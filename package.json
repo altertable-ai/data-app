@@ -1,0 +1,121 @@
+{
+  "name": "@altertable/data-app",
+  "version": "0.59.1",
+  "description": "Contracts, transport, and React UI for Altertable data apps",
+  "keywords": [
+    "altertable",
+    "analytics",
+    "data-app",
+    "react",
+    "typescript"
+  ],
+  "homepage": "https://github.com/altertable-ai/data-app",
+  "bugs": {
+    "url": "https://github.com/altertable-ai/data-app/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Altertable",
+    "url": "https://altertable.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altertable-ai/data-app.git"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "CONTRIBUTING.md",
+    "AGENTS.md"
+  ],
+  "type": "module",
+  "exports": {
+    "./contract": {
+      "types": "./dist/types/core/contract.d.ts",
+      "import": "./dist/core/contract.js"
+    },
+    "./config": {
+      "types": "./dist/types/core/config.d.ts",
+      "import": "./dist/core/config.js"
+    },
+    "./format": {
+      "types": "./dist/types/core/format.d.ts",
+      "import": "./dist/core/format.js"
+    },
+    "./appearance": {
+      "types": "./dist/types/core/appearance.d.ts",
+      "import": "./dist/core/appearance.js"
+    },
+    "./client": {
+      "types": "./dist/types/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    },
+    "./server": {
+      "types": "./dist/types/server/index.d.ts",
+      "import": "./dist/server.js"
+    },
+    "./server/bun": {
+      "types": "./dist/types/server/local.d.ts",
+      "import": "./dist/local.js"
+    },
+    "./react": {
+      "types": "./dist/types/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./react/styles.css": {
+      "types": "./dist/react.css.d.ts",
+      "default": "./dist/react/index.css"
+    },
+    "./embed": {
+      "types": "./dist/types/embed/index.d.ts",
+      "import": "./dist/embed/index.js"
+    },
+    "./react/embed": {
+      "types": "./dist/types/react/embed/index.d.ts",
+      "import": "./dist/react/embed/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint --type-aware src tests scripts browser-tests",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "test": "bun test ./tests",
+    "check": "bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run test:package",
+    "test:package": "bun run scripts/check-package.ts",
+    "check:workflows": "bash scripts/check-workflows.sh",
+    "test:browser": "playwright test --config browser-tests/playwright.config.ts",
+    "lint:fix": "oxlint --type-aware --fix src tests scripts browser-tests"
+  },
+  "dependencies": {
+    "@floating-ui/react": "0.27.20",
+    "@internationalized/date": "3.12.4",
+    "@tanstack/react-query": "5.104.0",
+    "fuzzysort": "4.0.2",
+    "lucide-react": "1.48.0",
+    "react-aria-components": "1.21.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/bun": "1.4.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "oxfmt": "0.70.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "typescript": "7.0.2"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "react-dom": ">=19"
+  },
+  "packageManager": "bun@1.4.2"
+}

@@ -1,0 +1,74 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git revision to verify
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.event_name }}-${{ github.ref }}-${{ inputs.ref }}
+  cancel-in-progress: ${{ !inputs.ref }}
+
+jobs:
+  package:
+    name: Source and packed package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Typecheck
+        run: bun run typecheck
+      - name: Lint
+        run: bun run lint
+      - name: Check formatting
+        run: bun run format:check
+      - name: Test source
+        run: bun run test
+      - name: Build package
+        run: bun run build
+      - name: Verify packed consumer
+        run: bun run test:package
+      - name: Install browser
+        run: bash scripts/install-test-browser.sh
+      - name: Test embedding in Chromium
+        run: bun run test:browser
+      - name: Verify lockfile is unchanged
+        run: git diff --exit-code -- bun.lock
+
+  workflows:
+    name: Validate workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out revision
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Validate GitHub Actions and shell scripts
+        run: bash scripts/check-workflows.sh

@@ -1,0 +1,56 @@
+import type { ReactNode } from 'react';
+import type {
+  DataReading,
+  MetricReading,
+  MetricValues,
+} from '@/src/core/reading';
+import type { DateRangeRequest } from '@/src/core/contract';
+
+export type DataContentHelpers<Data> = {
+  select: <Value>(select: (data: Data) => Value) => DataReading<Value>;
+  metric: (select: (data: Data) => MetricValues) => MetricReading;
+};
+
+export type DataContentState<Data, Input> = DataContentHelpers<Data> &
+  (
+    | { loading: true; data?: never; input?: never }
+    | { loading: false; data: Data; input: Input }
+  );
+
+/** Selectors run only for displayed data. Date comparisons inherit that result's input. */
+export function defineDataContent<Data, Input>(
+  render: (state: DataContentState<Data, Input>) => ReactNode,
+  options: { date?: (input: Input) => DateRangeRequest } = {}
+) {
+  return {
+    loading: render({
+      loading: true,
+      select() {
+        return { loading: true };
+      },
+      metric() {
+        return { loading: true };
+      },
+    }),
+    children(data: Data, input: Input) {
+      return render({
+        loading: false,
+        data,
+        input,
+        select(select) {
+          return { loading: false, value: select(data) };
+        },
+        metric(select) {
+          const values = select(data);
+          if (values.previous !== undefined && !options.date)
+            throw new Error('Metric comparisons require a view date binding.');
+
+          return {
+            loading: false,
+            value: { ...values, period: options.date?.(input) },
+          };
+        },
+      });
+    },
+  };
+}

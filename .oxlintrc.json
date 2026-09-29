@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "react", "jsx-a11y"],
+  "categories": {
+    "correctness": "error"
+  },
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/unsupported-syntax": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["./**", "../**", ".", ".."],
+            "message": "Use repository-root @/ imports instead of relative imports."
+          }
+        ]
+      }
+    ],
+    "func-style": [
+      "error",
+      "declaration",
+      {
+        "overrides": {
+          "namedExports": "declaration"
+        }
+      }
+    ]
+  }
+}
