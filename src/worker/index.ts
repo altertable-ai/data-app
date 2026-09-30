@@ -11,8 +11,9 @@ interface WorkerBindings {
 const TOKEN_RE = /^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)+-app-[1-9][0-9]*$/;
 const PAGE_CSP =
   "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'";
-const inlineBootstrap = DATA_APP_BOOTSTRAP.replace(/<\/script/gi, match =>
-  match.replace('<', '<\\')
+const inlineBootstrap = DATA_APP_BOOTSTRAP.replace(
+  /<\/script/gi,
+  match => `<\\${match.slice(1)}`
 );
 
 function runtimeHtml(parentOrigin: string) {

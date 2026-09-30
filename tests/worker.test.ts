@@ -20,13 +20,14 @@ function request(parent?: string, method = 'GET', config = bindings) {
 
 describe('published Worker', () => {
   test('escapes script endings without changing JavaScript string values', async () => {
+    const value = '</ScRiPt><script></SCRIPT data-test="value"></script >';
     const result = await Bun.build({
       entrypoints: ['src/worker/index.ts'],
       target: 'browser',
       format: 'esm',
       define: {
         DATA_APP_BOOTSTRAP: JSON.stringify(
-          'globalThis.value = "</ScRiPt><script>";'
+          `globalThis.value = ${JSON.stringify(value)};`
         ),
       },
     });
@@ -37,10 +38,12 @@ describe('published Worker', () => {
     )) as typeof import('@/src/worker');
     const html = await fixture.fetch(new Request(previewUrl), bindings).text();
     expect(html.match(/<\/script/gi)).toHaveLength(1);
-    const script = html.match(/<script[^>]*>([\s\S]*?)<\/script>/)![1]!;
+    const script = html.match(
+      /<script\b[^>]*>([\s\S]*?)<\/script\b[^>]*>/i
+    )![1]!;
     const context: { value?: string } = {};
     runInNewContext(script, context);
-    expect(context.value).toBe('</ScRiPt><script>');
+    expect(context.value).toBe(value);
   });
 
   test('serves unstyled classic bootstrap with restrictive headers and empty HEAD', async () => {

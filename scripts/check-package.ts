@@ -210,7 +210,7 @@ const response = await worker.fetch(new Request('https://test-report-app-1.examp
 assert.equal(response.status, 200);
 const html = await response.text();
 assert(html.includes('data-parent-origin="https://host.example"'));
-const source = html.match(/<script[^>]*>([\\s\\S]*?)<\\/script>/)[1];
+const source = html.match(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\b[^>]*>/i)[1];
 assert(!/createAppLocation|attachNavigation|replaceState|pushState|navigation:update/.test(source));
 
 function execute(parentOrigin) {
