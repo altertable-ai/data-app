@@ -163,8 +163,7 @@ export function attachDataAppBridge({
       onStatusChange?.('connected');
       send({
         type: 'initialize',
-        search: host.location.search,
-        hash: host.location.hash,
+        state: { search: host.location.search, hash: host.location.hash },
       });
       if (javascript !== undefined) send({ type: 'script.load', javascript });
 
@@ -192,9 +191,8 @@ export function attachDataAppBridge({
 
   function navigate() {
     send({
-      type: 'navigate',
-      search: host.location.search,
-      hash: host.location.hash,
+      type: 'state',
+      state: { search: host.location.search, hash: host.location.hash },
     });
   }
 

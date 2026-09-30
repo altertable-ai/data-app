@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { parseCount } from '@/src/core/contract';
+import { createDataAppNavigation } from '@/src/client/navigation';
 import { createIframeTransport } from '@/src/client/iframe';
 import {
   createMessageRouter,
@@ -448,7 +449,10 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent.at(-1)!.type).toBe('connect');
     receive({ type: 'ready', token });
     expect(sent.at(-1)!.type).toBe('initialize');
-    expect(sent.at(-1)!.search).toBe('?period=last-30');
+    expect(sent.at(-1)!.state).toEqual({
+      search: '?period=last-30',
+      hash: '#totals',
+    });
     finish?.('old result');
     await Promise.resolve();
     expect(sent.some(message => message.type === 'result')).toBe(false);
@@ -505,10 +509,10 @@ test('bundle transport keeps host location in memory and rejects stale session t
     receive({
       type: 'initialize',
       documentId,
-      search: '?period=last-30',
-      hash: '#totals',
+      state: { search: '?period=last-30', hash: '#totals' },
     });
-    expect(bridge.appLocation.snapshot()).toEqual({
+    const navigation = createDataAppNavigation({ bridge, window: frame });
+    expect(navigation.snapshot()).toEqual({
       search: '?period=last-30',
       hash: '#totals',
     });
@@ -521,10 +525,7 @@ test('bundle transport keeps host location in memory and rejects stale session t
     expect(executions).toBe(0);
     receive({ type: 'script.load', documentId, javascript: 'code' });
     expect(executions).toBe(1);
-    bridge.appLocation.update(
-      { search: '?period=last-7', hash: '#daily' },
-      'push'
-    );
+    navigation.update({ search: '?period=last-7', hash: '#daily' }, 'push');
     const request = sent.at(-1)!;
     expect(request.route).toBe('navigation.update');
     expect(request.payload).toEqual({
@@ -535,12 +536,11 @@ test('bundle transport keeps host location in memory and rejects stale session t
     });
     receive({ type: 'result', documentId, id: request.id, response: null });
     receive({
-      type: 'navigate',
+      type: 'state',
       documentId,
-      search: '?period=last-30',
-      hash: '#totals',
+      state: { search: '?period=last-30', hash: '#totals' },
     });
-    expect(bridge.appLocation.snapshot().search).toBe('?period=last-30');
+    expect(navigation.snapshot().search).toBe('?period=last-30');
   } finally {
     bridge.dispose();
   }

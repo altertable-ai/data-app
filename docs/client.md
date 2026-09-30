@@ -51,8 +51,8 @@ const bridge = createIframeTransport({
 const uninstall = installDataAppTransport(bridge);
 ```
 
-Use a configured trusted origin, not an unverified URL parameter. Installation
-makes data clients and React URL controls use the same connection. Cleanup removes
+Use a configured trusted origin, not an unverified URL parameter. Installation makes data clients discover the connection. React mounting and
+URL controls attach the optional navigation adapter to that connection. Cleanup removes
 the installation and disposes pending work. Bundle apps receive this installation
 from the [trusted bootstrap](embed.md#trusted-bootstrap).
 
@@ -72,9 +72,38 @@ const result = await messages.request('echo', 'hello', { signal });
 ```
 
 The app supplies shared `routes` and optional `signal`. Both client and host
-validate messages. `bridge.appLocation` provides `snapshot`, `subscribe`, and
-`update` for search/hash state, including virtual state in opaque sandboxes.
-`bridge.location(mode)` publishes URL changes made outside those controls.
+validate messages. The bridge retains opaque host state through `snapshot()` and
+`subscribe(listener)`; only authenticated, current-session state reaches subscribers.
+It never changes browser history or interprets the host state.
+
+## App navigation
+
+Navigation is an optional app adapter, separate from bootstrap and data delivery:
+
+```ts
+import { createDataAppNavigation } from '@altertable/data-app/client';
+
+const navigation = createDataAppNavigation({ bridge });
+const currentLocation = navigation.snapshot();
+navigation.update({ search: '?period=last-7', hash: '#daily' }, 'push');
+// If app code changes its URL directly:
+navigation.publish('replace');
+// Before removing the app or its transport:
+navigation.dispose();
+```
+
+The adapter provides `snapshot`, `subscribe`, and `update`. Opaque sandboxes keep
+search/hash in memory; URL frames preserve their URL and local-preview parent
+marker. Host Back/Forward state is applied without publishing it back.
+
+`getDataAppNavigation()` discovers an installed or verified local-preview bridge
+and shares one adapter per document. React mounting and URL-backed controls call
+it automatically. Apps that only use data delivery do not attach navigation.
+
+Migration: replace `bridge.appLocation` with the navigation adapter and
+`bridge.location(mode)` with `navigation.publish(mode)`. The version-1 wire envelope
+now carries host context in `initialize.state` and subsequent `state` messages;
+upgrade independently deployed hosts and runtimes together.
 Transport state is shared per window across separately bundled entry points;
 install only one transport per document. Public error classes retain `instanceof`
 recognition across independent bootstrap and app bundles in that window.

@@ -1,18 +1,17 @@
-import { localFrameBridge } from '@/src/client/iframe';
+import { getDataAppNavigation } from '@/src/client/navigation';
 const SEARCH_CHANGE = 'altertable:searchchange';
 
 export function searchParams(): URLSearchParams {
   return new URLSearchParams(
     typeof window === 'undefined'
       ? ''
-      : (localFrameBridge()?.appLocation?.snapshot().search ??
-          window.location.search)
+      : (getDataAppNavigation()?.snapshot().search ?? window.location.search)
   );
 }
 
 /** Listen to Back/Forward and writes made by another runtime control. */
 export function subscribeSearch(listener: () => void): () => void {
-  const location = localFrameBridge()?.appLocation;
+  const location = getDataAppNavigation();
   if (location) return location.subscribe(listener);
   window.addEventListener('popstate', listener);
   window.addEventListener(SEARCH_CHANGE, listener);
@@ -28,8 +27,7 @@ export function writeSearch(
   update: Record<string, string | null>,
   mode: 'replace' | 'push' = 'replace'
 ): void {
-  const bridge = localFrameBridge();
-  const location = bridge?.appLocation;
+  const location = getDataAppNavigation();
   const currentState = location?.snapshot();
   const url = new URL(window.location.href);
   if (currentState) {
@@ -48,12 +46,11 @@ export function writeSearch(
   const next = `${url.pathname}${url.search}${url.hash}`;
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
   if (next === current) return;
-  window.history[!bridge && mode === 'push' ? 'pushState' : 'replaceState'](
+  window.history[mode === 'push' ? 'pushState' : 'replaceState'](
     null,
     '',
     next
   );
-  bridge?.location(mode);
   window.dispatchEvent(new Event(SEARCH_CHANGE));
 }
 

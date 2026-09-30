@@ -2,11 +2,13 @@ import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 import {
   createMessageClient,
   createIframeTransport,
+  createDataAppNavigation,
 } from '@altertable/data-app/client';
 const bridge = createIframeTransport({
   parentOrigin:
     document.documentElement.dataset.parentOrigin ?? window.location.origin,
 });
+const navigation = createDataAppNavigation({ bridge });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const result = document.getElementById('result')!;
 const location = document.getElementById('location')!;
@@ -23,7 +25,7 @@ document.getElementById('query')!.addEventListener('click', () => {
 });
 document.getElementById('filter')!.addEventListener('click', () => {
   window.history.pushState(null, '', '?period=last-7#daily');
-  bridge.location('push');
+  navigation.publish('push');
   showLocation();
 });
 showLocation();

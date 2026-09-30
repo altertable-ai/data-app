@@ -261,7 +261,7 @@ export type NavigationUpdate = {
   mode: 'push' | 'replace';
   title?: string;
 };
-export const navigationUpdateRoute = defineMessageRoute({
+export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): NavigationUpdate {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid navigation.');
@@ -293,6 +293,6 @@ export const navigationUpdateRoute = defineMessageRoute({
   },
 });
 export const dataAppRoutes = {
-  'data.query': defineDataQueryRoute(),
+  'data.query': /* @__PURE__ */ defineDataQueryRoute(),
   'navigation.update': navigationUpdateRoute,
 };

@@ -61,7 +61,9 @@ CSP on a remote response. A starting policy for self-contained scripts and style
 is `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';
 img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'`.
 The initializer installs a shared transport before evaluating the app script;
-clients and React URL controls discover it even when independently bundled.
+data clients discover it even when independently bundled. The bootstrap contains
+no app navigation adapter. React mounting or URL controls attach navigation in the
+app bundle; non-React apps use `createDataAppNavigation` from `/client`.
 
 ## Delivery and navigation
 
@@ -76,8 +78,9 @@ null origin, token, document, and session to match.
 `createNavigationHandler({ window, reservedSearchParams })` handles the shared
 `navigation.update` route using browser history. Reserved host query parameters
 survive app changes. Supply your own handler when integrating a framework router.
-Host Back/Forward events synchronize the app's search and hash; opaque apps keep
-that state in memory rather than modifying their document URL.
+Host Back/Forward events publish opaque host state through the bridge. The app's
+optional navigation adapter interprets search/hash and synchronizes controls;
+opaque apps keep that state in memory rather than modifying their document URL.
 
 ## Status and diagnostics
 

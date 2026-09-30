@@ -219,6 +219,26 @@ if (typeof createDataHandler !== "function" || typeof localLakehouse !== "functi
   )
     throw new Error('Embedding entry includes app UI dependencies.');
 
+  await writeFile(
+    join(temporary, 'bootstrap.ts'),
+    `import { startDataAppBootstrap } from '@altertable/data-app/embed';
+startDataAppBootstrap({ parentOrigin: 'https://host.example' });
+`
+  );
+  const bootstrap = await Bun.build({
+    entrypoints: [join(temporary, 'bootstrap.ts')],
+    target: 'browser',
+    format: 'iife',
+  });
+  if (!bootstrap.success) throw new Error('Packed bootstrap build failed.');
+  const bootstrapSource = await bootstrap.outputs[0]!.text();
+  if (
+    /createAppLocation|attachNavigation|replaceState|pushState|navigation\.update/.test(
+      bootstrapSource
+    )
+  )
+    throw new Error('Bootstrap bundle includes app navigation behavior.');
+
   const browser = await Bun.build({
     entrypoints: [join(temporary, 'browser.tsx')],
     outdir: join(temporary, 'browser-dist'),

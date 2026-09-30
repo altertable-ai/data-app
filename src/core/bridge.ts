@@ -18,8 +18,8 @@ export type BridgeMessage = {
   response?: unknown;
   code?: string;
   message?: string;
-  search?: string;
-  hash?: string;
+  /** Opaque host context, interpreted by optional app adapters. */
+  state?: unknown;
   requestId?: string;
   token?: string;
   javascript?: string;
@@ -43,9 +43,10 @@ export function validId(value: unknown): value is string {
   return typeof value === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(value);
 }
 
-export function validLocation(
-  message: Pick<BridgeMessage, 'search' | 'hash'>
-): boolean {
+export function validLocation(message: {
+  search?: unknown;
+  hash?: unknown;
+}): boolean {
   return (
     typeof message.search === 'string' &&
     message.search.length <= 16_384 &&

@@ -5,7 +5,8 @@ Import `@altertable/data-app/react/styles.css` once in the browser entry.
 React 19.2 or newer and React DOM 19.2 or newer are peer dependencies.
 
 `mountDataApp({ config, component })` mounts into `#root`, sets the document
-title and language, and installs `DataAppProvider`. When mounting through another
+title and language, attaches navigation to an available iframe transport, and
+installs `DataAppProvider`. When mounting through another
 framework, wrap the app in `DataAppProvider` yourself.
 
 ## Find UI by task

@@ -1,4 +1,5 @@
 import { useState, type ComponentType, type ReactNode } from 'react';
+import { getDataAppNavigation } from '@/src/client/navigation';
 import { createRoot } from 'react-dom/client';
 import { invariant } from '@/src/core/invariant';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -17,6 +18,7 @@ export function mountDataApp({
   invariant(root, 'Data app root element is missing.');
   document.documentElement.lang = navigator.language;
   document.title = dataAppTitle(config);
+  getDataAppNavigation();
   createRoot(root).render(
     <DataAppProvider>
       <Component />

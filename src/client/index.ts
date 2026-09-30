@@ -18,6 +18,7 @@ export {
   createIframeTransport,
   installDataAppTransport,
   getDataAppTransport,
+  type IframeTransport,
 } from '@/src/client/iframe';
 export { createMessageClient } from '@/src/client/messages';
 import type { DataOperations, DisclosedQuery } from '@/src/core/contract';
@@ -107,3 +108,9 @@ export function createDataClient<Operations extends DataOperations>(
 }
 
 export type { DataAppLocation, AppLocation } from '@/src/client/location';
+
+export {
+  createDataAppNavigation,
+  getDataAppNavigation,
+  type DataAppNavigation,
+} from '@/src/client/navigation';

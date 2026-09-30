@@ -5,6 +5,7 @@ import {
   createMessageClient,
   createDataClient,
   getDataAppTransport,
+  getDataAppNavigation,
   DataAppError,
 } from '@altertable/data-app/client';
 import { textVariable, useAppVariables } from '@altertable/data-app/react';
@@ -25,7 +26,7 @@ function App() {
     <>
       <p id="location">
         {search}
-        {bridge.appLocation.snapshot().hash}
+        {getDataAppNavigation()!.snapshot().hash}
       </p>
       <p id="result">{result}</p>
       <button

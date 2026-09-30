@@ -14,6 +14,7 @@ export function createAppLocation(
   publish: (location: AppLocation, mode: 'push' | 'replace') => void
 ) {
   let state: AppLocation = { search: '', hash: '' };
+  let disposed = false;
   const listeners = new Set<() => void>();
 
   function notify() {
@@ -58,6 +59,7 @@ export function createAppLocation(
       };
     },
     update(next, mode = 'replace') {
+      if (disposed) return;
       if (!validLocation(next)) throw new Error('Invalid app location.');
       const before = snapshot();
       if (before.search === next.search && before.hash === next.hash) return;
@@ -66,5 +68,12 @@ export function createAppLocation(
     },
   };
 
-  return { location, apply };
+  function dispose() {
+    disposed = true;
+    for (const listener of listeners)
+      frame.removeEventListener('popstate', listener);
+    listeners.clear();
+  }
+
+  return { location, apply, dispose };
 }

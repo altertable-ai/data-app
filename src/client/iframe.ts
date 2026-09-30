@@ -5,17 +5,14 @@ import {
   REQUEST_TIMEOUT_MS,
   isBridgeMessage,
   validId,
-  validLocation,
   type BridgeMessage,
   type TransportResponse,
 } from '@/src/core/bridge';
 import {
-  dataAppRoutes,
+  defineDataQueryRoute,
   MessageRoutingError,
   type RoutedMessage,
-  type NavigationUpdate,
 } from '@/src/core/messages';
-import { createAppLocation } from '@/src/client/location';
 import { createMessageClient } from '@/src/client/messages';
 import { DataAppError } from '@/src/client/transport';
 
@@ -46,7 +43,8 @@ export function createIframeTransport({
   let sessionId: string | undefined;
   let disposed = false;
   const pending = new Map<string, Pending>();
-  let locationUpdate: NavigationUpdate | undefined;
+  let hostState: unknown;
+  const stateListeners = new Set<(state: unknown) => void>();
 
   function send(message: Partial<BridgeMessage>) {
     frame.parent.postMessage(
@@ -55,28 +53,9 @@ export function createIframeTransport({
     );
   }
 
-  function publishLocation() {
-    if (sessionId && locationUpdate) {
-      void messages
-        .request('navigation.update', locationUpdate)
-        .catch(() => {});
-      locationUpdate = undefined;
-    }
-  }
-
-  const { location: appLocation, apply } = createAppLocation(
-    frame,
-    mode === 'bundle',
-    (location, mode) => {
-      locationUpdate = { ...location, mode, title: frame.document.title };
-      publishLocation();
-    }
-  );
-
-  function navigate(message: BridgeMessage) {
-    if (!validLocation(message)) return;
-    locationUpdate = undefined;
-    apply({ search: message.search!, hash: message.hash! });
+  function receiveState(state: unknown) {
+    hostState = state;
+    for (const listener of stateListeners) listener(state);
   }
 
   function receive(event: MessageEvent) {
@@ -108,18 +87,17 @@ export function createIframeTransport({
             )
           );
       }
-      navigate(message);
       const first = !sessionId;
       sessionId = message.sessionId;
       if (first) for (const entry of pending.values()) entry.start();
-      publishLocation();
+      receiveState(message.state);
       if (mode === 'url') send({ type: 'runtime.ready' });
 
       return;
     }
     if (!sessionId || message.sessionId !== sessionId) return;
-    if (message.type === 'navigate' && validLocation(message)) {
-      navigate(message);
+    if (message.type === 'state') {
+      receiveState(message.state);
 
       return;
     }
@@ -232,7 +210,10 @@ export function createIframeTransport({
     });
   }
 
-  const messages = createMessageClient(dataAppRoutes, requestMessage);
+  const messages = createMessageClient(
+    { 'data.query': defineDataQueryRoute() },
+    requestMessage
+  );
 
   async function queryData(
     operation: string,
@@ -272,6 +253,7 @@ export function createIframeTransport({
     frame.removeEventListener('message', receive);
     frame.removeEventListener('pagehide', disconnect);
     frame.removeEventListener('pageshow', resume);
+    stateListeners.clear();
   }
 
   frame.addEventListener('pagehide', disconnect);
@@ -282,40 +264,46 @@ export function createIframeTransport({
     request: requestMessage,
     transport: queryData,
     dispose,
-    appLocation,
+    mode,
+    snapshot() {
+      return hostState;
+    },
+    subscribe(listener: (state: unknown) => void) {
+      stateListeners.add(listener);
+
+      return () => {
+        stateListeners.delete(listener);
+      };
+    },
     ready() {
       send({ type: 'runtime.ready' });
     },
     fail() {
       send({ type: 'runtime.error' });
     },
-    location(mode: 'push' | 'replace' = 'replace') {
-      locationUpdate = {
-        ...appLocation.snapshot(),
-        mode,
-        title: frame.document.title,
-      };
-      publishLocation();
-    },
   };
 }
+
+export type IframeTransport = ReturnType<typeof createIframeTransport>;
 
 const bridgeKey = Symbol.for('altertable.localFrameBridge');
 const installedKey = Symbol.for('altertable.installedTransport');
 type LocalBridge = Pick<
   ReturnType<typeof createIframeTransport>,
-  'transport' | 'location'
-> &
-  Partial<Pick<ReturnType<typeof createIframeTransport>, 'appLocation'>>;
+  'transport'
+> & { connect?: () => Promise<ReturnType<typeof createIframeTransport>> };
 type FrameWindow = Window & {
   [bridgeKey]?: LocalBridge;
   [installedKey]?: ReturnType<typeof createIframeTransport>;
 };
 
 /** The URL opts into local preview; only same-origin server configuration establishes trust. */
-export function localFrameBridge(): LocalBridge | undefined {
-  if (typeof window === 'undefined') return undefined;
-  const frame = window as FrameWindow;
+export function localFrameBridge(window?: Window): LocalBridge | undefined {
+  const activeWindow =
+    window ??
+    (typeof globalThis.window === 'undefined' ? undefined : globalThis.window);
+  if (!activeWindow) return undefined;
+  const frame = activeWindow as FrameWindow;
   if (frame[bridgeKey]) return frame[bridgeKey];
   const parentOrigin =
     new URL(frame.location.href).searchParams.get(PARENT_PARAM) ?? '';
@@ -397,9 +385,7 @@ export function localFrameBridge(): LocalBridge | undefined {
         if (abort) signal?.removeEventListener('abort', abort);
       }
     },
-    location(mode) {
-      void connection?.then(bridge => bridge.location(mode)).catch(() => {});
-    },
+    connect: getConnection,
   };
   frame[bridgeKey] = proxy;
   // Static mounting still verifies eagerly, without an unhandled rejection.
