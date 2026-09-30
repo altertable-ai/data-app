@@ -453,3 +453,143 @@ test('operation success and synchronous failure remove cancellation listeners', 
     AbortSignal.prototype.removeEventListener = originalRemove;
   }
 });
+
+function streamedRequest(
+  chunks: Uint8Array[],
+  options: {
+    length?: string;
+    signal?: AbortSignal;
+    fail?: boolean;
+    wait?: boolean;
+    slowCancel?: boolean;
+  } = {}
+) {
+  const state = { pulls: 0, cancelled: false };
+  const body = new ReadableStream<Uint8Array>(
+    {
+      pull(controller) {
+        state.pulls++;
+        if (options.fail) {
+          controller.error(new Error('Private stream failure'));
+          return;
+        }
+        const chunk = chunks.shift();
+        if (chunk) controller.enqueue(chunk);
+        else if (!options.wait) controller.close();
+      },
+      cancel() {
+        state.cancelled = true;
+        if (options.slowCancel) return new Promise(() => {});
+      },
+    },
+    { highWaterMark: 0 }
+  );
+  const request = new Request('http://localhost/api/data/cancel', {
+    method: 'POST',
+    body,
+    signal: options.signal,
+    headers: {
+      'content-type': 'application/json',
+      ...(options.length && { 'content-length': options.length }),
+    },
+  });
+
+  return { request, state };
+}
+
+function inputHandler(onRun: () => void = () => {}) {
+  return createDataHandler(
+    {
+      cancel: cancellationOperation(async () => {
+        onRun();
+        return 1;
+      }),
+    },
+    async () => cancellationAccess
+  );
+}
+
+test('HTTP inputs enforce the exact UTF-8 byte boundary', async () => {
+  const encode = new TextEncoder();
+  const handler = inputHandler();
+  for (const text of [
+    JSON.stringify('a'.repeat(16382)),
+    JSON.stringify('é'.repeat(8191)),
+  ]) {
+    expect(encode.encode(text).byteLength).toBe(16384);
+    expect(
+      (await handler(streamedRequest([encode.encode(text)]).request)).status
+    ).toBe(200);
+  }
+  for (const text of [
+    JSON.stringify('a'.repeat(16383)),
+    JSON.stringify('é'.repeat(8192)),
+  ]) {
+    const response = await handler(
+      streamedRequest([encode.encode(text)]).request
+    );
+    expect(response.status).toBe(413);
+    expect((await response.json()).error.code).toBe('input_too_large');
+  }
+});
+
+test('oversize input cancels remaining consumption regardless of Content-Length', async () => {
+  for (const length of [undefined, '1', '999999']) {
+    let calls = 0;
+    const { request, state } = streamedRequest(
+      [new Uint8Array(16385), new Uint8Array(20000)],
+      { length, slowCancel: true }
+    );
+    const response = await responseWithin(inputHandler(() => calls++)(request));
+    expect(response.status).toBe(413);
+    expect(state.pulls).toBe(1);
+    expect(state.cancelled).toBe(true);
+    expect(request.body?.locked).toBe(false);
+    expect(calls).toBe(0);
+  }
+});
+
+test('empty, malformed and failed streams keep safe input errors', async () => {
+  const encode = new TextEncoder();
+  for (const fixture of [
+    streamedRequest([]),
+    streamedRequest([encode.encode('{')]),
+    streamedRequest([], { fail: true }),
+  ]) {
+    const response = await inputHandler()(fixture.request);
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toMatchObject({
+      code: 'invalid_input',
+      message: "Check this operation's inputs.",
+    });
+  }
+});
+
+test('authorization rejects requests without reading their bodies', async () => {
+  const { request, state } = streamedRequest([new Uint8Array(16385)]);
+  const handler = createDataHandler(
+    { cancel: cancellationOperation(async () => 1) },
+    async () => {
+      throw new Error('Denied');
+    }
+  );
+  expect((await handler(request)).status).toBe(403);
+  expect(state.pulls).toBe(0);
+  expect(state.cancelled).toBe(false);
+});
+
+test('cancellation settles waiting body reads without awaiting stream cancellation', async () => {
+  const controller = new AbortController();
+  const { request, state } = streamedRequest([], {
+    wait: true,
+    signal: controller.signal,
+    slowCancel: true,
+  });
+  const pending = inputHandler()(request);
+  setTimeout(() => controller.abort(), 0);
+  const response = await responseWithin(pending);
+  expect(response.status).toBe(400);
+  expect(request.body?.locked).toBe(false);
+  expect(state.cancelled).toBe(true);
+  expect((await response.json()).error.code).toBe('invalid_input');
+});

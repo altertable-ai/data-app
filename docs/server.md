@@ -33,3 +33,15 @@ Keep credentials and operation implementations on the server.
 
 See [operation contracts](contract.md), the [client](client.md), and the
 [local Bun adapter](server-bun.md).
+
+## Request input limits
+
+JSON request bodies are limited to **16,384 encoded bytes**, including multibyte
+UTF-8 content. The handler counts bytes as it reads and cancels remaining
+consumption on overflow; it does not rely on `Content-Length`. Authorization
+runs before reading. Request cancellation interrupts waiting reads. Invalid or
+interrupted bodies return `400/invalid_input`; oversized bodies return
+`413/input_too_large`.
+
+`maxDurationMs` bounds execution after input parsing. It does not add a separate
+body-read deadline. The hosting runtime controls the size of individual chunks.
