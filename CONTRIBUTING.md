@@ -17,6 +17,9 @@ bun run check
 `src/server` owns request handling and the local Bun adapter, and `src/react` owns
 React bindings; `src/react/embed` provides hosts without app UI dependencies.
 Components and their styles live together in `src/react/ui`.
+`examples/starter` is the runnable CLI starter port, using public package imports.
+Its file dependency points to the built repository package; keep its app-owned
+configuration and agent guidance usable when copied into another project.
 `docs` describes each public entry. `scripts` builds and checks the published
 artifact. Workflow validation lives in `scripts/check-workflows.sh`, and release
 helpers live in `scripts/release`. Generated `dist` files are ignored; edit source
@@ -48,6 +51,7 @@ consumers.
 Run `bun run build` before individual typecheck, lint, or browser checks. Browser
 fixtures import the public package exports and need the generated declarations
 in `dist`. `bun run check` builds first, including on a fresh checkout.
+Release Please owns `CHANGELOG.md`; formatting excludes its generated output.
 
 | Command                   | Purpose                                          |
 | ------------------------- | ------------------------------------------------ |
@@ -57,6 +61,7 @@ in `dist`. `bun run check` builds first, including on a fresh checkout.
 | `bun run test`            | Run contract, transport, and component tests     |
 | `bun run build`           | Emit ESM, declarations, and the React stylesheet |
 | `bun run test:package`    | Check the built npm archive as a consumer        |
+| `bun run test:starter`    | Install, typecheck, lint, and build the starter  |
 | `bun run test:browser`    | Test embedding against built exports in Chromium |
 | `bun run check:workflows` | Validate workflows and shell scripts             |
 | `bun run check`           | Run all required checks                          |
