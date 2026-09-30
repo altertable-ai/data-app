@@ -18,13 +18,13 @@ function Host() {
   const timeout = new URLSearchParams(location.search).has('timeout');
   const forward = createHttpTransport();
   const router = createMessageRouter(bridgeRoutes, {
-    'test.echo'({ period }) {
+    'test:echo'({ period }) {
       return { period, version };
     },
-    'data.query'({ operation, input }, { signal }) {
+    'data:query'({ operation, input }, { signal }) {
       return forward(operation, input, signal);
     },
-    'navigation.update': createNavigationHandler(),
+    'navigation:update': createNavigationHandler(),
   });
 
   return (

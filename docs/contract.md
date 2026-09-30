@@ -63,6 +63,8 @@ Message contracts describe the payloads allowed between an embedded app and its
 host. Share these contracts with the app; keep handlers and authorization in the
 host/server.
 
+Name routes `{scope}:{action}`, for example `data:query` or `navigation:update`.
+
 ```ts
 import {
   createMessageRouter,
@@ -72,12 +74,12 @@ import {
 import { createNavigationHandler } from '@altertable/data-app/embed';
 
 const routes = {
-  echo: defineMessageRoute({ input: parseString, output: parseString }),
-  'navigation.update': navigationUpdateRoute,
+  'demo:echo': defineMessageRoute({ input: parseString, output: parseString }),
+  'navigation:update': navigationUpdateRoute,
 };
 const router = createMessageRouter(routes, {
-  echo: value => value,
-  'navigation.update': createNavigationHandler(),
+  'demo:echo': value => value,
+  'navigation:update': createNavigationHandler(),
 });
 ```
 
@@ -90,6 +92,6 @@ errors are replaced with a generic failure.
 input and output and preserves its response evidence. It infers the result type
 from the selected operation when used with `createMessageClient`. Share input and
 output parsers, not operation implementations containing SQL or credentials.
-`dataAppRoutes` supplies generic `data.query` and `navigation.update` contracts;
+`dataAppRoutes` supplies generic `data:query` and `navigation:update` contracts;
 generic hosts must delegate operation validation and authorization to their
 server. Request handlers receive `{ signal }` for cancellation.

@@ -81,7 +81,7 @@ export function attachDataAppBridge({
     message: string,
     requestId?: string
   ) {
-    send({ type: 'error', id, code, message, requestId });
+    send({ type: 'bridge:error', id, code, message, requestId });
   }
 
   async function request(message: BridgeMessage) {
@@ -126,7 +126,7 @@ export function attachDataAppBridge({
         { signal: controller.signal }
       );
       if (pending.get(id) === controller)
-        send({ type: 'result', id, response });
+        send({ type: 'bridge:result', id, response });
     } catch (failure) {
       if (pending.get(id) === controller) {
         if (failure instanceof MessageRoutingError)
@@ -154,7 +154,7 @@ export function attachDataAppBridge({
     const message = event.data;
     if (connection.type === 'opaque' && message.token !== token) return;
     onDiagnostic?.({ direction: 'receive', type: message.type });
-    if (message.type === 'ready') {
+    if (message.type === 'bridge:ready') {
       if (message.documentId !== documentId) {
         cancelAll();
         documentId = message.documentId;
@@ -162,10 +162,10 @@ export function attachDataAppBridge({
       }
       onStatusChange?.('connected');
       send({
-        type: 'initialize',
+        type: 'bridge:initialize',
         state: { search: host.location.search, hash: host.location.hash },
       });
-      if (javascript !== undefined) send({ type: 'script.load', javascript });
+      if (javascript !== undefined) send({ type: 'script:load', javascript });
 
       return;
     }
@@ -175,13 +175,13 @@ export function attachDataAppBridge({
       message.documentId !== documentId
     )
       return;
-    if (message.type === 'runtime.ready') onStatusChange?.('ready');
-    else if (message.type === 'runtime.error') onStatusChange?.('failed');
-    else if (message.type === 'request') void request(message);
-    else if (message.type === 'cancel' && validId(message.id)) {
+    if (message.type === 'runtime:ready') onStatusChange?.('ready');
+    else if (message.type === 'runtime:error') onStatusChange?.('failed');
+    else if (message.type === 'bridge:request') void request(message);
+    else if (message.type === 'bridge:cancel' && validId(message.id)) {
       pending.get(message.id)?.abort();
       pending.delete(message.id);
-    } else if (message.type === 'disconnect') {
+    } else if (message.type === 'bridge:disconnect') {
       cancelAll();
       documentId = undefined;
       sessionId = undefined;
@@ -191,7 +191,7 @@ export function attachDataAppBridge({
 
   function navigate() {
     send({
-      type: 'state',
+      type: 'state:update',
       state: { search: host.location.search, hash: host.location.hash },
     });
   }
@@ -202,7 +202,7 @@ export function attachDataAppBridge({
     documentId = undefined;
     sessionId = undefined;
     onStatusChange?.('connecting');
-    send({ type: 'connect', documentId: 'host' });
+    send({ type: 'bridge:connect', documentId: 'host' });
   }
 
   function dispose() {
@@ -219,7 +219,7 @@ export function attachDataAppBridge({
   host.addEventListener('pagehide', cancelAll);
   // Reconnect an already-loaded iframe when its host bridge mounts again.
   onStatusChange?.('connecting');
-  send({ type: 'connect', documentId: 'host' });
+  send({ type: 'bridge:connect', documentId: 'host' });
 
   return dispose;
 }

@@ -59,13 +59,17 @@ test('iframe waits for a trusted handshake, correlates concurrent responses and 
   try {
     const first = bridge.transport('first', { n: 1 });
     const second = bridge.transport('second', { n: 2 });
-    receive({ type: 'initialize' }, 'http://evil.example');
-    receive({ type: 'initialize' }, 'http://localhost:1', { postMessage() {} });
+    receive({ type: 'bridge:initialize' }, 'http://evil.example');
+    receive({ type: 'bridge:initialize' }, 'http://localhost:1', {
+      postMessage() {},
+    });
     expect(
-      sent.filter(({ message }) => message.type === 'request')
+      sent.filter(({ message }) => message.type === 'bridge:request')
     ).toHaveLength(0);
-    receive({ type: 'initialize' });
-    const queries = sent.filter(({ message }) => message.type === 'request');
+    receive({ type: 'bridge:initialize' });
+    const queries = sent.filter(
+      ({ message }) => message.type === 'bridge:request'
+    );
     expect(queries).toHaveLength(2);
     expect(queries.every(({ origin }) => origin === 'http://localhost:1')).toBe(
       true
@@ -79,16 +83,16 @@ test('iframe waits for a trusted handshake, correlates concurrent responses and 
         queryIds: ['q2'],
       },
     };
-    receive({ type: 'result', id: queries[1]!.message.id, response });
+    receive({ type: 'bridge:result', id: queries[1]!.message.id, response });
     expect(await second).toEqual(response);
     receive({
-      type: 'result',
+      type: 'bridge:result',
       id: queries[0]!.message.id,
       sessionId: 'stale',
       response,
     });
     receive({
-      type: 'error',
+      type: 'bridge:error',
       id: queries[0]!.message.id,
       code: 'forbidden',
       message: 'Denied',
@@ -111,15 +115,17 @@ test('iframe aborts before and after dispatch and times out missing shells', asy
     expect(await first.catch(error => error)).toMatchObject({
       name: 'AbortError',
     });
-    receive({ type: 'initialize' });
-    expect(sent.some(({ message }) => message.type === 'request')).toBe(false);
+    receive({ type: 'bridge:initialize' });
+    expect(sent.some(({ message }) => message.type === 'bridge:request')).toBe(
+      false
+    );
     const active = new AbortController();
     const second = bridge.transport('second', {}, active.signal);
     active.abort();
     expect(await second.catch(error => error)).toMatchObject({
       name: 'AbortError',
     });
-    expect(sent.at(-1)!.message.type).toBe('cancel');
+    expect(sent.at(-1)!.message.type).toBe('bridge:cancel');
   } finally {
     bridge.dispose();
   }
@@ -138,16 +144,18 @@ test('iframe aborts before and after dispatch and times out missing shells', asy
 test('iframe supports 50 simultaneous operation requests', async () => {
   const { bridge, receive, sent } = harness();
   try {
-    receive({ type: 'initialize' });
+    receive({ type: 'bridge:initialize' });
     const calls = Array.from({ length: 50 }, () =>
       bridge.transport('connection', {})
     );
-    const requests = sent.filter(({ message }) => message.type === 'request');
+    const requests = sent.filter(
+      ({ message }) => message.type === 'bridge:request'
+    );
     expect(requests).toHaveLength(50);
     for (const { message } of requests) {
-      if (message.type === 'request')
+      if (message.type === 'bridge:request')
         receive({
-          type: 'result',
+          type: 'bridge:result',
           id: message.id,
           response: {
             status: 200,
@@ -169,7 +177,7 @@ test('iframe supports 50 simultaneous operation requests', async () => {
 test('iframe bounds pending work and rejects old work on session replacement', async () => {
   const { bridge, receive } = harness();
   try {
-    receive({ type: 'initialize' });
+    receive({ type: 'bridge:initialize' });
     const calls = Array.from({ length: MAX_PENDING }, () =>
       bridge.transport('connection', {}).catch(error => error.code)
     );
@@ -178,7 +186,7 @@ test('iframe bounds pending work and rejects old work on session replacement', a
     ).toMatchObject({
       code: 'bridge_busy',
     });
-    receive({ type: 'initialize', sessionId: 'replacement' });
+    receive({ type: 'bridge:initialize', sessionId: 'replacement' });
     expect(await Promise.all(calls)).toEqual(
       Array(MAX_PENDING).fill('bridge_reset')
     );
@@ -214,7 +222,7 @@ test('shell rejects foreign sources, invalid input, duplicate IDs and stale sess
     onMessage: createMessageRouter(
       {
         ...dataAppRoutes,
-        'test.ping': defineMessageRoute({
+        'test:ping': defineMessageRoute({
           input(value: unknown): undefined {
             if (value !== undefined)
               throw new Error('Unexpected ping payload.');
@@ -225,15 +233,15 @@ test('shell rejects foreign sources, invalid input, duplicate IDs and stale sess
         }),
       },
       {
-        'data.query'({ operation, input }, { signal }) {
+        'data:query'({ operation, input }, { signal }) {
           return new Promise<TransportResponse>((resolve, reject) =>
             calls.push({ operation, input, signal, resolve, reject })
           );
         },
-        'navigation.update'() {
+        'navigation:update'() {
           return null;
         },
-        'test.ping'() {
+        'test:ping'() {
           return 7;
         },
       }
@@ -262,54 +270,56 @@ test('shell rejects foreign sources, invalid input, duplicate IDs and stale sess
   }
 
   try {
-    receive({ type: 'ready' }, 'http://evil.example');
-    receive({ type: 'ready' }, 'http://localhost:2', { postMessage() {} });
+    receive({ type: 'bridge:ready' }, 'http://evil.example');
+    receive({ type: 'bridge:ready' }, 'http://localhost:2', {
+      postMessage() {},
+    });
     expect(sent).toHaveLength(1);
-    expect(sent[0]!.type).toBe('connect');
-    receive({ type: 'ready' });
+    expect(sent[0]!.type).toBe('bridge:connect');
+    receive({ type: 'bridge:ready' });
     sessionId = sent.at(-1)!.sessionId;
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'ping',
-      route: 'test.ping',
+      route: 'test:ping',
       payload: undefined,
     });
     await Bun.sleep(0);
     expect(sent.at(-1)).toMatchObject({
-      type: 'result',
+      type: 'bridge:result',
       id: 'ping',
       response: 7,
     });
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'invalid',
-      route: 'data.query',
+      route: 'data:query',
       payload: { operation: 'https://evil.example', input: {} },
     });
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'big',
-      route: 'data.query',
+      route: 'data:query',
       payload: { operation: 'connection', input: 'x'.repeat(16_384) },
     });
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'stale',
-      route: 'data.query',
+      route: 'data:query',
       payload: { operation: 'connection', input: {} },
       sessionId: 'old',
     });
     expect(calls).toHaveLength(0);
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'call',
-      route: 'data.query',
+      route: 'data:query',
       payload: { operation: 'connection', input: {} },
     });
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'call',
-      route: 'data.query',
+      route: 'data:query',
       payload: { operation: 'connection', input: {} },
     });
     expect(calls).toHaveLength(1);
@@ -322,50 +332,52 @@ test('shell rejects foreign sources, invalid input, duplicate IDs and stale sess
     calls[0]!.resolve(response);
     await Bun.sleep(0);
     expect(sent.at(-1)).toMatchObject({
-      type: 'error',
+      type: 'bridge:error',
       id: 'call',
       code: 'forbidden',
       message: 'Denied',
     });
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'failed',
-      route: 'data.query',
+      route: 'data:query',
       payload: { operation: 'connection', input: {} },
     });
     calls[1]!.reject(new Error('Private handler details'));
     await Bun.sleep(0);
     expect(sent.at(-1)).toMatchObject({
-      type: 'error',
+      type: 'bridge:error',
       id: 'failed',
       code: 'request_failed',
       message: 'The message request failed. Retry the request.',
     });
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'invalid-response',
-      route: 'data.query',
+      route: 'data:query',
       payload: { operation: 'connection', input: {} },
     });
     calls[2]!.resolve({ status: 0, body: {} });
     await Bun.sleep(0);
     expect(sent.at(-1)).toMatchObject({
-      type: 'error',
+      type: 'bridge:error',
       id: 'invalid-response',
       code: 'invalid_response',
     });
     receive({
-      type: 'request',
+      type: 'bridge:request',
       id: 'reload',
-      route: 'data.query',
+      route: 'data:query',
       payload: { operation: 'connection', input: {} },
     });
-    receive({ type: 'ready', documentId: 'next-document' });
+    receive({ type: 'bridge:ready', documentId: 'next-document' });
     expect(calls[3]!.signal.aborted).toBe(true);
     calls[3]!.resolve({ status: 200, body: { data: 'late' } });
     await Bun.sleep(0);
     expect(
-      sent.some(message => message.type === 'result' && message.id === 'reload')
+      sent.some(
+        message => message.type === 'bridge:result' && message.id === 'reload'
+      )
     ).toBe(false);
   } finally {
     dispose();
@@ -427,17 +439,17 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
   }
 
   try {
-    receive({ type: 'ready', token: 'wrong' });
-    receive({ type: 'ready' }, 'http://localhost:2');
-    receive({ type: 'ready' }, 'null', {});
+    receive({ type: 'bridge:ready', token: 'wrong' });
+    receive({ type: 'bridge:ready' }, 'http://localhost:2');
+    receive({ type: 'bridge:ready' }, 'null', {});
     expect(sent).toHaveLength(1);
-    receive({ type: 'ready' });
+    receive({ type: 'bridge:ready' });
     const sessionId = sent.at(-1)!.sessionId;
     receive({
-      type: 'request',
+      type: 'bridge:request',
       sessionId,
       id: 'pending',
-      route: 'test.echo',
+      route: 'test:echo',
       payload: {},
     });
     expect(signal?.aborted).toBe(false);
@@ -445,17 +457,17 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(signal?.aborted).toBe(true);
     const token = sent.at(-1)!.token;
     expect(token).not.toBe('initial-token');
-    receive({ type: 'ready' });
-    expect(sent.at(-1)!.type).toBe('connect');
-    receive({ type: 'ready', token });
-    expect(sent.at(-1)!.type).toBe('initialize');
+    receive({ type: 'bridge:ready' });
+    expect(sent.at(-1)!.type).toBe('bridge:connect');
+    receive({ type: 'bridge:ready', token });
+    expect(sent.at(-1)!.type).toBe('bridge:initialize');
     expect(sent.at(-1)!.state).toEqual({
       search: '?period=last-30',
       hash: '#totals',
     });
     finish?.('old result');
     await Promise.resolve();
-    expect(sent.some(message => message.type === 'result')).toBe(false);
+    expect(sent.some(message => message.type === 'bridge:result')).toBe(false);
     expect(statuses).toContain('connected');
   } finally {
     dispose();
@@ -504,10 +516,10 @@ test('bundle transport keeps host location in memory and rejects stale session t
 
   try {
     expect(sent).toHaveLength(0);
-    receive({ type: 'connect', documentId: 'host' });
+    receive({ type: 'bridge:connect', documentId: 'host' });
     const documentId = sent.at(-1)!.documentId;
     receive({
-      type: 'initialize',
+      type: 'bridge:initialize',
       documentId,
       state: { search: '?period=last-30', hash: '#totals' },
     });
@@ -517,26 +529,31 @@ test('bundle transport keeps host location in memory and rejects stale session t
       hash: '#totals',
     });
     receive({
-      type: 'script.load',
+      type: 'script:load',
       documentId,
       token: 'stale',
       javascript: 'code',
     });
     expect(executions).toBe(0);
-    receive({ type: 'script.load', documentId, javascript: 'code' });
+    receive({ type: 'script:load', documentId, javascript: 'code' });
     expect(executions).toBe(1);
     navigation.update({ search: '?period=last-7', hash: '#daily' }, 'push');
     const request = sent.at(-1)!;
-    expect(request.route).toBe('navigation.update');
+    expect(request.route).toBe('navigation:update');
     expect(request.payload).toEqual({
       search: '?period=last-7',
       hash: '#daily',
       mode: 'push',
       title: 'Bundle',
     });
-    receive({ type: 'result', documentId, id: request.id, response: null });
     receive({
-      type: 'state',
+      type: 'bridge:result',
+      documentId,
+      id: request.id,
+      response: null,
+    });
+    receive({
+      type: 'state:update',
       documentId,
       state: { search: '?period=last-30', hash: '#totals' },
     });

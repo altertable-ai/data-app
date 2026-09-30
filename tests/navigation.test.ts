@@ -62,7 +62,7 @@ function harness(mode: 'url' | 'bundle' = 'bundle') {
     );
   }
 
-  receive({ type: 'connect', documentId: 'host' });
+  receive({ type: 'bridge:connect', documentId: 'host' });
   documentId = sent.at(-1)!.documentId;
 
   return { bridge, frame, receive, sent, writes };
@@ -72,10 +72,10 @@ test('transport retains opaque host state without applying navigation', () => {
   const { bridge, frame, receive, writes, sent } = harness('url');
   try {
     const state = { search: '?period=last-30', hash: '#totals' };
-    receive({ type: 'initialize', state });
+    receive({ type: 'bridge:initialize', state });
     expect(bridge.snapshot()).toEqual(state);
     expect(writes).toEqual([]);
-    expect(sent.some(message => message.route === 'navigation.update')).toBe(
+    expect(sent.some(message => message.route === 'navigation:update')).toBe(
       false
     );
     const navigation = createDataAppNavigation({
@@ -93,11 +93,11 @@ test('late navigation attachment reads the latest authenticated host state', () 
   const { bridge, frame, receive, writes } = harness();
   try {
     receive({
-      type: 'initialize',
+      type: 'bridge:initialize',
       state: { search: '?period=last-30', hash: '#totals' },
     });
     receive({
-      type: 'state',
+      type: 'state:update',
       state: { search: '?period=last-7', hash: '#daily' },
     });
     const navigation = createDataAppNavigation({ bridge, window: frame });
@@ -111,34 +111,40 @@ test('late navigation attachment reads the latest authenticated host state', () 
       notifications++;
     });
     receive({
-      type: 'state',
+      type: 'state:update',
       token: 'stale',
       state: { search: '?forged=1', hash: '' },
     });
     receive({
-      type: 'state',
+      type: 'state:update',
       sessionId: 'stale',
       state: { search: '?forged=1', hash: '' },
     });
     receive(
-      { type: 'state', state: { search: '?forged=1', hash: '' } },
+      { type: 'state:update', state: { search: '?forged=1', hash: '' } },
       'https://other.example'
     );
     receive(
-      { type: 'state', state: { search: '?forged=1', hash: '' } },
+      { type: 'state:update', state: { search: '?forged=1', hash: '' } },
       'https://host.example',
       {}
     );
-    receive({ type: 'state', state: { search: 'invalid', hash: '#daily' } });
+    receive({
+      type: 'state:update',
+      state: { search: 'invalid', hash: '#daily' },
+    });
     expect(notifications).toBe(0);
     expect(navigation.snapshot().search).toBe('?period=last-7');
     receive({
-      type: 'state',
+      type: 'state:update',
       state: { search: '?period=last-30', hash: '#totals' },
     });
     expect(notifications).toBe(1);
     navigation.dispose();
-    receive({ type: 'state', state: { search: '?period=today', hash: '' } });
+    receive({
+      type: 'state:update',
+      state: { search: '?period=today', hash: '' },
+    });
     navigation.update({ search: '?disposed=1', hash: '' });
     expect(notifications).toBe(1);
     expect(navigation.snapshot().search).toBe('?period=last-30');
@@ -153,7 +159,7 @@ test('URL navigation preserves the parent marker and publishes through the share
   const uninstall = installDataAppTransport(bridge, frame);
   try {
     receive({
-      type: 'initialize',
+      type: 'bridge:initialize',
       state: { search: '?period=last-30', hash: '#totals' },
     });
     const navigation = getDataAppNavigation(frame)!;
@@ -169,14 +175,14 @@ test('URL navigation preserves the parent marker and publishes through the share
     navigation.update({ search: '?period=last-7', hash: '#daily' }, 'push');
     expect(writes).toHaveLength(before + 1);
     const request = sent.at(-1)!;
-    expect(request.route).toBe('navigation.update');
+    expect(request.route).toBe('navigation:update');
     expect(request.payload).toEqual({
       search: '?period=last-7',
       hash: '#daily',
       title: 'Navigation fixture',
       mode: 'push',
     });
-    receive({ type: 'result', id: request.id, response: null });
+    receive({ type: 'bridge:result', id: request.id, response: null });
     await Promise.resolve();
     navigation.dispose();
     expect(getDataAppNavigation(frame)).not.toBe(navigation);

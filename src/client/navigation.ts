@@ -56,12 +56,12 @@ function attachNavigation(
     if (disposed) return;
     unsubscribe?.();
     const messages = createMessageClient(
-      { 'navigation.update': navigationUpdateRoute },
+      { 'navigation:update': navigationUpdateRoute },
       bridge.request
     );
 
     function sendUpdate(update: NavigationUpdate) {
-      void messages.request('navigation.update', update).catch(() => {});
+      void messages.request('navigation:update', update).catch(() => {});
     }
 
     function receiveState(state: unknown) {

@@ -66,18 +66,18 @@ export function createIframeTransport({
     )
       return;
     const message = event.data;
-    if (message.type === 'connect') {
+    if (message.type === 'bridge:connect') {
       if (mode === 'bundle') {
         if (!validId(message.token)) return;
         token = message.token;
       }
-      send({ type: 'ready' });
+      send({ type: 'bridge:ready' });
 
       return;
     }
     if (mode === 'bundle' && (!token || message.token !== token)) return;
     if (message.documentId !== documentId) return;
-    if (message.type === 'initialize' && validId(message.sessionId)) {
+    if (message.type === 'bridge:initialize' && validId(message.sessionId)) {
       if (sessionId && sessionId !== message.sessionId) {
         for (const entry of pending.values())
           entry.reject(
@@ -91,18 +91,18 @@ export function createIframeTransport({
       sessionId = message.sessionId;
       if (first) for (const entry of pending.values()) entry.start();
       receiveState(message.state);
-      if (mode === 'url') send({ type: 'runtime.ready' });
+      if (mode === 'url') send({ type: 'runtime:ready' });
 
       return;
     }
     if (!sessionId || message.sessionId !== sessionId) return;
-    if (message.type === 'state') {
+    if (message.type === 'state:update') {
       receiveState(message.state);
 
       return;
     }
     if (
-      message.type === 'script.load' &&
+      message.type === 'script:load' &&
       mode === 'bundle' &&
       typeof message.javascript === 'string'
     ) {
@@ -113,10 +113,10 @@ export function createIframeTransport({
     if (typeof message.id !== 'string') return;
     const entry = pending.get(message.id);
     if (!entry) return;
-    if (message.type === 'result' && 'response' in message) {
+    if (message.type === 'bridge:result' && 'response' in message) {
       entry.resolve(message.response);
     } else if (
-      message.type === 'error' &&
+      message.type === 'bridge:error' &&
       typeof message.code === 'string' &&
       typeof message.message === 'string'
     ) {
@@ -156,13 +156,13 @@ export function createIframeTransport({
       }
 
       function abort() {
-        if (sent) send({ type: 'cancel', id });
+        if (sent) send({ type: 'bridge:cancel', id });
         cleanup();
         reject(signal?.reason);
       }
 
       const timer = setTimeout(() => {
-        if (sent) send({ type: 'cancel', id });
+        if (sent) send({ type: 'bridge:cancel', id });
         cleanup();
         reject(
           new DataAppError(
@@ -178,7 +178,7 @@ export function createIframeTransport({
           if (sent) return;
           try {
             send({
-              type: 'request',
+              type: 'bridge:request',
               id,
               route: message.route,
               payload: message.payload,
@@ -206,12 +206,12 @@ export function createIframeTransport({
       pending.set(id, entry);
       signal?.addEventListener('abort', abort, { once: true });
       if (sessionId) entry.start();
-      else send({ type: 'ready' });
+      else send({ type: 'bridge:ready' });
     });
   }
 
   const messages = createMessageClient(
-    { 'data.query': defineDataQueryRoute() },
+    { 'data:query': defineDataQueryRoute() },
     requestMessage
   );
 
@@ -222,7 +222,7 @@ export function createIframeTransport({
   ): Promise<TransportResponse> {
     try {
       return await messages.request(
-        'data.query',
+        'data:query',
         { operation, input },
         { signal }
       );
@@ -234,7 +234,7 @@ export function createIframeTransport({
   }
 
   function disconnect() {
-    send({ type: 'disconnect' });
+    send({ type: 'bridge:disconnect' });
     sessionId = undefined;
     for (const entry of pending.values())
       entry.reject(
@@ -243,7 +243,7 @@ export function createIframeTransport({
   }
 
   function resume(event: PageTransitionEvent) {
-    if (event.persisted) send({ type: 'ready' });
+    if (event.persisted) send({ type: 'bridge:ready' });
   }
 
   function dispose() {
@@ -258,7 +258,7 @@ export function createIframeTransport({
 
   frame.addEventListener('pagehide', disconnect);
   frame.addEventListener('pageshow', resume);
-  if (mode === 'url') send({ type: 'ready' });
+  if (mode === 'url') send({ type: 'bridge:ready' });
 
   return {
     request: requestMessage,
@@ -276,10 +276,10 @@ export function createIframeTransport({
       };
     },
     ready() {
-      send({ type: 'runtime.ready' });
+      send({ type: 'runtime:ready' });
     },
     fail() {
-      send({ type: 'runtime.error' });
+      send({ type: 'runtime:error' });
     },
   };
 }

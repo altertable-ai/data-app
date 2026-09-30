@@ -32,7 +32,7 @@ function App() {
       <button
         onClick={() => {
           void messages
-            .request('test.echo', { period: 'last-7' })
+            .request('test:echo', { period: 'last-7' })
             .then(value => setResult(JSON.stringify(value)));
         }}
       >

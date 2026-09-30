@@ -23,11 +23,11 @@ function Host() {
   const [connected, setConnected] = useState(true);
   const forward = createHttpTransport();
   const router = createMessageRouter(bridgeRoutes, {
-    'data.query'({ operation, input }, { signal }) {
+    'data:query'({ operation, input }, { signal }) {
       return forward(operation, input, signal);
     },
-    'navigation.update': trackNavigation,
-    'test.echo'({ period }) {
+    'navigation:update': trackNavigation,
+    'test:echo'({ period }) {
       return { period, version };
     },
   });

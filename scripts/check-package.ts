@@ -143,8 +143,8 @@ const sent = [];
 const target = { postMessage(message) { sent.push(message); } };
 const iframe = Object.assign(new EventTarget(), { contentWindow: target });
 const host = Object.assign(events, { location: { search: "", hash: "" } });
-const router = createMessageRouter({ denied: defineMessageRoute({ input() { return null; }, output() { return null; } }) }, {
-  denied() { throw new MessageRoutingError("forbidden", "Denied", "request"); }
+const router = createMessageRouter({ "test:denied": defineMessageRoute({ input() { return null; }, output() { return null; } }) }, {
+  "test:denied"() { throw new MessageRoutingError("forbidden", "Denied", "request"); }
 });
 const dispose = attachDataAppBridge({ iframe, window: host, connection: { type: "origin", origin: "https://app.example" }, onMessage: router.dispatch });
 function receive(message) {
@@ -153,9 +153,9 @@ function receive(message) {
   }));
 }
 try {
-  receive({ type: "ready" });
+  receive({ type: "bridge:ready" });
   const sessionId = sent.at(-1).sessionId;
-  receive({ type: "request", sessionId, id: "call", route: "denied", payload: null });
+  receive({ type: "bridge:request", sessionId, id: "call", route: "test:denied", payload: null });
   await new Promise(resolve => setTimeout(resolve, 0));
   const response = sent.at(-1);
   if (response.code !== "forbidden" || response.message !== "Denied" || response.requestId !== "request")
@@ -200,7 +200,7 @@ import { runInNewContext } from 'node:vm';
 import { strict as assert } from 'node:assert';
 
 const source = await readFile(new URL(import.meta.resolve('@altertable/data-app/bootstrap')), 'utf8');
-assert(!/createAppLocation|attachNavigation|replaceState|pushState|navigation\\.update/.test(source));
+assert(!/createAppLocation|attachNavigation|replaceState|pushState|navigation:update/.test(source));
 
 function execute(parentOrigin) {
   const sent = [];
@@ -223,7 +223,7 @@ function execute(parentOrigin) {
 assert.throws(() => execute(undefined), /Missing trusted parent origin/);
 assert.throws(() => execute('https://host.example/path'), /Expected an exact parent origin/);
 const { sent, listeners, parent } = execute('https://host.example');
-const message = { channel: 'altertable:data-app', version: 1, type: 'connect', documentId: 'host', token: 'token' };
+const message = { channel: 'altertable:data-app', version: 1, type: 'bridge:connect', documentId: 'host', token: 'token' };
 listeners.get('message')({ origin: 'https://other.example', source: parent, data: message });
 assert.equal(sent.length, 0);
 listeners.get('message')({ origin: 'https://host.example', source: {}, data: message });
@@ -231,7 +231,7 @@ assert.equal(sent.length, 0);
 listeners.get('message')({ origin: 'https://host.example', source: parent, data: message });
 assert.equal(sent.length, 1);
 assert.equal(sent[0].origin, 'https://host.example');
-assert.equal(sent[0].message.type, 'ready');
+assert.equal(sent[0].message.type, 'bridge:ready');
 assert.equal(sent[0].message.token, 'token');
 assert.equal(sent[0].message.documentId, 'document');
 `

@@ -68,7 +68,7 @@ import {
 const bridge = getDataAppTransport();
 if (!bridge) throw new Error('An iframe transport must be installed first.');
 const messages = createMessageClient(routes, bridge.request);
-const result = await messages.request('echo', 'hello', { signal });
+const result = await messages.request('demo:echo', 'hello', { signal });
 ```
 
 The app supplies shared `routes` and optional `signal`. Both client and host

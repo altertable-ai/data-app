@@ -5,7 +5,7 @@ import {
 
 export const bridgeRoutes = {
   ...dataAppRoutes,
-  'test.echo': defineMessageRoute({
+  'test:echo': defineMessageRoute({
     input(value: unknown): { period: string } {
       if (
         !value ||

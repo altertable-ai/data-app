@@ -113,14 +113,14 @@ function previewFrame(verify: () => Promise<Response>, topLevel = false) {
           })
         );
       }
-      if (message.type === 'ready') {
+      if (message.type === 'bridge:ready') {
         handshakes++;
-        queueMicrotask(() => receive({ type: 'initialize' }));
+        queueMicrotask(() => receive({ type: 'bridge:initialize' }));
       }
-      if (message.type === 'request')
+      if (message.type === 'bridge:request')
         queueMicrotask(() =>
           receive({
-            type: 'result',
+            type: 'bridge:result',
             id: message.id,
             response: {
               status: 200,

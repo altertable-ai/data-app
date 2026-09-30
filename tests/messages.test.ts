@@ -17,7 +17,7 @@ function number(value: unknown): number {
 }
 
 const routes = {
-  double: defineMessageRoute({ input: number, output: number }),
+  'math:double': defineMessageRoute({ input: number, output: number }),
 };
 
 function context() {
@@ -27,7 +27,7 @@ function context() {
 test('typed routes validate both boundaries and reject unknown routes before invoking a handler', async () => {
   let calls = 0;
   const router = createMessageRouter(routes, {
-    double(value) {
+    'math:double'(value) {
       calls++;
 
       return value * 2;
@@ -36,7 +36,7 @@ test('typed routes validate both boundaries and reject unknown routes before inv
   const client = createMessageClient(routes, message =>
     router.dispatch(message, context())
   );
-  expect(await client.request('double', 7)).toBe(14);
+  expect(await client.request('math:double', 7)).toBe(14);
   expect(calls).toBe(1);
   for (const route of ['missing', '__proto__', 'constructor'])
     expect(
@@ -46,7 +46,7 @@ test('typed routes validate both boundaries and reject unknown routes before inv
     ).toMatchObject({ code: 'unknown_route' });
   expect(
     await router
-      .dispatch({ route: 'double', payload: '7' }, context())
+      .dispatch({ route: 'math:double', payload: '7' }, context())
       .catch(error => error)
   ).toMatchObject({
     code: 'invalid_payload',
@@ -54,21 +54,21 @@ test('typed routes validate both boundaries and reject unknown routes before inv
   });
   expect(calls).toBe(1);
   const invalid = createMessageRouter(routes, {
-    double() {
+    'math:double'() {
       return NaN;
     },
   });
   expect(
     await invalid
-      .dispatch({ route: 'double', payload: 1 }, context())
+      .dispatch({ route: 'math:double', payload: 1 }, context())
       .catch(error => error)
   ).toMatchObject({ code: 'invalid_response' });
   const forged = createMessageClient(routes, async () => 'bad response');
-  expect(await forged.request('double', 1).catch(error => error)).toMatchObject(
-    {
-      code: 'invalid_response',
-    }
-  );
+  expect(
+    await forged.request('math:double', 1).catch(error => error)
+  ).toMatchObject({
+    code: 'invalid_response',
+  });
 });
 
 test('operation route validates the selected input and output, preserving evidence and public errors', async () => {
@@ -84,18 +84,18 @@ test('operation route validates the selected input and output, preserving eviden
     queries: [{ name: 'totals', statement: 'SELECT 3', queryId: 'q1' }],
   };
   const router = createMessageRouter(
-    { 'data.query': route },
+    { 'data:query': route },
     {
-      'data.query'() {
+      'data:query'() {
         return { status: 200, body: envelope };
       },
     }
   );
-  const client = createMessageClient({ 'data.query': route }, message =>
+  const client = createMessageClient({ 'data:query': route }, message =>
     router.dispatch(message, context())
   );
   expect(
-    await client.request('data.query', { operation: 'count', input: 1 })
+    await client.request('data:query', { operation: 'count', input: 1 })
   ).toEqual({
     status: 200,
     body: envelope,
@@ -166,9 +166,9 @@ test('navigation route validates mode and location and preserves reserved host p
     },
   } as unknown as Window;
   const router = createMessageRouter(
-    { 'navigation.update': navigationUpdateRoute },
+    { 'navigation:update': navigationUpdateRoute },
     {
-      'navigation.update': createNavigationHandler({
+      'navigation:update': createNavigationHandler({
         window: host,
         reservedSearchParams: ['workspace'],
       }),
@@ -177,7 +177,7 @@ test('navigation route validates mode and location and preserves reserved host p
   expect(
     await router.dispatch(
       {
-        route: 'navigation.update',
+        route: 'navigation:update',
         payload: {
           search: '?period=last-7&workspace=forged&__altertable_parent=x',
           hash: '#daily',
@@ -200,7 +200,7 @@ test('navigation route validates mode and location and preserves reserved host p
   ])
     expect(
       await router
-        .dispatch({ route: 'navigation.update', payload }, context())
+        .dispatch({ route: 'navigation:update', payload }, context())
         .catch(error => error)
     ).toMatchObject({ code: 'invalid_payload' });
   expect(href).toBe(before);
@@ -209,7 +209,7 @@ test('navigation route validates mode and location and preserves reserved host p
 test('routing checks cancellation before and after handlers', async () => {
   const controller = new AbortController();
   const router = createMessageRouter(routes, {
-    double(value) {
+    'math:double'(value) {
       controller.abort();
 
       return value;
@@ -217,7 +217,10 @@ test('routing checks cancellation before and after handlers', async () => {
   });
   expect(
     await router
-      .dispatch({ route: 'double', payload: 1 }, { signal: controller.signal })
+      .dispatch(
+        { route: 'math:double', payload: 1 },
+        { signal: controller.signal }
+      )
       .catch(error => error)
   ).toMatchObject({ name: 'AbortError' });
 });

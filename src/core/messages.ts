@@ -293,6 +293,6 @@ export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 export const dataAppRoutes = {
-  'data.query': /* @__PURE__ */ defineDataQueryRoute(),
-  'navigation.update': navigationUpdateRoute,
+  'data:query': /* @__PURE__ */ defineDataQueryRoute(),
+  'navigation:update': navigationUpdateRoute,
 };

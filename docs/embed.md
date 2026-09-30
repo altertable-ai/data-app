@@ -79,7 +79,7 @@ wildcard delivery, but incoming messages still require the exact iframe window,
 null origin, token, document, and session to match.
 
 `createNavigationHandler({ window, reservedSearchParams })` handles the shared
-`navigation.update` route using browser history. Reserved host query parameters
+`navigation:update` route using browser history. Reserved host query parameters
 survive app changes. Supply your own handler when integrating a framework router.
 Host Back/Forward events publish opaque host state through the bridge. The app's
 optional navigation adapter interprets search/hash and synchronizes controls;
@@ -96,3 +96,11 @@ The shell's `startupTimeoutMs` defaults to 30 seconds.
 `onDiagnostic` receives only message `direction` and `type`, never tokens or
 payloads. Routed handlers must authorize every data request. Message validation
 and iframe isolation do not grant access to data or execute SQL.
+
+Message types follow `{scope}:{action}`: `bridge:connect`, `bridge:ready`,
+`bridge:initialize`, `bridge:request`, `bridge:result`, `bridge:error`,
+`bridge:cancel`, `bridge:disconnect`, `runtime:ready`, `runtime:error`,
+`script:load`, and `state:update`. Routed requests use the same convention,
+including `data:query` and `navigation:update`. Hosts, apps, and bootstrap scripts
+must use matching names; the former unscoped and dot-separated names are no
+longer supported.

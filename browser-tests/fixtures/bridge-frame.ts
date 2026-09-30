@@ -19,7 +19,7 @@ function showLocation() {
 
 window.addEventListener('popstate', showLocation);
 document.getElementById('query')!.addEventListener('click', () => {
-  void messages.request('test.echo', { period: 'last-7' }).then(response => {
+  void messages.request('test:echo', { period: 'last-7' }).then(response => {
     result.textContent = JSON.stringify(response);
   });
 });
