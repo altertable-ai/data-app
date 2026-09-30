@@ -1,3 +1,5 @@
+import '@/src/react/ui/Focus.css';
+
 // App shell and getting started
 export { DataApp } from '@/src/react/ui/DataApp';
 export type { DataAppProps, DataAppRequest } from '@/src/react/ui/DataApp';
@@ -24,11 +26,12 @@ export { Grid } from '@/src/react/ui/Grid';
 export type { GridProps } from '@/src/react/ui/Grid';
 export { GridItem } from '@/src/react/ui/GridItem';
 export type { GridItemProps } from '@/src/react/ui/GridItem';
-export { StorySection } from '@/src/react/ui/StorySection';
-export type { StorySectionProps } from '@/src/react/ui/StorySection';
 
 // Widgets and visualizations
 export type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
+export { DataWidget } from '@/src/react/ui/DataWidget';
+export type { WidgetStatus } from '@/src/react/ui/RequestHint';
+export type { DataWidgetProps } from '@/src/react/ui/DataWidget';
 export { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 export type {
   VisualizationWidgetProps,
@@ -70,6 +73,25 @@ export type {
 } from '@/src/react/ui/DataTable';
 export { MetricWidget } from '@/src/react/ui/MetricWidget';
 export type { MetricWidgetProps } from '@/src/react/ui/MetricWidget';
+export { SelectableBarChart } from '@/src/react/ui/SelectableBarChart';
+export type {
+  SelectableBarChartProps,
+  SelectableBarItem,
+} from '@/src/react/ui/SelectableBarChart';
+export { DimensionPicker } from '@/src/react/ui/DimensionPicker';
+export {
+  dimensionFilter,
+  parseDimensionSelection,
+  parseFacetOptions,
+  dimensionPredicate,
+} from '@/src/core/dimension';
+export type {
+  DimensionSelection,
+  DimensionMember,
+  DimensionOption,
+  DimensionVariable,
+  DimensionFilterOptions,
+} from '@/src/core/dimension';
 
 // Request states and freshness
 export { EmptyState } from '@/src/react/ui/EmptyState';
@@ -78,12 +100,20 @@ export { Skeleton } from '@/src/react/ui/Skeleton';
 export type { SkeletonProps } from '@/src/react/ui/Skeleton';
 export { DataBoundary } from '@/src/react/ui/DataBoundary';
 export { resolveDataView } from '@/src/core/data-view';
-export type { DataView, DataSnapshot } from '@/src/core/data-view';
+export { displayedSnapshot } from '@/src/core/data-view';
+export type {
+  DataView,
+  DataSnapshot,
+  DisplayedSnapshot,
+} from '@/src/core/data-view';
 export type { DataBoundaryProps } from '@/src/react/ui/DataBoundary';
 export { RefreshRegion } from '@/src/react/ui/RefreshRegion';
 export type { RefreshRegionProps } from '@/src/react/ui/RefreshRegion';
 export { DataSection } from '@/src/react/ui/DataSection';
-export type { DataSectionProps } from '@/src/react/ui/DataSection';
+export type {
+  DataSectionProps,
+  SectionResult,
+} from '@/src/react/ui/DataSection';
 export { StatusPanel } from '@/src/react/ui/StatusPanel';
 export type { StatusPanelProps } from '@/src/react/ui/StatusPanel';
 export { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
@@ -142,6 +172,8 @@ export { SearchMatch } from '@/src/react/ui/SearchMatch';
 export type { SearchMatchProps } from '@/src/react/ui/SearchMatch';
 export { Combobox } from '@/src/react/ui/Combobox';
 export type { ComboboxOption, ComboboxProps } from '@/src/react/ui/Combobox';
+export { GradientScroll } from '@/src/react/ui/GradientScroll';
+export type { GradientScrollProps } from '@/src/react/ui/GradientScroll';
 export {
   searchParams,
   slug,
@@ -184,8 +216,12 @@ export type {
 } from '@/src/react/ui/AboutData';
 
 // Present mode
-export { PlayStory } from '@/src/react/ui/PlayStory';
-export type { PlayStoryProps, StoryStep } from '@/src/react/ui/PlayStory';
+export { PresentStory } from '@/src/react/ui/PresentStory';
+export type { PresentStoryProps } from '@/src/react/ui/PresentStory';
+export type { StoryFinding, BoundStory } from '@/src/react/ui/story';
+
+export { Checkbox } from '@/src/react/ui/Checkbox';
+export type { CheckboxProps } from '@/src/react/ui/Checkbox';
 
 // Buttons, overlays, and icons
 export { AppIcon } from '@/src/react/ui/icons';

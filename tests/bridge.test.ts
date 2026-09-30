@@ -134,6 +134,37 @@ test('iframe aborts before and after dispatch and times out missing shells', asy
   }
 });
 
+test('iframe supports 50 simultaneous operation requests', async () => {
+  const { bridge, receive, sent } = harness();
+  try {
+    receive({ type: 'initialize' });
+    const calls = Array.from({ length: 50 }, () =>
+      bridge.transport('connection', {})
+    );
+    const requests = sent.filter(({ message }) => message.type === 'request');
+    expect(requests).toHaveLength(50);
+    for (const { message } of requests) {
+      if (message.type === 'request')
+        receive({
+          type: 'result',
+          id: message.id,
+          response: {
+            status: 200,
+            body: {
+              data: true,
+              requestId: 'parallel',
+              queriedAt: 'now',
+              queryIds: [],
+            },
+          },
+        });
+    }
+    expect(await Promise.all(calls)).toHaveLength(50);
+  } finally {
+    bridge.dispose();
+  }
+});
+
 test('iframe bounds pending work and rejects old work on session replacement', async () => {
   const { bridge, receive } = harness();
   try {

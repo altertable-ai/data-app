@@ -8,10 +8,17 @@ interactive apps with Altertable data.
 ## Installation
 
 ```fish
+# npm
+npm install @altertable/data-app
+
+# pnpm
+pnpm add @altertable/data-app
+
+# Bun
 bun add @altertable/data-app
 ```
 
-For React apps, also install React 19 and React DOM 19, then import the stylesheet
+For React apps, also install React 19.2 or newer and React DOM 19.2 or newer, then import the stylesheet
 once in your browser entry:
 
 ```tsx

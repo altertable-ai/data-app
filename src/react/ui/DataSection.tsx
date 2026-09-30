@@ -57,21 +57,14 @@ function errorPresentation(cause: Error) {
 }
 
 type SectionEmpty = Pick<EmptyStateProps, 'title' | 'description'>;
-type SectionResult<Data, Input> = {
+export type SectionResult<Data, Input> = {
   view: DataView<Data, Input>;
   refetch: () => unknown;
-  empty?: SectionEmpty;
 };
 
-export type DataSectionProps<Data, Input = unknown> = (
-  | { view: DataView<Data, Input>; result?: never; empty: SectionEmpty }
-  | { result: SectionResult<Data, Input>; view?: never; empty: SectionEmpty }
-  | {
-      result: SectionResult<Data, Input> & { empty: SectionEmpty };
-      view?: never;
-      empty?: SectionEmpty;
-    }
-) & {
+export type DataSectionProps<Data, Input = unknown> = {
+  result: SectionResult<Data, Input>;
+  empty: SectionEmpty;
   children: (data: Data, displayedInput: Input) => ReactNode;
   /** Placeholder layout for an initial request; use the ready view's grid without copied values. */
   loading?: ReactNode;
@@ -82,42 +75,35 @@ export type DataSectionProps<Data, Input = unknown> = (
   dimOnUpdate?: boolean;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
-/** One request boundary for any number of cards. Pass `useDataView` as `result` for
- * automatic retry and stale-data notices, or a manually resolved `view`. */
+/** One request boundary for any number of cards. `DataBoundary` exposes the lower-level
+ * view-state slots for custom composition. */
+
 export function DataSection<Data, Input>({
-  view,
   result,
   children,
   empty,
   loading,
   error,
   label,
-  notice = result ? 'inline' : 'none',
-  dimOnUpdate = !!result,
+  notice = 'inline',
+  dimOnUpdate = false,
   ...props
 }: DataSectionProps<Data, Input>) {
-  const dataView = result?.view ?? view;
-  if (!dataView) throw new Error('DataSection needs a data view.');
-  const emptyState = empty ?? result?.empty;
-  if (!emptyState) throw new Error('DataSection needs an empty state.');
-
   return (
     <DataBoundary
       {...props}
-      view={dataView}
+      view={result.view}
       role={label ? 'region' : undefined}
       aria-label={label}
       notice={notice}
       dimOnUpdate={dimOnUpdate}
       loading={loading ?? <ContentSkeleton variant="panel" />}
-      empty={<EmptyState {...emptyState} />}
+      empty={<EmptyState {...empty} />}
       error={cause => {
         const presentation = errorPresentation(cause);
         const retryAction =
           error?.onRetry ??
-          (presentation.retryable && result
-            ? () => void result.refetch()
-            : undefined);
+          (presentation.retryable ? () => void result.refetch() : undefined);
 
         return (
           <StatusPanel
@@ -128,13 +114,11 @@ export function DataSection<Data, Input>({
           />
         );
       }}
-      staleError={() =>
-        (error?.onRetry || result) && (
-          <Button onClick={error?.onRetry ?? (() => void result?.refetch())}>
-            Retry
-          </Button>
-        )
-      }
+      staleError={() => (
+        <Button onClick={error?.onRetry ?? (() => void result.refetch())}>
+          Retry
+        </Button>
+      )}
     >
       {children}
     </DataBoundary>

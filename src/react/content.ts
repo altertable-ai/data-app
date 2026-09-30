@@ -5,6 +5,7 @@ import type {
   MetricValues,
 } from '@/src/core/reading';
 import type { DateRangeRequest } from '@/src/core/contract';
+import { invariant } from '@/src/core/invariant';
 
 export type DataContentHelpers<Data> = {
   select: <Value>(select: (data: Data) => Value) => DataReading<Value>;
@@ -18,6 +19,7 @@ export type DataContentState<Data, Input> = DataContentHelpers<Data> &
   );
 
 /** Selectors run only for displayed data. Date comparisons inherit that result's input. */
+
 export function defineDataContent<Data, Input>(
   render: (state: DataContentState<Data, Input>) => ReactNode,
   options: { date?: (input: Input) => DateRangeRequest } = {}
@@ -42,8 +44,10 @@ export function defineDataContent<Data, Input>(
         },
         metric(select) {
           const values = select(data);
-          if (values.previous !== undefined && !options.date)
-            throw new Error('Metric comparisons require a view date binding.');
+          invariant(
+            values.previous === undefined || options.date,
+            'Metric comparisons require a view date binding.'
+          );
 
           return {
             loading: false,

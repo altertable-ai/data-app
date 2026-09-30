@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useSyncExternalStore } from 'react';
 import { today } from '@internationalized/date';
+import { invariant } from '@/src/core/invariant';
 import {
   searchParams,
   subscribeSearch,
@@ -31,6 +32,7 @@ export type {
 } from '@/src/core/variables';
 
 /** Adapt one date variable to the controlled picker without giving the picker URL ownership. */
+
 export function dateRangeControl(
   variable: DateRangeVariable,
   selection: DateRangeSelection,
@@ -91,6 +93,7 @@ function serverSearch() {
 }
 
 /** URL is the source of truth for app variables; one update can change dependent values atomically. */
+
 export function useAppVariables<const Variables extends VariableCollection>(
   definitions: Variables
 ) {
@@ -153,8 +156,7 @@ export function useAppVariables<const Variables extends VariableCollection>(
         AppVariableValues<Variables>[typeof name]
       >;
       const value = next[name]!;
-      if (!variable.valid(value))
-        throw new Error(`Invalid value for variable ${name}.`);
+      invariant(variable.valid(value), `Invalid value for variable ${name}.`);
       Object.assign(changes, variable.write(value));
       if (!history && variable.history === 'push') mode = 'push';
     }

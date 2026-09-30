@@ -1,5 +1,6 @@
 import type { ComponentPropsWithRef, CSSProperties, ReactNode } from 'react';
 import { formatCount, formatPercent } from '@/src/core/format';
+import { invariant } from '@/src/core/invariant';
 import { classNames } from '@/src/react/ui/classNames';
 import { chartColor } from '@/src/react/ui/chartColor';
 import '@/src/react/ui/Breakdown.css';
@@ -12,6 +13,7 @@ export type BreakdownProps = {
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** Mutually exclusive parts of one observed whole. Every share uses the supplied total. */
+
 export function Breakdown({
   total,
   items,
@@ -19,15 +21,13 @@ export function Breakdown({
   className,
   ...props
 }: BreakdownProps) {
-  if (
-    !Number.isFinite(total) ||
-    total < 0 ||
-    items.some(item => !Number.isFinite(item.value) || item.value < 0) ||
-    items.reduce((sum, item) => sum + item.value, 0) > total
-  )
-    throw new Error(
-      'Breakdown items must be nonnegative parts of the observed total.'
-    );
+  invariant(
+    Number.isFinite(total) &&
+      total >= 0 &&
+      items.every(item => Number.isFinite(item.value) && item.value >= 0) &&
+      items.reduce((sum, item) => sum + item.value, 0) <= total,
+    'Breakdown items must be nonnegative parts of the observed total.'
+  );
   const dominant = total > 0 && items.some(item => item.value / total >= 0.85);
 
   return (

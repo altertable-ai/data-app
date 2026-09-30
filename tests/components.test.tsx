@@ -4,6 +4,8 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { searchItems } from '@/src/react/ui/searchItems';
 import { SearchMatch } from '@/src/react/ui/SearchMatch';
 import { ariaKeyShortcuts, shortcutLabel } from '@/src/react/ui/shortcuts';
+import { Combobox } from '@/src/react/ui/Combobox';
+import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import { TableWidget } from '@/src/react/ui/TableWidget';
 import { QueryList, formatSql } from '@/src/react/ui/QueryList';
 import { DataSection } from '@/src/react/ui/DataSection';
@@ -37,7 +39,6 @@ test('initial data errors show a useful recovery action for each failure', () =>
       </DataSection>
     );
   }
-
   const unavailable = render('source_unavailable');
   expect(unavailable).toContain('Couldn’t load results');
   expect(unavailable).toContain('The lakehouse isn’t responding.');
@@ -123,7 +124,7 @@ test('local search preserves table order and highlights original text', () => {
     })
   );
   expect(table).toContain('<mark>Café</mark> &lt;table&gt;');
-  expect(table).toContain('class="altertable-data-panel-count">1</span>');
+  expect(table).toContain('class="altertable-data-widget-count">1</span>');
   expect(table).toMatch(/<th[^>]*data-type="number"[^>]*>Count<\/th>/);
   expect(table).toMatch(/<td[^>]*data-type="number"[^>]*>12<\/td>/);
 });
@@ -181,7 +182,7 @@ test('query notebook groups disclosed SQL and exposes one copy-all action', () =
     />
   );
   expect(html).toContain('aria-label="Query notebook"');
-  expect(html).toContain('aria-label="Copy all SQL"');
+  expect(html).toContain('aria-label="Copy all"');
   expect(html).toContain('totals.sql');
   expect(html).toContain('details.sql');
 });
@@ -401,4 +402,186 @@ test('operation routes decode one path segment and client errors remain useful',
     message: 'Could not load data.',
   });
   expect(DataAppError.name).toBe('DataAppError');
+});
+
+test('table pagination defaults to a bottom footer and supports complete and preview tables', () => {
+  const rows = Array.from({ length: 12 }, (_, id) => ({
+    id,
+    name: `Item ${id + 1}`,
+  }));
+  const props = {
+    title: 'Items',
+    columns: [
+      {
+        id: 'name',
+        header: 'Name',
+        cell(row: (typeof rows)[number]) {
+          return row.name;
+        },
+      },
+    ] as const,
+    rows,
+    rowKey(row: (typeof rows)[number]) {
+      return row.id;
+    },
+    empty: { title: 'No items' },
+  };
+  const paginated = renderToStaticMarkup(<TableWidget {...props} />);
+  expect(paginated).toContain('1–10 of 12 results');
+  expect(paginated).not.toContain('Item 11');
+  expect(paginated).toMatch(
+    /<footer class="altertable-data-widget-footer"><nav[^>]*aria-label="Table pages"/
+  );
+  expect(paginated.indexOf('</table>')).toBeLessThan(
+    paginated.indexOf('aria-label="Table pages"')
+  );
+  const complete = renderToStaticMarkup(
+    <TableWidget {...props} pagination={false} />
+  );
+  expect(complete).toContain('Item 12');
+  expect(complete).not.toContain('aria-label="Table pages"');
+  const preview = renderToStaticMarkup(<TableWidget {...props} limit={2} />);
+  expect(preview).not.toContain('Item 3');
+  expect(preview).not.toContain('aria-label="Table pages"');
+});
+
+test('pickers reject ambiguous selections and require explicit empty-selection meaning', () => {
+  const options = [{ id: 'a', label: 'Alpha' }];
+
+  function render(props: Parameters<typeof Combobox>[0]) {
+    return renderToStaticMarkup(<Combobox {...props} />);
+  }
+  expect(() =>
+    render({
+      label: 'Value',
+      options: [...options, ...options],
+      value: 'a',
+      onChange() {},
+    })
+  ).toThrow('unique');
+  expect(() =>
+    render({ label: 'Value', options, value: 'unknown', onChange() {} })
+  ).toThrow('available option IDs');
+  expect(() =>
+    render({
+      label: 'Value',
+      options,
+      value: 'a',
+      resetValue: 'unknown',
+      onChange() {},
+    })
+  ).toThrow('resetValue');
+  expect(() =>
+    render({
+      label: 'Value',
+      options,
+      values: ['a', 'a'],
+      maxSelected: 2,
+      emptySelectionLabel: 'All',
+      onChange() {},
+    })
+  ).toThrow('unique');
+  expect(() =>
+    render({
+      label: 'Value',
+      options,
+      values: [],
+      maxSelected: 0,
+      emptySelectionLabel: 'All',
+      onChange() {},
+    })
+  ).toThrow('positive integer');
+  expect(
+    render({
+      label: 'Value',
+      options,
+      values: [],
+      maxSelected: 1,
+      emptySelectionLabel: 'Choose a category',
+      onChange() {},
+    })
+  ).toContain('Value: Choose a category');
+  expect(
+    render({
+      label: 'Value',
+      options: [],
+      value: 'a',
+      loading: true,
+      onChange() {},
+    })
+  ).toContain('Value: a');
+});
+
+test('table configurations reject duplicate identities and contradictory display rules', () => {
+  const props = {
+    title: 'Rows',
+    columns: [
+      {
+        id: 'name',
+        header: 'Name',
+        cell(row: { id: string | number }) {
+          return row.id;
+        },
+      },
+    ] as const,
+    rows: [{ id: 1 }],
+    rowKey(row: { id: string | number }) {
+      return row.id;
+    },
+    empty: { title: 'No rows' },
+  };
+  expect(() =>
+    renderToStaticMarkup(
+      <TableWidget {...props} rows={[{ id: 1 }, { id: '1' }]} />
+    )
+  ).toThrow('row keys');
+  expect(() =>
+    renderToStaticMarkup(
+      <TableWidget {...props} columns={[props.columns[0], props.columns[0]]} />
+    )
+  ).toThrow('column IDs');
+  expect(() =>
+    renderToStaticMarkup(<TableWidget {...props} limit={0} />)
+  ).toThrow('positive integer');
+  expect(() =>
+    renderToStaticMarkup(
+      <TableWidget {...props} pagination={{ pageSize: 1.5 }} />
+    )
+  ).toThrow('positive integer');
+  // JavaScript callers must respect the same exclusivity as TypeScript callers.
+  const invalid = { ...props, limit: 1, pagination: { pageSize: 2 } };
+  // @ts-expect-error intentional invalid runtime configuration
+  expect(() => renderToStaticMarkup(<TableWidget {...invalid} />)).toThrow(
+    'mutually exclusive'
+  );
+});
+
+test('visualization view identities are validated even while data is loading', () => {
+  const props = {
+    title: 'Views',
+    reading: { loading: true } as const,
+    isEmpty(rows: string[]) {
+      return rows.length === 0;
+    },
+    empty: { title: 'No rows' },
+    evidence: { id: 'rows', queryNames: ['rows'] as [string] },
+    viewLabel: 'View',
+  };
+  const view = {
+    id: 'chart',
+    label: 'Chart',
+    render() {
+      return null;
+    },
+  };
+  expect(() =>
+    renderToStaticMarkup(
+      <VisualizationWidget {...props} views={[view, view]} />
+    )
+  ).toThrow('unique');
+  expect(() =>
+    renderToStaticMarkup(
+      <VisualizationWidget {...props} views={[view]} initialView="missing" />
+    )
+  ).toThrow('Unknown widget tab');
 });

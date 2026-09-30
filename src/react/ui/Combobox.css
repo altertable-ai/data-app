@@ -1,102 +1,38 @@
-.altertable-combobox {
-  display: inline-block;
-  min-width: 0;
-  color: var(--at-text, #202124);
-  font-size: 14px;
-}
-.altertable-combobox-control {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  max-width: min(300px, 75vw);
-  padding: 0 10px;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-control, 7px);
-  background: var(--at-surface, #fff);
-  color: inherit;
-  box-shadow: var(--at-shadow-surface, none);
-  font: inherit;
-  font-weight: 560;
-}
-.altertable-combobox-control:hover {
-  border-color: color-mix(
-    in srgb,
-    var(--at-muted, #687078) 45%,
-    var(--at-border, #e3e6e8)
-  );
-}
-.altertable-combobox-control:focus-within {
-  border-color: var(--at-control-focus-border, var(--at-accent, #4779dc));
-}
-.altertable-combobox[data-disabled] .altertable-combobox-control {
-  opacity: 0.5;
+.altertable-combobox-trigger {
+  max-width: min(100%, 340px, 75vw);
+  box-sizing: border-box;
+  text-align: left;
 }
 .altertable-combobox-label {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--at-muted, #687078);
   font-size: 12px;
   font-weight: 500;
 }
 .altertable-combobox-value {
-  width: clamp(80px, 12vw, 140px);
+  flex: none;
   min-width: 0;
-  padding: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: inherit;
+  max-width: 55%;
+  overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
 }
-.altertable-combobox-value::placeholder {
-  color: var(--at-muted, #687078);
-  font-weight: 400;
-}
-.altertable-combobox-reset {
-  display: inline-flex;
+.altertable-combobox-trigger > svg {
   flex: none;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  margin: -4px;
-  border: 0;
-  border-radius: 3px;
-  background: transparent;
+  margin-left: auto;
   color: var(--at-muted, #687078);
-  cursor: pointer;
-}
-.altertable-combobox-reset:hover {
-  color: var(--at-text, #202124);
-  background: var(--at-subtle, #f6f7f7);
-}
-.altertable-combobox-reset:focus-visible {
-  outline: 2px solid var(--at-accent, #4779dc);
-  outline-offset: 2px;
-}
-.altertable-combobox-control > .react-aria-Button {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  margin: -4px;
-  border: 0;
-  background: transparent;
-  color: var(--at-muted, #687078);
-  cursor: pointer;
-}
-.altertable-combobox-control > .react-aria-Button[data-focus-visible] {
-  outline: 2px solid var(--at-accent, #4779dc);
-  outline-offset: 2px;
-  border-radius: 3px;
 }
 .altertable-combobox-popover {
   z-index: 150;
-  min-width: var(--trigger-width);
+  min-width: max(var(--trigger-width), 240px);
   max-width: min(340px, calc(100vw - 24px));
-  padding: 4px;
+  padding: 8px;
   border: 1px solid var(--at-border, #e3e6e8);
   border-radius: var(--at-radius-surface, 12px);
   background: var(--at-surface, #fff);
@@ -104,33 +40,93 @@
   box-shadow: var(--at-shadow-overlay, 0 18px 50px rgb(20 28 40 / 16%));
   font: 13px/1.4 var(--at-font, ui-sans-serif, system-ui, sans-serif);
 }
-.altertable-combobox-popover .react-aria-ListBox {
+.altertable-combobox-dialog {
+  outline: none;
+}
+.altertable-combobox-dialog .altertable-search-input-wrap {
+  width: 100%;
+  box-sizing: border-box;
+}
+.altertable-combobox-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.altertable-combobox-options {
   max-height: min(320px, 60dvh);
-  overflow: auto;
+  margin-top: 4px;
+}
+.altertable-combobox-popover .react-aria-ListBox {
   outline: none;
 }
 .altertable-combobox-popover .react-aria-ListBoxItem {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 8px 10px;
   border-radius: var(--at-radius-control, 7px);
   outline: none;
   cursor: pointer;
 }
 .altertable-combobox-popover .react-aria-ListBoxItem small {
+  display: block;
   color: var(--at-muted, #687078);
   font-size: 11px;
+  font-weight: 400;
 }
-.altertable-combobox-popover .react-aria-ListBoxItem[data-selected] {
-  font-weight: 650;
+.altertable-combobox-popover
+  .react-aria-ListBoxItem[data-missing]:not(:first-child) {
+  position: relative;
+  margin-top: 9px;
+}
+.altertable-combobox-popover
+  .react-aria-ListBoxItem[data-missing]:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--at-border, #e3e6e8);
+  pointer-events: none;
+}
+.altertable-combobox-option-content {
+  min-width: 0;
 }
 .altertable-combobox-popover .react-aria-ListBoxItem[data-focused],
 .altertable-combobox-popover .react-aria-ListBoxItem[data-hovered] {
   background: var(--at-subtle, #f6f7f7);
 }
+.altertable-combobox-popover .react-aria-ListBoxItem[data-focus-visible] {
+  outline: var(--at-focus-outline, 1px solid #687078);
+  outline-offset: var(--at-focus-ring-inset, -1px);
+}
+.altertable-combobox-popover .react-aria-ListBoxItem[data-disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .altertable-combobox-empty {
-  display: block;
-  margin: 0;
   padding: 12px 10px;
   color: var(--at-muted, #687078);
+}
+.altertable-combobox-actions {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--at-border, #e3e6e8);
+  display: flex;
+  justify-content: flex-start;
+}
+
+.altertable-combobox-dialog > .altertable-request-hint {
+  margin: 4px 10px 0;
+}
+.altertable-combobox-skeletons {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+.altertable-combobox-skeletons > span {
+  height: 24px;
 }

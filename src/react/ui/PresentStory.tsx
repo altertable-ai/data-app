@@ -9,12 +9,12 @@ import {
   type ReactNode,
 } from 'react';
 import { useMergeRefs } from '@floating-ui/react';
-import type { DisclosedQuery } from '@/src/core/contract';
 import type { ThemeController } from '@/src/core/appearance';
 import { AboutData, type AboutEmpty } from '@/src/react/ui/AboutData';
 import type { DataContext } from '@/src/react/ui/data-context';
 import { AppIcon } from '@/src/react/ui/icons';
 import { IconButton } from '@/src/react/ui/IconButton';
+import { GradientScroll } from '@/src/react/ui/GradientScroll';
 import { classNames } from '@/src/react/ui/classNames';
 import {
   searchParams,
@@ -28,7 +28,8 @@ import {
 } from '@/src/react/ui/shortcuts';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
-import '@/src/react/ui/PlayStory.css';
+import { storySteps, type StoryFinding } from '@/src/react/ui/story';
+import '@/src/react/ui/PresentStory.css';
 
 export type StoryStep = {
   id: string;
@@ -39,12 +40,11 @@ export type StoryStep = {
   queryNames?: string[];
   visual: ReactNode;
   visualKind?: 'metric' | 'chart';
-  queries?: DisclosedQuery[];
 };
 
-export type PlayStoryProps = {
+export type PresentStoryProps = {
   title: string;
-  steps: StoryStep[];
+  findings: readonly StoryFinding[];
   empty?: AboutEmpty;
   scope?: ReactNode;
   dataContext: DataContext;
@@ -84,9 +84,10 @@ const stepKeys: Record<string, (index: number, last: number) => number> = {
  * inspection uses `?about=`. `launcherProps` targets the outer span; `dialogProps` targets the
  * modal.
  */
-export function PlayStory({
+
+export function PresentStory({
   title,
-  steps,
+  findings,
   empty,
   scope,
   dataContext,
@@ -101,7 +102,8 @@ export function PlayStory({
   disabled,
   ref,
   ...props
-}: PlayStoryProps) {
+}: PresentStoryProps) {
+  const steps = storySteps(findings, dataContext);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const headline = useRef<HTMLHeadingElement>(null);
@@ -117,7 +119,6 @@ export function PlayStory({
   const step = steps[index];
   const stepIds = steps.map(item => item.id).join('\u0000');
   const unavailable = !steps.length || !!disabled;
-
   const currentSteps = useEffectEvent(() => steps);
 
   useEffect(() => {
@@ -135,7 +136,6 @@ export function PlayStory({
         dialog.current.close();
       }
     }
-
     syncFromUrl();
 
     return subscribeSearch(syncFromUrl);
@@ -145,7 +145,10 @@ export function PlayStory({
     if (dialog.current?.open) headline.current?.focus({ preventScroll: true });
   }, [stepId]);
 
-  function writeStory(id?: string, mode: 'replace' | 'push' = 'replace') {
+  function writePresentation(
+    id?: string,
+    mode: 'replace' | 'push' = 'replace'
+  ) {
     writeSearch({ present: id ? '1' : null, step: id ?? null }, mode);
   }
 
@@ -154,7 +157,7 @@ export function PlayStory({
     setStepId(steps[0]!.id);
     dialog.current?.showModal();
     headline.current?.focus({ preventScroll: true });
-    writeStory(steps[0]!.id, 'push');
+    writePresentation(steps[0]!.id, 'push');
   }
 
   useShortcut(shortcuts.playStory, open, !unavailable);
@@ -163,7 +166,7 @@ export function PlayStory({
     const next = steps[nextIndex];
     if (!next) return;
     setStepId(next.id);
-    writeStory(next.id);
+    writePresentation(next.id);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDialogElement>) {
@@ -199,7 +202,7 @@ export function PlayStory({
           ref={triggerRef}
           icon="present"
           variant="elevated"
-          label={props['aria-label'] ?? 'Present data'}
+          label={props['aria-label'] ?? 'Present story'}
           shortcut={shortcuts.playStory}
           tooltipAlign="end"
           className={className}
@@ -226,7 +229,7 @@ export function PlayStory({
         }
         onClose={event => {
           if (event.target !== event.currentTarget) return;
-          if (searchParams().get('present') === '1') writeStory();
+          if (searchParams().get('present') === '1') writePresentation();
           trigger.current?.focus({ preventScroll: true });
           dialogProps?.onClose?.(event);
         }}
@@ -255,7 +258,7 @@ export function PlayStory({
               <div className="altertable-present-actions">
                 <span
                   className="altertable-present-count"
-                  aria-label={`Step ${index + 1} of ${steps.length}`}
+                  aria-label={`Finding ${index + 1} of ${steps.length}`}
                 >
                   {index + 1} / {steps.length}
                 </span>
@@ -268,7 +271,7 @@ export function PlayStory({
                 <IconButton
                   icon="close"
                   variant="ghost"
-                  label="Exit story"
+                  label="Exit presentation"
                   shortcut={{ label: 'Esc', aria: 'Escape' }}
                   tooltipAlign="end"
                   portalRoot={dialog}
@@ -276,12 +279,36 @@ export function PlayStory({
                 />
               </div>
             </header>
-            <div className="altertable-present-main" key={step.id}>
+            <GradientScroll className="altertable-present-main" key={step.id}>
               <div className="altertable-present-copy">
                 <h2 id={headlineId} ref={headline} tabIndex={-1}>
                   {step.headline}
                 </h2>
                 {step.context && <p id={contextId}>{step.context}</p>}
+                <div className="altertable-present-explore">
+                  <AboutData
+                    shortcut={false}
+                    key={step.id}
+                    id={step.id}
+                    empty={step.empty ?? empty}
+                    title={step.headline}
+                    description={step.context}
+                    visual={step.visual}
+                    visualKind={step.visualKind}
+                    dataContext={dataContext}
+                    tab={step.glossaryIds?.length ? 'glossary' : 'queries'}
+                    references={{
+                      kind: 'ids',
+                      glossaryIds: step.glossaryIds,
+                      queryNames: step.queryNames,
+                    }}
+                    tooltip="Explore this finding"
+                    variant="outline"
+                    portalRoot={dialog}
+                  >
+                    <AppIcon name="explore" /> Explore sources
+                  </AboutData>
+                </div>
               </div>
               <div
                 className="altertable-present-visual"
@@ -289,29 +316,8 @@ export function PlayStory({
               >
                 {step.visual}
               </div>
-              <div className="altertable-present-explore">
-                <AboutData
-                  shortcut={false}
-                  key={step.id}
-                  id={step.id}
-                  empty={step.empty ?? empty}
-                  title={step.headline}
-                  description={step.context}
-                  visual={step.visual}
-                  visualKind={step.visualKind}
-                  dataContext={dataContext}
-                  glossaryIds={step.glossaryIds}
-                  queries={step.queries ?? []}
-                  queryNames={step.queryNames}
-                  tooltip="Explore this step"
-                  variant="outline"
-                  portalRoot={dialog}
-                >
-                  <AppIcon name="explore" /> Explore
-                </AboutData>
-              </div>
-            </div>
-            <nav className="altertable-present-nav" aria-label="Story steps">
+            </GradientScroll>
+            <nav className="altertable-present-nav" aria-label="Story findings">
               <IconButton
                 icon="previous"
                 variant="ghost"
@@ -333,7 +339,7 @@ export function PlayStory({
                   >
                     <button
                       type="button"
-                      aria-label={`Step ${itemIndex + 1}: ${item.headline}`}
+                      aria-label={`Finding ${itemIndex + 1}: ${item.headline}`}
                       aria-current={itemIndex === index ? 'step' : undefined}
                       onClick={() => goTo(itemIndex)}
                     />

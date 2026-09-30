@@ -4,12 +4,20 @@ import {
   type DateRange,
 } from '@/src/core/date-range';
 import type { DateRangeContract, DateRangeRequest } from '@/src/core/contract';
+import type {
+  DimensionSelection,
+  DimensionVariable,
+} from '@/src/core/dimension';
+import { invariant } from '@/src/core/invariant';
 
 export type HistoryMode = 'push' | 'replace';
 
 /** An app-owned value with one URL representation. Controls never parse or write routes. */
-export type AppVariable<Value> = {
-  kind: Value extends string ? 'text' | 'select' : 'dateRange';
+export type AppVariable<
+  Value,
+  Kind extends string = Value extends string ? 'text' | 'select' : 'dateRange',
+> = {
+  kind: Kind;
   label?: string;
   options?: readonly { id: string; label: string }[];
   urlKeys: readonly string[];
@@ -23,28 +31,35 @@ export type AppVariable<Value> = {
 
 export type VariableCollection = Record<
   string,
-  AppVariable<string> | DateRangeVariable
+  AppVariable<string> | DateRangeVariable | DimensionVariable<any>
 >;
 export type AppVariableValues<Variables> = {
-  [Key in keyof Variables]: Variables[Key] extends AppVariable<infer Value>
-    ? Value
-    : never;
+  [Key in keyof Variables]: Variables[Key] extends DimensionVariable<
+    infer Value
+  >
+    ? DimensionSelection<Value>
+    : Variables[Key] extends AppVariable<infer Value, string>
+      ? Value
+      : never;
 };
 
 /** Name variables once in the app. URL keys must be unique across its controls. */
+
 export function defineAppVariables<const Variables extends VariableCollection>(
   variables: Variables
 ): Variables {
-  const usedUrlKeys = new Set<string>();
+  const owners = new Map<string, string>();
   for (const [name, variable] of Object.entries(variables)) {
     for (const key of variable.urlKeys) {
-      if (['view', 'about', 'tab', 'present', 'step'].includes(key))
-        throw new Error(`Variable ${name} uses reserved URL key: ${key}.`);
-      if (!key || usedUrlKeys.has(key))
-        throw new Error(
-          `Variable ${name} has an empty or duplicate URL key: ${key}.`
-        );
-      usedUrlKeys.add(key);
+      invariant(
+        !['view', 'about', 'tab', 'present', 'step'].includes(key),
+        `Variable ${name} uses reserved URL key: ${key}.`
+      );
+      invariant(
+        !!key && !owners.has(key),
+        `Variable ${name} has an empty or duplicate URL key: ${key}.`
+      );
+      owners.set(key, name);
     }
   }
 
@@ -59,6 +74,7 @@ type ScalarVariableOptions = {
 };
 
 /** A local text filter. Typing replaces the current history entry by default. */
+
 export function textVariable({
   key,
   label,
@@ -87,6 +103,7 @@ export function textVariable({
 }
 
 /** A single choice. Supply values when the option set is known before data loads. */
+
 export function selectVariable({
   key,
   label,
@@ -97,8 +114,10 @@ export function selectVariable({
   defaultValue: string;
   values?: readonly string[];
 }): AppVariable<string> {
-  if (values && !values.includes(defaultValue))
-    throw new Error(`Select variable ${key} must include its default value.`);
+  invariant(
+    !values || values.includes(defaultValue),
+    `Select variable ${key} must include its default value.`
+  );
 
   function valid(value: string) {
     return typeof value === 'string' && (!values || values.includes(value));
@@ -174,6 +193,7 @@ const PRESET_IDS = new Set<DatePresetId>([
 ]);
 
 /** A date variable keeps relative presets relative and validates exact dates against source coverage. */
+
 export function dateRangeVariable({
   key,
   label = 'Date range',
@@ -201,7 +221,8 @@ export function dateRangeVariable({
         // Invalid URL values fall back to the app default.
       }
     }
-    throw new Error(
+    invariant(
+      false,
       `Date variable ${key} is outside its available data range.`
     );
   }
@@ -218,7 +239,6 @@ export function dateRangeVariable({
           left.end === right.end)
     );
   }
-
   const variable: DateRangeVariable = {
     kind: 'dateRange',
     label,
@@ -272,7 +292,6 @@ export function dateRangeVariable({
 
         return variable.valid(selected) ? selected : selection;
       }
-
       const presetId = params.get(key);
       if (presetId && PRESET_IDS.has(presetId as DatePresetId)) {
         const selection = {
@@ -301,14 +320,14 @@ export function dateRangeVariable({
       };
     },
   };
-  if (defaultValue.comparison)
-    throw new Error(
-      `Date variable ${key} comparison must be activated by the reader.`
-    );
-  if (!variable.valid(defaultValue))
-    throw new Error(
-      `Date variable ${key} has a default outside its available data range.`
-    );
+  invariant(
+    !defaultValue.comparison,
+    `Date variable ${key} comparison must be activated by the reader.`
+  );
+  invariant(
+    variable.valid(defaultValue),
+    `Date variable ${key} has a default outside its available data range.`
+  );
 
   return variable;
 }

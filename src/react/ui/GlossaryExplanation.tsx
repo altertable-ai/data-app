@@ -17,6 +17,7 @@ export type GlossaryExplanationProps = {
 
 /** Opens the inspect sheet for one glossary term. Prefer a card's evidence slot
  * when the surface already has a title, description, and visual. */
+
 export function GlossaryExplanation({
   entry,
   empty,
@@ -37,7 +38,7 @@ export function GlossaryExplanation({
       title={title ?? entry.term}
       description={description}
       visual={visual}
-      glossaryEntry={entry}
+      references={{ kind: 'entries', entries: [entry] }}
       empty={empty}
       dataContext={dataContext}
       queries={queries}
@@ -45,7 +46,7 @@ export function GlossaryExplanation({
       tooltip="Explore this term"
       aria-label={props['aria-label'] ?? `Explore ${entry.term}`}
     >
-      <AppIcon name="inspect" size={15} />
+      <AppIcon name="openDetails" />
     </AboutData>
   );
 }

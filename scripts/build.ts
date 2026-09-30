@@ -24,6 +24,7 @@ const browser = await Bun.build({
   root: 'src',
   outdir: 'dist',
   target: 'browser',
+  jsx: { runtime: 'automatic', development: false },
   format: 'esm',
   splitting: true,
   external,

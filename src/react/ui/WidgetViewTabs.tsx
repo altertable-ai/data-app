@@ -2,6 +2,7 @@ import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@/src/react/ui/Tabs';
 import { EmptyState, type EmptyStateProps } from '@/src/react/ui/EmptyState';
 import { classNames } from '@/src/react/ui/classNames';
+import { validateWidgetViews } from '@/src/react/ui/widget-views';
 import '@/src/react/ui/WidgetViewTabs.css';
 
 export type WidgetView = {
@@ -28,11 +29,7 @@ export function WidgetViewTabs<const Views extends readonly WidgetView[]>({
   className,
   ...props
 }: WidgetViewTabsProps<Views>) {
-  const ids = new Set(views.map(view => view.id));
-  if (ids.size !== views.length || views.some(view => !view.id.trim()))
-    throw new Error('Widget tab IDs must be nonempty and unique.');
-  if (!ids.has(selectedKey))
-    throw new Error(`Unknown widget tab: ${selectedKey}.`);
+  validateWidgetViews(views, selectedKey);
 
   return (
     <div

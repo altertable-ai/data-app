@@ -18,6 +18,7 @@ export type DataBoundaryProps<T, Input = unknown> = {
 
 /** Render one request state at a time. Prior content remains readable during an update.
  * Local boundaries can opt into an inline notice and delayed dimming. */
+
 export function DataBoundary<T, Input>({
   view,
   loading,
@@ -80,7 +81,6 @@ export function DataBoundary<T, Input>({
       <div
         className="altertable-data-boundary-content"
         data-updating={(updating && dimOnUpdate) || undefined}
-        data-stale-error={(hasStaleError && dimOnUpdate) || undefined}
       >
         {children(
           view.data,

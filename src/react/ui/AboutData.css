@@ -13,34 +13,12 @@
 .altertable-about-visual > * {
   min-width: 0;
 }
-.altertable-about-visual > [role='img'],
-.altertable-about-visual > svg {
-  display: flex;
-  align-items: flex-end;
-  min-height: 240px;
-  min-width: min-content;
-}
-.altertable-about-visual figure {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-}
-.altertable-about-visual figcaption {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 6px 12px;
-  color: var(--at-muted, #687078);
-  font-size: 12px;
-  line-height: 1.35;
-}
-.altertable-about-visual .altertable-metric-value {
-  margin: 0;
-  font-size: 36px;
-}
 .altertable-about-visual[data-kind='metric'] {
   padding: 16px 18px;
+}
+.altertable-about-visual[data-kind='widget'] {
+  padding: 0;
+  background: var(--at-surface, #fff);
 }
 .altertable-about-body {
   display: grid;
@@ -78,6 +56,13 @@
   padding: 24px 0 14px;
   background: var(--at-surface, #fff);
 }
+@media (max-width: 600px) {
+  .altertable-about-tabbar {
+    margin-top: -20px;
+    padding-top: 20px;
+    top: -20px;
+  }
+}
 .altertable-about-tabs .react-aria-TabList {
   display: flex;
   flex-wrap: wrap;
@@ -107,11 +92,4 @@
 }
 .altertable-about-tabs .react-aria-TabPanel {
   min-width: 0;
-}
-@media (max-width: 600px) {
-  .altertable-about-tabbar {
-    top: -20px;
-    margin-top: -20px;
-    padding-top: 20px;
-  }
 }

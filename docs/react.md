@@ -2,7 +2,7 @@
 
 Import hooks, components, and UI helpers from `@altertable/data-app/react`.
 Import `@altertable/data-app/react/styles.css` once in the browser entry.
-React 19 and React DOM 19 are peer dependencies.
+React 19.2 or newer and React DOM 19.2 or newer are peer dependencies.
 
 `mountDataApp({ config, component })` mounts into `#root`, sets the document
 title and language, and installs `DataAppProvider`. When mounting through another
@@ -16,7 +16,7 @@ All of these APIs are exported from `/react`. Each component's stylesheet lives 
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Primary request and page shell                    | [DataApp](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/DataApp.tsx)                                                                                                                          | AppLayout, AppHeader, AppToolbar, AppFooter, AppScope, ThemeToggle                                                                                                                                                                                 |
 | Initial connection check                          | [GettingStarted](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/GettingStarted.tsx)                                                                                                            | Pair with `connectionCheck()` from `/contract`                                                                                                                                                                                                     |
-| Arrange content                                   | [Grid](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Grid.tsx), [Stack](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Stack.tsx)                                           | StorySection                                                                                                                                                                                                                                       |
+| Arrange content                                   | [Grid](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Grid.tsx), [Stack](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Stack.tsx)                                           | DataWidget                                                                                                                                                                                                                                         |
 | Show a key number                                 | [MetricWidget](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/MetricWidget.tsx)                                                                                                                | ComparisonVisual                                                                                                                                                                                                                                   |
 | Show charts and collections                       | [VisualizationWidget](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/VisualizationWidget.tsx), [TableWidget](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/TableWidget.tsx) | DataTable, Ranking, Breakdown, chartColor                                                                                                                                                                                                          |
 | Handle a request's loading, error, and stale data | [DataSection](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/DataSection.tsx)                                                                                                                  | DataBoundary, DataViewToast, EmptyState, StatusPanel, Skeleton                                                                                                                                                                                     |
@@ -24,7 +24,7 @@ All of these APIs are exported from `/react`. Each component's stylesheet lives 
 | Bind filters to the URL                           | [variables](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/variables.ts), [DateRangePicker](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/DateRangePicker.tsx)              | Combobox, PeriodSummary, Tabs, useViewTab                                                                                                                                                                                                          |
 | Search a loaded collection                        | [searchItems](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/searchItems.ts), [SearchMatch](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/SearchMatch.tsx)                  | SearchField                                                                                                                                                                                                                                        |
 | Explain context, glossary, and queries            | [AboutData](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/AboutData.tsx), [DataContext](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/data-context.ts)                     | [GlossaryDefinition](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/GlossaryDefinition.tsx), GlossaryExplanation, [defineDataIdentifiers](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/data-identifiers.tsx) |
-| Present loaded findings                           | [PlayStory](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/PlayStory.tsx)                                                                                                                      | StoryStep                                                                                                                                                                                                                                          |
+| Present loaded findings                           | [PresentStory](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/PresentStory.tsx)                                                                                                                | StoryFinding                                                                                                                                                                                                                                       |
 | Build custom controls and overlays                | [Button](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Button.tsx), [Sheet](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Sheet.tsx)                                       | IconButton, Tooltip, HelpPopover, Kbd                                                                                                                                                                                                              |
 
 ## Bound views and widgets
@@ -130,7 +130,7 @@ export const calendar = defineDateRangeContract({
 
 `useView` generates controls for date, text and fixed-option select variables; custom controls use `result.variables.bind(name)`. `input` chooses which variables reach the operation, so local search can stay local. The callback in `view.content` receives the displayed result, including its original input during refreshes and failures. Hooks belong in the enclosing component.
 
-`TableWidget` also accepts `reading={result.select((data) => data.rows)}` and optional `skeletonRows`. Columns and empty states are declared once for both loading and ready layouts. For bounded results already loaded in the app, pass `pagination={{ pageSize: 8 }}` to page the rows after local search; the footer counts only the supplied rows. `limit` remains a separate, mutually exclusive display cap. Large catalogs need query-backed pagination with a stable sort and total count.
+`TableWidget` also accepts `reading={result.select((data) => data.rows)}` and optional `skeletonRows`. Columns and empty states are declared once for both loading and ready layouts. Bounded tables default to 10 rows per page with a bottom footer shared with inspection. Set `pagination={{ pageSize: 8 }}` to change the page size or `pagination={false}` to show all rows. Search runs before pagination; the footer counts only the supplied rows. `limit` remains a separate, mutually exclusive display cap. Large catalogs need query-backed pagination with a stable sort and total count.
 
 Bound `VisualizationWidget` and `TableWidget` calls require `evidence` from `context.evidence(...)`. A bound `MetricWidget` gets evidence from its metric definition. Evidence must name at least one glossary entry or query. Static widgets may omit it.
 
@@ -184,11 +184,11 @@ const actions = context.metric({
   label: 'Tracked identities',
   format: { kind: 'count' },
 });
-const step = context.storyStep({
+const finding = context.finding({
   id: 'activity',
   headline: 'What people do',
   visual: <ActivityChart />,
-  queryNames: [queries.activity],
+  evidence: { id: 'activity-evidence', queryNames: [queries.activity] },
 });
 ```
 
@@ -201,3 +201,43 @@ Import `defineQueryNames` from `/contract` and the context/identifier factories 
 - Supply `empty` to secondary `DataSection` requests or pass a bound `useView` result. A primary `DataApp` accepts it either from `useView` or as an explicit prop.
 - For alternate views of the same bound result, pass `views={[{ id, label, render }]}` and `viewLabel` to `VisualizationWidget`. Its required `isEmpty` and `empty` apply to the whole result; the widget owns selection. Use `WidgetViewTabs` directly only when views have independent empty states.
 - Variable URL keys cannot use `view`, `about`, `tab`, `present`, or `step`.
+
+## Time views and dimension filters
+
+`createDataHooks(client).defineTimeView` owns the `period` variable, calendar
+controls, and displayed-period label. Declare `time: { contract, defaultValue }`,
+an operation, `isEmpty`, and `empty`. With no additional variables, its default
+input is the calendar request. With additional variables, it is `{ period, ...variables }`.
+Supply an `input` mapper for a different operation shape and `bindings` to extract
+nested period or dimension inputs. Mappings must preserve the selected values.
+
+`dimensionFilter` requires exactly one option source: fixed `options` or a `facet`.
+Use `defineFacetFilter` to bind a facet operation and its typed input. The generated
+`DimensionPicker` preserves cached options during refresh and failure, offers
+missing values separately, and retains selected values absent from a result with
+zero counts. `SelectableBarChart` can share controlled selection with the picker.
+
+## Findings and inspection
+
+`DataWidget` composes a body, toolbar feedback, and footer. Widgets and their
+inspection sheets render the same visual and controls. Keep interactive state
+above both mounts when authoring custom children.
+
+`DataApp.story` receives the displayed snapshot, including its original input
+during refresh or failure. Return one to four `StoryFinding` values with unique
+IDs and registered evidence. `PresentStory` presents those findings directly;
+`context.finding` validates their evidence against the context registry.
+
+### Migration from the earlier runtime
+
+- `DataWidget` replaces the internal `DataPanel` shell and `StorySection` layout.
+- `PresentStory` replaces `PlayStory`; provide `findings` with explicit `evidence`.
+- `context.finding` replaces `context.storyStep`.
+- Table pagination is enabled by default; use `pagination={false}` for complete tables.
+
+## Component gallery
+
+Contributors can preview `/gallery` on the browser fixture server with
+`bun browser-tests/server.ts`. The gallery covers control, widget, request,
+inspection, and narrow-layout defaults. `bun run test:browser` verifies desktop
+and phone interactions. Fixtures are excluded from the published package.

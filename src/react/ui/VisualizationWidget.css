@@ -3,6 +3,7 @@
   padding: var(--at-space-md, 16px) var(--at-space-lg, 24px)
     var(--at-space-lg, 24px);
 }
-:where(.altertable-data-panel-body) > .altertable-visualization-widget-content {
+:where(.altertable-data-widget-body)
+  > .altertable-visualization-widget-content {
   padding: 0;
 }

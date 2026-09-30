@@ -81,12 +81,12 @@ recognition across independent bootstrap and app bundles in that window.
 
 ## Pending request limits
 
-Each iframe bridge accepts at most 32 unresolved requests, including requests
+Each iframe bridge accepts at most 128 unresolved requests, including requests
 waiting for the connection handshake. Further calls reject with `bridge_busy`
 until a pending call completes, is cancelled, or times out. This bounds the
 client's promises, timers, and queued messages.
 
-The host independently limits pending requests to 32: an iframe can send
+The host independently limits pending requests to 128: an iframe can send
 messages directly without using the client helper. The shared cap is a resource
 policy, not a requirement of the message protocol. It rejects excess requests;
 it does not queue them or limit the total number of calls over a session.

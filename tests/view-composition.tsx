@@ -64,12 +64,11 @@ defineDataView({
 const metric: MetricWidgetProps = { label: 'Orders', value: 123 };
 // @ts-expect-error Secondary requests require an empty state.
 const section: DataSectionProps<number> = {
-  view: { kind: 'loading' },
+  result: { view: { kind: 'loading' }, refetch() {} },
   children() {
     return null;
   },
 };
-// @ts-expect-error Primary requests require a fallback on the request or shell.
 const app: DataAppProps<number> = {
   config: {
     appearance: {},
@@ -78,6 +77,7 @@ const app: DataAppProps<number> = {
   },
   dataContext: { description: 'Test', glossary: {} },
   aboutEmpty: { glossary: { title: 'Empty' }, queries: { title: 'Empty' } },
+  // @ts-expect-error Primary requests own their empty state.
   request: { view: { kind: 'loading' }, refetch() {} },
   children() {
     return null;
@@ -161,4 +161,70 @@ dateRangeVariable({
   contract: defineDateRangeContract({ maxRangeDays: 30, timeZone: 'UTC' }),
   // @ts-expect-error Comparison is activated by the reader, never by the app default.
   defaultValue: { kind: 'preset', id: 'last-7', comparison: 'previous' },
+});
+
+const { defineTimeView } = createDataHooks<{
+  nested: DataOperation<{ request: DateRangeRequest }, number>;
+  filtered: DataOperation<{ period: DateRangeRequest; search: string }, number>;
+}>(createDataClient());
+const time = {
+  contract: defineDateRangeContract({ maxRangeDays: 30, timeZone: 'UTC' }),
+  defaultValue: { kind: 'preset', id: 'last-7' },
+} as const;
+// @ts-expect-error A nested input requires an explicit mapper rather than an implicit cast.
+defineTimeView({
+  operation: 'nested',
+  time,
+  isEmpty() {
+    return false;
+  },
+  empty: { title: 'Empty' },
+});
+defineTimeView({
+  operation: 'nested',
+  time,
+  input({ period }) {
+    return { request: period };
+  },
+  bindings: {
+    period(input) {
+      return input.request;
+    },
+  },
+  isEmpty() {
+    return false;
+  },
+  empty: { title: 'Empty' },
+});
+defineTimeView({
+  operation: 'filtered',
+  time,
+  variables: { search: textVariable({ key: 'search' }) },
+  isEmpty() {
+    return false;
+  },
+  empty: { title: 'Empty' },
+});
+
+import { dimensionFilter } from '@/src/core/dimension';
+// @ts-expect-error A dimension needs exactly one option source.
+dimensionFilter({
+  key: 'source',
+  label: 'Source',
+  valueType: 'string',
+  selection: 'multiple',
+});
+// @ts-expect-error Fixed options and a facet operation cannot coexist.
+dimensionFilter({
+  key: 'source',
+  label: 'Source',
+  valueType: 'string',
+  selection: 'multiple',
+  options: [],
+  facet: {
+    operation: 'sources',
+    input() {
+      return {};
+    },
+  },
 });

@@ -11,8 +11,9 @@ export type DataViewToastProps<Data, Input> = {
   onRetry?: () => void;
 };
 
-/** One page-level refresh status. Updating waits briefly to avoid flashing on fast requests;
- * a failed update stays visible with its retry action until the view changes. */
+/** One page-level refresh status. Updating waits briefly; a failed refresh waits
+ * long enough to avoid interrupting the displayed result before showing retry. */
+
 export function DataViewToast<Data, Input>({
   view,
   message,
@@ -23,23 +24,32 @@ export function DataViewToast<Data, Input>({
   if (delay.kind !== view.kind) setDelay({ kind: view.kind, elapsed: false });
 
   useEffect(() => {
-    if (view.kind !== 'updating') return;
+    if (view.kind !== 'updating' && view.kind !== 'stale-error') return;
+    const kind = view.kind;
     const timer = window.setTimeout(
-      () => setDelay({ kind: 'updating', elapsed: true }),
-      450
+      () => setDelay({ kind, elapsed: true }),
+      kind === 'stale-error' ? 3_000 : 450
     );
 
     return () => window.clearTimeout(timer);
   }, [view.kind]);
 
-  const failed = view.kind === 'stale-error';
-  const updating =
+  const showUpdating =
     view.kind === 'updating' && delay.kind === 'updating' && delay.elapsed;
-  if (!failed && !updating && !notice) return null;
+  const showStaleError =
+    view.kind === 'stale-error' &&
+    delay.kind === 'stale-error' &&
+    delay.elapsed;
 
-  const content = failed || updating ? (message ?? view.message) : notice;
-  const icon = failed ? 'error' : updating ? 'loading' : 'live';
-  const state = failed ? 'stale-error' : updating ? 'updating' : 'notice';
+  if (!showStaleError && !showUpdating && !notice) return null;
+  const failed = showStaleError;
+  const showingUpdate = view.kind === 'updating' && showUpdating;
+  const detail =
+    view.kind === 'stale-error' || view.kind === 'updating'
+      ? view.message
+      : undefined;
+  const icon = failed ? 'error' : showingUpdate ? 'loading' : 'live';
+  const state = failed ? 'stale-error' : showingUpdate ? 'updating' : 'notice';
 
   return (
     <div className="altertable-data-view-toast-region">
@@ -52,10 +62,16 @@ export function DataViewToast<Data, Input>({
           name={icon}
           size={16}
           className={
-            updating ? 'altertable-data-view-toast-spinner' : undefined
+            showingUpdate ? 'altertable-data-view-toast-spinner' : undefined
           }
         />
-        <span>{content}</span>
+        <span>
+          {failed
+            ? (message ?? detail)
+            : showingUpdate
+              ? (message ?? detail)
+              : notice}
+        </span>
         {failed && onRetry && <Button onClick={onRetry}>Try again</Button>}
       </div>
     </div>

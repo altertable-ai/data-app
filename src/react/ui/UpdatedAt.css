@@ -2,14 +2,16 @@
   padding: 0;
   border: 0;
   background: transparent;
-  color: inherit;
-  font: inherit;
+  width: fit-content;
+  align-self: flex-start;
+  color: var(--at-muted, #687078);
+  font: 12px/1.4 var(--at-font, ui-sans-serif, system-ui, sans-serif);
   cursor: pointer;
 }
 .altertable-updated-at:hover {
   color: var(--at-text, #202124);
 }
 .altertable-updated-at:focus-visible {
-  outline: 2px solid var(--at-accent, #4779dc);
-  outline-offset: 3px;
+  outline: var(--at-focus-outline, 1px solid #687078);
+  outline-offset: var(--at-focus-ring-offset, 2px);
 }

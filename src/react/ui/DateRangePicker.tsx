@@ -25,6 +25,7 @@ import {
 import { classNames } from '@/src/react/ui/classNames';
 import { AppIcon } from '@/src/react/ui/icons';
 import { formatDateRange, pluralize } from '@/src/core/format';
+import { Checkbox } from '@/src/react/ui/Checkbox';
 import '@/src/react/ui/DateRangePicker.css';
 
 import {
@@ -71,6 +72,7 @@ export type DateRangePickerProps = {
 >;
 
 /** The app owns URL state; `dateRangeControl` binds a date variable to this picker. */
+
 export function DateRangePicker({
   label = 'Date range',
   value,
@@ -325,22 +327,16 @@ export function DateRangePicker({
                 )}
               </div>
               {comparison && (
-                <label className="altertable-date-range-compare">
-                  <input
-                    type="checkbox"
-                    checked={comparison.enabled}
-                    disabled={!comparison.range}
-                    onChange={event =>
-                      comparison.onChange(event.target.checked)
-                    }
-                  />
-                  <span>
-                    Compare with previous period
-                    {comparison.range && (
-                      <small>{formatDateRange(comparison.range)}</small>
-                    )}
-                  </span>
-                </label>
+                <Checkbox
+                  className="altertable-date-range-compare"
+                  label="Compare with previous period"
+                  checked={comparison.enabled}
+                  disabled={!comparison.range}
+                  onChange={comparison.onChange}
+                  description={
+                    comparison.range && formatDateRange(comparison.range)
+                  }
+                />
               )}
             </div>
           </div>

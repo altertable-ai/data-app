@@ -1,4 +1,5 @@
 import type { ComponentPropsWithRef } from 'react';
+import { invariant } from '@/src/core/invariant';
 import {
   Button as AriaButton,
   ListBox,
@@ -28,6 +29,7 @@ export type LiveControlProps = {
 } & Omit<ComponentPropsWithRef<'button'>, 'children' | 'onClick' | 'onChange'>;
 
 /** Toggle an app-owned recurring refresh. The app supplies the timer and its cadence. */
+
 export function LiveControl({
   enabled,
   onChange,
@@ -39,8 +41,7 @@ export function LiveControl({
   const frequency = intervals.find(
     interval => interval.seconds === intervalSeconds
   )?.description;
-  if (!frequency)
-    throw new Error('LiveControl requires a supported update interval.');
+  invariant(frequency, 'LiveControl requires a supported update interval.');
 
   return (
     <div

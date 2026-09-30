@@ -8,7 +8,9 @@ import {
 } from 'react';
 import { useMergeRefs } from '@floating-ui/react';
 import { classNames } from '@/src/react/ui/classNames';
+import { Button } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
+import { GradientScroll } from '@/src/react/ui/GradientScroll';
 import '@/src/react/ui/Sheet.css';
 
 export type SheetDialogProps = Omit<
@@ -32,6 +34,7 @@ export type SheetProps = {
  * Uses the native dialog top layer and focus trap. Closing keeps the modal mounted until its
  * exit transition completes.
  */
+
 export function Sheet({
   open,
   onOpenChange,
@@ -80,6 +83,7 @@ export function Sheet({
 
   // Native dialog backdrop clicks close the sheet; its contents remain keyboard accessible.
   /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */
+
   return (
     <dialog
       {...props}
@@ -131,17 +135,20 @@ export function Sheet({
           </div>
           <div className="altertable-sheet-actions">
             {headerActions}
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               className="altertable-sheet-close"
               aria-label="Close panel"
               onClick={() => onOpenChange(false)}
             >
               <AppIcon name="close" />
-            </button>
+            </Button>
           </div>
         </header>
-        <div className="altertable-sheet-body">{children}</div>
+        <GradientScroll className="altertable-sheet-body" fadeStart={false}>
+          {children}
+        </GradientScroll>
         {footer && (
           <footer className="altertable-sheet-footer">{footer}</footer>
         )}

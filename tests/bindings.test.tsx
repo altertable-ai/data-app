@@ -6,15 +6,20 @@ import {
   defineQueryNames,
 } from '@/src/core/contract';
 import { createDataClient } from '@/src/client/index';
-import { createDataHooks } from '@/src/react/index';
+import { createDataHooks, DataWidget } from '@/src/react/index';
+import { displayedSnapshot } from '@/src/core/data-view';
+import { storySteps } from '@/src/react/ui/story';
 import { resolveViewInput } from '@/src/react/view';
-import { dateRangeVariable } from '@/src/react/ui/variables';
+import { dateRangeVariable, textVariable } from '@/src/react/ui/variables';
 import { createDataContext } from '@/src/react/ui/data-context';
 import { ComparisonVisual } from '@/src/react/ui/ComparisonVisual';
 import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import { TableWidget } from '@/src/react/ui/TableWidget';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 import type { DataOperation, DateRangeRequest } from '@/src/core/contract';
+import { dimensionFilter, type DimensionSelection } from '@/src/core/dimension';
+import { PresentStory } from '@/src/react/ui/PresentStory';
+import { InspectionContext } from '@/src/react/ui/InspectionContext';
 
 const names = defineQueryNames({ activity: 'activity' });
 const context = createDataContext(names)({
@@ -49,7 +54,7 @@ const period = dateRangeVariable({
   defaultValue: { kind: 'preset', id: 'last-7' },
 });
 type Data = { current: number; previous: number | null; rows: string[] };
-const { defineDataView } = createDataHooks<{
+const { defineDataView, defineTimeView } = createDataHooks<{
   activity: DataOperation<DateRangeRequest, Data>;
 }>(createDataClient());
 const view = defineDataView({
@@ -68,6 +73,250 @@ const view = defineDataView({
     return data.rows.length === 0;
   },
   empty: { title: 'No actions' },
+});
+
+test('a custom data widget shares the bound loading, empty, and inspection contract', () => {
+  let rendered = 0;
+
+  function widget(
+    reading: { loading: true } | { loading: false; value: number[] }
+  ) {
+    return renderToStaticMarkup(
+      <DataWidget
+        title="Sessions by source"
+        evidence={featureEvidence}
+        reading={reading}
+        isEmpty={values => values.length === 0}
+        empty={{ title: 'No sessions' }}
+      >
+        {values => {
+          rendered++;
+
+          return (
+            <ol>
+              {values.map(value => (
+                <li key={value}>{value}</li>
+              ))}
+            </ol>
+          );
+        }}
+      </DataWidget>
+    );
+  }
+  expect(widget({ loading: true })).toContain('altertable-content-skeleton');
+  expect(rendered).toBe(0);
+  expect(widget({ loading: false, value: [] })).toContain('No sessions');
+  expect(rendered).toBe(0);
+  const ready = widget({ loading: false, value: [7] });
+  expect(ready).toContain('<li>7</li>');
+  expect(ready).toContain('Sessions by source');
+  expect(ready).toContain('aria-label="Explore Sessions by source"');
+  expect(rendered).toBe(1);
+});
+
+test('time view derives its control, input, and displayed period from one declaration', () => {
+  const timed = defineTimeView({
+    operation: 'activity',
+    time: {
+      contract: calendar,
+      defaultValue: { kind: 'preset', id: 'last-7' },
+    },
+    isEmpty(data) {
+      return !data.rows.length;
+    },
+    empty: { title: 'No actions' },
+  });
+  const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
+  expect(timed.variables.period.kind).toBe('dateRange');
+  expect(resolveViewInput(timed, { period: input })).toEqual(input);
+  expect(timed.describeInput(input)).toContain('Mar 10–12, 2026');
+});
+
+test('time view composes other inputs without surrendering its period binding', () => {
+  const { defineTimeView: defineSearchView } = createDataHooks<{
+    search: DataOperation<{ period: DateRangeRequest; search: string }, Data>;
+  }>(createDataClient());
+  const search = textVariable({ key: 'search' });
+  const timed = defineSearchView({
+    operation: 'search',
+    time: {
+      contract: calendar,
+      defaultValue: { kind: 'preset', id: 'last-7' },
+    },
+    variables: { search },
+    input({ period, search }) {
+      return { period, search };
+    },
+    isEmpty(data) {
+      return !data.rows.length;
+    },
+    empty: { title: 'No actions' },
+  });
+  const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
+  expect(resolveViewInput(timed, { period: input, search: 'billing' })).toEqual(
+    {
+      period: input,
+      search: 'billing',
+    }
+  );
+  expect(() =>
+    defineSearchView({
+      operation: 'search',
+      time: {
+        contract: calendar,
+        defaultValue: { kind: 'preset', id: 'last-7' },
+      },
+      // @ts-expect-error Deliberately bypass the reserved period type to test runtime validation.
+      variables: { period },
+      input({ period }) {
+        return { period, search: '' };
+      },
+      isEmpty() {
+        return false;
+      },
+      empty: { title: 'Empty' },
+    })
+  ).toThrow('owned by defineTimeView');
+});
+
+test('Present findings use the displayed input and require unique, supported evidence', () => {
+  const data = { current: 12, previous: null, rows: ['a'] };
+  const view = {
+    kind: 'stale-error' as const,
+    data,
+    displayedInput: 'old',
+    requestedInput: 'new',
+    error: new Error('offline'),
+    message: 'stale',
+  };
+  expect(displayedSnapshot(view)).toEqual({
+    data,
+    input: 'old',
+    state: 'stale-error',
+  });
+  const finding = {
+    id: 'concentration',
+    headline: 'Most activity occurred on one day',
+    visual: '12 actions',
+    evidence: featureEvidence,
+  };
+  expect(storySteps([finding], context)[0]?.queryNames).toEqual(['activity']);
+  expect(() => storySteps([finding, finding], context)).toThrow('unique');
+  expect(() =>
+    storySteps(
+      [{ ...finding, evidence: { id: 'missing', queryNames: ['unknown'] } }],
+      context
+    )
+  ).toThrow('Unknown query');
+});
+
+test('nested view inputs preserve dates and dimensions in validation and descriptions', () => {
+  const source = dimensionFilter<string>({
+    key: 'source',
+    label: 'Source',
+    valueType: 'string',
+    selection: 'multiple',
+    options: [{ value: 'HTTP', label: 'HTTP' }],
+  });
+  type Input = {
+    request: DateRangeRequest;
+    filters: { source: DimensionSelection<string> };
+  };
+  const { defineTimeView } = createDataHooks<{
+    nested: DataOperation<Input, Data>;
+  }>(createDataClient());
+  const timed = defineTimeView({
+    operation: 'nested',
+    time: {
+      contract: calendar,
+      defaultValue: { kind: 'preset', id: 'last-7' },
+    },
+    variables: { source },
+    input({ period, source }) {
+      return { request: period, filters: { source } };
+    },
+    bindings: {
+      period(input) {
+        return input.request;
+      },
+      source(input) {
+        return input.filters.source;
+      },
+    },
+    isEmpty(data) {
+      return !data.rows.length;
+    },
+    empty: { title: 'No actions' },
+  });
+  const period = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
+  const selected: DimensionSelection<string> = {
+    kind: 'include',
+    members: [{ kind: 'value', value: 'HTTP' }],
+  };
+  const input = resolveViewInput(timed, { period, source: selected });
+  expect(input).toEqual({ request: period, filters: { source: selected } });
+  expect(timed.describeInput(input)).toContain('Mar 10–12, 2026');
+  expect(timed.describeInput(input)).toContain('Source: HTTP');
+  expect(() =>
+    resolveViewInput({ ...timed, bindings: {} }, { period, source: selected })
+  ).toThrow('source dimension selection');
+  expect(() =>
+    resolveViewInput(
+      {
+        ...timed,
+        input() {
+          return {
+            request: period,
+            filters: { source: { kind: 'all' as const } },
+          };
+        },
+      },
+      { period, source: selected }
+    )
+  ).toThrow('source dimension selection');
+  expect(() =>
+    resolveViewInput(
+      {
+        ...timed,
+        date: {
+          variable: 'period',
+          input(input) {
+            return (input as unknown as { period: DateRangeRequest }).period;
+          },
+        },
+      },
+      { period, source: selected }
+    )
+  ).toThrow('selected date range');
+});
+
+test('story inspection inherits executed SQL and filters it to the finding evidence', () => {
+  const html = renderToStaticMarkup(
+    <InspectionContext.Provider
+      value={{
+        dataContext: context,
+        queries: [
+          { name: 'activity', statement: 'SELECT 42 AS story_evidence' },
+          { name: 'unrelated', statement: 'SELECT 99 AS unrelated_evidence' },
+        ],
+      }}
+    >
+      <PresentStory
+        title="Activity"
+        dataContext={context}
+        findings={[
+          {
+            id: 'concentration',
+            headline: 'Most activity occurred on one day',
+            visual: '42 actions',
+            evidence: featureEvidence,
+          },
+        ]}
+      />
+    </InspectionContext.Provider>
+  );
+  expect(html).toContain('story_evidence');
+  expect(html).not.toContain('unrelated_evidence');
 });
 
 test('bound metrics share values, formatting, evidence and displayed comparison periods', () => {

@@ -1,3 +1,4 @@
+import gallery from '@/browser-tests/fixtures/gallery.html';
 import bundleHost from '@/browser-tests/fixtures/bundle-host.html';
 import bridgeHost from '@/browser-tests/fixtures/bridge-host.html';
 import bridgeFrame from '@/browser-tests/fixtures/bridge-frame.html';
@@ -32,7 +33,9 @@ Bun.serve({
 Bun.serve({
   hostname: '127.0.0.1',
   port,
+  development: false,
   routes: {
+    '/gallery': gallery,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,

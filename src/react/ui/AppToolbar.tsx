@@ -3,7 +3,7 @@ import type { DataView } from '@/src/core/data-view';
 import { LiveControl, type LiveControlProps } from '@/src/react/ui/LiveControl';
 import { AppIcon } from '@/src/react/ui/icons';
 import { IconButton } from '@/src/react/ui/IconButton';
-import { PlayStory } from '@/src/react/ui/PlayStory';
+import { PresentStory } from '@/src/react/ui/PresentStory';
 import { RefreshControl } from '@/src/react/ui/RefreshControl';
 import { classNames } from '@/src/react/ui/classNames';
 import { shortcuts, useShortcut } from '@/src/react/ui/shortcuts';
@@ -27,7 +27,7 @@ export type AppToolbarProps = {
   };
   live?: LiveControlProps;
   aboutData?: ReactNode;
-  story?: ComponentProps<typeof PlayStory>;
+  story?: ComponentProps<typeof PresentStory>;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** Header actions only. Put reader-controlled inputs in DataApp.variables below the header.
@@ -35,6 +35,7 @@ export type AppToolbarProps = {
  * cluster; end follows the built-in actions. Live sits beside Refresh when supplied. Refresh also
  * answers Alt/Option+R and uses the button to cancel a running request when onCancel is provided;
  * refresh.tooltip overrides its static label. All built-in controls are optional. */
+
 export function AppToolbar({
   children,
   updatedAt,
@@ -65,7 +66,6 @@ export function AppToolbar({
     if (refresh.refreshing) refresh.onCancel?.();
     else refresh.onRefresh();
   }
-
   useShortcut(shortcuts.refresh, runRefresh, !!refresh);
 
   return (
@@ -125,9 +125,11 @@ export function AppToolbar({
               />
               {refresh.onCancel && (
                 <AppIcon
-                  name="cancel"
+                  name="stop"
                   className="altertable-refresh-cancel"
                   size={17}
+                  fill="currentColor"
+                  strokeWidth={0}
                 />
               )}
             </IconButton>
@@ -135,7 +137,7 @@ export function AppToolbar({
         )}
         {live && <LiveControl {...live} />}
         {aboutData}
-        {story && <PlayStory {...story} />}
+        {story && <PresentStory {...story} />}
         {end}
       </div>
     </div>

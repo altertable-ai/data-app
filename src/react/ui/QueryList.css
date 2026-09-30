@@ -34,8 +34,8 @@
   color: var(--at-text, #202124);
 }
 .altertable-query-list summary:focus-visible {
-  outline: 2px solid var(--at-accent, #4779dc);
-  outline-offset: 2px;
+  outline: var(--at-focus-outline, 1px solid #687078);
+  outline-offset: var(--at-focus-ring-offset, 2px);
 }
 .altertable-query-list figure {
   display: grid;
@@ -86,7 +86,8 @@
   background: var(--at-subtle, #f6f7f7);
 }
 .altertable-query-action:focus-visible {
-  outline: 2px solid var(--at-accent, #4779dc);
+  outline: var(--at-focus-outline, 1px solid #687078);
+  outline-offset: var(--at-focus-ring-offset, 2px);
 }
 .altertable-query-list pre {
   margin: 0;
@@ -147,9 +148,23 @@
   color: var(--at-danger, #b42318);
   font-size: 12px;
 }
+@media (hover: hover) and (pointer: fine) {
+  .altertable-query-actions .altertable-query-action {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+  .altertable-query-list figure:hover .altertable-query-action,
+  .altertable-query-list figure:focus-within .altertable-query-action,
+  .altertable-query-actions:has(output) .altertable-query-action {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .altertable-query-list summary,
-  .altertable-query-list summary::before {
+  .altertable-query-list summary::before,
+  .altertable-query-actions .altertable-query-action {
     transition: none;
   }
 }

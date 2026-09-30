@@ -1,4 +1,8 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
+import {
+  WidgetStatusControl,
+  type WidgetStatus,
+} from '@/src/react/ui/RequestHint';
 import { AboutData } from '@/src/react/ui/AboutData';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import { AppIcon } from '@/src/react/ui/icons';
@@ -21,6 +25,7 @@ type MetricWidgetBaseProps = {
   evidence?: WidgetEvidence;
   action?: ReactNode;
   insight?: ReactNode;
+  status?: WidgetStatus;
   visual?: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'about' | 'children'>;
 
@@ -79,6 +84,7 @@ function MetricWidgetContent({
   evidence,
   action,
   insight,
+  status,
   visual,
   className,
   ...props
@@ -99,26 +105,44 @@ function MetricWidgetContent({
         Previous period unavailable
       </span>
     ) : null;
+  const reading = (
+    <div className="altertable-metric-reading">
+      <strong
+        className="altertable-metric-value"
+        data-unavailable={shownValue === '—' || undefined}
+      >
+        {shownValue}
+      </strong>
+      {shownTrend && (
+        <span className="altertable-metric-trend">{shownTrend}</span>
+      )}
+    </div>
+  );
+  const visualization = visual && (
+    <div className="altertable-metric-visual">{visual}</div>
+  );
+  const feedback = <WidgetStatusControl status={status} />;
   const help = evidence ? (
     <AboutData
+      {...evidence}
       iconOnly
       variant="ghost"
       className="altertable-inspect-trigger"
       tooltip="Explore this metric"
-      {...evidence}
+      references={{
+        kind: 'ids',
+        glossaryIds: evidence.glossaryIds,
+        queryNames: evidence.queryNames,
+      }}
       shortcut={false}
       id={evidence.id}
       title={label}
+      headerActions={feedback}
       description={description}
       visual={
         <div className="altertable-metric-evidence">
-          <div className="altertable-metric-reading">
-            <strong className="altertable-metric-value">{shownValue}</strong>
-            {shownTrend && (
-              <span className="altertable-metric-trend">{shownTrend}</span>
-            )}
-          </div>
-          {visual}
+          {reading}
+          {visualization}
         </div>
       }
       visualKind="metric"
@@ -134,23 +158,17 @@ function MetricWidgetContent({
     >
       <div className="altertable-metric-label">
         <span>{label}</span>
-        {(action || help) && (
-          <div className="altertable-metric-help">
-            {action}
-            {help}
-          </div>
-        )}
+        <div className="altertable-metric-help">
+          {feedback}
+          {action}
+          {help}
+        </div>
       </div>
-      <div className="altertable-metric-reading">
-        <strong className="altertable-metric-value">{shownValue}</strong>
-        {shownTrend && (
-          <span className="altertable-metric-trend">{shownTrend}</span>
-        )}
-      </div>
+      {reading}
       {description && (
         <small className="altertable-metric-description">{description}</small>
       )}
-      {visual && <div className="altertable-metric-visual">{visual}</div>}
+      {visualization}
       {insight && <div className="altertable-metric-insight">{insight}</div>}
     </div>
   );

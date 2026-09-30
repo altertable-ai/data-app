@@ -16,7 +16,7 @@ import {
   GlossaryExplanation,
   MetricWidget,
   PeriodSummary,
-  PlayStory,
+  PresentStory,
   RefreshRegion,
   Sheet,
   Skeleton,
@@ -27,11 +27,9 @@ import {
   TooltipProvider,
   UpdatedAt,
   useAppVariables,
-  defineDataContext,
   createDataContext,
-  evidenceFor,
 } from '@/src/react/ui/index';
-import type { AppToolbarProps, PlayStoryProps } from '@/src/react/ui/index';
+import type { AppToolbarProps, PresentStoryProps } from '@/src/react/ui/index';
 import { defineDateRangeContract, defineQueryNames } from '@/src/core/contract';
 
 const toolbarProps = {
@@ -43,30 +41,24 @@ const empty = {
 };
 const storyProps = {
   title: 'Story',
-  steps: [],
+  findings: [],
   dataContext: null!,
   empty,
-} satisfies PlayStoryProps;
-const dataContext = defineDataContext({
+} satisfies PresentStoryProps;
+const queryNames = defineQueryNames({ totals: 'order-totals' });
+const dataContext = createDataContext(queryNames)({
   description: 'Orders',
   glossary: { orders: { term: 'Orders', definition: 'Completed orders.' } },
 });
-const queryNames = defineQueryNames({ totals: 'order-totals' });
-const evidence = createDataContext(queryNames)(dataContext).evidence({
+const evidence = dataContext.evidence({
   id: 'orders',
   glossaryIds: ['orders'],
   queryNames: [queryNames.totals],
 });
 // @ts-expect-error A widget cannot refer to a glossary entry absent from this context.
-evidenceFor(dataContext)({ id: 'missing', glossaryIds: ['unknown'] });
-evidenceFor(
-  dataContext,
-  queryNames
-)({
-  id: 'missing-query',
-  // @ts-expect-error A widget cannot refer to a query absent from the named query registry.
-  queryNames: ['other-query'],
-});
+dataContext.evidence({ id: 'missing', glossaryIds: ['unknown'] });
+// @ts-expect-error A widget cannot refer to a query absent from the named query registry.
+dataContext.evidence({ id: 'missing-query', queryNames: ['other-query'] });
 const variables = defineAppVariables({
   period: dateRangeVariable({
     key: 'period',
@@ -234,7 +226,7 @@ export function CompositionCheck() {
       >
         Body
       </Sheet>
-      <PlayStory
+      <PresentStory
         {...storyProps}
         className="play"
         headerActions={<Button>Save</Button>}

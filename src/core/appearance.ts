@@ -3,6 +3,8 @@
  * @module @altertable/data-app/appearance
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/appearance.md
  */
+import { invariant } from '@/src/core/invariant';
+
 export type AppearanceSettings = {
   mode: 'light' | 'dark' | 'system';
   baseColor: 'neutral' | 'slate' | 'warm';
@@ -73,11 +75,10 @@ export function parseAppearance(value: unknown): AppearanceSettings {
       chartColors: [...defaults.chartColors],
       typography: { ...defaults.typography },
     };
-  if (
-    !record(value) ||
-    Object.keys(value).some(
-      key =>
-        ![
+  invariant(
+    record(value) &&
+      Object.keys(value).every(key =>
+        [
           'mode',
           'baseColor',
           'accentColor',
@@ -88,39 +89,36 @@ export function parseAppearance(value: unknown): AppearanceSettings {
           'elevation',
           'typography',
         ].includes(key)
-    )
-  ) {
-    throw new Error('Invalid appearance settings.');
-  }
+      ),
+    'Invalid appearance settings.'
+  );
   const typography = value.typography;
-  if (
-    (value.mode !== undefined &&
-      !oneOf(value.mode, ['light', 'dark', 'system'])) ||
-    (value.baseColor !== undefined &&
-      !oneOf(value.baseColor, ['neutral', 'slate', 'warm'])) ||
-    (value.accentColor !== undefined && !color(value.accentColor)) ||
-    (value.darkAccentColor !== undefined && !color(value.darkAccentColor)) ||
-    (value.chartColors !== undefined &&
-      (!Array.isArray(value.chartColors) ||
-        value.chartColors.length < 1 ||
-        value.chartColors.length > 8 ||
-        !value.chartColors.every(color))) ||
-    (value.density !== undefined &&
-      !oneOf(value.density, ['compact', 'comfortable', 'spacious'])) ||
-    (value.cornerRadius !== undefined &&
-      !oneOf(value.cornerRadius, ['none', 'small', 'medium', 'large'])) ||
-    (value.elevation !== undefined &&
-      !oneOf(value.elevation, ['flat', 'subtle', 'raised'])) ||
-    (typography !== undefined &&
-      (!record(typography) ||
-        Object.keys(typography).some(
-          key => key !== 'body' && key !== 'heading'
-        ) ||
-        (typography.body !== undefined && !font(typography.body)) ||
-        (typography.heading !== undefined && !font(typography.heading))))
-  ) {
-    throw new Error('Invalid appearance settings.');
-  }
+  const validFields =
+    (value.mode === undefined ||
+      oneOf(value.mode, ['light', 'dark', 'system'])) &&
+    (value.baseColor === undefined ||
+      oneOf(value.baseColor, ['neutral', 'slate', 'warm'])) &&
+    (value.accentColor === undefined || color(value.accentColor)) &&
+    (value.darkAccentColor === undefined || color(value.darkAccentColor)) &&
+    (value.chartColors === undefined ||
+      (Array.isArray(value.chartColors) &&
+        value.chartColors.length >= 1 &&
+        value.chartColors.length <= 8 &&
+        value.chartColors.every(color))) &&
+    (value.density === undefined ||
+      oneOf(value.density, ['compact', 'comfortable', 'spacious'])) &&
+    (value.cornerRadius === undefined ||
+      oneOf(value.cornerRadius, ['none', 'small', 'medium', 'large'])) &&
+    (value.elevation === undefined ||
+      oneOf(value.elevation, ['flat', 'subtle', 'raised'])) &&
+    (typography === undefined ||
+      (record(typography) &&
+        Object.keys(typography).every(
+          key => key === 'body' || key === 'heading'
+        ) &&
+        (typography.body === undefined || font(typography.body)) &&
+        (typography.heading === undefined || font(typography.heading))));
+  invariant(validFields, 'Invalid appearance settings.');
 
   return {
     mode: (value.mode ?? defaults.mode) as AppearanceSettings['mode'],
@@ -189,6 +187,7 @@ function fontStack(family: string): string {
  * Install semantic tokens on the document root, including portaled UI. Returns a cleanup for
  * system-theme listening.
  */
+
 export function applyAppearance(value: unknown): () => void {
   const settings = parseAppearance(value);
   const root = document.documentElement;
@@ -244,7 +243,8 @@ export function applyAppearance(value: unknown): () => void {
       '--at-muted': muted,
       '--at-border': border,
       '--at-accent': accent,
-      '--at-control-focus-border': accent,
+      '--at-focus-color': muted,
+      '--at-control-hover-border': `color-mix(in srgb, ${muted} 45%, ${border})`,
       '--at-accent-hover': `color-mix(in srgb, ${accent} 80%, ${dark ? 'white' : 'black'})`,
       '--at-accent-subtle': `color-mix(in srgb, ${accent} ${dark ? 22 : 12}%, ${surfaceColor})`,
       '--at-on-accent': dark ? background : '#ffffff',
@@ -257,7 +257,6 @@ export function applyAppearance(value: unknown): () => void {
     for (const [name, token] of Object.entries(tokens))
       root.style.setProperty(name, token);
   }
-
   applyColors();
   if (settings.mode === 'system')
     preference.addEventListener('change', applyColors);
@@ -268,6 +267,7 @@ export function applyAppearance(value: unknown): () => void {
 }
 
 /** Viewer color mode persists independently of app-authored brand tokens. */
+
 export function createThemeController(value: unknown): ThemeController {
   const settings = parseAppearance(value);
   const storageKey = 'altertable.data-app.theme-mode';

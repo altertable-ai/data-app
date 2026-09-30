@@ -7,5 +7,9 @@ export { mountDataApp, DataAppProvider } from '@/src/react/mount';
 export { createDataHooks } from '@/src/react/hooks';
 export { defineDataContent } from '@/src/react/content';
 export type { DataContentState } from '@/src/react/content';
-export type { DataViewDefinition, ResolvedVariables } from '@/src/react/view';
+export type {
+  DataViewDefinition,
+  ResolvedVariables,
+  ViewBindings,
+} from '@/src/react/view';
 export * from '@/src/react/ui/index';

@@ -6,6 +6,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import { invariant } from '@/src/core/invariant';
 import { useMergeRefs } from '@floating-ui/react';
 import { AppIcon } from '@/src/react/ui/icons';
 import type { DisclosedQuery } from '@/src/core/contract';
@@ -48,13 +49,16 @@ export type AboutSubject = {
   title?: ReactNode;
   description?: ReactNode;
   visual?: ReactNode;
-  visualKind?: 'metric' | 'chart';
+  visualKind?: 'metric' | 'chart' | 'widget';
   dataContext?: DataContext;
-  glossaryEntry?: GlossaryEntry;
-  glossaryEntries?: GlossaryEntry[];
-  glossaryIds?: string[];
+  references?:
+    | {
+        kind: 'ids';
+        glossaryIds?: readonly string[];
+        queryNames?: readonly string[];
+      }
+    | { kind: 'entries'; entries: readonly GlossaryEntry[] };
   queries?: DisclosedQuery[];
-  queryNames?: string[];
 };
 
 export type AboutDataProps = AboutSubject & {
@@ -70,6 +74,7 @@ export type AboutDataProps = AboutSubject & {
   footer?: ReactNode;
   portalRoot?: RefObject<HTMLElement | null>;
   sheetProps?: SheetDialogProps;
+  headerActions?: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   /** Initial inspect tab. While open, the URL's `tab` parameter tracks selection. */
@@ -79,31 +84,33 @@ export type AboutDataProps = AboutSubject & {
 
 function namedGlossaryEntries(
   dataContext: DataContext | undefined,
-  ids: string[]
+  ids: readonly string[]
 ): GlossaryEntry[] {
   return ids.map(id => {
     const entry = dataContext?.glossary[id];
-    if (!entry) throw new Error(`Unknown glossary entry: ${id}.`);
+    invariant(entry, `Unknown glossary entry: ${id}.`);
 
     return entry;
   });
 }
 
 function listedGlossaryEntries({
-  glossaryEntry,
-  glossaryEntries,
+  references,
   dataContext,
-  glossaryIds,
 }: AboutSubject): GlossaryEntry[] {
-  if (glossaryEntries?.length) return glossaryEntries;
-  if (glossaryEntry) return [glossaryEntry];
-  if (glossaryIds) return namedGlossaryEntries(dataContext, glossaryIds);
+  if (references?.kind === 'entries') return [...references.entries];
+  if (references?.kind === 'ids' && references.glossaryIds)
+    return namedGlossaryEntries(dataContext, references.glossaryIds);
 
   return Object.values(dataContext?.glossary ?? {});
 }
 
 function glossaryQueries(subject: AboutSubject): string[] | undefined {
-  if (subject.queryNames?.length) return subject.queryNames;
+  if (
+    subject.references?.kind === 'ids' &&
+    subject.references.queryNames?.length
+  )
+    return [...subject.references.queryNames];
   const names = listedGlossaryEntries(subject).flatMap(
     item => item.queryNames ?? []
   );
@@ -134,6 +141,7 @@ function resolveTab(tab: string | null | undefined): AboutTab {
  * Open state uses `?about=`; tab selection uses `?tab=`. Enable the global shortcut only on the
  * page-level trigger.
  */
+
 export function AboutData({
   id,
   title,
@@ -142,11 +150,8 @@ export function AboutData({
   visualKind,
   variant,
   dataContext,
-  glossaryEntry,
-  glossaryEntries,
-  glossaryIds,
+  references,
   queries,
-  queryNames,
   empty,
   iconOnly = false,
   shortcut = true,
@@ -155,6 +160,7 @@ export function AboutData({
   footer,
   portalRoot,
   sheetProps,
+  headerActions,
   open: openProp,
   onOpenChange,
   tab,
@@ -174,19 +180,18 @@ export function AboutData({
     description,
     visual,
     dataContext: resolvedContext,
-    glossaryEntry,
-    glossaryEntries,
-    glossaryIds,
+    references,
     queries: resolvedQueries,
-    queryNames,
     empty: resolvedEmpty,
   };
   const listed = listedGlossaryEntries(subject);
   const names = glossaryQueries(subject);
   if (names && resolvedQueries?.length) {
     for (const name of names) {
-      if (!resolvedQueries.some(query => query.name === name))
-        throw new Error(`Unknown query name: ${name}.`);
+      invariant(
+        resolvedQueries.some(query => query.name === name),
+        `Unknown query name: ${name}.`
+      );
     }
   }
   const hasQueries = (resolvedQueries ?? []).some(
@@ -302,6 +307,7 @@ export function AboutData({
         wide={!!visual && visualKind !== 'metric'}
         returnFocus={triggerRef}
         footer={footer}
+        headerActions={headerActions}
       >
         {visual && (
           <div className="altertable-about-visual" data-kind={visualKind}>

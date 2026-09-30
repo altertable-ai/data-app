@@ -1,20 +1,26 @@
-import { useState, type ComponentProps, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ReactNode,
+} from 'react';
 import { createThemeController } from '@/src/core/appearance';
 import type { DisclosedQuery } from '@/src/core/contract';
 import type { DataAppConfig } from '@/src/core/config';
-import type { DataView } from '@/src/core/data-view';
+import { displayedSnapshot } from '@/src/core/data-view';
 import { AboutData, type AboutEmpty } from '@/src/react/ui/AboutData';
 import { AppHeader } from '@/src/react/ui/AppHeader';
 import { AppLayout } from '@/src/react/ui/AppLayout';
 import { AppScope } from '@/src/react/ui/AppScope';
 import { AppToolbar, type AppToolbarProps } from '@/src/react/ui/AppToolbar';
 import type { DataContext } from '@/src/react/ui/data-context';
-import type { PlayStoryProps } from '@/src/react/ui/PlayStory';
+import type { BoundStory } from '@/src/react/ui/story';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
-import { DataSection } from '@/src/react/ui/DataSection';
+import { DataSection, type SectionResult } from '@/src/react/ui/DataSection';
 import type { EmptyStateProps } from '@/src/react/ui/EmptyState';
 
 type DataAppBaseProps = {
@@ -24,9 +30,6 @@ type DataAppBaseProps = {
   description?: ReactNode;
   /** Display names only; config.scope remains the connection identity. */
   scopeLabels?: { organization?: string; environment?: string };
-  variables?: ReactNode;
-  story?: Omit<PlayStoryProps, 'title' | 'dataContext' | 'empty'> &
-    Partial<Pick<PlayStoryProps, 'title' | 'dataContext' | 'empty'>>;
   toolbarActions?: ReactNode;
   footerActions?: ReactNode;
   layoutProps?: Omit<
@@ -35,46 +38,43 @@ type DataAppBaseProps = {
   >;
 };
 
-export type DataAppRequest<Data, Input> = {
-  view: DataView<Data, Input>;
-  refetch: () => unknown;
+export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   queries?: DisclosedQuery[];
   refresh?: AppToolbarProps['refresh'];
-  empty?: Pick<EmptyStateProps, 'title' | 'description'>;
+  empty: Pick<EmptyStateProps, 'title' | 'description'>;
   controls?: ReactNode;
 };
 
 export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
   (
-    | ({
+    | {
         request: DataAppRequest<Data, Input>;
+        /** Findings are always derived from the result currently visible to the reader. */
+        story?: BoundStory<Data, Input>;
         children: (data: Data, displayedInput: Input) => ReactNode;
         loading?: ReactNode;
-        empty?: Pick<EmptyStateProps, 'title' | 'description'>;
         label?: string;
         queries?: never;
         refresh?: never;
-      } & (
-        | {
-            request: DataAppRequest<Data, Input> & {
-              empty: Pick<EmptyStateProps, 'title' | 'description'>;
-            };
-          }
-        | { empty: Pick<EmptyStateProps, 'title' | 'description'> }
-      ))
+        variables?: never;
+      }
     | {
         request?: never;
+        story?: never;
         children: ReactNode;
         queries?: DisclosedQuery[];
         refresh?: AppToolbarProps['refresh'];
+        variables?: ReactNode;
         loading?: never;
         empty?: never;
         label?: never;
       }
   );
 
-/** The primary request owns the page's result, period, refresh status, and inspection context.
+/** Owns the page title, header, gutter, and width; body content uses section headings.
+ * The primary request owns controls, empty state, displayed input, refresh, and inspection.
  * Without a request, the shell accepts authored children for setup or static views. */
+
 export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   const {
     config,
@@ -85,13 +85,25 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     request,
     queries,
     refresh,
-    variables,
-    story,
     toolbarActions,
     footerActions,
     layoutProps,
   } = props;
   const [theme] = useState(() => createThemeController(config.appearance));
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (import.meta.env?.DEV && bodyRef.current?.querySelector('h1'))
+      console.warn(
+        'DataApp owns the page title. Use section headings (h2) in its body.'
+      );
+  });
+
+  const snapshot = request && displayedSnapshot(request.view);
+  const story =
+    request && props.story && snapshot
+      ? { findings: props.story(snapshot) }
+      : undefined;
   const scope = (
     <AppScope
       organization={scopeLabels?.organization ?? config.scope.organization}
@@ -122,11 +134,11 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
               story={
                 story && {
                   ...story,
-                  title: story.title ?? config.title,
-                  scope: story.scope ?? scope,
-                  dataContext: story.dataContext ?? dataContext,
-                  empty: story.empty ?? aboutEmpty,
-                  theme: story.theme ?? theme,
+                  title: config.title,
+                  scope,
+                  dataContext,
+                  empty: aboutEmpty,
+                  theme,
                 }
               }
               aboutData={
@@ -145,22 +157,25 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
             </AppToolbar>
           }
         />
-        {(variables ?? request?.controls) && (
-          <VariableBar>{variables ?? request?.controls}</VariableBar>
+        {(request?.controls ?? props.variables) && (
+          <VariableBar>{request?.controls ?? props.variables}</VariableBar>
         )}
-        {request ? (
-          <DataSection
-            result={request}
-            notice="none"
-            loading={props.loading}
-            empty={props.empty ?? request.empty!}
-            label={props.label}
-          >
-            {(data, displayedInput) => props.children(data, displayedInput)}
-          </DataSection>
-        ) : (
-          props.children
-        )}
+        <div ref={bodyRef} className="altertable-app-body">
+          {request ? (
+            <DataSection
+              result={request}
+              notice="none"
+              dimOnUpdate={false}
+              loading={props.loading}
+              empty={request.empty}
+              label={props.label}
+            >
+              {(data, displayedInput) => props.children(data, displayedInput)}
+            </DataSection>
+          ) : (
+            props.children
+          )}
+        </div>
         {request && (
           <DataViewToast
             view={request.view}

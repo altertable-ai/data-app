@@ -1,5 +1,6 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join, posix } from 'node:path';
+import { tmpdir } from 'node:os';
 import manifest from '@/package.json';
 
 const root = process.cwd();
@@ -7,6 +8,9 @@ const bunVersion = (await readFile(join(root, '.bun-version'), 'utf8')).trim();
 if (manifest.packageManager !== `bun@${bunVersion}`)
   throw new Error('packageManager must match .bun-version.');
 const temporary = await mkdtemp(join(root, '.package-check-'));
+const minimumConsumer = await mkdtemp(
+  join(tmpdir(), 'data-app-minimum-react-')
+);
 
 async function run(
   command: string[],
@@ -235,9 +239,50 @@ if (typeof createDataHandler !== "function" || typeof localLakehouse !== "functi
   );
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
+  await writeFile(
+    join(minimumConsumer, 'package.json'),
+    JSON.stringify({ private: true, type: 'module' })
+  );
+  await run(
+    [
+      'npm',
+      'install',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--package-lock=false',
+      join(temporary, archive.filename),
+      'react@19.2.0',
+      'react-dom@19.2.0',
+    ],
+    minimumConsumer
+  );
+  await writeFile(
+    join(minimumConsumer, 'minimum.jsx'),
+    `
+import React from 'react';
+import * as ReactDOM from 'react-dom';
+import { renderToString } from 'react-dom/server';
+import { MetricWidget } from '@altertable/data-app/react';
+if (React.version !== '19.2.0' || ReactDOM.version !== '19.2.0' || typeof React.useEffectEvent !== 'function')
+  throw new Error('Minimum React consumer resolved the wrong peers');
+const html = renderToString(<MetricWidget label="Minimum React" value={0} format={{ kind: 'count' }} />);
+if (!html.includes('Minimum React') || !html.includes('>0<')) throw new Error('Minimum React render failed');
+`
+  );
+  await run(['bun', join(minimumConsumer, 'minimum.jsx')], minimumConsumer);
+  const minimumBuild = await Bun.build({
+    entrypoints: [join(minimumConsumer, 'minimum.jsx')],
+    target: 'browser',
+  });
+  if (!minimumBuild.success)
+    throw new Error(
+      `Minimum React browser build failed: ${minimumBuild.logs.map(log => log.message).join('\n')}`
+    );
   console.log(
     'Packed documentation, exports, declarations, browser CSS, and server imports verified.'
   );
 } finally {
+  await rm(minimumConsumer, { recursive: true, force: true });
   await rm(temporary, { recursive: true, force: true });
 }

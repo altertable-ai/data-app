@@ -152,13 +152,11 @@ function QueryNotebook({
           {queries.length} {queries.length === 1 ? 'SQL query' : 'SQL queries'}
         </span>
         <Button
-          aria-label={
-            copyState === 'copied' ? 'Copied all SQL' : 'Copy all SQL'
-          }
+          aria-label={copyState === 'copied' ? 'Copied all' : 'Copy all'}
           onClick={() => void copyAll()}
         >
           <AppIcon name={copyState === 'copied' ? 'check' : 'copy'} size={16} />
-          {copyState === 'copied' ? 'Copied' : 'Copy all SQL'}
+          {copyState === 'copied' ? 'Copied' : 'Copy all'}
         </Button>
       </header>
       {copyState === 'error' && (
@@ -181,6 +179,7 @@ function QueryNotebook({
  * `names` selects supporting queries. Missing query evidence is shown explicitly; `expanded`
  * skips the disclosure in a dedicated Queries view.
  */
+
 export function QueryList({
   queries,
   names,
@@ -204,8 +203,6 @@ export function QueryList({
       <p className="altertable-query-unavailable">No queries in this view.</p>
     ) : null;
   }
-  if (expanded) return <QueryNotebook queries={shown} className={className} />;
-
   const figures = shown.map(query => (
     <QueryFigure
       key={query.name}
@@ -213,6 +210,7 @@ export function QueryList({
       statement={query.statement}
     />
   ));
+  if (expanded) return <QueryNotebook queries={shown} className={className} />;
 
   return (
     <details

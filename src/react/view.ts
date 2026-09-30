@@ -5,6 +5,8 @@ import type {
   VariableCollection,
 } from '@/src/core/variables';
 import type { DateRangeRequest } from '@/src/core/contract';
+import type { DimensionVariable } from '@/src/core/dimension';
+import { invariant } from '@/src/core/invariant';
 
 export type ResolvedVariables<Variables extends VariableCollection> = {
   [Key in keyof Variables]: Variables[Key] extends DateRangeVariable
@@ -21,8 +23,17 @@ type DateVariableKey<Variables extends VariableCollection> = {
 
 export type ViewDate<Variables extends VariableCollection, Input> = {
   variable: DateVariableKey<Variables>;
+  /** Extract the selected range and comparison unchanged, including from nested inputs. */
   input: (input: Input) => DateRangeRequest;
 };
+
+/** Read variable values from a custom operation input; omitted keys use top-level fields. */
+export type ViewBindings<
+  Variables extends VariableCollection,
+  Input,
+> = Partial<{
+  [Key in keyof Variables]: (input: Input) => ResolvedVariables<Variables>[Key];
+}>;
 
 export type DataViewDefinition<
   Name extends string,
@@ -33,6 +44,8 @@ export type DataViewDefinition<
   operation: Name;
   variables: Variables;
   input: (values: ResolvedVariables<Variables>) => Input;
+  bindings?: ViewBindings<Variables, Input>;
+  /** App-owned semantics: measured zero need not mean an empty result. */
   isEmpty: (data: Data) => boolean;
   empty: Pick<EmptyStateProps, 'title' | 'description'>;
 } & (
@@ -45,31 +58,45 @@ export type DataViewDefinition<
 
 export function describeViewInput<Input>(definition: {
   variables: VariableCollection;
+  bindings?: Partial<Record<string, (input: Input) => unknown>>;
   date?: { variable: string; input: (input: Input) => DateRangeRequest };
   describeInput?: (input: Input) => string;
 }): (input: Input) => string {
   const date = definition.date;
   const variable = date && definition.variables[date.variable];
-  if (date && variable?.kind !== 'dateRange')
-    throw new Error('The view date must reference a date range variable.');
+  invariant(
+    !date || variable?.kind === 'dateRange',
+    'The view date must reference a date range variable.'
+  );
   if (definition.describeInput) return definition.describeInput;
-  if (!date || !variable)
-    throw new Error('A view needs a date binding or describeInput.');
+  invariant(date && variable, 'A view needs a date binding or describeInput.');
 
-  const dateBinding = date;
-  const dateVariable = variable as DateRangeVariable;
+  return input => {
+    const period = (variable as DateRangeVariable).describeInput(
+      date.input(input)
+    );
+    const filters = Object.entries(definition.variables)
+      .filter(([, variable]) => variable.kind === 'dimension')
+      .map(([key, filter]) => {
+        const dimension = filter as DimensionVariable<any>;
+        const selected = readViewBinding(definition, key, input);
 
-  function describeInput(input: Input) {
-    return dateVariable.describeInput(dateBinding.input(input));
-  }
+        return dimension.valid(selected as never)
+          ? `${dimension.label}: ${dimension.describe(selected as never)}`
+          : null;
+      })
+      .filter(Boolean);
 
-  return describeInput;
+    return [period, ...filters].join(' · ');
+  };
 }
 
 export function resolveViewInput<Variables extends VariableCollection, Input>(
   definition: {
     input: (values: ResolvedVariables<Variables>) => Input;
     date?: ViewDate<Variables, Input>;
+    variables: Variables;
+    bindings?: ViewBindings<Variables, Input>;
   },
   values: ResolvedVariables<Variables>
 ): Input {
@@ -77,24 +104,46 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
   if (definition.date) {
     const selected = values[definition.date.variable] as DateRangeRequest;
     const mapped = definition.date.input(input);
+    invariant(
+      mapped && mapped.range && 'comparison' in mapped,
+      'The operation input must preserve the selected date range and comparison.'
+    );
 
     function sameRange(
-      left: DateRangeRequest['comparison'],
-      right: DateRangeRequest['comparison']
+      a: DateRangeRequest['comparison'],
+      b: DateRangeRequest['comparison']
     ) {
-      return left === null || right === null
-        ? left === right
-        : left.start === right.start && left.end === right.end;
+      return a === b || (!!a && !!b && a.start === b.start && a.end === b.end);
     }
-
-    if (
-      !sameRange(selected.range, mapped.range) ||
-      !sameRange(selected.comparison, mapped.comparison)
-    )
-      throw new Error(
-        'The operation input must preserve the selected date range and comparison.'
-      );
+    invariant(
+      sameRange(selected.range, mapped.range) &&
+        sameRange(selected.comparison, mapped.comparison),
+      'The operation input must preserve the selected date range and comparison.'
+    );
+  }
+  for (const [key, variable] of Object.entries(definition.variables)) {
+    if (variable.kind !== 'dimension') continue;
+    const filter = variable as DimensionVariable<any>;
+    const selected = values[key] as never;
+    const mapped = readViewBinding(definition, key, input);
+    invariant(
+      filter.valid(mapped as never) && filter.same(selected, mapped as never),
+      `The operation input must preserve the ${key} dimension selection.`
+    );
   }
 
   return input;
+}
+
+function readViewBinding<Input>(
+  definition: { bindings?: Partial<Record<string, (input: Input) => unknown>> },
+  key: string,
+  input: Input
+): unknown {
+  const read = definition.bindings?.[key];
+  if (read) return read(input);
+
+  return input && typeof input === 'object'
+    ? (input as Record<string, unknown>)[key]
+    : undefined;
 }

@@ -1,5 +1,9 @@
 import {
   createContext,
+  useId,
+  Children,
+  cloneElement,
+  isValidElement,
   useContext,
   useEffect,
   useEffectEvent,
@@ -33,6 +37,7 @@ export type TooltipProviderProps = {
 
 /** Delay the first hover, then open nearby tooltips without waiting during the skip window.
  * Keyboard focus always opens immediately. AppLayout provides this by default. */
+
 export function TooltipProvider({
   children,
   delay = 500,
@@ -70,6 +75,7 @@ export type TooltipProps = {
 /** Short visual hint for an already labeled control. variant="chart" follows the cursor
  * on hover and toggles on tap so a bar or point can show the period and value. Hint
  * tooltips hide once the control is pressed. Escape closes either. */
+
 export function Tooltip({
   content,
   children,
@@ -88,6 +94,8 @@ export function Tooltip({
   onBlurCapture,
   ...props
 }: TooltipProps) {
+  const tooltipId = useId();
+  const describedBy = tooltipProps?.id ?? tooltipId;
   const timing = useContext(TooltipContext);
   const [open, setOpen] = useState(false);
   const [dialogRoot, setDialogRoot] = useState<HTMLDialogElement | null>(null);
@@ -269,7 +277,19 @@ export function Tooltip({
           if (!event.currentTarget.matches(':hover')) close();
         }}
       >
-        {children}
+        {Children.map(children, child =>
+          isValidElement<{ 'aria-describedby'?: string }>(child)
+            ? cloneElement(child, {
+                'aria-describedby':
+                  [
+                    child.props['aria-describedby'],
+                    open ? describedBy : undefined,
+                  ]
+                    .filter(Boolean)
+                    .join(' ') || undefined,
+              })
+            : child
+        )}
       </span>
       {open && (
         <FloatingPortal root={portalRoot ?? dialogRoot ?? undefined}>
@@ -283,6 +303,7 @@ export function Tooltip({
             )}
             style={{ ...tooltipProps?.style, ...floatingStyles }}
             role="tooltip"
+            id={describedBy}
           >
             {content}
           </span>

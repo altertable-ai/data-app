@@ -1,9 +1,10 @@
 import { defineQueryNames } from '@/src/core/contract';
+import { invariant } from '@/src/core/invariant';
 import type { ReactNode } from 'react';
 import type { DataIdentifierDefinition } from '@/src/react/ui/data-identifiers';
 import type { MetricFormat } from '@/src/core/format';
 import type { MetricDefinition } from '@/src/react/ui/metric';
-import type { StoryStep } from '@/src/react/ui/PlayStory';
+import type { StoryFinding } from '@/src/react/ui/story';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
 export type GlossaryEntry = {
@@ -16,6 +17,7 @@ export type DataContext = {
   description: ReactNode;
   glossary: Record<string, GlossaryEntry>;
   identifiers?: Readonly<Record<string, DataIdentifierDefinition>>;
+  queryNames?: Readonly<Record<string, string>>;
 };
 
 export function defineDataContext<const Context extends DataContext>(
@@ -28,19 +30,20 @@ export function evidenceFor<
   const Context extends DataContext,
   const Names extends Record<string, string> = Record<string, string>,
 >(context: Context, names?: Names) {
-  function validateEvidence(evidence: {
+  return (evidence: {
     id: string;
     glossaryIds?: readonly (keyof Context['glossary'] & string)[];
     queryNames?: readonly Names[keyof Names][];
-  }) {
+  }) => {
     for (const id of evidence.glossaryIds ?? []) {
-      if (!context.glossary[id])
-        throw new Error(`Unknown glossary entry: ${id}.`);
+      invariant(context.glossary[id], `Unknown glossary entry: ${id}.`);
     }
     if (names)
       for (const name of evidence.queryNames ?? []) {
-        if (!Object.values(names).includes(name))
-          throw new Error(`Unknown query name: ${name}.`);
+        invariant(
+          Object.values(names).includes(name),
+          `Unknown query name: ${name}.`
+        );
       }
 
     return {
@@ -48,18 +51,17 @@ export function evidenceFor<
       glossaryIds: evidence.glossaryIds ? [...evidence.glossaryIds] : undefined,
       queryNames: evidence.queryNames ? [...evidence.queryNames] : undefined,
     };
-  }
-
-  return validateEvidence;
+  };
 }
 
 /** Bind glossary query references and card evidence to the same registry. */
+
 export function createDataContext<const Names extends Record<string, string>>(
   queryNames: Names
 ) {
   defineQueryNames(queryNames);
 
-  function bindDataContext<
+  return <
     const Context extends Omit<DataContext, 'glossary'> & {
       glossary: Record<
         string,
@@ -68,12 +70,16 @@ export function createDataContext<const Names extends Record<string, string>>(
         }
       >;
     },
-  >(context: Context) {
+  >(
+    context: Context
+  ) => {
     const known = new Set(Object.values(queryNames));
     for (const [id, entry] of Object.entries(context.glossary)) {
       for (const query of entry.queryNames ?? []) {
-        if (!known.has(query))
-          throw new Error(`Unknown query ${query} for glossary entry ${id}.`);
+        invariant(
+          known.has(query),
+          `Unknown query ${query} for glossary entry ${id}.`
+        );
       }
     }
     const references = evidenceFor(context, queryNames);
@@ -92,11 +98,11 @@ export function createDataContext<const Names extends Record<string, string>>(
           }
       )
     ): WidgetEvidence {
-      if (!input.id.trim()) throw new Error('Evidence needs a nonempty ID.');
-      if (!input.glossaryIds?.length && !input.queryNames?.length)
-        throw new Error(
-          `Evidence ${input.id} needs a glossary entry or query name.`
-        );
+      invariant(!!input.id.trim(), 'Evidence needs a nonempty ID.');
+      invariant(
+        !!input.glossaryIds?.length || !!input.queryNames?.length,
+        `Evidence ${input.id} needs a glossary entry or query name.`
+      );
       const validated = references(input);
       if (validated.glossaryIds?.length)
         return {
@@ -116,19 +122,12 @@ export function createDataContext<const Names extends Record<string, string>>(
       };
     }
 
-    function storyStep<
-      const Step extends Omit<StoryStep, 'glossaryIds' | 'queryNames'> & {
-        glossaryIds?: readonly (keyof Context['glossary'] & string)[];
-        queryNames?: readonly Names[keyof Names][];
-      },
-    >(step: Step): StoryStep {
-      const stepReferences = references({
-        id: step.id,
-        glossaryIds: step.glossaryIds,
-        queryNames: step.queryNames,
-      });
-
-      return { ...step, ...stepReferences };
+    function finding(
+      input: Omit<StoryFinding, 'evidence'> & {
+        evidence: Parameters<typeof evidence>[0];
+      }
+    ): StoryFinding & { evidence: WidgetEvidence } {
+      return { ...input, evidence: evidence(input.evidence) };
     }
 
     function metric(definition: {
@@ -157,8 +156,6 @@ export function createDataContext<const Names extends Record<string, string>>(
       };
     }
 
-    return { ...context, queryNames, evidence, storyStep, metric };
-  }
-
-  return bindDataContext;
+    return { ...context, queryNames, evidence, finding, metric };
+  };
 }

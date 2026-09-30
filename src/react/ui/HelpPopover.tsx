@@ -23,6 +23,7 @@ import {
 } from '@floating-ui/react';
 import { classNames } from '@/src/react/ui/classNames';
 import '@/src/react/ui/HelpPopover.css';
+import '@/src/react/ui/Button.css';
 
 export type HelpPopoverTriggerProps = Omit<
   ComponentPropsWithRef<'button'>,
@@ -51,6 +52,7 @@ export type HelpPopoverProps = {
 /** A supplemental explanation that opens on click, Enter, or a deliberate mouse hover. Tabbing
  * past the trigger does not open it, and a click keeps a hover-opened panel in place.
  * triggerProps and panelProps target its two surfaces. */
+
 export function HelpPopover({
   trigger,
   triggerLabel,
@@ -73,7 +75,6 @@ export function HelpPopover({
     onOpenChange?.(next);
     if (openProp === undefined) setUncontrolledOpen(next);
   }
-
   const { refs, floatingStyles, context } = useFloating({
     open,
     onOpenChange: setOpen,
@@ -109,7 +110,12 @@ export function HelpPopover({
         })}
         ref={mergedTriggerRef}
         type="button"
-        className={classNames(triggerClassName, triggerProps?.className)}
+        className={classNames(
+          triggerClassName ?? 'altertable-button',
+          triggerProps?.className
+        )}
+        data-variant={triggerClassName ? undefined : 'outline'}
+        data-size={triggerClassName ? undefined : 'compact'}
         data-open={open}
       >
         {trigger}

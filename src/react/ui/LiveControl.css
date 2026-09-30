@@ -1,5 +1,9 @@
 .altertable-live-control {
   display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-self: flex-start;
+  flex: none;
   align-items: stretch;
   height: 36px;
   overflow: hidden;
@@ -57,8 +61,11 @@
   background: var(--at-subtle, #f6f7f7);
 }
 .altertable-live-frequency > button[data-focus-visible] {
-  outline: 2px solid var(--at-accent, #4779dc);
-  outline-offset: 2px;
+  outline: var(--at-focus-outline, 1px solid #687078);
+  outline-offset: var(--at-focus-ring-inset, -1px);
+}
+.altertable-live-control .altertable-button:focus-visible {
+  outline-offset: var(--at-focus-ring-inset, -1px);
 }
 .altertable-live-frequency-popover {
   z-index: 1000;
@@ -85,6 +92,10 @@
 .altertable-live-frequency-popover
   [role='option']:is([data-focused], [data-hovered]) {
   background: var(--at-subtle, #f6f7f7);
+}
+.altertable-live-frequency-popover [role='option'][data-focus-visible] {
+  outline: var(--at-focus-outline, 1px solid #687078);
+  outline-offset: var(--at-focus-ring-inset, -1px);
 }
 .altertable-live-frequency-popover [role='option'][data-selected] {
   color: var(--at-accent, #4779dc);

@@ -1,4 +1,5 @@
 import type { ComponentPropsWithRef } from 'react';
+import { invariant } from '@/src/core/invariant';
 import { classNames } from '@/src/react/ui/classNames';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 import '@/src/react/ui/ContentSkeleton.css';
@@ -9,21 +10,24 @@ export type ContentSkeletonProps = {
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** A metric, panel, or ranking placeholder to compose in the same layout as live content. */
+
 export function ContentSkeleton({
   variant,
   rows = 4,
   className,
   ...props
 }: ContentSkeletonProps) {
-  if (!Number.isInteger(rows) || rows < 0 || rows > 100)
-    throw new Error('Skeleton rows must be between 0 and 100.');
+  invariant(
+    Number.isInteger(rows) && rows >= 0 && rows <= 100,
+    'Skeleton rows must be between 0 and 100.'
+  );
 
   return (
     <div
       {...props}
       aria-hidden="true"
       className={classNames(
-        `altertable-${variant === 'metric' ? 'metric-widget' : 'data-panel'}`,
+        `altertable-${variant === 'metric' ? 'metric-widget' : 'data-widget'}`,
         'altertable-content-skeleton',
         className
       )}
