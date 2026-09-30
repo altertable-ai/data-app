@@ -1,4 +1,6 @@
 import { expect, test } from 'bun:test';
+import { defineOperation, parseCount } from '@/src/core/contract';
+import { createDataHandler } from '@/src/server/index';
 import * as runtime from '@/src/server/index';
 import * as contract from '@/src/core/contract';
 import * as local from '@/src/server/local';
@@ -263,4 +265,191 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
   expect(JSON.stringify(await denied.json())).not.toContain(
     'private authorization detail'
   );
+});
+
+function cancellationOperation(run: (signal: AbortSignal) => Promise<number>) {
+  return defineOperation({
+    input(value: unknown) {
+      return value;
+    },
+    output(value: unknown) {
+      return parseCount(value);
+    },
+    checks: [{}],
+    policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+    run({ signal }) {
+      return run(signal);
+    },
+  });
+}
+
+async function responseWithin(response: Promise<Response>) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      response,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('Handler did not settle after cancellation.')),
+          100
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function cancellableRequest(controller: AbortController) {
+  return new Request('http://localhost/api/data/cancel', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{}',
+    signal: controller.signal,
+  });
+}
+
+const cancellationAccess = {
+  canDiscloseSql: false,
+  lakehouse: {
+    async queryAll() {
+      return { columns: [], rows: [] };
+    },
+  },
+};
+
+test('cancellation during authorization prevents operation execution', async () => {
+  const controller = new AbortController();
+  let calls = 0;
+  const handler = createDataHandler(
+    {
+      cancel: cancellationOperation(async () => {
+        calls++;
+
+        return new Promise(() => {});
+      }),
+    },
+    async () => {
+      controller.abort();
+
+      return cancellationAccess;
+    }
+  );
+  const response = await responseWithin(
+    handler(cancellableRequest(controller))
+  );
+  expect(response.status).toBe(504);
+  expect(calls).toBe(0);
+});
+
+test('synchronous startup cancellation settles even when the operation never does', async () => {
+  const controller = new AbortController();
+  const handler = createDataHandler(
+    {
+      cancel: cancellationOperation(async () => {
+        controller.abort();
+
+        return new Promise(() => {});
+      }),
+    },
+    async () => cancellationAccess
+  );
+  const response = await responseWithin(
+    handler(cancellableRequest(controller))
+  );
+  expect(response.status).toBe(504);
+  expect((await response.json()).error.code).toBe('timeout');
+});
+
+test('later cancellation settles an operation that ignores its signal', async () => {
+  const controller = new AbortController();
+  const handler = createDataHandler(
+    {
+      cancel: cancellationOperation(async () => {
+        setTimeout(() => controller.abort(), 0);
+
+        return new Promise(() => {});
+      }),
+    },
+    async () => cancellationAccess
+  );
+  expect(
+    (await responseWithin(handler(cancellableRequest(controller)))).status
+  ).toBe(504);
+});
+
+test('execution deadlines settle operations that ignore cancellation', async () => {
+  const operation = cancellationOperation(async () => new Promise(() => {}));
+  operation.policy.maxDurationMs = 10;
+  const handler = createDataHandler(
+    { cancel: operation },
+    async () => cancellationAccess
+  );
+  expect(
+    (await responseWithin(handler(cancellableRequest(new AbortController()))))
+      .status
+  ).toBe(504);
+});
+
+test('operation success and synchronous failure remove cancellation listeners', async () => {
+  const originalAdd = Reflect.get(
+    AbortSignal.prototype,
+    'addEventListener'
+  ) as AbortSignal['addEventListener'];
+  const originalRemove = Reflect.get(
+    AbortSignal.prototype,
+    'removeEventListener'
+  ) as AbortSignal['removeEventListener'];
+  const active = new Map<
+    AbortSignal,
+    Set<EventListenerOrEventListenerObject>
+  >();
+  AbortSignal.prototype.addEventListener = function addListener(
+    this: AbortSignal,
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions
+  ) {
+    if (type === 'abort' && listener) {
+      const listeners = active.get(this) ?? new Set();
+      listeners.add(listener);
+      active.set(this, listeners);
+    }
+
+    return originalAdd.call(this, type, listener, options);
+  };
+  AbortSignal.prototype.removeEventListener = function removeListener(
+    this: AbortSignal,
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | EventListenerOptions
+  ) {
+    if (type === 'abort' && listener) active.get(this)?.delete(listener);
+
+    return originalRemove.call(this, type, listener, options);
+  };
+  try {
+    for (const fail of [false, true]) {
+      let executionSignal: AbortSignal | undefined;
+      const handler = createDataHandler(
+        {
+          cancel: cancellationOperation(signal => {
+            executionSignal = signal;
+            if (fail) throw new Error('Synchronous failure');
+
+            return Promise.resolve(1);
+          }),
+        },
+        async () => cancellationAccess
+      );
+      expect(
+        (await handler(cancellableRequest(new AbortController()))).status
+      ).toBe(fail ? 502 : 200);
+      expect(executionSignal).toBeDefined();
+      expect(active.get(executionSignal!)?.size).toBe(0);
+    }
+  } finally {
+    AbortSignal.prototype.addEventListener = originalAdd;
+    AbortSignal.prototype.removeEventListener = originalRemove;
+  }
 });

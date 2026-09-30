@@ -25,6 +25,7 @@ export type RequestAccess = { lakehouse: Lakehouse; canDiscloseSql: boolean };
  * authenticate another local process. SQL is returned only when both the operation and
  * authorization result permit disclosure.
  */
+
 export function createDataHandler(
   operations: DataOperations,
   authorize: (request: Request, operation: string) => Promise<RequestAccess>
@@ -148,22 +149,28 @@ export function createDataHandler(
         return result;
       },
     };
+    let abort: (() => void) | undefined;
     try {
+      signal.throwIfAborted();
+      const cancelled = new Promise<never>((_, reject) => {
+        function rejectAborted() {
+          reject(new Error('Request aborted.'));
+        }
+        abort = rejectAborted;
+        signal.addEventListener('abort', rejectAborted, { once: true });
+        if (signal.aborted) rejectAborted();
+      });
       const data = operation.output(
         await Promise.race([
-          operation.run(
-            { lakehouse: boundedLakehouse, signal },
-            input as never
-          ),
-          new Promise<never>((_, reject) =>
-            signal.addEventListener(
-              'abort',
-              () => reject(new Error('Request aborted.')),
-              {
-                once: true,
-              }
-            )
-          ),
+          cancelled,
+          Promise.resolve().then(() => {
+            signal.throwIfAborted();
+
+            return operation.run(
+              { lakehouse: boundedLakehouse, signal },
+              input as never
+            );
+          }),
         ])
       );
       const result = {
@@ -211,6 +218,8 @@ export function createDataHandler(
           : 'The data request failed.',
         requestId
       );
+    } finally {
+      if (abort) signal.removeEventListener('abort', abort);
     }
   }
 
