@@ -1,3 +1,4 @@
+import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
 import gallery from '@/browser-tests/fixtures/gallery.html';
 import bundleHost from '@/browser-tests/fixtures/bundle-host.html';
 import bridgeHost from '@/browser-tests/fixtures/bridge-host.html';
@@ -36,6 +37,7 @@ Bun.serve({
   development: false,
   routes: {
     '/gallery': gallery,
+    '/hooks-app': hooksApp,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,

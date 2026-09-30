@@ -1,10 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import {
-  keepPreviousData,
-  hashKey,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DataOperations, DateRangeRequest } from '@/src/core/contract';
 import type { DataClient, InputOf, OutputOf } from '@/src/client/index';
 import { displayedSnapshot, resolveDataView } from '@/src/core/data-view';
@@ -81,7 +76,9 @@ export function createDataHooks<Operations extends DataOperations>(
       queryFn({ signal }) {
         return client.query(name, input, { signal });
       },
-      placeholderData: keepPreviousData,
+      placeholderData(previousData, previousQuery) {
+        return previousQuery?.queryKey[1] === name ? previousData : undefined;
+      },
       enabled: options?.enabled,
       ...(options?.staleTime !== undefined && { staleTime: options.staleTime }),
       ...(options?.gcTime !== undefined && { gcTime: options.gcTime }),

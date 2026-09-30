@@ -241,3 +241,7 @@ Contributors can preview `/gallery` on the browser fixture server with
 `bun browser-tests/server.ts`. The gallery covers control, widget, request,
 inspection, and narrow-layout defaults. `bun run test:browser` verifies desktop
 and phone interactions. Fixtures are excluded from the published package.
+
+Previous data and evidence are retained only when the input changes within the
+same operation. Switching to another operation shows its own cached response or
+an initial loading/error state; it never inherits another operation's result.
