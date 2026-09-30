@@ -45,6 +45,10 @@ consumers.
 
 ## Checks
 
+Run `bun run build` before individual typecheck, lint, or browser checks. Browser
+fixtures import the public package exports and need the generated declarations
+in `dist`. `bun run check` builds first, including on a fresh checkout.
+
 | Command                   | Purpose                                          |
 | ------------------------- | ------------------------------------------------ |
 | `bun run typecheck`       | Validate source, tests, and scripts              |

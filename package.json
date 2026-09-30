@@ -90,7 +90,7 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "bun test ./tests",
-    "check": "bun run typecheck && bun run lint && bun run format:check && bun run test && bun run build && bun run test:package",
+    "check": "bun run build && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run test:package",
     "test:package": "bun run scripts/check-package.ts",
     "check:workflows": "bash scripts/check-workflows.sh",
     "test:browser": "playwright test --config browser-tests/playwright.config.ts",
