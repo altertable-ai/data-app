@@ -22,6 +22,9 @@
     "type": "git",
     "url": "git+https://github.com/altertable-ai/data-app.git"
   },
+  "workspaces": [
+    "examples/starter"
+  ],
   "files": [
     "dist",
     "docs",
@@ -90,11 +93,12 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "bun test ./tests",
-    "check": "bun run build && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run test:package",
+    "check": "bun run build && bun run typecheck && bun run lint && bun run format:check && bun run test && bun run test:package && bun run test:starter",
     "test:package": "bun run scripts/check-package.ts",
     "check:workflows": "bash scripts/check-workflows.sh",
     "test:browser": "playwright test --config browser-tests/playwright.config.ts",
-    "lint:fix": "oxlint --type-aware --fix src tests scripts browser-tests"
+    "lint:fix": "oxlint --type-aware --fix src tests scripts browser-tests",
+    "test:starter": "bun run scripts/check-starter.ts"
   },
   "dependencies": {
     "@floating-ui/react": "0.27.20",

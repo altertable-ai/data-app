@@ -47,5 +47,7 @@ interactions at phone and desktop widths, including loading, empty, error, and
 stale states. Verify that the exploration answers the user's question.
 ```
 
-The CLI's existing starter remains owned by its repository. Updating its template
-and checks to consume the published package is a separate migration.
+A runnable port of the CLI starter lives in
+[`examples/starter`](https://github.com/altertable-ai/data-app/tree/main/examples/starter). It consumes the built public
+package and keeps its own app instructions. Updating CLI scaffolding to consume
+the published package remains a separate migration.

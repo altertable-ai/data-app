@@ -48,6 +48,12 @@ The package ships these docs alongside its built JavaScript and declarations.
 For agent-assisted work, direct your agent to
 `node_modules/@altertable/data-app/AGENTS.md`.
 
+## Starter example
+
+The [runnable starter](https://github.com/altertable-ai/data-app/tree/main/examples/starter) includes app configuration,
+server operations, a React connectivity screen, and agent instructions.
+Use it as the starting point for an app that consumes the public package.
+
 ## Development
 
 ```fish
