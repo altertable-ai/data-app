@@ -6,17 +6,16 @@ server dependency.
 
 ```ts
 import { createDataClient } from '@altertable/data-app/client';
-import { operations } from './operations';
+import type { operations } from './operations';
 
-const client = createDataClient({ operations });
+const client = createDataClient<typeof operations>();
 const response = await client.query('activity', input, { signal });
 ```
 
 The app defines `operations`, `input`, and an optional cancellation `signal`.
-Operation input and output types come from that registry. The same call is used
-locally and in the Altertable product host. A local-only bundle may instead
-`import type { operations }` and call `createDataClient<typeof operations>()` so
-SQL stays on the server.
+Operation input and output types are inferred from the server registry. Keep the
+registry import type-only so its SQL and implementation stay on the server. The
+same client call is used locally and in a hosted app.
 
 The default endpoint is `/api/data`. Override it with
 `createDataClient({ endpoint, fetch })` to change the base URL or supply a Fetch
@@ -78,38 +77,14 @@ validate messages. The bridge retains opaque host state through `snapshot()` and
 `subscribe(listener)`; only authenticated, current-session state reaches subscribers.
 It never changes browser history or interprets the host state.
 
-## Local and hosted execution
+## Local and hosted apps
 
-Pass the operation registry when the same source may run outside a Bun or
-self-hosted server:
-
-```ts
-import { operations } from './operations';
-
-const client = createDataClient({ operations });
-```
-
-The client sends `data:query` with `{ operation, input }`. It does not send SQL
-or credentials. A local preview host or HTTP server runs the operation. The
-registry is not executed in the browser on that path.
-
-If the installed iframe transport rejects `data:query` with `unknown_route`, and
-HTTP was not selected, the client runs that same operation. Each `query()`
-statement is sent to the host as `query:execute` with `{ sql }` only. Later
-calls on that client skip the missing route. Timeouts, forbidden responses, and
-query failures do not switch paths. `query:execute` is not part of
-`dataAppRoutes`, and app code should not call it. `@altertable/data-app-runtime`
+The browser client is the same in both places. It sends `data:query` with
+`{ operation, input }` and does not send SQL or credentials. A local server, the
+Bun adapter, or a host using
+[`createHostedQueryHandler`](server.md#hosting-named-operations) runs the
+operation registry next to the lakehouse credentials. `@altertable/data-app-runtime`
 is not an import path.
-
-The host keeps lakehouse credentials. Operation row, duration, and response
-limits still apply. `queries` is included when the operation sets `exposeSql`,
-because those statements are already in the app. Query errors use
-`source_query_rejected`. A missing host transport uses `bridge_unavailable`.
-
-A host that does not implement named operations should reject `data:query` with
-code `unknown_route`. A different rejection code is a host-bridge gap: the app
-still calls `client.query`, and it should not grow a direct SQL call while that
-gap is open.
 
 ## App navigation
 

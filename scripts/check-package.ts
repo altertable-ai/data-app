@@ -165,9 +165,9 @@ try {
   );
   await writeFile(
     join(temporary, 'server.ts'),
-    `import { createDataHandler } from "@altertable/data-app/server";
+    `import { createDataHandler, createHostedQueryHandler, createQueryExecutorLakehouse } from "@altertable/data-app/server";
 import { localLakehouse } from "@altertable/data-app/server/bun";
-if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
+if (typeof createDataHandler !== "function" || typeof createHostedQueryHandler !== "function" || typeof createQueryExecutorLakehouse !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
 `
   );

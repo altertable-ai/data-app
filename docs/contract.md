@@ -97,7 +97,6 @@ for named operations and navigation. Generic hosts must delegate operation
 validation and authorization to their server. Request handlers receive `{ signal }`
 for cancellation.
 
-Do not add a host SQL route to `dataAppRoutes`. Hosts built with this package
-implement `data:query` for named operations. A client can run the same registry
-when a host rejects that route; see
-[local and hosted execution](client.md#local-and-hosted-execution).
+Do not add a host SQL route to `dataAppRoutes`. Hosts implement `data:query`
+for named operations and run the registry next to credentials. See
+[Hosting named operations](server.md#hosting-named-operations).

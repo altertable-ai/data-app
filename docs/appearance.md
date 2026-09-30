@@ -26,10 +26,10 @@ and returns a cleanup function for system-theme listening.
 independently of app-authored brand settings. Storage failures do not prevent
 the selection from applying to the current page.
 
-`applyAppearance` writes the active background and text colors onto `html`,
-`body`, and `#root`, and the [React stylesheet](react-styles.md) paints those
-elements from `--at-background` and `--at-text`. A dark theme fills the page
-canvas, including a hosted iframe, from those tokens.
+`applyAppearance` sets `--at-background` and `--at-text` on the document root.
+The [React stylesheet](react-styles.md) paints `html`, `body`, `#root`, and the
+app layout from those tokens, so a dark theme fills the page canvas without
+inline colors on the mount node.
 
 `typography.heading` is the page title, widget titles, metric values, and ranking
 labels. Use a UI text family. A display face such as Impact stays difficult to

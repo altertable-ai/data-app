@@ -23,13 +23,13 @@ Import public subpath entries such as `@altertable/data-app/client`,
 has no root export. `@altertable/data-app-runtime` is not an import path.
 
 Write one app. Named operations, `createDataClient`, and `useDataView` are the
-data path locally and in the Altertable product host. Pass the operation
-registry into `createDataClient({ operations })` so a host without `data:query`
-can run those operations; the host keeps credentials and executes SQL. A
-local-only bundle may use `import type` and omit the registry. Do not send SQL
-from app code with `getDataAppTransport()`. See
-[app authoring](docs/app-authoring.md). Import the React stylesheet once in the
-browser entry. Edit app-owned files, not installed package files.
+data path locally and in a hosted embed. Use `import type` for operation types
+in browser code. The host runs the registry next to credentials and adapts
+`data:query` to its SQL executor. Do not send SQL from app code. See
+[app authoring](docs/app-authoring.md) and
+[hosting named operations](docs/server.md#hosting-named-operations). Import the
+React stylesheet once in the browser entry. Edit app-owned files, not installed
+package files.
 
 Inspect source data and time coverage before choosing an exploration. Build
 findings from observed results and preserve loading, empty, error, and stale

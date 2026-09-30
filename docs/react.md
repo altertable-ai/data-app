@@ -59,7 +59,7 @@ import {
   VisualizationWidget,
   Ranking,
 } from '@altertable/data-app/react';
-import { operations } from '#app/operations.ts';
+import type { operations } from '#app/operations.ts';
 import { calendar } from '#app/contracts.ts';
 import { dataContext, actions } from '#app/data-context.tsx';
 import config from '#config';
@@ -70,9 +70,8 @@ const period = dateRangeVariable({
   comparison: true,
   defaultValue: { kind: 'preset', id: 'last-30' },
 });
-const { defineDataView, useView } = createDataHooks(
-  createDataClient({ operations })
-);
+const { defineDataView, useView } =
+  createDataHooks(createDataClient<typeof operations>());
 const activityView = defineDataView({
   operation: 'activity',
   variables: { period },
@@ -142,10 +141,6 @@ Bound `VisualizationWidget` and `TableWidget` calls require `evidence` from `con
 `MetricWidget` and `ComparisonVisual` both accept the same `metric` and `reading`. The comparison is enabled by the displayed result's range. The definition supplies formatting and evidence; a reading cannot override those or provide a second value. `favorableDirection` is optional; changes are neutral until the author defines whether up or down is favorable.
 
 `defineDataContent` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `DataSection` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
-
-`createDataClient({ operations })` keeps these views on named operations when a
-host only executes SQL. A local-only app may omit the registry and use
-`createDataClient<typeof operations>()` with a type-only import.
 
 ## Bind evidence
 

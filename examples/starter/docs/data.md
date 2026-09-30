@@ -14,9 +14,8 @@ exploration. Use bounded queries and observed results.
 Read `node_modules/@altertable/data-app/docs/contract.md` to define named
 operations. Credentials and SQL stay on the server for this local starter.
 Browser code imports the operation registry with `import type`; share input
-contracts in a separate module. The same operations work in a hosted app when
-the client is created with `createDataClient({ operations })`. Do not add a
-separate SQL call for that host.
+contracts in a separate module. A hosted embed uses the same `data:query`
+client. The host runs these operations. Do not add a SQL call in the app.
 Use a date variable for ongoing questions and a fixed period for deliberate
 historical explorations. Verify source identity and available coverage before
 labeling the app's scope.

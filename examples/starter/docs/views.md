@@ -6,8 +6,7 @@ Check actual content at phone and desktop widths in both themes.
 Read `node_modules/@altertable/data-app/docs/react.md` for typed views,
 variables, request states, skeletons, metrics, evidence, and Present steps.
 Use `createDataClient<typeof operations>()` with a type-only registry import.
-Pass `createDataClient({ operations })` when the same app must also run in a
-host that only executes SQL.
+The same call is the hosted path.
 Keep the stylesheet import in `src/main.tsx`.
 
 Replace `GettingStarted` in `src/App.tsx` with a view of your operation's result.

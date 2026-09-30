@@ -8,10 +8,6 @@ body,
   color: var(--at-text, #202124);
   background: var(--at-background, #fff);
 }
-body,
-#root {
-  min-height: 100dvh;
-}
 .altertable-app-layout {
   display: flex;
   flex-direction: column;

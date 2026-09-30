@@ -1,12 +1,15 @@
 import { expect, test } from 'bun:test';
 import { applyAppearance } from '@/src/core/appearance';
 
-test('dark appearance paints the page canvas from the palette', () => {
+test('dark appearance installs canvas tokens without inline element colors', () => {
+  const tokens = new Map<string, string>();
   const rootStyle = {
     colorScheme: '',
     backgroundColor: '',
     color: '',
-    setProperty() {},
+    setProperty(name: string, value: string) {
+      tokens.set(name, value);
+    },
   };
   const body = { style: { backgroundColor: '', color: '' } };
   const appRoot = { style: { backgroundColor: '', color: '' } };
@@ -31,12 +34,12 @@ test('dark appearance paints the page canvas from the palette', () => {
   try {
     const stop = applyAppearance({ mode: 'dark', baseColor: 'slate' });
     expect(rootStyle.colorScheme).toBe('dark');
-    expect(rootStyle.backgroundColor).toBe('#111820');
-    expect(rootStyle.color).toBe('#f0f4f8');
-    expect(body.style.backgroundColor).toBe('#111820');
-    expect(body.style.color).toBe('#f0f4f8');
-    expect(appRoot.style.backgroundColor).toBe('#111820');
-    expect(appRoot.style.color).toBe('#f0f4f8');
+    expect(tokens.get('--at-background')).toBe('#111820');
+    expect(tokens.get('--at-text')).toBe('#f0f4f8');
+    expect(rootStyle.backgroundColor).toBe('');
+    expect(rootStyle.color).toBe('');
+    expect(body.style.backgroundColor).toBe('');
+    expect(appRoot.style.backgroundColor).toBe('');
     stop();
   } finally {
     globalThis.document = previousDocument;
@@ -60,4 +63,7 @@ test('ranking and page shell styles keep text and canvas on theme tokens', async
   expect(layout).toContain(
     'html,\nbody,\n#root {\n  margin: 0;\n  color: var(--at-text, #202124);\n  background: var(--at-background, #fff);'
   );
+  expect(layout).not.toContain('body,\n#root {\n  min-height: 100dvh;');
+  expect(layout).toContain('.altertable-app-layout');
+  expect(layout).toContain('min-height: 100dvh;');
 });
