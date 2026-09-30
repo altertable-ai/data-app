@@ -37,6 +37,11 @@ The manifest starts at the imported runtime version `0.59.1`. This records the
 version baseline, not a claim that it is published. Release Please computes the
 next version from release-relevant commits on `main`.
 
+While the package is below `1.0.0`, breaking changes bump the minor version via
+`bump-minor-pre-major`. Features also bump the minor version, and fixes bump the
+patch version. Breaking changes remain documented in release notes. Remove this
+option when preparing the first stable `1.0.0` release.
+
 ## Release flow
 
 1. Merge Conventional Commits into `main`.
