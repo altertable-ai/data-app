@@ -28,6 +28,9 @@ instead.
 `src/embed/standalone.ts` emits `dist/bootstrap.js` as a self-contained classic
 script for backend HTML. It reads its trusted parent origin from the script
 element; keep app navigation and UI dependencies out of this artifact.
+The same build embeds this script in `src/worker/index.ts` to emit the single-file
+`dist/worker.js` deployment asset. Worker request policy and HTML live in the
+package; deployments supply domain and trusted-origin bindings.
 
 Keep core, client, server, and embed free of React and UI imports. Client and
 server may depend on core; neither may import the other. Embed may depend on core

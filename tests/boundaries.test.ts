@@ -8,6 +8,7 @@ const layers = {
   client: new Set(['core', 'client']),
   server: new Set(['core', 'server']),
   embed: new Set(['core', 'client', 'embed']),
+  worker: new Set(['worker']),
 } as const;
 
 test('non-React layers import only their allowed source layers', async () => {

@@ -45,10 +45,13 @@ the host document or use same-origin privileges. Both modes use
 
 ## Trusted bootstrap
 
-For backend HTML that embeds a ready-made script without bundling, use the
-[standalone bootstrap asset](bootstrap.md).
+For Cloudflare hosting, upload the [Worker asset](worker.md). It includes the
+bootstrap HTML and security policy; deployments supply the runtime domain and
+trusted parent origins through bindings.
 
-Bundle this initializer into the trusted bootstrap document, before any app code:
+For other hosts that own their HTML and security policy, embed the
+[standalone bootstrap asset](bootstrap.md). If your host already bundles its
+bootstrap document, use this initializer before any app code:
 
 ```ts
 import { startDataAppBootstrap } from '@altertable/data-app/embed';

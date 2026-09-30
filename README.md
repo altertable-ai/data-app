@@ -36,6 +36,7 @@ import { mountDataApp } from '@altertable/data-app/react';
 | [/server/bun](docs/server-bun.md)         | Serve an app locally with Bun                         |
 | [/embed](docs/embed.md)                   | Host URL apps or sandboxed JavaScript bundles         |
 | [/bootstrap](docs/bootstrap.md)           | Embed the standalone bootstrap script in backend HTML |
+| [/worker](docs/worker.md)                 | Upload the self-contained Cloudflare Worker asset     |
 | [/react/embed](docs/react-embed.md)       | Embed apps with React shells and bridges              |
 | [/react](docs/react.md)                   | Compose views, filters, widgets, and request states   |
 | [/react/styles.css](docs/react-styles.md) | Load the React UI stylesheet                          |

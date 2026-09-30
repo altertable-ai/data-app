@@ -237,6 +237,25 @@ assert.equal(sent[0].message.documentId, 'document');
 `
   );
   await run(['node', join(temporary, 'standalone-bootstrap.mjs')], temporary);
+  await writeFile(
+    join(temporary, 'worker-asset.mjs'),
+    `import { readFile } from 'node:fs/promises';
+import { strict as assert } from 'node:assert';
+
+const source = await readFile(new URL(import.meta.resolve('@altertable/data-app/worker')), 'utf8');
+assert(!/^import\\s|\\bimport\\s*\\(/m.test(source), 'Worker must have no runtime imports');
+assert(!/react-query|react-dom|attachNavigation|createAppLocation|Bun\\.|process\\./.test(source));
+// Simulate loading the one uploaded ESM module; consumers only resolve/read it.
+const { default: worker } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
+const response = await worker.fetch(new Request('https://test-report-app-1.example.test/'), {
+  DOMAIN_NAME: 'example.test', PARENT_ORIGINS: 'https://host.example',
+});
+assert.equal(response.status, 200);
+const html = await response.text();
+assert(html.includes('data-parent-origin="https://host.example"'));
+`
+  );
+  await run(['node', join(temporary, 'worker-asset.mjs')], temporary);
   await run(
     [
       'node',

@@ -5,28 +5,35 @@ script. It has no imports, React dependencies, or app navigation behavior. The
 package builds it once; a backend can embed the published file without running a
 bundler.
 
+For Cloudflare hosting, use the [Worker asset](worker.md) to upload the complete
+runtime without backend HTML generation or bundling. This bootstrap entry remains
+available for other hosts that own their HTML and security policy.
+
 This entry is a script asset, not a module API. Resolve and read it on the server;
 do not import it for execution in Node.js or Bun. For a bootstrap you bundle
 yourself, use `startDataAppBootstrap` from [embedding](embed.md).
 
-## Generate the backend HTML
+## Generate HTML for a custom host
 
-Install an exact package version in the backend runtime's `package.json`, commit
-the lockfile, and run this generation step before building or deploying the worker:
+Install an exact package version in the hosting service's `package.json`, commit
+the lockfile, and generate its bootstrap page before deployment:
 
 ```js
-// scripts/build-runtime.mjs
+// scripts/generate-bootstrap.mjs
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
-const parentOrigin = 'https://app.altertable.ai';
+const parentOrigin = 'https://app.example.com';
 const path = import.meta.resolve('@altertable/data-app/bootstrap');
 const javascript = await readFile(new URL(path), 'utf8');
-const inline = javascript.replace(/<\/script/gi, '<\\/script');
+const inline = javascript.replace(/<\/script/gi, match =>
+  match.replace('<', '<\\')
+);
 const originAttribute = parentOrigin
   .replaceAll('&', '&amp;')
   .replaceAll('"', '&quot;')
   .replaceAll('<', '&lt;')
-  .replaceAll('>', '&gt;');
+  .replaceAll('>', '&gt;')
+  .replaceAll("'", '&#39;');
 
 const html = `<!doctype html>
 <html>
@@ -41,17 +48,15 @@ const html = `<!doctype html>
 </html>`;
 
 await mkdir('generated', { recursive: true });
-await writeFile(
-  'generated/runtime-html.js',
-  `export const RUNTIME_HTML = ${JSON.stringify(html)};\n`
-);
+await writeFile('generated/bootstrap.html', html);
 ```
 
 ```fish
-node scripts/build-runtime.mjs
+node scripts/generate-bootstrap.mjs
 ```
 
-The worker imports `RUNTIME_HTML` and serves it as `text/html; charset=utf-8`.
+The hosting service serves this file as `text/html; charset=utf-8` with the
+security headers described below.
 The resulting HTML needs no package imports or network fetches at runtime.
 
 ## Configuration and security
@@ -61,7 +66,7 @@ after the app's mount element. The script reads `document.currentScript` and
 starts immediately. Do not use `type="module"`.
 
 The hosting service must supply an exact trusted origin, such as
-`https://app.altertable.ai`, through deployment configuration. Missing or invalid
+`https://app.example.com`, through deployment configuration. Missing or invalid
 origins fail before installing a transport. Do not derive this value from an
 unverified query parameter, referrer, or incoming message.
 

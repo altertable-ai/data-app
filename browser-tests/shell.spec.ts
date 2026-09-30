@@ -53,6 +53,29 @@ test('opaque bundle uses typed routes and virtual URL state without rerunning on
       }
     })
   ).toBe(true);
+  const blockedUrl = new URL('/__test/bundle', page.url()).href;
+  const violation = await frame.evaluate(async url => {
+    const violation = new Promise<{ directive: string; blockedURI: string }>(
+      resolve => {
+        document.addEventListener(
+          'securitypolicyviolation',
+          event => {
+            resolve({
+              directive: event.effectiveDirective,
+              blockedURI: event.blockedURI,
+            });
+          },
+          { once: true }
+        );
+      }
+    );
+    void fetch(url).catch(() => {});
+
+    return violation;
+  }, blockedUrl);
+  expect(violation.directive).toBe('connect-src');
+  // Browsers may strip a cross-origin URL's path from CSP reports.
+  expect(new URL(violation.blockedURI).origin).toBe(new URL(blockedUrl).origin);
   await frame.evaluate(() => location.reload());
   await expect(page.locator('iframe')).toBeVisible();
   await expect(app.locator('#location')).toHaveText('period=last-7#totals');
