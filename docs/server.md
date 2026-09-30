@@ -29,7 +29,10 @@ checks reject cross-site browser requests; they do not authenticate viewers.
 The handler validates operation input and output, enforces query row and duration
 bounds, propagates cancellation, and returns request IDs with errors. SQL is
 disclosed only when both the operation policy and `canDiscloseSql` allow it.
-Keep credentials and operation implementations on the server.
+Keep credentials and operation implementations on the server. The browser runs
+that same registry only when adapting to a host that rejects `data:query`; it
+still does not receive lakehouse credentials. See
+[local and hosted execution](client.md#local-and-hosted-execution).
 
 See [operation contracts](contract.md), the [client](client.md), and the
 [local Bun adapter](server-bun.md).

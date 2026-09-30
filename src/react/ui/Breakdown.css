@@ -2,6 +2,7 @@
   display: grid;
   gap: 12px;
   min-width: 0;
+  color: var(--at-text, #202124);
 }
 .altertable-breakdown-summary {
   display: flex;

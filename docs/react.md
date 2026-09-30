@@ -39,7 +39,10 @@ All of these APIs are exported from `/react`. Each component's stylesheet lives 
 | `context.metric`  | Label, numeric format, glossary evidence and optional direction of improvement.                                                                  |
 | `WidgetViewTabs`  | Valid, unique selection IDs and a required empty state per tab.                                                                                  |
 
-SQL and business definitions belong to the app. Hosted adapters authorize every request; local development can use the CLI proxy. SQL disclosure also requires server permission.
+SQL and business definitions belong to the app's named operations. The same
+`useView` path runs locally and in a hosted app. Hosted adapters authorize every
+request; local development can use the CLI proxy. SQL disclosure on a server
+also requires server permission.
 
 A measured zero and unavailable data have different meanings. Metric readings use `null` for an unavailable previous value. The app defines whether a result is empty. `Breakdown` shows parts of a total; `Ranking` scales against its largest value. Percent formats accept ratios.
 
@@ -56,7 +59,7 @@ import {
   VisualizationWidget,
   Ranking,
 } from '@altertable/data-app/react';
-import type { operations } from '#app/operations.ts';
+import { operations } from '#app/operations.ts';
 import { calendar } from '#app/contracts.ts';
 import { dataContext, actions } from '#app/data-context.tsx';
 import config from '#config';
@@ -67,8 +70,9 @@ const period = dateRangeVariable({
   comparison: true,
   defaultValue: { kind: 'preset', id: 'last-30' },
 });
-const { defineDataView, useView } =
-  createDataHooks(createDataClient<typeof operations>());
+const { defineDataView, useView } = createDataHooks(
+  createDataClient({ operations })
+);
 const activityView = defineDataView({
   operation: 'activity',
   variables: { period },
@@ -138,6 +142,10 @@ Bound `VisualizationWidget` and `TableWidget` calls require `evidence` from `con
 `MetricWidget` and `ComparisonVisual` both accept the same `metric` and `reading`. The comparison is enabled by the displayed result's range. The definition supplies formatting and evidence; a reading cannot override those or provide a second value. `favorableDirection` is optional; changes are neutral until the author defines whether up or down is favorable.
 
 `defineDataContent` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `DataSection` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
+
+`createDataClient({ operations })` keeps these views on named operations when a
+host only executes SQL. A local-only app may omit the registry and use
+`createDataClient<typeof operations>()` with a type-only import.
 
 ## Bind evidence
 

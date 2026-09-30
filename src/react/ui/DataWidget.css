@@ -1,5 +1,6 @@
 .altertable-data-widget {
   min-width: 0;
+  color: var(--at-text, #202124);
   border: 1px solid var(--at-border, #e3e6e8);
   border-radius: calc(var(--at-radius-surface, 12px) * 1.5);
   corner-shape: squircle;

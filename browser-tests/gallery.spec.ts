@@ -193,6 +193,79 @@ test('gallery uses shared defaults in both themes and narrow containers', async 
       .evaluate(element => getComputedStyle(element).backgroundColor);
     await expect(action).toHaveCSS('background-color', surfaceColor);
     backgrounds.push(surfaceColor);
+    const reading = await page.evaluate(() => {
+      function channel(value: number) {
+        const scaled = value / 255;
+
+        return scaled <= 0.03928
+          ? scaled / 12.92
+          : ((scaled + 0.055) / 1.055) ** 2.4;
+      }
+
+      function luminance(color: string) {
+        const parts = color.match(/[\d.]+/g)?.map(Number) ?? [];
+        const alpha = parts.length > 3 ? parts[3]! : 1;
+        if (alpha === 0) return null;
+
+        return (
+          0.2126 * channel(parts[0] ?? 0) +
+          0.7152 * channel(parts[1] ?? 0) +
+          0.0722 * channel(parts[2] ?? 0)
+        );
+      }
+
+      function contrast(foreground: string, background: string) {
+        const left = luminance(foreground);
+        const right = luminance(background);
+        if (left === null || right === null) return 0;
+        const [hi, lo] = left > right ? [left, right] : [right, left];
+
+        return (hi + 0.05) / (lo + 0.05);
+      }
+
+      function opaqueBackground(element: Element) {
+        let node: Element | null = element;
+        while (node) {
+          const color = getComputedStyle(node).backgroundColor;
+          const parts = color.match(/[\d.]+/g)?.map(Number) ?? [];
+          const alpha = parts.length > 3 ? parts[3]! : 1;
+          if (alpha > 0) return color;
+          node = node.parentElement;
+        }
+
+        return getComputedStyle(document.body).backgroundColor;
+      }
+
+      const label = document.querySelector(
+        '.altertable-ranking-reading > span'
+      );
+      const value = document.querySelector(
+        '.altertable-ranking-reading strong'
+      );
+      const probe = document.createElement('div');
+      probe.style.backgroundColor = 'var(--at-background)';
+      document.body.append(probe);
+      const expected = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      if (!label || !value) return null;
+      const background = opaqueBackground(label);
+
+      return {
+        expected,
+        html: getComputedStyle(document.documentElement).backgroundColor,
+        body: getComputedStyle(document.body).backgroundColor,
+        root: getComputedStyle(document.getElementById('root')!)
+          .backgroundColor,
+        labelContrast: contrast(getComputedStyle(label).color, background),
+        valueContrast: contrast(getComputedStyle(value).color, background),
+      };
+    });
+    expect(reading).not.toBeNull();
+    expect(reading!.html).toBe(reading!.expected);
+    expect(reading!.body).toBe(reading!.expected);
+    expect(reading!.root).toBe(reading!.expected);
+    expect(reading!.labelContrast).toBeGreaterThanOrEqual(4.5);
+    expect(reading!.valueContrast).toBeGreaterThanOrEqual(4.5);
     await action.press('Tab');
     await action.focus();
     const tooltip = page.getByRole('tooltip');

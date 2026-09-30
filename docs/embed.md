@@ -106,3 +106,10 @@ Message types follow `{scope}:{action}`: `bridge:connect`, `bridge:ready`,
 including `data:query` and `navigation:update`. Hosts, apps, and bootstrap scripts
 must use matching names; the former unscoped and dot-separated names are no
 longer supported.
+
+Apps send `data:query` with `{ operation, input }` through `createDataClient`.
+`dataAppRoutes` remains `data:query` and `navigation:update`. The Altertable
+product host executes SQL with `query:execute` and `{ sql }` instead of named
+operations. The client adapter performs that call after `data:query` returns
+`unknown_route`; application code does not. Credentials stay in the host. See
+[local and hosted execution](client.md#local-and-hosted-execution).

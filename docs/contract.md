@@ -92,6 +92,12 @@ errors are replaced with a generic failure.
 input and output and preserves its response evidence. It infers the result type
 from the selected operation when used with `createMessageClient`. Share input and
 output parsers, not operation implementations containing SQL or credentials.
-`dataAppRoutes` supplies generic `data:query` and `navigation:update` contracts;
-generic hosts must delegate operation validation and authorization to their
-server. Request handlers receive `{ signal }` for cancellation.
+`dataAppRoutes` supplies generic `data:query` and `navigation:update` contracts
+for named operations and navigation. Generic hosts must delegate operation
+validation and authorization to their server. Request handlers receive `{ signal }`
+for cancellation.
+
+Do not add a host SQL route to `dataAppRoutes`. Hosts built with this package
+implement `data:query` for named operations. A client can run the same registry
+when a host rejects that route; see
+[local and hosted execution](client.md#local-and-hosted-execution).

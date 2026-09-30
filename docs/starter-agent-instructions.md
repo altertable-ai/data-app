@@ -26,19 +26,26 @@ as cause. Keep copy concise and relevant to the reader.
 Read `node_modules/@altertable/data-app/AGENTS.md` first, then
 `node_modules/@altertable/data-app/docs/app-authoring.md`.
 
-| Task                                     | App-owned files                             | Package documentation                  |
-| ---------------------------------------- | ------------------------------------------- | -------------------------------------- |
-| Define queries and inputs                | `src/operations.ts`, shared input contracts | `docs/contract.md`, `docs/server.md`   |
-| Build views, filters, and request states | `src/App.tsx`                               | `docs/react.md`                        |
-| Explain terms and query evidence         | `src/data-context.ts` or `.tsx`             | `docs/react.md#bind-evidence`          |
-| Change identity and brand                | App configuration                           | `docs/config.md`, `docs/appearance.md` |
-| Configure local serving or hosting       | `src/server.ts`                             | `docs/server-bun.md`, `docs/server.md` |
+| Task                                     | App-owned files                             | Package documentation                                        |
+| ---------------------------------------- | ------------------------------------------- | ------------------------------------------------------------ |
+| Define queries and inputs                | `src/operations.ts`, shared input contracts | `docs/contract.md`, `docs/server.md`                         |
+| Call those operations from views         | `src/App.tsx` and the data client           | `docs/client.md#local-and-hosted-execution`, `docs/react.md` |
+| Build views, filters, and request states | `src/App.tsx`                               | `docs/react.md`                                              |
+| Explain terms and query evidence         | `src/data-context.ts` or `.tsx`             | `docs/react.md#bind-evidence`                                |
+| Change identity and brand                | App configuration                           | `docs/config.md`, `docs/appearance.md`                       |
+| Configure local serving or hosting       | `src/server.ts`                             | `docs/server-bun.md`, `docs/server.md`                       |
 
 Package documentation paths above are relative to
 `node_modules/@altertable/data-app/`.
 
-Edit app-owned source and import public package entries. Keep SQL and credentials
-on the server, and import operation types with `import type` in browser code.
+Edit app-owned source and import `@altertable/data-app/*` subpaths
+(`client`, `react`, `react/styles.css`, `contract`, `config`, and the entries
+listed in the package `AGENTS.md`). The package has no root export.
+
+Use the same named operations and `createDataClient` locally and in a hosted
+app. Pass `operations` into the client so a host without `data:query` can run
+them; leave credentials in the host. A local-only bundle may `import type` the
+registry instead. Do not send SQL from app code.
 Do not edit installed package files. The connectivity screen is scaffolding,
 not an example analysis.
 

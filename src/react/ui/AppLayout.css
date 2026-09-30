@@ -1,14 +1,23 @@
 html {
   scrollbar-gutter: stable;
 }
+html,
 body,
 #root {
   margin: 0;
+  color: var(--at-text, #202124);
+  background: var(--at-background, #fff);
+}
+body,
+#root {
+  min-height: 100dvh;
 }
 .altertable-app-layout {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
+  color: var(--at-text, #202124);
+  background: var(--at-background, #fff);
 }
 .altertable-app-main {
   display: grid;
@@ -45,8 +54,6 @@ body,
 :root {
   --at-content-width: 960px;
   font-family: var(--at-font, ui-sans-serif, system-ui, sans-serif);
-  color: var(--at-text, #202124);
-  background: var(--at-background, #fff);
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;

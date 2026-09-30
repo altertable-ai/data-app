@@ -17,9 +17,19 @@ boundaries. Read the documentation for the entry you use:
 | Configure identity and theme     | [Config](docs/config.md), [appearance](docs/appearance.md)         |
 | Format values                    | [Format](docs/format.md)                                           |
 
-Import public package entries. Keep SQL, credentials, and execution on the server;
-use `import type` for operation types in browser code. Import the React stylesheet
-once in the browser entry. Edit app-owned files, not installed package files.
+Import public subpath entries such as `@altertable/data-app/client`,
+`@altertable/data-app/react`, `@altertable/data-app/react/styles.css`,
+`@altertable/data-app/contract`, and `@altertable/data-app/config`. The package
+has no root export. `@altertable/data-app-runtime` is not an import path.
+
+Write one app. Named operations, `createDataClient`, and `useDataView` are the
+data path locally and in the Altertable product host. Pass the operation
+registry into `createDataClient({ operations })` so a host without `data:query`
+can run those operations; the host keeps credentials and executes SQL. A
+local-only bundle may use `import type` and omit the registry. Do not send SQL
+from app code with `getDataAppTransport()`. See
+[app authoring](docs/app-authoring.md). Import the React stylesheet once in the
+browser entry. Edit app-owned files, not installed package files.
 
 Inspect source data and time coverage before choosing an exploration. Build
 findings from observed results and preserve loading, empty, error, and stale

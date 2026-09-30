@@ -183,9 +183,23 @@ function fontStack(family: string): string {
     : `${JSON.stringify(family)}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ui-sans-serif, sans-serif`;
 }
 
+function paintCanvas(background: string, text: string): void {
+  for (const element of [
+    document.documentElement,
+    document.body,
+    document.getElementById('root'),
+  ]) {
+    if (!element || !('style' in element)) continue;
+    const style = element.style;
+    style.backgroundColor = background;
+    style.color = text;
+  }
+}
+
 /**
- * Install semantic tokens on the document root, including portaled UI. Returns a cleanup for
- * system-theme listening.
+ * Install semantic tokens on the document root, including portaled UI, and paint `html`, `body`,
+ * and `#root` from the active background and text colors. Returns a cleanup for system-theme
+ * listening.
  */
 export function applyAppearance(value: unknown): () => void {
   const settings = parseAppearance(value);
@@ -255,6 +269,7 @@ export function applyAppearance(value: unknown): () => void {
     root.style.colorScheme = dark ? 'dark' : 'light';
     for (const [name, token] of Object.entries(tokens))
       root.style.setProperty(name, token);
+    paintCanvas(background, text);
   }
   applyColors();
   if (settings.mode === 'system')
