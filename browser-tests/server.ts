@@ -16,10 +16,10 @@ async function bundle(entry: string) {
   return result.outputs[0]!.text();
 }
 
-// Hosting services embed the published bootstrap without bundling it again.
-const bootstrap = await Bun.file(
-  new URL(import.meta.resolve('@altertable/data-app/bootstrap'))
-).text();
+// Exercise the published single-file deployment without rebundling it.
+const { default: worker } = (await import(
+  import.meta.resolve('@altertable/data-app/worker')
+)) as typeof import('@/src/worker');
 const app = await bundle('./fixtures/bundle-app.tsx');
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
 const urlApp = await bundle('./fixtures/bridge-frame.ts');
@@ -52,15 +52,16 @@ Bun.serve({
       return new Response('<!doctype html><body>Silent frame</body>', {
         headers: { 'content-type': 'text/html' },
       });
-    if (path === '/__test/bootstrap')
-      return new Response(
-        `<!doctype html><body><div id="root"></div><script data-parent-origin="http://127.0.0.1:${port}">${bootstrap.replaceAll('</script', '<\\/script')}</script></body>`,
+    if (path === '/__test/runtime')
+      // Adapt the local fixture URL to a deployment preview hostname.
+      return worker.fetch(
+        new Request(
+          `https://test-report-app-1.example.test/${new URL(request.url).search}`,
+          request
+        ),
         {
-          headers: {
-            'content-type': 'text/html',
-            'content-security-policy':
-              "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'",
-          },
+          DOMAIN_NAME: 'example.test',
+          PARENT_ORIGINS: `http://127.0.0.1:${port}`,
         }
       );
     if (path === '/api/data/forbidden')

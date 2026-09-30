@@ -42,7 +42,7 @@ function Host() {
               }
             : {
                 type: 'bundle',
-                bootstrapUrl: `/__test/${timeout ? 'silent' : 'bootstrap'}`,
+                bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
                 javascript: broken
                   ? 'throw new Error("Broken app")'
                   : javascript,

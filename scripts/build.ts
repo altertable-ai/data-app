@@ -34,13 +34,23 @@ const browser = await Bun.build({
 
 const bootstrap = await Bun.build({
   entrypoints: ['src/embed/standalone.ts'],
-  outdir: 'dist',
   target: 'browser',
   format: 'iife',
-  naming: 'bootstrap.js',
 });
 
-const results = [browser, bootstrap];
+if (!bootstrap.success) throw new Error('Could not build bootstrap.');
+const worker = await Bun.build({
+  entrypoints: ['src/worker/index.ts'],
+  outdir: 'dist',
+  target: 'browser',
+  format: 'esm',
+  naming: 'worker.js',
+  define: {
+    DATA_APP_BOOTSTRAP: JSON.stringify(await bootstrap.outputs[0]!.text()),
+  },
+});
+
+const results = [browser, worker];
 for (const [name, entry] of Object.entries({
   server: 'src/server/index.ts',
   local: 'src/server/local.ts',

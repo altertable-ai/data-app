@@ -31,7 +31,7 @@ A bundle source has this shape:
 ```ts
 const source = {
   type: 'bundle' as const,
-  bootstrapUrl: 'https://preview.example.com/bootstrap',
+  bootstrapUrl: 'https://my-report-app-1.apps.example.net/',
   javascript: bundle.javascript,
   revision: bundle.revision,
 };
@@ -45,10 +45,12 @@ the host document or use same-origin privileges. Both modes use
 
 ## Trusted bootstrap
 
-For backend HTML that embeds a ready-made script without bundling, use the
-[standalone bootstrap asset](bootstrap.md).
+For Cloudflare hosting, upload the [Worker asset](worker.md). It includes the
+bootstrap HTML and security policy; deployments supply the runtime domain and
+trusted parent origins through bindings.
 
-Bundle this initializer into the trusted bootstrap document, before any app code:
+For other hosts that own their HTML and security policy, bundle this initializer
+into the bootstrap document before any app code:
 
 ```ts
 import { startDataAppBootstrap } from '@altertable/data-app/embed';
