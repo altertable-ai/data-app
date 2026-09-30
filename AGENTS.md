@@ -13,7 +13,7 @@ boundaries. Read the documentation for the entry you use:
 | Serve locally with Bun           | [Bun server](docs/server-bun.md)                                   |
 | Compose views and request states | [React](docs/react.md), [stylesheet](docs/react-styles.md)         |
 | Embed apps in a host             | [Embedding](docs/embed.md), [React embedding](docs/react-embed.md) |
-| Serve a trusted bootstrap        | [Standalone bootstrap](docs/bootstrap.md)                          |
+| Deploy a Cloudflare runtime      | [Worker asset](docs/worker.md)                                     |
 | Configure identity and theme     | [Config](docs/config.md), [appearance](docs/appearance.md)         |
 | Format values                    | [Format](docs/format.md)                                           |
 

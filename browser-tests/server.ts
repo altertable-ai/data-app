@@ -52,7 +52,7 @@ Bun.serve({
       return new Response('<!doctype html><body>Silent frame</body>', {
         headers: { 'content-type': 'text/html' },
       });
-    if (path === '/__test/bootstrap')
+    if (path === '/__test/runtime')
       // Adapt the local fixture URL to a deployment preview hostname.
       return worker.fetch(
         new Request(

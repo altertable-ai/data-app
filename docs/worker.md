@@ -2,7 +2,7 @@
 
 `@altertable/data-app/worker` resolves to a precompiled, self-contained ESM Worker
 script. Upload this one file as the deployment's main module. It includes the
-[standalone bootstrap](bootstrap.md) and HTML; no bundling, HTML generation,
+bootstrap and HTML; no bundling, HTML generation,
 runtime imports, or asset fetches are needed in the hosting backend.
 
 This export is a script asset, not a Node.js or Bun API. Pin an exact package
@@ -47,8 +47,9 @@ attribute and script escaping, restrictive CSP with configured `frame-ancestors`
 `altertable:data-app` bridge and retain opaque host state. Apps own styling and
 navigation; data requests still require backend authorization.
 
-To migrate a backend that generates HTML from `/bootstrap`, replace both its HTML
-generator and Worker bundler with resolving and reading `/worker`. Preserve
-`DOMAIN_NAME`, `PARENT_ORIGINS`, and Terraform domain/route/deployment resources.
-If Terraform reads a file, copy the asset unchanged to that file during deployment
-preparation. Upgrade the host package and Worker together for protocol changes.
+If Terraform reads a file, copy the resolved `/worker` asset unchanged to that
+file during deployment preparation. Configure `DOMAIN_NAME`, `PARENT_ORIGINS`,
+domains, routes, and deployment settings in Terraform. Upgrade the host package
+and Worker together for protocol changes.
+Custom hosts that bundle their own bootstrap can use `startDataAppBootstrap` from
+[/embed](embed.md#trusted-bootstrap).

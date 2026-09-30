@@ -9,5 +9,5 @@
     "rewriteRelativeImportExtensions": true
   },
   "include": ["src"],
-  "exclude": ["tests", "src/worker"]
+  "exclude": ["tests", "src/worker", "src/embed/standalone.ts"]
 }

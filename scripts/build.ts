@@ -34,10 +34,8 @@ const browser = await Bun.build({
 
 const bootstrap = await Bun.build({
   entrypoints: ['src/embed/standalone.ts'],
-  outdir: 'dist',
   target: 'browser',
   format: 'iife',
-  naming: 'bootstrap.js',
 });
 
 if (!bootstrap.success) throw new Error('Could not build bootstrap.');
@@ -52,7 +50,7 @@ const worker = await Bun.build({
   },
 });
 
-const results = [browser, bootstrap, worker];
+const results = [browser, worker];
 for (const [name, entry] of Object.entries({
   server: 'src/server/index.ts',
   local: 'src/server/local.ts',

@@ -50,7 +50,7 @@ test('shell reports startup failure and cleanup cancels pending startup timers',
     iframe: frame,
     source: {
       type: 'bundle',
-      bootstrapUrl: '/bootstrap',
+      bootstrapUrl: '/runtime',
       javascript: '',
       revision: '1',
     },
