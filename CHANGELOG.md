@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.61.0](https://github.com/altertable-ai/data-app/compare/v0.60.0...v0.61.0) (2026-09-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* **messages:** Hosts, apps, and bootstrap scripts must migrate together to colon-separated message names; unscoped and dot-separated names are no longer recognized.
+
+### Features
+
+* **examples:** port the CLI starter to public package APIs ([4a1d82f](https://github.com/altertable-ai/data-app/commit/4a1d82f1e71c34e0144ab9bef220f26d2231ec44))
+
+
+### Bug Fixes
+
+* **examples:** refresh built exports before starter checks ([b22552d](https://github.com/altertable-ai/data-app/commit/b22552d263f1dd725f164d4ced553d1016b4d071))
+* **release:** keep breaking changes on minor versions before 1.0 ([4c6959a](https://github.com/altertable-ai/data-app/commit/4c6959afe816940772ed8f45c679f9fb8515accb))
+
+
+### Code Refactoring
+
+* **messages:** standardize scoped protocol names ([9be3ef7](https://github.com/altertable-ai/data-app/commit/9be3ef7e727190234d438f62f91ceb725c3bf6c8))
+
 ## [0.60.0](https://github.com/altertable-ai/data-app/compare/v0.59.1...v0.60.0) (2026-09-30)
 
 
