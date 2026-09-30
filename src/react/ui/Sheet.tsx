@@ -11,7 +11,6 @@ import { classNames } from '@/src/react/ui/classNames';
 import { Button } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
 import { GradientScroll } from '@/src/react/ui/GradientScroll';
-import '@/src/react/ui/Sheet.css';
 
 export type SheetDialogProps = Omit<
   ComponentPropsWithRef<'dialog'>,

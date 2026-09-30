@@ -24,10 +24,11 @@ import {
   useMergeRefs,
 } from '@floating-ui/react';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/Tooltip.css';
 
 type TooltipTiming = { hoverDelay: () => number; rememberClose: () => void };
-const TooltipContext = createContext<TooltipTiming | null>(null);
+const TooltipContext = /* @__PURE__ */ createContext<TooltipTiming | null>(
+  null
+);
 
 export type TooltipProviderProps = {
   children: ReactNode;

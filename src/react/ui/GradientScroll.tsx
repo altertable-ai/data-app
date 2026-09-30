@@ -6,7 +6,6 @@ import {
 } from 'react';
 import { useMergeRefs } from '@floating-ui/react';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/GradientScroll.css';
 
 export type GradientScrollProps = ComponentPropsWithRef<'div'> & {
   axis?: 'vertical' | 'horizontal';

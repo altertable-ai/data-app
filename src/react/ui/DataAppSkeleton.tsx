@@ -5,7 +5,6 @@ import { MetricWidget } from '@/src/react/ui/MetricWidget';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/DataAppSkeleton.css';
 
 export type DataAppSkeletonProps = Omit<
   ComponentPropsWithRef<'output'>,

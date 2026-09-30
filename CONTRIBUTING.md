@@ -36,7 +36,7 @@ Keep core, client, server, and embed free of React and UI imports. Client and
 server may depend on core; neither may import the other. Embed may depend on core
 and client. Browser code must not import server
 implementations or credentials. React implementations import focused modules,
-not their own public barrel. Preserve the explicit stylesheet export. Public
+not their own public barrel. Keep style injection explicit; importing React must not modify the DOM. Public
 exports and their docs are the consumer interface; internal modules may change.
 
 Use repository-root imports (`@/src/...`, `@/package.json`) in source, tests, and
@@ -56,23 +56,23 @@ fixtures import the public package exports and need the generated declarations
 in `dist`. `bun run check` builds first, including on a fresh checkout.
 Release Please owns `CHANGELOG.md`; formatting excludes its generated output.
 
-| Command                   | Purpose                                          |
-| ------------------------- | ------------------------------------------------ |
-| `bun run typecheck`       | Validate source, tests, and scripts              |
-| `bun run lint`            | Run type-aware Oxlint checks                     |
-| `bun run format`          | Format source and documentation with Oxfmt       |
-| `bun run test`            | Run contract, transport, and component tests     |
-| `bun run build`           | Emit ESM, declarations, and the React stylesheet |
-| `bun run test:package`    | Check the built npm archive as a consumer        |
-| `bun run test:starter`    | Typecheck, lint, and build the starter           |
-| `bun run test:browser`    | Test embedding against built exports in Chromium |
-| `bun run check:workflows` | Validate workflows and shell scripts             |
-| `bun run check`           | Run all required checks                          |
+| Command                   | Purpose                                           |
+| ------------------------- | ------------------------------------------------- |
+| `bun run typecheck`       | Validate source, tests, and scripts               |
+| `bun run lint`            | Run type-aware Oxlint checks                      |
+| `bun run format`          | Format source and documentation with Oxfmt        |
+| `bun run test`            | Run contract, transport, and component tests      |
+| `bun run build`           | Emit ESM, declarations, and embedded React styles |
+| `bun run test:package`    | Check the built npm archive as a consumer         |
+| `bun run test:starter`    | Typecheck, lint, and build the starter            |
+| `bun run test:browser`    | Test embedding against built exports in Chromium  |
+| `bun run check:workflows` | Validate workflows and shell scripts              |
+| `bun run check`           | Run all required checks                           |
 
 Add focused tests for changed behavior and update the corresponding entry docs
 when changing public APIs. JSDoc should explain constraints, ownership, units,
 or runtime boundaries without duplicating the full API guide. The packed-package
-check verifies documentation, exports, declarations, browser CSS, and server
+check verifies documentation, exports, declarations, injected browser styles, and server
 imports. The package retains the
 runtime's Bun test suite; tests use observable output and contract behavior.
 

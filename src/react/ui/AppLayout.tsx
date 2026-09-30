@@ -5,7 +5,6 @@ import {
   TooltipProvider,
   type TooltipProviderProps,
 } from '@/src/react/ui/Tooltip';
-import '@/src/react/ui/AppLayout.css';
 
 export type AppLayoutProps = {
   children: ReactNode;

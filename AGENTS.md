@@ -20,8 +20,8 @@ boundaries. Read the documentation for the entry you use:
 Import public package entries. For HTTP apps, keep SQL and execution on the server
 and use `import type` for operation types in browser code. Bundle apps own their
 operations in the browser and send SQL through the authorized host bridge. Keep
-credentials and enforced access/query limits on the backend in both models. Import the React stylesheet
-once in the browser entry. Edit app-owned files, not installed package files.
+credentials and enforced access/query limits on the backend in both models. Call `injectDataAppStyles()`
+once in the browser entry before mounting. Edit app-owned files, not installed package files.
 
 Inspect source data and time coverage before choosing an exploration. Build
 findings from observed results and preserve loading, empty, error, and stale

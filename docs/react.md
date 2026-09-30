@@ -1,7 +1,8 @@
 # React
 
 Import hooks, components, and UI helpers from `@altertable/data-app/react`.
-Import `@altertable/data-app/react/styles.css` once in the browser entry.
+Call `injectDataAppStyles()` once in the browser entry before mounting.
+See [React styles](react-styles.md) for CSP and document options.
 React 19.2 or newer and React DOM 19.2 or newer are peer dependencies.
 
 `mountDataApp({ config, component })` mounts into `#root`, sets the document

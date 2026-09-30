@@ -30,7 +30,6 @@ import {
 } from '@/src/react/ui/shortcuts';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useInspectionDefaults } from '@/src/react/ui/InspectionContext';
-import '@/src/react/ui/AboutData.css';
 
 export type AboutTab = 'glossary' | 'queries';
 export type AboutEmpty = {

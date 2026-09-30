@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { AppIcon } from '@/src/react/ui/icons';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/SearchInput.css';
 
 /** One search control surface for picker search and table/page search. */
 export function SearchInput({

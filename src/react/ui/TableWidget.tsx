@@ -20,7 +20,6 @@ import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import '@/src/react/ui/TableWidget.css';
 
 export type TableWidgetColumn<Row> = {
   /** Stable, nonempty identity; unique within this table. */

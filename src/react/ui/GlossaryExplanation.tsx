@@ -3,7 +3,6 @@ import type { ComponentPropsWithRef, ReactNode } from 'react';
 import type { DisclosedQuery } from '@/src/core/contract';
 import type { DataContext, GlossaryEntry } from '@/src/react/ui/data-context';
 import { AboutData, type AboutEmpty } from '@/src/react/ui/AboutData';
-import '@/src/react/ui/Inspect.css';
 
 export type GlossaryExplanationProps = {
   entry: GlossaryEntry;

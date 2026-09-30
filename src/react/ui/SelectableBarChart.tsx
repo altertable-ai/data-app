@@ -1,5 +1,4 @@
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
-import '@/src/react/ui/SelectableBarChart.css';
 
 export type SelectableBarItem = { id: string; label: string; value: number };
 

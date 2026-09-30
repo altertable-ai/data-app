@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { HelpPopover, type HelpPopoverProps } from '@/src/react/ui/HelpPopover';
-import '@/src/react/ui/DateTimeTooltip.css';
 
 export type DateTimeTooltipProps = {
   date: Date;

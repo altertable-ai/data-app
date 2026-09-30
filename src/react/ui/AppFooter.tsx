@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { AltertableLogo } from '@/src/react/ui/AltertableLogo';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/AppFooter.css';
 
 export type AppFooterProps = ComponentPropsWithRef<'footer'> & {
   attribution?: ReactNode;

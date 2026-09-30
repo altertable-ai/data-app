@@ -1,4 +1,4 @@
-import '@altertable/data-app/react/styles.css';
+import { injectDataAppStyles } from '@altertable/data-app/react';
 import { connectionCheck } from '@altertable/data-app/contract';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -89,4 +89,6 @@ function App() {
 document.body.dataset.executions = String(
   Number(document.body.dataset.executions ?? 0) + 1
 );
+injectDataAppStyles();
+
 createRoot(document.getElementById('root')!).render(<App />);

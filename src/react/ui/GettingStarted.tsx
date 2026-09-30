@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { createDataClient } from '@/src/client/index';
 import type { DataAppConfig } from '@/src/core/config';
 import { connectionCheck } from '@/src/core/contract';
@@ -6,11 +7,6 @@ import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import { DataApp } from '@/src/react/ui/DataApp';
 import type { DataContext } from '@/src/react/ui/data-context';
-import '@/src/react/ui/GettingStarted.css';
-
-const { useDataQuery } = createDataHooks<{
-  connection: ReturnType<typeof connectionCheck>;
-}>(createDataClient());
 
 /** Query-backed connection state and next steps for a newly created app. Mount within
  * `DataAppProvider` and register `connection: connectionCheck()` on the server. */
@@ -21,6 +17,11 @@ export function GettingStarted({
   config: DataAppConfig;
   dataContext: DataContext;
 }) {
+  const [{ useDataQuery }] = useState(() =>
+    createDataHooks<{
+      connection: ReturnType<typeof connectionCheck>;
+    }>(createDataClient())
+  );
   const connection = useDataQuery('connection', {});
   const state = connection.error
     ? 'error'

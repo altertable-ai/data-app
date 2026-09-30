@@ -15,8 +15,6 @@ import { formatMetric, type MetricFormat } from '@/src/core/format';
 import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import type { MetricReading } from '@/src/core/reading';
 import { metricComparison, type MetricDefinition } from '@/src/react/ui/metric';
-import '@/src/react/ui/Inspect.css';
-import '@/src/react/ui/MetricWidget.css';
 
 type MetricWidgetBaseProps = {
   label: string;

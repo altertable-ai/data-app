@@ -119,9 +119,9 @@ try {
   }
   await writeFile(
     join(temporary, 'browser.tsx'),
-    `import "@altertable/data-app/react/styles.css";
-import { createDataClient } from "@altertable/data-app/client";
-import { Grid, DataAppSkeleton } from "@altertable/data-app/react";
+    `import { createDataClient } from "@altertable/data-app/client";
+import { Grid, DataAppSkeleton, injectDataAppStyles } from "@altertable/data-app/react";
+injectDataAppStyles();
 import { defineDateRangeContract, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
 import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app/embed";
 import { DataAppBridge } from "@altertable/data-app/react/embed";
@@ -305,13 +305,47 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
       `Packed browser build failed: ${browser.logs.map(log => log.message).join('\n')}`
     );
   const outputs = browser.outputs.map(output => output.path);
-  if (!outputs.some(path => path.endsWith('.css')))
-    throw new Error('Packed browser build omitted React styles.');
+  if (outputs.some(path => path.endsWith('.css')))
+    throw new Error('Packed browser build emitted a separate stylesheet.');
   const javascript = await Promise.all(
     outputs
       .filter(path => path.endsWith('.js'))
       .map(path => readFile(path, 'utf8'))
   );
+  if (!javascript.some(source => source.includes('.altertable-grid')))
+    throw new Error('Packed browser build omitted injected React styles.');
+
+  await writeFile(
+    join(temporary, 'tree-shaking.tsx'),
+    `import { Grid } from '@altertable/data-app/react';
+export { Grid };
+`
+  );
+  const shaken = await Bun.build({
+    entrypoints: [join(temporary, 'tree-shaking.tsx')],
+    target: 'browser',
+    minify: true,
+    external: ['react', 'react-dom'],
+  });
+  if (!shaken.success) throw new Error('Packed tree-shaking build failed.');
+  const shakenSource = await shaken.outputs[0]!.text();
+  if (!shakenSource.includes('altertable-grid'))
+    throw new Error('Tree-shaking removed the used Grid component.');
+  if (/data-altertable-styles|\.altertable-grid/.test(shakenSource))
+    throw new Error('Tree-shaking retained unused style injection.');
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `const { injectDataAppStyles } = await import('@altertable/data-app/react');
+if (typeof document !== 'undefined') throw new Error('Expected a DOM-free consumer');
+try { injectDataAppStyles(); throw new Error('Expected missing-document error'); }
+catch (error) { if (error.message !== 'injectDataAppStyles requires a browser document.') throw error; }`,
+    ],
+    temporary
+  );
+
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
   await writeFile(
@@ -355,7 +389,7 @@ if (!html.includes('Minimum React') || !html.includes('>0<')) throw new Error('M
       `Minimum React browser build failed: ${minimumBuild.logs.map(log => log.message).join('\n')}`
     );
   console.log(
-    'Packed documentation, exports, declarations, browser CSS, and server imports verified.'
+    'Packed documentation, exports, declarations, explicit styles, tree-shaking, and server imports verified.'
   );
 } finally {
   await rm(minimumConsumer, { recursive: true, force: true });

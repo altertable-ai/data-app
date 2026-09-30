@@ -3,7 +3,6 @@ import { formatCount, formatPercent } from '@/src/core/format';
 import { invariant } from '@/src/core/invariant';
 import { classNames } from '@/src/react/ui/classNames';
 import { chartColor } from '@/src/react/ui/chartColor';
-import '@/src/react/ui/Breakdown.css';
 
 export type BreakdownItem = { id: string; label: ReactNode; value: number };
 export type BreakdownProps = {

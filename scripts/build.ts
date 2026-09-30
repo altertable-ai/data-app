@@ -1,4 +1,4 @@
-import { rm, writeFile } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import manifest from '@/package.json';
 
@@ -7,6 +7,26 @@ const external = [
   ...Object.keys(manifest.dependencies),
   ...Object.keys(manifest.peerDependencies),
 ];
+
+// Compile the complete stylesheet once; importing React never installs it.
+const styleImports = new Set(
+  [
+    ...(await Bun.file('src/react/styles.css').text()).matchAll(
+      /@import ['"]\.\/ui\/([^'"]+)['"]/g
+    ),
+  ].map(match => match[1])
+);
+for (const file of new Bun.Glob('*.css').scanSync('src/react/ui')) {
+  if (!styleImports.has(file))
+    throw new Error(`React style manifest is missing ${file}.`);
+}
+const styles = await Bun.build({
+  entrypoints: ['src/react/styles.css'],
+  target: 'browser',
+});
+if (!styles.success) throw new Error('Could not build React styles.');
+const stylesheet = styles.outputs.find(output => output.path.endsWith('.css'));
+if (!stylesheet) throw new Error('React stylesheet is missing.');
 
 // Browser entries share chunks so error classes and transport helpers retain
 // their identity across public entry points. Hosts do not import the app UI.
@@ -27,6 +47,7 @@ const browser = await Bun.build({
   jsx: { runtime: 'automatic', development: false },
   format: 'esm',
   splitting: true,
+  define: { DATA_APP_STYLES: JSON.stringify(await stylesheet.text()) },
   external,
   naming: { entry: '[dir]/[name].[ext]', chunk: 'chunks/[name]-[hash].[ext]' },
   sourcemap: 'external',
@@ -77,4 +98,3 @@ for (const result of results) {
       throw new Error(`Unexpected build output: ${output.path}`);
   }
 }
-await writeFile('dist/react.css.d.ts', 'export {};\n');

@@ -14,8 +14,6 @@ import {
 } from '@/src/react/ui/ContentSkeleton';
 import { EmptyState, type EmptyStateProps } from '@/src/react/ui/EmptyState';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
-import '@/src/react/ui/Inspect.css';
-import '@/src/react/ui/DataWidget.css';
 
 type Empty = Pick<EmptyStateProps, 'title' | 'description'>;
 
