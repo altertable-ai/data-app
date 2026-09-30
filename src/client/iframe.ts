@@ -26,6 +26,7 @@ type Pending = {
 };
 
 /** One bridge per document, shared by all clients and retained across module hot replacement. */
+
 export function createIframeTransport({
   parentOrigin,
   window: frame = window,
@@ -313,13 +314,13 @@ type FrameWindow = Window & {
 };
 
 /** The URL opts into local preview; only same-origin server configuration establishes trust. */
+
 export function localFrameBridge(): LocalBridge | undefined {
   if (typeof window === 'undefined') return undefined;
   const frame = window as FrameWindow;
   if (frame[bridgeKey]) return frame[bridgeKey];
-  const parentOrigin = new URL(frame.location.href).searchParams.get(
-    PARENT_PARAM
-  );
+  const parentOrigin =
+    new URL(frame.location.href).searchParams.get(PARENT_PARAM) ?? '';
   if (!parentOrigin) return undefined;
 
   async function connect(parentOrigin: string) {
@@ -334,6 +335,10 @@ export function localFrameBridge(): LocalBridge | undefined {
         frame.parent === frame
       )
         throw new Error('Invalid local parent configuration.');
+      // Another owner can install a trusted bridge while configuration is pending.
+      if (frame[installedKey]) return frame[installedKey];
+      if (frame[bridgeKey] !== proxy)
+        throw new Error('Preview transport owner changed.');
       const bridge = createIframeTransport({ parentOrigin, window: frame });
       frame[bridgeKey] = bridge;
       frame[installedKey] = bridge;
@@ -347,18 +352,32 @@ export function localFrameBridge(): LocalBridge | undefined {
     }
   }
 
-  const connection = connect(parentOrigin);
-  // Mounting a static view may establish the bridge before any query awaits it.
-  void connection.catch(() => {});
+  let connection: Promise<ReturnType<typeof createIframeTransport>> | undefined;
 
-  return (frame[bridgeKey] = {
+  function getConnection() {
+    const installed = frame[installedKey];
+    if (installed) return Promise.resolve(installed);
+    if (!connection) {
+      const attempt = connect(parentOrigin);
+      connection = attempt;
+      // Clear only this failed attempt; retained proxy references can explicitly retry.
+      void attempt.catch(() => {
+        if (connection === attempt) connection = undefined;
+      });
+    }
+
+    return connection;
+  }
+
+  const proxy: LocalBridge = {
     async transport(operation, input, signal) {
       signal?.throwIfAborted();
+      const attempt = getConnection();
       let abort: (() => void) | undefined;
       try {
         const bridge = signal
           ? await Promise.race([
-              connection,
+              attempt,
               new Promise<never>((_, reject) => {
                 const requestSignal = signal;
 
@@ -372,7 +391,7 @@ export function localFrameBridge(): LocalBridge | undefined {
                 });
               }),
             ])
-          : await connection;
+          : await attempt;
         signal?.throwIfAborted();
 
         return bridge.transport(operation, input, signal);
@@ -381,18 +400,24 @@ export function localFrameBridge(): LocalBridge | undefined {
       }
     },
     location(mode) {
-      void connection.then(bridge => bridge.location(mode)).catch(() => {});
+      void connection?.then(bridge => bridge.location(mode)).catch(() => {});
     },
-  });
+  };
+  frame[bridgeKey] = proxy;
+  // Static mounting still verifies eagerly, without an unhandled rejection.
+  void getConnection().catch(() => {});
+
+  return proxy;
 }
 
 /** Install an explicitly trusted transport for hosted apps and their URL-backed controls. */
+
 export function installDataAppTransport(
   bridge: ReturnType<typeof createIframeTransport>,
   frame: Window = window
 ) {
   const target = frame as FrameWindow;
-  if (target[bridgeKey])
+  if (target[installedKey])
     throw new Error('A data app transport is already installed.');
   target[bridgeKey] = bridge;
   target[installedKey] = bridge;
@@ -405,6 +430,7 @@ export function installDataAppTransport(
 }
 
 /** The bootstrap installs this before executing app code. URL apps can install an explicit connection. */
+
 export function getDataAppTransport(frame: Window = window) {
   return (frame as FrameWindow)[installedKey];
 }

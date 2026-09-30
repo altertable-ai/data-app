@@ -90,3 +90,9 @@ The host independently limits pending requests to 128: an iframe can send
 messages directly without using the client helper. The shared cap is a resource
 policy, not a requirement of the message protocol. It rejects excess requests;
 it does not queue them or limit the total number of calls over a session.
+
+A failed local-preview verification can be retried by the next explicit data
+request. Concurrent callers share the current verification attempt; aborting
+one caller does not cancel the others. Retrying does not automatically repeat
+a data operation or bypass the configured parent-origin check, and verification
+failure never falls back to untrusted iframe or HTTP delivery.
