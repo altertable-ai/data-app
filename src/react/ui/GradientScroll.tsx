@@ -25,7 +25,6 @@ type ScrollMetrics = Pick<
 >;
 
 /** The visible edges that still have content beyond them. */
-
 export function scrollFadeEdges(
   metrics: ScrollMetrics,
   axis: 'vertical' | 'horizontal'
@@ -40,7 +39,6 @@ export function scrollFadeEdges(
 }
 
 /** Fades only scrollable edges; content, size, and scroll changes update the mask. */
-
 export function GradientScroll({
   axis = 'vertical',
   fadeStart = true,

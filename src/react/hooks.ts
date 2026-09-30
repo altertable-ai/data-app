@@ -53,7 +53,6 @@ type TimeInputMapping<Additional extends VariableCollection, Input> =
  * `placeholderData` may belong to an earlier input. Use `useDataView` to distinguish initial
  * loading, refreshes, and changed-input requests.
  */
-
 export function createDataHooks<Operations extends DataOperations>(
   client: DataClient<Operations>
 ) {

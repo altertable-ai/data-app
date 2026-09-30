@@ -25,7 +25,6 @@ export type DisplayedSnapshot<Data, Input> = DataSnapshot<Data, Input> & {
 };
 
 /** The result currently shown to the reader, including the input that produced it. */
-
 export function displayedSnapshot<Data, Input>(
   view: DataView<Data, Input>
 ): DisplayedSnapshot<Data, Input> | undefined {
@@ -38,7 +37,6 @@ export function displayedSnapshot<Data, Input>(
 }
 
 /** Keep the requested input separate from the input that produced visible data. */
-
 export function resolveDataView<Data, Input>({
   requestedInput,
   current,

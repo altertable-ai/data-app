@@ -25,7 +25,6 @@ export type RequestAccess = { lakehouse: Lakehouse; canDiscloseSql: boolean };
  * authenticate another local process. SQL is returned only when both the operation and
  * authorization result permit disclosure.
  */
-
 export function createDataHandler(
   operations: DataOperations,
   authorize: (request: Request, operation: string) => Promise<RequestAccess>
@@ -245,7 +244,6 @@ const MAX_INPUT_BYTES = 16_384;
 class InputTooLargeError extends Error {}
 
 /** Count encoded bytes before retaining chunks; cancellation also interrupts waiting reads. */
-
 async function readInput(request: Request): Promise<string> {
   const reader = request.body?.getReader();
   if (!reader) return '';

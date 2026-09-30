@@ -77,7 +77,6 @@ export type DataSectionProps<Data, Input = unknown> = {
 
 /** One request boundary for any number of cards. `DataBoundary` exposes the lower-level
  * view-state slots for custom composition. */
-
 export function DataSection<Data, Input>({
   result,
   children,

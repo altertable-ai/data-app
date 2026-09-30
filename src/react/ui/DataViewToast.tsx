@@ -13,7 +13,6 @@ export type DataViewToastProps<Data, Input> = {
 
 /** One page-level refresh status. Updating waits briefly; a failed refresh waits
  * long enough to avoid interrupting the displayed result before showing retry. */
-
 export function DataViewToast<Data, Input>({
   view,
   message,

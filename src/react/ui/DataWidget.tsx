@@ -155,7 +155,6 @@ function DataWidgetContent({
 }
 
 /** The page and inspection sheet render the same body and footer, with the same spacing. */
-
 function WidgetContent({
   bodyPadding,
   footer,

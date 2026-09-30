@@ -13,7 +13,6 @@ export type BreakdownProps = {
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** Mutually exclusive parts of one observed whole. Every share uses the supplied total. */
-
 export function Breakdown({
   total,
   items,

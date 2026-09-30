@@ -16,7 +16,6 @@ export type RankingProps = {
 } & Omit<ComponentPropsWithRef<'ol'>, 'children'>;
 
 /** Ordered values scaled to the largest visible item, not shares of a whole. */
-
 export function Ranking({
   items,
   formatValue = formatCount,

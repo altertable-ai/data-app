@@ -1,5 +1,4 @@
 /** Assert an author or data contract while preserving a useful failure message. */
-
 export function invariant(
   condition: unknown,
   message: string

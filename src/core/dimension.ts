@@ -59,7 +59,6 @@ export type DimensionFilterOptions<T extends DimensionValue> = {
 );
 
 /** A bounded categorical filter. URL tags distinguish missing from literal "null". */
-
 export function dimensionFilter<const T extends DimensionValue>(
   config: DimensionFilterOptions<T>
 ): DimensionVariable<T> {
@@ -199,7 +198,6 @@ export function dimensionFilter<const T extends DimensionValue>(
 }
 
 /** Server-side parser; call from the operation input parser before building SQL. */
-
 export function parseDimensionSelection<T extends DimensionValue>(
   value: unknown,
   filter: DimensionVariable<T>
@@ -213,7 +211,6 @@ export function parseDimensionSelection<T extends DimensionValue>(
 }
 
 /** Validate bounded facet results before showing them in a picker. */
-
 export function parseFacetOptions<T extends DimensionValue>(
   value: unknown,
   filter: DimensionVariable<T>
@@ -250,7 +247,6 @@ export function parseFacetOptions<T extends DimensionValue>(
 }
 
 /** Central SQL literal encoding for transports without bound parameters. Column is an allowlisted identifier. */
-
 export function dimensionPredicate<
   T extends DimensionValue,
   const Columns extends readonly string[],

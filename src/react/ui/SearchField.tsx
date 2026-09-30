@@ -29,7 +29,6 @@ export type SearchFieldProps = {
  * The caller owns filtering, URL state, and whether search runs while typing or on submit.
  * Escape and Clear reset the query.
  */
-
 export function SearchField({
   label,
   value,

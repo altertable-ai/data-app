@@ -17,7 +17,6 @@ export type GlossaryExplanationProps = {
 
 /** Opens the inspect sheet for one glossary term. Prefer a card's evidence slot
  * when the surface already has a title, description, and visual. */
-
 export function GlossaryExplanation({
   entry,
   empty,

@@ -42,7 +42,6 @@ function assertAlias(id: string) {
 }
 
 /** Register exact source names once; returned JSX IDs are checked against this registry. */
-
 export function defineDataIdentifiers<
   const Tables extends Record<string, TableIdentifier>,
   const Columns extends Record<

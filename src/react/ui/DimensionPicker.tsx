@@ -12,7 +12,6 @@ import { Combobox, type ComboboxOption } from '@/src/react/ui/Combobox';
 const allKey = 'all';
 
 /** Adapts the typed dimension contract to the shared Combobox control. */
-
 export function DimensionPicker<T extends DimensionValue>({
   filter,
   value,

@@ -10,7 +10,6 @@ export type WidgetStatus =
   | { kind: 'error'; message?: string; onRetry?: () => void };
 
 /** Fixed-height feedback keeps data in place; the retry belongs beside its failure message. */
-
 export function RequestHint({
   status,
   retryLabel = 'Retry',
@@ -57,7 +56,6 @@ export function RequestHint({
 }
 
 /** Fixed toolbar footprint preserves the title and action positions across request states. */
-
 export function WidgetStatusControl({ status }: { status?: WidgetStatus }) {
   const kind = status?.kind ?? 'idle';
   const message =

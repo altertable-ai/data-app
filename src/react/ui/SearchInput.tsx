@@ -4,7 +4,6 @@ import { classNames } from '@/src/react/ui/classNames';
 import '@/src/react/ui/SearchInput.css';
 
 /** One search control surface for picker search and table/page search. */
-
 export function SearchInput({
   size = 'default',
   endAction,

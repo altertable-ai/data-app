@@ -34,7 +34,6 @@ export type SheetProps = {
  * Uses the native dialog top layer and focus trap. Closing keeps the modal mounted until its
  * exit transition completes.
  */
-
 export function Sheet({
   open,
   onOpenChange,

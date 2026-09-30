@@ -52,7 +52,6 @@ export type HelpPopoverProps = {
 /** A supplemental explanation that opens on click, Enter, or a deliberate mouse hover. Tabbing
  * past the trigger does not open it, and a click keeps a hover-opened panel in place.
  * triggerProps and panelProps target its two surfaces. */
-
 export function HelpPopover({
   trigger,
   triggerLabel,

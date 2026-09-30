@@ -38,7 +38,6 @@ export type DateRangeRequest = {
 };
 
 /** The immediately preceding, equally long set of calendar days. */
-
 export function previousDateRange({
   start,
   end,
@@ -71,7 +70,6 @@ export type DateRangeContractOptions = {
 };
 
 /** One source policy for the server parser, URL variable, and displayed reporting period. */
-
 export function defineDateRangeContract(options: DateRangeContractOptions) {
   invariant(
     Number.isInteger(options.maxRangeDays) && options.maxRangeDays > 0,
@@ -167,7 +165,6 @@ export function defineDateRangeContract(options: DateRangeContractOptions) {
 export type DateRangeContract = ReturnType<typeof defineDateRangeContract>;
 
 /** Validate calendar dates and a bounded inclusive range on the server. */
-
 export function parseDateRangeInput(
   value: unknown,
   {
@@ -214,7 +211,6 @@ export function parseDateRangeInput(
 }
 
 /** Accepts numeric strings from DuckDB; rejects negative, fractional, and unsafe integers. */
-
 export function parseCount(value: unknown): number {
   const number =
     typeof value === 'number' || typeof value === 'string'
@@ -240,7 +236,6 @@ export function parseLabel(value: unknown, maxLength = 100): string {
 }
 
 /** Rejects missing or duplicate columns and rows whose width differs from the column list. */
-
 export function rowsAsRecords(
   result: QueryResult,
   requiredColumns: readonly string[]
@@ -392,7 +387,6 @@ export const connectionQueryNames = defineQueryNames({
 });
 
 /** Success requires a bounded SQL query; it does not establish access to a particular dataset. */
-
 export function connectionCheck(): DataOperation<Record<string, never>, true> {
   return defineOperation({
     input: parseEmptyInput,

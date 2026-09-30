@@ -37,7 +37,6 @@ export type TooltipProviderProps = {
 
 /** Delay the first hover, then open nearby tooltips without waiting during the skip window.
  * Keyboard focus always opens immediately. AppLayout provides this by default. */
-
 export function TooltipProvider({
   children,
   delay = 500,
@@ -75,7 +74,6 @@ export type TooltipProps = {
 /** Short visual hint for an already labeled control. variant="chart" follows the cursor
  * on hover and toggles on tap so a bar or point can show the period and value. Hint
  * tooltips hide once the control is pressed. Escape closes either. */
-
 export function Tooltip({
   content,
   children,

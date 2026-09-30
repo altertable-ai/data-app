@@ -23,7 +23,6 @@ export type BoundStory<Data, Input> = (
 ) => readonly StoryFinding[];
 
 /** Validate the authored findings before handing them to the presentation UI. */
-
 export function storySteps(
   findings: readonly StoryFinding[],
   context: DataContext

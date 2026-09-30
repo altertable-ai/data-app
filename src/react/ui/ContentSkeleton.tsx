@@ -10,7 +10,6 @@ export type ContentSkeletonProps = {
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** A metric, panel, or ranking placeholder to compose in the same layout as live content. */
-
 export function ContentSkeleton({
   variant,
   rows = 4,

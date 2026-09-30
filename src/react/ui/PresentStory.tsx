@@ -84,7 +84,6 @@ const stepKeys: Record<string, (index: number, last: number) => number> = {
  * inspection uses `?about=`. `launcherProps` targets the outer span; `dialogProps` targets the
  * modal.
  */
-
 export function PresentStory({
   title,
   findings,

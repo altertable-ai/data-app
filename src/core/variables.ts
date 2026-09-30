@@ -44,7 +44,6 @@ export type AppVariableValues<Variables> = {
 };
 
 /** Name variables once in the app. URL keys must be unique across its controls. */
-
 export function defineAppVariables<const Variables extends VariableCollection>(
   variables: Variables
 ): Variables {
@@ -74,7 +73,6 @@ type ScalarVariableOptions = {
 };
 
 /** A local text filter. Typing replaces the current history entry by default. */
-
 export function textVariable({
   key,
   label,
@@ -103,7 +101,6 @@ export function textVariable({
 }
 
 /** A single choice. Supply values when the option set is known before data loads. */
-
 export function selectVariable({
   key,
   label,
@@ -193,7 +190,6 @@ const PRESET_IDS = new Set<DatePresetId>([
 ]);
 
 /** A date variable keeps relative presets relative and validates exact dates against source coverage. */
-
 export function dateRangeVariable({
   key,
   label = 'Date range',

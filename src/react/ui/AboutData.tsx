@@ -141,7 +141,6 @@ function resolveTab(tab: string | null | undefined): AboutTab {
  * Open state uses `?about=`; tab selection uses `?tab=`. Enable the global shortcut only on the
  * page-level trigger.
  */
-
 export function AboutData({
   id,
   title,

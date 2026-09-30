@@ -74,7 +74,6 @@ export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
 /** Owns the page title, header, gutter, and width; body content uses section headings.
  * The primary request owns controls, empty state, displayed input, refresh, and inspection.
  * Without a request, the shell accepts authored children for setup or static views. */
-
 export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   const {
     config,

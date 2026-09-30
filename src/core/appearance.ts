@@ -187,7 +187,6 @@ function fontStack(family: string): string {
  * Install semantic tokens on the document root, including portaled UI. Returns a cleanup for
  * system-theme listening.
  */
-
 export function applyAppearance(value: unknown): () => void {
   const settings = parseAppearance(value);
   const root = document.documentElement;
@@ -267,7 +266,6 @@ export function applyAppearance(value: unknown): () => void {
 }
 
 /** Viewer color mode persists independently of app-authored brand tokens. */
-
 export function createThemeController(value: unknown): ThemeController {
   const settings = parseAppearance(value);
   const storageKey = 'altertable.data-app.theme-mode';

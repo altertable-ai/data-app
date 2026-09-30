@@ -29,7 +29,6 @@ export type LiveControlProps = {
 } & Omit<ComponentPropsWithRef<'button'>, 'children' | 'onClick' | 'onChange'>;
 
 /** Toggle an app-owned recurring refresh. The app supplies the timer and its cadence. */
-
 export function LiveControl({
   enabled,
   onChange,

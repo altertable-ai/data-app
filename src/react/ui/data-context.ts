@@ -30,11 +30,11 @@ export function evidenceFor<
   const Context extends DataContext,
   const Names extends Record<string, string> = Record<string, string>,
 >(context: Context, names?: Names) {
-  return (evidence: {
+  function validateEvidence(evidence: {
     id: string;
     glossaryIds?: readonly (keyof Context['glossary'] & string)[];
     queryNames?: readonly Names[keyof Names][];
-  }) => {
+  }) {
     for (const id of evidence.glossaryIds ?? []) {
       invariant(context.glossary[id], `Unknown glossary entry: ${id}.`);
     }
@@ -51,17 +51,18 @@ export function evidenceFor<
       glossaryIds: evidence.glossaryIds ? [...evidence.glossaryIds] : undefined,
       queryNames: evidence.queryNames ? [...evidence.queryNames] : undefined,
     };
-  };
+  }
+
+  return validateEvidence;
 }
 
 /** Bind glossary query references and card evidence to the same registry. */
-
 export function createDataContext<const Names extends Record<string, string>>(
   queryNames: Names
 ) {
   defineQueryNames(queryNames);
 
-  return <
+  function bindDataContext<
     const Context extends Omit<DataContext, 'glossary'> & {
       glossary: Record<
         string,
@@ -70,9 +71,7 @@ export function createDataContext<const Names extends Record<string, string>>(
         }
       >;
     },
-  >(
-    context: Context
-  ) => {
+  >(context: Context) {
     const known = new Set(Object.values(queryNames));
     for (const [id, entry] of Object.entries(context.glossary)) {
       for (const query of entry.queryNames ?? []) {
@@ -157,5 +156,7 @@ export function createDataContext<const Names extends Record<string, string>>(
     }
 
     return { ...context, queryNames, evidence, finding, metric };
-  };
+  }
+
+  return bindDataContext;
 }

@@ -19,7 +19,6 @@ export type DataContentState<Data, Input> = DataContentHelpers<Data> &
   );
 
 /** Selectors run only for displayed data. Date comparisons inherit that result's input. */
-
 export function defineDataContent<Data, Input>(
   render: (state: DataContentState<Data, Input>) => ReactNode,
   options: { date?: (input: Input) => DateRangeRequest } = {}

@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { dataAppTitle, type DataAppConfig } from '@/src/core/config';
 
 /** Mount once per document; installs document identity and the shared request provider. */
-
 export function mountDataApp({
   config,
   component: Component,

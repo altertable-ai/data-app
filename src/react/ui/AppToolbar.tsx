@@ -35,7 +35,6 @@ export type AppToolbarProps = {
  * cluster; end follows the built-in actions. Live sits beside Refresh when supplied. Refresh also
  * answers Alt/Option+R and uses the button to cancel a running request when onCancel is provided;
  * refresh.tooltip overrides its static label. All built-in controls are optional. */
-
 export function AppToolbar({
   children,
   updatedAt,

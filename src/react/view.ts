@@ -70,10 +70,11 @@ export function describeViewInput<Input>(definition: {
   );
   if (definition.describeInput) return definition.describeInput;
   invariant(date && variable, 'A view needs a date binding or describeInput.');
+  const dateBinding = date;
 
-  return input => {
+  function describeInput(input: Input) {
     const period = (variable as DateRangeVariable).describeInput(
-      date.input(input)
+      dateBinding.input(input)
     );
     const filters = Object.entries(definition.variables)
       .filter(([, variable]) => variable.kind === 'dimension')
@@ -88,7 +89,9 @@ export function describeViewInput<Input>(definition: {
       .filter(Boolean);
 
     return [period, ...filters].join(' · ');
-  };
+  }
+
+  return describeInput;
 }
 
 export function resolveViewInput<Variables extends VariableCollection, Input>(

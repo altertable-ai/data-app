@@ -32,7 +32,6 @@ export type {
 } from '@/src/core/variables';
 
 /** Adapt one date variable to the controlled picker without giving the picker URL ownership. */
-
 export function dateRangeControl(
   variable: DateRangeVariable,
   selection: DateRangeSelection,
@@ -93,7 +92,6 @@ function serverSearch() {
 }
 
 /** URL is the source of truth for app variables; one update can change dependent values atomically. */
-
 export function useAppVariables<const Variables extends VariableCollection>(
   definitions: Variables
 ) {

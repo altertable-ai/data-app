@@ -18,7 +18,6 @@ export type DataBoundaryProps<T, Input = unknown> = {
 
 /** Render one request state at a time. Prior content remains readable during an update.
  * Local boundaries can opt into an inline notice and delayed dimming. */
-
 export function DataBoundary<T, Input>({
   view,
   loading,

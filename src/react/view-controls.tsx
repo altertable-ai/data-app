@@ -19,7 +19,6 @@ import {
 import type { ResolvedVariables } from '@/src/react/view';
 
 /** URL values resolve before facets; facet keys include their dependent inputs for cached, bounded loading. */
-
 export function useViewVariables<Variables extends VariableCollection>(
   definitions: Variables,
   loadFacet: (

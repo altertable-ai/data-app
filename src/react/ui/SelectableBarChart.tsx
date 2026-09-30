@@ -13,7 +13,6 @@ export type SelectableBarChartProps = {
 };
 
 /** Selection inspects a bar; it never silently filters the rest of the page. */
-
 export function SelectableBarChart({
   items,
   selectedId,

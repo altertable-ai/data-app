@@ -26,7 +26,6 @@ type Pending = {
 };
 
 /** One bridge per document, shared by all clients and retained across module hot replacement. */
-
 export function createIframeTransport({
   parentOrigin,
   window: frame = window,
@@ -314,7 +313,6 @@ type FrameWindow = Window & {
 };
 
 /** The URL opts into local preview; only same-origin server configuration establishes trust. */
-
 export function localFrameBridge(): LocalBridge | undefined {
   if (typeof window === 'undefined') return undefined;
   const frame = window as FrameWindow;
@@ -411,7 +409,6 @@ export function localFrameBridge(): LocalBridge | undefined {
 }
 
 /** Install an explicitly trusted transport for hosted apps and their URL-backed controls. */
-
 export function installDataAppTransport(
   bridge: ReturnType<typeof createIframeTransport>,
   frame: Window = window
@@ -430,7 +427,6 @@ export function installDataAppTransport(
 }
 
 /** The bootstrap installs this before executing app code. URL apps can install an explicit connection. */
-
 export function getDataAppTransport(frame: Window = window) {
   return (frame as FrameWindow)[installedKey];
 }

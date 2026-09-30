@@ -179,7 +179,6 @@ function QueryNotebook({
  * `names` selects supporting queries. Missing query evidence is shown explicitly; `expanded`
  * skips the disclosure in a dedicated Queries view.
  */
-
 export function QueryList({
   queries,
   names,

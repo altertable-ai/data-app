@@ -60,7 +60,6 @@ export type MultiComboboxProps = SharedProps & {
 export type ComboboxProps = SingleComboboxProps | MultiComboboxProps;
 
 /** Searchable selection picker with one focus and popup model for single and multiple values. */
-
 export function Combobox(props: ComboboxProps) {
   const multiple = 'values' in props && props.values !== undefined;
   const { label, options, missingOption, disabled, loading, error, onRetry } =

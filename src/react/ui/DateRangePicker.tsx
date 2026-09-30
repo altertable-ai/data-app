@@ -72,7 +72,6 @@ export type DateRangePickerProps = {
 >;
 
 /** The app owns URL state; `dateRangeControl` binds a date variable to this picker. */
-
 export function DateRangePicker({
   label = 'Date range',
   value,
