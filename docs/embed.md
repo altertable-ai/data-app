@@ -45,6 +45,9 @@ the host document or use same-origin privileges. Both modes use
 
 ## Trusted bootstrap
 
+For backend HTML that embeds a ready-made script without bundling, use the
+[standalone bootstrap asset](bootstrap.md).
+
 Bundle this initializer into the trusted bootstrap document, before any app code:
 
 ```ts

@@ -16,8 +16,10 @@ async function bundle(entry: string) {
   return result.outputs[0]!.text();
 }
 
-// Build bootstrap and app separately, as a production hosting service would.
-const bootstrap = await bundle('./fixtures/bundle-bootstrap.ts');
+// Hosting services embed the published bootstrap without bundling it again.
+const bootstrap = await Bun.file(
+  new URL(import.meta.resolve('@altertable/data-app/bootstrap'))
+).text();
 const app = await bundle('./fixtures/bundle-app.tsx');
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
 const urlApp = await bundle('./fixtures/bridge-frame.ts');
@@ -52,7 +54,7 @@ Bun.serve({
       });
     if (path === '/__test/bootstrap')
       return new Response(
-        `<!doctype html><body><div id="root"></div><script>${bootstrap.replaceAll('</script', '<\\/script')}</script></body>`,
+        `<!doctype html><body><div id="root"></div><script data-parent-origin="http://127.0.0.1:${port}">${bootstrap.replaceAll('</script', '<\\/script')}</script></body>`,
         {
           headers: {
             'content-type': 'text/html',

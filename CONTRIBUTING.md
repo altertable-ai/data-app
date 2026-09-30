@@ -22,6 +22,10 @@ artifact. Workflow validation lives in `scripts/check-workflows.sh`, and release
 helpers live in `scripts/release`. Generated `dist` files are ignored; edit source
 instead.
 
+`src/embed/standalone.ts` emits `dist/bootstrap.js` as a self-contained classic
+script for backend HTML. It reads its trusted parent origin from the script
+element; keep app navigation and UI dependencies out of this artifact.
+
 Keep core, client, server, and embed free of React and UI imports. Client and
 server may depend on core; neither may import the other. Embed may depend on core
 and client. Browser code must not import server
@@ -66,7 +70,8 @@ Flag breaking API changes explicitly.
 
 Build the package, then run `bash scripts/install-test-browser.sh` once and
 `bun run test:browser` for iframe work. Browser fixtures import public built
-exports; bootstrap and app scripts are bundled independently.
+exports; the bootstrap uses the published standalone asset and app scripts are
+bundled independently.
 
 CI runs source and packed-package checks, validates workflow syntax, reviews
 dependency changes, and analyzes JavaScript and TypeScript with CodeQL.

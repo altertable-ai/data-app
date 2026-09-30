@@ -193,6 +193,50 @@ if (typeof createDataHandler !== "function" || typeof localLakehouse !== "functi
   ]);
   await run(['bun', join(temporary, 'server.ts')], temporary);
   await run(['bun', join(temporary, 'bridge.ts')], temporary);
+  await writeFile(
+    join(temporary, 'standalone-bootstrap.mjs'),
+    `import { readFile } from 'node:fs/promises';
+import { runInNewContext } from 'node:vm';
+import { strict as assert } from 'node:assert';
+
+const source = await readFile(new URL(import.meta.resolve('@altertable/data-app/bootstrap')), 'utf8');
+assert(!/createAppLocation|attachNavigation|replaceState|pushState|navigation\\.update/.test(source));
+
+function execute(parentOrigin) {
+  const sent = [];
+  const listeners = new Map();
+  const parent = { postMessage(message, origin) { sent.push({ message, origin }); } };
+  const frame = {
+    parent,
+    addEventListener(type, listener) { listeners.set(type, listener); },
+    removeEventListener(type) { listeners.delete(type); },
+  };
+  runInNewContext(source, {
+    document: { currentScript: { dataset: { parentOrigin } } },
+    window: frame,
+    URL,
+    crypto: { randomUUID() { return 'document'; } },
+  });
+  return { sent, listeners, parent, frame };
+}
+
+assert.throws(() => execute(undefined), /Missing trusted parent origin/);
+assert.throws(() => execute('https://host.example/path'), /Expected an exact parent origin/);
+const { sent, listeners, parent } = execute('https://host.example');
+const message = { channel: 'altertable:data-app', version: 1, type: 'connect', documentId: 'host', token: 'token' };
+listeners.get('message')({ origin: 'https://other.example', source: parent, data: message });
+assert.equal(sent.length, 0);
+listeners.get('message')({ origin: 'https://host.example', source: {}, data: message });
+assert.equal(sent.length, 0);
+listeners.get('message')({ origin: 'https://host.example', source: parent, data: message });
+assert.equal(sent.length, 1);
+assert.equal(sent[0].origin, 'https://host.example');
+assert.equal(sent[0].message.type, 'ready');
+assert.equal(sent[0].message.token, 'token');
+assert.equal(sent[0].message.documentId, 'document');
+`
+  );
+  await run(['node', join(temporary, 'standalone-bootstrap.mjs')], temporary);
   await run(
     [
       'node',

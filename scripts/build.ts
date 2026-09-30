@@ -32,7 +32,15 @@ const browser = await Bun.build({
   sourcemap: 'external',
 });
 
-const results = [browser];
+const bootstrap = await Bun.build({
+  entrypoints: ['src/embed/standalone.ts'],
+  outdir: 'dist',
+  target: 'browser',
+  format: 'iife',
+  naming: 'bootstrap.js',
+});
+
+const results = [browser, bootstrap];
 for (const [name, entry] of Object.entries({
   server: 'src/server/index.ts',
   local: 'src/server/local.ts',

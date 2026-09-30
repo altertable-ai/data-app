@@ -71,6 +71,9 @@
       "types": "./dist/types/embed/index.d.ts",
       "import": "./dist/embed/index.js"
     },
+    "./bootstrap": {
+      "default": "./dist/bootstrap.js"
+    },
     "./react/embed": {
       "types": "./dist/types/react/embed/index.d.ts",
       "import": "./dist/react/embed/index.js"

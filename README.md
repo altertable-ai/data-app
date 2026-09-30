@@ -28,19 +28,20 @@ import { mountDataApp } from '@altertable/data-app/react';
 
 ## Documentation
 
-| Entry                                     | Use                                                 |
-| ----------------------------------------- | --------------------------------------------------- |
-| [/contract](docs/contract.md)             | Define typed operations, parsers, and date ranges   |
-| [/client](docs/client.md)                 | Call server operations with `fetch`                 |
-| [/server](docs/server.md)                 | Authorize and execute requests on a hosted server   |
-| [/server/bun](docs/server-bun.md)         | Serve an app locally with Bun                       |
-| [/embed](docs/embed.md)                   | Host URL apps or sandboxed JavaScript bundles       |
-| [/react/embed](docs/react-embed.md)       | Embed apps with React shells and bridges            |
-| [/react](docs/react.md)                   | Compose views, filters, widgets, and request states |
-| [/react/styles.css](docs/react-styles.md) | Load the React UI stylesheet                        |
-| [/config](docs/config.md)                 | Define app identity and scope                       |
-| [/appearance](docs/appearance.md)         | Configure brand tokens and viewer theme             |
-| [/format](docs/format.md)                 | Format dates, counts, ratios, and currencies        |
+| Entry                                     | Use                                                   |
+| ----------------------------------------- | ----------------------------------------------------- |
+| [/contract](docs/contract.md)             | Define typed operations, parsers, and date ranges     |
+| [/client](docs/client.md)                 | Call server operations with `fetch`                   |
+| [/server](docs/server.md)                 | Authorize and execute requests on a hosted server     |
+| [/server/bun](docs/server-bun.md)         | Serve an app locally with Bun                         |
+| [/embed](docs/embed.md)                   | Host URL apps or sandboxed JavaScript bundles         |
+| [/bootstrap](docs/bootstrap.md)           | Embed the standalone bootstrap script in backend HTML |
+| [/react/embed](docs/react-embed.md)       | Embed apps with React shells and bridges              |
+| [/react](docs/react.md)                   | Compose views, filters, widgets, and request states   |
+| [/react/styles.css](docs/react-styles.md) | Load the React UI stylesheet                          |
+| [/config](docs/config.md)                 | Define app identity and scope                         |
+| [/appearance](docs/appearance.md)         | Configure brand tokens and viewer theme               |
+| [/format](docs/format.md)                 | Format dates, counts, ratios, and currencies          |
 
 Start with [app authoring](docs/app-authoring.md) for the complete data flow.
 The package ships these docs alongside its built JavaScript and declarations.
