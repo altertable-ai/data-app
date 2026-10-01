@@ -1,7 +1,8 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
 import { DateTimeTooltip } from '@/src/react/ui/DateTimeTooltip';
-import { EmptyState, type EmptyStateProps } from '@/src/react/ui/EmptyState';
+import { EmptyState } from '@/src/react/ui/EmptyState';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 import { SearchField, type SearchFieldProps } from '@/src/react/ui/SearchField';
 
 export type DataTableSearch = Pick<
@@ -61,10 +62,7 @@ export function DataTableShare({ value }: { value: number }) {
   return <span className="altertable-data-table-share">{label}</span>;
 }
 
-export type DataTableEmptyRowProps = Pick<
-  EmptyStateProps,
-  'title' | 'description'
-> & {
+export type DataTableEmptyRowProps = EmptyContent & {
   colSpan: number;
 };
 

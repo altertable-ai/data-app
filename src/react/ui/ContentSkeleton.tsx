@@ -1,12 +1,11 @@
 import type { ComponentPropsWithRef } from 'react';
+import type { SkeletonContent } from '@/src/react/ui/presentation';
 import { invariant } from '@/src/core/invariant';
 import { classNames } from '@/src/react/ui/classNames';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 
-export type ContentSkeletonProps = {
-  rows?: number;
-  variant: 'metric' | 'panel' | 'ranking';
-} & Omit<ComponentPropsWithRef<'div'>, 'children'>;
+export type ContentSkeletonProps = SkeletonContent &
+  Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** A metric, panel, or ranking placeholder to compose in the same layout as live content. */
 export function ContentSkeleton({

@@ -1,6 +1,7 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@/src/react/ui/Tabs';
-import { EmptyState, type EmptyStateProps } from '@/src/react/ui/EmptyState';
+import { EmptyState } from '@/src/react/ui/EmptyState';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 import { classNames } from '@/src/react/ui/classNames';
 import { validateWidgetViews } from '@/src/react/ui/widget-views';
 
@@ -8,7 +9,7 @@ export type WidgetView = {
   id: string;
   label: ReactNode;
   content: ReactNode;
-  empty: Pick<EmptyStateProps, 'title' | 'description'>;
+  empty: EmptyContent;
   isEmpty: boolean;
 };
 export type WidgetViewTabsProps<

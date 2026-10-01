@@ -16,7 +16,7 @@ import { VariableBar } from '@/src/react/ui/VariableBar';
 import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
 import { DataSection, type SectionResult } from '@/src/react/ui/DataSection';
-import type { EmptyStateProps } from '@/src/react/ui/EmptyState';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 
 type DataAppBaseProps = {
   config: DataAppConfig;
@@ -36,7 +36,7 @@ type DataAppBaseProps = {
 export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   queries?: DisclosedQuery[];
   refresh?: AppToolbarProps['refresh'];
-  empty: Pick<EmptyStateProps, 'title' | 'description'>;
+  empty: EmptyContent;
   controls?: ReactNode;
 };
 

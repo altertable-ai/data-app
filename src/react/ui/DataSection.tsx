@@ -4,7 +4,8 @@ import { Button } from '@/src/react/ui/Button';
 import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';
 import type { DataView } from '@/src/core/data-view';
-import { EmptyState, type EmptyStateProps } from '@/src/react/ui/EmptyState';
+import { EmptyState } from '@/src/react/ui/EmptyState';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 import { StatusPanel } from '@/src/react/ui/StatusPanel';
 
 function errorPresentation(cause: Error) {
@@ -56,7 +57,6 @@ function errorPresentation(cause: Error) {
   }
 }
 
-type SectionEmpty = Pick<EmptyStateProps, 'title' | 'description'>;
 export type SectionResult<Data, Input> = {
   view: DataView<Data, Input>;
   refetch: () => unknown;
@@ -64,7 +64,7 @@ export type SectionResult<Data, Input> = {
 
 export type DataSectionProps<Data, Input = unknown> = {
   result: SectionResult<Data, Input>;
-  empty: SectionEmpty;
+  empty: EmptyContent;
   children: (data: Data, displayedInput: Input) => ReactNode;
   /** Placeholder layout for an initial request; use the ready view's grid without copied values. */
   loading?: ReactNode;

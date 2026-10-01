@@ -7,14 +7,12 @@ import {
 import type { DataOperations, Lakehouse } from '@/src/core/contract';
 import { defineDataQueryRoute, MessageRoutingError } from '@/src/core/messages';
 import type { DataTransport } from '@/src/client/transport';
-import type { DataQueryBody } from '@/src/core/messages';
-
-export type InputOf<T> = T extends { input: (value: unknown) => infer Input }
-  ? Input
-  : never;
-export type OutputOf<T> = T extends { output: (value: unknown) => infer Output }
-  ? Output
-  : never;
+import type {
+  DataQueryBody,
+  InputOf,
+  OutputOf,
+} from '@/src/core/operation-types';
+export type { InputOf, OutputOf } from '@/src/core/operation-types';
 
 /**
  * Parsed operation data and query evidence. `queries` is present only when SQL disclosure is

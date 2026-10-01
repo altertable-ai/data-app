@@ -6,12 +6,20 @@
 import { parseDate, today } from '@internationalized/date';
 import { formatDateRange } from '@/src/core/format';
 import { invariant } from '@/src/core/invariant';
-
-export type QueryResult = {
-  columns: { name: string; type?: string }[];
-  rows: unknown[][];
-  queryId?: string;
-};
+import type { DateRange as DateRangeInput } from '@/src/core/date-range';
+import type {
+  QueryResult,
+  DataOperation,
+  OperationContext,
+} from '@/src/core/operation-types';
+export type {
+  QueryResult,
+  DisclosedQuery,
+  Lakehouse,
+  OperationContext,
+  DataOperation,
+  DataOperations,
+} from '@/src/core/operation-types';
 
 export function parseEmptyInput(value: unknown): Record<string, never> {
   invariant(
@@ -31,7 +39,7 @@ export function parseTrue(value: unknown): true {
   return true;
 }
 
-export type DateRangeInput = { start: string; end: string };
+export type { DateRange as DateRangeInput } from '@/src/core/date-range';
 export type DateRangeRequest = {
   range: DateRangeInput;
   comparison: DateRangeInput | null;
@@ -257,13 +265,6 @@ export function rowsAsRecords(
   });
 }
 
-/** One named statement an operation ran. Returned only when SQL disclosure is allowed. */
-export type DisclosedQuery = {
-  name: string;
-  statement: string;
-  queryId?: string;
-};
-
 export function defineQueryNames<const Names extends Record<string, string>>(
   names: Names
 ): Names {
@@ -303,34 +304,6 @@ export class DataSourceError extends Error {
     this.name = 'DataSourceError';
   }
 }
-
-/** Query interface supplied by a server adapter or an authorized iframe bridge. */
-export type Lakehouse = {
-  queryAll(
-    statement: string,
-    options: { limit: number; signal: AbortSignal; name?: string }
-  ): Promise<QueryResult>;
-};
-
-export type OperationContext = { lakehouse: Lakehouse; signal: AbortSignal };
-
-/**
- * Parsers run in the operation executor's runtime: server for HTTP apps, browser for bundle apps.
- * Browser validation does not replace backend authorization or query limits.
- */
-export type DataOperation<Input, Output> = {
-  input: (value: unknown) => Input;
-  output: (value: unknown) => Output;
-  run: (context: OperationContext, input: Input) => Promise<Output>;
-  checks: readonly Input[];
-  queryNames?: Readonly<Record<string, string>>;
-  policy: {
-    maxQueryRows: number;
-    maxDurationMs: number;
-    maxResponseBytes?: number;
-    exposeSql?: boolean;
-  };
-};
 
 export type OperationQuery<Names extends Readonly<Record<string, string>>> = (
   name: Names[keyof Names],
@@ -415,17 +388,6 @@ export function connectionCheck(): DataOperation<Record<string, never>, true> {
   });
 }
 
-export type DataOperations = Record<
-  string,
-  {
-    input: (value: unknown) => unknown;
-    output: (value: unknown) => unknown;
-    run: (context: OperationContext, input: never) => Promise<unknown>;
-    checks: readonly unknown[];
-    queryNames?: Readonly<Record<string, string>>;
-    policy: DataOperation<never, unknown>['policy'];
-  }
->;
 export {
   dimensionFilter,
   parseDimensionSelection,

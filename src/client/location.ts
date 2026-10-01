@@ -1,17 +1,19 @@
-import { PARENT_PARAM, validLocation } from '@/src/core/bridge';
+import { PARENT_PARAM } from '@/src/core/bridge';
+import { validLocation } from '@/src/core/navigation';
 
-export type AppLocation = { search: string; hash: string };
+import type { AppLocation, HistoryMode } from '@/src/core/navigation';
+export type { AppLocation } from '@/src/core/navigation';
 export type DataAppLocation = {
   snapshot(): AppLocation;
   subscribe(listener: () => void): () => void;
-  update(location: AppLocation, mode?: 'push' | 'replace'): void;
+  update(location: AppLocation, mode?: HistoryMode): void;
 };
 
 /** Opaque sandboxes keep app state in memory; URL frames retain their real URL for HMR. */
 export function createAppLocation(
   frame: Window,
   virtual: boolean,
-  publish: (location: AppLocation, mode: 'push' | 'replace') => void
+  publish: (location: AppLocation, mode: HistoryMode) => void
 ) {
   let state: AppLocation = { search: '', hash: '' };
   let disposed = false;
