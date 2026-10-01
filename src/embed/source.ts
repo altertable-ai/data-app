@@ -1,7 +1,7 @@
 import { PARENT_PARAM } from '@/src/core/bridge';
 import type { MessageDispatcher } from '@/src/core/messages';
 import {
-  attachDataAppBridge,
+  attachDataAppConnection,
   type DataAppStatus,
   type DataAppDiagnostic,
 } from '@/src/embed/host';
@@ -12,9 +12,8 @@ export type DataAppSource =
       type: 'bundle';
       bootstrapUrl: string;
       javascript: string;
-      revision: string;
     };
-export type DataAppShellOptions = {
+export type DataAppSourceOptions = {
   iframe: HTMLIFrameElement;
   source: DataAppSource;
   onMessage: MessageDispatcher;
@@ -24,14 +23,14 @@ export type DataAppShellOptions = {
 };
 
 /** Owns loading and sandbox policy. Dispose before replacing the source or retrying. */
-export function attachDataAppShell({
+export function attachDataAppSource({
   iframe,
   source,
   onMessage,
   onStatusChange,
   onDiagnostic,
   startupTimeoutMs = 30_000,
-}: DataAppShellOptions) {
+}: DataAppSourceOptions) {
   const host = iframe.ownerDocument.defaultView;
   if (!host) throw new Error('The iframe requires a host window.');
   const url = new URL(
@@ -42,7 +41,7 @@ export function attachDataAppShell({
     throw new Error('Data apps require an HTTP(S) URL.');
   const opaque = source.type === 'bundle';
   if (!opaque && url.origin === host.location.origin)
-    throw new Error('URL data apps require a separate origin from the shell.');
+    throw new Error('URL data apps require a separate origin from the host.');
   iframe.setAttribute(
     'sandbox',
     opaque
@@ -71,7 +70,7 @@ export function attachDataAppShell({
     onStatusChange?.(value);
   }
 
-  const disposeBridge = attachDataAppBridge({
+  const disposeBridge = attachDataAppConnection({
     iframe,
     connection: opaque
       ? { type: 'opaque', token: crypto.randomUUID() }

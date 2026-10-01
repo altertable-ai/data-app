@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { DataAppSkeleton } from '@/src/react/index';
 import { searchItems } from '@/src/react/ui/searchItems';
 import { SearchMatch } from '@/src/react/ui/SearchMatch';
 import { ariaKeyShortcuts, shortcutLabel } from '@/src/react/ui/shortcuts';
@@ -584,4 +585,36 @@ test('visualization view identities are validated even while data is loading', (
       <VisualizationWidget {...props} views={[view]} initialView="missing" />
     )
   ).toThrow('Unknown widget tab');
+});
+
+test('data app startup skeleton exposes one customizable status without live controls or data', () => {
+  const markup = renderToStaticMarkup(
+    <DataAppSkeleton
+      aria-label="Loading activity report"
+      className="host-loading"
+    />
+  );
+  expect(markup).toContain(
+    '<output aria-label="Loading activity report" aria-busy="true"'
+  );
+  expect(markup).toContain('altertable-data-app-skeleton host-loading');
+  expect(markup).toContain('aria-hidden="true"');
+  expect(markup).not.toContain('<button');
+  expect(markup).not.toContain('No results');
+});
+
+test('data app skeleton accepts independent header and footer nodes without adding defaults', () => {
+  const plain = renderToStaticMarkup(<DataAppSkeleton />);
+  expect(plain).not.toContain('altertable-data-app-skeleton-header');
+  expect(plain).not.toContain('altertable-data-app-skeleton-footer');
+  const withHeader = renderToStaticMarkup(
+    <DataAppSkeleton header={<h1>Activity report</h1>} />
+  );
+  expect(withHeader).toContain('<h1>Activity report</h1>');
+  expect(withHeader).not.toContain('altertable-data-app-skeleton-footer');
+  const withFooter = renderToStaticMarkup(
+    <DataAppSkeleton footer={<p>About the report</p>} />
+  );
+  expect(withFooter).toContain('<p>About the report</p>');
+  expect(withFooter).not.toContain('altertable-data-app-skeleton-header');
 });

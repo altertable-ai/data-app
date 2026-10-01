@@ -1,24 +1,73 @@
-import { useRef, useLayoutEffect, useEffect, type ComponentRef } from 'react';
+import {
+  useRef,
+  useLayoutEffect,
+  useEffect,
+  useState,
+  type ComponentRef,
+  type ComponentPropsWithoutRef,
+} from 'react';
 import {
   attachDataAppBridge,
-  type DataAppConnection,
-  type DataAppStatus,
-  type DataAppDiagnostic,
-} from '@/src/embed/host';
-import type { MessageDispatcher } from '@/src/core/messages';
+  type DataAppBridgeOptions,
+} from '@/src/embed/bridge';
+import type { DataAppConnection } from '@/src/embed/host';
+import type { DataAppSource } from '@/src/embed/source';
 
-export type DataAppBridgeProps = {
-  iframe: ComponentRef<'iframe'> | null;
-  connection: DataAppConnection;
-  onMessage: MessageDispatcher;
-  onStatusChange?: (status: DataAppStatus) => void;
-  onDiagnostic?: (event: DataAppDiagnostic) => void;
-};
+export type DataAppBridgeProps = Pick<
+  DataAppBridgeOptions,
+  'onMessage' | 'onStatusChange' | 'onDiagnostic'
+> &
+  (
+    | {
+        source: DataAppSource;
+        title: string;
+        startupTimeoutMs?: number;
+        iframeProps?: Omit<
+          ComponentPropsWithoutRef<'iframe'>,
+          | 'src'
+          | 'srcDoc'
+          | 'sandbox'
+          | 'referrerPolicy'
+          | 'loading'
+          | 'children'
+          | 'title'
+        >;
+        iframe?: never;
+        connection?: never;
+      }
+    | {
+        iframe: ComponentRef<'iframe'> | null;
+        connection: DataAppConnection;
+        source?: never;
+        title?: never;
+        startupTimeoutMs?: never;
+        iframeProps?: never;
+      }
+  );
 
-/** Delivery only; the host owns the iframe and route handlers, including navigation. */
-export function DataAppBridge({
-  iframe,
-  connection,
+/** Owns iframe setup and delivery. The consuming shell owns loading, error UI, and retries. */
+export function DataAppBridge(props: DataAppBridgeProps) {
+  if (props.source) {
+    const source = props.source;
+    const identity = JSON.stringify(
+      source.type === 'url'
+        ? [source.type, source.url]
+        : [source.type, source.bootstrapUrl, source.javascript]
+    );
+
+    return <SourceBridge key={identity} {...props} />;
+  }
+
+  return <ConnectionBridge {...props} />;
+}
+
+type SourceBridgeProps = Extract<DataAppBridgeProps, { source: DataAppSource }>;
+type ConnectionBridgeProps = Extract<
+  DataAppBridgeProps,
+  { connection: DataAppConnection }
+>;
+
+function useHandlers({
   onMessage,
   onStatusChange,
   onDiagnostic,
@@ -29,6 +78,51 @@ export function DataAppBridge({
     handlers.current = { onMessage, onStatusChange, onDiagnostic };
   });
 
+  return handlers;
+}
+
+function SourceBridge(props: SourceBridgeProps) {
+  const { source, title, iframeProps, startupTimeoutMs } = props;
+  const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
+  const handlers = useHandlers(props);
+  const type = source.type;
+  const url = source.type === 'url' ? source.url : source.bootstrapUrl;
+  const javascript = source.type === 'bundle' ? source.javascript : undefined;
+
+  useEffect(() => {
+    if (!iframe) return;
+
+    return attachDataAppBridge({
+      iframe,
+      source:
+        type === 'url'
+          ? { type, url }
+          : {
+              type,
+              bootstrapUrl: url,
+              javascript: javascript!,
+            },
+      startupTimeoutMs,
+      onMessage(request, context) {
+        return handlers.current.onMessage(request, context);
+      },
+      onStatusChange(status) {
+        return handlers.current.onStatusChange?.(status);
+      },
+      onDiagnostic(event) {
+        return handlers.current.onDiagnostic?.(event);
+      },
+    });
+  }, [iframe, type, url, javascript, startupTimeoutMs, handlers]);
+
+  return (
+    <iframe {...iframeProps} loading="eager" ref={setIframe} title={title} />
+  );
+}
+
+function ConnectionBridge(props: ConnectionBridgeProps) {
+  const { iframe, connection } = props;
+  const handlers = useHandlers(props);
   const identity =
     connection.type === 'origin' ? connection.origin : connection.token;
   const type = connection.type;
@@ -54,7 +148,7 @@ export function DataAppBridge({
         return handlers.current.onDiagnostic?.(event);
       },
     });
-  }, [iframe, type, identity]);
+  }, [iframe, type, identity, handlers]);
 
   return null;
 }

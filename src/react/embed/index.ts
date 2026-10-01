@@ -5,5 +5,3 @@
  */
 export { DataAppBridge } from '@/src/react/embed/bridge';
 export type { DataAppBridgeProps } from '@/src/react/embed/bridge';
-export { DataAppShell } from '@/src/react/embed/shell';
-export type { DataAppShellProps } from '@/src/react/embed/shell';
