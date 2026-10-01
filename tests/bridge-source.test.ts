@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { attachDataAppShell } from '@/src/embed/shell';
+import { attachDataAppBridge } from '@/src/embed/bridge';
 
 function iframe() {
   const host = Object.assign(new EventTarget(), {
@@ -24,7 +24,7 @@ function iframe() {
   return { frame, attributes };
 }
 
-test('shell rejects non-HTTP sources and URL apps sharing the host origin', () => {
+test('source bridge rejects non-HTTP sources and URL apps sharing the host origin', () => {
   const { frame } = iframe();
   for (const url of [
     'javascript:alert(1)',
@@ -32,7 +32,7 @@ test('shell rejects non-HTTP sources and URL apps sharing the host origin', () =
     'https://host.example/app',
   ]) {
     expect(() =>
-      attachDataAppShell({
+      attachDataAppBridge({
         iframe: frame,
         source: { type: 'url', url },
         async onMessage() {
@@ -43,16 +43,15 @@ test('shell rejects non-HTTP sources and URL apps sharing the host origin', () =
   }
 });
 
-test('shell reports startup failure and cleanup cancels pending startup timers', async () => {
+test('source bridge reports startup failure and cleanup cancels pending startup timers', async () => {
   const { frame, attributes } = iframe();
   const statuses: string[] = [];
-  const host = attachDataAppShell({
+  const host = attachDataAppBridge({
     iframe: frame,
     source: {
       type: 'bundle',
       bootstrapUrl: '/runtime',
       javascript: '',
-      revision: '1',
     },
     async onMessage() {
       return null;
@@ -67,7 +66,7 @@ test('shell reports startup failure and cleanup cancels pending startup timers',
   await Bun.sleep(30);
   expect(statuses).toEqual(['connecting', 'failed']);
   host.dispose();
-  const next = attachDataAppShell({
+  const next = attachDataAppBridge({
     iframe: frame,
     source: { type: 'url', url: 'https://app.example/report' },
     async onMessage() {

@@ -125,20 +125,12 @@ const row = {
   amount: 1234567.89,
 };
 const columns = [
-  {
-    id: 'name',
-    header: 'Record',
-    cell(item: typeof row) {
-      return item.name;
-    },
-  },
+  { id: 'name', header: 'Record', cell: (item: typeof row) => item.name },
   {
     id: 'amount',
     header: 'Amount',
     type: 'number' as const,
-    cell(item: typeof row) {
-      return item.amount.toLocaleString();
-    },
+    cell: (item: typeof row) => item.amount.toLocaleString(),
   },
 ] as const;
 
@@ -343,7 +335,7 @@ export function GalleryCases() {
   }, [uncached]);
 
   function retry() {
-    return setStatus({ kind: 'idle' });
+    setStatus({ kind: 'idle' });
   }
   const widgetStatus =
     status.kind === 'error' ? { ...status, onRetry: retry } : status;
@@ -902,14 +894,12 @@ export function GalleryCases() {
             ))}
           </div>
         </Case>
-        <Case title="DataSection">
+        <Case
+          title="DataSection"
+          note="Opt-in inline notice above a local section’s retained content. Widget feedback belongs in its toolbar; page feedback belongs in page actions."
+        >
           <DataSection
-            result={{
-              view: dataView,
-              refetch() {
-                return setRequest('ready');
-              },
-            }}
+            result={{ view: dataView, refetch: () => setRequest('ready') }}
             empty={empty}
             label="Fixture request"
           >
@@ -920,7 +910,10 @@ export function GalleryCases() {
             )}
           </DataSection>
         </Case>
-        <Case title="Custom DataBoundary">
+        <Case
+          title="Custom DataBoundary"
+          note="Use for a local request boundary without a widget shell."
+        >
           <DataBoundary
             view={dataView}
             loading={<ContentSkeleton variant="panel" />}
@@ -1141,12 +1134,8 @@ export function GalleryCases() {
             aria-label="Fixture page actions"
             refresh={{
               refreshing: status.kind === 'updating',
-              onRefresh() {
-                return setStatus({ kind: 'updating' });
-              },
-              onCancel() {
-                return setStatus({ kind: 'idle' });
-              },
+              onRefresh: () => setStatus({ kind: 'updating' }),
+              onCancel: () => setStatus({ kind: 'idle' }),
             }}
           />
         </Case>

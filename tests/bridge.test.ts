@@ -7,7 +7,7 @@ import {
   dataAppRoutes,
   defineMessageRoute,
 } from '@/src/core/messages';
-import { attachDataAppBridge } from '@/src/embed/host';
+import { attachDataAppBridge } from '@/src/embed/bridge';
 import {
   BRIDGE,
   MAX_PENDING,
@@ -106,7 +106,7 @@ test('iframe waits for a trusted handshake, correlates concurrent responses and 
   }
 });
 
-test('iframe aborts before and after dispatch and times out missing shells', async () => {
+test('iframe aborts before and after dispatch and times out missing hosts', async () => {
   const { bridge, receive, sent } = harness();
   try {
     const controller = new AbortController();
@@ -195,7 +195,7 @@ test('iframe bounds pending work and rejects old work on session replacement', a
   }
 });
 
-test('shell rejects foreign sources, invalid input, duplicate IDs and stale sessions; reload cancels handler work', async () => {
+test('bridge rejects foreign sources, invalid input, duplicate IDs and stale sessions; reload cancels handler work', async () => {
   const events = new EventTarget();
   const sent: BridgeMessage[] = [];
   const target = {

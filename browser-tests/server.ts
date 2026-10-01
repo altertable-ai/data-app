@@ -1,3 +1,4 @@
+import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
 import gallery from '@/browser-tests/fixtures/gallery.html';
 import bundleHost from '@/browser-tests/fixtures/bundle-host.html';
@@ -49,6 +50,7 @@ Bun.serve({
   port,
   development: false,
   routes: {
+    '/skeleton': skeleton,
     '/gallery': gallery,
     '/hooks-app': hooksApp,
     '/bridge-host': bridgeHost,

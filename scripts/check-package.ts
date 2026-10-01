@@ -121,17 +121,17 @@ try {
     join(temporary, 'browser.tsx'),
     `import "@altertable/data-app/react/styles.css";
 import { createDataClient } from "@altertable/data-app/client";
-import { Grid } from "@altertable/data-app/react";
+import { Grid, DataAppSkeleton } from "@altertable/data-app/react";
 import { defineDateRangeContract, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
-import { attachDataAppShell, startDataAppBootstrap } from "@altertable/data-app/embed";
-import { DataAppShell, DataAppBridge } from "@altertable/data-app/react/embed";
-export const api = { createDataClient, Grid, defineDateRangeContract, createMessageRouter, defineMessageRoute, attachDataAppShell, startDataAppBootstrap, DataAppShell, DataAppBridge };
+import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app/embed";
+import { DataAppBridge } from "@altertable/data-app/react/embed";
+export const api = { createDataClient, Grid, DataAppSkeleton, defineDateRangeContract, createMessageRouter, defineMessageRoute, attachDataAppBridge, startDataAppBootstrap, DataAppBridge };
 `
   );
   await writeFile(
     join(temporary, 'embed.tsx'),
-    `import { DataAppShell } from "@altertable/data-app/react/embed";
-export { DataAppShell };
+    `import { DataAppBridge } from "@altertable/data-app/react/embed";
+export { DataAppBridge };
 `
   );
   await writeFile(

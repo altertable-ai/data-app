@@ -1,36 +1,70 @@
 # React embedding
 
-Import `DataAppShell` and `DataAppBridge` from
-`@altertable/data-app/react/embed`. This entry depends on React and the embedding
-engine, and does not load the app's widgets, React Query, or CSS.
+Import `DataAppBridge` from `@altertable/data-app/react/embed`. This entry depends
+on React and the embedding engine, and does not load the app's widgets, React
+Query, or CSS.
 
-## Shell
+The bridge owns iframe setup and `postMessage` communication. The consuming
+frontend or CLI owns its shell: fetching a bundle, subscriptions, layout, loading
+and error UI, and retry controls. Both hosts use the same bridge and transport.
+
+## Source-managed iframe
+
+Use `source` for local URL apps or hosted bundles. The bridge creates the iframe,
+configures its sandbox, loads its source, and reports connection status. It renders
+only the iframe; it adds no loading, error, or retry UI and does not hide the frame.
 
 ```tsx
-import { DataAppShell } from '@altertable/data-app/react/embed';
+import { useReducer, useState } from 'react';
+import { DataAppBridge } from '@altertable/data-app/react/embed';
+import type { DataAppStatus } from '@altertable/data-app/embed';
 
-<DataAppShell
-  title="Activity report"
-  source={{ type: 'url', url: 'https://apps.example.com/activity' }}
-  onMessage={router.dispatch}
-  loading={<p>Loading report…</p>}
-  renderError={retry => <button onClick={retry}>Retry report</button>}
-/>;
+function Shell() {
+  const [status, setStatus] = useState<DataAppStatus>('connecting');
+  const [attempt, retry] = useReducer(value => value + 1, 0);
+
+  return (
+    <div className="app-shell">
+      {status !== 'ready' && status !== 'failed' && <p>Loading report…</p>}
+      {status === 'failed' && <button onClick={retry}>Retry report</button>}
+      <DataAppBridge
+        key={attempt}
+        title="Activity report"
+        source={{ type: 'url', url: 'http://127.0.0.1:25837/' }}
+        onMessage={router.dispatch}
+        onStatusChange={setStatus}
+        iframeProps={{ className: 'app-frame', hidden: status !== 'ready' }}
+      />
+    </div>
+  );
+}
 ```
 
 The host supplies `router` using [message contracts](contract.md#message-routes).
-For bundles, use `{ type: 'bundle', bootstrapUrl, javascript, revision }` as
-`source`. See [embedding](embed.md) for trust, sandbox, CSP, and bootstrap setup.
+The local URL must have a different origin from its shell. For hosted bundles,
+replace `source` with:
 
-The shell creates and owns the iframe. Source changes, bundle revision changes,
-and retries replace the entire frame. Handler changes use the latest callbacks
-without resetting the session. `startupTimeoutMs`, `onStatusChange`, and
-`onDiagnostic` have the same meaning as in the framework-neutral API. The iframe
-remains hidden until ready; loading and error UI have sensible defaults.
+```tsx
+source={{ type: 'bundle', bootstrapUrl, javascript }}
+```
+
+The host supplies those bundle values. See [embedding](embed.md) for trust,
+sandbox, CSP, and bootstrap setup.
+
+Source URL or JavaScript content changes replace the entire iframe. Change the
+bridge's React `key` to retry with a fresh frame. Handler changes use the latest
+callbacks without resetting the session. `startupTimeoutMs`, `onStatusChange`, and
+`onDiagnostic` have the same meaning as in the framework-neutral API.
+
+`iframeProps` forwards presentation and accessibility attributes to the iframe,
+including `className`, `style`, and `hidden`. The bridge controls `src`, `srcDoc`,
+`sandbox`, `referrerPolicy`, `loading`, and the callback ref. Loading is always
+`eager` so an iframe hidden until ready can start. Supply `title` directly.
 
 ## Host-owned iframe
 
-Use `DataAppBridge` when the host owns iframe rendering:
+Use the same `DataAppBridge` with `iframe` and `connection` when the host already
+owns a loaded iframe and its security policy:
 
 ```tsx
 import { useState, type ComponentRef } from 'react';
@@ -52,14 +86,31 @@ function Host() {
 ```
 
 The app supplies `appUrl` and `router`. A callback ref lets the bridge observe late
-mounting and replacement; listeners attach to the iframe's owner document. The
-bridge handles delivery only. Use `DataAppShell` to manage source loading,
-sandbox policy, bundle tokens, and startup errors.
+mounting and replacement; listeners attach to the iframe's owner document. This
+mode renders nothing and handles delivery only. Use source mode for bundle
+loading, sandbox policy, token rotation, and startup timeout. The two prop modes
+are mutually exclusive.
+
+## Migration from the package shell
+
+`DataAppShell` and `DataAppShellProps` have been removed. Replace the import with
+`DataAppBridge` and keep `source`, `title`, and message/status callbacks. Move
+`loading` and `renderError` into the consuming shell, use `iframeProps.hidden` to
+control visibility, and change the bridge's key for retries. Frontend bundle
+fetching and subscriptions and CLI local-server forwarding remain host concerns.
+
+## Loading placeholder
+
+For a shared placeholder while building or connecting, render `DataAppSkeleton`
+from `@altertable/data-app/react` in the consuming shell. Import
+`@altertable/data-app/react/styles.css` once in that host's browser entry. See
+[React](react.md#loading-an-embedded-app) for usage. The bridge does not render
+loading UI itself.
 
 ## Parent-owned presentation
 
 Pass `presentation={{ surface: 'embedded', theme: resolvedTheme }}`
-to `DataAppShell` or `DataAppBridge`. Use `'standalone'` when the app should render its own page chrome.
+to `DataAppBridge` in either source or connection mode. Use `'standalone'` when the app should render its own page chrome.
 Prop updates publish trusted state without reloading the iframe or reconnecting
 the session. Resolve system preference in the parent to `'light'` or `'dark'`.
 Inside an embedded surface, `DataApp` retains toolbar actions and hides its header

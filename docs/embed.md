@@ -6,13 +6,13 @@ app UI stylesheet.
 
 ## Sources
 
-`attachDataAppShell` owns iframe loading, sandbox policy, startup timeout, and
+`attachDataAppBridge` in source mode owns iframe loading, sandbox policy, startup timeout, and
 message delivery. The host supplies an iframe and a validated message dispatcher:
 
 ```ts
-import { attachDataAppShell } from '@altertable/data-app/embed';
+import { attachDataAppBridge } from '@altertable/data-app/embed';
 
-const host = attachDataAppShell({
+const host = attachDataAppBridge({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
   onMessage: router.dispatch,
@@ -21,7 +21,7 @@ const host = attachDataAppShell({
 
 The host defines `iframe` and `router`; see [message contracts](contract.md#message-routes).
 Call `host.dispose()` before replacing the source or retrying. A URL source requires HTTP(S)
-and a different origin from its host. The shell adds `__altertable_parent` to the
+and a different origin from its host. The source bridge adds `__altertable_parent` to the
 app URL. A hosted app must explicitly install a transport to its configured,
 trusted parent origin using the [client API](client.md#iframe-transport).
 The query parameter alone does not establish trust.
@@ -33,12 +33,11 @@ const source = {
   type: 'bundle' as const,
   bootstrapUrl: 'https://my-report-app-1.apps.example.net/',
   javascript: bundle.javascript,
-  revision: bundle.revision,
 };
 ```
 
-The host provides a self-contained JavaScript bundle and a revision identifying
-that bundle. Serve the bootstrap page with a CSP compatible with the bundle.
+The host provides a self-contained JavaScript bundle. React bridges replace the
+iframe whenever its JavaScript content changes. Serve the bootstrap page with a CSP compatible with the bundle.
 Bundle mode uses `sandbox="allow-scripts"` and an opaque origin; it cannot read
 the host document or use same-origin privileges. Both modes use
 `referrerPolicy="no-referrer"`.
@@ -61,7 +60,7 @@ const dispose = startDataAppBootstrap({
 ```
 
 The bootstrap URL is trusted executable code: it receives the app script and
-session token. Its hosting service must enforce its CSP. The shell cannot impose
+session token. Its hosting service must enforce its CSP. The bridge cannot impose
 CSP on a remote response. A starting policy for self-contained scripts and styles
 is `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';
 img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'`.
@@ -72,11 +71,10 @@ app bundle; non-React apps use `createDataAppNavigation` from `/client`.
 
 ## Delivery and navigation
 
-`attachDataAppBridge` is the lower-level API for a host-owned iframe. Supply
+`attachDataAppBridge` also supports connection mode for a host-owned iframe. Supply
 `connection: { type: 'origin', origin }` or `{ type: 'opaque', token }`, and an
-`onMessage` dispatcher. It returns a host with `dispose()` and `setPresentation()` and owns source/origin checks, request
-correlation, cancellation, bounded pending requests, and reconnection. Use the
-shell for bundle loading and token rotation. The opaque destination requires
+`onMessage` dispatcher. Both modes use the same transport. It returns `{ dispose, setPresentation }` and owns source/origin checks, request
+correlation, cancellation, bounded pending requests, and reconnection. Use source mode for bundle loading and token rotation. The opaque destination requires
 wildcard delivery, but incoming messages still require the exact iframe window,
 null origin, token, document, and session to match.
 
@@ -93,7 +91,7 @@ opaque apps keep that state in memory rather than modifying their document URL.
 `disconnected`. `connected` means transport initialization; `ready` means a URL
 client acknowledged initialization or a bundle script finished evaluation. It
 does not mean asynchronous data queries finished. Script errors report `failed`.
-The shell's `startupTimeoutMs` defaults to 30 seconds.
+The source bridge's `startupTimeoutMs` defaults to 30 seconds.
 
 `onDiagnostic` receives only message `direction` and `type`, never tokens or
 payloads. Routed handlers must authorize every data request. Message validation
@@ -112,7 +110,7 @@ longer supported.
 The parent declares where the iframe is mounted and owns its resolved theme:
 
 ```ts
-const host = attachDataAppShell({
+const host = attachDataAppBridge({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
   presentation: { surface: 'embedded', theme: 'dark' },
@@ -123,7 +121,7 @@ const host = attachDataAppShell({
 host.setPresentation({ surface: 'embedded', theme: 'light' });
 ```
 
-`attachDataAppBridge` supports the same `presentation` option and
+Both source and connection modes support the `presentation` option and
 `host.setPresentation(presentation)` method. `DataAppPresentation` is exported from
 `/embed` and `/client`. Use `surface: 'embedded'` when the parent provides page chrome, as in the
 Altertable frontend, and `'standalone'` when the app provides its own header and
@@ -142,3 +140,10 @@ changing saved viewer preferences. Omitting presentation preserves standalone be
 The host attachment is an explicit `{ dispose, setPresentation }` object. Replace
 former cleanup calls (`dispose()`) with `host.dispose()`. React hosts manage this
 lifecycle automatically.
+
+## Migration
+
+`attachDataAppShell` and `DataAppShellOptions` have been removed. Use
+`attachDataAppBridge` with the same source options and `DataAppBridgeOptions`.
+Source and connection options are mutually exclusive. The frontend and CLI own
+their shell UI; this package provides iframe bridges only.

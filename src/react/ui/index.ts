@@ -98,6 +98,8 @@ export { EmptyState } from '@/src/react/ui/EmptyState';
 export type { EmptyStateProps } from '@/src/react/ui/EmptyState';
 export { Skeleton } from '@/src/react/ui/Skeleton';
 export type { SkeletonProps } from '@/src/react/ui/Skeleton';
+export { DataAppSkeleton } from '@/src/react/ui/DataAppSkeleton';
+export type { DataAppSkeletonProps } from '@/src/react/ui/DataAppSkeleton';
 export { DataBoundary } from '@/src/react/ui/DataBoundary';
 export { resolveDataView } from '@/src/core/data-view';
 export { displayedSnapshot } from '@/src/core/data-view';

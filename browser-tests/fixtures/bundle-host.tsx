@@ -1,10 +1,13 @@
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DataAppShell } from '@altertable/data-app/react/embed';
+import { DataAppBridge } from '@altertable/data-app/react/embed';
 import { createMessageRouter } from '@altertable/data-app/contract';
 import { createHttpTransport } from '@altertable/data-app/client';
-import { createNavigationHandler } from '@altertable/data-app/embed';
+import {
+  type DataAppStatus,
+  createNavigationHandler,
+} from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 const response = await fetch('/__test/bundle');
 const javascript = await response.text();
@@ -13,13 +16,23 @@ function Host() {
   const [theme, setTheme] = useState<Theme>('dark');
   const [parentPresentation, setParentPresentation] = useState(true);
   const [embedded, setEmbedded] = useState(true);
+  const [status, setStatus] = useState<DataAppStatus>('connecting');
+  const [attempt, bumpAttempt] = useReducer(value => value + 1, 0);
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
-  const [revision, bumpRevision] = useReducer(value => value + 1, 1);
+  const [bundleVersion, bumpBundleVersion] = useReducer(value => value + 1, 1);
   const [broken, setBroken] = useState(
     new URLSearchParams(location.search).has('broken')
   );
   const urlMode = new URLSearchParams(location.search).has('url');
   const timeout = new URLSearchParams(location.search).has('timeout');
+  // Extra attributes can still arrive from JavaScript callers or spread objects.
+  const iframeProps = {
+    hidden: status !== 'ready',
+    className: 'app-frame',
+    ...(new URLSearchParams(location.search).has('lazy')
+      ? { loading: 'lazy' as const }
+      : {}),
+  };
   const forward = createHttpTransport();
   const router = createMessageRouter(bridgeRoutes, {
     'test:echo'({ period }) {
@@ -45,9 +58,18 @@ function Host() {
         Change surface
       </button>
       <button onClick={bumpVersion}>Change handler</button>
-      <button onClick={bumpRevision}>Change revision</button>
+      <button onClick={bumpBundleVersion}>Change javascript</button>
       <button onClick={() => setBroken(false)}>Fix bundle</button>
-      <DataAppShell
+      {status === 'failed' && (
+        <div role="alert">
+          Could not load the data app.{' '}
+          <button onClick={bumpAttempt}>Retry</button>
+        </div>
+      )}
+      <DataAppBridge
+        key={attempt}
+        onStatusChange={setStatus}
+        iframeProps={iframeProps}
         title="Sandbox app"
         presentation={
           parentPresentation
@@ -65,8 +87,7 @@ function Host() {
                 bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
                 javascript: broken
                   ? 'throw new Error("Broken app")'
-                  : javascript,
-                revision: String(revision),
+                  : `${javascript}\ndocument.body.dataset.bundleVersion = "${bundleVersion}";`,
               }
         }
         startupTimeoutMs={timeout ? 200 : 10_000}

@@ -217,29 +217,26 @@ function Gallery() {
                   {
                     id: 'chart',
                     label: 'Chart',
-                    render(items) {
-                      return (
-                        <SelectableBarChart
-                          items={items}
-                          selectedId={selected}
-                          onSelectionChange={setSelected}
-                          unit="events"
-                          ariaLabel="Weekly events"
-                        />
-                      );
-                    },
+                    render: items => (
+                      <SelectableBarChart
+                        items={items}
+                        selectedId={selected}
+                        onSelectionChange={setSelected}
+                        unit="events"
+                        ariaLabel="Weekly events"
+                      />
+                    ),
                   },
                   {
                     id: 'summary',
                     label: 'Summary',
-                    render(items) {
-                      return (
-                        <p>
-                          {items.reduce((sum, item) => sum + item.value, 0)}{' '}
-                          events this week
-                        </p>
-                      );
-                    },
+                    render: items => (
+                      <p>
+                        {items.reduce((sum, item) => sum + item.value, 0)}{' '}
+                        events this week, concentrated on Monday and Wednesday.
+                        Tuesday had no recorded activity.
+                      </p>
+                    ),
                   },
                 ]}
               />
@@ -248,26 +245,13 @@ function Gallery() {
                 rows={rows}
                 rowKey={row => row.id}
                 columns={[
-                  {
-                    id: 'name',
-                    header: 'Record',
-                    cell(row) {
-                      return row.name;
-                    },
-                  },
+                  { id: 'name', header: 'Record', cell: row => row.name },
                 ]}
                 search={{
                   label: 'Search table records',
                   value: query,
                   onChange: setQuery,
-                  attributes: [
-                    {
-                      name: 'name',
-                      getter(row) {
-                        return row.name;
-                      },
-                    },
-                  ],
+                  attributes: [{ name: 'name', getter: row => row.name }],
                 }}
                 evidence={{
                   id: 'gallery-records',
@@ -304,7 +288,7 @@ function Gallery() {
                 status={{
                   kind: 'error',
                   message: 'Couldn’t refresh activity',
-                  onRetry() {},
+                  onRetry: () => {},
                 }}
               >
                 <p>The last successful result remains visible.</p>

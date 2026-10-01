@@ -29,17 +29,7 @@ export type DataAppHost = {
   setPresentation: (presentation?: DataAppPresentation) => void;
 };
 
-/** The bridge owns delivery and cancellation; the routed handler owns validation, authorization and execution. */
-export function attachDataAppBridge({
-  iframe,
-  connection,
-  javascript,
-  presentation,
-  onStatusChange,
-  onDiagnostic,
-  onMessage,
-  window: host = window,
-}: {
+export type DataAppConnectionOptions = {
   iframe: HTMLIFrameElement;
   connection: DataAppConnection;
   javascript?: string;
@@ -48,7 +38,19 @@ export function attachDataAppBridge({
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   onMessage: MessageDispatcher;
   window?: Window;
-}): DataAppHost {
+};
+
+/** The bridge owns delivery and cancellation; the routed handler owns validation, authorization and execution. */
+export function attachDataAppConnection({
+  iframe,
+  connection,
+  javascript,
+  presentation,
+  onStatusChange,
+  onDiagnostic,
+  onMessage,
+  window: host = window,
+}: DataAppConnectionOptions): DataAppHost {
   const frameOrigin = connection.type === 'origin' ? connection.origin : 'null';
   if (
     connection.type === 'origin' &&
