@@ -28,6 +28,34 @@ All of these APIs are exported from `/react`. Each component's stylesheet lives 
 | Present loaded findings                           | [PresentStory](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/PresentStory.tsx)                                                                                                                | StoryFinding                                                                                                                                                                                                                                       |
 | Build custom controls and overlays                | [Button](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Button.tsx), [Sheet](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Sheet.tsx)                                       | IconButton, Tooltip, HelpPopover, Kbd                                                                                                                                                                                                              |
 
+## Loading an embedded app
+
+`DataAppSkeleton` is a host-side placeholder while an embedded app is building or
+starting. It composes the shared metric, visualization, and data widgets with
+skeleton content: three metric cards, a chart, and table rows. Optional `header`
+and `footer` React nodes let the host supply its own layout; neither renders by
+default.
+It adapts to container width and inherits the package's appearance variables and
+reduced-motion skeleton animation.
+
+```tsx
+import { DataAppSkeleton } from '@altertable/data-app/react';
+import '@altertable/data-app/react/styles.css';
+
+<DataAppSkeleton
+  aria-label="Loading activity report"
+  className="app-loading"
+  header={<ReportHeaderSkeleton />}
+  footer={<ReportFooterSkeleton />}
+/>;
+```
+
+The container announces a loading status; its widget placeholders are hidden from
+assistive technology. Supplied header and footer nodes remain accessible and can
+use the exported `Skeleton` component for their own placeholders. Standard output props, including `style` and `ref`, can be used
+for layout. The consuming shell controls when to display it. The `/react/embed`
+entry remains independent of UI components and the stylesheet.
+
 ## Bound views and widgets
 
 | Definition        | Runtime owns                                                                                                                                     |

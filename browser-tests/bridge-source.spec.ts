@@ -13,6 +13,8 @@ test('opaque bundle uses typed routes and virtual URL state without rerunning on
   await page.goto('/bundle-host?period=last-30#totals');
   const app = page.frameLocator('iframe');
   await expect(page.locator('iframe')).toBeVisible();
+  await expect(page.locator('iframe')).toHaveClass('app-frame');
+  await expect(app.locator('body')).toHaveAttribute('data-bundle-version', '1');
   await expect(page.locator('iframe')).toHaveAttribute(
     'sandbox',
     'allow-scripts'
@@ -26,10 +28,17 @@ test('opaque bundle uses typed routes and virtual URL state without rerunning on
   await expect(app.locator('#result')).toHaveText(
     '{"publicError":true,"code":"forbidden"}'
   );
+  await page.locator('iframe').evaluate(frame => {
+    frame.dataset.identity = 'original';
+  });
   await page.getByRole('button', { name: 'Change handler' }).click();
   await app.getByRole('button', { name: 'Query', exact: true }).click();
   await expect(app.locator('#result')).toContainText('"version":2');
   await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'data-identity',
+    'original'
+  );
   await app.getByRole('button', { name: 'Last 7 days' }).click();
   await expect(page).toHaveURL(/period=last-7#totals$/);
   await page.goBack();
@@ -80,7 +89,12 @@ test('opaque bundle uses typed routes and virtual URL state without rerunning on
   await expect(page.locator('iframe')).toBeVisible();
   await expect(app.locator('#location')).toHaveText('period=last-7#totals');
   await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
-  await page.getByRole('button', { name: 'Change revision' }).click();
+  await page.getByRole('button', { name: 'Change javascript' }).click();
+  await expect(app.locator('body')).toHaveAttribute('data-bundle-version', '2');
+  await expect(page.locator('iframe')).not.toHaveAttribute(
+    'data-identity',
+    'original'
+  );
   await expect(app.locator('#location')).toHaveText('period=last-7#totals');
   await app.getByRole('button', { name: 'Query', exact: true }).click();
   await expect(app.locator('#result')).toContainText('"version":2');
@@ -98,7 +112,14 @@ test('bundle failures recover with a fresh frame and unavailable bootstraps time
 }) => {
   await page.goto('/bundle-host?broken=1');
   await expect(page.getByRole('alert')).toContainText('Could not load');
+  await page.locator('iframe').evaluate(frame => {
+    frame.dataset.identity = 'failed';
+  });
   await page.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect(page.locator('iframe')).not.toHaveAttribute(
+    'data-identity',
+    'failed'
+  );
   await expect(page.getByRole('alert')).toContainText('Could not load');
   await page.getByRole('button', { name: 'Fix bundle' }).click();
   await expect(
@@ -111,7 +132,7 @@ test('bundle failures recover with a fresh frame and unavailable bootstraps time
   await expect(page.locator('iframe')).toBeHidden();
 });
 
-test('URL shell loads a separate-origin app and preserves navigation on reload', async ({
+test('URL bridge loads a separate-origin app and preserves navigation on reload', async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -137,4 +158,32 @@ test('URL shell loads a separate-origin app and preserves navigation on reload',
   await page.reload();
   await expect(app.locator('#location')).toContainText('period=last-30');
   expect(errors).toEqual([]);
+});
+
+test('hidden source iframe starts eagerly even when a caller supplies lazy loading', async ({
+  page,
+}) => {
+  let releaseBootstrap!: () => void;
+  const bootstrapGate = new Promise<void>(resolve => {
+    releaseBootstrap = resolve;
+  });
+  await page.route('**/__test/runtime', async route => {
+    await bootstrapGate;
+    await route.continue();
+  });
+  const bootstrapRequest = page.waitForRequest('**/__test/runtime');
+  try {
+    await page.goto('/bundle-host?lazy=1', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('iframe')).toBeHidden();
+    await expect(page.locator('iframe')).toHaveAttribute('loading', 'eager');
+    await bootstrapRequest;
+    releaseBootstrap();
+    await expect(page.locator('iframe')).toBeVisible();
+    await expect(page.frameLocator('iframe').locator('body')).toHaveAttribute(
+      'data-bundle-version',
+      '1'
+    );
+  } finally {
+    releaseBootstrap();
+  }
 });

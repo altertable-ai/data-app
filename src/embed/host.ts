@@ -23,16 +23,7 @@ export type DataAppStatus =
   | 'disconnected';
 export type DataAppDiagnostic = { direction: 'send' | 'receive'; type: string };
 
-/** The bridge owns delivery and cancellation; the routed handler owns validation, authorization and execution. */
-export function attachDataAppBridge({
-  iframe,
-  connection,
-  javascript,
-  onStatusChange,
-  onDiagnostic,
-  onMessage,
-  window: host = window,
-}: {
+export type DataAppConnectionOptions = {
   iframe: HTMLIFrameElement;
   connection: DataAppConnection;
   javascript?: string;
@@ -40,7 +31,18 @@ export function attachDataAppBridge({
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   onMessage: MessageDispatcher;
   window?: Window;
-}) {
+};
+
+/** The bridge owns delivery and cancellation; the routed handler owns validation, authorization and execution. */
+export function attachDataAppConnection({
+  iframe,
+  connection,
+  javascript,
+  onStatusChange,
+  onDiagnostic,
+  onMessage,
+  window: host = window,
+}: DataAppConnectionOptions) {
   const frameOrigin = connection.type === 'origin' ? connection.origin : 'null';
   if (
     connection.type === 'origin' &&
