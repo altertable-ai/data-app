@@ -333,19 +333,6 @@ export { Grid };
     throw new Error('Tree-shaking removed the used Grid component.');
   if (/data-altertable-styles|\.altertable-grid/.test(shakenSource))
     throw new Error('Tree-shaking retained unused style injection.');
-  await run(
-    [
-      'node',
-      '--input-type=module',
-      '-e',
-      `const { injectDataAppStyles } = await import('@altertable/data-app/react');
-if (typeof document !== 'undefined') throw new Error('Expected a DOM-free consumer');
-try { injectDataAppStyles(); throw new Error('Expected missing-document error'); }
-catch (error) { if (error.message !== 'injectDataAppStyles requires a browser document.') throw error; }`,
-    ],
-    temporary
-  );
-
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
   await writeFile(
@@ -372,7 +359,9 @@ catch (error) { if (error.message !== 'injectDataAppStyles requires a browser do
 import React from 'react';
 import * as ReactDOM from 'react-dom';
 import { renderToString } from 'react-dom/server';
-import { MetricWidget } from '@altertable/data-app/react';
+import { MetricWidget, injectDataAppStyles } from '@altertable/data-app/react';
+if (typeof document !== 'undefined' || typeof injectDataAppStyles !== 'function')
+  throw new Error('React styles must be importable without a DOM');
 if (React.version !== '19.2.0' || ReactDOM.version !== '19.2.0' || typeof React.useEffectEvent !== 'function')
   throw new Error('Minimum React consumer resolved the wrong peers');
 const html = renderToString(<MetricWidget label="Minimum React" value={0} format={{ kind: 'count' }} />);

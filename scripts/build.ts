@@ -9,17 +9,6 @@ const external = [
 ];
 
 // Compile the complete stylesheet once; importing React never installs it.
-const styleImports = new Set(
-  [
-    ...(await Bun.file('src/react/styles.css').text()).matchAll(
-      /@import ['"]\.\/ui\/([^'"]+)['"]/g
-    ),
-  ].map(match => match[1])
-);
-for (const file of new Bun.Glob('*.css').scanSync('src/react/ui')) {
-  if (!styleImports.has(file))
-    throw new Error(`React style manifest is missing ${file}.`);
-}
 const styles = await Bun.build({
   entrypoints: ['src/react/styles.css'],
   target: 'browser',

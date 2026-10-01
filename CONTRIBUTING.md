@@ -16,7 +16,8 @@ bun run check
 `src/embed` owns iframe hosting and trusted bootstrap initialization.
 `src/server` owns request handling and the local Bun adapter, and `src/react` owns
 React bindings; `src/react/embed` provides hosts without app UI dependencies.
-Components and their styles live together in `src/react/ui`.
+Components and their styles live together in `src/react/ui`. Add new styles to
+the ordered `src/react/styles.css` entry.
 `examples/starter` is the runnable CLI starter port, using public package imports.
 Its workspace dependency points to the built repository package; keep its app-owned
 configuration and agent guidance usable when copied into another project.

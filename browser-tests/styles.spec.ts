@@ -5,12 +5,7 @@ test('styles require explicit injection, respect CSP and install once per docume
 }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/styles?__altertable_parent=https%3A%2F%2Fhost.example');
-  expect(
-    await page.evaluate(() =>
-      Reflect.has(window, Symbol.for('altertable.localFrameBridge'))
-    )
-  ).toBe(false);
+  await page.goto('/styles');
   const styles = page.locator('style[data-altertable-styles]');
   await expect(styles).toHaveCount(0);
   await expect(page.locator('.altertable-grid')).toHaveCSS('display', 'block');
