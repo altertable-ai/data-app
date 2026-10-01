@@ -51,7 +51,7 @@ function Host() {
         title="Sandbox app"
         presentation={
           parentPresentation
-            ? { surface: embedded ? 'altertable' : 'custom', theme }
+            ? { surface: embedded ? 'embedded' : 'standalone', theme }
             : undefined
         }
         source={

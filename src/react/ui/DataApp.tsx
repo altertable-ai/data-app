@@ -84,7 +84,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     layoutProps,
   } = props;
   const presentation = useDataAppPresentation();
-  const inAltertable = presentation?.surface === 'altertable';
+  const isEmbedded = presentation?.surface === 'embedded';
   const themeController = useAppAppearance(
     config.appearance,
     presentation?.theme
@@ -149,13 +149,13 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     >
       <AppLayout
         {...layoutProps}
-        footer={inAltertable ? null : layoutProps?.footer}
+        footer={isEmbedded ? null : layoutProps?.footer}
         footerActions={
           footerActions ??
           (themeController && <ThemeToggle theme={themeController} />)
         }
       >
-        {inAltertable ? (
+        {isEmbedded ? (
           toolbar
         ) : (
           <AppHeader

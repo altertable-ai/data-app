@@ -115,25 +115,26 @@ The parent declares where the iframe is mounted and owns its resolved theme:
 const host = attachDataAppShell({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
-  presentation: { surface: 'altertable', theme: 'dark' },
+  presentation: { surface: 'embedded', theme: 'dark' },
   onMessage: router.dispatch,
 });
 
 // Update presentation without replacing the iframe or its bridge session.
-host.setPresentation({ surface: 'altertable', theme: 'light' });
+host.setPresentation({ surface: 'embedded', theme: 'light' });
 ```
 
 `attachDataAppBridge` supports the same `presentation` option and
 `host.setPresentation(presentation)` method. `DataAppPresentation` is exported from
-`/embed` and `/client`. Use `surface: 'altertable'` inside the Altertable frontend
-and `'custom'` for other hosts. `theme` must be resolved to `'light'` or
+`/embed` and `/client`. Use `surface: 'embedded'` when the parent provides page chrome, as in the
+Altertable frontend, and `'standalone'` when the app provides its own header and
+footer. `theme` must be resolved to `'light'` or
 `'dark'`; the parent decides how its system preference is resolved.
 
 Presentation travels over `postMessage` in the authenticated `bridge:initialize` and
 `state:update` messages, alongside `search` and `hash`. Framework-neutral apps
 can narrow the unknown state returned by `bridge.snapshot()` to read its
 `presentation` field, and subscribe through `bridge.subscribe`. React `DataApp` consumes it automatically.
-An Altertable surface renders toolbar actions without the page header or footer.
+An embedded surface renders toolbar actions without the page header or footer.
 Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;
 `host.setPresentation(undefined)` restores it.

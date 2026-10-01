@@ -568,11 +568,11 @@ test('presentation context follows only authenticated current-session state', ()
   const dark = {
     search: '?period=last-30',
     hash: '#totals',
-    presentation: { surface: 'altertable', theme: 'dark' },
+    presentation: { surface: 'embedded', theme: 'dark' },
   };
   const light = {
     ...dark,
-    presentation: { surface: 'altertable', theme: 'light' },
+    presentation: { surface: 'embedded', theme: 'light' },
   };
   const states: unknown[] = [];
   const unsubscribe = bridge.subscribe(state => states.push(state));

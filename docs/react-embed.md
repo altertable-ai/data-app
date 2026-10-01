@@ -58,9 +58,9 @@ sandbox policy, bundle tokens, and startup errors.
 
 ## Parent-owned presentation
 
-Pass `presentation={{ surface: 'altertable', theme: resolvedTheme }}`
-to `DataAppShell` or `DataAppBridge`. Use `'custom'` for other host surfaces.
+Pass `presentation={{ surface: 'embedded', theme: resolvedTheme }}`
+to `DataAppShell` or `DataAppBridge`. Use `'standalone'` when the app should render its own page chrome.
 Prop updates publish trusted state without reloading the iframe or reconnecting
 the session. Resolve system preference in the parent to `'light'` or `'dark'`.
-Inside an Altertable surface, `DataApp` retains toolbar actions and hides its header
+Inside an embedded surface, `DataApp` retains toolbar actions and hides its header
 and footer. See [parent presentation](embed.md#parent-presentation).

@@ -139,7 +139,7 @@ test('URL shell loads a separate-origin app and preserves navigation on reload',
   expect(errors).toEqual([]);
 });
 
-test('Altertable embeds retain toolbar actions and live theme changes without losing navigation', async ({
+test('Embedded surfaces retain toolbar actions and live theme changes without losing navigation', async ({
   page,
 }) => {
   await page.goto('/bundle-host?period=last-30#totals');
