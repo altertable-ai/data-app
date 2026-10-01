@@ -3,37 +3,21 @@
  * @module @altertable/data-app/client
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/client.md
  */
-import {
-  createHttpTransport,
-  DataAppError,
-  type DataTransport,
-} from '@/src/client/transport';
+import { createHttpTransport, DataAppError } from '@/src/client/transport';
 import { createBrowserOperationClient } from '@/src/client/browser-operations';
-import type { DataClient, DataResponse, OutputOf } from '@/src/client/types';
+import type {
+  DataClient,
+  DataClientOptions,
+  DataResponse,
+  OutputOf,
+} from '@/src/client/types';
 import { localFrameBridge } from '@/src/client/iframe';
-import type { DataOperations, Lakehouse } from '@/src/core/contract';
+import type { DataOperations } from '@/src/core/contract';
 
 /** Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. */
 export function createDataClient<Operations extends DataOperations>(
-  options: {
-    operations?: Operations;
-    lakehouse?: Lakehouse;
-    transport?: DataTransport;
-    endpoint?: string;
-    fetch?: typeof fetch;
-  } = {}
+  options: DataClientOptions<Operations> = {}
 ): DataClient<Operations> {
-  if (
-    options.operations &&
-    (options.transport ||
-      options.endpoint !== undefined ||
-      options.fetch !== undefined)
-  )
-    throw new Error(
-      'Browser operations cannot be combined with an HTTP endpoint or operation transport.'
-    );
-  if (options.lakehouse && !options.operations)
-    throw new Error('A lakehouse requires browser operations.');
   if (options.operations)
     return createBrowserOperationClient(options.operations, options.lakehouse);
 
@@ -94,6 +78,7 @@ export type {
   OutputOf,
   DataResponse,
   DataClient,
+  DataClientOptions,
 } from '@/src/client/types';
 
 export {

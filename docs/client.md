@@ -55,7 +55,8 @@ The trusted bootstrap installs the bridge for bundle apps. A custom runtime must
 install it before querying. An explicit `lakehouse` can supply another authorized
 adapter, including `bridge.lakehouse` or a local server adapter. `operations` cannot
 be combined with `transport`, `endpoint`, or `fetch`; a `lakehouse` requires
-`operations`. Omitting `operations` preserves named HTTP/iframe operation delivery.
+`operations`. The exported `DataClientOptions` union rejects mixed configurations
+at compile time. Omitting `operations` preserves named HTTP/iframe operation delivery.
 
 The host must implement and authorize the [SQL route](embed.md#sql-query-route).
 Browser policies improve app behavior; backend access and resource limits must be

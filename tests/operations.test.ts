@@ -175,19 +175,13 @@ test('browser operations settle ignored deadlines and preserve caller cancellati
   ).toBe(reason);
 });
 
-test('browser operation clients require a SQL adapter and reject conflicting delivery options', async () => {
+test('browser operation clients require a SQL adapter', async () => {
   const operations = { count: operation() };
   expect(
     await createDataClient({ operations })
       .query('count', 3)
       .catch(error => error)
   ).toBeInstanceOf(DataAppError);
-  expect(() => createDataClient({ operations, endpoint: '/api/data' })).toThrow(
-    'Browser operations'
-  );
-  expect(() => createDataClient({ lakehouse: lakehouse() })).toThrow(
-    'requires browser operations'
-  );
 });
 
 test('HTTP returns the exact serialization checked against the response byte limit', async () => {

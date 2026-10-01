@@ -1,4 +1,26 @@
-import type { DataOperations, DisclosedQuery } from '@/src/core/contract';
+import type {
+  DataOperations,
+  DisclosedQuery,
+  Lakehouse,
+} from '@/src/core/contract';
+import type { DataTransport } from '@/src/client/transport';
+
+/** Browser operations and named-operation delivery are mutually exclusive configurations. */
+export type DataClientOptions<Operations extends DataOperations> =
+  | {
+      operations: Operations;
+      lakehouse?: Lakehouse;
+      transport?: never;
+      endpoint?: never;
+      fetch?: never;
+    }
+  | {
+      operations?: never;
+      lakehouse?: never;
+      transport?: DataTransport;
+      endpoint?: string;
+      fetch?: typeof fetch;
+    };
 
 export type InputOf<T> = T extends { input: (value: unknown) => infer Input }
   ? Input
