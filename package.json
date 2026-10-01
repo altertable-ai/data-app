@@ -23,11 +23,12 @@
     "url": "git+https://github.com/altertable-ai/data-app.git"
   },
   "workspaces": [
-    "examples/starter"
+    "examples/starter-local-data-app"
   ],
   "files": [
     "dist",
     "docs",
+    "examples/starter-data-app",
     "README.md",
     "CONTRIBUTING.md",
     "AGENTS.md"
@@ -85,8 +86,8 @@
   },
   "scripts": {
     "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
-    "typecheck": "tsc --noEmit",
-    "lint": "oxlint --type-aware src tests scripts browser-tests",
+    "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
+    "lint": "oxlint --type-aware src tests scripts browser-tests examples/starter-data-app",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "bun test ./tests",

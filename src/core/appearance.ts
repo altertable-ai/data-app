@@ -1,7 +1,6 @@
 /**
  * Brand settings; parsing is portable, while theme application requires the browser.
  * @module @altertable/data-app/appearance
- * @see https://github.com/altertable-ai/data-app/blob/main/docs/appearance.md
  */
 import { invariant } from '@/src/core/invariant';
 

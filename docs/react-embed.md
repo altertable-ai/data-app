@@ -1,10 +1,10 @@
 # React embedding
 
-Import `DataAppBridge` from `@altertable/data-app/react/embed`. This entry depends
+Import `<DataAppBridge>` from `@altertable/data-app/react/embed`. This entry depends
 on React and the embedding engine, and does not load the app's widgets, React
 Query, or CSS.
 
-The bridge owns iframe setup and `postMessage` communication. The consuming
+The bridge owns iframe setup and `postMessage()` communication. The consuming
 frontend or CLI owns its shell: fetching a bundle, subscriptions, layout, loading
 and error UI, and retry controls. Both hosts use the same bridge and transport.
 
@@ -63,7 +63,7 @@ including `className`, `style`, and `hidden`. The bridge controls `src`, `srcDoc
 
 ## Host-owned iframe
 
-Use the same `DataAppBridge` with `iframe` and `connection` when the host already
+Use the same `<DataAppBridge>` with `iframe` and `connection` when the host already
 owns a loaded iframe and its security policy:
 
 ```tsx
@@ -91,19 +91,18 @@ mode renders nothing and handles delivery only. Use source mode for bundle
 loading, sandbox policy, token rotation, and startup timeout. The two prop modes
 are mutually exclusive.
 
-## Loading placeholder
+## Loading an embedded app
 
-For a shared placeholder while building or connecting, render `DataAppSkeleton`
-from `@altertable/data-app/react` in the consuming shell. Call
-`injectDataAppShellStyles()` from that entry once in the host's browser entry before
-rendering. See [React](react.md#loading-an-embedded-app) for the entry-point example. The bridge does not render
-loading UI itself.
+Use `<DataAppSkeleton>` from `/react` while the host builds or starts an app.
+Call `injectDataAppShellStyles()` from `/react` before rendering the placeholder.
+The host owns when to show it and supplies any surrounding header or footer.
+`/react/embed` itself remains independent of UI components and styles.
 
 ## Parent-owned presentation
 
 Pass `presentation={{ surface: 'embedded', theme: resolvedTheme }}`
-to `DataAppBridge` in either source or connection mode. Use `'standalone'` when the app should render its own page chrome.
+to `<DataAppBridge>` in either source or connection mode. Use `'standalone'` when the app should render its own page chrome.
 Prop updates publish trusted state without reloading the iframe or reconnecting
 the session. Resolve system preference in the parent to `'light'` or `'dark'`.
-Inside an embedded surface, `DataApp` retains toolbar actions and hides its header
+Inside an embedded surface, `<DataApp>` retains toolbar actions and hides its header
 and footer. See [parent presentation](embed.md#parent-presentation).

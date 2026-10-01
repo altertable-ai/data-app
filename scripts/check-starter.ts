@@ -6,7 +6,7 @@ const root = resolve(import.meta.dir, '..');
 // so a fresh checkout's starter resolves the generated public exports.
 for (const [command, cwd] of [
   [['bun', 'install', '--frozen-lockfile'], root],
-  [['bun', 'run', 'check'], resolve(root, 'examples/starter')],
+  [['bun', 'run', 'check'], resolve(root, 'examples/starter-local-data-app')],
 ] as const) {
   const child = Bun.spawn([...command], {
     cwd,

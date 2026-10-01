@@ -18,48 +18,24 @@ pnpm add @altertable/data-app
 bun add @altertable/data-app
 ```
 
-For React apps, also install React 19.2 or newer and React DOM 19.2 or newer, then inject the styles
-once in your browser entry:
+## Build an app
 
-```tsx
-import { injectDataAppStyles, mountDataApp } from '@altertable/data-app/react';
+Apps render in an iframe in Altertable, a chat app, or locally in a browser.
+Follow [app authoring](docs/app-authoring.md) to explore data and present findings.
 
-injectDataAppStyles();
-```
+| App                                | Start here                               |
+| ---------------------------------- | ---------------------------------------- |
+| Data app (hosted / remote / cloud) | [Single-file guide](docs/hosted-apps.md) |
+| Local data app                     | [Local guide](docs/local-data-apps.md)   |
 
-## Documentation
+For agent-assisted work, direct your agent to [AGENTS.md](AGENTS.md).
+The package ships its guides and single-file starter alongside the built exports.
 
-| Entry                               | Use                                                 |
-| ----------------------------------- | --------------------------------------------------- |
-| [/contract](docs/contract.md)       | Define typed operations, parsers, and date ranges   |
-| [/client](docs/client.md)           | Call HTTP operations or run bundle operations       |
-| [/server](docs/server.md)           | Authorize and execute requests on a hosted server   |
-| [/server/bun](docs/server-bun.md)   | Serve an app locally with Bun                       |
-| [/embed](docs/embed.md)             | Host URL apps or sandboxed JavaScript bundles       |
-| [/worker](docs/worker.md)           | Upload the self-contained Cloudflare Worker asset   |
-| [/react/embed](docs/react-embed.md) | Embed apps with a shared React iframe bridge        |
-| [/react](docs/react.md)             | Compose views, filters, widgets, and request states |
-| [/config](docs/config.md)           | Define app identity and scope                       |
-| [/appearance](docs/appearance.md)   | Configure brand tokens and viewer theme             |
-| [/format](docs/format.md)           | Format dates, counts, ratios, and currencies        |
+## Host apps
 
-Start with [app authoring](docs/app-authoring.md) for the complete data flow.
-The package ships these docs alongside its built JavaScript and declarations.
-For agent-assisted work, direct your agent to
-`node_modules/@altertable/data-app/AGENTS.md`.
-
-## Starter example
-
-The [runnable starter](https://github.com/altertable-ai/data-app/tree/main/examples/starter) includes app configuration,
-server operations, a React connectivity screen, and agent instructions.
-Use it as the starting point for an app that consumes the public package.
+For integrating apps into a host, see [embedding](docs/embed.md).
 
 ## Development
-
-```fish
-bun install --frozen-lockfile
-bun run check
-```
 
 See [Contributing](CONTRIBUTING.md) for repository structure and focused checks.
 Releases use [Release Please and npm trusted publishing](docs/releasing.md).

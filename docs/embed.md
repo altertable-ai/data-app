@@ -6,7 +6,7 @@ app UI stylesheet.
 
 ## Sources
 
-`attachDataAppBridge` in source mode owns iframe loading, sandbox policy, startup timeout, and
+`attachDataAppBridge()` in source mode owns iframe loading, sandbox policy, startup timeout, and
 message delivery. The host supplies an iframe and a validated message dispatcher:
 
 ```ts
@@ -67,13 +67,13 @@ img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'`.
 The initializer installs a shared transport before evaluating the app script;
 data clients discover it even when independently bundled. The bootstrap contains
 no app navigation adapter. React mounting or URL controls attach navigation in the
-app bundle; non-React apps use `createDataAppNavigation` from `/client`.
+app bundle; non-React apps use `createDataAppNavigation()` from `/client`.
 
 ## Delivery and navigation
 
-`attachDataAppBridge` also supports connection mode for a host-owned iframe. Supply
+`attachDataAppBridge()` also supports connection mode for a host-owned iframe. Supply
 `connection: { type: 'origin', origin }` or `{ type: 'opaque', token }`, and an
-`onMessage` dispatcher. Both modes use the same transport. It returns `{ dispose, setPresentation }` and owns source/origin checks, request
+`onMessage` dispatcher. Both modes use the same transport. It returns `dispose()` and `setPresentation()` methods and owns source/origin checks, request
 correlation, cancellation, bounded pending requests, and reconnection. Use source mode for bundle loading and token rotation. The opaque destination requires
 wildcard delivery, but incoming messages still require the exact iframe window,
 null origin, token, document, and session to match.
@@ -119,10 +119,10 @@ const router = createMessageRouter(
 // Supply router.dispatch as the shell's onMessage handler.
 ```
 
-The host supplies `authorizedLakehouseForCurrentViewer`. Its backend must enforce
+The host supplies `authorizedLakehouseForCurrentViewer()`. Its backend must enforce
 viewer/dataset permissions, permitted query behavior, maximum rows, execution
 time, concurrency, and response size independently of browser policy. Route
-validation is not SQL authorization. `createSqlQueryHandler` calls authorization
+validation is not SQL authorization. `createSqlQueryHandler()` calls authorization
 for each query, forwards cancellation, and preserves `DataSourceError` reasons
 as public `source_*` errors with request IDs. Authorization failures return
 `forbidden`; unknown query errors are hidden. Custom handlers can return deliberate
@@ -164,10 +164,10 @@ Altertable frontend, and `'standalone'` when the app provides its own header and
 footer. `theme` must be resolved to `'light'` or
 `'dark'`; the parent decides how its system preference is resolved.
 
-Presentation travels over `postMessage` in the authenticated `bridge:initialize` and
+Presentation travels over `postMessage()` in the authenticated `bridge:initialize` and
 `state:update` messages, alongside `search` and `hash`. Framework-neutral apps
 can narrow the unknown state returned by `bridge.snapshot()` to read its
-`presentation` field, and subscribe through `bridge.subscribe`. React `DataApp` consumes it automatically.
+`presentation` field, and subscribe through `bridge.subscribe()`. React `<DataApp>` consumes it automatically.
 An embedded surface renders toolbar actions without the page header or footer.
 Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;

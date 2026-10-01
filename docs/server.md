@@ -1,6 +1,6 @@
 # Server
 
-Import `createDataHandler` and the `RequestAccess` type from
+Import `createDataHandler()` and the `RequestAccess` type from
 `@altertable/data-app/server`. The handler accepts a Web `Request` and returns a
 `Promise<Response>`. This entry can be imported in Node and Bun without loading
 React or the Bun local-development adapter.
@@ -21,7 +21,7 @@ export const handleDataRequest = createDataHandler(
 );
 ```
 
-The app supplies `authenticate` and `lakehouseFor`, then routes `/api/data/*`
+The app supplies `authenticate()` and `lakehouseFor()`, then routes `/api/data/*`
 requests to the handler. Authorize every viewer and operation, and scope the
 returned lakehouse to the viewer's permitted data. Origin and Fetch Metadata
 checks reject cross-site browser requests; they do not authenticate viewers.

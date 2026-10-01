@@ -29,7 +29,7 @@
         "react-dom": ">=19.2.0",
       },
     },
-    "examples/starter": {
+    "examples/starter-local-data-app": {
       "name": "data-app-starter",
       "dependencies": {
         "@altertable/data-app": "file:../..",
@@ -222,7 +222,7 @@
 
     "csstype": ["csstype@3.2.3", "", {}, "sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ=="],
 
-    "data-app-starter": ["data-app-starter@workspace:examples/starter"],
+    "data-app-starter": ["data-app-starter@workspace:examples/starter-local-data-app"],
 
     "fuzzysort": ["fuzzysort@4.0.2", "", {}, "sha512-3c7yD6rK1EXIsqpcu1ZVzXJugODWNMzvUij6yTiziaAHrpNS8kzFOI9mJLE8pmG4K9JOaVgzQRgklfOEk8f4Tg=="],
 

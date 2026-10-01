@@ -1,10 +1,10 @@
 /**
  * App identity and display scope shared by browser and server.
  * @module @altertable/data-app/config
- * @see https://github.com/altertable-ai/data-app/blob/main/docs/config.md
  */
 export type DataAppConfig = {
   title: string;
+  /** Display labels; scope does not grant data access. */
   scope: { organization: string; environment: string };
   appearance: unknown;
 };

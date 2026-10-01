@@ -1,7 +1,6 @@
 /**
  * Date and number formatting with explicit units and missing-value behavior.
  * @module @altertable/data-app/format
- * @see https://github.com/altertable-ai/data-app/blob/main/docs/format.md
  */
 type CommonOptions = { locale?: string; missing?: string };
 
