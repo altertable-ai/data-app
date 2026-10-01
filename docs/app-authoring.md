@@ -36,13 +36,6 @@ readers can inspect the source of each claim.
 Use the exported types for configuration, appearance, formatting, and component
 options.
 
-Compose the provided components before creating custom UI, including layouts.
-Use `DataApp` for the shared shell, `Stack` and `Grid` for content layout, and
-`VariableBar` for wrapping controls. Let the primitives own widths, spacing,
-surfaces, and responsive behavior; avoid gallery- or app-specific overrides.
-If a needed primitive is unavailable, report the gap. Keep any necessary
-fallback limited to that gap rather than building a parallel component layer.
-
 ## Present the findings
 
 Compose a [story](react.md#present-data-with-stories) from the exploration's

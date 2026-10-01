@@ -30,6 +30,10 @@ Use `@/src/...` imports in repository source and `@altertable/data-app/<entry>`
 in consumer tests and examples. Run `bun run lint:fix` and `bun run format` for
 style fixes.
 
+Compose the gallery from provided components, including layouts. Let primitives
+own sizing, spacing, and responsive behavior. Report missing primitives and keep
+fallbacks minimal.
+
 ## Verify changes
 
 Tests should tell the package's public usage stories: define an operation,
