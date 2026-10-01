@@ -102,13 +102,3 @@ for (const result of results) {
       throw new Error(`Unexpected build output: ${output.path}`);
   }
 }
-
-const validation = await Bun.build({
-  entrypoints: ['src/validate/index.ts'],
-  outdir: 'dist',
-  target: 'node',
-  format: 'esm',
-  naming: 'validate.js',
-});
-if (!validation.success)
-  throw new Error(validation.logs.map(log => log.message).join('\n'));

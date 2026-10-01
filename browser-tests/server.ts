@@ -2,7 +2,6 @@ import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
 import starterConfig from '@/examples/starter-local-data-app/app';
-import { validateApp } from '@altertable/data-app/validate';
 import { Database } from 'bun:sqlite';
 import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
@@ -40,17 +39,6 @@ const { default: worker } = (await import(
   import.meta.resolve('@altertable/data-app/worker')
 )) as typeof import('@/src/worker');
 const app = await bundle('./fixtures/bundle-app.tsx');
-const starterEntry = new URL(
-  '../examples/starter-data-app/index.tsx',
-  import.meta.url
-).pathname;
-const validation = await validateApp({
-  entrypoints: [starterEntry],
-  cwd: new URL('..', import.meta.url).pathname,
-  tsconfig: 'tsconfig.json',
-});
-if (!validation.success)
-  throw new Error(JSON.stringify(validation.diagnostics));
 const hostedStarterBundle = await bundle(
   '../examples/starter-data-app/index.tsx'
 );

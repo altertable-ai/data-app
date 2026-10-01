@@ -32,11 +32,7 @@
       "peerDependencies": {
         "react": ">=19.2.0",
         "react-dom": ">=19.2.0",
-        "typescript": ">=7.0.0",
       },
-      "optionalPeers": [
-        "typescript",
-      ],
     },
     "examples/starter-local-data-app": {
       "name": "data-app-starter",

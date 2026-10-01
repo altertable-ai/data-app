@@ -323,22 +323,6 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
   if (!javascript.some(source => source.includes('.altertable-grid')))
     throw new Error('Packed browser build omitted injected React styles.');
 
-  await writeFile(
-    join(temporary, 'validate.mjs'),
-    String.raw`import { validateApp } from '@altertable/data-app/validate';
-import { writeFile } from 'node:fs/promises';
-const validation = await validateApp({
-  entrypoints: ['node_modules/@altertable/data-app/examples/starter-data-app/index.tsx'],
-});
-if (!validation.success) throw new Error(JSON.stringify(validation.diagnostics));
-await writeFile('invalid-app.ts', "import type { DataAppConfig } from '@altertable/data-app/config';\nconst app: DataAppConfig = { title: 'Invalid', scope: { organization: 'demo', environment: 'test' }, appearance: { theme: 'invalid' } };\n");
-const invalid = await validateApp({ entrypoints: ['invalid-app.ts'] });
-if (invalid.success || invalid.diagnostics.length !== 1 || !invalid.diagnostics[0].file?.endsWith('invalid-app.ts'))
-  throw new Error('Packed Node validator failed to reject invalid appearance.');
-`
-  );
-  await run(['node', join(temporary, 'validate.mjs')], temporary);
-
   const hosted = await Bun.build({
     entrypoints: [
       join(packageDirectory, 'examples/starter-data-app/index.tsx'),

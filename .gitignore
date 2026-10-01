@@ -3,4 +3,3 @@ dist/
 .package-check-*/
 test-results/
 playwright-report/
-.data-app-validate-*/
