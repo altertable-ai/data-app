@@ -205,7 +205,8 @@ export function defineDataQueryRoute<
         response.status < 100 ||
         response.status > 599 ||
         !response.body ||
-        typeof response.body !== 'object'
+        typeof response.body !== 'object' ||
+        Array.isArray(response.body)
       )
         throw new Error('Invalid data response.');
       const body = response.body as DataQueryBody<unknown> & {

@@ -24,6 +24,10 @@ operation inputs rather than SQL or credentials.
 `DataResponse` contains `data`, the exact request `input`, `requestId`,
 `queriedAt`, and `queryIds`. `queries` is present when the operation exposes SQL
 and the execution runtime permits disclosure. Use the returned input when labeling stale data during a refresh.
+HTTP and iframe delivery validate the same success envelope: data, request ID,
+query timestamp, query IDs, and optional query evidence. Malformed responses
+reject with `invalid_response`.
+
 `DataAppError` exposes a `code` and optional `requestId`; cancellation follows
 the supplied abort signal.
 

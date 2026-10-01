@@ -14,6 +14,7 @@ import type {
   DisclosedQuery,
   Lakehouse,
 } from '@/src/core/contract';
+import { defineDataQueryRoute, MessageRoutingError } from '@/src/core/messages';
 import type { DataTransport } from '@/src/client/transport';
 
 export type InputOf<T> = T extends { input: (value: unknown) => infer Input }
@@ -63,6 +64,8 @@ export type DataClientOptions<Operations extends DataOperations> =
       endpoint?: string;
       fetch?: typeof fetch;
     };
+
+const dataQueryRoute = defineDataQueryRoute();
 
 /** Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. */
 export function createDataClient<Operations extends DataOperations>(
@@ -124,34 +127,19 @@ export function createDataClient<Operations extends DataOperations>(
         (useHttp ? http : (localFrameBridge()?.transport ?? http));
       const response = await transport(name, input, signal);
       const ok = response.status >= 200 && response.status < 300;
-      let body: Omit<
-        DataResponse<OutputOf<Operations[typeof name]>>,
-        'input'
-      > & {
-        error?: { code: string; message: string; requestId?: string };
-      };
+      let body: Omit<DataResponse<OutputOf<Operations[typeof name]>>, 'input'>;
       try {
-        const parsed: unknown = response.body;
-        if (
-          parsed === null ||
-          typeof parsed !== 'object' ||
-          Array.isArray(parsed)
-        )
-          throw new Error('Invalid response envelope.');
-        body = parsed as typeof body;
+        body = dataQueryRoute.output(response, { operation: name, input })
+          .body as typeof body;
       } catch (error) {
         if (signal?.aborted) throw error;
+        if (error instanceof MessageRoutingError)
+          throw new DataAppError(error.message, error.code, error.requestId);
         throw new DataAppError(
           ok ? 'The data response was invalid.' : 'Could not load data.',
           ok ? 'invalid_response' : 'request_failed'
         );
       }
-      if (!ok)
-        throw new DataAppError(
-          body.error?.message ?? 'Could not load data.',
-          body.error?.code ?? 'request_failed',
-          body.error?.requestId
-        );
 
       return { ...body, input };
     },
