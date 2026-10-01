@@ -4,6 +4,8 @@ Import `createDataClient` and `DataAppError` from
 `@altertable/data-app/client`. The client uses Fetch APIs and has no React or
 server dependency.
 
+## HTTP operations
+
 ```ts
 import { createDataClient } from '@altertable/data-app/client';
 import type { operations } from './operations';
@@ -36,6 +38,8 @@ See [contracts](contract.md), [server handlers](server.md), and
 
 ## Browser-owned operations for bundle apps
 
+Start with the complete [single-file example](../examples/starter-data-app/index.tsx)
+and [data app authoring guide](hosted-apps.md).
 Bundle apps pass their operation registry as a value:
 
 ```ts

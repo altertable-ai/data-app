@@ -53,17 +53,20 @@ try {
     'dist/types/react/index.d.ts',
     'CONTRIBUTING.md',
     'docs/app-authoring.md',
-    'docs/starter-agent-instructions.md',
+    'docs/hosted-apps.md',
+    'docs/local-data-apps.md',
+    'docs/contract.md',
+    'docs/client.md',
+    'docs/react.md',
+    'docs/server.md',
+    'docs/server-bun.md',
+    'docs/embed.md',
+    'docs/react-embed.md',
+    'docs/worker.md',
+    'examples/starter-data-app/index.tsx',
   ];
   for (const value of Object.values(manifest.exports)) {
     for (const path of Object.values(value)) required.push(path.slice(2));
-  }
-  for (const entry of Object.keys(manifest.exports)) {
-    const name = entry
-      .slice(2)
-      .replace('/styles.css', '-styles')
-      .replaceAll('/', '-');
-    required.push(`docs/${name}.md`);
   }
   for (const path of required) {
     if (!paths.has(path)) throw new Error(`Package is missing ${path}`);
@@ -183,7 +186,12 @@ if (typeof createDataHandler !== "function" || typeof localLakehouse !== "functi
         noEmit: true,
         skipLibCheck: true,
       },
-      include: ['browser.tsx', 'embed.tsx', 'server.ts'],
+      include: [
+        'browser.tsx',
+        'embed.tsx',
+        'server.ts',
+        'node_modules/@altertable/data-app/examples/starter-data-app/index.tsx',
+      ],
     })
   );
   await run([
@@ -315,6 +323,21 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
   if (!javascript.some(source => source.includes('.altertable-grid')))
     throw new Error('Packed browser build omitted injected React styles.');
 
+  const hosted = await Bun.build({
+    entrypoints: [
+      join(packageDirectory, 'examples/starter-data-app/index.tsx'),
+    ],
+    target: 'browser',
+    format: 'iife',
+  });
+  if (
+    !hosted.success ||
+    hosted.outputs.some(output => output.path.endsWith('.css'))
+  )
+    throw new Error(
+      'Packed hosted example must build as one JavaScript bundle.'
+    );
+
   await writeFile(
     join(temporary, 'shell.tsx'),
     `import { DataAppSkeleton, injectDataAppShellStyles } from '@altertable/data-app/react';
@@ -385,7 +408,8 @@ export { Grid };
       'react@19.2.0',
       'react-dom@19.2.0',
     ],
-    minimumConsumer
+    minimumConsumer,
+    { npm_config_cache: join(temporary, 'npm-cache') }
   );
   await writeFile(
     join(minimumConsumer, 'minimum.jsx'),

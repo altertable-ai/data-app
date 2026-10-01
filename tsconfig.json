@@ -14,5 +14,11 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["src", "tests", "scripts", "browser-tests"]
+  "include": [
+    "src",
+    "tests",
+    "scripts",
+    "browser-tests",
+    "examples/starter-data-app/index.tsx"
+  ]
 }

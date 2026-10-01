@@ -5,6 +5,7 @@ import { DataAppBridge } from '@altertable/data-app/react/embed';
 import {
   createMessageRouter,
   sqlQueryRoute,
+  DataSourceError,
 } from '@altertable/data-app/contract';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
@@ -13,7 +14,11 @@ import {
   createSqlQueryHandler,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
-const response = await fetch('/__test/bundle');
+const response = await fetch(
+  location.pathname === '/starter-data-app'
+    ? '/__test/starter-data-app'
+    : '/__test/bundle'
+);
 const javascript = await response.text();
 
 function Host() {
@@ -27,12 +32,18 @@ function Host() {
   const [broken, setBroken] = useState(
     new URLSearchParams(location.search).has('broken')
   );
+  const starterPreview = location.pathname === '/starter-data-app';
   const urlMode = new URLSearchParams(location.search).has('url');
   const timeout = new URLSearchParams(location.search).has('timeout');
   // Extra attributes can still arrive from JavaScript callers or spread objects.
   const iframeProps = {
     hidden: status !== 'ready',
     className: 'app-frame',
+    ...(starterPreview
+      ? {
+          style: { display: 'block', width: '100%', height: '80vh', border: 0 },
+        }
+      : {}),
     ...(new URLSearchParams(location.search).has('lazy')
       ? { loading: 'lazy' as const }
       : {}),
@@ -49,6 +60,7 @@ function Host() {
             body: JSON.stringify({ statement, limit }),
             signal,
           });
+          if (!response.ok) throw new DataSourceError('unavailable');
           return response.json();
         },
       })),

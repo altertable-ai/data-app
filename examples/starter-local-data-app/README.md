@@ -1,4 +1,7 @@
-# Data app starter
+# Local data app starter
+
+Use this starter with the [local authoring guide](https://github.com/altertable-ai/data-app/blob/main/docs/local-data-apps.md).
+See [AGENTS.md](AGENTS.md) for app-owned files.
 
 A Bun and React app that imports the public `@altertable/data-app` package.
 It starts with a lakehouse connectivity check. Replace that check with bounded
@@ -13,7 +16,7 @@ From the repository root:
 bun install --frozen-lockfile
 bun run build
 bun install --frozen-lockfile
-cd examples/starter
+cd examples/starter-local-data-app
 bun run dev
 ```
 
@@ -39,18 +42,6 @@ This checkout uses `file:../..` to exercise the built package before publication
 When copying the starter elsewhere, replace that dependency with the published
 package using `bun add @altertable/data-app`, `npm install @altertable/data-app`,
 or `pnpm add @altertable/data-app`, then regenerate your lockfile.
-
-- `app.json`: title, organization, environment, and appearance.
-- `src/operations.ts`: server operations, SQL, validation, and query bounds.
-- `src/data-context.ts`: source context, glossary, and query evidence.
-- `src/App.tsx`: findings, controls, and request states.
-- `src/main.tsx`: explicit style injection and React mounting.
-- `src/server.ts`: local Bun server; replace it with an authorized server handler
-  when hosting for other people.
-
-Read [data authoring](docs/data.md), [view authoring](docs/views.md),
-[app authoring](../../docs/app-authoring.md) and the entry documentation in
-`node_modules/@altertable/data-app/docs/`. Agent guidance lives in [AGENTS.md](AGENTS.md).
 
 ```fish
 bun run check

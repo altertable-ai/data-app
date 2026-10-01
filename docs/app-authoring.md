@@ -1,30 +1,49 @@
 # Author a data app
 
-An app owns its question, SQL, result parsing, business definitions, configuration,
-and presentation. The package supplies contracts, request handling, typed client
-calls, and reusable React UI.
+Build an exploration that answers the user's question and a story that presents
+its strongest findings. Both use the same queries, definitions, and evidence.
 
-1. Inspect the source data, time coverage, and existing definitions before choosing
-   the exploration. Build findings from observed results and distinguish
-   association from cause.
-2. Define named, bounded [operations](contract.md) in the execution runtime. Put shared input
-   contracts in a browser-safe module and validate outputs before returning them.
-3. For HTTP apps, use a [server handler](server.md) that authorizes each request, or the
-   [Bun adapter](server-bun.md) for local development.
-4. Create a typed [client](client.md) and compose [React views](react.md). Import
-   the operation registry with `import type` for HTTP apps, or as a value for bundle apps.
-5. Define glossary and query evidence, handle empty results, and preserve the
-   displayed input while a request refreshes or fails. A measured zero and an
-   unavailable value must remain distinct.
-6. Verify the app's findings and interactions against the original question.
-   Inspect loading, error, stale, and empty states at desktop and phone widths.
+## Inspect the data
 
-Import through `@altertable/data-app/<entry>`. Installed package files are
-dependencies; customize the app's own source rather than editing `node_modules`.
-For HTTP apps, SQL, credentials, and viewer authorization belong on the server.
-For bundle apps, define operations in the browser and pass them to
-`createDataClient({ operations })`; SQL travels through the authorized
-[SQL bridge](embed.md#sql-query-route). Credentials, viewer authorization, and
-enforced query limits remain backend-owned.
+Inspect the relevant catalogs, tables, and fields, their time coverage, and
+existing definitions. Choose a question the available data can answer.
 
-For agent-assisted authoring, see the [starter AGENTS.md template](starter-agent-instructions.md).
+## Build the exploration
+
+Choose the execution path:
+
+| App                                | Guide                                   |
+| ---------------------------------- | --------------------------------------- |
+| Data app (hosted / remote / cloud) | [Single-file authoring](hosted-apps.md) |
+| Local data app                     | [Local authoring](local-data-apps.md)   |
+
+Lead with a supported finding and expose the relevant fields as filter variables. Use a date filter for questions worth exploring over time,
+or a fixed period snapshot for a deliberate historical analysis.
+Register terms and query evidence so readers can inspect the source of each claim.
+
+| Task                                       | Documentation                          |
+| ------------------------------------------ | -------------------------------------- |
+| Define queries, inputs, and result parsing | [Operations](contract.md)              |
+| Build views, filters, and request states   | [React](react.md)                      |
+| Bind definitions and source evidence       | [Data context](react.md#bind-evidence) |
+
+Use the exported types for configuration, appearance, formatting, and component
+options.
+
+## Present the findings
+
+Compose a [story](react.md#present-data-with-stories) from the exploration's
+findings. Lead with the answer, then show the evidence and comparisons that
+explain it. Select the findings that matter to the audience; do not turn every
+row or chart into a step.
+
+## Verify the app
+
+Verify findings against the source and the user's question. Distinguish measured
+zero, unavailable values, and empty results. Check filters, refresh, loading,
+empty, error, and stale states, then present the story. Inspect both experiences
+at phone and desktop widths in light and dark themes.
+
+The app owns its queries, result parsing, business definitions, configuration,
+and presentation. Credentials, authorization, and enforced access/query limits
+stay backend-owned. Edit app-owned files; installed package files are dependencies.

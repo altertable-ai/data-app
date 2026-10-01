@@ -91,13 +91,12 @@ mode renders nothing and handles delivery only. Use source mode for bundle
 loading, sandbox policy, token rotation, and startup timeout. The two prop modes
 are mutually exclusive.
 
-## Loading placeholder
+## Loading an embedded app
 
-For a shared placeholder while building or connecting, render `DataAppSkeleton`
-from `@altertable/data-app/react` in the consuming shell. Call
-`injectDataAppShellStyles()` from that entry once in the host's browser entry before
-rendering. See [React](react.md#loading-an-embedded-app) for the entry-point example. The bridge does not render
-loading UI itself.
+Use `DataAppSkeleton` from `/react` while the host builds or starts an app.
+Call `injectDataAppShellStyles()` from `/react` before rendering the placeholder.
+The host owns when to show it and supplies any surrounding header or footer.
+`/react/embed` itself remains independent of UI components and styles.
 
 ## Parent-owned presentation
 
