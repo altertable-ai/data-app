@@ -1,9 +1,10 @@
-import type { DataAppHostContext } from '@/src/core/host-context';
+import type { DataAppPresentation } from '@/src/core/presentation';
 import { PARENT_PARAM } from '@/src/core/bridge';
 import type { MessageDispatcher } from '@/src/core/messages';
 import {
   attachDataAppBridge,
   type DataAppStatus,
+  type DataAppHost,
   type DataAppDiagnostic,
 } from '@/src/embed/host';
 
@@ -18,7 +19,7 @@ export type DataAppSource =
 export type DataAppShellOptions = {
   iframe: HTMLIFrameElement;
   source: DataAppSource;
-  hostContext?: DataAppHostContext;
+  presentation?: DataAppPresentation;
   onMessage: MessageDispatcher;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
@@ -29,12 +30,12 @@ export type DataAppShellOptions = {
 export function attachDataAppShell({
   iframe,
   source,
-  hostContext,
+  presentation,
   onMessage,
   onStatusChange,
   onDiagnostic,
   startupTimeoutMs = 30_000,
-}: DataAppShellOptions) {
+}: DataAppShellOptions): DataAppHost {
   const host = iframe.ownerDocument.defaultView;
   if (!host) throw new Error('The iframe requires a host window.');
   const url = new URL(
@@ -64,23 +65,23 @@ export function attachDataAppShell({
     if (value === 'connecting' || value === 'connected')
       timer = setTimeout(() => {
         failed = true;
-        disposeBridge();
+        bridge.dispose();
         onStatusChange?.('failed');
       }, startupTimeoutMs);
     if (value === 'failed') {
       failed = true;
-      disposeBridge();
+      bridge.dispose();
     }
     onStatusChange?.(value);
   }
 
-  const disposeBridge = attachDataAppBridge({
+  const bridge = attachDataAppBridge({
     iframe,
     connection: opaque
       ? { type: 'opaque', token: crypto.randomUUID() }
       : { type: 'origin', origin: url.origin },
     javascript: opaque ? source.javascript : undefined,
-    hostContext,
+    presentation,
     onMessage,
     onStatusChange: status,
     onDiagnostic,
@@ -97,10 +98,8 @@ export function attachDataAppShell({
   function dispose() {
     clearTimeout(timer);
     iframe.removeEventListener('error', error);
-    disposeBridge();
+    bridge.dispose();
   }
 
-  return Object.assign(dispose, {
-    updateHostContext: disposeBridge.updateHostContext,
-  });
+  return { dispose, setPresentation: bridge.setPresentation };
 }

@@ -12,7 +12,7 @@ import {
   type DataAppSource,
   type DataAppShellOptions,
 } from '@/src/embed/shell';
-import type { DataAppStatus } from '@/src/embed/host';
+import type { DataAppStatus, DataAppHost } from '@/src/embed/host';
 
 export type DataAppShellProps = Pick<
   DataAppShellOptions,
@@ -20,7 +20,7 @@ export type DataAppShellProps = Pick<
   | 'onStatusChange'
   | 'onDiagnostic'
   | 'startupTimeoutMs'
-  | 'hostContext'
+  | 'presentation'
 > & {
   source: DataAppSource;
   title: string;
@@ -33,7 +33,7 @@ export function DataAppShell({
   source,
   title,
   onMessage,
-  hostContext,
+  presentation,
   onStatusChange,
   onDiagnostic,
   startupTimeoutMs,
@@ -43,16 +43,19 @@ export function DataAppShell({
   const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
   const [attempt, bumpAttempt] = useReducer(value => value + 1, 0);
   const [status, setStatus] = useState<DataAppStatus>('connecting');
-  const attached = useRef<ReturnType<typeof attachDataAppShell> | undefined>(
-    undefined
-  );
-  const contextRef = useRef(hostContext);
-  const handlers = useRef({ onMessage, onStatusChange, onDiagnostic });
+  const hostRef = useRef<DataAppHost | undefined>(undefined);
+  const handlers = useRef({
+    onMessage,
+    onStatusChange,
+    onDiagnostic,
+  });
 
   useLayoutEffect(() => {
-    contextRef.current = hostContext;
-    attached.current?.updateHostContext(hostContext);
-    handlers.current = { onMessage, onStatusChange, onDiagnostic };
+    handlers.current = {
+      onMessage,
+      onStatusChange,
+      onDiagnostic,
+    };
   });
 
   const url = source.type === 'url' ? source.url : source.bootstrapUrl;
@@ -64,8 +67,7 @@ export function DataAppShell({
   useEffect(() => {
     if (!iframe) return;
 
-    const dispose = attachDataAppShell({
-      hostContext: contextRef.current,
+    const host = attachDataAppShell({
       iframe,
       source:
         type === 'url'
@@ -88,13 +90,17 @@ export function DataAppShell({
         handlers.current.onStatusChange?.(value);
       },
     });
-    attached.current = dispose;
+    hostRef.current = host;
 
     return () => {
-      attached.current = undefined;
-      dispose();
+      hostRef.current = undefined;
+      host.dispose();
     };
   }, [iframe, type, url, javascript, revision, startupTimeoutMs]);
+
+  useEffect(() => {
+    hostRef.current?.setPresentation(presentation);
+  });
 
   function retry() {
     setStatus('connecting');

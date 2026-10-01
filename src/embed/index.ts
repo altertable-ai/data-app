@@ -5,6 +5,7 @@
  */
 export { attachDataAppBridge } from '@/src/embed/host';
 export type {
+  DataAppHost,
   DataAppConnection,
   DataAppStatus,
   DataAppDiagnostic,
@@ -14,4 +15,4 @@ export type { DataAppSource, DataAppShellOptions } from '@/src/embed/shell';
 export { startDataAppBootstrap } from '@/src/embed/bootstrap';
 export { createNavigationHandler } from '@/src/embed/navigation';
 
-export type { DataAppHostContext } from '@/src/core/host-context';
+export type { DataAppPresentation } from '@/src/core/presentation';

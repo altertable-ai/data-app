@@ -247,8 +247,8 @@ Previous data and evidence are retained only when the input changes within the
 same operation. Switching to another operation shows its own cached response or
 an initial loading/error state; it never inherits another operation's result.
 
-When a trusted parent supplies [host context](embed.md#host-presentation-context),
-`DataApp` follows its resolved color scheme and suppresses local theme controls,
-including in presentations. In the Altertable frontend (`surface: 'altertable'`),
+When a trusted parent supplies [parent presentation](embed.md#parent-presentation),
+`DataApp` follows its resolved theme and suppresses local theme controls,
+including in presentations. In the Altertable frontend (`mount: 'altertable'`),
 only toolbar actions remain above the app body; the title, scope, description, and
 footer are omitted. Variables and request states remain available.

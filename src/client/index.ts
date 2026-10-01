@@ -115,4 +115,4 @@ export {
   type DataAppNavigation,
 } from '@/src/client/navigation';
 
-export type { DataAppHostContext } from '@/src/core/host-context';
+export type { DataAppPresentation } from '@/src/core/presentation';

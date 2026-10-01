@@ -139,7 +139,7 @@ test('URL shell loads a separate-origin app and preserves navigation on reload',
   expect(errors).toEqual([]);
 });
 
-test('parent controls embedded chrome and live color scheme without remounting', async ({
+test('parent controls embedded chrome and live theme without remounting', async ({
   page,
 }) => {
   await page.goto('/bundle-host?period=last-30#totals');
@@ -157,7 +157,7 @@ test('parent controls embedded chrome and live color scheme without remounting',
   await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
   await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
   await expect(app.locator('#location')).toHaveText('period=last-30#totals');
-  await page.getByRole('button', { name: 'Change surface' }).click();
+  await page.getByRole('button', { name: 'Change mount' }).click();
   await expect(
     app.getByRole('heading', { name: 'Embedded report' })
   ).toBeVisible();
@@ -167,5 +167,32 @@ test('parent controls embedded chrome and live color scheme without remounting',
   ).toBeVisible();
   await page.getByRole('button', { name: 'Change theme' }).click();
   await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
+  await page
+    .getByRole('button', { name: 'Toggle parent presentation' })
+    .click();
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+  await page.getByRole('button', { name: 'Change theme' }).click();
+  await page.getByRole('button', { name: 'Change theme' }).click();
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+  await page
+    .getByRole('button', { name: 'Toggle parent presentation' })
+    .click();
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.getByRole('button', { name: 'Change theme' }).click();
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+  await page
+    .getByRole('button', { name: 'Toggle parent presentation' })
+    .click();
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+  await page
+    .getByRole('button', { name: 'Toggle parent presentation' })
+    .click();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
   await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
 });

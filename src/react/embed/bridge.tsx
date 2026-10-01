@@ -1,7 +1,8 @@
-import type { DataAppHostContext } from '@/src/core/host-context';
+import type { DataAppPresentation } from '@/src/core/presentation';
 import { useRef, useLayoutEffect, useEffect, type ComponentRef } from 'react';
 import {
   attachDataAppBridge,
+  type DataAppHost,
   type DataAppConnection,
   type DataAppStatus,
   type DataAppDiagnostic,
@@ -9,7 +10,7 @@ import {
 import type { MessageDispatcher } from '@/src/core/messages';
 
 export type DataAppBridgeProps = {
-  hostContext?: DataAppHostContext;
+  presentation?: DataAppPresentation;
   iframe: ComponentRef<'iframe'> | null;
   connection: DataAppConnection;
   onMessage: MessageDispatcher;
@@ -22,20 +23,23 @@ export function DataAppBridge({
   iframe,
   connection,
   onMessage,
-  hostContext,
+  presentation,
   onStatusChange,
   onDiagnostic,
 }: DataAppBridgeProps) {
-  const attached = useRef<ReturnType<typeof attachDataAppBridge> | undefined>(
-    undefined
-  );
-  const contextRef = useRef(hostContext);
-  const handlers = useRef({ onMessage, onStatusChange, onDiagnostic });
+  const hostRef = useRef<DataAppHost | undefined>(undefined);
+  const handlers = useRef({
+    onMessage,
+    onStatusChange,
+    onDiagnostic,
+  });
 
   useLayoutEffect(() => {
-    contextRef.current = hostContext;
-    attached.current?.updateHostContext(hostContext);
-    handlers.current = { onMessage, onStatusChange, onDiagnostic };
+    handlers.current = {
+      onMessage,
+      onStatusChange,
+      onDiagnostic,
+    };
   });
 
   const identity =
@@ -43,17 +47,16 @@ export function DataAppBridge({
   const type = connection.type;
 
   useEffect(() => {
-    const host = iframe?.ownerDocument.defaultView;
-    if (!iframe || !host) return;
+    const hostWindow = iframe?.ownerDocument.defaultView;
+    if (!iframe || !hostWindow) return;
 
-    const dispose = attachDataAppBridge({
-      hostContext: contextRef.current,
+    const host = attachDataAppBridge({
       iframe,
       connection:
         type === 'origin'
           ? { type, origin: identity }
           : { type, token: identity },
-      window: host,
+      window: hostWindow,
       onMessage(request, context) {
         return handlers.current.onMessage(request, context);
       },
@@ -64,13 +67,17 @@ export function DataAppBridge({
         return handlers.current.onDiagnostic?.(event);
       },
     });
-    attached.current = dispose;
+    hostRef.current = host;
 
     return () => {
-      attached.current = undefined;
-      dispose();
+      hostRef.current = undefined;
+      host.dispose();
     };
   }, [iframe, type, identity]);
+
+  useEffect(() => {
+    hostRef.current?.setPresentation(presentation);
+  });
 
   return null;
 }

@@ -5,8 +5,11 @@
  */
 import { invariant } from '@/src/core/invariant';
 
+export type Theme = 'light' | 'dark';
+export type ThemePreference = Theme | 'system';
+
 export type AppearanceSettings = {
-  mode: 'light' | 'dark' | 'system';
+  mode: ThemePreference;
   baseColor: 'neutral' | 'slate' | 'warm';
   accentColor: string;
   darkAccentColor?: string;
@@ -17,11 +20,9 @@ export type AppearanceSettings = {
   typography: { body: string; heading: string };
 };
 
-export type ThemeMode = AppearanceSettings['mode'];
-
 export type ThemeController = {
-  getMode: () => ThemeMode;
-  setMode: (mode: ThemeMode) => void;
+  getTheme: () => ThemePreference;
+  setTheme: (theme: ThemePreference) => void;
   subscribe: (listener: () => void) => () => void;
 };
 
@@ -265,48 +266,36 @@ export function applyAppearance(value: unknown): () => void {
   };
 }
 
-/** Viewer color mode persists independently of app-authored brand tokens. */
+/** Persist a viewer theme preference. Applying appearance belongs to the UI owner. */
 export function createThemeController(
-  value: unknown,
-  initialHostMode?: 'light' | 'dark'
-): ThemeController & {
-  /** Override viewer preferences without persisting them. */
-  setHostMode(mode: 'light' | 'dark' | undefined): void;
-} {
-  const settings = parseAppearance(value);
+  initialTheme: ThemePreference = 'light'
+): ThemeController {
+  invariant(
+    oneOf(initialTheme, ['light', 'dark', 'system']),
+    'Invalid theme preference.'
+  );
   const storageKey = 'altertable.data-app.theme-mode';
-  let mode = settings.mode;
+  let theme = initialTheme;
   try {
     const saved = window.localStorage.getItem(storageKey);
-    if (oneOf(saved, ['light', 'dark', 'system'])) mode = saved;
+    if (oneOf(saved, ['light', 'dark', 'system'])) theme = saved;
   } catch {
     // Storage can be unavailable in private browsing or embedded contexts.
   }
-  let hostMode = initialHostMode;
-  let stopAppearance = applyAppearance({ ...settings, mode: hostMode ?? mode });
   const listeners = new Set<() => void>();
 
   return {
-    getMode() {
-      return hostMode ?? mode;
+    getTheme() {
+      return theme;
     },
-    setMode(nextMode) {
-      if (hostMode || nextMode === mode) return;
-      stopAppearance();
-      mode = nextMode;
-      stopAppearance = applyAppearance({ ...settings, mode });
+    setTheme(nextTheme) {
+      if (nextTheme === theme) return;
+      theme = nextTheme;
       try {
-        window.localStorage.setItem(storageKey, mode);
+        window.localStorage.setItem(storageKey, theme);
       } catch {
         // The selection still applies to this page.
       }
-      listeners.forEach(listener => listener());
-    },
-    setHostMode(nextMode) {
-      if (hostMode === nextMode) return;
-      stopAppearance();
-      hostMode = nextMode;
-      stopAppearance = applyAppearance({ ...settings, mode: hostMode ?? mode });
       listeners.forEach(listener => listener());
     },
     subscribe(listener) {

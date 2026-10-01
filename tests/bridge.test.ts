@@ -213,7 +213,7 @@ test('shell rejects foreign sources, invalid input, duplicate IDs and stale sess
   const host = Object.assign(events, {
     location: { search: '', hash: '' },
   }) as unknown as Window;
-  const dispose = attachDataAppBridge({
+  const connection = attachDataAppBridge({
     iframe: Object.assign(new EventTarget(), {
       contentWindow: target,
     }) as unknown as HTMLIFrameElement,
@@ -380,7 +380,7 @@ test('shell rejects foreign sources, invalid input, duplicate IDs and stale sess
       )
     ).toBe(false);
   } finally {
-    dispose();
+    connection.dispose();
   }
 });
 
@@ -402,11 +402,11 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
   let signal: AbortSignal | undefined;
   let finish: ((result: unknown) => void) | undefined;
   const statuses: string[] = [];
-  const dispose = attachDataAppBridge({
+  const connection = attachDataAppBridge({
     iframe,
     connection: { type: 'opaque', token: 'initial-token' },
     window: host,
-    hostContext: { surface: 'altertable', colorScheme: 'dark' },
+    presentation: { mount: 'altertable', theme: 'dark' },
     onStatusChange(status) {
       return statuses.push(status);
     },
@@ -449,24 +449,24 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent.at(-1)!.state).toEqual({
       search: '?period=last-30',
       hash: '#totals',
-      hostContext: { surface: 'altertable', colorScheme: 'dark' },
+      presentation: { mount: 'altertable', theme: 'dark' },
     });
-    dispose.updateHostContext({ surface: 'altertable', colorScheme: 'light' });
+    connection.setPresentation({ mount: 'altertable', theme: 'light' });
     expect(sent.at(-1)).toMatchObject({
       type: 'state:update',
       sessionId,
       state: {
         search: '?period=last-30',
         hash: '#totals',
-        hostContext: { surface: 'altertable', colorScheme: 'light' },
+        presentation: { mount: 'altertable', theme: 'light' },
       },
     });
     expect(() =>
-      dispose.updateHostContext({
-        surface: 'altertable',
-        colorScheme: 'system',
+      connection.setPresentation({
+        mount: 'altertable',
+        theme: 'system',
       } as never)
-    ).toThrow('Invalid host context');
+    ).toThrow('Invalid app presentation');
 
     receive({
       type: 'bridge:request',
@@ -487,9 +487,9 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent.at(-1)!.state).toEqual({
       search: '?period=last-30',
       hash: '#totals',
-      hostContext: { surface: 'altertable', colorScheme: 'light' },
+      presentation: { mount: 'altertable', theme: 'light' },
     });
-    dispose.updateHostContext(undefined);
+    connection.setPresentation(undefined);
     expect(sent.at(-1)!.state).toEqual({
       search: '?period=last-30',
       hash: '#totals',
@@ -499,7 +499,7 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent.some(message => message.type === 'bridge:result')).toBe(false);
     expect(statuses).toContain('connected');
   } finally {
-    dispose();
+    connection.dispose();
   }
 });
 
@@ -597,11 +597,11 @@ test('presentation context follows only authenticated current-session state', ()
   const dark = {
     search: '?period=last-30',
     hash: '#totals',
-    hostContext: { surface: 'altertable', colorScheme: 'dark' },
+    presentation: { mount: 'altertable', theme: 'dark' },
   };
   const light = {
     ...dark,
-    hostContext: { surface: 'altertable', colorScheme: 'light' },
+    presentation: { mount: 'altertable', theme: 'light' },
   };
   const states: unknown[] = [];
   const unsubscribe = bridge.subscribe(state => states.push(state));

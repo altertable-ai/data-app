@@ -5,23 +5,23 @@ import {
   type IframeTransport,
 } from '@/src/client/iframe';
 import {
-  parseHostContext,
-  type DataAppHostContext,
-} from '@/src/core/host-context';
+  parsePresentation,
+  type DataAppPresentation,
+} from '@/src/core/presentation';
 
-function contextFromState(state: unknown) {
-  return parseHostContext(
+function presentationFromBridgeState(state: unknown) {
+  return parsePresentation(
     state && typeof state === 'object'
-      ? (state as { hostContext?: unknown }).hostContext
+      ? (state as { presentation?: unknown }).presentation
       : undefined
   );
 }
 
 /** Local preview verifies its parent before accepting presentation context. */
-export function useHostContext() {
-  const [context, setContext] = useState<DataAppHostContext | undefined>(() =>
-    contextFromState(getDataAppTransport()?.snapshot())
-  );
+export function useDataAppPresentation() {
+  const [presentation, setPresentation] = useState<
+    DataAppPresentation | undefined
+  >(() => presentationFromBridgeState(getDataAppTransport()?.snapshot()));
 
   useLayoutEffect(() => {
     let disposed = false;
@@ -30,9 +30,9 @@ export function useHostContext() {
     function attach(bridge: IframeTransport) {
       if (disposed) return;
       unsubscribe = bridge.subscribe(state =>
-        setContext(contextFromState(state))
+        setPresentation(presentationFromBridgeState(state))
       );
-      setContext(contextFromState(bridge.snapshot()));
+      setPresentation(presentationFromBridgeState(bridge.snapshot()));
     }
 
     const bridge = getDataAppTransport();
@@ -49,5 +49,5 @@ export function useHostContext() {
     };
   }, []);
 
-  return context;
+  return presentation;
 }

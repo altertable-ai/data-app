@@ -12,7 +12,7 @@ message delivery. The host supplies an iframe and a validated message dispatcher
 ```ts
 import { attachDataAppShell } from '@altertable/data-app/embed';
 
-const dispose = attachDataAppShell({
+const host = attachDataAppShell({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
   onMessage: router.dispatch,
@@ -20,7 +20,7 @@ const dispose = attachDataAppShell({
 ```
 
 The host defines `iframe` and `router`; see [message contracts](contract.md#message-routes).
-Dispose before replacing the source or retrying. A URL source requires HTTP(S)
+Call `host.dispose()` before replacing the source or retrying. A URL source requires HTTP(S)
 and a different origin from its host. The shell adds `__altertable_parent` to the
 app URL. A hosted app must explicitly install a transport to its configured,
 trusted parent origin using the [client API](client.md#iframe-transport).
@@ -74,7 +74,7 @@ app bundle; non-React apps use `createDataAppNavigation` from `/client`.
 
 `attachDataAppBridge` is the lower-level API for a host-owned iframe. Supply
 `connection: { type: 'origin', origin }` or `{ type: 'opaque', token }`, and an
-`onMessage` dispatcher. It returns cleanup and owns source/origin checks, request
+`onMessage` dispatcher. It returns a host with `dispose()` and `setPresentation()` and owns source/origin checks, request
 correlation, cancellation, bounded pending requests, and reconnection. Use the
 shell for bundle loading and token rotation. The opaque destination requires
 wildcard delivery, but incoming messages still require the exact iframe window,
@@ -107,33 +107,37 @@ including `data:query` and `navigation:update`. Hosts, apps, and bootstrap scrip
 must use matching names; the former unscoped and dot-separated names are no
 longer supported.
 
-## Host presentation context
+## Parent presentation
 
-The parent declares where the iframe is mounted and owns its resolved color scheme:
+The parent declares where the iframe is mounted and owns its resolved theme:
 
 ```ts
-const dispose = attachDataAppShell({
+const host = attachDataAppShell({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
-  hostContext: { surface: 'altertable', colorScheme: 'dark' },
+  presentation: { mount: 'altertable', theme: 'dark' },
   onMessage: router.dispatch,
 });
 
 // Update presentation without replacing the iframe or its bridge session.
-dispose.updateHostContext({ surface: 'altertable', colorScheme: 'light' });
+host.setPresentation({ mount: 'altertable', theme: 'light' });
 ```
 
-`attachDataAppBridge` supports the same `hostContext` option and
-`dispose.updateHostContext(context)` method. `DataAppHostContext` is exported from
-`/embed` and `/client`. Use `surface: 'altertable'` inside the Altertable frontend
-and `'custom'` for other hosts. `colorScheme` must be resolved to `'light'` or
+`attachDataAppBridge` supports the same `presentation` option and
+`host.setPresentation(presentation)` method. `DataAppPresentation` is exported from
+`/embed` and `/client`. Use `mount: 'altertable'` inside the Altertable frontend
+and `'custom'` for other hosts. `theme` must be resolved to `'light'` or
 `'dark'`; the parent decides how its system preference is resolved.
 
-Context travels over `postMessage` in the authenticated `bridge:initialize` and
+Presentation travels over `postMessage` in the authenticated `bridge:initialize` and
 `state:update` messages, alongside `search` and `hash`. Framework-neutral apps
-can read `bridge.snapshot().hostContext` after narrowing the unknown state and
+can read `bridge.snapshot().presentation` after narrowing the unknown state and
 subscribe through `bridge.subscribe`. React `DataApp` consumes it automatically.
 An Altertable mount renders toolbar actions without the page header or footer.
-Both surfaces follow the parent's theme, including presentation mode, without
-changing saved viewer preferences. Omitting context preserves standalone behavior;
-`dispose.updateHostContext(undefined)` restores it.
+Both mount locations follow the parent's theme, including presentation mode, without
+changing saved viewer preferences. Omitting presentation preserves standalone behavior;
+`host.setPresentation(undefined)` restores it.
+
+The host attachment is an explicit `{ dispose, setPresentation }` object. Replace
+former cleanup calls (`dispose()`) with `host.dispose()`. React hosts manage this
+lifecycle automatically.

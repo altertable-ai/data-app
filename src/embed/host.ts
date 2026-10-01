@@ -1,7 +1,7 @@
 import {
-  parseHostContext,
-  type DataAppHostContext,
-} from '@/src/core/host-context';
+  parsePresentation,
+  type DataAppPresentation,
+} from '@/src/core/presentation';
 import {
   BRIDGE,
   MAX_PENDING,
@@ -27,12 +27,17 @@ export type DataAppStatus =
   | 'disconnected';
 export type DataAppDiagnostic = { direction: 'send' | 'receive'; type: string };
 
+export type DataAppHost = {
+  dispose: () => void;
+  setPresentation: (presentation?: DataAppPresentation) => void;
+};
+
 /** The bridge owns delivery and cancellation; the routed handler owns validation, authorization and execution. */
 export function attachDataAppBridge({
   iframe,
   connection,
   javascript,
-  hostContext,
+  presentation,
   onStatusChange,
   onDiagnostic,
   onMessage,
@@ -41,12 +46,12 @@ export function attachDataAppBridge({
   iframe: HTMLIFrameElement;
   connection: DataAppConnection;
   javascript?: string;
-  hostContext?: DataAppHostContext;
+  presentation?: DataAppPresentation;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   onMessage: MessageDispatcher;
   window?: Window;
-}) {
+}): DataAppHost {
   const frameOrigin = connection.type === 'origin' ? connection.origin : 'null';
   if (
     connection.type === 'origin' &&
@@ -57,38 +62,32 @@ export function attachDataAppBridge({
     throw new Error('Invalid sandbox token.');
   let token = connection.type === 'opaque' ? connection.token : undefined;
   const targetOrigin = connection.type === 'opaque' ? '*' : frameOrigin;
-  let context = validateContext(hostContext);
+  let currentPresentation: DataAppPresentation | undefined;
   let disposed = false;
   let documentId: string | undefined;
   let sessionId: string | undefined;
   const pending = new Map<string, AbortController>();
 
-  function validateContext(value: DataAppHostContext | undefined) {
-    const parsed = parseHostContext(value);
-    if (value !== undefined && !parsed)
-      throw new Error('Invalid host context.');
-
-    return parsed;
-  }
-
-  function state() {
+  function hostState() {
     return {
       search: host.location.search,
       hash: host.location.hash,
-      ...(context ? { hostContext: context } : {}),
+      ...(currentPresentation ? { presentation: currentPresentation } : {}),
     };
   }
 
-  function updateHostContext(value: DataAppHostContext | undefined) {
+  function setPresentation(value: DataAppPresentation | undefined) {
     if (disposed) return;
-    const next = validateContext(value);
+    const next = parsePresentation(value);
+    if (value !== undefined && !next)
+      throw new Error('Invalid app presentation.');
     if (
-      next?.surface === context?.surface &&
-      next?.colorScheme === context?.colorScheme
+      next?.mount === currentPresentation?.mount &&
+      next?.theme === currentPresentation?.theme
     )
       return;
-    context = next;
-    if (sessionId) navigate();
+    currentPresentation = next;
+    if (sessionId) publishState();
   }
 
   function cancelAll() {
@@ -199,7 +198,7 @@ export function attachDataAppBridge({
       onStatusChange?.('connected');
       send({
         type: 'bridge:initialize',
-        state: state(),
+        state: hostState(),
       });
       if (javascript !== undefined) send({ type: 'script:load', javascript });
 
@@ -225,10 +224,10 @@ export function attachDataAppBridge({
     }
   }
 
-  function navigate() {
+  function publishState() {
     send({
       type: 'state:update',
-      state: state(),
+      state: hostState(),
     });
   }
 
@@ -246,17 +245,18 @@ export function attachDataAppBridge({
     cancelAll();
     iframe.removeEventListener('load', load);
     host.removeEventListener('message', receive);
-    host.removeEventListener('popstate', navigate);
+    host.removeEventListener('popstate', publishState);
     host.removeEventListener('pagehide', cancelAll);
   }
 
+  setPresentation(presentation);
   iframe.addEventListener('load', load);
   host.addEventListener('message', receive);
-  host.addEventListener('popstate', navigate);
+  host.addEventListener('popstate', publishState);
   host.addEventListener('pagehide', cancelAll);
   // Reconnect an already-loaded iframe when its host bridge mounts again.
   onStatusChange?.('connecting');
   send({ type: 'bridge:connect', documentId: 'host' });
 
-  return Object.assign(dispose, { updateHostContext });
+  return { dispose, setPresentation };
 }

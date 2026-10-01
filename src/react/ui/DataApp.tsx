@@ -1,13 +1,6 @@
-import { useHostContext } from '@/src/react/ui/useHostContext';
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from 'react';
-import { createThemeController } from '@/src/core/appearance';
+import { useDataAppPresentation } from '@/src/react/ui/useDataAppPresentation';
+import { useEffect, useRef, type ComponentProps, type ReactNode } from 'react';
+import { useAppAppearance } from '@/src/react/ui/useAppAppearance';
 import type { DisclosedQuery } from '@/src/core/contract';
 import type { DataAppConfig } from '@/src/core/config';
 import { displayedSnapshot } from '@/src/core/data-view';
@@ -90,15 +83,12 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     footerActions,
     layoutProps,
   } = props;
-  const hostContext = useHostContext();
-  const compactChrome = hostContext?.surface === 'altertable';
-  const [theme] = useState(() =>
-    createThemeController(config.appearance, hostContext?.colorScheme)
+  const presentation = useDataAppPresentation();
+  const inAltertable = presentation?.mount === 'altertable';
+  const themeController = useAppAppearance(
+    config.appearance,
+    presentation?.theme
   );
-
-  useLayoutEffect(() => {
-    theme.setHostMode(hostContext?.colorScheme);
-  }, [theme, hostContext?.colorScheme]);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,6 +109,35 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
       environment={scopeLabels?.environment ?? config.scope.environment}
     />
   );
+  const toolbar = (
+    <AppToolbar
+      requestState={request?.view.kind}
+      refresh={refresh ?? request?.refresh}
+      story={
+        story && {
+          ...story,
+          title: config.title,
+          scope,
+          dataContext,
+          empty: aboutEmpty,
+          theme: themeController,
+        }
+      }
+      aboutData={
+        <AboutData
+          id="data"
+          shortcut
+          dataContext={dataContext}
+          empty={aboutEmpty}
+          queries={queries ?? request?.queries}
+          iconOnly
+          variant="elevated"
+        />
+      }
+    >
+      {toolbarActions}
+    </AppToolbar>
+  );
 
   return (
     <InspectionContext
@@ -130,47 +149,22 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     >
       <AppLayout
         {...layoutProps}
-        footer={compactChrome ? null : layoutProps?.footer}
+        footer={inAltertable ? null : layoutProps?.footer}
         footerActions={
           footerActions ??
-          (hostContext ? undefined : <ThemeToggle theme={theme} />)
+          (themeController && <ThemeToggle theme={themeController} />)
         }
       >
-        <AppHeader
-          toolbarOnly={compactChrome}
-          scope={scope}
-          title={config.title}
-          description={description}
-          toolbar={
-            <AppToolbar
-              requestState={request?.view.kind}
-              refresh={refresh ?? request?.refresh}
-              story={
-                story && {
-                  ...story,
-                  title: config.title,
-                  scope,
-                  dataContext,
-                  empty: aboutEmpty,
-                  theme: hostContext ? undefined : theme,
-                }
-              }
-              aboutData={
-                <AboutData
-                  id="data"
-                  shortcut
-                  dataContext={dataContext}
-                  empty={aboutEmpty}
-                  queries={queries ?? request?.queries}
-                  iconOnly
-                  variant="elevated"
-                />
-              }
-            >
-              {toolbarActions}
-            </AppToolbar>
-          }
-        />
+        {inAltertable ? (
+          <div className="altertable-app-toolbar-only">{toolbar}</div>
+        ) : (
+          <AppHeader
+            scope={scope}
+            title={config.title}
+            description={description}
+            toolbar={toolbar}
+          />
+        )}
         {(request?.controls ?? props.variables) && (
           <VariableBar>{request?.controls ?? props.variables}</VariableBar>
         )}

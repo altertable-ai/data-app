@@ -32,7 +32,7 @@ function App() {
       config={{
         title: 'Embedded report',
         scope: { organization: 'test', environment: 'prod' },
-        appearance: { mode: 'light' },
+        appearance: { mode: 'system' },
       }}
       dataContext={{ description: 'Test report', glossary: {} }}
       description="Report description"

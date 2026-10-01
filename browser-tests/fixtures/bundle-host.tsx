@@ -1,3 +1,4 @@
+import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DataAppShell } from '@altertable/data-app/react/embed';
@@ -9,7 +10,8 @@ const response = await fetch('/__test/bundle');
 const javascript = await response.text();
 
 function Host() {
-  const [colorScheme, setColorScheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<Theme>('dark');
+  const [parentPresentation, setParentPresentation] = useState(true);
   const [embedded, setEmbedded] = useState(true);
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
   const [revision, bumpRevision] = useReducer(value => value + 1, 1);
@@ -32,24 +34,24 @@ function Host() {
   return (
     <>
       <button
-        onClick={() =>
-          setColorScheme(value => (value === 'dark' ? 'light' : 'dark'))
-        }
+        onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}
       >
         Change theme
       </button>
-      <button onClick={() => setEmbedded(value => !value)}>
-        Change surface
+      <button onClick={() => setParentPresentation(value => !value)}>
+        Toggle parent presentation
       </button>
+      <button onClick={() => setEmbedded(value => !value)}>Change mount</button>
       <button onClick={bumpVersion}>Change handler</button>
       <button onClick={bumpRevision}>Change revision</button>
       <button onClick={() => setBroken(false)}>Fix bundle</button>
       <DataAppShell
         title="Sandbox app"
-        hostContext={{
-          surface: embedded ? 'altertable' : 'custom',
-          colorScheme,
-        }}
+        presentation={
+          parentPresentation
+            ? { mount: embedded ? 'altertable' : 'custom', theme }
+            : undefined
+        }
         source={
           urlMode
             ? {
