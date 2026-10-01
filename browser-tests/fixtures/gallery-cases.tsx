@@ -1,4 +1,8 @@
 import {
+  gallerySections,
+  type GalleryCategory,
+} from '@/browser-tests/fixtures/gallery-catalog';
+import {
   dimensionFilter,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
@@ -136,123 +140,35 @@ const columns = [
   },
 ] as const;
 
-const sections: Record<
-  string,
-  { group: string; description: string; frame: string }
-> = {
-  buttons: {
-    group: 'Controls',
-    description:
-      'Shared actions, selection marks and search. Variants and sizes are independent.',
-    frame: 'controls',
-  },
-  'picker-edges': {
-    group: 'Controls',
-    description:
-      'Filters in their toolbar footprint. Open each picker to review its popup states.',
-    frame: 'controls',
-  },
-  dates: {
-    group: 'Controls',
-    description:
-      'Date filters, reporting periods and freshness in an app toolbar.',
-    frame: 'controls',
-  },
-  metrics: {
-    group: 'Data display',
-    description:
-      'KPI cards at dashboard column width. Missing readings and measured zero stay distinct.',
-    frame: 'metric',
-  },
-  tables: {
-    group: 'Data display',
-    description:
-      'Record widgets with headers, bounded rows and bottom pagination.',
-    frame: 'widget',
-  },
-  charts: {
-    group: 'Data display',
-    description: 'Visualizations inside the same widget shell used in apps.',
-    frame: 'visual',
-  },
-  refresh: {
-    group: 'Request states',
-    description:
-      'Replay refresh and failure. Data, titles and toolbar actions should stay in place.',
-    frame: 'widget',
-  },
-  requests: {
-    group: 'Request states',
-    description:
-      'Page and section boundaries, including initial failure and retained results.',
-    frame: 'content',
-  },
-  'empty-loading': {
-    group: 'Request states',
-    description:
-      'Empty content in its widget, and skeletons in the footprint they replace.',
-    frame: 'widget',
-  },
-  overlays: {
-    group: 'Context',
-    description:
-      'Inspection, help, sheets and secondary views with the shared runtime controls.',
-    frame: 'content',
-  },
-  chrome: {
-    group: 'App structure',
-    description:
-      'Page identity, toolbars, variables, notices and attribution at page width.',
-    frame: 'page',
-  },
-  layout: {
-    group: 'App structure',
-    description:
-      'Constrained containers, responsive grids and scroll behavior.',
-    frame: 'page',
-  },
-  icons: {
-    group: 'Reference',
-    description:
-      'Every semantic icon with its API name. Compare meaning and visual consistency here.',
-    frame: 'icons',
-  },
-};
 const FrameContext = createContext('content');
+const CategoryContext = createContext<GalleryCategory>('overview');
 
 function Case({
   title,
   note,
+  widget = false,
   children,
 }: {
   title: string;
   note?: string;
+  widget?: boolean;
   children: ReactNode;
 }) {
   const frame = useContext(FrameContext);
-  const widget =
-    frame === 'visual' ||
-    [
-      'Visual empty title and description',
-      'Long empty copy',
-      'Compact table empty',
-      'Comparison visual',
-      'Native table, numeric, share and timestamp',
-    ].includes(title);
 
   return (
-    <article className="gallery-case" data-frame={frame}>
-      <header className="gallery-case-label">
-        <h3>{title.charAt(0).toUpperCase() + title.slice(1)}</h3>
-        {note && <p className="gallery-note">{note}</p>}
-      </header>
-      <div className="gallery-stage" data-frame={frame}>
-        {widget ? (
+    <article className="gallery-case">
+      <Stack gap="md">
+        <Stack className="gallery-copy" gap="sm">
+          <h3>{title.charAt(0).toUpperCase() + title.slice(1)}</h3>
+          {note && <p>{note}</p>}
+        </Stack>
+        {widget || frame === 'visual' ? (
           <DataWidget title="Activity">{children}</DataWidget>
         ) : (
           children
         )}
-      </div>
+      </Stack>
     </article>
   );
 }
@@ -266,25 +182,31 @@ function Section({
   title: string;
   children: ReactNode;
 }) {
-  const section = sections[id]!;
-
+  const category = useContext(CategoryContext);
+  const section = gallerySections[id]!;
+  if (section.category !== category) return null;
+  const fullWidth = section.frame === 'page' || section.frame === 'icons';
   return (
-    <section id={id} className="gallery-section" aria-label={title}>
-      <header className="gallery-section-heading">
-        <span className="gallery-group">{section.group}</span>
-        <h2>{title}</h2>
-        <p className="gallery-note">{section.description}</p>
-      </header>
-      <FrameContext.Provider value={section.frame}>
-        <div className="gallery-cases" data-frame={section.frame}>
-          {children}
-        </div>
-      </FrameContext.Provider>
+    <section id={id} aria-label={title}>
+      <Stack>
+        <Stack className="gallery-copy" gap="sm">
+          <h2>{title}</h2>
+          <p>{section.description}</p>
+        </Stack>
+        <FrameContext.Provider value={section.frame}>
+          <Grid
+            columns={fullWidth ? 1 : section.frame === 'metric' ? 3 : 2}
+            minItemWidth={section.frame === 'metric' ? 'compact' : 'wide'}
+          >
+            {children}
+          </Grid>
+        </FrameContext.Provider>
+      </Stack>
     </section>
   );
 }
 
-export function GalleryCases() {
+export function GalleryCases({ category }: { category: GalleryCategory }) {
   const [search, setSearch] = useState('');
   const [single, setSingle] = useState('http');
   const [multi, setMulti] = useState<string[]>(['http', 'postgres']);
@@ -368,10 +290,10 @@ export function GalleryCases() {
                 };
 
   return (
-    <>
+    <CategoryContext.Provider value={category}>
       <Section id="buttons" title="Buttons and selection">
         <Case title="Every button variant and size">
-          <div className="gallery-wrap">
+          <VariableBar aria-label="Demo controls">
             {(['elevated', 'outline', 'ghost'] as const).map(variant =>
               (['default', 'compact'] as const).map(size => (
                 <Button
@@ -391,7 +313,7 @@ export function GalleryCases() {
             <Button aria-busy="true">
               <AppIcon name="loading" /> Busy action
             </Button>
-          </div>
+          </VariableBar>
         </Case>
         <Case title="Checkbox copy, checked and disabled">
           <Stack>
@@ -597,7 +519,7 @@ export function GalleryCases() {
           </Stack>
         </Case>
         <Case title="Live controls and timestamp details">
-          <div className="gallery-wrap">
+          <VariableBar aria-label="Demo controls">
             <LiveControl
               enabled={live}
               onChange={setLive}
@@ -611,7 +533,7 @@ export function GalleryCases() {
             >
               Exact UTC time
             </DateTimeTooltip>
-          </div>
+          </VariableBar>
         </Case>
       </Section>
       <Section id="metrics" title="Metric formats and comparisons">
@@ -668,7 +590,7 @@ export function GalleryCases() {
             />
           </Case>
         ))}
-        <Case title="Comparison visual">
+        <Case title="Comparison visual" widget>
           <ComparisonVisual
             label="Reduced errors"
             current={{ value: 12, formattedValue: '12' }}
@@ -718,7 +640,7 @@ export function GalleryCases() {
             empty={empty}
           />
         </Case>
-        <Case title="Native table, numeric, share and timestamp">
+        <Case title="Native table, numeric, share and timestamp" widget>
           <DataTable>
             <thead>
               <tr>
@@ -823,7 +745,7 @@ export function GalleryCases() {
           title="Reserved feedback slot"
           note="The same widget moves between states. Its data and geometry stay fixed."
         >
-          <div className="gallery-wrap">
+          <VariableBar aria-label="Demo controls">
             <Button onClick={() => setStatus({ kind: 'idle' })}>
               Widget ready
             </Button>
@@ -844,7 +766,7 @@ export function GalleryCases() {
             >
               Long widget failure
             </Button>
-          </div>
+          </VariableBar>
         </Case>
         <Case title="Shared widget state">
           <DataWidget
@@ -879,7 +801,7 @@ export function GalleryCases() {
           title="All request states"
           note="No network calls. Initial loading uses a skeleton; refresh retains the displayed result."
         >
-          <div className="gallery-wrap">
+          <VariableBar aria-label="Demo controls">
             {(
               [
                 'loading',
@@ -894,7 +816,7 @@ export function GalleryCases() {
                 {kind}
               </Button>
             ))}
-          </div>
+          </VariableBar>
         </Case>
         <Case
           title="DataSection"
@@ -946,19 +868,19 @@ export function GalleryCases() {
         id="empty-loading"
         title="Empty states, skeletons and status panels"
       >
-        <Case title="Visual empty title and description">
+        <Case title="Visual empty title and description" widget>
           <EmptyState
             title="Nothing to show yet"
             description="A description has quieter typography than its title."
           />
         </Case>
-        <Case title="Long empty copy">
+        <Case title="Long empty copy" widget>
           <EmptyState
             title="No records match this combination of dates and categories"
             description="Clear one filter or select a wider period. This explanation wraps without changing the title hierarchy."
           />
         </Case>
-        <Case title="Compact table empty">
+        <Case title="Compact table empty" widget>
           <EmptyState title="No matches" variant="table" />
         </Case>
         {(['metric', 'panel', 'ranking'] as const).map(variant => (
@@ -981,7 +903,7 @@ export function GalleryCases() {
       </Section>
       <Section id="overlays" title="Inspection, overlays and disclosures">
         <Case title="Glossary and SQL">
-          <div className="gallery-wrap">
+          <VariableBar aria-label="Demo controls">
             <GlossaryDefinition entry={glossary}>
               Activity definition
             </GlossaryDefinition>
@@ -1007,7 +929,7 @@ export function GalleryCases() {
             >
               Inspect unavailable evidence
             </AboutData>
-          </div>
+          </VariableBar>
         </Case>
         <Case title="Tooltip and help popover">
           <Stack>
@@ -1175,13 +1097,9 @@ export function GalleryCases() {
         title="Layout, scrolling and constrained composition"
       >
         <Case title="Narrow filter and metric labels">
-          <div
-            style={{
-              maxWidth: 320,
-              display: 'grid',
-              gap: 8,
-              gridTemplateColumns: 'minmax(0, 1fr)',
-            }}
+          <Stack
+            gap="sm"
+            style={{ maxWidth: 320 }}
             data-testid="narrow-controls"
           >
             <Combobox
@@ -1195,10 +1113,10 @@ export function GalleryCases() {
               value={0}
               format={{ kind: 'count' }}
             />
-          </div>
+          </Stack>
         </Case>
         <Case title="Narrow widget with long title, description, count and action">
-          <div style={{ maxWidth: 260 }}>
+          <Stack style={{ maxWidth: 260 }}>
             <DataWidget
               title="A long widget title wraps within its own column"
               count={1234567}
@@ -1210,7 +1128,7 @@ export function GalleryCases() {
             >
               <p>Content remains within the card.</p>
             </DataWidget>
-          </div>
+          </Stack>
         </Case>
         <Case title="Grid spans and stacks">
           <Grid columns={3}>
@@ -1235,48 +1153,60 @@ export function GalleryCases() {
       </Section>
       <Section id="icons" title="Semantic icon inventory">
         <Case title="Semantic icon inventory">
-          <div className="gallery-icon-inventory">
-            {(
-              [
-                'cancel',
-                'calendar',
-                'clock',
-                'check',
-                'disclosure',
-                'previousMonth',
-                'nextMonth',
-                'explore',
-                'info',
-                'openDetails',
-                'present',
-                'error',
-                'close',
-                'previous',
-                'next',
-                'lightTheme',
-                'darkTheme',
-                'live',
-                'loading',
-                'refresh',
-                'stop',
-                'reset',
-                'search',
-                'copy',
-                'sql',
-                'wrap',
-                'trendDown',
-                'trendFlat',
-                'trendUp',
-              ] satisfies AppIconName[]
-            ).map(name => (
-              <span key={name} className="gallery-icon-entry">
-                <AppIcon name={name} />
-                <code>{name}</code>
-              </span>
-            ))}
-          </div>
+          <DataTable aria-label="Semantic icons">
+            <thead>
+              <tr>
+                <th scope="col">Icon</th>
+                <th scope="col">Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(
+                [
+                  'cancel',
+                  'calendar',
+                  'clock',
+                  'check',
+                  'disclosure',
+                  'previousMonth',
+                  'nextMonth',
+                  'explore',
+                  'info',
+                  'openDetails',
+                  'present',
+                  'error',
+                  'close',
+                  'previous',
+                  'next',
+                  'lightTheme',
+                  'darkTheme',
+                  'live',
+                  'loading',
+                  'refresh',
+                  'stop',
+                  'reset',
+                  'search',
+                  'copy',
+                  'sql',
+                  'wrap',
+                  'trendDown',
+                  'trendFlat',
+                  'trendUp',
+                ] satisfies AppIconName[]
+              ).map(name => (
+                <tr key={name}>
+                  <td>
+                    <AppIcon name={name} />
+                  </td>
+                  <th scope="row">
+                    <code>{name}</code>
+                  </th>
+                </tr>
+              ))}
+            </tbody>
+          </DataTable>
         </Case>
       </Section>
-    </>
+    </CategoryContext.Provider>
   );
 }

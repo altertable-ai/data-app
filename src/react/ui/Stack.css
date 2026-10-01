@@ -1,5 +1,6 @@
 .altertable-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   min-width: 0;
 }
