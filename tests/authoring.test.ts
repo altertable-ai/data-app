@@ -204,14 +204,14 @@ test('comparison uses the preceding equal-length range and respects source cover
   ).toBe('Mar 4–6, 2026 UTC');
 });
 
-test('app appearance accepts supported settings and rejects invalid configuration', () => {
+test('app appearance accepts supported settings and falls back for invalid configuration', () => {
   expect(
     parseAppearance({ density: 'compact', cornerRadius: 'small' })
   ).toMatchObject({
     density: 'compact',
     cornerRadius: 'small',
   });
-  expect(() => parseAppearance({ cornerRadius: 'roundish' })).toThrow(
-    'Invalid appearance'
-  );
+  expect(parseAppearance({ cornerRadius: 'roundish' })).toMatchObject({
+    cornerRadius: 'medium',
+  });
 });

@@ -2,8 +2,6 @@
  * Brand settings; parsing is portable, while theme application requires the browser.
  * @module @altertable/data-app/appearance
  */
-import { invariant } from '@/src/core/invariant';
-
 export type Theme = 'light' | 'dark';
 export type ThemePreference = Theme | 'system';
 
@@ -73,35 +71,48 @@ function font(value: unknown): value is string {
   );
 }
 
+/** Preserve supported external settings and use defaults for invalid fields. */
 export function parseAppearance(value: unknown): AppearanceSettings {
-  if (value === undefined) return normalizeAppearance();
-  invariant(record(value), 'Invalid appearance settings.');
-  const typography = value.typography;
-  const validFields =
-    (value.theme === undefined ||
-      oneOf(value.theme, ['light', 'dark', 'system'])) &&
-    (value.baseColor === undefined ||
-      oneOf(value.baseColor, ['neutral', 'slate', 'warm'])) &&
-    (value.accentColor === undefined || color(value.accentColor)) &&
-    (value.darkAccentColor === undefined || color(value.darkAccentColor)) &&
-    (value.chartColors === undefined ||
-      (Array.isArray(value.chartColors) &&
-        value.chartColors.length >= 1 &&
-        value.chartColors.length <= 8 &&
-        value.chartColors.every(color))) &&
-    (value.density === undefined ||
-      oneOf(value.density, ['compact', 'comfortable', 'spacious'])) &&
-    (value.cornerRadius === undefined ||
-      oneOf(value.cornerRadius, ['none', 'small', 'medium', 'large'])) &&
-    (value.elevation === undefined ||
-      oneOf(value.elevation, ['flat', 'subtle', 'raised'])) &&
-    (typography === undefined ||
-      (record(typography) &&
-        (typography.body === undefined || font(typography.body)) &&
-        (typography.heading === undefined || font(typography.heading))));
-  invariant(validFields, 'Invalid appearance settings.');
+  if (!record(value)) return normalizeAppearance();
+  const typography = record(value.typography) ? value.typography : {};
 
-  return normalizeAppearance(value as AppearanceOptions);
+  return normalizeAppearance({
+    theme: oneOf(value.theme, ['light', 'dark', 'system'])
+      ? value.theme
+      : undefined,
+    baseColor: oneOf(value.baseColor, ['neutral', 'slate', 'warm'])
+      ? value.baseColor
+      : undefined,
+    accentColor: color(value.accentColor) ? value.accentColor : undefined,
+    darkAccentColor: color(value.darkAccentColor)
+      ? value.darkAccentColor
+      : undefined,
+    chartColors:
+      Array.isArray(value.chartColors) &&
+      value.chartColors.length >= 1 &&
+      value.chartColors.length <= 8 &&
+      value.chartColors.every(color)
+        ? value.chartColors
+        : undefined,
+    density: oneOf(value.density, ['compact', 'comfortable', 'spacious'])
+      ? value.density
+      : undefined,
+    cornerRadius: oneOf(value.cornerRadius, [
+      'none',
+      'small',
+      'medium',
+      'large',
+    ])
+      ? value.cornerRadius
+      : undefined,
+    elevation: oneOf(value.elevation, ['flat', 'subtle', 'raised'])
+      ? value.elevation
+      : undefined,
+    typography: {
+      body: font(typography.body) ? typography.body : undefined,
+      heading: font(typography.heading) ? typography.heading : undefined,
+    },
+  });
 }
 
 /** Resolve typed app settings without repeating authoring checks at runtime. */

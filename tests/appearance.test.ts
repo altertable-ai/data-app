@@ -16,8 +16,41 @@ test('appearance defaults merge typed overrides and ignore unrelated parsed fiel
       typography: { future: true },
     }).theme
   ).toBe('dark');
-  expect(() => parseAppearance(null)).toThrow('Invalid appearance');
-  expect(() => parseAppearance({ theme: 'invalid' })).toThrow(
-    'Invalid appearance'
+  for (const value of [undefined, null, [], 'invalid', { theme: 'invalid' }])
+    expect(parseAppearance(value)).toEqual(normalizeAppearance());
+});
+
+test('invalid appearance fields fall back without discarding supported settings', () => {
+  const defaults = normalizeAppearance();
+  expect(
+    parseAppearance({
+      theme: 'dark',
+      baseColor: 'invalid',
+      accentColor: 'invalid',
+      darkAccentColor: 42,
+      chartColors: ['invalid'],
+      density: 'compact',
+      cornerRadius: 'invalid',
+      elevation: null,
+      typography: { body: ';invalid', heading: 'Georgia' },
+    })
+  ).toEqual({
+    ...defaults,
+    theme: 'dark',
+    density: 'compact',
+    typography: { body: defaults.typography.body, heading: 'Georgia' },
+  });
+  expect(parseAppearance({ typography: null }).typography).toEqual(
+    defaults.typography
   );
+  for (const chartColors of [[], Array(9).fill('#112233'), null])
+    expect(parseAppearance({ chartColors }).chartColors).toEqual(
+      defaults.chartColors
+    );
+  expect(
+    parseAppearance({ accentColor: '#112233', darkAccentColor: 'invalid' })
+  ).toMatchObject({
+    accentColor: '#112233',
+    darkAccentColor: undefined,
+  });
 });
