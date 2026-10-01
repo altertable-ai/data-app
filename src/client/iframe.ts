@@ -10,9 +10,11 @@ import {
 } from '@/src/core/bridge';
 import {
   defineDataQueryRoute,
+  sqlQueryRoute,
   MessageRoutingError,
   type RoutedMessage,
 } from '@/src/core/messages';
+import type { Lakehouse } from '@/src/core/contract';
 import { createMessageClient } from '@/src/client/messages';
 import { DataAppError } from '@/src/client/transport';
 
@@ -21,6 +23,13 @@ type Pending = {
   reject: (error: unknown) => void;
   resolve: (value: unknown) => void;
 };
+
+/** Data clients expose one error type for HTTP and message delivery. */
+function rethrowDataMessageError(error: unknown): never {
+  if (error instanceof MessageRoutingError)
+    throw new DataAppError(error.message, error.code, error.requestId);
+  throw error;
+}
 
 /** One bridge per document, shared by all clients and retained across module hot replacement. */
 export function createIframeTransport({
@@ -211,26 +220,18 @@ export function createIframeTransport({
   }
 
   const messages = createMessageClient(
-    { 'data:query': defineDataQueryRoute() },
+    { 'data:query': defineDataQueryRoute(), 'data:sql': sqlQueryRoute },
     requestMessage
   );
 
-  async function queryData(
+  function queryOperation(
     operation: string,
     input: unknown,
     signal?: AbortSignal
   ): Promise<TransportResponse> {
-    try {
-      return await messages.request(
-        'data:query',
-        { operation, input },
-        { signal }
-      );
-    } catch (error) {
-      if (error instanceof MessageRoutingError)
-        throw new DataAppError(error.message, error.code, error.requestId);
-      throw error;
-    }
+    return messages
+      .request('data:query', { operation, input }, { signal })
+      .catch(rethrowDataMessageError);
   }
 
   function disconnect() {
@@ -262,7 +263,14 @@ export function createIframeTransport({
 
   return {
     request: requestMessage,
-    transport: queryData,
+    transport: queryOperation,
+    lakehouse: {
+      queryAll(statement, { limit, signal }) {
+        return messages
+          .request('data:sql', { statement, limit }, { signal })
+          .catch(rethrowDataMessageError);
+      },
+    } satisfies Lakehouse,
     dispose,
     mode,
     snapshot() {

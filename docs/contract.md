@@ -2,7 +2,7 @@
 
 Import operation definitions, parsers, and shared types from
 `@altertable/data-app/contract`. This entry is safe to import in browser and server
-modules. Keep SQL and operation implementations on the server; browser modules
+modules. For HTTP apps, keep SQL and operation implementations on the server; browser modules
 should import their operation types using `import type`.
 
 ## Execute named queries
@@ -30,7 +30,7 @@ const activity = defineOperation({
 });
 ```
 
-`query` inherits the operation's limit and cancellation signal; `{ limit }` can lower a particular query's bound. Names are checked by TypeScript and at runtime. The server records the SQL and query ID when execution occurs, so evidence does not need a separate result field. Browser modules import operation types with `import type`; they never import server implementations.
+`query` inherits the operation's limit and cancellation signal; `{ limit }` can lower a particular query's bound. Names are checked by TypeScript and at runtime. The executor records the SQL and query ID when execution occurs, so evidence does not need a separate result field. HTTP browser modules import operation types with `import type`. Bundle apps import their browser-owned operation registry as a value and use [browser execution](client.md#browser-owned-operations-for-bundle-apps). Never bundle credentials or server adapters.
 
 ## Shared date ranges
 

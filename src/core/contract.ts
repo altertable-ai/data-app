@@ -294,7 +294,7 @@ export class DataSourceError extends Error {
   }
 }
 
-/** Server-only query interface supplied by a local or hosted adapter. */
+/** Query interface supplied by a server adapter or an authorized iframe bridge. */
 export type Lakehouse = {
   queryAll(
     statement: string,
@@ -305,8 +305,8 @@ export type Lakehouse = {
 export type OperationContext = { lakehouse: Lakehouse; signal: AbortSignal };
 
 /**
- * Both parsers run on the server before results cross the JSON boundary. Schema libraries can be
- * used inside either parser.
+ * Parsers run in the operation executor's runtime: server for HTTP apps, browser for bundle apps.
+ * Browser validation does not replace backend authorization or query limits.
  */
 export type DataOperation<Input, Output> = {
   input: (value: unknown) => Input;

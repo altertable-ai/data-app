@@ -1,3 +1,4 @@
+import { ClientCacheApp } from '@/browser-tests/fixtures/client-cache';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createDataClient } from '@/src/client/index';
@@ -132,6 +133,10 @@ function App() {
 }
 createRoot(document.getElementById('root')!).render(
   <DataAppProvider>
-    <App />
+    {new URLSearchParams(location.search).has('client-cache') ? (
+      <ClientCacheApp />
+    ) : (
+      <App />
+    )}
   </DataAppProvider>
 );

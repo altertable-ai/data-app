@@ -125,7 +125,20 @@ function parseQueryResult(body: string, limit: number): QueryResult {
     .split('\n')
     .filter(line => line.trim());
   if (!lines.length) throw new Error('Query response is empty.');
-  const metadata = JSON.parse(lines[0]!) as { query_id?: string };
+  const metadata: unknown = JSON.parse(lines[0]!);
+  if (
+    !metadata ||
+    typeof metadata !== 'object' ||
+    Array.isArray(metadata) ||
+    ('query_id' in metadata &&
+      metadata.query_id !== undefined &&
+      typeof metadata.query_id !== 'string')
+  )
+    throw new Error('Invalid query metadata.');
+  const queryId =
+    'query_id' in metadata
+      ? (metadata.query_id as string | undefined)
+      : undefined;
   let firstRowIndex = 1;
   let columns: QueryResult['columns'] = [];
   if (lines[firstRowIndex]) {
@@ -139,18 +152,43 @@ function parseQueryResult(body: string, limit: number): QueryResult {
       )
     ) {
       columns = columnDefinitions.map(value =>
-        typeof value === 'string'
-          ? { name: value }
-          : (value as { name: string; type?: string })
+        typeof value === 'string' ? { name: value } : parseColumn(value)
       );
       firstRowIndex++;
     }
   }
-  const rows = lines
-    .slice(firstRowIndex)
-    .map(line => JSON.parse(line) as unknown[]);
+  const rows = lines.slice(firstRowIndex).map(line => {
+    const row: unknown = JSON.parse(line);
+    if (
+      !Array.isArray(row) ||
+      (firstRowIndex === 2 && row.length !== columns.length)
+    )
+      throw new Error('Invalid query row.');
+
+    return row;
+  });
   if (rows.length > limit)
     throw new Error('Lakehouse returned more rows than requested.');
 
-  return { columns, rows, queryId: metadata.query_id };
+  return { columns, rows, queryId };
+}
+
+function parseColumn(value: unknown): QueryResult['columns'][number] {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !('name' in value) ||
+    typeof value.name !== 'string' ||
+    ('type' in value &&
+      value.type !== undefined &&
+      typeof value.type !== 'string')
+  )
+    throw new Error('Invalid query column.');
+
+  return {
+    name: value.name,
+    ...('type' in value && value.type !== undefined
+      ? { type: value.type as string }
+      : {}),
+  };
 }

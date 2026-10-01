@@ -563,6 +563,80 @@ test('bundle transport keeps host location in memory and rejects stale session t
   }
 });
 
+test('browser-owned operations send SQL and bounded limits over the authenticated bridge', async () => {
+  const { createDataClient } = await import('@/src/client/index');
+  const { defineOperation } = await import('@/src/core/contract');
+  const { bridge, receive, sent } = harness();
+  try {
+    const count = defineOperation({
+      input: parseCount,
+      output: parseCount,
+      checks: [3],
+      queryNames: { count: 'count' },
+      policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
+      async run({ query }, input) {
+        const result = await query('count', `SELECT ${input}`, { limit: 10 });
+        return result.rows[0]![0];
+      },
+    });
+    const client = createDataClient({
+      operations: { count },
+      lakehouse: bridge.lakehouse,
+    });
+    const pending = client.query('count', 3);
+    receive({ type: 'bridge:initialize' });
+    await Promise.resolve();
+    const message = sent.find(
+      entry => entry.message.type === 'bridge:request'
+    )!.message;
+    expect(message.route).toBe('data:sql');
+    expect(message.payload).toEqual({ statement: 'SELECT 3', limit: 1 });
+    receive({
+      type: 'bridge:result',
+      id: message.id,
+      response: { columns: [{ name: 'n' }], rows: [[3]], queryId: 'q1' },
+    });
+    expect(await pending).toMatchObject({
+      data: 3,
+      input: 3,
+      queryIds: ['q1'],
+      queries: [{ name: 'count', statement: 'SELECT 3', queryId: 'q1' }],
+    });
+    const failed = client.query('count', 3);
+    await Promise.resolve();
+    const failedMessage = sent
+      .filter(entry => entry.message.type === 'bridge:request')
+      .at(-1)!.message;
+    receive({
+      type: 'bridge:error',
+      id: failedMessage.id,
+      code: 'source_rate_limited',
+      message: 'The lakehouse is busy.',
+      requestId: 'host-request',
+    });
+    expect(await failed.catch(error => error)).toMatchObject({
+      code: 'source_rate_limited',
+      requestId: 'host-request',
+    });
+    const controller = new AbortController();
+    const cancelled = client.query('count', 3, { signal: controller.signal });
+    await Promise.resolve();
+    const request = sent
+      .filter(entry => entry.message.type === 'bridge:request')
+      .at(-1)!.message;
+    controller.abort();
+    expect(await cancelled.catch(error => error)).toMatchObject({
+      name: 'AbortError',
+    });
+    expect(sent.at(-1)!.message).toMatchObject({
+      type: 'bridge:cancel',
+      id: request.id,
+    });
+  } finally {
+    bridge.dispose();
+  }
+});
+
 test('presentation context follows only authenticated current-session state', () => {
   const { bridge, receive, parent } = harness();
   const dark = {

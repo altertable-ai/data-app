@@ -31,7 +31,7 @@ import { mountDataApp } from '@altertable/data-app/react';
 | Entry                                     | Use                                                 |
 | ----------------------------------------- | --------------------------------------------------- |
 | [/contract](docs/contract.md)             | Define typed operations, parsers, and date ranges   |
-| [/client](docs/client.md)                 | Call server operations with `fetch`                 |
+| [/client](docs/client.md)                 | Call HTTP operations or run bundle operations       |
 | [/server](docs/server.md)                 | Authorize and execute requests on a hosted server   |
 | [/server/bun](docs/server-bun.md)         | Serve an app locally with Bun                       |
 | [/embed](docs/embed.md)                   | Host URL apps or sandboxed JavaScript bundles       |

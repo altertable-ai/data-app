@@ -17,8 +17,10 @@ boundaries. Read the documentation for the entry you use:
 | Configure identity and theme     | [Config](docs/config.md), [appearance](docs/appearance.md)         |
 | Format values                    | [Format](docs/format.md)                                           |
 
-Import public package entries. Keep SQL, credentials, and execution on the server;
-use `import type` for operation types in browser code. Import the React stylesheet
+Import public package entries. For HTTP apps, keep SQL and execution on the server
+and use `import type` for operation types in browser code. Bundle apps own their
+operations in the browser and send SQL through the authorized host bridge. Keep
+credentials and enforced access/query limits on the backend in both models. Import the React stylesheet
 once in the browser entry. Edit app-owned files, not installed package files.
 
 Inspect source data and time coverage before choosing an exploration. Build

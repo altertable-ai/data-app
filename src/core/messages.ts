@@ -1,5 +1,5 @@
 import type { TransportResponse } from '@/src/core/bridge';
-import type { DisclosedQuery } from '@/src/core/contract';
+import type { DisclosedQuery, QueryResult } from '@/src/core/contract';
 
 export type MessageContext = { signal: AbortSignal };
 export type RoutedMessage = { route: string; payload: unknown };
@@ -205,7 +205,8 @@ export function defineDataQueryRoute<
         response.status < 100 ||
         response.status > 599 ||
         !response.body ||
-        typeof response.body !== 'object'
+        typeof response.body !== 'object' ||
+        Array.isArray(response.body)
       )
         throw new Error('Invalid data response.');
       const body = response.body as DataQueryBody<unknown> & {
@@ -292,6 +293,54 @@ export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
     return null;
   },
 });
+export type SqlQueryInput = { statement: string; limit: number };
+
+/** SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits. */
+export const sqlQueryRoute = defineMessageRoute({
+  input(value: unknown): SqlQueryInput {
+    if (!value || typeof value !== 'object')
+      throw new Error('Invalid SQL query.');
+    const query = value as { statement?: unknown; limit?: unknown };
+    if (
+      typeof query.statement !== 'string' ||
+      !query.statement.trim() ||
+      typeof query.limit !== 'number' ||
+      !Number.isSafeInteger(query.limit) ||
+      query.limit < 1
+    )
+      throw new Error('Invalid SQL query.');
+
+    return { statement: query.statement, limit: query.limit };
+  },
+  output(value: unknown, input: SqlQueryInput): QueryResult {
+    if (!value || typeof value !== 'object')
+      throw new Error('Invalid query result.');
+    const result = value as QueryResult;
+    if (
+      !Array.isArray(result.columns) ||
+      !result.columns.every(
+        column =>
+          column &&
+          typeof column.name === 'string' &&
+          (column.type === undefined || typeof column.type === 'string')
+      ) ||
+      !Array.isArray(result.rows) ||
+      result.rows.length > input.limit ||
+      !result.rows.every(
+        row => Array.isArray(row) && row.length === result.columns.length
+      ) ||
+      (result.queryId !== undefined && typeof result.queryId !== 'string')
+    )
+      throw new Error('Invalid query result.');
+
+    return {
+      columns: result.columns,
+      rows: result.rows,
+      ...(result.queryId === undefined ? {} : { queryId: result.queryId }),
+    };
+  },
+});
+
 export const dataAppRoutes = {
   'data:query': /* @__PURE__ */ defineDataQueryRoute(),
   'navigation:update': navigationUpdateRoute,

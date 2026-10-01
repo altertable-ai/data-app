@@ -287,6 +287,11 @@ Previous data and evidence are retained only when the input changes within the
 same operation. Switching to another operation shows its own cached response or
 an initial loading/error state; it never inherits another operation's result.
 
+Operation and facet caches are scoped to the `DataClient` instance. Hooks created
+from the same client share queries; separate clients do not share results, stale
+data, or cancellation even under one provider. Keep client instances stable
+across renders to preserve their cache.
+
 When a trusted parent supplies [parent presentation](embed.md#parent-presentation),
 `DataApp` follows its resolved theme and suppresses local theme controls,
 including in presentations. On an embedded surface (`surface: 'embedded'`),

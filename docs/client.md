@@ -22,13 +22,50 @@ implementation. Calls POST JSON to `/api/data/:operation`; the client sends
 operation inputs rather than SQL or credentials.
 
 `DataResponse` contains `data`, the exact request `input`, `requestId`,
-`queriedAt`, and `queryIds`. `queries` is present only when the server permits
-SQL disclosure. Use the returned input when labeling stale data during a refresh.
+`queriedAt`, and `queryIds`. `queries` is present when the operation exposes SQL
+and the execution runtime permits disclosure. Use the returned input when labeling stale data during a refresh.
+HTTP and iframe delivery validate the same success envelope: data, request ID,
+query timestamp, query IDs, and optional query evidence. Malformed responses
+reject with `invalid_response`.
+
 `DataAppError` exposes a `code` and optional `requestId`; cancellation follows
 the supplied abort signal.
 
 See [contracts](contract.md), [server handlers](server.md), and
 [React bindings](react.md).
+
+## Browser-owned operations for bundle apps
+
+Bundle apps pass their operation registry as a value:
+
+```ts
+import { connectionCheck } from '@altertable/data-app/contract';
+import { createDataClient } from '@altertable/data-app/client';
+
+const client = createDataClient({
+  operations: { connection: connectionCheck() },
+});
+const response = await client.query('connection', {});
+```
+
+The client runs input parsing, operation logic, and output parsing in the browser.
+It uses the same executor as the server handler for query names, row and duration
+bounds, response size, and query evidence. Each query sends `{ statement, limit }`
+to the installed iframe bridge's `data:sql` route; the host needs no operation
+registry. SQL is visible in the browser, even when `exposeSql` is false; that flag
+only controls evidence in the returned response. Credentials remain backend-owned.
+
+The trusted bootstrap installs the bridge for bundle apps. A custom runtime must
+install it before querying. An explicit `lakehouse` can supply another authorized
+adapter, including `bridge.lakehouse` or a local server adapter. `operations` cannot
+be combined with `transport`, `endpoint`, or `fetch`; a `lakehouse` requires
+`operations`. The exported `DataClientOptions` union rejects mixed configurations
+at compile time. Omitting `operations` preserves named HTTP/iframe operation delivery.
+
+The host must implement and authorize the [SQL route](embed.md#sql-query-route).
+Browser policies improve app behavior; backend access and resource limits must be
+enforced independently because a frame can forge requests. Cancellation reaches
+the host through the existing bridge cancellation protocol.
 
 ## Iframe transport
 

@@ -2,11 +2,15 @@ import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DataAppBridge } from '@altertable/data-app/react/embed';
-import { createMessageRouter } from '@altertable/data-app/contract';
+import {
+  createMessageRouter,
+  sqlQueryRoute,
+} from '@altertable/data-app/contract';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
   type DataAppStatus,
   createNavigationHandler,
+  createSqlQueryHandler,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 const response = await fetch('/__test/bundle');
@@ -34,15 +38,29 @@ function Host() {
       : {}),
   };
   const forward = createHttpTransport();
-  const router = createMessageRouter(bridgeRoutes, {
-    'test:echo'({ period }) {
-      return { period, version };
-    },
-    'data:query'({ operation, input }, { signal }) {
-      return forward(operation, input, signal);
-    },
-    'navigation:update': createNavigationHandler(),
-  });
+  const router = createMessageRouter(
+    { ...bridgeRoutes, 'data:sql': sqlQueryRoute },
+    {
+      'data:sql': createSqlQueryHandler(async () => ({
+        async queryAll(statement, { limit, signal }) {
+          const response = await fetch('/api/sql', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ statement, limit }),
+            signal,
+          });
+          return response.json();
+        },
+      })),
+      'test:echo'({ period }) {
+        return { period, version };
+      },
+      'data:query'({ operation, input }, { signal }) {
+        return forward(operation, input, signal);
+      },
+      'navigation:update': createNavigationHandler(),
+    }
+  );
 
   return (
     <>

@@ -21,6 +21,7 @@ import type { ResolvedVariables } from '@/src/react/view';
 /** URL values resolve before facets; facet keys include their dependent inputs for cached, bounded loading. */
 export function useViewVariables<Variables extends VariableCollection>(
   definitions: Variables,
+  clientScope: string,
   loadFacet: (
     operation: string,
     input: unknown,
@@ -48,7 +49,13 @@ export function useViewVariables<Variables extends VariableCollection>(
       const input = facet.input({ ...resolved, [name]: { kind: 'all' } });
 
       return {
-        queryKey: ['dimension-facet', name, facet.operation, input],
+        queryKey: [
+          'dimension-facet',
+          clientScope,
+          name,
+          facet.operation,
+          input,
+        ],
         queryFn({ signal }: { signal: AbortSignal }) {
           return loadFacet(facet.operation, input, signal).then(result =>
             parseFacetOptions(result, filter)

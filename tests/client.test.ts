@@ -255,3 +255,38 @@ test('pending verification cannot overwrite a transport installed by another own
     }
   });
 });
+
+test('HTTP and iframe delivery reject the same malformed success envelopes', async () => {
+  const { defineDataQueryRoute } = await import('@/src/core/messages');
+  const valid = {
+    data: true,
+    requestId: 'request',
+    queriedAt: 'now',
+    queryIds: [],
+  };
+  const bodies = [
+    {},
+    { requestId: 'request', queriedAt: 'now', queryIds: [] },
+    { ...valid, requestId: undefined },
+    { ...valid, queriedAt: undefined },
+    { ...valid, queryIds: [1] },
+    { ...valid, queries: [{ name: 'query', statement: 1 }] },
+    [],
+  ];
+  for (const body of bodies) {
+    const client = createDataClient({
+      fetch: Object.assign(async () => Response.json(body), {
+        preconnect() {},
+      }),
+    });
+    expect(
+      await client.query('connection', {}).catch(error => error)
+    ).toMatchObject({ code: 'invalid_response' });
+    expect(() =>
+      defineDataQueryRoute().output(
+        { status: 200, body },
+        { operation: 'connection', input: {} }
+      )
+    ).toThrow();
+  }
+});
