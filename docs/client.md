@@ -1,6 +1,6 @@
 # Client
 
-Import `createDataClient` and `DataAppError` from
+Import `createDataClient()` and `DataAppError` from
 `@altertable/data-app/client`. The client uses Fetch APIs and has no React or
 server dependency.
 
@@ -75,7 +75,7 @@ the host through the existing bridge cancellation protocol.
 `createDataClient({ transport })` accepts a `DataTransport`. Without an explicit
 transport, endpoint, or Fetch implementation, it discovers an installed iframe
 transport before falling back to HTTP. Explicit endpoint/Fetch options select
-HTTP. `createHttpTransport` provides the underlying operation delivery adapter.
+HTTP. `createHttpTransport()` provides the underlying operation delivery adapter.
 
 A URL-hosted app configures trust and installs the bridge before mounting:
 
@@ -96,8 +96,8 @@ URL controls attach the optional navigation adapter to that connection. Cleanup 
 the installation and disposes pending work. Bundle apps receive this installation
 from the [trusted bootstrap](embed.md#trusted-bootstrap).
 
-`getDataAppTransport()` returns the explicitly installed bridge. Its `request`
-transport supports custom typed routes:
+`getDataAppTransport()` returns the explicitly installed bridge. Its `request()`
+method supports custom typed routes:
 
 ```ts
 import {
@@ -132,7 +132,7 @@ navigation.publish('replace');
 navigation.dispose();
 ```
 
-The adapter provides `snapshot`, `subscribe`, and `update`. Opaque sandboxes keep
+The adapter provides `snapshot()`, `subscribe()`, and `update()`. Opaque sandboxes keep
 search/hash in memory; URL frames preserve their URL and local-preview parent
 marker. Host Back/Forward state is applied without publishing it back.
 

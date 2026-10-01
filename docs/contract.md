@@ -7,8 +7,8 @@ should import their operation types using `import type`.
 
 ## Execute named queries
 
-The app supplies `calendar`, `parseActivity`, `checkInput`, `buildActivitySql`,
-and `parseActivityRows` in this example.
+The app supplies `calendar`, `parseActivity()`, `checkInput`, `buildActivitySql()`,
+and `parseActivityRows()` in this example.
 
 ```ts
 import {
@@ -30,14 +30,14 @@ const activity = defineOperation({
 });
 ```
 
-`query` inherits the operation's limit and cancellation signal; `{ limit }` can lower a particular query's bound. Names are checked by TypeScript and at runtime. Responses include executed SQL and query IDs when disclosure is allowed. HTTP browser modules import operation types with `import type`. Bundle apps import their browser-owned operation registry as a value and use [browser execution](client.md#browser-owned-operations-for-bundle-apps). Never bundle credentials or server adapters.
+`query()` inherits the operation's limit and cancellation signal; `{ limit }` can lower a particular query's bound. Names are checked by TypeScript and at runtime. Responses include executed SQL and query IDs when disclosure is allowed. HTTP browser modules import operation types with `import type`. Bundle apps import their browser-owned operation registry as a value and use [browser execution](client.md#browser-owned-operations-for-bundle-apps). Never bundle credentials or server adapters.
 
 ## Shared date ranges
 
-Use `defineDateRangeContract` in a browser-safe module to share source coverage,
+Use `defineDateRangeContract()` in a browser-safe module to share source coverage,
 time zone, maximum range, and comparison rules between the server parser and
-React variables. The server uses `calendar.parseRequest`; React uses the same
-contract with `dateRangeVariable`.
+React variables. The server uses `calendar.parseRequest()`; React uses the same
+contract with `dateRangeVariable()`.
 
 ```ts
 import { defineDateRangeContract } from '@altertable/data-app/contract';
@@ -49,7 +49,7 @@ export const calendar = defineDateRangeContract({
 });
 ```
 
-`parseEmptyInput`, `parseTrue`, `parseCount`, and `parseDateRangeInput` validate
+`parseEmptyInput()`, `parseTrue()`, `parseCount()`, and `parseDateRangeInput()` validate
 common inputs and results. `connectionCheck()` defines a bounded connectivity
 operation. A successful connectivity check confirms access; it is not an
 analysis result.
@@ -83,14 +83,14 @@ const router = createMessageRouter(routes, {
 });
 ```
 
-The app defines `parseString` to validate unknown values. `router.dispatch` checks
+The app defines `parseString()` to validate unknown values. `router.dispatch()` checks
 registered routes, input, output, and cancellation. `MessageRoutingError` exposes
 an intentional public code, message, and optional request ID; other handler
 errors are replaced with a generic failure.
 
 `defineDataQueryRoute(operationContracts)` validates the selected operation's
 input and output and preserves its response evidence. It infers the result type
-from the selected operation when used with `createMessageClient`. Share input and
+from the selected operation when used with `createMessageClient()`. Share input and
 output parsers, not operation implementations containing SQL or credentials.
 `dataAppRoutes` supplies generic `data:query` and `navigation:update` contracts;
 generic hosts must delegate operation validation and authorization to their

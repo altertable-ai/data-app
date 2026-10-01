@@ -7,8 +7,8 @@ React 19.2 or newer and React DOM 19.2 or newer are peer dependencies.
 
 `mountDataApp({ config, component })` mounts into `#root`, sets the document
 title and language, attaches navigation to an available iframe transport, and
-installs `DataAppProvider`. When mounting through another
-framework, wrap the app in `DataAppProvider` yourself.
+installs `<DataAppProvider>`. When mounting through another
+framework, wrap the app in `<DataAppProvider>` yourself.
 
 ```tsx
 import { injectDataAppStyles, mountDataApp } from '@altertable/data-app/react';
@@ -37,7 +37,7 @@ import {
 } from '@altertable/data-app/react';
 import type { operations } from '#app/operations.ts';
 import { calendar } from '#app/contracts.ts';
-import { dataContext, actions } from '#app/data-context.tsx';
+import { dataContext, trackedIdentities } from '#app/data-context.tsx';
 import config from '#config';
 
 const period = dateRangeVariable({
@@ -63,7 +63,7 @@ const featureEvidence = dataContext.evidence({
 const content = activityView.content(result => (
   <Grid columns={2}>
     <MetricWidget
-      metric={actions}
+      metric={trackedIdentities}
       reading={result.metric(data => ({
         current: data.count,
         previous: data.previousCount,
@@ -99,22 +99,26 @@ The `date` binding identifies the controlling variable and extracts its range fr
 Share the [date range contract](contract.md#shared-date-ranges) between the
 operation parser and the view.
 
-`useView` generates controls for date, text and fixed-option select variables; custom controls use `result.variables.bind(name)`. `input` chooses which variables reach the operation, so local search can stay local. The callback in `view.content` receives the displayed result, including its original input during refreshes and failures. Hooks belong in the enclosing component.
+`useView()` generates controls for date, text and fixed-option select variables; custom controls use `result.variables.bind(name)`. `input` chooses which variables reach the operation, so local search can stay local. Hooks belong in the enclosing component.
 
 For large tables, use query-backed pagination with a stable sort and total
 count. Client pagination and search cover only the rows already returned.
 
-Bound `VisualizationWidget` and `TableWidget` calls require `evidence` from `context.evidence(...)`. A bound `MetricWidget` gets evidence from its metric definition. Evidence must name at least one glossary entry or query. Static widgets may omit it.
+Bound `<VisualizationWidget>` and `<TableWidget>` components require `evidence` from `context.evidence(...)`. A bound `<MetricWidget>` gets evidence from its metric definition. Evidence must name at least one glossary entry or query. Static widgets may omit it.
 
-`MetricWidget` and `ComparisonVisual` both accept the same `metric` and `reading`. The comparison is enabled by the displayed result's range. The definition supplies formatting and evidence; a reading cannot override those or provide a second value. `favorableDirection` is optional; changes are neutral until the author defines whether up or down is favorable.
+`<MetricWidget>` and `<ComparisonVisual>` both accept the same `metric` and `reading`. The comparison is enabled by the displayed result's range. The definition supplies formatting and evidence; a reading cannot override those or provide a second value. `favorableDirection` is optional; changes are neutral until the author defines whether up or down is favorable.
 
-`defineDataContent` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `DataSection` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
+`defineDataContent()` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `<DataSection>` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
 
-## Bind evidence
+## Register source identifiers
+
+Use `defineDataIdentifiers()` from `/react` to register exact catalog, schema,
+table, and field names. Use `<DataIdentifier>` in descriptions and glossary
+entries to render those source references consistently.
 
 ```tsx
-const queries = defineQueryNames({ activity: 'feature-activity' });
-// In the server operation: queryNames: queries
+import { defineDataIdentifiers } from '@altertable/data-app/react';
+
 const identifiers = defineDataIdentifiers({
   tables: {
     events: {
@@ -126,6 +130,20 @@ const identifiers = defineDataIdentifiers({
   columns: { identity: { table: 'events', name: 'identity_uuid' } },
 });
 const { DataIdentifier } = identifiers;
+
+<DataIdentifier id="tables.events" />;
+<DataIdentifier id="columns.events.identity" />;
+```
+
+Pass `identifiers.definitions` to `createDataContext()` so the context carries the
+same source registry. Source identifiers name physical data; glossary entries
+explain its business meaning, and query evidence records how it was queried.
+
+## Bind evidence
+
+```tsx
+const queries = defineQueryNames({ activity: 'feature-activity' });
+// In the server operation: queryNames: queries
 const context = createDataContext(queries)({
   identifiers: identifiers.definitions,
   description: (
@@ -150,7 +168,7 @@ const evidence = context.evidence({
   glossaryIds: ['identities'],
   queryNames: [queries.activity],
 });
-const actions = context.metric({
+const trackedIdentities = context.metric({
   id: 'actions',
   glossaryId: 'identities',
   label: 'Tracked identities',
@@ -164,28 +182,27 @@ const finding = context.finding({
 });
 ```
 
-Import `defineQueryNames` from `/contract` and the context/identifier factories from `/react`. Use the same registry in `defineOperation({ queryNames: queries, ... })`. Unknown glossary/query references fail type checks and registry validation; the server also validates returned query names. Physical source identity stays in the identifier registry for future linking.
+Import `defineQueryNames()` from `/contract` and the context/identifier factories from `/react`. Use the same registry in `defineOperation({ queryNames: queries, ... })`. Unknown glossary/query references fail type checks and registry validation; the server also validates returned query names.
 
-## Time views and dimension filters
+## Time views and field filters
 
-`createDataHooks(client).defineTimeView` owns the `period` variable, calendar
+`createDataHooks(client).defineTimeView()` owns the `period` variable, calendar
 controls, and displayed-period label. Declare `time: { contract, defaultValue }`,
 an operation, `isEmpty`, and `empty`. With no additional variables, its default
 input is the calendar request. With additional variables, it is `{ period, ...variables }`.
 Supply an `input` mapper for a different operation shape and `bindings` to extract
-nested period or dimension inputs. Mappings must preserve the selected values.
+nested period or field-filter inputs. Mappings must preserve the selected values.
 
-`dimensionFilter` from `/contract` requires exactly one option source: fixed `options` or a `facet`.
-Use `defineFacetFilter` to bind a facet operation and its typed input. The generated
-`DimensionPicker` preserves cached options during refresh and failure, offers
+`dimensionFilter()` from `/contract` requires exactly one option source: fixed `options` or a `facet`.
+Use `defineFacetFilter()` to bind a facet operation and its typed input. The generated
+`<DimensionPicker>` preserves cached options during refresh and failure, offers
 missing values separately, and retains selected values absent from a result with
-zero counts. `SelectableBarChart` can share controlled selection with the picker.
+zero counts. `<SelectableBarChart>` can share controlled selection with the picker.
 
-## Findings and inspection
+## Preserve displayed results
 
-`DataWidget` composes a body, toolbar feedback, and footer. Widgets and their
-inspection sheets render the same visual and controls. Keep interactive state
-above both mounts when authoring custom children.
+The callback in `view.content()` receives the displayed result and its original
+input during refreshes and failures. Use that input when labeling the data.
 
 Previous data and evidence are retained only when the input changes within the
 same operation. Switching to another operation shows its own cached response or
@@ -196,20 +213,26 @@ from the same client share queries; separate clients do not share results, stale
 data, or cancellation even under one provider. Keep client instances stable
 across renders to preserve their cache.
 
+## Findings and inspection
+
+`<DataWidget>` composes a body, toolbar feedback, and footer. Widgets and their
+inspection sheets render the same visual and controls. Keep interactive state
+above both mounts when authoring custom children.
+
 When a trusted parent supplies [parent presentation](embed.md#parent-presentation),
-`DataApp` follows its resolved theme and suppresses local theme controls,
+`<DataApp>` follows its resolved theme and suppresses local theme controls,
 including in presentations. On an embedded surface (`surface: 'embedded'`),
 only toolbar actions remain above the app body; the title, scope, description, and
 footer are omitted. Variables and request states remain available.
 
 ## Present data with stories
 
-Stories turn the exploration's findings into a presentation. Add `DataApp.story`
-to enable **Present story** in the toolbar; use `PresentStory` directly for a
+Stories turn the exploration's findings into a presentation. Set the `story` prop on `<DataApp>`
+to enable **Present story** in the toolbar; use `<PresentStory>` directly for a
 custom shell. Start from the [data app starter](../examples/starter-data-app/index.tsx).
 
 Return one to four findings with a headline, a visual, and registered source
-evidence. Use `context.finding` to bind the evidence.
+evidence. Use `context.finding()` to bind the evidence.
 
 The callback receives the displayed data and its original input, including
 during refresh or failure. Derive the story from that snapshot so it agrees with

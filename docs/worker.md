@@ -51,5 +51,5 @@ If Terraform reads a file, copy the resolved `/worker` asset unchanged to that
 file during deployment preparation. Configure `DOMAIN_NAME`, `PARENT_ORIGINS`,
 domains, routes, and deployment settings in Terraform. Upgrade the host package
 and Worker together for protocol changes.
-Custom hosts that bundle their own bootstrap can use `startDataAppBootstrap` from
+Custom hosts that bundle their own bootstrap can use `startDataAppBootstrap()` from
 [/embed](embed.md#trusted-bootstrap).

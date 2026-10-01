@@ -19,13 +19,18 @@ Choose the execution path:
 
 Lead with a supported finding and expose the relevant fields as filter variables. Use a date filter for questions worth exploring over time,
 or a fixed period snapshot for a deliberate historical analysis.
-Register terms and query evidence so readers can inspect the source of each claim.
+Register inspected tables and fields with `defineDataIdentifiers()` and use
+`<DataIdentifier>` when naming sources. Register terms and query evidence so
+readers can inspect the source of each claim.
 
-| Task                                       | Documentation                          |
-| ------------------------------------------ | -------------------------------------- |
-| Define queries, inputs, and result parsing | [Operations](contract.md)              |
-| Build views, filters, and request states   | [React](react.md)                      |
-| Bind definitions and source evidence       | [Data context](react.md#bind-evidence) |
+| Task                                       | Documentation                                              |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| Define queries, inputs, and result parsing | [Operations](contract.md)                                  |
+| Build views, filters, and request states   | [React](react.md)                                          |
+| Register source names                      | [Source identifiers](react.md#register-source-identifiers) |
+| Choose date and field filters              | [Filter variables](react.md#time-views-and-field-filters)  |
+| Handle refresh and stale results           | [Displayed results](react.md#preserve-displayed-results)   |
+| Bind definitions and source evidence       | [Data context](react.md#bind-evidence)                     |
 
 Use the exported types for configuration, appearance, formatting, and component
 options.

@@ -20,7 +20,7 @@ For execution details, see [browser-owned operations](client.md#browser-owned-op
    for execution through the host.
 3. Remove the Bun server, HTML, server adapters, credentials, and relative or
    app-alias imports. Rewrite any operation that depends on server-only code
-   to use the operation's `query` helper.
+   to use the operation's `query()` helper.
 4. Confirm the host can query the same catalogs, tables, and fields.
    [Verify the app](app-authoring.md#verify-the-app) in the hosted runtime against
    the local version's filters and findings.
