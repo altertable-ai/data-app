@@ -12,6 +12,15 @@ const navigation = createDataAppNavigation({ bridge });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const result = document.getElementById('result')!;
 const location = document.getElementById('location')!;
+const log = document.createElement('button');
+log.textContent = 'Write logs';
+log.addEventListener('click', () => {
+  bridge.logger.log('plain');
+  bridge.logger.info(() => ['completed', { rows: 3 }]);
+  bridge.logger.warn('slow');
+  bridge.logger.error('failed');
+});
+document.body.append(log);
 
 function showLocation() {
   location.textContent = window.location.search + window.location.hash;

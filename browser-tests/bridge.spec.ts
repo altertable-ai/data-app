@@ -1,5 +1,31 @@
 import { expect, test } from '@playwright/test';
 
+test('iframe logs reach the current React host logger without reconnecting', async ({
+  page,
+}) => {
+  await page.goto('/bridge-host?period=last-30');
+  const app = page.frameLocator('iframe');
+  await expect(app.locator('#location')).toContainText('period=last-30');
+  await app.getByRole('button', { name: 'Write logs' }).click();
+  const entries = [
+    [1, 'log', 'plain'],
+    [1, 'info', 'completed', { rows: 3 }],
+    [1, 'warn', 'slow'],
+    [1, 'error', 'failed'],
+  ];
+  await expect(page.locator('#logs')).toHaveText(JSON.stringify(entries));
+  await page.getByRole('button', { name: 'Change handler' }).click();
+  await app.getByRole('button', { name: 'Write logs' }).click();
+  entries.push(...entries.map(([, ...entry]) => [2, ...entry]));
+  await expect(page.locator('#logs')).toHaveText(JSON.stringify(entries));
+  await page.getByRole('button', { name: 'Toggle logging' }).click();
+  await app.getByRole('button', { name: 'Write logs' }).click();
+  // A subsequent request response confirms earlier log messages were processed.
+  await app.getByRole('button', { name: 'Query', exact: true }).click();
+  await expect(app.locator('#result')).toContainText('"version":2');
+  await expect(page.locator('#logs')).toHaveText(JSON.stringify(entries));
+});
+
 test('React host bridge uses the latest handler and synchronizes deep links and history', async ({
   page,
 }) => {

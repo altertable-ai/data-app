@@ -23,6 +23,7 @@ export function attachDataAppSource({
   iframe,
   source,
   presentation,
+  logger,
   onMessage,
   onStatusChange,
   onDiagnostic,
@@ -74,6 +75,7 @@ export function attachDataAppSource({
       : { type: 'origin', origin: url.origin },
     javascript: opaque ? source.javascript : undefined,
     presentation,
+    logger,
     onMessage,
     onStatusChange: status,
     onDiagnostic,
@@ -93,5 +95,9 @@ export function attachDataAppSource({
     bridge.dispose();
   }
 
-  return { dispose, setPresentation: bridge.setPresentation };
+  return {
+    dispose,
+    setPresentation: bridge.setPresentation,
+    setLogger: bridge.setLogger,
+  };
 }

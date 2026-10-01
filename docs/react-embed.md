@@ -106,3 +106,12 @@ Prop updates publish trusted state without reloading the iframe or reconnecting
 the session. Resolve system preference in the parent to `'light'` or `'dark'`.
 Inside an embedded surface, `<DataApp>` retains toolbar actions and hides its header
 and footer. See [parent presentation](embed.md#parent-presentation).
+
+## Parent-owned logging
+
+Pass `logger={logger}` to `<DataAppBridge>` in either source or connection mode.
+The value can come directly from the frontend's `createLogger()`; only its `log`,
+`info`, `warn`, and `error` methods are required. Prop updates replace the host
+logger without reloading or reconnecting the iframe. See
+[parent-owned logging](embed.md#parent-owned-logging) for iframe usage and delivery
+semantics.

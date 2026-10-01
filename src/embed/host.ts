@@ -1,4 +1,6 @@
 import type { DataAppPresentation } from '@/src/core/presentation';
+import type { DataAppLogger } from '@/src/core/logger';
+import { receiveLog } from '@/src/embed/logger';
 import {
   BRIDGE,
   MAX_PENDING,
@@ -27,11 +29,13 @@ export type DataAppDiagnostic = { direction: 'send' | 'receive'; type: string };
 export type DataAppHost = {
   dispose: () => void;
   setPresentation: (presentation?: DataAppPresentation) => void;
+  setLogger: (logger?: DataAppLogger) => void;
 };
 
 export type DataAppHostOptions = {
   iframe: HTMLIFrameElement;
   presentation?: DataAppPresentation;
+  logger?: DataAppLogger;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   onMessage: MessageDispatcher;
@@ -49,6 +53,7 @@ export function attachDataAppConnection({
   connection,
   javascript,
   presentation,
+  logger,
   onStatusChange,
   onDiagnostic,
   onMessage,
@@ -75,7 +80,14 @@ export function attachDataAppConnection({
       search: host.location.search,
       hash: host.location.hash,
       ...(currentPresentation ? { presentation: currentPresentation } : {}),
+      ...(logger ? { logging: true } : {}),
     };
+  }
+
+  function setLogger(value: DataAppLogger | undefined) {
+    if (disposed || value === logger) return;
+    logger = value;
+    if (sessionId) publishState();
   }
 
   function setPresentation(value: DataAppPresentation | undefined) {
@@ -209,7 +221,9 @@ export function attachDataAppConnection({
       message.documentId !== documentId
     )
       return;
-    if (message.type === 'runtime:ready') onStatusChange?.('ready');
+    if (message.type === 'runtime:log') {
+      if (logger) receiveLog(logger, message.payload);
+    } else if (message.type === 'runtime:ready') onStatusChange?.('ready');
     else if (message.type === 'runtime:error') onStatusChange?.('failed');
     else if (message.type === 'bridge:request') void request(message);
     else if (message.type === 'bridge:cancel' && validId(message.id)) {
@@ -257,5 +271,5 @@ export function attachDataAppConnection({
   onStatusChange?.('connecting');
   send({ type: 'bridge:connect', documentId: 'host' });
 
-  return { dispose, setPresentation };
+  return { dispose, setPresentation, setLogger };
 }
