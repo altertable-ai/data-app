@@ -23,10 +23,17 @@ Register inspected tables and fields with `defineDataIdentifiers()` and use
 `<DataIdentifier>` when naming sources. Register terms and query evidence so
 readers can inspect the source of each claim.
 
+Connect visualizations with introductions and explanations. Use `<TextWidget>`
+for a narrative panel with the standard widget frame, or `<TextContent>` for
+borderless prose. Bind claims to `result.select((data, input) => ...)` so their
+values and scope follow the displayed results through filter changes, refresh,
+and failure.
+
 | Task                                       | Documentation                                              |
 | ------------------------------------------ | ---------------------------------------------------------- |
 | Define queries, inputs, and result parsing | [Operations](contract.md)                                  |
 | Build views, filters, and request states   | [React](react.md)                                          |
+| Introduce and explain visualizations       | [Narrative text](react.md#narrative-text)                  |
 | Find formatters and presentation helpers   | [App helpers](react.md#reuse-app-helpers)                  |
 | Register source names                      | [Source identifiers](react.md#register-source-identifiers) |
 | Choose date and field filters              | [Filter variables](react.md#time-views-and-field-filters)  |

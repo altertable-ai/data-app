@@ -7,12 +7,14 @@ import type {
 import type { DateRangeRequest } from '@/src/core/contract';
 import { invariant } from '@/src/core/invariant';
 
-export type DataContentHelpers<Data> = {
-  select: <Value>(select: (data: Data) => Value) => DataReading<Value>;
+export type DataContentHelpers<Data, Input> = {
+  select: <Value>(
+    select: (data: Data, input: Input) => Value
+  ) => DataReading<Value>;
   metric: (select: (data: Data) => MetricValues) => MetricReading;
 };
 
-export type DataContentState<Data, Input> = DataContentHelpers<Data> &
+export type DataContentState<Data, Input> = DataContentHelpers<Data, Input> &
   (
     | { loading: true; data?: never; input?: never }
     | { loading: false; data: Data; input: Input }
@@ -39,7 +41,7 @@ export function defineDataContent<Data, Input>(
         data,
         input,
         select(select) {
-          return { loading: false, value: select(data) };
+          return { loading: false, value: select(data, input) };
         },
         metric(select) {
           const values = select(data);

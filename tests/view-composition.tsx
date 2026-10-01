@@ -18,6 +18,7 @@ import {
   createDataContext,
   MetricWidget,
   WidgetViewTabs,
+  type TextWidgetProps,
 } from '@altertable/data-app/react';
 
 const { defineDataView } = createDataHooks<{
@@ -97,6 +98,14 @@ const app: DataAppProps<number> = {
   },
 };
 void [metric, section, app];
+
+// @ts-expect-error Data-bound explanations require evidence.
+const text: TextWidgetProps<number> = {
+  title: 'Activity',
+  reading: { loading: false, value: 12 },
+  children: value => <p>{value}</p>,
+};
+void text;
 
 const queries = defineQueryNames({ actions: 'actions' });
 defineOperation({
@@ -236,3 +245,7 @@ dimensionFilter({
     },
   },
 });
+
+// @ts-expect-error A framed TextWidget requires a title.
+const untitledText: TextWidgetProps = { children: <p>Introduction</p> };
+void untitledText;

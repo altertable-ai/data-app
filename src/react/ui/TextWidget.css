@@ -1,0 +1,12 @@
+.altertable-text-widget-skeleton {
+  display: grid;
+  gap: var(--at-space-sm, 8px);
+  max-width: 70ch;
+}
+.altertable-text-widget-skeleton > .altertable-skeleton {
+  width: 100%;
+  height: 14px;
+}
+.altertable-text-widget-skeleton > :last-child {
+  width: 65%;
+}

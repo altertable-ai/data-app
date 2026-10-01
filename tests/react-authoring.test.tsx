@@ -14,6 +14,8 @@ import {
   WidgetViewTabs,
   MetricWidget,
   calendarMetricComparison,
+  TextWidget,
+  TextContent,
 } from '@altertable/data-app/react';
 import { describeViewInput, type DataViewDefinition } from '@/src/react/view';
 
@@ -250,4 +252,82 @@ test('an empty widget tab renders its authored fallback', () => {
   );
   expect(markup).toContain('No orders');
   expect(markup).not.toContain('Must not render');
+});
+
+test('narrative content binds values and scope without evaluating loading data', () => {
+  let calls = 0;
+  const content = defineDataContent<{ count: number }, { region: string }>(
+    result => (
+      <TextWidget
+        title="Activity explained"
+        evidence={{ id: 'activity-explanation', queryNames: ['activity'] }}
+        reading={result.select((data, input) => {
+          calls++;
+          return { count: data.count, region: input.region };
+        })}
+      >
+        {({ count, region }) => (
+          <p>
+            {count === 0
+              ? `No activity in ${region}`
+              : `${count} active people in ${region}`}
+          </p>
+        )}
+      </TextWidget>
+    )
+  );
+  const loading = renderToStaticMarkup(content.loading);
+  expect(calls).toBe(0);
+  expect(loading).toContain('aria-busy="true"');
+  expect(loading).toContain('altertable-text-widget-skeleton');
+  expect(loading).not.toContain('active people');
+  expect(loading).toContain('altertable-data-widget');
+  expect(loading).toContain('Activity explained');
+  expect(
+    renderToStaticMarkup(content.children({ count: 12 }, { region: 'Europe' }))
+  ).toContain('12 active people in Europe');
+  expect(
+    renderToStaticMarkup(content.children({ count: 0 }, { region: 'Asia' }))
+  ).toContain('No activity in Asia');
+  expect(calls).toBe(2);
+});
+
+test('static narrative accepts rich prose without requiring a heading or evidence', () => {
+  const markup = renderToStaticMarkup(
+    <TextContent aria-label="Introduction">
+      <p>
+        Explore <strong>adoption</strong> by region.
+      </p>
+      <ul>
+        <li>Start with activity.</li>
+      </ul>
+      <a href="#features">Compare features</a>
+    </TextContent>
+  );
+  expect(markup).toContain('aria-label="Introduction"');
+  expect(markup).toContain('<strong>adoption</strong>');
+  expect(markup).toContain('<li>Start with activity.</li>');
+  expect(markup).not.toContain('<h2');
+  expect(markup).not.toContain('aria-labelledby');
+});
+
+test('static text widgets compose the shared frame around prose', () => {
+  const markup = renderToStaticMarkup(
+    <TextWidget
+      title="How to explore"
+      description="Start here"
+      action={<button>Next</button>}
+      footer={<p>Source coverage</p>}
+    >
+      <p>
+        Compare the <strong>regions</strong> below.
+      </p>
+    </TextWidget>
+  );
+  expect(markup).toContain('altertable-data-widget');
+  expect(markup).toContain('altertable-text-content');
+  expect(markup).toContain('How to explore');
+  expect(markup).toContain('Start here');
+  expect(markup).toContain('<button>Next</button>');
+  expect(markup).toContain('Source coverage');
 });

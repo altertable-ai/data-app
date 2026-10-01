@@ -39,6 +39,8 @@
 @import './ui/DateTimeTooltip.css';
 @import './ui/DataTable.css';
 @import './ui/TableWidget.css';
+@import './ui/TextContent.css';
+@import './ui/TextWidget.css';
 @import './ui/Breakdown.css';
 @import './ui/Ranking.css';
 @import './ui/WidgetDisclosure.css';

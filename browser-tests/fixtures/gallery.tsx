@@ -13,6 +13,11 @@ import {
   TableWidget,
   Tooltip,
   VisualizationWidget,
+  TextWidget,
+  TextContent,
+  defineDataContent,
+  DataBoundary,
+  resolveDataView,
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app/react';
@@ -49,6 +54,141 @@ const dataContext = {
   description: 'Static runtime component fixtures.',
 };
 
+const narrative = defineDataContent<{ count: number }, { region: string }>(
+  result => (
+    <TextWidget
+      title="Activity for this selection"
+      evidence={{ id: 'text-activity', queryNames: ['gallery-trend'] }}
+      reading={result.select((data, input) => ({
+        count: data.count,
+        region: input.region,
+      }))}
+    >
+      {({ count, region }) => (
+        <p>
+          {count === 0
+            ? `No activity was recorded in ${region}.`
+            : `${count} people were active in ${region}.`}{' '}
+          Compare feature use below to understand their activity.
+        </p>
+      )}
+    </TextWidget>
+  )
+);
+
+function TextExamples() {
+  const [region, setRegion] = useState('Europe');
+  const [shown, setShown] = useState({
+    data: { count: 42 },
+    input: { region: 'Europe' },
+  });
+  const [state, setState] = useState<
+    'ready' | 'loading' | 'updating' | 'failed'
+  >('ready');
+  const view = resolveDataView({
+    requestedInput: { region },
+    current: state === 'ready' ? shown : undefined,
+    previous: state === 'loading' ? undefined : shown,
+    pending: state === 'loading' || state === 'updating',
+    error: state === 'failed' ? new Error('Fixture unavailable') : undefined,
+    sameInput: (left, right) => left.region === right.region,
+    describe: input => input.region,
+    isEmpty: () => false,
+  });
+
+  return (
+    <section id="text" aria-label="Text widgets">
+      <Stack>
+        <h2>Text widgets</h2>
+        <p className="gallery-caption">
+          TextWidget uses the standard widget frame. TextContent provides the
+          same prose typography without a frame.
+        </p>
+        <TextContent>
+          <p>
+            This is a borderless <strong>TextContent</strong> introduction.
+            Start with activity, then explore which features people use.
+          </p>
+        </TextContent>
+        <TextWidget
+          title="How to read this exploration"
+          description="Static narrative with the standard widget frame"
+        >
+          <p>
+            Use the charts to compare <strong>activity across regions</strong>.
+          </p>
+          <ul>
+            <li>A measured zero means no activity was recorded.</li>
+            <li>
+              Text explaining results follows the same selection as the charts.
+            </li>
+          </ul>
+          <p>
+            <a href="#widgets">Explore the dashboard composition</a> for a
+            complete example.
+          </p>
+        </TextWidget>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          <Combobox
+            label="Narrative region"
+            options={[
+              { id: 'Europe', label: 'Europe' },
+              { id: 'Asia', label: 'Asia' },
+            ]}
+            value={region}
+            onChange={value => {
+              if (value) {
+                setRegion(value);
+                setState('updating');
+              }
+            }}
+          />
+          <Button onClick={() => setState('loading')}>
+            Initial text loading
+          </Button>
+          <Button onClick={() => setState('updating')}>Refresh text</Button>
+          <Button onClick={() => setState('failed')}>Fail text refresh</Button>
+          <Button
+            onClick={() => {
+              setShown({
+                data: { count: region === 'Europe' ? 42 : 18 },
+                input: { region },
+              });
+              setState('ready');
+            }}
+          >
+            Resolve text request
+          </Button>
+          <Button
+            onClick={() => {
+              setShown({ data: { count: 0 }, input: { region } });
+              setState('ready');
+            }}
+          >
+            Show zero activity
+          </Button>
+        </div>
+        <DataBoundary
+          view={view}
+          loading={narrative.loading}
+          empty={null}
+          error={() => (
+            <TextContent>
+              <p>
+                Couldn’t load this selection. Resolve the text request to try
+                again.
+              </p>
+            </TextContent>
+          )}
+          notice="inline"
+        >
+          {(data, input) => narrative.children(data, input)}
+        </DataBoundary>
+      </Stack>
+    </section>
+  );
+}
+
 function Gallery() {
   const [query, setQuery] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
@@ -84,6 +224,7 @@ function Gallery() {
             {
               label: 'Data display',
               links: [
+                ['text', 'Text widgets'],
                 ['metrics', 'Metrics'],
                 ['tables', 'Tables'],
                 ['charts', 'Charts & collections'],
@@ -202,9 +343,24 @@ function Gallery() {
             </div>
           </Stack>
         </section>
+        <TextExamples />
         <section id="widgets" aria-label="Widget states">
           <Stack>
             <h2>Dashboard composition</h2>
+            <TextWidget title="Explore weekly activity">
+              <p>
+                Start with <strong>daily activity</strong>, then compare the
+                records behind each day.
+              </p>
+              <ul>
+                <li>A measured zero means there was no activity that day.</li>
+                <li>Use the widget headings to inspect their evidence.</li>
+              </ul>
+              <p>
+                <a href="#charts">Explore the charts and collections</a> for
+                more detail.
+              </p>
+            </TextWidget>
             <Grid columns={2}>
               <VisualizationWidget
                 title="Weekly activity"

@@ -28,19 +28,42 @@ test('input changes retain the original input and data through refresh and failu
   page,
 }) => {
   await page.goto('/hooks-app');
+  await expect(page.getByTestId('narrative')).toHaveAttribute(
+    'aria-busy',
+    'true'
+  );
   await page.getByRole('button', { name: 'Resolve request' }).click();
   await expect(page.getByTestId('input')).toHaveText('1');
+  await expect(page.getByTestId('narrative')).toContainText(
+    '1 for selection 1'
+  );
   await page.getByRole('button', { name: 'Change input' }).click();
   await expect(page.getByTestId('state')).toHaveText('updating');
   await expect(page.getByTestId('shown')).toHaveText('alpha');
   await expect(page.getByTestId('input')).toHaveText('1');
+  await expect(page.getByTestId('narrative')).toContainText(
+    '1 for selection 1'
+  );
+  await expect(page.getByTestId('narrative')).not.toContainText('selection 2');
   await page.getByRole('button', { name: 'Fail request' }).click();
   await expect(page.getByTestId('state')).toHaveText('stale-error');
   await expect(page.getByTestId('input')).toHaveText('1');
+  await expect(page.getByTestId('narrative')).toContainText(
+    '1 for selection 1'
+  );
   await page.getByRole('button', { name: 'Change input' }).click();
   await page.getByRole('button', { name: 'Resolve request' }).click();
   await expect(page.getByTestId('state')).toHaveText('ready');
   await expect(page.getByTestId('input')).toHaveText('3');
+  await expect(page.getByTestId('narrative')).toContainText(
+    '3 for selection 3'
+  );
+  await page
+    .getByRole('button', { name: 'Explore Activity explained' })
+    .click();
+  await expect(
+    page.getByRole('dialog').locator('.altertable-text-content')
+  ).toHaveText('3 for selection 3');
 });
 
 test('distinct clients isolate operation and facet results while the same client shares them', async ({
