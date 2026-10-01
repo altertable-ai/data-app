@@ -46,12 +46,9 @@ In the host's browser entry, inject the styles before rendering:
 
 ```tsx
 import { createRoot } from 'react-dom/client';
-import {
-  DataAppSkeleton,
-  injectDataAppStyles,
-} from '@altertable/data-app/react';
+import { DataAppSkeleton, injectShellStyles } from '@altertable/data-app/react';
 
-injectDataAppStyles();
+injectShellStyles();
 createRoot(document.getElementById('root')!).render(
   <DataAppSkeleton
     aria-label="Loading activity report"

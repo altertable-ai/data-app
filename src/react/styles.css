@@ -2,7 +2,7 @@
 @import './ui/SearchInput.css';
 @import './ui/Button.css';
 @import './ui/SearchField.css';
-@import './ui/Skeleton.css';
+@import './shellStyles.css';
 @import './ui/Tooltip.css';
 @import './ui/RequestHint.css';
 @import './ui/GradientScroll.css';
@@ -53,4 +53,3 @@
 @import './ui/UpdatedAt.css';
 @import './ui/data-identifiers.css';
 @import './ui/GlossaryDefinition.css';
-@import './ui/DataAppSkeleton.css';

@@ -4,6 +4,7 @@
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/react.md
  */
 export { injectDataAppStyles } from '@/src/react/styles';
+export { injectShellStyles } from '@/src/react/shellStyles';
 export type { DataAppStylesOptions } from '@/src/react/styles';
 
 export { mountDataApp, DataAppProvider } from '@/src/react/mount';

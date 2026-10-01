@@ -4,11 +4,17 @@ test('startup skeleton adapts to host width, theme, and reduced motion', async (
   page,
 }) => {
   await page.goto('/skeleton');
+  const styles = page.locator('style[data-altertable-shell-styles]');
+  await expect(styles).toHaveCount(1);
+  expect(
+    await styles.evaluate(element => (element as HTMLStyleElement).nonce)
+  ).toBe('shell-test');
+  await expect(page.locator('style[data-altertable-styles]')).toHaveCount(0);
   const status = page.getByRole('status', { name: 'Loading fixture app' });
   await expect(status).toBeVisible();
   await expect(status).toHaveAttribute('aria-busy', 'true');
   await expect(page.getByRole('button')).toHaveCount(0);
-  const cards = page.locator('.altertable-metric-widget');
+  const cards = page.locator('.altertable-data-app-skeleton-metric');
   await expect(cards).toHaveCount(3);
   const wide = await cards.evaluateAll(elements =>
     elements.map(element => element.getBoundingClientRect().y)

@@ -95,7 +95,7 @@ are mutually exclusive.
 
 For a shared placeholder while building or connecting, render `DataAppSkeleton`
 from `@altertable/data-app/react` in the consuming shell. Call
-`injectDataAppStyles()` from that entry once in the host's browser entry before
+`injectShellStyles()` from that entry once in the host's browser entry before
 rendering. See [React](react.md#loading-an-embedded-app) for the entry-point example. The bridge does not render
 loading UI itself.
 

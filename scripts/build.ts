@@ -8,17 +8,26 @@ const external = [
   ...Object.keys(manifest.peerDependencies),
 ];
 
-// Compile the complete stylesheet once; importing React never installs it.
-const styles = await Bun.build({
-  entrypoints: ['src/react/styles.css'],
-  target: 'browser',
-});
-if (!styles.success) {
-  for (const log of styles.logs) console.error(log);
-  throw new Error('Could not build React styles.');
+// Compile explicit stylesheets; importing React never installs them.
+async function compileStyles(entrypoint: string): Promise<string> {
+  const styles = await Bun.build({
+    entrypoints: [entrypoint],
+    target: 'browser',
+  });
+  if (!styles.success) {
+    for (const log of styles.logs) console.error(log);
+    throw new Error(`Could not build ${entrypoint}.`);
+  }
+  const stylesheet = styles.outputs.find(output =>
+    output.path.endsWith('.css')
+  );
+  if (!stylesheet) throw new Error(`${entrypoint} stylesheet is missing.`);
+  return stylesheet.text();
 }
-const stylesheet = styles.outputs.find(output => output.path.endsWith('.css'));
-if (!stylesheet) throw new Error('React stylesheet is missing.');
+const [dataAppStyles, shellStyles] = await Promise.all([
+  compileStyles('src/react/styles.css'),
+  compileStyles('src/react/shellStyles.css'),
+]);
 
 // Browser entries share chunks so error classes and transport helpers retain
 // their identity across public entry points. Hosts do not import the app UI.
@@ -39,7 +48,10 @@ const browser = await Bun.build({
   jsx: { runtime: 'automatic', development: false },
   format: 'esm',
   splitting: true,
-  define: { DATA_APP_STYLES: JSON.stringify(await stylesheet.text()) },
+  define: {
+    DATA_APP_STYLES: JSON.stringify(dataAppStyles),
+    SHELL_STYLES: JSON.stringify(shellStyles),
+  },
   external,
   naming: { entry: '[dir]/[name].[ext]', chunk: 'chunks/[name]-[hash].[ext]' },
   sourcemap: 'external',
