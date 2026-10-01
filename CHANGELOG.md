@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.62.0](https://github.com/altertable-ai/data-app/compare/v0.61.0...v0.62.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **embed:** let parent shells own app presentation ([#9](https://github.com/altertable-ai/data-app/issues/9))
+* unify iframe bridges and add data app skeleton ([#8](https://github.com/altertable-ai/data-app/issues/8))
+
+### Features
+
+* **client:** support browser-owned operations through SQL bridge ([#10](https://github.com/altertable-ai/data-app/issues/10)) ([6c70ae8](https://github.com/altertable-ai/data-app/commit/6c70ae832059221e19c1ce1e4cade2c74b68d9d4))
+* **embed:** let parent shells own app presentation ([#9](https://github.com/altertable-ai/data-app/issues/9)) ([e447e84](https://github.com/altertable-ai/data-app/commit/e447e8471033c94949ac4b63bf7870b4d8936e42))
+* unify iframe bridges and add data app skeleton ([#8](https://github.com/altertable-ai/data-app/issues/8)) ([9fe2ea2](https://github.com/altertable-ai/data-app/commit/9fe2ea2f122f769d2766d1357dd019ede1f4d98a))
+* **worker:** add Cloudflare Worker deployment asset ([#4](https://github.com/altertable-ai/data-app/issues/4)) ([2b3503a](https://github.com/altertable-ai/data-app/commit/2b3503aea354b98ea665c5f40c79ca5ff74b748c))
+
+
+### Bug Fixes
+
+* **react:** port widget inspection and picker refinements ([#7](https://github.com/altertable-ai/data-app/issues/7)) ([2975dd5](https://github.com/altertable-ai/data-app/commit/2975dd59b865a6fcdef5dcc8a610743d962fa47c))
+
 ## [0.61.0](https://github.com/altertable-ai/data-app/compare/v0.60.0...v0.61.0) (2026-09-30)
 
 
