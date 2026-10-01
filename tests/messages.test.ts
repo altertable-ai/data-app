@@ -302,3 +302,24 @@ test('SQL host authorizes each request, preserves source errors, and hides priva
   expect(error).toMatchObject({ name: 'AbortError' });
   expect(authorizations).toBe(3);
 });
+
+test('SQL host authentication failures give browser viewers actionable messages', async () => {
+  const { createSqlQueryHandler } = await import('@/src/embed/sql');
+  const { DataSourceError } = await import('@/src/core/contract');
+  for (const reason of ['unauthorized', 'forbidden'] as const) {
+    const handler = createSqlQueryHandler(async () => ({
+      async queryAll() {
+        throw new DataSourceError(reason);
+      },
+    }));
+    const error = await handler(
+      { statement: 'SELECT 1', limit: 1 },
+      context()
+    ).catch(error => error);
+    expect(error.message).not.toMatch(/altertable|profile|CLI/);
+    expect(error).toMatchObject({
+      code: `source_${reason}`,
+      message: expect.stringContaining('app owner'),
+    });
+  }
+});

@@ -251,7 +251,7 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
   expect(await upstreamFailure.json()).toMatchObject({
     error: {
       code: 'source_unauthorized',
-      message: expect.stringContaining('altertable login'),
+      message: expect.stringContaining('authenticate its data connection'),
     },
   });
   const forbidden = runtime.createDataHandler(

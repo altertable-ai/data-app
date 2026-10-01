@@ -160,9 +160,9 @@ class OperationInputError extends Error {}
 
 const sourceErrorMessages = {
   unauthorized:
-    "Lakehouse access needs attention. Run this app with 'altertable app dev', or run 'altertable login' and retry.",
+    'This app could not authenticate its data connection. Contact the app owner.',
   forbidden:
-    "This app cannot access its lakehouse data. Check the selected profile's permissions.",
+    'This app cannot access the requested data. Contact the app owner.',
   rate_limited: 'The lakehouse is busy. Wait a moment and retry.',
   query_rejected:
     "A lakehouse query was rejected. Check the app's data operation.",
