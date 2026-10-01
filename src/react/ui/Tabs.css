@@ -44,6 +44,10 @@
   min-width: 0;
   outline: none;
 }
+/* Retained inactive panels preserve state without taking part in layout. */
+.react-aria-TabPanel[data-inert] {
+  display: none;
+}
 .react-aria-TabPanel[data-focus-visible] {
   outline: var(--at-focus-outline, 1px solid #687078);
   outline-offset: var(--at-focus-ring-offset, 2px);

@@ -7,7 +7,9 @@ import { useEffect, useState } from 'react';
 import { getDataAppNavigation } from '@altertable/data-app/client';
 import {
   DataApp,
-  AppIcon,
+  HelpPopover,
+  PeriodSummary,
+  VariableBar,
   Breakdown,
   Ranking,
   MetricWidget,
@@ -132,15 +134,14 @@ function QuickControls() {
   return (
     <section id="controls" aria-label="Control states">
       <Stack>
-        <header className="gallery-section-heading">
-          <span className="gallery-group">Segment investigation</span>
+        <Stack className="gallery-copy" gap="sm">
           <h2>Find and filter records</h2>
-          <p className="gallery-note">
+          <p>
             Search a dataset, include archived records, and choose sources. Open
             the pickers to compare ready, loading, empty, and failed states.
           </p>
-        </header>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        </Stack>
+        <VariableBar aria-label="Demo controls">
           <Button>Default button</Button>
           <Button variant="ghost" size="compact">
             Compact ghost action
@@ -155,13 +156,13 @@ function QuickControls() {
             checked={checked}
             onChange={setChecked}
           />
-        </div>
+        </VariableBar>
         <SearchField
           label="Search gallery records"
           value={query}
           onChange={setQuery}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        <VariableBar aria-label="Demo controls">
           <Combobox
             label="Categories"
             options={options}
@@ -217,7 +218,7 @@ function QuickControls() {
             onChange={() => {}}
             disabled
           />
-        </div>
+        </VariableBar>
       </Stack>
     </section>
   );
@@ -229,16 +230,32 @@ function Overview() {
   return (
     <section id="widgets" aria-label="Product activity dashboard">
       <Stack>
-        <div className="gallery-finding">
-          <span className="gallery-group">
-            Product activity · Sep 28–30, 2026
-          </span>
-          <h3>Monday accounts for 60% of recorded activity</h3>
-          <p>
-            20 events across two active workspaces. Tuesday has a measured zero.
-            Select a day to inspect it, or search the workspace records below.
-          </p>
-        </div>
+        <DataWidget
+          title="Monday accounts for 60% of recorded activity"
+          description="20 events across two active workspaces. Tuesday has a measured zero. Select a day to inspect it, or search the workspace records below."
+        >
+          <VariableBar aria-label="Dashboard context">
+            <PeriodSummary
+              period={{
+                kind: 'calendar',
+                start: '2026-09-28',
+                end: '2026-09-30',
+                timeZone: 'UTC',
+              }}
+            />
+            <HelpPopover
+              trigger="Build this pattern"
+              triggerLabel="How to compose this dashboard"
+              label="Dashboard composition"
+            >
+              <p>
+                Combine MetricWidget for the headline, VisualizationWidget for
+                the trend, and TableWidget for the supporting records. Open a
+                widget heading to inspect its definition and sample SQL.
+              </p>
+            </HelpPopover>
+          </VariableBar>
+        </DataWidget>
         <Grid columns={3} minItemWidth="compact">
           <MetricWidget
             label="Recorded events"
@@ -341,15 +358,6 @@ function Overview() {
             />
           </DataWidget>
         </Grid>
-        <div className="gallery-recipe">
-          <AppIcon name="info" size={16} />
-          <p>
-            <strong>Build this pattern.</strong> Combine MetricWidget for the
-            headline, VisualizationWidget for the trend, and TableWidget for the
-            supporting records. Open a widget heading to inspect its definition
-            and sample SQL.
-          </p>
-        </div>
       </Stack>
     </section>
   );
@@ -403,10 +411,9 @@ function Gallery() {
       dataContext={dataContext}
       queries={queries}
       description="Explore the patterns behind useful data apps. Start with a working dashboard, then try the controls, displays, and states that fit your use case."
-      layoutProps={{ className: 'gallery-app' }}
     >
       <Tabs
-        className="gallery-tabs"
+        data-testid="gallery-tabs"
         selectedKey={view}
         onSelectionChange={selectCategory}
       >
@@ -420,31 +427,23 @@ function Gallery() {
         <TabPanels>
           {galleryCategories.map(category => (
             <TabPanel key={category.id} id={category.id} shouldForceMount>
-              <header className="gallery-introduction">
-                <span className="gallery-group">
-                  {category.id === 'overview'
-                    ? 'Composed example'
-                    : 'Pattern library'}
-                </span>
-                <h2>{category.title}</h2>
-                <p>{category.description}</p>
-                <ul
-                  className="gallery-use-cases"
-                  aria-label="Example use cases"
-                >
-                  {category.uses.map(use => (
-                    <li key={use}>{use}</li>
-                  ))}
-                </ul>
-              </header>
-              {category.id === 'overview' ? (
-                <Overview />
-              ) : (
-                <Stack>
-                  {category.id === 'filters' && <QuickControls />}
-                  <GalleryCases category={category.id} />
+              <Stack>
+                <Stack className="gallery-copy" gap="sm">
+                  <h2>{category.title}</h2>
+                  <p>{category.description}</p>
+                  <p>
+                    <strong>Use for:</strong> {category.uses.join(' · ')}
+                  </p>
                 </Stack>
-              )}
+                {category.id === 'overview' ? (
+                  <Overview />
+                ) : (
+                  <Stack>
+                    {category.id === 'filters' && <QuickControls />}
+                    <GalleryCases category={category.id} />
+                  </Stack>
+                )}
+              </Stack>
             </TabPanel>
           ))}
         </TabPanels>

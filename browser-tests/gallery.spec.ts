@@ -609,7 +609,7 @@ test('gallery categories support keyboard navigation, links, and persistent demo
   await expect(tabs.getByRole('tab')).toHaveCount(7);
   await expect(
     page.locator(
-      '.gallery-tabs > .react-aria-TabPanels > .react-aria-TabPanel:not([data-inert])'
+      '[data-testid="gallery-tabs"] > .react-aria-TabPanels > .react-aria-TabPanel:not([data-inert])'
     )
   ).toHaveCount(1);
   await expect(
@@ -708,6 +708,14 @@ test('every gallery category renders in both themes without page overflow', asyn
         scroll: document.documentElement.scrollWidth,
       }));
       expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width + 1);
+      const main = await page.locator('.altertable-app-main').boundingBox();
+      const footer = await page
+        .locator(
+          '.altertable-app-layout > .altertable-app-footer .altertable-app-footer-inner'
+        )
+        .boundingBox();
+      expect(Math.abs(main!.x - footer!.x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(main!.width - footer!.width)).toBeLessThanOrEqual(1);
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({
         path: `/tmp/gallery-${test.info().project.name}-${theme}-${label.toLowerCase().replaceAll(/[^a-z]+/g, '-')}.png`,
