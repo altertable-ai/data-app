@@ -29,6 +29,13 @@ borderless prose. Bind claims to `result.select((data, input) => ...)` so their
 values and scope follow the displayed results through filter changes, refresh,
 and failure.
 
+Use `<DataTable>` for tables inside a visualization's Data view and `<TableWidget>`
+for standalone table panels. Mark numeric headers and cells with `data-type="number"`
+in `<DataTable>` so values align consistently. Avoid raw HTML tables with ad hoc styles.
+
+Keep chart legends compact: inherit `<VisualizationWidget>`'s annotation-sized text,
+use small color markers, and allow labels to wrap at narrow widths.
+
 | Task                                       | Documentation                                              |
 | ------------------------------------------ | ---------------------------------------------------------- |
 | Define queries, inputs, and result parsing | [Operations](contract.md)                                  |

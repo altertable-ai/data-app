@@ -115,6 +115,10 @@ charts, and custom views.
 
 ## Narrative text
 
+`<DataApp>` spaces top-level body blocks with the standard section gap, including
+fragments returned by `view.content()` during loading and after results arrive.
+Use `<Stack>` to space blocks within a custom section or independent request boundary.
+
 Use `<TextContent>` for prose within a page or custom layout, and `<TextWidget>`
 when the explanation belongs in a titled panel alongside other widgets.
 
@@ -251,6 +255,12 @@ across renders to preserve their cache.
 `<DataWidget>` composes a body, toolbar feedback, and footer. Widgets and their
 inspection sheets render the same visual and controls. Keep interactive state
 above both mounts when authoring custom children.
+
+Widget footers, including `<VisualizationWidget>` insights, use compact, muted
+annotation text. Use `<TextContent>` or `<TextWidget>` for longer narrative prose.
+
+`<VisualizationWidget>` also supplies compact typography for custom chart content,
+including HTML legends. Chart renderers can set their own type sizes when needed.
 
 When a trusted parent supplies [parent presentation](embed.md#parent-presentation),
 `<DataApp>` follows its resolved theme and suppresses local theme controls,

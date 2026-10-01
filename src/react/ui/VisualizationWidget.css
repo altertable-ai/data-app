@@ -2,6 +2,8 @@
   min-width: 0;
   padding: var(--at-space-md, 16px) var(--at-layout-gap, 24px)
     var(--at-layout-gap, 24px);
+  font-size: 12px;
+  line-height: 1.45;
 }
 :where(.altertable-data-widget-body)
   > .altertable-visualization-widget-content {

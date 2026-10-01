@@ -16,6 +16,7 @@ import { VariableBar } from '@/src/react/ui/VariableBar';
 import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
 import { DataSection, type SectionResult } from '@/src/react/ui/DataSection';
+import { Stack } from '@/src/react/ui/Stack';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 
 type DataAppBaseProps = {
@@ -66,7 +67,7 @@ export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
       }
   );
 
-/** Owns the page title, header, gutter, and width; body content uses section headings.
+/** Owns the page title, header, gutter, width, and spacing between top-level body blocks.
  * The primary request owns controls, empty state, displayed input, refresh, and inspection.
  * Without a request, the shell accepts authored children for setup or static views. */
 export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
@@ -168,22 +169,24 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
         {(request?.controls ?? props.variables) && (
           <VariableBar>{request?.controls ?? props.variables}</VariableBar>
         )}
-        <div ref={bodyRef} className="altertable-app-body">
+        <Stack ref={bodyRef} className="altertable-app-body">
           {request ? (
             <DataSection
               result={request}
               notice="none"
               dimOnUpdate={false}
-              loading={props.loading}
+              loading={props.loading && <Stack>{props.loading}</Stack>}
               empty={request.empty}
               label={props.label}
             >
-              {(data, displayedInput) => props.children(data, displayedInput)}
+              {(data, displayedInput) => (
+                <Stack>{props.children(data, displayedInput)}</Stack>
+              )}
             </DataSection>
           ) : (
             props.children
           )}
-        </div>
+        </Stack>
         {request && (
           <DataViewToast
             view={request.view}

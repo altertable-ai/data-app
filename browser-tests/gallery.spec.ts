@@ -1,5 +1,43 @@
 import { expect, test } from '@playwright/test';
 
+test('app spaces fragment blocks during loading, after loading and without a request', async ({
+  page,
+}) => {
+  const body = page.locator('.altertable-app-body');
+  async function checkSpacing() {
+    const sectionGap = await page
+      .locator('.altertable-app-main')
+      .evaluate(element => parseFloat(getComputedStyle(element).rowGap));
+    const blocks = [
+      body.getByRole('region', { name: 'Production at a glance', exact: true }),
+      body.getByLabel('Summary metrics', { exact: true }),
+      body.getByLabel('Log introduction', { exact: true }),
+      body.getByLabel('Log charts', { exact: true }),
+    ];
+    const boxes = await Promise.all(blocks.map(block => block.boundingBox()));
+    for (let index = 1; index < boxes.length; index++) {
+      const previous = boxes[index - 1]!;
+      const current = boxes[index]!;
+      expect(current.y - previous.y - previous.height).toBeGreaterThanOrEqual(
+        sectionGap - 1
+      );
+    }
+  }
+  await page.goto('/gallery?spacing=bound');
+  await checkSpacing();
+  await page.getByRole('button', { name: 'Load sample', exact: true }).click();
+  await expect(
+    body.getByRole('paragraph').filter({ hasText: '20 sample events.' })
+  ).toBeVisible();
+  await checkSpacing();
+  await page.screenshot({
+    path: `/tmp/data-app-spacing-${test.info().project.name}.png`,
+    fullPage: true,
+  });
+  await page.goto('/gallery?spacing=static');
+  await checkSpacing();
+});
+
 test('gallery preserves control defaults, status, and keyboard selection', async ({
   page,
 }) => {

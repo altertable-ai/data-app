@@ -1,4 +1,5 @@
 import { GalleryCases } from '@/browser-tests/fixtures/gallery-cases';
+import { AppSpacing } from '@/browser-tests/fixtures/app-spacing';
 import {
   galleryCategories,
   gallerySections,
@@ -425,6 +426,7 @@ function Overview() {
         <Grid columns={2}>
           <VisualizationWidget
             title="Weekly activity"
+            insight="Activity is concentrated on Monday and Wednesday; Tuesday has no recorded events."
             reading={{ loading: false, value: bars }}
             evidence={evidence}
             isEmpty={items => items.length === 0}
@@ -597,4 +599,9 @@ function Gallery() {
 }
 
 injectDataAppStyles();
-mountDataApp({ config, component: Gallery });
+mountDataApp({
+  config,
+  component: new URLSearchParams(location.search).has('spacing')
+    ? () => <AppSpacing config={config} />
+    : Gallery,
+});

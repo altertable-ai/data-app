@@ -56,6 +56,9 @@
 }
 .altertable-data-widget-footer {
   padding: var(--at-space-md, 16px) var(--at-layout-gap, 24px);
+  color: var(--at-muted, #687078);
+  font-size: 12px;
+  line-height: 1.45;
 }
 .altertable-data-widget-body > .altertable-status-panel {
   margin: 0;
