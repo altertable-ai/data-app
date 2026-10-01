@@ -14,7 +14,7 @@ test('startup skeleton adapts to host width, theme, and reduced motion', async (
   await expect(status).toBeVisible();
   await expect(status).toHaveAttribute('aria-busy', 'true');
   await expect(page.getByRole('button')).toHaveCount(0);
-  const cards = page.locator('.altertable-data-app-skeleton-metric');
+  const cards = page.locator('.altertable-metric-widget');
   await expect(cards).toHaveCount(3);
   const wide = await cards.evaluateAll(elements =>
     elements.map(element => element.getBoundingClientRect().y)

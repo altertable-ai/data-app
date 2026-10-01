@@ -14,8 +14,9 @@ current document's head and returns its `<style>` element. Repeated calls return
 the existing element, including calls from independently bundled package copies.
 
 For a host rendering `DataAppSkeleton` or `Skeleton`, use `injectShellStyles()`
-from the same React entry. It installs only the skeleton animation and startup
-placeholder layout, without the full UI component stylesheet:
+from the same React entry. It installs skeleton styles and the shared `Grid`, `DataWidget`,
+`MetricWidget`, and `VisualizationWidget` surface styles used by the startup
+placeholder, without the full UI component stylesheet:
 
 ```ts
 import { injectShellStyles } from '@altertable/data-app/react';
@@ -23,10 +24,13 @@ import { injectShellStyles } from '@altertable/data-app/react';
 injectShellStyles();
 ```
 
-The complete stylesheet also includes these skeleton styles. Both injectors accept
+The complete stylesheet imports the same shell stylesheet, so these component
+styles have a single source. Both injectors accept
 the same document and nonce options and install once per document, each using its
 own style element. Host-owned header and footer content supplies its own styles.
-`ContentSkeleton` belongs to the full UI and uses `injectDataAppStyles()`.
+`ContentSkeleton` styles are also included. Widget features such as inspection,
+view tabs, and empty states use additional UI styles; use `injectDataAppStyles()`
+when enabling those features.
 
 For a CSP that restricts inline styles, pass a nonce permitted by `style-src`:
 

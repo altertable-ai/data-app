@@ -1,5 +1,9 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
+import { DataWidget } from '@/src/react/ui/DataWidget';
+import { Grid } from '@/src/react/ui/Grid';
+import { MetricWidget } from '@/src/react/ui/MetricWidget';
 import { Skeleton } from '@/src/react/ui/Skeleton';
+import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import { classNames } from '@/src/react/ui/classNames';
 
 export type DataAppSkeletonProps = Omit<
@@ -31,25 +35,28 @@ export function DataAppSkeleton({
           <div className="altertable-data-app-skeleton-header">{header}</div>
         )}
         <div className="altertable-data-app-skeleton-body" aria-hidden="true">
-          <div className="altertable-data-app-skeleton-metrics">
+          <Grid columns={3} gap="md">
             {[0, 1, 2].map(item => (
-              <div className="altertable-data-app-skeleton-metric" key={item}>
-                <Skeleton className="altertable-data-app-skeleton-metric-label" />
-                <Skeleton className="altertable-data-app-skeleton-metric-value" />
-                <Skeleton className="altertable-data-app-skeleton-metric-foot" />
-              </div>
+              <MetricWidget key={item} label="" loading />
             ))}
-          </div>
-          <div className="altertable-data-app-skeleton-widget">
-            <Skeleton className="altertable-data-app-skeleton-widget-title" />
-            <div className="altertable-data-app-skeleton-chart">
-              {chartHeights.map((height, index) => (
-                <Skeleton key={index} style={{ height: `${height}%` }} />
-              ))}
-            </div>
-          </div>
-          <div className="altertable-data-app-skeleton-widget">
-            <Skeleton className="altertable-data-app-skeleton-widget-title" />
+          </Grid>
+          <VisualizationWidget
+            title={
+              <Skeleton className="altertable-data-app-skeleton-widget-title" />
+            }
+            visual={
+              <div className="altertable-data-app-skeleton-chart">
+                {chartHeights.map((height, index) => (
+                  <Skeleton key={index} style={{ height: `${height}%` }} />
+                ))}
+              </div>
+            }
+          />
+          <DataWidget
+            title={
+              <Skeleton className="altertable-data-app-skeleton-widget-title" />
+            }
+          >
             <div className="altertable-data-app-skeleton-rows">
               {[0, 1, 2].map(row => (
                 <div className="altertable-data-app-skeleton-row" key={row}>
@@ -59,7 +66,7 @@ export function DataAppSkeleton({
                 </div>
               ))}
             </div>
-          </div>
+          </DataWidget>
         </div>
         {footer != null && footer !== false && (
           <div className="altertable-data-app-skeleton-footer">{footer}</div>

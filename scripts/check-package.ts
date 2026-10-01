@@ -332,8 +332,18 @@ export { DataAppSkeleton };
   const shellSource = await shell.outputs[0]!.text();
   if (!shellSource.includes('.altertable-data-app-skeleton'))
     throw new Error('Packed shell build omitted skeleton styles.');
+  for (const component of [
+    'grid',
+    'data-widget',
+    'metric-widget',
+    'visualization-widget-content',
+    'content-skeleton',
+  ]) {
+    if (!shellSource.includes(`.altertable-${component}`))
+      throw new Error(`Packed shell build omitted shared ${component} styles.`);
+  }
   if (
-    /\.altertable-(grid|data-widget|metric-widget|button|combobox)\b|data-altertable-styles/.test(
+    /\.altertable-(button|combobox|data-table|date-range-picker)\b|data-altertable-styles/.test(
       shellSource
     )
   )
