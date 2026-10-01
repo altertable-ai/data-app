@@ -27,6 +27,7 @@ readers can inspect the source of each claim.
 | ------------------------------------------ | ---------------------------------------------------------- |
 | Define queries, inputs, and result parsing | [Operations](contract.md)                                  |
 | Build views, filters, and request states   | [React](react.md)                                          |
+| Find formatters and presentation helpers   | [App helpers](react.md#reuse-app-helpers)                  |
 | Register source names                      | [Source identifiers](react.md#register-source-identifiers) |
 | Choose date and field filters              | [Filter variables](react.md#time-views-and-field-filters)  |
 | Handle refresh and stale results           | [Displayed results](react.md#preserve-displayed-results)   |

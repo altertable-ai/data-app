@@ -108,7 +108,25 @@ Bound `<VisualizationWidget>` and `<TableWidget>` components require `evidence` 
 
 `<MetricWidget>` and `<ComparisonVisual>` both accept the same `metric` and `reading`. The comparison is enabled by the displayed result's range. The definition supplies formatting and evidence; a reading cannot override those or provide a second value. `favorableDirection` is optional; changes are neutral until the author defines whether up or down is favorable.
 
+Use the [app helpers](#reuse-app-helpers) for metric formats and values in tables,
+charts, and custom views.
+
 `defineDataContent()` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `<DataSection>` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
+
+## Reuse app helpers
+
+Use the shared helpers for common app tasks. Follow the entry points below to
+find their exports, types, and usage constraints.
+
+| Task                                                                                        | Entry point                                                                                       |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Format numbers, counts, percentages, currency, date ranges, and plural labels (`pluralize`) | [Format helpers](https://github.com/altertable-ai/data-app/blob/main/src/core/format.ts)          |
+| Choose chart colors                                                                         | [Chart colors](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/chartColor.ts)    |
+| Search items and highlight matches                                                          | [Search helpers](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/searchItems.ts) |
+| Read and synchronize URL query state                                                        | [URL state helpers](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/search.ts)   |
+| Render timestamps, freshness, table shares, periods, and metric comparisons                 | [React exports](https://github.com/altertable-ai/data-app/blob/main/src/react/index.ts)           |
+| Configure appearance and theme preferences                                                  | [Appearance helpers](https://github.com/altertable-ai/data-app/blob/main/src/core/appearance.ts)  |
+| Build the app's scoped document title                                                       | [Configuration helpers](https://github.com/altertable-ai/data-app/blob/main/src/core/config.ts)   |
 
 ## Register source identifiers
 
