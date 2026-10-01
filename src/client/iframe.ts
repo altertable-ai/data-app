@@ -10,9 +10,11 @@ import {
 } from '@/src/core/bridge';
 import {
   defineDataQueryRoute,
+  sqlQueryRoute,
   MessageRoutingError,
   type RoutedMessage,
 } from '@/src/core/messages';
+import type { Lakehouse } from '@/src/core/contract';
 import { createMessageClient } from '@/src/client/messages';
 import { DataAppError } from '@/src/client/transport';
 
@@ -211,7 +213,7 @@ export function createIframeTransport({
   }
 
   const messages = createMessageClient(
-    { 'data:query': defineDataQueryRoute() },
+    { 'data:query': defineDataQueryRoute(), 'data:sql': sqlQueryRoute },
     requestMessage
   );
 
@@ -263,6 +265,21 @@ export function createIframeTransport({
   return {
     request: requestMessage,
     transport: queryData,
+    lakehouse: {
+      async queryAll(statement, { limit, signal }) {
+        try {
+          return await messages.request(
+            'data:sql',
+            { statement, limit },
+            { signal }
+          );
+        } catch (error) {
+          if (error instanceof MessageRoutingError)
+            throw new DataAppError(error.message, error.code, error.requestId);
+          throw error;
+        }
+      },
+    } satisfies Lakehouse,
     dispose,
     mode,
     snapshot() {

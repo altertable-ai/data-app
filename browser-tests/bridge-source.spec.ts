@@ -7,7 +7,10 @@ test('opaque bundle uses typed routes and virtual URL state without rerunning on
   page.on('pageerror', error => errors.push(error.message));
   const apiFrames: string[] = [];
   page.on('request', request => {
-    if (request.url().includes('/api/data/'))
+    if (
+      request.url().includes('/api/data/') ||
+      request.url().endsWith('/api/sql')
+    )
       apiFrames.push(request.frame() === page.mainFrame() ? 'host' : 'app');
   });
   await page.goto('/bundle-host?period=last-30#totals');
@@ -24,6 +27,10 @@ test('opaque bundle uses typed routes and virtual URL state without rerunning on
   await expect(app.locator('#result')).toContainText('"version":1');
   await app.getByRole('button', { name: 'Data query', exact: true }).click();
   await expect(app.locator('#result')).toContainText('"data":true');
+  await expect(app.locator('#result')).toContainText(
+    'SELECT 1 AS connection_check'
+  );
+  await expect(app.locator('#result')).toContainText('sql-query');
   await app.getByRole('button', { name: 'Denied query', exact: true }).click();
   await expect(app.locator('#result')).toHaveText(
     '{"publicError":true,"code":"forbidden"}'

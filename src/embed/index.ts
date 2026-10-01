@@ -13,3 +13,7 @@ export type {
 export type { DataAppSource } from '@/src/embed/source';
 export { startDataAppBootstrap } from '@/src/embed/bootstrap';
 export { createNavigationHandler } from '@/src/embed/navigation';
+
+export { sqlQueryRoute } from '@/src/core/messages';
+
+export { createSqlQueryHandler } from '@/src/embed/sql';

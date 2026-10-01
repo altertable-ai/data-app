@@ -105,6 +105,48 @@ including `data:query` and `navigation:update`. Hosts, apps, and bootstrap scrip
 must use matching names; the former unscoped and dot-separated names are no
 longer supported.
 
+## SQL query route
+
+Hosts serving browser-owned operations register `sqlQueryRoute` explicitly:
+
+```ts
+import {
+  createMessageRouter,
+  sqlQueryRoute,
+} from '@altertable/data-app/contract';
+
+const router = createMessageRouter(
+  { 'data:sql': sqlQueryRoute },
+  {
+    'data:sql': createSqlQueryHandler(async (query, { signal }) => {
+      return authorizedLakehouseForCurrentViewer(query, signal);
+    }),
+  }
+);
+// Supply router.dispatch as the shell's onMessage handler.
+```
+
+The host supplies `authorizedLakehouseForCurrentViewer`. Its backend must enforce
+viewer/dataset permissions, permitted query behavior, maximum rows, execution
+time, concurrency, and response size independently of browser policy. Route
+validation is not SQL authorization. `createSqlQueryHandler` calls authorization
+for each query, forwards cancellation, and preserves `DataSourceError` reasons
+as public `source_*` errors with request IDs. Authorization failures return
+`forbidden`; unknown query errors are hidden. Custom handlers can return deliberate
+public failures with `MessageRoutingError`.
+
+Requests carry `{ statement: string, limit: number }`; responses are
+`{ columns: { name: string, type?: string }[], rows: unknown[][], queryId?: string }`.
+The route rejects empty statements, unsafe or nonpositive limits, malformed
+results, and results exceeding the requested limit. The bridge's existing payload
+and pending-call limits apply, and cancellation reaches the handler's signal.
+Operation names and inputs stay in the app; query evidence is assembled there.
+
+`dataAppRoutes` retains named `data:query` and navigation routes for existing
+server-backed hosts. SQL hosts opt into `data:sql`; they need no named-operation
+handler unless they also serve HTTP-style apps. Update the host before switching
+an app to browser-owned operations. Older hosts reject `data:sql` as unknown.
+
 ## Migration
 
 `attachDataAppShell` and `DataAppShellOptions` have been removed. Use

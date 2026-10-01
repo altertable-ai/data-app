@@ -46,7 +46,7 @@ Bun.serve({
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,
   },
-  fetch(request) {
+  async fetch(request) {
     const path = new URL(request.url).pathname;
     if (path === '/') return new Response('Embedding test server');
     if (path === '/__test/bundle') return new Response(app);
@@ -66,6 +66,25 @@ Bun.serve({
           PARENT_ORIGINS: `http://127.0.0.1:${port}`,
         }
       );
+    if (path === '/api/sql') {
+      const query = (await request.json()) as {
+        statement: string;
+        limit: number;
+      };
+      if (
+        query.statement !== 'SELECT 1 AS connection_check' ||
+        query.limit !== 1
+      )
+        return Response.json(
+          { error: 'Unexpected SQL request' },
+          { status: 400 }
+        );
+      return Response.json({
+        columns: [{ name: 'connection_check' }],
+        rows: [[1]],
+        queryId: 'sql-query',
+      });
+    }
     if (path === '/api/data/forbidden')
       return Response.json(
         { error: { code: 'forbidden', message: 'Denied' } },

@@ -8,6 +8,7 @@ import {
   DataAppError,
   type DataTransport,
 } from '@/src/client/transport';
+import { createOperationTransport } from '@/src/client/operations';
 import { localFrameBridge } from '@/src/client/iframe';
 export {
   createHttpTransport,
@@ -21,7 +22,11 @@ export {
   type IframeTransport,
 } from '@/src/client/iframe';
 export { createMessageClient } from '@/src/client/messages';
-import type { DataOperations, DisclosedQuery } from '@/src/core/contract';
+import type {
+  DataOperations,
+  DisclosedQuery,
+  Lakehouse,
+} from '@/src/core/contract';
 
 export type InputOf<T> = T extends { input: (value: unknown) => infer Input }
   ? Input
@@ -54,19 +59,36 @@ export type DataClient<Operations extends DataOperations> = {
   >;
 };
 
-/** Browser client for named operations; it sends inputs, never SQL or lakehouse credentials. */
+/** Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. */
 export function createDataClient<Operations extends DataOperations>(
   options: {
+    operations?: Operations;
+    lakehouse?: Lakehouse;
     transport?: DataTransport;
     endpoint?: string;
     fetch?: typeof fetch;
   } = {}
 ): DataClient<Operations> {
+  if (
+    options.operations &&
+    (options.transport ||
+      options.endpoint !== undefined ||
+      options.fetch !== undefined)
+  )
+    throw new Error(
+      'Browser operations cannot be combined with an HTTP endpoint or operation transport.'
+    );
+  if (options.lakehouse && !options.operations)
+    throw new Error('A lakehouse requires browser operations.');
   const http = createHttpTransport(options);
+  const operationTransport = options.operations
+    ? createOperationTransport(options.operations, options.lakehouse)
+    : undefined;
 
   return {
     async query(name, input, { signal } = {}) {
       const transport =
+        operationTransport ??
         options.transport ??
         (options.endpoint !== undefined || options.fetch !== undefined
           ? http

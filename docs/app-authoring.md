@@ -7,12 +7,12 @@ calls, and reusable React UI.
 1. Inspect the source data, time coverage, and existing definitions before choosing
    the exploration. Build findings from observed results and distinguish
    association from cause.
-2. Define named, bounded [operations](contract.md) on the server. Put shared input
+2. Define named, bounded [operations](contract.md) in the execution runtime. Put shared input
    contracts in a browser-safe module and validate outputs before returning them.
-3. Use a [server handler](server.md) that authorizes each request, or the
+3. For HTTP apps, use a [server handler](server.md) that authorizes each request, or the
    [Bun adapter](server-bun.md) for local development.
 4. Create a typed [client](client.md) and compose [React views](react.md). Import
-   the operation registry with `import type` in browser code.
+   the operation registry with `import type` for HTTP apps, or as a value for bundle apps.
 5. Define glossary and query evidence, handle empty results, and preserve the
    displayed input while a request refreshes or fails. A measured zero and an
    unavailable value must remain distinct.
@@ -21,6 +21,10 @@ calls, and reusable React UI.
 
 Import through `@altertable/data-app/<entry>`. Installed package files are
 dependencies; customize the app's own source rather than editing `node_modules`.
-SQL, credentials, and viewer authorization belong on the server.
+For HTTP apps, SQL, credentials, and viewer authorization belong on the server.
+For bundle apps, define operations in the browser and pass them to
+`createDataClient({ operations })`; SQL travels through the authorized
+[SQL bridge](embed.md#sql-query-route). Credentials, viewer authorization, and
+enforced query limits remain backend-owned.
 
 For agent-assisted authoring, see the [starter AGENTS.md template](starter-agent-instructions.md).

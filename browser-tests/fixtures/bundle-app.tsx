@@ -1,4 +1,4 @@
-import type { connectionCheck } from '@altertable/data-app/contract';
+import { connectionCheck } from '@altertable/data-app/contract';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
@@ -11,9 +11,9 @@ import {
 import { textVariable, useAppVariables } from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 const bridge = getDataAppTransport()!;
-const data = createDataClient<{
-  connection: ReturnType<typeof connectionCheck>;
-}>();
+const data = createDataClient({
+  operations: { connection: connectionCheck() },
+});
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = { period: textVariable({ key: 'period', history: 'push' }) };
 

@@ -224,3 +224,81 @@ test('routing checks cancellation before and after handlers', async () => {
       .catch(error => error)
   ).toMatchObject({ name: 'AbortError' });
 });
+
+test('SQL route validates statements, safe row bounds, and result shape', async () => {
+  const { sqlQueryRoute } = await import('@/src/core/messages');
+  for (const value of [
+    null,
+    {},
+    { statement: '', limit: 1 },
+    { statement: 'SELECT 1', limit: 0 },
+    { statement: 'SELECT 1', limit: 1.5 },
+    { statement: 'SELECT 1', limit: Number.MAX_SAFE_INTEGER + 1 },
+  ])
+    expect(() => sqlQueryRoute.input(value)).toThrow();
+  const input = { statement: 'SELECT 1', limit: 1 };
+  expect(sqlQueryRoute.input({ ...input, credentials: 'discard' })).toEqual(
+    input
+  );
+  const result = { columns: [{ name: 'n' }], rows: [[1]], queryId: 'q' };
+  expect(sqlQueryRoute.output(result, input)).toEqual(result);
+  for (const value of [
+    null,
+    { ...result, rows: [[1], [2]] },
+    { ...result, rows: [['wrong', 'width']] },
+    { ...result, columns: [{}] },
+    { ...result, queryId: 1 },
+  ])
+    expect(() => sqlQueryRoute.output(value, input)).toThrow();
+});
+
+test('SQL host authorizes each request, preserves source errors, and hides private failures', async () => {
+  const { sqlQueryRoute } = await import('@/src/core/messages');
+  const { createSqlQueryHandler } = await import('@/src/embed/sql');
+  const { DataSourceError } = await import('@/src/core/contract');
+  let authorizations = 0;
+  const router = createMessageRouter(
+    { 'data:sql': sqlQueryRoute },
+    {
+      'data:sql': createSqlQueryHandler(async ({ statement }, { signal }) => {
+        authorizations++;
+        expect(signal.aborted).toBe(false);
+        if (statement === 'denied') throw new Error('private auth');
+        return {
+          async queryAll(_, options) {
+            expect(options.signal).toBe(signal);
+            if (statement === 'busy') throw new DataSourceError('rate_limited');
+            throw new Error('private query');
+          },
+        };
+      }),
+    }
+  );
+  const ctx = context();
+  for (const [statement, code] of [
+    ['denied', 'forbidden'],
+    ['busy', 'source_rate_limited'],
+    ['failure', 'query_failed'],
+  ]) {
+    const error = await router
+      .dispatch({ route: 'data:sql', payload: { statement, limit: 1 } }, ctx)
+      .catch(error => error);
+    expect(error).toBeInstanceOf(MessageRoutingError);
+    if (!(error instanceof MessageRoutingError))
+      throw new Error('Expected a public routing error.');
+    expect(error.code).toBe(code);
+    expect(error.requestId).toEqual(expect.any(String));
+    expect(error.message).not.toContain('private');
+  }
+  expect(authorizations).toBe(3);
+  const cancelled = new AbortController();
+  cancelled.abort();
+  const error = await router
+    .dispatch(
+      { route: 'data:sql', payload: { statement: 'busy', limit: 1 } },
+      { signal: cancelled.signal }
+    )
+    .catch(error => error);
+  expect(error).toMatchObject({ name: 'AbortError' });
+  expect(authorizations).toBe(3);
+});

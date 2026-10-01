@@ -1,20 +1,12 @@
 import {
+  executeDataOperation,
+  dataOperationFailure,
+} from '@/src/core/operation';
+import {
   DataSourceError,
   type DataOperations,
-  type DisclosedQuery,
   type Lakehouse,
 } from '@/src/core/contract';
-
-const sourceErrorMessages = {
-  unauthorized:
-    "Lakehouse access needs attention. Run this app with 'altertable app dev', or run 'altertable login' and retry.",
-  forbidden:
-    "This app cannot access its lakehouse data. Check the selected profile's permissions.",
-  rate_limited: 'The lakehouse is busy. Wait a moment and retry.',
-  query_rejected:
-    "A lakehouse query was rejected. Check the app's data operation.",
-  unavailable: 'The lakehouse is unavailable. Check the connection and retry.',
-};
 
 /** Authorization result for one viewer request. A hosted adapter must scope its lakehouse client. */
 export type RequestAccess = { lakehouse: Lakehouse; canDiscloseSql: boolean };
@@ -94,7 +86,7 @@ export function createDataHandler(
       return problem(504, 'timeout', 'The data request timed out.', requestId);
     try {
       const body = await readInput(request);
-      input = operation.input(JSON.parse(body));
+      input = JSON.parse(body);
     } catch (error) {
       if (error instanceof InputTooLargeError)
         return problem(
@@ -111,88 +103,15 @@ export function createDataHandler(
         requestId
       );
     }
-    const timeout = AbortSignal.timeout(operation.policy.maxDurationMs);
-    const signal = AbortSignal.any([request.signal, timeout]);
-    const queryIds: string[] = [];
-    const queries: DisclosedQuery[] = [];
-    const boundedLakehouse: Lakehouse = {
-      async queryAll(statement, options) {
-        if (!Number.isInteger(options.limit) || options.limit < 1)
-          throw new Error('Query needs a positive row limit.');
-        if (
-          operation.queryNames &&
-          !Object.values(operation.queryNames).includes(options.name ?? '')
-        )
-          throw new Error(
-            `Query name is not registered for operation ${name}.`
-          );
-        const query: DisclosedQuery = {
-          name: options.name ?? `Query ${queries.length + 1}`,
-          statement,
-        };
-        queries.push(query);
-        let result;
-        try {
-          result = await access.lakehouse.queryAll(statement, {
-            limit: Math.min(options.limit, operation.policy.maxQueryRows),
-            signal: AbortSignal.any([signal, options.signal]),
-          });
-        } catch (error) {
-          if (error instanceof DataSourceError) error.queryName = query.name;
-          throw error;
-        }
-        if (result.rows.length > operation.policy.maxQueryRows)
-          throw new Error('Result exceeds row limit.');
-        if (result.queryId) {
-          query.queryId = result.queryId;
-          queryIds.push(result.queryId);
-        }
-
-        return result;
-      },
-    };
-    let abort: (() => void) | undefined;
+    const signal = request.signal;
     try {
-      signal.throwIfAborted();
-      const cancelled = new Promise<never>((_, reject) => {
-        function rejectAborted() {
-          reject(new Error('Request aborted.'));
-        }
-        abort = rejectAborted;
-        signal.addEventListener('abort', rejectAborted, { once: true });
-        if (signal.aborted) rejectAborted();
-      });
-      const data = operation.output(
-        await Promise.race([
-          cancelled,
-          Promise.resolve().then(() => {
-            signal.throwIfAborted();
-
-            return operation.run(
-              { lakehouse: boundedLakehouse, signal },
-              input as never
-            );
-          }),
-        ])
-      );
-      const result = {
-        data,
+      const { serializedBody } = await executeDataOperation(operation, input, {
+        ...access,
+        signal,
         requestId,
-        queriedAt: new Date().toISOString(),
-        queryIds,
-        ...(operation.policy.exposeSql && access.canDiscloseSql
-          ? { queries }
-          : {}),
-      };
-      const body = JSON.stringify(result);
-      if (
-        new TextEncoder().encode(body).byteLength >
-        (operation.policy.maxResponseBytes ?? 1_000_000)
-      ) {
-        throw new Error('Response exceeds byte limit.');
-      }
-
-      return new Response(body, {
+        name,
+      });
+      return new Response(serializedBody, {
         headers: {
           'cache-control': 'no-store',
           'content-type': 'application/json',
@@ -203,25 +122,9 @@ export function createDataHandler(
       console.error(
         `Data operation ${name} failed (${requestId}): ${source ? `${source.reason}${source.status ? ` (${source.status})` : ''}${source.queryName ? ` in ${source.queryName}` : ''}` : error instanceof Error ? error.name : 'unknown'}`
       );
-      if (source) {
-        return problem(
-          source.reason === 'rate_limited' ? 429 : 502,
-          `source_${source.reason}`,
-          sourceErrorMessages[source.reason],
-          requestId
-        );
-      }
+      const failure = dataOperationFailure(error, signal.aborted);
 
-      return problem(
-        signal.aborted ? 504 : 502,
-        signal.aborted ? 'timeout' : 'query_failed',
-        signal.aborted
-          ? 'The data request timed out.'
-          : 'The data request failed.',
-        requestId
-      );
-    } finally {
-      if (abort) signal.removeEventListener('abort', abort);
+      return problem(failure.status, failure.code, failure.message, requestId);
     }
   }
 
