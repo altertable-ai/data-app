@@ -1,4 +1,4 @@
-import type { EmptyStateProps } from '@/src/react/ui/EmptyState';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 import type {
   AppVariableValues,
   DateRangeVariable,
@@ -47,7 +47,7 @@ export type DataViewDefinition<
   bindings?: ViewBindings<Variables, Input>;
   /** App-owned semantics: measured zero need not mean an empty result. */
   isEmpty: (data: Data) => boolean;
-  empty: Pick<EmptyStateProps, 'title' | 'description'>;
+  empty: EmptyContent;
 } & (
   | {
       date: ViewDate<Variables, Input>;

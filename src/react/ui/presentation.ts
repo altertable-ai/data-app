@@ -1,0 +1,18 @@
+import type { ReactNode } from 'react';
+import type { DataReading } from '@/src/core/reading';
+import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
+
+export type EmptyContent = { title: ReactNode; description?: ReactNode };
+export type SkeletonContent = {
+  variant: 'metric' | 'panel' | 'ranking';
+  rows?: number;
+};
+
+/** A bound widget must explain empty results and link the reading to its evidence. */
+export type BoundWidgetReading<Data> = {
+  reading: DataReading<Data>;
+  isEmpty: (data: Data) => boolean;
+  empty: EmptyContent;
+  evidence: WidgetEvidence;
+  skeleton?: SkeletonContent;
+};

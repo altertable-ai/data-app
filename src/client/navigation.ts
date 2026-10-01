@@ -1,5 +1,6 @@
+import type { AppLocation, HistoryMode } from '@/src/core/navigation';
 import { createAppLocation, type DataAppLocation } from '@/src/client/location';
-import { validLocation } from '@/src/core/bridge';
+import { validLocation } from '@/src/core/navigation';
 import {
   navigationUpdateRoute,
   type NavigationUpdate,
@@ -13,7 +14,7 @@ import {
 
 export type DataAppNavigation = DataAppLocation & {
   /** Publish URL changes made outside the adapter, including the document title. */
-  publish(mode?: 'push' | 'replace'): void;
+  publish(mode?: HistoryMode): void;
   dispose(): void;
 };
 
@@ -43,10 +44,7 @@ function attachNavigation(
     publish
   );
 
-  function publish(
-    location: { search: string; hash: string },
-    mode: 'push' | 'replace'
-  ) {
+  function publish(location: AppLocation, mode: HistoryMode) {
     const update = { ...location, mode, title: frame.document.title };
     if (send) send(update);
     else pendingUpdate = update;
@@ -65,9 +63,9 @@ function attachNavigation(
     }
 
     function receiveState(state: unknown) {
-      if (!state || typeof state !== 'object' || !validLocation(state)) return;
+      if (!validLocation(state)) return;
       pendingUpdate = undefined;
-      apply(state as { search: string; hash: string });
+      apply(state);
     }
 
     send = sendUpdate;

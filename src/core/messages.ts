@@ -1,5 +1,18 @@
-import type { TransportResponse } from '@/src/core/bridge';
-import type { DisclosedQuery, QueryResult } from '@/src/core/contract';
+import type {
+  TransportResponse,
+  QueryResult,
+  OperationContracts,
+  DataQueryInput,
+  DataQueryBody,
+  OutputOf,
+} from '@/src/core/operation-types';
+export type {
+  OperationContracts,
+  DataQueryInput,
+  DataQueryBody,
+} from '@/src/core/operation-types';
+import { validLocation, type NavigationUpdate } from '@/src/core/navigation';
+export type { NavigationUpdate } from '@/src/core/navigation';
 
 export type MessageContext = { signal: AbortSignal };
 export type RoutedMessage = { route: string; payload: unknown };
@@ -134,26 +147,6 @@ export function createMessageRouter<const Routes extends MessageRoutes>(
   return { dispatch };
 }
 
-export type OperationContracts = Record<
-  string,
-  {
-    input: (value: unknown) => unknown;
-    output: (value: unknown) => unknown;
-  }
->;
-export type DataQueryInput<Operations extends OperationContracts> = {
-  [Name in keyof Operations & string]: {
-    operation: Name;
-    input: ReturnType<Operations[Name]['input']>;
-  };
-}[keyof Operations & string];
-export type DataQueryBody<Output> = {
-  data: Output;
-  requestId: string;
-  queriedAt: string;
-  queryIds: string[];
-  queries?: DisclosedQuery[];
-};
 export type DataQueryRoute<Operations extends OperationContracts> =
   MessageRoute<DataQueryInput<Operations>, TransportResponse> & {
     operations: Operations | undefined;
@@ -161,10 +154,7 @@ export type DataQueryRoute<Operations extends OperationContracts> =
 export type MessageOutput<Route extends MessageRoutes[string], Input> =
   Route extends DataQueryRoute<infer Operations>
     ? Input extends { operation: infer Name extends keyof Operations }
-      ? {
-          status: number;
-          body: DataQueryBody<ReturnType<Operations[Name]['output']>>;
-        }
+      ? TransportResponse<DataQueryBody<OutputOf<Operations[Name]>>>
       : never
     : ReturnType<Route['output']>;
 
@@ -256,24 +246,13 @@ export function defineDataQueryRoute<
   };
 }
 
-export type NavigationUpdate = {
-  search: string;
-  hash: string;
-  mode: 'push' | 'replace';
-  title?: string;
-};
 export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): NavigationUpdate {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid navigation.');
     const input = value as NavigationUpdate;
     if (
-      typeof input.search !== 'string' ||
-      input.search.length > 16_384 ||
-      (input.search !== '' && !input.search.startsWith('?')) ||
-      typeof input.hash !== 'string' ||
-      input.hash.length > 4096 ||
-      (input.hash !== '' && !input.hash.startsWith('#')) ||
+      !validLocation(input) ||
       (input.mode !== 'push' && input.mode !== 'replace') ||
       (input.title !== undefined &&
         (typeof input.title !== 'string' || input.title.length > 512))

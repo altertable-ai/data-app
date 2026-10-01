@@ -10,7 +10,8 @@ import type {
 } from '@/src/core/dimension';
 import { invariant } from '@/src/core/invariant';
 
-export type HistoryMode = 'push' | 'replace';
+import type { HistoryMode } from '@/src/core/navigation';
+export type { HistoryMode } from '@/src/core/navigation';
 
 /** An app-owned value with one URL representation. Controls never parse or write routes. */
 export type AppVariable<

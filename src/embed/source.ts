@@ -1,11 +1,9 @@
-import type { DataAppPresentation } from '@/src/core/presentation';
 import { PARENT_PARAM } from '@/src/core/bridge';
-import type { MessageDispatcher } from '@/src/core/messages';
 import {
   attachDataAppConnection,
   type DataAppStatus,
   type DataAppHost,
-  type DataAppDiagnostic,
+  type DataAppHostOptions,
 } from '@/src/embed/host';
 
 export type DataAppSource =
@@ -15,13 +13,8 @@ export type DataAppSource =
       bootstrapUrl: string;
       javascript: string;
     };
-export type DataAppSourceOptions = {
-  iframe: HTMLIFrameElement;
+export type DataAppSourceOptions = DataAppHostOptions & {
   source: DataAppSource;
-  presentation?: DataAppPresentation;
-  onMessage: MessageDispatcher;
-  onStatusChange?: (status: DataAppStatus) => void;
-  onDiagnostic?: (event: DataAppDiagnostic) => void;
   startupTimeoutMs?: number;
 };
 

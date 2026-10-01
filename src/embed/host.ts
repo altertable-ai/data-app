@@ -29,14 +29,17 @@ export type DataAppHost = {
   setPresentation: (presentation?: DataAppPresentation) => void;
 };
 
-export type DataAppConnectionOptions = {
+export type DataAppHostOptions = {
   iframe: HTMLIFrameElement;
-  connection: DataAppConnection;
-  javascript?: string;
   presentation?: DataAppPresentation;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   onMessage: MessageDispatcher;
+};
+
+export type DataAppConnectionOptions = DataAppHostOptions & {
+  connection: DataAppConnection;
+  javascript?: string;
   window?: Window;
 };
 

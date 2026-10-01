@@ -1,12 +1,12 @@
 import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
-import { DataWidget, type DataWidgetProps } from '@/src/react/ui/DataWidget';
-import type { EmptyStateProps } from '@/src/react/ui/EmptyState';
-import type { DataReading } from '@/src/core/reading';
-import {
-  ContentSkeleton,
-  type ContentSkeletonProps,
-} from '@/src/react/ui/ContentSkeleton';
+import { DataWidget } from '@/src/react/ui/DataWidget';
+import type { WidgetStatus } from '@/src/react/ui/RequestHint';
+import type {
+  EmptyContent,
+  BoundWidgetReading,
+} from '@/src/react/ui/presentation';
+import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import { validateWidgetViews } from '@/src/react/ui/widget-views';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 
@@ -16,8 +16,8 @@ type VisualizationWidgetBaseProps = {
   insight?: ReactNode;
   action?: ReactNode;
   evidence?: WidgetEvidence;
-  status?: DataWidgetProps['status'];
-  empty?: Pick<EmptyStateProps, 'title' | 'description'>;
+  status?: WidgetStatus;
+  empty?: EmptyContent;
 } & Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
 type UnboundVisualizationWidgetProps = VisualizationWidgetBaseProps &
@@ -30,15 +30,11 @@ export type VisualizationWidgetView<Data> = {
   render: (data: Data) => ReactNode;
 };
 
-type BoundVisualizationWidgetBase<Data> = VisualizationWidgetBaseProps & {
-  evidence: WidgetEvidence;
-  reading: DataReading<Data>;
-  isEmpty: (data: Data) => boolean;
-  empty: Pick<EmptyStateProps, 'title' | 'description'>;
-  skeleton?: Pick<ContentSkeletonProps, 'variant' | 'rows'>;
-  visual?: never;
-  loading?: never;
-};
+type BoundVisualizationWidgetBase<Data> = VisualizationWidgetBaseProps &
+  BoundWidgetReading<Data> & {
+    visual?: never;
+    loading?: never;
+  };
 
 /** The widget owns alternate-view selection and shares it with inspection.
  * Custom chart interactions remain controlled by the caller, above both mounts. */

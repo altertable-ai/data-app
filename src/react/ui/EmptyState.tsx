@@ -1,9 +1,7 @@
-import type { ReactNode } from 'react';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 import { classNames } from '@/src/react/ui/classNames';
 
-export type EmptyStateProps = {
-  title: ReactNode;
-  description?: ReactNode;
+export type EmptyStateProps = EmptyContent & {
   variant?: 'visual' | 'table';
   className?: string;
 };

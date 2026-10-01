@@ -1,10 +1,11 @@
-import {
-  DataSourceError,
-  type DataOperations,
-  type DisclosedQuery,
-  type Lakehouse,
-  type OperationContext,
-} from '@/src/core/contract';
+import { DataSourceError } from '@/src/core/contract';
+import type {
+  DataOperations,
+  DisclosedQuery,
+  Lakehouse,
+  OperationContext,
+  DataQueryBody,
+} from '@/src/core/operation-types';
 
 type Operation = DataOperations[string];
 type OperationExecutionOptions = {
@@ -51,7 +52,7 @@ export async function executeDataOperation(
       lakehouse: execution.lakehouse,
       signal,
     });
-    const body = {
+    const body: DataQueryBody<unknown> = {
       data: operation.output(output),
       requestId,
       queriedAt: new Date().toISOString(),
