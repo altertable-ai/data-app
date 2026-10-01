@@ -146,7 +146,7 @@ const host = Object.assign(events, { location: { search: "", hash: "" } });
 const router = createMessageRouter({ "test:denied": defineMessageRoute({ input() { return null; }, output() { return null; } }) }, {
   "test:denied"() { throw new MessageRoutingError("forbidden", "Denied", "request"); }
 });
-const dispose = attachDataAppBridge({ iframe, window: host, connection: { type: "origin", origin: "https://app.example" }, onMessage: router.dispatch });
+const bridgeHost = attachDataAppBridge({ iframe, window: host, connection: { type: "origin", origin: "https://app.example" }, onMessage: router.dispatch });
 function receive(message) {
   events.dispatchEvent(Object.assign(new Event("message"), {
     source: target, origin: "https://app.example", data: { channel: "altertable:data-app", version: 1, documentId: "document", ...message }
@@ -160,7 +160,7 @@ try {
   const response = sent.at(-1);
   if (response.code !== "forbidden" || response.message !== "Denied" || response.requestId !== "request")
     throw new Error("Public routed errors lost identity across packed entries");
-} finally { dispose(); }
+} finally { bridgeHost.dispose(); }
 `
   );
   await writeFile(

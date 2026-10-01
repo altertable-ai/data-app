@@ -286,3 +286,9 @@ and phone interactions. Fixtures are excluded from the published package.
 Previous data and evidence are retained only when the input changes within the
 same operation. Switching to another operation shows its own cached response or
 an initial loading/error state; it never inherits another operation's result.
+
+When a trusted parent supplies [parent presentation](embed.md#parent-presentation),
+`DataApp` follows its resolved theme and suppresses local theme controls,
+including in presentations. On an embedded surface (`surface: 'embedded'`),
+only toolbar actions remain above the app body; the title, scope, description, and
+footer are omitted. Variables and request states remain available.

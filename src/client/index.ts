@@ -114,3 +114,5 @@ export {
   getDataAppNavigation,
   type DataAppNavigation,
 } from '@/src/client/navigation';
+
+export type { DataAppPresentation } from '@/src/core/presentation';

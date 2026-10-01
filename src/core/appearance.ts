@@ -5,8 +5,11 @@
  */
 import { invariant } from '@/src/core/invariant';
 
+export type Theme = 'light' | 'dark';
+export type ThemePreference = Theme | 'system';
+
 export type AppearanceSettings = {
-  mode: 'light' | 'dark' | 'system';
+  theme: ThemePreference;
   baseColor: 'neutral' | 'slate' | 'warm';
   accentColor: string;
   darkAccentColor?: string;
@@ -17,16 +20,14 @@ export type AppearanceSettings = {
   typography: { body: string; heading: string };
 };
 
-export type ThemeMode = AppearanceSettings['mode'];
-
 export type ThemeController = {
-  getMode: () => ThemeMode;
-  setMode: (mode: ThemeMode) => void;
+  getTheme: () => ThemePreference;
+  setTheme: (theme: ThemePreference) => void;
   subscribe: (listener: () => void) => () => void;
 };
 
 const defaults: AppearanceSettings = {
-  mode: 'light',
+  theme: 'light',
   baseColor: 'neutral',
   accentColor: '#405d47',
   darkAccentColor: '#a6c4ad',
@@ -79,7 +80,7 @@ export function parseAppearance(value: unknown): AppearanceSettings {
     record(value) &&
       Object.keys(value).every(key =>
         [
-          'mode',
+          'theme',
           'baseColor',
           'accentColor',
           'darkAccentColor',
@@ -94,8 +95,8 @@ export function parseAppearance(value: unknown): AppearanceSettings {
   );
   const typography = value.typography;
   const validFields =
-    (value.mode === undefined ||
-      oneOf(value.mode, ['light', 'dark', 'system'])) &&
+    (value.theme === undefined ||
+      oneOf(value.theme, ['light', 'dark', 'system'])) &&
     (value.baseColor === undefined ||
       oneOf(value.baseColor, ['neutral', 'slate', 'warm'])) &&
     (value.accentColor === undefined || color(value.accentColor)) &&
@@ -121,7 +122,7 @@ export function parseAppearance(value: unknown): AppearanceSettings {
   invariant(validFields, 'Invalid appearance settings.');
 
   return {
-    mode: (value.mode ?? defaults.mode) as AppearanceSettings['mode'],
+    theme: (value.theme ?? defaults.theme) as AppearanceSettings['theme'],
     baseColor: (value.baseColor ??
       defaults.baseColor) as AppearanceSettings['baseColor'],
     accentColor: (value.accentColor ?? defaults.accentColor) as string,
@@ -221,8 +222,8 @@ export function applyAppearance(value: unknown): () => void {
 
   function applyColors(): void {
     const dark =
-      settings.mode === 'dark' ||
-      (settings.mode === 'system' && preference.matches);
+      settings.theme === 'dark' ||
+      (settings.theme === 'system' && preference.matches);
     const [background, surfaceColor, subtle, text, muted, border] =
       palettes[settings.baseColor][dark ? 'dark' : 'light'];
     const accent = dark
@@ -257,7 +258,7 @@ export function applyAppearance(value: unknown): () => void {
       root.style.setProperty(name, token);
   }
   applyColors();
-  if (settings.mode === 'system')
+  if (settings.theme === 'system')
     preference.addEventListener('change', applyColors);
 
   return () => {
@@ -265,31 +266,29 @@ export function applyAppearance(value: unknown): () => void {
   };
 }
 
-/** Viewer color mode persists independently of app-authored brand tokens. */
-export function createThemeController(value: unknown): ThemeController {
-  const settings = parseAppearance(value);
-  const storageKey = 'altertable.data-app.theme-mode';
-  let mode = settings.mode;
+/** Persist a viewer theme preference. Applying appearance belongs to the UI owner. */
+export function createThemeController(
+  initialTheme: ThemePreference = 'light'
+): ThemeController {
+  const storageKey = 'altertable.data-app.theme';
+  let theme = initialTheme;
   try {
     const saved = window.localStorage.getItem(storageKey);
-    if (oneOf(saved, ['light', 'dark', 'system'])) mode = saved;
+    if (oneOf(saved, ['light', 'dark', 'system'])) theme = saved;
   } catch {
     // Storage can be unavailable in private browsing or embedded contexts.
   }
-  let stopAppearance = applyAppearance({ ...settings, mode });
   const listeners = new Set<() => void>();
 
   return {
-    getMode() {
-      return mode;
+    getTheme() {
+      return theme;
     },
-    setMode(nextMode) {
-      if (nextMode === mode) return;
-      stopAppearance();
-      mode = nextMode;
-      stopAppearance = applyAppearance({ ...settings, mode });
+    setTheme(nextTheme) {
+      if (nextTheme === theme) return;
+      theme = nextTheme;
       try {
-        window.localStorage.setItem(storageKey, mode);
+        window.localStorage.setItem(storageKey, theme);
       } catch {
         // The selection still applies to this page.
       }

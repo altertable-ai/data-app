@@ -10,12 +10,12 @@ import {
   attachDataAppBridge,
   type DataAppBridgeOptions,
 } from '@/src/embed/bridge';
-import type { DataAppConnection } from '@/src/embed/host';
+import type { DataAppConnection, DataAppHost } from '@/src/embed/host';
 import type { DataAppSource } from '@/src/embed/source';
 
 export type DataAppBridgeProps = Pick<
   DataAppBridgeOptions,
-  'onMessage' | 'onStatusChange' | 'onDiagnostic'
+  'onMessage' | 'onStatusChange' | 'onDiagnostic' | 'presentation'
 > &
   (
     | {
@@ -67,24 +67,25 @@ type ConnectionBridgeProps = Extract<
   { connection: DataAppConnection }
 >;
 
-function useHandlers({
-  onMessage,
-  onStatusChange,
-  onDiagnostic,
-}: DataAppBridgeProps) {
-  const handlers = useRef({ onMessage, onStatusChange, onDiagnostic });
+function useBridgeState(props: DataAppBridgeProps) {
+  const hostRef = useRef<DataAppHost | undefined>(undefined);
+  const handlers = useRef(props);
 
   useLayoutEffect(() => {
-    handlers.current = { onMessage, onStatusChange, onDiagnostic };
+    handlers.current = props;
   });
 
-  return handlers;
+  useEffect(() => {
+    hostRef.current?.setPresentation(props.presentation);
+  });
+
+  return { hostRef, handlers };
 }
 
 function SourceBridge(props: SourceBridgeProps) {
   const { source, title, iframeProps, startupTimeoutMs } = props;
   const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
-  const handlers = useHandlers(props);
+  const { hostRef, handlers } = useBridgeState(props);
   const type = source.type;
   const url = source.type === 'url' ? source.url : source.bootstrapUrl;
   const javascript = source.type === 'bundle' ? source.javascript : undefined;
@@ -92,7 +93,7 @@ function SourceBridge(props: SourceBridgeProps) {
   useEffect(() => {
     if (!iframe) return;
 
-    return attachDataAppBridge({
+    const bridge = attachDataAppBridge({
       iframe,
       source:
         type === 'url'
@@ -103,6 +104,7 @@ function SourceBridge(props: SourceBridgeProps) {
               javascript: javascript!,
             },
       startupTimeoutMs,
+      presentation: handlers.current.presentation,
       onMessage(request, context) {
         return handlers.current.onMessage(request, context);
       },
@@ -113,7 +115,13 @@ function SourceBridge(props: SourceBridgeProps) {
         return handlers.current.onDiagnostic?.(event);
       },
     });
-  }, [iframe, type, url, javascript, startupTimeoutMs, handlers]);
+    hostRef.current = bridge;
+
+    return () => {
+      hostRef.current = undefined;
+      bridge.dispose();
+    };
+  }, [iframe, type, url, javascript, startupTimeoutMs, hostRef, handlers]);
 
   return (
     <iframe {...iframeProps} loading="eager" ref={setIframe} title={title} />
@@ -122,7 +130,7 @@ function SourceBridge(props: SourceBridgeProps) {
 
 function ConnectionBridge(props: ConnectionBridgeProps) {
   const { iframe, connection } = props;
-  const handlers = useHandlers(props);
+  const { hostRef, handlers } = useBridgeState(props);
   const identity =
     connection.type === 'origin' ? connection.origin : connection.token;
   const type = connection.type;
@@ -131,13 +139,14 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
     const host = iframe?.ownerDocument.defaultView;
     if (!iframe || !host) return;
 
-    return attachDataAppBridge({
+    const bridge = attachDataAppBridge({
       iframe,
       connection:
         type === 'origin'
           ? { type, origin: identity }
           : { type, token: identity },
       window: host,
+      presentation: handlers.current.presentation,
       onMessage(request, context) {
         return handlers.current.onMessage(request, context);
       },
@@ -148,7 +157,13 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
         return handlers.current.onDiagnostic?.(event);
       },
     });
-  }, [iframe, type, identity, handlers]);
+    hostRef.current = bridge;
+
+    return () => {
+      hostRef.current = undefined;
+      bridge.dispose();
+    };
+  }, [iframe, type, identity, hostRef, handlers]);
 
   return null;
 }

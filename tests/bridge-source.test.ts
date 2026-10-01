@@ -46,7 +46,7 @@ test('source bridge rejects non-HTTP sources and URL apps sharing the host origi
 test('source bridge reports startup failure and cleanup cancels pending startup timers', async () => {
   const { frame, attributes } = iframe();
   const statuses: string[] = [];
-  const dispose = attachDataAppBridge({
+  const host = attachDataAppBridge({
     iframe: frame,
     source: {
       type: 'bundle',
@@ -65,7 +65,7 @@ test('source bridge reports startup failure and cleanup cancels pending startup 
   expect(frame.referrerPolicy).toBe('no-referrer');
   await Bun.sleep(30);
   expect(statuses).toEqual(['connecting', 'failed']);
-  dispose();
+  host.dispose();
   const next = attachDataAppBridge({
     iframe: frame,
     source: { type: 'url', url: 'https://app.example/report' },
@@ -80,7 +80,7 @@ test('source bridge reports startup failure and cleanup cancels pending startup 
   expect(new URL(frame.src).searchParams.get('__altertable_parent')).toBe(
     'https://host.example'
   );
-  next();
+  next.dispose();
   await Bun.sleep(30);
   expect(statuses).toEqual(['connecting', 'failed', 'connecting']);
 });
