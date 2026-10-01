@@ -167,6 +167,64 @@ test('URL bridge loads a separate-origin app and preserves navigation on reload'
   expect(errors).toEqual([]);
 });
 
+test('Embedded surfaces retain toolbar actions and live theme changes without losing navigation', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?period=last-30#totals');
+  const app = page.frameLocator('iframe');
+  await expect(
+    app.getByRole('button', { name: 'Custom toolbar action' })
+  ).toBeVisible();
+  await expect(
+    app.getByRole('heading', { name: 'Embedded report' })
+  ).toHaveCount(0);
+  await expect(
+    app.getByRole('button', { name: 'Custom footer action' })
+  ).toHaveCount(0);
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
+
+  await page.getByRole('button', { name: 'Change theme' }).click();
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+  await expect(app.locator('#location')).toHaveText('period=last-30#totals');
+  await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
+
+  await page.getByRole('button', { name: 'Change surface' }).click();
+  await expect(
+    app.getByRole('heading', { name: 'Embedded report' })
+  ).toBeVisible();
+  await expect(
+    app.getByRole('button', { name: 'Custom footer action' })
+  ).toBeVisible();
+  await expect(
+    app.getByRole('button', { name: 'Custom toolbar action' })
+  ).toBeVisible();
+  await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
+});
+
+test('parent presentation owns the theme until standalone system preferences are restored', async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/bundle-host');
+  const app = page.frameLocator('iframe');
+  await page.getByRole('button', { name: 'Change theme' }).click();
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+
+  await page
+    .getByRole('button', { name: 'Toggle parent presentation' })
+    .click();
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+
+  await page
+    .getByRole('button', { name: 'Toggle parent presentation' })
+    .click();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+  await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
+});
+
 test('hidden source iframe starts eagerly even when a caller supplies lazy loading', async ({
   page,
 }) => {

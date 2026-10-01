@@ -6,6 +6,7 @@
 export { attachDataAppBridge } from '@/src/embed/bridge';
 export type { DataAppBridgeOptions } from '@/src/embed/bridge';
 export type {
+  DataAppHost,
   DataAppConnection,
   DataAppStatus,
   DataAppDiagnostic,
@@ -17,3 +18,5 @@ export { createNavigationHandler } from '@/src/embed/navigation';
 export { sqlQueryRoute, type SqlQueryInput } from '@/src/core/messages';
 
 export { createSqlQueryHandler } from '@/src/embed/sql';
+
+export type { DataAppPresentation } from '@/src/core/presentation';

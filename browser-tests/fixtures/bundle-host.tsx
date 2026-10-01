@@ -1,3 +1,4 @@
+import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { DataAppBridge } from '@altertable/data-app/react/embed';
@@ -16,6 +17,9 @@ const response = await fetch('/__test/bundle');
 const javascript = await response.text();
 
 function Host() {
+  const [theme, setTheme] = useState<Theme>('dark');
+  const [parentPresentation, setParentPresentation] = useState(true);
+  const [embedded, setEmbedded] = useState(true);
   const [status, setStatus] = useState<DataAppStatus>('connecting');
   const [attempt, bumpAttempt] = useReducer(value => value + 1, 0);
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
@@ -60,6 +64,17 @@ function Host() {
 
   return (
     <>
+      <button
+        onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}
+      >
+        Change theme
+      </button>
+      <button onClick={() => setParentPresentation(value => !value)}>
+        Toggle parent presentation
+      </button>
+      <button onClick={() => setEmbedded(value => !value)}>
+        Change surface
+      </button>
       <button onClick={bumpVersion}>Change handler</button>
       <button onClick={bumpBundleVersion}>Change javascript</button>
       <button onClick={() => setBroken(false)}>Fix bundle</button>
@@ -74,6 +89,11 @@ function Host() {
         onStatusChange={setStatus}
         iframeProps={iframeProps}
         title="Sandbox app"
+        presentation={
+          parentPresentation
+            ? { surface: embedded ? 'embedded' : 'standalone', theme }
+            : undefined
+        }
         source={
           urlMode
             ? {

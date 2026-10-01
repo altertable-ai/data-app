@@ -1,8 +1,10 @@
+import type { DataAppPresentation } from '@/src/core/presentation';
 import { PARENT_PARAM } from '@/src/core/bridge';
 import type { MessageDispatcher } from '@/src/core/messages';
 import {
   attachDataAppConnection,
   type DataAppStatus,
+  type DataAppHost,
   type DataAppDiagnostic,
 } from '@/src/embed/host';
 
@@ -16,6 +18,7 @@ export type DataAppSource =
 export type DataAppSourceOptions = {
   iframe: HTMLIFrameElement;
   source: DataAppSource;
+  presentation?: DataAppPresentation;
   onMessage: MessageDispatcher;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
@@ -26,11 +29,12 @@ export type DataAppSourceOptions = {
 export function attachDataAppSource({
   iframe,
   source,
+  presentation,
   onMessage,
   onStatusChange,
   onDiagnostic,
   startupTimeoutMs = 30_000,
-}: DataAppSourceOptions) {
+}: DataAppSourceOptions): DataAppHost {
   const host = iframe.ownerDocument.defaultView;
   if (!host) throw new Error('The iframe requires a host window.');
   const url = new URL(
@@ -60,22 +64,23 @@ export function attachDataAppSource({
     if (value === 'connecting' || value === 'connected')
       timer = setTimeout(() => {
         failed = true;
-        disposeBridge();
+        bridge.dispose();
         onStatusChange?.('failed');
       }, startupTimeoutMs);
     if (value === 'failed') {
       failed = true;
-      disposeBridge();
+      bridge.dispose();
     }
     onStatusChange?.(value);
   }
 
-  const disposeBridge = attachDataAppConnection({
+  const bridge = attachDataAppConnection({
     iframe,
     connection: opaque
       ? { type: 'opaque', token: crypto.randomUUID() }
       : { type: 'origin', origin: url.origin },
     javascript: opaque ? source.javascript : undefined,
+    presentation,
     onMessage,
     onStatusChange: status,
     onDiagnostic,
@@ -89,9 +94,11 @@ export function attachDataAppSource({
   iframe.addEventListener('error', error);
   iframe.src = url.href;
 
-  return () => {
+  function dispose() {
     clearTimeout(timer);
     iframe.removeEventListener('error', error);
-    disposeBridge();
-  };
+    bridge.dispose();
+  }
+
+  return { dispose, setPresentation: bridge.setPresentation };
 }

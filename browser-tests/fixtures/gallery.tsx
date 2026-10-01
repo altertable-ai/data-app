@@ -42,7 +42,7 @@ const rows = Array.from({ length: 23 }, (_, index) => ({
 const config = {
   title: 'Runtime component gallery',
   scope: { organization: 'Fixtures', environment: 'development' },
-  appearance: { mode: 'light' },
+  appearance: { theme: 'light' },
 };
 const dataContext = {
   glossary: {},

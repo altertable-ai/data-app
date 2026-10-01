@@ -1,11 +1,6 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from 'react';
-import { createThemeController } from '@/src/core/appearance';
+import { useDataAppPresentation } from '@/src/react/ui/useDataAppPresentation';
+import { useEffect, useRef, type ComponentProps, type ReactNode } from 'react';
+import { useAppAppearance } from '@/src/react/ui/useAppAppearance';
 import type { DisclosedQuery } from '@/src/core/contract';
 import type { DataAppConfig } from '@/src/core/config';
 import { displayedSnapshot } from '@/src/core/data-view';
@@ -88,7 +83,12 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     footerActions,
     layoutProps,
   } = props;
-  const [theme] = useState(() => createThemeController(config.appearance));
+  const presentation = useDataAppPresentation();
+  const isEmbedded = presentation?.surface === 'embedded';
+  const themeController = useAppAppearance(
+    config.appearance,
+    presentation?.theme
+  );
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -109,6 +109,35 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
       environment={scopeLabels?.environment ?? config.scope.environment}
     />
   );
+  const toolbar = (
+    <AppToolbar
+      requestState={request?.view.kind}
+      refresh={refresh ?? request?.refresh}
+      story={
+        story && {
+          ...story,
+          title: config.title,
+          scope,
+          dataContext,
+          empty: aboutEmpty,
+          theme: themeController,
+        }
+      }
+      aboutData={
+        <AboutData
+          id="data"
+          shortcut
+          dataContext={dataContext}
+          empty={aboutEmpty}
+          queries={queries ?? request?.queries}
+          iconOnly
+          variant="elevated"
+        />
+      }
+    >
+      {toolbarActions}
+    </AppToolbar>
+  );
 
   return (
     <InspectionContext
@@ -120,42 +149,22 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     >
       <AppLayout
         {...layoutProps}
-        footerActions={footerActions ?? <ThemeToggle theme={theme} />}
+        footer={isEmbedded ? null : layoutProps?.footer}
+        footerActions={
+          footerActions ??
+          (themeController && <ThemeToggle theme={themeController} />)
+        }
       >
-        <AppHeader
-          scope={scope}
-          title={config.title}
-          description={description}
-          toolbar={
-            <AppToolbar
-              requestState={request?.view.kind}
-              refresh={refresh ?? request?.refresh}
-              story={
-                story && {
-                  ...story,
-                  title: config.title,
-                  scope,
-                  dataContext,
-                  empty: aboutEmpty,
-                  theme,
-                }
-              }
-              aboutData={
-                <AboutData
-                  id="data"
-                  shortcut
-                  dataContext={dataContext}
-                  empty={aboutEmpty}
-                  queries={queries ?? request?.queries}
-                  iconOnly
-                  variant="elevated"
-                />
-              }
-            >
-              {toolbarActions}
-            </AppToolbar>
-          }
-        />
+        {isEmbedded ? (
+          toolbar
+        ) : (
+          <AppHeader
+            scope={scope}
+            title={config.title}
+            description={description}
+            toolbar={toolbar}
+          />
+        )}
         {(request?.controls ?? props.variables) && (
           <VariableBar>{request?.controls ?? props.variables}</VariableBar>
         )}

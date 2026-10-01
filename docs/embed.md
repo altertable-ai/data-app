@@ -12,7 +12,7 @@ message delivery. The host supplies an iframe and a validated message dispatcher
 ```ts
 import { attachDataAppBridge } from '@altertable/data-app/embed';
 
-const dispose = attachDataAppBridge({
+const host = attachDataAppBridge({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
   onMessage: router.dispatch,
@@ -20,7 +20,7 @@ const dispose = attachDataAppBridge({
 ```
 
 The host defines `iframe` and `router`; see [message contracts](contract.md#message-routes).
-Dispose before replacing the source or retrying. A URL source requires HTTP(S)
+Call `host.dispose()` before replacing the source or retrying. A URL source requires HTTP(S)
 and a different origin from its host. The source bridge adds `__altertable_parent` to the
 app URL. A hosted app must explicitly install a transport to its configured,
 trusted parent origin using the [client API](client.md#iframe-transport).
@@ -73,7 +73,7 @@ app bundle; non-React apps use `createDataAppNavigation` from `/client`.
 
 `attachDataAppBridge` also supports connection mode for a host-owned iframe. Supply
 `connection: { type: 'origin', origin }` or `{ type: 'opaque', token }`, and an
-`onMessage` dispatcher. Both modes use the same transport. It returns cleanup and owns source/origin checks, request
+`onMessage` dispatcher. Both modes use the same transport. It returns `{ dispose, setPresentation }` and owns source/origin checks, request
 correlation, cancellation, bounded pending requests, and reconnection. Use source mode for bundle loading and token rotation. The opaque destination requires
 wildcard delivery, but incoming messages still require the exact iframe window,
 null origin, token, document, and session to match.
@@ -148,6 +148,42 @@ Operation names and inputs stay in the app; query evidence is assembled there.
 server-backed hosts. SQL hosts opt into `data:sql`; they need no named-operation
 handler unless they also serve HTTP-style apps. Update the host before switching
 an app to browser-owned operations. Older hosts reject `data:sql` as unknown.
+
+## Parent presentation
+
+The parent declares where the iframe is mounted and owns its resolved theme:
+
+```ts
+const host = attachDataAppBridge({
+  iframe,
+  source: { type: 'url', url: 'https://apps.example.com/report' },
+  presentation: { surface: 'embedded', theme: 'dark' },
+  onMessage: router.dispatch,
+});
+
+// Update presentation without replacing the iframe or its bridge session.
+host.setPresentation({ surface: 'embedded', theme: 'light' });
+```
+
+Both source and connection modes support the `presentation` option and
+`host.setPresentation(presentation)` method. `DataAppPresentation` is exported from
+`/embed` and `/client`. Use `surface: 'embedded'` when the parent provides page chrome, as in the
+Altertable frontend, and `'standalone'` when the app provides its own header and
+footer. `theme` must be resolved to `'light'` or
+`'dark'`; the parent decides how its system preference is resolved.
+
+Presentation travels over `postMessage` in the authenticated `bridge:initialize` and
+`state:update` messages, alongside `search` and `hash`. Framework-neutral apps
+can narrow the unknown state returned by `bridge.snapshot()` to read its
+`presentation` field, and subscribe through `bridge.subscribe`. React `DataApp` consumes it automatically.
+An embedded surface renders toolbar actions without the page header or footer.
+Both surfaces follow the parent's theme, including presentation mode, without
+changing saved viewer preferences. Omitting presentation preserves standalone behavior;
+`host.setPresentation(undefined)` restores it.
+
+The host attachment is an explicit `{ dispose, setPresentation }` object. Replace
+former cleanup calls (`dispose()`) with `host.dispose()`. React hosts manage this
+lifecycle automatically.
 
 ## Migration
 

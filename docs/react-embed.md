@@ -106,3 +106,12 @@ from `@altertable/data-app/react` in the consuming shell. Import
 `@altertable/data-app/react/styles.css` once in that host's browser entry. See
 [React](react.md#loading-an-embedded-app) for usage. The bridge does not render
 loading UI itself.
+
+## Parent-owned presentation
+
+Pass `presentation={{ surface: 'embedded', theme: resolvedTheme }}`
+to `DataAppBridge` in either source or connection mode. Use `'standalone'` when the app should render its own page chrome.
+Prop updates publish trusted state without reloading the iframe or reconnecting
+the session. Resolve system preference in the parent to `'light'` or `'dark'`.
+Inside an embedded surface, `DataApp` retains toolbar actions and hides its header
+and footer. See [parent presentation](embed.md#parent-presentation).

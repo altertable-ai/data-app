@@ -166,3 +166,5 @@ export {
   type IframeTransport,
 } from '@/src/client/iframe';
 export { createMessageClient } from '@/src/client/messages';
+
+export type { DataAppPresentation } from '@/src/core/presentation';

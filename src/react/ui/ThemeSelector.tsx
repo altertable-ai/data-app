@@ -13,7 +13,7 @@ import { classNames } from '@/src/react/ui/classNames';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import '@/src/react/ui/ThemeSelector.css';
 
-const modes = [
+const themes = [
   { value: 'light', label: 'Light', icon: 'lightTheme' },
   { value: 'dark', label: 'Dark', icon: 'darkTheme' },
 ] as const;
@@ -39,13 +39,13 @@ function useResolvedTheme(theme: ThemeController) {
   );
 
   const snapshot = useCallback(() => {
-    const mode = theme.getMode();
+    const preference = theme.getTheme();
 
-    return mode === 'system'
+    return preference === 'system'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
         ? 'dark'
         : 'light'
-      : mode;
+      : preference;
   }, [theme]);
 
   return useSyncExternalStore(subscribe, snapshot, () => 'light');
@@ -67,7 +67,7 @@ export function ThemeSelector({
       className={classNames('altertable-theme-selector', className)}
     >
       <legend className="altertable-theme-legend">Color theme</legend>
-      {modes.map(({ value, label, icon }) => (
+      {themes.map(({ value, label, icon }) => (
         <Tooltip key={value} content={`${label} theme`}>
           <label>
             <input
@@ -76,7 +76,7 @@ export function ThemeSelector({
               value={value}
               checked={selected === value}
               aria-label={`${label} theme`}
-              onChange={() => theme.setMode(value)}
+              onChange={() => theme.setTheme(value)}
             />
             <AppIcon name={icon} size={16} />
           </label>
@@ -104,7 +104,7 @@ export function ThemeToggle({
       variant="ghost"
       label={`Switch to ${next} theme`}
       portalRoot={portalRoot}
-      onClick={() => theme.setMode(next)}
+      onClick={() => theme.setTheme(next)}
     />
   );
 }

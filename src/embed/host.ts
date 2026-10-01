@@ -1,3 +1,4 @@
+import type { DataAppPresentation } from '@/src/core/presentation';
 import {
   BRIDGE,
   MAX_PENDING,
@@ -23,10 +24,16 @@ export type DataAppStatus =
   | 'disconnected';
 export type DataAppDiagnostic = { direction: 'send' | 'receive'; type: string };
 
+export type DataAppHost = {
+  dispose: () => void;
+  setPresentation: (presentation?: DataAppPresentation) => void;
+};
+
 export type DataAppConnectionOptions = {
   iframe: HTMLIFrameElement;
   connection: DataAppConnection;
   javascript?: string;
+  presentation?: DataAppPresentation;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   onMessage: MessageDispatcher;
@@ -38,11 +45,12 @@ export function attachDataAppConnection({
   iframe,
   connection,
   javascript,
+  presentation,
   onStatusChange,
   onDiagnostic,
   onMessage,
   window: host = window,
-}: DataAppConnectionOptions) {
+}: DataAppConnectionOptions): DataAppHost {
   const frameOrigin = connection.type === 'origin' ? connection.origin : 'null';
   if (
     connection.type === 'origin' &&
@@ -53,9 +61,30 @@ export function attachDataAppConnection({
     throw new Error('Invalid sandbox token.');
   let token = connection.type === 'opaque' ? connection.token : undefined;
   const targetOrigin = connection.type === 'opaque' ? '*' : frameOrigin;
+  let currentPresentation: DataAppPresentation | undefined;
+  let disposed = false;
   let documentId: string | undefined;
   let sessionId: string | undefined;
   const pending = new Map<string, AbortController>();
+
+  function hostState() {
+    return {
+      search: host.location.search,
+      hash: host.location.hash,
+      ...(currentPresentation ? { presentation: currentPresentation } : {}),
+    };
+  }
+
+  function setPresentation(value: DataAppPresentation | undefined) {
+    if (disposed) return;
+    if (
+      value?.surface === currentPresentation?.surface &&
+      value?.theme === currentPresentation?.theme
+    )
+      return;
+    currentPresentation = value && { ...value };
+    if (sessionId) publishState();
+  }
 
   function cancelAll() {
     for (const controller of pending.values()) controller.abort();
@@ -165,7 +194,7 @@ export function attachDataAppConnection({
       onStatusChange?.('connected');
       send({
         type: 'bridge:initialize',
-        state: { search: host.location.search, hash: host.location.hash },
+        state: hostState(),
       });
       if (javascript !== undefined) send({ type: 'script:load', javascript });
 
@@ -191,10 +220,10 @@ export function attachDataAppConnection({
     }
   }
 
-  function navigate() {
+  function publishState() {
     send({
       type: 'state:update',
-      state: { search: host.location.search, hash: host.location.hash },
+      state: hostState(),
     });
   }
 
@@ -208,20 +237,22 @@ export function attachDataAppConnection({
   }
 
   function dispose() {
+    disposed = true;
     cancelAll();
     iframe.removeEventListener('load', load);
     host.removeEventListener('message', receive);
-    host.removeEventListener('popstate', navigate);
+    host.removeEventListener('popstate', publishState);
     host.removeEventListener('pagehide', cancelAll);
   }
 
+  setPresentation(presentation);
   iframe.addEventListener('load', load);
   host.addEventListener('message', receive);
-  host.addEventListener('popstate', navigate);
+  host.addEventListener('popstate', publishState);
   host.addEventListener('pagehide', cancelAll);
   // Reconnect an already-loaded iframe when its host bridge mounts again.
   onStatusChange?.('connecting');
   send({ type: 'bridge:connect', documentId: 'host' });
 
-  return dispose;
+  return { dispose, setPresentation };
 }

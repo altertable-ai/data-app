@@ -213,7 +213,7 @@ test('bridge rejects foreign sources, invalid input, duplicate IDs and stale ses
   const host = Object.assign(events, {
     location: { search: '', hash: '' },
   }) as unknown as Window;
-  const dispose = attachDataAppBridge({
+  const connection = attachDataAppBridge({
     iframe: Object.assign(new EventTarget(), {
       contentWindow: target,
     }) as unknown as HTMLIFrameElement,
@@ -380,7 +380,7 @@ test('bridge rejects foreign sources, invalid input, duplicate IDs and stale ses
       )
     ).toBe(false);
   } finally {
-    dispose();
+    connection.dispose();
   }
 });
 
@@ -402,7 +402,7 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
   let signal: AbortSignal | undefined;
   let finish: ((result: unknown) => void) | undefined;
   const statuses: string[] = [];
-  const dispose = attachDataAppBridge({
+  const connection = attachDataAppBridge({
     iframe,
     connection: { type: 'opaque', token: 'initial-token' },
     window: host,
@@ -470,7 +470,7 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent.some(message => message.type === 'bridge:result')).toBe(false);
     expect(statuses).toContain('connected');
   } finally {
-    dispose();
+    connection.dispose();
   }
 });
 
@@ -633,6 +633,44 @@ test('browser-owned operations send SQL and bounded limits over the authenticate
       id: request.id,
     });
   } finally {
+    bridge.dispose();
+  }
+});
+
+test('presentation context follows only authenticated current-session state', () => {
+  const { bridge, receive, parent } = harness();
+  const dark = {
+    search: '?period=last-30',
+    hash: '#totals',
+    presentation: { surface: 'embedded', theme: 'dark' },
+  };
+  const light = {
+    ...dark,
+    presentation: { surface: 'embedded', theme: 'light' },
+  };
+  const states: unknown[] = [];
+  const unsubscribe = bridge.subscribe(state => states.push(state));
+  try {
+    receive({ type: 'state:update', state: light });
+    expect(bridge.snapshot()).toBeUndefined();
+    receive({ type: 'bridge:initialize', state: dark });
+    expect(bridge.snapshot()).toEqual(dark);
+    receive(
+      { type: 'state:update', state: light },
+      'http://evil.example',
+      parent
+    );
+    receive({ type: 'state:update', state: light }, 'http://localhost:1', {
+      postMessage() {},
+    });
+    receive({ type: 'state:update', state: light, sessionId: 'stale' });
+    receive({ type: 'state:update', state: light, documentId: 'stale' });
+    expect(states).toEqual([dark]);
+    receive({ type: 'state:update', state: light });
+    expect(states).toEqual([dark, light]);
+    expect(bridge.snapshot()).toEqual(light);
+  } finally {
+    unsubscribe();
     bridge.dispose();
   }
 });

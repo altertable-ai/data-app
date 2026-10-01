@@ -4,7 +4,7 @@ import { DataAppSkeleton } from '@altertable/data-app/react';
 import { applyAppearance } from '@altertable/data-app/appearance';
 
 const params = new URLSearchParams(location.search);
-applyAppearance({ mode: params.has('dark') ? 'dark' : 'light' });
+applyAppearance({ theme: params.has('dark') ? 'dark' : 'light' });
 createRoot(document.getElementById('root')!).render(
   <div
     style={{

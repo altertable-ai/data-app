@@ -291,3 +291,9 @@ Operation and facet caches are scoped to the `DataClient` instance. Hooks create
 from the same client share queries; separate clients do not share results, stale
 data, or cancellation even under one provider. Keep client instances stable
 across renders to preserve their cache.
+
+When a trusted parent supplies [parent presentation](embed.md#parent-presentation),
+`DataApp` follows its resolved theme and suppresses local theme controls,
+including in presentations. On an embedded surface (`surface: 'embedded'`),
+only toolbar actions remain above the app body; the title, scope, description, and
+footer are omitted. Variables and request states remain available.
