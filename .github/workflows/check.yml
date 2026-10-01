@@ -53,6 +53,8 @@ jobs:
         run: bun run test
       - name: Verify packed consumer
         run: bun run test:package
+      - name: Verify starter integration
+        run: bun run test:starter
       - name: Install browser
         run: bash scripts/install-test-browser.sh
       - name: Test embedding in Chromium
