@@ -13,7 +13,10 @@ const styles = await Bun.build({
   entrypoints: ['src/react/styles.css'],
   target: 'browser',
 });
-if (!styles.success) throw new Error('Could not build React styles.');
+if (!styles.success) {
+  for (const log of styles.logs) console.error(log);
+  throw new Error('Could not build React styles.');
+}
 const stylesheet = styles.outputs.find(output => output.path.endsWith('.css'));
 if (!stylesheet) throw new Error('React stylesheet is missing.');
 
