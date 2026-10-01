@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { attachDataAppBridge } from '@/src/embed/bridge';
+import { attachDataAppBridge } from '@altertable/data-app/embed';
 
 function iframe() {
   const host = Object.assign(new EventTarget(), {

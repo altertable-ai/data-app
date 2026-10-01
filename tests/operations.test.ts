@@ -1,12 +1,12 @@
 import { expect, test } from 'bun:test';
-import { createDataClient, DataAppError } from '@/src/client/index';
+import { createDataClient, DataAppError } from '@altertable/data-app/client';
 import {
   defineOperation,
   parseCount,
   DataSourceError,
   type Lakehouse,
-} from '@/src/core/contract';
-import { createDataHandler } from '@/src/server/handler';
+} from '@altertable/data-app/contract';
+import { createDataHandler } from '@altertable/data-app/server';
 
 function operation() {
   return defineOperation({
@@ -47,16 +47,17 @@ test('browser and HTTP operations share parsing, bounds, and query evidence', as
     lakehouse: lakehouse(),
     canDiscloseSql: true,
   }));
-  const response = await handler(
-    new Request('http://localhost/api/data/count', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: '3',
-    })
-  );
-  expect(response.status).toBe(200);
-  expect(await response.json()).toMatchObject({
+  const http = createDataClient<typeof operations>({
+    endpoint: 'http://localhost/api/data',
+    fetch: Object.assign(
+      async (url: RequestInfo | URL, options?: RequestInit) =>
+        handler(new Request(url, options)),
+      { preconnect() {} }
+    ),
+  });
+  expect(await http.query('count', 3)).toMatchObject({
     data: browser.data,
+    input: browser.input,
     queryIds: browser.queryIds,
     queries: browser.queries,
   });
@@ -88,18 +89,35 @@ test('browser operations reject malformed inputs, unknown operations, and privat
     code: 'query_failed',
     message: 'The data request failed.',
   });
-  const sourceError = createDataClient({
-    operations: { count: operation() },
-    lakehouse: {
-      async queryAll() {
-        throw new DataSourceError('rate_limited');
-      },
+});
+
+test('browser and HTTP execution preserve public source failures across package entries', async () => {
+  const operations = { count: operation() };
+  const source: Lakehouse = {
+    async queryAll() {
+      throw new DataSourceError('rate_limited');
     },
-  });
+  };
+  const sourceError = createDataClient({ operations, lakehouse: source });
   expect(
     await sourceError.query('count', 3).catch(error => error)
   ).toMatchObject({
     code: 'source_rate_limited',
+  });
+  const handler = createDataHandler(operations, async () => ({
+    lakehouse: source,
+    canDiscloseSql: false,
+  }));
+  const response = await handler(
+    new Request('http://localhost/api/data/count', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '3',
+    })
+  );
+  expect(response.status).toBe(429);
+  expect(await response.json()).toMatchObject({
+    error: { code: 'source_rate_limited' },
   });
 });
 

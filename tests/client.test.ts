@@ -4,9 +4,9 @@ import {
   createIframeTransport,
   installDataAppTransport,
   getDataAppTransport,
-} from '@/src/client/index';
+} from '@altertable/data-app/client';
 import { BRIDGE, type BridgeMessage } from '@/src/core/bridge';
-import type { connectionCheck } from '@/src/core/contract';
+import type { connectionCheck } from '@altertable/data-app/contract';
 
 test('data client discovers the iframe while explicit transport and HTTP options retain priority', async () => {
   const global = globalThis as unknown as { window?: Window };
@@ -257,7 +257,8 @@ test('pending verification cannot overwrite a transport installed by another own
 });
 
 test('HTTP and iframe delivery reject the same malformed success envelopes', async () => {
-  const { defineDataQueryRoute } = await import('@/src/core/messages');
+  const { defineDataQueryRoute } =
+    await import('@altertable/data-app/contract');
   const valid = {
     data: true,
     requestId: 'request',

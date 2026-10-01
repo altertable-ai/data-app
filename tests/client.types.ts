@@ -2,8 +2,8 @@ import {
   createDataClient,
   type DataClientOptions,
   type DataTransport,
-} from '@/src/client/index';
-import { connectionCheck, type Lakehouse } from '@/src/core/contract';
+} from '@altertable/data-app/client';
+import { connectionCheck, type Lakehouse } from '@altertable/data-app/contract';
 
 // Compile-only assertions: invalid configurations must never run.
 async function verifyClientOptions(

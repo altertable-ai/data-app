@@ -1,21 +1,23 @@
 import { expect, test } from 'bun:test';
-import { defineOperation, parseCount } from '@/src/core/contract';
-import { createDataHandler } from '@/src/server/index';
-import * as runtime from '@/src/server/index';
-import * as contract from '@/src/core/contract';
-import * as local from '@/src/server/local';
-import * as appearance from '@/src/core/appearance';
+import {
+  defineOperation,
+  defineQueryNames,
+  parseCount,
+} from '@altertable/data-app/contract';
+import { createDataHandler } from '@altertable/data-app/server';
+import { localLakehouse } from '@altertable/data-app/server/bun';
+import { parseAppearance } from '@altertable/data-app/appearance';
 test('runtime validates input, bounds rows, and hides query failures', async () => {
   expect(
-    appearance.parseAppearance({ density: 'compact', cornerRadius: 'small' })
+    parseAppearance({ density: 'compact', cornerRadius: 'small' })
   ).toMatchObject({
     density: 'compact',
     cornerRadius: 'small',
   });
-  expect(() =>
-    appearance.parseAppearance({ cornerRadius: 'roundish' })
-  ).toThrow('Invalid appearance');
-  const source = local.localLakehouse(
+  expect(() => parseAppearance({ cornerRadius: 'roundish' })).toThrow(
+    'Invalid appearance'
+  );
+  const source = localLakehouse(
     {
       ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
       ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
@@ -36,7 +38,7 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
   } catch (error) {
     expect(error).toMatchObject({ reason: 'unauthorized', status: 401 });
   }
-  const proxied = local.localLakehouse(
+  const proxied = localLakehouse(
     {
       ALTERTABLE_DATA_PROXY_URL: 'http://127.0.0.1:1234',
       ALTERTABLE_DATA_PROXY_TOKEN: 'run-token',
@@ -61,9 +63,9 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
       signal: new AbortController().signal,
     })
   ).toMatchObject({ rows: [[1]], queryId: 'q1' });
-  const operation = contract.defineOperation({
+  const operation = defineOperation({
     checks: [1],
-    queryNames: contract.defineQueryNames({ totals: 'totals' }),
+    queryNames: defineQueryNames({ totals: 'totals' }),
     input(value: unknown) {
       if (value !== 1) throw new Error('Bad input');
 
@@ -95,7 +97,7 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
     },
   });
   let requestedLimit = 0;
-  const handle = runtime.createDataHandler({ totals: operation }, async () => ({
+  const handle = createDataHandler({ totals: operation }, async () => ({
     canDiscloseSql: true,
     lakehouse: {
       async queryAll(_statement: string, options: { limit: number }) {
@@ -124,7 +126,7 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
     queries: [{ name: 'totals', statement: 'SELECT 1', queryId: 'query-1' }],
   });
   expect(requestedLimit).toBe(1);
-  const unregistered = runtime.createDataHandler(
+  const unregistered = createDataHandler(
     {
       totals: {
         ...operation,
@@ -205,17 +207,14 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
       )
     ).status
   ).toBe(200);
-  const restricted = runtime.createDataHandler(
-    { totals: operation },
-    async () => ({
-      canDiscloseSql: false,
-      lakehouse: {
-        async queryAll() {
-          return { columns: [], rows: [[1]] };
-        },
+  const restricted = createDataHandler({ totals: operation }, async () => ({
+    canDiscloseSql: false,
+    lakehouse: {
+      async queryAll() {
+        return { columns: [], rows: [[1]] };
       },
-    })
-  );
+    },
+  }));
   expect(await (await restricted(request(1))).json()).not.toHaveProperty(
     'queries'
   );
@@ -223,29 +222,23 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
   expect(
     (await handle(new Request('http://localhost/api/data/other'))).status
   ).toBe(404);
-  const failing = runtime.createDataHandler(
-    { totals: operation },
-    async () => ({
-      canDiscloseSql: false,
-      lakehouse: {
-        async queryAll() {
-          throw new Error('private upstream detail');
-        },
+  const failing = createDataHandler({ totals: operation }, async () => ({
+    canDiscloseSql: false,
+    lakehouse: {
+      async queryAll() {
+        throw new Error('private upstream detail');
       },
-    })
-  );
+    },
+  }));
   const failure = await failing(request(1));
   expect(failure.status).toBe(502);
   expect(JSON.stringify(await failure.json())).not.toContain(
     'private upstream detail'
   );
-  const sourceFailure = runtime.createDataHandler(
-    { totals: operation },
-    async () => ({
-      canDiscloseSql: false,
-      lakehouse: source,
-    })
-  );
+  const sourceFailure = createDataHandler({ totals: operation }, async () => ({
+    canDiscloseSql: false,
+    lakehouse: source,
+  }));
   const upstreamFailure = await sourceFailure(request(1));
   expect(upstreamFailure.status).toBe(502);
   expect(await upstreamFailure.json()).toMatchObject({
@@ -254,12 +247,9 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
       message: expect.stringContaining('authenticate its data connection'),
     },
   });
-  const forbidden = runtime.createDataHandler(
-    { totals: operation },
-    async () => {
-      throw new Error('private authorization detail');
-    }
-  );
+  const forbidden = createDataHandler({ totals: operation }, async () => {
+    throw new Error('private authorization detail');
+  });
   const denied = await forbidden(request(1));
   expect(denied.status).toBe(403);
   expect(JSON.stringify(await denied.json())).not.toContain(
@@ -604,7 +594,7 @@ test('local lakehouse rejects malformed NDJSON metadata, columns and rows', asyn
     '{}\n["value"]\nnull\n',
     '{}\n["value"]\n[1,2]\n',
   ]) {
-    const source = local.localLakehouse(
+    const source = localLakehouse(
       {
         ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
         ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
@@ -631,7 +621,7 @@ test('local lakehouse accepts string and typed column headers, empty results and
     ['{}\n["value"]\n', { columns: [{ name: 'value' }], rows: [] }],
     ['{}\n[1]\n', { columns: [], rows: [[1]] }],
   ] as const) {
-    const source = local.localLakehouse(
+    const source = localLakehouse(
       {
         ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
         ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',

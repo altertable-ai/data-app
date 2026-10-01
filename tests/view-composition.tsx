@@ -1,11 +1,24 @@
-import type { DataOperation, DateRangeRequest } from '@/src/core/contract';
-import { defineDateRangeContract } from '@/src/core/contract';
-import { createDataClient } from '@/src/client/index';
-import { createDataHooks } from '@/src/react/index';
-import { dateRangeVariable, textVariable } from '@/src/react/ui/variables';
-import type { MetricWidgetProps } from '@/src/react/ui/MetricWidget';
-import type { DataSectionProps } from '@/src/react/ui/DataSection';
-import type { DataAppProps } from '@/src/react/ui/DataApp';
+import {
+  type DataOperation,
+  type DateRangeRequest,
+  defineDateRangeContract,
+  defineOperation,
+  defineQueryNames,
+  dimensionFilter,
+} from '@altertable/data-app/contract';
+
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  createDataHooks,
+  dateRangeVariable,
+  textVariable,
+  type MetricWidgetProps,
+  type DataSectionProps,
+  type DataAppProps,
+  createDataContext,
+  MetricWidget,
+  WidgetViewTabs,
+} from '@altertable/data-app/react';
 
 const { defineDataView } = createDataHooks<{
   activity: DataOperation<DateRangeRequest, { count: number }>;
@@ -85,10 +98,6 @@ const app: DataAppProps<number> = {
 };
 void [metric, section, app];
 
-import { defineOperation, defineQueryNames } from '@/src/core/contract';
-import { createDataContext } from '@/src/react/ui/data-context';
-import { MetricWidget } from '@/src/react/ui/MetricWidget';
-import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 const queries = defineQueryNames({ actions: 'actions' });
 defineOperation({
   queryNames: queries,
@@ -206,7 +215,6 @@ defineTimeView({
   empty: { title: 'Empty' },
 });
 
-import { dimensionFilter } from '@/src/core/dimension';
 // @ts-expect-error A dimension needs exactly one option source.
 dimensionFilter({
   key: 'source',

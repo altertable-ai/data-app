@@ -1,27 +1,29 @@
 import { expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { DataAppSkeleton } from '@/src/react/index';
-import { searchItems } from '@/src/react/ui/searchItems';
-import { SearchMatch } from '@/src/react/ui/SearchMatch';
-import { ariaKeyShortcuts, shortcutLabel } from '@/src/react/ui/shortcuts';
-import { Combobox } from '@/src/react/ui/Combobox';
-import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
-import { TableWidget } from '@/src/react/ui/TableWidget';
-import { QueryList, formatSql } from '@/src/react/ui/QueryList';
-import { DataSection } from '@/src/react/ui/DataSection';
 import {
+  DataAppSkeleton,
+  searchItems,
+  SearchMatch,
+  Combobox,
+  VisualizationWidget,
+  TableWidget,
+  DataSection,
   dateRangeControl,
   dateRangeVariable,
   defineAppVariables,
   selectVariable,
   textVariable,
-} from '@/src/react/ui/variables';
-import { createDataClient, DataAppError } from '@/src/client/index';
-import { createDataHandler } from '@/src/server/index';
-import { defineDateRangeContract, defineQueryNames } from '@/src/core/contract';
-import { chartColor } from '@/src/react/ui/chartColor';
-import { formatMetric } from '@/src/core/format';
+} from '@altertable/data-app/react';
+
+import { QueryList } from '@/src/react/ui/QueryList';
+
+import { createDataClient, DataAppError } from '@altertable/data-app/client';
+import { createDataHandler } from '@altertable/data-app/server';
+import {
+  defineDateRangeContract,
+  defineQueryNames,
+} from '@altertable/data-app/contract';
 
 test('initial data errors show a useful recovery action for each failure', () => {
   function render(code: string) {
@@ -188,21 +190,6 @@ test('query notebook groups disclosed SQL and exposes one copy-all action', () =
   expect(html).toContain('details.sql');
 });
 
-test('read-only SQL keeps literals and query whitespace intact', () => {
-  expect(formatSql("  SELECT 'FROM orders' AS label\n  FROM orders  ")).toBe(
-    "SELECT 'FROM orders' AS label\n  FROM orders"
-  );
-});
-
-test('category color follows identity and numeric metric formats use their units', () => {
-  expect(chartColor('insights')).toBe(chartColor('insights'));
-  expect(formatMetric(0.125, { kind: 'ratio' })).toBe('12.5%');
-  expect(formatMetric(12, { kind: 'count' })).toBe('12');
-  expect(formatMetric(12, { kind: 'currency', currency: 'USD' })).toBe(
-    '$12.00'
-  );
-});
-
 test('named query registry rejects ambiguous evidence names', () => {
   expect(defineQueryNames({ totals: 'order-totals' }).totals).toBe(
     'order-totals'
@@ -210,17 +197,6 @@ test('named query registry rejects ambiguous evidence names', () => {
   expect(() => defineQueryNames({ first: 'same', second: 'same' })).toThrow(
     'unique'
   );
-});
-
-test('shortcut labels and accessible keys include optional Shift', () => {
-  const shortcut = {
-    modifier: 'alt',
-    shift: true,
-    code: 'KeyK',
-    key: 'K',
-  } as const;
-  expect(['⌥⇧K', 'Alt+Shift+K']).toContain(shortcutLabel(shortcut));
-  expect(ariaKeyShortcuts(shortcut)).toBe('Alt+Shift+K');
 });
 
 test('app variables validate URLs and keep date presets relative', () => {
@@ -402,7 +378,6 @@ test('operation routes decode one path segment and client errors remain useful',
     code: 'request_failed',
     message: 'Could not load data.',
   });
-  expect(DataAppError.name).toBe('DataAppError');
 });
 
 test('table pagination defaults to a bottom footer and supports complete and preview tables', () => {

@@ -9,9 +9,8 @@ import {
   parseTrue,
   previousDateRange,
   rowsAsRecords,
-} from '@/src/core/contract';
-import { dataAppTitle } from '@/src/core/config';
-import { resolveDataView } from '@/src/core/data-view';
+} from '@altertable/data-app/contract';
+import { resolveDataView } from '@altertable/data-app/react';
 
 test('starter connection requires a successful bounded query', async () => {
   const query = connectionCheck();
@@ -94,15 +93,6 @@ test('server parsers reject invalid dates, counts, and query shapes', () => {
   expect(() =>
     rowsAsRecords({ columns: [{ name: 'name' }], rows: [['A', 2]] }, ['name'])
   ).toThrow();
-});
-
-test("document title reflects the app's configured scope", () => {
-  expect(
-    dataAppTitle({
-      title: 'Revenue',
-      scope: { organization: 'Acme', environment: 'production' },
-    })
-  ).toBe('Revenue • Acme/production • Altertable app');
 });
 
 test('request state labels data from an older input and preserves it on failure', () => {

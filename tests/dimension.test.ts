@@ -5,7 +5,7 @@ import {
   parseDimensionSelection,
   parseFacetOptions,
   type DimensionSelection,
-} from '@/src/core/dimension';
+} from '@altertable/data-app/contract';
 import { resolveViewInput } from '@/src/react/view';
 
 const interfaceFilter = dimensionFilter<string>({

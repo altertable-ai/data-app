@@ -15,8 +15,6 @@ export type { DataAppSource } from '@/src/embed/source';
 export { startDataAppBootstrap } from '@/src/embed/bootstrap';
 export { createNavigationHandler } from '@/src/embed/navigation';
 
-export { sqlQueryRoute, type SqlQueryInput } from '@/src/core/messages';
-
 export { createSqlQueryHandler } from '@/src/embed/sql';
 
 export type { DataAppPresentation } from '@/src/core/presentation';

@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { DataAppBridge } from '@/src/react/embed/index';
+import { DataAppBridge } from '@altertable/data-app/react/embed';
 
 async function onMessage() {
   return null;

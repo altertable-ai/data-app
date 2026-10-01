@@ -1,13 +1,16 @@
 import { expect, test } from 'bun:test';
-import { parseCount } from '@/src/core/contract';
-import { createDataAppNavigation } from '@/src/client/navigation';
-import { createIframeTransport } from '@/src/client/iframe';
 import {
+  parseCount,
   createMessageRouter,
   dataAppRoutes,
   defineMessageRoute,
-} from '@/src/core/messages';
-import { attachDataAppBridge } from '@/src/embed/bridge';
+} from '@altertable/data-app/contract';
+import {
+  createDataAppNavigation,
+  createIframeTransport,
+} from '@altertable/data-app/client';
+
+import { attachDataAppBridge } from '@altertable/data-app/embed';
 import {
   BRIDGE,
   MAX_PENDING,
@@ -564,8 +567,8 @@ test('bundle transport keeps host location in memory and rejects stale session t
 });
 
 test('browser-owned operations send SQL and bounded limits over the authenticated bridge', async () => {
-  const { createDataClient } = await import('@/src/client/index');
-  const { defineOperation } = await import('@/src/core/contract');
+  const { createDataClient } = await import('@altertable/data-app/client');
+  const { defineOperation } = await import('@altertable/data-app/contract');
   const { bridge, receive, sent } = harness();
   try {
     const count = defineOperation({
