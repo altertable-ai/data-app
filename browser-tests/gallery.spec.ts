@@ -476,3 +476,16 @@ test('widget toolbar owns shimmer, retry tooltip and stable action positions', a
   await retry.click();
   await expect(status).toHaveAttribute('data-state', 'idle');
 });
+
+test('standalone viewers retain their chosen theme after reload', async ({
+  page,
+}) => {
+  await page.goto('/gallery');
+  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await page.reload();
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await expect(
+    page.getByRole('button', { name: 'Switch to light theme' })
+  ).toBeVisible();
+});

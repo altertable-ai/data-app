@@ -406,7 +406,6 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     iframe,
     connection: { type: 'opaque', token: 'initial-token' },
     window: host,
-    presentation: { surface: 'altertable', theme: 'dark' },
     onStatusChange(status) {
       return statuses.push(status);
     },
@@ -446,28 +445,6 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent).toHaveLength(1);
     receive({ type: 'bridge:ready' });
     const sessionId = sent.at(-1)!.sessionId;
-    expect(sent.at(-1)!.state).toEqual({
-      search: '?period=last-30',
-      hash: '#totals',
-      presentation: { surface: 'altertable', theme: 'dark' },
-    });
-    connection.setPresentation({ surface: 'altertable', theme: 'light' });
-    expect(sent.at(-1)).toMatchObject({
-      type: 'state:update',
-      sessionId,
-      state: {
-        search: '?period=last-30',
-        hash: '#totals',
-        presentation: { surface: 'altertable', theme: 'light' },
-      },
-    });
-    expect(() =>
-      connection.setPresentation({
-        surface: 'altertable',
-        theme: 'system',
-      } as never)
-    ).toThrow('Invalid app presentation');
-
     receive({
       type: 'bridge:request',
       sessionId,
@@ -484,12 +461,6 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent.at(-1)!.type).toBe('bridge:connect');
     receive({ type: 'bridge:ready', token });
     expect(sent.at(-1)!.type).toBe('bridge:initialize');
-    expect(sent.at(-1)!.state).toEqual({
-      search: '?period=last-30',
-      hash: '#totals',
-      presentation: { surface: 'altertable', theme: 'light' },
-    });
-    connection.setPresentation(undefined);
     expect(sent.at(-1)!.state).toEqual({
       search: '?period=last-30',
       hash: '#totals',

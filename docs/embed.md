@@ -131,8 +131,8 @@ and `'custom'` for other hosts. `theme` must be resolved to `'light'` or
 
 Presentation travels over `postMessage` in the authenticated `bridge:initialize` and
 `state:update` messages, alongside `search` and `hash`. Framework-neutral apps
-can read `bridge.snapshot().presentation` after narrowing the unknown state and
-subscribe through `bridge.subscribe`. React `DataApp` consumes it automatically.
+can narrow the unknown state returned by `bridge.snapshot()` to read its
+`presentation` field, and subscribe through `bridge.subscribe`. React `DataApp` consumes it automatically.
 An Altertable surface renders toolbar actions without the page header or footer.
 Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;

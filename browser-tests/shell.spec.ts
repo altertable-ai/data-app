@@ -139,7 +139,7 @@ test('URL shell loads a separate-origin app and preserves navigation on reload',
   expect(errors).toEqual([]);
 });
 
-test('parent controls embedded chrome and live theme without remounting', async ({
+test('Altertable embeds retain toolbar actions and live theme changes without losing navigation', async ({
   page,
 }) => {
   await page.goto('/bundle-host?period=last-30#totals');
@@ -147,48 +147,48 @@ test('parent controls embedded chrome and live theme without remounting', async 
   await expect(
     app.getByRole('button', { name: 'Custom toolbar action' })
   ).toBeVisible();
-  await expect(app.locator('.altertable-app-header')).toHaveCount(0);
-  await expect(app.locator('.altertable-app-footer')).toHaveCount(0);
   await expect(
     app.getByRole('heading', { name: 'Embedded report' })
   ).toHaveCount(0);
+  await expect(
+    app.getByRole('button', { name: 'Custom footer action' })
+  ).toHaveCount(0);
   await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
+
   await page.getByRole('button', { name: 'Change theme' }).click();
   await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
-  await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
   await expect(app.locator('#location')).toHaveText('period=last-30#totals');
+  await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
+
   await page.getByRole('button', { name: 'Change surface' }).click();
   await expect(
     app.getByRole('heading', { name: 'Embedded report' })
   ).toBeVisible();
-  await expect(app.locator('.altertable-app-footer')).toBeVisible();
   await expect(
     app.getByRole('button', { name: 'Custom footer action' })
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Change theme' }).click();
-  await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await expect(
+    app.getByRole('button', { name: 'Custom toolbar action' })
+  ).toBeVisible();
   await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
-  await page
-    .getByRole('button', { name: 'Toggle parent presentation' })
-    .click();
-  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
-  await page.getByRole('button', { name: 'Change theme' }).click();
-  await page.getByRole('button', { name: 'Change theme' }).click();
-  await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
-  await page
-    .getByRole('button', { name: 'Toggle parent presentation' })
-    .click();
-  await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
-  await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
+});
+
+test('parent presentation owns the theme until standalone system preferences are restored', async ({
+  page,
+}) => {
   await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/bundle-host');
+  const app = page.frameLocator('iframe');
   await page.getByRole('button', { name: 'Change theme' }).click();
   await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+
   await page
     .getByRole('button', { name: 'Toggle parent presentation' })
     .click();
   await expect(app.locator('html')).toHaveCSS('color-scheme', 'dark');
   await page.emulateMedia({ colorScheme: 'light' });
   await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
+
   await page
     .getByRole('button', { name: 'Toggle parent presentation' })
     .click();

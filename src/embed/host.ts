@@ -1,7 +1,4 @@
-import {
-  parsePresentation,
-  type DataAppPresentation,
-} from '@/src/core/presentation';
+import type { DataAppPresentation } from '@/src/core/presentation';
 import {
   BRIDGE,
   MAX_PENDING,
@@ -78,15 +75,12 @@ export function attachDataAppBridge({
 
   function setPresentation(value: DataAppPresentation | undefined) {
     if (disposed) return;
-    const next = parsePresentation(value);
-    if (value !== undefined && !next)
-      throw new Error('Invalid app presentation.');
     if (
-      next?.surface === currentPresentation?.surface &&
-      next?.theme === currentPresentation?.theme
+      value?.surface === currentPresentation?.surface &&
+      value?.theme === currentPresentation?.theme
     )
       return;
-    currentPresentation = next;
+    currentPresentation = value && { ...value };
     if (sessionId) publishState();
   }
 

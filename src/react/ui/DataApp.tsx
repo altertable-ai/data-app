@@ -156,7 +156,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
         }
       >
         {inAltertable ? (
-          <div className="altertable-app-toolbar-only">{toolbar}</div>
+          toolbar
         ) : (
           <AppHeader
             scope={scope}

@@ -1,20 +1,21 @@
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   getDataAppTransport,
   localFrameBridge,
   type IframeTransport,
 } from '@/src/client/iframe';
 import {
-  parsePresentation,
+  isDataAppPresentation,
   type DataAppPresentation,
 } from '@/src/core/presentation';
 
 function presentationFromBridgeState(state: unknown) {
-  return parsePresentation(
+  const presentation =
     state && typeof state === 'object'
       ? (state as { presentation?: unknown }).presentation
-      : undefined
-  );
+      : undefined;
+
+  return isDataAppPresentation(presentation) ? presentation : undefined;
 }
 
 /** Local preview verifies its parent before accepting presentation context. */
@@ -23,7 +24,7 @@ export function useDataAppPresentation() {
     DataAppPresentation | undefined
   >(() => presentationFromBridgeState(getDataAppTransport()?.snapshot()));
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     let disposed = false;
     let unsubscribe: (() => void) | undefined;
 

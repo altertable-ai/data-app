@@ -1,6 +1,6 @@
 import {
   useEffect,
-  useLayoutEffect,
+  useEffectEvent,
   useRef,
   useReducer,
   useState,
@@ -12,7 +12,11 @@ import {
   type DataAppSource,
   type DataAppShellOptions,
 } from '@/src/embed/shell';
-import type { DataAppStatus, DataAppHost } from '@/src/embed/host';
+import type {
+  DataAppStatus,
+  DataAppHost,
+  DataAppDiagnostic,
+} from '@/src/embed/host';
 
 export type DataAppShellProps = Pick<
   DataAppShellOptions,
@@ -44,19 +48,14 @@ export function DataAppShell({
   const [attempt, bumpAttempt] = useReducer(value => value + 1, 0);
   const [status, setStatus] = useState<DataAppStatus>('connecting');
   const hostRef = useRef<DataAppHost | undefined>(undefined);
-  const handlers = useRef({
-    onMessage,
-    onStatusChange,
-    onDiagnostic,
+  const dispatchMessage = useEffectEvent(onMessage);
+  const reportStatus = useEffectEvent((status: DataAppStatus) => {
+    setStatus(status);
+    onStatusChange?.(status);
   });
-
-  useLayoutEffect(() => {
-    handlers.current = {
-      onMessage,
-      onStatusChange,
-      onDiagnostic,
-    };
-  });
+  const reportDiagnostic = useEffectEvent((event: DataAppDiagnostic) =>
+    onDiagnostic?.(event)
+  );
 
   const url = source.type === 'url' ? source.url : source.bootstrapUrl;
   const javascript = source.type === 'bundle' ? source.javascript : undefined;
@@ -79,16 +78,9 @@ export function DataAppShell({
               revision: revision!,
             },
       startupTimeoutMs,
-      onMessage(message, context) {
-        return handlers.current.onMessage(message, context);
-      },
-      onDiagnostic(event) {
-        return handlers.current.onDiagnostic?.(event);
-      },
-      onStatusChange(value) {
-        setStatus(value);
-        handlers.current.onStatusChange?.(value);
-      },
+      onMessage: dispatchMessage,
+      onStatusChange: reportStatus,
+      onDiagnostic: reportDiagnostic,
     });
     hostRef.current = host;
 

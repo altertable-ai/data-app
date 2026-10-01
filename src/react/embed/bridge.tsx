@@ -1,5 +1,5 @@
 import type { DataAppPresentation } from '@/src/core/presentation';
-import { useRef, useLayoutEffect, useEffect, type ComponentRef } from 'react';
+import { useRef, useEffectEvent, useEffect, type ComponentRef } from 'react';
 import {
   attachDataAppBridge,
   type DataAppHost,
@@ -28,19 +28,13 @@ export function DataAppBridge({
   onDiagnostic,
 }: DataAppBridgeProps) {
   const hostRef = useRef<DataAppHost | undefined>(undefined);
-  const handlers = useRef({
-    onMessage,
-    onStatusChange,
-    onDiagnostic,
-  });
-
-  useLayoutEffect(() => {
-    handlers.current = {
-      onMessage,
-      onStatusChange,
-      onDiagnostic,
-    };
-  });
+  const dispatchMessage = useEffectEvent(onMessage);
+  const reportStatus = useEffectEvent((status: DataAppStatus) =>
+    onStatusChange?.(status)
+  );
+  const reportDiagnostic = useEffectEvent((event: DataAppDiagnostic) =>
+    onDiagnostic?.(event)
+  );
 
   const identity =
     connection.type === 'origin' ? connection.origin : connection.token;
@@ -57,15 +51,9 @@ export function DataAppBridge({
           ? { type, origin: identity }
           : { type, token: identity },
       window: hostWindow,
-      onMessage(request, context) {
-        return handlers.current.onMessage(request, context);
-      },
-      onStatusChange(status) {
-        return handlers.current.onStatusChange?.(status);
-      },
-      onDiagnostic(event) {
-        return handlers.current.onDiagnostic?.(event);
-      },
+      onMessage: dispatchMessage,
+      onStatusChange: reportStatus,
+      onDiagnostic: reportDiagnostic,
     });
     hostRef.current = host;
 

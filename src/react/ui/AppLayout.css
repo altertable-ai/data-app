@@ -58,8 +58,3 @@ button {
   font: inherit;
   cursor: pointer;
 }
-
-.altertable-app-toolbar-only {
-  display: flex;
-  justify-content: flex-end;
-}

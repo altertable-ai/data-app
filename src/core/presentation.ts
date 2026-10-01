@@ -6,17 +6,15 @@ export type DataAppPresentation = {
   theme: Theme;
 };
 
-export function parsePresentation(
+export function isDataAppPresentation(
   value: unknown
-): DataAppPresentation | undefined {
-  if (!value || typeof value !== 'object') return undefined;
+): value is DataAppPresentation {
+  if (!value || typeof value !== 'object') return false;
   const presentation = value as DataAppPresentation;
-  if (
-    (presentation.surface !== 'altertable' &&
-      presentation.surface !== 'custom') ||
-    (presentation.theme !== 'light' && presentation.theme !== 'dark')
-  )
-    return undefined;
 
-  return { surface: presentation.surface, theme: presentation.theme };
+  return (
+    (presentation.surface === 'altertable' ||
+      presentation.surface === 'custom') &&
+    (presentation.theme === 'light' || presentation.theme === 'dark')
+  );
 }
