@@ -3,11 +3,9 @@ import { BRIDGE, type BridgeMessage } from '@/src/core/bridge';
 import {
   createIframeTransport,
   installDataAppTransport,
-} from '@/src/client/iframe';
-import {
   createDataAppNavigation,
   getDataAppNavigation,
-} from '@/src/client/navigation';
+} from '@altertable/data-app/client';
 
 function harness(mode: 'url' | 'bundle' = 'bundle') {
   const sent: BridgeMessage[] = [];

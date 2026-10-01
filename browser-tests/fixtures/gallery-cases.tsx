@@ -1,4 +1,8 @@
 import {
+  dimensionFilter,
+  type DimensionSelection,
+} from '@altertable/data-app/contract';
+import {
   createContext,
   useContext,
   useEffect,
@@ -12,7 +16,6 @@ import {
   AppFooter,
   VariableBar,
   DimensionPicker,
-  dimensionFilter,
   DataViewToast,
   AboutData,
   AppIcon,
@@ -67,7 +70,6 @@ import {
   type LiveIntervalSeconds,
   type WidgetStatus,
   type DataView,
-  type DimensionSelection,
   type AppIconName,
 } from '@altertable/data-app/react';
 import '@/browser-tests/fixtures/gallery.css';

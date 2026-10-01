@@ -1,5 +1,5 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
-import { DataAppError } from '@/src/client/index';
+import { DataAppError } from '@/src/client/transport';
 import { Button } from '@/src/react/ui/Button';
 import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';

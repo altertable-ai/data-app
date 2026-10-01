@@ -1,96 +1,68 @@
 # Contributing
 
-Install the versions of Bun and Node.js in `.bun-version` and `.node-version`.
-Node supplies npm for the packed-package check; Bun runs the build, tools, and tests.
-`bunfig.toml` sets `install.exact = true` so newly added dependencies use exact
-versions. Keep `packageManager` aligned with `.bun-version`.
+Use the Bun and Node.js versions in `.bun-version` and `.node-version`.
 
 ```fish
 bun install --frozen-lockfile
 bun run check
 ```
 
-## Repository layout
+## Find the code
 
-`src/core` holds shared contracts and data logic. `src/client` owns Fetch transport,
-`src/embed` owns iframe hosting and trusted bootstrap initialization.
-`src/server` owns request handling and the local Bun adapter, and `src/react` owns
-React bindings; `src/react/embed` provides hosts without app UI dependencies.
-Components and their styles live together in `src/react/ui`. Add new styles to
-the ordered `src/react/styles.css` entry.
-`examples/starter` is the runnable CLI starter port, using public package imports.
-Its workspace dependency points to the built repository package; keep its app-owned
-configuration and agent guidance usable when copied into another project.
-`docs` describes each public entry. `scripts` builds and checks the published
-artifact. Workflow validation lives in `scripts/check-workflows.sh`, and release
-helpers live in `scripts/release`. Generated `dist` files are ignored; edit source
-instead.
+| Task                                    | Location                  |
+| --------------------------------------- | ------------------------- |
+| Operations, validation, and data state  | `src/core`                |
+| Browser clients and navigation          | `src/client`              |
+| Request authorization and local serving | `src/server`              |
+| Iframe hosting and bootstrap            | `src/embed`, `src/worker` |
+| React bindings and UI                   | `src/react`               |
+| Consumer example                        | `examples/starter`        |
+| Public guides                           | `docs`                    |
+| Build, package checks, and releases     | `scripts`                 |
 
-The build compiles `src/embed/standalone.ts` into an in-memory classic script and
-embeds it in `src/worker/index.ts` to emit the single-file `dist/worker.js`
-deployment asset. The internal bootstrap reads its trusted parent origin from the
-script element; keep app navigation and UI dependencies out of it. Worker request
-policy and HTML live in the package; deployments supply domain and trusted-origin
-bindings.
+Keep browser entries free of server implementations and credentials. Core,
+client, server, and embed remain independent of React. Implementations import
+focused modules; public entry points declare the supported exports explicitly.
+Keep style injection explicit; importing React must not modify the DOM. Add new
+styles to `src/react/styles.css`. Do not edit generated `dist`.
 
-Keep core, client, server, and embed free of React and UI imports. Client and
-server may depend on core; neither may import the other. Embed may depend on core
-and client. Browser code must not import server
-implementations or credentials. React implementations import focused modules,
-not their own public barrel. Keep style injection explicit; importing React must not modify the DOM. Public
-exports and their docs are the consumer interface; internal modules may change.
+Use `@/src/...` imports in repository source and `@altertable/data-app/<entry>`
+in consumer tests and examples. Run `bun run lint:fix` and `bun run format` for
+style fixes.
 
-Use repository-root imports (`@/src/...`, `@/package.json`) in source, tests, and
-scripts. Oxlint rejects relative imports and requires declarations for named
-functions (`func-style`). Use method shorthand for object behavior; retain arrows for inline
-callbacks such as collection transforms and hooks. Leave blank lines around
-function declarations, effect hooks, and before returns. Use `useReducer(value =>
-value + 1, 0)` with a `bump…` dispatcher for increment-only counters rather than
-state setters. Run `bun run lint:fix` and `bun run format` for automated fixes.
-The declaration build rewrites aliases to portable relative imports for npm
-consumers.
+## Verify changes
 
-## Checks
+Tests should tell the package's public usage stories: define an operation,
+authorize and query it, compose a view, or embed an app. Exercise published
+entries so build and export mistakes are observable. Test private logic in
+isolation only when its complexity warrants it, such as cancellation, streaming,
+SQL escaping, or authenticated bridge sessions. Avoid tests that repeat trivial
+helpers, file layout, or every component prop.
 
-Run `bun run build` before individual typecheck, lint, or browser checks. Browser
-fixtures import the public package exports and need the generated declarations
-in `dist`. `bun run check` builds first, including on a fresh checkout.
-Release Please owns `CHANGELOG.md`; formatting excludes its generated output.
+Update the relevant guide when changing public behavior. Keep JSDoc for
+constraints, ownership, units, and runtime boundaries; leave implementation
+explanations in the code. App instructions belong in the consuming app's
+`AGENTS.md`; see the [starter template](docs/starter-agent-instructions.md).
 
-| Command                   | Purpose                                           |
-| ------------------------- | ------------------------------------------------- |
-| `bun run typecheck`       | Validate source, tests, and scripts               |
-| `bun run lint`            | Run type-aware Oxlint checks                      |
-| `bun run format`          | Format source and documentation with Oxfmt        |
-| `bun run test`            | Run contract, transport, and component tests      |
-| `bun run build`           | Emit ESM, declarations, and embedded React styles |
-| `bun run test:package`    | Check the built npm archive as a consumer         |
-| `bun run test:starter`    | Typecheck, lint, and build the starter            |
-| `bun run test:browser`    | Test embedding against built exports in Chromium  |
-| `bun run check:workflows` | Validate workflows and shell scripts              |
-| `bun run check`           | Run all required checks                           |
+`bun run check` builds first and runs all required source, package, and starter
+checks. Build before running consumer tests individually.
 
-Add focused tests for changed behavior and update the corresponding entry docs
-when changing public APIs. JSDoc should explain constraints, ownership, units,
-or runtime boundaries without duplicating the full API guide. The packed-package
-check verifies documentation, exports, declarations, injected browser styles, and server
-imports. The package retains the
-runtime's Bun test suite; tests use observable output and contract behavior.
+| Command                   | Purpose                                             |
+| ------------------------- | --------------------------------------------------- |
+| `bun run build`           | Build JavaScript, declarations, and injected styles |
+| `bun run typecheck`       | Check source, tests, and scripts                    |
+| `bun run lint`            | Run type-aware lint checks                          |
+| `bun run format`          | Format source and docs                              |
+| `bun run test`            | Verify public contracts and complex isolated logic  |
+| `bun run test:package`    | Verify the npm archive as a consumer                |
+| `bun run test:starter`    | Typecheck, lint, and build the starter              |
+| `bun run test:browser`    | Verify browser interactions in Chromium             |
+| `bun run check:workflows` | Validate workflows and shell scripts                |
 
-Use Conventional Commits (`fix:`, `feat:`, `docs:`) and describe behavior changes
-and verification in pull requests. PR titles are checked against these types.
-Flag breaking API changes explicitly.
+For browser changes, run `bash scripts/install-test-browser.sh` once, then
+`bun run test:browser`. Preview UI examples at `/gallery` with
+`bun browser-tests/server.ts`.
 
-Build the package, then run `bash scripts/install-test-browser.sh` once and
-`bun run test:browser` for iframe work. Browser fixtures import public built
-exports; runtime HTML comes from the published Worker asset and app scripts are
-bundled independently.
-
-CI runs source and packed-package checks, validates workflow syntax, reviews
-dependency changes, and analyzes JavaScript and TypeScript with CodeQL.
-Dependabot updates Bun dependencies and GitHub Actions weekly. Release Please
-creates version and changelog PRs; merging a release PR publishes the verified
-release tag to npm. See [Releasing](docs/releasing.md) for setup and recovery.
-
-App-authoring instructions belong to a consuming app's `AGENTS.md`; see the
-[starter template](docs/starter-agent-instructions.md).
+Use Conventional Commits and describe behavior changes and verification in PRs.
+Flag breaking API changes. Release Please owns `CHANGELOG.md`; see
+[Releasing](docs/releasing.md) for release setup and recovery.

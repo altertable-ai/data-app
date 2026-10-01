@@ -4,22 +4,29 @@ import {
   defineDateRangeContract,
   defineOperation,
   defineQueryNames,
-} from '@/src/core/contract';
-import { createDataClient } from '@/src/client/index';
-import { createDataHooks, DataWidget } from '@/src/react/index';
-import { displayedSnapshot } from '@/src/core/data-view';
+  type DataOperation,
+  type DateRangeRequest,
+  dimensionFilter,
+  type DimensionSelection,
+} from '@altertable/data-app/contract';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  createDataHooks,
+  DataWidget,
+  displayedSnapshot,
+  dateRangeVariable,
+  textVariable,
+  createDataContext,
+  ComparisonVisual,
+  VisualizationWidget,
+  TableWidget,
+  WidgetViewTabs,
+  PresentStory,
+  DataApp,
+} from '@altertable/data-app/react';
+
 import { storySteps } from '@/src/react/ui/story';
 import { resolveViewInput } from '@/src/react/view';
-import { dateRangeVariable, textVariable } from '@/src/react/ui/variables';
-import { createDataContext } from '@/src/react/ui/data-context';
-import { ComparisonVisual } from '@/src/react/ui/ComparisonVisual';
-import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
-import { TableWidget } from '@/src/react/ui/TableWidget';
-import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
-import type { DataOperation, DateRangeRequest } from '@/src/core/contract';
-import { dimensionFilter, type DimensionSelection } from '@/src/core/dimension';
-import { PresentStory } from '@/src/react/ui/PresentStory';
-import { InspectionContext } from '@/src/react/ui/InspectionContext';
 
 const names = defineQueryNames({ activity: 'activity' });
 const context = createDataContext(names)({
@@ -291,32 +298,48 @@ test('nested view inputs preserve dates and dimensions in validation and descrip
 });
 
 test('story inspection inherits executed SQL and filters it to the finding evidence', () => {
-  const html = renderToStaticMarkup(
-    <InspectionContext.Provider
-      value={{
-        dataContext: context,
-        queries: [
+  const frame = { location: new URL('https://app.example.com') };
+  Object.assign(frame, { top: frame });
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: frame,
+  });
+  try {
+    const html = renderToStaticMarkup(
+      <DataApp
+        config={{
+          title: 'Activity',
+          scope: { organization: 'Acme', environment: 'production' },
+          appearance: {},
+        }}
+        dataContext={context}
+        queries={[
           { name: 'activity', statement: 'SELECT 42 AS story_evidence' },
           { name: 'unrelated', statement: 'SELECT 99 AS unrelated_evidence' },
-        ],
-      }}
-    >
-      <PresentStory
-        title="Activity"
-        dataContext={context}
-        findings={[
-          {
-            id: 'concentration',
-            headline: 'Most activity occurred on one day',
-            visual: '42 actions',
-            evidence: featureEvidence,
-          },
         ]}
-      />
-    </InspectionContext.Provider>
-  );
-  expect(html).toContain('story_evidence');
-  expect(html).not.toContain('unrelated_evidence');
+      >
+        <PresentStory
+          title="Activity"
+          dataContext={context}
+          findings={[
+            {
+              id: 'concentration',
+              headline: 'Most activity occurred on one day',
+              visual: '42 actions',
+              evidence: featureEvidence,
+            },
+          ]}
+        />
+      </DataApp>
+    );
+    expect(html).toContain('story_evidence');
+    expect(html).not.toContain('unrelated_evidence');
+  } finally {
+    if (previousWindow)
+      Object.defineProperty(globalThis, 'window', previousWindow);
+    else Reflect.deleteProperty(globalThis, 'window');
+  }
 });
 
 test('bound metrics share values, formatting, evidence and displayed comparison periods', () => {

@@ -3,8 +3,8 @@ import {
   defineMessageRoute,
   defineDataQueryRoute,
   navigationUpdateRoute,
-} from '@/src/core/messages';
-import { createMessageClient } from '@/src/client/messages';
+} from '@altertable/data-app/contract';
+import { createMessageClient } from '@altertable/data-app/client';
 
 const operations = {
   activity: {

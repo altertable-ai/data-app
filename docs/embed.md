@@ -97,14 +97,6 @@ The source bridge's `startupTimeoutMs` defaults to 30 seconds.
 payloads. Routed handlers must authorize every data request. Message validation
 and iframe isolation do not grant access to data or execute SQL.
 
-Message types follow `{scope}:{action}`: `bridge:connect`, `bridge:ready`,
-`bridge:initialize`, `bridge:request`, `bridge:result`, `bridge:error`,
-`bridge:cancel`, `bridge:disconnect`, `runtime:ready`, `runtime:error`,
-`script:load`, and `state:update`. Routed requests use the same convention,
-including `data:query` and `navigation:update`. Hosts, apps, and bootstrap scripts
-must use matching names; the former unscoped and dot-separated names are no
-longer supported.
-
 ## SQL query route
 
 Hosts serving browser-owned operations register `sqlQueryRoute` explicitly:
@@ -136,7 +128,7 @@ as public `source_*` errors with request IDs. Authorization failures return
 `forbidden`; unknown query errors are hidden. Custom handlers can return deliberate
 public failures with `MessageRoutingError`.
 
-`SqlQueryInput` (exported from `/contract` and `/embed`) carries
+`SqlQueryInput` (exported from `/contract`) carries
 `{ statement: string, limit: number }`; responses are
 `{ columns: { name: string, type?: string }[], rows: unknown[][], queryId?: string }`.
 The route rejects empty statements, unsafe or nonpositive limits, malformed
@@ -167,7 +159,7 @@ host.setPresentation({ surface: 'embedded', theme: 'light' });
 
 Both source and connection modes support the `presentation` option and
 `host.setPresentation(presentation)` method. `DataAppPresentation` is exported from
-`/embed` and `/client`. Use `surface: 'embedded'` when the parent provides page chrome, as in the
+`/embed`. Use `surface: 'embedded'` when the parent provides page chrome, as in the
 Altertable frontend, and `'standalone'` when the app provides its own header and
 footer. `theme` must be resolved to `'light'` or
 `'dark'`; the parent decides how its system preference is resolved.
@@ -180,14 +172,3 @@ An embedded surface renders toolbar actions without the page header or footer.
 Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;
 `host.setPresentation(undefined)` restores it.
-
-The host attachment is an explicit `{ dispose, setPresentation }` object. Replace
-former cleanup calls (`dispose()`) with `host.dispose()`. React hosts manage this
-lifecycle automatically.
-
-## Migration
-
-`attachDataAppShell` and `DataAppShellOptions` have been removed. Use
-`attachDataAppBridge` with the same source options and `DataAppBridgeOptions`.
-Source and connection options are mutually exclusive. The frontend and CLI own
-their shell UI; this package provides iframe bridges only.

@@ -1,18 +1,21 @@
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { defineDateRangeContract, defineQueryNames } from '@/src/core/contract';
-import { defineDataContent } from '@/src/react/content';
-import { describeViewInput, type DataViewDefinition } from '@/src/react/view';
-import { createDataContext } from '@/src/react/ui/data-context';
 import {
+  defineDateRangeContract,
+  defineQueryNames,
+} from '@altertable/data-app/contract';
+import {
+  defineDataContent,
+  createDataContext,
   dateRangeVariable,
   defineAppVariables,
   textVariable,
-} from '@/src/react/ui/variables';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
-import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
-import { calendarMetricComparison } from '@/src/react/ui/comparison';
-import { MetricWidget } from '@/src/react/ui/MetricWidget';
+  ContentSkeleton,
+  WidgetViewTabs,
+  MetricWidget,
+  calendarMetricComparison,
+} from '@altertable/data-app/react';
+import { describeViewInput, type DataViewDefinition } from '@/src/react/view';
 
 const calendar = defineDateRangeContract({
   minDate: '2026-01-01',

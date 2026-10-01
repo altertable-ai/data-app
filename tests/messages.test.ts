@@ -5,9 +5,14 @@ import {
   defineDataQueryRoute,
   navigationUpdateRoute,
   MessageRoutingError,
-} from '@/src/core/messages';
-import { createMessageClient } from '@/src/client/messages';
-import { createNavigationHandler } from '@/src/embed/navigation';
+  sqlQueryRoute,
+  DataSourceError,
+} from '@altertable/data-app/contract';
+import { createMessageClient } from '@altertable/data-app/client';
+import {
+  createNavigationHandler,
+  createSqlQueryHandler,
+} from '@altertable/data-app/embed';
 
 function number(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value))
@@ -226,7 +231,6 @@ test('routing checks cancellation before and after handlers', async () => {
 });
 
 test('SQL route validates statements, safe row bounds, and result shape', async () => {
-  const { sqlQueryRoute } = await import('@/src/core/messages');
   for (const value of [
     null,
     {},
@@ -253,9 +257,6 @@ test('SQL route validates statements, safe row bounds, and result shape', async 
 });
 
 test('SQL host authorizes each request, preserves source errors, and hides private failures', async () => {
-  const { sqlQueryRoute } = await import('@/src/core/messages');
-  const { createSqlQueryHandler } = await import('@/src/embed/sql');
-  const { DataSourceError } = await import('@/src/core/contract');
   let authorizations = 0;
   const router = createMessageRouter(
     { 'data:sql': sqlQueryRoute },
@@ -304,8 +305,6 @@ test('SQL host authorizes each request, preserves source errors, and hides priva
 });
 
 test('SQL host authentication failures give browser viewers actionable messages', async () => {
-  const { createSqlQueryHandler } = await import('@/src/embed/sql');
-  const { DataSourceError } = await import('@/src/core/contract');
   for (const reason of ['unauthorized', 'forbidden'] as const) {
     const handler = createSqlQueryHandler(async () => ({
       async queryAll() {

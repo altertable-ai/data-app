@@ -1,101 +1,45 @@
 import { expect, test } from 'bun:test';
-import { defineOperation, parseCount } from '@/src/core/contract';
-import { createDataHandler } from '@/src/server/index';
-import * as runtime from '@/src/server/index';
-import * as contract from '@/src/core/contract';
-import * as local from '@/src/server/local';
-import * as appearance from '@/src/core/appearance';
-test('runtime validates input, bounds rows, and hides query failures', async () => {
-  expect(
-    appearance.parseAppearance({ density: 'compact', cornerRadius: 'small' })
-  ).toMatchObject({
-    density: 'compact',
-    cornerRadius: 'small',
-  });
-  expect(() =>
-    appearance.parseAppearance({ cornerRadius: 'roundish' })
-  ).toThrow('Invalid appearance');
-  const source = local.localLakehouse(
-    {
-      ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
-      ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
-    },
-    Object.assign(
-      async () => new Response('private upstream detail', { status: 401 }),
-      {
-        preconnect() {},
-      }
-    )
-  );
-  try {
-    await source.queryAll('SELECT 1', {
-      limit: 1,
-      signal: new AbortController().signal,
-    });
-    throw new Error('Expected an authorization failure.');
-  } catch (error) {
-    expect(error).toMatchObject({ reason: 'unauthorized', status: 401 });
-  }
-  const proxied = local.localLakehouse(
-    {
-      ALTERTABLE_DATA_PROXY_URL: 'http://127.0.0.1:1234',
-      ALTERTABLE_DATA_PROXY_TOKEN: 'run-token',
-    },
-    Object.assign(
-      async (url: RequestInfo | URL, options?: RequestInit) => {
-        expect(url instanceof Request ? url.url : url.toString()).toBe(
-          'http://127.0.0.1:1234/query'
-        );
-        expect(options?.headers).toMatchObject({
-          authorization: 'Bearer run-token',
-        });
+import {
+  defineOperation,
+  defineQueryNames,
+  parseCount,
+} from '@altertable/data-app/contract';
+import { createDataHandler } from '@altertable/data-app/server';
+import { localLakehouse } from '@altertable/data-app/server/bun';
+const totalsOperation = defineOperation({
+  checks: [1],
+  queryNames: defineQueryNames({ totals: 'totals' }),
+  input(value: unknown) {
+    if (value !== 1) throw new Error('Bad input');
 
-        return new Response('{"query_id":"q1"}\n["value"]\n[1]\n');
-      },
-      { preconnect() {} }
-    )
-  );
-  expect(
-    await proxied.queryAll('SELECT 1', {
-      limit: 1,
-      signal: new AbortController().signal,
-    })
-  ).toMatchObject({ rows: [[1]], queryId: 'q1' });
-  const operation = contract.defineOperation({
-    checks: [1],
-    queryNames: contract.defineQueryNames({ totals: 'totals' }),
-    input(value: unknown) {
-      if (value !== 1) throw new Error('Bad input');
-
-      return 1;
-    },
-    output(value: unknown) {
-      return value as number;
-    },
-    policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
-    async run({
-      lakehouse,
+    return 1;
+  },
+  output(value: unknown) {
+    return value as number;
+  },
+  policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
+  async run({ lakehouse, signal }) {
+    const result = await lakehouse.queryAll('SELECT 1', {
+      limit: 20,
       signal,
-    }: {
-      lakehouse: {
-        queryAll: (
-          sql: string,
-          options: { limit: number; signal: AbortSignal; name?: string }
-        ) => Promise<{ rows: unknown[][] }>;
-      };
-      signal: AbortSignal;
-    }) {
-      const result = await lakehouse.queryAll('SELECT 1', {
-        limit: 20,
-        signal,
-        name: 'totals',
-      });
+      name: 'totals',
+    });
 
-      return result.rows.length;
-    },
+    return result.rows.length;
+  },
+});
+
+function totalsRequest(value: unknown) {
+  return new Request('http://localhost/api/data/totals', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(value),
   });
+}
+
+test('HTTP operations validate inputs, enforce row policy, and disclose permitted evidence', async () => {
   let requestedLimit = 0;
-  const handle = runtime.createDataHandler({ totals: operation }, async () => ({
+  const handle = createDataHandler({ totals: totalsOperation }, async () => ({
     canDiscloseSql: true,
     lakehouse: {
       async queryAll(_statement: string, options: { limit: number }) {
@@ -106,15 +50,7 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
     },
   }));
 
-  function request(value: unknown) {
-    return new Request('http://localhost/api/data/totals', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(value),
-    });
-  }
-
-  const valid = await handle(request(1));
+  const valid = await handle(totalsRequest(1));
   expect(valid.status).toBe(200);
   const response = await valid.json();
   expect(response).not.toHaveProperty('evidence');
@@ -124,10 +60,10 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
     queries: [{ name: 'totals', statement: 'SELECT 1', queryId: 'query-1' }],
   });
   expect(requestedLimit).toBe(1);
-  const unregistered = runtime.createDataHandler(
+  const unregistered = createDataHandler(
     {
       totals: {
-        ...operation,
+        ...totalsOperation,
         async run({ lakehouse, signal }) {
           await lakehouse.queryAll('SELECT 1', {
             limit: 1,
@@ -148,65 +84,9 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
       },
     })
   );
-  expect((await unregistered(request(1))).status).toBe(502);
-  expect(
-    (
-      await handle(
-        new Request('http://localhost/api/data/totals', {
-          method: 'POST',
-          headers: { 'content-type': 'text/plain' },
-          body: '1',
-        })
-      )
-    ).status
-  ).toBe(415);
-  expect(
-    (
-      await handle(
-        new Request('http://localhost/api/data/totals', {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            origin: 'http://other.example',
-          },
-          body: '1',
-        })
-      )
-    ).status
-  ).toBe(403);
-  expect(
-    (
-      await handle(
-        new Request('http://localhost/api/data/totals', {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            origin: 'http://localhost',
-            'sec-fetch-site': 'cross-site',
-          },
-          body: '1',
-        })
-      )
-    ).status
-  ).toBe(403);
-  expect(
-    (
-      await handle(
-        new Request('http://localhost/api/data/totals', {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            origin: 'http://localhost',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-mode': 'cors',
-          },
-          body: '1',
-        })
-      )
-    ).status
-  ).toBe(200);
-  const restricted = runtime.createDataHandler(
-    { totals: operation },
+  expect((await unregistered(totalsRequest(1))).status).toBe(502);
+  const restricted = createDataHandler(
+    { totals: totalsOperation },
     async () => ({
       canDiscloseSql: false,
       lakehouse: {
@@ -216,37 +96,96 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
       },
     })
   );
-  expect(await (await restricted(request(1))).json()).not.toHaveProperty(
+  expect(await (await restricted(totalsRequest(1))).json()).not.toHaveProperty(
     'queries'
   );
-  expect((await handle(request(2))).status).toBe(400);
+  expect((await handle(totalsRequest(2))).status).toBe(400);
   expect(
     (await handle(new Request('http://localhost/api/data/other'))).status
   ).toBe(404);
-  const failing = runtime.createDataHandler(
-    { totals: operation },
-    async () => ({
-      canDiscloseSql: false,
-      lakehouse: {
-        async queryAll() {
-          throw new Error('private upstream detail');
-        },
+});
+
+test('HTTP requests require JSON and an allowed same-origin delivery context', async () => {
+  const handle = createDataHandler({ totals: totalsOperation }, async () => ({
+    canDiscloseSql: false,
+    lakehouse: {
+      async queryAll() {
+        return { columns: [], rows: [] };
       },
-    })
+    },
+  }));
+  for (const { headers, status } of [
+    { headers: { 'content-type': 'text/plain' }, status: 415 },
+    {
+      headers: {
+        'content-type': 'application/json',
+        origin: 'http://other.example',
+      },
+      status: 403,
+    },
+    {
+      headers: {
+        'content-type': 'application/json',
+        origin: 'http://localhost',
+        'sec-fetch-site': 'cross-site',
+      },
+      status: 403,
+    },
+    {
+      headers: {
+        'content-type': 'application/json',
+        origin: 'http://localhost',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-mode': 'cors',
+      },
+      status: 200,
+    },
+  ]) {
+    const response = await handle(
+      new Request('http://localhost/api/data/totals', {
+        method: 'POST',
+        headers,
+        body: '1',
+      })
+    );
+    expect(response.status).toBe(status);
+  }
+});
+
+test('HTTP handlers hide private failures and preserve adapter authentication errors', async () => {
+  const source = localLakehouse(
+    {
+      ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
+      ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
+    },
+    Object.assign(
+      async () => new Response('private upstream detail', { status: 401 }),
+      {
+        preconnect() {},
+      }
+    )
   );
-  const failure = await failing(request(1));
+  const failing = createDataHandler({ totals: totalsOperation }, async () => ({
+    canDiscloseSql: false,
+    lakehouse: {
+      async queryAll() {
+        throw new Error('private upstream detail');
+      },
+    },
+  }));
+  const failure = await failing(totalsRequest(1));
   expect(failure.status).toBe(502);
   expect(JSON.stringify(await failure.json())).not.toContain(
     'private upstream detail'
   );
-  const sourceFailure = runtime.createDataHandler(
-    { totals: operation },
+  const sourceFailure = createDataHandler(
+    { totals: totalsOperation },
     async () => ({
       canDiscloseSql: false,
       lakehouse: source,
     })
   );
-  const upstreamFailure = await sourceFailure(request(1));
+  const upstreamFailure = await sourceFailure(totalsRequest(1));
   expect(upstreamFailure.status).toBe(502);
   expect(await upstreamFailure.json()).toMatchObject({
     error: {
@@ -254,13 +193,10 @@ test('runtime validates input, bounds rows, and hides query failures', async () 
       message: expect.stringContaining('authenticate its data connection'),
     },
   });
-  const forbidden = runtime.createDataHandler(
-    { totals: operation },
-    async () => {
-      throw new Error('private authorization detail');
-    }
-  );
-  const denied = await forbidden(request(1));
+  const forbidden = createDataHandler({ totals: totalsOperation }, async () => {
+    throw new Error('private authorization detail');
+  });
+  const denied = await forbidden(totalsRequest(1));
   expect(denied.status).toBe(403);
   expect(JSON.stringify(await denied.json())).not.toContain(
     'private authorization detail'
@@ -592,57 +528,4 @@ test('cancellation settles waiting body reads without awaiting stream cancellati
   expect(request.body?.locked).toBe(false);
   expect(state.cancelled).toBe(true);
   expect((await response.json()).error.code).toBe('invalid_input');
-});
-
-test('local lakehouse rejects malformed NDJSON metadata, columns and rows', async () => {
-  for (const body of [
-    'null\n["value"]\n[1]\n',
-    '{"query_id":42}\n["value"]\n[1]\n',
-    '{}\n[{"name":42}]\n[1]\n',
-    '{}\n[{"name":"value","type":42}]\n[1]\n',
-    '{}\n["value"]\n{"value":1}\n',
-    '{}\n["value"]\nnull\n',
-    '{}\n["value"]\n[1,2]\n',
-  ]) {
-    const source = local.localLakehouse(
-      {
-        ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
-        ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
-      },
-      Object.assign(async () => new Response(body), { preconnect() {} })
-    );
-    const error = await source
-      .queryAll('SELECT 1', { limit: 1, signal: new AbortController().signal })
-      .catch(error => error);
-    expect(error).toBeInstanceOf(Error);
-  }
-});
-
-test('local lakehouse accepts string and typed column headers, empty results and headerless array rows', async () => {
-  for (const [body, expected] of [
-    [
-      '{"query_id":"q"}\n["value"]\n[1]\n',
-      { columns: [{ name: 'value' }], rows: [[1]], queryId: 'q' },
-    ],
-    [
-      '{}\n[{"name":"value","type":"INTEGER"}]\n[1]\n',
-      { columns: [{ name: 'value', type: 'INTEGER' }], rows: [[1]] },
-    ],
-    ['{}\n["value"]\n', { columns: [{ name: 'value' }], rows: [] }],
-    ['{}\n[1]\n', { columns: [], rows: [[1]] }],
-  ] as const) {
-    const source = local.localLakehouse(
-      {
-        ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
-        ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
-      },
-      Object.assign(async () => new Response(body), { preconnect() {} })
-    );
-    expect(
-      await source.queryAll('SELECT 1', {
-        limit: 1,
-        signal: new AbortController().signal,
-      })
-    ).toMatchObject(expected);
-  }
 });

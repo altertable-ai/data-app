@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DataOperations, DateRangeRequest } from '@/src/core/contract';
-import type { DataClient, InputOf, OutputOf } from '@/src/client/index';
+import type { DataClient, InputOf, OutputOf } from '@/src/client/data-client';
 import { displayedSnapshot, resolveDataView } from '@/src/core/data-view';
 import {
   reportingPeriodText,

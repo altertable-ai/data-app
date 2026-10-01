@@ -4,7 +4,7 @@ import {
   formatCount,
   formatPercent,
   formatDateRange,
-} from '@/src/core/format';
+} from '@altertable/data-app/format';
 test('number formatting distinguishes counts and ratios', () => {
   expect(formatNumber(12.345, { maximumFractionDigits: 2 })).toBe('12.35');
   expect(formatNumber(-0)).toBe('0');

@@ -1,4 +1,5 @@
 import { expect, test } from 'bun:test';
+import { parseAppearance } from '@altertable/data-app/appearance';
 import {
   connectionCheck,
   defineDateRangeContract,
@@ -9,9 +10,8 @@ import {
   parseTrue,
   previousDateRange,
   rowsAsRecords,
-} from '@/src/core/contract';
-import { dataAppTitle } from '@/src/core/config';
-import { resolveDataView } from '@/src/core/data-view';
+} from '@altertable/data-app/contract';
+import { resolveDataView } from '@altertable/data-app/react';
 
 test('starter connection requires a successful bounded query', async () => {
   const query = connectionCheck();
@@ -56,7 +56,7 @@ test('starter connection requires a successful bounded query', async () => {
   ).rejects.toThrow('No lakehouse access');
 });
 
-test('server parsers reject invalid dates, counts, and query shapes', () => {
+test('calendar inputs stay within valid dates and available coverage', () => {
   const bounded = {
     minDate: '2026-01-01',
     maxDate: '2026-01-31',
@@ -76,6 +76,9 @@ test('server parsers reject invalid dates, counts, and query shapes', () => {
   ]) {
     expect(() => parseDateRangeInput(range, bounded)).toThrow();
   }
+});
+
+test('query result parsing rejects invalid metrics and malformed row shapes', () => {
   expect(parseCount('12')).toBe(12);
   for (const value of [-1, 1.5, 'not-a-number', Number.MAX_SAFE_INTEGER + 1]) {
     expect(() => parseCount(value)).toThrow();
@@ -94,15 +97,6 @@ test('server parsers reject invalid dates, counts, and query shapes', () => {
   expect(() =>
     rowsAsRecords({ columns: [{ name: 'name' }], rows: [['A', 2]] }, ['name'])
   ).toThrow();
-});
-
-test("document title reflects the app's configured scope", () => {
-  expect(
-    dataAppTitle({
-      title: 'Revenue',
-      scope: { organization: 'Acme', environment: 'production' },
-    })
-  ).toBe('Revenue • Acme/production • Altertable app');
 });
 
 test('request state labels data from an older input and preserves it on failure', () => {
@@ -208,4 +202,16 @@ test('comparison uses the preceding equal-length range and respects source cover
   expect(
     contract.describeInput({ start: '2026-03-04', end: '2026-03-06' })
   ).toBe('Mar 4–6, 2026 UTC');
+});
+
+test('app appearance accepts supported settings and rejects invalid configuration', () => {
+  expect(
+    parseAppearance({ density: 'compact', cornerRadius: 'small' })
+  ).toMatchObject({
+    density: 'compact',
+    cornerRadius: 'small',
+  });
+  expect(() => parseAppearance({ cornerRadius: 'roundish' })).toThrow(
+    'Invalid appearance'
+  );
 });

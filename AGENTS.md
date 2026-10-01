@@ -17,21 +17,17 @@ boundaries. Read the documentation for the entry you use:
 | Configure identity and theme     | [Config](docs/config.md), [appearance](docs/appearance.md)         |
 | Format values                    | [Format](docs/format.md)                                           |
 
-Import public package entries. For HTTP apps, keep SQL and execution on the server
-and use `import type` for operation types in browser code. Bundle apps own their
-operations in the browser and send SQL through the authorized host bridge. Keep
-credentials and enforced access/query limits on the backend in both models. Call `injectDataAppStyles()`
-once in the browser entry before mounting. Edit app-owned files, not installed package files.
+Import public entries and call `injectDataAppStyles()` once before mounting in
+the browser entry. Edit app-owned files. HTTP apps keep operations on the server and import their types
+in browser code; bundle apps execute operations through the authorized host SQL
+bridge. Credentials and enforced access/query limits stay on the backend.
 
-Inspect source data and time coverage before choosing an exploration. Build
-findings from observed results and preserve loading, empty, error, and stale
-states. The consuming app's instructions define its paths, commands, and analysis
-context; the [starter template](docs/starter-agent-instructions.md) shows how to
-connect them to this guide.
+Inspect data and time coverage before choosing an exploration. Build findings
+from observed results and verify loading, empty, error, and stale states.
 
 ## Contribute to the package source
 
 When working in this package's source repository, read
-[Contributing](CONTRIBUTING.md) for setup, architecture, and checks. Update docs
+[Contributing](CONTRIBUTING.md) for setup and checks. Update docs
 when changing public APIs and run `bun run check` before committing. Do not edit
 generated `dist` files.

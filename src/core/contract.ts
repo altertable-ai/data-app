@@ -277,8 +277,18 @@ export function defineQueryNames<const Names extends Record<string, string>>(
   return names;
 }
 
+const sourceErrorBrand = Symbol.for('@altertable/data-app/DataSourceError');
+
 export class DataSourceError extends Error {
+  readonly [sourceErrorBrand] = true;
   queryName?: string;
+
+  static [Symbol.hasInstance](value: unknown): boolean {
+    return (
+      value instanceof Error &&
+      (value as { [sourceErrorBrand]?: unknown })[sourceErrorBrand] === true
+    );
+  }
 
   constructor(
     public readonly reason:
@@ -430,5 +440,30 @@ export type {
   DimensionFilterOptions,
 } from '@/src/core/dimension';
 
-export * from '@/src/core/messages';
+export {
+  createMessageRouter,
+  defineMessageRoute,
+  defineDataQueryRoute,
+  MessageRoutingError,
+  dataAppRoutes,
+  navigationUpdateRoute,
+  sqlQueryRoute,
+} from '@/src/core/messages';
+export type {
+  MessageContext,
+  RoutedMessage,
+  MessageDispatcher,
+  MessageTransport,
+  MessageRoute,
+  MessageRoutes,
+  MessageInput,
+  MessageHandlers,
+  MessageOutput,
+  OperationContracts,
+  DataQueryInput,
+  DataQueryBody,
+  DataQueryRoute,
+  NavigationUpdate,
+  SqlQueryInput,
+} from '@/src/core/messages';
 export type { TransportResponse } from '@/src/core/bridge';

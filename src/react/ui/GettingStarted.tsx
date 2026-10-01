@@ -1,4 +1,4 @@
-import { createDataClient } from '@/src/client/index';
+import { createDataClient } from '@/src/client/data-client';
 import type { DataAppConfig } from '@/src/core/config';
 import { connectionCheck } from '@/src/core/contract';
 import { createDataHooks } from '@/src/react/hooks';

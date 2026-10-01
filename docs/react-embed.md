@@ -91,14 +91,6 @@ mode renders nothing and handles delivery only. Use source mode for bundle
 loading, sandbox policy, token rotation, and startup timeout. The two prop modes
 are mutually exclusive.
 
-## Migration from the package shell
-
-`DataAppShell` and `DataAppShellProps` have been removed. Replace the import with
-`DataAppBridge` and keep `source`, `title`, and message/status callbacks. Move
-`loading` and `renderError` into the consuming shell, use `iframeProps.hidden` to
-control visibility, and change the bridge's key for retries. Frontend bundle
-fetching and subscriptions and CLI local-server forwarding remain host concerns.
-
 ## Loading placeholder
 
 For a shared placeholder while building or connecting, render `DataAppSkeleton`
