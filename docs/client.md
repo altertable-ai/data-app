@@ -49,8 +49,7 @@ const response = await client.query('connection', {});
 ```
 
 The client runs input parsing, operation logic, and output parsing in the browser.
-It uses the same executor as the server handler for query names, row and duration
-bounds, response size, and query evidence. Each query sends `{ statement, limit }`
+Operation policy bounds rows, duration, and response size and records query evidence. Each query sends `{ statement, limit }`
 to the installed iframe bridge's `data:sql` route; the host needs no operation
 registry. SQL is visible in the browser, even when `exposeSql` is false; that flag
 only controls evidence in the returned response. Credentials remain backend-owned.
@@ -137,14 +136,6 @@ marker. Host Back/Forward state is applied without publishing it back.
 and shares one adapter per document. React mounting and URL-backed controls call
 it automatically. Apps that only use data delivery do not attach navigation.
 
-Migration: replace `bridge.appLocation` with the navigation adapter and
-`bridge.location(mode)` with `navigation.publish(mode)`. The version-1 wire envelope
-now carries host context in `initialize.state` and subsequent `state` messages;
-upgrade independently deployed hosts and runtimes together.
-Transport state is shared per window across separately bundled entry points;
-install only one transport per document. Public error classes retain `instanceof`
-recognition across independent bootstrap and app bundles in that window.
-
 ## Pending request limits
 
 Each iframe bridge accepts at most 128 unresolved requests, including requests
@@ -152,10 +143,7 @@ waiting for the connection handshake. Further calls reject with `bridge_busy`
 until a pending call completes, is cancelled, or times out. This bounds the
 client's promises, timers, and queued messages.
 
-The host independently limits pending requests to 128: an iframe can send
-messages directly without using the client helper. The shared cap is a resource
-policy, not a requirement of the message protocol. It rejects excess requests;
-it does not queue them or limit the total number of calls over a session.
+Hosts enforce their own request limits independently of the client.
 
 A failed local-preview verification can be retried by the next explicit data
 request. Concurrent callers share the current verification attempt; aborting

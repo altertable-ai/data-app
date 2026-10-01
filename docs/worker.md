@@ -41,10 +41,8 @@ return 403. Missing or invalid origin configuration returns 503; an absent
 selection requires an exact default origin. Referrers and messages never supply
 trust.
 
-The package owns the unstyled HTML (`#root` followed by an inline classic script),
-attribute and script escaping, restrictive CSP with configured `frame-ancestors`,
-`no-referrer`, and `nosniff`. App scripts load through the authenticated
-`altertable:data-app` bridge and retain opaque host state. Apps own styling and
+The Worker enforces a restrictive CSP with configured `frame-ancestors`,
+`no-referrer`, and `nosniff`. App scripts load through the authenticated bridge. Apps own styling and
 navigation. Bundle apps execute their operation registry in the browser and send
 SQL through the [host query route](embed.md#sql-query-route); the Worker does not
 resolve operation names or execute queries. Data requests require backend authorization.

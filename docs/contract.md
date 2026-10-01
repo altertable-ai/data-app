@@ -30,7 +30,7 @@ const activity = defineOperation({
 });
 ```
 
-`query` inherits the operation's limit and cancellation signal; `{ limit }` can lower a particular query's bound. Names are checked by TypeScript and at runtime. The executor records the SQL and query ID when execution occurs, so evidence does not need a separate result field. HTTP browser modules import operation types with `import type`. Bundle apps import their browser-owned operation registry as a value and use [browser execution](client.md#browser-owned-operations-for-bundle-apps). Never bundle credentials or server adapters.
+`query` inherits the operation's limit and cancellation signal; `{ limit }` can lower a particular query's bound. Names are checked by TypeScript and at runtime. Responses include executed SQL and query IDs when disclosure is allowed. HTTP browser modules import operation types with `import type`. Bundle apps import their browser-owned operation registry as a value and use [browser execution](client.md#browser-owned-operations-for-bundle-apps). Never bundle credentials or server adapters.
 
 ## Shared date ranges
 

@@ -16,10 +16,7 @@ Read `node_modules/@altertable/data-app/AGENTS.md` and
 | Configure local serving or hosting       | `src/server.ts`                                | `docs/server-bun.md`, `docs/server.md` |
 
 Package documentation paths are relative to `node_modules/@altertable/data-app/`.
-Edit app-owned files and import public package entries. Use `#app/*` and
-`#config` for app imports. Use function declarations for named functions and
-leave blank lines around declarations, effects, and before returns.
-Keep SQL and credentials on the server; use `import type` for operation types
+Edit app-owned files and import public package entries. Keep SQL and credentials on the server; use `import type` for operation types
 in browser code. Import the stylesheet once in the browser entry.
 The connectivity screen is scaffolding, not an example analysis.
 

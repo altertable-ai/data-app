@@ -9,24 +9,27 @@ title and language, attaches navigation to an available iframe transport, and
 installs `DataAppProvider`. When mounting through another
 framework, wrap the app in `DataAppProvider` yourself.
 
+Import shared query and dimension contracts from `/contract`. For custom URL
+controls, compose `searchParams`, `subscribeSearch`, and `writeSearch`.
+
 ## Find UI by task
 
-All of these APIs are exported from `/react`. Each component's stylesheet lives beside its implementation.
+These APIs are exported from `/react`; their props are described in the package declarations.
 
-| Task                                              | Start here                                                                                                                                                                                                       | Related APIs                                                                                                                                                                                                                                       |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Primary request and page shell                    | [DataApp](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/DataApp.tsx)                                                                                                                          | AppLayout, AppHeader, AppToolbar, AppFooter, AppScope, ThemeToggle                                                                                                                                                                                 |
-| Initial connection check                          | [GettingStarted](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/GettingStarted.tsx)                                                                                                            | Pair with `connectionCheck()` from `/contract`                                                                                                                                                                                                     |
-| Arrange content                                   | [Grid](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Grid.tsx), [Stack](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Stack.tsx)                                           | DataWidget                                                                                                                                                                                                                                         |
-| Show a key number                                 | [MetricWidget](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/MetricWidget.tsx)                                                                                                                | ComparisonVisual                                                                                                                                                                                                                                   |
-| Show charts and collections                       | [VisualizationWidget](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/VisualizationWidget.tsx), [TableWidget](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/TableWidget.tsx) | DataTable, Ranking, Breakdown, chartColor                                                                                                                                                                                                          |
-| Handle a request's loading, error, and stale data | [DataSection](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/DataSection.tsx)                                                                                                                  | DataBoundary, DataViewToast, EmptyState, StatusPanel, Skeleton                                                                                                                                                                                     |
-| Show freshness and refresh                        | [UpdatedAt](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/UpdatedAt.tsx), [AppToolbar](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/AppToolbar.tsx)                       | RefreshRegion, LiveControl                                                                                                                                                                                                                         |
-| Bind filters to the URL                           | [variables](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/variables.ts), [DateRangePicker](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/DateRangePicker.tsx)              | Combobox, PeriodSummary, Tabs, useViewTab                                                                                                                                                                                                          |
-| Search a loaded collection                        | [searchItems](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/searchItems.ts), [SearchMatch](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/SearchMatch.tsx)                  | SearchField                                                                                                                                                                                                                                        |
-| Explain context, glossary, and queries            | [AboutData](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/AboutData.tsx), [DataContext](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/data-context.ts)                     | [GlossaryDefinition](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/GlossaryDefinition.tsx), GlossaryExplanation, [defineDataIdentifiers](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/data-identifiers.tsx) |
-| Present loaded findings                           | [PresentStory](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/PresentStory.tsx)                                                                                                                | StoryFinding                                                                                                                                                                                                                                       |
-| Build custom controls and overlays                | [Button](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Button.tsx), [Sheet](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Sheet.tsx)                                       | IconButton, Tooltip, HelpPopover, Kbd                                                                                                                                                                                                              |
+| Task                                              | Start here                           | Related APIs                                                       |
+| ------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------ |
+| Primary request and page shell                    | `DataApp`                            | AppLayout, AppHeader, AppToolbar, AppFooter, AppScope, ThemeToggle |
+| Initial connection check                          | `GettingStarted`                     | Pair with `connectionCheck()` from `/contract`                     |
+| Arrange content                                   | `Grid`, `Stack`                      | DataWidget                                                         |
+| Show a key number                                 | `MetricWidget`                       | ComparisonVisual                                                   |
+| Show charts and collections                       | `VisualizationWidget`, `TableWidget` | DataTable, Ranking, Breakdown, chartColor                          |
+| Handle a request's loading, error, and stale data | `DataSection`                        | DataBoundary, DataViewToast, EmptyState, StatusPanel, Skeleton     |
+| Show freshness and refresh                        | `UpdatedAt`, `AppToolbar`            | RefreshRegion, LiveControl                                         |
+| Bind filters to the URL                           | `variables`, `DateRangePicker`       | Combobox, PeriodSummary, Tabs, useViewTab                          |
+| Search a loaded collection                        | `searchItems`, `SearchMatch`         | SearchField                                                        |
+| Explain context, glossary, and queries            | `AboutData`, `DataContext`           | `GlossaryDefinition`, GlossaryExplanation, `defineDataIdentifiers` |
+| Present loaded findings                           | `PresentStory`                       | StoryFinding                                                       |
+| Build custom controls and overlays                | `Button`, `Sheet`                    | IconButton, Tooltip, HelpPopover, Kbd                              |
 
 ## Loading an embedded app
 
@@ -240,7 +243,7 @@ input is the calendar request. With additional variables, it is `{ period, ...va
 Supply an `input` mapper for a different operation shape and `bindings` to extract
 nested period or dimension inputs. Mappings must preserve the selected values.
 
-`dimensionFilter` requires exactly one option source: fixed `options` or a `facet`.
+`dimensionFilter` from `/contract` requires exactly one option source: fixed `options` or a `facet`.
 Use `defineFacetFilter` to bind a facet operation and its typed input. The generated
 `DimensionPicker` preserves cached options during refresh and failure, offers
 missing values separately, and retains selected values absent from a result with
@@ -252,36 +255,10 @@ zero counts. `SelectableBarChart` can share controlled selection with the picker
 inspection sheets render the same visual and controls. Keep interactive state
 above both mounts when authoring custom children.
 
-Widget headings open inspection when evidence is available; a disclosure arrow
-appears beside the heading on hover or keyboard focus. The top-end toolbar is
-reserved for actions and request status. Empty widgets omit their footer, charts
-omit interaction instructions without data, and table pagination appears only
-when there is more than one page. Local `DataBoundary` and `DataSection` inline
-notices sit above retained section content; use widget status for widget feedback
-and page controls or notices for page feedback.
-
-Combobox search text aligns with option labels. Empty search inputs blur on
-Escape; a second Escape dismisses an open picker. Picker failures show a centered
-message with the retry action below it.
-
 `DataApp.story` receives the displayed snapshot, including its original input
 during refresh or failure. Return one to four `StoryFinding` values with unique
 IDs and registered evidence. `PresentStory` presents those findings directly;
 `context.finding` validates their evidence against the context registry.
-
-### Migration from the earlier runtime
-
-- `DataWidget` replaces the internal `DataPanel` shell and `StorySection` layout.
-- `PresentStory` replaces `PlayStory`; provide `findings` with explicit `evidence`.
-- `context.finding` replaces `context.storyStep`.
-- Table pagination is enabled by default; use `pagination={false}` for complete tables.
-
-## Component gallery
-
-Contributors can preview `/gallery` on the browser fixture server with
-`bun browser-tests/server.ts`. The gallery covers control, widget, request,
-inspection, and narrow-layout defaults. `bun run test:browser` verifies desktop
-and phone interactions. Fixtures are excluded from the published package.
 
 Previous data and evidence are retained only when the input changes within the
 same operation. Switching to another operation shows its own cached response or
