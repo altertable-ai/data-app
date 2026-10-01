@@ -1,6 +1,6 @@
 import {
   executeDataOperation,
-  dataOperationFailure,
+  toDataOperationFailure,
 } from '@/src/core/operation';
 import {
   DataSourceError,
@@ -106,10 +106,11 @@ export function createDataHandler(
     const signal = request.signal;
     try {
       const { serializedBody } = await executeDataOperation(operation, input, {
-        ...access,
+        lakehouse: access.lakehouse,
+        includeSql: access.canDiscloseSql,
         signal,
         requestId,
-        name,
+        operationName: name,
       });
       return new Response(serializedBody, {
         headers: {
@@ -122,7 +123,7 @@ export function createDataHandler(
       console.error(
         `Data operation ${name} failed (${requestId}): ${source ? `${source.reason}${source.status ? ` (${source.status})` : ''}${source.queryName ? ` in ${source.queryName}` : ''}` : error instanceof Error ? error.name : 'unknown'}`
       );
-      const failure = dataOperationFailure(error, signal.aborted);
+      const failure = toDataOperationFailure(error, signal.aborted);
 
       return problem(failure.status, failure.code, failure.message, requestId);
     }

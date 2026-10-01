@@ -27,4 +27,20 @@ For bundle apps, define operations in the browser and pass them to
 [SQL bridge](embed.md#sql-query-route). Credentials, viewer authorization, and
 enforced query limits remain backend-owned.
 
+## Execution ownership
+
+The client selects one of two paths when it is created:
+
+| App model  | Operation execution                                                                                      | Query delivery                                                                                        |
+| ---------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| HTTP app   | The browser sends a name and input; the server authorizes the request and runs its registered operation. | A server-owned lakehouse adapter executes SQL.                                                        |
+| Bundle app | The browser directly runs the registry passed to `createDataClient({ operations })`.                     | `bridge.lakehouse` sends SQL to the host, which authorizes each query and supplies a backend adapter. |
+
+Both paths use the same internal operation executor for input/output validation,
+query names, row bounds, deadlines, evidence, and response serialization limits.
+The executor accepts a `Lakehouse` and never chooses a transport or authorizes a
+viewer. Each adapter owns its boundary: HTTP owns request parsing and responses;
+the bridge owns message delivery; the SQL host owns authorization and public query
+errors. Backend permissions and resource limits apply independently of app policy.
+
 For agent-assisted authoring, see the [starter AGENTS.md template](starter-agent-instructions.md).

@@ -292,9 +292,11 @@ export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
     return null;
   },
 });
+export type SqlQueryInput = { statement: string; limit: number };
+
 /** SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits. */
 export const sqlQueryRoute = defineMessageRoute({
-  input(value: unknown): { statement: string; limit: number } {
+  input(value: unknown): SqlQueryInput {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid SQL query.');
     const query = value as { statement?: unknown; limit?: unknown };
@@ -309,10 +311,7 @@ export const sqlQueryRoute = defineMessageRoute({
 
     return { statement: query.statement, limit: query.limit };
   },
-  output(
-    value: unknown,
-    input: { statement: string; limit: number }
-  ): QueryResult {
+  output(value: unknown, input: SqlQueryInput): QueryResult {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid query result.');
     const result = value as QueryResult;

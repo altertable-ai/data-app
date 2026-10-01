@@ -135,7 +135,8 @@ as public `source_*` errors with request IDs. Authorization failures return
 `forbidden`; unknown query errors are hidden. Custom handlers can return deliberate
 public failures with `MessageRoutingError`.
 
-Requests carry `{ statement: string, limit: number }`; responses are
+`SqlQueryInput` (exported from `/contract` and `/embed`) carries
+`{ statement: string, limit: number }`; responses are
 `{ columns: { name: string, type?: string }[], rows: unknown[][], queryId?: string }`.
 The route rejects empty statements, unsafe or nonpositive limits, malformed
 results, and results exceeding the requested limit. The bridge's existing payload

@@ -1,12 +1,10 @@
-import { DataSourceError, type Lakehouse } from '@/src/core/contract';
-import { dataOperationFailure } from '@/src/core/operation';
+import type { Lakehouse } from '@/src/core/contract';
+import { toDataOperationFailure } from '@/src/core/operation';
 import {
   MessageRoutingError,
   type MessageContext,
-  type sqlQueryRoute,
+  type SqlQueryInput,
 } from '@/src/core/messages';
-
-type SqlQueryInput = ReturnType<typeof sqlQueryRoute.input>;
 
 /** Authorize every SQL request and supply a backend that independently enforces access and query limits. */
 export function createSqlQueryHandler(
@@ -15,7 +13,7 @@ export function createSqlQueryHandler(
     context: MessageContext
   ) => Promise<Lakehouse>
 ) {
-  async function query(input: SqlQueryInput, context: MessageContext) {
+  async function handleSqlQuery(input: SqlQueryInput, context: MessageContext) {
     const requestId = crypto.randomUUID();
     context.signal.throwIfAborted();
     let lakehouse: Lakehouse;
@@ -38,17 +36,10 @@ export function createSqlQueryHandler(
     } catch (error) {
       context.signal.throwIfAborted();
       if (error instanceof MessageRoutingError) throw error;
-      if (error instanceof DataSourceError) {
-        const failure = dataOperationFailure(error);
-        throw new MessageRoutingError(failure.code, failure.message, requestId);
-      }
-      throw new MessageRoutingError(
-        'query_failed',
-        'The data request failed.',
-        requestId
-      );
+      const failure = toDataOperationFailure(error);
+      throw new MessageRoutingError(failure.code, failure.message, requestId);
     }
   }
 
-  return query;
+  return handleSqlQuery;
 }

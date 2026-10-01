@@ -8,56 +8,10 @@ import {
   DataAppError,
   type DataTransport,
 } from '@/src/client/transport';
-import { createOperationTransport } from '@/src/client/operations';
+import { createBrowserOperationClient } from '@/src/client/browser-operations';
+import type { DataClient, DataResponse, OutputOf } from '@/src/client/types';
 import { localFrameBridge } from '@/src/client/iframe';
-export {
-  createHttpTransport,
-  DataAppError,
-  type DataTransport,
-} from '@/src/client/transport';
-export {
-  createIframeTransport,
-  installDataAppTransport,
-  getDataAppTransport,
-  type IframeTransport,
-} from '@/src/client/iframe';
-export { createMessageClient } from '@/src/client/messages';
-import type {
-  DataOperations,
-  DisclosedQuery,
-  Lakehouse,
-} from '@/src/core/contract';
-
-export type InputOf<T> = T extends { input: (value: unknown) => infer Input }
-  ? Input
-  : never;
-export type OutputOf<T> = T extends { output: (value: unknown) => infer Output }
-  ? Output
-  : never;
-
-/**
- * Parsed operation data and query evidence. `queries` is present only when SQL disclosure is
- * allowed.
- */
-export type DataResponse<Output, Input = unknown> = {
-  data: Output;
-  /** The exact browser input that produced this response. Never infer it from current controls. */
-  input: Input;
-  requestId: string;
-  queriedAt: string;
-  queryIds: string[];
-  queries?: DisclosedQuery[];
-};
-
-export type DataClient<Operations extends DataOperations> = {
-  query<Name extends keyof Operations & string>(
-    name: Name,
-    input: InputOf<Operations[Name]>,
-    options?: { signal?: AbortSignal }
-  ): Promise<
-    DataResponse<OutputOf<Operations[Name]>, InputOf<Operations[Name]>>
-  >;
-};
+import type { DataOperations, Lakehouse } from '@/src/core/contract';
 
 /** Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. */
 export function createDataClient<Operations extends DataOperations>(
@@ -80,19 +34,17 @@ export function createDataClient<Operations extends DataOperations>(
     );
   if (options.lakehouse && !options.operations)
     throw new Error('A lakehouse requires browser operations.');
+  if (options.operations)
+    return createBrowserOperationClient(options.operations, options.lakehouse);
+
   const http = createHttpTransport(options);
-  const operationTransport = options.operations
-    ? createOperationTransport(options.operations, options.lakehouse)
-    : undefined;
+  const useHttp = options.endpoint !== undefined || options.fetch !== undefined;
 
   return {
     async query(name, input, { signal } = {}) {
       const transport =
-        operationTransport ??
         options.transport ??
-        (options.endpoint !== undefined || options.fetch !== undefined
-          ? http
-          : (localFrameBridge()?.transport ?? http));
+        (useHttp ? http : (localFrameBridge()?.transport ?? http));
       const response = await transport(name, input, signal);
       const ok = response.status >= 200 && response.status < 300;
       let body: Omit<
@@ -136,3 +88,23 @@ export {
   getDataAppNavigation,
   type DataAppNavigation,
 } from '@/src/client/navigation';
+
+export type {
+  InputOf,
+  OutputOf,
+  DataResponse,
+  DataClient,
+} from '@/src/client/types';
+
+export {
+  createHttpTransport,
+  DataAppError,
+  type DataTransport,
+} from '@/src/client/transport';
+export {
+  createIframeTransport,
+  installDataAppTransport,
+  getDataAppTransport,
+  type IframeTransport,
+} from '@/src/client/iframe';
+export { createMessageClient } from '@/src/client/messages';
