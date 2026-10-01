@@ -1,3 +1,5 @@
+import { injectStyles } from '@/src/react/injectStyles';
+
 // Replaced with the compiled stylesheet by the package build.
 declare const DATA_APP_STYLES: string;
 
@@ -12,20 +14,10 @@ export interface DataAppStylesOptions {
 export function injectDataAppStyles(
   options: DataAppStylesOptions = {}
 ): HTMLStyleElement {
-  const target =
-    options.document ??
-    (typeof document === 'undefined' ? undefined : document);
-  if (!target)
-    throw new Error('injectDataAppStyles requires a browser document.');
-  const existing = target.querySelector<HTMLStyleElement>(
-    'style[data-altertable-styles]'
-  );
-  if (existing) return existing;
-  const style = target.createElement('style');
-  style.setAttribute('data-altertable-styles', '');
-  if (options.nonce !== undefined) style.nonce = options.nonce;
-  style.textContent = DATA_APP_STYLES;
-  target.head.append(style);
-
-  return style;
+  return injectStyles({
+    name: 'injectDataAppStyles',
+    attribute: 'data-altertable-styles',
+    css: DATA_APP_STYLES,
+    options,
+  });
 }

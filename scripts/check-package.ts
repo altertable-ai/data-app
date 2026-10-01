@@ -316,6 +316,40 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
     throw new Error('Packed browser build omitted injected React styles.');
 
   await writeFile(
+    join(temporary, 'shell.tsx'),
+    `import { DataAppSkeleton, injectDataAppShellStyles } from '@altertable/data-app/react';
+injectDataAppShellStyles();
+export { DataAppSkeleton };
+`
+  );
+  const shell = await Bun.build({
+    entrypoints: [join(temporary, 'shell.tsx')],
+    target: 'browser',
+    minify: true,
+    external: ['react', 'react-dom'],
+  });
+  if (!shell.success) throw new Error('Packed shell build failed.');
+  const shellSource = await shell.outputs[0]!.text();
+  if (!shellSource.includes('.altertable-data-app-skeleton'))
+    throw new Error('Packed shell build omitted skeleton styles.');
+  for (const component of [
+    'grid',
+    'data-widget',
+    'metric-widget',
+    'visualization-widget-content',
+    'content-skeleton',
+  ]) {
+    if (!shellSource.includes(`.altertable-${component}`))
+      throw new Error(`Packed shell build omitted shared ${component} styles.`);
+  }
+  if (
+    /\.altertable-(button|combobox|data-table|date-range-picker)\b|data-altertable-styles/.test(
+      shellSource
+    )
+  )
+    throw new Error('Packed shell build retained full UI styles.');
+
+  await writeFile(
     join(temporary, 'tree-shaking.tsx'),
     `import { Grid } from '@altertable/data-app/react';
 export { Grid };

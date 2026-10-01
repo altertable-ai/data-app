@@ -2,7 +2,7 @@
 @import './ui/SearchInput.css';
 @import './ui/Button.css';
 @import './ui/SearchField.css';
-@import './ui/Skeleton.css';
+@import './shared.css';
 @import './ui/Tooltip.css';
 @import './ui/RequestHint.css';
 @import './ui/GradientScroll.css';
@@ -29,16 +29,12 @@
 @import './ui/AppToolbar.css';
 @import './ui/VariableBar.css';
 @import './ui/DataViewToast.css';
-@import './ui/ContentSkeleton.css';
 @import './ui/DataBoundary.css';
 @import './ui/StatusPanel.css';
 @import './ui/GettingStarted.css';
 @import './ui/Stack.css';
-@import './ui/Grid.css';
 @import './ui/Inspect.css';
-@import './ui/DataWidget.css';
 @import './ui/WidgetViewTabs.css';
-@import './ui/VisualizationWidget.css';
 @import './ui/HelpPopover.css';
 @import './ui/DateTimeTooltip.css';
 @import './ui/DataTable.css';
@@ -47,7 +43,6 @@
 @import './ui/Ranking.css';
 @import './ui/WidgetDisclosure.css';
 @import './ui/ComparisonVisual.css';
-@import './ui/MetricWidget.css';
 @import './ui/SelectableBarChart.css';
 @import './ui/RefreshRegion.css';
 @import './ui/UpdatedAt.css';
