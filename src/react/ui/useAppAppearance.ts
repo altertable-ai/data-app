@@ -2,14 +2,18 @@ import { useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import {
   applyAppearance,
   createThemeController,
-  parseAppearance,
+  normalizeAppearance,
   type Theme,
+  type AppearanceOptions,
 } from '@/src/core/appearance';
 
 /** The parent theme takes precedence; only standalone viewers receive controls. */
-export function useAppAppearance(appearance: unknown, hostTheme?: Theme) {
+export function useAppAppearance(
+  appearance: AppearanceOptions,
+  hostTheme?: Theme
+) {
   const [controller] = useState(() =>
-    createThemeController(parseAppearance(appearance).theme)
+    createThemeController(normalizeAppearance(appearance).theme)
   );
   const viewerPreference = useSyncExternalStore(
     controller.subscribe,
@@ -20,7 +24,7 @@ export function useAppAppearance(appearance: unknown, hostTheme?: Theme) {
   useLayoutEffect(
     () =>
       applyAppearance({
-        ...parseAppearance(appearance),
+        ...normalizeAppearance(appearance),
         theme: hostTheme ?? viewerPreference,
       }),
     [appearance, hostTheme, viewerPreference]

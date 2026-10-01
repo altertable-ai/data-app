@@ -41,7 +41,8 @@ and failure.
 | Bind definitions and source evidence       | [Data context](react.md#bind-evidence)                     |
 
 Use the exported types for configuration, appearance, formatting, and component
-options.
+options. Declare configuration with `satisfies DataAppConfig` so appearance
+fields and values are checked before bundling.
 
 ## Present the findings
 

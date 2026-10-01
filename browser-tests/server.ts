@@ -1,7 +1,7 @@
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
-import starterConfig from '@/examples/starter-local-data-app/app.json';
+import starterConfig from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';

@@ -64,10 +64,6 @@ export function dimensionFilter<const T extends DimensionValue>(
 ): DimensionVariable<T> {
   const { key, label, selection, valueType } = config;
   const options = config.options ?? [];
-  invariant(
-    !!config.options !== !!config.facet,
-    'Choose fixed options or one facet operation.'
-  );
   const optionKeys = options.map(option =>
     dimensionMemberKey({ kind: 'value', value: option.value })
   );

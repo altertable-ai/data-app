@@ -47,5 +47,7 @@ or `pnpm add @altertable/data-app`, then regenerate your lockfile.
 bun run check
 ```
 
-`bun run build` bundles the browser page into `dist/`. That browser artifact
+Edit identity and appearance in `app.ts`, which uses `satisfies DataAppConfig`.
+
+`bun run build` typechecks the app, then bundles the browser page into `dist/`. That browser artifact
 still needs an authorized `/api/data` backend when hosted.

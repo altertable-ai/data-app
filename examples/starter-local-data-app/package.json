@@ -4,16 +4,16 @@
   "type": "module",
   "imports": {
     "#app/*": "./src/*",
-    "#config": "./app.json"
+    "#config": "./app.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "lint": "oxlint --type-aware src",
-    "format": "oxfmt src",
-    "format:check": "oxfmt --check src",
+    "format": "oxfmt src app.ts",
+    "format:check": "oxfmt --check src app.ts",
     "dev": "bun --hot src/server.ts",
-    "build": "bun build src/index.html --outdir=dist --production",
-    "check": "bun run typecheck && bun run lint && bun run format:check && bun run build"
+    "build": "bun run typecheck && bun build src/index.html --outdir=dist --production",
+    "check": "bun run lint && bun run format:check && bun run build"
   },
   "dependencies": {
     "@altertable/data-app": "file:../..",
