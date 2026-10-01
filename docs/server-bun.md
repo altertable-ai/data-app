@@ -24,3 +24,8 @@ Missing credentials fail the query. Keep these variables out of browser code.
 Local serving permits SQL disclosure and does not authenticate hosted viewers.
 Use [the portable server handler](server.md) with per-request authorization when
 hosting an app for other people.
+
+The local adapter validates NDJSON metadata, optional string or typed column
+headers, and array rows before returning a result. Query IDs must be strings.
+Rows must match the column count when a header is present; headerless array rows
+remain supported with empty column metadata. Empty results remain valid.
