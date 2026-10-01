@@ -32,17 +32,19 @@ export function RequestHint({
     >
       {active && (
         <>
-          <AppIcon
-            name={status.kind === 'error' ? 'error' : 'loading'}
-            size={14}
-            className={
-              status.kind === 'updating'
-                ? 'altertable-request-hint-spinner'
-                : undefined
-            }
-          />
-          <span className="altertable-request-hint-message" title={message}>
-            {message}
+          <span className="altertable-request-hint-copy">
+            <AppIcon
+              name={status.kind === 'error' ? 'error' : 'loading'}
+              size={14}
+              className={
+                status.kind === 'updating'
+                  ? 'altertable-request-hint-spinner'
+                  : undefined
+              }
+            />
+            <span className="altertable-request-hint-message" title={message}>
+              {message}
+            </span>
           </span>
           {status.kind === 'error' && status.onRetry && (
             <Button variant="ghost" size="compact" onClick={status.onRetry}>

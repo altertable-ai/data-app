@@ -95,7 +95,7 @@ function DataWidgetContent({
   const visual = (
     <WidgetContent
       bodyPadding={empty ? 'flush' : bodyPadding}
-      footer={footer}
+      footer={empty ? undefined : footer}
       status={status}
     >
       {content}
@@ -103,16 +103,17 @@ function DataWidgetContent({
   );
   const help = evidence && (
     <AboutData
-      {...evidence}
       id={evidence.id}
       references={{
         kind: 'ids',
         glossaryIds: evidence.glossaryIds,
         queryNames: evidence.queryNames,
       }}
-      iconOnly
+      aria-label={
+        typeof title === 'string' ? `Explore ${title}` : 'Explore this widget'
+      }
       variant="ghost"
-      className="altertable-inspect-trigger"
+      className="altertable-widget-heading-trigger"
       tooltip="Explore this widget"
       shortcut={false}
       title={title}
@@ -121,6 +122,7 @@ function DataWidgetContent({
       visual={visual}
       visualKind="widget"
     >
+      {title}
       <AppIcon name="openDetails" />
     </AboutData>
   );
@@ -133,8 +135,11 @@ function DataWidgetContent({
     >
       <header className="altertable-data-widget-header">
         <div>
-          <h2 id={titleId}>
-            {title}
+          <h2
+            id={titleId}
+            aria-label={typeof title === 'string' ? title : undefined}
+          >
+            {help ?? title}
             {count !== undefined && (
               <span className="altertable-data-widget-count">
                 {formatCount(count)}
@@ -146,7 +151,6 @@ function DataWidgetContent({
         <div className="altertable-data-widget-help">
           <WidgetStatusControl status={status} />
           {action}
-          {help}
         </div>
       </header>
       {visual}

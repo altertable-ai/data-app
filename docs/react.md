@@ -224,6 +224,18 @@ zero counts. `SelectableBarChart` can share controlled selection with the picker
 inspection sheets render the same visual and controls. Keep interactive state
 above both mounts when authoring custom children.
 
+Widget headings open inspection when evidence is available; a disclosure arrow
+appears beside the heading on hover or keyboard focus. The top-end toolbar is
+reserved for actions and request status. Empty widgets omit their footer, charts
+omit interaction instructions without data, and table pagination appears only
+when there is more than one page. Local `DataBoundary` and `DataSection` inline
+notices sit above retained section content; use widget status for widget feedback
+and page controls or notices for page feedback.
+
+Combobox search text aligns with option labels. Empty search inputs blur on
+Escape; a second Escape dismisses an open picker. Picker failures show a centered
+message with the retry action below it.
+
 `DataApp.story` receives the displayed snapshot, including its original input
 during refresh or failure. Return one to four `StoryFinding` values with unique
 IDs and registered evidence. `PresentStory` presents those findings directly;
