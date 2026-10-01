@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.64.0](https://github.com/altertable-ai/data-app/compare/v0.63.0...v0.64.0) (2026-10-01)
+
+
+### Features
+
+* **gallery:** compose gallery with data app components ([#20](https://github.com/altertable-ai/data-app/issues/20)) ([7afa6e2](https://github.com/altertable-ai/data-app/commit/7afa6e272287af7e206168538a8f2f27bce8529f))
+
+
+### Bug Fixes
+
+* **config:** enforce app authoring contracts through TypeScript ([#23](https://github.com/altertable-ai/data-app/issues/23)) ([2578a07](https://github.com/altertable-ai/data-app/commit/2578a0753cadb9edb5d028da28910a3f7f8a4762))
+* **worker:** expose runtimeHtml ([#22](https://github.com/altertable-ai/data-app/issues/22)) ([a730048](https://github.com/altertable-ai/data-app/commit/a730048419b796ca7efc848b4e7df6ed0d6841f8))
+
 ## [0.63.0](https://github.com/altertable-ai/data-app/compare/v0.62.0...v0.63.0) (2026-10-01)
 
 
