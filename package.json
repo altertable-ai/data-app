@@ -86,7 +86,7 @@
   },
   "scripts": {
     "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
     "lint": "oxlint --type-aware src tests scripts browser-tests examples/starter-data-app",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
