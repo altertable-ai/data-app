@@ -1,10 +1,10 @@
+import { createBridgeEndpoint } from '@/src/core/bridge-endpoint';
 import type { DataAppPresentation } from '@/src/core/presentation';
 import {
-  BRIDGE,
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
-  isBridgeMessage,
   validId,
+  type BridgeEventMessage,
   type BridgeMessage,
 } from '@/src/core/bridge';
 
@@ -22,7 +22,10 @@ export type DataAppStatus =
   | 'ready'
   | 'failed'
   | 'disconnected';
-export type DataAppDiagnostic = { direction: 'send' | 'receive'; type: string };
+export type DataAppDiagnostic = {
+  direction: 'send' | 'receive';
+  type: BridgeMessage['type'];
+};
 
 export type DataAppHost = {
   dispose: () => void;
@@ -94,20 +97,56 @@ export function attachDataAppConnection({
     pending.clear();
   }
 
-  function send(message: Partial<BridgeMessage>) {
-    onDiagnostic?.({ direction: 'send', type: message.type ?? 'unknown' });
-    iframe.contentWindow?.postMessage(
-      {
-        channel: BRIDGE,
-        version: 1,
-        documentId,
-        sessionId,
-        ...(connection.type === 'opaque' ? { token } : {}),
-        ...message,
+  const endpoint = createBridgeEndpoint({
+    role: 'host',
+    origin: frameOrigin,
+    source: () => iframe.contentWindow,
+    opaque: connection.type === 'opaque',
+    context: () => ({ documentId, sessionId, token }),
+    post: message => iframe.contentWindow?.postMessage(message, targetOrigin),
+    diagnostic: (direction, type) => onDiagnostic?.({ direction, type }),
+    invalidRequest: id => {
+      if (pending.has(id)) return;
+      if (pending.size >= MAX_PENDING)
+        error(id, 'bridge_busy', 'Too many pending data requests.');
+      else error(id, 'invalid_message', 'Invalid message route.');
+    },
+    handlers: {
+      ready(message) {
+        if (message.documentId !== documentId) {
+          cancelAll();
+          documentId = message.documentId;
+          sessionId = crypto.randomUUID();
+        }
+        onStatusChange?.('connected');
+        if (disposed) return;
+        send('initialize', { state: hostState() });
+        if (disposed) return;
+        if (javascript !== undefined) send('scriptLoad', { javascript });
       },
-      targetOrigin
-    );
-  }
+      runtimeReady() {
+        onStatusChange?.('ready');
+      },
+      runtimeError() {
+        onStatusChange?.('failed');
+      },
+      request(message) {
+        void request(message);
+      },
+      cancel(message) {
+        pending.get(message.id)?.abort();
+        pending.delete(message.id);
+      },
+      disconnect() {
+        cancelAll();
+        documentId = undefined;
+        sessionId = undefined;
+        onStatusChange?.('disconnected');
+      },
+    },
+  });
+  const send = endpoint.send;
+  const receive = endpoint.receive;
 
   function error(
     id: string,
@@ -115,20 +154,14 @@ export function attachDataAppConnection({
     message: string,
     requestId?: string
   ) {
-    send({ type: 'bridge:error', id, code, message, requestId });
+    send('error', { id, code, message, requestId });
   }
 
-  async function request(message: BridgeMessage) {
+  async function request(message: BridgeEventMessage<'request'>) {
     const id = message.id;
-    if (!validId(id) || pending.has(id)) return;
+    if (pending.has(id)) return;
     if (pending.size >= MAX_PENDING)
       return error(id, 'bridge_busy', 'Too many pending data requests.');
-    if (
-      typeof message.route !== 'string' ||
-      !message.route ||
-      message.route.length > 256
-    )
-      return error(id, 'invalid_message', 'Invalid message route.');
     try {
       const body = JSON.stringify(message.payload);
       if (
@@ -159,8 +192,7 @@ export function attachDataAppConnection({
         { route: message.route, payload: message.payload },
         { signal: controller.signal }
       );
-      if (pending.get(id) === controller)
-        send({ type: 'bridge:result', id, response });
+      if (pending.get(id) === controller) send('result', { id, response });
     } catch (failure) {
       if (pending.get(id) === controller) {
         if (failure instanceof MessageRoutingError)
@@ -178,56 +210,9 @@ export function attachDataAppConnection({
     }
   }
 
-  function receive(event: MessageEvent) {
-    if (
-      event.origin !== frameOrigin ||
-      event.source !== iframe.contentWindow ||
-      !isBridgeMessage(event.data)
-    )
-      return;
-    const message = event.data;
-    if (connection.type === 'opaque' && message.token !== token) return;
-    onDiagnostic?.({ direction: 'receive', type: message.type });
-    if (message.type === 'bridge:ready') {
-      if (message.documentId !== documentId) {
-        cancelAll();
-        documentId = message.documentId;
-        sessionId = crypto.randomUUID();
-      }
-      onStatusChange?.('connected');
-      send({
-        type: 'bridge:initialize',
-        state: hostState(),
-      });
-      if (javascript !== undefined) send({ type: 'script:load', javascript });
-
-      return;
-    }
-    if (
-      !sessionId ||
-      message.sessionId !== sessionId ||
-      message.documentId !== documentId
-    )
-      return;
-    if (message.type === 'runtime:ready') onStatusChange?.('ready');
-    else if (message.type === 'runtime:error') onStatusChange?.('failed');
-    else if (message.type === 'bridge:request') void request(message);
-    else if (message.type === 'bridge:cancel' && validId(message.id)) {
-      pending.get(message.id)?.abort();
-      pending.delete(message.id);
-    } else if (message.type === 'bridge:disconnect') {
-      cancelAll();
-      documentId = undefined;
-      sessionId = undefined;
-      onStatusChange?.('disconnected');
-    }
-  }
-
   function publishState() {
-    send({
-      type: 'state:update',
-      state: hostState(),
-    });
+    if (disposed || !sessionId) return;
+    send('stateUpdate', { state: hostState() });
   }
 
   function load() {
@@ -236,11 +221,12 @@ export function attachDataAppConnection({
     documentId = undefined;
     sessionId = undefined;
     onStatusChange?.('connecting');
-    send({ type: 'bridge:connect', documentId: 'host' });
+    send('connect', {});
   }
 
   function dispose() {
     disposed = true;
+    endpoint.dispose();
     cancelAll();
     iframe.removeEventListener('load', load);
     host.removeEventListener('message', receive);
@@ -255,7 +241,7 @@ export function attachDataAppConnection({
   host.addEventListener('pagehide', cancelAll);
   // Reconnect an already-loaded iframe when its host bridge mounts again.
   onStatusChange?.('connecting');
-  send({ type: 'bridge:connect', documentId: 'host' });
+  send('connect', {});
 
   return { dispose, setPresentation };
 }
