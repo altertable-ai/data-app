@@ -49,6 +49,7 @@ function isPreviewHost(hostname: string, domainName: string) {
 }
 
 export default {
+  runtimeHtml,
   fetch(request: Request, env: WorkerBindings) {
     const url = new URL(request.url);
     if (!isPreviewHost(url.hostname, env.DOMAIN_NAME) || url.pathname !== '/') {
