@@ -157,7 +157,7 @@ test('parent controls embedded chrome and live theme without remounting', async 
   await expect(app.locator('html')).toHaveCSS('color-scheme', 'light');
   await expect(app.locator('body')).toHaveAttribute('data-executions', '1');
   await expect(app.locator('#location')).toHaveText('period=last-30#totals');
-  await page.getByRole('button', { name: 'Change mount' }).click();
+  await page.getByRole('button', { name: 'Change surface' }).click();
   await expect(
     app.getByRole('heading', { name: 'Embedded report' })
   ).toBeVisible();

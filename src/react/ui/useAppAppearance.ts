@@ -9,7 +9,7 @@ import {
 /** The parent theme takes precedence; only standalone viewers receive controls. */
 export function useAppAppearance(appearance: unknown, hostTheme?: Theme) {
   const [controller] = useState(() =>
-    createThemeController(parseAppearance(appearance).mode)
+    createThemeController(parseAppearance(appearance).theme)
   );
   const viewerPreference = useSyncExternalStore(
     controller.subscribe,
@@ -21,7 +21,7 @@ export function useAppAppearance(appearance: unknown, hostTheme?: Theme) {
     () =>
       applyAppearance({
         ...parseAppearance(appearance),
-        mode: hostTheme ?? viewerPreference,
+        theme: hostTheme ?? viewerPreference,
       }),
     [appearance, hostTheme, viewerPreference]
   );

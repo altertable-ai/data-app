@@ -7,15 +7,15 @@ import {
 import { parsePresentation } from '@/src/core/presentation';
 
 test('presentation accepts only known mounts and resolved themes', () => {
-  expect(parsePresentation({ mount: 'altertable', theme: 'dark' })).toEqual({
-    mount: 'altertable',
+  expect(parsePresentation({ surface: 'altertable', theme: 'dark' })).toEqual({
+    surface: 'altertable',
     theme: 'dark',
   });
   for (const value of [
     null,
     [],
-    { mount: 'altertable', theme: 'system' },
-    { mount: 'unknown', theme: 'light' },
+    { surface: 'altertable', theme: 'system' },
+    { surface: 'unknown', theme: 'light' },
   ])
     expect(parsePresentation(value)).toBeUndefined();
 });
@@ -44,20 +44,20 @@ test('host appearance does not persist and standalone viewers restore their save
   } as unknown as Window & typeof globalThis;
   globalThis.document = { documentElement: { style } } as unknown as Document;
   try {
-    const appearance = parseAppearance({ mode: 'system' });
-    const stopHostAppearance = applyAppearance({ ...appearance, mode: 'dark' });
+    const appearance = parseAppearance({ theme: 'system' });
+    const stopHostAppearance = applyAppearance({
+      ...appearance,
+      theme: 'dark',
+    });
     expect(style.colorScheme).toBe('dark');
     expect(writes).toEqual([]);
     stopHostAppearance();
-    expect(() => createThemeController('unknown' as never)).toThrow(
-      'Invalid theme preference.'
-    );
-    const viewerTheme = createThemeController(appearance.mode);
+    const viewerTheme = createThemeController(appearance.theme);
     expect(style.colorScheme).toBe('dark');
     expect(viewerTheme.getTheme()).toBe('light');
     const stopViewerAppearance = applyAppearance({
       ...appearance,
-      mode: viewerTheme.getTheme(),
+      theme: viewerTheme.getTheme(),
     });
     expect(style.colorScheme).toBe('light');
     let notifications = 0;

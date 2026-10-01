@@ -115,17 +115,17 @@ The parent declares where the iframe is mounted and owns its resolved theme:
 const host = attachDataAppShell({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
-  presentation: { mount: 'altertable', theme: 'dark' },
+  presentation: { surface: 'altertable', theme: 'dark' },
   onMessage: router.dispatch,
 });
 
 // Update presentation without replacing the iframe or its bridge session.
-host.setPresentation({ mount: 'altertable', theme: 'light' });
+host.setPresentation({ surface: 'altertable', theme: 'light' });
 ```
 
 `attachDataAppBridge` supports the same `presentation` option and
 `host.setPresentation(presentation)` method. `DataAppPresentation` is exported from
-`/embed` and `/client`. Use `mount: 'altertable'` inside the Altertable frontend
+`/embed` and `/client`. Use `surface: 'altertable'` inside the Altertable frontend
 and `'custom'` for other hosts. `theme` must be resolved to `'light'` or
 `'dark'`; the parent decides how its system preference is resolved.
 
@@ -133,8 +133,8 @@ Presentation travels over `postMessage` in the authenticated `bridge:initialize`
 `state:update` messages, alongside `search` and `hash`. Framework-neutral apps
 can read `bridge.snapshot().presentation` after narrowing the unknown state and
 subscribe through `bridge.subscribe`. React `DataApp` consumes it automatically.
-An Altertable mount renders toolbar actions without the page header or footer.
-Both mount locations follow the parent's theme, including presentation mode, without
+An Altertable surface renders toolbar actions without the page header or footer.
+Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;
 `host.setPresentation(undefined)` restores it.
 

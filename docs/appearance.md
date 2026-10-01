@@ -8,14 +8,14 @@ viewer preferences use browser storage.
 import { parseAppearance } from '@altertable/data-app/appearance';
 
 const appearance = parseAppearance({
-  mode: 'system',
+  theme: 'system',
   accentColor: '#405d47',
   density: 'comfortable',
 });
 ```
 
 `parseAppearance` fills omitted settings with defaults and rejects unknown keys
-or invalid values. Settings include light/dark/system mode, neutral/slate/warm
+or invalid values. Settings include light/dark/system theme, neutral/slate/warm
 base colors, accent colors, a chart palette, density, corner radius, elevation,
 and body/heading typography. Colors are six-digit hexadecimal values.
 
@@ -39,3 +39,5 @@ When migrating theme controls, replace `getMode`/`setMode` with
 `getTheme`/`setTheme`, and initialize the controller with a `ThemePreference`
 rather than appearance settings. Subscribe to the controller and compose its
 preference with `applyAppearance` to update document tokens.
+
+Appearance configuration uses `theme` (formerly `mode`).

@@ -9,7 +9,7 @@ export type Theme = 'light' | 'dark';
 export type ThemePreference = Theme | 'system';
 
 export type AppearanceSettings = {
-  mode: ThemePreference;
+  theme: ThemePreference;
   baseColor: 'neutral' | 'slate' | 'warm';
   accentColor: string;
   darkAccentColor?: string;
@@ -27,7 +27,7 @@ export type ThemeController = {
 };
 
 const defaults: AppearanceSettings = {
-  mode: 'light',
+  theme: 'light',
   baseColor: 'neutral',
   accentColor: '#405d47',
   darkAccentColor: '#a6c4ad',
@@ -80,7 +80,7 @@ export function parseAppearance(value: unknown): AppearanceSettings {
     record(value) &&
       Object.keys(value).every(key =>
         [
-          'mode',
+          'theme',
           'baseColor',
           'accentColor',
           'darkAccentColor',
@@ -95,8 +95,8 @@ export function parseAppearance(value: unknown): AppearanceSettings {
   );
   const typography = value.typography;
   const validFields =
-    (value.mode === undefined ||
-      oneOf(value.mode, ['light', 'dark', 'system'])) &&
+    (value.theme === undefined ||
+      oneOf(value.theme, ['light', 'dark', 'system'])) &&
     (value.baseColor === undefined ||
       oneOf(value.baseColor, ['neutral', 'slate', 'warm'])) &&
     (value.accentColor === undefined || color(value.accentColor)) &&
@@ -122,7 +122,7 @@ export function parseAppearance(value: unknown): AppearanceSettings {
   invariant(validFields, 'Invalid appearance settings.');
 
   return {
-    mode: (value.mode ?? defaults.mode) as AppearanceSettings['mode'],
+    theme: (value.theme ?? defaults.theme) as AppearanceSettings['theme'],
     baseColor: (value.baseColor ??
       defaults.baseColor) as AppearanceSettings['baseColor'],
     accentColor: (value.accentColor ?? defaults.accentColor) as string,
@@ -222,8 +222,8 @@ export function applyAppearance(value: unknown): () => void {
 
   function applyColors(): void {
     const dark =
-      settings.mode === 'dark' ||
-      (settings.mode === 'system' && preference.matches);
+      settings.theme === 'dark' ||
+      (settings.theme === 'system' && preference.matches);
     const [background, surfaceColor, subtle, text, muted, border] =
       palettes[settings.baseColor][dark ? 'dark' : 'light'];
     const accent = dark
@@ -258,7 +258,7 @@ export function applyAppearance(value: unknown): () => void {
       root.style.setProperty(name, token);
   }
   applyColors();
-  if (settings.mode === 'system')
+  if (settings.theme === 'system')
     preference.addEventListener('change', applyColors);
 
   return () => {
@@ -270,11 +270,7 @@ export function applyAppearance(value: unknown): () => void {
 export function createThemeController(
   initialTheme: ThemePreference = 'light'
 ): ThemeController {
-  invariant(
-    oneOf(initialTheme, ['light', 'dark', 'system']),
-    'Invalid theme preference.'
-  );
-  const storageKey = 'altertable.data-app.theme-mode';
+  const storageKey = 'altertable.data-app.theme';
   let theme = initialTheme;
   try {
     const saved = window.localStorage.getItem(storageKey);

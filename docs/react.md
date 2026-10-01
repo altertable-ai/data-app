@@ -249,6 +249,6 @@ an initial loading/error state; it never inherits another operation's result.
 
 When a trusted parent supplies [parent presentation](embed.md#parent-presentation),
 `DataApp` follows its resolved theme and suppresses local theme controls,
-including in presentations. In the Altertable frontend (`mount: 'altertable'`),
+including in presentations. In the Altertable frontend (`surface: 'altertable'`),
 only toolbar actions remain above the app body; the title, scope, description, and
 footer are omitted. Variables and request states remain available.

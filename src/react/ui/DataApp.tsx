@@ -84,7 +84,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     layoutProps,
   } = props;
   const presentation = useDataAppPresentation();
-  const inAltertable = presentation?.mount === 'altertable';
+  const inAltertable = presentation?.surface === 'altertable';
   const themeController = useAppAppearance(
     config.appearance,
     presentation?.theme

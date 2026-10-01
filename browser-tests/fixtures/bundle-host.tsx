@@ -41,7 +41,9 @@ function Host() {
       <button onClick={() => setParentPresentation(value => !value)}>
         Toggle parent presentation
       </button>
-      <button onClick={() => setEmbedded(value => !value)}>Change mount</button>
+      <button onClick={() => setEmbedded(value => !value)}>
+        Change surface
+      </button>
       <button onClick={bumpVersion}>Change handler</button>
       <button onClick={bumpRevision}>Change revision</button>
       <button onClick={() => setBroken(false)}>Fix bundle</button>
@@ -49,7 +51,7 @@ function Host() {
         title="Sandbox app"
         presentation={
           parentPresentation
-            ? { mount: embedded ? 'altertable' : 'custom', theme }
+            ? { surface: embedded ? 'altertable' : 'custom', theme }
             : undefined
         }
         source={

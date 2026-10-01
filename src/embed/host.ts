@@ -82,7 +82,7 @@ export function attachDataAppBridge({
     if (value !== undefined && !next)
       throw new Error('Invalid app presentation.');
     if (
-      next?.mount === currentPresentation?.mount &&
+      next?.surface === currentPresentation?.surface &&
       next?.theme === currentPresentation?.theme
     )
       return;

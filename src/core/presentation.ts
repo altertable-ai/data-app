@@ -2,7 +2,7 @@ import type { Theme } from '@/src/core/appearance';
 
 /** Presentation owned by the parent shell, delivered only over a trusted bridge. */
 export type DataAppPresentation = {
-  mount: 'altertable' | 'custom';
+  surface: 'altertable' | 'custom';
   theme: Theme;
 };
 
@@ -12,10 +12,11 @@ export function parsePresentation(
   if (!value || typeof value !== 'object') return undefined;
   const presentation = value as DataAppPresentation;
   if (
-    (presentation.mount !== 'altertable' && presentation.mount !== 'custom') ||
+    (presentation.surface !== 'altertable' &&
+      presentation.surface !== 'custom') ||
     (presentation.theme !== 'light' && presentation.theme !== 'dark')
   )
     return undefined;
 
-  return { mount: presentation.mount, theme: presentation.theme };
+  return { surface: presentation.surface, theme: presentation.theme };
 }
