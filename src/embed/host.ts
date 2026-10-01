@@ -1,4 +1,8 @@
 import {
+  parseHostContext,
+  type DataAppHostContext,
+} from '@/src/core/host-context';
+import {
   BRIDGE,
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
@@ -28,6 +32,7 @@ export function attachDataAppBridge({
   iframe,
   connection,
   javascript,
+  hostContext,
   onStatusChange,
   onDiagnostic,
   onMessage,
@@ -36,6 +41,7 @@ export function attachDataAppBridge({
   iframe: HTMLIFrameElement;
   connection: DataAppConnection;
   javascript?: string;
+  hostContext?: DataAppHostContext;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   onMessage: MessageDispatcher;
@@ -51,9 +57,39 @@ export function attachDataAppBridge({
     throw new Error('Invalid sandbox token.');
   let token = connection.type === 'opaque' ? connection.token : undefined;
   const targetOrigin = connection.type === 'opaque' ? '*' : frameOrigin;
+  let context = validateContext(hostContext);
+  let disposed = false;
   let documentId: string | undefined;
   let sessionId: string | undefined;
   const pending = new Map<string, AbortController>();
+
+  function validateContext(value: DataAppHostContext | undefined) {
+    const parsed = parseHostContext(value);
+    if (value !== undefined && !parsed)
+      throw new Error('Invalid host context.');
+
+    return parsed;
+  }
+
+  function state() {
+    return {
+      search: host.location.search,
+      hash: host.location.hash,
+      ...(context ? { hostContext: context } : {}),
+    };
+  }
+
+  function updateHostContext(value: DataAppHostContext | undefined) {
+    if (disposed) return;
+    const next = validateContext(value);
+    if (
+      next?.surface === context?.surface &&
+      next?.colorScheme === context?.colorScheme
+    )
+      return;
+    context = next;
+    if (sessionId) navigate();
+  }
 
   function cancelAll() {
     for (const controller of pending.values()) controller.abort();
@@ -163,7 +199,7 @@ export function attachDataAppBridge({
       onStatusChange?.('connected');
       send({
         type: 'bridge:initialize',
-        state: { search: host.location.search, hash: host.location.hash },
+        state: state(),
       });
       if (javascript !== undefined) send({ type: 'script:load', javascript });
 
@@ -192,7 +228,7 @@ export function attachDataAppBridge({
   function navigate() {
     send({
       type: 'state:update',
-      state: { search: host.location.search, hash: host.location.hash },
+      state: state(),
     });
   }
 
@@ -206,6 +242,7 @@ export function attachDataAppBridge({
   }
 
   function dispose() {
+    disposed = true;
     cancelAll();
     iframe.removeEventListener('load', load);
     host.removeEventListener('message', receive);
@@ -221,5 +258,5 @@ export function attachDataAppBridge({
   onStatusChange?.('connecting');
   send({ type: 'bridge:connect', documentId: 'host' });
 
-  return dispose;
+  return Object.assign(dispose, { updateHostContext });
 }

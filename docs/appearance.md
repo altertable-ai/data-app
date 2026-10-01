@@ -28,3 +28,9 @@ the selection from applying to the current page.
 
 The React `DataApp` shell manages appearance for normal app usage. See
 [configuration](config.md), [React](react.md), and [styles](react-styles.md).
+
+`createThemeController(appearance, hostMode?)` can start with a parent-owned
+`'light'` or `'dark'` mode. `controller.setHostMode(mode)` overrides viewer
+preferences without writing to storage; `setMode` has no effect while a host mode
+is active. `setHostMode(undefined)` restores the viewer mode. React `DataApp`
+manages this automatically from trusted embedding context.

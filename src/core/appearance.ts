@@ -266,7 +266,13 @@ export function applyAppearance(value: unknown): () => void {
 }
 
 /** Viewer color mode persists independently of app-authored brand tokens. */
-export function createThemeController(value: unknown): ThemeController {
+export function createThemeController(
+  value: unknown,
+  initialHostMode?: 'light' | 'dark'
+): ThemeController & {
+  /** Override viewer preferences without persisting them. */
+  setHostMode(mode: 'light' | 'dark' | undefined): void;
+} {
   const settings = parseAppearance(value);
   const storageKey = 'altertable.data-app.theme-mode';
   let mode = settings.mode;
@@ -276,15 +282,16 @@ export function createThemeController(value: unknown): ThemeController {
   } catch {
     // Storage can be unavailable in private browsing or embedded contexts.
   }
-  let stopAppearance = applyAppearance({ ...settings, mode });
+  let hostMode = initialHostMode;
+  let stopAppearance = applyAppearance({ ...settings, mode: hostMode ?? mode });
   const listeners = new Set<() => void>();
 
   return {
     getMode() {
-      return mode;
+      return hostMode ?? mode;
     },
     setMode(nextMode) {
-      if (nextMode === mode) return;
+      if (hostMode || nextMode === mode) return;
       stopAppearance();
       mode = nextMode;
       stopAppearance = applyAppearance({ ...settings, mode });
@@ -293,6 +300,13 @@ export function createThemeController(value: unknown): ThemeController {
       } catch {
         // The selection still applies to this page.
       }
+      listeners.forEach(listener => listener());
+    },
+    setHostMode(nextMode) {
+      if (hostMode === nextMode) return;
+      stopAppearance();
+      hostMode = nextMode;
+      stopAppearance = applyAppearance({ ...settings, mode: hostMode ?? mode });
       listeners.forEach(listener => listener());
     },
     subscribe(listener) {

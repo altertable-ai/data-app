@@ -13,3 +13,5 @@ export { attachDataAppShell } from '@/src/embed/shell';
 export type { DataAppSource, DataAppShellOptions } from '@/src/embed/shell';
 export { startDataAppBootstrap } from '@/src/embed/bootstrap';
 export { createNavigationHandler } from '@/src/embed/navigation';
+
+export type { DataAppHostContext } from '@/src/core/host-context';

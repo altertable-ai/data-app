@@ -1,5 +1,7 @@
+import { useHostContext } from '@/src/react/ui/useHostContext';
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentProps,
@@ -88,7 +90,15 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     footerActions,
     layoutProps,
   } = props;
-  const [theme] = useState(() => createThemeController(config.appearance));
+  const hostContext = useHostContext();
+  const compactChrome = hostContext?.surface === 'altertable';
+  const [theme] = useState(() =>
+    createThemeController(config.appearance, hostContext?.colorScheme)
+  );
+
+  useLayoutEffect(() => {
+    theme.setHostMode(hostContext?.colorScheme);
+  }, [theme, hostContext?.colorScheme]);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -120,9 +130,14 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     >
       <AppLayout
         {...layoutProps}
-        footerActions={footerActions ?? <ThemeToggle theme={theme} />}
+        footer={compactChrome ? null : layoutProps?.footer}
+        footerActions={
+          footerActions ??
+          (hostContext ? undefined : <ThemeToggle theme={theme} />)
+        }
       >
         <AppHeader
+          toolbarOnly={compactChrome}
           scope={scope}
           title={config.title}
           description={description}
@@ -137,7 +152,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
                   scope,
                   dataContext,
                   empty: aboutEmpty,
-                  theme,
+                  theme: hostContext ? undefined : theme,
                 }
               }
               aboutData={

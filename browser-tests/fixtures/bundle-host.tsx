@@ -9,6 +9,8 @@ const response = await fetch('/__test/bundle');
 const javascript = await response.text();
 
 function Host() {
+  const [colorScheme, setColorScheme] = useState<'light' | 'dark'>('dark');
+  const [embedded, setEmbedded] = useState(true);
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
   const [revision, bumpRevision] = useReducer(value => value + 1, 1);
   const [broken, setBroken] = useState(
@@ -29,11 +31,25 @@ function Host() {
 
   return (
     <>
+      <button
+        onClick={() =>
+          setColorScheme(value => (value === 'dark' ? 'light' : 'dark'))
+        }
+      >
+        Change theme
+      </button>
+      <button onClick={() => setEmbedded(value => !value)}>
+        Change surface
+      </button>
       <button onClick={bumpVersion}>Change handler</button>
       <button onClick={bumpRevision}>Change revision</button>
       <button onClick={() => setBroken(false)}>Fix bundle</button>
       <DataAppShell
         title="Sandbox app"
+        hostContext={{
+          surface: embedded ? 'altertable' : 'custom',
+          colorScheme,
+        }}
         source={
           urlMode
             ? {

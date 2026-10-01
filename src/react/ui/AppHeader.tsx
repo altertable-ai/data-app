@@ -3,6 +3,8 @@ import { classNames } from '@/src/react/ui/classNames';
 import '@/src/react/ui/AppHeader.css';
 
 export type AppHeaderProps = {
+  /** Retain only the toolbar when the parent shell owns page identity. */
+  toolbarOnly?: boolean;
   scope?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
@@ -13,6 +15,7 @@ export type AppHeaderProps = {
 
 /** Page identity and actions; on narrow screens the scope shares a row with actions. */
 export function AppHeader({
+  toolbarOnly = false,
   scope,
   title,
   description,
@@ -22,6 +25,16 @@ export function AppHeader({
   className,
   ...props
 }: AppHeaderProps) {
+  if (toolbarOnly)
+    return (
+      <section
+        {...props}
+        className={classNames('altertable-app-toolbar-only', className)}
+      >
+        {toolbar}
+      </section>
+    );
+
   return (
     <header
       {...props}

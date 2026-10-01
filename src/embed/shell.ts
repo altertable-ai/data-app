@@ -1,3 +1,4 @@
+import type { DataAppHostContext } from '@/src/core/host-context';
 import { PARENT_PARAM } from '@/src/core/bridge';
 import type { MessageDispatcher } from '@/src/core/messages';
 import {
@@ -17,6 +18,7 @@ export type DataAppSource =
 export type DataAppShellOptions = {
   iframe: HTMLIFrameElement;
   source: DataAppSource;
+  hostContext?: DataAppHostContext;
   onMessage: MessageDispatcher;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
@@ -27,6 +29,7 @@ export type DataAppShellOptions = {
 export function attachDataAppShell({
   iframe,
   source,
+  hostContext,
   onMessage,
   onStatusChange,
   onDiagnostic,
@@ -77,6 +80,7 @@ export function attachDataAppShell({
       ? { type: 'opaque', token: crypto.randomUUID() }
       : { type: 'origin', origin: url.origin },
     javascript: opaque ? source.javascript : undefined,
+    hostContext,
     onMessage,
     onStatusChange: status,
     onDiagnostic,
@@ -90,9 +94,13 @@ export function attachDataAppShell({
   iframe.addEventListener('error', error);
   iframe.src = url.href;
 
-  return () => {
+  function dispose() {
     clearTimeout(timer);
     iframe.removeEventListener('error', error);
     disposeBridge();
-  };
+  }
+
+  return Object.assign(dispose, {
+    updateHostContext: disposeBridge.updateHostContext,
+  });
 }

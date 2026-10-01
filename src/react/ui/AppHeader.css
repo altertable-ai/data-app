@@ -65,3 +65,8 @@
     margin-top: 8px;
   }
 }
+
+.altertable-app-toolbar-only {
+  display: flex;
+  justify-content: flex-end;
+}

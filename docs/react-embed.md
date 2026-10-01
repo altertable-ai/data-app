@@ -55,3 +55,12 @@ The app supplies `appUrl` and `router`. A callback ref lets the bridge observe l
 mounting and replacement; listeners attach to the iframe's owner document. The
 bridge handles delivery only. Use `DataAppShell` to manage source loading,
 sandbox policy, bundle tokens, and startup errors.
+
+## Parent-owned presentation
+
+Pass `hostContext={{ surface: 'altertable', colorScheme: resolvedColorScheme }}`
+to `DataAppShell` or `DataAppBridge`. Use `'custom'` for other host surfaces.
+Prop updates publish trusted state without reloading the iframe or reconnecting
+the session. Resolve system preference in the parent to `'light'` or `'dark'`.
+Inside an Altertable mount, `DataApp` retains toolbar actions and hides its header
+and footer. See [host context](embed.md#host-presentation-context).

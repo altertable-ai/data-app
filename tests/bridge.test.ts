@@ -406,6 +406,7 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     iframe,
     connection: { type: 'opaque', token: 'initial-token' },
     window: host,
+    hostContext: { surface: 'altertable', colorScheme: 'dark' },
     onStatusChange(status) {
       return statuses.push(status);
     },
@@ -445,6 +446,28 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent).toHaveLength(1);
     receive({ type: 'bridge:ready' });
     const sessionId = sent.at(-1)!.sessionId;
+    expect(sent.at(-1)!.state).toEqual({
+      search: '?period=last-30',
+      hash: '#totals',
+      hostContext: { surface: 'altertable', colorScheme: 'dark' },
+    });
+    dispose.updateHostContext({ surface: 'altertable', colorScheme: 'light' });
+    expect(sent.at(-1)).toMatchObject({
+      type: 'state:update',
+      sessionId,
+      state: {
+        search: '?period=last-30',
+        hash: '#totals',
+        hostContext: { surface: 'altertable', colorScheme: 'light' },
+      },
+    });
+    expect(() =>
+      dispose.updateHostContext({
+        surface: 'altertable',
+        colorScheme: 'system',
+      } as never)
+    ).toThrow('Invalid host context');
+
     receive({
       type: 'bridge:request',
       sessionId,
@@ -461,6 +484,12 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent.at(-1)!.type).toBe('bridge:connect');
     receive({ type: 'bridge:ready', token });
     expect(sent.at(-1)!.type).toBe('bridge:initialize');
+    expect(sent.at(-1)!.state).toEqual({
+      search: '?period=last-30',
+      hash: '#totals',
+      hostContext: { surface: 'altertable', colorScheme: 'light' },
+    });
+    dispose.updateHostContext(undefined);
     expect(sent.at(-1)!.state).toEqual({
       search: '?period=last-30',
       hash: '#totals',
@@ -559,6 +588,44 @@ test('bundle transport keeps host location in memory and rejects stale session t
     });
     expect(navigation.snapshot().search).toBe('?period=last-30');
   } finally {
+    bridge.dispose();
+  }
+});
+
+test('presentation context follows only authenticated current-session state', () => {
+  const { bridge, receive, parent } = harness();
+  const dark = {
+    search: '?period=last-30',
+    hash: '#totals',
+    hostContext: { surface: 'altertable', colorScheme: 'dark' },
+  };
+  const light = {
+    ...dark,
+    hostContext: { surface: 'altertable', colorScheme: 'light' },
+  };
+  const states: unknown[] = [];
+  const unsubscribe = bridge.subscribe(state => states.push(state));
+  try {
+    receive({ type: 'state:update', state: light });
+    expect(bridge.snapshot()).toBeUndefined();
+    receive({ type: 'bridge:initialize', state: dark });
+    expect(bridge.snapshot()).toEqual(dark);
+    receive(
+      { type: 'state:update', state: light },
+      'http://evil.example',
+      parent
+    );
+    receive({ type: 'state:update', state: light }, 'http://localhost:1', {
+      postMessage() {},
+    });
+    receive({ type: 'state:update', state: light, sessionId: 'stale' });
+    receive({ type: 'state:update', state: light, documentId: 'stale' });
+    expect(states).toEqual([dark]);
+    receive({ type: 'state:update', state: light });
+    expect(states).toEqual([dark, light]);
+    expect(bridge.snapshot()).toEqual(light);
+  } finally {
+    unsubscribe();
     bridge.dispose();
   }
 });

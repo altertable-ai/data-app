@@ -1,3 +1,4 @@
+import '@altertable/data-app/react/styles.css';
 import type { connectionCheck } from '@altertable/data-app/contract';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -8,7 +9,11 @@ import {
   getDataAppNavigation,
   DataAppError,
 } from '@altertable/data-app/client';
-import { textVariable, useAppVariables } from '@altertable/data-app/react';
+import {
+  DataApp,
+  textVariable,
+  useAppVariables,
+} from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 const bridge = getDataAppTransport()!;
 const data = createDataClient<{
@@ -23,7 +28,17 @@ function App() {
   const [result, setResult] = useState('');
 
   return (
-    <>
+    <DataApp
+      config={{
+        title: 'Embedded report',
+        scope: { organization: 'test', environment: 'prod' },
+        appearance: { mode: 'light' },
+      }}
+      dataContext={{ description: 'Test report', glossary: {} }}
+      description="Report description"
+      toolbarActions={<button>Custom toolbar action</button>}
+      footerActions={<button>Custom footer action</button>}
+    >
       <p id="location">
         {search}
         {getDataAppNavigation()!.snapshot().hash}
@@ -67,7 +82,7 @@ function App() {
       </button>
       <button onClick={() => state.set('period', '')}>Clear filter</button>
       <button onClick={() => state.set('period', 'last-7')}>Last 7 days</button>
-    </>
+    </DataApp>
   );
 }
 

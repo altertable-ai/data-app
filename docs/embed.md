@@ -106,3 +106,34 @@ Message types follow `{scope}:{action}`: `bridge:connect`, `bridge:ready`,
 including `data:query` and `navigation:update`. Hosts, apps, and bootstrap scripts
 must use matching names; the former unscoped and dot-separated names are no
 longer supported.
+
+## Host presentation context
+
+The parent declares where the iframe is mounted and owns its resolved color scheme:
+
+```ts
+const dispose = attachDataAppShell({
+  iframe,
+  source: { type: 'url', url: 'https://apps.example.com/report' },
+  hostContext: { surface: 'altertable', colorScheme: 'dark' },
+  onMessage: router.dispatch,
+});
+
+// Update presentation without replacing the iframe or its bridge session.
+dispose.updateHostContext({ surface: 'altertable', colorScheme: 'light' });
+```
+
+`attachDataAppBridge` supports the same `hostContext` option and
+`dispose.updateHostContext(context)` method. `DataAppHostContext` is exported from
+`/embed` and `/client`. Use `surface: 'altertable'` inside the Altertable frontend
+and `'custom'` for other hosts. `colorScheme` must be resolved to `'light'` or
+`'dark'`; the parent decides how its system preference is resolved.
+
+Context travels over `postMessage` in the authenticated `bridge:initialize` and
+`state:update` messages, alongside `search` and `hash`. Framework-neutral apps
+can read `bridge.snapshot().hostContext` after narrowing the unknown state and
+subscribe through `bridge.subscribe`. React `DataApp` consumes it automatically.
+An Altertable mount renders toolbar actions without the page header or footer.
+Both surfaces follow the parent's theme, including presentation mode, without
+changing saved viewer preferences. Omitting context preserves standalone behavior;
+`dispose.updateHostContext(undefined)` restores it.

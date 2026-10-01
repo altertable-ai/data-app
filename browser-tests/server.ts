@@ -8,12 +8,23 @@ async function bundle(entry: string) {
   const result = await Bun.build({
     entrypoints: [new URL(entry, import.meta.url).pathname],
     target: 'browser',
+    format: 'iife',
+    define: { 'import.meta.env': '{}' },
     minify: true,
   });
   if (!result.success)
     throw new Error(result.logs.map(log => log.message).join('\n'));
 
-  return result.outputs[0]!.text();
+  const javascript = await result.outputs
+    .find(output => output.path.endsWith('.js'))!
+    .text();
+  const stylesheet = result.outputs.find(output =>
+    output.path.endsWith('.css')
+  );
+  if (!stylesheet) return javascript;
+  const css = await stylesheet.text();
+
+  return `const style = document.createElement('style'); style.textContent = ${JSON.stringify(css)}; document.head.append(style);\n${javascript}`;
 }
 
 // Exercise the published single-file deployment without rebundling it.

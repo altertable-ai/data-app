@@ -16,7 +16,11 @@ import type { DataAppStatus } from '@/src/embed/host';
 
 export type DataAppShellProps = Pick<
   DataAppShellOptions,
-  'onMessage' | 'onStatusChange' | 'onDiagnostic' | 'startupTimeoutMs'
+  | 'onMessage'
+  | 'onStatusChange'
+  | 'onDiagnostic'
+  | 'startupTimeoutMs'
+  | 'hostContext'
 > & {
   source: DataAppSource;
   title: string;
@@ -29,6 +33,7 @@ export function DataAppShell({
   source,
   title,
   onMessage,
+  hostContext,
   onStatusChange,
   onDiagnostic,
   startupTimeoutMs,
@@ -38,9 +43,15 @@ export function DataAppShell({
   const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
   const [attempt, bumpAttempt] = useReducer(value => value + 1, 0);
   const [status, setStatus] = useState<DataAppStatus>('connecting');
+  const attached = useRef<ReturnType<typeof attachDataAppShell> | undefined>(
+    undefined
+  );
+  const contextRef = useRef(hostContext);
   const handlers = useRef({ onMessage, onStatusChange, onDiagnostic });
 
   useLayoutEffect(() => {
+    contextRef.current = hostContext;
+    attached.current?.updateHostContext(hostContext);
     handlers.current = { onMessage, onStatusChange, onDiagnostic };
   });
 
@@ -53,7 +64,8 @@ export function DataAppShell({
   useEffect(() => {
     if (!iframe) return;
 
-    return attachDataAppShell({
+    const dispose = attachDataAppShell({
+      hostContext: contextRef.current,
       iframe,
       source:
         type === 'url'
@@ -76,6 +88,12 @@ export function DataAppShell({
         handlers.current.onStatusChange?.(value);
       },
     });
+    attached.current = dispose;
+
+    return () => {
+      attached.current = undefined;
+      dispose();
+    };
   }, [iframe, type, url, javascript, revision, startupTimeoutMs]);
 
   function retry() {

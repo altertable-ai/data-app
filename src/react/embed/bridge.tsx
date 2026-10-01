@@ -1,3 +1,4 @@
+import type { DataAppHostContext } from '@/src/core/host-context';
 import { useRef, useLayoutEffect, useEffect, type ComponentRef } from 'react';
 import {
   attachDataAppBridge,
@@ -8,6 +9,7 @@ import {
 import type { MessageDispatcher } from '@/src/core/messages';
 
 export type DataAppBridgeProps = {
+  hostContext?: DataAppHostContext;
   iframe: ComponentRef<'iframe'> | null;
   connection: DataAppConnection;
   onMessage: MessageDispatcher;
@@ -20,12 +22,19 @@ export function DataAppBridge({
   iframe,
   connection,
   onMessage,
+  hostContext,
   onStatusChange,
   onDiagnostic,
 }: DataAppBridgeProps) {
+  const attached = useRef<ReturnType<typeof attachDataAppBridge> | undefined>(
+    undefined
+  );
+  const contextRef = useRef(hostContext);
   const handlers = useRef({ onMessage, onStatusChange, onDiagnostic });
 
   useLayoutEffect(() => {
+    contextRef.current = hostContext;
+    attached.current?.updateHostContext(hostContext);
     handlers.current = { onMessage, onStatusChange, onDiagnostic };
   });
 
@@ -37,7 +46,8 @@ export function DataAppBridge({
     const host = iframe?.ownerDocument.defaultView;
     if (!iframe || !host) return;
 
-    return attachDataAppBridge({
+    const dispose = attachDataAppBridge({
+      hostContext: contextRef.current,
       iframe,
       connection:
         type === 'origin'
@@ -54,6 +64,12 @@ export function DataAppBridge({
         return handlers.current.onDiagnostic?.(event);
       },
     });
+    attached.current = dispose;
+
+    return () => {
+      attached.current = undefined;
+      dispose();
+    };
   }, [iframe, type, identity]);
 
   return null;
