@@ -1,11 +1,8 @@
+import { createBridgeEndpoint } from '@/src/core/bridge-endpoint';
 import {
-  BRIDGE,
   PARENT_PARAM,
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
-  isBridgeMessage,
-  validId,
-  type BridgeMessage,
   type TransportResponse,
 } from '@/src/core/bridge';
 import {
@@ -55,88 +52,63 @@ export function createIframeTransport({
   let hostState: unknown;
   const stateListeners = new Set<(state: unknown) => void>();
 
-  function send(message: Partial<BridgeMessage>) {
-    frame.parent.postMessage(
-      { channel: BRIDGE, version: 1, documentId, sessionId, token, ...message },
-      parentOrigin
-    );
-  }
+  const endpoint = createBridgeEndpoint({
+    role: 'app',
+    origin: parentOrigin,
+    source: () => frame.parent,
+    opaque: mode === 'bundle',
+    context: () => ({ documentId, sessionId, token }),
+    post: message => frame.parent.postMessage(message, parentOrigin),
+    handlers: {
+      connect(message) {
+        if (mode === 'bundle') token = message.token;
+        send('ready', {});
+      },
+      initialize(message) {
+        if (sessionId && sessionId !== message.sessionId) {
+          for (const entry of pending.values())
+            entry.reject(
+              new DataAppError(
+                'The preview reconnected. Retry the request.',
+                'bridge_reset'
+              )
+            );
+        }
+        const first = !sessionId;
+        sessionId = message.sessionId;
+        if (first) for (const entry of pending.values()) entry.start();
+        receiveState(message.state);
+        if (disposed) return;
+        if (mode === 'url') send('runtimeReady', {});
+      },
+      stateUpdate(message) {
+        receiveState(message.state);
+      },
+      scriptLoad(message) {
+        if (mode === 'bundle') loadScript?.(message.javascript);
+      },
+      result(message) {
+        pending.get(message.id)?.resolve(message.response);
+      },
+      error(message) {
+        pending
+          .get(message.id)
+          ?.reject(
+            new MessageRoutingError(
+              message.code,
+              message.message,
+              message.requestId
+            )
+          );
+      },
+    },
+  });
+  const send = endpoint.send;
+  const receive = endpoint.receive;
 
   function receiveState(state: unknown) {
     hostState = state;
     for (const listener of stateListeners) listener(state);
-  }
-
-  function receive(event: MessageEvent) {
-    if (
-      event.origin !== parentOrigin ||
-      event.source !== frame.parent ||
-      !isBridgeMessage(event.data)
-    )
-      return;
-    const message = event.data;
-    if (message.type === 'bridge:connect') {
-      if (mode === 'bundle') {
-        if (!validId(message.token)) return;
-        token = message.token;
-      }
-      send({ type: 'bridge:ready' });
-
-      return;
-    }
-    if (mode === 'bundle' && (!token || message.token !== token)) return;
-    if (message.documentId !== documentId) return;
-    if (message.type === 'bridge:initialize' && validId(message.sessionId)) {
-      if (sessionId && sessionId !== message.sessionId) {
-        for (const entry of pending.values())
-          entry.reject(
-            new DataAppError(
-              'The preview reconnected. Retry the request.',
-              'bridge_reset'
-            )
-          );
-      }
-      const first = !sessionId;
-      sessionId = message.sessionId;
-      if (first) for (const entry of pending.values()) entry.start();
-      receiveState(message.state);
-      if (mode === 'url') send({ type: 'runtime:ready' });
-
-      return;
-    }
-    if (!sessionId || message.sessionId !== sessionId) return;
-    if (message.type === 'state:update') {
-      receiveState(message.state);
-
-      return;
-    }
-    if (
-      message.type === 'script:load' &&
-      mode === 'bundle' &&
-      typeof message.javascript === 'string'
-    ) {
-      loadScript?.(message.javascript);
-
-      return;
-    }
-    if (typeof message.id !== 'string') return;
-    const entry = pending.get(message.id);
-    if (!entry) return;
-    if (message.type === 'bridge:result' && 'response' in message) {
-      entry.resolve(message.response);
-    } else if (
-      message.type === 'bridge:error' &&
-      typeof message.code === 'string' &&
-      typeof message.message === 'string'
-    ) {
-      entry.reject(
-        new MessageRoutingError(
-          message.code,
-          message.message,
-          typeof message.requestId === 'string' ? message.requestId : undefined
-        )
-      );
-    }
   }
 
   frame.addEventListener('message', receive);
@@ -165,13 +137,13 @@ export function createIframeTransport({
       }
 
       function abort() {
-        if (sent) send({ type: 'bridge:cancel', id });
+        if (sent) send('cancel', { id });
         cleanup();
         reject(signal?.reason);
       }
 
       const timer = setTimeout(() => {
-        if (sent) send({ type: 'bridge:cancel', id });
+        if (sent) send('cancel', { id });
         cleanup();
         reject(
           new DataAppError(
@@ -186,8 +158,7 @@ export function createIframeTransport({
         start() {
           if (sent) return;
           try {
-            send({
-              type: 'bridge:request',
+            send('request', {
               id,
               route: message.route,
               payload: message.payload,
@@ -215,7 +186,7 @@ export function createIframeTransport({
       pending.set(id, entry);
       signal?.addEventListener('abort', abort, { once: true });
       if (sessionId) entry.start();
-      else send({ type: 'bridge:ready' });
+      else if (mode === 'url' || token) send('ready', {});
     });
   }
 
@@ -235,7 +206,7 @@ export function createIframeTransport({
   }
 
   function disconnect() {
-    send({ type: 'bridge:disconnect' });
+    if (sessionId) send('disconnect', {});
     sessionId = undefined;
     for (const entry of pending.values())
       entry.reject(
@@ -244,13 +215,14 @@ export function createIframeTransport({
   }
 
   function resume(event: PageTransitionEvent) {
-    if (event.persisted) send({ type: 'bridge:ready' });
+    if (event.persisted && (mode === 'url' || token)) send('ready', {});
   }
 
   function dispose() {
     if (disposed) return;
     disconnect();
     disposed = true;
+    endpoint.dispose();
     frame.removeEventListener('message', receive);
     frame.removeEventListener('pagehide', disconnect);
     frame.removeEventListener('pageshow', resume);
@@ -259,7 +231,7 @@ export function createIframeTransport({
 
   frame.addEventListener('pagehide', disconnect);
   frame.addEventListener('pageshow', resume);
-  if (mode === 'url') send({ type: 'bridge:ready' });
+  if (mode === 'url') send('ready', {});
 
   return {
     request: requestMessage,
@@ -284,10 +256,10 @@ export function createIframeTransport({
       };
     },
     ready() {
-      send({ type: 'runtime:ready' });
+      if (!disposed && sessionId) send('runtimeReady', {});
     },
     fail() {
-      send({ type: 'runtime:error' });
+      if (!disposed && sessionId) send('runtimeError', {});
     },
   };
 }

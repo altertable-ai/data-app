@@ -70,11 +70,11 @@ test('iframe waits for a trusted handshake, correlates concurrent responses and 
       sent.filter(({ message }) => message.type === 'bridge:request')
     ).toHaveLength(0);
     receive({ type: 'bridge:initialize' });
-    const queries = sent.filter(
-      ({ message }) => message.type === 'bridge:request'
-    );
+    const queries = sent
+      .map(entry => entry.message)
+      .filter(message => message.type === 'bridge:request');
     expect(queries).toHaveLength(2);
-    expect(queries.every(({ origin }) => origin === 'http://localhost:1')).toBe(
+    expect(sent.every(({ origin }) => origin === 'http://localhost:1')).toBe(
       true
     );
     const response = {
@@ -86,17 +86,17 @@ test('iframe waits for a trusted handshake, correlates concurrent responses and 
         queryIds: ['q2'],
       },
     };
-    receive({ type: 'bridge:result', id: queries[1]!.message.id, response });
+    receive({ type: 'bridge:result', id: queries[1]!.id, response });
     expect(await second).toEqual(response);
     receive({
       type: 'bridge:result',
-      id: queries[0]!.message.id,
+      id: queries[0]!.id,
       sessionId: 'stale',
       response,
     });
     receive({
       type: 'bridge:error',
-      id: queries[0]!.message.id,
+      id: queries[0]!.id,
       code: 'forbidden',
       message: 'Denied',
     });
@@ -279,8 +279,16 @@ test('bridge rejects foreign sources, invalid input, duplicate IDs and stale ses
     });
     expect(sent).toHaveLength(1);
     expect(sent[0]!.type).toBe('bridge:connect');
+    host.dispatchEvent(new Event('popstate'));
+    expect(sent).toHaveLength(1);
     receive({ type: 'bridge:ready' });
     sessionId = sent.at(-1)!.sessionId;
+    receive({ type: 'bridge:request', id: 'malformed', route: '' });
+    expect(sent.at(-1)).toMatchObject({
+      type: 'bridge:error',
+      id: 'malformed',
+      code: 'invalid_message',
+    });
     receive({
       type: 'bridge:request',
       id: 'ping',
@@ -464,7 +472,10 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(sent.at(-1)!.type).toBe('bridge:connect');
     receive({ type: 'bridge:ready', token });
     expect(sent.at(-1)!.type).toBe('bridge:initialize');
-    expect(sent.at(-1)!.state).toEqual({
+    const initialized = sent.at(-1)!;
+    if (initialized.type !== 'bridge:initialize')
+      throw new Error('Expected initialize.');
+    expect(initialized.state).toEqual({
       search: '?period=last-30',
       hash: '#totals',
     });
@@ -542,6 +553,7 @@ test('bundle transport keeps host location in memory and rejects stale session t
     expect(executions).toBe(1);
     navigation.update({ search: '?period=last-7', hash: '#daily' }, 'push');
     const request = sent.at(-1)!;
+    if (request.type !== 'bridge:request') throw new Error('Expected request.');
     expect(request.route).toBe('navigation:update');
     expect(request.payload).toEqual({
       search: '?period=last-7',
@@ -592,6 +604,7 @@ test('browser-owned operations send SQL and bounded limits over the authenticate
     const message = sent.find(
       entry => entry.message.type === 'bridge:request'
     )!.message;
+    if (message.type !== 'bridge:request') throw new Error('Expected request.');
     expect(message.route).toBe('data:sql');
     expect(message.payload).toEqual({ statement: 'SELECT 3', limit: 1 });
     receive({
@@ -608,8 +621,9 @@ test('browser-owned operations send SQL and bounded limits over the authenticate
     const failed = client.query('count', 3);
     await Promise.resolve();
     const failedMessage = sent
-      .filter(entry => entry.message.type === 'bridge:request')
-      .at(-1)!.message;
+      .map(entry => entry.message)
+      .filter(message => message.type === 'bridge:request')
+      .at(-1)!;
     receive({
       type: 'bridge:error',
       id: failedMessage.id,
@@ -625,8 +639,9 @@ test('browser-owned operations send SQL and bounded limits over the authenticate
     const cancelled = client.query('count', 3, { signal: controller.signal });
     await Promise.resolve();
     const request = sent
-      .filter(entry => entry.message.type === 'bridge:request')
-      .at(-1)!.message;
+      .map(entry => entry.message)
+      .filter(message => message.type === 'bridge:request')
+      .at(-1)!;
     controller.abort();
     expect(await cancelled.catch(error => error)).toMatchObject({
       name: 'AbortError',
@@ -674,6 +689,181 @@ test('presentation context follows only authenticated current-session state', ()
     expect(bridge.snapshot()).toEqual(light);
   } finally {
     unsubscribe();
+    bridge.dispose();
+  }
+});
+
+test('bundle requests wait for a token and session, and runtime callbacks tolerate disposal', async () => {
+  const events = new EventTarget();
+  const sent: BridgeMessage[] = [];
+  const parent = {
+    postMessage(message: BridgeMessage) {
+      sent.push(message);
+    },
+  };
+  const frame = Object.assign(events, { parent }) as unknown as Window;
+  const bridge = createIframeTransport({
+    parentOrigin: 'https://host.example',
+    window: frame,
+    mode: 'bundle',
+  });
+  function receive(message: Record<string, unknown>) {
+    events.dispatchEvent(
+      Object.assign(new Event('message'), {
+        origin: 'https://host.example',
+        source: parent,
+        data: {
+          channel: BRIDGE,
+          version: 1,
+          token: 'token',
+          sessionId: 'session',
+          ...message,
+        },
+      })
+    );
+  }
+  try {
+    bridge.ready();
+    bridge.fail();
+    const pending = bridge.request({ route: 'test:ping', payload: undefined });
+    expect(sent).toHaveLength(0);
+    receive({ type: 'bridge:connect', documentId: 'host' });
+    const documentId = sent[0]!.documentId;
+    expect(sent[0]!.type).toBe('bridge:ready');
+    expect(sent.some(message => message.type === 'bridge:request')).toBe(false);
+    receive({ type: 'bridge:initialize', documentId });
+    const request = sent.find(message => message.type === 'bridge:request')!;
+    receive({
+      type: 'bridge:result',
+      documentId,
+      id: request.id,
+      response: undefined,
+    });
+    expect(await pending).toBeUndefined();
+    bridge.dispose();
+    const count = sent.length;
+    expect(() => bridge.ready()).not.toThrow();
+    expect(() => bridge.fail()).not.toThrow();
+    expect(sent).toHaveLength(count);
+  } finally {
+    bridge.dispose();
+  }
+});
+
+/** Invoke message listeners directly so synchronous callback failures stay observable. */
+function callbackWindow(origin: string, source: Window) {
+  const listeners = new Map<string, (event: MessageEvent) => void>();
+  const window = {
+    location: { search: '', hash: '' },
+    parent: source,
+    addEventListener(type: string, listener: (event: MessageEvent) => void) {
+      listeners.set(type, listener);
+    },
+    removeEventListener(type: string) {
+      listeners.delete(type);
+    },
+  } as unknown as Window;
+  return {
+    window,
+    receive: (message: Record<string, unknown>) => {
+      listeners.get('message')?.({
+        origin,
+        source,
+        data: { channel: BRIDGE, version: 1, ...message },
+      } as MessageEvent);
+    },
+  };
+}
+
+test('host stops initialization when the connected callback disposes the bridge', () => {
+  const sent: BridgeMessage[] = [];
+  const target = {
+    postMessage(message: BridgeMessage) {
+      sent.push(message);
+    },
+  } as unknown as Window;
+  const { window, receive } = callbackWindow('https://app.example', target);
+  const bridge = attachDataAppBridge({
+    iframe: Object.assign(new EventTarget(), {
+      contentWindow: target,
+    }) as unknown as HTMLIFrameElement,
+    connection: { type: 'origin', origin: 'https://app.example' },
+    window,
+    javascript: 'app()',
+    onMessage: async () => null,
+    onStatusChange(status) {
+      if (status === 'connected') bridge.dispose();
+    },
+  });
+  try {
+    expect(() =>
+      receive({ type: 'bridge:ready', documentId: 'document' })
+    ).not.toThrow();
+    expect(sent.map(message => message.type)).toEqual(['bridge:connect']);
+  } finally {
+    bridge.dispose();
+  }
+});
+
+test('iframe stops initialization when a state subscriber disposes the transport', () => {
+  const sent: BridgeMessage[] = [];
+  const parent = {
+    postMessage(message: BridgeMessage) {
+      sent.push(message);
+    },
+  } as unknown as Window;
+  const { window, receive } = callbackWindow('https://host.example', parent);
+  const bridge = createIframeTransport({
+    parentOrigin: 'https://host.example',
+    window,
+  });
+  const documentId = sent[0]!.documentId;
+  bridge.subscribe(() => bridge.dispose());
+  try {
+    expect(() =>
+      receive({
+        type: 'bridge:initialize',
+        documentId,
+        sessionId: 'session',
+        state: null,
+      })
+    ).not.toThrow();
+    expect(sent.map(message => message.type)).toEqual([
+      'bridge:ready',
+      'bridge:disconnect',
+    ]);
+  } finally {
+    bridge.dispose();
+  }
+});
+
+test('host stops the handshake when a send diagnostic disposes the bridge', () => {
+  const sent: BridgeMessage[] = [];
+  const target = {
+    postMessage(message: BridgeMessage) {
+      sent.push(message);
+    },
+  } as unknown as Window;
+  const { window, receive } = callbackWindow('https://app.example', target);
+  const bridge = attachDataAppBridge({
+    iframe: Object.assign(new EventTarget(), {
+      contentWindow: target,
+    }) as unknown as HTMLIFrameElement,
+    connection: { type: 'origin', origin: 'https://app.example' },
+    window,
+    javascript: 'app()',
+    onMessage: async () => null,
+    onDiagnostic({ direction, type }) {
+      if (direction === 'send' && type === 'bridge:initialize')
+        bridge.dispose();
+    },
+  });
+  try {
+    expect(() =>
+      receive({ type: 'bridge:ready', documentId: 'document' })
+    ).not.toThrow();
+    expect(sent.map(message => message.type)).toEqual(['bridge:connect']);
+  } finally {
     bridge.dispose();
   }
 });

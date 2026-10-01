@@ -73,9 +73,13 @@ test('transport retains opaque host state without applying navigation', () => {
     receive({ type: 'bridge:initialize', state });
     expect(bridge.snapshot()).toEqual(state);
     expect(writes).toEqual([]);
-    expect(sent.some(message => message.route === 'navigation:update')).toBe(
-      false
-    );
+    expect(
+      sent.some(
+        message =>
+          message.type === 'bridge:request' &&
+          message.route === 'navigation:update'
+      )
+    ).toBe(false);
     const navigation = createDataAppNavigation({
       bridge,
       window: frame,
@@ -173,6 +177,7 @@ test('URL navigation preserves the parent marker and publishes through the share
     navigation.update({ search: '?period=last-7', hash: '#daily' }, 'push');
     expect(writes).toHaveLength(before + 1);
     const request = sent.at(-1)!;
+    if (request.type !== 'bridge:request') throw new Error('Expected request.');
     expect(request.route).toBe('navigation:update');
     expect(request.payload).toEqual({
       search: '?period=last-7',
