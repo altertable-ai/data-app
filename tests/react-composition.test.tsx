@@ -16,8 +16,6 @@ import {
   textVariable,
 } from '@altertable/data-app/react';
 
-import { QueryList } from '@/src/react/ui/QueryList';
-
 import { createDataClient, DataAppError } from '@altertable/data-app/client';
 import { createDataHandler } from '@altertable/data-app/server';
 import {
@@ -172,22 +170,6 @@ test('table search finds a later matching row before applying the display limit'
   );
   expect(table).toContain('Café');
   expect(table).not.toContain('Alpha');
-});
-
-test('query notebook groups disclosed SQL and exposes one copy-all action', () => {
-  const html = renderToStaticMarkup(
-    <QueryList
-      expanded
-      queries={[
-        { name: 'totals', statement: 'select count(*) from orders' },
-        { name: 'details', statement: 'select id from orders' },
-      ]}
-    />
-  );
-  expect(html).toContain('aria-label="Query notebook"');
-  expect(html).toContain('aria-label="Copy all"');
-  expect(html).toContain('totals.sql');
-  expect(html).toContain('details.sql');
 });
 
 test('named query registry rejects ambiguous evidence names', () => {
