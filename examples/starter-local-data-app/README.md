@@ -22,7 +22,7 @@ bun run dev
 
 The second install refreshes the local file dependency with the built exports.
 
-Open http://127.0.0.1:25837. Missing credentials show the connection error state;
+Open <http://127.0.0.1:25837>. Missing credentials show the connection error state;
 the page still runs. Set server-only credentials before starting the server:
 
 ```fish

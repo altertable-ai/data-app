@@ -1,0 +1,17 @@
+{
+  "plugins": [
+    "remark-gfm",
+    [
+      "remark-lint-no-dead-urls",
+      {
+        "skipLocalhost": true,
+        "deadOrAliveOptions": {
+          "maxRetries": 1,
+          "timeout": 10000,
+          "checkAnchor": false,
+          "followMetaHttpEquiv": false
+        }
+      }
+    ]
+  ]
+}
