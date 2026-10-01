@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.63.0](https://github.com/altertable-ai/data-app/compare/v0.62.0...v0.63.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** clarify public exports and consumer contracts ([#11](https://github.com/altertable-ai/data-app/issues/11))
+* **react:** make style injection explicit for tree-shaking ([#12](https://github.com/altertable-ai/data-app/issues/12))
+
+### Features
+
+* **docs:** add a hosted starter and streamline data app guides ([#15](https://github.com/altertable-ai/data-app/issues/15)) ([ff964c0](https://github.com/altertable-ai/data-app/commit/ff964c02768710a1ac29ee9b96970e07bb580067))
+* **react:** add shell style injection with shared widget styles ([#14](https://github.com/altertable-ai/data-app/issues/14)) ([c447cb1](https://github.com/altertable-ai/data-app/commit/c447cb11f6adcb164185a94d78f1698de7590d32))
+* **react:** make style injection explicit for tree-shaking ([#12](https://github.com/altertable-ai/data-app/issues/12)) ([c90a2a9](https://github.com/altertable-ai/data-app/commit/c90a2a9d50dfa6b71c928d89acdb05d68a476c8f))
+
+
+### Bug Fixes
+
+* **ci:** add Markdown linting and link checks to CI ([#16](https://github.com/altertable-ai/data-app/issues/16)) ([0ca623d](https://github.com/altertable-ai/data-app/commit/0ca623dde330a768d304f7320dd82810953c3920))
+
+
+### Code Refactoring
+
+* **api:** clarify public exports and consumer contracts ([#11](https://github.com/altertable-ai/data-app/issues/11)) ([f4e162f](https://github.com/altertable-ai/data-app/commit/f4e162f03b224f7f468af4f5687b3c873d2a167a))
+
 ## [0.62.0](https://github.com/altertable-ai/data-app/compare/v0.61.0...v0.62.0) (2026-10-01)
 
 
