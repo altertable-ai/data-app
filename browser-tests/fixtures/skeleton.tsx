@@ -1,13 +1,13 @@
-import { injectShellStyles } from '@altertable/data-app/react';
+import { injectDataAppShellStyles } from '@altertable/data-app/react';
 import { createRoot } from 'react-dom/client';
 import { DataAppSkeleton } from '@altertable/data-app/react';
 import { applyAppearance } from '@altertable/data-app/appearance';
 
 const params = new URLSearchParams(location.search);
 applyAppearance({ theme: params.has('dark') ? 'dark' : 'light' });
-injectShellStyles({ nonce: 'shell-test' });
+injectDataAppShellStyles({ nonce: 'shell-test' });
 // Verify repeated calls reuse the style element and preserve its first nonce.
-injectShellStyles({ nonce: 'ignored' });
+injectDataAppShellStyles({ nonce: 'ignored' });
 
 createRoot(document.getElementById('root')!).render(
   <div

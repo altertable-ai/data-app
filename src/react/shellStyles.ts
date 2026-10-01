@@ -5,13 +5,13 @@ import type { DataAppStylesOptions } from '@/src/react/styles';
 declare const SHELL_STYLES: string;
 
 /** Install shared layout, widget surface, and skeleton styles once per document, before mounting. */
-export function injectShellStyles(
+export function injectDataAppShellStyles(
   options: DataAppStylesOptions = {}
 ): HTMLStyleElement {
-  return injectStyles(
-    'injectShellStyles',
-    'data-altertable-shell-styles',
-    SHELL_STYLES,
-    options
-  );
+  return injectStyles({
+    name: 'injectDataAppShellStyles',
+    attribute: 'data-altertable-shell-styles',
+    css: SHELL_STYLES,
+    options,
+  });
 }

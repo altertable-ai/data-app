@@ -1,11 +1,16 @@
 import type { DataAppStylesOptions } from '@/src/react/styles';
 
-export function injectStyles(
-  name: string,
-  attribute: string,
-  css: string,
-  options: DataAppStylesOptions
-): HTMLStyleElement {
+export function injectStyles({
+  name,
+  attribute,
+  css,
+  options,
+}: {
+  name: string;
+  attribute: string;
+  css: string;
+  options: DataAppStylesOptions;
+}): HTMLStyleElement {
   const target =
     options.document ??
     (typeof document === 'undefined' ? undefined : document);

@@ -14,10 +14,10 @@ export interface DataAppStylesOptions {
 export function injectDataAppStyles(
   options: DataAppStylesOptions = {}
 ): HTMLStyleElement {
-  return injectStyles(
-    'injectDataAppStyles',
-    'data-altertable-styles',
-    DATA_APP_STYLES,
-    options
-  );
+  return injectStyles({
+    name: 'injectDataAppStyles',
+    attribute: 'data-altertable-styles',
+    css: DATA_APP_STYLES,
+    options,
+  });
 }

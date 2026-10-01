@@ -317,8 +317,8 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
 
   await writeFile(
     join(temporary, 'shell.tsx'),
-    `import { DataAppSkeleton, injectShellStyles } from '@altertable/data-app/react';
-injectShellStyles();
+    `import { DataAppSkeleton, injectDataAppShellStyles } from '@altertable/data-app/react';
+injectDataAppShellStyles();
 export { DataAppSkeleton };
 `
   );

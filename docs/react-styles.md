@@ -13,19 +13,19 @@ The function synchronously inserts the complete compiled UI stylesheet into the
 current document's head and returns its `<style>` element. Repeated calls return
 the existing element, including calls from independently bundled package copies.
 
-For a host rendering `DataAppSkeleton` or `Skeleton`, use `injectShellStyles()`
+For a host rendering `DataAppSkeleton` or `Skeleton`, use `injectDataAppShellStyles()`
 from the same React entry. It installs skeleton styles and the shared `Grid`, `DataWidget`,
 `MetricWidget`, and `VisualizationWidget` surface styles used by the startup
 placeholder, without the full UI component stylesheet:
 
 ```ts
-import { injectShellStyles } from '@altertable/data-app/react';
+import { injectDataAppShellStyles } from '@altertable/data-app/react';
 
-injectShellStyles();
+injectDataAppShellStyles();
 ```
 
-The complete stylesheet imports the same shell stylesheet, so these component
-styles have a single source. Both injectors accept
+Both entry stylesheets import `src/react/shared.css`, so common component styles
+have a single source. Each also includes the startup placeholder stylesheet. Both injectors accept
 the same document and nonce options and install once per document, each using its
 own style element. Host-owned header and footer content supplies its own styles.
 `ContentSkeleton` styles are also included. Widget features such as inspection,
