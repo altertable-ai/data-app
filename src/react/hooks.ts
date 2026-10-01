@@ -23,7 +23,6 @@ import {
   type DimensionValue,
 } from '@/src/core/dimension';
 import type { EmptyContent } from '@/src/react/ui/presentation';
-import { invariant } from '@/src/core/invariant';
 import { defineDataContent, type DataContentState } from '@/src/react/content';
 import {
   describeViewInput,
@@ -245,10 +244,6 @@ export function createDataHooks<Operations extends DataOperations>(
       empty: EmptyContent;
     } & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>>
   ) {
-    invariant(
-      !definition.variables || !('period' in definition.variables),
-      'The period input is owned by defineTimeView.'
-    );
     const period = dateRangeVariable({ ...definition.time, key: 'period' });
 
     return defineDataView<Name, { period: typeof period } & Additional>({

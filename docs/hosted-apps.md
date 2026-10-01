@@ -37,3 +37,39 @@ Open [the starter preview](http://127.0.0.1:27418/starter-data-app).
 Its test host executes the sample SQL through the iframe bridge using SQLite.
 
 For checks, see [Contributing](../CONTRIBUTING.md).
+
+## Validate before bundling
+
+Install TypeScript 7 or later in the build tool's project. The build-only
+`@altertable/data-app/validate` entry point runs that project's compiler without
+executing app code. Keep this import in the host's build tooling, outside the app.
+
+```ts
+import { validateApp } from '@altertable/data-app/validate';
+
+const validation = await validateApp({
+  entrypoints: ['index.tsx'],
+  cwd: appDirectory,
+});
+if (!validation.success) {
+  // Diagnostics contain code, message, and file/line/column where available.
+  throw new Error(JSON.stringify(validation.diagnostics));
+}
+// Bundle the same source with the same installed package version after validation.
+```
+
+Pass `tsconfig` for project-specific path aliases and environment types. Validation
+always enables strict checking and disables emission, even when the supplied
+project settings disable checking. Compiler setup failures throw instead of
+returning a successful result.
+
+Configuration uses `satisfies DataAppConfig`, including typed partial appearance
+and typography overrides. Prop combinations and typed registry references are
+checked by TypeScript. Numerical bounds, duplicate values in dynamic collections,
+and callback behavior are not proven by this check. Runtime validation remains
+for query results, URL input, host messages, and SQL encoding. `parseAppearance`
+validates unknown external settings; typed app settings use `normalizeAppearance`
+and `applyAppearance` without repeating authoring checks.
+
+The repository's hosted starter preview and packed-package check validate before
+bundling. The local starter's `bun run build` also runs its TypeScript check first.

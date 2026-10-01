@@ -4,6 +4,7 @@ import {
   gallerySections,
 } from '@/browser-tests/fixtures/gallery-catalog';
 import { useEffect, useState } from 'react';
+import type { DataAppConfig } from '@altertable/data-app/config';
 import { getDataAppNavigation } from '@altertable/data-app/client';
 import {
   DataApp,
@@ -96,7 +97,7 @@ const config = {
   title: 'Data app gallery',
   scope: { organization: 'Demo workspace', environment: 'Sample data' },
   appearance: { theme: 'light' },
-};
+} satisfies DataAppConfig;
 const dataContext = {
   description:
     'Synthetic sample data for exploring data app patterns. The overview is a fixed September 28–30, 2026 snapshot; other tabs demonstrate independent component states. Sample SQL documents the fixture data and does not query a live source.',

@@ -83,10 +83,6 @@ export function TableWidget<Row>(props: TableWidgetProps<Row>) {
     'TableWidget pagination.pageSize must be a positive integer.'
   );
   invariant(
-    limit === undefined || pagination === undefined,
-    'TableWidget limit and pagination are mutually exclusive.'
-  );
-  invariant(
     limit === undefined || (Number.isSafeInteger(limit) && limit >= 1),
     'TableWidget limit must be a positive integer.'
   );

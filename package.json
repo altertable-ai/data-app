@@ -72,6 +72,10 @@
       "types": "./dist/types/embed/index.d.ts",
       "import": "./dist/embed/index.js"
     },
+    "./validate": {
+      "types": "./dist/types/validate/index.d.ts",
+      "import": "./dist/validate.js"
+    },
     "./worker": {
       "default": "./dist/worker.js"
     },
@@ -128,7 +132,13 @@
   },
   "peerDependencies": {
     "react": ">=19.2.0",
-    "react-dom": ">=19.2.0"
+    "react-dom": ">=19.2.0",
+    "typescript": ">=7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "packageManager": "bun@1.4.2"
 }

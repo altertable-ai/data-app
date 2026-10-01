@@ -19,6 +19,11 @@ export type AppearanceSettings = {
   typography: { body: string; heading: string };
 };
 
+/** App-authored overrides; omitted fields use the package defaults. */
+export type AppearanceOptions = Partial<
+  Omit<AppearanceSettings, 'typography'>
+> & { typography?: Partial<AppearanceSettings['typography']> };
+
 export type ThemeController = {
   getTheme: () => ThemePreference;
   setTheme: (theme: ThemePreference) => void;
@@ -69,29 +74,8 @@ function font(value: unknown): value is string {
 }
 
 export function parseAppearance(value: unknown): AppearanceSettings {
-  if (value === undefined)
-    return {
-      ...defaults,
-      chartColors: [...defaults.chartColors],
-      typography: { ...defaults.typography },
-    };
-  invariant(
-    record(value) &&
-      Object.keys(value).every(key =>
-        [
-          'theme',
-          'baseColor',
-          'accentColor',
-          'darkAccentColor',
-          'chartColors',
-          'density',
-          'cornerRadius',
-          'elevation',
-          'typography',
-        ].includes(key)
-      ),
-    'Invalid appearance settings.'
-  );
+  if (value === undefined) return normalizeAppearance();
+  invariant(record(value), 'Invalid appearance settings.');
   const typography = value.typography;
   const validFields =
     (value.theme === undefined ||
@@ -113,38 +97,31 @@ export function parseAppearance(value: unknown): AppearanceSettings {
       oneOf(value.elevation, ['flat', 'subtle', 'raised'])) &&
     (typography === undefined ||
       (record(typography) &&
-        Object.keys(typography).every(
-          key => key === 'body' || key === 'heading'
-        ) &&
         (typography.body === undefined || font(typography.body)) &&
         (typography.heading === undefined || font(typography.heading))));
   invariant(validFields, 'Invalid appearance settings.');
 
+  return normalizeAppearance(value as AppearanceOptions);
+}
+
+/** Resolve typed app settings without repeating authoring checks at runtime. */
+export function normalizeAppearance(
+  value: AppearanceOptions = {}
+): AppearanceSettings {
   return {
-    theme: (value.theme ?? defaults.theme) as AppearanceSettings['theme'],
-    baseColor: (value.baseColor ??
-      defaults.baseColor) as AppearanceSettings['baseColor'],
-    accentColor: (value.accentColor ?? defaults.accentColor) as string,
-    darkAccentColor: (value.darkAccentColor ??
-      (value.accentColor === undefined
-        ? defaults.darkAccentColor
-        : undefined)) as string | undefined,
-    chartColors: (value.chartColors ?? defaults.chartColors) as string[],
-    density: (value.density ??
-      defaults.density) as AppearanceSettings['density'],
-    cornerRadius: (value.cornerRadius ??
-      defaults.cornerRadius) as AppearanceSettings['cornerRadius'],
-    elevation: (value.elevation ??
-      defaults.elevation) as AppearanceSettings['elevation'],
+    theme: value.theme ?? defaults.theme,
+    baseColor: value.baseColor ?? defaults.baseColor,
+    accentColor: value.accentColor ?? defaults.accentColor,
+    density: value.density ?? defaults.density,
+    cornerRadius: value.cornerRadius ?? defaults.cornerRadius,
+    elevation: value.elevation ?? defaults.elevation,
+    darkAccentColor:
+      value.darkAccentColor ??
+      (value.accentColor === undefined ? defaults.darkAccentColor : undefined),
+    chartColors: [...(value.chartColors ?? defaults.chartColors)],
     typography: {
-      body:
-        record(typography) && typeof typography.body === 'string'
-          ? typography.body
-          : defaults.typography.body,
-      heading:
-        record(typography) && typeof typography.heading === 'string'
-          ? typography.heading
-          : defaults.typography.heading,
+      body: value.typography?.body ?? defaults.typography.body,
+      heading: value.typography?.heading ?? defaults.typography.heading,
     },
   };
 }
@@ -187,8 +164,8 @@ function fontStack(family: string): string {
  * Install semantic tokens on the document root, including portaled UI. Returns a cleanup for
  * system-theme listening.
  */
-export function applyAppearance(value: unknown): () => void {
-  const settings = parseAppearance(value);
+export function applyAppearance(value?: AppearanceOptions): () => void {
+  const settings = normalizeAppearance(value);
   const root = document.documentElement;
   const preference = window.matchMedia('(prefers-color-scheme: dark)');
   const [xs, sm, md, lg, xl] = spaces[settings.density];

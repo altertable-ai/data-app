@@ -41,7 +41,13 @@ and failure.
 | Bind definitions and source evidence       | [Data context](react.md#bind-evidence)                     |
 
 Use the exported types for configuration, appearance, formatting, and component
-options.
+options. Declare configuration with `satisfies DataAppConfig` so appearance
+fields and values are checked before bundling. Local apps keep this configuration
+in `app.ts`; hosted apps keep it in their entry file.
+
+Typecheck app source before bundling. Build tools running in Node or Bun can use
+`validateApp` from `@altertable/data-app/validate`; see
+[build-time validation](hosted-apps.md#validate-before-bundling).
 
 ## Present the findings
 

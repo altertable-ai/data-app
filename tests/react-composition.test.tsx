@@ -470,7 +470,7 @@ test('pickers reject ambiguous selections and require explicit empty-selection m
   ).toContain('Value: a');
 });
 
-test('table configurations reject duplicate identities and contradictory display rules', () => {
+test('table configurations reject duplicate identities and invalid numerical bounds', () => {
   const props = {
     title: 'Rows',
     columns: [
@@ -506,12 +506,6 @@ test('table configurations reject duplicate identities and contradictory display
       <TableWidget {...props} pagination={{ pageSize: 1.5 }} />
     )
   ).toThrow('positive integer');
-  // JavaScript callers must respect the same exclusivity as TypeScript callers.
-  const invalid = { ...props, limit: 1, pagination: { pageSize: 2 } };
-  // @ts-expect-error intentional invalid runtime configuration
-  expect(() => renderToStaticMarkup(<TableWidget {...invalid} />)).toThrow(
-    'mutually exclusive'
-  );
 });
 
 test('visualization view identities are validated even while data is loading', () => {

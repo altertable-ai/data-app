@@ -318,10 +318,6 @@ export function dateRangeVariable({
     },
   };
   invariant(
-    !defaultValue.comparison,
-    `Date variable ${key} comparison must be activated by the reader.`
-  );
-  invariant(
     variable.valid(defaultValue),
     `Date variable ${key} has a default outside its available data range.`
   );
