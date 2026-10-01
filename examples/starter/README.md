@@ -44,7 +44,7 @@ or `pnpm add @altertable/data-app`, then regenerate your lockfile.
 - `src/operations.ts`: server operations, SQL, validation, and query bounds.
 - `src/data-context.ts`: source context, glossary, and query evidence.
 - `src/App.tsx`: findings, controls, and request states.
-- `src/main.tsx`: stylesheet import and React mounting.
+- `src/main.tsx`: explicit style injection and React mounting.
 - `src/server.ts`: local Bun server; replace it with an authorized server handler
   when hosting for other people.
 

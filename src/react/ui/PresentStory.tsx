@@ -29,7 +29,6 @@ import {
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { storySteps, type StoryFinding } from '@/src/react/ui/story';
-import '@/src/react/ui/PresentStory.css';
 
 export type StoryStep = {
   id: string;

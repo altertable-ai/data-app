@@ -1,7 +1,6 @@
 import { AppIcon } from '@/src/react/ui/icons';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { Button } from '@/src/react/ui/Button';
-import '@/src/react/ui/RequestHint.css';
 
 /** Idle keeps the same reserved space as refresh and failure. Initial loading belongs to skeletons. */
 export type WidgetStatus =

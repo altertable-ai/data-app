@@ -3,7 +3,6 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@/src/react/ui/Tabs';
 import { EmptyState, type EmptyStateProps } from '@/src/react/ui/EmptyState';
 import { classNames } from '@/src/react/ui/classNames';
 import { validateWidgetViews } from '@/src/react/ui/widget-views';
-import '@/src/react/ui/WidgetViewTabs.css';
 
 export type WidgetView = {
   id: string;

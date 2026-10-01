@@ -1,6 +1,5 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/AppHeader.css';
 
 export type AppHeaderProps = {
   scope?: ReactNode;

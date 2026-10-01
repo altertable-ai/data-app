@@ -9,7 +9,8 @@ export type InspectionDefaults = {
   queries?: DisclosedQuery[];
 };
 
-export const InspectionContext = createContext<InspectionDefaults | null>(null);
+export const InspectionContext =
+  /* @__PURE__ */ createContext<InspectionDefaults | null>(null);
 
 export function useInspectionDefaults(): InspectionDefaults | null {
   return useContext(InspectionContext);

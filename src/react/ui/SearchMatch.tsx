@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
 import type { SearchMatchValue } from '@/src/react/ui/searchItems';
-import '@/src/react/ui/SearchMatch.css';
 
 export type SearchMatchProps = {
   match: SearchMatchValue;

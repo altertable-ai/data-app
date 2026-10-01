@@ -5,7 +5,6 @@ import {
   type ReactNode,
 } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/RefreshControl.css';
 
 export type RefreshControlProps = {
   refreshing: boolean;

@@ -3,7 +3,6 @@ import {
   DateTimeTooltip,
   type DateTimeTooltipProps,
 } from '@/src/react/ui/DateTimeTooltip';
-import '@/src/react/ui/UpdatedAt.css';
 
 export type UpdatedAtProps = {
   timestamp: number;

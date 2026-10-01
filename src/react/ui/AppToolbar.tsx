@@ -7,7 +7,6 @@ import { PresentStory } from '@/src/react/ui/PresentStory';
 import { RefreshControl } from '@/src/react/ui/RefreshControl';
 import { classNames } from '@/src/react/ui/classNames';
 import { shortcuts, useShortcut } from '@/src/react/ui/shortcuts';
-import '@/src/react/ui/AppToolbar.css';
 
 export type AppToolbarProps = {
   children?: ReactNode;

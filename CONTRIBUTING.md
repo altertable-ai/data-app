@@ -23,7 +23,8 @@ bun run check
 Keep browser entries free of server implementations and credentials. Core,
 client, server, and embed remain independent of React. Implementations import
 focused modules; public entry points declare the supported exports explicitly.
-Keep the React stylesheet as a separate export. Do not edit generated `dist`.
+Keep style injection explicit; importing React must not modify the DOM. Add new
+styles to `src/react/styles.css`. Do not edit generated `dist`.
 
 Use `@/src/...` imports in repository source and `@altertable/data-app/<entry>`
 in consumer tests and examples. Run `bun run lint:fix` and `bun run format` for
@@ -46,17 +47,17 @@ explanations in the code. App instructions belong in the consuming app's
 `bun run check` builds first and runs all required source, package, and starter
 checks. Build before running consumer tests individually.
 
-| Command                   | Purpose                                            |
-| ------------------------- | -------------------------------------------------- |
-| `bun run build`           | Build JavaScript, declarations, and CSS            |
-| `bun run typecheck`       | Check source, tests, and scripts                   |
-| `bun run lint`            | Run type-aware lint checks                         |
-| `bun run format`          | Format source and docs                             |
-| `bun run test`            | Verify public contracts and complex isolated logic |
-| `bun run test:package`    | Verify the npm archive as a consumer               |
-| `bun run test:starter`    | Typecheck, lint, and build the starter             |
-| `bun run test:browser`    | Verify browser interactions in Chromium            |
-| `bun run check:workflows` | Validate workflows and shell scripts               |
+| Command                   | Purpose                                             |
+| ------------------------- | --------------------------------------------------- |
+| `bun run build`           | Build JavaScript, declarations, and injected styles |
+| `bun run typecheck`       | Check source, tests, and scripts                    |
+| `bun run lint`            | Run type-aware lint checks                          |
+| `bun run format`          | Format source and docs                              |
+| `bun run test`            | Verify public contracts and complex isolated logic  |
+| `bun run test:package`    | Verify the npm archive as a consumer                |
+| `bun run test:starter`    | Typecheck, lint, and build the starter              |
+| `bun run test:browser`    | Verify browser interactions in Chromium             |
+| `bun run check:workflows` | Validate workflows and shell scripts                |
 
 For browser changes, run `bash scripts/install-test-browser.sh` once, then
 `bun run test:browser`. Preview UI examples at `/gallery` with

@@ -1,9 +1,10 @@
 /**
- * React bindings and UI; load the stylesheet separately in the browser entry.
+ * React bindings and UI; inject styles explicitly in the browser entry.
  * @module @altertable/data-app/react
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/react.md
  */
-import '@/src/react/ui/Focus.css';
+export { injectDataAppStyles } from '@/src/react/styles';
+export type { DataAppStylesOptions } from '@/src/react/styles';
 
 export { mountDataApp, DataAppProvider } from '@/src/react/mount';
 export { createDataHooks } from '@/src/react/hooks';

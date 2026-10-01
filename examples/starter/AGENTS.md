@@ -17,7 +17,7 @@ Read `node_modules/@altertable/data-app/AGENTS.md` and
 
 Package documentation paths are relative to `node_modules/@altertable/data-app/`.
 Edit app-owned files and import public package entries. Keep SQL and credentials on the server; use `import type` for operation types
-in browser code. Import the stylesheet once in the browser entry.
+in browser code. Call `injectDataAppStyles()` once in the browser entry before mounting.
 The connectivity screen is scaffolding, not an example analysis.
 
 Run `bun run check`. Inspect findings and interactions at phone and desktop

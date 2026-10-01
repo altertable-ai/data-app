@@ -2,7 +2,6 @@ import { classNames } from '@/src/react/ui/classNames';
 import { AppIcon } from '@/src/react/ui/icons';
 import type { ReportingPeriod } from '@/src/core/contract';
 import { formatDateRange } from '@/src/core/format';
-import '@/src/react/ui/PeriodSummary.css';
 
 export type { ReportingPeriod } from '@/src/core/contract';
 

@@ -17,8 +17,8 @@ boundaries. Read the documentation for the entry you use:
 | Configure identity and theme     | [Config](docs/config.md), [appearance](docs/appearance.md)         |
 | Format values                    | [Format](docs/format.md)                                           |
 
-Import public entries and the React stylesheet once in the browser entry. Edit
-app-owned files. HTTP apps keep operations on the server and import their types
+Import public entries and call `injectDataAppStyles()` once before mounting in
+the browser entry. Edit app-owned files. HTTP apps keep operations on the server and import their types
 in browser code; bundle apps execute operations through the authorized host SQL
 bridge. Credentials and enforced access/query limits stay on the backend.
 

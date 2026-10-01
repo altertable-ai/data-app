@@ -1,5 +1,4 @@
 import { invariant } from '@/src/core/invariant';
-import '@/src/react/ui/data-identifiers.css';
 
 export type TableIdentifier = { catalog: string; schema: string; name: string };
 export type ColumnIdentifier<TableId extends string = string> = {

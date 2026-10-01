@@ -1,7 +1,6 @@
 import { useId, type ReactNode } from 'react';
 import { SelectionMark } from '@/src/react/ui/SelectionMark';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/Checkbox.css';
 
 export type CheckboxProps = {
   label: string;

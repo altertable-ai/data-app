@@ -11,7 +11,6 @@ import { IconButton } from '@/src/react/ui/IconButton';
 import { AppIcon } from '@/src/react/ui/icons';
 import { classNames } from '@/src/react/ui/classNames';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import '@/src/react/ui/ThemeSelector.css';
 
 const themes = [
   { value: 'light', label: 'Light', icon: 'lightTheme' },

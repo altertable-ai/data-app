@@ -22,8 +22,6 @@ import {
   type Placement,
 } from '@floating-ui/react';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/HelpPopover.css';
-import '@/src/react/ui/Button.css';
 
 export type HelpPopoverTriggerProps = Omit<
   ComponentPropsWithRef<'button'>,

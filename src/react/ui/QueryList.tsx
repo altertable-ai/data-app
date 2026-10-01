@@ -9,7 +9,6 @@ import { Button } from '@/src/react/ui/Button';
 import { classNames } from '@/src/react/ui/classNames';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import '@/src/react/ui/QueryList.css';
 
 export type QueryListProps = {
   queries?: DisclosedQuery[];
