@@ -33,6 +33,18 @@ import {
 } from '@/src/react/view';
 import { useViewVariables } from '@/src/react/view-controls';
 
+const clientScopes = new WeakMap<object, string>();
+
+function getClientScope(client: object): string {
+  let scope = clientScopes.get(client);
+  if (!scope) {
+    scope = crypto.randomUUID();
+    clientScopes.set(client, scope);
+  }
+
+  return scope;
+}
+
 type TimeVariables<Additional extends VariableCollection> = {
   period: ReturnType<typeof dateRangeVariable>;
 } & Additional;
@@ -56,6 +68,8 @@ type TimeInputMapping<Additional extends VariableCollection, Input> =
 export function createDataHooks<Operations extends DataOperations>(
   client: DataClient<Operations>
 ) {
+  const clientScope = getClientScope(client);
+
   type QueryOptions = {
     enabled?: boolean;
     staleTime?: number;
@@ -69,14 +83,17 @@ export function createDataHooks<Operations extends DataOperations>(
     options?: QueryOptions
   ) {
     const queryClient = useQueryClient();
-    const queryKey = ['data-operation', name, input] as const;
+    const queryKey = ['data-operation', clientScope, name, input] as const;
     const query = useQuery({
       queryKey,
       queryFn({ signal }) {
         return client.query(name, input, { signal });
       },
       placeholderData(previousData, previousQuery) {
-        return previousQuery?.queryKey[1] === name ? previousData : undefined;
+        return previousQuery?.queryKey[1] === clientScope &&
+          previousQuery.queryKey[2] === name
+          ? previousData
+          : undefined;
       },
       enabled: options?.enabled,
       ...(options?.staleTime !== undefined && { staleTime: options.staleTime }),
@@ -116,6 +133,7 @@ export function createDataHooks<Operations extends DataOperations>(
   ) {
     const query = useDataQuery(name, input, options);
     const [last, setLast] = useState<{
+      clientScope: string;
       name: Name;
       response: NonNullable<typeof query.data>;
     }>();
@@ -123,16 +141,21 @@ export function createDataHooks<Operations extends DataOperations>(
       query.isSuccess &&
       !query.isPlaceholderData &&
       query.data &&
-      (last?.name !== name || last.response !== query.data)
+      (last?.clientScope !== clientScope ||
+        last.name !== name ||
+        last.response !== query.data)
     ) {
-      setLast({ name, response: query.data });
+      setLast({ clientScope, name, response: query.data });
     }
     const sameInput =
       options.sameInput ??
       ((left: InputOf<Operations[Name]>, right: InputOf<Operations[Name]>) =>
         hashKey([left]) === hashKey([right]));
     const response =
-      query.data ?? (last?.name === name ? last.response : undefined);
+      query.data ??
+      (last?.clientScope === clientScope && last.name === name
+        ? last.response
+        : undefined);
     const snapshot = response && { data: response.data, input: response.input };
     const view = resolveDataView({
       requestedInput: input,
@@ -288,6 +311,7 @@ export function createDataHooks<Operations extends DataOperations>(
   ) {
     const variables = useViewVariables(
       definition.variables,
+      clientScope,
       (operation, input, signal) =>
         client
           .query(operation as keyof Operations & string, input as never, {
