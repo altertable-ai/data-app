@@ -2,7 +2,6 @@ import type { ComponentPropsWithRef } from 'react';
 import { invariant } from '@/src/core/invariant';
 import { classNames } from '@/src/react/ui/classNames';
 import { Skeleton } from '@/src/react/ui/Skeleton';
-import '@/src/react/ui/ContentSkeleton.css';
 
 export type ContentSkeletonProps = {
   rows?: number;

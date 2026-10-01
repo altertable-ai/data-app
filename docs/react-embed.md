@@ -102,9 +102,9 @@ fetching and subscriptions and CLI local-server forwarding remain host concerns.
 ## Loading placeholder
 
 For a shared placeholder while building or connecting, render `DataAppSkeleton`
-from `@altertable/data-app/react` in the consuming shell. Import
-`@altertable/data-app/react/styles.css` once in that host's browser entry. See
-[React](react.md#loading-an-embedded-app) for usage. The bridge does not render
+from `@altertable/data-app/react` in the consuming shell. Call
+`injectDataAppStyles()` from that entry once in the host's browser entry before
+rendering. See [React](react.md#loading-an-embedded-app) for the entry-point example. The bridge does not render
 loading UI itself.
 
 ## Parent-owned presentation

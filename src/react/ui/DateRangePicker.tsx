@@ -26,7 +26,6 @@ import { classNames } from '@/src/react/ui/classNames';
 import { AppIcon } from '@/src/react/ui/icons';
 import { formatDateRange, pluralize } from '@/src/core/format';
 import { Checkbox } from '@/src/react/ui/Checkbox';
-import '@/src/react/ui/DateRangePicker.css';
 
 import {
   availableDatePresets,

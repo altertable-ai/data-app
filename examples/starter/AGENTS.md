@@ -20,7 +20,7 @@ Edit app-owned files and import public package entries. Use `#app/*` and
 `#config` for app imports. Use function declarations for named functions and
 leave blank lines around declarations, effects, and before returns.
 Keep SQL and credentials on the server; use `import type` for operation types
-in browser code. Import the stylesheet once in the browser entry.
+in browser code. Call `injectDataAppStyles()` once in the browser entry before mounting.
 The connectivity screen is scaffolding, not an example analysis.
 
 Run `bun run check`. Inspect findings and interactions at phone and desktop

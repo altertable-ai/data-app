@@ -1,6 +1,5 @@
 import type { ComponentPropsWithRef } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/Skeleton.css';
 
 export type SkeletonProps = Omit<
   ComponentPropsWithRef<'span'>,

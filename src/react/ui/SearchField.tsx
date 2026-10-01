@@ -3,7 +3,6 @@ import { classNames } from '@/src/react/ui/classNames';
 import { SearchInput } from '@/src/react/ui/SearchInput';
 import { Button } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
-import '@/src/react/ui/SearchField.css';
 
 export type SearchFieldProps = {
   label: string;

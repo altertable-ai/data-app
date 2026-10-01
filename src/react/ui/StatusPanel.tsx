@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
 import { AppIcon } from '@/src/react/ui/icons';
-import '@/src/react/ui/StatusPanel.css';
 
 export type StatusPanelProps = {
   status: 'loading' | 'empty' | 'error';

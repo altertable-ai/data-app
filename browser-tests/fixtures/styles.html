@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="script-src 'self'; style-src 'nonce-styles-test'"
+    />
+  </head>
+  <body>
+    <button id="inject">Inject styles</button>
+    <div class="altertable-grid">Grid</div>
+    <iframe title="Other document" src="about:blank"></iframe>
+    <button id="iframe">Style iframe</button>
+    <script type="module" src="./styles.ts"></script>
+  </body>
+</html>

@@ -1,4 +1,3 @@
-import '@altertable/data-app/react/styles.css';
 import { GalleryCases } from '@/browser-tests/fixtures/gallery-cases';
 import { useState } from 'react';
 import {
@@ -14,6 +13,7 @@ import {
   TableWidget,
   Tooltip,
   VisualizationWidget,
+  injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app/react';
 
@@ -301,5 +301,7 @@ function Gallery() {
     </DataApp>
   );
 }
+
+injectDataAppStyles();
 
 mountDataApp({ config, component: Gallery });

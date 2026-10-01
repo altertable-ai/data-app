@@ -17,7 +17,6 @@ import { GradientScroll } from '@/src/react/ui/GradientScroll';
 import { SelectionMark } from '@/src/react/ui/SelectionMark';
 import { SearchMatch } from '@/src/react/ui/SearchMatch';
 import { searchItems } from '@/src/react/ui/searchItems';
-import '@/src/react/ui/Combobox.css';
 
 /** IDs are nonempty and unique across ordinary and missing options. */
 export type ComboboxOption = {

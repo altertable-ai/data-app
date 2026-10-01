@@ -1,6 +1,5 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/RefreshRegion.css';
 
 export type RefreshRegionProps = {
   refreshing: boolean;

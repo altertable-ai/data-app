@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
 import { shortcutLabel, type Shortcut } from '@/src/react/ui/shortcuts';
-import '@/src/react/ui/Kbd.css';
 
 export type KbdProps = ComponentPropsWithRef<'kbd'> & { shortcut?: Shortcut };
 

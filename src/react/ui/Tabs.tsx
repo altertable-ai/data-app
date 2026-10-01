@@ -11,7 +11,6 @@ import {
   subscribeSearch,
   writeSearch,
 } from '@/src/react/ui/search';
-import '@/src/react/ui/Tabs.css';
 
 /** React Aria tabs with keyboard and ARIA behavior; pair each Tab and TabPanel by stable id. */
 export { Tabs, TabList, Tab, TabPanels, TabPanel };

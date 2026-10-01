@@ -33,6 +33,7 @@
     "AGENTS.md"
   ],
   "type": "module",
+  "sideEffects": false,
   "exports": {
     "./contract": {
       "types": "./dist/types/core/contract.d.ts",
@@ -65,10 +66,6 @@
     "./react": {
       "types": "./dist/types/react/index.d.ts",
       "import": "./dist/react/index.js"
-    },
-    "./react/styles.css": {
-      "types": "./dist/react.css.d.ts",
-      "default": "./dist/react/index.css"
     },
     "./embed": {
       "types": "./dist/types/embed/index.d.ts",

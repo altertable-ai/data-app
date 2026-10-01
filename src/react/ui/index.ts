@@ -1,5 +1,3 @@
-import '@/src/react/ui/Focus.css';
-
 // App shell and getting started
 export { DataApp } from '@/src/react/ui/DataApp';
 export type { DataAppProps, DataAppRequest } from '@/src/react/ui/DataApp';

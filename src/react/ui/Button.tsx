@@ -4,7 +4,6 @@ import {
   type ButtonProps as AriaButtonProps,
 } from 'react-aria-components';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/Button.css';
 
 export type ButtonProps = ComponentPropsWithRef<'button'> & {
   variant?: 'elevated' | 'outline' | 'ghost';

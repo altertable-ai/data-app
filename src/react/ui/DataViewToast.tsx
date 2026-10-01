@@ -2,7 +2,6 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { DataView } from '@/src/core/data-view';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
-import '@/src/react/ui/DataViewToast.css';
 
 export type DataViewToastProps<Data, Input> = {
   view: DataView<Data, Input>;

@@ -3,7 +3,6 @@ import { classNames } from '@/src/react/ui/classNames';
 import { DateTimeTooltip } from '@/src/react/ui/DateTimeTooltip';
 import { EmptyState, type EmptyStateProps } from '@/src/react/ui/EmptyState';
 import { SearchField, type SearchFieldProps } from '@/src/react/ui/SearchField';
-import '@/src/react/ui/DataTable.css';
 
 export type DataTableSearch = Pick<
   SearchFieldProps,

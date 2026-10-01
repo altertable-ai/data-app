@@ -1,10 +1,12 @@
-import '@altertable/data-app/react/styles.css';
+import { injectDataAppStyles } from '@altertable/data-app/react';
 import { createRoot } from 'react-dom/client';
 import { DataAppSkeleton } from '@altertable/data-app/react';
 import { applyAppearance } from '@altertable/data-app/appearance';
 
 const params = new URLSearchParams(location.search);
 applyAppearance({ theme: params.has('dark') ? 'dark' : 'light' });
+injectDataAppStyles();
+
 createRoot(document.getElementById('root')!).render(
   <div
     style={{

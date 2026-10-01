@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/EmptyState.css';
 
 export type EmptyStateProps = {
   title: ReactNode;

@@ -11,7 +11,6 @@ import {
 import { IconButton } from '@/src/react/ui/IconButton';
 import { AppIcon } from '@/src/react/ui/icons';
 import { classNames } from '@/src/react/ui/classNames';
-import '@/src/react/ui/LiveControl.css';
 
 export type LiveIntervalSeconds = 30 | 60 | 300;
 

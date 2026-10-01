@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { GlossaryEntry } from '@/src/react/ui/data-context';
 import { HelpPopover } from '@/src/react/ui/HelpPopover';
-import '@/src/react/ui/GlossaryDefinition.css';
 
 export type GlossaryDefinitionProps = {
   entry: GlossaryEntry;

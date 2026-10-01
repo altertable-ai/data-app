@@ -7,7 +7,6 @@ import type { MetricDefinition } from '@/src/react/ui/metric';
 import { metricComparison } from '@/src/react/ui/metric';
 import type { MetricReading } from '@/src/core/reading';
 import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
-import '@/src/react/ui/ComparisonVisual.css';
 
 type UnboundComparisonProps = MetricComparison & {
   label: string;

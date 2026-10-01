@@ -9,7 +9,6 @@ import {
 } from '@/src/react/ui/ContentSkeleton';
 import { validateWidgetViews } from '@/src/react/ui/widget-views';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
-import '@/src/react/ui/VisualizationWidget.css';
 
 type VisualizationWidgetBaseProps = {
   title: ReactNode;
