@@ -114,6 +114,7 @@ import {
   createMessageRouter,
   sqlQueryRoute,
 } from '@altertable/data-app/contract';
+import { createSqlQueryHandler } from '@altertable/data-app/embed';
 
 const router = createMessageRouter(
   { 'data:sql': sqlQueryRoute },
