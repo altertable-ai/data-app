@@ -3,9 +3,9 @@ import { expect, test } from '@playwright/test';
 test('gallery preserves control defaults, status, and keyboard selection', async ({
   page,
 }) => {
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=filters');
   await expect(
-    page.getByRole('heading', { name: 'Runtime component gallery' })
+    page.getByRole('heading', { name: 'Data app gallery' })
   ).toBeVisible();
   await expect(
     page.getByRole('button', { name: 'Disabled action', exact: true })
@@ -21,10 +21,9 @@ test('gallery preserves control defaults, status, and keyboard selection', async
   await expect(checkbox).toBeChecked();
   await checkbox.press('Tab');
   await page.keyboard.press('Shift+Tab');
-  await expect(page.locator('.altertable-checkbox').first()).toHaveCSS(
-    'outline-width',
-    '1px'
-  );
+  await expect(
+    page.locator('#controls .altertable-checkbox').first()
+  ).toHaveCSS('outline-width', '1px');
   await page
     .getByRole('button', {
       name: 'Loading categories: Choose categories',
@@ -181,7 +180,7 @@ test('gallery widget and inspection share selected bars and view changes', async
 test('gallery uses shared defaults in both themes and narrow containers', async ({
   page,
 }) => {
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=filters');
   const action = page.getByRole('button', { name: 'Hint action', exact: true });
   const backgrounds: string[] = [];
   for (const theme of ['light', 'dark'] as const) {
@@ -194,7 +193,7 @@ test('gallery uses shared defaults in both themes and narrow containers', async 
         .not.toBe(backgrounds[0]);
     }
     const surfaceColor = await page
-      .locator('.altertable-data-widget')
+      .locator('#widgets .altertable-data-widget')
       .first()
       .evaluate(element => getComputedStyle(element).backgroundColor);
     await expect(action).toHaveCSS('background-color', surfaceColor);
@@ -210,6 +209,7 @@ test('gallery uses shared defaults in both themes and narrow containers', async 
     await expect(action).toHaveCSS('outline-width', '1px');
     await action.press('Escape');
     await expect(tooltip).not.toBeVisible();
+    await page.getByRole('tab', { name: 'App layout', exact: true }).click();
     const narrow = page.getByTestId('narrow-controls');
     const bounds = await narrow.evaluate(element => ({
       width: element.clientWidth,
@@ -220,6 +220,9 @@ test('gallery uses shared defaults in both themes and narrow containers', async 
       path: `/tmp/runtime-gallery-${test.info().project.name}-${theme}.png`,
       fullPage: true,
     });
+    await page
+      .getByRole('tab', { name: 'Filters & actions', exact: true })
+      .click();
   }
   expect(backgrounds[0]).not.toBe(backgrounds[1]);
 });
@@ -227,7 +230,7 @@ test('gallery uses shared defaults in both themes and narrow containers', async 
 test('picker refresh and failure keep cached choices and retry in fixed slots', async ({
   page,
 }) => {
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=filters');
   await page
     .getByRole('button', { name: 'Start picker cycle', exact: true })
     .click();
@@ -273,7 +276,7 @@ test('picker refresh and failure keep cached choices and retry in fixed slots', 
 test('widget refresh slots preserve data, geometry and inspection feedback', async ({
   page,
 }) => {
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=states');
   const widget = page.locator('.altertable-data-widget').filter({
     has: page.getByRole('heading', { name: 'Stable activity', exact: true }),
   });
@@ -322,7 +325,7 @@ test('gallery spans all UI families and handles empty, overflow and request reco
 }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=filters');
   expect(await page.locator('.gallery-case').count()).toBeGreaterThanOrEqual(
     65
   );
@@ -343,6 +346,7 @@ test('gallery spans all UI families and handles empty, overflow and request reco
   );
   await picker.getByRole('searchbox').press('Escape');
   await page.keyboard.press('Escape');
+  await page.getByRole('tab', { name: 'Request states', exact: true }).click();
   const request = page.getByRole('region', {
     name: 'Fixture request',
     exact: true,
@@ -366,7 +370,7 @@ test('gallery respects reduced motion and retry without cached data', async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=filters');
   await page
     .getByRole('button', { name: 'Refreshing categories: HTTP', exact: true })
     .click();
@@ -395,6 +399,7 @@ test('gallery respects reduced motion and retry without cached data', async ({
   await expect(dialog.getByRole('option')).toHaveCount(3);
   await dialog.getByRole('searchbox').press('Escape');
   await page.keyboard.press('Escape');
+  await page.getByRole('tab', { name: 'Request states', exact: true }).click();
   const title = page.getByText('Nothing to show yet', { exact: true });
   const description = page.getByText(
     'A description has quieter typography than its title.',
@@ -419,7 +424,7 @@ test('gallery respects reduced motion and retry without cached data', async ({
 test('clear closes the picker and idle panels have no feedback gap', async ({
   page,
 }) => {
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=filters');
   await page
     .getByRole('button', { name: 'Resettable category: HTTP', exact: true })
     .click();
@@ -450,7 +455,7 @@ test('widget toolbar owns shimmer, retry tooltip and stable action positions', a
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=states');
   const widget = page.locator('.altertable-data-widget').filter({
     has: page.getByRole('heading', { name: 'Stable activity', exact: true }),
   });
@@ -506,7 +511,7 @@ test('standalone viewers retain their chosen theme after reload', async ({
 test('widgets keep inspection on headings and suppress unneeded empty chrome', async ({
   page,
 }) => {
-  await page.goto('/gallery');
+  await page.goto('/gallery?view=states');
   const widget = page.locator('.altertable-data-widget').filter({
     has: page.getByRole('heading', { name: 'Stable activity', exact: true }),
   });
@@ -539,6 +544,9 @@ test('widgets keep inspection on headings and suppress unneeded empty chrome', a
     .first();
   await expect(error).toHaveCSS('border-top-width', '0px');
   await page
+    .getByRole('tab', { name: 'Filters & actions', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Resettable category: HTTP', exact: true })
     .click();
   const search = page
@@ -570,6 +578,9 @@ test('menu search aligns labels and Escape blurs empty searches', async ({
   await tableSearch.press('Escape');
   await expect(tableSearch).not.toBeFocused();
   await page
+    .getByRole('tab', { name: 'Filters & actions', exact: true })
+    .click();
+  await page
     .getByRole('button', { name: 'Resettable category: HTTP', exact: true })
     .click();
   const dialog = page.getByRole('dialog', {
@@ -588,4 +599,120 @@ test('menu search aligns labels and Escape blurs empty searches', async ({
   await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
+});
+
+test('gallery categories support keyboard navigation, links, and persistent demo state', async ({
+  page,
+}) => {
+  await page.goto('/gallery');
+  const tabs = page.getByRole('tablist', { name: 'Gallery categories' });
+  await expect(tabs.getByRole('tab')).toHaveCount(7);
+  await expect(
+    page.locator(
+      '.gallery-tabs > .react-aria-TabPanels > .react-aria-TabPanel:not([data-inert])'
+    )
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole('tabpanel', { name: 'Overview', exact: true })
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      name: 'Monday accounts for 60% of recorded activity',
+    })
+  ).toBeVisible();
+  await tabs.getByRole('tab', { name: 'Overview', exact: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(
+    tabs.getByRole('tab', { name: 'Filters & actions', exact: true })
+  ).toBeFocused();
+  await expect(page).toHaveURL(/view=filters/);
+  const checkbox = page.getByRole('checkbox', {
+    name: 'Include archived records',
+    exact: true,
+  });
+  await checkbox.check();
+  await tabs.getByRole('tab', { name: 'Metrics', exact: true }).click();
+  await expect(checkbox).not.toBeVisible();
+  await tabs
+    .getByRole('tab', { name: 'Filters & actions', exact: true })
+    .click();
+  await expect(checkbox).toBeChecked();
+  await page.goBack();
+  await expect(
+    tabs.getByRole('tab', { name: 'Metrics', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+  await page.reload();
+  await expect(
+    tabs.getByRole('tab', { name: 'Metrics', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+  await page.evaluate(() => {
+    window.location.hash = 'dates';
+  });
+  await expect(
+    tabs.getByRole('tab', { name: 'Filters & actions', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+  await expect(
+    page.getByRole('heading', {
+      name: 'Dates, periods and freshness',
+      exact: true,
+    })
+  ).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/view=metrics$/);
+  await expect(
+    tabs.getByRole('tab', { name: 'Metrics', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+  await page.goForward();
+  await expect(page).toHaveURL(/view=filters#dates$/);
+  await expect(
+    tabs.getByRole('tab', { name: 'Filters & actions', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+  await tabs.getByRole('tab', { name: 'Metrics', exact: true }).click();
+  await page.reload();
+  await expect(
+    tabs.getByRole('tab', { name: 'Metrics', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+  await page.goto('/gallery?view=unknown');
+  await expect(
+    tabs.getByRole('tab', { name: 'Overview', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+});
+
+test('every gallery category renders in both themes without page overflow', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/gallery');
+  const tabs = page.getByRole('tablist', { name: 'Gallery categories' });
+  for (const theme of ['light', 'dark']) {
+    if (theme === 'dark')
+      await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    for (const label of [
+      'Overview',
+      'Filters & actions',
+      'Metrics',
+      'Tables & charts',
+      'Request states',
+      'Stories & evidence',
+      'App layout',
+    ]) {
+      await tabs.getByRole('tab', { name: label, exact: true }).click();
+      const panel = page.getByRole('tabpanel', { name: label, exact: true });
+      await expect(panel).toBeVisible();
+      await expect(
+        panel.getByRole('heading', { level: 2 }).first()
+      ).toBeVisible();
+      const dimensions = await page.evaluate(() => ({
+        width: document.documentElement.clientWidth,
+        scroll: document.documentElement.scrollWidth,
+      }));
+      expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width + 1);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.screenshot({
+        path: `/tmp/gallery-${test.info().project.name}-${theme}-${label.toLowerCase().replaceAll(/[^a-z]+/g, '-')}.png`,
+      });
+    }
+  }
+  expect(errors).toEqual([]);
 });

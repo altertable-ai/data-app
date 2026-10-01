@@ -1,4 +1,8 @@
 import {
+  gallerySections,
+  type GalleryCategory,
+} from '@/browser-tests/fixtures/gallery-catalog';
+import {
   dimensionFilter,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
@@ -136,89 +140,8 @@ const columns = [
   },
 ] as const;
 
-const sections: Record<
-  string,
-  { group: string; description: string; frame: string }
-> = {
-  buttons: {
-    group: 'Controls',
-    description:
-      'Shared actions, selection marks and search. Variants and sizes are independent.',
-    frame: 'controls',
-  },
-  'picker-edges': {
-    group: 'Controls',
-    description:
-      'Filters in their toolbar footprint. Open each picker to review its popup states.',
-    frame: 'controls',
-  },
-  dates: {
-    group: 'Controls',
-    description:
-      'Date filters, reporting periods and freshness in an app toolbar.',
-    frame: 'controls',
-  },
-  metrics: {
-    group: 'Data display',
-    description:
-      'KPI cards at dashboard column width. Missing readings and measured zero stay distinct.',
-    frame: 'metric',
-  },
-  tables: {
-    group: 'Data display',
-    description:
-      'Record widgets with headers, bounded rows and bottom pagination.',
-    frame: 'widget',
-  },
-  charts: {
-    group: 'Data display',
-    description: 'Visualizations inside the same widget shell used in apps.',
-    frame: 'visual',
-  },
-  refresh: {
-    group: 'Request states',
-    description:
-      'Replay refresh and failure. Data, titles and toolbar actions should stay in place.',
-    frame: 'widget',
-  },
-  requests: {
-    group: 'Request states',
-    description:
-      'Page and section boundaries, including initial failure and retained results.',
-    frame: 'content',
-  },
-  'empty-loading': {
-    group: 'Request states',
-    description:
-      'Empty content in its widget, and skeletons in the footprint they replace.',
-    frame: 'widget',
-  },
-  overlays: {
-    group: 'Context',
-    description:
-      'Inspection, help, sheets and secondary views with the shared runtime controls.',
-    frame: 'content',
-  },
-  chrome: {
-    group: 'App structure',
-    description:
-      'Page identity, toolbars, variables, notices and attribution at page width.',
-    frame: 'page',
-  },
-  layout: {
-    group: 'App structure',
-    description:
-      'Constrained containers, responsive grids and scroll behavior.',
-    frame: 'page',
-  },
-  icons: {
-    group: 'Reference',
-    description:
-      'Every semantic icon with its API name. Compare meaning and visual consistency here.',
-    frame: 'icons',
-  },
-};
 const FrameContext = createContext('content');
+const CategoryContext = createContext<GalleryCategory>('overview');
 
 function Case({
   title,
@@ -266,7 +189,9 @@ function Section({
   title: string;
   children: ReactNode;
 }) {
-  const section = sections[id]!;
+  const category = useContext(CategoryContext);
+  const section = gallerySections[id]!;
+  if (section.category !== category) return null;
 
   return (
     <section id={id} className="gallery-section" aria-label={title}>
@@ -284,7 +209,7 @@ function Section({
   );
 }
 
-export function GalleryCases() {
+export function GalleryCases({ category }: { category: GalleryCategory }) {
   const [search, setSearch] = useState('');
   const [single, setSingle] = useState('http');
   const [multi, setMulti] = useState<string[]>(['http', 'postgres']);
@@ -368,7 +293,7 @@ export function GalleryCases() {
                 };
 
   return (
-    <>
+    <CategoryContext.Provider value={category}>
       <Section id="buttons" title="Buttons and selection">
         <Case title="Every button variant and size">
           <div className="gallery-wrap">
@@ -1277,6 +1202,6 @@ export function GalleryCases() {
           </div>
         </Case>
       </Section>
-    </>
+    </CategoryContext.Provider>
   );
 }
