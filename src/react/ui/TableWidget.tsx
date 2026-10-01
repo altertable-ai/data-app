@@ -8,7 +8,7 @@ import {
   DataTableEmptyRow,
   type DataTableSearch,
 } from '@/src/react/ui/DataTable';
-import type { EmptyStateProps } from '@/src/react/ui/EmptyState';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 import {
   searchItems,
   type SearchHit,
@@ -46,7 +46,7 @@ type TableWidgetBaseProps<Row> = {
   evidence?: WidgetEvidence;
   search?: TableWidgetSearch<Row>;
   /** Valid result with no rows; the header remains visible. */
-  empty: Pick<EmptyStateProps, 'title' | 'description'>;
+  empty: EmptyContent;
 } & (
   | {
       /** Positive integer preview cap after search; disables pagination. */

@@ -49,6 +49,10 @@ export type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 export { DataWidget } from '@/src/react/ui/DataWidget';
 export type { WidgetStatus } from '@/src/react/ui/RequestHint';
 export type { DataWidgetProps } from '@/src/react/ui/DataWidget';
+export { TextContent } from '@/src/react/ui/TextContent';
+export type { TextContentProps } from '@/src/react/ui/TextContent';
+export { TextWidget } from '@/src/react/ui/TextWidget';
+export type { TextWidgetProps } from '@/src/react/ui/TextWidget';
 export { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 export type {
   VisualizationWidgetProps,

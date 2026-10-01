@@ -724,3 +724,82 @@ test('every gallery category renders in both themes without page overflow', asyn
   }
   expect(errors).toEqual([]);
 });
+
+test('text widgets share the frame and retain narrative scope through region changes', async ({
+  page,
+}) => {
+  await page.goto('/gallery#text');
+  const section = page.getByRole('region', {
+    name: 'Text widgets',
+    exact: true,
+  });
+  const narrative = section
+    .locator('.altertable-text-widget')
+    .filter({ hasText: 'Activity for this selection' });
+  await expect(narrative).toContainText('42 people were active in Europe.');
+  await expect(narrative).toHaveCSS('border-top-width', '1px');
+  await section
+    .getByRole('button', { name: 'Narrative region: Europe' })
+    .click();
+  await page.getByRole('option', { name: 'Asia', exact: true }).click();
+  await expect(narrative).toContainText('42 people were active in Europe.');
+  await section.getByRole('button', { name: 'Fail text refresh' }).click();
+  await expect(section.getByRole('alert')).toContainText('Europe');
+  await expect(narrative).toContainText('42 people were active in Europe.');
+  await section.getByRole('button', { name: 'Resolve text request' }).click();
+  await expect(narrative).toContainText('18 people were active in Asia.');
+  await section.getByRole('button', { name: 'Show zero activity' }).click();
+  await expect(narrative).toContainText('No activity was recorded in Asia.');
+  await section.getByRole('button', { name: 'Initial text loading' }).click();
+  await expect(narrative).toHaveAttribute('aria-busy', 'true');
+  await expect(
+    narrative.locator('.altertable-text-widget-skeleton')
+  ).toBeVisible();
+  await expect(narrative).toHaveCSS('border-top-width', '1px');
+  await expect(narrative).not.toContainText('No activity was recorded');
+});
+
+test('widget insets align across metrics, visualizations, and loading states', async ({
+  page,
+}) => {
+  await page.goto('/gallery');
+  const metric = page.locator('.altertable-metric-widget').first();
+  const header = page.locator('.altertable-data-widget-header').first();
+  const body = page
+    .locator('.altertable-data-widget-body[data-padding="inset"]')
+    .first();
+  const padding = await metric.evaluate(
+    element => getComputedStyle(element).paddingLeft
+  );
+  for (const frame of [header, body]) {
+    await expect(frame).toHaveCSS('padding-left', padding);
+    await expect(frame).toHaveCSS('padding-right', padding);
+  }
+  await expect(metric).toHaveCSS('padding-top', padding);
+  await expect(header).toHaveCSS('padding-top', padding);
+  await page.getByRole('tab', { name: 'Request states', exact: true }).click();
+  const panel = page.getByRole('tabpanel', { name: 'Request states' });
+  for (const selector of [
+    '.altertable-metric-widget.altertable-content-skeleton',
+    '.altertable-data-widget.altertable-content-skeleton',
+  ]) {
+    const skeleton = panel.locator(selector).first();
+    await expect(skeleton).toHaveCSS('padding-left', padding);
+    await expect(skeleton).toHaveCSS('padding-right', padding);
+  }
+});
+
+test('prose links have pointer and keyboard affordances', async ({ page }) => {
+  await page.goto('/gallery#text');
+  const link = page.getByRole('link', {
+    name: 'Explore the dashboard composition',
+    exact: true,
+  });
+  await expect(link).toHaveCSS('text-decoration-thickness', '1px');
+  await link.hover();
+  await expect(link).toHaveCSS('text-decoration-thickness', '2px');
+  await page.mouse.move(0, 0);
+  await link.focus();
+  await expect(link).toHaveCSS('outline-width', '1px');
+  await expect(link).toHaveCSS('outline-style', 'solid');
+});

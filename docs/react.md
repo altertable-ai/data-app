@@ -113,6 +113,21 @@ charts, and custom views.
 
 `defineDataContent()` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `<DataSection>` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
 
+## Narrative text
+
+Use `<TextContent>` for prose within a page or custom layout, and `<TextWidget>`
+when the explanation belongs in a titled panel alongside other widgets.
+
+Give text a purpose: frame the question, explain how to interpret a comparison,
+qualify a finding, or suggest what to explore next. Choose the content for the
+reader's question and the decisions the exploration supports.
+
+For data-dependent text, use `reading={result.select((data, input) => ...)}` and
+provide `evidence`. Derive both the explanation and its scope from those displayed
+values so it stays consistent with the visualizations while filters change.
+Static instructions can use ordinary children; local filters should feed the same
+filtered data to the text and its related visualization.
+
 ## Reuse app helpers
 
 Use the shared helpers for common app tasks. Follow the entry points below to

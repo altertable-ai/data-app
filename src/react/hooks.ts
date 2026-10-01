@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DataOperations, DateRangeRequest } from '@/src/core/contract';
-import type { DataClient, InputOf, OutputOf } from '@/src/client/data-client';
+import type { DataClient } from '@/src/client/data-client';
+import type { InputOf, OutputOf } from '@/src/core/operation-types';
 import { displayedSnapshot, resolveDataView } from '@/src/core/data-view';
 import {
   reportingPeriodText,
@@ -21,7 +22,7 @@ import {
   type DimensionOption,
   type DimensionValue,
 } from '@/src/core/dimension';
-import type { EmptyStateProps } from '@/src/react/ui/EmptyState';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 import { invariant } from '@/src/core/invariant';
 import { defineDataContent, type DataContentState } from '@/src/react/content';
 import {
@@ -241,7 +242,7 @@ export function createDataHooks<Operations extends DataOperations>(
         InputOf<Operations[Name]>
       >;
       isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
-      empty: Pick<EmptyStateProps, 'title' | 'description'>;
+      empty: EmptyContent;
     } & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>>
   ) {
     invariant(

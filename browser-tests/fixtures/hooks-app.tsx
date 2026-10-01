@@ -1,10 +1,19 @@
 import { ClientCacheApp } from '@/browser-tests/fixtures/client-cache';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createDataClient } from '@/src/client/index';
+import { injectDataAppStyles } from '@altertable/data-app/react';
+import { createDataClient, type OutputOf } from '@/src/client/index';
 import { defineOperation } from '@/src/core/contract';
 import type { TransportResponse } from '@/src/core/bridge';
-import { createDataHooks, DataAppProvider } from '@/src/react/index';
+import {
+  createDataHooks,
+  DataAppProvider,
+  DataSection,
+  defineDataContent,
+  TextWidget,
+} from '@/src/react/index';
+
+injectDataAppStyles();
 
 const operations = {
   alpha: defineOperation({
@@ -54,6 +63,29 @@ const client = createDataClient<typeof operations>({
   },
 });
 const { useDataView } = createDataHooks(client);
+const narrative = defineDataContent<
+  OutputOf<(typeof operations)[keyof typeof operations]>,
+  { version: number }
+>(result => (
+  <TextWidget
+    title="Activity explained"
+    data-testid="narrative"
+    evidence={{
+      id: 'activity-explanation',
+      queryNames: ['alpha-evidence', 'beta-evidence'],
+    }}
+    reading={result.select((data, input) => ({
+      value: 'count' in data ? data.count : data.label,
+      version: input.version,
+    }))}
+  >
+    {({ value, version }) => (
+      <p>
+        {value} for selection {version}
+      </p>
+    )}
+  </TextWidget>
+));
 
 function App() {
   const [operation, setOperation] = useState<'alpha' | 'beta'>('alpha');
@@ -128,6 +160,11 @@ function App() {
       <p data-testid="evidence">
         {result.queries?.map(query => query.name).join(',') ?? 'none'}
       </p>
+      <DataSection
+        result={result}
+        empty={{ title: 'No activity' }}
+        {...narrative}
+      />
     </>
   );
 }

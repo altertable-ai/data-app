@@ -125,6 +125,12 @@ export const gallerySections: Record<
       'Explain what a reader can do next when data is missing. Match skeletons to the content they replace and make retry actions easy to find.',
     frame: 'widget',
   },
+  text: {
+    category: 'evidence',
+    description:
+      'Explain results with prose that follows the displayed selection.',
+    frame: 'widget',
+  },
   overlays: {
     category: 'evidence',
     description:

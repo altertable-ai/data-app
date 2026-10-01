@@ -43,7 +43,8 @@ isolation only when its complexity warrants it, such as cancellation, streaming,
 SQL escaping, or authenticated bridge sessions. Avoid tests that repeat trivial
 helpers, file layout, or every component prop.
 
-Update the relevant guide when changing public behavior. Keep JSDoc for
+Update the relevant guide when changing public behavior. In documentation prose,
+write functions as `functionName()` and components as `<ComponentName>`. Keep JSDoc for
 constraints, ownership, units, and runtime boundaries; leave implementation
 explanations in the code. App instructions belong in the consuming app's
 `AGENTS.md`; see the [local starter](https://github.com/altertable-ai/data-app/tree/main/examples/starter-local-data-app)

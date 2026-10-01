@@ -1,6 +1,5 @@
 import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { formatCount } from '@/src/core/format';
-import type { DataReading } from '@/src/core/reading';
 import { AboutData } from '@/src/react/ui/AboutData';
 import { AppIcon } from '@/src/react/ui/icons';
 import {
@@ -8,14 +7,13 @@ import {
   type WidgetStatus,
 } from '@/src/react/ui/RequestHint';
 import { classNames } from '@/src/react/ui/classNames';
-import {
-  ContentSkeleton,
-  type ContentSkeletonProps,
-} from '@/src/react/ui/ContentSkeleton';
-import { EmptyState, type EmptyStateProps } from '@/src/react/ui/EmptyState';
+import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { EmptyState } from '@/src/react/ui/EmptyState';
+import type {
+  EmptyContent,
+  BoundWidgetReading,
+} from '@/src/react/ui/presentation';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
-
-type Empty = Pick<EmptyStateProps, 'title' | 'description'>;
 
 type DataWidgetBaseProps = {
   title: ReactNode;
@@ -34,19 +32,14 @@ type DataWidgetBaseProps = {
  * A bound reading requires evidence; its child renderer runs only for nonempty ready data. */
 export type DataWidgetProps<Data = unknown> = DataWidgetBaseProps &
   (
-    | {
-        reading: DataReading<Data>;
-        isEmpty: (data: Data) => boolean;
-        empty: Empty;
-        evidence: WidgetEvidence;
-        skeleton?: Pick<ContentSkeletonProps, 'variant' | 'rows'>;
+    | (BoundWidgetReading<Data> & {
         children: (data: Data) => ReactNode;
-      }
+      })
     | {
         reading?: never;
         isEmpty?: never;
         skeleton?: never;
-        empty?: Empty;
+        empty?: EmptyContent;
         children: ReactNode;
       }
   );
@@ -87,7 +80,7 @@ function DataWidgetContent({
   children,
   className,
   ...props
-}: DataWidgetBaseProps & { empty?: Empty; children: ReactNode }) {
+}: DataWidgetBaseProps & { empty?: EmptyContent; children: ReactNode }) {
   const titleId = useId();
   const content = empty ? <EmptyState {...empty} /> : children;
   const visual = (
