@@ -130,6 +130,9 @@ test('facet choices are fetched and displayed separately for each client', async
   await expect(
     page.getByRole('option', { name: 'B category', exact: true })
   ).toHaveCount(0);
+  await page
+    .getByRole('searchbox', { name: 'Search category values' })
+    .press('Escape');
   await page.keyboard.press('Escape');
   await page
     .getByTestId('b')
