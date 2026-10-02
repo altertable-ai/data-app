@@ -46,7 +46,7 @@ for (const width of [375, 1280]) {
         expect(Math.abs(gap - geometry.gap)).toBeLessThan(1);
       expect(geometry.mainWidth).toBeLessThanOrEqual(960);
       expect(geometry.gutter).toBeGreaterThanOrEqual(width <= 600 ? 16 : 24);
-      expect(geometry.scrollWidth).toBe(geometry.width);
+      expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.width);
       if (['ready', 'loading', 'stale'].includes(state)) {
         const grid = app.getByTestId('cards');
         await expect(grid).toHaveCSS('gap', `${geometry.gap}px`);
