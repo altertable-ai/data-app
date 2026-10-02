@@ -116,7 +116,9 @@ function Host() {
                 type: 'bundle',
                 bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
                 javascript: broken
-                  ? 'throw new Error("Broken app")'
+                  ? new URLSearchParams(location.search).has('syntax')
+                    ? 'const ='
+                    : 'throw new Error("Broken app")'
                   : `${javascript}\ndocument.body.dataset.bundleVersion = "${bundleVersion}";`,
               }
         }

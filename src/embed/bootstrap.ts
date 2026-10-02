@@ -13,6 +13,7 @@ export function startDataAppBootstrap({
 }) {
   let loaded: string | undefined;
   let failed = false;
+  const bundleSource = `altertable-data-app-${crypto.randomUUID()}.js`;
   const bridge = createIframeTransport({
     parentOrigin,
     window: frame,
@@ -29,7 +30,7 @@ export function startDataAppBootstrap({
       loaded = javascript;
       try {
         const script = frame.document.createElement('script');
-        script.textContent = javascript;
+        script.textContent = `${javascript}\n//# sourceURL=${bundleSource}`;
         frame.document.body.append(script);
         if (!failed) bridge.ready();
       } catch {
@@ -43,13 +44,25 @@ export function startDataAppBootstrap({
     bridge.fail();
   }
 
-  frame.addEventListener('error', reportError);
-  frame.addEventListener('unhandledrejection', reportError);
+  function reportBundleError(event: ErrorEvent) {
+    if (event.filename === bundleSource) reportError();
+  }
+
+  function reportBundleRejection(event: PromiseRejectionEvent) {
+    if (
+      event.reason instanceof Error &&
+      event.reason.stack?.includes(bundleSource)
+    )
+      reportError();
+  }
+
+  frame.addEventListener('error', reportBundleError);
+  frame.addEventListener('unhandledrejection', reportBundleRejection);
   const uninstall = installDataAppTransport(bridge, frame);
 
   return () => {
-    frame.removeEventListener('error', reportError);
-    frame.removeEventListener('unhandledrejection', reportError);
+    frame.removeEventListener('error', reportBundleError);
+    frame.removeEventListener('unhandledrejection', reportBundleRejection);
     uninstall();
   };
 }

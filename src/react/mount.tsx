@@ -1,4 +1,5 @@
 import { useState, type ComponentType, type ReactNode } from 'react';
+import { getDataAppTransport } from '@/src/client/iframe';
 import { getDataAppNavigation } from '@/src/client/navigation';
 import { createRoot } from 'react-dom/client';
 import { invariant } from '@/src/core/invariant';
@@ -19,7 +20,12 @@ export function mountDataApp({
   document.documentElement.lang = navigator.language;
   document.title = dataAppTitle(config);
   getDataAppNavigation();
-  createRoot(root).render(
+  createRoot(root, {
+    onUncaughtError(error) {
+      console.error(error);
+      getDataAppTransport()?.fail();
+    },
+  }).render(
     <DataAppProvider>
       <Component />
     </DataAppProvider>
