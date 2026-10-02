@@ -13,6 +13,17 @@ test('select widgets and custom elements and deliver numbered feedback through t
   await frame
     .getByRole('textbox', { name: 'What should change?' })
     .fill('Compare with last year');
+  await expect(frame.getByRole('combobox')).toHaveCount(0);
+  const composer = await frame
+    .getByRole('region', { name: 'Annotate app' })
+    .boundingBox();
+  const viewport = await page.locator('iframe').boundingBox();
+  expect(composer).not.toBeNull();
+  expect(composer!.width).toBeLessThanOrEqual(320);
+  expect(composer!.x).toBeGreaterThanOrEqual(viewport!.x);
+  expect(composer!.x + composer!.width).toBeLessThanOrEqual(
+    viewport!.x + viewport!.width
+  );
   await page.screenshot({ path: testInfo.outputPath('annotations.png') });
   await frame
     .getByRole('button', { name: 'Add feedback', exact: true })
@@ -23,9 +34,7 @@ test('select widgets and custom elements and deliver numbered feedback through t
   expect(drafts[0].target.id).toBe('monthly-revenue');
   expect(drafts[0].target.queryNames).toEqual(['revenue']);
   expect(drafts[0].comment).toBe('Compare with last year');
-  await frame
-    .getByRole('combobox', { name: 'Element to annotate' })
-    .selectOption('intro');
+  await frame.locator('[data-annotation-id="intro"]').click();
   await frame
     .getByRole('textbox', { name: 'What should change?' })
     .fill('Make this shorter');
@@ -48,9 +57,7 @@ test('failed delivery retains feedback and supports retry; Escape restores inter
   await page.goto('/bundle-host?annotations&annotation-error');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
-  await frame
-    .getByRole('combobox', { name: 'Element to annotate' })
-    .selectOption('customers');
+  await frame.locator('[data-annotation-id="customers"]').click();
   await frame
     .getByRole('textbox', { name: 'What should change?' })
     .fill('Show active customers');
@@ -69,7 +76,7 @@ test('failed delivery retains feedback and supports retry; Escape restores inter
     .click();
   await expect(frame.getByLabel('Annotation 1', { exact: true })).toBeVisible();
   await frame
-    .getByRole('combobox', { name: 'Element to annotate' })
+    .getByRole('button', { name: 'Annotate', exact: true })
     .press('Escape');
   await expect(frame.getByRole('region', { name: 'Annotate app' })).toHaveCount(
     0
@@ -95,9 +102,7 @@ test('feedback freezes the displayed filters at selection while results change',
   await page.goto('/bundle-host?annotations&annotation-state');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
-  await frame
-    .getByRole('combobox', { name: 'Element to annotate' })
-    .selectOption('revenue');
+  await frame.locator('[data-annotation-id="revenue"]').click();
   await frame
     .getByRole('textbox', { name: 'What should change?' })
     .fill('Compare with last year');
@@ -120,9 +125,7 @@ test('host admission failures explain how to recover without losing the comment'
   await page.goto('/bundle-host?annotations&annotation-limit');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
-  await frame
-    .getByRole('combobox', { name: 'Element to annotate' })
-    .selectOption('intro');
+  await frame.locator('[data-annotation-id="intro"]').click();
   await frame
     .getByRole('textbox', { name: 'What should change?' })
     .fill('Explain this');
@@ -135,4 +138,21 @@ test('host admission failures explain how to recover without losing the comment'
   await expect(
     frame.getByRole('textbox', { name: 'What should change?' })
   ).toHaveValue('Explain this');
+});
+
+test('keyboard selection opens the floating comment and Enter adds feedback', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  const trigger = frame.getByRole('button', { name: 'Annotate', exact: true });
+  await trigger.click();
+  await trigger.press('Tab');
+  await trigger.press('Enter');
+  const comment = frame.getByRole('textbox', { name: 'What should change?' });
+  await expect(comment).toBeFocused();
+  await comment.fill('Compare with last year');
+  await comment.press('Enter');
+  await expect(frame.getByLabel('Annotation 1', { exact: true })).toBeVisible();
+  await expect(comment).toHaveCount(0);
 });

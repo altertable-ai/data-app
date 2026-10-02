@@ -20,53 +20,59 @@
   font: 600 12px var(--at-font-body, sans-serif);
 }
 .altertable-annotation-composer {
-  position: fixed;
   z-index: 1102;
-  bottom: 16px;
-  right: 16px;
-  width: min(360px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
-  overflow: auto;
-  padding: 16px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: min(320px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 8px;
   border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-surface, 12px);
+  border-radius: 24px;
   background: var(--at-surface, #fff);
   color: var(--at-text, #202124);
-  box-shadow: 0 8px 32px #0002;
+  box-shadow: 0 4px 16px #0002;
   font: 13px/1.5 var(--at-font-body, sans-serif);
 }
-.altertable-annotation-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: center;
-}
-.altertable-annotation-composer label {
-  display: grid;
-  gap: 4px;
-  margin-block: 12px;
-}
-.altertable-annotation-composer textarea,
-.altertable-annotation-composer select {
-  width: 100%;
+.altertable-annotation-composer textarea {
+  flex: 1;
+  min-width: 0;
+  field-sizing: content;
+  max-height: min(160px, 30vh);
   box-sizing: border-box;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-control, 8px);
-  padding: 8px;
+  border: 0;
+  border-radius: 12px;
+  padding: 6px 8px;
+  resize: none;
   font: inherit;
-  background: var(--at-surface, #fff);
+  background: transparent;
   color: inherit;
 }
-.altertable-annotation-composer textarea {
-  min-height: 88px;
-  resize: vertical;
-}
-.altertable-annotation-composer p {
-  font-size: 12px;
-  color: var(--at-muted, #687078);
-  margin-bottom: 0;
+.altertable-annotation-composer textarea:focus-visible {
+  outline: 2px solid var(--at-accent, #405d47);
+  outline-offset: -2px;
 }
 .altertable-annotation-composer [role='alert'] {
+  flex-basis: 100%;
+  padding: 0 8px;
   color: var(--at-danger, #b42318);
-  margin-bottom: 12px;
+  margin: 4px 0;
+}
+.altertable-annotation-hint {
+  position: fixed;
+  z-index: 1102;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 8px 16px;
+  border: 1px solid var(--at-border, #e3e6e8);
+  border-radius: 24px;
+  background: var(--at-surface, #fff);
+  color: var(--at-text, #202124);
+  box-shadow: 0 4px 16px #0002;
+  font: 13px/1.5 var(--at-font-body, sans-serif);
+  pointer-events: none;
 }

@@ -338,7 +338,7 @@ Example:
 ## Annotate app elements
 
 A host that enables annotations adds **Annotate** to `<DataApp>`'s toolbar.
-Readers select a widget or choose it from the element picker, describe a change,
+Readers click a widget and describe a change in the floating comment box,
 and add feedback to their chat draft. Adding feedback does not start the agent;
 the reader sends the message from the host's composer.
 

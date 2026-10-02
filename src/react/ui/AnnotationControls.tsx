@@ -6,6 +6,15 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
+import {
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  useFloating,
+  useMergeRefs,
+} from '@floating-ui/react';
+import { ArrowUp, X } from 'lucide-react';
 import { MessageRoutingError } from '@/src/core/messages';
 import { DataAppError } from '@/src/client/transport';
 import { getDataAppTransport } from '@/src/client/iframe';
@@ -51,7 +60,6 @@ export function AnnotationControls({
   view?: string;
 }) {
   const toolbarRef = useRef<HTMLButtonElement>(null);
-  const pickerRef = useRef<HTMLSelectElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [active, setActive] = useState(false);
   const [hovered, setHovered] = useState<Target>();
@@ -60,12 +68,21 @@ export function AnnotationControls({
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
-  const [available, setAvailable] = useState<Target[]>([]);
   const [ambiguous, setAmbiguous] = useState(false);
   const [boxes, setBoxes] = useState<
     { id: string; number: number; rect: ReturnType<typeof geometry> }[]
   >([]);
   const [outline, setOutline] = useState<ReturnType<typeof geometry>>();
+
+  const { refs, floatingStyles } = useFloating({
+    elements: { reference: selected?.element },
+    placement: 'right-start',
+    strategy: 'fixed',
+    middleware: [offset(8), flip(), shift({ padding: 12, crossAxis: true })],
+    whileElementsMounted: autoUpdate,
+  });
+
+  const floatingRef = useMergeRefs([refs.setFloating]);
 
   function select(target: Target) {
     const location = getDataAppNavigation()?.snapshot();
@@ -126,11 +143,9 @@ export function AnnotationControls({
   }, [draft?.id]);
   useEffect(() => {
     if (!active) return;
-    pickerRef.current?.focus();
     const root = rootRef.current;
     function updateTargets() {
       const selectable = targets(root);
-      setAvailable(selectable);
       setAmbiguous(
         (root?.querySelectorAll('[data-annotation-id]').length ?? 0) >
           selectable.length
@@ -164,6 +179,24 @@ export function AnnotationControls({
       if (event.key === 'Escape' && !pending) {
         event.preventDefault();
         finishFromKeyboard();
+      } else if (
+        !pending &&
+        !draft &&
+        ['Tab', 'ArrowRight', 'ArrowLeft', 'Enter'].includes(event.key)
+      ) {
+        const all = targets(root);
+        if (!all.length) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.key === 'Enter' && hovered) captureSelection(hovered);
+        else {
+          const current = all.findIndex(target => target.id === hovered?.id);
+          const direction =
+            event.shiftKey || event.key === 'ArrowLeft' ? -1 : 1;
+          const target = all[(current + direction + all.length) % all.length]!;
+          target.element.scrollIntoView({ block: 'nearest' });
+          setHovered(target);
+        }
       } else if (event.target instanceof Node && root?.contains(event.target)) {
         event.preventDefault();
         event.stopPropagation();
@@ -180,7 +213,7 @@ export function AnnotationControls({
       document.removeEventListener('pointermove', hover);
       document.removeEventListener('keydown', escape, true);
     };
-  }, [active, rootRef, displayedInput, view, pending]);
+  }, [active, rootRef, displayedInput, view, pending, draft, hovered]);
 
   useEffect(() => {
     const target = targets(rootRef.current).find(
@@ -295,80 +328,67 @@ export function AnnotationControls({
               {box.number}
             </span>
           ))}
-          {active && (
+          {active && !selected && (
+            <output className="altertable-annotation-hint">
+              {ambiguous
+                ? 'Some elements are unavailable for feedback.'
+                : 'Click an element to annotate · Esc to exit'}
+            </output>
+          )}
+          {active && selected && (
             <section
+              ref={floatingRef}
+              style={floatingStyles}
               className="altertable-annotation-composer"
               aria-label="Annotate app"
             >
-              <div className="altertable-annotation-heading">
-                <strong>
-                  {selected ? selected.label : 'Select an element to annotate'}
-                </strong>
-                <Button size="compact" disabled={pending} onClick={finish}>
-                  Done
-                </Button>
-              </div>
-              <label>
-                Element
-                <select
-                  ref={pickerRef}
-                  aria-label="Element to annotate"
-                  disabled={pending}
-                  value={selected?.id ?? ''}
-                  onChange={event => {
-                    const target = available.find(
-                      target => target.id === event.target.value
-                    );
-                    if (target) {
-                      target.element.scrollIntoView({ block: 'center' });
-                      select(target);
-                    }
-                  }}
-                >
-                  <option value="">Choose an element</option>
-                  {available.map((target, index) => (
-                    <option key={`${target.id}:${index}`} value={target.id}>
-                      {target.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              {selected && (
-                <div>
-                  <label>
-                    What should change?
-                    <textarea
-                      aria-label="What should change?"
-                      ref={textareaRef}
-                      maxLength={2000}
-                      value={comment}
-                      disabled={pending}
-                      onChange={event => setComment(event.target.value)}
-                    />
-                  </label>
-                  {error && <p role="alert">{error}</p>}
-                  <Button
-                    onClick={() => void addFeedback()}
-                    size="compact"
-                    variant="elevated"
-                    disabled={pending || !comment.trim()}
-                  >
-                    {pending ? 'Adding feedback…' : 'Add feedback'}
-                  </Button>
-                </div>
-              )}
-              {ambiguous && (
-                <p>
-                  <output>
-                    Some elements can’t be selected. Ask the agent to make them
-                    available for feedback.
-                  </output>
-                </p>
-              )}
-              <p>
-                Feedback is added to your chat draft. Send the message to ask
-                the agent to make changes.
-              </p>
+              <textarea
+                aria-label="What should change?"
+                placeholder="Add a comment…"
+                ref={textareaRef}
+                rows={1}
+                maxLength={2000}
+                value={comment}
+                disabled={pending}
+                onChange={event => setComment(event.target.value)}
+                onKeyDown={event => {
+                  if (
+                    event.key === 'Enter' &&
+                    !event.shiftKey &&
+                    !event.nativeEvent.isComposing
+                  ) {
+                    event.preventDefault();
+                    if (comment.trim()) void addFeedback();
+                  }
+                }}
+              />
+              <Button
+                aria-label="Add feedback"
+                title="Add feedback"
+                onClick={() => void addFeedback()}
+                size="icon-compact"
+                variant="elevated"
+                disabled={pending || !comment.trim()}
+              >
+                <ArrowUp size={16} aria-hidden />
+              </Button>
+              <Button
+                aria-label="Cancel annotation"
+                title="Cancel annotation"
+                size="icon-compact"
+                variant="ghost"
+                disabled={pending}
+                onClick={() => {
+                  setSelected(undefined);
+                  setDraft(undefined);
+                  setComment('');
+                  setError('');
+                  toolbarRef.current?.focus();
+                }}
+              >
+                <X size={16} aria-hidden />
+              </Button>
+              {error && <p role="alert">{error}</p>}
             </section>
           )}
         </>,
