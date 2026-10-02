@@ -21,7 +21,7 @@ bun add @altertable/data-app
 ## Build an app
 
 Apps render in an iframe in Altertable, a chat app, or locally in a browser.
-Follow [app authoring](docs/app-authoring.md) to explore data and present findings.
+Follow [app authoring](docs/app-authoring.md) to explore data, export displayed results as CSV, and present findings.
 
 | App                                | Start here                               |
 | ---------------------------------- | ---------------------------------------- |

@@ -17,6 +17,8 @@ export type {
   ViewBindings,
 } from '@/src/react/view';
 
+export type { CsvCell, CsvTable, CsvExport } from '@/src/react/ui/csv-export';
+
 // App shell and getting started
 export { DataApp } from '@/src/react/ui/DataApp';
 export type { DataAppProps, DataAppRequest } from '@/src/react/ui/DataApp';

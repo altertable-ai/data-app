@@ -3,7 +3,11 @@ import { useEffect, useRef, type ComponentProps, type ReactNode } from 'react';
 import { useAppAppearance } from '@/src/react/ui/useAppAppearance';
 import type { DisclosedQuery } from '@/src/core/contract';
 import type { DataAppConfig } from '@/src/core/config';
-import { displayedSnapshot } from '@/src/core/data-view';
+import type { CsvExport } from '@/src/react/ui/csv-export';
+import {
+  displayedSnapshot,
+  type DisplayedSnapshot,
+} from '@/src/core/data-view';
 import { AboutData, type AboutEmpty } from '@/src/react/ui/AboutData';
 import { AppHeader } from '@/src/react/ui/AppHeader';
 import { AppLayout } from '@/src/react/ui/AppLayout';
@@ -45,7 +49,9 @@ export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
     | {
         request: DataAppRequest<Data, Input>;
         /** Findings are always derived from the result currently visible to the reader. */
-        story?: BoundStory<Data, Input>;
+        story: BoundStory<Data, Input>;
+        /** Every analytical view exports every distinct dataset in its displayed result. */
+        csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
         children: (data: Data, displayedInput: Input) => ReactNode;
         loading?: ReactNode;
         label?: string;
@@ -56,6 +62,7 @@ export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
     | {
         request?: never;
         story?: never;
+        csvExport?: CsvExport;
         children: ReactNode;
         queries?: DisclosedQuery[];
         refresh?: AppToolbarProps['refresh'];
@@ -99,10 +106,8 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   });
 
   const snapshot = request && displayedSnapshot(request.view);
-  const story =
-    request && props.story && snapshot
-      ? { findings: props.story(snapshot) }
-      : undefined;
+  const findings = request && snapshot ? props.story(snapshot) : undefined;
+  const story = findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
       organization={scopeLabels?.organization ?? config.scope.organization}
@@ -111,6 +116,13 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   );
   const toolbar = (
     <AppToolbar
+      csvExport={
+        request
+          ? snapshot
+            ? props.csvExport(snapshot)
+            : undefined
+          : props.csvExport
+      }
       requestState={request?.view.kind}
       refresh={refresh ?? request?.refresh}
       story={

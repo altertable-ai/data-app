@@ -89,6 +89,29 @@ function App() {
       config={config}
       dataContext={dataContext}
       request={activity}
+      csvExport={({ data }) => ({
+        filename: 'activity.csv',
+        tables: [
+          {
+            name: 'Tracked identities',
+            columns: ['Current count', 'Previous count'],
+            rows: [[data.count, data.previousCount]],
+          },
+          {
+            name: 'Feature use',
+            columns: ['Feature ID', 'Count'],
+            rows: data.features.map(feature => [feature.id, feature.value]),
+          },
+        ],
+      })}
+      story={({ data }) => [
+        dataContext.finding({
+          id: 'feature-use',
+          headline: 'Feature use in the selected period',
+          visual: <Ranking items={data.features} />,
+          evidence: featureEvidence,
+        }),
+      ]}
       {...content}
     />
   );
@@ -267,7 +290,8 @@ footer are omitted. Variables and request states remain available.
 
 ## Present data with stories
 
-Stories turn the exploration's findings into a presentation. Set the `story` prop on `<DataApp>`
+Include a story in every analytical app. Stories turn the exploration's findings
+into a presentation. Set the `story` prop on `<DataApp>`
 to enable **Present story** in the toolbar; use `<PresentStory>` directly for a
 custom shell. Start from the [data app starter](../examples/starter-data-app/index.tsx).
 
@@ -278,3 +302,34 @@ The callback receives the displayed data and its original input, including
 during refresh or failure. Derive the story from that snapshot so it agrees with
 the visible exploration. Initial loading, empty results, and initial errors have
 no story to present.
+
+## Export displayed data as CSV
+
+Every request-backed `<DataApp>` requires `story` and `csvExport`. Select all distinct named datasets
+from the displayed snapshot so the built-in **Export** action is available
+whenever analytical results are shown. Include this alongside the app's story;
+setup and static shells may omit it. One dataset downloads directly as CSV. Multiple
+datasets offer individual CSV downloads and **Export all** as a ZIP archive.
+
+Example:
+
+```tsx
+<DataApp
+  config={config}
+  dataContext={dataContext}
+  request={result}
+  story={story}
+  csvExport={({ data, input }) => ({
+    filename: `counts-${input.groupName || 'all'}.csv`,
+    tables: [
+      {
+        name: 'Sample counts',
+        columns: ['Group', 'Sample count'],
+        rows: data.map(row => [row.groupName, row.sampleCount]),
+      },
+    ],
+  })}
+>
+  {(data, input) => <Results data={data} input={input} />}
+</DataApp>
+```

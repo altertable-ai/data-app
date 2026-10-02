@@ -1,7 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import type { DataView } from '@/src/core/data-view';
-import { AppIcon } from '@/src/react/ui/icons';
-import { Button } from '@/src/react/ui/Button';
+import { Toast } from '@/src/react/ui/Toast';
 
 export type DataViewToastProps<Data, Input> = {
   view: DataView<Data, Input>;
@@ -46,32 +45,11 @@ export function DataViewToast<Data, Input>({
     view.kind === 'stale-error' || view.kind === 'updating'
       ? view.message
       : undefined;
-  const icon = failed ? 'error' : showingUpdate ? 'loading' : 'live';
-  const state = failed ? 'stale-error' : showingUpdate ? 'updating' : 'notice';
+  const state = failed ? 'error' : showingUpdate ? 'updating' : 'notice';
 
   return (
-    <div className="altertable-data-view-toast-region">
-      <div
-        className="altertable-data-view-toast"
-        data-state={state}
-        role={failed ? 'alert' : 'status'}
-      >
-        <AppIcon
-          name={icon}
-          size={16}
-          className={
-            showingUpdate ? 'altertable-data-view-toast-spinner' : undefined
-          }
-        />
-        <span>
-          {failed
-            ? (message ?? detail)
-            : showingUpdate
-              ? (message ?? detail)
-              : notice}
-        </span>
-        {failed && onRetry && <Button onClick={onRetry}>Try again</Button>}
-      </div>
-    </div>
+    <Toast state={state} onRetry={onRetry}>
+      {failed || showingUpdate ? (message ?? detail) : notice}
+    </Toast>
   );
 }

@@ -37,6 +37,20 @@ function App() {
 
   return (
     <DataApp
+      csvExport={{
+        filename: 'gallery',
+        tables: [
+          {
+            name: 'Counts',
+            columns: ['Name', 'Count'],
+            rows: [
+              ['München, "East"', 0],
+              ['Two\nlines', null],
+            ],
+          },
+          { name: 'Summary', columns: ['Total'], rows: [[0]] },
+        ],
+      }}
       config={config}
       dataContext={{ description: 'Test report', glossary: {} }}
       description="Report description"

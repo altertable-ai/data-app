@@ -4,7 +4,7 @@ Follow the [shared authoring flow](app-authoring.md) using [index.tsx](../exampl
 one file with public package imports; omit server files, HTML, credentials, and
 relative or app-alias imports.
 
-Replace the sample SQL, parsers, filters, data context, story, and configuration with
+Replace the sample SQL, parsers, filters, data context, CSV export, story, and configuration with
 an exploration of the source data you inspected. The starter uses two SQL
 `VALUES` rows, so it needs no production table.
 
@@ -13,7 +13,7 @@ For execution details, see [browser-owned operations](client.md#browser-owned-op
 ## Convert a local data app
 
 1. Combine the app's operations and parsers, data context, views, story,
-   configuration, and browser entry into one `index.tsx`, following the
+   CSV export, configuration, and browser entry into one `index.tsx`, following the
    [single-file starter](../examples/starter-data-app/index.tsx).
 2. Replace the HTTP client with `createDataClient({ operations })`, using the
    operation registry as a value. See [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps)

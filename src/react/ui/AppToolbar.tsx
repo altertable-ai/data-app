@@ -1,5 +1,7 @@
 import type { ComponentProps, ComponentPropsWithRef, ReactNode } from 'react';
 import type { DataView } from '@/src/core/data-view';
+import { ExportControl } from '@/src/react/ui/ExportControl';
+import type { CsvExport } from '@/src/react/ui/csv-export';
 import { LiveControl, type LiveControlProps } from '@/src/react/ui/LiveControl';
 import { AppIcon } from '@/src/react/ui/icons';
 import { IconButton } from '@/src/react/ui/IconButton';
@@ -27,6 +29,7 @@ export type AppToolbarProps = {
   live?: LiveControlProps;
   aboutData?: ReactNode;
   story?: ComponentProps<typeof PresentStory>;
+  csvExport?: CsvExport;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** Header actions only. Put reader-controlled inputs in DataApp.variables below the header.
@@ -43,6 +46,7 @@ export function AppToolbar({
   live,
   aboutData,
   story,
+  csvExport,
   end,
   controlsProps,
   className,
@@ -135,6 +139,7 @@ export function AppToolbar({
         )}
         {live && <LiveControl {...live} />}
         {aboutData}
+        {!!csvExport?.tables.length && <ExportControl csv={csvExport} />}
         {story && <PresentStory {...story} />}
         {end}
       </div>
