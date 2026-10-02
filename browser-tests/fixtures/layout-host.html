@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Layout host</title>
+  </head>
+  <body style="margin: 0">
+    <iframe
+      title="Layout app"
+      style="display: block; width: 100%; height: 100dvh; border: 0"
+    ></iframe>
+    <script>
+      document.querySelector('iframe').src = '/layout-frame' + location.search;
+    </script>
+  </body>
+</html>
