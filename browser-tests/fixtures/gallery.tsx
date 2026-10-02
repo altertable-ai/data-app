@@ -550,6 +550,14 @@ function Gallery() {
 
   return (
     <DataApp
+      csvExport={{
+        filename: 'gallery',
+        columns: ['Name', 'Count'],
+        rows: [
+          ['München, "East"', 0],
+          ['Two\nlines', null],
+        ],
+      }}
       config={config}
       dataContext={dataContext}
       queries={queries}

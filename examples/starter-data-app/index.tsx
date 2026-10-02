@@ -117,6 +117,14 @@ function App() {
       config={appConfig}
       dataContext={sampleDataContext}
       request={sampleCountsRequest}
+      csvExport={({ data: sampleCounts, input }) => ({
+        filename: `sample-counts-${input.groupName || 'all'}.csv`,
+        columns: ['Group', 'Sample count'],
+        rows: sampleCounts.map(({ groupName, sampleCount }) => [
+          groupName,
+          sampleCount,
+        ]),
+      })}
       story={
         sampleCountsRequest.snapshot?.data.length
           ? ({ data: sampleCounts, input: displayedInput }) =>

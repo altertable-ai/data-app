@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { DataAppBridge } from '@altertable/data-app/react/embed';
 import {
   createMessageRouter,
+  defineMessageRoute,
   sqlQueryRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
@@ -29,6 +30,9 @@ function Host() {
   const [attempt, bumpAttempt] = useReducer(value => value + 1, 0);
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
   const [bundleVersion, bumpBundleVersion] = useReducer(value => value + 1, 1);
+  const [exportFailure, setExportFailure] = useState(
+    new URLSearchParams(location.search).has('export-error')
+  );
   const [broken, setBroken] = useState(
     new URLSearchParams(location.search).has('broken')
   );
@@ -50,8 +54,37 @@ function Host() {
   };
   const forward = createHttpTransport();
   const router = createMessageRouter(
-    { ...bridgeRoutes, 'data:sql': sqlQueryRoute },
     {
+      ...bridgeRoutes,
+      'data:sql': sqlQueryRoute,
+      'export:csv': defineMessageRoute({
+        input(value: unknown): { filename: string; blob: Blob } {
+          if (!value || typeof value !== 'object')
+            throw new Error('Invalid CSV export.');
+          const file = value as { filename: string; blob: Blob };
+          if (typeof file.filename !== 'string' || !(file.blob instanceof Blob))
+            throw new Error('Invalid CSV export.');
+          return file;
+        },
+        output(value: unknown): null {
+          if (value !== null) throw new Error('Invalid CSV export response.');
+          return null;
+        },
+      }),
+    },
+    {
+      'export:csv': ({ filename, blob }) => {
+        if (exportFailure) throw new Error('Fixture export failure');
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return null;
+      },
       'data:sql': createSqlQueryHandler(async () => ({
         async queryAll(statement, { limit, signal }) {
           const response = await fetch('/api/sql', {
@@ -87,6 +120,9 @@ function Host() {
       <button onClick={() => setEmbedded(value => !value)}>
         Change surface
       </button>
+      {exportFailure && (
+        <button onClick={() => setExportFailure(false)}>Allow exports</button>
+      )}
       <button onClick={bumpVersion}>Change handler</button>
       <button onClick={bumpBundleVersion}>Change javascript</button>
       <button onClick={() => setBroken(false)}>Fix bundle</button>

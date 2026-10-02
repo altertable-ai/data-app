@@ -277,3 +277,44 @@ The callback receives the displayed data and its original input, including
 during refresh or failure. Derive the story from that snapshot so it agrees with
 the visible exploration. Initial loading, empty results, and initial errors have
 no story to present.
+
+## Export displayed data as CSV
+
+Set `DataApp.csvExport` to select an ordered table from the displayed snapshot:
+
+```tsx
+<DataApp
+  config={config}
+  dataContext={dataContext}
+  request={result}
+  csvExport={({ data, input }) => ({
+    filename: `counts-${input.groupName || 'all'}.csv`,
+    columns: ['Group', 'Sample count'],
+    rows: data.map(row => [row.groupName, row.sampleCount]),
+  })}
+>
+  {(data, input) => <Results data={data} input={input} />}
+</DataApp>
+```
+
+The app defines `config`, `dataContext`, `result`, and `Results`. Export uses the
+same displayed snapshot as the body and story, including while new filters load
+or a refresh fails. Loading, empty, and initial-error states have no export action.
+Use raw strings, numbers, booleans, or null cells. Column order is explicit;
+CSV preserves zero and quotes commas, quotes, and line breaks. UTF-8 files include
+a byte-order mark for spreadsheet compatibility. String cells that could be
+interpreted as spreadsheet formulas receive an apostrophe prefix.
+
+For a static shell or a custom toolbar, pass a `CsvExport` object directly to
+`DataApp.csvExport` or `AppToolbar.csvExport`. Filenames receive `.csv` when needed.
+Standalone apps download locally. Embedded apps send an `export:csv` request with
+`{ filename, blob }` through the installed transport. The trusted host validates
+the CSV Blob, downloads it from its own document, and returns `null`. Export
+failures appear beside the toolbar action and can be retried.
+
+The Altertable frontend handles this route. Other embedding hosts must register
+an equivalent handler in their message router; the Blob uses structured cloning
+and does not require iframe download permissions. Hosts should validate the
+filename, MIME type, and file size before downloading. Altertable accepts CSV
+files up to 50 MB and filenames up to 255 characters without paths or control
+characters.
