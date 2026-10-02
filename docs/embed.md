@@ -193,7 +193,5 @@ closes. Lazy arguments are evaluated in the iframe only while logging is enabled
 A single lazy argument returning an array supplies the entire argument list;
 other lazy arguments resolve individually.
 
-The transport logs outgoing messages with their type, request ID, route, and
-named query operation where applicable. Query payloads and session credentials
-are excluded. Authenticated log notifications never log themselves, and logging
-failures do not interrupt the app. Ordinary iframe console calls are not forwarded.
+Ordinary iframe console calls are not forwarded. Use `bridge.logger` to send logs
+to the host.

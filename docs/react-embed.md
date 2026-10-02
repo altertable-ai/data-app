@@ -112,4 +112,4 @@ and footer. See [parent presentation](embed.md#parent-presentation).
 Pass `logger={logger}` to `<DataAppBridge>` in either mode. The logger implements
 `log`, `info`, `warn`, and `error`; `logger={console}` forwards logs to the host
 console. Prop changes replace or remove the logger without reconnecting the
-iframe. See [iframe logging](embed.md#iframe-logging) for app calls and delivery.
+iframe. See [iframe logging](embed.md#iframe-logging) for the logger API.
