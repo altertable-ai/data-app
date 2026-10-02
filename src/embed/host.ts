@@ -88,8 +88,9 @@ export function attachDataAppConnection({
 
   function setLogger(value: DataAppLogger | undefined) {
     if (disposed || value === logger) return;
+    const wasEnabled = logger !== undefined;
     logger = value;
-    publishState();
+    if (wasEnabled !== (logger !== undefined)) publishState();
   }
 
   function setPresentation(value: DataAppPresentation | undefined) {
