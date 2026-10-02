@@ -1,0 +1,29 @@
+version = 1
+name = "data-app"
+
+[setup]
+script = '''
+bun install --frozen-lockfile
+bun run build
+bun install --frozen-lockfile
+'''
+
+[[actions]]
+name = "Preview gallery"
+icon = "run"
+command = "bun run build && bun install --frozen-lockfile && bun browser-tests/server.ts"
+
+[[actions]]
+name = "Check"
+icon = "test"
+command = "bun run check"
+
+[[actions]]
+name = "Browser tests"
+icon = "test"
+command = "bun run build && bun install --frozen-lockfile && bun run test:browser"
+
+[[actions]]
+name = "Build"
+icon = "test"
+command = "bun run build"
