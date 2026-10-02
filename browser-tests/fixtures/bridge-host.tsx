@@ -26,7 +26,12 @@ function Host() {
   const [connected, setConnected] = useState(true);
   const [logging, setLogging] = useState(true);
   const [logs, setLogs] = useState<unknown[][]>([]);
+  const [diagnostics, setDiagnostics] = useState<unknown[][]>([]);
   function record(level: string, args: unknown[]) {
+    if (args[0] === 'Sending message to parent') {
+      setDiagnostics(previous => [...previous, [version, level, ...args]]);
+      return;
+    }
     setLogs(previous => [...previous, [version, level, ...args]]);
   }
   const logger: DataAppLogger = {
@@ -53,6 +58,7 @@ function Host() {
       <button onClick={() => setConnected(!connected)}>Toggle bridge</button>
       <button onClick={() => setLogging(!logging)}>Toggle logging</button>
       <output id="logs">{JSON.stringify(logs)}</output>
+      <output id="diagnostics">{JSON.stringify(diagnostics)}</output>
       {connected && (
         <DataAppBridge
           iframe={iframe}

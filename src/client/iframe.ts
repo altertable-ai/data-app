@@ -68,7 +68,30 @@ export function createIframeTransport({
     );
   }
 
+  function getLogger() {
+    if (!loggingEnabled()) return undefined;
+    return (logger ??= createBridgeLogger(loggingEnabled, entry =>
+      send({ type: 'runtime:log', payload: entry })
+    ));
+  }
+
   function send(message: Partial<BridgeMessage>) {
+    // Log notifications use this same transport and must not log themselves.
+    if (message.type !== 'runtime:log') {
+      const payload = message.payload;
+      getLogger()?.log('Sending message to parent', {
+        type: message.type,
+        ...(message.id ? { id: message.id } : {}),
+        ...(message.route ? { route: message.route } : {}),
+        ...(message.route === 'data:query' &&
+        payload &&
+        typeof payload === 'object' &&
+        'operation' in payload &&
+        typeof payload.operation === 'string'
+          ? { operation: payload.operation }
+          : {}),
+      });
+    }
     frame.parent.postMessage(
       { channel: BRIDGE, version: 1, documentId, sessionId, token, ...message },
       parentOrigin
@@ -111,8 +134,8 @@ export function createIframeTransport({
       }
       const first = !sessionId;
       sessionId = message.sessionId;
-      if (first) for (const entry of pending.values()) entry.start();
       receiveState(message.state);
+      if (first) for (const entry of pending.values()) entry.start();
       if (mode === 'url') send({ type: 'runtime:ready' });
 
       return;
@@ -276,10 +299,7 @@ export function createIframeTransport({
 
   return {
     get logger() {
-      if (!loggingEnabled()) return undefined;
-      return (logger ??= createBridgeLogger(loggingEnabled, entry =>
-        send({ type: 'runtime:log', payload: entry })
-      ));
+      return getLogger();
     },
     request: requestMessage,
     transport: queryOperation,

@@ -18,12 +18,22 @@ test('iframe logs reach the current React host logger without reconnecting', asy
   await app.getByRole('button', { name: 'Write logs' }).click();
   entries.push(...entries.map(([, ...entry]) => [2, ...entry]));
   await expect(page.locator('#logs')).toHaveText(JSON.stringify(entries));
+  await app.getByRole('button', { name: 'Query', exact: true }).click();
+  await expect(app.locator('#result')).toContainText('"version":2');
+  await expect(page.locator('#diagnostics')).toContainText(
+    '"route":"test:echo"'
+  );
+  const diagnostics = await page.locator('#diagnostics').textContent();
   await page.getByRole('button', { name: 'Toggle logging' }).click();
   await app.getByRole('button', { name: 'Write logs' }).click();
+  await app.locator('#result').evaluate(element => {
+    element.textContent = '';
+  });
   // A subsequent request response confirms earlier log messages were processed.
   await app.getByRole('button', { name: 'Query', exact: true }).click();
   await expect(app.locator('#result')).toContainText('"version":2');
   await expect(page.locator('#logs')).toHaveText(JSON.stringify(entries));
+  await expect(page.locator('#diagnostics')).toHaveText(diagnostics!);
 });
 
 test('React host bridge uses the latest handler and synchronizes deep links and history', async ({

@@ -23,7 +23,7 @@ function recordingLogger(calls: unknown[][]): DataAppLogger {
   };
 }
 
-function harness(logger?: DataAppLogger) {
+function harness(logger?: DataAppLogger, mode: 'url' | 'bundle' = 'url') {
   const hostEvents = new EventTarget();
   const frameEvents = new EventTarget();
   const queue: (() => void)[] = [];
@@ -31,7 +31,7 @@ function harness(logger?: DataAppLogger) {
   const requests: unknown[] = [];
   function receive(
     data: BridgeMessage,
-    origin = 'https://app.example',
+    origin = mode === 'bundle' ? 'null' : 'https://app.example',
     source: unknown = target
   ) {
     hostEvents.dispatchEvent(
@@ -63,7 +63,10 @@ function harness(logger?: DataAppLogger) {
     iframe: Object.assign(new EventTarget(), {
       contentWindow: target,
     }) as unknown as HTMLIFrameElement,
-    connection: { type: 'origin', origin: 'https://app.example' },
+    connection:
+      mode === 'bundle'
+        ? { type: 'opaque', token: 'sandbox-token' }
+        : { type: 'origin', origin: 'https://app.example' },
     window: Object.assign(hostEvents, {
       location: { search: '', hash: '' },
     }) as unknown as Window,
@@ -75,6 +78,7 @@ function harness(logger?: DataAppLogger) {
   });
   const frame = createIframeTransport({
     parentOrigin: 'https://shell.example',
+    mode,
     window: Object.assign(frameEvents, { parent }) as unknown as Window,
   });
   function flush() {
@@ -93,6 +97,7 @@ test('iframe forwards log, info, warn and error to the shell without requests', 
   try {
     expect(h.frame.logger).toBeUndefined();
     h.flush();
+    calls.length = 0;
     const logger = h.frame.logger!;
     expect(Object.keys(logger).sort()).toEqual([
       'error',
@@ -179,6 +184,8 @@ test('shell rejects foreign, stale and malformed log notifications', () => {
   const h = harness(recordingLogger(calls));
   try {
     h.flush();
+    calls.length = 0;
+    h.sent.length = 0;
     h.frame.logger!.info('valid');
     h.flush();
     const message = h.sent.find(message => message.type === 'runtime:log')!;
@@ -213,6 +220,7 @@ test('lazy argument, serialization and host logger failures stay isolated', () =
   const h = harness(sink);
   try {
     h.flush();
+    calls.length = 0;
     expect(() =>
       h.frame.logger!.info(() => {
         throw new Error('lazy failure');
@@ -227,3 +235,95 @@ test('lazy argument, serialization and host logger failures stay isolated', () =
     h.dispose();
   }
 });
+
+for (const mode of ['url', 'bundle'] as const) {
+  test(`${mode} iframe logs queued queries, SQL requests and cancellations without logging its own notifications`, async () => {
+    const calls: unknown[][] = [];
+    const h = harness(recordingLogger(calls), mode);
+    const controller = new AbortController();
+    try {
+      const query = h.frame.request({
+        route: 'data:query',
+        payload: { operation: 'sales', input: { secret: 'private' } },
+      });
+      expect(calls).toEqual([]);
+      h.flush();
+      await Promise.resolve();
+      h.flush();
+      expect(await query).toBeNull();
+      const sql = h.frame
+        .request(
+          {
+            route: 'data:sql',
+            payload: { statement: 'SELECT private FROM sales', limit: 10 },
+          },
+          controller.signal
+        )
+        .catch(error => error);
+      controller.abort();
+      h.flush();
+      expect(await sql).toBe(controller.signal.reason);
+      const sent = h.sent.filter(message =>
+        ['bridge:request', 'bridge:cancel'].includes(message.type)
+      );
+      expect(
+        calls.filter(call =>
+          (call[2] as { type: string }).type.startsWith('bridge:')
+        )
+      ).toEqual([
+        [
+          'log',
+          'Sending message to parent',
+          {
+            type: 'bridge:request',
+            id: sent[0]!.id,
+            route: 'data:query',
+            operation: 'sales',
+          },
+        ],
+        [
+          'log',
+          'Sending message to parent',
+          {
+            type: 'bridge:request',
+            id: sent[1]!.id,
+            route: 'data:sql',
+          },
+        ],
+        [
+          'log',
+          'Sending message to parent',
+          { type: 'bridge:cancel', id: sent[1]!.id },
+        ],
+      ]);
+      h.frame.ready();
+      h.frame.fail();
+      h.flush();
+      expect(calls.slice(-2)).toEqual([
+        ['log', 'Sending message to parent', { type: 'runtime:ready' }],
+        ['log', 'Sending message to parent', { type: 'runtime:error' }],
+      ]);
+      expect(
+        calls.every(
+          call => (call[2] as { type: string }).type !== 'runtime:log'
+        )
+      ).toBe(true);
+      expect(JSON.stringify(calls)).not.toContain('private');
+      expect(JSON.stringify(calls)).not.toContain('sandbox-token');
+      expect(
+        h.sent.filter(message => message.type === 'runtime:log')
+      ).toHaveLength(calls.length);
+      h.host.setLogger(undefined);
+      h.flush();
+      const count = calls.length;
+      h.frame.ready();
+      h.flush();
+      expect(calls).toHaveLength(count);
+      expect(
+        h.sent.filter(message => message.type === 'runtime:log')
+      ).toHaveLength(count);
+    } finally {
+      h.dispose();
+    }
+  });
+}
