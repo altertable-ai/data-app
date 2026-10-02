@@ -1,7 +1,7 @@
 import { injectDataAppStyles } from '@altertable/data-app/react';
+import type { DataAppConfig } from '@altertable/data-app/config';
 import { connectionCheck } from '@altertable/data-app/contract';
 import { useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import {
   createMessageClient,
   createDataClient,
@@ -11,10 +11,16 @@ import {
 } from '@altertable/data-app/client';
 import {
   DataApp,
+  mountDataApp,
   textVariable,
   useAppVariables,
 } from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
+const config: DataAppConfig = {
+  title: 'Embedded report',
+  scope: { organization: 'test', environment: 'prod' },
+  appearance: { theme: 'system' },
+};
 const bridge = getDataAppTransport()!;
 const data = createDataClient({
   operations: { connection: connectionCheck() },
@@ -23,22 +29,37 @@ const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = { period: textVariable({ key: 'period', history: 'push' }) };
 
 function App() {
+  const [crashed, setCrashed] = useState(false);
   const state = useAppVariables(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
+  if (crashed) throw new Error('Uncaught render failure');
 
   return (
     <DataApp
-      config={{
-        title: 'Embedded report',
-        scope: { organization: 'test', environment: 'prod' },
-        appearance: { theme: 'system' },
-      }}
+      config={config}
       dataContext={{ description: 'Test report', glossary: {} }}
       description="Report description"
       toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}
     >
+      <button onClick={() => setCrashed(true)}>Crash render</button>
+      <button
+        onClick={() =>
+          setTimeout(() => {
+            throw new Error('Delayed app failure');
+          }, 0)
+        }
+      >
+        Crash callback
+      </button>
+      <button
+        onClick={() => {
+          void Promise.reject(new Error('App promise failure'));
+        }}
+      >
+        Reject promise
+      </button>
       <p id="location">
         {search}
         {getDataAppNavigation()!.snapshot().hash}
@@ -91,4 +112,7 @@ document.body.dataset.executions = String(
 );
 injectDataAppStyles();
 
-createRoot(document.getElementById('root')!).render(<App />);
+mountDataApp({
+  config,
+  component: App,
+});
