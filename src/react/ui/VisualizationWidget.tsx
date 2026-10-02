@@ -12,6 +12,7 @@ import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 
 type VisualizationWidgetBaseProps = {
   title: ReactNode;
+  annotationId?: string;
   description?: ReactNode;
   insight?: ReactNode;
   action?: ReactNode;

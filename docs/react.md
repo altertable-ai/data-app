@@ -334,3 +334,33 @@ Example:
   {(data, input) => <Results data={data} input={input} />}
 </DataApp>
 ```
+
+## Annotate app elements
+
+A host that enables annotations adds **Annotate** to `<DataApp>`'s toolbar.
+Readers select a widget or choose it from the element picker, describe a change,
+and add feedback to their chat draft. Adding feedback does not start the agent;
+the reader sends the message from the host's composer.
+
+Built-in widgets expose their labels, evidence IDs, query names, and glossary
+references. Set `annotationId` when the same evidence appears in multiple widgets,
+or to give a static widget an identity that survives title changes. IDs must be
+unique within the app and remain stable across edits. Without an explicit ID or
+evidence, widgets use their mounted instance identity. Duplicate authored IDs are
+excluded from selection to avoid attaching feedback to the wrong element.
+
+Use `<AnnotationTarget>` for custom content:
+
+```tsx
+import { AnnotationTarget } from '@altertable/data-app/react';
+
+<AnnotationTarget annotationId="summary" label="Executive summary">
+  <p>Revenue grew compared with the previous period.</p>
+</AnnotationTarget>;
+```
+
+Feedback captures a bounded text excerpt, query and glossary references, the
+selected element's rectangle, viewport, navigation, and the primary request's
+**displayed** input at selection time. Chart points and individual table cells
+are not separate targets in this version. Hosts retain drafts and associate them
+with the app source version; the package does not persist or send chat messages.

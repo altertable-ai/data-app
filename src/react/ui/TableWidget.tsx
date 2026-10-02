@@ -35,6 +35,7 @@ export type TableWidgetSearch<Row> = Omit<DataTableSearch, 'itemCount'> &
 
 type TableWidgetBaseProps<Row> = {
   title: ReactNode;
+  annotationId?: string;
   count?: number;
   description?: ReactNode;
   columns: readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];

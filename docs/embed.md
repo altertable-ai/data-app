@@ -172,3 +172,48 @@ An embedded surface renders toolbar actions without the page header or footer.
 Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;
 `host.setPresentation(undefined)` restores it.
+
+## Annotation drafts
+
+Hosts opt into feedback explicitly through presentation and register
+`annotationDraftRoute` from `/contract` under `annotation:draft`:
+
+```ts
+import {
+  annotationDraftRoute,
+  createMessageRouter,
+} from '@altertable/data-app/contract';
+
+const router = createMessageRouter(
+  { 'annotation:draft': annotationDraftRoute },
+  {
+    'annotation:draft'(draft) {
+      addToChatDraft(draft); // Host-owned draft storage; deduplicate by draft.id.
+      return null;
+    },
+  }
+);
+
+host.setPresentation({
+  surface: 'embedded',
+  theme: 'light',
+  annotations: {
+    enabled: true,
+    targets: [{ id: 'feedback-1', targetId: 'revenue', number: 1 }],
+    selectedTargetId: 'revenue',
+    selectionId: 'selection-1',
+  },
+});
+```
+
+The host defines `addToChatDraft()` and binds each accepted draft to its authorized
+app identity and source version. Return `null` only after the draft is retained;
+failures keep the reader's comment available for retry. Requests use the existing
+authenticated bridge and validate a JSON payload bounded to 12,000 bytes. Draft
+IDs make retries idempotent. Hosts should limit the total draft count and size.
+
+Send `targets` for drafts belonging to the current app version to render numbered
+pins. Changing `selectedTargetId` scrolls to and highlights that target. Set a fresh
+`selectionId` on each selection to reveal the same target again after scrolling. Preserve
+old-version annotations in chat without reattaching them to a newer app. Omit
+`annotations` when the host cannot accept feedback; the toolbar stays unchanged.

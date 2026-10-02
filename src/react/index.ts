@@ -262,3 +262,5 @@ export type {
   MetricReading,
   MetricValues,
 } from '@/src/core/reading';
+
+export { AnnotationTarget } from '@/src/react/ui/AnnotationTarget';

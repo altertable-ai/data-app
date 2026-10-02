@@ -11,6 +11,9 @@ import {
 } from '@altertable/data-app/client';
 import {
   DataApp,
+  DataWidget,
+  MetricWidget,
+  AnnotationTarget,
   mountDataApp,
   textVariable,
   useAppVariables,
@@ -57,6 +60,23 @@ function App() {
       toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}
     >
+      <DataWidget
+        title="Revenue by month"
+        evidence={{ id: 'monthly-revenue', queryNames: ['revenue'] }}
+      >
+        <button onClick={() => setResult('Chart clicked')}>
+          Explore revenue
+        </button>
+      </DataWidget>
+      <MetricWidget
+        label="Customers"
+        annotationId="customers"
+        value={42}
+        format={{ kind: 'count' }}
+      />
+      <AnnotationTarget annotationId="intro" label="Introduction">
+        <p>Revenue is growing.</p>
+      </AnnotationTarget>
       <button onClick={() => setCrashed(true)}>Crash render</button>
       <button
         onClick={() =>

@@ -82,6 +82,9 @@ const { default: worker } = (await import(
   import.meta.resolve('@altertable/data-app/worker')
 )) as typeof import('@/src/worker');
 const loadFixtureBundle = await createBundleLoader('./fixtures/bundle-app.tsx');
+const loadAnnotationStateBundle = await createBundleLoader(
+  './fixtures/annotation-state-app.tsx'
+);
 // Tests exercise the hosted starter; `bun run dev` serves the playground, which
 // queries the demo tables it seeds into the mocked API.
 const hostedApps = {
@@ -152,6 +155,8 @@ Bun.serve({
     }
     if (path === `/__test${hostedApp.path}`)
       return new Response(await loadHostedAppBundle());
+    if (path === '/__test/annotation-state')
+      return new Response(await loadAnnotationStateBundle());
     if (path === '/__test/bundle')
       return new Response(await loadFixtureBundle());
     if (path === '/__test/silent')

@@ -1,4 +1,5 @@
-import type { ComponentPropsWithRef, ReactNode } from 'react';
+import { annotationAttributes } from '@/src/react/ui/AnnotationTarget';
+import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
 import {
   WidgetStatusControl,
   type WidgetStatus,
@@ -18,6 +19,7 @@ import { metricComparison, type MetricDefinition } from '@/src/react/ui/metric';
 
 type MetricWidgetBaseProps = {
   label: string;
+  annotationId?: string;
   description?: ReactNode;
   comparison?: MetricComparison;
   evidence?: WidgetEvidence;
@@ -73,6 +75,7 @@ export function MetricWidget(props: MetricWidgetProps) {
 
 function MetricWidgetContent({
   label,
+  annotationId,
   value,
   content,
   format,
@@ -87,6 +90,7 @@ function MetricWidgetContent({
   className,
   ...props
 }: UnboundMetricWidgetProps) {
+  const targetId = useId();
   if (loading)
     return <ContentSkeleton variant="metric" className={className} />;
   const shownValue = format ? formatMetric(value as number, format) : content;
@@ -152,6 +156,11 @@ function MetricWidgetContent({
   return (
     <div
       {...props}
+      {...annotationAttributes({
+        id: annotationId ?? props.id ?? evidence?.id ?? targetId,
+        label,
+        evidence,
+      })}
       className={classNames('altertable-metric-widget', className)}
     >
       <div className="altertable-metric-label">

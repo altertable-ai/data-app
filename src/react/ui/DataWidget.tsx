@@ -1,3 +1,4 @@
+import { annotationAttributes } from '@/src/react/ui/AnnotationTarget';
 import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { formatCount } from '@/src/core/format';
 import { AboutData } from '@/src/react/ui/AboutData';
@@ -17,6 +18,7 @@ import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
 type DataWidgetBaseProps = {
   title: ReactNode;
+  annotationId?: string;
   count?: number;
   description?: ReactNode;
   evidence?: WidgetEvidence;
@@ -69,6 +71,7 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
 
 function DataWidgetContent({
   title,
+  annotationId,
   count,
   description,
   evidence,
@@ -121,6 +124,11 @@ function DataWidgetContent({
   return (
     <section
       {...props}
+      {...annotationAttributes({
+        id: annotationId ?? props.id ?? evidence?.id ?? titleId,
+        label: typeof title === 'string' ? title : undefined,
+        evidence,
+      })}
       className={classNames('altertable-data-widget', className)}
       aria-labelledby={props['aria-labelledby'] ?? titleId}
     >

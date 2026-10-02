@@ -41,6 +41,7 @@ and failure.
 | Choose date and field filters              | [Filter variables](react.md#time-views-and-field-filters)  |
 | Handle refresh and stale results           | [Displayed results](react.md#preserve-displayed-results)   |
 | Export displayed data as CSV               | [CSV export](react.md#export-displayed-data-as-csv)        |
+| Enable precise feedback on custom content  | [Annotations](react.md#annotate-app-elements)              |
 | Bind definitions and source evidence       | [Data context](react.md#bind-evidence)                     |
 
 Use the exported types for configuration, appearance, formatting, and component
@@ -83,6 +84,11 @@ and filter scope against the displayed result. Export and Present story must be
 available once analytical results are shown; initial loading, empty, and initial
 errors keep both actions visible and disabled. Inspect both experiences
 at phone and desktop widths in light and dark themes.
+
+Keep widget `annotationId` values unique and stable so user feedback continues to
+identify the intended visual. When a user supplies annotation feedback, use its
+comment as the requested change and its captured filters/text as context; check
+the current app source when the feedback refers to an earlier version.
 
 The app owns its queries, result parsing, business definitions, configuration,
 and presentation. Credentials, authorization, and enforced access/query limits

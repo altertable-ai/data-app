@@ -6,6 +6,9 @@ import '@/src/react/ui/Tooltip.css';
 import { createRoot } from 'react-dom/client';
 import { DataAppBridge } from '@altertable/data-app/react/embed';
 import {
+  MessageRoutingError,
+  annotationDraftRoute,
+  type DataAppAnnotationDraft,
   createMessageRouter,
   defineMessageRoute,
   sqlQueryRoute,
@@ -26,7 +29,11 @@ const appPreview = ['/starter-data-app', '/playground'].includes(
   location.pathname
 );
 const response = await fetch(
-  appPreview ? `/__test${location.pathname}` : '/__test/bundle'
+  appPreview
+    ? `/__test${location.pathname}`
+    : new URLSearchParams(location.search).has('annotation-state')
+      ? '/__test/annotation-state'
+      : '/__test/bundle'
 );
 const javascript = await response.text();
 
@@ -47,6 +54,10 @@ const previewLabels = {
 };
 
 function Host() {
+  const [annotations, setAnnotations] = useState<DataAppAnnotationDraft[]>([]);
+  const [annotationFailure, setAnnotationFailure] = useState(
+    new URLSearchParams(location.search).has('annotation-error')
+  );
   const hostRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<Theme>('dark');
   const [parentPresentation, setParentPresentation] = useState(true);
@@ -73,7 +84,22 @@ function Host() {
   const SurfaceIcon = embedded ? Maximize : PanelsTopLeft;
   const hasParentPresentation = isPlayground ? embedded : parentPresentation;
   const presentation = hasParentPresentation
-    ? ({ surface, theme } as const)
+    ? ({
+        surface,
+        theme,
+        ...(new URLSearchParams(location.search).has('annotations')
+          ? {
+              annotations: {
+                enabled: true,
+                targets: annotations.map((draft, index) => ({
+                  id: draft.id,
+                  targetId: draft.target.id,
+                  number: index + 1,
+                })),
+              },
+            }
+          : {}),
+      } as const)
     : undefined;
   // Extra attributes can still arrive from JavaScript callers or spread objects.
   const iframeProps = {
@@ -83,7 +109,9 @@ function Host() {
       : 'fullscreen *',
     allowFullScreen: true,
     className: 'app-frame',
-    ...(appPreview && !isPlayground
+    ...((appPreview ||
+      new URLSearchParams(location.search).has('annotations')) &&
+    !isPlayground
       ? {
           style: { display: 'block', width: '100%', height: '80vh', border: 0 },
         }
@@ -128,11 +156,26 @@ function Host() {
   const router = createMessageRouter(
     {
       ...bridgeRoutes,
+      'annotation:draft': annotationDraftRoute,
       'data:sql': sqlQueryRoute,
       'export:csv': fileExportRoute,
       'export:zip': fileExportRoute,
     },
     {
+      'annotation:draft'(draft) {
+        if (new URLSearchParams(location.search).has('annotation-limit'))
+          throw new MessageRoutingError(
+            'annotation_limit',
+            'Remove an annotation before adding more feedback.'
+          );
+        if (annotationFailure) throw new Error('Fixture failure');
+        setAnnotations(values =>
+          values.some(value => value.id === draft.id)
+            ? values
+            : [...values, draft]
+        );
+        return null;
+      },
       'export:csv': downloadExport,
       'export:zip': downloadExport,
       'data:sql': createSqlQueryHandler(async () => ({
@@ -185,6 +228,14 @@ function Host() {
       {exportFailure && (
         <button onClick={() => setExportFailure(false)}>Allow exports</button>
       )}
+      {annotationFailure && (
+        <button onClick={() => setAnnotationFailure(false)}>
+          Allow feedback
+        </button>
+      )}
+      <output aria-label="Annotation drafts">
+        {JSON.stringify(annotations)}
+      </output>
       <button onClick={bumpVersion}>Change handler</button>
       <button onClick={bumpBundleVersion}>Change javascript</button>
       <button onClick={() => setBroken(false)}>Fix bundle</button>

@@ -1,0 +1,103 @@
+import { expect, test } from 'bun:test';
+import {
+  annotationDraftRoute,
+  parseDataAppAnnotationDraft,
+  createMessageRouter,
+  MessageRoutingError,
+  type DataAppAnnotationDraft,
+} from '@altertable/data-app/contract';
+import { isDataAppPresentation } from '@/src/core/presentation';
+const draft: DataAppAnnotationDraft = {
+  id: 'feedback-1',
+  target: {
+    id: 'revenue',
+    label: 'Revenue',
+    kind: 'widget',
+    text: 'Revenue $42',
+    queryNames: ['revenue'],
+    glossaryIds: [],
+  },
+  context: {
+    search: '?period=last-7',
+    hash: '',
+    displayedInput: { period: 'last-30' },
+    view: 'stale-error',
+    viewport: { width: 1000, height: 800 },
+    rect: { x: 10, y: 20, width: 300, height: 200 },
+  },
+  comment: '  Compare with last year  ',
+};
+test('annotation boundaries preserve displayed context and discard unexpected fields', () => {
+  const parsed = parseDataAppAnnotationDraft({
+    ...draft,
+    credentials: 'discard',
+    target: { ...draft.target, html: 'discard' },
+  });
+  expect(parsed).toEqual({ ...draft, comment: 'Compare with last year' });
+  expect(parsed.context.displayedInput).toEqual({ period: 'last-30' });
+});
+test('invalid and oversized feedback cannot reach the host handler', async () => {
+  let calls = 0;
+  const router = createMessageRouter(
+    { 'annotation:draft': annotationDraftRoute },
+    {
+      'annotation:draft'() {
+        calls++;
+        return null;
+      },
+    }
+  );
+  for (const value of [
+    null,
+    { ...draft, comment: ' ' },
+    { ...draft, target: { ...draft.target, kind: 'unknown' } },
+    {
+      ...draft,
+      context: { ...draft.context, displayedInput: 'é'.repeat(6000) },
+    },
+    {
+      ...draft,
+      context: {
+        ...draft.context,
+        rect: { ...draft.context.rect, x: Infinity },
+      },
+    },
+  ]) {
+    const failure = await router
+      .dispatch(
+        { route: 'annotation:draft', payload: value },
+        { signal: new AbortController().signal }
+      )
+      .then(
+        () => undefined,
+        (error: unknown) => error
+      );
+    expect(failure).toBeInstanceOf(MessageRoutingError);
+  }
+  expect(calls).toBe(0);
+});
+test('hosts explicitly advertise annotation support and bounded pin state', () => {
+  expect(isDataAppPresentation({ surface: 'embedded', theme: 'dark' })).toBe(
+    true
+  );
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: {
+        enabled: true,
+        targets: [{ id: '1', targetId: 'revenue', number: 1 }],
+      },
+    })
+  ).toBe(true);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: {
+        enabled: true,
+        targets: [{ id: '1', targetId: 'revenue', number: -1 }],
+      },
+    })
+  ).toBe(false);
+});
