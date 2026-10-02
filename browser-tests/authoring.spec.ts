@@ -63,11 +63,20 @@ test('single-file hosted example queries through the host and preserves displaye
     .getByRole('button', { name: 'Exit presentation', exact: true })
     .click();
   expect(requests.length).toBe(queryCountBeforeStory);
-  const group = app.getByRole('searchbox', { name: 'Group', exact: true });
+  async function selectGroup(value: string) {
+    await app.getByRole('button', { name: /^Group:/ }).click();
+    if (value === '') {
+      await app.getByRole('option', { name: 'Empty', exact: true }).click();
+      return;
+    }
+    const search = app.getByRole('searchbox', { name: 'Search group values' });
+    await search.fill(value);
+    await search.press('Enter');
+  }
   gate = new Promise<void>(resolve => {
     release = resolve;
   });
-  await group.fill('Beta');
+  await selectGroup('Beta');
   await expect(
     app.getByText('Showing all groups', { exact: true })
   ).toBeVisible();
@@ -79,7 +88,7 @@ test('single-file hosted example queries through the host and preserves displaye
   await expect(app.getByText('Showing Beta', { exact: true })).toBeVisible();
   await expect(app.getByText('Alpha: 3', { exact: true })).toHaveCount(0);
   fail = true;
-  await group.fill('Alpha');
+  await selectGroup('Alpha');
   await expect(app.getByText('Showing Beta', { exact: true })).toBeVisible();
   await expect(
     app.getByText(
@@ -99,19 +108,19 @@ test('single-file hosted example queries through the host and preserves displaye
   fail = false;
   await app.getByRole('button', { name: 'Try again', exact: true }).click();
   await expect(app.getByText('Showing Alpha', { exact: true })).toBeVisible();
-  await group.fill('missing');
+  await selectGroup('missing');
   await expect(
     app.getByText('No matching groups', { exact: true })
   ).toBeVisible();
   await expect(
     app.getByRole('button', { name: 'Present story', exact: true })
   ).toHaveCount(0);
-  await group.fill("O'Reilly");
+  await selectGroup("O'Reilly");
   await expect.poll(() => requests.at(-1)?.statement).toContain("O''Reilly");
   await expect(
     app.getByText('No matching groups', { exact: true })
   ).toBeVisible();
-  await group.fill('');
+  await selectGroup('');
   await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
   const before = requests.length;
   await app.getByRole('button', { name: 'Refresh data', exact: true }).click();

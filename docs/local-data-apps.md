@@ -12,3 +12,16 @@ Replace the connectivity screen with the exploration, CSV export, and story from
 | Call operations from the browser        | [HTTP client](client.md#http-operations) |
 
 You can also [convert the local app to a hosted data app](hosted-apps.md#convert-a-local-data-app).
+
+## Statements and query variables
+
+Local operations may keep arbitrary SQL statements with `query(name, statement)`.
+They may also declare [query templates and variables](contract.md#execute-named-queries)
+and call `query(name, values)`. The Bun `localLakehouse()` adapter builds the SQL
+before sending `{ statement, limit }` through the CLI proxy. Local execution does
+not require hosted registration or send registered query IDs to the Lakehouse API.
+The existing HTTP operation request between the browser and Bun is unchanged.
+
+An explicit custom Lakehouse adapter must handle `options.variables` with
+`buildQueryStatement()` before executing a template. Arbitrary local statements
+without those bindings pass through unchanged.

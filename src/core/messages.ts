@@ -324,3 +324,39 @@ export const dataAppRoutes = {
   'data:query': /* @__PURE__ */ defineDataQueryRoute(),
   'navigation:update': navigationUpdateRoute,
 };
+
+/** Registered statement delivery uses data:query in bundle hosts; HTTP operation hosts retain defineDataQueryRoute(). */
+export type RegisteredQueryInput = {
+  operation: string;
+  variables: Record<string, unknown>;
+  limit: number;
+};
+export const registeredQueryRoute = defineMessageRoute({
+  input(value: unknown): RegisteredQueryInput {
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new Error('Invalid query.');
+    const query = value as RegisteredQueryInput;
+    if (
+      Object.keys(query).some(
+        key => !['operation', 'variables', 'limit'].includes(key)
+      ) ||
+      typeof query.operation !== 'string' ||
+      !query.operation.trim() ||
+      query.operation.length > 256 ||
+      !query.variables ||
+      typeof query.variables !== 'object' ||
+      Array.isArray(query.variables) ||
+      !Number.isSafeInteger(query.limit) ||
+      query.limit < 1
+    )
+      throw new Error('Invalid registered query.');
+    return {
+      operation: query.operation,
+      variables: query.variables,
+      limit: query.limit,
+    };
+  },
+  output(value: unknown, input: RegisteredQueryInput): QueryResult {
+    return sqlQueryRoute.output(value, { statement: '', limit: input.limit });
+  },
+});

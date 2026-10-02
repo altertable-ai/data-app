@@ -1,3 +1,7 @@
+import type {
+  QueryVariableBindings,
+  QueryVariableDefinitions,
+} from '@/src/core/query-variables';
 /** Shared operation, query, and response contracts; independent of delivery adapters. */
 export type OperationContracts = Record<
   string,
@@ -31,7 +35,12 @@ export type DisclosedQuery = {
 export type Lakehouse = {
   queryAll(
     statement: string,
-    options: { limit: number; signal: AbortSignal; name?: string }
+    options: {
+      limit: number;
+      signal: AbortSignal;
+      name?: string;
+      variables?: QueryVariableBindings;
+    }
   ): Promise<QueryResult>;
 };
 
@@ -47,6 +56,8 @@ export type DataOperation<Input, Output> = {
   run: (context: OperationContext, input: Input) => Promise<Output>;
   checks: readonly Input[];
   queryNames?: Readonly<Record<string, string>>;
+  queries?: Readonly<Record<string, string>>;
+  variables?: QueryVariableDefinitions;
   policy: {
     maxQueryRows: number;
     maxDurationMs: number;

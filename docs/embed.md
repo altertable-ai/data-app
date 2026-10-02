@@ -97,9 +97,54 @@ The source bridge's `startupTimeoutMs` defaults to 30 seconds.
 payloads. Routed handlers must authorize every data request. Message validation
 and iframe isolation do not grant access to data or execute SQL.
 
+## Registered query route
+
+For registered bundle apps, attach `registeredQueryRoute` to `data:query`:
+
+```ts
+import {
+  createMessageRouter,
+  registeredQueryRoute,
+} from '@altertable/data-app/contract';
+
+const router = createMessageRouter(
+  { 'data:query': registeredQueryRoute },
+  {
+    'data:query': async (query, { signal }) => {
+      return executeRegisteredQueryForCurrentViewer(appRevision, query, signal);
+    },
+  }
+);
+```
+
+The host supplies `appRevision` and `executeRegisteredQueryForCurrentViewer()`.
+Resolve the revision from the trusted iframe session. Look up the registered
+statement, validate its variable values, safely construct SQL, and enforce viewer
+permissions and resource limits on the backend. Never accept registration from
+the iframe or use an iframe-supplied app identity for authorization.
+
+`RegisteredQueryInput` is `{ operation, variables, limit }`; the output is the
+same `QueryResult` as SQL delivery. `operation` identifies an individual named
+statement. The request envelope, ID correlation, cancellation, response validation,
+and pending-call limits are unchanged. `defineDataQueryRoute()` remains the
+separate contract for HTTP-style operation hosts returning data envelopes; choose
+the contract that matches the app execution mode.
+
+`createRegisteredQueryHandler(registration, authorize)` is available for trusted
+server/local hosts with a stored registration and a statement-based Lakehouse.
+It derives required variables, rejects extra values, applies defaults, and builds
+SQL. Authorization runs on every request; the supplied backend must enforce access
+and resource limits. In production iframe hosts, forward the request to the
+backend so registration lookup and enforcement happen there.
+
+**Do not register `data:sql` for registered hosted apps.** Keeping a raw statement
+route would bypass the registered-query restriction. Deploy host registration
+support before updating apps; unsupported registered requests fail without an
+SQL fallback.
+
 ## SQL query route
 
-Hosts serving browser-owned operations register `sqlQueryRoute` explicitly:
+Legacy hosts explicitly permitting arbitrary SQL register `sqlQueryRoute` explicitly:
 
 ```ts
 import {

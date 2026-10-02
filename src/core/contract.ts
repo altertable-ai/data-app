@@ -1,3 +1,11 @@
+import {
+  bindQueryVariables,
+  defineQueryVariables,
+  type QueryVariableBindings,
+  type QueryVariableDefinitions,
+  type QueryVariableValues,
+} from '@/src/core/query-variables';
+import { queryVariableNames } from '@/src/core/query-template';
 /**
  * Shared operation contracts and input/output validation for browser and server.
  * @module @altertable/data-app/contract
@@ -305,9 +313,12 @@ export class DataSourceError extends Error {
   }
 }
 
-export type OperationQuery<Names extends Readonly<Record<string, string>>> = (
+export type OperationQuery<
+  Names extends Readonly<Record<string, string>>,
+  Variables extends QueryVariableDefinitions = QueryVariableDefinitions,
+> = (
   name: Names[keyof Names],
-  statement: string,
+  statement: string | QueryVariableValues<Variables>,
   options?: { limit?: number }
 ) => Promise<QueryResult>;
 
@@ -315,11 +326,19 @@ export function defineOperation<
   Input,
   Output,
   const Names extends Readonly<Record<string, string>> = Record<string, never>,
+  const Variables extends QueryVariableDefinitions = Record<string, never>,
 >(
-  operation: Omit<DataOperation<Input, Output>, 'run' | 'queryNames'> & {
+  operation: Omit<
+    DataOperation<Input, Output>,
+    'run' | 'queryNames' | 'variables' | 'queries'
+  > & {
     queryNames?: Names;
+    queries?: Record<NoInfer<Names[keyof Names]>, string>;
+    variables?: Variables;
     run: (
-      context: OperationContext & { query: OperationQuery<NoInfer<Names>> },
+      context: OperationContext & {
+        query: OperationQuery<NoInfer<Names>, NoInfer<Variables>>;
+      },
       input: Input
     ) => Promise<Output>;
   }
@@ -337,6 +356,23 @@ export function defineOperation<
     'Each data operation needs check inputs and positive row and duration limits.'
   );
   if (operation.queryNames) defineQueryNames(operation.queryNames);
+  if (operation.variables) defineQueryVariables(operation.variables);
+  if (operation.queries) {
+    invariant(
+      operation.queryNames &&
+        Object.values(operation.queryNames).every(name =>
+          Object.hasOwn(operation.queries!, name)
+        ),
+      'Declare a statement for every query name.'
+    );
+    for (const [name, statement] of Object.entries(operation.queries)) {
+      invariant(
+        Object.values(operation.queryNames!).includes(name),
+        'Unknown registered query name.'
+      );
+      queryVariableNames(statement as string, operation.variables ?? {});
+    }
+  }
   for (const input of operation.checks) operation.input(input);
 
   return {
@@ -344,7 +380,7 @@ export function defineOperation<
     run(context, input) {
       function query(
         name: Names[keyof Names],
-        statement: string,
+        statement: string | QueryVariableValues<Variables>,
         options?: { limit?: number }
       ): Promise<QueryResult> {
         invariant(
@@ -353,7 +389,40 @@ export function defineOperation<
           `Unknown query name: ${name}.`
         );
 
-        return context.lakehouse.queryAll(statement, {
+        let bindings: QueryVariableBindings | undefined;
+        let sql: string;
+        if (operation.queries) {
+          invariant(
+            typeof statement !== 'string',
+            'Registered queries accept variable values, not SQL.'
+          );
+          sql = operation.queries[name]!;
+          const names = queryVariableNames(sql, operation.variables ?? {});
+          const definitions = Object.fromEntries(
+            names.map(key => [key, operation.variables![key]!])
+          );
+          // Operations may share controls; each named query sends only its own variables.
+          const values = Object.fromEntries(
+            names
+              .filter(key => Object.hasOwn(statement, key))
+              .map(key => [key, statement[key as keyof typeof statement]])
+          );
+          invariant(
+            Object.keys(statement).every(key =>
+              Object.hasOwn(operation.variables ?? {}, key)
+            ),
+            'Unknown query variable.'
+          );
+          bindings = bindQueryVariables(definitions, values);
+        } else {
+          invariant(
+            typeof statement === 'string',
+            'Local queries require a SQL statement.'
+          );
+          sql = statement;
+        }
+        return context.lakehouse.queryAll(sql, {
+          ...(bindings ? { variables: bindings } : {}),
           name,
           limit: options?.limit ?? operation.policy.maxQueryRows,
           signal: context.signal,
@@ -429,3 +498,42 @@ export type {
   SqlQueryInput,
 } from '@/src/core/messages';
 export type { TransportResponse } from '@/src/core/bridge';
+
+export {
+  defineQueryVariables,
+  parseVariableValue,
+  parseQueryVariable,
+  parseQueryVariables,
+  variableValueTypes,
+  histogramIntervals,
+  durationUnits,
+  relativeUnits,
+  relativeAnchors,
+} from '@/src/core/query-variables';
+export type {
+  VariableValueType,
+  VariableValue,
+  VariableValues,
+  HistogramInterval,
+  DurationUnit,
+  Duration,
+  RelativeUnit,
+  RelativeAnchor,
+  RelativeOffset,
+  RelativeDateTime,
+  AbsoluteOrRelativeDateTime,
+  DateTimeRange,
+  QueryVariableDefinition,
+  QueryVariableDefinitions,
+  QueryVariableValues,
+  QueryVariableBindings,
+} from '@/src/core/query-variables';
+export {
+  queryVariableNames,
+  buildQueryStatement,
+  resolveVariableDateTime,
+} from '@/src/core/query-template';
+export { getDataAppRegistration } from '@/src/core/query-registration';
+export type { DataAppRegistration } from '@/src/core/query-registration';
+export { registeredQueryRoute } from '@/src/core/messages';
+export type { RegisteredQueryInput } from '@/src/core/messages';

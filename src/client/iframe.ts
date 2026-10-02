@@ -1,3 +1,4 @@
+import { registeredQueryRoute } from '@/src/core/messages';
 import { createBridgeEndpoint } from '@/src/core/bridge-endpoint';
 import {
   PARENT_PARAM,
@@ -209,6 +210,11 @@ export function createIframeTransport({
     requestMessage
   );
 
+  const registeredMessages = createMessageClient(
+    { 'data:query': registeredQueryRoute },
+    requestMessage
+  );
+
   function queryOperation(
     operation: string,
     input: unknown,
@@ -252,7 +258,27 @@ export function createIframeTransport({
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
-      queryAll(statement, { limit, signal }) {
+      queryAll(statement, { limit, signal, name, variables }) {
+        if (variables) {
+          if (!name) throw new Error('Registered queries need a name.');
+          const values = JSON.parse(
+            JSON.stringify(
+              Object.fromEntries(
+                Object.entries(variables).map(([key, binding]) => [
+                  key,
+                  binding.value,
+                ])
+              )
+            )
+          ) as Record<string, unknown>;
+          return registeredMessages
+            .request(
+              'data:query',
+              { operation: name, variables: values, limit },
+              { signal }
+            )
+            .catch(rethrowDataMessageError);
+        }
         return messages
           .request('data:sql', { statement, limit }, { signal })
           .catch(rethrowDataMessageError);

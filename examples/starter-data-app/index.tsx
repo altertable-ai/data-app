@@ -3,6 +3,9 @@ import type { DataAppConfig } from '@altertable/data-app/config';
 import {
   defineOperation,
   defineQueryNames,
+  defineQueryVariables,
+  parseQueryVariables,
+  getDataAppRegistration,
   parseCount,
 } from '@altertable/data-app/contract';
 import {
@@ -15,23 +18,15 @@ import {
   injectDataAppStyles,
   mountDataApp,
   MetricWidget,
-  textVariable,
+  queryVariable,
 } from '@altertable/data-app/react';
 
 const queryNames = defineQueryNames({
   sampleCountsByGroup: 'sample-counts-by-group',
 });
-function parseSampleCountFilter(value: unknown) {
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    !('groupName' in value) ||
-    typeof value.groupName !== 'string' ||
-    value.groupName.length > 40
-  )
-    throw new Error('Expected a group name of at most 40 characters.');
-  return { groupName: value.groupName };
-}
+const queryVariables = defineQueryVariables({
+  groupName: { type: 'STRING', default: '' },
+});
 function parseSampleCounts(
   value: unknown
 ): { groupName: string; sampleCount: number }[] {
@@ -49,7 +44,15 @@ function parseSampleCounts(
 const operations = {
   sampleCountsByGroup: defineOperation({
     queryNames,
-    input: parseSampleCountFilter,
+    variables: queryVariables,
+    queries: {
+      [queryNames.sampleCountsByGroup]: `
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 3), ('Beta', 0))
+SELECT group_name, sample_count FROM sample_counts
+WHERE {{groupName}} = '' OR group_name = {{groupName}}
+ORDER BY group_name LIMIT 10`,
+    },
+    input: value => parseQueryVariables(queryVariables, value),
     output: parseSampleCounts,
     checks: [
       { groupName: '' },
@@ -58,16 +61,9 @@ const operations = {
     ],
     policy: { maxQueryRows: 10, maxDurationMs: 15000, exposeSql: true },
     async run({ query }, { groupName }) {
-      // Portable sample data, not a production table. Escape the validated SQL literal.
-      const escapedGroupName = groupName.replaceAll("'", "''");
-      const queryResult = await query(
-        queryNames.sampleCountsByGroup,
-        `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 3), ('Beta', 0))
-SELECT group_name, sample_count FROM sample_counts
-WHERE '${escapedGroupName}' = '' OR group_name = '${escapedGroupName}'
-ORDER BY group_name LIMIT 10`
-      );
+      const queryResult = await query(queryNames.sampleCountsByGroup, {
+        groupName,
+      });
       return parseSampleCounts(
         queryResult.rows.map(([groupName, sampleCount]) => ({
           groupName,
@@ -77,6 +73,8 @@ ORDER BY group_name LIMIT 10`
     },
   }),
 };
+export const registration = getDataAppRegistration(operations);
+
 const appConfig: DataAppConfig = {
   title: 'Sample counts',
   scope: { organization: 'demo', environment: 'sample' },
@@ -99,7 +97,10 @@ const { defineDataView, useView } = createDataHooks(
 const sampleCountsView = defineDataView({
   operation: 'sampleCountsByGroup',
   variables: {
-    groupName: textVariable({ key: 'group', label: 'Group', defaultValue: '' }),
+    groupName: queryVariable(queryVariables.groupName, {
+      key: 'group',
+      label: 'Group',
+    }),
   },
   input: ({ groupName }) => ({ groupName }),
   describeInput: ({ groupName }) =>

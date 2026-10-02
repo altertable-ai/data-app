@@ -6,6 +6,8 @@ import {
   createMessageRouter,
   defineMessageRoute,
   sqlQueryRoute,
+  registeredQueryRoute,
+  navigationUpdateRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
 import { createHttpTransport } from '@altertable/data-app/client';
@@ -13,6 +15,7 @@ import {
   type DataAppStatus,
   createNavigationHandler,
   createSqlQueryHandler,
+  createRegisteredQueryHandler,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 const response = await fetch(
@@ -89,7 +92,7 @@ function Host() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     return null;
   }
-  const router = createMessageRouter(
+  const legacyRouter = createMessageRouter(
     {
       ...bridgeRoutes,
       'data:sql': sqlQueryRoute,
@@ -120,6 +123,46 @@ function Host() {
       'navigation:update': createNavigationHandler(),
     }
   );
+
+  const router = starterPreview
+    ? createMessageRouter(
+        {
+          'export:csv': fileExportRoute,
+          'export:zip': fileExportRoute,
+          'data:query': registeredQueryRoute,
+          'navigation:update': navigationUpdateRoute,
+        },
+        {
+          'export:csv': downloadExport,
+          'export:zip': downloadExport,
+          'data:query': createRegisteredQueryHandler(
+            {
+              queries: {
+                'sample-counts-by-group': `
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 3), ('Beta', 0))
+SELECT group_name, sample_count FROM sample_counts
+WHERE {{groupName}} = '' OR group_name = {{groupName}}
+ORDER BY group_name LIMIT 10`,
+              },
+              variables: { groupName: { type: 'STRING', default: '' } },
+            },
+            async () => ({
+              async queryAll(statement, { limit, signal }) {
+                const response = await fetch('/api/sql', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ statement, limit }),
+                  signal,
+                });
+                if (!response.ok) throw new DataSourceError('unavailable');
+                return response.json();
+              },
+            })
+          ),
+          'navigation:update': createNavigationHandler(),
+        }
+      )
+    : legacyRouter;
 
   return (
     <>

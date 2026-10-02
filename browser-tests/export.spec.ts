@@ -47,6 +47,13 @@ test('embedded toolbar exports displayed results through its host during updates
     'allow-scripts'
   );
 
+  async function selectGroup(value: string) {
+    await app.getByRole('button', { name: /^Group:/ }).click();
+    const search = app.getByRole('searchbox', { name: 'Search group values' });
+    await search.fill(value);
+    await search.press('Enter');
+  }
+
   async function expectExport(filename: string, csv: string) {
     const downloaded = page.waitForEvent('download');
     await app.getByRole('button', { name: 'Export CSV', exact: true }).click();
@@ -65,7 +72,7 @@ test('embedded toolbar exports displayed results through its host during updates
   gate = new Promise<void>(resolve => {
     release = resolve;
   });
-  await app.getByRole('searchbox', { name: 'Group', exact: true }).fill('Beta');
+  await selectGroup('Beta');
   await expect(
     app.getByText('Showing all groups while loading group Beta…')
   ).toBeVisible();
@@ -77,9 +84,7 @@ test('embedded toolbar exports displayed results through its host during updates
   gate = Promise.resolve();
   await expect(app.getByText('Showing Beta', { exact: true })).toBeVisible();
   fail = true;
-  await app
-    .getByRole('searchbox', { name: 'Group', exact: true })
-    .fill('Alpha');
+  await selectGroup('Alpha');
   await expect(
     app.getByText(
       'Couldn’t refresh. Showing group Beta while group Alpha is unavailable.'
@@ -90,9 +95,7 @@ test('embedded toolbar exports displayed results through its host during updates
     '\uFEFFGroup,Sample count\r\nBeta,0\r\n'
   );
   fail = false;
-  await app
-    .getByRole('searchbox', { name: 'Group', exact: true })
-    .fill('missing');
+  await selectGroup('missing');
   await expect(
     app.getByText('No matching groups', { exact: true })
   ).toBeVisible();
