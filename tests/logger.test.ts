@@ -91,8 +91,9 @@ test('iframe forwards log, info, warn and error to the shell without requests', 
   const calls: unknown[][] = [];
   const h = harness(recordingLogger(calls));
   try {
+    expect(h.frame.logger).toBeUndefined();
     h.flush();
-    const logger = h.frame.logger;
+    const logger = h.frame.logger!;
     expect(Object.keys(logger).sort()).toEqual([
       'error',
       'info',
@@ -124,7 +125,7 @@ test('iframe forwards log, info, warn and error to the shell without requests', 
   }
 });
 
-test('logging is enabled by trusted host state and follows logger replacement, removal and disposal', () => {
+test('iframe logger exists only while the bridge supplies a logger', () => {
   const first: unknown[][] = [];
   const second: unknown[][] = [];
   const h = harness();
@@ -134,28 +135,39 @@ test('logging is enabled by trusted host state and follows logger replacement, r
     return 'entry';
   }
   try {
-    h.frame.logger.info(lazy);
+    expect(h.frame.logger).toBeUndefined();
     h.flush();
-    h.frame.logger.info(lazy);
-    expect(evaluated).toBe(0);
+    expect(h.frame.logger).toBeUndefined();
     h.host.setLogger(recordingLogger(first));
+    expect(h.frame.logger).toBeUndefined();
     h.flush();
-    h.frame.logger.info(lazy);
+    const retained = h.frame.logger!;
+    expect(retained).toBeDefined();
+    retained.info(lazy);
     h.flush();
     expect(first).toEqual([['info', 'entry']]);
     h.host.setLogger(recordingLogger(second));
     h.flush();
-    h.frame.logger.warn('replacement');
+    h.frame.logger!.warn('replacement');
     h.flush();
     expect(second).toEqual([['warn', 'replacement']]);
     h.host.setLogger(undefined);
     h.flush();
-    h.frame.logger.info(lazy);
+    expect(h.frame.logger).toBeUndefined();
+    retained.info(lazy);
     expect(evaluated).toBe(1);
     h.host.setLogger(recordingLogger(second));
     h.flush();
+    expect(h.frame.logger).toBeDefined();
+    h.frame.logger!.info('restored');
+    h.flush();
+    expect(second).toEqual([
+      ['warn', 'replacement'],
+      ['info', 'restored'],
+    ]);
     h.frame.dispose();
-    h.frame.logger.info(lazy);
+    expect(h.frame.logger).toBeUndefined();
+    retained.info(lazy);
     expect(evaluated).toBe(1);
   } finally {
     h.dispose();
@@ -167,7 +179,7 @@ test('shell rejects foreign, stale and malformed log notifications', () => {
   const h = harness(recordingLogger(calls));
   try {
     h.flush();
-    h.frame.logger.info('valid');
+    h.frame.logger!.info('valid');
     h.flush();
     const message = h.sent.find(message => message.type === 'runtime:log')!;
     h.receive(message, 'https://foreign.example');
@@ -202,13 +214,13 @@ test('lazy argument, serialization and host logger failures stay isolated', () =
   try {
     h.flush();
     expect(() =>
-      h.frame.logger.info(() => {
+      h.frame.logger!.info(() => {
         throw new Error('lazy failure');
       })
     ).not.toThrow();
-    expect(() => h.frame.logger.info({ callback() {} })).not.toThrow();
-    h.frame.logger.warn('sink failure');
-    h.frame.logger.info('still works');
+    expect(() => h.frame.logger!.info({ callback() {} })).not.toThrow();
+    h.frame.logger!.warn('sink failure');
+    h.frame.logger!.info('still works');
     expect(() => h.flush()).not.toThrow();
     expect(calls).toEqual([['info', 'still works']]);
   } finally {

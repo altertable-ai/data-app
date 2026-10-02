@@ -18,6 +18,7 @@ import type { Lakehouse } from '@/src/core/contract';
 import { createMessageClient } from '@/src/client/messages';
 import { DataAppError } from '@/src/client/transport';
 import { createBridgeLogger } from '@/src/client/logger';
+import type { DataAppLogger } from '@/src/core/logger';
 
 type Pending = {
   start: () => void;
@@ -55,15 +56,17 @@ export function createIframeTransport({
   const pending = new Map<string, Pending>();
   let hostState: unknown;
   const stateListeners = new Set<(state: unknown) => void>();
-  const logger = createBridgeLogger(
-    () =>
+  let logger: DataAppLogger | undefined;
+
+  function loggingEnabled() {
+    return (
       !disposed &&
       !!sessionId &&
       !!hostState &&
       typeof hostState === 'object' &&
-      (hostState as { logging?: unknown }).logging === true,
-    entry => send({ type: 'runtime:log', payload: entry })
-  );
+      (hostState as { logging?: unknown }).logging === true
+    );
+  }
 
   function send(message: Partial<BridgeMessage>) {
     frame.parent.postMessage(
@@ -272,7 +275,12 @@ export function createIframeTransport({
   if (mode === 'url') send({ type: 'bridge:ready' });
 
   return {
-    logger,
+    get logger() {
+      if (!loggingEnabled()) return undefined;
+      return (logger ??= createBridgeLogger(loggingEnabled, entry =>
+        send({ type: 'runtime:log', payload: entry })
+      ));
+    },
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
