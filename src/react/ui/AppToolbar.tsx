@@ -139,8 +139,8 @@ export function AppToolbar({
         )}
         {live && <LiveControl {...live} />}
         {aboutData}
-        {story && <PresentStory {...story} />}
         {csvExport && <ExportControl csv={csvExport} />}
+        {story && <PresentStory {...story} />}
         {end}
       </div>
     </div>
