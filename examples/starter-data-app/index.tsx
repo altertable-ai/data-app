@@ -9,6 +9,9 @@ import {
   createDataContext,
   createDataHooks,
   DataApp,
+  Grid,
+  Stack,
+  TextContent,
   injectDataAppStyles,
   mountDataApp,
   MetricWidget,
@@ -140,17 +143,22 @@ function App() {
       }
     >
       {(sampleCounts, displayedInput) => (
-        <section aria-label="Sample results">
-          <h2>Sample counts</h2>
-          <p>Showing {displayedInput.groupName || 'all groups'}</p>
-          <ul>
+        <Stack aria-label="Sample results">
+          <TextContent>
+            <h2>Sample counts</h2>
+            <p>Showing {displayedInput.groupName || 'all groups'}</p>
+          </TextContent>
+          <Grid columns={2}>
             {sampleCounts.map(({ groupName, sampleCount }) => (
-              <li key={groupName}>
-                {groupName}: {sampleCount}
-              </li>
+              <MetricWidget
+                key={groupName}
+                label={`${groupName}: ${sampleCount}`}
+                value={sampleCount}
+                format={{ kind: 'count' }}
+              />
             ))}
-          </ul>
-        </section>
+          </Grid>
+        </Stack>
       )}
     </DataApp>
   );

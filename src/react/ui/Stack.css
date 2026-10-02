@@ -13,3 +13,7 @@
 .altertable-stack[data-gap='lg'] {
   gap: var(--at-layout-gap, 24px);
 }
+
+.altertable-stack > * {
+  margin: 0;
+}

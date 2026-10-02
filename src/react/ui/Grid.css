@@ -20,6 +20,7 @@
   );
 }
 .altertable-grid > * {
+  margin: 0;
   min-width: 0;
   min-height: 0;
 }
@@ -60,19 +61,20 @@
   min-height: 0;
 }
 
-@container altertable-grid (min-width: 408px) {
+/* Span thresholds include the largest supported density gap (30px). */
+@container altertable-grid (min-width: 414px) {
   .altertable-grid:not([data-columns='1'])[data-min-item-width='compact']
     > .altertable-grid-item[data-span='2'] {
     grid-column: span 2;
   }
 }
-@container altertable-grid (min-width: 504px) {
+@container altertable-grid (min-width: 510px) {
   .altertable-grid:not([data-columns='1'])[data-min-item-width='regular']
     > .altertable-grid-item[data-span='2'] {
     grid-column: span 2;
   }
 }
-@container altertable-grid (min-width: 664px) {
+@container altertable-grid (min-width: 670px) {
   .altertable-grid:not([data-columns='1'])[data-min-item-width='wide']
     > .altertable-grid-item[data-span='2'] {
     grid-column: span 2;

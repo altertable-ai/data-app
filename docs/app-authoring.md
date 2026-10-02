@@ -44,6 +44,10 @@ Use the exported types for configuration, appearance, formatting, and component
 options. Declare configuration with `satisfies DataAppConfig` so appearance
 fields and values are checked before bundling.
 
+## Compose the layout
+
+See the [layout contract](layout.md).
+
 ## Present the findings
 
 Compose a [story](react.md#present-data-with-stories) from the exploration's
