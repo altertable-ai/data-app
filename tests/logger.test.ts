@@ -128,6 +128,7 @@ test('iframe logger stays callable as the host enables, replaces and removes log
   const second: unknown[][] = [];
   const h = harness();
   let evaluated = 0;
+  let stateNotifications = 0;
   function lazy() {
     evaluated++;
     return 'entry';
@@ -136,6 +137,9 @@ test('iframe logger stays callable as the host enables, replaces and removes log
     const logger = h.frame.logger;
     logger.info(lazy);
     h.flush();
+    h.frame.subscribe(() => {
+      stateNotifications++;
+    });
     logger.info(lazy);
     expect(evaluated).toBe(0);
     h.host.setLogger(recordingLogger(first));
@@ -146,13 +150,16 @@ test('iframe logger stays callable as the host enables, replaces and removes log
     logger.info(lazy);
     h.flush();
     expect(first).toEqual([['info', 'entry']]);
+    expect(stateNotifications).toBe(1);
     h.host.setLogger(recordingLogger(second));
     h.flush();
     logger.warn('replacement');
     h.flush();
     expect(second).toEqual([['warn', 'replacement']]);
+    expect(stateNotifications).toBe(1);
     h.host.setLogger(undefined);
     h.flush();
+    expect(stateNotifications).toBe(2);
     expect(h.frame.logger).toBe(logger);
     logger.info(lazy);
     expect(evaluated).toBe(1);
@@ -165,6 +172,7 @@ test('iframe logger stays callable as the host enables, replaces and removes log
       ['warn', 'replacement'],
       ['info', 'restored'],
     ]);
+    expect(stateNotifications).toBe(3);
     h.frame.dispose();
     expect(h.frame.logger).toBe(logger);
     logger.info(lazy);
