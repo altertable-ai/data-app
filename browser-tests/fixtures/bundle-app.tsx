@@ -29,6 +29,20 @@ function App() {
 
   return (
     <DataApp
+      csvExport={{
+        filename: 'gallery',
+        tables: [
+          {
+            name: 'Counts',
+            columns: ['Name', 'Count'],
+            rows: [
+              ['München, "East"', 0],
+              ['Two\nlines', null],
+            ],
+          },
+          { name: 'Summary', columns: ['Total'], rows: [[0]] },
+        ],
+      }}
       config={{
         title: 'Embedded report',
         scope: { organization: 'test', environment: 'prod' },

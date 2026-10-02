@@ -88,6 +88,29 @@ function App() {
       config={config}
       dataContext={dataContext}
       request={activity}
+      csvExport={({ data }) => ({
+        filename: 'activity.csv',
+        tables: [
+          {
+            name: 'Tracked identities',
+            columns: ['Current count', 'Previous count'],
+            rows: [[data.count, data.previousCount]],
+          },
+          {
+            name: 'Feature use',
+            columns: ['Feature ID', 'Count'],
+            rows: data.features.map(feature => [feature.id, feature.value]),
+          },
+        ],
+      })}
+      story={({ data }) => [
+        dataContext.finding({
+          id: 'feature-use',
+          headline: 'Feature use in the selected period',
+          visual: <Ranking items={data.features} />,
+          evidence: featureEvidence,
+        }),
+      ]}
       {...content}
     />
   );
@@ -266,7 +289,8 @@ footer are omitted. Variables and request states remain available.
 
 ## Present data with stories
 
-Stories turn the exploration's findings into a presentation. Set the `story` prop on `<DataApp>`
+Include a story in every analytical app. Stories turn the exploration's findings
+into a presentation. Set the `story` prop on `<DataApp>`
 to enable **Present story** in the toolbar; use `<PresentStory>` directly for a
 custom shell. Start from the [data app starter](../examples/starter-data-app/index.tsx).
 
@@ -280,41 +304,31 @@ no story to present.
 
 ## Export displayed data as CSV
 
-Set `DataApp.csvExport` to select an ordered table from the displayed snapshot:
+Every request-backed `<DataApp>` requires `story` and `csvExport`. Select all distinct named datasets
+from the displayed snapshot so the built-in **Export** action is available
+whenever analytical results are shown. Include this alongside the app's story;
+setup and static shells may omit it. One dataset downloads directly as CSV. Multiple
+datasets offer individual CSV downloads and **Export all** as a ZIP archive.
+
+Example:
 
 ```tsx
 <DataApp
   config={config}
   dataContext={dataContext}
   request={result}
+  story={story}
   csvExport={({ data, input }) => ({
     filename: `counts-${input.groupName || 'all'}.csv`,
-    columns: ['Group', 'Sample count'],
-    rows: data.map(row => [row.groupName, row.sampleCount]),
+    tables: [
+      {
+        name: 'Sample counts',
+        columns: ['Group', 'Sample count'],
+        rows: data.map(row => [row.groupName, row.sampleCount]),
+      },
+    ],
   })}
 >
   {(data, input) => <Results data={data} input={input} />}
 </DataApp>
 ```
-
-The app defines `config`, `dataContext`, `result`, and `Results`. Export uses the
-same displayed snapshot as the body and story, including while new filters load
-or a refresh fails. Loading, empty, and initial-error states have no export action.
-Use raw strings, numbers, booleans, or null cells. Column order is explicit;
-CSV preserves zero and quotes commas, quotes, and line breaks. UTF-8 files include
-a byte-order mark for spreadsheet compatibility. String cells that could be
-interpreted as spreadsheet formulas receive an apostrophe prefix.
-
-For a static shell or a custom toolbar, pass a `CsvExport` object directly to
-`DataApp.csvExport` or `AppToolbar.csvExport`. Filenames receive `.csv` when needed.
-Standalone apps download locally. Embedded apps send an `export:csv` request with
-`{ filename, blob }` through the installed transport. The trusted host validates
-the CSV Blob, downloads it from its own document, and returns `null`. Export
-failures appear beside the toolbar action and can be retried.
-
-The Altertable frontend handles this route. Other embedding hosts must register
-an equivalent handler in their message router; the Blob uses structured cloning
-and does not require iframe download permissions. Hosts should validate the
-filename, MIME type, and file size before downloading. Altertable accepts CSV
-files up to 50 MB and filenames up to 255 characters without paths or control
-characters.

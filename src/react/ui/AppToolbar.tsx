@@ -139,7 +139,7 @@ export function AppToolbar({
         )}
         {live && <LiveControl {...live} />}
         {aboutData}
-        {csvExport && <ExportControl csv={csvExport} />}
+        {!!csvExport?.tables.length && <ExportControl csv={csvExport} />}
         {story && <PresentStory {...story} />}
         {end}
       </div>

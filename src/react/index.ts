@@ -17,7 +17,7 @@ export type {
   ViewBindings,
 } from '@/src/react/view';
 
-export type { CsvCell, CsvExport } from '@/src/react/ui/csv-export';
+export type { CsvCell, CsvTable, CsvExport } from '@/src/react/ui/csv-export';
 
 // App shell and getting started
 export { DataApp } from '@/src/react/ui/DataApp';

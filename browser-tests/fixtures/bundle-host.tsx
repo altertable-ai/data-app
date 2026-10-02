@@ -53,38 +53,48 @@ function Host() {
       : {}),
   };
   const forward = createHttpTransport();
+  const fileExportRoute = defineMessageRoute({
+    input(value: unknown): { filename: string; blob: Blob } {
+      if (!value || typeof value !== 'object')
+        throw new Error('Invalid data export.');
+      const file = value as { filename: string; blob: Blob };
+      if (typeof file.filename !== 'string' || !(file.blob instanceof Blob))
+        throw new Error('Invalid data export.');
+      return file;
+    },
+    output(value: unknown): null {
+      if (value !== null) throw new Error('Invalid data export response.');
+      return null;
+    },
+  });
+  function downloadExport({
+    filename,
+    blob,
+  }: {
+    filename: string;
+    blob: Blob;
+  }) {
+    if (exportFailure) throw new Error('Fixture export failure');
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return null;
+  }
   const router = createMessageRouter(
     {
       ...bridgeRoutes,
       'data:sql': sqlQueryRoute,
-      'export:csv': defineMessageRoute({
-        input(value: unknown): { filename: string; blob: Blob } {
-          if (!value || typeof value !== 'object')
-            throw new Error('Invalid CSV export.');
-          const file = value as { filename: string; blob: Blob };
-          if (typeof file.filename !== 'string' || !(file.blob instanceof Blob))
-            throw new Error('Invalid CSV export.');
-          return file;
-        },
-        output(value: unknown): null {
-          if (value !== null) throw new Error('Invalid CSV export response.');
-          return null;
-        },
-      }),
+      'export:csv': fileExportRoute,
+      'export:zip': fileExportRoute,
     },
     {
-      'export:csv': ({ filename, blob }) => {
-        if (exportFailure) throw new Error('Fixture export failure');
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.append(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        return null;
-      },
+      'export:csv': downloadExport,
+      'export:zip': downloadExport,
       'data:sql': createSqlQueryHandler(async () => ({
         async queryAll(statement, { limit, signal }) {
           const response = await fetch('/api/sql', {

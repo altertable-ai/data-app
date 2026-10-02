@@ -1,7 +1,9 @@
 # Author a data app
 
 Build an exploration that answers the user's question and a story that presents
-its strongest findings. Both use the same queries, definitions, and evidence.
+its strongest findings. Include CSV export so readers can take the displayed
+results into their own tools. Exploration, export, and story use the same
+queries, definitions, and evidence.
 
 ## Inspect the data
 
@@ -49,6 +51,21 @@ fields and values are checked before bundling.
 
 See the [layout contract](layout.md).
 
+## Export the displayed results
+
+Provide `DataApp.csvExport` in every analytical app. The request-backed API
+requires a callback that selects an explicit filename and named datasets with ordered columns and raw
+rows from the displayed snapshot. Follow [CSV export](react.md#export-displayed-data-as-csv)
+and the [starter](../examples/starter-data-app/index.tsx); use the built-in toolbar
+action rather than adding a custom download button.
+
+Export every distinct analytical dataset at its displayed grain, including relevant
+dimensions and measures. Reuse one dataset for charts or metrics derived from the
+same rows. One dataset downloads as CSV; multiple datasets offer individual CSVs
+and **Export all** as a ZIP archive. Use the displayed input for scope labels and filenames. Export the
+bounded result the app already has; do not issue a different query or mix pending
+filters into the visible result. Setup and static screens may omit export.
+
 ## Present the findings
 
 Compose a [story](react.md#present-data-with-stories) from the exploration's
@@ -60,7 +77,11 @@ row or chart into a step.
 
 Verify findings against the source and the user's question. Distinguish measured
 zero, unavailable values, and empty results. Check filters, refresh, loading,
-empty, error, and stale states, then present the story. Inspect both experiences
+empty, error, and stale states, then present the story. Download CSV from the
+standalone and embedded toolbar and verify its filename, columns, raw values,
+and filter scope against the displayed result. Export and Present story must be
+available once analytical results are shown; initial loading, empty, and initial
+errors have neither action. Inspect both experiences
 at phone and desktop widths in light and dark themes.
 
 The app owns its queries, result parsing, business definitions, configuration,

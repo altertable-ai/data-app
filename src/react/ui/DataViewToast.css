@@ -7,6 +7,10 @@
   justify-content: center;
   pointer-events: none;
 }
+.altertable-data-view-toast-region[data-position='top'] {
+  top: max(20px, env(safe-area-inset-top));
+  bottom: auto;
+}
 .altertable-data-view-toast {
   display: flex;
   align-items: center;
@@ -29,7 +33,7 @@
   flex: none;
   color: var(--at-muted, #687078);
 }
-.altertable-data-view-toast[data-state='stale-error'] > svg {
+.altertable-data-view-toast[data-state='error'] > svg {
   color: var(--at-danger, #b42318);
 }
 .altertable-data-view-toast > span {

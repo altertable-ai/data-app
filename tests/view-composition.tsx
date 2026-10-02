@@ -84,6 +84,11 @@ const section: DataSectionProps<number> = {
   },
 };
 const app: DataAppProps<number> = {
+  story: () => [],
+  csvExport: ({ data }) => ({
+    filename: 'test.csv',
+    tables: [{ name: 'Values', columns: ['Value'], rows: [[data]] }],
+  }),
   config: {
     appearance: {},
     title: 'Test',
@@ -249,3 +254,32 @@ dimensionFilter({
 // @ts-expect-error A framed TextWidget requires a title.
 const untitledText: TextWidgetProps = { children: <p>Introduction</p> };
 void untitledText;
+
+const analyticalApp: Extract<DataAppProps<number>, { request: unknown }> = {
+  config: {
+    appearance: {},
+    title: 'Test',
+    scope: { organization: 'a', environment: 'b' },
+  },
+  dataContext: { description: 'Test', glossary: {} },
+  story: () => [],
+  csvExport: ({ data }) => ({
+    filename: 'test.csv',
+    tables: [{ name: 'Values', columns: ['Value'], rows: [[data]] }],
+  }),
+  request: {
+    view: { kind: 'loading' },
+    refetch() {},
+    empty: { title: 'No results' },
+  },
+  children() {
+    return null;
+  },
+};
+const { csvExport, ...withoutExport } = analyticalApp;
+const { story, ...withoutStory } = analyticalApp;
+// @ts-expect-error Analytical apps must provide a CSV export of their displayed result.
+const appWithoutExport: DataAppProps<number> = withoutExport;
+// @ts-expect-error Analytical apps must provide a story of their displayed findings.
+const appWithoutStory: DataAppProps<number> = withoutStory;
+void [csvExport, story, appWithoutExport, appWithoutStory];

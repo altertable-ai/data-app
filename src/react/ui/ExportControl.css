@@ -1,0 +1,21 @@
+.altertable-export-popover {
+  z-index: 1000;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: min(320px, calc(100dvh - 24px));
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--at-border, #e3e6e8);
+  border-radius: var(--at-radius-surface, 12px);
+  background: var(--at-surface, #fff);
+  box-shadow: 0 10px 32px rgb(0 0 0 / 12%);
+  color: var(--at-text, #202124);
+}
+.altertable-export-popover [role='menuitem'] {
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+}
+.altertable-export-popover [role='menuitem'][data-focused] {
+  background: var(--at-border, #e3e6e8);
+}

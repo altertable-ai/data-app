@@ -49,8 +49,9 @@ export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
     | {
         request: DataAppRequest<Data, Input>;
         /** Findings are always derived from the result currently visible to the reader. */
-        story?: BoundStory<Data, Input>;
-        csvExport?: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
+        story: BoundStory<Data, Input>;
+        /** Every analytical view exports every distinct dataset in its displayed result. */
+        csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
         children: (data: Data, displayedInput: Input) => ReactNode;
         loading?: ReactNode;
         label?: string;
@@ -105,10 +106,8 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   });
 
   const snapshot = request && displayedSnapshot(request.view);
-  const story =
-    request && props.story && snapshot
-      ? { findings: props.story(snapshot) }
-      : undefined;
+  const findings = request && snapshot ? props.story(snapshot) : undefined;
+  const story = findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
       organization={scopeLabels?.organization ?? config.scope.organization}
@@ -119,7 +118,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     <AppToolbar
       csvExport={
         request
-          ? props.csvExport && snapshot
+          ? snapshot
             ? props.csvExport(snapshot)
             : undefined
           : props.csvExport

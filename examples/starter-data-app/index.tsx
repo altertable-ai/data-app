@@ -119,35 +119,37 @@ function App() {
       request={sampleCountsRequest}
       csvExport={({ data: sampleCounts, input }) => ({
         filename: `sample-counts-${input.groupName || 'all'}.csv`,
-        columns: ['Group', 'Sample count'],
-        rows: sampleCounts.map(({ groupName, sampleCount }) => [
-          groupName,
-          sampleCount,
-        ]),
+        tables: [
+          {
+            name: 'Sample counts',
+            columns: ['Group', 'Sample count'],
+            rows: sampleCounts.map(({ groupName, sampleCount }) => [
+              groupName,
+              sampleCount,
+            ]),
+          },
+        ],
       })}
-      story={
-        sampleCountsRequest.snapshot?.data.length
-          ? ({ data: sampleCounts, input: displayedInput }) =>
-              sampleCounts.map(({ groupName, sampleCount }) =>
-                sampleDataContext.finding({
-                  id: `sample-count-${groupName}`,
-                  headline: `${groupName} has ${sampleCount} samples`,
-                  context: `Demonstration values for ${displayedInput.groupName || 'all groups'}.`,
-                  visual: (
-                    <MetricWidget
-                      label="Sample count"
-                      value={sampleCount}
-                      format={{ kind: 'count' }}
-                    />
-                  ),
-                  visualKind: 'metric',
-                  evidence: {
-                    id: `sample-count-${groupName}`,
-                    glossaryIds: ['sampleCount'],
-                  },
-                })
-              )
-          : undefined
+      story={({ data: sampleCounts, input: displayedInput }) =>
+        sampleCounts.map(({ groupName, sampleCount }) =>
+          sampleDataContext.finding({
+            id: `sample-count-${groupName}`,
+            headline: `${groupName} has ${sampleCount} samples`,
+            context: `Demonstration values for ${displayedInput.groupName || 'all groups'}.`,
+            visual: (
+              <MetricWidget
+                label="Sample count"
+                value={sampleCount}
+                format={{ kind: 'count' }}
+              />
+            ),
+            visualKind: 'metric',
+            evidence: {
+              id: `sample-count-${groupName}`,
+              glossaryIds: ['sampleCount'],
+            },
+          })
+        )
       }
     >
       {(sampleCounts, displayedInput) => (

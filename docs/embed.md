@@ -42,16 +42,6 @@ Bundle mode uses `sandbox="allow-scripts"` and an opaque origin; it cannot read
 the host document or use same-origin privileges. Both modes use
 `referrerPolicy="no-referrer"`.
 
-## CSV export
-
-Apps using `DataApp.csvExport` request `export:csv` through their installed bridge.
-The payload is `{ filename: string, blob: Blob }`; `blob.type` is
-`text/csv;charset=utf-8`. Register a handler that validates the filename and Blob,
-downloads it in the host document, and returns `null`. The frontend provides this
-handler. A Blob travels through structured cloning, so export does not require
-loosening the bundle sandbox or sending CSV text in a JSON payload.
-See [CSV authoring](react.md#export-displayed-data-as-csv).
-
 ## Trusted bootstrap
 
 For Cloudflare hosting, upload the [Worker asset](worker.md). It includes the

@@ -1,3 +1,4 @@
+import { unzipSync, strFromU8 } from 'fflate';
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
@@ -106,15 +107,59 @@ test('embedded export failures stay visible and allow retry', async ({
   const button = app.getByRole('button', { name: 'Export CSV', exact: true });
   await button.click();
   await expect(app.getByRole('alert')).toHaveText(
-    'Couldn’t export CSV. Try again.'
+    'Couldn’t export data.Try again'
   );
+  await page
+    .locator('iframe')
+    .screenshot({ path: test.info().outputPath('export-error-toast.png') });
   await expect(button).toBeEnabled();
+  await expect(
+    app.locator('.altertable-data-view-toast-region[data-position="top"]')
+  ).toBeVisible();
   await page
     .getByRole('button', { name: 'Allow exports', exact: true })
     .click();
   const downloaded = page.waitForEvent('download');
-  await button.click();
+  await app.getByRole('button', { name: 'Try again', exact: true }).click();
   expect((await downloaded).suggestedFilename()).toBe('sample-counts-all.csv');
   await expect(app.getByRole('alert')).toHaveCount(0);
   await expect(button).toBeEnabled();
 });
+
+for (const embedded of [false, true])
+  test(`multiple datasets export CSVs and a ZIP ${embedded ? 'through the iframe host' : 'standalone'}`, async ({
+    page,
+  }) => {
+    await page.goto(embedded ? '/bundle-host' : '/gallery?multiple-exports');
+    const app = embedded ? page.frameLocator('iframe') : page;
+    const button = app.getByRole('button', { name: 'Export', exact: true });
+    await button.press('ArrowDown');
+    await expect(
+      app.getByRole('menuitem', { name: 'Export Counts (CSV)', exact: true })
+    ).toBeFocused();
+    let downloaded = page.waitForEvent('download');
+    await app
+      .getByRole('menuitem', { name: 'Export Summary (CSV)', exact: true })
+      .click();
+    let download = await downloaded;
+    expect(download.suggestedFilename()).toBe('Summary.csv');
+    expect(await contents(download)).toBe('\uFEFFTotal\r\n0\r\n');
+    await button.click();
+    downloaded = page.waitForEvent('download');
+    await app
+      .getByRole('menuitem', { name: 'Export all (ZIP)', exact: true })
+      .click();
+    download = await downloaded;
+    expect(download.suggestedFilename()).toBe('gallery.zip');
+    const files = unzipSync(await readFile((await download.path())!));
+    expect(Object.keys(files)).toEqual(['Counts.csv', 'Summary.csv']);
+    expect(Array.from(files['Summary.csv']!.slice(0, 3))).toEqual([
+      239, 187, 191,
+    ]);
+    expect(strFromU8(files['Summary.csv']!)).toBe('Total\r\n0\r\n');
+    await button.click();
+    await page.screenshot({ path: test.info().outputPath('export-menu.png') });
+    await app.getByRole('menu').press('Escape');
+    await expect(app.getByRole('menu')).toHaveCount(0);
+    await expect(button).toBeFocused();
+  });

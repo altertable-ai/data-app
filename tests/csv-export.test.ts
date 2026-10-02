@@ -1,5 +1,10 @@
 import { expect, test } from 'bun:test';
-import { formatCsv } from '@/src/react/ui/csv-export';
+import { unzipSync, strFromU8 } from 'fflate';
+import {
+  createCsvDownload,
+  formatCsv,
+  type CsvExport,
+} from '@/src/react/ui/csv-export';
 
 test('CSV preserves column order, Unicode, raw numbers, zero, booleans and null cells', () => {
   expect(
@@ -51,4 +56,37 @@ test('CSV supports header-only files and rejects inconsistent table shapes', () 
   expect(formatCsv({ columns: ['Name'], rows: [] })).toBe('Name\r\n');
   expect(() => formatCsv({ columns: [], rows: [] })).toThrow();
   expect(() => formatCsv({ columns: ['Name'], rows: [['A', 1]] })).toThrow();
+});
+
+test('multiple datasets download as a ZIP with distinct complete CSV files', async () => {
+  const tables: CsvExport['tables'] = [
+    { name: 'Groups', columns: ['Name', 'Count'], rows: [['München', 0]] },
+    { name: 'Summary', columns: ['Total'], rows: [[0]] },
+  ];
+  const file = createCsvDownload({ filename: 'report', tables });
+  expect(file.filename).toBe('report.zip');
+  expect(file.route).toBe('export:zip');
+  const files = unzipSync(new Uint8Array(await file.blob.arrayBuffer()));
+  expect(Object.keys(files)).toEqual(['Groups.csv', 'Summary.csv']);
+  expect(Array.from(files['Groups.csv']!.slice(0, 3))).toEqual([239, 187, 191]);
+  expect(strFromU8(files['Groups.csv']!)).toBe('Name,Count\r\nMünchen,0\r\n');
+  expect(strFromU8(files['Summary.csv']!)).toBe('Total\r\n0\r\n');
+  const selected = createCsvDownload({ filename: 'report', tables }, tables[1]);
+  expect(selected.filename).toBe('Summary.csv');
+  expect(selected.route).toBe('export:csv');
+  expect(await selected.blob.text()).toBe('\uFEFFTotal\r\n0\r\n'.slice(1));
+});
+test('export rejects empty collections, duplicate names and archive paths', () => {
+  const table = { name: 'Groups', columns: ['Name'], rows: [] };
+  // @ts-expect-error Exports require at least one dataset; reject invalid JavaScript callers too.
+  expect(() => createCsvDownload({ filename: 'report', tables: [] })).toThrow();
+  expect(() =>
+    createCsvDownload({ filename: 'report', tables: [table, table] })
+  ).toThrow();
+  expect(() =>
+    createCsvDownload({
+      filename: 'report',
+      tables: [{ ...table, name: '../groups' }],
+    })
+  ).toThrow();
 });
