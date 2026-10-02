@@ -17,9 +17,7 @@ export function createBridgeLogger(
   function write(method: keyof DataAppLogger, args: unknown[]) {
     if (!enabled()) return;
     try {
-      const resolved = resolve(args);
-      if (resolved.length > 128) return;
-      send({ method, args: resolved });
+      send({ method, args: resolve(args) });
     } catch {
       // Logging must not interrupt the app or recursively log delivery failures.
     }

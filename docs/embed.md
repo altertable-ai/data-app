@@ -172,26 +172,3 @@ An embedded surface renders toolbar actions without the page header or footer.
 Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;
 `host.setPresentation(undefined)` restores it.
-
-## Iframe logging
-
-Pass a `logger` implementing `log`, `info`, `warn`, and `error` to either bridge
-mode. `DataAppLogger` is exported from `/embed` and `/client`; `console` also
-satisfies the interface. Use `host.setLogger(logger)` to replace it without
-reconnecting, or `host.setLogger(undefined)` to disable logging.
-
-The iframe transport always exposes a stable `bridge.logger`:
-
-```ts
-bridge.logger.info('Query completed', { rows: 42 });
-bridge.logger.log(() => ['Snapshot', expensiveDetails()]);
-```
-
-The app supplies `bridge` and `expensiveDetails()`. Calls do nothing until the
-connected host enables logging, after it removes the logger, or after the bridge
-closes. Lazy arguments are evaluated in the iframe only while logging is enabled.
-A single lazy argument returning an array supplies the entire argument list;
-other lazy arguments resolve individually.
-
-Ordinary iframe console calls are not forwarded. Use `bridge.logger` to send logs
-to the host.

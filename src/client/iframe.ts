@@ -52,9 +52,14 @@ export function createIframeTransport({
   const pending = new Map<string, Pending>();
   let hostState: unknown;
   const stateListeners = new Set<(state: unknown) => void>();
-  let hostLoggingEnabled = false;
   const logger = createBridgeLogger(
-    () => !disposed && !!sessionId && hostLoggingEnabled,
+    () =>
+      !disposed &&
+      !!sessionId &&
+      !!hostState &&
+      typeof hostState === 'object' &&
+      'logging' in hostState &&
+      hostState.logging === true,
     entry => send('runtimeLog', { payload: entry })
   );
 
@@ -117,11 +122,6 @@ export function createIframeTransport({
 
   function receiveState(state: unknown) {
     hostState = state;
-    hostLoggingEnabled =
-      !!state &&
-      typeof state === 'object' &&
-      'logging' in state &&
-      state.logging === true;
     for (const listener of stateListeners) listener(state);
   }
 

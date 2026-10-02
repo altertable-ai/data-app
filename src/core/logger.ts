@@ -13,7 +13,7 @@ export type LogEntry = {
 
 export function isLogEntry(value: unknown): value is LogEntry {
   if (!value || typeof value !== 'object') return false;
-  const entry = value as LogEntry;
+  const entry = value as Record<string, unknown>;
   return (
     (entry.method === 'log' ||
       entry.method === 'info' ||
