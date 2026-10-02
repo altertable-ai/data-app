@@ -90,3 +90,21 @@ test('export rejects empty collections, duplicate names and archive paths', () =
     })
   ).toThrow();
 });
+
+test('ZIP compresses repetitive CSV data and preserves its exact bytes', async () => {
+  const table = {
+    name: 'Activity',
+    columns: ['Group', 'Count'],
+    rows: Array.from({ length: 1000 }, () => ['Alpha', 3]),
+  };
+  const file = createCsvDownload({
+    filename: 'report',
+    tables: [table, { ...table, name: 'Comparison' }],
+  });
+  const original = new TextEncoder().encode('\uFEFF' + formatCsv(table));
+  const archive = new Uint8Array(await file.blob.arrayBuffer());
+  expect(archive.byteLength).toBeLessThan(original.byteLength);
+  const files = unzipSync(archive);
+  expect(files['Activity.csv']).toEqual(original);
+  expect(files['Comparison.csv']).toEqual(original);
+});

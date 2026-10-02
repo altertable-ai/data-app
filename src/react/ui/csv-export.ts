@@ -76,7 +76,7 @@ export function createCsvDownload(
   );
   return {
     filename: filenameWithExtension(data.filename, 'zip'),
-    blob: new Blob([zipSync(files, { level: 0 })], { type: 'application/zip' }),
+    blob: new Blob([zipSync(files, { level: 1 })], { type: 'application/zip' }),
     route: 'export:zip',
   };
 }
