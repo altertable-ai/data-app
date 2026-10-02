@@ -38,6 +38,10 @@ function Host() {
   // Extra attributes can still arrive from JavaScript callers or spread objects.
   const iframeProps = {
     hidden: status !== 'ready',
+    allow: new URLSearchParams(location.search).has('no-fullscreen')
+      ? "fullscreen 'none'"
+      : 'fullscreen *',
+    allowFullScreen: true,
     className: 'app-frame',
     ...(starterPreview
       ? {
