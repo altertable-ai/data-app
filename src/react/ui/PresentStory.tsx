@@ -105,6 +105,8 @@ export function PresentStory({
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const headline = useRef<HTMLHeadingElement>(null);
+  const ownedFullscreenElement = useRef<HTMLElement | null>(null);
+  const isOpening = useRef(false);
   const headlineId = useId();
   const contextId = useId();
   const [stepId, setStepId] = useState(steps[0]?.id);
@@ -143,6 +145,39 @@ export function PresentStory({
     if (dialog.current?.open) headline.current?.focus({ preventScroll: true });
   }, [stepId]);
 
+  useEffect(() => {
+    const presentationDialog = dialog.current;
+    if (!presentationDialog) return;
+    const ownerDocument = presentationDialog.ownerDocument;
+    function handleFullscreenChange() {
+      const fullscreenElement = ownedFullscreenElement.current;
+      if (
+        !fullscreenElement ||
+        ownerDocument.fullscreenElement === fullscreenElement
+      )
+        return;
+      ownedFullscreenElement.current = null;
+      dialog.current?.close();
+    }
+    ownerDocument.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      ownerDocument.removeEventListener(
+        'fullscreenchange',
+        handleFullscreenChange
+      );
+      exitPresentationFullscreen();
+    };
+  }, []);
+
+  function exitPresentationFullscreen() {
+    const fullscreenElement = ownedFullscreenElement.current;
+    ownedFullscreenElement.current = null;
+    if (!fullscreenElement) return;
+    const ownerDocument = fullscreenElement.ownerDocument;
+    if (ownerDocument.fullscreenElement === fullscreenElement)
+      void ownerDocument.exitFullscreen().catch(() => {});
+  }
+
   function writePresentation(
     id?: string,
     mode: 'replace' | 'push' = 'replace'
@@ -150,15 +185,35 @@ export function PresentStory({
     writeSearch({ present: id ? '1' : null, step: id ?? null }, mode);
   }
 
-  function open() {
-    if (unavailable) return;
-    setStepId(steps[0]!.id);
-    dialog.current?.showModal();
+  async function openPresentation() {
+    const presentationDialog = dialog.current;
+    const firstStep = steps[0];
+    if (unavailable || isOpening.current || !presentationDialog || !firstStep)
+      return;
+    const ownerDocument = presentationDialog.ownerDocument;
+    const fullscreenElement = ownerDocument.documentElement;
+    isOpening.current = true;
+    try {
+      if (!ownerDocument.fullscreenElement && ownerDocument.fullscreenEnabled) {
+        await fullscreenElement.requestFullscreen();
+        ownedFullscreenElement.current = fullscreenElement;
+      }
+    } catch {
+      // Keep the presentation available when fullscreen is denied.
+    } finally {
+      isOpening.current = false;
+    }
+    if (!presentationDialog.isConnected) {
+      exitPresentationFullscreen();
+      return;
+    }
+    setStepId(firstStep.id);
+    presentationDialog.showModal();
     headline.current?.focus({ preventScroll: true });
-    writePresentation(steps[0]!.id, 'push');
+    writePresentation(firstStep.id, 'push');
   }
 
-  useShortcut(shortcuts.playStory, open, !unavailable);
+  useShortcut(shortcuts.playStory, openPresentation, !unavailable);
 
   function goTo(nextIndex: number) {
     const next = steps[nextIndex];
@@ -207,7 +262,7 @@ export function PresentStory({
           disabled={unavailable}
           onClick={event => {
             onClick?.(event);
-            if (!event.defaultPrevented) open();
+            if (!event.defaultPrevented) void openPresentation();
           }}
         >
           {children}
@@ -227,6 +282,7 @@ export function PresentStory({
         }
         onClose={event => {
           if (event.target !== event.currentTarget) return;
+          exitPresentationFullscreen();
           if (searchParams().get('present') === '1') writePresentation();
           trigger.current?.focus({ preventScroll: true });
           dialogProps?.onClose?.(event);
