@@ -5,32 +5,13 @@ import {
   type CsvTable,
 } from '@/src/react/ui/csv-export';
 import { IconButton } from '@/src/react/ui/IconButton';
-import { Menu, MenuItem } from 'react-aria-components';
-import {
-  autoUpdate,
-  flip,
-  FloatingFocusManager,
-  FloatingPortal,
-  offset,
-  shift,
-  useDismiss,
-  useFloating,
-  useInteractions,
-} from '@floating-ui/react';
+import { Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components';
+import { PressButton } from '@/src/react/ui/Button';
+import { AppIcon } from '@/src/react/ui/icons';
 import { Toast } from '@/src/react/ui/Toast';
 
 export function ExportControl({ csv }: { csv: CsvExport }) {
   const [open, setOpen] = useState(false);
-  const { refs, floatingStyles, context } = useFloating({
-    open,
-    onOpenChange: setOpen,
-    placement: 'bottom-end',
-    strategy: 'fixed',
-    middleware: [offset(8), flip(), shift({ padding: 12, crossAxis: true })],
-    whileElementsMounted: (reference, floating, update) =>
-      autoUpdate(reference, floating, update, { elementResize: false }),
-  });
-  const { getFloatingProps } = useInteractions([useDismiss(context)]);
   const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
 
   const [retryTableName, setRetryTableName] = useState<string>();
@@ -71,52 +52,33 @@ export function ExportControl({ csv }: { csv: CsvExport }) {
           onClick={() => void download()}
         />
       ) : (
-        <>
-          <IconButton
-            ref={element => refs.setReference(element)}
+        <MenuTrigger isOpen={open} onOpenChange={setOpen}>
+          <PressButton
             variant="elevated"
-            icon="export"
-            label="Export"
-            disabled={status === 'pending'}
+            size="icon"
+            aria-label="Export"
+            isDisabled={status === 'pending'}
             aria-busy={status === 'pending'}
-            aria-expanded={open}
-            aria-haspopup="menu"
-            onClick={() => setOpen(value => !value)}
-            onKeyDown={event => {
-              if (event.key === 'ArrowDown') {
-                event.preventDefault();
-                setOpen(true);
-              }
-            }}
-          />
-          {open && (
-            <FloatingPortal>
-              <FloatingFocusManager context={context}>
-                <div
-                  {...getFloatingProps()}
-                  ref={element => refs.setFloating(element)}
-                  style={floatingStyles}
-                  className="altertable-export-popover"
+          >
+            <AppIcon name="export" />
+          </PressButton>
+          <Popover placement="bottom end" className="altertable-export-popover">
+            <Menu aria-label="Export data">
+              {csv.tables.map((table, index) => (
+                <MenuItem
+                  key={index}
+                  id={index}
+                  onAction={() => void download(table)}
                 >
-                  <Menu aria-label="Export data" onClose={() => setOpen(false)}>
-                    {csv.tables.map((table, index) => (
-                      <MenuItem
-                        key={index}
-                        id={index}
-                        onAction={() => void download(table)}
-                      >
-                        Export {table.name} (CSV)
-                      </MenuItem>
-                    ))}
-                    <MenuItem id="all" onAction={() => void download()}>
-                      Export all (ZIP)
-                    </MenuItem>
-                  </Menu>
-                </div>
-              </FloatingFocusManager>
-            </FloatingPortal>
-          )}
-        </>
+                  Export {table.name} (CSV)
+                </MenuItem>
+              ))}
+              <MenuItem id="all" onAction={() => void download()}>
+                Export all (ZIP)
+              </MenuItem>
+            </Menu>
+          </Popover>
+        </MenuTrigger>
       )}
     </>
   );

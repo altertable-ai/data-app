@@ -42,6 +42,10 @@ function Host() {
   // Extra attributes can still arrive from JavaScript callers or spread objects.
   const iframeProps = {
     hidden: status !== 'ready',
+    allow: new URLSearchParams(location.search).has('no-fullscreen')
+      ? "fullscreen 'none'"
+      : 'fullscreen *',
+    allowFullScreen: true,
     className: 'app-frame',
     ...(starterPreview
       ? {
@@ -162,7 +166,9 @@ function Host() {
                 type: 'bundle',
                 bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
                 javascript: broken
-                  ? 'throw new Error("Broken app")'
+                  ? new URLSearchParams(location.search).has('syntax')
+                    ? 'const ='
+                    : 'throw new Error("Broken app")'
                   : `${javascript}\ndocument.body.dataset.bundleVersion = "${bundleVersion}";`,
               }
         }
