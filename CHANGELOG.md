@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.65.0](https://github.com/altertable-ai/data-app/compare/v0.64.0...v0.65.0) (2026-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **react:** add built-in CSV exports for analytical data apps ([#32](https://github.com/altertable-ai/data-app/issues/32))
+
+### Features
+
+* **bridge:** centralize postMessage contracts in a typed catalog ([#25](https://github.com/altertable-ai/data-app/issues/25)) ([7cb33a0](https://github.com/altertable-ai/data-app/commit/7cb33a03d2fa58279e42581e498a923c7c2f5ea0))
+* **embed:** forward iframe logs to the host logger ([#24](https://github.com/altertable-ai/data-app/issues/24)) ([ee6e61a](https://github.com/altertable-ai/data-app/commit/ee6e61a9fd5d3f69b83b22aa0ade4be963b1da53))
+* **react:** add built-in CSV exports for analytical data apps ([#32](https://github.com/altertable-ai/data-app/issues/32)) ([a0f49b8](https://github.com/altertable-ai/data-app/commit/a0f49b8e44584c9f7bd52c1beb85b2e708a577e7))
+* **react:** standardize data app layout spacing ([#28](https://github.com/altertable-ai/data-app/issues/28)) ([1f81c95](https://github.com/altertable-ai/data-app/commit/1f81c9541ade3894c254b4cda84d8e802b51db3d)), closes [#27](https://github.com/altertable-ai/data-app/issues/27)
+
+
+### Bug Fixes
+
+* **embed:** isolate data apps from browser extension errors ([#31](https://github.com/altertable-ai/data-app/issues/31)) ([018e9ab](https://github.com/altertable-ai/data-app/commit/018e9ab46cbcac66e54964c03ccf3ce10053b563))
+* **react:** enter browser fullscreen when presenting a story ([#30](https://github.com/altertable-ai/data-app/issues/30)) ([9ee0c2f](https://github.com/altertable-ai/data-app/commit/9ee0c2fd0f6a23300856bd9ea9aeae96ffbdb733))
+
 ## [0.64.0](https://github.com/altertable-ai/data-app/compare/v0.63.0...v0.64.0) (2026-10-01)
 
 
