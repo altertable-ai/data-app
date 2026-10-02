@@ -15,10 +15,10 @@ const location = document.getElementById('location')!;
 const log = document.createElement('button');
 log.textContent = 'Write logs';
 log.addEventListener('click', () => {
-  bridge.logger?.log('plain');
-  bridge.logger?.info(() => ['completed', { rows: 3 }]);
-  bridge.logger?.warn('slow');
-  bridge.logger?.error('failed');
+  bridge.logger.log('plain');
+  bridge.logger.info(() => ['completed', { rows: 3 }]);
+  bridge.logger.warn('slow');
+  bridge.logger.error('failed');
 });
 document.body.append(log);
 

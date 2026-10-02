@@ -30,7 +30,7 @@ function harness(logger?: DataAppLogger, mode: 'url' | 'bundle' = 'url') {
   const sent: BridgeMessage[] = [];
   const requests: unknown[] = [];
   function receive(
-    data: BridgeMessage,
+    data: unknown,
     origin = mode === 'bundle' ? 'null' : 'https://app.example',
     source: unknown = target
   ) {
@@ -95,10 +95,10 @@ test('iframe forwards log, info, warn and error to the shell without requests', 
   const calls: unknown[][] = [];
   const h = harness(recordingLogger(calls));
   try {
-    expect(h.frame.logger).toBeUndefined();
+    expect(h.frame.logger).toBeDefined();
     h.flush();
     calls.length = 0;
-    const logger = h.frame.logger!;
+    const logger = h.frame.logger;
     expect(Object.keys(logger).sort()).toEqual([
       'error',
       'info',
@@ -123,14 +123,14 @@ test('iframe forwards log, info, warn and error to the shell without requests', 
     expect(
       h.sent
         .filter(message => message.type === 'runtime:log')
-        .every(message => message.id === undefined)
+        .every(message => !('id' in message))
     ).toBe(true);
   } finally {
     h.dispose();
   }
 });
 
-test('iframe logger exists only while the bridge supplies a logger', () => {
+test('iframe logger stays callable as the host enables, replaces and removes logging', () => {
   const first: unknown[][] = [];
   const second: unknown[][] = [];
   const h = harness();
@@ -140,38 +140,42 @@ test('iframe logger exists only while the bridge supplies a logger', () => {
     return 'entry';
   }
   try {
-    expect(h.frame.logger).toBeUndefined();
+    const logger = h.frame.logger;
+    logger.info(lazy);
     h.flush();
-    expect(h.frame.logger).toBeUndefined();
+    logger.info(lazy);
+    expect(evaluated).toBe(0);
     h.host.setLogger(recordingLogger(first));
-    expect(h.frame.logger).toBeUndefined();
+    logger.info(lazy);
+    expect(evaluated).toBe(0);
+    expect(h.frame.logger).toBe(logger);
     h.flush();
-    const retained = h.frame.logger!;
-    expect(retained).toBeDefined();
+    const retained = h.frame.logger;
+    expect(retained).toBe(logger);
     retained.info(lazy);
     h.flush();
     expect(first).toEqual([['info', 'entry']]);
     h.host.setLogger(recordingLogger(second));
     h.flush();
-    h.frame.logger!.warn('replacement');
+    h.frame.logger.warn('replacement');
     h.flush();
     expect(second).toEqual([['warn', 'replacement']]);
     h.host.setLogger(undefined);
     h.flush();
-    expect(h.frame.logger).toBeUndefined();
+    expect(h.frame.logger).toBe(logger);
     retained.info(lazy);
     expect(evaluated).toBe(1);
     h.host.setLogger(recordingLogger(second));
     h.flush();
-    expect(h.frame.logger).toBeDefined();
-    h.frame.logger!.info('restored');
+    expect(h.frame.logger).toBe(logger);
+    h.frame.logger.info('restored');
     h.flush();
     expect(second).toEqual([
       ['warn', 'replacement'],
       ['info', 'restored'],
     ]);
     h.frame.dispose();
-    expect(h.frame.logger).toBeUndefined();
+    expect(h.frame.logger).toBe(logger);
     retained.info(lazy);
     expect(evaluated).toBe(1);
   } finally {
@@ -186,7 +190,7 @@ test('shell rejects foreign, stale and malformed log notifications', () => {
     h.flush();
     calls.length = 0;
     h.sent.length = 0;
-    h.frame.logger!.info('valid');
+    h.frame.logger.info('valid');
     h.flush();
     const message = h.sent.find(message => message.type === 'runtime:log')!;
     h.receive(message, 'https://foreign.example');
@@ -195,15 +199,20 @@ test('shell rejects foreign, stale and malformed log notifications', () => {
     h.receive({ ...message, documentId: 'stale' });
     h.receive({
       ...message,
-      payload: { scopes: [], method: 'constructor', args: [] },
+      payload: { method: 'constructor', args: [] },
     });
     h.receive({
       ...message,
-      payload: { scopes: [], method: 'warnDev', args: [42] },
+      payload: { method: 'warnDev', args: [42] },
     });
     h.receive({
       ...message,
-      payload: { scopes: [], method: 'group', label: 'bad', entries: [null] },
+      payload: { method: 'group', label: 'bad', entries: [null] },
+    });
+    h.receive({ ...message, payload: { method: 'info', args: 'invalid' } });
+    h.receive({
+      ...message,
+      payload: { method: 'info', args: Array(129).fill(0) },
     });
     expect(calls).toEqual([['info', 'valid']]);
   } finally {
@@ -222,15 +231,34 @@ test('lazy argument, serialization and host logger failures stay isolated', () =
     h.flush();
     calls.length = 0;
     expect(() =>
-      h.frame.logger!.info(() => {
+      h.frame.logger.info(() => {
         throw new Error('lazy failure');
       })
     ).not.toThrow();
-    expect(() => h.frame.logger!.info({ callback() {} })).not.toThrow();
-    h.frame.logger!.warn('sink failure');
-    h.frame.logger!.info('still works');
+    expect(() => h.frame.logger.info({ callback() {} })).not.toThrow();
+    h.frame.logger.warn('sink failure');
+    h.frame.logger.info('still works');
     expect(() => h.flush()).not.toThrow();
     expect(calls).toEqual([['info', 'still works']]);
+  } finally {
+    h.dispose();
+  }
+});
+
+test('requests that cannot be delivered do not emit outgoing message logs', async () => {
+  const calls: unknown[][] = [];
+  const h = harness(recordingLogger(calls));
+  try {
+    h.flush();
+    calls.length = 0;
+    h.sent.length = 0;
+    const error = await h.frame
+      .request({ route: 'test:echo', payload: { callback() {} } })
+      .catch(error => error);
+    expect(error).toMatchObject({ code: 'invalid_payload' });
+    h.flush();
+    expect(calls).toEqual([]);
+    expect(h.sent).toEqual([]);
   } finally {
     h.dispose();
   }
@@ -263,8 +291,9 @@ for (const mode of ['url', 'bundle'] as const) {
       controller.abort();
       h.flush();
       expect(await sql).toBe(controller.signal.reason);
-      const sent = h.sent.filter(message =>
-        ['bridge:request', 'bridge:cancel'].includes(message.type)
+      const sent = h.sent.filter(
+        message =>
+          message.type === 'bridge:request' || message.type === 'bridge:cancel'
       );
       expect(
         calls.filter(call =>

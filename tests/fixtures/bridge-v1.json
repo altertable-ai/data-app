@@ -1,0 +1,178 @@
+[
+  {
+    "name": "connect",
+    "from": "host",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "bridge:connect",
+      "documentId": "host",
+      "token": "token"
+    }
+  },
+  {
+    "name": "ready",
+    "from": "app",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "bridge:ready",
+      "documentId": "document",
+      "token": "token"
+    }
+  },
+  {
+    "name": "initialize",
+    "from": "host",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "bridge:initialize",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "state": { "search": "?period=7", "hash": "#daily" }
+    }
+  },
+  {
+    "name": "request",
+    "from": "app",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "bridge:request",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "id": "request",
+      "route": "data:query",
+      "payload": { "operation": "count", "input": {} }
+    }
+  },
+  {
+    "name": "result",
+    "from": "host",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "bridge:result",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "id": "request",
+      "response": { "count": 3 }
+    }
+  },
+  {
+    "name": "error",
+    "from": "host",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "bridge:error",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "id": "request",
+      "code": "forbidden",
+      "message": "Denied",
+      "requestId": "server-request"
+    }
+  },
+  {
+    "name": "cancel",
+    "from": "app",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "bridge:cancel",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "id": "request"
+    }
+  },
+  {
+    "name": "disconnect",
+    "from": "app",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "bridge:disconnect",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token"
+    }
+  },
+  {
+    "name": "scriptLoad",
+    "from": "host",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "script:load",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "javascript": "app()"
+    }
+  },
+  {
+    "name": "stateUpdate",
+    "from": "host",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "state:update",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "state": { "search": "?period=30", "hash": "#daily" }
+    }
+  },
+  {
+    "name": "runtimeReady",
+    "from": "app",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "runtime:ready",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token"
+    }
+  },
+  {
+    "name": "runtimeError",
+    "from": "app",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "runtime:error",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token"
+    }
+  },
+  {
+    "name": "runtimeLog",
+    "from": "app",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "runtime:log",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "payload": {
+        "method": "info",
+        "args": [
+          "Completed",
+          {
+            "rows": 3
+          }
+        ]
+      }
+    }
+  }
+]

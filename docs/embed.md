@@ -73,7 +73,7 @@ app bundle; non-React apps use `createDataAppNavigation()` from `/client`.
 
 `attachDataAppBridge()` also supports connection mode for a host-owned iframe. Supply
 `connection: { type: 'origin', origin }` or `{ type: 'opaque', token }`, and an
-`onMessage` dispatcher. Both modes use the same transport. It returns `dispose()` and `setPresentation()` methods and owns source/origin checks, request
+`onMessage` dispatcher. Both modes use the same transport. It returns `dispose()`, `setPresentation()`, and `setLogger()` methods and owns source/origin checks, request
 correlation, cancellation, bounded pending requests, and reconnection. Use source mode for bundle loading and token rotation. The opaque destination requires
 wildcard delivery, but incoming messages still require the exact iframe window,
 null origin, token, document, and session to match.
@@ -172,3 +172,28 @@ An embedded surface renders toolbar actions without the page header or footer.
 Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;
 `host.setPresentation(undefined)` restores it.
+
+## Iframe logging
+
+Pass a `logger` implementing `log`, `info`, `warn`, and `error` to either bridge
+mode. `DataAppLogger` is exported from `/embed` and `/client`; `console` also
+satisfies the interface. Use `host.setLogger(logger)` to replace it without
+reconnecting, or `host.setLogger(undefined)` to disable logging.
+
+The iframe transport always exposes a stable `bridge.logger`:
+
+```ts
+bridge.logger.info('Query completed', { rows: 42 });
+bridge.logger.log(() => ['Snapshot', expensiveDetails()]);
+```
+
+The app supplies `bridge` and `expensiveDetails()`. Calls do nothing until the
+connected host enables logging, after it removes the logger, or after the bridge
+closes. Lazy arguments are evaluated in the iframe only while logging is enabled.
+A single lazy argument returning an array supplies the entire argument list;
+other lazy arguments resolve individually.
+
+The transport logs outgoing messages with their type, request ID, route, and
+named query operation where applicable. Query payloads and session credentials
+are excluded. Authenticated log notifications never log themselves, and logging
+failures do not interrupt the app. Ordinary iframe console calls are not forwarded.

@@ -1,4 +1,4 @@
-/** The log, info, warn and error methods of the frontend createLogger() result. */
+/** Host-owned log sink; compatible with console and frontend createLogger(). */
 export type DataAppLogger = {
   log: (...args: unknown[]) => void;
   info: (...args: unknown[]) => void;
