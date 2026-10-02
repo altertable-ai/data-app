@@ -7,6 +7,8 @@ import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
 import gallery from '@/browser-tests/fixtures/gallery.html';
 import styles from '@/browser-tests/fixtures/styles.html';
+import layout from '@/browser-tests/fixtures/layout.html';
+import layoutHost from '@/browser-tests/fixtures/layout-host.html';
 import bundleHost from '@/browser-tests/fixtures/bundle-host.html';
 import bridgeHost from '@/browser-tests/fixtures/bridge-host.html';
 import bridgeFrame from '@/browser-tests/fixtures/bridge-frame.html';
@@ -72,6 +74,8 @@ Bun.serve({
     '/skeleton': skeleton,
     '/gallery': gallery,
     '/styles': styles,
+    '/layout': layoutHost,
+    '/layout-frame': layout,
     '/hooks-app': hooksApp,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,

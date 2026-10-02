@@ -113,6 +113,12 @@ charts, and custom views.
 
 `defineDataContent()` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `<DataSection>` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
 
+## Layout
+
+Use `<Stack>` for sections, `<Grid>` for peer widgets, and `<GridItem>` for spans.
+They share the app layout gap and own responsive behavior. Follow the
+[layout contract](layout.md) for spacing ownership and composition guidance.
+
 ## Narrative text
 
 Use `<TextContent>` for prose within a page or custom layout, and `<TextWidget>`

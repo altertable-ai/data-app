@@ -20,7 +20,14 @@ body,
   padding: var(--at-layout-gap, 24px) 0 var(--at-space-md, 16px);
 }
 .altertable-app-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--at-layout-gap, 24px);
   min-width: 0;
+}
+.altertable-app-main > *,
+.altertable-app-body > * {
+  margin: 0;
 }
 .altertable-app-footer {
   margin-top: auto;
