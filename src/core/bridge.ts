@@ -1,3 +1,5 @@
+import { isLogEntry } from '@/src/core/logger';
+
 /** Data app delivery protocol. IDs identify a document, a shell session, and an individual call. */
 export const BRIDGE = 'altertable:data-app';
 export const PARENT_PARAM = '__altertable_parent';
@@ -136,6 +138,15 @@ export const bridgeProtocol = {
       from: 'host',
       session: 'current',
       parse: fields => ({ state: fields.state }),
+    }),
+    runtimeLog: event({
+      wire: 'runtime:log',
+      from: 'app',
+      session: 'current',
+      parse: fields => {
+        if (!isLogEntry(fields.payload)) throw new Error('Invalid log entry.');
+        return { payload: fields.payload };
+      },
     }),
     runtimeReady: event({
       wire: 'runtime:ready',

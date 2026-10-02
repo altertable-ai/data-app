@@ -153,5 +153,26 @@
       "sessionId": "session",
       "token": "token"
     }
+  },
+  {
+    "name": "runtimeLog",
+    "from": "app",
+    "message": {
+      "channel": "altertable:data-app",
+      "version": 1,
+      "type": "runtime:log",
+      "documentId": "document",
+      "sessionId": "session",
+      "token": "token",
+      "payload": {
+        "method": "info",
+        "args": [
+          "Completed",
+          {
+            "rows": 3
+          }
+        ]
+      }
+    }
   }
 ]

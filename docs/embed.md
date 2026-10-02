@@ -73,7 +73,7 @@ app bundle; non-React apps use `createDataAppNavigation()` from `/client`.
 
 `attachDataAppBridge()` also supports connection mode for a host-owned iframe. Supply
 `connection: { type: 'origin', origin }` or `{ type: 'opaque', token }`, and an
-`onMessage` dispatcher. Both modes use the same transport. It returns `dispose()` and `setPresentation()` methods and owns source/origin checks, request
+`onMessage` dispatcher. Both modes use the same transport. It returns `dispose()`, `setPresentation()`, and `setLogger()` methods and owns source/origin checks, request
 correlation, cancellation, bounded pending requests, and reconnection. Use source mode for bundle loading and token rotation. The opaque destination requires
 wildcard delivery, but incoming messages still require the exact iframe window,
 null origin, token, document, and session to match.

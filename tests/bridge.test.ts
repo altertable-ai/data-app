@@ -478,6 +478,7 @@ test('opaque bridge requires source, null origin and token; reload aborts old wo
     expect(initialized.state).toEqual({
       search: '?period=last-30',
       hash: '#totals',
+      logging: false,
     });
     finish?.('old result');
     await Promise.resolve();

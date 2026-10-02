@@ -35,7 +35,7 @@ export function createBridgeEndpoint<const Role extends BridgeRole>({
   source: () => MessageEventSource | null;
   opaque: boolean;
   context: () => ConnectionContext;
-  post: (message: unknown) => void;
+  post: (message: BridgeMessage) => void;
   diagnostic?: (
     direction: 'send' | 'receive',
     type: BridgeMessage['type']

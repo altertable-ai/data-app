@@ -1,5 +1,6 @@
 import { createBridgeEndpoint } from '@/src/core/bridge-endpoint';
 import type { DataAppPresentation } from '@/src/core/presentation';
+import type { DataAppLogger } from '@/src/core/logger';
 import {
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
@@ -30,11 +31,13 @@ export type DataAppDiagnostic = {
 export type DataAppHost = {
   dispose: () => void;
   setPresentation: (presentation?: DataAppPresentation) => void;
+  setLogger: (logger?: DataAppLogger) => void;
 };
 
 export type DataAppHostOptions = {
   iframe: HTMLIFrameElement;
   presentation?: DataAppPresentation;
+  logger?: DataAppLogger;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
   onMessage: MessageDispatcher;
@@ -52,6 +55,7 @@ export function attachDataAppConnection({
   connection,
   javascript,
   presentation,
+  logger,
   onStatusChange,
   onDiagnostic,
   onMessage,
@@ -78,7 +82,15 @@ export function attachDataAppConnection({
       search: host.location.search,
       hash: host.location.hash,
       ...(currentPresentation ? { presentation: currentPresentation } : {}),
+      logging: logger !== undefined,
     };
+  }
+
+  function setLogger(value: DataAppLogger | undefined) {
+    if (disposed || value === logger) return;
+    const wasEnabled = logger !== undefined;
+    logger = value;
+    if (wasEnabled !== (logger !== undefined)) publishState();
   }
 
   function setPresentation(value: DataAppPresentation | undefined) {
@@ -89,7 +101,7 @@ export function attachDataAppConnection({
     )
       return;
     currentPresentation = value && { ...value };
-    if (sessionId) publishState();
+    publishState();
   }
 
   function cancelAll() {
@@ -123,6 +135,13 @@ export function attachDataAppConnection({
         send('initialize', { state: hostState() });
         if (disposed) return;
         if (javascript !== undefined) send('scriptLoad', { javascript });
+      },
+      runtimeLog({ payload }) {
+        try {
+          logger?.[payload.method](...payload.args);
+        } catch {
+          // A host logger failure must not break bridge delivery.
+        }
       },
       runtimeReady() {
         onStatusChange?.('ready');
@@ -243,5 +262,5 @@ export function attachDataAppConnection({
   onStatusChange?.('connecting');
   send('connect', {});
 
-  return { dispose, setPresentation };
+  return { dispose, setPresentation, setLogger };
 }

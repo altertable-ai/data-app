@@ -15,7 +15,7 @@ import type { DataAppSource } from '@/src/embed/source';
 
 export type DataAppBridgeProps = Pick<
   DataAppBridgeOptions,
-  'onMessage' | 'onStatusChange' | 'onDiagnostic' | 'presentation'
+  'onMessage' | 'onStatusChange' | 'onDiagnostic' | 'presentation' | 'logger'
 > &
   (
     | {
@@ -77,6 +77,7 @@ function useBridgeState(props: DataAppBridgeProps) {
 
   useEffect(() => {
     hostRef.current?.setPresentation(props.presentation);
+    hostRef.current?.setLogger(props.logger);
   });
 
   return { hostRef, handlers };
@@ -105,6 +106,7 @@ function SourceBridge(props: SourceBridgeProps) {
             },
       startupTimeoutMs,
       presentation: handlers.current.presentation,
+      logger: handlers.current.logger,
       onMessage(request, context) {
         return handlers.current.onMessage(request, context);
       },
@@ -147,6 +149,7 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
           : { type, token: identity },
       window: host,
       presentation: handlers.current.presentation,
+      logger: handlers.current.logger,
       onMessage(request, context) {
         return handlers.current.onMessage(request, context);
       },

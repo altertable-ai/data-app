@@ -14,6 +14,7 @@ import {
 import type { Lakehouse } from '@/src/core/contract';
 import { createMessageClient } from '@/src/client/messages';
 import { DataAppError } from '@/src/client/transport';
+import { createBridgeLogger, logBridgeMessage } from '@/src/client/logger';
 
 type Pending = {
   start: () => void;
@@ -51,6 +52,16 @@ export function createIframeTransport({
   const pending = new Map<string, Pending>();
   let hostState: unknown;
   const stateListeners = new Set<(state: unknown) => void>();
+  const logger = createBridgeLogger(
+    () =>
+      !disposed &&
+      !!sessionId &&
+      !!hostState &&
+      typeof hostState === 'object' &&
+      'logging' in hostState &&
+      hostState.logging === true,
+    entry => send('runtimeLog', { payload: entry })
+  );
 
   const endpoint = createBridgeEndpoint({
     role: 'app',
@@ -58,7 +69,10 @@ export function createIframeTransport({
     source: () => frame.parent,
     opaque: mode === 'bundle',
     context: () => ({ documentId, sessionId, token }),
-    post: message => frame.parent.postMessage(message, parentOrigin),
+    post(message) {
+      frame.parent.postMessage(message, parentOrigin);
+      logBridgeMessage(logger, message);
+    },
     handlers: {
       connect(message) {
         if (mode === 'bundle') token = message.token;
@@ -76,8 +90,8 @@ export function createIframeTransport({
         }
         const first = !sessionId;
         sessionId = message.sessionId;
-        if (first) for (const entry of pending.values()) entry.start();
         receiveState(message.state);
+        if (first) for (const entry of pending.values()) entry.start();
         if (disposed) return;
         if (mode === 'url') send('runtimeReady', {});
       },
@@ -234,6 +248,7 @@ export function createIframeTransport({
   if (mode === 'url') send('ready', {});
 
   return {
+    logger,
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
