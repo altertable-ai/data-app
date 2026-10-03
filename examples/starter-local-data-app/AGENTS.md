@@ -11,4 +11,10 @@ Read [AGENTS.md](https://github.com/altertable-ai/data-app/blob/main/AGENTS.md) 
 | Inject styles and mount React            | `src/main.tsx`                                 |
 | Configure local serving                  | `src/server.ts`                                |
 
+Declare `queries` and `variables` on each operation and execute with
+`query(id, values)`, using the same contract as hosted apps. Export the complete
+maps with `getDataAppRegistration(operations)`. Keep SQL in declarations; Bun
+builds statements for the CLI proxy. Share variable definitions with the UI in
+a browser-safe module and import operation types with `import type`.
+
 See [README.md](README.md) for setup and checks.

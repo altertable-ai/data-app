@@ -333,3 +333,46 @@ Example:
   {(data, input) => <Results data={data} input={input} />}
 </DataApp>
 ```
+
+## Query variable selectors
+
+Reuse the frontend variable types through `defineQueryVariables()` from
+`/contract`. Adapt a definition with `queryVariable()` from `/react`:
+
+```ts
+const variables = defineQueryVariables({
+  country: { type: 'STRING', default: 'FR', options: ['FR', 'GB', 'US'] },
+});
+const country = queryVariable(variables.country, {
+  key: 'country',
+  label: 'Country',
+});
+```
+
+Pass `{ country }` to a view's `variables`. `useView()` generates the selector,
+keeps its value typed, and handles URL state through the existing variable APIs.
+A control needs a default, including an explicit null for nullable controls.
+Existing text, select, date-range, and dimension variables remain available.
+
+`<VariableValueSelector>` accepts `definition`, `label`, `value`, and `onChange`.
+It renders a control for each frontend variable type:
+
+- `STRING`, `INTEGER`, `FLOAT`: searchable values with custom typed input.
+- `BOOLEAN`: True, False, and Null when nullable.
+- `INTERVAL`: Hour, Day, Week, Month, Quarter, Year.
+- `DURATION`: None when nullable, Previous week, Previous month, Previous year.
+- `DATETIME`: one date field. Selecting a date sets it to midnight UTC.
+- `DATETIMERANGE`: two date fields, From and To. The end date includes the
+  whole day; clearing either field leaves that endpoint open.
+
+Declared `options` restrict accepted values. Nullable controls offer a Null,
+None, or Clear choice. Date fields use UTC and produce absolute dates when
+edited. Existing relative values are displayed as resolved dates and preserved
+until edited.
+
+The individual controlled selectors are also exported:
+`<VariableTextSelector>`, `<VariableBooleanSelector>`, `<VariableIntervalSelector>`,
+`<VariableDurationSelector>`, `<VariableDateTimeSelector>`, and
+`<VariableDateTimeRangeSelector>`. They use this package's primitives and explicit
+style injection. See [query variables](contract.md#query-variables) for value types
+and SQL behavior.

@@ -1,3 +1,4 @@
+import { buildQueryStatement } from '@/src/core/query-template';
 /**
  * Bun local-development serving and server-only lakehouse access.
  * @module @altertable/data-app/server/bun
@@ -46,7 +47,8 @@ export function localLakehouse(
   request: typeof fetch = fetch
 ): Lakehouse {
   return {
-    async queryAll(statement, { limit, signal }) {
+    async queryAll(statement, { limit, signal, variables }) {
+      if (variables) statement = buildQueryStatement(statement, variables);
       const proxyUrl = environment.ALTERTABLE_DATA_PROXY_URL;
       const proxyToken = environment.ALTERTABLE_DATA_PROXY_TOKEN;
       const username = environment.ALTERTABLE_LAKEHOUSE_USERNAME;

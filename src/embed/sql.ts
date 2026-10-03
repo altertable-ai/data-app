@@ -1,3 +1,13 @@
+import type { DataAppRegistration } from '@/src/core/query-registration';
+import type { RegisteredQueryInput } from '@/src/core/messages';
+import {
+  defineQueryVariables,
+  bindQueryVariables,
+} from '@/src/core/query-variables';
+import {
+  queryVariableNames,
+  buildQueryStatement,
+} from '@/src/core/query-template';
 import type { Lakehouse } from '@/src/core/contract';
 import { toDataOperationFailure } from '@/src/core/operation';
 import {
@@ -42,4 +52,56 @@ export function createSqlQueryHandler(
   }
 
   return handleSqlQuery;
+}
+
+/** Bind registration to the trusted app revision before constructing this handler. */
+export function createRegisteredQueryHandler(
+  registration: DataAppRegistration,
+  authorize: (
+    query: RegisteredQueryInput,
+    context: MessageContext
+  ) => Promise<Lakehouse>
+) {
+  defineQueryVariables(registration.variables);
+  for (const statement of Object.values(registration.queries))
+    queryVariableNames(statement, registration.variables);
+  return async (input: RegisteredQueryInput, context: MessageContext) => {
+    context.signal.throwIfAborted();
+    const requestId = crypto.randomUUID();
+    let lakehouse: Lakehouse;
+    try {
+      lakehouse = await authorize(input, context);
+    } catch {
+      context.signal.throwIfAborted();
+      throw new MessageRoutingError(
+        'forbidden',
+        'You cannot run this query.',
+        requestId
+      );
+    }
+    if (!Object.hasOwn(registration.queries, input.operation))
+      throw new MessageRoutingError('not_found', 'Unknown query.');
+    const statement = registration.queries[input.operation]!;
+    const names = queryVariableNames(statement, registration.variables);
+    const definitions = Object.fromEntries(
+      names.map(name => [name, registration.variables[name]!])
+    );
+    let bindings;
+    try {
+      bindings = bindQueryVariables(definitions, input.variables);
+    } catch {
+      throw new MessageRoutingError(
+        'invalid_input',
+        'Invalid query variables.'
+      );
+    }
+    context.signal.throwIfAborted();
+    return createSqlQueryHandler(async () => lakehouse)(
+      {
+        statement: buildQueryStatement(statement, bindings),
+        limit: input.limit,
+      },
+      context
+    );
+  };
 }

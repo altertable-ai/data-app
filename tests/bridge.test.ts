@@ -868,3 +868,56 @@ test('host stops the handshake when a send diagnostic disposes the bridge', () =
     bridge.dispose();
   }
 });
+
+test('registered queries send only their ID, JSON variable values and bounded limit', async () => {
+  const { createDataClient } = await import('@altertable/data-app/client');
+  const { defineOperation, defineQueryVariables, parseQueryVariables } =
+    await import('@altertable/data-app/contract');
+  const { bridge, receive, sent } = harness();
+  try {
+    const variables = defineQueryVariables({
+      when: { type: 'DATETIME' },
+      unused: { type: 'STRING', default: '' },
+    });
+    const operation = defineOperation({
+      queryNames: { time: 'time' },
+      queries: { time: 'SELECT {{when}}' },
+      variables,
+      input: value => parseQueryVariables(variables, value),
+      output: (value: unknown) => value,
+      checks: [{ when: new Date('2026-10-01T00:00:00Z'), unused: '' }],
+      policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
+      run({ query }, input) {
+        return query('time', input);
+      },
+    });
+    const client = createDataClient({
+      operations: { time: operation },
+      lakehouse: bridge.lakehouse,
+    });
+    const pending = client.query('time', {
+      when: new Date('2026-10-01T00:00:00Z'),
+      unused: 'local only',
+    });
+    receive({ type: 'bridge:initialize' });
+    await Promise.resolve();
+    const message = sent.find(
+      entry => entry.message.type === 'bridge:request'
+    )!.message;
+    if (message.type !== 'bridge:request') throw new Error('Expected request.');
+    expect(message.route).toBe('data:query');
+    expect(message.payload).toEqual({
+      operation: 'time',
+      variables: { when: '2026-10-01T00:00:00.000Z' },
+      limit: 1,
+    });
+    receive({
+      type: 'bridge:result',
+      id: message.id,
+      response: { columns: [], rows: [] },
+    });
+    await pending;
+  } finally {
+    bridge.dispose();
+  }
+});
