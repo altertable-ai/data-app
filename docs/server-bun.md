@@ -17,6 +17,10 @@ serveLocalApp({ page, operations, title: 'Activity' });
 
 The server binds to `127.0.0.1`. Its default port is `25837`, overridable through
 `PORT` or the `port` option. It serves the Bun HTML bundle and operation requests.
+Declare `queries` and `variables` on the supplied operations, then execute with
+`query(id, values)`, following the [local authoring guide](local-data-apps.md#declare-queries-and-variables).
+The browser sends operation IDs and input values. Bun validates those values and
+expands the registered templates before the CLI proxy receives SQL.
 
 `localLakehouse()` reads the CLI proxy URL and token from
 `ALTERTABLE_DATA_PROXY_URL` and `ALTERTABLE_DATA_PROXY_TOKEN`. It also supports

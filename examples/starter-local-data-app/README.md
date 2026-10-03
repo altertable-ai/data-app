@@ -7,6 +7,12 @@ A Bun and React app that imports the public `@altertable/data-app` package.
 It starts with a lakehouse connectivity check. Replace that check with bounded
 operations and views built from inspected data before sharing an analysis.
 
+The probe already uses a registered statement and an empty variable map. Declare
+`queries` and typed `variables` for your operations, then call `query(id, values)`.
+`src/operations.ts` exports the same registration metadata used by hosted apps.
+Bun loads those declarations locally and builds SQL for the CLI proxy; browser
+requests carry only operation IDs and input values.
+
 ## Run from this repository
 
 Use the Bun and Node versions in `.bun-version` and `.node-version`.

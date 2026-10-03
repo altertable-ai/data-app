@@ -445,12 +445,13 @@ export function connectionCheck(): DataOperation<Record<string, never>, true> {
     output: parseTrue,
     checks: [{}],
     queryNames: connectionQueryNames,
+    queries: {
+      [connectionQueryNames.connection]: 'SELECT 1 AS connection_check',
+    },
+    variables: {},
     policy: { maxQueryRows: 1, maxDurationMs: 15_000, exposeSql: true },
     async run({ query }): Promise<true> {
-      await query(
-        connectionQueryNames.connection,
-        'SELECT 1 AS connection_check'
-      );
+      await query(connectionQueryNames.connection, {});
 
       return true;
     },

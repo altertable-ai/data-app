@@ -15,6 +15,7 @@ import {
 } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
 import { createRegisteredQueryHandler } from '@altertable/data-app/embed';
+import { createDataHandler } from '@altertable/data-app/server';
 import { localLakehouse } from '@altertable/data-app/server/bun';
 import { queryVariable } from '@altertable/data-app/react';
 
@@ -36,7 +37,7 @@ const operation = defineOperation({
   },
 });
 
-test('registered operations export complete metadata and execute through a local statement proxy', async () => {
+test('local HTTP clients send IDs and values, and Bun expands registered queries for the CLI proxy', async () => {
   const registration = getDataAppRegistration({ search: operation });
   expect(registration).toEqual({
     queries: { 'find-person': 'SELECT {{name}} AS name' },
@@ -63,20 +64,56 @@ test('registered operations export complete metadata and execute through a local
       );
     }) as typeof fetch
   );
-  const client = createDataClient({
-    operations: { search: operation },
+  const operations = { search: operation };
+  const handler = createDataHandler(operations, async () => ({
     lakehouse: source,
+    canDiscloseSql: true,
+  }));
+  const requests: { path: string; values: unknown }[] = [];
+  const server = Bun.serve({
+    hostname: '127.0.0.1',
+    port: 0,
+    async fetch(request) {
+      requests.push({
+        path: new URL(request.url).pathname,
+        values: await request.clone().json(),
+      });
+      return handler(request);
+    },
   });
-  const value = "Robert'); DROP TABLE people; --\\";
-  const response = await client.query('search', { name: value, count: 10 });
-  expect(response.data).toEqual({
-    columns: [{ name: 'name' }],
-    rows: [[value]],
-    queryId: 'q1',
+  const client = createDataClient<typeof operations>({
+    endpoint: new URL('/api/data', server.url).href,
   });
-  expect(response.queryIds).toEqual(['q1']);
-  expect(statements[0]).not.toContain('{{');
-  database.close();
+  try {
+    const value = "Robert'); DROP TABLE people; --\\";
+    const response = await client.query('search', { name: value, count: 10 });
+    expect(response.data).toEqual({
+      columns: [{ name: 'name' }],
+      rows: [[value]],
+      queryId: 'q1',
+    });
+    expect(response.queryIds).toEqual(['q1']);
+    expect(requests).toEqual([
+      { path: '/api/data/search', values: { name: value, count: 10 } },
+    ]);
+    expect(statements[0]).not.toContain('{{');
+    for (const [id, values, status] of [
+      ['search', { name: 42 }, 400],
+      ['search', { name: '', statement: 'SELECT 2' }, 400],
+      ['unknown', {}, 404],
+    ] as const) {
+      const rejected = await fetch(new URL(`/api/data/${id}`, server.url), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      expect(rejected.status).toBe(status);
+    }
+    expect(statements).toHaveLength(1);
+  } finally {
+    await server.stop(true);
+    database.close();
+  }
 });
 
 test('registered host uses trusted definitions, validates values, and does not accept raw SQL', async () => {

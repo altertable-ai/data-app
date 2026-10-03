@@ -8,9 +8,9 @@ should import their operation types using `import type`.
 ## Execute named queries
 
 Keep `defineOperation()` and `defineQueryNames()` as the operation boundary. An
-operation can run several named SQL queries and parse their results. For hosted
-apps, declare their statements in `queries` and their shared variable definitions
-in `variables`. The existing query name identifies each registered statement.
+operation can run several named SQL queries and parse their results. For both
+local and hosted apps, declare their statements in `queries` and their shared
+variable definitions in `variables`. The existing query name identifies each registered statement.
 
 ```ts
 import {
@@ -63,10 +63,11 @@ empty maps when appropriate; updates replace the maps, including removals. The
 host/backend stores and validates them through its create/update API. Registration
 is not sent by the running iframe. See [hosted authoring](hosted-apps.md).
 
-Local server operations can keep `query(name, statement)` without declaring
-`queries`. They can also use the same templates: the Bun adapter constructs SQL
-before calling the CLI proxy. HTTP browser modules import operation types with
-`import type`; hosted apps import their operation registry as a value.
+Local apps use the same declarations and `query(name, values)` calls. Bun loads
+them from app source and constructs SQL before calling the CLI proxy; no hosted
+create/update call is needed. HTTP browser modules import operation types with
+`import type`; hosted apps import their operation registry as a value. Existing
+local operations using `query(name, statement)` remain supported for compatibility.
 
 ## Query variables
 
