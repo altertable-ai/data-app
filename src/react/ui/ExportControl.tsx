@@ -5,10 +5,11 @@ import {
   type CsvTable,
 } from '@/src/react/ui/csv-export';
 import { IconButton } from '@/src/react/ui/IconButton';
-import { Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components';
+import { ListBox, ListBoxItem, Popover, Select } from 'react-aria-components';
 import { PressButton } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Toast } from '@/src/react/ui/Toast';
+import { Tooltip } from '@/src/react/ui/Tooltip';
 
 export function ExportControl({ csv }: { csv: CsvExport }) {
   const [open, setOpen] = useState(false);
@@ -52,33 +53,46 @@ export function ExportControl({ csv }: { csv: CsvExport }) {
           onClick={() => void download()}
         />
       ) : (
-        <MenuTrigger isOpen={open} onOpenChange={setOpen}>
-          <PressButton
-            variant="elevated"
-            size="icon"
-            aria-label="Export"
-            isDisabled={status === 'pending'}
-            aria-busy={status === 'pending'}
-          >
-            <AppIcon name="export" />
-          </PressButton>
+        <Select
+          aria-label="Export data"
+          isOpen={open}
+          onOpenChange={setOpen}
+          isDisabled={status === 'pending'}
+          selectedKey={null}
+          onSelectionChange={key => {
+            if (key !== null)
+              void download(
+                key === 'all' ? undefined : csv.tables[Number(key)]
+              );
+          }}
+        >
+          <Tooltip content="Export">
+            <PressButton
+              variant="elevated"
+              size="icon"
+              aria-label="Export"
+              aria-busy={status === 'pending'}
+            >
+              <AppIcon name="export" />
+            </PressButton>
+          </Tooltip>
           <Popover placement="bottom end" className="altertable-export-popover">
-            <Menu aria-label="Export data">
+            <ListBox aria-label="Export data">
               {csv.tables.map((table, index) => (
-                <MenuItem
+                <ListBoxItem
                   key={index}
                   id={index}
-                  onAction={() => void download(table)}
+                  textValue={`Export ${table.name} (CSV)`}
                 >
                   Export {table.name} (CSV)
-                </MenuItem>
+                </ListBoxItem>
               ))}
-              <MenuItem id="all" onAction={() => void download()}>
+              <ListBoxItem id="all" textValue="Export all (ZIP)">
                 Export all (ZIP)
-              </MenuItem>
-            </Menu>
+              </ListBoxItem>
+            </ListBox>
           </Popover>
-        </MenuTrigger>
+        </Select>
       )}
     </>
   );

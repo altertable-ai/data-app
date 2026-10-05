@@ -5,17 +5,24 @@
   overflow: auto;
   padding: 4px;
   border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-surface, 12px);
+  border-radius: var(--at-radius-control, 7px);
   background: var(--at-surface, #fff);
-  box-shadow: 0 10px 32px rgb(0 0 0 / 12%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
   color: var(--at-text, #202124);
 }
-.altertable-export-popover [role='menuitem'] {
-  padding: 10px 12px;
-  border-radius: 6px;
+.altertable-export-popover [role='option'] {
+  min-height: 34px;
+  padding: 6px 9px;
+  border-radius: 4px;
   font-size: 13px;
+  cursor: pointer;
   outline: none;
 }
-.altertable-export-popover [role='menuitem'][data-focused] {
-  background: var(--at-border, #e3e6e8);
+.altertable-export-popover [role='option']:is([data-focused], [data-hovered]) {
+  background: var(--at-subtle, #f6f7f7);
+}
+
+.altertable-export-popover [role='option'][data-focus-visible] {
+  outline: var(--at-focus-outline, 1px solid #687078);
+  outline-offset: var(--at-focus-ring-inset, -1px);
 }
