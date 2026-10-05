@@ -10,7 +10,14 @@
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
   color: var(--at-text, #202124);
 }
+.altertable-export-popover [role='listbox'] {
+  outline: none;
+}
 .altertable-export-popover [role='option'] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   min-height: 34px;
   padding: 6px 9px;
   border-radius: 4px;
@@ -22,7 +29,20 @@
   background: var(--at-subtle, #f6f7f7);
 }
 
-.altertable-export-popover [role='option'][data-focus-visible] {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-inset, -1px);
+.altertable-export-format {
+  flex: none;
+  color: var(--at-muted, #687078);
+  font-size: 11px;
+}
+.altertable-export-all {
+  position: relative;
+  margin-top: 9px;
+}
+.altertable-export-all::before {
+  position: absolute;
+  top: -5px;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--at-border, #e3e6e8);
+  content: '';
 }

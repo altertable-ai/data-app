@@ -48,6 +48,7 @@ export function ExportControl({ csv }: { csv: CsvExport }) {
           icon="export"
           variant="elevated"
           label="Export CSV"
+          tooltip="Export data"
           disabled={status === 'pending'}
           aria-busy={status === 'pending'}
           onClick={() => void download()}
@@ -66,7 +67,7 @@ export function ExportControl({ csv }: { csv: CsvExport }) {
               );
           }}
         >
-          <Tooltip content="Export">
+          <Tooltip content="Export data">
             <PressButton
               variant="elevated"
               size="icon"
@@ -82,13 +83,21 @@ export function ExportControl({ csv }: { csv: CsvExport }) {
                 <ListBoxItem
                   key={index}
                   id={index}
-                  textValue={`Export ${table.name} (CSV)`}
+                  textValue={`Export ${table.name} CSV`}
+                  aria-label={`Export ${table.name} CSV`}
                 >
-                  Export {table.name} (CSV)
+                  <span>Export {table.name}</span>
+                  <span className="altertable-export-format">CSV</span>
                 </ListBoxItem>
               ))}
-              <ListBoxItem id="all" textValue="Export all (ZIP)">
-                Export all (ZIP)
+              <ListBoxItem
+                id="all"
+                textValue="Export all ZIP"
+                aria-label="Export all ZIP"
+                className="altertable-export-all"
+              >
+                <span>Export all</span>
+                <span className="altertable-export-format">ZIP</span>
               </ListBoxItem>
             </ListBox>
           </Popover>

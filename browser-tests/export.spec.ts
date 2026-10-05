@@ -134,14 +134,14 @@ for (const embedded of [false, true])
     const app = embedded ? page.frameLocator('iframe') : page;
     const button = app.getByRole('button', { name: 'Export', exact: true });
     await button.focus();
-    await expect(app.getByRole('tooltip')).toHaveText('Export');
+    await expect(app.getByRole('tooltip')).toHaveText('Export data');
     await button.press('ArrowDown');
     await expect(
-      app.getByRole('option', { name: 'Export Counts (CSV)', exact: true })
+      app.getByRole('option', { name: 'Export Counts CSV', exact: true })
     ).toBeFocused();
     let downloaded = page.waitForEvent('download');
     await app
-      .getByRole('option', { name: 'Export Summary (CSV)', exact: true })
+      .getByRole('option', { name: 'Export Summary CSV', exact: true })
       .click();
     let download = await downloaded;
     expect(download.suggestedFilename()).toBe('Summary.csv');
@@ -149,7 +149,7 @@ for (const embedded of [false, true])
     await button.click();
     downloaded = page.waitForEvent('download');
     await app
-      .getByRole('option', { name: 'Export all (ZIP)', exact: true })
+      .getByRole('option', { name: 'Export all ZIP', exact: true })
       .click();
     download = await downloaded;
     expect(download.suggestedFilename()).toBe('gallery.zip');
@@ -162,7 +162,7 @@ for (const embedded of [false, true])
     await button.click();
     downloaded = page.waitForEvent('download');
     await app
-      .getByRole('option', { name: 'Export all (ZIP)', exact: true })
+      .getByRole('option', { name: 'Export all ZIP', exact: true })
       .click();
     expect((await downloaded).suggestedFilename()).toBe('gallery.zip');
     await button.click();
