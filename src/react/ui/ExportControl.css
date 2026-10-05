@@ -5,17 +5,44 @@
   overflow: auto;
   padding: 4px;
   border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-surface, 12px);
+  border-radius: var(--at-radius-control, 7px);
   background: var(--at-surface, #fff);
-  box-shadow: 0 10px 32px rgb(0 0 0 / 12%);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
   color: var(--at-text, #202124);
 }
-.altertable-export-popover [role='menuitem'] {
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 13px;
+.altertable-export-popover [role='listbox'] {
   outline: none;
 }
-.altertable-export-popover [role='menuitem'][data-focused] {
-  background: var(--at-border, #e3e6e8);
+.altertable-export-popover [role='option'] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 34px;
+  padding: 6px 9px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+.altertable-export-popover [role='option']:is([data-focused], [data-hovered]) {
+  background: var(--at-subtle, #f6f7f7);
+}
+
+.altertable-export-format {
+  flex: none;
+  color: var(--at-muted, #687078);
+  font-size: 11px;
+}
+.altertable-export-all {
+  position: relative;
+  margin-top: 9px;
+}
+.altertable-export-all::before {
+  position: absolute;
+  top: -5px;
+  right: 0;
+  left: 0;
+  border-top: 1px solid var(--at-border, #e3e6e8);
+  content: '';
 }

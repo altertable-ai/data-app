@@ -133,13 +133,15 @@ for (const embedded of [false, true])
     await page.goto(embedded ? '/bundle-host' : '/gallery?multiple-exports');
     const app = embedded ? page.frameLocator('iframe') : page;
     const button = app.getByRole('button', { name: 'Export', exact: true });
+    await button.focus();
+    await expect(app.getByRole('tooltip')).toHaveText('Export data');
     await button.press('ArrowDown');
     await expect(
-      app.getByRole('menuitem', { name: 'Export Counts (CSV)', exact: true })
+      app.getByRole('option', { name: 'Export Counts CSV', exact: true })
     ).toBeFocused();
     let downloaded = page.waitForEvent('download');
     await app
-      .getByRole('menuitem', { name: 'Export Summary (CSV)', exact: true })
+      .getByRole('option', { name: 'Export Summary CSV', exact: true })
       .click();
     let download = await downloaded;
     expect(download.suggestedFilename()).toBe('Summary.csv');
@@ -147,7 +149,7 @@ for (const embedded of [false, true])
     await button.click();
     downloaded = page.waitForEvent('download');
     await app
-      .getByRole('menuitem', { name: 'Export all (ZIP)', exact: true })
+      .getByRole('option', { name: 'Export all ZIP', exact: true })
       .click();
     download = await downloaded;
     expect(download.suggestedFilename()).toBe('gallery.zip');
@@ -158,8 +160,14 @@ for (const embedded of [false, true])
     ]);
     expect(strFromU8(files['Summary.csv']!)).toBe('Total\r\n0\r\n');
     await button.click();
+    downloaded = page.waitForEvent('download');
+    await app
+      .getByRole('option', { name: 'Export all ZIP', exact: true })
+      .click();
+    expect((await downloaded).suggestedFilename()).toBe('gallery.zip');
+    await button.click();
     await page.screenshot({ path: test.info().outputPath('export-menu.png') });
-    await app.getByRole('menu').press('Escape');
-    await expect(app.getByRole('menu')).toHaveCount(0);
+    await app.getByRole('listbox').press('Escape');
+    await expect(app.getByRole('listbox')).toHaveCount(0);
     await expect(button).toBeFocused();
   });
