@@ -63,18 +63,20 @@ export type QueryVariableDefinition<
   Type extends VariableValueType = VariableValueType,
 > = {
   [Key in Type]: {
+    name: string;
     type: Key;
-    default?: VariableValue<Key> | null;
-    nullable?: boolean;
     options?: readonly (VariableValue<Key> | null)[];
-  };
+  } & (
+    | { nullable: true; default: VariableValue<Key> | null }
+    | { nullable: false; default: VariableValue<Key> }
+  );
 }[Type];
-export type QueryVariableDefinitions = Record<string, QueryVariableDefinition>;
+export type QueryVariableDefinitions = readonly QueryVariableDefinition[];
 export type QueryVariableValues<Definitions extends QueryVariableDefinitions> =
   {
-    [Name in keyof Definitions]:
-      | VariableValue<Definitions[Name]['type']>
-      | (Definitions[Name] extends { nullable: true } ? null : never);
+    [Definition in Definitions[number] as Definition['name']]:
+      | VariableValue<Definition['type']>
+      | (Definition extends { nullable: true } ? null : never);
   };
 export type QueryVariableBinding = {
   [Type in VariableValueType]: {
@@ -231,19 +233,28 @@ export function parseQueryVariable(
 export function defineQueryVariables<
   const Definitions extends QueryVariableDefinitions,
 >(definitions: Definitions): Definitions {
-  record(definitions);
-  for (const [name, definition] of Object.entries(definitions)) {
+  invariant(Array.isArray(definitions), 'Expected a variable list.');
+  const names = new Set<string>();
+  for (const definition of definitions as QueryVariableDefinitions) {
+    record(definition);
+    const { name } = definition;
+    invariant(
+      typeof name === 'string' && !names.has(name),
+      'Duplicate or missing variable name.'
+    );
+    names.add(name);
     invariant(
       /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) &&
         !['table', '__proto__', 'constructor', 'prototype'].includes(name),
       'Invalid or reserved variable name.'
     );
     record(definition);
-    keys(definition, ['type', 'default', 'nullable', 'options']);
+    keys(definition, ['name', 'type', 'default', 'nullable', 'options']);
     invariant(
       variableValueTypes.includes(definition.type) &&
-        (definition.nullable === undefined ||
-          typeof definition.nullable === 'boolean'),
+        typeof definition.nullable === 'boolean' &&
+        Object.hasOwn(definition, 'default') &&
+        definition.default !== undefined,
       'Invalid variable definition.'
     );
     if (definition.options !== undefined) {
@@ -254,6 +265,8 @@ export function defineQueryVariables<
       const options = definition.options.map(option =>
         parseQueryVariable(
           {
+            name,
+            default: option,
             type: definition.type,
             nullable: definition.nullable,
           } as QueryVariableDefinition,
@@ -266,8 +279,7 @@ export function defineQueryVariables<
         'Variable options must be unique.'
       );
     }
-    if (definition.default !== undefined)
-      parseQueryVariable(definition, definition.default);
+    parseQueryVariable(definition, definition.default);
   }
   return definitions;
 }
@@ -278,13 +290,15 @@ export function parseQueryVariables<
   defineQueryVariables(definitions);
   record(value);
   invariant(
-    Object.keys(value).every(name => Object.hasOwn(definitions, name)),
+    Object.keys(value).every(name =>
+      definitions.some(definition => definition.name === name)
+    ),
     'Unknown query variable.'
   );
   return Object.fromEntries(
-    Object.entries(definitions).map(([name, definition]) => [
-      name,
-      parseQueryVariable(definition, value[name]),
+    definitions.map(definition => [
+      definition.name,
+      parseQueryVariable(definition, value[definition.name]),
     ])
   ) as QueryVariableValues<Definitions>;
 }
@@ -295,9 +309,9 @@ export function bindQueryVariables(
 ): QueryVariableBindings {
   const parsed = parseQueryVariables(definitions, value);
   return Object.fromEntries(
-    Object.entries(definitions).map(([name, definition]) => [
-      name,
-      { type: definition.type, value: parsed[name] },
+    definitions.map(definition => [
+      definition.name,
+      { type: definition.type, value: parsed[definition.name] },
     ])
   ) as QueryVariableBindings;
 }

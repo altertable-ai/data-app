@@ -4,43 +4,42 @@ import {
   type QueryVariableDefinitions,
 } from '@/src/core/query-variables';
 import { queryVariableNames } from '@/src/core/query-template';
-import type { DataOperations } from '@/src/core/operation-types';
 
 export type DataAppRegistration = {
   queries: Record<string, string>;
   variables: QueryVariableDefinitions;
 };
 
-/** Full replacement metadata for hosted app creation/update; query IDs are the existing query names. */
-export function getDataAppRegistration(
-  operations: DataOperations
-): DataAppRegistration {
-  const queries: Record<string, string> = Object.create(null);
-  const variables: QueryVariableDefinitions = Object.create(null);
-  for (const operation of Object.values(operations)) {
+/** Validate separate, server-owned registration before saving or serving an app revision. */
+export function defineDataAppRegistration(value: unknown): DataAppRegistration {
+  const registration = value as DataAppRegistration;
+  invariant(
+    !!registration &&
+      typeof registration === 'object' &&
+      !Array.isArray(registration),
+    'Expected app registration.'
+  );
+  invariant(
+    Object.keys(registration).every(key =>
+      ['queries', 'variables'].includes(key)
+    ),
+    'Unknown registration field.'
+  );
+  invariant(
+    !!registration.queries &&
+      typeof registration.queries === 'object' &&
+      !Array.isArray(registration.queries),
+    'Expected a query map.'
+  );
+  defineQueryVariables(registration.variables);
+  for (const [name, statement] of Object.entries(registration.queries)) {
     invariant(
-      operation.queries,
-      'Hosted operations must declare their query statements.'
+      !!name.trim() &&
+        name.length <= 256 &&
+        !['__proto__', 'constructor', 'prototype'].includes(name),
+      'Invalid query name.'
     );
-    for (const [name, definition] of Object.entries(
-      operation.variables ?? {}
-    )) {
-      invariant(
-        !Object.hasOwn(variables, name) ||
-          JSON.stringify(variables[name]) === JSON.stringify(definition),
-        `Conflicting variable: ${name}.`
-      );
-      variables[name] = definition;
-    }
-    for (const [name, statement] of Object.entries(operation.queries)) {
-      invariant(
-        !Object.hasOwn(queries, name) || queries[name] === statement,
-        `Conflicting query: ${name}.`
-      );
-      queries[name] = statement;
-      queryVariableNames(statement, operation.variables ?? {});
-    }
+    queryVariableNames(statement, registration.variables);
   }
-  defineQueryVariables(variables);
-  return { queries, variables };
+  return registration;
 }

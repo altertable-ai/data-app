@@ -5,7 +5,6 @@ import {
   defineQueryNames,
   defineQueryVariables,
   parseQueryVariables,
-  getDataAppRegistration,
   parseCount,
 } from '@altertable/data-app/contract';
 import {
@@ -24,9 +23,9 @@ import {
 const queryNames = defineQueryNames({
   sampleCountsByGroup: 'sample-counts-by-group',
 });
-const queryVariables = defineQueryVariables({
-  groupName: { type: 'STRING', default: '' },
-});
+const queryVariables = defineQueryVariables([
+  { name: 'groupName', nullable: false, type: 'STRING', default: '' },
+]);
 function parseSampleCounts(
   value: unknown
 ): { groupName: string; sampleCount: number }[] {
@@ -45,13 +44,6 @@ const operations = {
   sampleCountsByGroup: defineOperation({
     queryNames,
     variables: queryVariables,
-    queries: {
-      [queryNames.sampleCountsByGroup]: `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 3), ('Beta', 0))
-SELECT group_name, sample_count FROM sample_counts
-WHERE {{groupName}} = '' OR group_name = {{groupName}}
-ORDER BY group_name LIMIT 10`,
-    },
     input: value => parseQueryVariables(queryVariables, value),
     output: parseSampleCounts,
     checks: [
@@ -73,7 +65,6 @@ ORDER BY group_name LIMIT 10`,
     },
   }),
 };
-export const registration = getDataAppRegistration(operations);
 
 const appConfig: DataAppConfig = {
   title: 'Sample counts',
@@ -97,7 +88,7 @@ const { defineDataView, useView } = createDataHooks(
 const sampleCountsView = defineDataView({
   operation: 'sampleCountsByGroup',
   variables: {
-    groupName: queryVariable(queryVariables.groupName, {
+    groupName: queryVariable(queryVariables[0], {
       key: 'group',
       label: 'Group',
     }),

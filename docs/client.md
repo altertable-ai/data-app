@@ -45,14 +45,14 @@ Bundle apps pass their operation registry as a value:
 ```ts
 import { createDataClient } from '@altertable/data-app/client';
 
-// The app declares operations with queries and variables, as in the starter.
+// Operations refer to registered query IDs; the host stores their SQL separately.
 const client = createDataClient({ operations });
 const response = await client.query('activity', input);
 ```
 
 The client runs input parsing, operation logic, and output parsing in the browser.
 Operation policy bounds rows, duration, and response size and records query
-evidence. For operations with registered `queries`, each named query sends
+IDs. Each `query(id, values)` call sends
 `{ operation, variables, limit }` over `data:query`. `operation` is the existing
 query name, identifying one statement even when an operation runs several queries.
 Statement templates and variable definitions are submitted at app creation/update;
@@ -67,14 +67,14 @@ at compile time. Omitting `operations` preserves named HTTP/iframe operation del
 
 The host must implement the [registered query route](embed.md#registered-query-route)
 and enforce backend access and resource limits independently of browser policy.
-Cancellation uses the existing bridge cancellation protocol. SQL templates are
-visible in the bundle; `exposeSql` controls response evidence, not confidentiality.
+Cancellation uses the existing bridge cancellation protocol. SQL templates stay
+on the host and are absent from the bundle and registered query evidence.
 
 Legacy browser operations without registered statements still use the explicit
 `data:sql` route. Registered hosted apps must not expose that route. There is no
-fallback to raw SQL when registered execution fails. Local HTTP operations keep
-sending their operation input to Bun, whose Lakehouse adapter sends built SQL to
-the CLI proxy.
+fallback to raw SQL when registered execution fails. Local apps run the same
+browser-owned operations in an iframe; the local host forwards ID/value requests
+to Bun, which sends built statements to the CLI proxy over HTTP.
 
 ## Iframe transport
 

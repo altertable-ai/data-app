@@ -11,10 +11,10 @@ Read [AGENTS.md](https://github.com/altertable-ai/data-app/blob/main/AGENTS.md) 
 | Inject styles and mount React            | `src/main.tsx`                                 |
 | Configure local serving                  | `src/server.ts`                                |
 
-Declare `queries` and `variables` on each operation and execute with
-`query(id, values)`, using the same contract as hosted apps. Export the complete
-maps with `getDataAppRegistration(operations)`. Keep SQL in declarations; Bun
-builds statements for the CLI proxy. Share variable definitions with the UI in
-a browser-safe module and import operation types with `import type`.
+Keep the query map in `queries.json` and the variable list in `variables.json`.
+Each variable needs `name`, `type`, `nullable`, and `default`. App operations run in
+the iframe and call `query(id, values)` through `createDataClient({ operations })`.
+SQL and credentials stay in the local host. Do not import `queries.json` into the
+browser. The server loads registration and builds SQL for the CLI proxy's HTTP call.
 
 See [README.md](README.md) for setup and checks.

@@ -12,18 +12,20 @@ For execution details, see [browser-owned operations](client.md#browser-owned-op
 
 ## Create and update registration
 
-Declare every named statement and its frontend variable definitions with the
-[operation contract](contract.md#execute-named-queries). Use
-`getDataAppRegistration(operations)` to obtain the complete `queries` and
-`variables` maps. The single-file starter exports this as `registration`.
+Produce the browser source, a separate `queries.json` map, and a `variables.json`
+list following the [operation contract](contract.md#execute-named-queries).
+Each variable requires `name`, `type`, `nullable`, and `default`. Validate the
+metadata with `defineDataAppRegistration({ queries, variables })` on the host.
+SQL belongs only in the external query map; app code calls `query(id, values)`
+through `createDataClient({ operations })`. The starter supplies all three artifacts.
 
 Submit source, queries, and variables together for both creation and source
-updates. Treat the maps as complete replacements for the same app revision,
-including deleted entries and empty maps. Retrieve existing source and metadata
+updates. Treat the query map and variable list as complete replacements for the same app revision,
+including deleted entries and empty collections. Retrieve existing source and metadata
 before an edit. Validate the replacement source and registration before saving.
 Use the live create/update tool schema for argument names and required metadata.
 If the host lacks registration support, report that integration requirement;
-do not drop the maps or fall back to unrestricted SQL for a registered app.
+do not drop the registration or fall back to unrestricted SQL for a registered app.
 
 The backend must validate registration and enforce viewer permissions and query
 limits. The trusted host selects the app revision and uses the
@@ -34,18 +36,13 @@ not implemented by this package.
 
 ## Convert a local data app
 
-1. Combine the app's operations and parsers, data context, views, story,
-   CSV export, configuration, and browser entry into one `index.tsx`, following the
-   [single-file starter](../examples/starter-data-app/index.tsx).
-2. Replace the HTTP client with `createDataClient({ operations })`, using the
-   operation registry as a value. See [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps)
-   for execution through the host.
-3. Remove the Bun server, HTML, server adapters, credentials, and relative or
-   app-alias imports. Rewrite any operation that depends on server-only code
-   to use the operation's `query()` helper.
-4. Register the complete queries and variables with the source. Confirm the host can query the same catalogs, tables, and fields.
-   [Verify the app](app-authoring.md#verify-the-app) in the hosted runtime against
-   the local version's filters and findings.
+1. Combine the browser operations, parsers, views, story, and CSV export into the
+   [single-file starter](../examples/starter-data-app/index.tsx) format.
+2. Keep `createDataClient({ operations })` and `query(id, values)` unchanged.
+3. Remove local serving files and app-alias imports. Keep queries and variable
+   metadata separate from the browser source.
+4. Submit all three artifacts for the same revision. Confirm the host can access
+   the same catalogs and verify filters, results, export, and story.
 
 ## Preview in this repository
 

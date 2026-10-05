@@ -1,8 +1,4 @@
-import { connectionCheck, getDataAppRegistration } from "@altertable/data-app/contract";
+import { connectionCheck } from "@altertable/data-app/contract";
 
-/** Connectivity probe only: its successful query supplies no analytical result. Replace it with
- * bounded, validated operations that cover the questions the finished app will answer. */
+/** Browser-owned operation. Its SQL lives only in queries.json on the local host. */
 export const operations = { connection: connectionCheck() };
-
-/** Same query and variable metadata submitted when publishing a hosted app. */
-export const registration = getDataAppRegistration(operations);

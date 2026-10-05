@@ -2,7 +2,6 @@ import { expect, test } from 'bun:test';
 import { parseAppearance } from '@altertable/data-app/appearance';
 import {
   connectionCheck,
-  getDataAppRegistration,
   defineDateRangeContract,
   parseCount,
   parseDateRangeInput,
@@ -16,21 +15,19 @@ import { resolveDataView } from '@altertable/data-app/react';
 
 test('starter connection requires a successful bounded query', async () => {
   const query = connectionCheck();
-  expect(getDataAppRegistration({ connection: query })).toEqual({
-    queries: { 'connection-check': 'SELECT 1 AS connection_check' },
-    variables: {},
-  });
   const calls: unknown[] = [];
   const result = await query.run(
     {
       signal: new AbortController().signal,
       lakehouse: {
-        async queryAll(statement, options) {
+        async queryAll() {
+          throw new Error('Raw SQL is unavailable.');
+        },
+        async queryRegistered(name, variables, options) {
           calls.push({
-            statement,
             limit: options.limit,
-            name: options.name,
-            variables: options.variables,
+            name,
+            variables,
           });
 
           return { columns: [{ name: 'connection_check' }], rows: [[1]] };
@@ -42,7 +39,6 @@ test('starter connection requires a successful bounded query', async () => {
   expect(result).toBe(true);
   expect(calls).toEqual([
     {
-      statement: 'SELECT 1 AS connection_check',
       limit: 1,
       name: 'connection-check',
       variables: {},
@@ -58,6 +54,9 @@ test('starter connection requires a successful bounded query', async () => {
         signal: new AbortController().signal,
         lakehouse: {
           async queryAll() {
+            throw new Error('Raw SQL is unavailable.');
+          },
+          async queryRegistered() {
             throw new Error('No lakehouse access');
           },
         },

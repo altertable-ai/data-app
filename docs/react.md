@@ -340,10 +340,16 @@ Reuse the frontend variable types through `defineQueryVariables()` from
 `/contract`. Adapt a definition with `queryVariable()` from `/react`:
 
 ```ts
-const variables = defineQueryVariables({
-  country: { type: 'STRING', default: 'FR', options: ['FR', 'GB', 'US'] },
-});
-const country = queryVariable(variables.country, {
+const variables = defineQueryVariables([
+  {
+    name: 'country',
+    type: 'STRING',
+    nullable: false,
+    default: 'FR',
+    options: ['FR', 'GB', 'US'],
+  },
+]);
+const country = queryVariable(variables[0], {
   key: 'country',
   label: 'Country',
 });

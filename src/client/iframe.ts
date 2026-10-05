@@ -258,27 +258,23 @@ export function createIframeTransport({
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
-      queryAll(statement, { limit, signal, name, variables }) {
-        if (variables) {
-          if (!name) throw new Error('Registered queries need a name.');
-          const values = JSON.parse(
-            JSON.stringify(
-              Object.fromEntries(
-                Object.entries(variables).map(([key, binding]) => [
-                  key,
-                  binding.value,
-                ])
-              )
-            )
-          ) as Record<string, unknown>;
-          return registeredMessages
-            .request(
-              'data:query',
-              { operation: name, variables: values, limit },
-              { signal }
-            )
-            .catch(rethrowDataMessageError);
-        }
+      queryRegistered(name, variables, { limit, signal }) {
+        return registeredMessages
+          .request(
+            'data:query',
+            {
+              operation: name,
+              variables: JSON.parse(JSON.stringify(variables)) as Record<
+                string,
+                unknown
+              >,
+              limit,
+            },
+            { signal }
+          )
+          .catch(rethrowDataMessageError);
+      },
+      queryAll(statement, { limit, signal }) {
         return messages
           .request('data:sql', { statement, limit }, { signal })
           .catch(rethrowDataMessageError);

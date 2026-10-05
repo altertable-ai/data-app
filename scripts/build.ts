@@ -75,6 +75,12 @@ const worker = await Bun.build({
   },
 });
 
+const localHost = await Bun.build({
+  entrypoints: ['src/embed/local-host.ts'],
+  target: 'browser',
+  format: 'iife',
+});
+if (!localHost.success) throw new Error('Could not build local iframe host.');
 const results = [browser, worker];
 for (const [name, entry] of Object.entries({
   server: 'src/server/index.ts',
@@ -86,6 +92,10 @@ for (const [name, entry] of Object.entries({
       outdir: 'dist',
       target: 'bun',
       format: 'esm',
+      define: {
+        DATA_APP_BOOTSTRAP: JSON.stringify(await bootstrap.outputs[0]!.text()),
+        DATA_APP_LOCAL_HOST: JSON.stringify(await localHost.outputs[0]!.text()),
+      },
       external,
       naming: `${name}.[ext]`,
       sourcemap: 'external',

@@ -174,7 +174,7 @@ test('local starter mounts, queries its server, refreshes and retries a failed c
   let gate = new Promise<void>(resolve => {
     release = resolve;
   });
-  await page.route('**/api/data/connection', async route => {
+  await page.route('**/api/query', async route => {
     await gate;
     if (fail)
       await route.fulfill({
@@ -188,38 +188,43 @@ test('local starter mounts, queries its server, refreshes and retries a failed c
   const local = new URL(baseURL!);
   local.port = String(Number(local.port) + 2);
   await page.goto(local.href);
+  const app = page.frameLocator('iframe');
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'sandbox',
+    'allow-scripts'
+  );
   await expect(
-    page.getByRole('heading', { name: 'Checking connection…', exact: true })
+    app.getByRole('heading', { name: 'Checking connection…', exact: true })
   ).toBeVisible();
   release();
   gate = Promise.resolve();
   await expect(
-    page.getByRole('heading', { name: 'Connected', exact: true })
+    app.getByRole('heading', { name: 'Connected', exact: true })
   ).toBeVisible();
-  await expect(page.locator('style[data-altertable-styles]')).toHaveCount(1);
+  await expect(app.locator('style[data-altertable-styles]')).toHaveCount(1);
   fail = true;
-  await page
+  await app
     .getByRole('button', { name: 'Check connection', exact: true })
     .click();
   await expect(
-    page.getByText('An earlier query succeeded, but the latest check failed.', {
+    app.getByText('An earlier query succeeded, but the latest check failed.', {
       exact: false,
     })
   ).toBeVisible();
   fail = false;
-  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await app.getByRole('button', { name: 'Try again', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'Connected', exact: true })
+    app.getByRole('heading', { name: 'Connected', exact: true })
   ).toBeVisible();
   fail = true;
   await page.reload();
   await expect(
-    page.getByRole('heading', { name: 'Connection not verified', exact: true })
+    app.getByRole('heading', { name: 'Connection not verified', exact: true })
   ).toBeVisible();
   fail = false;
-  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await app.getByRole('button', { name: 'Try again', exact: true }).click();
   await expect(
-    page.getByRole('heading', { name: 'Connected', exact: true })
+    app.getByRole('heading', { name: 'Connected', exact: true })
   ).toBeVisible();
   await page.screenshot({
     path: test.info().outputPath('example.png'),

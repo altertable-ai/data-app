@@ -10,23 +10,31 @@ import {
   injectDataAppStyles,
   VariableValueSelector,
 } from '@altertable/data-app/react';
-const definitions = defineQueryVariables({
-  Text: { type: 'STRING', default: 'hello' },
-  Count: { type: 'INTEGER', default: 2 },
-  Fraction: { type: 'FLOAT', default: 1.5 },
-  Enabled: { type: 'BOOLEAN', default: false, nullable: true },
-  Interval: { type: 'INTERVAL', default: 'DAILY' },
-  Duration: {
+const definitions = defineQueryVariables([
+  { name: 'Text', nullable: false, type: 'STRING', default: 'hello' },
+  { name: 'Count', nullable: false, type: 'INTEGER', default: 2 },
+  { name: 'Fraction', nullable: false, type: 'FLOAT', default: 1.5 },
+  { name: 'Enabled', type: 'BOOLEAN', default: false, nullable: true },
+  { name: 'Interval', nullable: false, type: 'INTERVAL', default: 'DAILY' },
+  {
+    name: 'Duration',
     type: 'DURATION',
     default: { amount: 1, unit: 'WEEK' },
     nullable: true,
   },
-  Date: { type: 'DATETIME', default: new Date('2026-10-01T10:00:00Z') },
-  Period: {
+  {
+    name: 'Date',
+    nullable: false,
+    type: 'DATETIME',
+    default: new Date('2026-10-01T10:00:00Z'),
+  },
+  {
+    name: 'Period',
+    nullable: false,
     type: 'DATETIMERANGE',
     default: { from: new Date('2026-09-01T00:00:00Z'), to: null },
   },
-});
+]);
 function App() {
   const [values, setValues] = useState<Record<string, VariableValue | null>>(
     parseQueryVariables(definitions, {})
@@ -55,17 +63,19 @@ function App() {
         variable types.
       </p>
       <div style={{ display: 'grid', justifyItems: 'start', gap: 16 }}>
-        {Object.entries(definitions).map(([label, definition]) => (
-          <VariableValueSelector
-            key={label}
-            label={label}
-            definition={definition}
-            value={values[label]!}
-            onChange={value =>
-              setValues(previous => ({ ...previous, [label]: value }))
-            }
-          />
-        ))}
+        {definitions
+          .map(definition => [definition.name, definition] as const)
+          .map(([label, definition]) => (
+            <VariableValueSelector
+              key={label}
+              label={label}
+              definition={definition}
+              value={values[label]!}
+              onChange={value =>
+                setValues(previous => ({ ...previous, [label]: value }))
+              }
+            />
+          ))}
       </div>
       <pre
         data-testid="values"

@@ -875,20 +875,24 @@ test('registered queries send only their ID, JSON variable values and bounded li
     await import('@altertable/data-app/contract');
   const { bridge, receive, sent } = harness();
   try {
-    const variables = defineQueryVariables({
-      when: { type: 'DATETIME' },
-      unused: { type: 'STRING', default: '' },
-    });
+    const variables = defineQueryVariables([
+      {
+        name: 'when',
+        nullable: false,
+        default: new Date('2026-10-01T00:00:00Z'),
+        type: 'DATETIME',
+      },
+      { name: 'unused', nullable: false, type: 'STRING', default: '' },
+    ]);
     const operation = defineOperation({
       queryNames: { time: 'time' },
-      queries: { time: 'SELECT {{when}}' },
       variables,
       input: value => parseQueryVariables(variables, value),
       output: (value: unknown) => value,
       checks: [{ when: new Date('2026-10-01T00:00:00Z'), unused: '' }],
       policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
       run({ query }, input) {
-        return query('time', input);
+        return query('time', { when: input.when });
       },
     });
     const client = createDataClient({

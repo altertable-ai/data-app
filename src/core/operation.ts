@@ -84,6 +84,26 @@ function createOperationLakehouse(
   const queryIds: string[] = [];
   const queries: DisclosedQuery[] = [];
   const lakehouse: Lakehouse = {
+    async queryRegistered(name, values, options) {
+      if (!source.queryRegistered)
+        throw new Error('A registered query bridge is required.');
+      if (!Number.isSafeInteger(options.limit) || options.limit < 1)
+        throw new Error('Query needs a positive row limit.');
+      if (
+        !operation.queryNames ||
+        !Object.values(operation.queryNames).includes(name)
+      )
+        throw new Error('Unknown registered query name.');
+      const limit = Math.min(options.limit, operation.policy.maxQueryRows);
+      const result = await source.queryRegistered(name, values, {
+        limit,
+        signal: AbortSignal.any([signal, options.signal]),
+      });
+      if (result.rows.length > limit)
+        throw new Error('Result exceeds row limit.');
+      if (result.queryId) queryIds.push(result.queryId);
+      return result;
+    },
     async queryAll(statement, options) {
       if (!Number.isInteger(options.limit) || options.limit < 1)
         throw new Error('Query needs a positive row limit.');

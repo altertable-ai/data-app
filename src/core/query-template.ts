@@ -126,10 +126,12 @@ export function queryVariableNames(
   const names = new Set<string>();
   transform(statement, placeholder => {
     invariant(
-      Object.hasOwn(definitions, placeholder.name),
+      definitions.some(definition => definition.name === placeholder.name),
       `Undefined variable: ${placeholder.name}.`
     );
-    const type = definitions[placeholder.name]!.type;
+    const type = definitions.find(
+      definition => definition.name === placeholder.name
+    )!.type;
     invariant(
       !placeholder.quoted || type === 'INTERVAL',
       'Only INTERVAL placeholders may be quoted.'
@@ -201,12 +203,12 @@ export function buildQueryStatement(
   bindings: QueryVariableBindings,
   { now = new Date(), timeZone = 'UTC' }: { now?: Date; timeZone?: string } = {}
 ): string {
-  const definitions = Object.fromEntries(
-    Object.entries(bindings).map(([name, binding]) => [
-      name,
-      { type: binding.type },
-    ])
-  ) as QueryVariableDefinitions;
+  const definitions = Object.entries(bindings).map(([name, binding]) => ({
+    name,
+    type: binding.type,
+    nullable: binding.value === null,
+    default: binding.value,
+  })) as QueryVariableDefinitions;
   queryVariableNames(statement, definitions);
   function literal(value: string) {
     return `'${value.replaceAll("'", "''")}'`;

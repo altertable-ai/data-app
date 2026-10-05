@@ -33,6 +33,12 @@ export type DisclosedQuery = {
 
 /** Query interface supplied by a server adapter or an authorized iframe bridge. */
 export type Lakehouse = {
+  queryRegistered?(
+    this: void,
+    name: string,
+    values: Record<string, unknown>,
+    options: { limit: number; signal: AbortSignal }
+  ): Promise<QueryResult>;
   queryAll(
     statement: string,
     options: {
@@ -56,7 +62,6 @@ export type DataOperation<Input, Output> = {
   run: (context: OperationContext, input: Input) => Promise<Output>;
   checks: readonly Input[];
   queryNames?: Readonly<Record<string, string>>;
-  queries?: Readonly<Record<string, string>>;
   variables?: QueryVariableDefinitions;
   policy: {
     maxQueryRows: number;

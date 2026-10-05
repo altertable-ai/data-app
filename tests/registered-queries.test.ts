@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { rejects } from 'node:assert/strict';
 import { expect, test } from 'bun:test';
 import { Database } from 'bun:sqlite';
@@ -6,7 +9,7 @@ import {
   defineQueryNames,
   defineQueryVariables,
   parseQueryVariables,
-  getDataAppRegistration,
+  defineDataAppRegistration,
   buildQueryStatement,
   queryVariableNames,
   registeredQueryRoute,
@@ -15,34 +18,32 @@ import {
 } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
 import { createRegisteredQueryHandler } from '@altertable/data-app/embed';
-import { createDataHandler } from '@altertable/data-app/server';
-import { localLakehouse } from '@altertable/data-app/server/bun';
+import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { queryVariable } from '@altertable/data-app/react';
 
 const names = defineQueryNames({ search: 'find-person' });
-const variables = defineQueryVariables({
-  name: { type: 'STRING', default: '' },
-  count: { type: 'INTEGER', default: 10 },
-});
+const variables = defineQueryVariables([
+  { name: 'name', nullable: false, type: 'STRING', default: '' },
+  { name: 'count', nullable: false, type: 'INTEGER', default: 10 },
+]);
 const operation = defineOperation({
   queryNames: names,
-  queries: { [names.search]: 'SELECT {{name}} AS name' },
   variables,
   input: value => parseQueryVariables(variables, value),
   output: (value: unknown) => value,
   checks: [{ name: 'Alice', count: 10 }],
   policy: { maxQueryRows: 5, maxDurationMs: 1000, exposeSql: true },
   async run({ query }, input) {
-    return query(names.search, input);
+    return query(names.search, { name: input.name });
   },
 });
 
-test('local HTTP clients send IDs and values, and Bun expands registered queries for the CLI proxy', async () => {
-  const registration = getDataAppRegistration({ search: operation });
-  expect(registration).toEqual({
-    queries: { 'find-person': 'SELECT {{name}} AS name' },
-    variables,
-  });
+const registration = defineDataAppRegistration({
+  queries: { [names.search]: 'SELECT {{name}} AS name' },
+  variables,
+});
+
+test('browser-owned operations resolve separate registration through the local HTTP proxy', async () => {
   const database = new Database(':memory:');
   const statements: string[] = [];
   const source = localLakehouse(
@@ -64,25 +65,23 @@ test('local HTTP clients send IDs and values, and Bun expands registered queries
       );
     }) as typeof fetch
   );
-  const operations = { search: operation };
-  const handler = createDataHandler(operations, async () => ({
-    lakehouse: source,
-    canDiscloseSql: true,
-  }));
-  const requests: { path: string; values: unknown }[] = [];
-  const server = Bun.serve({
-    hostname: '127.0.0.1',
-    port: 0,
-    async fetch(request) {
-      requests.push({
-        path: new URL(request.url).pathname,
-        values: await request.clone().json(),
-      });
-      return handler(request);
+  const execute = createRegisteredQueryHandler(
+    registration,
+    async () => source
+  );
+  const requests: unknown[] = [];
+  const client = createDataClient({
+    operations: { search: operation },
+    lakehouse: {
+      async queryAll() {
+        throw new Error('Raw SQL is unavailable.');
+      },
+      async queryRegistered(operation, variables, { limit, signal }) {
+        const query = { operation, variables, limit };
+        requests.push(query);
+        return execute(query, { signal });
+      },
     },
-  });
-  const client = createDataClient<typeof operations>({
-    endpoint: new URL('/api/data', server.url).href,
   });
   try {
     const value = "Robert'); DROP TABLE people; --\\";
@@ -94,24 +93,11 @@ test('local HTTP clients send IDs and values, and Bun expands registered queries
     });
     expect(response.queryIds).toEqual(['q1']);
     expect(requests).toEqual([
-      { path: '/api/data/search', values: { name: value, count: 10 } },
+      { operation: 'find-person', variables: { name: value }, limit: 5 },
     ]);
     expect(statements[0]).not.toContain('{{');
-    for (const [id, values, status] of [
-      ['search', { name: 42 }, 400],
-      ['search', { name: '', statement: 'SELECT 2' }, 400],
-      ['unknown', {}, 404],
-    ] as const) {
-      const rejected = await fetch(new URL(`/api/data/${id}`, server.url), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(values),
-      });
-      expect(rejected.status).toBe(status);
-    }
     expect(statements).toHaveLength(1);
   } finally {
-    await server.stop(true);
     database.close();
   }
 });
@@ -121,15 +107,12 @@ test('registered host uses trusted definitions, validates values, and does not a
   const router = createMessageRouter(
     { 'data:query': registeredQueryRoute },
     {
-      'data:query': createRegisteredQueryHandler(
-        getDataAppRegistration({ search: operation }),
-        async () => ({
-          async queryAll(statement) {
-            calls++;
-            return { columns: [{ name: 'name' }], rows: [[statement]] };
-          },
-        })
-      ),
+      'data:query': createRegisteredQueryHandler(registration, async () => ({
+        async queryAll(statement) {
+          calls++;
+          return { columns: [{ name: 'name' }], rows: [[statement]] };
+        },
+      })),
     }
   );
   function dispatch(payload: unknown) {
@@ -213,10 +196,17 @@ test('SQL helper behavior matches platform null and range semantics', () => {
 });
 
 test('frontend variable shapes survive URL/JSON round trips and reject malformed values', () => {
-  const definitions = defineQueryVariables({
-    count: { type: 'INTEGER', default: 2 },
-    date: { type: 'DATETIME', default: new Date('2026-09-01T00:00:00Z') },
-    range: {
+  const definitions = defineQueryVariables([
+    { name: 'count', nullable: false, type: 'INTEGER', default: 2 },
+    {
+      name: 'date',
+      nullable: false,
+      type: 'DATETIME',
+      default: new Date('2026-09-01T00:00:00Z'),
+    },
+    {
+      name: 'range',
+      nullable: false,
       type: 'DATETIMERANGE',
       default: {
         from: {
@@ -226,23 +216,21 @@ test('frontend variable shapes survive URL/JSON round trips and reject malformed
         to: null,
       },
     },
-    bool: { type: 'BOOLEAN', default: false },
-  });
+    { name: 'bool', nullable: false, type: 'BOOLEAN', default: false },
+  ]);
   const parsed = parseQueryVariables(
     definitions,
     JSON.parse(
       JSON.stringify(
-        Object.fromEntries(
-          Object.entries(definitions).map(([key, def]) => [key, def.default])
-        )
+        Object.fromEntries(definitions.map(def => [def.name, def.default]))
       )
     )
   );
   expect(parsed.date).toBeInstanceOf(Date);
-  expect(parsed.range.from).toEqual(definitions.range.default.from);
+  expect(parsed.range.from).toEqual(definitions[2].default.from);
   expect(() => parseQueryVariables(definitions, { count: '2' })).toThrow();
   expect(() => parseQueryVariables(definitions, { bool: 'false' })).toThrow();
-  const variable = queryVariable(definitions.date, { key: 'date' });
+  const variable = queryVariable(definitions[1], { key: 'date' });
   const next = new Date('2026-10-01T00:00:00Z');
   expect(
     variable.read(new URLSearchParams({ date: variable.write(next).date! }))
@@ -267,25 +255,113 @@ test('relative dates use one clock and clamp month offsets', () => {
 
 test('variable options validate canonical dates, uniqueness and explicit nullability', () => {
   const definition = {
+    name: 'period',
+    nullable: false,
     type: 'DATETIMERANGE',
     default: { from: new Date('2026-09-01T00:00:00Z') },
     options: [{ from: new Date('2026-09-01T00:00:00Z') }],
   } as const;
-  const definitions = defineQueryVariables({ period: definition });
+  const definitions = defineQueryVariables([definition]);
   expect(parseQueryVariables(definitions, {}).period).toEqual({
     from: new Date('2026-09-01T00:00:00Z'),
     to: null,
   });
   expect(() =>
-    defineQueryVariables({ name: { type: 'STRING', options: ['A', 'A'] } })
+    defineQueryVariables([
+      {
+        name: 'name',
+        nullable: false,
+        default: '',
+        type: 'STRING',
+        options: ['A', 'A'],
+      },
+    ])
   ).toThrow('unique');
   expect(() =>
-    defineQueryVariables({ name: { type: 'STRING', default: null } })
+    defineQueryVariables([
+      // @ts-expect-error runtime validation also rejects a null default when not nullable
+      { name: 'name', nullable: false, type: 'STRING', default: null },
+    ])
   ).toThrow();
   expect(() =>
     parseQueryVariables(
-      { day: { type: 'DATETIME' } },
+      [
+        {
+          name: 'day',
+          type: 'DATETIME',
+          nullable: false,
+          default: new Date('2026-01-01T00:00:00Z'),
+        },
+      ],
       { day: '2026-02-31T00:00:00Z' }
     )
   ).toThrow();
+});
+
+test('registration requires named variables with explicit nullability and typed defaults', () => {
+  const valid = {
+    name: 'country',
+    type: 'STRING',
+    nullable: false,
+    default: 'FR',
+  };
+  for (const invalid of [
+    { type: 'STRING', nullable: false, default: '' },
+    { name: 'country', type: 'STRING', default: '' },
+    { name: 'country', type: 'STRING', nullable: false },
+    { ...valid, default: null },
+    { ...valid, default: 12 },
+    { ...valid, name: '__proto__' },
+  ]) {
+    expect(() =>
+      defineDataAppRegistration(
+        JSON.parse(JSON.stringify({ queries: {}, variables: [invalid] }))
+      )
+    ).toThrow();
+  }
+  expect(() =>
+    defineDataAppRegistration(
+      JSON.parse(JSON.stringify({ queries: {}, variables: [valid, valid] }))
+    )
+  ).toThrow();
+  expect(() =>
+    defineDataAppRegistration(
+      JSON.parse(JSON.stringify({ queries: {}, variables: { country: valid } }))
+    )
+  ).toThrow();
+  const nullable = defineQueryVariables([
+    { name: 'country', type: 'STRING', nullable: true, default: null },
+  ]);
+  expect(parseQueryVariables(nullable, {})).toEqual({ country: null });
+  expect(() =>
+    defineDataAppRegistration({
+      queries: { count: 'SELECT {{missing}}' },
+      variables: nullable,
+    })
+  ).toThrow();
+});
+
+test('local serving rejects SQL registration imports into the iframe bundle', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'registered-app-boundary-'));
+  try {
+    await writeFile(
+      join(directory, 'queries.json'),
+      JSON.stringify({ count: 'SELECT 1' })
+    );
+    await writeFile(
+      join(directory, 'app.ts'),
+      "import queries from './queries.json'; console.log(queries);"
+    );
+    await rejects(
+      serveLocalApp({
+        entrypoint: join(directory, 'app.ts'),
+        registration: { queries: { count: 'SELECT 1' }, variables: [] },
+        title: 'Test',
+        port: 0,
+      }),
+      /server-owned/
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 });

@@ -7,13 +7,15 @@ import { Button } from '@/src/react/ui/Button';
 import { DataApp } from '@/src/react/ui/DataApp';
 import type { DataContext } from '@/src/react/ui/data-context';
 
-const client = /* @__PURE__ */ createDataClient();
+const client = /* @__PURE__ */ createDataClient({
+  operations: { connection: connectionCheck() },
+});
 const { useDataQuery } = /* @__PURE__ */ createDataHooks<{
   connection: ReturnType<typeof connectionCheck>;
 }>(client);
 
 /** Query-backed connection state and next steps for a newly created app. Mount within
- * `DataAppProvider` and register `connection: connectionCheck()` on the server. */
+ * `DataAppProvider`; the host registers the connection-check statement separately. */
 export function GettingStarted({
   config,
   dataContext,

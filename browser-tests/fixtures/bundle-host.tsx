@@ -1,3 +1,4 @@
+import starterQueries from '@/examples/starter-data-app/queries.json';
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -137,14 +138,15 @@ function Host() {
           'export:zip': downloadExport,
           'data:query': createRegisteredQueryHandler(
             {
-              queries: {
-                'sample-counts-by-group': `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 3), ('Beta', 0))
-SELECT group_name, sample_count FROM sample_counts
-WHERE {{groupName}} = '' OR group_name = {{groupName}}
-ORDER BY group_name LIMIT 10`,
-              },
-              variables: { groupName: { type: 'STRING', default: '' } },
+              queries: starterQueries,
+              variables: [
+                {
+                  name: 'groupName',
+                  type: 'STRING',
+                  nullable: false,
+                  default: '',
+                },
+              ],
             },
             async () => ({
               async queryAll(statement, { limit, signal }) {

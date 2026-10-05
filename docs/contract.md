@@ -7,10 +7,32 @@ should import their operation types using `import type`.
 
 ## Execute named queries
 
-Keep `defineOperation()` and `defineQueryNames()` as the operation boundary. An
-operation can run several named SQL queries and parse their results. For both
-local and hosted apps, declare their statements in `queries` and their shared
-variable definitions in `variables`. The existing query name identifies each registered statement.
+Produce three artifacts for both local and hosted apps:
+
+- App source: browser-owned operations, parsing, views, and controls.
+- `queries.json`: an object mapping each query ID to its SQL template.
+- `variables.json`: a list of definitions with required `name`, `type`, `nullable`,
+  and `default` fields; `options` is optional.
+
+For example, the host stores this registration separately from the app bundle:
+
+```json
+{
+  "queries": {
+    "event-count": "SELECT count(*) FROM events WHERE country = {{country}}"
+  },
+  "variables": [
+    { "name": "country", "type": "STRING", "nullable": false, "default": "FR" }
+  ]
+}
+```
+
+Validate the external payload with `defineDataAppRegistration({ queries, variables })`.
+It rejects invalid definitions, duplicate names, and undefined SQL placeholders.
+Keep the query map on the trusted host/server. Do not import it into app code.
+Variable definitions can also appear in app code to type inputs and build controls.
+
+App code references query IDs and passes values:
 
 ```ts
 import {
@@ -18,65 +40,50 @@ import {
   defineQueryNames,
   defineQueryVariables,
   parseQueryVariables,
-  getDataAppRegistration,
+  parseCount,
 } from '@altertable/data-app/contract';
 
-const queries = defineQueryNames({ activity: 'feature-activity' });
-const variables = defineQueryVariables({
-  feature: { type: 'STRING', default: '' },
-  interval: { type: 'INTERVAL', default: 'DAILY' },
-});
-const activity = defineOperation({
-  queryNames: queries,
-  variables,
-  queries: {
-    [queries.activity]: `
-      SELECT date_trunc('{{interval}}', occurred_at) AS day, count(*) AS count
-      FROM events
-      WHERE {{feature}} = '' OR feature = {{feature}}
-      GROUP BY 1 ORDER BY 1`,
-  },
-  input: value => parseQueryVariables(variables, value),
-  output: parseActivity,
-  checks: [{ feature: '', interval: 'DAILY' }],
-  policy: { maxQueryRows: 100, maxDurationMs: 15000, exposeSql: true },
-  async run({ query }, input) {
-    const result = await query(queries.activity, input);
-    return parseActivityRows(result);
-  },
-});
-const operations = { activity };
-const registration = getDataAppRegistration(operations);
+const queryNames = defineQueryNames({ count: 'event-count' });
+const variables = defineQueryVariables([
+  { name: 'country', type: 'STRING', nullable: false, default: 'FR' },
+]);
+const operations = {
+  eventCount: defineOperation({
+    queryNames,
+    variables,
+    input: value => parseQueryVariables(variables, value),
+    output: parseCount,
+    checks: [{ country: 'FR' }],
+    policy: { maxQueryRows: 1, maxDurationMs: 15000 },
+    async run({ query }, input) {
+      const result = await query(queryNames.count, { country: input.country });
+      return parseCount(result.rows[0]?.[0]);
+    },
+  }),
+};
 ```
 
-The app supplies `parseActivity()` and `parseActivityRows()`. `query()` inherits the
-operation's limits and cancellation signal; `{ limit }` can lower a query's row
-bound. Names are checked by TypeScript and at runtime. A registered query accepts
-variable values, never replacement SQL. The runtime derives dependencies from
-placeholders and sends only the referenced variables. An operation can pass its
-shared input to several queries without declaring dependencies twice.
+Use `createDataClient({ operations })` in both environments. `query(id, values)`
+sends `{ operation, variables, limit }` through the installed `postMessage` bridge.
+The host looks up the SQL and validates values using its saved registration.
+Pass the variables needed by that query; omitted values use their defaults.
+Unrelated or unknown values are rejected by the host. An operation may execute
+several named queries, but the bridge's `operation` field identifies one statement.
 
-`getDataAppRegistration()` returns `{ queries, variables }`, merging the operation
-definitions and rejecting conflicting names. **For hosted creation and updates,
-submit both complete maps alongside the source for the same app revision.** Include
-empty maps when appropriate; updates replace the maps, including removals. The
-host/backend stores and validates them through its create/update API. Registration
-is not sent by the running iframe. See [hosted authoring](hosted-apps.md).
-
-Local apps use the same declarations and `query(name, values)` calls. Bun loads
-them from app source and constructs SQL before calling the CLI proxy; no hosted
-create/update call is needed. HTTP browser modules import operation types with
-`import type`; hosted apps import their operation registry as a value. Existing
-local operations using `query(name, statement)` remain supported for compatibility.
+Submit app source, the complete query map, and the complete variable list together
+on hosted creation and every source update, including removals and empty collections.
+Local Bun serving reads the two JSON files and runs the same iframe code and bridge.
+See [hosted authoring](hosted-apps.md) and [local authoring](local-data-apps.md).
+Existing server-operation HTTP APIs remain available for custom integrations.
 
 ## Query variables
 
 The supported types and value shapes follow Altertable's frontend variable
 contract. `VariableValue<Type>` maps each type to its value;
-`QueryVariableValues<typeof variables>` derives an operation input. Definitions
-accept `type`, `default`, `nullable`, and `options`. Options must be unique and constrain allowed
+`QueryVariableValues<typeof variables>` derives an operation input keyed by variable name. Each definition requires `name`, `type`, `nullable`, and `default`;
+`options` is optional. Names must be unique. Options must be unique and constrain allowed
 values. Missing values use the declared default; explicit null requires
-`nullable: true`. Without a default, a value is required. Runtime parsing rejects
+`nullable: true`. A default must be a valid value for its type, or null when nullable is true. Runtime parsing rejects
 unknown names, malformed shapes, non-finite numbers, and numeric/boolean strings.
 Custom types and SQL fragments are not supported.
 
@@ -137,9 +144,8 @@ with Monday as the start of week. `buildQueryStatement()` accepts an explicit
 `timeZone` and `now` for other server contexts. Configure the hosted backend with
 the same timezone when comparing local and hosted results.
 
-Template evidence contains the registered statement. The operation response keeps
-the exact input and backend query IDs; the iframe does not claim to know the final
-SQL produced by the hosted backend. Raw local statement evidence is unchanged.
+Registered operation responses contain backend query IDs and the original input.
+SQL is kept on the host and is absent from iframe messages and query evidence.
 
 ## Shared date ranges
 

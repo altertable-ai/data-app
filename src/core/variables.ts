@@ -337,7 +337,7 @@ export function dateRangeVariable({
 export type QueryVariable<
   Definition extends QueryVariableDefinition = QueryVariableDefinition,
 > = AppVariable<
-  QueryVariableValues<{ value: Definition }>['value'],
+  QueryVariableValues<readonly [Definition]>[Definition['name']],
   'query'
 > & { definition: Definition };
 
@@ -350,7 +350,7 @@ export function queryVariable<const Definition extends QueryVariableDefinition>(
     history = 'push',
   }: { key: string; label?: string; history?: HistoryMode }
 ): QueryVariable<Definition> {
-  defineQueryVariables({ value: definition });
+  defineQueryVariables([definition]);
   const defaultValue = parseQueryVariable(
     definition,
     undefined
