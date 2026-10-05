@@ -79,8 +79,17 @@ validation. It stays outside required checks because third-party availability an
 rate limits can cause failures unrelated to a change.
 
 For browser changes, run `bash scripts/install-test-browser.sh` once, then
-`bun run test:browser`. Preview UI examples at `/gallery` with
-`bun browser-tests/server.ts`.
+`bun run test:browser`.
+
+Run `bun run dev` to preview UI examples at `http://127.0.0.1:27418/gallery`
+and a playground at `/playground` (`dev/playground.tsx`, querying the demo
+tables `scripts/dev.ts` seeds). It builds once, then rebuilds `dist` when `src`
+changes; open pages reload on package, fixture, and playground edits. Restart it after changing
+`browser-tests/server.ts`; rerun `bun run build` to refresh declarations. Add `?delay=2000` to a host page URL
+to delay its SQL responses and inspect loading states. It needs Docker: SQL runs
+against a mocked Altertable API
+([altertable-mock](https://github.com/altertable-ai/altertable-mock), DuckDB)
+started with Testcontainers and stopped on exit. Browser tests keep fixtures.
 
 Use Conventional Commits and describe behavior changes and verification in PRs.
 Flag breaking API changes. Release Please owns `CHANGELOG.md`; see

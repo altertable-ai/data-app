@@ -15,10 +15,12 @@ import {
   createSqlQueryHandler,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
+import '@/browser-tests/fixtures/dev-reload';
+const appPreview = ['/starter-data-app', '/playground'].includes(
+  location.pathname
+);
 const response = await fetch(
-  location.pathname === '/starter-data-app'
-    ? '/__test/starter-data-app'
-    : '/__test/bundle'
+  appPreview ? `/__test${location.pathname}` : '/__test/bundle'
 );
 const javascript = await response.text();
 
@@ -36,7 +38,6 @@ function Host() {
   const [broken, setBroken] = useState(
     new URLSearchParams(location.search).has('broken')
   );
-  const starterPreview = location.pathname === '/starter-data-app';
   const urlMode = new URLSearchParams(location.search).has('url');
   const timeout = new URLSearchParams(location.search).has('timeout');
   // Extra attributes can still arrive from JavaScript callers or spread objects.
@@ -47,7 +48,7 @@ function Host() {
       : 'fullscreen *',
     allowFullScreen: true,
     className: 'app-frame',
-    ...(starterPreview
+    ...(appPreview
       ? {
           style: { display: 'block', width: '100%', height: '80vh', border: 0 },
         }

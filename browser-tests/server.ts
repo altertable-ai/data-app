@@ -1,8 +1,9 @@
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
-import { serveLocalApp } from '@altertable/data-app/server/bun';
+import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
 import starterConfig from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
+import { watch } from 'node:fs';
 import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
 import gallery from '@/browser-tests/fixtures/gallery.html';
@@ -36,32 +37,86 @@ async function bundle(entry: string) {
   return `const style = document.createElement('style'); style.textContent = ${JSON.stringify(css)}; document.head.append(style);\n${javascript}`;
 }
 
+const dev = process.env.DATA_APP_DEV === '1';
+
+/** Bundle once for tests; in development, rebundle on each request so edits apply on reload. */
+async function bundled(entry: string) {
+  const initial = await bundle(entry);
+  return () => (dev ? bundle(entry) : Promise.resolve(initial));
+}
+
+/** Pages reload when sources outside their own module graph change. */
+function watchForReload(paths: string[]) {
+  const clients = new Set<ReadableStreamDefaultController<string>>();
+  let pending: ReturnType<typeof setTimeout> | undefined;
+  for (const path of paths)
+    watch(new URL(path, import.meta.url).pathname, { recursive: true }, () => {
+      clearTimeout(pending);
+      pending = setTimeout(() => {
+        for (const client of clients) client.enqueue('data: reload\n\n');
+      }, 100);
+    });
+
+  return (request: Request) =>
+    new Response(
+      new ReadableStream<string>({
+        start(client) {
+          clients.add(client);
+          request.signal.addEventListener('abort', () =>
+            clients.delete(client)
+          );
+        },
+      }),
+      {
+        headers: {
+          'content-type': 'text/event-stream',
+          'cache-control': 'no-cache',
+        },
+      }
+    );
+}
+
 // Exercise the published single-file deployment without rebundling it.
 const { default: worker } = (await import(
   import.meta.resolve('@altertable/data-app/worker')
 )) as typeof import('@/src/worker');
-const app = await bundle('./fixtures/bundle-app.tsx');
-const hostedStarterBundle = await bundle(
-  '../examples/starter-data-app/index.tsx'
+const app = await bundled('./fixtures/bundle-app.tsx');
+// Tests exercise the hosted starter; `bun run dev` serves the playground, which
+// queries the demo tables it seeds into the mocked API.
+const hostedAppPath = dev ? '/playground' : '/starter-data-app';
+const hostedAppBundle = await bundled(
+  dev ? '../dev/playground.tsx' : '../examples/starter-data-app/index.tsx'
 );
+const reloadEvents =
+  dev &&
+  watchForReload([
+    '../dev',
+    './fixtures/bundle-app.tsx',
+    './fixtures/bridge-frame.ts',
+  ]);
 const fixtureDatabase = new Database(':memory:');
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
-process.env.ALTERTABLE_DATA_PROXY_URL = `http://127.0.0.1:${port}/__test/proxy`;
-process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'local-test-fixture';
-process.env.NODE_ENV = 'production';
+// `bun run dev` provides a mocked Altertable API; tests keep deterministic fixtures.
+const mockApi =
+  dev && process.env.ALTERTABLE_API_BASE ? localLakehouse() : null;
+if (!mockApi) {
+  process.env.ALTERTABLE_DATA_PROXY_URL = `http://127.0.0.1:${port}/__test/proxy`;
+  process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'local-test-fixture';
+}
+if (!dev) process.env.NODE_ENV = 'production';
 serveLocalApp({
   page: starterPage,
   operations: starterOperations,
   title: starterConfig.title,
   port: port + 2,
 });
-const urlApp = await bundle('./fixtures/bridge-frame.ts');
+const urlApp = await bundled('./fixtures/bridge-frame.ts');
 Bun.serve({
   hostname: '127.0.0.1',
   port: port + 1,
-  fetch() {
+  async fetch() {
     return new Response(
-      `<!doctype html><html data-parent-origin="http://127.0.0.1:${port}"><body><p id="location"></p><p id="result"></p><button id="query">Query</button><button id="filter">Last 7 days</button><script>${urlApp.replaceAll('</script', '<\\/script')}</script></body></html>`,
+      `<!doctype html><html data-parent-origin="http://127.0.0.1:${port}"><body><p id="location"></p><p id="result"></p><button id="query">Query</button><button id="filter">Last 7 days</button><script>${(await urlApp()).replaceAll('</script', '<\\/script')}</script></body></html>`,
       { headers: { 'content-type': 'text/html' } }
     );
   },
@@ -69,7 +124,7 @@ Bun.serve({
 Bun.serve({
   hostname: '127.0.0.1',
   port,
-  development: false,
+  development: dev && { hmr: true },
   routes: {
     '/skeleton': skeleton,
     '/gallery': gallery,
@@ -80,14 +135,18 @@ Bun.serve({
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,
-    '/starter-data-app': bundleHost,
+    [hostedAppPath]: bundleHost,
   },
-  async fetch(request) {
+  async fetch(request, server) {
     const path = new URL(request.url).pathname;
     if (path === '/') return new Response('Embedding test server');
-    if (path === '/__test/starter-data-app')
-      return new Response(hostedStarterBundle);
-    if (path === '/__test/bundle') return new Response(app);
+    if (reloadEvents && path === '/__dev/reload') {
+      server.timeout(request, 0);
+      return reloadEvents(request);
+    }
+    if (path === `/__test${hostedAppPath}`)
+      return new Response(await hostedAppBundle());
+    if (path === '/__test/bundle') return new Response(await app());
     if (path === '/__test/silent')
       return new Response('<!doctype html><body>Silent frame</body>', {
         headers: { 'content-type': 'text/html' },
@@ -120,10 +179,33 @@ Bun.serve({
       );
     }
     if (path === '/api/sql') {
+      const delay = dev
+        ? Number(
+            new URL(
+              request.headers.get('referer') ?? request.url
+            ).searchParams.get('delay')
+          )
+        : 0;
+      if (delay > 0) await Bun.sleep(Math.min(delay, 30_000));
       const query = (await request.json()) as {
         statement: string;
         limit: number;
       };
+      if (mockApi) {
+        try {
+          const { columns, rows, queryId } = await mockApi.queryAll(
+            query.statement,
+            { limit: query.limit, signal: request.signal }
+          );
+          return Response.json({ columns, rows, queryId });
+        } catch (error) {
+          console.error('Mocked Altertable API query failed:', error);
+          return Response.json(
+            { error: error instanceof Error ? error.message : String(error) },
+            { status: 502 }
+          );
+        }
+      }
       if (
         query.statement.trim().startsWith('WITH sample_counts(') &&
         query.limit === 10
