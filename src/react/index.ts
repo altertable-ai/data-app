@@ -262,3 +262,5 @@ export type {
   MetricReading,
   MetricValues,
 } from '@/src/core/reading';
+
+export type { WidgetInsight } from '@/src/react/ui/WidgetInsight';

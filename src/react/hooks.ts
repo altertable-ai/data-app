@@ -332,6 +332,7 @@ export function createDataHooks<Operations extends DataOperations>(
       refresh: request.refresh,
       queries: request.queries,
       empty: definition.empty,
+      date: definition.date?.input,
       controls: variables.controls,
       variables,
     };

@@ -81,7 +81,7 @@ export function DataSection<Data, Input>({
   result,
   children,
   empty,
-  loading,
+  loading = <ContentSkeleton variant="panel" />,
   error,
   label,
   notice = 'inline',
@@ -96,7 +96,7 @@ export function DataSection<Data, Input>({
       aria-label={label}
       notice={notice}
       dimOnUpdate={dimOnUpdate}
-      loading={loading ?? <ContentSkeleton variant="panel" />}
+      loading={loading}
       empty={<EmptyState {...empty} />}
       error={cause => {
         const presentation = errorPresentation(cause);

@@ -18,11 +18,15 @@ import {
   textVariable,
   createDataContext,
   ComparisonVisual,
+  MetricWidget,
   VisualizationWidget,
   TableWidget,
   WidgetViewTabs,
   PresentStory,
   DataApp,
+  DataSection,
+  type DataView,
+  type DataReading,
 } from '@altertable/data-app/react';
 
 import { storySteps } from '@/src/react/ui/story';
@@ -82,6 +86,207 @@ const view = defineDataView({
   empty: { title: 'No actions' },
 });
 
+test('an explicit null loading layout does not restore the generic panel', () => {
+  const html = renderToStaticMarkup(
+    <DataSection
+      result={{ view: { kind: 'loading' }, refetch() {} }}
+      empty={{ title: 'No results' }}
+      loading={null}
+    >
+      {() => <p>Ready</p>}
+    </DataSection>
+  );
+  expect(html).not.toContain('altertable-content-skeleton');
+  expect(html).not.toContain('Ready');
+});
+
+test('inline app content runs for pending or displayed results and inherits comparison dates', () => {
+  const frame = { location: new URL('https://app.example.com') };
+  Object.assign(frame, { top: frame });
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: frame,
+  });
+  let renders = 0;
+  let selectors = 0;
+  const input = calendar.request(
+    { start: '2026-03-10', end: '2026-03-12' },
+    true
+  );
+  const data = { current: 12, previous: 10, rows: ['Insights'] };
+  function render(state: DataView<Data, DateRangeRequest>) {
+    return renderToStaticMarkup(
+      <DataApp
+        config={{
+          title: 'Activity',
+          scope: { organization: 'a', environment: 'b' },
+          appearance: {},
+        }}
+        dataContext={context}
+        request={{
+          view: state,
+          refetch() {},
+          empty: { title: 'No actions' },
+          date: value => value,
+        }}
+        story={() => []}
+        csvExport={({ data }) => ({
+          filename: 'actions',
+          tables: [
+            { name: 'Actions', columns: ['Count'], rows: [[data.current]] },
+          ],
+        })}
+      >
+        {result => {
+          renders++;
+          const scope = result.select((_, input) => {
+            selectors++;
+            return input.range.start;
+          });
+          return (
+            <>
+              <h2>Activity overview</h2>
+              <p>{scope.loading ? 'Pending scope' : scope.value}</p>
+              <MetricWidget
+                metric={actions}
+                reading={result.metric(data => ({
+                  current: data.current,
+                  previous: data.previous,
+                }))}
+              />
+            </>
+          );
+        }}
+      </DataApp>
+    );
+  }
+  try {
+    const pending = render({ kind: 'loading' });
+    expect(pending).toContain('Activity overview');
+    expect(pending).toContain('Pending scope');
+    expect(selectors).toBe(0);
+    expect(renders).toBe(1);
+    const ready = render({ kind: 'ready', data, input });
+    expect(ready).toContain('20.0%');
+    expect(ready).toContain(input.range.start);
+    expect(selectors).toBe(1);
+    expect(renders).toBe(2);
+    for (const kind of ['updating', 'stale-error'] as const) {
+      const html = render({
+        kind,
+        data,
+        displayedInput: input,
+        requestedInput: calendar.request(
+          { start: '2026-03-13', end: '2026-03-15' },
+          true
+        ),
+        error: new Error('Unavailable'),
+        message: 'Showing previous results.',
+      });
+      expect(html).toContain(input.range.start);
+      expect(html).toContain('20.0%');
+      expect(html).not.toContain('Pending scope');
+    }
+    expect(renders).toBe(4);
+    const reusable = view.content(result => (
+      <MetricWidget
+        metric={actions}
+        reading={result.metric(data => ({
+          current: data.current,
+          previous: data.previous,
+        }))}
+      />
+    ));
+    function renderCustom(
+      state: DataView<Data, DateRangeRequest>,
+      loading = reusable.loading
+    ) {
+      return renderToStaticMarkup(
+        <DataApp
+          config={{
+            title: 'Activity',
+            scope: { organization: 'a', environment: 'b' },
+            appearance: {},
+          }}
+          dataContext={context}
+          request={{
+            view: state,
+            refetch() {},
+            empty: { title: 'No actions' },
+          }}
+          story={() => []}
+          csvExport={({ data }) => ({
+            filename: 'actions',
+            tables: [
+              { name: 'Actions', columns: ['Count'], rows: [[data.current]] },
+            ],
+          })}
+          {...reusable}
+          loading={loading}
+        />
+      );
+    }
+    expect(renderCustom({ kind: 'loading' })).toContain(
+      'altertable-content-skeleton'
+    );
+    expect(renderCustom({ kind: 'loading' }, null)).not.toContain(
+      'altertable-content-skeleton'
+    );
+    expect(renderCustom({ kind: 'ready', data, input })).toContain('20.0%');
+    expect(render({ kind: 'empty', input })).toContain('No actions');
+    expect(
+      render({ kind: 'error', error: new Error('Unavailable') })
+    ).toContain('Couldn’t load results');
+    expect(renders).toBe(4);
+  } finally {
+    if (previousWindow)
+      Object.defineProperty(globalThis, 'window', previousWindow);
+    else Reflect.deleteProperty(globalThis, 'window');
+  }
+});
+
+test('widget insights accept readings, preserve zero, and omit absent findings', () => {
+  function render(insight: DataReading<string | number | null | undefined>) {
+    return renderToStaticMarkup(
+      <>
+        <MetricWidget
+          label="Actions"
+          value={0}
+          format={{ kind: 'count' }}
+          insight={insight}
+        />
+        <VisualizationWidget
+          title="Features"
+          visual={<p>Chart</p>}
+          insight={insight}
+        />
+        <TableWidget
+          title="Sources"
+          rows={['Web']}
+          rowKey={row => row}
+          columns={[{ id: 'source', header: 'Source', cell: row => row }]}
+          empty={{ title: 'No sources' }}
+          insight={insight}
+        />
+      </>
+    );
+  }
+  const pending = render({ loading: true });
+  expect(pending.match(/altertable-content-skeleton-foot/g)).toHaveLength(3);
+  const ready = render({ loading: false, value: 'A displayed finding' });
+  expect(ready.match(/A displayed finding/g)).toHaveLength(3);
+  expect(ready).not.toContain('altertable-content-skeleton-foot');
+  const zero = render({ loading: false, value: 0 });
+  expect(zero).toContain('altertable-metric-insight">0</div>');
+  expect(zero.match(/altertable-data-widget-footer/g)).toHaveLength(2);
+  for (const value of [null, undefined]) {
+    const absent = render({ loading: false, value });
+    expect(absent).not.toContain('altertable-data-widget-footer');
+    expect(absent).not.toContain('altertable-metric-insight');
+  }
+});
+
 test('a custom data widget shares the bound loading, empty, and inspection contract', () => {
   let rendered = 0;
 
@@ -110,7 +315,11 @@ test('a custom data widget shares the bound loading, empty, and inspection contr
       </DataWidget>
     );
   }
-  expect(widget({ loading: true })).toContain('altertable-content-skeleton');
+  const loading = widget({ loading: true });
+  expect(loading).toContain('altertable-content-skeleton-body');
+  expect(loading).toContain('Sessions by source');
+  expect(loading).toContain('aria-busy="true"');
+  expect(loading).not.toContain('Explore Sessions by source');
   expect(rendered).toBe(0);
   expect(widget({ loading: false, value: [] })).toContain('No sessions');
   expect(rendered).toBe(0);
@@ -421,6 +630,47 @@ test('bound visual selectors do not run during loading or render an empty result
   expect(calls).toBe(1);
 });
 
+test('loading widgets keep their authored titles and labels in place', () => {
+  const content = view.content(result => (
+    <>
+      <MetricWidget
+        metric={actions}
+        description="Pooled, completed cohorts"
+        insight="Calculated cohort trend"
+        style={{ minHeight: 160 }}
+        reading={result.metric(data => ({
+          current: data.current,
+          previous: data.previous,
+        }))}
+      />
+      <VisualizationWidget
+        title="Weekly signups"
+        description="New accounts per week"
+        evidence={featureEvidence}
+        reading={result.select(data => data.rows)}
+        isEmpty={rows => rows.length === 0}
+        empty={{ title: 'No signups' }}
+        insight="Derived from the displayed weeks"
+      >
+        {rows => <p>{rows.join(', ')}</p>}
+      </VisualizationWidget>
+    </>
+  ));
+  const loading = renderToStaticMarkup(content.loading);
+  expect(loading).toContain('Actions');
+  expect(loading).toContain('Pooled, completed cohorts');
+  expect(loading).toContain('Weekly signups');
+  expect(loading).toContain('New accounts per week');
+  expect(loading).not.toContain('Derived from the displayed weeks');
+  expect(loading).not.toContain('Calculated cohort trend');
+  expect(loading).toContain('altertable-data-widget-footer');
+  expect(loading).toContain('altertable-metric-insight');
+  expect(loading).toContain('min-height:160px');
+  expect(loading).not.toContain('No signups');
+  expect(loading).not.toContain('Explore');
+  expect(loading.match(/aria-busy="true"/g)).toHaveLength(2);
+});
+
 test('date bindings reject silently changed ranges and comparisons', () => {
   const selection = calendar.request(
     { start: '2026-03-10', end: '2026-03-12' },
@@ -561,13 +811,17 @@ test('bound tables keep their row contract while loading', () => {
       ]}
       empty={{ title: 'No features' }}
       skeletonRows={3}
+      insight="Most used feature"
     />
   ));
-  expect(
-    renderToStaticMarkup(content.loading).match(
-      /class="altertable-content-skeleton-row"/g
-    )
-  ).toHaveLength(3);
+  const loading = renderToStaticMarkup(content.loading);
+  expect(loading.match(/class="altertable-table-skeleton-row"/g)).toHaveLength(
+    3
+  );
+  expect(loading).toContain('Features');
+  expect(loading).toContain('<th scope="col">Feature</th>');
+  expect(loading).toContain('altertable-data-widget-footer');
+  expect(loading).not.toContain('Most used feature');
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
   expect(
     renderToStaticMarkup(

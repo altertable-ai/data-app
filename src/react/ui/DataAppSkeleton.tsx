@@ -1,7 +1,7 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
+import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import { DataWidget } from '@/src/react/ui/DataWidget';
 import { Grid } from '@/src/react/ui/Grid';
-import { MetricWidget } from '@/src/react/ui/MetricWidget';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import { classNames } from '@/src/react/ui/classNames';
@@ -37,7 +37,7 @@ export function DataAppSkeleton({
         <div className="altertable-data-app-skeleton-body" aria-hidden="true">
           <Grid columns={3} gap="md">
             {[0, 1, 2].map(item => (
-              <MetricWidget key={item} label="" loading />
+              <ContentSkeleton key={item} variant="metric" />
             ))}
           </Grid>
           <VisualizationWidget

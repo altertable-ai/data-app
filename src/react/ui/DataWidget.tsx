@@ -1,3 +1,7 @@
+import {
+  renderWidgetInsight,
+  type WidgetInsight,
+} from '@/src/react/ui/WidgetInsight';
 import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { formatCount } from '@/src/core/format';
 import { AboutData } from '@/src/react/ui/AboutData';
@@ -7,7 +11,7 @@ import {
   type WidgetStatus,
 } from '@/src/react/ui/RequestHint';
 import { classNames } from '@/src/react/ui/classNames';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { ContentSkeletonBody } from '@/src/react/ui/ContentSkeleton';
 import { EmptyState } from '@/src/react/ui/EmptyState';
 import type {
   EmptyContent,
@@ -23,7 +27,7 @@ type DataWidgetBaseProps = {
   action?: ReactNode;
   /** Reserved feedback slot; retain displayed content while refreshing or after failure. */
   status?: WidgetStatus;
-  footer?: ReactNode;
+  footer?: WidgetInsight;
   bodyPadding?: 'inset' | 'flush';
 } & Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
@@ -49,11 +53,9 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
     const { reading, isEmpty, empty, skeleton, children, ...shell } = props;
     if (reading.loading)
       return (
-        <ContentSkeleton
-          variant="panel"
-          {...skeleton}
-          className={shell.className}
-        />
+        <DataWidgetLoading {...shell}>
+          <ContentSkeletonBody variant="panel" {...skeleton} />
+        </DataWidgetLoading>
       );
     const noData = isEmpty(reading.value);
 
@@ -65,6 +67,22 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
   }
 
   return <DataWidgetContent {...props} />;
+}
+
+/** Preserve the authored frame and reserve its insight slot without rendering findings. */
+export function DataWidgetLoading({
+  evidence: _evidence,
+  footer,
+  empty: _empty,
+  ...shell
+}: DataWidgetBaseProps & { empty?: EmptyContent; children: ReactNode }) {
+  return (
+    <DataWidgetContent
+      {...shell}
+      aria-busy="true"
+      footer={renderWidgetInsight(footer, true)}
+    />
+  );
 }
 
 function DataWidgetContent({
@@ -157,10 +175,11 @@ function WidgetContent({
   children,
 }: {
   bodyPadding: 'inset' | 'flush';
-  footer?: ReactNode;
+  footer?: WidgetInsight;
   status?: WidgetStatus;
   children: ReactNode;
 }) {
+  const shownFooter = renderWidgetInsight(footer);
   return (
     <>
       <div
@@ -170,8 +189,8 @@ function WidgetContent({
       >
         {children}
       </div>
-      {footer && (
-        <footer className="altertable-data-widget-footer">{footer}</footer>
+      {shownFooter != null && (
+        <footer className="altertable-data-widget-footer">{shownFooter}</footer>
       )}
     </>
   );

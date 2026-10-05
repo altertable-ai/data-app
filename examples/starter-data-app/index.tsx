@@ -152,21 +152,29 @@ function App() {
         )
       }
     >
-      {(sampleCounts, displayedInput) => (
+      {result => (
         <Stack aria-label="Sample results">
           <TextContent>
             <h2>Sample counts</h2>
-            <p>Showing {displayedInput.groupName || 'all groups'}</p>
+            <p>
+              {result.loading
+                ? 'Counting samples by group.'
+                : `Showing ${result.input.groupName || 'all groups'}`}
+            </p>
           </TextContent>
           <Grid columns={2}>
-            {sampleCounts.map(({ groupName, sampleCount }) => (
-              <MetricWidget
-                key={groupName}
-                label={`${groupName}: ${sampleCount}`}
-                value={sampleCount}
-                format={{ kind: 'count' }}
-              />
-            ))}
+            {result.loading ? (
+              <MetricWidget label="Sample count" loading />
+            ) : (
+              result.data.map(({ groupName, sampleCount }) => (
+                <MetricWidget
+                  key={groupName}
+                  label={`${groupName}: ${sampleCount}`}
+                  value={sampleCount}
+                  format={{ kind: 'count' }}
+                />
+              ))
+            )}
           </Grid>
         </Stack>
       )}

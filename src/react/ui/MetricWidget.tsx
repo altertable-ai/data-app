@@ -1,3 +1,7 @@
+import {
+  renderWidgetInsight,
+  type WidgetInsight,
+} from '@/src/react/ui/WidgetInsight';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import {
   WidgetStatusControl,
@@ -12,7 +16,7 @@ import {
 } from '@/src/react/ui/comparison';
 import { classNames } from '@/src/react/ui/classNames';
 import { formatMetric, type MetricFormat } from '@/src/core/format';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { ContentSkeletonBody } from '@/src/react/ui/ContentSkeleton';
 import type { MetricReading } from '@/src/core/reading';
 import { metricComparison, type MetricDefinition } from '@/src/react/ui/metric';
 
@@ -22,7 +26,7 @@ type MetricWidgetBaseProps = {
   comparison?: MetricComparison;
   evidence?: WidgetEvidence;
   action?: ReactNode;
-  insight?: ReactNode;
+  insight?: WidgetInsight;
   status?: WidgetStatus;
   visual?: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'about' | 'children'>;
@@ -87,8 +91,30 @@ function MetricWidgetContent({
   className,
   ...props
 }: UnboundMetricWidgetProps) {
+  const shownInsight = renderWidgetInsight(insight, loading);
   if (loading)
-    return <ContentSkeleton variant="metric" className={className} />;
+    return (
+      <div
+        {...props}
+        className={classNames('altertable-metric-widget', className)}
+        aria-busy="true"
+      >
+        <div className="altertable-metric-label">
+          <span>{label}</span>
+          <div className="altertable-metric-help">
+            <WidgetStatusControl status={status} />
+            {action}
+          </div>
+        </div>
+        <ContentSkeletonBody variant="metric" />
+        {description && (
+          <small className="altertable-metric-description">{description}</small>
+        )}
+        {shownInsight != null && (
+          <div className="altertable-metric-insight">{shownInsight}</div>
+        )}
+      </div>
+    );
   const shownValue = format ? formatMetric(value as number, format) : content;
   const change = comparison ? comparisonChange(comparison) : null;
   const shownTrend =
@@ -166,7 +192,9 @@ function MetricWidgetContent({
         <small className="altertable-metric-description">{description}</small>
       )}
       {visualization}
-      {insight && <div className="altertable-metric-insight">{insight}</div>}
+      {shownInsight != null && (
+        <div className="altertable-metric-insight">{shownInsight}</div>
+      )}
     </div>
   );
 }

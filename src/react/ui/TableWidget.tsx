@@ -1,8 +1,12 @@
+import {
+  renderWidgetInsight,
+  type WidgetInsight,
+} from '@/src/react/ui/WidgetInsight';
 import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { invariant } from '@/src/core/invariant';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
-import { DataWidget } from '@/src/react/ui/DataWidget';
+import { DataWidget, DataWidgetLoading } from '@/src/react/ui/DataWidget';
 import {
   DataTable,
   DataTableEmptyRow,
@@ -16,7 +20,7 @@ import {
 } from '@/src/react/ui/searchItems';
 import type { DataReading } from '@/src/core/reading';
 import { formatCount, pluralize } from '@/src/core/format';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { Skeleton } from '@/src/react/ui/Skeleton';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import { Tooltip } from '@/src/react/ui/Tooltip';
@@ -40,7 +44,7 @@ type TableWidgetBaseProps<Row> = {
   columns: readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
   /** Unique, nonempty row identity. Numeric keys must be finite; 1 and "1" collide. */
   rowKey: (row: Row) => string | number;
-  insight?: ReactNode;
+  insight?: WidgetInsight;
   status?: WidgetStatus;
   action?: ReactNode;
   evidence?: WidgetEvidence;
@@ -97,18 +101,63 @@ export function TableWidget<Row>(props: TableWidgetProps<Row>) {
   if (props.reading) {
     const { reading, skeletonRows = 5, ...rest } = props;
     if (reading.loading)
-      return (
-        <ContentSkeleton
-          variant="ranking"
-          rows={skeletonRows}
-          className={rest.className}
-        />
-      );
+      return <TableWidgetLoading {...rest} rows={skeletonRows} />;
 
     return <TableWidgetContent {...rest} rows={reading.value} />;
   }
 
   return <TableWidgetContent {...props} />;
+}
+
+function TableWidgetLoading<Row>({
+  columns,
+  rows,
+  rowKey: _rowKey,
+  insight,
+  evidence: _evidence,
+  search: _search,
+  limit: _limit,
+  pagination: _pagination,
+  empty: _empty,
+  ...shell
+}: TableWidgetBaseProps<Row> & { rows: number }) {
+  invariant(
+    Number.isInteger(rows) && rows >= 0 && rows <= 100,
+    'TableWidget skeletonRows must be between 0 and 100.'
+  );
+
+  return (
+    <DataWidgetLoading {...shell} footer={insight}>
+      <div className="altertable-table-widget-content">
+        <DataTable>
+          <thead>
+            <tr>
+              {columns.map(column => (
+                <th key={column.id} scope="col" data-type={column.type}>
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: rows }, (_, row) => (
+              <tr
+                key={row}
+                className="altertable-table-skeleton-row"
+                aria-hidden="true"
+              >
+                {columns.map(column => (
+                  <td key={column.id} data-type={column.type}>
+                    <Skeleton />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </DataTable>
+      </div>
+    </DataWidgetLoading>
+  );
 }
 
 function TableWidgetContent<Row>({
@@ -261,6 +310,7 @@ function TableWidgetContent<Row>({
     </nav>
   );
 
+  const shownInsight = renderWidgetInsight(insight);
   return (
     <DataWidget
       {...props}
@@ -270,10 +320,10 @@ function TableWidgetContent<Row>({
       action={action}
       evidence={evidence}
       footer={
-        (pager || insight) && (
+        (pager || shownInsight != null) && (
           <>
             {pager}
-            {insight}
+            {shownInsight}
           </>
         )
       }

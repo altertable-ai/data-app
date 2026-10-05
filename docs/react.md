@@ -61,27 +61,6 @@ const featureEvidence = dataContext.evidence({
   id: 'feature-use',
   queryNames: [dataContext.queryNames.activity],
 });
-const content = activityView.content(result => (
-  <Grid columns={2}>
-    <MetricWidget
-      metric={trackedIdentities}
-      reading={result.metric(data => ({
-        current: data.count,
-        previous: data.previousCount,
-      }))}
-    />
-    <VisualizationWidget
-      title="Feature use"
-      evidence={featureEvidence}
-      reading={result.select(data => data.features)}
-      isEmpty={features => features.length === 0}
-      empty={{ title: 'No features' }}
-      skeleton={{ variant: 'ranking', rows: 6 }}
-    >
-      {features => <Ranking items={features} />}
-    </VisualizationWidget>
-  </Grid>
-));
 function App() {
   const activity = useView(activityView);
   return (
@@ -112,11 +91,56 @@ function App() {
           evidence: featureEvidence,
         }),
       ]}
-      {...content}
-    />
+    >
+      {result => (
+        <Grid columns={2}>
+          <MetricWidget
+            metric={trackedIdentities}
+            reading={result.metric(data => ({
+              current: data.count,
+              previous: data.previousCount,
+            }))}
+          />
+          <VisualizationWidget
+            title="Feature use"
+            evidence={featureEvidence}
+            reading={result.select(data => data.features)}
+            isEmpty={features => features.length === 0}
+            empty={{ title: 'No features' }}
+            skeleton={{ variant: 'ranking', rows: 6 }}
+          >
+            {features => <Ranking items={features} />}
+          </VisualizationWidget>
+        </Grid>
+      )}
+    </DataApp>
   );
 }
 ```
+
+A request-backed `<DataApp>` normally takes an inline child callback. It runs
+with pending readings during initial loading and with the displayed result once
+ready. Each widget keeps its title, label, or columns and shows placeholders for
+its values. Selectors run only when displayed data exists. Branch on
+`result.loading` for structure that depends on the result, such as one widget per
+returned row.
+
+Keep the grid, widget titles, descriptions, and table columns in this shared
+composition. Reserve space for chart bodies and expected insights with the same
+classes or dimensions in both states. When an insight slot is supplied, widgets
+show a placeholder there until data arrives. Refreshes keep the displayed result
+visible rather than returning to skeletons.
+
+Insight slots accept a `DataReading<ReactNode>` as well as static content:
+`insight={result.select(data => explain(data))}`. Pending readings show a
+placeholder; ready readings render the finding. Null or undefined findings omit
+the slot, and measured zero remains visible.
+
+For custom composition, provide an explicit `loading` layout and a ready callback
+`(data, displayedInput) => ...`. `loading={null}` intentionally omits it.
+`view.content()` remains an optional reuse helper that returns these two props.
+Independent `<DataSection>` requests get a generic placeholder when `loading` is
+omitted.
 
 The `date` binding identifies the controlling variable and extracts its range from the operation input. Nested inputs use, for example, `input: (input) => input.period`. The runtime rejects mappings that silently change the selected range or comparison. Non-date views supply `describeInput`; date views can override it when other inputs also need describing.
 
@@ -264,8 +288,9 @@ zero counts. `<SelectableBarChart>` can share controlled selection with the pick
 
 ## Preserve displayed results
 
-The callback in `view.content()` receives the displayed result and its original
-input during refreshes and failures. Use that input when labeling the data.
+The inline `<DataApp>` callback receives the displayed result and its original
+input during refreshes and failures. Use `result.input` when labeling the data.
+The optional `view.content()` helper follows the same rule.
 
 Previous data and evidence are retained only when the input changes within the
 same operation. Switching to another operation shows its own cached response or
@@ -330,6 +355,6 @@ Example:
     ],
   })}
 >
-  {(data, input) => <Results data={data} input={input} />}
+  {result => <Results result={result} />}
 </DataApp>
 ```

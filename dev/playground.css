@@ -1,0 +1,39 @@
+.orders-results .altertable-metric-widget {
+  min-height: 180px;
+}
+.orders-results .altertable-data-widget-footer {
+  min-height: 76px;
+}
+.orders-results .altertable-metric-insight {
+  min-height: 18px;
+}
+.orders-daily .altertable-data-widget-body {
+  min-height: 224px;
+}
+.orders-daily .altertable-content-skeleton-chart {
+  height: auto;
+  aspect-ratio: 400 / 160;
+}
+.orders-value .altertable-data-widget-body {
+  min-height: 256px;
+}
+.orders-value .altertable-content-skeleton-chart {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+}
+.orders-countries .altertable-data-widget-body {
+  min-height: 400px;
+}
+.orders-countries .altertable-content-skeleton-subtitle {
+  display: none;
+}
+.orders-countries .altertable-content-skeleton-rows {
+  gap: 24px;
+  margin-top: 0;
+}
+@media (max-width: 480px) {
+  .orders-value .altertable-data-widget-body {
+    min-height: 288px;
+  }
+}

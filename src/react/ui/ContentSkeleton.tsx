@@ -10,15 +10,10 @@ export type ContentSkeletonProps = SkeletonContent &
 /** A metric, panel, or ranking placeholder to compose in the same layout as live content. */
 export function ContentSkeleton({
   variant,
-  rows = 4,
+  rows,
   className,
   ...props
 }: ContentSkeletonProps) {
-  invariant(
-    Number.isInteger(rows) && rows >= 0 && rows <= 100,
-    'Skeleton rows must be between 0 and 100.'
-  );
-
   return (
     <div
       {...props}
@@ -30,6 +25,23 @@ export function ContentSkeleton({
       )}
     >
       <Skeleton className="altertable-content-skeleton-label" />
+      <ContentSkeletonBody variant={variant} rows={rows} />
+      {variant === 'panel' && (
+        <Skeleton className="altertable-content-skeleton-foot" />
+      )}
+    </div>
+  );
+}
+
+/** The value area of a skeleton, for a widget frame that already shows its own title. */
+export function ContentSkeletonBody({ variant, rows = 4 }: SkeletonContent) {
+  invariant(
+    Number.isInteger(rows) && rows >= 0 && rows <= 100,
+    'Skeleton rows must be between 0 and 100.'
+  );
+
+  return (
+    <div className="altertable-content-skeleton-body" aria-hidden="true">
       <Skeleton
         className={
           variant === 'metric'
@@ -39,9 +51,6 @@ export function ContentSkeleton({
               : 'altertable-content-skeleton-chart'
         }
       />
-      {variant === 'panel' && (
-        <Skeleton className="altertable-content-skeleton-foot" />
-      )}
       {variant === 'ranking' && (
         <div className="altertable-content-skeleton-rows">
           {Array.from({ length: rows }, (_, index) => index).map(row => (

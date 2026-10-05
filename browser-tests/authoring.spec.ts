@@ -27,6 +27,12 @@ test('single-file hosted example queries through the host and preserves displaye
   const app = page.frameLocator('iframe');
   await expect(app.getByText('Loading data')).toBeVisible();
   await expect(
+    app.getByRole('heading', { name: 'Sample counts', level: 2 })
+  ).toBeVisible();
+  await expect(
+    app.getByLabel('Sample results').getByText('Sample count', { exact: true })
+  ).toBeVisible();
+  await expect(
     app.getByRole('button', { name: 'Present story', exact: true })
   ).toHaveCount(0);
   release!();

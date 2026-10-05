@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import {
   type DataOperation,
   type DateRangeRequest,
@@ -15,6 +16,7 @@ import {
   type MetricWidgetProps,
   type DataSectionProps,
   type DataAppProps,
+  DataApp,
   createDataContext,
   MetricWidget,
   WidgetViewTabs,
@@ -98,6 +100,7 @@ const app: DataAppProps<number> = {
   aboutEmpty: { glossary: { title: 'Empty' }, queries: { title: 'Empty' } },
   // @ts-expect-error Primary requests own their empty state.
   request: { view: { kind: 'loading' }, refetch() {} },
+  loading: null,
   children() {
     return null;
   },
@@ -272,14 +275,42 @@ const analyticalApp: Extract<DataAppProps<number>, { request: unknown }> = {
     refetch() {},
     empty: { title: 'No results' },
   },
+  loading: null,
   children() {
     return null;
   },
 };
 const { csvExport, ...withoutExport } = analyticalApp;
 const { story, ...withoutStory } = analyticalApp;
+const { loading, ...withoutLoading } = analyticalApp;
 // @ts-expect-error Analytical apps must provide a CSV export of their displayed result.
 const appWithoutExport: DataAppProps<number> = withoutExport;
 // @ts-expect-error Analytical apps must provide a story of their displayed findings.
 const appWithoutStory: DataAppProps<number> = withoutStory;
-void [csvExport, story, appWithoutExport, appWithoutStory];
+// @ts-expect-error Analytical apps must lay out their initial request.
+const appWithoutLoading: DataAppProps<number> = withoutLoading;
+void [
+  csvExport,
+  story,
+  loading,
+  appWithoutExport,
+  appWithoutStory,
+  appWithoutLoading,
+];
+
+function ForwardedApp<Data, Input>(props: DataAppProps<Data, Input>) {
+  return <DataApp {...props} />;
+}
+const inferredExplicitProps: ComponentProps<typeof DataApp> = {
+  ...analyticalApp,
+  story: () => [],
+  csvExport: () =>
+    ({
+      filename: 'values',
+      tables: [{ name: 'Values', columns: ['Value'], rows: [[1]] }],
+    }) as const,
+  children(_data: unknown, _input: unknown) {
+    return null;
+  },
+};
+void [ForwardedApp, inferredExplicitProps];

@@ -9,6 +9,14 @@
 .altertable-table-widget-content .altertable-data-table-search {
   margin-top: 0;
 }
+.altertable-table-skeleton-row .altertable-skeleton {
+  width: 72%;
+  height: 12px;
+}
+.altertable-table-skeleton-row [data-type='number'] .altertable-skeleton {
+  width: 48%;
+  margin-inline-start: auto;
+}
 .altertable-table-pagination {
   display: flex;
   align-items: center;

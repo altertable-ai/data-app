@@ -1,3 +1,4 @@
+import '@/dev/playground.css';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataAppConfig } from '@altertable/data-app/config';
 import {
@@ -425,6 +426,38 @@ function CountryRanking({ countries }: { countries: CountryRevenue[] }) {
   );
 }
 
+const orderMetric = orderDataContext.metric({
+  id: 'order-count',
+  glossaryId: 'orders',
+  format: { kind: 'count' },
+});
+const revenueMetric = orderDataContext.metric({
+  id: 'total-revenue',
+  glossaryId: 'revenue',
+  format: currency,
+});
+function averageOrderValue({ countries, days }: OrderOverview) {
+  const orders = sum(days, day => day.orderCount);
+  const revenue = sum(countries, country => country.revenue);
+  return orders > 0
+    ? `${formatMetric(revenue / orders, currency)} per order on average.`
+    : undefined;
+}
+function orderValueInsight({ bands, days }: OrderOverview) {
+  const orders = sum(days, day => day.orderCount);
+  const topBand = largestBand(bands);
+  return topBand && orders > 0
+    ? `Largest band: ${topBand.band}, with ${formatPercent(topBand.orderCount / orders)} of orders.`
+    : undefined;
+}
+function countryRevenueInsight({ countries }: OrderOverview) {
+  const revenue = sum(countries, country => country.revenue);
+  const [leader] = countries;
+  return leader && revenue > 0
+    ? `${leader.country} brings in ${formatPercent(leader.revenue / revenue)} of revenue.`
+    : undefined;
+}
+
 function App() {
   const orderRequest = useView(orderView);
   return (
@@ -497,81 +530,83 @@ function App() {
         ];
       }}
     >
-      {({ countries, days, bands }, displayedInput) => {
-        const orders = sum(days, day => day.orderCount);
-        const revenue = sum(countries, country => country.revenue);
-        const [leader] = countries;
-        const topBand = largestBand(bands);
-        return (
-          <Stack aria-label="Order results">
-            <TextContent>
-              <h2>Orders</h2>
-              <p>
-                How much did customers order over the last 30 days, and where
-                does the revenue come from? Filter by a country code such as US
-                to compare markets.
-              </p>
-              <p>Showing {displayedInput.country || 'all countries'}</p>
-            </TextContent>
-            <Grid columns={2}>
-              <MetricWidget
-                label="Orders"
-                description="Orders placed in any status."
-                value={orders}
-                format={{ kind: 'count' }}
-              />
-              <MetricWidget
-                label="Revenue"
-                description="Paid and pending orders; refunds excluded."
-                value={revenue}
-                format={currency}
-                insight={
-                  orders > 0
-                    ? `${formatMetric(revenue / orders, currency)} per order on average.`
-                    : undefined
-                }
-              />
-              <VisualizationWidget
-                title="Orders per day"
-                description="Daily order count. Days without orders stay on the chart as zero."
-                evidence={ordersPerDayEvidence}
-                visual={<DailyLineChart days={days} />}
-                insight={weeklyTrend(days)}
-              />
-              <VisualizationWidget
-                title="Order value"
-                description="Share of orders by amount, in $50 bands."
-                evidence={orderValueEvidence}
-                visual={<OrderValuePieChart bands={bands} />}
-                insight={
-                  topBand
-                    ? `Largest band: ${topBand.band}, with ${formatPercent(topBand.orderCount / orders)} of orders.`
-                    : undefined
-                }
-                empty={
-                  bands.length
-                    ? undefined
-                    : {
-                        title: 'No orders',
-                        description: 'No orders in the last 30 days.',
-                      }
-                }
-              />
-            </Grid>
-            <VisualizationWidget
-              title="Revenue by country"
-              description="Highest revenue first. Countries whose customers placed no orders show $0."
-              evidence={revenueEvidence}
-              visual={<CountryRanking countries={countries} />}
-              insight={
-                leader && revenue > 0
-                  ? `${leader.country} brings in ${formatPercent(leader.revenue / revenue)} of revenue.`
-                  : undefined
-              }
+      {result => (
+        <Stack aria-label="Order results" className="orders-results">
+          <TextContent>
+            <h2>Orders</h2>
+            <p>
+              How much did customers order over the last 30 days, and where does
+              the revenue come from? Filter by a country code such as US to
+              compare markets.
+            </p>
+            <p>
+              {result.loading
+                ? 'Loading selected scope…'
+                : `Showing ${result.input.country || 'all countries'}`}
+            </p>
+          </TextContent>
+          <Grid columns={2}>
+            <MetricWidget
+              metric={orderMetric}
+              description="Orders placed in any status."
+              reading={result.metric(data => ({
+                current: sum(data.days, day => day.orderCount),
+              }))}
             />
-          </Stack>
-        );
-      }}
+            <MetricWidget
+              metric={revenueMetric}
+              description="Paid and pending orders; refunds excluded."
+              reading={result.metric(data => ({
+                current: sum(data.countries, country => country.revenue),
+              }))}
+              insight={result.select(averageOrderValue)}
+            />
+            <VisualizationWidget
+              className="orders-daily"
+              title="Orders per day"
+              description="Daily order count. Days without orders stay on the chart as zero."
+              evidence={ordersPerDayEvidence}
+              reading={result.select(data => data.days)}
+              isEmpty={days => days.length === 0}
+              empty={{
+                title: 'No orders',
+                description: 'No orders in the last 30 days.',
+              }}
+              insight={result.select(data => weeklyTrend(data.days))}
+            >
+              {days => <DailyLineChart days={days} />}
+            </VisualizationWidget>
+            <VisualizationWidget
+              className="orders-value"
+              title="Order value"
+              description="Share of orders by amount, in $50 bands."
+              evidence={orderValueEvidence}
+              reading={result.select(data => data.bands)}
+              isEmpty={bands => bands.length === 0}
+              empty={{
+                title: 'No orders',
+                description: 'No orders in the last 30 days.',
+              }}
+              insight={result.select(orderValueInsight)}
+            >
+              {bands => <OrderValuePieChart bands={bands} />}
+            </VisualizationWidget>
+          </Grid>
+          <VisualizationWidget
+            className="orders-countries"
+            title="Revenue by country"
+            description="Highest revenue first. Countries whose customers placed no orders show $0."
+            evidence={revenueEvidence}
+            reading={result.select(data => data.countries)}
+            isEmpty={countries => countries.length === 0}
+            empty={{ title: 'No matching countries' }}
+            skeleton={{ variant: 'ranking', rows: 5 }}
+            insight={result.select(countryRevenueInsight)}
+          >
+            {countries => <CountryRanking countries={countries} />}
+          </VisualizationWidget>
+        </Stack>
+      )}
     </DataApp>
   );
 }

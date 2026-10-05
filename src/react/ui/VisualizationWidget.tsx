@@ -1,19 +1,20 @@
+import { type WidgetInsight } from '@/src/react/ui/WidgetInsight';
 import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
-import { DataWidget } from '@/src/react/ui/DataWidget';
+import { DataWidget, DataWidgetLoading } from '@/src/react/ui/DataWidget';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
 import type {
   EmptyContent,
   BoundWidgetReading,
 } from '@/src/react/ui/presentation';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { ContentSkeletonBody } from '@/src/react/ui/ContentSkeleton';
 import { validateWidgetViews } from '@/src/react/ui/widget-views';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 
 type VisualizationWidgetBaseProps = {
   title: ReactNode;
   description?: ReactNode;
-  insight?: ReactNode;
+  insight?: WidgetInsight;
   action?: ReactNode;
   evidence?: WidgetEvidence;
   status?: WidgetStatus;
@@ -80,7 +81,11 @@ export function VisualizationWidget<Data>(
   }
   const { visual, loading = false, insight, ...shell } = props;
   if (loading)
-    return <ContentSkeleton variant="panel" className={shell.className} />;
+    return (
+      <DataWidgetLoading {...shell} footer={insight}>
+        <ContentSkeletonBody variant="panel" />
+      </DataWidgetLoading>
+    );
 
   return (
     <DataWidget {...shell} footer={insight}>

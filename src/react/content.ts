@@ -20,13 +20,15 @@ export type DataContentState<Data, Input> = DataContentHelpers<Data, Input> &
     | { loading: false; data: Data; input: Input }
   );
 
-/** Selectors run only for displayed data. Date comparisons inherit that result's input. */
-export function defineDataContent<Data, Input>(
-  render: (state: DataContentState<Data, Input>) => ReactNode,
-  options: { date?: (input: Input) => DateRangeRequest } = {}
-) {
-  return {
-    loading: render({
+type ContentOptions<Input> = { date?: (input: Input) => DateRangeRequest };
+
+/** Selectors run only for displayed data, including its original comparison input. */
+export function createDataContentState<Data, Input>(
+  snapshot: { data: Data; input: Input } | null,
+  options: ContentOptions<Input> = {}
+): DataContentState<Data, Input> {
+  if (!snapshot)
+    return {
       loading: true,
       select() {
         return { loading: true };
@@ -34,28 +36,38 @@ export function defineDataContent<Data, Input>(
       metric() {
         return { loading: true };
       },
-    }),
-    children(data: Data, input: Input) {
-      return render({
+    };
+  const { data, input } = snapshot;
+  return {
+    loading: false,
+    data,
+    input,
+    select(select) {
+      return { loading: false, value: select(data, input) };
+    },
+    metric(select) {
+      const values = select(data);
+      invariant(
+        values.previous === undefined || options.date,
+        'Metric comparisons require a view date binding.'
+      );
+      return {
         loading: false,
-        data,
-        input,
-        select(select) {
-          return { loading: false, value: select(data, input) };
-        },
-        metric(select) {
-          const values = select(data);
-          invariant(
-            values.previous === undefined || options.date,
-            'Metric comparisons require a view date binding.'
-          );
+        value: { ...values, period: options.date?.(input) },
+      };
+    },
+  };
+}
 
-          return {
-            loading: false,
-            value: { ...values, period: options.date?.(input) },
-          };
-        },
-      });
+/** Optional reusable composition for DataApp's explicit layout or a DataSection. */
+export function defineDataContent<Data, Input>(
+  render: (state: DataContentState<Data, Input>) => ReactNode,
+  options: ContentOptions<Input> = {}
+) {
+  return {
+    loading: render(createDataContentState<Data, Input>(null, options)),
+    children(data: Data, input: Input) {
+      return render(createDataContentState({ data, input }, options));
     },
   };
 }
