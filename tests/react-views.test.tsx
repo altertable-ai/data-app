@@ -666,3 +666,23 @@ test('DataApp keeps its children visible while local boundaries own request stat
     else Reflect.deleteProperty(globalThis, 'window');
   }
 });
+
+test('visualization controls and insight share the footer without dropping insight when controls are absent', () => {
+  for (const footer of [false, <button key="next">Next page</button>]) {
+    const html = renderToStaticMarkup(
+      <VisualizationWidget
+        title="Revenue"
+        visual={<p>120 sales</p>}
+        footer={footer}
+        insight="Revenue increased."
+      />
+    );
+    expect(html).toContain('120 sales');
+    expect(html).toContain('Revenue increased.');
+    if (footer) {
+      expect(html.indexOf('Next page')).toBeLessThan(
+        html.indexOf('Revenue increased.')
+      );
+    }
+  }
+});

@@ -25,9 +25,6 @@
   border-radius: 999px;
   background: var(--at-subtle, #f6f7f7);
 }
-.altertable-breakdown[data-dominant='true'] .altertable-breakdown-bar {
-  height: 8px;
-}
 .altertable-breakdown-bar > span {
   display: block;
   height: 100%;

@@ -2,7 +2,7 @@ import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { invariant } from '@/src/core/invariant';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
-import { DataWidget } from '@/src/react/ui/DataWidget';
+import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import {
   DataTable,
   DataTableEmptyRow,
@@ -287,7 +287,7 @@ function TableWidgetContent<Row>({
   );
 
   return (
-    <DataWidget
+    <VisualizationWidget
       {...props}
       title={title}
       count={loading ? undefined : count}
@@ -295,16 +295,9 @@ function TableWidgetContent<Row>({
       action={action}
       evidence={loading ? undefined : evidence}
       aria-busy={loading || props['aria-busy']}
-      footer={
-        (pager || insight) && (
-          <>
-            {pager}
-            {insight}
-          </>
-        )
-      }
-    >
-      <div className="altertable-table-widget-content">{table}</div>
-    </DataWidget>
+      footer={pager}
+      insight={insight}
+      visual={<div className="altertable-table-widget-content">{table}</div>}
+    />
   );
 }

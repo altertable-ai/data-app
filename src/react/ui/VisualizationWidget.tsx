@@ -13,6 +13,9 @@ import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 type VisualizationWidgetBaseProps = {
   title: ReactNode;
   description?: ReactNode;
+  count?: number;
+  /** Controls placed before the supporting insight, such as table pagination. */
+  footer?: ReactNode;
   insight?: ReactNode;
   action?: ReactNode;
   evidence?: WidgetEvidence;
@@ -21,7 +24,10 @@ type VisualizationWidgetBaseProps = {
 } & Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
 type UnboundVisualizationWidgetProps = VisualizationWidgetBaseProps &
-  ({ loading: true; visual?: never } | { loading?: false; visual: ReactNode });
+  (
+    | { loading: true; loadingContent?: ReactNode; visual?: never }
+    | { loading?: false; visual: ReactNode; loadingContent?: never }
+  );
 
 export type VisualizationWidgetView<Data> = {
   /** Stable, nonempty identity; unique within this widget. */
@@ -58,8 +64,16 @@ export function VisualizationWidget<Data>(
   if ('views' in props && props.views)
     return <VisualizationWidgetWithViews {...props} />;
   if ('reading' in props) {
-    const { reading, children, isEmpty, empty, skeleton, insight, ...shell } =
-      props;
+    const {
+      reading,
+      children,
+      isEmpty,
+      empty,
+      skeleton,
+      insight,
+      footer,
+      ...shell
+    } = props;
 
     return (
       <DataWidget
@@ -68,7 +82,7 @@ export function VisualizationWidget<Data>(
         isEmpty={isEmpty}
         empty={empty}
         skeleton={skeleton}
-        footer={insight}
+        footer={widgetFooter(footer, insight)}
       >
         {data => (
           <div className="altertable-visualization-widget-content">
@@ -78,16 +92,25 @@ export function VisualizationWidget<Data>(
       </DataWidget>
     );
   }
-  const { visual, loading = false, insight, ...shell } = props;
+  const {
+    visual,
+    loading = false,
+    loadingContent,
+    insight,
+    footer,
+    ...shell
+  } = props;
   if (loading)
     return (
-      <DataWidget {...shell} evidence={undefined} footer={insight} aria-busy>
-        <ContentSkeletonBody variant="panel" />
+      <DataWidget {...shell} evidence={undefined} footer={widgetFooter(footer, insight)} aria-busy>
+        <div className="altertable-visualization-widget-content">
+          {loadingContent ?? <ContentSkeletonBody variant="panel" />}
+        </div>
       </DataWidget>
     );
 
   return (
-    <DataWidget {...shell} footer={insight}>
+    <DataWidget {...shell} footer={widgetFooter(footer, insight)}>
       <div className="altertable-visualization-widget-content">{visual}</div>
     </DataWidget>
   );
@@ -102,6 +125,7 @@ function VisualizationWidgetWithViews<Data>({
   empty,
   skeleton,
   insight,
+  footer,
   ...shell
 }: BoundVisualizationWidgetBase<Data> & {
   views: readonly VisualizationWidgetView<Data>[];
@@ -118,7 +142,7 @@ function VisualizationWidgetWithViews<Data>({
       isEmpty={isEmpty}
       empty={empty}
       skeleton={skeleton}
-      footer={insight}
+      footer={widgetFooter(footer, insight)}
     >
       {data => (
         <div className="altertable-visualization-widget-content">
@@ -137,5 +161,16 @@ function VisualizationWidgetWithViews<Data>({
         </div>
       )}
     </DataWidget>
+  );
+}
+
+function widgetFooter(footer: ReactNode, insight: ReactNode) {
+  return footer && insight ? (
+    <>
+      {footer}
+      {insight}
+    </>
+  ) : (
+    footer || insight
   );
 }

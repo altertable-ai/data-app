@@ -313,6 +313,21 @@ across renders to preserve their cache.
 
 ## Findings and inspection
 
+Data display widgets share one frame:
+
+- `<DataWidget>` provides the base card, heading, actions, feedback, and inspection.
+- `<VisualizationWidget>` uses that card for any data display, including charts,
+  tables, and metrics. It supports alternate views, an `insight`, and a `footer`
+  for controls placed before the insight.
+- `<MetricWidget>` and `<TableWidget>` use `<VisualizationWidget>` with their
+  own display content. They retain metric formatting and comparison behavior,
+  and table columns, search, and pagination respectively.
+- `<TextWidget>` is a sibling of `<VisualizationWidget>`: it uses `<DataWidget>`
+  directly with `<TextContent>` for narrative prose.
+
+Use `<VisualizationWidget>` around a custom data display; use `<DataWidget>`
+when composing a different kind of panel.
+
 `<DataWidget>` composes a body, toolbar feedback, and footer. Widgets and their
 inspection sheets render the same visual and controls. Keep interactive state
 above both mounts when authoring custom children.

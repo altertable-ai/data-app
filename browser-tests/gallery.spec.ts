@@ -768,15 +768,33 @@ test('widget insets align across metrics, visualizations, and loading states', a
   const body = page
     .locator('.altertable-data-widget-body[data-padding="inset"]')
     .first();
-  const padding = await metric.evaluate(
-    element => getComputedStyle(element).paddingLeft
-  );
+  const padding = await metric
+    .locator('.altertable-data-widget-header')
+    .evaluate(element => getComputedStyle(element).paddingLeft);
   for (const frame of [header, body]) {
     await expect(frame).toHaveCSS('padding-left', padding);
     await expect(frame).toHaveCSS('padding-right', padding);
   }
-  await expect(metric).toHaveCSS('padding-top', padding);
+  const valueInset = await metric.evaluate(element => {
+    const value = element.querySelector(
+      ':scope > .altertable-data-widget-body .altertable-metric-value'
+    )!;
+    return (
+      value.getBoundingClientRect().left - element.getBoundingClientRect().left
+    );
+  });
+  expect(valueInset).toBeCloseTo(parseFloat(padding) + 1, 0);
   await expect(header).toHaveCSS('padding-top', padding);
+  await metric
+    .getByRole('button', { name: 'Explore Recorded events', exact: true })
+    .click();
+  const inspection = page.getByRole('dialog');
+  await expect(inspection.getByText('20', { exact: true })).toBeVisible();
+  await expect(
+    inspection.getByText('12 on Monday · 8 on Wednesday', { exact: true })
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+
   await page.getByRole('tab', { name: 'Request states', exact: true }).click();
   const panel = page.getByRole('tabpanel', { name: 'Request states' });
   for (const selector of [
@@ -786,6 +804,28 @@ test('widget insets align across metrics, visualizations, and loading states', a
     const skeleton = panel.locator(selector).first();
     await expect(skeleton).toHaveCSS('padding-left', padding);
     await expect(skeleton).toHaveCSS('padding-right', padding);
+  }
+  await page.getByRole('tab', { name: 'Metrics', exact: true }).click();
+  const loadingWidget = page.getByRole('region', {
+    name: 'Loading metric',
+    exact: true,
+  });
+  await expect(loadingWidget).toHaveAttribute('aria-busy', 'true');
+  await expect(
+    loadingWidget.locator('.altertable-content-skeleton-body')
+  ).toBeVisible();
+  for (const part of [
+    '.altertable-data-widget-header',
+    '.altertable-data-widget-body',
+  ]) {
+    await expect(loadingWidget.locator(part)).toHaveCSS(
+      'padding-left',
+      padding
+    );
+    await expect(loadingWidget.locator(part)).toHaveCSS(
+      'padding-right',
+      padding
+    );
   }
 });
 
@@ -802,4 +842,58 @@ test('prose links have pointer and keyboard affordances', async ({ page }) => {
   await link.focus();
   await expect(link).toHaveCSS('outline-width', '1px');
   await expect(link).toHaveCSS('outline-style', 'solid');
+});
+
+test('component gallery shows composable data displays in the shared frame', async ({
+  page,
+}) => {
+  await page.goto('/gallery');
+  await page
+    .getByRole('button', { name: 'Component gallery', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/gallery\/components$/);
+  await expect(
+    page.getByRole('tablist', { name: 'Gallery categories' })
+  ).toHaveCount(0);
+  const panel = page.getByRole('main');
+  await expect(
+    panel.getByRole('region', { name: /basic example$/ })
+  ).toHaveCount(5);
+  for (const name of [
+    'ComparisonVisual',
+    'Ranking',
+    'Breakdown',
+    'SelectableBarChart',
+    'DataTable',
+  ]) {
+    await expect(
+      panel.getByRole('heading', { name, exact: true })
+    ).toBeVisible();
+  }
+  const bars = panel.getByRole('region', {
+    name: 'SelectableBarChart basic example',
+    exact: true,
+  });
+  await bars
+    .getByRole('button', { name: 'Monday: 12 events', exact: true })
+    .click();
+  await expect(
+    bars.getByRole('button', { name: 'Monday: 12 events', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true');
+  await bars.getByRole('button', { name: 'Clear selection' }).click();
+  await expect(panel.getByRole('table')).toHaveCount(1);
+  await expect(panel.getByRole('rowheader', { name: 'Monday' })).toBeVisible();
+  await page.reload();
+  await expect(panel).toBeVisible();
+  await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+  const dimensions = await page.evaluate(() => ({
+    width: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }));
+  expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width + 1);
+  await page.getByRole('button', { name: 'Back to app gallery' }).click();
+  await expect(page).toHaveURL(/\/gallery\?view=overview$/);
+  await expect(
+    page.getByRole('tablist', { name: 'Gallery categories' })
+  ).toBeVisible();
 });
