@@ -1,6 +1,12 @@
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useRef, useState } from 'react';
-import { Moon, Sun, PanelsTopLeft, Maximize } from 'lucide-react';
+import {
+  Moon,
+  Sun,
+  PanelsTopLeft,
+  Maximize,
+  MousePointer2,
+} from 'lucide-react';
 import { Tooltip, TooltipProvider } from '@altertable/data-app/react';
 import '@/src/react/ui/Tooltip.css';
 import { createRoot } from 'react-dom/client';
@@ -8,6 +14,7 @@ import { DataAppBridge } from '@altertable/data-app/react/embed';
 import {
   MessageRoutingError,
   annotationDraftRoute,
+  annotationModeRoute,
   type DataAppAnnotationDraft,
   createMessageRouter,
   defineMessageRoute,
@@ -58,6 +65,7 @@ function Host() {
   const [annotationFailure, setAnnotationFailure] = useState(
     new URLSearchParams(location.search).has('annotation-error')
   );
+  const [annotating, setAnnotating] = useState(false);
   const hostRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<Theme>('dark');
   const [parentPresentation, setParentPresentation] = useState(true);
@@ -87,10 +95,12 @@ function Host() {
     ? ({
         surface,
         theme,
-        ...(new URLSearchParams(location.search).has('annotations')
+        ...(isPlayground ||
+        new URLSearchParams(location.search).has('annotations')
           ? {
               annotations: {
                 enabled: true,
+                ...(isPlayground ? { active: annotating } : {}),
                 targets: annotations.map((draft, index) => ({
                   id: draft.id,
                   targetId: draft.target.id,
@@ -157,11 +167,16 @@ function Host() {
     {
       ...bridgeRoutes,
       'annotation:draft': annotationDraftRoute,
+      'annotation:mode': annotationModeRoute,
       'data:sql': sqlQueryRoute,
       'export:csv': fileExportRoute,
       'export:zip': fileExportRoute,
     },
     {
+      'annotation:mode'({ active }) {
+        setAnnotating(active);
+        return null;
+      },
       'annotation:draft'(draft) {
         if (new URLSearchParams(location.search).has('annotation-limit'))
           throw new MessageRoutingError(
@@ -217,7 +232,10 @@ function Host() {
       </button>
       <button
         aria-label="Change surface"
-        onClick={() => setEmbedded(value => !value)}
+        onClick={() => {
+          setAnnotating(false);
+          setEmbedded(value => !value);
+        }}
       >
         Change surface
       </button>
@@ -263,6 +281,20 @@ function Host() {
               className="playground-controls"
             >
               <Tooltip
+                content="Annotate"
+                placement="bottom"
+                portalRoot={hostRef}
+              >
+                <button
+                  aria-label="Annotate"
+                  aria-pressed={annotating}
+                  disabled={!embedded || status !== 'ready'}
+                  onClick={() => setAnnotating(value => !value)}
+                >
+                  <MousePointer2 size={16} aria-hidden="true" />
+                </button>
+              </Tooltip>
+              <Tooltip
                 content={themeLabel}
                 placement="bottom"
                 portalRoot={hostRef}
@@ -285,7 +317,10 @@ function Host() {
                 <button
                   aria-label="Standalone preview"
                   aria-pressed={!embedded}
-                  onClick={() => setEmbedded(value => !value)}
+                  onClick={() => {
+                    setAnnotating(false);
+                    setEmbedded(value => !value);
+                  }}
                 >
                   <SurfaceIcon size={16} aria-hidden="true" />
                 </button>
@@ -298,6 +333,18 @@ function Host() {
           {presentationControls}
           {testControls}
         </>
+      )}
+      {isPlayground && annotations.length > 0 && (
+        <aside className="playground-feedback" aria-label="Annotation drafts">
+          {annotations.map((draft, index) => (
+            <div key={draft.id}>
+              <strong>
+                {index + 1}. {draft.target.label}
+              </strong>
+              <span>{draft.comment}</span>
+            </div>
+          ))}
+        </aside>
       )}
       <main className={isPlayground ? 'playground-stage' : undefined}>
         {status === 'failed' && (

@@ -217,3 +217,8 @@ pins. Changing `selectedTargetId` scrolls to and highlights that target. Set a f
 `selectionId` on each selection to reveal the same target again after scrolling. Preserve
 old-version annotations in chat without reattaching them to a newer app. Omit
 `annotations` when the host cannot accept feedback; the toolbar stays unchanged.
+
+A shell can place **Annotate** in its own navigation by providing `annotations.active`.
+This hides the in-app trigger and controls selection mode. Register `annotationModeRoute`
+under `annotation:mode` to receive local exits such as Escape and update the shell toggle.
+Leave `active` undefined to use the data app's built-in toolbar trigger.

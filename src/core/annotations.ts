@@ -23,6 +23,8 @@ export type DataAppAnnotationDraft = {
 
 export type DataAppAnnotationPresentation = {
   enabled: boolean;
+  /** When provided, the host owns the mode and renders the annotation trigger. */
+  active?: boolean;
   targets?: { id: string; targetId: string; number: number }[];
   selectedTargetId?: string;
   selectionId?: string;
@@ -113,6 +115,20 @@ export const annotationDraftRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 
+/** A controlled shell acknowledges local exits (for example Escape). */
+export const annotationModeRoute = /* @__PURE__ */ defineMessageRoute({
+  input(value: unknown): { active: boolean } {
+    const input = object(value);
+    if (typeof input.active !== 'boolean')
+      throw new Error('Invalid annotation mode.');
+    return { active: input.active };
+  },
+  output(value: unknown): null {
+    if (value !== null) throw new Error('Invalid annotation response.');
+    return null;
+  },
+});
+
 export function isAnnotationPresentation(
   value: unknown
 ): value is DataAppAnnotationPresentation {
@@ -120,6 +136,7 @@ export function isAnnotationPresentation(
   const input = value as DataAppAnnotationPresentation;
   return (
     typeof input.enabled === 'boolean' &&
+    (input.active === undefined || typeof input.active === 'boolean') &&
     (input.selectionId === undefined ||
       (typeof input.selectionId === 'string' &&
         input.selectionId.length <= 128)) &&

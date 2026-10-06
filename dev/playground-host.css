@@ -144,3 +144,29 @@ body:has(.playground-host) #root {
   opacity: 0.4;
   cursor: default;
 }
+
+.playground-feedback {
+  position: absolute;
+  z-index: 2;
+  top: 52px;
+  right: 12px;
+  width: min(280px, calc(100vw - 24px));
+  max-height: 30vh;
+  overflow: auto;
+  border: 1px solid var(--host-border);
+  border-radius: 8px;
+  background: var(--host-surface);
+  box-shadow: 0 4px 16px #0002;
+}
+.playground-feedback > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  overflow-wrap: anywhere;
+}
+.playground-feedback > div + div {
+  border-top: 1px solid var(--host-border);
+}
+.playground-feedback span {
+  color: var(--host-muted);
+}

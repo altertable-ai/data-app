@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test';
 import {
   annotationDraftRoute,
+  annotationModeRoute,
   parseDataAppAnnotationDraft,
   createMessageRouter,
   MessageRoutingError,
@@ -100,4 +101,43 @@ test('hosts explicitly advertise annotation support and bounded pin state', () =
       },
     })
   ).toBe(false);
+});
+
+test('shell-controlled annotation mode accepts booleans and rejects invalid mode state', async () => {
+  const modes: boolean[] = [];
+  const router = createMessageRouter(
+    { 'annotation:mode': annotationModeRoute },
+    {
+      'annotation:mode'({ active }) {
+        modes.push(active);
+        return null;
+      },
+    }
+  );
+  await router.dispatch(
+    { route: 'annotation:mode', payload: { active: false } },
+    { signal: new AbortController().signal }
+  );
+  expect(modes).toEqual([false]);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: { enabled: true, active: true },
+    })
+  ).toBe(true);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: { enabled: true, active: 'yes' },
+    })
+  ).toBe(false);
+  const failure = await router
+    .dispatch(
+      { route: 'annotation:mode', payload: { active: 'yes' } },
+      { signal: new AbortController().signal }
+    )
+    .catch((error: unknown) => error);
+  expect(failure).toBeInstanceOf(MessageRoutingError);
 });

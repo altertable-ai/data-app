@@ -22,6 +22,7 @@ import { getDataAppNavigation } from '@/src/client/navigation';
 import { createMessageClient } from '@/src/client/messages';
 import {
   annotationDraftRoute,
+  annotationModeRoute,
   type DataAppAnnotationDraft,
   type DataAppAnnotationPresentation,
 } from '@/src/core/annotations';
@@ -61,7 +62,8 @@ export function AnnotationControls({
 }) {
   const toolbarRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [active, setActive] = useState(false);
+  const [localActive, setActive] = useState(false);
+  const active = presentation.active ?? localActive;
   const [hovered, setHovered] = useState<Target>();
   const [selected, setSelected] = useState<Target>();
   const [draft, setDraft] = useState<DataAppAnnotationDraft>();
@@ -129,12 +131,32 @@ export function AnnotationControls({
     });
   }
 
+  const [lastActive, setLastActive] = useState(active);
+  if (lastActive !== active) {
+    setLastActive(active);
+    if (!active) {
+      setSelected(undefined);
+      setDraft(undefined);
+      setHovered(undefined);
+    }
+  }
+
   function finish() {
     setActive(false);
     setSelected(undefined);
     setDraft(undefined);
     setHovered(undefined);
     toolbarRef.current?.focus();
+    if (presentation.active !== undefined) {
+      const bridge = getDataAppTransport();
+      if (bridge)
+        void createMessageClient(
+          { 'annotation:mode': annotationModeRoute },
+          bridge.request
+        )
+          .request('annotation:mode', { active: false })
+          .catch(() => {});
+    }
   }
   const finishFromKeyboard = useEffectEvent(finish);
   const captureSelection = useEffectEvent(select);
@@ -286,21 +308,23 @@ export function AnnotationControls({
 
   return (
     <>
-      <Button
-        size="compact"
-        variant="elevated"
-        ref={toolbarRef}
-        aria-pressed={active}
-        disabled={pending}
-        onClick={() => {
-          setActive(!active);
-          setSelected(undefined);
-          setDraft(undefined);
-          setHovered(undefined);
-        }}
-      >
-        Annotate
-      </Button>
+      {presentation.active === undefined && (
+        <Button
+          size="compact"
+          variant="elevated"
+          ref={toolbarRef}
+          aria-pressed={active}
+          disabled={pending}
+          onClick={() => {
+            setActive(!active);
+            setSelected(undefined);
+            setDraft(undefined);
+            setHovered(undefined);
+          }}
+        >
+          Annotate
+        </Button>
+      )}
       {createPortal(
         <>
           {outline && (

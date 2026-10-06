@@ -96,6 +96,9 @@ const hostedApps = {
 };
 const hostedApp = hostedApps[isDevelopment ? 'development' : 'test'];
 const loadHostedAppBundle = await createBundleLoader(hostedApp.entry);
+const loadPlaygroundBundle = isDevelopment
+  ? loadHostedAppBundle
+  : await createBundleLoader('../dev/playground.tsx');
 const serveReloadEvents =
   isDevelopment &&
   createReloadHandler([
@@ -144,6 +147,7 @@ Bun.serve({
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,
+    '/playground': bundleHost,
     [hostedApp.path]: bundleHost,
   },
   async fetch(request, server) {
@@ -153,6 +157,8 @@ Bun.serve({
       server.timeout(request, 0);
       return serveReloadEvents(request);
     }
+    if (path === '/__test/playground')
+      return new Response(await loadPlaygroundBundle());
     if (path === `/__test${hostedApp.path}`)
       return new Response(await loadHostedAppBundle());
     if (path === '/__test/annotation-state')
