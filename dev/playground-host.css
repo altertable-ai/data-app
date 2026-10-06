@@ -68,7 +68,7 @@ body:has(.playground-host) #root {
   margin-left: auto;
 }
 
-.playground-host button {
+.playground-controls button {
   appearance: none;
   display: inline-flex;
   align-items: center;
@@ -84,13 +84,13 @@ body:has(.playground-host) #root {
   cursor: pointer;
 }
 
-.playground-host button:not(:disabled):hover,
-.playground-host button[aria-pressed='true'] {
+.playground-controls button:not(:disabled):hover,
+.playground-controls button[aria-pressed='true'] {
   background: var(--host-hover);
   color: var(--host-text);
 }
 
-.playground-host button:focus-visible {
+.playground-controls button:focus-visible {
   outline: 2px solid #7c9dd6;
   outline-offset: 2px;
 }
@@ -142,7 +142,7 @@ body:has(.playground-host) #root {
   border: 1px solid var(--host-border);
 }
 
-.playground-host button:disabled {
+.playground-controls button:disabled {
   opacity: 0.4;
   cursor: default;
 }

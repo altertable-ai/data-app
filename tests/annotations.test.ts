@@ -256,3 +256,48 @@ test('editor state and display settings preserve canonical pin data', async () =
     })
   ).toBe(false);
 });
+
+test('root captures validate PNG dimensions and preserve exact cursor anchors', () => {
+  const screenshot = {
+    mimeType: 'image/png' as const,
+    dataUrl:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/axFNy8AAAAASUVORK5CYII=',
+    width: 1,
+    height: 1,
+  };
+  const value = {
+    ...draft,
+    target: { ...draft.target, kind: 'app' },
+    context: {
+      ...draft.context,
+      anchor: { x: 0.25, y: 0.5 },
+      cursor: { x: 200, y: 300 },
+      screenshot,
+    },
+  };
+  const parsed = parseDataAppAnnotationDraft(value);
+  expect(parsed.target.kind).toBe('app');
+  expect(parsed.context.screenshot).toEqual(screenshot);
+  expect(parsed.context.anchor).toEqual({ x: 0.25, y: 0.5 });
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      context: { ...value.context, screenshot: { ...screenshot, width: 2 } },
+    })
+  ).toThrow();
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      context: { ...value.context, anchor: { x: 2, y: 0 } },
+    })
+  ).toThrow();
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      context: {
+        ...value.context,
+        screenshot: { ...screenshot, mimeType: 'image/svg+xml' },
+      },
+    })
+  ).toThrow();
+});

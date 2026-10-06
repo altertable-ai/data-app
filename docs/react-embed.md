@@ -151,3 +151,13 @@ same callback to its existing Ask Agent message submission path.
 The bar appears once at least one annotation is saved. Before then, keep the
 in-frame hint enabled. The count opens the review panel; pin visibility and Send
 stay in the compact bar. Discarding all pending annotations requires confirmation.
+
+Hosts can pass `requestDiscard(discard)` to use their existing confirmation dialog;
+invoke `discard()` only when confirmed. The default confirmation uses the package's
+standard sheet styling with centered placement.
+
+Forward `draft.context.anchor` into each presentation target to position its pin
+at the original click. `context.cursor` records the selection-time viewport point.
+The `app` target kind identifies global layout instructions. Screenshot payloads
+are bounded PNGs in `context.screenshot`; transmit those bytes through the agent's
+image attachment API and retain metadata/filename association in its instructions.

@@ -370,3 +370,15 @@ elsewhere). Clicking a numbered pin reopens its comment. Enter saves it; Shift+E
 inserts a newline. An unsaved annotation shakes on the first Escape; pressing Escape
 again discards the local edit and exits annotation mode. Unchanged saved annotations close with a single Escape. Saved annotations remain
 until explicitly deleted by the host.
+
+Clicking empty space in the app content selects **App layout** for global layout
+instructions. Widget and custom element targets take precedence. Pointer selection
+stores viewport coordinates and a normalized target-relative anchor; badges stay
+at that location as the page scrolls or the target resizes. Keyboard selection
+uses the center of the visible target area.
+
+A PNG of the visible selected area is captured at selection time and travels with
+the saved annotation. Annotation overlays are excluded. Captures are limited to
+1024 pixels per dimension and 256 KiB; the original displayed input and text stay
+frozen. Hosts forward screenshots as image attachments rather than base64 prompt
+text and limit aggregate image bytes separately from annotation metadata.

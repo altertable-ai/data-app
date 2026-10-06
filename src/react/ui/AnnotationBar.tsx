@@ -1,7 +1,6 @@
 import {
   useEffect,
   useEffectEvent,
-  useId,
   useRef,
   useState,
   type CSSProperties,
@@ -30,6 +29,7 @@ import {
 } from '@/src/core/annotations';
 import { Button } from '@/src/react/ui/Button';
 import { Tooltip, TooltipProvider } from '@/src/react/ui/Tooltip';
+import { Sheet } from '@/src/react/ui/Sheet';
 import { Kbd } from '@/src/react/ui/Kbd';
 
 export type AnnotationBarProps = {
@@ -42,6 +42,8 @@ export type AnnotationBarProps = {
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onClear: () => void;
+  /** Let host apps use their existing confirmation dialog. */
+  requestDiscard?: (discard: () => void) => void;
   /** Resolve only after the outer application's agent API accepts this snapshot. */
   onSend: (annotations: readonly DataAppAnnotationDraft[]) => Promise<void>;
   onClose: () => void;
@@ -58,13 +60,12 @@ export function AnnotationBar({
   onSelect,
   onDelete,
   onClear,
+  requestDiscard,
   onSend,
   onClose,
 }: AnnotationBarProps) {
   const reviewElement = useRef<HTMLDialogElement>(null);
   const reviewTrigger = useRef<HTMLButtonElement>(null);
-  const discardId = useId();
-  const discardDialog = useRef<HTMLDialogElement>(null);
   const cancelDiscard = useRef<HTMLButtonElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const drag = useRef<
@@ -139,13 +140,14 @@ export function AnnotationBar({
     }
   }
   useEffect(() => {
-    const dialog = discardDialog.current;
-    if (!dialog) return;
-    if (discardOpen && !dialog.open) {
-      dialog.showModal();
-      cancelDiscard.current?.focus();
-    } else if (!discardOpen && dialog.open) dialog.close();
+    if (discardOpen) cancelDiscard.current?.focus();
   }, [discardOpen]);
+  function discardAnnotations() {
+    setDiscardOpen(false);
+    setReviewOpen(false);
+    onClear();
+    onClose();
+  }
   if (annotations.length === 0) return null;
   const style: CSSProperties = position
     ? {
@@ -260,7 +262,11 @@ export function AnnotationBar({
             size="icon-compact"
             aria-label="Discard all annotations"
             disabled={locked}
-            onClick={() => setDiscardOpen(true)}
+            onClick={() =>
+              requestDiscard
+                ? requestDiscard(discardAnnotations)
+                : setDiscardOpen(true)
+            }
           >
             <Trash2 size={16} aria-hidden />
           </Button>
@@ -382,43 +388,36 @@ export function AnnotationBar({
           </dialog>,
           document.body
         )}
-      {createPortal(
-        <dialog
-          ref={discardDialog}
-          className="altertable-annotation-discard"
-          data-theme={theme}
-          aria-labelledby={`${discardId}-title`}
-          aria-describedby={`${discardId}-description`}
-          onCancel={() => setDiscardOpen(false)}
-          onClose={() => setDiscardOpen(false)}
+      {!requestDiscard && (
+        <Sheet
+          open={discardOpen}
+          onOpenChange={setDiscardOpen}
+          placement="center"
+          title="Discard all pending annotations?"
+          returnFocus={barRef}
+          footer={
+            <>
+              <Button
+                ref={cancelDiscard}
+                variant="ghost"
+                onClick={() => setDiscardOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="altertable-annotation-discard-confirm"
+                disabled={locked}
+                onClick={discardAnnotations}
+              >
+                Discard
+              </Button>
+            </>
+          }
         >
-          <h2 id={`${discardId}-title`}>Discard all pending annotations?</h2>
-          <p id={`${discardId}-description`}>
+          <p className="altertable-annotation-discard-description">
             These annotations will be removed and won’t be sent to the agent.
           </p>
-          <footer>
-            <Button
-              ref={cancelDiscard}
-              variant="ghost"
-              onClick={() => setDiscardOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="altertable-annotation-discard-confirm"
-              disabled={locked}
-              onClick={() => {
-                setDiscardOpen(false);
-                setReviewOpen(false);
-                onClear();
-                onClose();
-              }}
-            >
-              Discard
-            </Button>
-          </footer>
-        </dialog>,
-        document.body
+        </Sheet>
       )}
     </TooltipProvider>
   );

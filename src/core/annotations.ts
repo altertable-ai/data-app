@@ -5,7 +5,7 @@ export type DataAppAnnotationDraft = {
   target: {
     id: string;
     label: string;
-    kind: 'widget' | 'element';
+    kind: 'widget' | 'element' | 'app';
     text: string;
     queryNames: string[];
     glossaryIds: string[];
@@ -14,6 +14,15 @@ export type DataAppAnnotationDraft = {
     search: string;
     hash: string;
     displayedInput?: unknown;
+    /** Normalized position within the selected target, stable across scrolling/resizing. */
+    anchor?: { x: number; y: number };
+    cursor?: { x: number; y: number };
+    screenshot?: {
+      mimeType: 'image/png';
+      dataUrl: string;
+      width: number;
+      height: number;
+    };
     view?: string;
     viewport: { width: number; height: number };
     rect: { x: number; y: number; width: number; height: number };
@@ -33,6 +42,7 @@ export type DataAppAnnotationPresentation = {
     targetId: string;
     number: number;
     comment?: string;
+    anchor?: { x: number; y: number };
   }[];
   selectedAnnotationId?: string;
   selectedTargetId?: string;
@@ -78,8 +88,65 @@ export function parseDataAppAnnotationDraft(
   const context = object(input.context);
   const viewport = object(context.viewport);
   const rect = object(context.rect);
-  if (target.kind !== 'widget' && target.kind !== 'element')
+  if (
+    target.kind !== 'widget' &&
+    target.kind !== 'element' &&
+    target.kind !== 'app'
+  )
     throw new Error('Invalid annotation target.');
+  let screenshot: DataAppAnnotationDraft['context']['screenshot'];
+  if (context.screenshot !== undefined) {
+    const image = object(context.screenshot);
+    const dataUrl = text(image.dataUrl, 350_000, true);
+    if (
+      image.mimeType !== 'image/png' ||
+      !/^data:image\/png;base64,iVBORw0KGgo[A-Za-z0-9+/]*={0,2}$/.test(dataUrl)
+    )
+      throw new Error('Invalid annotation screenshot.');
+    const width = number(image.width, true);
+    const height = number(image.height, true);
+    if (
+      !Number.isInteger(width) ||
+      !Number.isInteger(height) ||
+      width < 1 ||
+      height < 1 ||
+      width > 1024 ||
+      height > 1024
+    )
+      throw new Error('Invalid screenshot dimensions.');
+    const encoded = dataUrl.slice('data:image/png;base64,'.length);
+    if (
+      encoded.length % 4 !== 0 ||
+      (encoded.length / 4) * 3 -
+        (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0) >
+        262_144
+    )
+      throw new Error('Screenshot is too large.');
+    const header = atob(encoded.slice(0, 44));
+    if (header.length < 24 || header.slice(12, 16) !== 'IHDR')
+      throw new Error('Invalid PNG header.');
+    const bytes = Uint8Array.from(header, character => character.charCodeAt(0));
+    const dimensions = new DataView(bytes.buffer);
+    if (
+      dimensions.getUint32(16) !== width ||
+      dimensions.getUint32(20) !== height
+    )
+      throw new Error('Screenshot dimensions do not match the image.');
+    screenshot = { mimeType: 'image/png', dataUrl, width, height };
+  }
+  let anchor: { x: number; y: number } | undefined;
+  if (context.anchor !== undefined) {
+    const point = object(context.anchor);
+    const x = number(point.x, true);
+    const y = number(point.y, true);
+    if (x > 1 || y > 1) throw new Error('Invalid annotation anchor.');
+    anchor = { x, y };
+  }
+  let cursor: { x: number; y: number } | undefined;
+  if (context.cursor !== undefined) {
+    const point = object(context.cursor);
+    cursor = { x: number(point.x), y: number(point.y) };
+  }
   const draft: DataAppAnnotationDraft = {
     id: text(input.id, 128, true),
     target: {
@@ -91,6 +158,9 @@ export function parseDataAppAnnotationDraft(
       glossaryIds: names(target.glossaryIds),
     },
     context: {
+      ...(anchor ? { anchor } : {}),
+      ...(cursor ? { cursor } : {}),
+      ...(screenshot ? { screenshot } : {}),
       search: text(context.search, 2048),
       hash: text(context.hash, 1024),
       viewport: {
@@ -110,10 +180,13 @@ export function parseDataAppAnnotationDraft(
     },
     comment: text(input.comment, 2000, true).trim(),
   };
-  const json = JSON.stringify(draft);
+  const json = JSON.stringify({
+    ...draft,
+    context: { ...draft.context, screenshot: undefined },
+  });
   if (new TextEncoder().encode(json).byteLength > 12_000)
     throw new Error('Annotation is too large.');
-  return JSON.parse(json) as DataAppAnnotationDraft;
+  return JSON.parse(JSON.stringify(draft)) as DataAppAnnotationDraft;
 }
 
 export const annotationDraftRoute = /* @__PURE__ */ defineMessageRoute({
@@ -198,6 +271,15 @@ export function isAnnotationPresentation(
             target.targetId.length <= 128 &&
             Number.isSafeInteger(target.number) &&
             target.number > 0 &&
+            (target.anchor === undefined ||
+              (typeof target.anchor.x === 'number' &&
+                Number.isFinite(target.anchor.x) &&
+                target.anchor.x >= 0 &&
+                target.anchor.x <= 1 &&
+                typeof target.anchor.y === 'number' &&
+                Number.isFinite(target.anchor.y) &&
+                target.anchor.y >= 0 &&
+                target.anchor.y <= 1)) &&
             (target.comment === undefined ||
               (typeof target.comment === 'string' &&
                 target.comment.length <= 2000))

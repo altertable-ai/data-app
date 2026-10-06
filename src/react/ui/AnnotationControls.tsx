@@ -2,6 +2,7 @@ import {
   useEffect,
   useEffectEvent,
   useRef,
+  useMemo,
   useState,
   type RefObject,
 } from 'react';
@@ -23,6 +24,14 @@ import {
   type DataAppAnnotationPresentation,
 } from '@/src/core/annotations';
 import { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';
+import {
+  annotationTargets as targets,
+  annotationGeometry as geometry,
+  annotationPoint,
+  type AnnotationTargetElement as Target,
+  type AnnotationPoint,
+} from '@/src/react/ui/annotation-targets';
+import { captureAnnotationScreenshot } from '@/src/react/ui/annotation-screenshot';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Kbd } from '@/src/react/ui/Kbd';
 import { Tooltip } from '@/src/react/ui/Tooltip';
@@ -32,27 +41,6 @@ import {
   ariaKeyShortcuts,
 } from '@/src/react/ui/shortcuts';
 import { Button } from '@/src/react/ui/Button';
-
-type Target = { element: HTMLElement; id: string; label: string };
-function targets(root: HTMLElement | null): Target[] {
-  const found = Array.from(
-    root?.querySelectorAll<HTMLElement>('[data-annotation-id]') ?? []
-  ).flatMap(element => {
-    const id = element.dataset.annotationId;
-    const label =
-      element.dataset.annotationLabel ??
-      element.querySelector('h2')?.textContent ??
-      'App element';
-    return id ? [{ element, id, label }] : [];
-  });
-  return found.filter(
-    target => found.filter(other => other.id === target.id).length === 1
-  );
-}
-function geometry(element: HTMLElement) {
-  const rect = element.getBoundingClientRect();
-  return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
-}
 
 export function AnnotationControls({
   rootRef,
@@ -66,6 +54,16 @@ export function AnnotationControls({
   view?: string;
 }) {
   const annotationClient = useDataAppAnnotations();
+  const screenshot = useRef<
+    | {
+        id: string;
+        result: Promise<{
+          image?: NonNullable<DataAppAnnotationDraft['context']['screenshot']>;
+          error?: unknown;
+        }>;
+      }
+    | undefined
+  >(undefined);
   const toolbarRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [localActive, setActive] = useState(false);
@@ -88,7 +86,7 @@ export function AnnotationControls({
     {
       id: string;
       number: number;
-      offset: number;
+      anchor: AnnotationPoint;
       rect: ReturnType<typeof geometry>;
     }[]
   >([]);
@@ -98,17 +96,41 @@ export function AnnotationControls({
     void annotationClient.setEditorState(hasUnsavedChanges).catch(() => {});
   }, [annotationClient, hasUnsavedChanges]);
 
+  const reference = useMemo(
+    () =>
+      selected && draft?.context.anchor
+        ? {
+            contextElement: selected.element,
+            getBoundingClientRect() {
+              const rect = selected.element.getBoundingClientRect();
+              return new DOMRect(
+                rect.x + rect.width * draft.context.anchor!.x,
+                rect.y + rect.height * draft.context.anchor!.y,
+                0,
+                0
+              );
+            },
+          }
+        : selected?.element,
+    [selected, draft]
+  );
   const { refs, floatingStyles } = useFloating({
-    elements: { reference: selected?.element },
     placement: 'right-start',
     strategy: 'fixed',
     middleware: [offset(8), flip(), shift({ padding: 12, crossAxis: true })],
     whileElementsMounted: autoUpdate,
   });
 
+  useEffect(() => {
+    refs.setPositionReference(reference ?? null);
+  }, [refs, reference]);
   const floatingRef = useMergeRefs([refs.setFloating]);
 
-  function selectTarget(target: Target) {
+  function selectTarget(
+    target: Target,
+    cursor?: AnnotationPoint,
+    capture = true
+  ) {
     setEditingId(undefined);
     discardArmed.current = false;
     setShaking(false);
@@ -121,15 +143,23 @@ export function AnnotationControls({
     setHovered(undefined);
     setError('');
     setComment('');
+    const id = crypto.randomUUID();
+    const point = annotationPoint(target.element, cursor);
+    if (capture)
+      screenshot.current = {
+        id,
+        result: captureAnnotationScreenshot(target.element).then(
+          image => ({ image }),
+          error => ({ error })
+        ),
+      };
+    else screenshot.current = undefined;
     setDraft({
-      id: crypto.randomUUID(),
+      id,
       target: {
         id: target.id,
         label: target.label.slice(0, 256),
-        kind:
-          target.element.dataset.annotationKind === 'element'
-            ? 'element'
-            : 'widget',
+        kind: target.kind,
         text: (target.element.textContent ?? '')
           .replace(/\s+/g, ' ')
           .trim()
@@ -142,6 +172,7 @@ export function AnnotationControls({
         ) as string[],
       },
       context: {
+        ...point,
         search: (location?.search ?? window.location.search).slice(0, 2048),
         hash: (location?.hash ?? window.location.hash).slice(0, 1024),
         displayedInput: input,
@@ -197,7 +228,17 @@ export function AnnotationControls({
     if (!pin || !target || pending) return;
     setAnnotationMode(true);
     target.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    selectTarget(target);
+    const rect = target.element.getBoundingClientRect();
+    selectTarget(
+      target,
+      pin.anchor
+        ? {
+            x: rect.x + pin.anchor.x * rect.width,
+            y: rect.y + pin.anchor.y * rect.height,
+          }
+        : undefined,
+      false
+    );
     setEditingId(id);
     setComment(pin.comment ?? '');
   }
@@ -216,6 +257,7 @@ export function AnnotationControls({
   useEffect(() => {
     if (!active) return;
     const root = rootRef.current;
+    const scope = root?.closest<HTMLElement>('.altertable-app-main') ?? root;
     function updateTargets() {
       const selectable = targets(root);
       setAmbiguous(
@@ -233,19 +275,41 @@ export function AnnotationControls({
         attributeFilter: ['data-annotation-id', 'data-annotation-label'],
       });
     function capture(event: Event) {
-      if (!(event.target instanceof Element) || !root?.contains(event.target))
+      if (!(event.target instanceof Element) || !scope?.contains(event.target))
         return;
       const element = event.target.closest<HTMLElement>('[data-annotation-id]');
-      const target = targets(root).find(target => target.element === element);
+      const all = targets(root);
+      const target =
+        all.find(target => target.element === element) ??
+        all.find(target => target.kind === 'app');
+      // Keep request controls available while results update in the background.
+      if (
+        !element &&
+        event.target.closest(
+          '.altertable-variable-bar, .altertable-app-toolbar'
+        )
+      )
+        return;
       event.preventDefault();
       event.stopPropagation();
       if (event.type === 'click' && target && !pending)
-        captureSelection(target);
+        captureSelection(
+          target,
+          event instanceof MouseEvent && event.detail > 0
+            ? { x: event.clientX, y: event.clientY }
+            : undefined
+        );
     }
     function hover(event: PointerEvent) {
       if (!(event.target instanceof Element)) return;
       const element = event.target.closest<HTMLElement>('[data-annotation-id]');
-      setHovered(targets(root).find(target => target.element === element));
+      const all = targets(root);
+      setHovered(
+        scope?.contains(event.target)
+          ? (all.find(target => target.element === element) ??
+              all.find(target => target.kind === 'app'))
+          : undefined
+      );
     }
     function escape(event: KeyboardEvent) {
       if (event.key === 'Escape' && !pending) {
@@ -331,19 +395,15 @@ export function AnnotationControls({
     function measure() {
       const all = targets(rootRef.current);
       setBoxes(
-        (presentation.targets ?? []).flatMap((pin, index) => {
+        (presentation.targets ?? []).flatMap(pin => {
           const target = all.find(target => target.id === pin.targetId);
           return target
             ? [
                 {
                   id: pin.id,
                   number: pin.number,
-                  offset:
-                    (presentation.targets ?? [])
-                      .slice(0, index)
-                      .filter(other => other.targetId === pin.targetId).length *
-                    28,
                   rect: geometry(target.element),
+                  anchor: pin.anchor ?? { x: 1, y: 0 },
                 },
               ]
             : [];
@@ -371,7 +431,19 @@ export function AnnotationControls({
     try {
       if (editingId)
         await annotationClient.updateAnnotation(editingId, comment);
-      else await annotationClient.sendAnnotation({ ...draft, comment });
+      else {
+        const capture = screenshot.current;
+        if (!capture || capture.id !== draft.id)
+          throw new Error('Annotation capture is unavailable.');
+        const result = await capture.result;
+        if (!result.image)
+          throw new Error('Could not capture the annotation area.');
+        await annotationClient.sendAnnotation({
+          ...draft,
+          comment,
+          context: { ...draft.context, screenshot: result.image },
+        });
+      }
       setEditingId(undefined);
       setSelected(undefined);
       setDraft(undefined);
@@ -402,6 +474,7 @@ export function AnnotationControls({
           }
         >
           <Button
+            data-annotation-ui
             aria-label="Annotate"
             aria-keyshortcuts={ariaKeyShortcuts(shortcuts.annotate)}
             size="compact"
@@ -445,11 +518,8 @@ export function AnnotationControls({
               className="altertable-annotation-pin"
               aria-label={`Annotation ${box.number}`}
               style={{
-                left: Math.max(
-                  8,
-                  box.rect.x + box.rect.width - 24 - box.offset
-                ),
-                top: box.rect.y + 8,
+                left: box.rect.x + box.rect.width * box.anchor.x - 12,
+                top: box.rect.y + box.rect.height * box.anchor.y - 12,
               }}
             >
               {box.number}

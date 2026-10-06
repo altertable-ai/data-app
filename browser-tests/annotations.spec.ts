@@ -1,3 +1,4 @@
+import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 
 test('select widgets and custom elements and deliver numbered feedback through the opaque bridge', async ({
@@ -43,11 +44,13 @@ test('select widgets and custom elements and deliver numbered feedback through t
     .click();
   await expect(frame.getByLabel('Annotation 2', { exact: true })).toBeVisible();
   // Host drafts outlive replacement of the iframe document.
-  await page.getByRole('button', { name: 'Change javascript' }).click();
+  await page
+    .getByRole('button', { name: 'Change javascript' })
+    .click({ position: { x: 4, y: 4 } });
   await expect(frame.getByLabel('Annotation 1', { exact: true })).toBeVisible();
   await frame
     .getByRole('button', { name: 'Explore revenue', exact: true })
-    .click();
+    .click({ position: { x: 4, y: 4 } });
   await expect(frame.locator('#result')).toHaveText('Chart clicked');
 });
 
@@ -155,4 +158,98 @@ test('keyboard selection opens the floating comment and Enter adds feedback', as
   await comment.press('Enter');
   await expect(frame.getByLabel('Annotation 1', { exact: true })).toBeVisible();
   await expect(comment).toHaveCount(0);
+});
+
+test('click coordinates anchor the badge and the bridge carries a real PNG of the area', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const widget = frame.locator('[data-annotation-id="monthly-revenue"]');
+  const rect = await widget.evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return { x: box.x, y: box.y, width: box.width, height: box.height };
+  });
+  await widget.click({ position: { x: 30, y: 45 } });
+  await frame
+    .getByRole('textbox', { name: 'Annotation text' })
+    .fill('Move the legend below the chart');
+  await frame
+    .getByRole('button', { name: 'Add annotation', exact: true })
+    .click();
+  const output = page.getByLabel('Annotation drafts', { exact: true });
+  await expect(output).toContainText('Move the legend below the chart');
+  const annotations = JSON.parse((await output.textContent())!);
+  expect(annotations[0].context.cursor).toEqual({
+    x: rect.x + 31,
+    y: rect.y + 46,
+  });
+  expect(annotations[0].context.anchor.x).toBeCloseTo(31 / rect.width);
+  expect(annotations[0].context.anchor.y).toBeCloseTo(46 / rect.height);
+  const screenshot = annotations[0].context.screenshot;
+  expect(screenshot.mimeType).toBe('image/png');
+  expect(screenshot.width).toBeGreaterThan(0);
+  expect(screenshot.height).toBeGreaterThan(0);
+  const pixels = Buffer.from(screenshot.dataUrl.split(',')[1], 'base64');
+  expect(pixels.byteLength).toBeLessThanOrEqual(262144);
+  expect(pixels.subarray(0, 8)).toEqual(
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+  );
+  await writeFile(testInfo.outputPath('captured-widget.png'), pixels);
+  const pin = frame.getByRole('button', { name: 'Annotation 1', exact: true });
+  const position = await pin.evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  });
+  const currentRect = await widget.evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return { x: box.x, y: box.y, width: box.width, height: box.height };
+  });
+  expect(position.x).toBeCloseTo(
+    currentRect.x + currentRect.width * annotations[0].context.anchor.x,
+    0
+  );
+  expect(position.y).toBeCloseTo(
+    currentRect.y + currentRect.height * annotations[0].context.anchor.y,
+    0
+  );
+});
+
+test('blank layout areas select the app root and capture the visible global layout', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const widget = frame.locator('[data-annotation-id="monthly-revenue"]');
+  const bounds = await widget.boundingBox();
+  const main = frame.locator('.altertable-app-main');
+  const root = await main.boundingBox();
+  await main.click({
+    position: {
+      x: bounds!.x - root!.x + 4,
+      y: bounds!.y - root!.y + bounds!.height + 10,
+    },
+  });
+  await frame
+    .getByRole('textbox', { name: 'Annotation text' })
+    .fill('Use three columns and reduce the page spacing');
+  await frame
+    .getByRole('button', { name: 'Add annotation', exact: true })
+    .click();
+  const output = page.getByLabel('Annotation drafts', { exact: true });
+  await expect(output).toContainText('Use three columns');
+  const annotations = JSON.parse((await output.textContent())!);
+  expect(annotations[0].target.kind).toBe('app');
+  expect(annotations[0].target.label).toBe('App layout');
+  expect(annotations[0].context.screenshot.width).toBeLessThanOrEqual(1024);
+  expect(annotations[0].context.screenshot.height).toBeLessThanOrEqual(1024);
+  await writeFile(
+    testInfo.outputPath('captured-layout.png'),
+    Buffer.from(
+      annotations[0].context.screenshot.dataUrl.split(',')[1],
+      'base64'
+    )
+  );
 });

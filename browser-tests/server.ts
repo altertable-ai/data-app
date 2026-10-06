@@ -167,10 +167,28 @@ Bun.serve({
           throw new Error('Invalid annotation batch.');
         const annotations = input.annotations.map(parseDataAppAnnotationDraft);
         if (
-          new TextEncoder().encode(JSON.stringify(annotations)).byteLength >
-          120_000
+          new TextEncoder().encode(
+            JSON.stringify(
+              annotations.map(annotation => ({
+                ...annotation,
+                context: { ...annotation.context, screenshot: undefined },
+              }))
+            )
+          ).byteLength > 120_000
         )
           throw new Error('Annotation batch is too large.');
+        const imageBytes = annotations.reduce((total, annotation) => {
+          const encoded = annotation.context.screenshot?.dataUrl.split(',')[1];
+          return (
+            total +
+            (encoded
+              ? (encoded.length / 4) * 3 -
+                (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0)
+              : 0)
+          );
+        }, 0);
+        if (imageBytes > 4 * 1024 * 1024)
+          throw new Error('Annotation images are too large.');
         return Response.json({ acceptedCount: annotations.length });
       } catch {
         return Response.json(

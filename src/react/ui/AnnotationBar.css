@@ -1,7 +1,6 @@
 .altertable-annotation-bar,
 .altertable-annotation-bar-panel,
-.altertable-annotation-bar-tooltip,
-.altertable-annotation-discard {
+.altertable-annotation-bar-tooltip {
   --bar-surface: #202326;
   --bar-text: #f2f3f4;
   --bar-muted: #aeb5bc;
@@ -22,8 +21,7 @@
 }
 .altertable-annotation-bar[data-theme='dark'],
 .altertable-annotation-bar-panel[data-theme='dark'],
-.altertable-annotation-bar-tooltip[data-theme='dark'],
-.altertable-annotation-discard[data-theme='dark'] {
+.altertable-annotation-bar-tooltip[data-theme='dark'] {
   --bar-surface: #f2f3f4;
   --bar-text: #151719;
   --bar-muted: #505963;
@@ -203,46 +201,13 @@
     rotate: 360deg;
   }
 }
-.altertable-annotation-discard {
-  margin: auto;
-  width: min(440px, calc(100vw - 32px));
-  padding: 24px;
-  border-radius: 20px;
-}
-.altertable-annotation-discard::backdrop {
-  background: #0006;
-}
-.altertable-annotation-discard h2 {
+.altertable-annotation-discard-description {
   margin: 0;
-  font: 600 20px/1.35 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  color: var(--at-muted, #687078);
+  font: 14px/1.55 var(--at-font, ui-sans-serif, system-ui, sans-serif);
 }
-.altertable-annotation-discard p {
-  margin: 12px 0 20px;
-  color: var(--bar-muted);
-}
-.altertable-annotation-discard footer {
-  display: flex;
-  justify-content: end;
-  gap: 8px;
-}
-.altertable-annotation-discard .altertable-button {
-  border: 0;
-  border-radius: 12px;
-  padding: 0 16px;
-  color: var(--bar-text);
-  background: var(--at-subtle);
-  font: inherit;
-  transition: none;
-}
-.altertable-annotation-discard .altertable-button:hover:not(:disabled) {
-  color: var(--bar-text);
-  background: color-mix(in srgb, var(--bar-text) 14%, var(--bar-surface));
-}
-.altertable-annotation-discard .altertable-annotation-discard-confirm,
-.altertable-annotation-discard
-  .altertable-annotation-discard-confirm:hover:not(:disabled) {
-  color: var(--bar-danger);
-  background: var(--bar-danger-surface);
+.altertable-annotation-discard-confirm {
+  color: var(--at-danger, #b42318);
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-annotation-bar-spinner {

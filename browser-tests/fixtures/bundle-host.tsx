@@ -145,6 +145,7 @@ function Host() {
                   targetId: draft.target.id,
                   number: index + 1,
                   comment: draft.comment,
+                  anchor: draft.context.anchor,
                 })),
               },
             }
@@ -318,7 +319,7 @@ function Host() {
           Allow annotations
         </button>
       )}
-      <output aria-label="Annotation drafts">
+      <output aria-label="Annotation drafts" hidden>
         {JSON.stringify(annotations)}
       </output>
       <button onClick={bumpVersion}>Change handler</button>

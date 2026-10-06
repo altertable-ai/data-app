@@ -110,6 +110,7 @@ test('bottom bar reviews, focuses, hides and deletes saved annotations', async (
   ).toBeFocused();
   await page.screenshot({
     path: testInfo.outputPath('annotation-discard.png'),
+    animations: 'disabled',
   });
   await confirmation
     .getByRole('button', { name: 'Cancel', exact: true })

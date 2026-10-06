@@ -185,9 +185,11 @@ export function attachDataAppConnection({
       return error(id, 'bridge_busy', 'Too many pending data requests.');
     try {
       const body = JSON.stringify(message.payload);
+      // PNG annotation captures have a separate validated 256 KiB image budget.
+      const limit = message.route === 'annotation:draft' ? 384_000 : 16_384;
       if (
         message.payload !== undefined &&
-        (typeof body !== 'string' || body.length > 16_384)
+        (typeof body !== 'string' || body.length > limit)
       )
         throw new Error('Invalid payload');
     } catch {
