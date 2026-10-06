@@ -16,6 +16,9 @@ import {
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 import '@/browser-tests/fixtures/dev-reload';
+import '@/dev/playground-host.css';
+const isPlayground = location.pathname === '/playground';
+if (isPlayground) document.title = 'Playground · Altertable';
 const appPreview = ['/starter-data-app', '/playground'].includes(
   location.pathname
 );
@@ -48,7 +51,7 @@ function Host() {
       : 'fullscreen *',
     allowFullScreen: true,
     className: 'app-frame',
-    ...(appPreview
+    ...(appPreview && !isPlayground
       ? {
           style: { display: 'block', width: '100%', height: '80vh', border: 0 },
         }
@@ -122,64 +125,128 @@ function Host() {
     }
   );
 
-  return (
+  const presentationControls = (
     <>
       <button
+        aria-label="Change theme"
         onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}
       >
-        Change theme
+        {isPlayground
+          ? `Theme: ${theme === 'dark' ? 'Dark' : 'Light'}`
+          : 'Change theme'}
       </button>
-      <button onClick={() => setParentPresentation(value => !value)}>
-        Toggle parent presentation
+      <button
+        aria-label="Toggle parent presentation"
+        aria-pressed={parentPresentation}
+        onClick={() => setParentPresentation(value => !value)}
+      >
+        {isPlayground ? 'Host appearance' : 'Toggle parent presentation'}
       </button>
-      <button onClick={() => setEmbedded(value => !value)}>
-        Change surface
+      <button
+        aria-label="Change surface"
+        onClick={() => setEmbedded(value => !value)}
+      >
+        {isPlayground
+          ? `Surface: ${embedded ? 'Embedded' : 'Standalone'}`
+          : 'Change surface'}
       </button>
+    </>
+  );
+  const testControls = (
+    <>
       {exportFailure && (
         <button onClick={() => setExportFailure(false)}>Allow exports</button>
       )}
       <button onClick={bumpVersion}>Change handler</button>
       <button onClick={bumpBundleVersion}>Change javascript</button>
       <button onClick={() => setBroken(false)}>Fix bundle</button>
-      {status === 'failed' && (
-        <div role="alert">
-          Could not load the data app.{' '}
-          <button onClick={bumpAttempt}>Retry</button>
-        </div>
-      )}
-      <DataAppBridge
-        key={attempt}
-        onStatusChange={setStatus}
-        iframeProps={iframeProps}
-        title="Sandbox app"
-        presentation={
-          parentPresentation
-            ? { surface: embedded ? 'embedded' : 'standalone', theme }
-            : undefined
-        }
-        source={
-          urlMode
-            ? {
-                type: 'url',
-                url: `http://127.0.0.1:${Number(location.port) + 1}/report`,
-              }
-            : {
-                type: 'bundle',
-                bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
-                javascript: broken
-                  ? new URLSearchParams(location.search).has('syntax')
-                    ? 'const ='
-                    : 'throw new Error("Broken app")'
-                  : `${javascript}\ndocument.body.dataset.bundleVersion = "${bundleVersion}";`,
-              }
-        }
-        startupTimeoutMs={timeout ? 200 : 10_000}
-        onMessage={router.dispatch}
-        onDiagnostic={event => {
-          document.body.dataset.diagnostic = JSON.stringify(event);
-        }}
-      />
     </>
+  );
+
+  return (
+    <div
+      className={isPlayground ? 'playground-host' : undefined}
+      data-theme={theme}
+    >
+      {isPlayground ? (
+        <header className="playground-navbar">
+          <div className="playground-brand">
+            <span className="playground-mark" aria-hidden="true">
+              a
+            </span>
+            <div>
+              <strong>Playground</strong>
+              <span className="playground-subtitle">Altertable data apps</span>
+            </div>
+            <span className="playground-badge">Development</span>
+          </div>
+          <nav aria-label="Playground controls" className="playground-controls">
+            {presentationControls}
+          </nav>
+          <div className="playground-tools">
+            <output className="playground-connection" data-status={status}>
+              {status === 'ready'
+                ? 'Connected'
+                : status === 'failed'
+                  ? 'Disconnected'
+                  : 'Connecting'}
+            </output>
+            <details>
+              <summary>Testing tools</summary>
+              <div className="playground-tools-menu">{testControls}</div>
+            </details>
+          </div>
+        </header>
+      ) : (
+        <>
+          {presentationControls}
+          {testControls}
+        </>
+      )}
+      <main className={isPlayground ? 'playground-stage' : undefined}>
+        {status === 'failed' && (
+          <div
+            role="alert"
+            className={isPlayground ? 'playground-error' : undefined}
+          >
+            Could not load the data app.{' '}
+            <button onClick={bumpAttempt}>Retry</button>
+          </div>
+        )}
+        <DataAppBridge
+          key={attempt}
+          onStatusChange={setStatus}
+          iframeProps={iframeProps}
+          title={isPlayground ? 'Orders preview' : 'Sandbox app'}
+          presentation={
+            parentPresentation
+              ? { surface: embedded ? 'embedded' : 'standalone', theme }
+              : undefined
+          }
+          source={
+            urlMode
+              ? {
+                  type: 'url',
+                  url: `http://127.0.0.1:${Number(location.port) + 1}/report`,
+                }
+              : {
+                  type: 'bundle',
+                  bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
+                  javascript: broken
+                    ? new URLSearchParams(location.search).has('syntax')
+                      ? 'const ='
+                      : 'throw new Error("Broken app")'
+                    : `${javascript}\ndocument.body.dataset.bundleVersion = "${bundleVersion}";`,
+                }
+          }
+          startupTimeoutMs={timeout ? 200 : 10_000}
+          onMessage={router.dispatch}
+          onDiagnostic={event => {
+            document.body.dataset.diagnostic = JSON.stringify(event);
+          }}
+        />
+      </main>
+    </div>
   );
 }
 

@@ -1,0 +1,258 @@
+html:has(.playground-host),
+body:has(.playground-host),
+body:has(.playground-host) #root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+.playground-host {
+  --host-background: #151719;
+  --host-surface: #202326;
+  --host-hover: #292d31;
+  --host-text: #f2f3f4;
+  --host-muted: #aeb5bc;
+  --host-border: #3b4248;
+  color-scheme: dark;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100dvh;
+  background: var(--host-background);
+  color: var(--host-text);
+  font:
+    13px/1.4 ui-sans-serif,
+    system-ui,
+    sans-serif;
+}
+
+.playground-host[data-theme='light'] {
+  --host-background: #f7f8f9;
+  --host-surface: #fff;
+  --host-hover: #f0f2f4;
+  --host-text: #202326;
+  --host-muted: #626b73;
+  --host-border: #dfe3e6;
+  color-scheme: light;
+}
+
+.playground-host * {
+  box-sizing: border-box;
+}
+
+.playground-navbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 20px;
+  background: var(--host-surface);
+  border-bottom: 1px solid var(--host-border);
+  z-index: 1;
+}
+
+.playground-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.playground-mark {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--host-text);
+  color: var(--host-surface);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.playground-brand strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.playground-subtitle {
+  display: block;
+  color: var(--host-muted);
+  font-size: 11px;
+}
+
+.playground-badge {
+  padding: 3px 7px;
+  border: 1px solid var(--host-border);
+  border-radius: 5px;
+  color: var(--host-muted);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.playground-controls,
+.playground-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.playground-tools {
+  margin-left: auto;
+  gap: 16px;
+}
+
+.playground-host button,
+.playground-host summary {
+  appearance: none;
+  border: 1px solid var(--host-border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  background: transparent;
+  color: var(--host-text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.playground-host button:hover,
+.playground-host summary:hover {
+  background: var(--host-hover);
+}
+
+.playground-host button[aria-pressed='true'] {
+  background: var(--host-hover);
+}
+
+.playground-host button:focus-visible,
+.playground-host summary:focus-visible {
+  outline: 2px solid #7c9dd6;
+  outline-offset: 3px;
+}
+
+.playground-connection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--host-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.playground-connection::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c99b73;
+}
+
+.playground-connection[data-status='ready']::before {
+  background: #83ad95;
+}
+
+.playground-connection[data-status='failed']::before {
+  background: #d68b9d;
+}
+
+.playground-tools details {
+  position: relative;
+}
+
+.playground-tools summary {
+  list-style: none;
+  color: var(--host-muted);
+}
+
+.playground-tools summary::-webkit-details-marker {
+  display: none;
+}
+
+.playground-tools-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  padding: 6px;
+  border: 1px solid var(--host-border);
+  border-radius: 8px;
+  background: var(--host-surface);
+  box-shadow: 0 8px 24px #0003;
+}
+
+.playground-tools-menu button {
+  border-color: transparent;
+  text-align: left;
+}
+
+.playground-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.playground-stage .app-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.playground-stage .app-frame[hidden] {
+  display: none;
+}
+
+.playground-error {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+  height: 100%;
+  color: var(--host-muted);
+}
+
+@media (max-width: 1100px) {
+  .playground-navbar {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .playground-brand {
+    flex: 1;
+  }
+
+  .playground-controls {
+    order: 1;
+    flex-basis: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .playground-navbar {
+    padding: 12px;
+  }
+
+  .playground-badge,
+  .playground-connection {
+    display: none;
+  }
+
+  .playground-controls {
+    min-width: 0;
+    gap: 4px;
+    align-items: stretch;
+  }
+
+  .playground-controls button {
+    flex: 1;
+    min-width: 0;
+    white-space: normal;
+    padding: 7px 6px;
+    font-size: 11px;
+  }
+}
