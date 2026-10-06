@@ -1,9 +1,6 @@
 import { injectDataAppStyles } from '@altertable/data-app/react';
 import type { DataAppConfig } from '@altertable/data-app/config';
-import {
-  connectionCheck,
-  defineOperation,
-} from '@altertable/data-app/contract';
+import { connectionCheck } from '@altertable/data-app/contract';
 import { useState } from 'react';
 import {
   createMessageClient,
@@ -26,16 +23,7 @@ const config: DataAppConfig = {
 };
 const bridge = getDataAppTransport()!;
 const data = createDataClient({
-  operations: {
-    connection: defineOperation({
-      ...connectionCheck(),
-      queryNames: { connection: 'connection-check' },
-      async run({ query }) {
-        await query('connection-check', 'SELECT 1 AS connection_check');
-        return true;
-      },
-    }),
-  },
+  operations: { connection: connectionCheck() },
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = { period: textVariable({ key: 'period', history: 'push' }) };

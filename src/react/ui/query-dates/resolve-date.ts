@@ -1,13 +1,9 @@
 import { fromDate, getDayOfWeek } from '@internationalized/date';
-import { invariant } from '@/src/core/invariant';
 import type { AbsoluteOrRelativeDateTime } from '@/src/core/query-variables';
 
-function resolveVariableDateTime(
-  value: AbsoluteOrRelativeDateTime,
-  { now = new Date(), timeZone = 'UTC' }: { now?: Date; timeZone?: string } = {}
-): Date {
+function resolveVariableDateTime(value: AbsoluteOrRelativeDateTime): Date {
   if (value instanceof Date) return value;
-  let date = fromDate(now, timeZone);
+  let date = fromDate(new Date(), 'UTC');
   if (value.anchor !== 'RELATIVE_ANCHOR_NOW')
     date = date.set({ hour: 0, minute: 0, second: 0, millisecond: 0 });
   switch (value.anchor) {
@@ -39,12 +35,7 @@ function resolveVariableDateTime(
     }[unit];
     date = date.add({ [key]: amount });
   }
-  const resolved = date.toDate();
-  invariant(
-    Number.isFinite(resolved.getTime()),
-    'Date is outside the supported range.'
-  );
-  return resolved;
+  return date.toDate();
 }
 
 /** Display URL or controlled values without making malformed values crash the UI. */

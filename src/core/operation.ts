@@ -124,7 +124,6 @@ function createOperationLakehouse(
       try {
         result = await source.queryAll(statement, {
           limit,
-          name: options.name,
           signal: AbortSignal.any([signal, options.signal]),
         });
       } catch (error) {

@@ -55,7 +55,7 @@ const operations = {
       { groupName: 'Alpha' },
       { groupName: 'missing' },
     ],
-    policy: { maxQueryRows: 10, maxDurationMs: 15000, exposeSql: true },
+    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const queryResult = await query(queryNames.sampleCountsByGroup, {
         groupName,

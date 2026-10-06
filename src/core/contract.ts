@@ -314,7 +314,7 @@ export type OperationQuery<
   Variables extends QueryVariableDefinitions = QueryVariableDefinitions,
 > = (
   name: Names[keyof Names],
-  statement: string | Partial<QueryVariableValues<Variables>>,
+  statementOrValues: string | Partial<QueryVariableValues<Variables>>,
   options?: { limit?: number }
 ) => Promise<QueryResult>;
 
@@ -358,7 +358,7 @@ export function defineOperation<
     run(context, input) {
       function query(
         name: Names[keyof Names],
-        statement: string | Partial<QueryVariableValues<Variables>>,
+        statementOrValues: string | Partial<QueryVariableValues<Variables>>,
         options?: { limit?: number }
       ): Promise<QueryResult> {
         invariant(
@@ -368,17 +368,17 @@ export function defineOperation<
         );
 
         const limit = options?.limit ?? operation.policy.maxQueryRows;
-        if (typeof statement !== 'string') {
+        if (typeof statementOrValues !== 'string') {
           invariant(
             context.lakehouse.queryById,
             'A registered query bridge is required.'
           );
-          return context.lakehouse.queryById(name, statement, {
+          return context.lakehouse.queryById(name, statementOrValues, {
             limit,
             signal: context.signal,
           });
         }
-        return context.lakehouse.queryAll(statement, {
+        return context.lakehouse.queryAll(statementOrValues, {
           name,
           limit,
           signal: context.signal,

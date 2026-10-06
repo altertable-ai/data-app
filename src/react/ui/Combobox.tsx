@@ -163,7 +163,7 @@ export function Combobox(props: ComboboxProps) {
       if (id !== undefined) {
         props.onChange(id);
         setOpen(false);
-        setSearch('');
+        if (props.customValue) setSearch('');
       }
     }
   }
