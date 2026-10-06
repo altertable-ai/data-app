@@ -20,15 +20,8 @@ test('starter connection requires a successful bounded query', async () => {
     {
       signal: new AbortController().signal,
       lakehouse: {
-        async queryAll() {
-          throw new Error('Raw SQL is unavailable.');
-        },
-        async queryRegistered(name, variables, options) {
-          calls.push({
-            limit: options.limit,
-            name,
-            variables,
-          });
+        async queryAll(statement, options) {
+          calls.push({ statement, limit: options.limit, name: options.name });
 
           return { columns: [{ name: 'connection_check' }], rows: [[1]] };
         },
@@ -39,9 +32,9 @@ test('starter connection requires a successful bounded query', async () => {
   expect(result).toBe(true);
   expect(calls).toEqual([
     {
+      statement: 'SELECT 1 AS connection_check',
       limit: 1,
       name: 'connection-check',
-      variables: {},
     },
   ]);
   expect(query.output(true)).toBe(true);
@@ -54,9 +47,6 @@ test('starter connection requires a successful bounded query', async () => {
         signal: new AbortController().signal,
         lakehouse: {
           async queryAll() {
-            throw new Error('Raw SQL is unavailable.');
-          },
-          async queryRegistered() {
             throw new Error('No lakehouse access');
           },
         },

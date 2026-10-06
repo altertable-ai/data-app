@@ -7,12 +7,6 @@ A Bun and React app that imports the public `@altertable/data-app` package.
 It starts with a lakehouse connectivity check. Replace that check with bounded
 operations and views built from inspected data before sharing an analysis.
 
-The probe runs inside an iframe with the same `postMessage` bridge as hosted apps.
-`queries.json` contains its statement; `variables.json` is an empty list. For an
-analysis, declare variables with `name`, `type`, `nullable`, and `default`, then
-call `query(id, values)` from browser-owned operations. SQL stays on the Bun host,
-which validates requests and builds statements for the CLI proxy's HTTP API.
-
 ## Run from this repository
 
 Use the Bun and Node versions in `.bun-version` and `.node-version`.
@@ -56,5 +50,4 @@ bun run check
 Edit identity and appearance in `app.ts`, which uses `satisfies DataAppConfig`.
 
 `bun run build` typechecks the app, then bundles the browser page into `dist/`. That browser artifact
-is the iframe app code; deploy it with its separate queries and variables and an
-authorized registered-query host.
+still needs an authorized `/api/data` backend when hosted.

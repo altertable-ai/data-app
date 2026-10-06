@@ -1,26 +1,29 @@
 # Local Bun server
 
-Import `serveLocalApp()` from `@altertable/data-app/server/bun`. It builds a browser
-entrypoint and serves it inside the same sandboxed iframe runtime as hosted apps.
-Use [the local authoring guide](local-data-apps.md) for the three app artifacts and
-server example. This entry requires Bun; install `@types/bun` for typechecking.
+Use this Bun server for local data apps. Start from the CLI scaffold or
+[local data app starter](https://github.com/altertable-ai/data-app/tree/main/examples/starter-local-data-app).
 
-The server binds to `127.0.0.1`. The default port is `25837`, overridable with `PORT`
-or `port`. Supply `entrypoint`, the separate `{ queries, variables }` registration,
-and `title`. The registration is validated and snapshotted at startup.
+Import `serveLocalApp()` and `localLakehouse()` from
+`@altertable/data-app/server/bun`. This entry requires Bun; install `@types/bun`
+when typechecking a Bun app.
 
-Browser operations call `query(id, values)` through `postMessage`. Only the trusted
-local shell forwards requests to `/api/query`, using a session token. Bun looks up
-the statement, validates variables, and calls the CLI proxy over HTTP. Raw SQL
-requests are not exposed. Server row and duration limits default to 10,000 rows
-and 30 seconds; use `maxQueryRows` and `maxDurationMs` to configure them.
+```ts
+import { serveLocalApp } from '@altertable/data-app/server/bun';
+import page from './index.html';
+import { operations } from './operations';
 
-`localLakehouse()` is the server-only HTTP adapter. It reads the CLI proxy URL and
-token from `ALTERTABLE_DATA_PROXY_URL` and `ALTERTABLE_DATA_PROXY_TOKEN`. It also
-supports `ALTERTABLE_LAKEHOUSE_USERNAME` and `ALTERTABLE_LAKEHOUSE_PASSWORD`, with
-an optional `ALTERTABLE_API_BASE`. Missing credentials fail the query. These values
-must never enter the iframe bundle.
+serveLocalApp({ page, operations, title: 'Activity' });
+```
 
-Local serving uses the selected CLI profile and does not authorize hosted viewers.
-Production hosts must enforce viewer authorization and limits on their backend.
-The [portable operation handler](server.md) remains available for custom HTTP apps.
+The server binds to `127.0.0.1`. Its default port is `25837`, overridable through
+`PORT` or the `port` option. It serves the Bun HTML bundle and operation requests.
+
+`localLakehouse()` reads the CLI proxy URL and token from
+`ALTERTABLE_DATA_PROXY_URL` and `ALTERTABLE_DATA_PROXY_TOKEN`. It also supports
+server-only `ALTERTABLE_LAKEHOUSE_USERNAME` and
+`ALTERTABLE_LAKEHOUSE_PASSWORD`, with an optional `ALTERTABLE_API_BASE`.
+Missing credentials fail the query. Keep these variables out of browser code.
+
+Local serving permits SQL disclosure and does not authenticate hosted viewers.
+Use [the portable server handler](server.md) with per-request authorization when
+hosting an app for other people.

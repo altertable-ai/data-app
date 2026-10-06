@@ -7,7 +7,7 @@ should import their operation types using `import type`.
 
 ## Execute named queries
 
-Produce three artifacts for both local and hosted apps:
+Produce three artifacts for hosted apps:
 
 - App source: browser-owned operations, parsing, views, and controls.
 - `queries.json`: an object mapping each query ID to its SQL template.
@@ -63,7 +63,7 @@ const operations = {
 };
 ```
 
-Use `createDataClient({ operations })` in both environments. `query(id, values)`
+Use `createDataClient({ operations })` in hosted app code. `query(id, values)`
 sends `{ operation, variables, limit }` through the installed `postMessage` bridge.
 The host looks up the SQL and validates values using its saved registration.
 Pass the variables needed by that query; omitted values use their defaults.
@@ -72,9 +72,10 @@ several named queries, but the bridge's `operation` field identifies one stateme
 
 Submit app source, the complete query map, and the complete variable list together
 on hosted creation and every source update, including removals and empty collections.
-Local Bun serving reads the two JSON files and runs the same iframe code and bridge.
+Local CLI apps keep their server-owned operations and statement-based lakehouse
+queries. They do not require query registration or the two JSON files. Their
+browser client uses `createDataClient()` to call the existing HTTP operation API.
 See [hosted authoring](hosted-apps.md) and [local authoring](local-data-apps.md).
-Existing server-operation HTTP APIs remain available for custom integrations.
 
 ## Query variables
 
@@ -139,10 +140,9 @@ quoted identifiers are rejected. Use standard SQL strings in templates, without
 backslash escapes. STRING values are escaped as literals; text search wildcards
 still follow SQL LIKE semantics and are not automatically added or removed.
 
-Local construction resolves relative dates against one execution clock in UTC,
+The template helper resolves relative dates against one execution clock in UTC,
 with Monday as the start of week. `buildQueryStatement()` accepts an explicit
-`timeZone` and `now` for other server contexts. Configure the hosted backend with
-the same timezone when comparing local and hosted results.
+`timeZone` and `now` for other server contexts. The hosted backend is authoritative for timezone and execution-time resolution.
 
 Registered operation responses contain backend query IDs and the original input.
 SQL is kept on the host and is absent from iframe messages and query evidence.

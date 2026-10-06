@@ -70,11 +70,10 @@ and enforce backend access and resource limits independently of browser policy.
 Cancellation uses the existing bridge cancellation protocol. SQL templates stay
 on the host and are absent from the bundle and registered query evidence.
 
-Legacy browser operations without registered statements still use the explicit
+Existing statement-based iframe integrations can still use the explicit
 `data:sql` route. Registered hosted apps must not expose that route. There is no
-fallback to raw SQL when registered execution fails. Local apps run the same
-browser-owned operations in an iframe; the local host forwards ID/value requests
-to Bun, which sends built statements to the CLI proxy over HTTP.
+fallback to raw SQL when registered execution fails. Local CLI apps keep `createDataClient()` and their HTTP server-operation flow;
+SQL runs in their server operations through the existing CLI proxy.
 
 ## Iframe transport
 

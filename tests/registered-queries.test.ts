@@ -1,6 +1,3 @@
-import { mkdtemp, writeFile, rm } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 import { rejects } from 'node:assert/strict';
 import { expect, test } from 'bun:test';
 import { Database } from 'bun:sqlite';
@@ -18,7 +15,6 @@ import {
 } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
 import { createRegisteredQueryHandler } from '@altertable/data-app/embed';
-import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { queryVariable } from '@altertable/data-app/react';
 
 const names = defineQueryNames({ search: 'find-person' });
@@ -43,28 +39,20 @@ const registration = defineDataAppRegistration({
   variables,
 });
 
-test('browser-owned operations resolve separate registration through the local HTTP proxy', async () => {
+test('browser-owned operations resolve separate registration through a registered host', async () => {
   const database = new Database(':memory:');
   const statements: string[] = [];
-  const source = localLakehouse(
-    {
-      ALTERTABLE_DATA_PROXY_URL: 'http://local/',
-      ALTERTABLE_DATA_PROXY_TOKEN: 'test',
-    },
-    (async (_url, init) => {
-      const { statement, limit } = JSON.parse(init!.body as string);
+  const source = {
+    async queryAll(statement: string, { limit }: { limit: number }) {
       statements.push(statement);
       expect(limit).toBe(5);
-      const rows = database.query(statement).values();
-      return new Response(
-        [
-          JSON.stringify({ query_id: 'q1' }),
-          JSON.stringify(['name']),
-          ...rows.map(row => JSON.stringify(row)),
-        ].join('\n')
-      );
-    }) as typeof fetch
-  );
+      return {
+        columns: [{ name: 'name' }],
+        rows: database.query(statement).values(),
+        queryId: 'q1',
+      };
+    },
+  };
   const execute = createRegisteredQueryHandler(
     registration,
     async () => source
@@ -339,29 +327,4 @@ test('registration requires named variables with explicit nullability and typed 
       variables: nullable,
     })
   ).toThrow();
-});
-
-test('local serving rejects SQL registration imports into the iframe bundle', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'registered-app-boundary-'));
-  try {
-    await writeFile(
-      join(directory, 'queries.json'),
-      JSON.stringify({ count: 'SELECT 1' })
-    );
-    await writeFile(
-      join(directory, 'app.ts'),
-      "import queries from './queries.json'; console.log(queries);"
-    );
-    await rejects(
-      serveLocalApp({
-        entrypoint: join(directory, 'app.ts'),
-        registration: { queries: { count: 'SELECT 1' }, variables: [] },
-        title: 'Test',
-        port: 0,
-      }),
-      /server-owned/
-    );
-  } finally {
-    await rm(directory, { recursive: true, force: true });
-  }
 });

@@ -197,7 +197,7 @@ export function resolveVariableDateTime(
   return resolved;
 }
 
-/** DuckDB SQL construction for local/server adapters. Hosted iframes send IDs and values instead. */
+/** DuckDB SQL construction for trusted hosts. Hosted iframes send IDs and values instead. */
 export function buildQueryStatement(
   statement: string,
   bindings: QueryVariableBindings,

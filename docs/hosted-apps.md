@@ -36,9 +36,11 @@ not implemented by this package.
 
 ## Convert a local data app
 
-1. Combine the browser operations, parsers, views, story, and CSV export into the
+1. Combine the operation orchestration, parsers, views, story, and CSV export into the
    [single-file starter](../examples/starter-data-app/index.tsx) format.
-2. Keep `createDataClient({ operations })` and `query(id, values)` unchanged.
+2. Move SQL from local server operations into `queries.json`, define typed variables
+   in `variables.json`, and replace statement calls with `query(id, values)`. Use
+   `createDataClient({ operations })` in the browser.
 3. Remove local serving files and app-alias imports. Keep queries and variable
    metadata separate from the browser source.
 4. Submit all three artifacts for the same revision. Confirm the host can access

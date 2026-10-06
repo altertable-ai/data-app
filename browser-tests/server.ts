@@ -1,7 +1,7 @@
-import sampleQueries from '@/examples/starter-data-app/queries.json';
 import queryVariables from '@/browser-tests/fixtures/query-variables.html';
-import starterQueries from '@/examples/starter-local-data-app/queries.json';
+import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { serveLocalApp } from '@altertable/data-app/server/bun';
+import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
 import starterConfig from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import skeleton from '@/browser-tests/fixtures/skeleton.html';
@@ -50,26 +50,11 @@ const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
 process.env.ALTERTABLE_DATA_PROXY_URL = `http://127.0.0.1:${port}/__test/proxy`;
 process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'local-test-fixture';
 process.env.NODE_ENV = 'production';
-await serveLocalApp({
-  entrypoint: new URL(
-    '../examples/starter-local-data-app/src/main.tsx',
-    import.meta.url
-  ).pathname,
-  registration: { queries: starterQueries, variables: [] },
+serveLocalApp({
+  page: starterPage,
+  operations: starterOperations,
   title: starterConfig.title,
   port: port + 2,
-});
-await serveLocalApp({
-  entrypoint: new URL('../examples/starter-data-app/index.tsx', import.meta.url)
-    .pathname,
-  registration: {
-    queries: sampleQueries,
-    variables: [
-      { name: 'groupName', type: 'STRING', nullable: false, default: '' },
-    ],
-  },
-  title: 'Sample counts',
-  port: port + 3,
 });
 const urlApp = await bundle('./fixtures/bridge-frame.ts');
 Bun.serve({
@@ -126,19 +111,8 @@ Bun.serve({
         statement: string;
         limit: number;
       };
-      if (request.headers.get('authorization') !== 'Bearer local-test-fixture')
-        return new Response('Rejected fixture query', { status: 403 });
-      if (query.statement.startsWith('WITH sample_counts(')) {
-        const rows = fixtureDatabase.query(query.statement).values();
-        return new Response(
-          [
-            JSON.stringify({ query_id: 'sample-query' }),
-            JSON.stringify(['group_name', 'sample_count']),
-            ...rows.map(row => JSON.stringify(row)),
-          ].join('\n')
-        );
-      }
       if (
+        request.headers.get('authorization') !== 'Bearer local-test-fixture' ||
         query.statement !== 'SELECT 1 AS connection_check' ||
         query.limit !== 1
       )

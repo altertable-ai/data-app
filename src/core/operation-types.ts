@@ -1,7 +1,4 @@
-import type {
-  QueryVariableBindings,
-  QueryVariableDefinitions,
-} from '@/src/core/query-variables';
+import type { QueryVariableDefinitions } from '@/src/core/query-variables';
 /** Shared operation, query, and response contracts; independent of delivery adapters. */
 export type OperationContracts = Record<
   string,
@@ -45,7 +42,6 @@ export type Lakehouse = {
       limit: number;
       signal: AbortSignal;
       name?: string;
-      variables?: QueryVariableBindings;
     }
   ): Promise<QueryResult>;
 };

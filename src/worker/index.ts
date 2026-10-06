@@ -1,7 +1,3 @@
-import {
-  PAGE_CSP,
-  runtimeHtml as renderRuntimeHtml,
-} from '@/src/core/runtime-html';
 import { trustedParent } from '@/src/worker/trusted-parent';
 
 // The package build embeds the compiled classic script, never a runtime import.
@@ -13,8 +9,34 @@ interface WorkerBindings {
 }
 
 const TOKEN_RE = /^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)+-app-[1-9][0-9]*$/;
+const PAGE_CSP =
+  "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; form-action 'none'; base-uri 'none'";
+const inlineBootstrap = DATA_APP_BOOTSTRAP.replace(
+  /<\/script/gi,
+  match => `<\\${match.slice(1)}`
+);
+
 function runtimeHtml(parentOrigin: string) {
-  return renderRuntimeHtml(parentOrigin, DATA_APP_BOOTSTRAP);
+  const attribute = parentOrigin
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll("'", '&#39;');
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta http-equiv="Content-Security-Policy" content="${PAGE_CSP}">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script data-parent-origin="${attribute}">${inlineBootstrap}</script>
+  </body>
+</html>
+`;
 }
 
 function isPreviewHost(hostname: string, domainName: string) {

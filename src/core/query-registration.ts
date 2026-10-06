@@ -10,7 +10,7 @@ export type DataAppRegistration = {
   variables: QueryVariableDefinitions;
 };
 
-/** Validate separate, server-owned registration before saving or serving an app revision. */
+/** Validate separate, server-owned registration before saving a hosted app revision. */
 export function defineDataAppRegistration(value: unknown): DataAppRegistration {
   const registration = value as DataAppRegistration;
   invariant(

@@ -131,7 +131,7 @@ separate contract for HTTP-style operation hosts returning data envelopes; choos
 the contract that matches the app execution mode.
 
 `createRegisteredQueryHandler(registration, authorize)` is available for trusted
-server/local hosts with a stored registration and a statement-based Lakehouse.
+hosts with a stored registration and a statement-based Lakehouse.
 It derives required variables, rejects extra values, applies defaults, and builds
 SQL. Authorization runs on every request; the supplied backend must enforce access
 and resource limits. In production iframe hosts, forward the request to the
@@ -144,7 +144,7 @@ SQL fallback.
 
 ## SQL query route
 
-Legacy hosts explicitly permitting arbitrary SQL register `sqlQueryRoute` explicitly:
+Hosts explicitly permitting statement-based queries register `sqlQueryRoute` explicitly:
 
 ```ts
 import {
