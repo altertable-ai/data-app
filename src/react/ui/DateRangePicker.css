@@ -493,9 +493,9 @@
   min-width: 0;
 }
 .altertable-date-range .react-aria-Group > input[type='date'] {
-  width: 93px;
+  width: 78px;
   min-width: 0;
-  flex: 1 1 93px;
+  flex: 0 1 78px;
   padding: 0;
   border: 0;
   outline: none;
