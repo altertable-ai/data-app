@@ -6,15 +6,23 @@ import {
   PanelsTopLeft,
   Maximize,
   MousePointer2,
+  Trash2,
 } from 'lucide-react';
-import { Tooltip, TooltipProvider } from '@altertable/data-app/react';
+import { Kbd, Tooltip, TooltipProvider } from '@altertable/data-app/react';
 import '@/src/react/ui/Tooltip.css';
+import '@/src/react/ui/Kbd.css';
+import {
+  shortcuts,
+  useShortcut,
+  ariaKeyShortcuts,
+} from '@/src/react/ui/shortcuts';
 import { createRoot } from 'react-dom/client';
 import { DataAppBridge } from '@altertable/data-app/react/embed';
 import {
   MessageRoutingError,
   annotationDraftRoute,
   annotationModeRoute,
+  annotationUpdateRoute,
   type DataAppAnnotationDraft,
   createMessageRouter,
   defineMessageRoute,
@@ -66,6 +74,8 @@ function Host() {
     new URLSearchParams(location.search).has('annotation-error')
   );
   const [annotating, setAnnotating] = useState(false);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string>();
+  const [selectionId, setSelectionId] = useState<string>();
   const hostRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<Theme>('dark');
   const [parentPresentation, setParentPresentation] = useState(true);
@@ -82,6 +92,12 @@ function Host() {
   );
   const urlMode = new URLSearchParams(location.search).has('url');
   const timeout = new URLSearchParams(location.search).has('timeout');
+  useShortcut(
+    shortcuts.annotate,
+    () => setAnnotating(value => !value),
+    isPlayground && embedded && status === 'ready',
+    true
+  );
   const surface = embedded ? 'embedded' : 'standalone';
   const connectionLabel = connectionLabels[status];
   const themeControl = themeControls[theme];
@@ -101,10 +117,20 @@ function Host() {
               annotations: {
                 enabled: true,
                 ...(isPlayground ? { active: annotating } : {}),
+                ...(selectedAnnotationId
+                  ? {
+                      selectedAnnotationId,
+                      selectedTargetId: annotations.find(
+                        draft => draft.id === selectedAnnotationId
+                      )?.target.id,
+                      selectionId,
+                    }
+                  : {}),
                 targets: annotations.map((draft, index) => ({
                   id: draft.id,
                   targetId: draft.target.id,
                   number: index + 1,
+                  comment: draft.comment,
                 })),
               },
             }
@@ -168,11 +194,23 @@ function Host() {
       ...bridgeRoutes,
       'annotation:draft': annotationDraftRoute,
       'annotation:mode': annotationModeRoute,
+      'annotation:update': annotationUpdateRoute,
       'data:sql': sqlQueryRoute,
       'export:csv': fileExportRoute,
       'export:zip': fileExportRoute,
     },
     {
+      'annotation:update'({ id, comment }) {
+        if (!annotations.some(draft => draft.id === id))
+          throw new MessageRoutingError(
+            'invalid_payload',
+            'This annotation is no longer available.'
+          );
+        setAnnotations(values =>
+          values.map(draft => (draft.id === id ? { ...draft, comment } : draft))
+        );
+        return null;
+      },
       'annotation:mode'({ active }) {
         setAnnotating(active);
         return null;
@@ -281,17 +319,32 @@ function Host() {
               className="playground-controls"
             >
               <Tooltip
-                content="Annotate"
+                content={
+                  <>
+                    Point at items to change the data app{' '}
+                    <Kbd shortcut={shortcuts.annotate} />
+                  </>
+                }
                 placement="bottom"
                 portalRoot={hostRef}
               >
                 <button
                   aria-label="Annotate"
+                  aria-keyshortcuts={ariaKeyShortcuts(shortcuts.annotate)}
+                  className="playground-annotate"
                   aria-pressed={annotating}
                   disabled={!embedded || status !== 'ready'}
                   onClick={() => setAnnotating(value => !value)}
                 >
                   <MousePointer2 size={16} aria-hidden="true" />
+                  {annotations.length > 0 && (
+                    <span
+                      className="playground-annotation-count"
+                      aria-label={`${annotations.length} annotations`}
+                    >
+                      {annotations.length}
+                    </span>
+                  )}
                 </button>
               </Tooltip>
               <Tooltip
@@ -334,14 +387,35 @@ function Host() {
           {testControls}
         </>
       )}
-      {isPlayground && annotations.length > 0 && (
+      {isPlayground && annotating && annotations.length > 0 && (
         <aside className="playground-feedback" aria-label="Annotation drafts">
           {annotations.map((draft, index) => (
             <div key={draft.id}>
-              <strong>
-                {index + 1}. {draft.target.label}
-              </strong>
-              <span>{draft.comment}</span>
+              <button
+                className="playground-feedback-open"
+                aria-label={`Open annotation ${index + 1}`}
+                onClick={() => {
+                  setSelectedAnnotationId(draft.id);
+                  setSelectionId(crypto.randomUUID());
+                }}
+              >
+                <strong>
+                  {index + 1}. {draft.target.label}
+                </strong>
+                <span>{draft.comment}</span>
+              </button>
+              <button
+                aria-label={`Delete annotation ${index + 1}`}
+                onClick={() => {
+                  setAnnotations(values =>
+                    values.filter(value => value.id !== draft.id)
+                  );
+                  if (selectedAnnotationId === draft.id)
+                    setSelectedAnnotationId(undefined);
+                }}
+              >
+                <Trash2 size={14} aria-hidden />
+              </button>
             </div>
           ))}
         </aside>

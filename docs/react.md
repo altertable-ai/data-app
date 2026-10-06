@@ -364,3 +364,9 @@ selected element's rectangle, viewport, navigation, and the primary request's
 **displayed** input at selection time. Chart points and individual table cells
 are not separate targets in this version. Hosts retain drafts and associate them
 with the app source version; the package does not persist or send chat messages.
+
+Annotation mode supports Shift+Mod+. (Mod is Command on Apple platforms and Ctrl
+elsewhere). Clicking a numbered pin reopens its comment. Enter saves it; Shift+Enter
+inserts a newline. A non-empty comment shakes on the first Escape; pressing Escape
+again discards the local edit and exits annotation mode. Saved annotations remain
+until explicitly removed by the host.

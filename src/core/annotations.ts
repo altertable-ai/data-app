@@ -25,7 +25,13 @@ export type DataAppAnnotationPresentation = {
   enabled: boolean;
   /** When provided, the host owns the mode and renders the annotation trigger. */
   active?: boolean;
-  targets?: { id: string; targetId: string; number: number }[];
+  targets?: {
+    id: string;
+    targetId: string;
+    number: number;
+    comment?: string;
+  }[];
+  selectedAnnotationId?: string;
   selectedTargetId?: string;
   selectionId?: string;
 };
@@ -115,6 +121,20 @@ export const annotationDraftRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 
+export const annotationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
+  input(value: unknown): { id: string; comment: string } {
+    const input = object(value);
+    return {
+      id: text(input.id, 128, true),
+      comment: text(input.comment, 2000, true).trim(),
+    };
+  },
+  output(value: unknown): null {
+    if (value !== null) throw new Error('Invalid annotation response.');
+    return null;
+  },
+});
+
 /** A controlled shell acknowledges local exits (for example Escape). */
 export const annotationModeRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): { active: boolean } {
@@ -137,6 +157,9 @@ export function isAnnotationPresentation(
   return (
     typeof input.enabled === 'boolean' &&
     (input.active === undefined || typeof input.active === 'boolean') &&
+    (input.selectedAnnotationId === undefined ||
+      (typeof input.selectedAnnotationId === 'string' &&
+        input.selectedAnnotationId.length <= 128)) &&
     (input.selectionId === undefined ||
       (typeof input.selectionId === 'string' &&
         input.selectionId.length <= 128)) &&
@@ -154,7 +177,10 @@ export function isAnnotationPresentation(
             typeof target.targetId === 'string' &&
             target.targetId.length <= 128 &&
             Number.isSafeInteger(target.number) &&
-            target.number > 0
+            target.number > 0 &&
+            (target.comment === undefined ||
+              (typeof target.comment === 'string' &&
+                target.comment.length <= 2000))
         )))
   );
 }

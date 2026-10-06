@@ -222,3 +222,10 @@ A shell can place **Annotate** in its own navigation by providing `annotations.a
 This hides the in-app trigger and controls selection mode. Register `annotationModeRoute`
 under `annotation:mode` to receive local exits such as Escape and update the shell toggle.
 Leave `active` undefined to use the data app's built-in toolbar trigger.
+
+For editable pins, include each annotation's `comment` in `annotations.targets` and
+register `annotationUpdateRoute` under `annotation:update`. This route receives
+`{ id, comment }`; update only an existing annotation authorized for the current
+app and source version, preserving its captured context. Keep new-draft retry
+admission idempotent. Set `selectedAnnotationId` with a fresh `selectionId` to
+scroll to and reopen a saved annotation from the host list.

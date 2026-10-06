@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import {
   annotationDraftRoute,
   annotationModeRoute,
+  annotationUpdateRoute,
   parseDataAppAnnotationDraft,
   createMessageRouter,
   MessageRoutingError,
@@ -140,4 +141,41 @@ test('shell-controlled annotation mode accepts booleans and rejects invalid mode
     )
     .catch((error: unknown) => error);
   expect(failure).toBeInstanceOf(MessageRoutingError);
+});
+
+test('editing comments is a separate validated mutation from draft admission', async () => {
+  const changes: { id: string; comment: string }[] = [];
+  const router = createMessageRouter(
+    { 'annotation:update': annotationUpdateRoute },
+    {
+      'annotation:update'(value) {
+        changes.push(value);
+        return null;
+      },
+    }
+  );
+  await router.dispatch(
+    {
+      route: 'annotation:update',
+      payload: {
+        id: 'feedback-1',
+        comment: '  Compare last quarter  ',
+        context: 'ignored',
+      },
+    },
+    { signal: new AbortController().signal }
+  );
+  expect(changes).toEqual([
+    { id: 'feedback-1', comment: 'Compare last quarter' },
+  ]);
+  for (const comment of ['', ' ', 'x'.repeat(2001)]) {
+    const failure = await router
+      .dispatch(
+        { route: 'annotation:update', payload: { id: 'feedback-1', comment } },
+        { signal: new AbortController().signal }
+      )
+      .catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(MessageRoutingError);
+  }
+  expect(changes).toHaveLength(1);
 });

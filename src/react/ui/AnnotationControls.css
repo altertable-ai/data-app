@@ -9,7 +9,9 @@
 .altertable-annotation-pin {
   position: fixed;
   z-index: 1101;
-  pointer-events: none;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
   display: grid;
   place-items: center;
   width: 24px;
@@ -50,8 +52,7 @@
   color: inherit;
 }
 .altertable-annotation-composer textarea:focus-visible {
-  outline: 2px solid var(--at-accent, #405d47);
-  outline-offset: -2px;
+  outline: none;
 }
 .altertable-annotation-composer [role='alert'] {
   flex-basis: 100%;
@@ -75,4 +76,32 @@
   box-shadow: 0 4px 16px #0002;
   font: 13px/1.5 var(--at-font-body, sans-serif);
   pointer-events: none;
+}
+
+.altertable-annotation-pin:focus-visible {
+  outline: 2px solid var(--at-accent, #405d47);
+  outline-offset: 2px;
+}
+.altertable-annotation-count {
+  border-radius: 20px;
+  padding: 0 5px;
+  background: var(--at-subtle);
+  font-size: 11px;
+}
+.altertable-annotation-composer[data-shaking] {
+  animation: annotation-shake 220ms ease-in-out;
+}
+@keyframes annotation-shake {
+  25%,
+  75% {
+    translate: -4px 0;
+  }
+  50% {
+    translate: 4px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-annotation-composer[data-shaking] {
+    animation-duration: 1ms;
+  }
 }

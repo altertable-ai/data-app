@@ -16,6 +16,8 @@ body:has(.playground-host) #root {
   --at-border: var(--host-border);
   --at-surface: var(--host-surface);
   --at-text: var(--host-text);
+  --at-subtle: var(--host-hover);
+  --at-muted: var(--host-muted);
   color-scheme: dark;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -159,7 +161,8 @@ body:has(.playground-host) #root {
   box-shadow: 0 4px 16px #0002;
 }
 .playground-feedback > div {
-  display: grid;
+  display: flex;
+  align-items: start;
   gap: 4px;
   padding: 12px;
   overflow-wrap: anywhere;
@@ -169,4 +172,32 @@ body:has(.playground-host) #root {
 }
 .playground-feedback span {
   color: var(--host-muted);
+}
+
+.playground-host .playground-feedback-open {
+  display: grid;
+  flex: 1;
+  justify-content: stretch;
+  text-align: left;
+  width: auto;
+  height: auto;
+  gap: 4px;
+}
+.playground-annotate {
+  position: relative;
+}
+.playground-annotation-count {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  border-radius: 12px;
+  min-width: 16px;
+  padding: 1px 4px;
+  font-size: 10px;
+  background: var(--host-text);
+  color: var(--host-background);
+}
+
+.playground-feedback-open strong {
+  color: var(--host-text);
 }

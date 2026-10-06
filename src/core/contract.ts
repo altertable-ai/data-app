@@ -433,6 +433,7 @@ export type { TransportResponse } from '@/src/core/bridge';
 export {
   annotationDraftRoute,
   annotationModeRoute,
+  annotationUpdateRoute,
   parseDataAppAnnotationDraft,
 } from '@/src/core/annotations';
 export type {

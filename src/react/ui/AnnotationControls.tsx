@@ -14,7 +14,7 @@ import {
   useFloating,
   useMergeRefs,
 } from '@floating-ui/react';
-import { ArrowUp, X } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { MessageRoutingError } from '@/src/core/messages';
 import { DataAppError } from '@/src/client/transport';
 import { getDataAppTransport } from '@/src/client/iframe';
@@ -23,9 +23,17 @@ import { createMessageClient } from '@/src/client/messages';
 import {
   annotationDraftRoute,
   annotationModeRoute,
+  annotationUpdateRoute,
   type DataAppAnnotationDraft,
   type DataAppAnnotationPresentation,
 } from '@/src/core/annotations';
+import { Kbd } from '@/src/react/ui/Kbd';
+import { Tooltip } from '@/src/react/ui/Tooltip';
+import {
+  shortcuts,
+  useShortcut,
+  ariaKeyShortcuts,
+} from '@/src/react/ui/shortcuts';
 import { Button } from '@/src/react/ui/Button';
 
 type Target = { element: HTMLElement; id: string; label: string };
@@ -68,11 +76,19 @@ export function AnnotationControls({
   const [selected, setSelected] = useState<Target>();
   const [draft, setDraft] = useState<DataAppAnnotationDraft>();
   const [comment, setComment] = useState('');
+  const [editingId, setEditingId] = useState<string>();
+  const [shaking, setShaking] = useState(false);
+  const discardArmed = useRef(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [ambiguous, setAmbiguous] = useState(false);
   const [boxes, setBoxes] = useState<
-    { id: string; number: number; rect: ReturnType<typeof geometry> }[]
+    {
+      id: string;
+      number: number;
+      offset: number;
+      rect: ReturnType<typeof geometry>;
+    }[]
   >([]);
   const [outline, setOutline] = useState<ReturnType<typeof geometry>>();
 
@@ -87,6 +103,9 @@ export function AnnotationControls({
   const floatingRef = useMergeRefs([refs.setFloating]);
 
   function select(target: Target) {
+    setEditingId(undefined);
+    discardArmed.current = false;
+    setShaking(false);
     const location = getDataAppNavigation()?.snapshot();
     const input =
       displayedInput === undefined
@@ -142,11 +161,18 @@ export function AnnotationControls({
   }
 
   function finish() {
-    setActive(false);
+    setMode(false);
     setSelected(undefined);
     setDraft(undefined);
     setHovered(undefined);
+    setEditingId(undefined);
+    setComment('');
+    discardArmed.current = false;
+    setShaking(false);
     toolbarRef.current?.focus();
+  }
+  function setMode(value: boolean) {
+    setActive(value);
     if (presentation.active !== undefined) {
       const bridge = getDataAppTransport();
       if (bridge)
@@ -154,15 +180,41 @@ export function AnnotationControls({
           { 'annotation:mode': annotationModeRoute },
           bridge.request
         )
-          .request('annotation:mode', { active: false })
+          .request('annotation:mode', { active: value })
           .catch(() => {});
     }
+  }
+  useShortcut(
+    shortcuts.annotate,
+    () => (active ? finish() : setMode(true)),
+    !pending,
+    true
+  );
+
+  function openAnnotation(id: string) {
+    const pin = presentation.targets?.find(pin => pin.id === id);
+    const target = targets(rootRef.current).find(
+      target => target.id === pin?.targetId
+    );
+    if (!pin || !target || pending) return;
+    setMode(true);
+    target.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    select(target);
+    setEditingId(id);
+    setComment(pin.comment ?? '');
+  }
+  const openFromHost = useEffectEvent(openAnnotation);
+  if (editingId && !presentation.targets?.some(pin => pin.id === editingId)) {
+    setSelected(undefined);
+    setDraft(undefined);
+    setEditingId(undefined);
+    setComment('');
   }
   const finishFromKeyboard = useEffectEvent(finish);
   const captureSelection = useEffectEvent(select);
   useEffect(() => {
     textareaRef.current?.focus();
-  }, [draft?.id]);
+  }, [draft?.id, active]);
   useEffect(() => {
     if (!active) return;
     const root = rootRef.current;
@@ -199,8 +251,20 @@ export function AnnotationControls({
     }
     function escape(event: KeyboardEvent) {
       if (event.key === 'Escape' && !pending) {
+        if (event.isComposing) return;
         event.preventDefault();
-        finishFromKeyboard();
+        event.stopPropagation();
+        if (event.repeat) return;
+        if (draft && comment.length > 0 && !discardArmed.current) {
+          discardArmed.current = true;
+          setShaking(true);
+        } else finishFromKeyboard();
+      } else if (
+        event.code === 'Period' &&
+        event.shiftKey &&
+        (event.metaKey || event.ctrlKey)
+      ) {
+        return;
       } else if (
         !pending &&
         !draft &&
@@ -235,9 +299,13 @@ export function AnnotationControls({
       document.removeEventListener('pointermove', hover);
       document.removeEventListener('keydown', escape, true);
     };
-  }, [active, rootRef, displayedInput, view, pending, draft, hovered]);
+  }, [active, rootRef, displayedInput, view, pending, draft, hovered, comment]);
 
   useEffect(() => {
+    if (presentation.selectedAnnotationId) {
+      openFromHost(presentation.selectedAnnotationId);
+      return;
+    }
     const target = targets(rootRef.current).find(
       target => target.id === presentation.selectedTargetId
     );
@@ -245,19 +313,29 @@ export function AnnotationControls({
       target.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
     }
     setHovered(target);
-  }, [presentation.selectedTargetId, presentation.selectionId, rootRef]);
+  }, [
+    presentation.selectedTargetId,
+    presentation.selectedAnnotationId,
+    presentation.selectionId,
+    rootRef,
+  ]);
 
   useEffect(() => {
     function measure() {
       const all = targets(rootRef.current);
       setBoxes(
-        (presentation.targets ?? []).flatMap(pin => {
+        (presentation.targets ?? []).flatMap((pin, index) => {
           const target = all.find(target => target.id === pin.targetId);
           return target
             ? [
                 {
                   id: pin.id,
                   number: pin.number,
+                  offset:
+                    (presentation.targets ?? [])
+                      .slice(0, index)
+                      .filter(other => other.targetId === pin.targetId).length *
+                    28,
                   rect: geometry(target.element),
                 },
               ]
@@ -286,10 +364,17 @@ export function AnnotationControls({
     try {
       const bridge = getDataAppTransport();
       if (!bridge) throw new Error('No host');
-      await createMessageClient(
-        { 'annotation:draft': annotationDraftRoute },
-        bridge.request
-      ).request('annotation:draft', { ...draft, comment });
+      if (editingId)
+        await createMessageClient(
+          { 'annotation:update': annotationUpdateRoute },
+          bridge.request
+        ).request('annotation:update', { id: editingId, comment });
+      else
+        await createMessageClient(
+          { 'annotation:draft': annotationDraftRoute },
+          bridge.request
+        ).request('annotation:draft', { ...draft, comment });
+      setEditingId(undefined);
       setSelected(undefined);
       setDraft(undefined);
       setComment('');
@@ -309,21 +394,32 @@ export function AnnotationControls({
   return (
     <>
       {presentation.active === undefined && (
-        <Button
-          size="compact"
-          variant="elevated"
-          ref={toolbarRef}
-          aria-pressed={active}
-          disabled={pending}
-          onClick={() => {
-            setActive(!active);
-            setSelected(undefined);
-            setDraft(undefined);
-            setHovered(undefined);
-          }}
+        <Tooltip
+          content={
+            <>
+              Point at items to change the data app{' '}
+              <Kbd shortcut={shortcuts.annotate} />
+            </>
+          }
         >
-          Annotate
-        </Button>
+          <Button
+            aria-label="Annotate"
+            aria-keyshortcuts={ariaKeyShortcuts(shortcuts.annotate)}
+            size="compact"
+            variant="elevated"
+            ref={toolbarRef}
+            aria-pressed={active}
+            disabled={pending}
+            onClick={() => (active ? finish() : setMode(true))}
+          >
+            Annotate{' '}
+            {presentation.targets?.length ? (
+              <span className="altertable-annotation-count">
+                {presentation.targets.length}
+              </span>
+            ) : null}
+          </Button>
+        </Tooltip>
       )}
       {createPortal(
         <>
@@ -340,23 +436,33 @@ export function AnnotationControls({
             />
           )}
           {boxes.map(box => (
-            <span
+            <button
+              type="button"
+              onClick={() => openAnnotation(box.id)}
+              disabled={pending}
               key={box.id}
               className="altertable-annotation-pin"
               aria-label={`Annotation ${box.number}`}
               style={{
-                left: Math.max(8, box.rect.x + box.rect.width - 24),
+                left: Math.max(
+                  8,
+                  box.rect.x + box.rect.width - 24 - box.offset
+                ),
                 top: box.rect.y + 8,
               }}
             >
               {box.number}
-            </span>
+            </button>
           ))}
           {active && !selected && (
             <output className="altertable-annotation-hint">
-              {ambiguous
-                ? 'Some elements are unavailable for feedback.'
-                : 'Click an element to annotate · Esc to exit'}
+              {ambiguous ? (
+                'Some elements are unavailable for feedback.'
+              ) : (
+                <>
+                  Click an element to annotate · <Kbd>Esc</Kbd> to exit
+                </>
+              )}
             </output>
           )}
           {active && selected && (
@@ -364,6 +470,8 @@ export function AnnotationControls({
               ref={floatingRef}
               style={floatingStyles}
               className="altertable-annotation-composer"
+              data-shaking={shaking || undefined}
+              onAnimationEnd={() => setShaking(false)}
               aria-label="Annotate app"
             >
               <textarea
@@ -374,7 +482,11 @@ export function AnnotationControls({
                 maxLength={2000}
                 value={comment}
                 disabled={pending}
-                onChange={event => setComment(event.target.value)}
+                onChange={event => {
+                  discardArmed.current = false;
+                  setShaking(false);
+                  setComment(event.target.value);
+                }}
                 onKeyDown={event => {
                   if (
                     event.key === 'Enter' &&
@@ -386,32 +498,24 @@ export function AnnotationControls({
                   }
                 }}
               />
-              <Button
-                aria-label="Add feedback"
-                title="Add feedback"
-                onClick={() => void addFeedback()}
-                size="icon-compact"
-                variant="elevated"
-                disabled={pending || !comment.trim()}
+              <Tooltip
+                content={
+                  <>
+                    {editingId ? 'Save feedback' : 'Add feedback'}{' '}
+                    <Kbd>Enter</Kbd>
+                  </>
+                }
               >
-                <ArrowUp size={16} aria-hidden />
-              </Button>
-              <Button
-                aria-label="Cancel annotation"
-                title="Cancel annotation"
-                size="icon-compact"
-                variant="ghost"
-                disabled={pending}
-                onClick={() => {
-                  setSelected(undefined);
-                  setDraft(undefined);
-                  setComment('');
-                  setError('');
-                  toolbarRef.current?.focus();
-                }}
-              >
-                <X size={16} aria-hidden />
-              </Button>
+                <Button
+                  aria-label={editingId ? 'Save feedback' : 'Add feedback'}
+                  onClick={() => void addFeedback()}
+                  size="icon-compact"
+                  variant="elevated"
+                  disabled={pending || !comment.trim()}
+                >
+                  <ArrowUp size={16} aria-hidden />
+                </Button>
+              </Tooltip>
               {error && <p role="alert">{error}</p>}
             </section>
           )}
