@@ -81,7 +81,8 @@ export function AnnotationControls({
   const [shaking, setShaking] = useState(false);
   const discardArmed = useRef(false);
   const [error, setError] = useState('');
-  const [pending, setPending] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const pending = saving || presentation.readOnly === true;
   const [ambiguous, setAmbiguous] = useState(false);
   const [boxes, setBoxes] = useState<
     {
@@ -92,6 +93,10 @@ export function AnnotationControls({
     }[]
   >([]);
   const [outline, setOutline] = useState<ReturnType<typeof geometry>>();
+
+  useEffect(() => {
+    void annotationClient.setEditorState(hasUnsavedChanges).catch(() => {});
+  }, [annotationClient, hasUnsavedChanges]);
 
   const { refs, floatingStyles } = useFloating({
     elements: { reference: selected?.element },
@@ -361,7 +366,7 @@ export function AnnotationControls({
 
   async function saveAnnotation() {
     if (!draft || pending) return;
-    setPending(true);
+    setSaving(true);
     setError('');
     try {
       if (editingId)
@@ -380,7 +385,7 @@ export function AnnotationControls({
           : 'Could not save annotation. Try again.'
       );
     } finally {
-      setPending(false);
+      setSaving(false);
     }
   }
 
@@ -419,7 +424,7 @@ export function AnnotationControls({
       )}
       {createPortal(
         <>
-          {outline && (
+          {outline && presentation.pinsVisible !== false && (
             <div
               aria-hidden
               className="altertable-annotation-outline"
@@ -431,7 +436,7 @@ export function AnnotationControls({
               }}
             />
           )}
-          {boxes.map(box => (
+          {(presentation.pinsVisible === false ? [] : boxes).map(box => (
             <button
               type="button"
               onClick={() => openAnnotation(box.id)}
@@ -450,7 +455,7 @@ export function AnnotationControls({
               {box.number}
             </button>
           ))}
-          {active && !selected && (
+          {active && !selected && presentation.showHint !== false && (
             <output className="altertable-annotation-hint">
               {ambiguous ? (
                 'Some items cannot be annotated.'

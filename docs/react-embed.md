@@ -106,3 +106,48 @@ Prop updates publish trusted state without reloading the iframe or reconnecting
 the session. Resolve system preference in the parent to `'light'` or `'dark'`.
 Inside an embedded surface, `<DataApp>` retains toolbar actions and hides its header
 and footer. See [parent presentation](embed.md#parent-presentation).
+
+## Annotation bar and batch submission
+
+`AnnotationBar` from `/react` is an outer-frame control for a host-owned collection.
+Install `injectDataAppAnnotationStyles()` before rendering it. This stylesheet
+contains only annotation controls and leaves the host page layout intact. Pass the current drafts,
+selection/delete callbacks, mode/visibility controls, and an asynchronous `onSend`.
+
+```tsx
+<AnnotationBar
+  annotations={annotations}
+  theme={theme}
+  pinsVisible={pinsVisible}
+  onPinsVisibleChange={setPinsVisible}
+  hasUnsavedChanges={hasUnsavedChanges}
+  onSelect={selectAnnotation}
+  onDelete={deleteAnnotation}
+  onClear={clearAnnotations}
+  onClose={exitAnnotationMode}
+  onSend={async batch => {
+    await submitToAgent(batch);
+    removeAcceptedAnnotations(batch);
+  }}
+/>
+```
+
+`onSend` receives an independent snapshot of the saved annotations. Resolve only
+when the host's agent submission API accepts the batch; reject on failure. The bar
+keeps drafts visible and supports retry, and never clears host state itself.
+Remove only the accepted annotations after success, preserving unrelated draft
+text, uploads, annotations, and any newer edits. Prevent mutations while sending
+by publishing `annotations.readOnly`, or preserve changed records when clearing.
+
+Register `annotationEditorStateRoute` under `annotation:editor` to receive
+`{ hasUnsavedChanges }` from the iframe. Forward that state to the bar so Send waits
+for the open annotation to be saved. Publish `annotations.showHint: false` when the
+bar replaces the in-app instruction hint. Publish `annotations.pinsVisible` to
+hide or reveal pins without removing canonical `targets` used for editing.
+
+The playground submits to a local preview-host endpoint. Altertable connects the
+same callback to its existing Ask Agent message submission path.
+
+The bar appears once at least one annotation is saved. Before then, keep the
+in-frame hint enabled. The count opens the review panel; pin visibility and Send
+stay in the compact bar. Discarding all pending annotations requires confirmation.

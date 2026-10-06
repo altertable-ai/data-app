@@ -1,14 +1,17 @@
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useRef, useState } from 'react';
-import { Moon, Sun, PanelsTopLeft, AppWindow, Trash2 } from 'lucide-react';
+import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';
 import {
   AppIcon,
+  AnnotationBar,
+  injectDataAppAnnotationStyles,
   Kbd,
   Tooltip,
   TooltipProvider,
 } from '@altertable/data-app/react';
 import '@/src/react/ui/Tooltip.css';
 import '@/src/react/ui/Kbd.css';
+
 import {
   shortcuts,
   useShortcut,
@@ -20,6 +23,7 @@ import {
   MessageRoutingError,
   annotationDraftRoute,
   annotationModeRoute,
+  annotationEditorStateRoute,
   annotationUpdateRoute,
   type DataAppAnnotationDraft,
   createMessageRouter,
@@ -36,6 +40,7 @@ import {
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 import '@/browser-tests/fixtures/dev-reload';
 import '@/dev/playground-host.css';
+injectDataAppAnnotationStyles();
 const isPlayground = location.pathname === '/playground';
 if (isPlayground) document.title = 'Playground · Altertable';
 const appPreview = ['/starter-data-app', '/playground'].includes(
@@ -72,6 +77,10 @@ function Host() {
     new URLSearchParams(location.search).has('annotation-error')
   );
   const [annotating, setAnnotating] = useState(false);
+  const [pinsVisible, setPinsVisible] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string>();
   const [selectionId, setSelectionId] = useState<string>();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -114,7 +123,14 @@ function Host() {
           ? {
               annotations: {
                 enabled: true,
-                ...(isPlayground ? { active: annotating } : {}),
+                ...(isPlayground
+                  ? {
+                      active: annotating,
+                      pinsVisible,
+                      showHint: annotations.length === 0,
+                      readOnly: sending,
+                    }
+                  : {}),
                 ...(selectedAnnotationId
                   ? {
                       selectedAnnotationId,
@@ -192,13 +208,23 @@ function Host() {
       ...bridgeRoutes,
       'annotation:draft': annotationDraftRoute,
       'annotation:mode': annotationModeRoute,
+      'annotation:editor': annotationEditorStateRoute,
       'annotation:update': annotationUpdateRoute,
       'data:sql': sqlQueryRoute,
       'export:csv': fileExportRoute,
       'export:zip': fileExportRoute,
     },
     {
+      'annotation:editor'({ hasUnsavedChanges }) {
+        setHasUnsavedChanges(hasUnsavedChanges);
+        return null;
+      },
       'annotation:update'({ id, comment }) {
+        if (sending)
+          throw new MessageRoutingError(
+            'busy',
+            'Wait for annotations to finish sending.'
+          );
         if (!annotations.some(draft => draft.id === id))
           throw new MessageRoutingError(
             'invalid_payload',
@@ -214,6 +240,11 @@ function Host() {
         return null;
       },
       'annotation:draft'(draft) {
+        if (sending)
+          throw new MessageRoutingError(
+            'busy',
+            'Wait for annotations to finish sending.'
+          );
         if (new URLSearchParams(location.search).has('annotation-limit'))
           throw new MessageRoutingError(
             'annotation_limit',
@@ -385,40 +416,63 @@ function Host() {
           {testControls}
         </>
       )}
-      {isPlayground && annotating && annotations.length > 0 && (
-        <aside
-          className="playground-annotations"
-          aria-label="Annotation drafts"
+      {isPlayground && annotating && (
+        <AnnotationBar
+          annotations={annotations}
+          theme={theme}
+          pinsVisible={pinsVisible}
+          onPinsVisibleChange={setPinsVisible}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onSelect={id => {
+            setSelectedAnnotationId(id);
+            setSelectionId(crypto.randomUUID());
+          }}
+          onDelete={id => {
+            setAnnotations(values => values.filter(value => value.id !== id));
+            if (selectedAnnotationId === id) setSelectedAnnotationId(undefined);
+          }}
+          onClear={() => {
+            setAnnotations([]);
+            setSelectedAnnotationId(undefined);
+          }}
+          onClose={() => setAnnotating(false)}
+          onSend={async batch => {
+            if (sending || hasUnsavedChanges)
+              throw new Error('Annotation submission is unavailable.');
+            setSending(true);
+            try {
+              const response = await fetch('/api/annotations', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ annotations: batch }),
+              });
+              if (!response.ok)
+                throw new Error('Annotation submission failed.');
+              setAnnotations(values =>
+                values.filter(
+                  value =>
+                    !batch.some(
+                      sent =>
+                        sent.id === value.id && sent.comment === value.comment
+                    )
+                )
+              );
+              setSelectedAnnotationId(undefined);
+              setSentCount(batch.length);
+              setAnnotating(false);
+            } finally {
+              setSending(false);
+            }
+          }}
+        />
+      )}
+      {isPlayground && !annotating && sentCount > 0 && (
+        <output
+          className="playground-submission-status"
+          aria-label="Annotation submission"
         >
-          {annotations.map((draft, index) => (
-            <div key={draft.id}>
-              <button
-                className="playground-annotation-open"
-                aria-label={`Open annotation ${index + 1}`}
-                onClick={() => {
-                  setSelectedAnnotationId(draft.id);
-                  setSelectionId(crypto.randomUUID());
-                }}
-              >
-                <strong>{draft.target.label}</strong>
-                <span>{draft.comment}</span>
-              </button>
-              <button
-                className="playground-annotation-delete"
-                aria-label={`Delete annotation ${index + 1}`}
-                onClick={() => {
-                  setAnnotations(values =>
-                    values.filter(value => value.id !== draft.id)
-                  );
-                  if (selectedAnnotationId === draft.id)
-                    setSelectedAnnotationId(undefined);
-                }}
-              >
-                <Trash2 size={14} aria-hidden />
-              </button>
-            </div>
-          ))}
-        </aside>
+          Sent {sentCount} annotations to the preview host.
+        </output>
       )}
       <main className={isPlayground ? 'playground-stage' : undefined}>
         {status === 'failed' && (
@@ -432,7 +486,11 @@ function Host() {
         )}
         <DataAppBridge
           key={attempt}
-          onStatusChange={setStatus}
+          onStatusChange={nextStatus => {
+            setStatus(nextStatus);
+            if (nextStatus === 'failed' || nextStatus === 'disconnected')
+              setHasUnsavedChanges(false);
+          }}
           iframeProps={iframeProps}
           title={isPlayground ? 'Orders preview' : 'Sandbox app'}
           presentation={presentation}

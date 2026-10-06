@@ -3,6 +3,7 @@ import { expect, test } from 'bun:test';
 import {
   annotationDraftRoute,
   annotationModeRoute,
+  annotationEditorStateRoute,
   annotationUpdateRoute,
   parseDataAppAnnotationDraft,
   createMessageRouter,
@@ -208,4 +209,50 @@ test('public annotation client delivers validated drafts and edits to the host',
     { ...draft, comment: draft.comment.trim() },
     { id: draft.id, comment: 'Compare last quarter' },
   ]);
+});
+
+test('editor state and display settings preserve canonical pin data', async () => {
+  const dirty: boolean[] = [];
+  const router = createMessageRouter(
+    { 'annotation:editor': annotationEditorStateRoute },
+    {
+      'annotation:editor'({ hasUnsavedChanges }) {
+        dirty.push(hasUnsavedChanges);
+        return null;
+      },
+    }
+  );
+  const client = createAnnotationClient((message, signal) =>
+    router.dispatch(message, { signal: signal ?? new AbortController().signal })
+  );
+  await client.setEditorState(true);
+  await client.setEditorState(false);
+  expect(dirty).toEqual([true, false]);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: {
+        enabled: true,
+        pinsVisible: false,
+        showHint: false,
+        readOnly: true,
+        targets: [
+          {
+            id: '1',
+            targetId: 'revenue',
+            number: 1,
+            comment: 'Compare last year',
+          },
+        ],
+      },
+    })
+  ).toBe(true);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: { enabled: true, readOnly: 'yes' },
+    })
+  ).toBe(false);
 });

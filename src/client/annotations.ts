@@ -2,6 +2,7 @@ import {
   annotationDraftRoute,
   annotationUpdateRoute,
   annotationModeRoute,
+  annotationEditorStateRoute,
   type DataAppAnnotationDraft,
 } from '@/src/core/annotations';
 import type { MessageTransport } from '@/src/core/messages';
@@ -14,10 +15,14 @@ export function createAnnotationClient(transport: MessageTransport) {
       'annotation:draft': annotationDraftRoute,
       'annotation:update': annotationUpdateRoute,
       'annotation:mode': annotationModeRoute,
+      'annotation:editor': annotationEditorStateRoute,
     },
     transport
   );
   return {
+    setEditorState(hasUnsavedChanges: boolean) {
+      return client.request('annotation:editor', { hasUnsavedChanges });
+    },
     sendAnnotation(
       draft: DataAppAnnotationDraft,
       options?: { signal?: AbortSignal }

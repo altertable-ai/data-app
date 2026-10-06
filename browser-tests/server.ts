@@ -4,6 +4,7 @@ import { operations as starterOperations } from '@/examples/starter-local-data-a
 import starterConfig from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
+import { parseDataAppAnnotationDraft } from '@altertable/data-app/contract';
 import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
 import gallery from '@/browser-tests/fixtures/gallery.html';
@@ -155,6 +156,29 @@ Bun.serve({
   async fetch(request, server) {
     const path = new URL(request.url).pathname;
     if (path === '/') return new Response('Embedding test server');
+    if (path === '/api/annotations' && request.method === 'POST') {
+      try {
+        const input = (await request.json()) as { annotations?: unknown[] };
+        if (
+          !Array.isArray(input.annotations) ||
+          input.annotations.length === 0 ||
+          input.annotations.length > 50
+        )
+          throw new Error('Invalid annotation batch.');
+        const annotations = input.annotations.map(parseDataAppAnnotationDraft);
+        if (
+          new TextEncoder().encode(JSON.stringify(annotations)).byteLength >
+          120_000
+        )
+          throw new Error('Annotation batch is too large.');
+        return Response.json({ acceptedCount: annotations.length });
+      } catch {
+        return Response.json(
+          { error: 'Invalid annotation batch.' },
+          { status: 400 }
+        );
+      }
+    }
     if (serveReloadEvents && path === '/__dev/reload') {
       server.timeout(request, 0);
       return serveReloadEvents(request);

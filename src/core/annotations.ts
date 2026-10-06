@@ -25,6 +25,9 @@ export type DataAppAnnotationPresentation = {
   enabled: boolean;
   /** When provided, the host owns the mode and renders the annotation trigger. */
   active?: boolean;
+  pinsVisible?: boolean;
+  showHint?: boolean;
+  readOnly?: boolean;
   targets?: {
     id: string;
     targetId: string;
@@ -121,6 +124,19 @@ export const annotationDraftRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 
+export const annotationEditorStateRoute = /* @__PURE__ */ defineMessageRoute({
+  input(value: unknown): { hasUnsavedChanges: boolean } {
+    const input = object(value);
+    if (typeof input.hasUnsavedChanges !== 'boolean')
+      throw new Error('Invalid annotation editor state.');
+    return { hasUnsavedChanges: input.hasUnsavedChanges };
+  },
+  output(value: unknown): null {
+    if (value !== null) throw new Error('Invalid annotation response.');
+    return null;
+  },
+});
+
 export const annotationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): { id: string; comment: string } {
     const input = object(value);
@@ -157,6 +173,10 @@ export function isAnnotationPresentation(
   return (
     typeof input.enabled === 'boolean' &&
     (input.active === undefined || typeof input.active === 'boolean') &&
+    (input.pinsVisible === undefined ||
+      typeof input.pinsVisible === 'boolean') &&
+    (input.showHint === undefined || typeof input.showHint === 'boolean') &&
+    (input.readOnly === undefined || typeof input.readOnly === 'boolean') &&
     (input.selectedAnnotationId === undefined ||
       (typeof input.selectedAnnotationId === 'string' &&
         input.selectedAnnotationId.length <= 128)) &&
