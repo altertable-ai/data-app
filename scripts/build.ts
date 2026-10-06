@@ -2,7 +2,9 @@ import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import manifest from '@/package.json';
 
-await rm('dist', { recursive: true, force: true });
+// Watch rebuilds keep declarations and let open pages pick up the new files.
+if (!process.argv.includes('--incremental'))
+  await rm('dist', { recursive: true, force: true });
 const external = [
   ...Object.keys(manifest.dependencies),
   ...Object.keys(manifest.peerDependencies),

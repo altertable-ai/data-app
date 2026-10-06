@@ -11,12 +11,13 @@ import { AppIcon } from '@/src/react/ui/icons';
 import { Toast } from '@/src/react/ui/Toast';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
-export function ExportControl({ csv }: { csv: CsvExport }) {
+export function ExportControl({ csv }: { csv?: CsvExport }) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
 
   const [retryTableName, setRetryTableName] = useState<string>();
   async function download(table?: CsvTable) {
+    if (!csv?.tables.length) return;
     setOpen(false);
     setRetryTableName(table?.name);
     setStatus('pending');
@@ -26,6 +27,18 @@ export function ExportControl({ csv }: { csv: CsvExport }) {
     } catch {
       setStatus('error');
     }
+  }
+
+  if (!csv?.tables.length) {
+    return (
+      <IconButton
+        icon="export"
+        variant="elevated"
+        label="Export CSV"
+        tooltip="Export data"
+        disabled
+      />
+    );
   }
 
   return (

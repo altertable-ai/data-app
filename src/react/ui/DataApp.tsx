@@ -120,20 +120,24 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
         request
           ? snapshot
             ? props.csvExport(snapshot)
-            : undefined
+            : null
           : props.csvExport
       }
       requestState={request?.view.kind}
       refresh={refresh ?? request?.refresh}
       story={
-        story && {
-          ...story,
-          title: config.title,
-          scope,
-          dataContext,
-          empty: aboutEmpty,
-          theme: themeController,
-        }
+        story
+          ? {
+              ...story,
+              title: config.title,
+              scope,
+              dataContext,
+              empty: aboutEmpty,
+              theme: themeController,
+            }
+          : request
+            ? null
+            : undefined
       }
       aboutData={
         <AboutData

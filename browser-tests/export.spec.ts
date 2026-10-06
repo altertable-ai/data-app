@@ -38,7 +38,7 @@ test('embedded toolbar exports displayed results through its host during updates
   await page.goto('/starter-data-app');
   const app = page.frameLocator('iframe');
   await expect(app.getByText('Loading data')).toBeVisible();
-  await expect(app.getByRole('button', { name: 'Export CSV' })).toHaveCount(0);
+  await expect(app.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
   release();
   gate = Promise.resolve();
   await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
@@ -96,7 +96,7 @@ test('embedded toolbar exports displayed results through its host during updates
   await expect(
     app.getByText('No matching groups', { exact: true })
   ).toBeVisible();
-  await expect(app.getByRole('button', { name: 'Export CSV' })).toHaveCount(0);
+  await expect(app.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
 });
 
 test('embedded export failures stay visible and allow retry', async ({
