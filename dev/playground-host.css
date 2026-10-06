@@ -13,6 +13,9 @@ body:has(.playground-host) #root {
   --host-text: #f2f3f4;
   --host-muted: #aeb5bc;
   --host-border: #3b4248;
+  --at-border: var(--host-border);
+  --at-surface: var(--host-surface);
+  --at-text: var(--host-text);
   color-scheme: dark;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -43,151 +46,66 @@ body:has(.playground-host) #root {
 .playground-navbar {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 12px 20px;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px;
   background: var(--host-surface);
   border-bottom: 1px solid var(--host-border);
   z-index: 1;
 }
 
-.playground-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.playground-mark {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: var(--host-text);
-  color: var(--host-surface);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.playground-brand strong {
-  display: block;
-  font-size: 14px;
+.playground-title {
+  font-size: 12px;
   font-weight: 600;
 }
 
-.playground-subtitle {
-  display: block;
-  color: var(--host-muted);
-  font-size: 11px;
-}
-
-.playground-badge {
-  padding: 3px 7px;
-  border: 1px solid var(--host-border);
-  border-radius: 5px;
-  color: var(--host-muted);
-  font-size: 10px;
-  font-weight: 500;
-}
-
-.playground-controls,
-.playground-tools {
+.playground-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.playground-tools {
+  gap: 2px;
   margin-left: auto;
-  gap: 16px;
 }
 
-.playground-host button,
-.playground-host summary {
+.playground-host button {
   appearance: none;
-  border: 1px solid var(--host-border);
-  border-radius: 6px;
-  padding: 7px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
   background: transparent;
-  color: var(--host-text);
+  color: var(--host-muted);
   font: inherit;
-  font-size: 12px;
-  line-height: 1.4;
-  white-space: nowrap;
   cursor: pointer;
 }
 
 .playground-host button:hover,
-.playground-host summary:hover {
-  background: var(--host-hover);
-}
-
 .playground-host button[aria-pressed='true'] {
   background: var(--host-hover);
+  color: var(--host-text);
 }
 
-.playground-host button:focus-visible,
-.playground-host summary:focus-visible {
+.playground-host button:focus-visible {
   outline: 2px solid #7c9dd6;
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
 .playground-connection {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--host-muted);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.playground-connection::before {
-  content: '';
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: #c99b73;
 }
 
-.playground-connection[data-status='ready']::before {
+.playground-connection[data-status='ready'] {
   background: #83ad95;
 }
 
-.playground-connection[data-status='failed']::before {
+.playground-connection[data-status='failed'] {
   background: #d68b9d;
-}
-
-.playground-tools details {
-  position: relative;
-}
-
-.playground-tools summary {
-  list-style: none;
-  color: var(--host-muted);
-}
-
-.playground-tools summary::-webkit-details-marker {
-  display: none;
-}
-
-.playground-tools-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  display: grid;
-  gap: 4px;
-  min-width: 180px;
-  padding: 6px;
-  border: 1px solid var(--host-border);
-  border-radius: 8px;
-  background: var(--host-surface);
-  box-shadow: 0 8px 24px #0003;
-}
-
-.playground-tools-menu button {
-  border-color: transparent;
-  text-align: left;
 }
 
 .playground-stage {
@@ -216,43 +134,8 @@ body:has(.playground-host) #root {
   color: var(--host-muted);
 }
 
-@media (max-width: 1100px) {
-  .playground-navbar {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .playground-brand {
-    flex: 1;
-  }
-
-  .playground-controls {
-    order: 1;
-    flex-basis: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .playground-navbar {
-    padding: 12px;
-  }
-
-  .playground-badge,
-  .playground-connection {
-    display: none;
-  }
-
-  .playground-controls {
-    min-width: 0;
-    gap: 4px;
-    align-items: stretch;
-  }
-
-  .playground-controls button {
-    flex: 1;
-    min-width: 0;
-    white-space: normal;
-    padding: 7px 6px;
-    font-size: 11px;
-  }
+.playground-error button {
+  width: auto;
+  padding: 0 12px;
+  border: 1px solid var(--host-border);
 }

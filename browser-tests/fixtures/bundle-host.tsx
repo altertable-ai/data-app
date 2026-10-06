@@ -1,5 +1,8 @@
 import type { Theme } from '@altertable/data-app/appearance';
-import { StrictMode, useReducer, useState } from 'react';
+import { StrictMode, useReducer, useRef, useState } from 'react';
+import { Moon, Sun, PanelsTopLeft, Maximize } from 'lucide-react';
+import { Tooltip, TooltipProvider } from '@altertable/data-app/react';
+import '@/src/react/ui/Tooltip.css';
 import { createRoot } from 'react-dom/client';
 import { DataAppBridge } from '@altertable/data-app/react/embed';
 import {
@@ -28,6 +31,7 @@ const response = await fetch(
 const javascript = await response.text();
 
 function Host() {
+  const hostRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<Theme>('dark');
   const [parentPresentation, setParentPresentation] = useState(true);
   const [embedded, setEmbedded] = useState(true);
@@ -131,24 +135,20 @@ function Host() {
         aria-label="Change theme"
         onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}
       >
-        {isPlayground
-          ? `Theme: ${theme === 'dark' ? 'Dark' : 'Light'}`
-          : 'Change theme'}
+        Change theme
       </button>
       <button
         aria-label="Toggle parent presentation"
         aria-pressed={parentPresentation}
         onClick={() => setParentPresentation(value => !value)}
       >
-        {isPlayground ? 'Host appearance' : 'Toggle parent presentation'}
+        Toggle parent presentation
       </button>
       <button
         aria-label="Change surface"
         onClick={() => setEmbedded(value => !value)}
       >
-        {isPlayground
-          ? `Surface: ${embedded ? 'Embedded' : 'Standalone'}`
-          : 'Change surface'}
+        Change surface
       </button>
     </>
   );
@@ -165,37 +165,83 @@ function Host() {
 
   return (
     <div
+      ref={hostRef}
       className={isPlayground ? 'playground-host' : undefined}
       data-theme={theme}
     >
       {isPlayground ? (
         <header className="playground-navbar">
-          <div className="playground-brand">
-            <span className="playground-mark" aria-hidden="true">
-              a
-            </span>
-            <div>
-              <strong>Playground</strong>
-              <span className="playground-subtitle">Altertable data apps</span>
-            </div>
-            <span className="playground-badge">Development</span>
-          </div>
-          <nav aria-label="Playground controls" className="playground-controls">
-            {presentationControls}
-          </nav>
-          <div className="playground-tools">
-            <output className="playground-connection" data-status={status}>
-              {status === 'ready'
+          <strong className="playground-title">Playground</strong>
+          <output
+            className="playground-connection"
+            data-status={status}
+            aria-label={
+              status === 'ready'
                 ? 'Connected'
                 : status === 'failed'
                   ? 'Disconnected'
-                  : 'Connecting'}
-            </output>
-            <details>
-              <summary>Testing tools</summary>
-              <div className="playground-tools-menu">{testControls}</div>
-            </details>
-          </div>
+                  : 'Connecting'
+            }
+            title={
+              status === 'ready'
+                ? 'Connected'
+                : status === 'failed'
+                  ? 'Disconnected'
+                  : 'Connecting'
+            }
+          />
+          <TooltipProvider>
+            <nav
+              aria-label="Playground controls"
+              className="playground-controls"
+            >
+              <Tooltip
+                content={
+                  theme === 'dark'
+                    ? 'Switch to light theme'
+                    : 'Switch to dark theme'
+                }
+                placement="bottom"
+                portalRoot={hostRef}
+              >
+                <button
+                  aria-label={
+                    theme === 'dark'
+                      ? 'Switch to light theme'
+                      : 'Switch to dark theme'
+                  }
+                  onClick={() =>
+                    setTheme(value => (value === 'dark' ? 'light' : 'dark'))
+                  }
+                >
+                  {theme === 'dark' ? (
+                    <Sun size={16} aria-hidden="true" />
+                  ) : (
+                    <Moon size={16} aria-hidden="true" />
+                  )}
+                </button>
+              </Tooltip>
+              <Tooltip
+                content={
+                  embedded ? 'Preview standalone app' : 'Preview embedded app'
+                }
+                placement="bottom"
+                portalRoot={hostRef}
+              >
+                <button
+                  aria-label="Standalone preview"
+                  aria-pressed={!embedded}
+                  onClick={() => setEmbedded(value => !value)}
+                >
+                  {embedded ? (
+                    <Maximize size={16} aria-hidden="true" />
+                  ) : (
+                    <PanelsTopLeft size={16} aria-hidden="true" />
+                  )}
+                </button>
+              </Tooltip>
+            </nav>
+          </TooltipProvider>
         </header>
       ) : (
         <>
@@ -219,7 +265,7 @@ function Host() {
           iframeProps={iframeProps}
           title={isPlayground ? 'Orders preview' : 'Sandbox app'}
           presentation={
-            parentPresentation
+            isPlayground || parentPresentation
               ? { surface: embedded ? 'embedded' : 'standalone', theme }
               : undefined
           }
