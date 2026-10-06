@@ -262,7 +262,6 @@ export type {
   MetricValues,
 } from '@/src/core/reading';
 
-
 export { LineChart } from '@/src/react/ui/LineChart';
 export type { LineChartProps, LineChartItem } from '@/src/react/ui/LineChart';
 export { AreaChart } from '@/src/react/ui/AreaChart';

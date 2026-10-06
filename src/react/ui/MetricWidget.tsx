@@ -150,7 +150,11 @@ function MetricVisual({
         className="altertable-metric-value"
         data-unavailable={shownValue === '—' || undefined}
       >
-        {loading ? <Skeleton className="altertable-metric-loading-value" /> : shownValue}
+        {loading ? (
+          <Skeleton className="altertable-metric-loading-value" />
+        ) : (
+          shownValue
+        )}
       </strong>
       {shownTrend && (
         <span className="altertable-metric-trend">{shownTrend}</span>

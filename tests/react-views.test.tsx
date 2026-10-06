@@ -22,7 +22,6 @@ import {
   AreaChart,
   PieChart,
   ScatterChart,
-  MetricWidget,
   VisualizationWidget,
   TableWidget,
   WidgetViewTabs,
