@@ -163,7 +163,7 @@ Use `context.evidence(...)` for bound charts and tables. `<MetricWidget>` uses
 its metric definition for the label, format, and evidence; keep view-specific
 descriptions on the widget.
 
-`<MetricWidget>` and `<ComparisonVisual>` share a metric reading. Comparisons
+`<MetricWidget>` and `<Comparison>` share a metric reading. Comparisons
 follow the displayed result's range.
 
 Use the [app helpers](#reuse-app-helpers) for metric formats and values in tables,
@@ -295,7 +295,7 @@ nested period or field-filter inputs. Mappings must preserve the selected values
 Use `defineFacetFilter()` to bind a facet operation and its typed input. The generated
 `<DimensionPicker>` preserves cached options during refresh and failure, offers
 missing values separately, and retains selected values absent from a result with
-zero counts. `<SelectableBarChart>` can share controlled selection with the picker.
+zero counts. `<BarChart>` exposes values through tooltips.
 
 ## Preserve displayed results
 
@@ -310,6 +310,9 @@ Operation and facet caches are scoped to the `DataClient` instance. Hooks create
 from the same client share queries; separate clients do not share results, stale
 data, or cancellation even under one provider. Keep client instances stable
 across renders to preserve their cache.
+
+`<Comparison>` compares a metric across periods, and `<BarChart>` displays
+bars with tooltips for each category.
 
 ## Findings and inspection
 
@@ -390,3 +393,71 @@ Example:
   </DataSection>
 </DataApp>
 ```
+
+## Line and area charts
+
+`<LineChart>` and `<AreaChart>` use the same API as `<BarChart>`:
+`items`, `unit`, `ariaLabel`, and optional
+`formatValue`. Each item has a unique nonempty `id`, a `label`, and a finite
+numeric `value`. Samples are equally spaced in the supplied order; fill missing
+periods explicitly when showing a time series. Negative values are supported,
+and the area fill extends to zero. A single sample renders a point; empty items
+show “No data”. Long series scroll horizontally.
+
+```tsx
+<VisualizationWidget
+  title="Daily events"
+  visual={
+    <LineChart items={days} unit="events" ariaLabel="Daily event trend" />
+  }
+/>
+```
+
+All five charts show a tooltip on hover. Chart points are skipped by Tab and
+do not open tooltips on keyboard focus. On touch screens, tap a point to
+show its tooltip, then tap it again or tap outside to dismiss. Escape dismisses
+a tooltip; scrolling the page or a nested container also dismisses it. Each point has an accessible label
+with its values, even when its tooltip is closed. There is no persistent
+selection state to manage. Custom visuals can use `<Tooltip variant="chart">`
+and its `onOpenChange` callback to coordinate emphasis with tooltip visibility.
+Tooltips use the shared chart styling and stay
+inside the viewport, including in widget inspection panels.
+
+## Pie charts
+
+`<PieChart>` uses the same `items`, `unit`,
+`ariaLabel`, and optional `formatValue` API as `<BarChart>`. It shows shares of
+**the sum of supplied values**. Supply mutually exclusive categories and include
+an Other category if needed to represent the whole. Values must be finite and
+nonnegative; IDs must be unique and nonempty. Prefer a few distinct categories.
+
+Hover a slice or its legend label to inspect its value and share. The
+inspected slice keeps its color while the others fade. Legend labels also
+support touch tooltips.
+Zero values remain in the legend without a slice; an all-zero series shows a
+neutral empty circle, and an empty series shows “No data”. Colors use the app’s
+chart palette in item order. Compose it inside `<VisualizationWidget>`.
+
+## Scatter charts
+
+`<ScatterChart>` positions independent observations by numeric X and Y values.
+Pass `items` with unique nonempty `id`, `label`, and finite `x` and `y` values,
+plus `ariaLabel`. Name the axes with
+`xLabel`, `yLabel`, `xUnit`, and `yUnit`; optionally format values with `formatX`
+and `formatY`. Both axes use linear scales that include zero and support negative
+values. Empty data shows “No data”; constant axes remain valid.
+
+```tsx
+<ScatterChart
+  items={workspaces}
+  xLabel="Request volume"
+  yLabel="Response time"
+  xUnit="requests"
+  yUnit="ms"
+  ariaLabel="Workspace performance"
+/>
+```
+
+Tooltips show the observation label and both named coordinates with their units.
+Each observation retains an accessible label. Compose the chart inside
+`<VisualizationWidget>`.

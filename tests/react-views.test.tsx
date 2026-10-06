@@ -17,7 +17,12 @@ import {
   dateRangeVariable,
   textVariable,
   createDataContext,
-  ComparisonVisual,
+  Comparison,
+  LineChart,
+  AreaChart,
+  PieChart,
+  ScatterChart,
+  MetricWidget,
   VisualizationWidget,
   TableWidget,
   WidgetViewTabs,
@@ -338,7 +343,7 @@ test('bound metrics share values, formatting, evidence and displayed comparison 
       previous: data.previous,
     }));
 
-    return <ComparisonVisual metric={actions} reading={reading} />;
+    return <Comparison metric={actions} reading={reading} />;
   });
   const input = calendar.request(
     { start: '2026-03-10', end: '2026-03-12' },
@@ -371,7 +376,7 @@ test('favorable direction colors a comparison without changing its numeric direc
     favorableDirection: 'down',
   });
   const content = view.content(result => (
-    <ComparisonVisual
+    <Comparison
       metric={fewerIsBetter}
       reading={result.metric(data => ({
         current: data.current,
@@ -683,6 +688,134 @@ test('visualization controls and insight share the footer without dropping insig
       expect(html.indexOf('Next page')).toBeLessThan(
         html.indexOf('Revenue increased.')
       );
+    }
+  }
+});
+
+test('line and area charts support empty, single, signed, zero and extreme samples', () => {
+  for (const Chart of [LineChart, AreaChart]) {
+    for (const values of [
+      [],
+      [0],
+      [12],
+      [-4, 0, 8],
+      [0, 0, 0],
+      [-Number.MAX_VALUE, Number.MAX_VALUE],
+    ]) {
+      const html = renderToStaticMarkup(
+        <Chart
+          items={values.map((value, index) => ({
+            id: String(index),
+            label: `Day ${index}`,
+            value,
+          }))}
+          unit="events"
+          ariaLabel="Activity trend"
+          formatValue={value => `${value} formatted`}
+        />
+      );
+      expect(html).not.toMatch(/NaN|Infinity/);
+      if (!values.length) {
+        expect(html).toContain('No data');
+        expect(html).not.toContain('<svg');
+      } else {
+        expect(html.match(/type="button"/g)).toHaveLength(values.length);
+        expect(html).toContain('formatted events');
+      }
+    }
+    expect(() =>
+      renderToStaticMarkup(
+        <Chart
+          items={[{ id: 'bad', label: 'Invalid', value: NaN }]}
+          unit="events"
+          ariaLabel="Invalid chart"
+        />
+      )
+    ).toThrow('finite values');
+  }
+});
+
+test('pie charts preserve zero categories and handle empty, whole and extreme shares', () => {
+  for (const values of [
+    [],
+    [10],
+    [0, 0],
+    [10, 0, 30],
+    [Number.MAX_VALUE, Number.MAX_VALUE],
+  ]) {
+    const html = renderToStaticMarkup(
+      <PieChart
+        items={values.map((value, index) => ({
+          id: String(index),
+          label: `Part ${index}`,
+          value,
+        }))}
+        unit="orders"
+        ariaLabel="Order mix"
+      />
+    );
+    expect(html).not.toMatch(/NaN|Infinity/);
+    if (!values.length) expect(html).toContain('No data');
+    else {
+      expect(html.match(/type="button"/g)).toHaveLength(values.length);
+      if (values.every(value => value === 0))
+        expect(html).toContain('No nonzero values');
+      else
+        expect(html.match(/class="altertable-pie-slice"/g)).toHaveLength(
+          values.filter(value => value > 0).length
+        );
+    }
+    if (values.length === 1) expect(html).toContain('100%');
+  }
+  for (const values of [[-1], [NaN], [Infinity]]) {
+    expect(() =>
+      renderToStaticMarkup(
+        <PieChart
+          items={values.map((value, index) => ({
+            id: String(index),
+            label: 'Invalid',
+            value,
+          }))}
+          unit="orders"
+          ariaLabel="Invalid mix"
+        />
+      )
+    ).toThrow('nonnegative values');
+  }
+});
+
+test('scatter charts position numeric samples and support empty, constant and signed domains', () => {
+  for (const values of [
+    [],
+    [0],
+    [5, 5],
+    [-10, 0, 20],
+    [-Number.MAX_VALUE, Number.MAX_VALUE],
+  ]) {
+    const html = renderToStaticMarkup(
+      <ScatterChart
+        items={values.map((value, index) => ({
+          id: String(index),
+          label: `Point ${index}`,
+          x: value,
+          y: value,
+        }))}
+        xLabel="Volume"
+        yLabel="Latency"
+        xUnit="requests"
+        yUnit="ms"
+        ariaLabel="Performance"
+      />
+    );
+    expect(html).not.toMatch(/NaN|Infinity/);
+    if (!values.length) expect(html).toContain('No data');
+    else expect(html.match(/type="button"/g)).toHaveLength(values.length);
+    if (values.length === 3) {
+      expect(html).toContain('left:0%;bottom:0%');
+      expect(html).toContain(
+        'left:33.33333333333333%;bottom:33.33333333333333%'
+      );
+      expect(html).toContain('left:100%;bottom:100%');
     }
   }
 });

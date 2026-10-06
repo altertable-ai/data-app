@@ -1,0 +1,86 @@
+.altertable-pie-chart {
+  min-width: 0;
+}
+.altertable-pie-plot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 12px 0 14px;
+}
+.altertable-pie-plot svg {
+  display: block;
+  width: min(100%, 220px);
+  height: auto;
+}
+.altertable-pie-slice {
+  stroke: var(--at-surface, #fff);
+  stroke-width: 2;
+  cursor: pointer;
+  transition: opacity 140ms ease;
+}
+.altertable-pie-plot
+  svg:has(.altertable-pie-slice[data-active])
+  .altertable-pie-slice:not([data-active]) {
+  opacity: 0.3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-pie-slice {
+    transition: none;
+  }
+}
+.altertable-pie-empty {
+  fill: var(--at-subtle, #f6f7f7);
+  stroke: var(--at-border, #e3e6e8);
+}
+.altertable-pie-empty-label {
+  position: absolute;
+  color: var(--at-muted, #687078);
+  font-size: 12px;
+}
+.altertable-pie-legend {
+  display: grid;
+  margin-bottom: 14px;
+}
+.altertable-pie-legend button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--at-border, #e3e6e8);
+  background: transparent;
+  color: var(--at-text, #202124);
+  text-align: left;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.altertable-pie-legend [data-open] > button {
+  background: var(--at-subtle, #f6f7f7);
+}
+.altertable-pie-legend button:focus {
+  outline: none;
+}
+.altertable-pie-key {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: none;
+}
+.altertable-pie-label {
+  flex: 1;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.altertable-pie-legend button > span:last-child {
+  color: var(--at-muted, #687078);
+  min-width: 4ch;
+  text-align: right;
+}
+
+.altertable-tooltip-trigger.altertable-pie-tooltip[data-variant='chart'] {
+  width: min(100%, 220px);
+  height: auto;
+}

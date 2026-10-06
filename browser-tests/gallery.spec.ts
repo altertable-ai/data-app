@@ -133,30 +133,33 @@ test('gallery preserves control defaults, status, and keyboard selection', async
   ).toBeVisible();
 });
 
-test('gallery widget and inspection share selected bars and view changes', async ({
+test('gallery widget and inspection show chart tooltips and share view changes', async ({
   page,
+  isMobile,
 }) => {
   await page.goto('/gallery');
   const widget = page.locator('.altertable-data-widget').filter({
     has: page.getByRole('heading', { name: 'Weekly activity', exact: true }),
   });
-  await widget
-    .getByRole('button', { name: 'Tuesday: 0 events', exact: true })
-    .click();
   const trigger = widget.getByRole('button', {
     name: 'Explore Weekly activity',
   });
-  await trigger.click();
+  if (isMobile) await trigger.tap();
+  else await trigger.click();
   const sheet = page.getByRole('dialog', {
     name: 'Weekly activity',
     exact: true,
   });
-  await expect(
-    sheet.getByRole('button', { name: 'Tuesday: 0 events', exact: true })
-  ).toHaveAttribute('aria-pressed', 'true');
-  await sheet
-    .getByRole('button', { name: 'Wednesday: 8 events', exact: true })
-    .click();
+  const sheetPoint = sheet.getByRole('button', {
+    name: 'Wednesday: 8 events',
+    exact: true,
+  });
+  if (isMobile) await sheetPoint.tap();
+  else await sheetPoint.hover();
+  await expect(sheet.getByRole('tooltip')).toContainText('8 events');
+  await page.keyboard.press('Escape');
+  await expect(sheet.getByRole('tooltip')).toHaveCount(0);
+  await expect(sheet).toBeVisible();
   await sheet.getByRole('tab', { name: 'Summary', exact: true }).click();
   await expect(
     sheet.getByText(
@@ -172,9 +175,13 @@ test('gallery widget and inspection share selected bars and view changes', async
     body.getByRole('tab', { name: 'Summary', exact: true })
   ).toHaveAttribute('aria-selected', 'true');
   await body.getByRole('tab', { name: 'Chart', exact: true }).click();
-  await expect(
-    body.getByRole('button', { name: 'Wednesday: 8 events', exact: true })
-  ).toHaveAttribute('aria-pressed', 'true');
+  const bodyPoint = body.getByRole('button', {
+    name: 'Wednesday: 8 events',
+    exact: true,
+  });
+  if (isMobile) await bodyPoint.tap();
+  else await bodyPoint.hover();
+  await expect(page.getByRole('tooltip')).toContainText('8 events');
 });
 
 test('gallery uses shared defaults in both themes and narrow containers', async ({
@@ -606,7 +613,7 @@ test('gallery categories support keyboard navigation, links, and persistent demo
 }) => {
   await page.goto('/gallery');
   const tabs = page.getByRole('tablist', { name: 'Gallery categories' });
-  await expect(tabs.getByRole('tab')).toHaveCount(7);
+  await expect(tabs.getByRole('tab')).toHaveCount(8);
   await expect(
     page.locator(
       '[data-testid="gallery-tabs"] > .react-aria-TabPanels > .react-aria-TabPanel:not([data-inert])'
@@ -621,6 +628,11 @@ test('gallery categories support keyboard navigation, links, and persistent demo
     })
   ).toBeVisible();
   await tabs.getByRole('tab', { name: 'Overview', exact: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(
+    tabs.getByRole('tab', { name: 'Widgets', exact: true })
+  ).toBeFocused();
+  await expect(page).toHaveURL(/view=widgets/);
   await page.keyboard.press('ArrowRight');
   await expect(
     tabs.getByRole('tab', { name: 'Filters & actions', exact: true })
@@ -690,6 +702,7 @@ test('every gallery category renders in both themes without page overflow', asyn
       await page.getByRole('button', { name: 'Switch to dark theme' }).click();
     for (const label of [
       'Overview',
+      'Widgets',
       'Filters & actions',
       'Metrics',
       'Tables & charts',
@@ -844,43 +857,51 @@ test('prose links have pointer and keyboard affordances', async ({ page }) => {
   await expect(link).toHaveCSS('outline-style', 'solid');
 });
 
-test('component gallery shows composable data displays in the shared frame', async ({
+test('Widgets tab shows composable data displays in the shared frame', async ({
   page,
 }) => {
   await page.goto('/gallery');
-  await page
-    .getByRole('button', { name: 'Component gallery', exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/gallery\/components$/);
+  await page.getByRole('tab', { name: 'Widgets', exact: true }).click();
+  await expect(page).toHaveURL(/\/gallery\?view=widgets$/);
   await expect(
     page.getByRole('tablist', { name: 'Gallery categories' })
-  ).toHaveCount(0);
-  const panel = page.getByRole('main');
+  ).toHaveCount(1);
+  const panel = page.getByRole('tabpanel', { name: 'Widgets', exact: true });
   await expect(
     panel.getByRole('region', { name: /basic example$/ })
-  ).toHaveCount(5);
+  ).toHaveCount(9);
   for (const name of [
-    'ComparisonVisual',
+    'Comparison',
     'Ranking',
     'Breakdown',
-    'SelectableBarChart',
+    'BarChart',
+    'LineChart',
+    'AreaChart',
+    'PieChart',
+    'ScatterChart',
     'DataTable',
   ]) {
     await expect(
       panel.getByRole('heading', { name, exact: true })
     ).toBeVisible();
   }
-  const bars = panel.getByRole('region', {
-    name: 'SelectableBarChart basic example',
-    exact: true,
-  });
-  await bars
-    .getByRole('button', { name: 'Monday: 12 events', exact: true })
-    .click();
   await expect(
-    bars.getByRole('button', { name: 'Monday: 12 events', exact: true })
-  ).toHaveAttribute('aria-pressed', 'true');
-  await bars.getByRole('button', { name: 'Clear selection' }).click();
+    panel.getByText(/^(Latest|Selected|Preview|Largest)$/)
+  ).toHaveCount(0);
+  await expect(panel.getByText(/Use arrow keys to move/)).toHaveCount(0);
+  await expect(
+    panel.getByRole('button', { name: 'Clear selection' })
+  ).toHaveCount(0);
+  await expect(
+    panel
+      .getByRole('region', { name: 'Charts', exact: true })
+      .getByRole('region', { name: /basic example$/ })
+  ).toHaveCount(5);
+  await expect(
+    panel
+      .getByRole('region', { name: 'Custom visualizations', exact: true })
+      .getByRole('region', { name: /basic example$/ })
+  ).toHaveCount(4);
   await expect(panel.getByRole('table')).toHaveCount(1);
   await expect(panel.getByRole('rowheader', { name: 'Monday' })).toBeVisible();
   await page.reload();
@@ -891,9 +912,173 @@ test('component gallery shows composable data displays in the shared frame', asy
     scroll: document.documentElement.scrollWidth,
   }));
   expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.width + 1);
-  await page.getByRole('button', { name: 'Back to app gallery' }).click();
+  await page.getByRole('tab', { name: 'Overview', exact: true }).click();
   await expect(page).toHaveURL(/\/gallery\?view=overview$/);
   await expect(
     page.getByRole('tablist', { name: 'Gallery categories' })
   ).toBeVisible();
+});
+
+for (const [name, first, second, value] of [
+  ['BarChart', 'Web: 84 orders', 'App: 112 orders', '84 orders'],
+  ['LineChart', 'Mon: 180 ms', 'Tue: 165 ms', '180 ms'],
+  ['AreaChart', 'Jan: 120 GB', 'Feb: 155 GB', '120 GB'],
+  [
+    'PieChart',
+    'Direct: 4,000 visits, 40%',
+    'Organic search: 3,200 visits, 32%',
+    '4,000 visits',
+  ],
+  [
+    'ScatterChart',
+    'Atlas: Request volume 120 requests, Response time 145 ms',
+    'Birch: Request volume 240 requests, Response time 160 ms',
+    'Response time: 145 ms',
+  ],
+]) {
+  test(`${name} exposes pointer tooltips without keyboard inspection`, async ({
+    page,
+    isMobile,
+  }) => {
+    await page.goto('/gallery?view=widgets');
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    const point = chart.getByRole('button', { name: first, exact: true });
+    const next = chart.getByRole('button', { name: second, exact: true });
+    if (isMobile) {
+      await point.tap();
+      await expect(page.getByRole('tooltip')).toContainText(value);
+      await point.tap();
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+      await point.tap();
+      await chart.getByRole('heading', { name, exact: true }).tap();
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+    } else {
+      await point.hover();
+      await expect(page.getByRole('tooltip')).toContainText(value);
+      await point.click();
+      await chart.getByRole('heading', { name, exact: true }).hover();
+      await expect(page.getByRole('tooltip')).toHaveCount(0);
+    }
+    await expect(point).toHaveAttribute('tabindex', '-1');
+    await expect(next).toHaveAttribute('tabindex', '-1');
+    await page.mouse.move(0, 0);
+    await page.keyboard.press('Tab');
+    await point.focus();
+    await expect(
+      page.locator('[role=tooltip][data-variant=chart]')
+    ).toHaveCount(0);
+    if (isMobile) await next.tap();
+    else await next.hover();
+    await expect(page.getByRole('tooltip')).toHaveCount(1);
+    await page.evaluate(() => window.scrollBy(0, 150));
+    await expect(page.getByRole('tooltip')).toHaveCount(0);
+  });
+}
+
+test('pie slice tooltips emphasize only the inspected category', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('/gallery?view=widgets');
+  const pie = page.getByRole('region', {
+    name: 'PieChart basic example',
+    exact: true,
+  });
+  const slices = pie.locator('.altertable-pie-slice');
+  if (isMobile) await slices.first().tap({ position: { x: 70, y: 70 } });
+  else await slices.first().hover({ position: { x: 70, y: 70 } });
+  await expect(page.getByRole('tooltip')).toContainText('Direct');
+  await expect(slices.first()).toHaveCSS('opacity', '1');
+  await expect(slices.nth(1)).toHaveCSS('opacity', '0.3');
+  if (isMobile) {
+    await pie.locator('svg').tap({ position: { x: 110, y: 190 } });
+    await expect(page.getByRole('tooltip')).toContainText('Organic search');
+    await expect(slices.nth(1)).toHaveCSS('opacity', '1');
+  }
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
+  await expect(slices.nth(1)).toHaveCSS('opacity', '1');
+});
+
+test('former component gallery links open the Widgets tab', async ({
+  page,
+}) => {
+  await page.goto('/gallery/components');
+  await expect(page).toHaveURL(/\/gallery\?view=widgets$/);
+  await expect(
+    page.getByRole('tab', { name: 'Widgets', exact: true })
+  ).toHaveAttribute('aria-selected', 'true');
+});
+
+for (const width of [375, 600, 960, 1280]) {
+  test(`Widgets uses responsive app layout at ${width}px`, async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, 'Explicit widths cover the responsive layout.');
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/gallery?view=widgets');
+    const panel = page.getByRole('tabpanel', { name: 'Widgets', exact: true });
+    const geometry = await panel.evaluate(element => {
+      const cards = [
+        ...element.querySelectorAll('[aria-label$="basic example"]'),
+      ];
+      const rects = cards.map(card => {
+        const { x, y, width, height, right } = card.getBoundingClientRect();
+        return { x, y, width, height, right };
+      });
+      const chartGrid = cards[0]!
+        .closest('.altertable-grid')!
+        .getBoundingClientRect();
+      const line = element.querySelector('.altertable-trend-scroll')!;
+      return {
+        rects,
+        chartWidth: chartGrid.width,
+        pageWidth: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        lineWidth: line.clientWidth,
+        lineScroll: line.scrollWidth,
+      };
+    });
+    const [bar, line, , , scatter] = geometry.rects;
+    expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.pageWidth + 1);
+    for (const card of geometry.rects) {
+      expect(card.x).toBeGreaterThanOrEqual(0);
+      expect(card.right).toBeLessThanOrEqual(geometry.pageWidth);
+    }
+    if (width >= 960) {
+      expect(Math.abs(bar!.y - line!.y)).toBeLessThan(1);
+      expect(line!.x).toBeGreaterThan(bar!.right);
+      expect(geometry.lineScroll).toBeLessThanOrEqual(geometry.lineWidth + 1);
+    } else {
+      expect(line!.y).toBeGreaterThanOrEqual(bar!.y + bar!.height);
+      expect(Math.abs(bar!.x - line!.x)).toBeLessThan(1);
+    }
+    expect(Math.abs(scatter!.width - geometry.chartWidth)).toBeLessThan(1);
+  });
+}
+
+test('chart tooltips dismiss when their chart scrolls horizontally', async ({
+  page,
+  isMobile,
+}) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto('/gallery?view=widgets');
+  const chart = page.getByRole('region', {
+    name: 'LineChart basic example',
+    exact: true,
+  });
+  const point = chart.getByRole('button', { name: 'Wed: 210 ms', exact: true });
+  if (isMobile) await point.tap();
+  else await point.hover();
+  await expect(page.getByRole('tooltip')).toBeVisible();
+  await chart.locator('.altertable-trend-scroll').evaluate(element => {
+    if (element.scrollWidth <= element.clientWidth)
+      throw new Error('Expected an overflowing chart');
+    element.scrollLeft = element.scrollLeft ? 0 : element.scrollWidth;
+  });
+  await expect(page.getByRole('tooltip')).toHaveCount(0);
 });

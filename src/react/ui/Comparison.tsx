@@ -2,7 +2,7 @@ import { AppIcon } from '@/src/react/ui/icons';
 import {
   comparisonChange,
   type MetricComparison,
-} from '@/src/react/ui/comparison';
+} from '@/src/react/ui/metric-comparison';
 import type { MetricDefinition } from '@/src/react/ui/metric';
 import { metricComparison } from '@/src/react/ui/metric';
 import type { MetricReading } from '@/src/core/reading';
@@ -13,7 +13,7 @@ type UnboundComparisonProps = MetricComparison & {
   emphasis?: 'standard' | 'story';
 };
 
-export type ComparisonVisualProps =
+export type ComparisonProps =
   | UnboundComparisonProps
   | {
       metric: MetricDefinition;
@@ -21,7 +21,7 @@ export type ComparisonVisualProps =
       emphasis?: 'standard' | 'story';
     };
 
-export function ComparisonVisual(props: ComparisonVisualProps) {
+export function Comparison(props: ComparisonProps) {
   if ('metric' in props) {
     if (props.reading.loading) return <ContentSkeleton variant="panel" />;
     const comparison = metricComparison(props.metric, props.reading);

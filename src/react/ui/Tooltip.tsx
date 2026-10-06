@@ -25,6 +25,14 @@ import {
 } from '@floating-ui/react';
 import { classNames } from '@/src/react/ui/classNames';
 
+const chartPointerPositions = new WeakMap<Document, { x: number; y: number }>();
+
+function chartPointerMoved(document: Document, x: number, y: number) {
+  const previous = chartPointerPositions.get(document);
+  chartPointerPositions.set(document, { x, y });
+  return !previous || previous.x !== x || previous.y !== y;
+}
+
 type TooltipTiming = { hoverDelay: () => number; rememberClose: () => void };
 const TooltipContext = /* @__PURE__ */ createContext<TooltipTiming | null>(
   null
@@ -66,6 +74,7 @@ export type TooltipProps = {
   content: ReactNode;
   children: ReactNode;
   variant?: 'hint' | 'chart';
+  onOpenChange?: (open: boolean) => void;
   align?: 'start' | 'center' | 'end';
   placement?: 'top' | 'bottom';
   portalRoot?: RefObject<HTMLElement | null>;
@@ -73,11 +82,13 @@ export type TooltipProps = {
 } & Omit<ComponentPropsWithRef<'span'>, 'children' | 'content'>;
 
 /** Short visual hint for an already labeled control. variant="chart" follows the cursor
- * on hover and toggles on tap so a bar or point can show the period and value. Hint
+ * on hover and toggles on tap so a bar or point can show the period and value. Chart
+ * tooltips dismiss on scroll and do not open on keyboard focus. Hint
  * tooltips hide once the control is pressed. Escape closes either. */
 export function Tooltip({
   content,
   children,
+  onOpenChange,
   variant = 'hint',
   align = 'center',
   placement,
@@ -97,6 +108,13 @@ export function Tooltip({
   const describedBy = tooltipProps?.id ?? tooltipId;
   const timing = useContext(TooltipContext);
   const [open, setOpen] = useState(false);
+  const visible = open && content != null;
+  const notifyOpenChange = useEffectEvent((value: boolean) =>
+    onOpenChange?.(value)
+  );
+  useEffect(() => {
+    notifyOpenChange(visible);
+  }, [visible]);
   const [dialogRoot, setDialogRoot] = useState<HTMLDialogElement | null>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressed = useRef(false);
@@ -118,10 +136,11 @@ export function Tooltip({
   useEffect(() => cancelHover, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!visible) return;
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape') return;
+      if (variant === 'chart') event.preventDefault();
       suppressed.current = true;
       closeFromEffect();
     }
@@ -129,10 +148,20 @@ export function Tooltip({
     document.addEventListener('keydown', onKeyDown);
 
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open]);
+  }, [visible, variant]);
+
+  useEffect(() => {
+    if (!visible || variant !== 'chart') return;
+    function onScroll() {
+      suppressed.current = false;
+      closeFromEffect();
+    }
+    window.addEventListener('scroll', onScroll, true);
+    return () => window.removeEventListener('scroll', onScroll, true);
+  }, [visible, variant]);
 
   const { refs, floatingStyles, update } = useFloating({
-    open,
+    open: visible,
     onOpenChange: setOpen,
     placement: align === 'center' ? side : `${side}-${align}`,
     strategy: 'fixed',
@@ -177,16 +206,17 @@ export function Tooltip({
   }
 
   useEffect(() => {
-    if (!open || variant !== 'chart') return;
+    if (!visible || variant !== 'chart') return;
 
     function onDocPointerDown(event: PointerEvent) {
       closeOnOutsidePointer(event);
     }
 
-    document.addEventListener('pointerdown', onDocPointerDown);
+    document.addEventListener('pointerdown', onDocPointerDown, true);
 
-    return () => document.removeEventListener('pointerdown', onDocPointerDown);
-  }, [open, variant]);
+    return () =>
+      document.removeEventListener('pointerdown', onDocPointerDown, true);
+  }, [visible, variant]);
 
   const triggerRef = useMergeRefs([
     refs.setReference,
@@ -202,6 +232,7 @@ export function Tooltip({
         {...props}
         ref={triggerRef}
         data-variant={variant}
+        data-open={visible || undefined}
         className={classNames('altertable-tooltip-trigger', className)}
         onPointerEnter={event => {
           onPointerEnter?.(event);
@@ -211,10 +242,22 @@ export function Tooltip({
             suppressed.current
           )
             return;
-          if (variant === 'chart') followCursor(event);
+          if (variant === 'chart') {
+            if (
+              chartPointerMoved(
+                event.currentTarget.ownerDocument,
+                event.clientX,
+                event.clientY
+              )
+            ) {
+              followCursor(event);
+              setOpen(true);
+            }
+            return;
+          }
           if (open) return;
           cancelHover();
-          const delay = variant === 'chart' ? 0 : (timing?.hoverDelay() ?? 500);
+          const delay = timing?.hoverDelay() ?? 500;
           if (delay === 0) setOpen(true);
           else
             hoverTimer.current = setTimeout(() => {
@@ -230,7 +273,16 @@ export function Tooltip({
             event.pointerType !== 'mouse'
           )
             return;
+          if (
+            !chartPointerMoved(
+              event.currentTarget.ownerDocument,
+              event.clientX,
+              event.clientY
+            )
+          )
+            return;
           followCursor(event);
+          if (!suppressed.current) setOpen(true);
         }}
         onPointerLeave={event => {
           onPointerLeave?.(event);
@@ -238,7 +290,10 @@ export function Tooltip({
           if (variant === 'chart' && event.pointerType !== 'mouse') return;
           if (
             !event.defaultPrevented &&
-            !event.currentTarget.contains(document.activeElement)
+            !(
+              event.currentTarget.contains(document.activeElement) &&
+              variant !== 'chart'
+            )
           )
             close();
           else cancelHover();
@@ -246,8 +301,11 @@ export function Tooltip({
         onPointerDown={event => {
           onPointerDown?.(event);
           if (event.defaultPrevented) return;
-          if (variant === 'chart' && event.pointerType !== 'mouse') {
-            setOpen(wasOpen => !wasOpen);
+          if (variant === 'chart') {
+            if (event.pointerType !== 'mouse') {
+              followCursor(event);
+              setOpen(wasOpen => !wasOpen);
+            }
 
             return;
           }
@@ -259,10 +317,12 @@ export function Tooltip({
           if (
             event.defaultPrevented ||
             suppressed.current ||
+            variant === 'chart' ||
             !event.target.matches(':focus-visible')
           )
             return;
           cancelHover();
+          refs.setPositionReference(refs.domReference.current);
           setOpen(true);
         }}
         onBlurCapture={event => {
@@ -282,7 +342,7 @@ export function Tooltip({
                 'aria-describedby':
                   [
                     child.props['aria-describedby'],
-                    open ? describedBy : undefined,
+                    visible ? describedBy : undefined,
                   ]
                     .filter(Boolean)
                     .join(' ') || undefined,
@@ -290,7 +350,7 @@ export function Tooltip({
             : child
         )}
       </span>
-      {open && (
+      {visible && (
         <FloatingPortal root={portalRoot ?? dialogRoot ?? undefined}>
           <span
             {...tooltipProps}

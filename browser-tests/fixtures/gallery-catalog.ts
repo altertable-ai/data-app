@@ -12,6 +12,18 @@ export const galleryCategories = [
     ],
   },
   {
+    id: 'widgets',
+    label: 'Widgets',
+    title: 'Explore the visualization library',
+    description:
+      'One basic example of each chart and custom visualization, using the same widget frame.',
+    uses: [
+      'Choose a visualization',
+      'Compare components',
+      'Iterate on designs',
+    ],
+  },
+  {
     id: 'filters',
     label: 'Filters & actions',
     title: 'Give readers a useful way into the data',

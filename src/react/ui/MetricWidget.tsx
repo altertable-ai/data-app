@@ -6,7 +6,7 @@ import { AppIcon } from '@/src/react/ui/icons';
 import {
   comparisonChange,
   type MetricComparison,
-} from '@/src/react/ui/comparison';
+} from '@/src/react/ui/metric-comparison';
 import { classNames } from '@/src/react/ui/classNames';
 import { formatMetric, type MetricFormat } from '@/src/core/format';
 import { Skeleton } from '@/src/react/ui/Skeleton';

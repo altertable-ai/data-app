@@ -91,8 +91,8 @@ against a mocked Altertable API
 ([altertable-mock](https://github.com/altertable-ai/altertable-mock), DuckDB)
 started with Testcontainers and stopped on exit. Browser tests keep fixtures.
 
-Open **Component gallery** (`/gallery/components`) for one ready example of each
-composable data display inside `<VisualizationWidget>`. The main gallery covers
+Open the **Widgets** tab (`/gallery?view=widgets`) for one ready example of each
+composable data display inside `<VisualizationWidget>`. The other tabs cover
 composed apps, variants, and request states.
 
 Use Conventional Commits and describe behavior changes and verification in PRs.

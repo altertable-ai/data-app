@@ -7,7 +7,6 @@ import { watch } from 'node:fs';
 import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
 import gallery from '@/browser-tests/fixtures/gallery.html';
-import components from '@/browser-tests/fixtures/gallery-components.html';
 import styles from '@/browser-tests/fixtures/styles.html';
 import layout from '@/browser-tests/fixtures/layout.html';
 import layoutHost from '@/browser-tests/fixtures/layout-host.html';
@@ -135,7 +134,8 @@ Bun.serve({
   routes: {
     '/skeleton': skeleton,
     '/gallery': gallery,
-    '/gallery/components': components,
+    '/gallery/components': request =>
+      Response.redirect(new URL('/gallery?view=widgets', request.url), 302),
     '/styles': styles,
     '/layout': layoutHost,
     '/layout-frame': layout,

@@ -1,3 +1,4 @@
+import { GalleryBasics } from '@/browser-tests/fixtures/gallery-basics';
 import { GalleryCases } from '@/browser-tests/fixtures/gallery-cases';
 import {
   galleryCategories,
@@ -20,7 +21,7 @@ import {
   DataWidget,
   Grid,
   SearchField,
-  SelectableBarChart,
+  BarChart,
   Stack,
   TableWidget,
   Tooltip,
@@ -369,7 +370,6 @@ function QuickControls() {
 
 function Overview() {
   const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState<string | null>(null);
   return (
     <section id="widgets" aria-label="Product activity dashboard">
       <Stack>
@@ -435,10 +435,8 @@ function Overview() {
                 id: 'chart',
                 label: 'Chart',
                 render: items => (
-                  <SelectableBarChart
+                  <BarChart
                     items={items}
-                    selectedId={selected}
-                    onSelectionChange={setSelected}
                     unit="events"
                     ariaLabel="Weekly events"
                   />
@@ -569,11 +567,6 @@ function Gallery() {
       config={config}
       dataContext={dataContext}
       queries={queries}
-      toolbarActions={
-        <Button onClick={() => window.location.assign('/gallery/components')}>
-          Component gallery
-        </Button>
-      }
       description="Explore the patterns behind useful data apps. Start with a working dashboard, then try the controls, displays, and states that fit your use case."
     >
       <Tabs
@@ -601,6 +594,8 @@ function Gallery() {
                 </Stack>
                 {category.id === 'overview' ? (
                   <Overview />
+                ) : category.id === 'widgets' ? (
+                  <GalleryBasics />
                 ) : (
                   <Stack>
                     {category.id === 'filters' && <QuickControls />}
