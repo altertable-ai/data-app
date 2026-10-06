@@ -8,3 +8,9 @@ both derived from the displayed result. Setup and static screens may omit them.
 
 Follow [app authoring](docs/app-authoring.md) for the shared workflow, the data app
 and local data app paths, and task-specific documentation.
+
+## Documentation
+
+Use `<Component>` notation for React components. Keep guidance concise; leave
+prop details to TypeScript and JSDoc. Describe the current API without migration
+or legacy instructions.

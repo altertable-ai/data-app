@@ -27,12 +27,44 @@ test('single-file hosted example queries through the host and preserves displaye
   const app = page.frameLocator('iframe');
   await expect(app.getByText('Loading data')).toBeVisible();
   await expect(
+    app.locator('.altertable-skeleton[data-inline]').first()
+  ).toHaveCSS('vertical-align', 'middle');
+  await expect(
+    app.getByRole('heading', { name: 'Sample counts', exact: true })
+  ).toBeVisible();
+  await expect(app.getByText('Total samples', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Sum of the fixture counts in the selected groups.', {
+      exact: true,
+    })
+  ).toBeVisible();
+  await expect(
+    app.getByRole('heading', { name: 'Counts by group', exact: true })
+  ).toBeVisible();
+  await expect(app.getByText('Alpha: 3', { exact: true })).toHaveCount(0);
+  await expect(
     app.getByRole('button', { name: 'Present story', exact: true })
-  ).toHaveCount(0);
+  ).toBeDisabled();
+  const stableActions = ['Explore data', 'Export CSV', 'Present story'].map(
+    name => app.getByRole('button', { name, exact: true })
+  );
+  await expect(stableActions[1]!).toBeDisabled();
+  const loadingPositions = await Promise.all(
+    stableActions.map(action => action.boundingBox())
+  );
   release!();
   gate = Promise.resolve();
-  await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
-  await expect(app.getByText('Beta: 0', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Alpha: 3', { exact: true }).filter({ visible: true })
+  ).toBeVisible();
+  await expect(
+    app.getByText('Beta: 0', { exact: true }).filter({ visible: true })
+  ).toBeVisible();
+  await expect(stableActions[1]!).toBeEnabled();
+  await expect(stableActions[2]!).toBeEnabled();
+  expect(
+    await Promise.all(stableActions.map(action => action.boundingBox()))
+  ).toEqual(loadingPositions);
   await expect(app.locator('style[data-altertable-styles]')).toHaveCount(1);
   const width = await app
     .locator('html')
@@ -86,7 +118,9 @@ test('single-file hosted example queries through the host and preserves displaye
   release!();
   gate = Promise.resolve();
   await expect(app.getByText('Showing Beta', { exact: true })).toBeVisible();
-  await expect(app.getByText('Alpha: 3', { exact: true })).toHaveCount(0);
+  await expect(
+    app.getByText('Alpha: 3', { exact: true }).filter({ visible: true })
+  ).toHaveCount(0);
   fail = true;
   await selectGroup('Alpha');
   await expect(app.getByText('Showing Beta', { exact: true })).toBeVisible();
@@ -114,18 +148,22 @@ test('single-file hosted example queries through the host and preserves displaye
   ).toBeVisible();
   await expect(
     app.getByRole('button', { name: 'Present story', exact: true })
-  ).toHaveCount(0);
+  ).toBeDisabled();
   await selectGroup("O'Reilly");
   await expect.poll(() => requests.at(-1)?.statement).toContain("O''Reilly");
   await expect(
     app.getByText('No matching groups', { exact: true })
   ).toBeVisible();
   await selectGroup('');
-  await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Alpha: 3', { exact: true }).filter({ visible: true })
+  ).toBeVisible();
   const before = requests.length;
   await app.getByRole('button', { name: 'Refresh data', exact: true }).click();
   await expect.poll(() => requests.length).toBeGreaterThan(before);
-  await expect(app.getByText('Beta: 0', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Beta: 0', { exact: true }).filter({ visible: true })
+  ).toBeVisible();
   expect(
     requests.every(
       request =>
@@ -158,9 +196,17 @@ test('hosted initial query error recovers by retry', async ({ page }) => {
   await expect(
     app.getByText('Couldn’t load results', { exact: true })
   ).toBeVisible();
+  await expect(
+    app.getByRole('button', { name: 'Export CSV', exact: true })
+  ).toBeDisabled();
+  await expect(
+    app.getByRole('button', { name: 'Present story', exact: true })
+  ).toBeDisabled();
   fail = false;
   await app.getByRole('button', { name: 'Retry', exact: true }).click();
-  await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Alpha: 3', { exact: true }).filter({ visible: true })
+  ).toBeVisible();
 });
 
 test('local starter mounts, queries its server, refreshes and retries a failed check', async ({

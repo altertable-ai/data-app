@@ -162,7 +162,7 @@ function App() {
       </p>
       <DataSection
         result={result}
-        empty={{ title: 'No activity' }}
+        emptyFallback={{ title: 'No activity' }}
         {...narrative}
       />
     </>

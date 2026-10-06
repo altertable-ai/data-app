@@ -28,8 +28,10 @@ export type AppToolbarProps = {
   };
   live?: LiveControlProps;
   aboutData?: ReactNode;
-  story?: ComponentProps<typeof PresentStory>;
-  csvExport?: CsvExport;
+  /** Null reserves a disabled story action while its findings are unavailable. */
+  story?: ComponentProps<typeof PresentStory> | null;
+  /** Null reserves a disabled export action while its data is unavailable. */
+  csvExport?: CsvExport | null;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** Header actions only. Put reader-controlled inputs in DataApp.variables below the header.
@@ -139,8 +141,20 @@ export function AppToolbar({
         )}
         {live && <LiveControl {...live} />}
         {aboutData}
-        {!!csvExport?.tables.length && <ExportControl csv={csvExport} />}
-        {story && <PresentStory {...story} />}
+        {csvExport !== undefined && (
+          <ExportControl csv={csvExport ?? undefined} />
+        )}
+        {story !== undefined &&
+          (story ? (
+            <PresentStory {...story} />
+          ) : (
+            <IconButton
+              icon="present"
+              variant="elevated"
+              label="Present story"
+              disabled
+            />
+          ))}
         {end}
       </div>
     </div>

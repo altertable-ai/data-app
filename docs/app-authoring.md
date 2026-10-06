@@ -27,7 +27,10 @@ readers can inspect the source of each claim.
 
 Connect visualizations with introductions and explanations. Use `<TextWidget>`
 for a narrative panel with the standard widget frame, or `<TextContent>` for
-borderless prose. Bind claims to `result.select((data, input) => ...)` so their
+borderless prose. Render static titles, descriptions, and instructions immediately. Use bound
+readings for dynamic values and `<DataValue>` for values within static prose.
+Skeletonize only the content that needs data. Bind claims to
+`result.select((data, input) => ...)` so their
 values and scope follow the displayed results through filter changes, refresh,
 and failure.
 
@@ -58,7 +61,7 @@ dimensions and measures. Reuse one dataset for charts or metrics derived from th
 same rows. Use the displayed input for scope labels and filenames; do not issue a
 different query or mix pending filters into the visible result. Setup and static
 screens may omit export. Use the built-in toolbar action via
-[`DataApp.csvExport`](react.md#export-displayed-data-as-csv).
+[`csvExport` on `<DataApp>`](react.md#export-displayed-data-as-csv).
 
 ## Present the findings
 
@@ -75,7 +78,7 @@ empty, error, and stale states, then present the story. Download CSV from the
 standalone and embedded toolbar and verify its filename, columns, raw values,
 and filter scope against the displayed result. Export and Present story must be
 available once analytical results are shown; initial loading, empty, and initial
-errors have neither action. Inspect both experiences
+errors keep both actions visible and disabled. Inspect both experiences
 at phone and desktop widths in light and dark themes.
 
 The app owns its queries, result parsing, business definitions, configuration,

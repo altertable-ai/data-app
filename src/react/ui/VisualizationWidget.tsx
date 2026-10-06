@@ -6,7 +6,7 @@ import type {
   EmptyContent,
   BoundWidgetReading,
 } from '@/src/react/ui/presentation';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { ContentSkeletonBody } from '@/src/react/ui/ContentSkeleton';
 import { validateWidgetViews } from '@/src/react/ui/widget-views';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 
@@ -80,7 +80,11 @@ export function VisualizationWidget<Data>(
   }
   const { visual, loading = false, insight, ...shell } = props;
   if (loading)
-    return <ContentSkeleton variant="panel" className={shell.className} />;
+    return (
+      <DataWidget {...shell} evidence={undefined} footer={insight} aria-busy>
+        <ContentSkeletonBody variant="panel" />
+      </DataWidget>
+    );
 
   return (
     <DataWidget {...shell} footer={insight}>

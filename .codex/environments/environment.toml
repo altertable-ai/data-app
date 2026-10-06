@@ -9,6 +9,11 @@ bun install --frozen-lockfile
 '''
 
 [[actions]]
+name = "Dev"
+icon = "run"
+command = "bun run dev"
+
+[[actions]]
 name = "Preview gallery"
 icon = "run"
 command = "bun run build && bun install --frozen-lockfile && bun browser-tests/server.ts"

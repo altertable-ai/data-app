@@ -6,8 +6,8 @@ import type { DataView } from '@/src/core/data-view';
 
 export type DataBoundaryProps<T, Input = unknown> = {
   view: DataView<T, Input>;
-  loading: ReactNode;
-  empty: ReactNode;
+  loadingFallback: ReactNode;
+  emptyFallback: ReactNode;
   error: (error: Error) => ReactNode;
   staleError?: (error: Error) => ReactNode;
   notice?: 'inline' | 'none';
@@ -19,8 +19,8 @@ export type DataBoundaryProps<T, Input = unknown> = {
  * Local boundaries can opt into an inline notice and delayed dimming. */
 export function DataBoundary<T, Input>({
   view,
-  loading,
-  empty,
+  loadingFallback,
+  emptyFallback,
   error,
   staleError,
   notice = 'none',
@@ -36,9 +36,9 @@ export function DataBoundary<T, Input>({
         className={classNames('altertable-data-boundary', className)}
       >
         {view.kind === 'loading'
-          ? loading
+          ? loadingFallback
           : view.kind === 'empty'
-            ? empty
+            ? emptyFallback
             : error(view.error)}
       </div>
     );

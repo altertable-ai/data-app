@@ -8,6 +8,7 @@ import {
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 import { DataAppBridge } from '@altertable/data-app/react/embed';
+import '@/browser-tests/fixtures/dev-reload';
 
 function trackNavigation(
   input: Parameters<ReturnType<typeof createNavigationHandler>>[0]

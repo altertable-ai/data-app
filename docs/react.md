@@ -31,8 +31,11 @@ import {
   createDataHooks,
   dateRangeVariable,
   DataApp,
+  DataSection,
   Grid,
   MetricWidget,
+  DataValue,
+  Skeleton,
   VisualizationWidget,
   Ranking,
 } from '@altertable/data-app/react';
@@ -112,30 +115,62 @@ function App() {
           evidence: featureEvidence,
         }),
       ]}
-      {...content}
-    />
+    >
+      <DataSection
+        result={activity}
+        emptyFallback={activity.empty}
+        {...content}
+      />
+    </DataApp>
   );
 }
 ```
 
-The `date` binding identifies the controlling variable and extracts its range from the operation input. Nested inputs use, for example, `input: (input) => input.period`. The runtime rejects mappings that silently change the selected range or comparison. Non-date views supply `describeInput`; date views can override it when other inputs also need describing.
+Render static text immediately; skeletonize only dynamic content. Keep section
+introductions outside request boundaries so they remain visible on empty and
+error states.
 
-Share the [date range contract](contract.md#shared-date-ranges) between the
-operation parser and the view.
+Use `<DataSection>` for each independently fetched subtree and `view.content()`
+to share its loading and ready layout. Refreshes retain displayed content.
 
-`useView()` generates controls for date, text and fixed-option select variables; custom controls use `result.variables.bind(name)`. `input` chooses which variables reach the operation, so local search can stay local. Hooks belong in the enclosing component.
+Use `<DataValue>` for a dynamic value within static prose:
+
+```tsx
+<p>
+  Orders in the last 7 days:{' '}
+  <DataValue
+    reading={result.select(data => data.weeklyOrders)}
+    loadingFallback={<Skeleton inline />}
+  >
+    {count => formatCount(count)}
+  </DataValue>
+</p>
+```
+
+Bind the whole sentence when its wording depends on the result.
+
+Use the same [date range contract](contract.md#shared-date-ranges) for the
+operation and its view. For nested inputs, bind the range with
+`input: input => input.period`.
+
+Use `result.variables.bind(name)` for custom controls. Keep local-only filters
+out of the operation's `input`.
 
 For large tables, use query-backed pagination with a stable sort and total
 count. Client pagination and search cover only the rows already returned.
 
-Bound `<VisualizationWidget>` and `<TableWidget>` components require `evidence` from `context.evidence(...)`. A bound `<MetricWidget>` gets evidence from its metric definition. Evidence must name at least one glossary entry or query. Static widgets may omit it.
+Use `context.evidence(...)` for bound charts and tables. `<MetricWidget>` uses
+its metric definition for the label, format, and evidence; keep view-specific
+descriptions on the widget.
 
-`<MetricWidget>` and `<ComparisonVisual>` both accept the same `metric` and `reading`. The comparison is enabled by the displayed result's range. The definition supplies formatting and evidence; a reading cannot override those or provide a second value. `favorableDirection` is optional; changes are neutral until the author defines whether up or down is favorable.
+`<MetricWidget>` and `<ComparisonVisual>` share a metric reading. Comparisons
+follow the displayed result's range.
 
 Use the [app helpers](#reuse-app-helpers) for metric formats and values in tables,
 charts, and custom views.
 
-`defineDataContent()` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `<DataSection>` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
+For manually managed requests, use `defineDataContent()` to share loading and
+ready layouts.
 
 ## Layout
 
@@ -301,7 +336,7 @@ evidence. Use `context.finding()` to bind the evidence.
 The callback receives the displayed data and its original input, including
 during refresh or failure. Derive the story from that snapshot so it agrees with
 the visible exploration. Initial loading, empty results, and initial errors have
-no story to present.
+no story to present; the toolbar keeps its story action visible and disabled.
 
 ## Export displayed data as CSV
 
@@ -310,6 +345,7 @@ from the displayed snapshot so the built-in **Export** action is available
 whenever analytical results are shown. Include this alongside the app's story;
 setup and static shells may omit it. One dataset downloads directly as CSV. Multiple
 datasets offer individual CSV downloads and **Export all** as a ZIP archive.
+While no displayed snapshot is available, the export action stays visible and disabled.
 
 Example:
 
@@ -330,7 +366,13 @@ Example:
     ],
   })}
 >
-  {(data, input) => <Results data={data} input={input} />}
+  <DataSection
+    result={result}
+    emptyFallback={result.empty}
+    loadingFallback={<ResultsSkeleton />}
+  >
+    {(data, input) => <Results data={data} input={input} />}
+  </DataSection>
 </DataApp>
 ```
 

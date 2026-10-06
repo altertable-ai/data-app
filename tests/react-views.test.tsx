@@ -23,6 +23,8 @@ import {
   WidgetViewTabs,
   PresentStory,
   DataApp,
+  DataSection,
+  type DataView,
 } from '@altertable/data-app/react';
 
 import { storySteps } from '@/src/react/ui/story';
@@ -408,7 +410,7 @@ test('bound visual selectors do not run during loading or render an empty result
   ));
   expect(calls).toBe(0);
   expect(
-    renderToStaticMarkup(content.loading).match(
+    renderToStaticMarkup(content.loadingFallback).match(
       /class="altertable-content-skeleton-row"/g
     )
   ).toHaveLength(6);
@@ -564,8 +566,8 @@ test('bound tables keep their row contract while loading', () => {
     />
   ));
   expect(
-    renderToStaticMarkup(content.loading).match(
-      /class="altertable-content-skeleton-row"/g
+    renderToStaticMarkup(content.loadingFallback).match(
+      /class="altertable-skeleton"/g
     )
   ).toHaveLength(3);
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
@@ -582,4 +584,85 @@ test('bound tables keep their row contract while loading', () => {
       content.children({ current: 0, previous: null, rows: [] }, input)
     )
   ).toContain('No features');
+});
+
+test('DataApp keeps its children visible while local boundaries own request states', () => {
+  const frame = { location: new URL('https://app.example.com') };
+  Object.assign(frame, { top: frame });
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: frame,
+  });
+  let renders = 0;
+  function render(state: DataView<number, string>) {
+    return renderToStaticMarkup(
+      <DataApp
+        config={{
+          title: 'Activity',
+          scope: { organization: 'a', environment: 'b' },
+          appearance: {},
+        }}
+        dataContext={context}
+        request={{ view: state, refetch() {} }}
+        story={() => []}
+        csvExport={({ data }) => ({
+          filename: 'activity',
+          tables: [{ name: 'Activity', columns: ['Count'], rows: [[data]] }],
+        })}
+      >
+        <h2>Always visible introduction</h2>
+        <DataSection
+          result={{ view: state, refetch() {} }}
+          emptyFallback={{ title: 'No activity' }}
+          loadingFallback={<p>Loading this section</p>}
+          notice="none"
+        >
+          {(count, input) => {
+            renders++;
+            return (
+              <p>
+                {count} actions: {input}
+              </p>
+            );
+          }}
+        </DataSection>
+      </DataApp>
+    );
+  }
+  try {
+    const pending = render({ kind: 'loading' });
+    expect(pending).toContain('Always visible introduction');
+    expect(pending).toContain('Loading this section');
+    expect(renders).toBe(0);
+    const failed = render({ kind: 'error', error: new Error('Unavailable') });
+    expect(failed).toContain('Always visible introduction');
+    expect(failed).toContain('Couldn’t load results');
+    const empty = render({ kind: 'empty', input: 'March' });
+    expect(empty).toContain('Always visible introduction');
+    expect(empty).toContain('No activity');
+    expect(renders).toBe(0);
+    for (const kind of ['ready', 'updating', 'stale-error'] as const) {
+      const state =
+        kind === 'ready'
+          ? { kind, data: 0, input: 'March' }
+          : {
+              kind,
+              data: 0,
+              displayedInput: 'March',
+              requestedInput: 'April',
+              message: 'Showing March',
+              error: new Error('Unavailable'),
+            };
+      const html = render(state);
+      expect(html).toContain('Always visible introduction');
+      expect(html).toContain('0 actions: March');
+      expect(html).not.toContain('Loading this section');
+    }
+    expect(renders).toBe(3);
+  } finally {
+    if (previousWindow)
+      Object.defineProperty(globalThis, 'window', previousWindow);
+    else Reflect.deleteProperty(globalThis, 'window');
+  }
 });

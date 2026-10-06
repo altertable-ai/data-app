@@ -7,6 +7,12 @@
     altertable-skeleton-in 200ms ease 200ms forwards,
     altertable-skeleton-pulse 1.4s ease-in-out 400ms infinite alternate;
 }
+.altertable-skeleton[data-inline] {
+  display: inline-block;
+  width: 8ch;
+  height: 1em;
+  vertical-align: middle;
+}
 @keyframes altertable-skeleton-in {
   to {
     opacity: 1;

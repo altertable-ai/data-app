@@ -19,10 +19,10 @@ import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
-import { DataSection, type SectionResult } from '@/src/react/ui/DataSection';
-import type { EmptyContent } from '@/src/react/ui/presentation';
+import type { SectionResult } from '@/src/react/ui/DataSection';
 
 type DataAppBaseProps = {
+  children: ReactNode;
   config: DataAppConfig;
   dataContext: DataContext;
   aboutEmpty?: AboutEmpty;
@@ -40,7 +40,6 @@ type DataAppBaseProps = {
 export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   queries?: DisclosedQuery[];
   refresh?: AppToolbarProps['refresh'];
-  empty: EmptyContent;
   controls?: ReactNode;
 };
 
@@ -52,9 +51,6 @@ export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
         story: BoundStory<Data, Input>;
         /** Every analytical view exports every distinct dataset in its displayed result. */
         csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
-        children: (data: Data, displayedInput: Input) => ReactNode;
-        loading?: ReactNode;
-        label?: string;
         queries?: never;
         refresh?: never;
         variables?: never;
@@ -63,19 +59,15 @@ export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
         request?: never;
         story?: never;
         csvExport?: CsvExport;
-        children: ReactNode;
         queries?: DisclosedQuery[];
         refresh?: AppToolbarProps['refresh'];
         variables?: ReactNode;
-        loading?: never;
-        empty?: never;
-        label?: never;
       }
   );
 
 /** Owns the page title, header, gutter, and width; body content uses section headings.
- * The primary request owns controls, empty state, displayed input, refresh, and inspection.
- * Without a request, the shell accepts authored children for setup or static views. */
+ * The primary request binds the toolbar, controls, refresh, and inspection.
+ * Children always render; compose DataSection boundaries around independently loading content. */
 export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   const {
     config,
@@ -120,20 +112,24 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
         request
           ? snapshot
             ? props.csvExport(snapshot)
-            : undefined
+            : null
           : props.csvExport
       }
       requestState={request?.view.kind}
       refresh={refresh ?? request?.refresh}
       story={
-        story && {
-          ...story,
-          title: config.title,
-          scope,
-          dataContext,
-          empty: aboutEmpty,
-          theme: themeController,
-        }
+        story
+          ? {
+              ...story,
+              title: config.title,
+              scope,
+              dataContext,
+              empty: aboutEmpty,
+              theme: themeController,
+            }
+          : request
+            ? null
+            : undefined
       }
       aboutData={
         <AboutData
@@ -181,20 +177,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
           <VariableBar>{request?.controls ?? props.variables}</VariableBar>
         )}
         <div ref={bodyRef} className="altertable-app-body">
-          {request ? (
-            <DataSection
-              result={request}
-              notice="none"
-              dimOnUpdate={false}
-              loading={props.loading}
-              empty={request.empty}
-              label={props.label}
-            >
-              {(data, displayedInput) => props.children(data, displayedInput)}
-            </DataSection>
-          ) : (
-            props.children
-          )}
+          {props.children}
         </div>
         {request && (
           <DataViewToast

@@ -38,10 +38,12 @@ test('embedded toolbar exports displayed results through its host during updates
   await page.goto('/starter-data-app');
   const app = page.frameLocator('iframe');
   await expect(app.getByText('Loading data')).toBeVisible();
-  await expect(app.getByRole('button', { name: 'Export CSV' })).toHaveCount(0);
+  await expect(app.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
   release();
   gate = Promise.resolve();
-  await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Alpha: 3', { exact: true }).filter({ visible: true })
+  ).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'sandbox',
     'allow-scripts'
@@ -99,7 +101,7 @@ test('embedded toolbar exports displayed results through its host during updates
   await expect(
     app.getByText('No matching groups', { exact: true })
   ).toBeVisible();
-  await expect(app.getByRole('button', { name: 'Export CSV' })).toHaveCount(0);
+  await expect(app.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
 });
 
 test('embedded export failures stay visible and allow retry', async ({
@@ -136,13 +138,15 @@ for (const embedded of [false, true])
     await page.goto(embedded ? '/bundle-host' : '/gallery?multiple-exports');
     const app = embedded ? page.frameLocator('iframe') : page;
     const button = app.getByRole('button', { name: 'Export', exact: true });
+    await button.focus();
+    await expect(app.getByRole('tooltip')).toHaveText('Export data');
     await button.press('ArrowDown');
     await expect(
-      app.getByRole('menuitem', { name: 'Export Counts (CSV)', exact: true })
+      app.getByRole('option', { name: 'Export Counts CSV', exact: true })
     ).toBeFocused();
     let downloaded = page.waitForEvent('download');
     await app
-      .getByRole('menuitem', { name: 'Export Summary (CSV)', exact: true })
+      .getByRole('option', { name: 'Export Summary CSV', exact: true })
       .click();
     let download = await downloaded;
     expect(download.suggestedFilename()).toBe('Summary.csv');
@@ -150,7 +154,7 @@ for (const embedded of [false, true])
     await button.click();
     downloaded = page.waitForEvent('download');
     await app
-      .getByRole('menuitem', { name: 'Export all (ZIP)', exact: true })
+      .getByRole('option', { name: 'Export all ZIP', exact: true })
       .click();
     download = await downloaded;
     expect(download.suggestedFilename()).toBe('gallery.zip');
@@ -161,8 +165,14 @@ for (const embedded of [false, true])
     ]);
     expect(strFromU8(files['Summary.csv']!)).toBe('Total\r\n0\r\n');
     await button.click();
+    downloaded = page.waitForEvent('download');
+    await app
+      .getByRole('option', { name: 'Export all ZIP', exact: true })
+      .click();
+    expect((await downloaded).suggestedFilename()).toBe('gallery.zip');
+    await button.click();
     await page.screenshot({ path: test.info().outputPath('export-menu.png') });
-    await app.getByRole('menu').press('Escape');
-    await expect(app.getByRole('menu')).toHaveCount(0);
+    await app.getByRole('listbox').press('Escape');
+    await expect(app.getByRole('listbox')).toHaveCount(0);
     await expect(button).toBeFocused();
   });
