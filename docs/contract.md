@@ -7,32 +7,10 @@ should import their operation types using `import type`.
 
 ## Execute named queries
 
-Produce three artifacts for hosted apps:
-
-- App source: browser-owned operations, parsing, views, and controls.
-- `queries.json`: an object mapping each query ID to its SQL template.
-- `variables.json`: a list of definitions with required `name`, `type`, `nullable`,
-  and `default` fields; `options` is optional.
-
-For example, the host stores this registration separately from the app bundle:
-
-```json
-{
-  "queries": {
-    "event-count": "SELECT count(*) FROM events WHERE country = {{country}}"
-  },
-  "variables": [
-    { "name": "country", "type": "STRING", "nullable": false, "default": "FR" }
-  ]
-}
-```
-
-Validate the external payload with `defineDataAppRegistration({ queries, variables })`.
-It rejects invalid definitions, duplicate names, and undefined SQL placeholders.
-Keep the query map on the trusted host/server. Do not import it into app code.
-Variable definitions can also appear in app code to type inputs and build controls.
-
-App code references query IDs and passes values:
+Hosted operations call registered query IDs with typed values. For example,
+`event-count` can reference `SELECT count(*) FROM events WHERE country = {{country}}`
+in the separate query map. See [hosted registration](hosted-apps.md#create-and-update-registration)
+for the app's deliverables.
 
 ```ts
 import {
@@ -63,45 +41,35 @@ const operations = {
 };
 ```
 
-Use `createDataClient({ operations })` in hosted app code. `query(id, values)`
-sends `{ operation, variables, limit }` through the installed `postMessage` bridge.
-The host looks up the SQL and validates values using its saved registration.
-Pass the variables needed by that query; omitted values use their defaults.
-Unrelated or unknown values are rejected by the host. An operation may execute
-several named queries, but the bridge's `operation` field identifies one statement.
-
-Submit app source, the complete query map, and the complete variable list together
-on hosted creation and every source update, including removals and empty collections.
-Local CLI apps keep their server-owned operations and statement-based lakehouse
-queries. They do not require query registration or the two JSON files. Their
-browser client uses `createDataClient()` to call the existing HTTP operation API.
-See [hosted authoring](hosted-apps.md) and [local authoring](local-data-apps.md).
+`query(id, values)` inherits the operation's limit and cancellation signal;
+`{ limit }` can lower the row bound. Pass only the variables used by that query.
+An operation may execute several named queries. Local server operations keep
+`query(id, statement)`; see [local authoring](local-data-apps.md).
 
 ## Query variables
 
-The supported types and value shapes follow Altertable's frontend variable
-contract. `VariableValue<Type>` maps each type to its value;
-`QueryVariableValues<typeof variables>` derives an operation input keyed by variable name. Each definition requires `name`, `type`, `nullable`, and `default`;
-`options` is optional. Names must be unique. Options must be unique and constrain allowed
-values. Missing values use the declared default; explicit null requires
-`nullable: true`. A default must be a valid value for its type, or null when nullable is true. Runtime parsing rejects
-unknown names, malformed shapes, non-finite numbers, and numeric/boolean strings.
-Custom types and SQL fragments are not supported.
+Each definition requires `name`, `type`, `nullable`, and a valid `default`.
+Names must be unique. Missing values use the default; null requires `nullable: true`. Optional `options`
+restrict values to a unique list. `parseQueryVariables()` validates values without
+coercing strings to numbers or booleans and rejects unknown names.
 
-| Type            | TypeScript value             | JSON representation                                           |
-| --------------- | ---------------------------- | ------------------------------------------------------------- |
-| `STRING`        | `string`                     | String                                                        |
-| `INTEGER`       | `number` (safe integer)      | Number                                                        |
-| `FLOAT`         | `number` (finite)            | Number                                                        |
-| `BOOLEAN`       | `boolean`                    | Boolean                                                       |
-| `INTERVAL`      | `HistogramInterval`          | `HOURLY`, `DAILY`, `WEEKLY`, `MONTHLY`, `QUARTERLY`, `YEARLY` |
-| `DURATION`      | `Duration`                   | `{ amount: integer, unit: HOUR/DAY/WEEK/MONTH/YEAR }`         |
-| `DATETIME`      | `Date` or `RelativeDateTime` | ISO timestamp with timezone, or `{ anchor, offset }`          |
-| `DATETIMERANGE` | `DateTimeRange`              | `{ from, to }`, each a datetime or null                       |
+`VariableValue<Type>` gives the value type;
+`QueryVariableValues<typeof variables>` derives inputs keyed by name.
 
-`RelativeDateTime` uses the frontend's `RELATIVE_ANCHOR_NOW` and
-`RELATIVE_ANCHOR_START_OF_TODAY`, `YESTERDAY`, `TOMORROW`, `WEEK`, `MONTH`, or
-`YEAR` anchors (each with the full prefix). `offset` is an ordered array of
+| Type            | Value                                                              |
+| --------------- | ------------------------------------------------------------------ |
+| `STRING`        | `string`                                                           |
+| `INTEGER`       | Safe integer                                                       |
+| `FLOAT`         | Finite number                                                      |
+| `BOOLEAN`       | `boolean`                                                          |
+| `INTERVAL`      | `HOURLY`, `DAILY`, `WEEKLY`, `MONTHLY`, `QUARTERLY`, `YEARLY`      |
+| `DURATION`      | `{ amount: integer, unit: HOUR/DAY/WEEK/MONTH/YEAR }`              |
+| `DATETIME`      | `Date` (ISO timestamp with timezone in JSON) or `RelativeDateTime` |
+| `DATETIMERANGE` | `{ from, to }`, each a datetime or null                            |
+
+`RelativeDateTime` is `{ anchor, offset }`. Use `RELATIVE_ANCHOR_NOW` or
+`RELATIVE_ANCHOR_START_OF_` followed by `TODAY`, `YESTERDAY`, `TOMORROW`,
+`WEEK`, `MONTH`, or `YEAR` for the anchor. `offset` is an ordered array of
 `{ amount: integer, unit }`; units are `SECOND`, `MINUTE`, `HOUR`, `DAY`, `WEEK`,
 `MONTH`, and `YEAR`. Dates serialize to ISO strings across JSON and are parsed
 back to `Date` values. Relative selections stay relative.
@@ -111,8 +79,7 @@ bind these definitions to existing view controls and URL state.
 
 ## SQL variable syntax
 
-These placeholders are Altertable syntax, resolved by the query backend. Local
-execution uses `buildQueryStatement()` with DuckDB-compatible SQL literals.
+These placeholders are Altertable syntax, resolved by the query backend.
 
 | SQL                                      | Behavior                                                                 |
 | ---------------------------------------- | ------------------------------------------------------------------------ |
@@ -131,21 +98,12 @@ SQL comparisons to a plain null placeholder retain normal SQL null semantics.
 For optional filters, write the condition explicitly, such as
 `{{country}} IS NULL OR country = {{country}}`.
 
-Variable names are identifiers such as `country` and `period`; dotted access,
-expressions, array values, and arbitrary identifier substitution are unsupported.
-Helper column arguments support fixed, optionally qualified/quoted identifiers.
-`INTERVAL` inside a complete quoted placeholder is the one quoting exception.
-Placeholders in comments are ignored; placeholders embedded in other strings or
-quoted identifiers are rejected. Use standard SQL strings in templates, without
-backslash escapes. STRING values are escaped as literals; text search wildcards
-still follow SQL LIKE semantics and are not automatically added or removed.
-
-The template helper resolves relative dates against one execution clock in UTC,
-with Monday as the start of week. `buildQueryStatement()` accepts an explicit
-`timeZone` and `now` for other server contexts. The hosted backend is authoritative for timezone and execution-time resolution.
-
-Registered operation responses contain backend query IDs and the original input.
-SQL is kept on the host and is absent from iframe messages and query evidence.
+Use simple variable names such as `country`; expressions, dotted access, arrays,
+and identifier substitution are unsupported. Helper column arguments must be
+fixed SQL identifiers, optionally qualified or quoted. Do not quote placeholders
+except for the `INTERVAL` example above, or embed them in strings or identifiers.
+Use standard SQL strings without backslash escapes. `LIKE` wildcards retain their
+SQL meaning. The backend resolves relative dates and timezones at execution time.
 
 ## Shared date ranges
 

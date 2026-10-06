@@ -38,42 +38,25 @@ See [contracts](contract.md), [server handlers](server.md), and
 
 ## Browser-owned operations for bundle apps
 
-Start with the complete [single-file example](../examples/starter-data-app/index.tsx)
-and [data app authoring guide](hosted-apps.md).
-Bundle apps pass their operation registry as a value:
+Pass the browser-owned operation registry as a value:
 
 ```ts
 import { createDataClient } from '@altertable/data-app/client';
 
-// Operations refer to registered query IDs; the host stores their SQL separately.
 const client = createDataClient({ operations });
 const response = await client.query('activity', input);
 ```
 
-The client runs input parsing, operation logic, and output parsing in the browser.
-Operation policy bounds rows, duration, and response size and records query
-IDs. Each `query(id, values)` call sends
-`{ operation, variables, limit }` over `data:query`. `operation` is the existing
-query name, identifying one statement even when an operation runs several queries.
-Statement templates and variable definitions are submitted at app creation/update;
-they are not part of runtime requests. See [registration](contract.md#execute-named-queries).
+The client runs parsing and operation logic in the browser, applies operation
+policy, and sends registered query IDs and values through the installed bridge.
+SQL stays on the host and is absent from query evidence. See
+[named queries](contract.md#execute-named-queries) and the
+[hosted starter](hosted-apps.md).
 
-The trusted bootstrap installs the bridge for bundle apps. A custom runtime must
-install it before querying. An explicit `lakehouse` can supply another authorized
-adapter, including `bridge.lakehouse` or a local server adapter. `operations` cannot
-be combined with `transport`, `endpoint`, or `fetch`; a `lakehouse` requires
-`operations`. The exported `DataClientOptions` union rejects mixed configurations
-at compile time. Omitting `operations` preserves named HTTP/iframe operation delivery.
-
-The host must implement the [registered query route](embed.md#registered-query-route)
-and enforce backend access and resource limits independently of browser policy.
-Cancellation uses the existing bridge cancellation protocol. SQL templates stay
-on the host and are absent from the bundle and registered query evidence.
-
-Existing statement-based iframe integrations can still use the explicit
-`data:sql` route. Registered hosted apps must not expose that route. There is no
-fallback to raw SQL when registered execution fails. Local CLI apps keep `createDataClient()` and their HTTP server-operation flow;
-SQL runs in their server operations through the existing CLI proxy.
+The trusted bootstrap installs the bridge; custom runtimes must install it before
+querying. An explicit `lakehouse` can supply another authorized adapter.
+`operations` cannot be combined with `transport`, `endpoint`, or `fetch`;
+`lakehouse` requires `operations`.
 
 ## Iframe transport
 

@@ -117,34 +117,28 @@ const router = createMessageRouter(
 );
 ```
 
+The route accepts `RegisteredQueryInput` (`{ operation, variables, limit }`) and
+returns `QueryResult`. Here `operation` identifies one registered SQL statement, rather
+than the browser operation that may orchestrate several queries.
+
 The host supplies `appRevision` and `executeRegisteredQueryForCurrentViewer()`.
-Resolve the revision from the trusted iframe session. Look up the registered
-statement, validate its variable values, safely construct SQL, and enforce viewer
-permissions and resource limits on the backend. Never accept registration from
-the iframe or use an iframe-supplied app identity for authorization.
+Resolve the revision from the trusted session and forward requests to the backend
+for registration lookup, value validation, execution, viewer authorization, and
+resource limits. Never accept registration or authorization scope from the iframe.
+**Do not expose `data:sql` for registered apps:** it would bypass registration.
 
-`RegisteredQueryInput` is `{ operation, variables, limit }`; the output is the
-same `QueryResult` as SQL delivery. `operation` identifies an individual named
-statement. The request envelope, ID correlation, cancellation, response validation,
-and pending-call limits are unchanged. `defineDataQueryRoute()` remains the
-separate contract for HTTP-style operation hosts returning data envelopes; choose
-the contract that matches the app execution mode.
+For trusted servers with a statement-based Lakehouse,
+`createRegisteredQueryHandler(registration, authorize)` handles lookup, variable
+validation, defaults, and SQL construction. The lower-level
+`buildQueryStatement()` from `/contract` accepts `now` and `timeZone`; defaults
+use UTC and Monday week starts.
 
-`createRegisteredQueryHandler(registration, authorize)` is available for trusted
-hosts with a stored registration and a statement-based Lakehouse.
-It derives required variables, rejects extra values, applies defaults, and builds
-SQL. Authorization runs on every request; the supplied backend must enforce access
-and resource limits. In production iframe hosts, forward the request to the
-backend so registration lookup and enforcement happen there.
-
-**Do not register `data:sql` for registered hosted apps.** Keeping a raw statement
-route would bypass the registered-query restriction. Deploy host registration
-support before updating apps; unsupported registered requests fail without an
-SQL fallback.
+For HTTP-style operation envelopes, use
+[`defineDataQueryRoute()`](contract.md#message-routes) instead.
 
 ## SQL query route
 
-Hosts explicitly permitting statement-based queries register `sqlQueryRoute` explicitly:
+Hosts permitting statement-based queries register `sqlQueryRoute`:
 
 ```ts
 import {
@@ -183,8 +177,7 @@ Operation names and inputs stay in the app; query evidence is assembled there.
 
 `dataAppRoutes` retains named `data:query` and navigation routes for existing
 server-backed hosts. SQL hosts opt into `data:sql`; they need no named-operation
-handler unless they also serve HTTP-style apps. Update the host before switching
-an app to browser-owned operations. Older hosts reject `data:sql` as unknown.
+handler unless they also serve HTTP-style apps.
 
 ## Parent presentation
 

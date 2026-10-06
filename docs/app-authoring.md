@@ -53,18 +53,12 @@ See the [layout contract](layout.md).
 
 ## Export the displayed results
 
-Provide `DataApp.csvExport` in every analytical app. The request-backed API
-requires a callback that selects an explicit filename and named datasets with ordered columns and raw
-rows from the displayed snapshot. Follow [CSV export](react.md#export-displayed-data-as-csv)
-and the [starter](../examples/starter-data-app/index.tsx); use the built-in toolbar
-action rather than adding a custom download button.
-
 Export every distinct analytical dataset at its displayed grain, including relevant
 dimensions and measures. Reuse one dataset for charts or metrics derived from the
-same rows. One dataset downloads as CSV; multiple datasets offer individual CSVs
-and **Export all** as a ZIP archive. Use the displayed input for scope labels and filenames. Export the
-bounded result the app already has; do not issue a different query or mix pending
-filters into the visible result. Setup and static screens may omit export.
+same rows. Use the displayed input for scope labels and filenames; do not issue a
+different query or mix pending filters into the visible result. Setup and static
+screens may omit export. Use the built-in toolbar action via
+[`DataApp.csvExport`](react.md#export-displayed-data-as-csv).
 
 ## Present the findings
 
