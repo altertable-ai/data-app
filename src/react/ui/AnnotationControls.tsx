@@ -211,7 +211,6 @@ export function AnnotationControls({
   useEffect(() => {
     if (!active) return;
     const root = rootRef.current;
-    root?.classList.add('altertable-annotating');
     function updateTargets() {
       const selectable = targets(root);
       setAmbiguous(
@@ -287,7 +286,6 @@ export function AnnotationControls({
     document.addEventListener('pointermove', hover);
     document.addEventListener('keydown', escape, true);
     return () => {
-      root?.classList.remove('altertable-annotating');
       mutations.disconnect();
       document.removeEventListener('pointerdown', capture, true);
       document.removeEventListener('click', capture, true);
@@ -472,14 +470,9 @@ export function AnnotationControls({
               onAnimationEnd={() => setShaking(false)}
               aria-label="Annotation editor"
             >
-              <AppIcon
-                name="annotation"
-                size={18}
-                className="altertable-annotation-icon"
-              />
               <textarea
                 aria-label="Annotation text"
-                placeholder="Add an annotation…"
+                placeholder="Describe what to change…"
                 ref={textareaRef}
                 rows={1}
                 maxLength={2000}

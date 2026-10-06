@@ -181,15 +181,32 @@ test('floating annotations invert the app theme and retain only unsaved changes'
     return element.evaluate(node => getComputedStyle(node).color);
   }
   await expect(editor).toHaveCSS('background-color', await colorOf(widget));
-  await expect(editor.locator('.altertable-annotation-icon')).toHaveCount(1);
+  await expect(editor.locator('.altertable-annotation-icon')).toHaveCount(0);
+  await expect(input).toHaveAttribute(
+    'placeholder',
+    'Describe what to change…'
+  );
+  await expect(input).toHaveCSS(
+    'font-family',
+    await widget.evaluate(node => getComputedStyle(node).fontFamily)
+  );
   await expect(
     frame.getByRole('button', { name: 'Add annotation', exact: true })
   ).toHaveCSS('border-radius', '50%');
-  await expect(widget).toHaveCSS('cursor', /data:image\/svg\+xml/);
+  expect(
+    await widget.evaluate(node => getComputedStyle(node).cursor)
+  ).not.toContain('data:image');
   await input.fill('Compare last year');
   await input.press('Enter');
   const panel = page.getByLabel('Annotation drafts');
   await expect(panel.locator('strong')).toHaveText('Revenue by month');
+  const row = await panel.locator('div').first().boundingBox();
+  const remove = await page
+    .getByRole('button', { name: 'Delete annotation 1' })
+    .boundingBox();
+  expect(
+    Math.abs(remove!.y + remove!.height / 2 - (row!.y + row!.height / 2))
+  ).toBeLessThan(1);
   await expect(panel).toHaveCSS(
     'background-color',
     await colorOf(page.locator('.playground-host'))

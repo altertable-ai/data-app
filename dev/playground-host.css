@@ -172,9 +172,11 @@ body:has(.playground-host) #root {
 }
 .playground-annotations > div {
   display: flex;
-  align-items: start;
-  gap: 4px;
-  padding: 4px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  transition: background-color 120ms ease;
   overflow-wrap: anywhere;
 }
 .playground-annotations > div + div {
@@ -191,14 +193,25 @@ body:has(.playground-host) #root {
   text-align: left;
   width: auto;
   height: auto;
-  padding: 8px;
+  padding: 4px;
   gap: 4px;
+  line-height: 1.5;
 }
 .playground-host .playground-annotations button {
   color: var(--panel-muted);
   border-radius: 8px;
 }
-.playground-host .playground-annotations button:hover:not(:disabled) {
+.playground-annotations > div:hover,
+.playground-annotations > div:focus-within {
+  background: color-mix(in srgb, var(--panel-text) 6%, var(--panel-surface));
+}
+.playground-host .playground-annotation-open:hover:not(:disabled) {
+  background: transparent;
+}
+.playground-host .playground-annotation-delete {
+  flex: none;
+}
+.playground-host .playground-annotation-delete:hover:not(:disabled) {
   color: var(--panel-text);
   background: color-mix(in srgb, var(--panel-text) 8%, var(--panel-surface));
 }

@@ -404,6 +404,7 @@ function Host() {
                 <span>{draft.comment}</span>
               </button>
               <button
+                className="playground-annotation-delete"
                 aria-label={`Delete annotation ${index + 1}`}
                 onClick={() => {
                   setAnnotations(values =>
