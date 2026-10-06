@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { GenericContainer, Wait } from 'testcontainers';
 
 const root = resolve(import.meta.dir, '..');
-const lakehousePort = 15000;
+const mockApiPort = 15000;
 
 /** Demo tables queried by `dev/playground.tsx`. Orders land in its 30-day window;
  * Linus never orders, so FI stays a measured zero. */
@@ -36,9 +36,9 @@ const seedStatements = [
     FROM demo.orders`,
 ];
 
-async function seedMockApi(base: string) {
+async function seedMockApi(apiUrl: string) {
   for (const statement of seedStatements) {
-    const response = await fetch(`${base}/query`, {
+    const response = await fetch(`${apiUrl}/query`, {
       method: 'POST',
       headers: {
         authorization: `Basic ${btoa('dev:dev')}`,
@@ -59,15 +59,15 @@ async function startMockApi() {
       'ghcr.io/altertable-ai/altertable-mock:latest'
     )
       .withEnvironment({ ALTERTABLE_MOCK_USERS: 'dev:dev' })
-      .withExposedPorts(lakehousePort)
+      .withExposedPorts(mockApiPort)
       .withWaitStrategy(Wait.forListeningPorts())
       .start();
-    const base = `http://${container.getHost()}:${container.getMappedPort(lakehousePort)}`;
-    await seedMockApi(base).catch(async error => {
+    const apiUrl = `http://${container.getHost()}:${container.getMappedPort(mockApiPort)}`;
+    await seedMockApi(apiUrl).catch(async error => {
       await container.stop();
       throw error;
     });
-    return { container, base };
+    return { container, apiUrl };
   } catch (error) {
     console.error(
       'Could not start the mocked Altertable API. Is Docker running?\n',
@@ -77,7 +77,7 @@ async function startMockApi() {
   }
 }
 
-async function run(args: string[]) {
+async function runBun(args: string[]) {
   const child = Bun.spawn([process.execPath, ...args], {
     cwd: root,
     stdout: 'inherit',
@@ -87,11 +87,9 @@ async function run(args: string[]) {
 }
 
 // Declarations are only built once; editors keep them while JavaScript rebuilds.
-const [built, { container: mockApi, base: mockApiBase }] = await Promise.all([
-  run(['run', 'build']),
-  startMockApi(),
-]);
-if (!built) {
+const [initialBuildSucceeded, { container: mockApi, apiUrl: mockApiUrl }] =
+  await Promise.all([runBun(['run', 'build']), startMockApi()]);
+if (!initialBuildSucceeded) {
   await mockApi.stop();
   process.exit(1);
 }
@@ -101,7 +99,7 @@ const server = Bun.spawn([process.execPath, 'browser-tests/server.ts'], {
   env: {
     ...process.env,
     DATA_APP_DEV: '1',
-    ALTERTABLE_API_BASE: mockApiBase,
+    ALTERTABLE_API_BASE: mockApiUrl,
     ALTERTABLE_LAKEHOUSE_USERNAME: 'dev',
     ALTERTABLE_LAKEHOUSE_PASSWORD: 'dev',
   },
@@ -109,36 +107,36 @@ const server = Bun.spawn([process.execPath, 'browser-tests/server.ts'], {
   stderr: 'inherit',
 });
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
-console.log(`Mocked Altertable API: ${mockApiBase}`);
+console.log(`Mocked Altertable API: ${mockApiUrl}`);
 console.log(`Gallery: http://127.0.0.1:${port}/gallery`);
 console.log(`Playground: http://127.0.0.1:${port}/playground`);
-let building = false;
-let queued = false;
-let pending: ReturnType<typeof setTimeout> | undefined;
+let isBuilding = false;
+let rebuildQueued = false;
+let rebuildTimer: ReturnType<typeof setTimeout> | undefined;
 
 async function rebuild() {
-  if (building) {
-    queued = true;
+  if (isBuilding) {
+    rebuildQueued = true;
     return;
   }
-  building = true;
+  isBuilding = true;
   const started = performance.now();
-  const ok = await run(['run', 'scripts/build.ts', '--incremental']);
+  const ok = await runBun(['run', 'scripts/build.ts', '--incremental']);
   console.log(
     ok
       ? `Rebuilt in ${Math.round(performance.now() - started)}ms`
       : 'Build failed; open pages keep the last successful build.'
   );
-  building = false;
-  if (queued) {
-    queued = false;
+  isBuilding = false;
+  if (rebuildQueued) {
+    rebuildQueued = false;
     void rebuild();
   }
 }
 
 watch(resolve(root, 'src'), { recursive: true }, () => {
-  clearTimeout(pending);
-  pending = setTimeout(() => void rebuild(), 50);
+  clearTimeout(rebuildTimer);
+  rebuildTimer = setTimeout(() => void rebuild(), 50);
 });
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const)

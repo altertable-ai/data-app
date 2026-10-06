@@ -37,16 +37,17 @@ async function bundle(entry: string) {
   return `const style = document.createElement('style'); style.textContent = ${JSON.stringify(css)}; document.head.append(style);\n${javascript}`;
 }
 
-const dev = process.env.DATA_APP_DEV === '1';
+const isDevelopment = process.env.DATA_APP_DEV === '1';
 
 /** Bundle once for tests; in development, rebundle on each request so edits apply on reload. */
-async function bundled(entry: string) {
-  const initial = await bundle(entry);
-  return () => (dev ? bundle(entry) : Promise.resolve(initial));
+async function createBundleLoader(entry: string) {
+  if (isDevelopment) return () => bundle(entry);
+  const javascript = await bundle(entry);
+  return () => Promise.resolve(javascript);
 }
 
 /** Pages reload when sources outside their own module graph change. */
-function watchForReload(paths: string[]) {
+function createReloadHandler(paths: string[]) {
   const clients = new Set<ReadableStreamDefaultController<string>>();
   let pending: ReturnType<typeof setTimeout> | undefined;
   for (const path of paths)
@@ -80,16 +81,19 @@ function watchForReload(paths: string[]) {
 const { default: worker } = (await import(
   import.meta.resolve('@altertable/data-app/worker')
 )) as typeof import('@/src/worker');
-const app = await bundled('./fixtures/bundle-app.tsx');
+const loadFixtureBundle = await createBundleLoader('./fixtures/bundle-app.tsx');
 // Tests exercise the hosted starter; `bun run dev` serves the playground, which
 // queries the demo tables it seeds into the mocked API.
-const hostedAppPath = dev ? '/playground' : '/starter-data-app';
-const hostedAppBundle = await bundled(
-  dev ? '../dev/playground.tsx' : '../examples/starter-data-app/index.tsx'
-);
-const reloadEvents =
-  dev &&
-  watchForReload([
+const hostedApp = isDevelopment
+  ? { path: '/playground', entry: '../dev/playground.tsx' }
+  : {
+      path: '/starter-data-app',
+      entry: '../examples/starter-data-app/index.tsx',
+    };
+const loadHostedAppBundle = await createBundleLoader(hostedApp.entry);
+const serveReloadEvents =
+  isDevelopment &&
+  createReloadHandler([
     '../dev',
     './fixtures/bundle-app.tsx',
     './fixtures/bridge-frame.ts',
@@ -97,26 +101,26 @@ const reloadEvents =
 const fixtureDatabase = new Database(':memory:');
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
 // `bun run dev` provides a mocked Altertable API; tests keep deterministic fixtures.
-const mockApi =
-  dev && process.env.ALTERTABLE_API_BASE ? localLakehouse() : null;
-if (!mockApi) {
+const lakehouse =
+  isDevelopment && process.env.ALTERTABLE_API_BASE ? localLakehouse() : null;
+if (!lakehouse) {
   process.env.ALTERTABLE_DATA_PROXY_URL = `http://127.0.0.1:${port}/__test/proxy`;
   process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'local-test-fixture';
 }
-if (!dev) process.env.NODE_ENV = 'production';
+if (!isDevelopment) process.env.NODE_ENV = 'production';
 serveLocalApp({
   page: starterPage,
   operations: starterOperations,
   title: starterConfig.title,
   port: port + 2,
 });
-const urlApp = await bundled('./fixtures/bridge-frame.ts');
+const loadFrameBundle = await createBundleLoader('./fixtures/bridge-frame.ts');
 Bun.serve({
   hostname: '127.0.0.1',
   port: port + 1,
   async fetch() {
     return new Response(
-      `<!doctype html><html data-parent-origin="http://127.0.0.1:${port}"><body><p id="location"></p><p id="result"></p><button id="query">Query</button><button id="filter">Last 7 days</button><script>${(await urlApp()).replaceAll('</script', '<\\/script')}</script></body></html>`,
+      `<!doctype html><html data-parent-origin="http://127.0.0.1:${port}"><body><p id="location"></p><p id="result"></p><button id="query">Query</button><button id="filter">Last 7 days</button><script>${(await loadFrameBundle()).replaceAll('</script', '<\\/script')}</script></body></html>`,
       { headers: { 'content-type': 'text/html' } }
     );
   },
@@ -124,7 +128,7 @@ Bun.serve({
 Bun.serve({
   hostname: '127.0.0.1',
   port,
-  development: dev && { hmr: true },
+  development: isDevelopment && { hmr: true },
   routes: {
     '/skeleton': skeleton,
     '/gallery': gallery,
@@ -135,18 +139,19 @@ Bun.serve({
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,
-    [hostedAppPath]: bundleHost,
+    [hostedApp.path]: bundleHost,
   },
   async fetch(request, server) {
     const path = new URL(request.url).pathname;
     if (path === '/') return new Response('Embedding test server');
-    if (reloadEvents && path === '/__dev/reload') {
+    if (serveReloadEvents && path === '/__dev/reload') {
       server.timeout(request, 0);
-      return reloadEvents(request);
+      return serveReloadEvents(request);
     }
-    if (path === `/__test${hostedAppPath}`)
-      return new Response(await hostedAppBundle());
-    if (path === '/__test/bundle') return new Response(await app());
+    if (path === `/__test${hostedApp.path}`)
+      return new Response(await loadHostedAppBundle());
+    if (path === '/__test/bundle')
+      return new Response(await loadFixtureBundle());
     if (path === '/__test/silent')
       return new Response('<!doctype html><body>Silent frame</body>', {
         headers: { 'content-type': 'text/html' },
@@ -179,7 +184,7 @@ Bun.serve({
       );
     }
     if (path === '/api/sql') {
-      const delay = dev
+      const delay = isDevelopment
         ? Number(
             new URL(
               request.headers.get('referer') ?? request.url
@@ -191,9 +196,9 @@ Bun.serve({
         statement: string;
         limit: number;
       };
-      if (mockApi) {
+      if (lakehouse) {
         try {
-          const { columns, rows, queryId } = await mockApi.queryAll(
+          const { columns, rows, queryId } = await lakehouse.queryAll(
             query.statement,
             { limit: query.limit, signal: request.signal }
           );
