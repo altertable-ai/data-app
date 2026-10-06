@@ -63,7 +63,9 @@ type TableWidgetBaseProps<Row> = {
 ) &
   Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
-/** Column definitions own both header and body semantics; the first column is the row header. */
+/** Composes VisualizationWidget with DataTable, search, and local pagination.
+ * Columns own header and body semantics; the first column is the row header.
+ * Use DataTable inside VisualizationWidget directly for custom table markup. */
 export type TableWidgetProps<Row> = TableWidgetBaseProps<Row> &
   (
     | { rows: readonly Row[]; reading?: never; skeletonRows?: never }

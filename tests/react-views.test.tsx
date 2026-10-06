@@ -779,7 +779,9 @@ test('pie charts preserve zero categories and handle empty, whole and extreme sh
           ariaLabel="Invalid mix"
         />
       )
-    ).toThrow('nonnegative values');
+    ).toThrow(
+      Number.isFinite(values[0]) ? 'nonnegative values' : 'finite values'
+    );
   }
 });
 

@@ -1,13 +1,9 @@
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
-import { invariant } from '@/src/core/invariant';
+import { validateChartItems } from '@/src/react/ui/chart-data';
 
-export type ScatterChartItem = {
-  id: string;
-  label: string;
-  x: number;
-  y: number;
-};
+import type { ScatterChartItem } from '@/src/react/ui/chart-data';
+export type { ScatterChartItem } from '@/src/react/ui/chart-data';
 export type ScatterChartProps = {
   items: readonly ScatterChartItem[];
   xLabel: string;
@@ -46,7 +42,10 @@ function scale(values: readonly number[]) {
   };
 }
 
-/** Numeric axes include zero. Each observation exposes both coordinates in a tooltip. */
+/** Independent finite X/Y observations on linear axes that include zero.
+ * Negative and constant coordinates are supported. Axis labels and units describe
+ * tooltips as well as the plot; formatX/formatY format ticks and tooltip values.
+ * Compose inside VisualizationWidget; hover/touch tooltips need no caller state. */
 export function ScatterChart({
   items,
   xLabel,
@@ -57,13 +56,7 @@ export function ScatterChart({
   formatX = formatNumber,
   formatY = formatNumber,
 }: ScatterChartProps) {
-  invariant(
-    items.every(
-      item =>
-        item.id.trim() && Number.isFinite(item.x) && Number.isFinite(item.y)
-    ) && new Set(items.map(item => item.id)).size === items.length,
-    'ScatterChart items require unique, nonempty IDs and finite x and y values.'
-  );
+  validateChartItems('scatter', items);
   const xScale = scale(items.map(item => item.x));
   const yScale = scale(items.map(item => item.y));
   return (

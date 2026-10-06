@@ -1,22 +1,25 @@
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useLayoutEffect, useRef } from 'react';
 
-export type BarChartItem = { id: string; label: string; value: number };
+import {
+  validateChartItems,
+  type ChartItem,
+  type ValueChartProps,
+} from '@/src/react/ui/chart-data';
 
-export type BarChartProps = {
-  items: readonly BarChartItem[];
-  unit: string;
-  ariaLabel: string;
-  formatValue?: (value: number) => string;
-};
+export type BarChartItem = ChartItem;
 
-/** Inspect values on hover or touch without persistent selection. */
+export type BarChartProps = ValueChartProps;
+
+/** Nonnegative category values. Compose inside VisualizationWidget for a titled panel.
+ * Owns hover/touch tooltips; no selection state or keyboard navigation. */
 export function BarChart({
   items,
   unit,
   ariaLabel,
   formatValue = value => new Intl.NumberFormat().format(value),
 }: BarChartProps) {
+  validateChartItems('bar', items);
   const scrollport = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -24,7 +27,7 @@ export function BarChart({
     if (element) element.scrollLeft = element.scrollWidth - element.clientWidth;
   }, [items]);
 
-  const maximum = Math.max(1, ...items.map(item => item.value));
+  const maximum = items.reduce((max, item) => Math.max(max, item.value), 1);
 
   return (
     <section className="altertable-selectable-bars" aria-label={ariaLabel}>

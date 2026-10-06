@@ -1,7 +1,7 @@
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useLayoutEffect, useRef } from 'react';
-import type { BarChartProps } from '@/src/react/ui/BarChart';
-import { invariant } from '@/src/core/invariant';
+import type { ValueChartProps } from '@/src/react/ui/chart-data';
+import { validateChartItems } from '@/src/react/ui/chart-data';
 
 /** Ordered, equally spaced samples; negative values share an explicit zero baseline. */
 export function TrendChart({
@@ -10,12 +10,8 @@ export function TrendChart({
   ariaLabel,
   formatValue = value => new Intl.NumberFormat().format(value),
   area = false,
-}: BarChartProps & { area?: boolean }) {
-  invariant(
-    items.every(item => item.id.trim() && Number.isFinite(item.value)) &&
-      new Set(items.map(item => item.id)).size === items.length,
-    'Chart items require unique, nonempty IDs and finite values.'
-  );
+}: ValueChartProps & { area?: boolean }) {
+  validateChartItems(area ? 'area' : 'line', items);
   const scrollport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const element = scrollport.current;

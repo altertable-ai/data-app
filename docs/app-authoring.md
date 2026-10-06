@@ -37,6 +37,7 @@ and failure.
 | Task                                       | Documentation                                              |
 | ------------------------------------------ | ---------------------------------------------------------- |
 | Define queries, inputs, and result parsing | [Operations](contract.md)                                  |
+| Choose charts, comparisons, or tables      | [Visualization choices](react.md#choose-a-visualization)   |
 | Build views, filters, and request states   | [React](react.md)                                          |
 | Introduce and explain visualizations       | [Narrative text](react.md#narrative-text)                  |
 | Find formatters and presentation helpers   | [App helpers](react.md#reuse-app-helpers)                  |

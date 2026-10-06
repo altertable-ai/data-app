@@ -1,24 +1,22 @@
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useState } from 'react';
-import type { BarChartItem, BarChartProps } from '@/src/react/ui/BarChart';
-import { invariant } from '@/src/core/invariant';
+import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
+import { validateChartItems } from '@/src/react/ui/chart-data';
 
-export type PieChartItem = BarChartItem;
-export type PieChartProps = BarChartProps;
+export type PieChartItem = ChartItem;
+export type PieChartProps = ValueChartProps;
 
-/** Nonnegative, mutually exclusive parts. Shares use the sum of supplied items. */
+/** Nonnegative, mutually exclusive parts; shares use the sum of supplied items.
+ * Include Other to represent the whole. Zero values remain in the legend; all-zero
+ * data shows an empty circle. Colors follow item order. Compose inside VisualizationWidget;
+ * hover/touch tooltips coordinate slice and legend emphasis without caller state. */
 export function PieChart({
   items,
   unit,
   ariaLabel,
   formatValue = value => new Intl.NumberFormat().format(value),
 }: PieChartProps) {
-  invariant(
-    items.every(
-      item => item.id.trim() && Number.isFinite(item.value) && item.value >= 0
-    ) && new Set(items.map(item => item.id)).size === items.length,
-    'PieChart items require unique, nonempty IDs and finite, nonnegative values.'
-  );
+  validateChartItems('pie', items);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [plotOpen, setPlotOpen] = useState(false);
   const [legendId, setLegendId] = useState<string | null>(null);

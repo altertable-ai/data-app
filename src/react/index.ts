@@ -275,3 +275,10 @@ export type {
   ScatterChartProps,
   ScatterChartItem,
 } from '@/src/react/ui/ScatterChart';
+
+export { defineChartItems } from '@/src/react/ui/chart-data';
+export type {
+  ChartItem,
+  ChartKind,
+  ValueChartProps,
+} from '@/src/react/ui/chart-data';

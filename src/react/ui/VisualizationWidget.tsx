@@ -1,26 +1,17 @@
 import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
-import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
-import { DataWidget } from '@/src/react/ui/DataWidget';
-import type { WidgetStatus } from '@/src/react/ui/RequestHint';
-import type {
-  EmptyContent,
-  BoundWidgetReading,
-} from '@/src/react/ui/presentation';
+import { DataWidget, type DataWidgetProps } from '@/src/react/ui/DataWidget';
+import type { BoundWidgetReading } from '@/src/react/ui/presentation';
 import { ContentSkeletonBody } from '@/src/react/ui/ContentSkeleton';
 import { validateWidgetViews } from '@/src/react/ui/widget-views';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 
-type VisualizationWidgetBaseProps = {
-  title: ReactNode;
-  description?: ReactNode;
-  count?: number;
+type VisualizationWidgetBaseProps = Pick<
+  DataWidgetProps,
+  'title' | 'description' | 'count' | 'action' | 'evidence' | 'status' | 'empty'
+> & {
   /** Controls placed before the supporting insight, such as table pagination. */
   footer?: ReactNode;
   insight?: ReactNode;
-  action?: ReactNode;
-  evidence?: WidgetEvidence;
-  status?: WidgetStatus;
-  empty?: EmptyContent;
 } & Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
 type UnboundVisualizationWidgetProps = VisualizationWidgetBaseProps &
@@ -42,8 +33,10 @@ type BoundVisualizationWidgetBase<Data> = VisualizationWidgetBaseProps &
     loading?: never;
   };
 
-/** The widget owns alternate-view selection and shares it with inspection.
- * Custom chart interactions remain controlled by the caller, above both mounts. */
+/** DataWidget frame for charts, DataTable, metrics, or a custom data display.
+ * Owns alternate-view selection and shares it with inspection. Built-in charts own
+ * transient tooltips; lift persistent custom interactions above both mounts.
+ * For narrative prose use the sibling TextWidget, which composes DataWidget directly. */
 export type VisualizationWidgetProps<Data = unknown> =
   | UnboundVisualizationWidgetProps
   | (BoundVisualizationWidgetBase<Data> & {
@@ -58,6 +51,7 @@ export type VisualizationWidgetProps<Data = unknown> =
       children?: never;
     });
 
+/** Compose an unframed visual with the shared heading, insight, and inspection. */
 export function VisualizationWidget<Data>(
   props: VisualizationWidgetProps<Data>
 ) {

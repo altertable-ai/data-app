@@ -33,6 +33,7 @@ type UnboundMetricWidgetProps = MetricWidgetBaseProps &
       ))
   );
 
+/** VisualizationWidget with a formatted metric, optional comparison, and evidence. */
 export type MetricWidgetProps =
   | UnboundMetricWidgetProps
   | (Omit<MetricWidgetBaseProps, 'label' | 'comparison' | 'evidence'> & {

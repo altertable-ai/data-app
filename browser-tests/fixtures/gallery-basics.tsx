@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import {
+  defineChartItems,
   Breakdown,
   Comparison,
   DataTable,
@@ -27,15 +28,15 @@ const days = [
   { id: 'wed', label: 'Wednesday', value: 16 },
 ];
 
-const ordersByChannel = [
+const ordersByChannel = defineChartItems('bar', [
   { id: 'web', label: 'Web', value: 84 },
   { id: 'app', label: 'App', value: 112 },
   { id: 'store', label: 'Store', value: 67 },
   { id: 'email', label: 'Email', value: 38 },
   { id: 'social', label: 'Social', value: 52 },
   { id: 'partner', label: 'Partner', value: 29 },
-];
-const dailyResponseTime = [
+]);
+const dailyResponseTime = defineChartItems('line', [
   { id: 'mon', label: 'Mon', value: 180 },
   { id: 'tue', label: 'Tue', value: 165 },
   { id: 'wed', label: 'Wed', value: 210 },
@@ -43,24 +44,24 @@ const dailyResponseTime = [
   { id: 'fri', label: 'Fri', value: 155 },
   { id: 'sat', label: 'Sat', value: 142 },
   { id: 'sun', label: 'Sun', value: 150 },
-];
-const monthlyStorage = [
+]);
+const monthlyStorage = defineChartItems('area', [
   { id: 'jan', label: 'Jan', value: 120 },
   { id: 'feb', label: 'Feb', value: 155 },
   { id: 'mar', label: 'Mar', value: 148 },
   { id: 'apr', label: 'Apr', value: 205 },
   { id: 'may', label: 'May', value: 260 },
   { id: 'jun', label: 'Jun', value: 310 },
-];
+]);
 
-const trafficSources = [
+const trafficSources = defineChartItems('pie', [
   { id: 'direct', label: 'Direct', value: 4000 },
   { id: 'organic', label: 'Organic search', value: 3200 },
   { id: 'referral', label: 'Referral', value: 1800 },
   { id: 'social', label: 'Social', value: 1000 },
-];
+]);
 
-const workspaces = [
+const workspaces = defineChartItems('scatter', [
   { id: 'atlas', label: 'Atlas', x: 120, y: 145 },
   { id: 'birch', label: 'Birch', x: 240, y: 160 },
   { id: 'cedar', label: 'Cedar', x: 310, y: 130 },
@@ -73,7 +74,7 @@ const workspaces = [
   { id: 'juniper', label: 'Juniper', x: 920, y: 310 },
   { id: 'kite', label: 'Kite', x: 400, y: 350 },
   { id: 'linden', label: 'Linden', x: 1050, y: 280 },
-];
+]);
 
 function Example({
   name,

@@ -311,25 +311,12 @@ from the same client share queries; separate clients do not share results, stale
 data, or cancellation even under one provider. Keep client instances stable
 across renders to preserve their cache.
 
-`<Comparison>` compares a metric across periods, and `<BarChart>` displays
-bars with tooltips for each category.
-
 ## Findings and inspection
 
-Data display widgets share one frame:
-
-- `<DataWidget>` provides the base card, heading, actions, feedback, and inspection.
-- `<VisualizationWidget>` uses that card for any data display, including charts,
-  tables, and metrics. It supports alternate views, an `insight`, and a `footer`
-  for controls placed before the insight.
-- `<MetricWidget>` and `<TableWidget>` use `<VisualizationWidget>` with their
-  own display content. They retain metric formatting and comparison behavior,
-  and table columns, search, and pagination respectively.
-- `<TextWidget>` is a sibling of `<VisualizationWidget>`: it uses `<DataWidget>`
-  directly with `<TextContent>` for narrative prose.
-
-Use `<VisualizationWidget>` around a custom data display; use `<DataWidget>`
-when composing a different kind of panel.
+Use `<VisualizationWidget>` to frame a chart or custom data display.
+`<MetricWidget>` and `<TableWidget>` compose it for common metric and table use.
+`<TextWidget>` frames narrative prose. All share `<DataWidget>` for headings,
+feedback, and inspection; use that base directly for other kinds of panels.
 
 `<DataWidget>` composes a body, toolbar feedback, and footer. Widgets and their
 inspection sheets render the same visual and controls. Keep interactive state
@@ -394,70 +381,45 @@ Example:
 </DataApp>
 ```
 
-## Line and area charts
+## Choose a visualization
 
-`<LineChart>` and `<AreaChart>` use the same API as `<BarChart>`:
-`items`, `unit`, `ariaLabel`, and optional
-`formatValue`. Each item has a unique nonempty `id`, a `label`, and a finite
-numeric `value`. Samples are equally spaced in the supplied order; fill missing
-periods explicitly when showing a time series. Negative values are supported,
-and the area fill extends to zero. A single sample renders a point; empty items
-show “No data”. Long series scroll horizontally.
+| Scenario                              | Component        | Key constraint                                            |
+| ------------------------------------- | ---------------- | --------------------------------------------------------- |
+| Compare categories                    | `<BarChart>`     | Nonnegative values                                        |
+| Follow a trend                        | `<LineChart>`    | Equally spaced samples in supplied order                  |
+| Emphasize volume over time            | `<AreaChart>`    | Equally spaced samples; fill extends to zero              |
+| Show a few shares of a whole          | `<PieChart>`     | Nonnegative, mutually exclusive parts; total is their sum |
+| Explore relationships or outliers     | `<ScatterChart>` | Numeric X/Y coordinates; both axes include zero           |
+| Compare a metric across periods       | `<Comparison>`   | Use the displayed metric reading                          |
+| Rank categories                       | `<Ranking>`      | Bars scale to the largest item                            |
+| Show shares against an explicit total | `<Breakdown>`    | Mutually exclusive parts of that total                    |
+| Read exact values or records          | `<TableWidget>`  | Use `<DataTable>` for custom table markup                 |
+
+Charts own hover and touch tooltips, with no persistent selection state.
+Tap again, tap outside, scroll, or press Escape to dismiss. Chart points skip Tab.
+Wrap primitives in `<VisualizationWidget>` for a title, insight, and inspection.
+
+Prepare data with `defineChartItems()` before rendering. Literal tuples catch
+duplicate or blank IDs and negative bar/pie values during typechecking.
+Dynamic arrays and non-finite numbers still require runtime validation; the helper
+and direct chart callers use the same checks. Item order is preserved.
 
 ```tsx
+const days = defineChartItems('line', [
+  { id: 'mon', label: 'Mon', value: 12 },
+  { id: 'tue', label: 'Tue', value: 8 },
+]);
+
 <VisualizationWidget
   title="Daily events"
   visual={
     <LineChart items={days} unit="events" ariaLabel="Daily event trend" />
   }
-/>
+/>;
 ```
 
-All five charts show a tooltip on hover. Chart points are skipped by Tab and
-do not open tooltips on keyboard focus. On touch screens, tap a point to
-show its tooltip, then tap it again or tap outside to dismiss. Escape dismisses
-a tooltip; scrolling the page or a nested container also dismisses it. Each point has an accessible label
-with its values, even when its tooltip is closed. There is no persistent
-selection state to manage. Custom visuals can use `<Tooltip variant="chart">`
-and its `onOpenChange` callback to coordinate emphasis with tooltip visibility.
-Tooltips use the shared chart styling and stay
-inside the viewport, including in widget inspection panels.
-
-## Pie charts
-
-`<PieChart>` uses the same `items`, `unit`,
-`ariaLabel`, and optional `formatValue` API as `<BarChart>`. It shows shares of
-**the sum of supplied values**. Supply mutually exclusive categories and include
-an Other category if needed to represent the whole. Values must be finite and
-nonnegative; IDs must be unique and nonempty. Prefer a few distinct categories.
-
-Hover a slice or its legend label to inspect its value and share. The
-inspected slice keeps its color while the others fade. Legend labels also
-support touch tooltips.
-Zero values remain in the legend without a slice; an all-zero series shows a
-neutral empty circle, and an empty series shows “No data”. Colors use the app’s
-chart palette in item order. Compose it inside `<VisualizationWidget>`.
-
-## Scatter charts
-
-`<ScatterChart>` positions independent observations by numeric X and Y values.
-Pass `items` with unique nonempty `id`, `label`, and finite `x` and `y` values,
-plus `ariaLabel`. Name the axes with
-`xLabel`, `yLabel`, `xUnit`, and `yUnit`; optionally format values with `formatX`
-and `formatY`. Both axes use linear scales that include zero and support negative
-values. Empty data shows “No data”; constant axes remain valid.
-
-```tsx
-<ScatterChart
-  items={workspaces}
-  xLabel="Request volume"
-  yLabel="Response time"
-  xUnit="requests"
-  yUnit="ms"
-  ariaLabel="Workspace performance"
-/>
-```
-
-Tooltips show the observation label and both named coordinates with their units.
-Each observation retains an accessible label. Compose the chart inside
-`<VisualizationWidget>`.
+Bar, line, area, and pie charts share `items`, `unit`, `ariaLabel`, and optional
+`formatValue`. Scatter items use `x` and `y`; supply `xLabel`, `yLabel`,
+`xUnit`, and `yUnit`, with optional `formatX` and `formatY`.
+See exported types and JSDoc for constraints and the gallery's **Widgets** tab
+for complete examples.
