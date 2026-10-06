@@ -1,4 +1,4 @@
-import { rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import manifest from '@/package.json';
 
@@ -104,3 +104,11 @@ for (const result of results) {
       throw new Error(`Unexpected build output: ${output.path}`);
   }
 }
+
+// The dev runner restarts only after every JavaScript output is available.
+// Keep this signal outside dist: clean builds remove that directory.
+await mkdir('node_modules/.cache', { recursive: true });
+await writeFile(
+  'node_modules/.cache/data-app-build-ready',
+  crypto.randomUUID()
+);

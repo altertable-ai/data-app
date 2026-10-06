@@ -94,18 +94,35 @@ if (!initialBuildSucceeded) {
   process.exit(1);
 }
 
-const server = Bun.spawn([process.execPath, 'browser-tests/server.ts'], {
-  cwd: root,
-  env: {
-    ...process.env,
-    DATA_APP_DEV: '1',
-    ALTERTABLE_API_BASE: mockApiUrl,
-    ALTERTABLE_LAKEHOUSE_USERNAME: 'dev',
-    ALTERTABLE_LAKEHOUSE_PASSWORD: 'dev',
-  },
-  stdout: 'inherit',
-  stderr: 'inherit',
-});
+function startServer() {
+  return Bun.spawn([process.execPath, 'browser-tests/server.ts'], {
+    cwd: root,
+    env: {
+      ...process.env,
+      DATA_APP_DEV: '1',
+      ALTERTABLE_API_BASE: mockApiUrl,
+      ALTERTABLE_LAKEHOUSE_USERNAME: 'dev',
+      ALTERTABLE_LAKEHOUSE_PASSWORD: 'dev',
+    },
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+}
+let server = startServer();
+let restartRequested = false;
+let stopping = false;
+let restartTimer: ReturnType<typeof setTimeout> | undefined;
+const readyWatcher = watch(
+  resolve(root, 'node_modules/.cache'),
+  (_, filename) => {
+    if (filename !== 'data-app-build-ready') return;
+    clearTimeout(restartTimer);
+    restartTimer = setTimeout(() => {
+      restartRequested = true;
+      server.kill();
+    }, 50);
+  }
+);
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
 console.log(`Mocked Altertable API: ${mockApiUrl}`);
 console.log(`Gallery: http://127.0.0.1:${port}/gallery`);
@@ -141,9 +158,18 @@ watch(resolve(root, 'src'), { recursive: true }, () => {
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const)
   process.on(signal, async () => {
+    stopping = true;
+    readyWatcher.close();
+    clearTimeout(restartTimer);
     server.kill();
     await mockApi.stop();
     process.exit(0);
   });
-await server.exited;
-await mockApi.stop();
+while (true) {
+  await server.exited;
+  if (stopping || !restartRequested) break;
+  restartRequested = false;
+  server = startServer();
+}
+readyWatcher.close();
+if (!stopping) await mockApi.stop();

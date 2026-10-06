@@ -48,6 +48,7 @@ async function createBundleLoader(entry: string) {
 
 /** Pages reload when sources outside their own module graph change. */
 function createReloadHandler(paths: string[]) {
+  const sessionId = crypto.randomUUID();
   const clients = new Set<ReadableStreamDefaultController<string>>();
   let pending: ReturnType<typeof setTimeout> | undefined;
   for (const path of paths)
@@ -63,6 +64,7 @@ function createReloadHandler(paths: string[]) {
       new ReadableStream<string>({
         start(client) {
           clients.add(client);
+          client.enqueue(`event: ready\ndata: ${sessionId}\n\n`);
           request.signal.addEventListener('abort', () =>
             clients.delete(client)
           );
