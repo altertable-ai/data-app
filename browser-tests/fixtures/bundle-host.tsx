@@ -197,18 +197,23 @@ function Host() {
             >
               <Tooltip
                 content={
-                  theme === 'dark'
-                    ? 'Switch to light theme'
-                    : 'Switch to dark theme'
+                  !embedded
+                    ? 'Change the app theme in its footer'
+                    : theme === 'dark'
+                      ? 'Switch to light theme'
+                      : 'Switch to dark theme'
                 }
                 placement="bottom"
                 portalRoot={hostRef}
               >
                 <button
+                  disabled={!embedded}
                   aria-label={
-                    theme === 'dark'
-                      ? 'Switch to light theme'
-                      : 'Switch to dark theme'
+                    !embedded
+                      ? 'Change the app theme in its footer'
+                      : theme === 'dark'
+                        ? 'Switch to light theme'
+                        : 'Switch to dark theme'
                   }
                   onClick={() =>
                     setTheme(value => (value === 'dark' ? 'light' : 'dark'))
@@ -265,9 +270,13 @@ function Host() {
           iframeProps={iframeProps}
           title={isPlayground ? 'Orders preview' : 'Sandbox app'}
           presentation={
-            isPlayground || parentPresentation
-              ? { surface: embedded ? 'embedded' : 'standalone', theme }
-              : undefined
+            isPlayground
+              ? embedded
+                ? { surface: 'embedded', theme }
+                : undefined
+              : parentPresentation
+                ? { surface: embedded ? 'embedded' : 'standalone', theme }
+                : undefined
           }
           source={
             urlMode

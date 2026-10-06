@@ -82,7 +82,7 @@ body:has(.playground-host) #root {
   cursor: pointer;
 }
 
-.playground-host button:hover,
+.playground-host button:not(:disabled):hover,
 .playground-host button[aria-pressed='true'] {
   background: var(--host-hover);
   color: var(--host-text);
@@ -138,4 +138,9 @@ body:has(.playground-host) #root {
   width: auto;
   padding: 0 12px;
   border: 1px solid var(--host-border);
+}
+
+.playground-host button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
