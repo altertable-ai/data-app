@@ -825,7 +825,7 @@ test('widget insets align across metrics, visualizations, and loading states', a
   });
   await expect(loadingWidget).toHaveAttribute('aria-busy', 'true');
   await expect(
-    loadingWidget.locator('.altertable-content-skeleton-body')
+    loadingWidget.locator('.altertable-metric-loading-value')
   ).toBeVisible();
   for (const part of [
     '.altertable-data-widget-header',
