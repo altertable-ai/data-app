@@ -1,6 +1,5 @@
 import type { ComponentPropsWithRef } from 'react';
 import type { SkeletonContent } from '@/src/react/ui/presentation';
-import { invariant } from '@/src/core/invariant';
 import { classNames } from '@/src/react/ui/classNames';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 
@@ -14,11 +13,6 @@ export function ContentSkeleton({
   className,
   ...props
 }: ContentSkeletonProps) {
-  invariant(
-    Number.isInteger(rows) && rows >= 0 && rows <= 100,
-    'Skeleton rows must be between 0 and 100.'
-  );
-
   return (
     <div
       {...props}
@@ -30,6 +24,19 @@ export function ContentSkeleton({
       )}
     >
       <Skeleton className="altertable-content-skeleton-label" />
+      <ContentSkeletonBody variant={variant} rows={rows} />
+      {variant === 'panel' && (
+        <Skeleton className="altertable-content-skeleton-foot" />
+      )}
+    </div>
+  );
+}
+
+/** Placeholder for a widget body; static headings stay outside it. */
+export function ContentSkeletonBody({ variant, rows = 4 }: SkeletonContent) {
+  const rowCount = Math.min(100, Math.max(0, Math.trunc(rows) || 0));
+  return (
+    <div className="altertable-content-skeleton-body" aria-hidden="true">
       <Skeleton
         className={
           variant === 'metric'
@@ -39,12 +46,9 @@ export function ContentSkeleton({
               : 'altertable-content-skeleton-chart'
         }
       />
-      {variant === 'panel' && (
-        <Skeleton className="altertable-content-skeleton-foot" />
-      )}
       {variant === 'ranking' && (
         <div className="altertable-content-skeleton-rows">
-          {Array.from({ length: rows }, (_, index) => index).map(row => (
+          {Array.from({ length: rowCount }, (_, row) => (
             <div className="altertable-content-skeleton-row" key={row}>
               <Skeleton className="altertable-content-skeleton-row-label" />
               <Skeleton className="altertable-content-skeleton-row-track" />

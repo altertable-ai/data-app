@@ -7,7 +7,7 @@ import {
   type WidgetStatus,
 } from '@/src/react/ui/RequestHint';
 import { classNames } from '@/src/react/ui/classNames';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { ContentSkeletonBody } from '@/src/react/ui/ContentSkeleton';
 import { EmptyState } from '@/src/react/ui/EmptyState';
 import type {
   EmptyContent,
@@ -49,11 +49,9 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
     const { reading, isEmpty, empty, skeleton, children, ...shell } = props;
     if (reading.loading)
       return (
-        <ContentSkeleton
-          variant="panel"
-          {...skeleton}
-          className={shell.className}
-        />
+        <DataWidgetContent {...shell} evidence={undefined} aria-busy>
+          <ContentSkeletonBody variant="panel" {...skeleton} />
+        </DataWidgetContent>
       );
     const noData = isEmpty(reading.value);
 

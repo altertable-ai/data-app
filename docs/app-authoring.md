@@ -27,7 +27,10 @@ readers can inspect the source of each claim.
 
 Connect visualizations with introductions and explanations. Use `<TextWidget>`
 for a narrative panel with the standard widget frame, or `<TextContent>` for
-borderless prose. Bind claims to `result.select((data, input) => ...)` so their
+borderless prose. Render static titles, descriptions, and instructions immediately. Use bound
+readings for dynamic values and `<DataValue>` for values within static prose.
+Skeletonize only the content that needs data. Bind claims to
+`result.select((data, input) => ...)` so their
 values and scope follow the displayed results through filter changes, refresh,
 and failure.
 
@@ -53,7 +56,7 @@ See the [layout contract](layout.md).
 
 ## Export the displayed results
 
-Provide `DataApp.csvExport` in every analytical app. The request-backed API
+Provide `csvExport` on `<DataApp>` in every analytical app. The request-backed API
 requires a callback that selects an explicit filename and named datasets with ordered columns and raw
 rows from the displayed snapshot. Follow [CSV export](react.md#export-displayed-data-as-csv)
 and the [starter](../examples/starter-data-app/index.tsx); use the built-in toolbar

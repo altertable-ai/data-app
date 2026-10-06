@@ -54,3 +54,9 @@
   .altertable-content-skeleton-row-track {
   width: 30%;
 }
+
+.altertable-content-skeleton-body {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}

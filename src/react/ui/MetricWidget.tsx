@@ -12,7 +12,7 @@ import {
 } from '@/src/react/ui/comparison';
 import { classNames } from '@/src/react/ui/classNames';
 import { formatMetric, type MetricFormat } from '@/src/core/format';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { Skeleton } from '@/src/react/ui/Skeleton';
 import type { MetricReading } from '@/src/core/reading';
 import { metricComparison, type MetricDefinition } from '@/src/react/ui/metric';
 
@@ -87,8 +87,6 @@ function MetricWidgetContent({
   className,
   ...props
 }: UnboundMetricWidgetProps) {
-  if (loading)
-    return <ContentSkeleton variant="metric" className={className} />;
   const shownValue = format ? formatMetric(value as number, format) : content;
   const change = comparison ? comparisonChange(comparison) : null;
   const shownTrend =
@@ -109,7 +107,11 @@ function MetricWidgetContent({
         className="altertable-metric-value"
         data-unavailable={shownValue === '—' || undefined}
       >
-        {shownValue}
+        {loading ? (
+          <Skeleton className="altertable-metric-loading-value" />
+        ) : (
+          shownValue
+        )}
       </strong>
       {shownTrend && (
         <span className="altertable-metric-trend">{shownTrend}</span>
@@ -120,39 +122,41 @@ function MetricWidgetContent({
     <div className="altertable-metric-visual">{visual}</div>
   );
   const feedback = <WidgetStatusControl status={status} />;
-  const help = evidence ? (
-    <AboutData
-      aria-label={`Explore ${label}`}
-      variant="ghost"
-      className="altertable-widget-heading-trigger"
-      tooltip="Explore this metric"
-      references={{
-        kind: 'ids',
-        glossaryIds: evidence.glossaryIds,
-        queryNames: evidence.queryNames,
-      }}
-      shortcut={false}
-      id={evidence.id}
-      title={label}
-      headerActions={feedback}
-      description={description}
-      visual={
-        <div className="altertable-metric-evidence">
-          {reading}
-          {visualization}
-        </div>
-      }
-      visualKind="metric"
-    >
-      {label}
-      <AppIcon name="openDetails" />
-    </AboutData>
-  ) : null;
+  const help =
+    !loading && evidence ? (
+      <AboutData
+        aria-label={`Explore ${label}`}
+        variant="ghost"
+        className="altertable-widget-heading-trigger"
+        tooltip="Explore this metric"
+        references={{
+          kind: 'ids',
+          glossaryIds: evidence.glossaryIds,
+          queryNames: evidence.queryNames,
+        }}
+        shortcut={false}
+        id={evidence.id}
+        title={label}
+        headerActions={feedback}
+        description={description}
+        visual={
+          <div className="altertable-metric-evidence">
+            {reading}
+            {visualization}
+          </div>
+        }
+        visualKind="metric"
+      >
+        {label}
+        <AppIcon name="openDetails" />
+      </AboutData>
+    ) : null;
 
   return (
     <div
       {...props}
       className={classNames('altertable-metric-widget', className)}
+      aria-busy={loading || props['aria-busy']}
     >
       <div className="altertable-metric-label">
         <span>{help ?? label}</span>
