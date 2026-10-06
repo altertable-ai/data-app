@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { Button } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
-import { resolveVariableDateTime } from '@/src/core/query-template';
+import { formatVariableDate } from '@/src/react/ui/query-dates/resolve-date';
 import type { DateTimeRange } from '@/src/core/query-variables';
 
 /** Two UTC calendar dates; an empty field leaves that end of the range open. */
@@ -31,12 +31,8 @@ export function DateTimeRangeValueSelector({
     draft?.source === source
       ? draft
       : {
-          from: value?.from
-            ? resolveVariableDateTime(value.from).toISOString().slice(0, 10)
-            : '',
-          to: value?.to
-            ? resolveVariableDateTime(value.to).toISOString().slice(0, 10)
-            : '',
+          from: value?.from ? formatVariableDate(value.from) : '',
+          to: value?.to ? formatVariableDate(value.to) : '',
           error: '',
         };
   function change(endpoint: 'from' | 'to', date: string) {

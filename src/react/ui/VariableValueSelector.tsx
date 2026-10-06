@@ -3,7 +3,6 @@ import { DateTimeValueSelector } from '@/src/react/ui/query-dates/DateTimeValueS
 import { DateTimeRangeValueSelector } from '@/src/react/ui/query-dates/DateTimeRangeValueSelector';
 import {
   histogramIntervals,
-  parseQueryVariable,
   type AbsoluteOrRelativeDateTime,
   type DateTimeRange,
   type Duration,
@@ -188,26 +187,24 @@ export function VariableValueSelector<Type extends VariableValueType>(
   props: VariableValueSelectorProps<Type>
 ) {
   const { label, definition, value } = props;
-  function parse(next: unknown) {
-    return parseQueryVariable(definition as QueryVariableDefinition, next);
-  }
   function isAllowed(next: unknown) {
-    try {
-      parse(next);
-      return true;
-    } catch {
-      return false;
-    }
+    return (
+      (next !== null || definition.nullable) &&
+      (!definition.options ||
+        definition.options.some(
+          option => JSON.stringify(option) === JSON.stringify(next)
+        ))
+    );
   }
   function onChange(next: VariableValue | null) {
-    props.onChange(parse(next) as VariableValue<Type> | null);
+    props.onChange(next as VariableValue<Type> | null);
   }
   const common = {
     label,
     onChange,
     nullable: definition.nullable && isAllowed(null),
   };
-  const options = definition.options?.map(option => parse(option));
+  const options = definition.options;
   switch (definition.type) {
     case 'STRING':
     case 'INTEGER':

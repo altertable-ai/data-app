@@ -1,6 +1,4 @@
 import {
-  defineQueryVariables,
-  parseQueryVariable,
   type QueryVariableDefinition,
   type QueryVariableValues,
 } from '@/src/core/query-variables';
@@ -350,13 +348,26 @@ export function queryVariable<const Definition extends QueryVariableDefinition>(
     history = 'push',
   }: { key: string; label?: string; history?: HistoryMode }
 ): QueryVariable<Definition> {
-  defineQueryVariables([definition]);
-  const defaultValue = parseQueryVariable(
-    definition,
-    undefined
-  ) as QueryVariable<Definition>['defaultValue'];
-  function parse(value: unknown) {
-    return parseQueryVariable(definition, value) as typeof defaultValue;
+  const defaultValue =
+    definition.default as QueryVariable<Definition>['defaultValue'];
+  function decode(value: unknown) {
+    // URL state serializes dates as strings; restore them for date controls.
+    if (definition.type === 'DATETIME' && typeof value === 'string')
+      return new Date(value);
+    if (
+      definition.type === 'DATETIMERANGE' &&
+      value &&
+      typeof value === 'object'
+    ) {
+      const range = value as { from?: unknown; to?: unknown };
+      return Object.fromEntries(
+        Object.entries(range).map(([key, endpoint]) => [
+          key,
+          typeof endpoint === 'string' ? new Date(endpoint) : endpoint,
+        ])
+      );
+    }
+    return value;
   }
   return {
     kind: 'query',
@@ -369,7 +380,7 @@ export function queryVariable<const Definition extends QueryVariableDefinition>(
       const value = params.get(key);
       if (value === null) return defaultValue;
       try {
-        return parse(JSON.parse(value));
+        return decode(JSON.parse(value)) as typeof defaultValue;
       } catch {
         return defaultValue;
       }
@@ -382,13 +393,8 @@ export function queryVariable<const Definition extends QueryVariableDefinition>(
             : JSON.stringify(value),
       };
     },
-    valid(value) {
-      try {
-        parse(value);
-        return true;
-      } catch {
-        return false;
-      }
+    valid() {
+      return true; // Query values are validated by the backend.
     },
     same(left, right) {
       return JSON.stringify(left) === JSON.stringify(right);

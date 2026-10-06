@@ -1,5 +1,5 @@
 import { useId, useState } from 'react';
-import { resolveVariableDateTime } from '@/src/core/query-template';
+import { formatVariableDate } from '@/src/react/ui/query-dates/resolve-date';
 import type { AbsoluteOrRelativeDateTime } from '@/src/core/query-variables';
 
 /** A single UTC calendar date. Existing relative values change only when edited. */
@@ -28,9 +28,7 @@ export function DateTimeValueSelector({
     draft?.source === source
       ? draft
       : {
-          text: value
-            ? resolveVariableDateTime(value).toISOString().slice(0, 10)
-            : '',
+          text: value ? formatVariableDate(value) : '',
           error: '',
         };
   function change(text: string) {

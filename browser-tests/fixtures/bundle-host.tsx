@@ -1,4 +1,3 @@
-import starterQueries from '@/examples/starter-data-app/queries.json';
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useRef, useState } from 'react';
 import { Moon, Sun, PanelsTopLeft, Maximize } from 'lucide-react';
@@ -19,7 +18,6 @@ import {
   type DataAppStatus,
   createNavigationHandler,
   createSqlQueryHandler,
-  createRegisteredQueryHandler,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 import '@/browser-tests/fixtures/dev-reload';
@@ -173,31 +171,16 @@ function Host() {
           {
             'export:csv': downloadExport,
             'export:zip': downloadExport,
-            'data:query': createRegisteredQueryHandler(
-              {
-                queries: starterQueries,
-                variables: [
-                  {
-                    name: 'groupName',
-                    type: 'STRING',
-                    nullable: false,
-                    default: '',
-                  },
-                ],
-              },
-              async () => ({
-                async queryAll(statement, { limit, signal }) {
-                  const response = await fetch('/api/sql', {
-                    method: 'POST',
-                    headers: { 'content-type': 'application/json' },
-                    body: JSON.stringify({ statement, limit }),
-                    signal,
-                  });
-                  if (!response.ok) throw new DataSourceError('unavailable');
-                  return response.json();
-                },
-              })
-            ),
+            'data:query': async (query, { signal }) => {
+              const response = await fetch('/api/registered-query', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(query),
+                signal,
+              });
+              if (!response.ok) throw new DataSourceError('unavailable');
+              return response.json();
+            },
             'navigation:update': createNavigationHandler(),
           }
         )

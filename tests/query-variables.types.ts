@@ -1,16 +1,16 @@
 import {
-  defineQueryVariables,
+  type QueryVariableDefinitions,
   type QueryVariableValues,
 } from '@altertable/data-app/contract';
 import {
   queryVariable,
   type AppVariableValues,
 } from '@altertable/data-app/react';
-const definitions = defineQueryVariables([
+const definitions = [
   { name: 'count', nullable: false, type: 'INTEGER', default: 1 },
   { name: 'interval', nullable: false, type: 'INTERVAL', default: 'DAILY' },
   { name: 'text', type: 'STRING', default: null, nullable: true },
-]);
+] as const satisfies QueryVariableDefinitions;
 const values: QueryVariableValues<typeof definitions> = {
   count: 4,
   interval: 'MONTHLY',
@@ -24,14 +24,14 @@ const invalid: QueryVariableValues<typeof definitions> = {
   text: null,
 };
 void invalid;
-defineQueryVariables([
+[
   // @ts-expect-error unsupported variable type
   { name: 'name', nullable: false, default: '', type: 'SQL' },
-]);
-defineQueryVariables([
+] as const satisfies QueryVariableDefinitions;
+[
   // @ts-expect-error interval options must use the frontend enum
   { name: 'interval', nullable: false, type: 'INTERVAL', default: 'day' },
-]);
+] as const satisfies QueryVariableDefinitions;
 const controls = { count: queryVariable(definitions[0], { key: 'count' }) };
 const controlled: AppVariableValues<typeof controls> = { count: 3 };
 void controlled;

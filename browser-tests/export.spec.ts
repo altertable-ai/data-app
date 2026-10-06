@@ -29,7 +29,7 @@ test('embedded toolbar exports displayed results through its host during updates
     release = resolve;
   });
   let fail = false;
-  await page.route('**/api/sql', async route => {
+  await page.route('**/api/registered-query', async route => {
     await gate;
     if (fail)
       await route.fulfill({ status: 503, json: { error: 'Unavailable' } });

@@ -127,12 +127,6 @@ for registration lookup, value validation, execution, viewer authorization, and
 resource limits. Never accept registration or authorization scope from the iframe.
 **Do not expose `data:sql` for registered apps:** it would bypass registration.
 
-For trusted servers with a statement-based Lakehouse,
-`createRegisteredQueryHandler(registration, authorize)` handles lookup, variable
-validation, defaults, and SQL construction. The lower-level
-`buildQueryStatement()` from `/contract` accepts `now` and `timeZone`; defaults
-use UTC and Monday week starts.
-
 For HTTP-style operation envelopes, use
 [`defineDataQueryRoute()`](contract.md#message-routes) instead.
 

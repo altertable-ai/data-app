@@ -20,15 +20,14 @@ Produce three artifacts, as shown in the starter:
   templates. Keep this map out of the browser bundle.
 - [variables.json](../examples/starter-data-app/variables.json): lists the
   [typed variable definitions](contract.md#query-variables), which app code may
-  also use for parsing and controls.
+  also use for typed inputs and controls.
 
 Submit all three together on creation and every source update. Queries and
 variables are complete replacements, including removals and empty collections.
 Follow the [hosted build skill](https://github.com/altertable-ai/skills/blob/main/skills/build-data-app/SKILL.md)
 for the create/update tool workflow.
 
-`defineDataAppRegistration({ queries, variables })` validates registration,
-including duplicate names and undefined placeholders. Host implementers should
+The backend validates registration and query values. Host implementers should
 follow the [registered query route](embed.md#registered-query-route).
 
 ## Convert a local data app
@@ -50,6 +49,6 @@ bun browser-tests/server.ts
 ```
 
 Open [the starter preview](http://127.0.0.1:27418/starter-data-app).
-Its test host executes the sample SQL through the iframe bridge using SQLite.
+Its test host returns fixture results through the registered query bridge.
 
 For checks, see [Contributing](../CONTRIBUTING.md).

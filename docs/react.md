@@ -378,11 +378,11 @@ Example:
 
 ## Query variable selectors
 
-Reuse the frontend variable types through `defineQueryVariables()` from
-`/contract`. Adapt a definition with `queryVariable()` from `/react`:
+Type definitions with `QueryVariableDefinitions` from `/contract`.
+Adapt a definition with `queryVariable()` from `/react`:
 
 ```ts
-const variables = defineQueryVariables([
+const variables = [
   {
     name: 'country',
     type: 'STRING',
@@ -390,7 +390,7 @@ const variables = defineQueryVariables([
     default: 'FR',
     options: ['FR', 'GB', 'US'],
   },
-]);
+] as const satisfies QueryVariableDefinitions;
 const country = queryVariable(variables[0], {
   key: 'country',
   label: 'Country',

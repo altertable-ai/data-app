@@ -16,20 +16,20 @@ for the app's deliverables.
 import {
   defineOperation,
   defineQueryNames,
-  defineQueryVariables,
-  parseQueryVariables,
+  type QueryVariableDefinitions,
+  type QueryVariableValues,
   parseCount,
 } from '@altertable/data-app/contract';
 
 const queryNames = defineQueryNames({ count: 'event-count' });
-const variables = defineQueryVariables([
+const variables = [
   { name: 'country', type: 'STRING', nullable: false, default: 'FR' },
-]);
+] as const satisfies QueryVariableDefinitions;
 const operations = {
   eventCount: defineOperation({
     queryNames,
     variables,
-    input: value => parseQueryVariables(variables, value),
+    input: value => value as QueryVariableValues<typeof variables>,
     output: parseCount,
     checks: [{ country: 'FR' }],
     policy: { maxQueryRows: 1, maxDurationMs: 15000 },
@@ -50,8 +50,8 @@ An operation may execute several named queries. Local server operations keep
 
 Each definition requires `name`, `type`, `nullable`, and a valid `default`.
 Names must be unique. Missing values use the default; null requires `nullable: true`. Optional `options`
-restrict values to a unique list. `parseQueryVariables()` validates values without
-coercing strings to numbers or booleans and rejects unknown names.
+restrict the selector choices. The backend validates definitions and values,
+applies defaults, and resolves SQL placeholders.
 
 `VariableValue<Type>` gives the value type;
 `QueryVariableValues<typeof variables>` derives inputs keyed by name.
@@ -71,8 +71,7 @@ coercing strings to numbers or booleans and rejects unknown names.
 `RELATIVE_ANCHOR_START_OF_` followed by `TODAY`, `YESTERDAY`, `TOMORROW`,
 `WEEK`, `MONTH`, or `YEAR` for the anchor. `offset` is an ordered array of
 `{ amount: integer, unit }`; units are `SECOND`, `MINUTE`, `HOUR`, `DAY`, `WEEK`,
-`MONTH`, and `YEAR`. Dates serialize to ISO strings across JSON and are parsed
-back to `Date` values. Relative selections stay relative.
+`MONTH`, and `YEAR`. Dates serialize to ISO strings across JSON. Relative selections stay relative.
 
 Use [`queryVariable()` and the selectors](react.md#query-variable-selectors) to
 bind these definitions to existing view controls and URL state.

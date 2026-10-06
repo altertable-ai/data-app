@@ -7,13 +7,18 @@ test('single-file hosted example queries through the host and preserves displaye
 }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  const requests: { statement: string; limit: number; host: boolean }[] = [];
+  const requests: {
+    operation: string;
+    variables: { groupName: string };
+    limit: number;
+    host: boolean;
+  }[] = [];
   let fail = false;
   let release: (() => void) | undefined;
   let gate = new Promise<void>(resolve => {
     release = resolve;
   });
-  await page.route('**/api/sql', async route => {
+  await page.route('**/api/registered-query', async route => {
     const payload = route.request().postDataJSON();
     requests.push({
       ...payload,
@@ -150,7 +155,9 @@ test('single-file hosted example queries through the host and preserves displaye
     app.getByRole('button', { name: 'Present story', exact: true })
   ).toBeDisabled();
   await selectGroup("O'Reilly");
-  await expect.poll(() => requests.at(-1)?.statement).toContain("O''Reilly");
+  await expect
+    .poll(() => requests.at(-1)?.variables.groupName)
+    .toBe("O'Reilly");
   await expect(
     app.getByText('No matching groups', { exact: true })
   ).toBeVisible();
@@ -169,7 +176,7 @@ test('single-file hosted example queries through the host and preserves displaye
       request =>
         request.host &&
         request.limit === 10 &&
-        request.statement.includes('LIMIT 10')
+        request.operation === 'sample-counts-by-group'
     )
   ).toBe(true);
   await expect(
@@ -187,7 +194,7 @@ test('single-file hosted example queries through the host and preserves displaye
 
 test('hosted initial query error recovers by retry', async ({ page }) => {
   let fail = true;
-  await page.route('**/api/sql', async route => {
+  await page.route('**/api/registered-query', async route => {
     if (fail) await route.fulfill({ status: 503, json: failure });
     else await route.continue();
   });

@@ -2,15 +2,14 @@ import { applyAppearance, type Theme } from '@altertable/data-app/appearance';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-  defineQueryVariables,
-  parseQueryVariables,
+  type QueryVariableDefinitions,
   type VariableValue,
 } from '@altertable/data-app/contract';
 import {
   injectDataAppStyles,
   VariableValueSelector,
 } from '@altertable/data-app/react';
-const definitions = defineQueryVariables([
+const definitions = [
   { name: 'Text', nullable: false, type: 'STRING', default: 'hello' },
   { name: 'Count', nullable: false, type: 'INTEGER', default: 2 },
   { name: 'Fraction', nullable: false, type: 'FLOAT', default: 1.5 },
@@ -34,10 +33,12 @@ const definitions = defineQueryVariables([
     type: 'DATETIMERANGE',
     default: { from: new Date('2026-09-01T00:00:00Z'), to: null },
   },
-]);
+] as const satisfies QueryVariableDefinitions;
 function App() {
   const [values, setValues] = useState<Record<string, VariableValue | null>>(
-    parseQueryVariables(definitions, {})
+    Object.fromEntries(
+      definitions.map(definition => [definition.name, definition.default])
+    )
   );
   const [theme, setTheme] = useState<Theme>('light');
   useEffect(() => applyAppearance({ theme }), [theme]);

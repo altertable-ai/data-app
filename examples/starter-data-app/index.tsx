@@ -3,8 +3,8 @@ import type { DataAppConfig } from '@altertable/data-app/config';
 import {
   defineOperation,
   defineQueryNames,
-  defineQueryVariables,
-  parseQueryVariables,
+  type QueryVariableDefinitions,
+  type QueryVariableValues,
   parseCount,
 } from '@altertable/data-app/contract';
 import {
@@ -27,9 +27,9 @@ import {
 const queryNames = defineQueryNames({
   sampleCountsByGroup: 'sample-counts-by-group',
 });
-const queryVariables = defineQueryVariables([
+const queryVariables = [
   { name: 'groupName', nullable: false, type: 'STRING', default: '' },
-]);
+] as const satisfies QueryVariableDefinitions;
 function parseSampleCounts(
   value: unknown
 ): { groupName: string; sampleCount: number }[] {
@@ -48,7 +48,7 @@ const operations = {
   sampleCountsByGroup: defineOperation({
     queryNames,
     variables: queryVariables,
-    input: value => parseQueryVariables(queryVariables, value),
+    input: value => value as QueryVariableValues<typeof queryVariables>,
     output: parseSampleCounts,
     checks: [
       { groupName: '' },

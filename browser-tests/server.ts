@@ -3,7 +3,6 @@ import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
 import starterConfig from '@/examples/starter-local-data-app/app';
-import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
 import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
@@ -101,7 +100,6 @@ const serveReloadEvents =
     './fixtures/bundle-app.tsx',
     './fixtures/bridge-frame.ts',
   ]);
-const fixtureDatabase = new Database(':memory:');
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
 // `bun run dev` provides a mocked Altertable API; tests keep deterministic fixtures.
 const lakehouse =
@@ -187,6 +185,30 @@ Bun.serve({
         '{"query_id":"starter-query"}\n["connection_check"]\n[1]\n'
       );
     }
+    // Fixed backend fixture for the hosted starter; no SQL template engine.
+    if (path === '/api/registered-query') {
+      const query = (await request.json()) as {
+        operation: string;
+        variables: { groupName?: string };
+        limit: number;
+      };
+      if (query.operation !== 'sample-counts-by-group')
+        return Response.json(
+          { error: 'Unknown fixture query' },
+          { status: 400 }
+        );
+      const groupName = query.variables.groupName ?? '';
+      return Response.json({
+        columns: [{ name: 'group_name' }, { name: 'sample_count' }],
+        rows: [
+          ['Alpha', 3],
+          ['Beta', 0],
+        ]
+          .filter(([group]) => !groupName || group === groupName)
+          .slice(0, query.limit),
+        queryId: 'sample-query',
+      });
+    }
     if (path === '/api/sql') {
       const delay = isDevelopment
         ? Number(
@@ -214,17 +236,6 @@ Bun.serve({
             { status: 502 }
           );
         }
-      }
-      if (
-        query.statement.trim().startsWith('WITH sample_counts(') &&
-        query.limit === 10
-      ) {
-        const rows = fixtureDatabase.query(query.statement).values();
-        return Response.json({
-          columns: [{ name: 'group_name' }, { name: 'sample_count' }],
-          rows,
-          queryId: 'sample-query',
-        });
       }
       if (
         query.statement !== 'SELECT 1 AS connection_check' ||

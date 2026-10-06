@@ -1,5 +1,4 @@
 import {
-  defineQueryVariables,
   type QueryVariableDefinitions,
   type QueryVariableValues,
 } from '@/src/core/query-variables';
@@ -352,7 +351,6 @@ export function defineOperation<
     'Each data operation needs check inputs and positive row and duration limits.'
   );
   if (operation.queryNames) defineQueryNames(operation.queryNames);
-  if (operation.variables) defineQueryVariables(operation.variables);
   for (const input of operation.checks) operation.input(input);
 
   return {
@@ -458,10 +456,6 @@ export type {
 export type { TransportResponse } from '@/src/core/bridge';
 
 export {
-  defineQueryVariables,
-  parseVariableValue,
-  parseQueryVariable,
-  parseQueryVariables,
   variableValueTypes,
   histogramIntervals,
   durationUnits,
@@ -484,14 +478,7 @@ export type {
   QueryVariableDefinition,
   QueryVariableDefinitions,
   QueryVariableValues,
-  QueryVariableBindings,
 } from '@/src/core/query-variables';
-export {
-  queryVariableNames,
-  buildQueryStatement,
-  resolveVariableDateTime,
-} from '@/src/core/query-template';
-export { defineDataAppRegistration } from '@/src/core/query-registration';
-export type { DataAppRegistration } from '@/src/core/query-registration';
+export type { DataAppRegistration } from '@/src/core/query-variables';
 export { registeredQueryRoute } from '@/src/core/messages';
 export type { RegisteredQueryInput } from '@/src/core/messages';
