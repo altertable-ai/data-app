@@ -84,12 +84,14 @@ const { default: worker } = (await import(
 const loadFixtureBundle = await createBundleLoader('./fixtures/bundle-app.tsx');
 // Tests exercise the hosted starter; `bun run dev` serves the playground, which
 // queries the demo tables it seeds into the mocked API.
-const hostedApp = isDevelopment
-  ? { path: '/playground', entry: '../dev/playground.tsx' }
-  : {
-      path: '/starter-data-app',
-      entry: '../examples/starter-data-app/index.tsx',
-    };
+const hostedApps = {
+  development: { path: '/playground', entry: '../dev/playground.tsx' },
+  test: {
+    path: '/starter-data-app',
+    entry: '../examples/starter-data-app/index.tsx',
+  },
+};
+const hostedApp = hostedApps[isDevelopment ? 'development' : 'test'];
 const loadHostedAppBundle = await createBundleLoader(hostedApp.entry);
 const serveReloadEvents =
   isDevelopment &&

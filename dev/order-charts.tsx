@@ -31,6 +31,11 @@ export function DailyLineChart({ days }: { days: OrderDay[] }) {
   const first = days[0]?.day ?? '';
   const last = days.at(-1)?.day ?? '';
   const peak = days[peakIndex];
+  const edgeTextAnchors: Record<number, 'start' | 'end'> = {
+    [days.length - 1]: 'end',
+    0: 'start',
+  };
+  const peakTextAnchor = edgeTextAnchors[peakIndex] ?? 'middle';
   return (
     <svg
       role="img"
@@ -55,13 +60,7 @@ export function DailyLineChart({ days }: { days: OrderDay[] }) {
         <text
           x={x(peakIndex)}
           y={y(peak.orderCount) - 6}
-          textAnchor={
-            peakIndex === 0
-              ? 'start'
-              : peakIndex === days.length - 1
-                ? 'end'
-                : 'middle'
-          }
+          textAnchor={peakTextAnchor}
           fill="currentColor"
           fontSize={12}
         >

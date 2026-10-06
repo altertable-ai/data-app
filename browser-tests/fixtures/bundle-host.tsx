@@ -30,6 +30,22 @@ const response = await fetch(
 );
 const javascript = await response.text();
 
+const connectionLabels: Record<DataAppStatus, string> = {
+  connecting: 'Connecting',
+  connected: 'Connecting',
+  ready: 'Connected',
+  failed: 'Disconnected',
+  disconnected: 'Connecting',
+};
+const themeControls = {
+  dark: { nextTheme: 'light', label: 'Switch to light theme' },
+  light: { nextTheme: 'dark', label: 'Switch to dark theme' },
+} satisfies Record<Theme, { nextTheme: Theme; label: string }>;
+const previewLabels = {
+  embedded: 'Preview standalone app',
+  standalone: 'Preview embedded app',
+};
+
 function Host() {
   const hostRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<Theme>('dark');
@@ -47,6 +63,18 @@ function Host() {
   );
   const urlMode = new URLSearchParams(location.search).has('url');
   const timeout = new URLSearchParams(location.search).has('timeout');
+  const surface = embedded ? 'embedded' : 'standalone';
+  const connectionLabel = connectionLabels[status];
+  const themeControl = themeControls[theme];
+  const themeLabel = embedded
+    ? themeControl.label
+    : 'In standalone mode, change the app theme in its footer';
+  const ThemeIcon = theme === 'dark' ? Sun : Moon;
+  const SurfaceIcon = embedded ? Maximize : PanelsTopLeft;
+  const hasParentPresentation = isPlayground ? embedded : parentPresentation;
+  const presentation = hasParentPresentation
+    ? ({ surface, theme } as const)
+    : undefined;
   // Extra attributes can still arrive from JavaScript callers or spread objects.
   const iframeProps = {
     hidden: status !== 'ready',
@@ -133,7 +161,7 @@ function Host() {
     <>
       <button
         aria-label="Change theme"
-        onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}
+        onClick={() => setTheme(value => themeControls[value].nextTheme)}
       >
         Change theme
       </button>
@@ -175,20 +203,8 @@ function Host() {
           <output
             className="playground-connection"
             data-status={status}
-            aria-label={
-              status === 'ready'
-                ? 'Connected'
-                : status === 'failed'
-                  ? 'Disconnected'
-                  : 'Connecting'
-            }
-            title={
-              status === 'ready'
-                ? 'Connected'
-                : status === 'failed'
-                  ? 'Disconnected'
-                  : 'Connecting'
-            }
+            aria-label={connectionLabel}
+            title={connectionLabel}
           />
           <TooltipProvider>
             <nav
@@ -196,40 +212,22 @@ function Host() {
               className="playground-controls"
             >
               <Tooltip
-                content={
-                  !embedded
-                    ? 'In standalone mode, change the app theme in its footer'
-                    : theme === 'dark'
-                      ? 'Switch to light theme'
-                      : 'Switch to dark theme'
-                }
+                content={themeLabel}
                 placement="bottom"
                 portalRoot={hostRef}
               >
                 <button
                   disabled={!embedded}
-                  aria-label={
-                    !embedded
-                      ? 'In standalone mode, change the app theme in its footer'
-                      : theme === 'dark'
-                        ? 'Switch to light theme'
-                        : 'Switch to dark theme'
-                  }
+                  aria-label={themeLabel}
                   onClick={() =>
-                    setTheme(value => (value === 'dark' ? 'light' : 'dark'))
+                    setTheme(value => themeControls[value].nextTheme)
                   }
                 >
-                  {theme === 'dark' ? (
-                    <Sun size={16} aria-hidden="true" />
-                  ) : (
-                    <Moon size={16} aria-hidden="true" />
-                  )}
+                  <ThemeIcon size={16} aria-hidden="true" />
                 </button>
               </Tooltip>
               <Tooltip
-                content={
-                  embedded ? 'Preview standalone app' : 'Preview embedded app'
-                }
+                content={previewLabels[surface]}
                 placement="bottom"
                 portalRoot={hostRef}
               >
@@ -238,11 +236,7 @@ function Host() {
                   aria-pressed={!embedded}
                   onClick={() => setEmbedded(value => !value)}
                 >
-                  {embedded ? (
-                    <Maximize size={16} aria-hidden="true" />
-                  ) : (
-                    <PanelsTopLeft size={16} aria-hidden="true" />
-                  )}
+                  <SurfaceIcon size={16} aria-hidden="true" />
                 </button>
               </Tooltip>
             </nav>
@@ -269,15 +263,7 @@ function Host() {
           onStatusChange={setStatus}
           iframeProps={iframeProps}
           title={isPlayground ? 'Orders preview' : 'Sandbox app'}
-          presentation={
-            isPlayground
-              ? embedded
-                ? { surface: 'embedded', theme }
-                : undefined
-              : parentPresentation
-                ? { surface: embedded ? 'embedded' : 'standalone', theme }
-                : undefined
-          }
+          presentation={presentation}
           source={
             urlMode
               ? {
