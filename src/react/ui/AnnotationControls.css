@@ -20,7 +20,7 @@
   z-index: 1100;
   pointer-events: none;
   border: 2px solid var(--at-accent, #405d47);
-  border-radius: var(--at-radius-surface, 12px);
+  border-radius: 0;
   background: color-mix(in srgb, var(--at-accent, #405d47) 8%, transparent);
 }
 .altertable-annotation-pin {
@@ -157,4 +157,32 @@
   .altertable-annotation-composer textarea {
     font-size: 16px;
   }
+}
+
+.altertable-annotation-outline[data-widget] {
+  border-radius: var(--at-radius-surface, 12px);
+}
+.altertable-annotation-selection-layer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  z-index: 1099;
+  cursor: crosshair;
+  touch-action: none;
+}
+.altertable-annotation-selection-layer:focus-visible {
+  outline: 2px solid var(--at-accent);
+  outline-offset: -2px;
+}
+.altertable-annotation-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }

@@ -146,6 +146,7 @@ function Host() {
                   number: index + 1,
                   comment: draft.comment,
                   anchor: draft.context.anchor,
+                  region: draft.context.region,
                 })),
               },
             }

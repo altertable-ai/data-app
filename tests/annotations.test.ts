@@ -301,3 +301,32 @@ test('root captures validate PNG dimensions and preserve exact cursor anchors', 
     })
   ).toThrow();
 });
+
+test('custom areas require a bounded normalized app-root region', () => {
+  const value = {
+    ...draft,
+    target: { ...draft.target, kind: 'app' },
+    context: {
+      ...draft.context,
+      region: { x: 0.1, y: 0.2, width: 0.4, height: 0.3 },
+    },
+  };
+  expect(parseDataAppAnnotationDraft(value).context.region).toEqual(
+    value.context.region
+  );
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      target: { ...value.target, kind: 'widget' },
+    })
+  ).toThrow();
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      context: {
+        ...value.context,
+        region: { x: 0.9, y: 0, width: 0.4, height: 1 },
+      },
+    })
+  ).toThrow();
+});

@@ -1,15 +1,23 @@
 import { toCanvas } from 'html-to-image';
+import type { AnnotationRegion } from '@/src/react/ui/AnnotationSelectionLayer';
 import type { DataAppAnnotationDraft } from '@/src/core/annotations';
 
 /** Capture the visible target at selection time; never include annotation controls. */
 export async function captureAnnotationScreenshot(
-  element: HTMLElement
+  element: HTMLElement,
+  region?: AnnotationRegion
 ): Promise<NonNullable<DataAppAnnotationDraft['context']['screenshot']>> {
   const rect = element.getBoundingClientRect();
-  const left = Math.max(0, rect.left);
-  const top = Math.max(0, rect.top);
-  const width = Math.min(window.innerWidth, rect.right) - left;
-  const height = Math.min(window.innerHeight, rect.bottom) - top;
+  const left = Math.max(0, region?.x ?? rect.left);
+  const top = Math.max(0, region?.y ?? rect.top);
+  const width =
+    Math.min(window.innerWidth, region ? region.x + region.width : rect.right) -
+    left;
+  const height =
+    Math.min(
+      window.innerHeight,
+      region ? region.y + region.height : rect.bottom
+    ) - top;
   if (width <= 0 || height <= 0)
     throw new Error('The annotation area is not visible.');
   const scale = Math.min(1, 1024 / width, 1024 / height);

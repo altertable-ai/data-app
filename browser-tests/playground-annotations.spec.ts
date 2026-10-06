@@ -12,11 +12,15 @@ async function openPlayground(page: Page) {
   const trigger = page.getByRole('button', { name: 'Annotate', exact: true });
   await expect(trigger).toBeEnabled();
   await trigger.click();
-  return page.frameLocator('iframe');
+  const frame = page.frameLocator('iframe');
+  await expect(
+    frame.getByRole('button', { name: 'Annotation selection' })
+  ).toBeVisible();
+  return frame;
 }
 async function addAnnotation(page: Page, id: string, text: string) {
   const frame = page.frameLocator('iframe');
-  await frame.locator(`[data-annotation-id="${id}"]`).click();
+  await frame.locator(`[data-annotation-id="${id}"]`).click({ force: true });
   const input = frame.getByRole('textbox', { name: 'Annotation text' });
   await input.fill(text);
   await input.press('Enter');
@@ -96,6 +100,10 @@ test('bottom bar reviews, focuses, hides and deletes saved annotations', async (
   const input = frame.getByRole('textbox', { name: 'Annotation text' });
   await expect(input).toHaveValue('Show active customers');
   await input.press('Escape');
+  await expect(bar).toBeVisible();
+  await frame
+    .getByRole('button', { name: 'Annotation selection' })
+    .press('Escape');
   await expect(bar).toHaveCount(0);
   await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   await page
@@ -152,6 +160,9 @@ test('unsaved input gates batch Send and only dirty edits require two Escapes', 
   await expect(input).toHaveValue('Unsaved edit');
   await input.press('Escape');
   await expect(input).toHaveCount(0);
+  await frame
+    .getByRole('button', { name: 'Annotation selection' })
+    .press('Escape');
   await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const panel = await review(page);
   await panel

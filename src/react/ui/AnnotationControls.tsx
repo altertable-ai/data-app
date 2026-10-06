@@ -32,6 +32,10 @@ import {
   type AnnotationPoint,
 } from '@/src/react/ui/annotation-targets';
 import { captureAnnotationScreenshot } from '@/src/react/ui/annotation-screenshot';
+import {
+  AnnotationSelectionLayer,
+  type AnnotationRegion,
+} from '@/src/react/ui/AnnotationSelectionLayer';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Kbd } from '@/src/react/ui/Kbd';
 import { Tooltip } from '@/src/react/ui/Tooltip';
@@ -129,7 +133,8 @@ export function AnnotationControls({
   function selectTarget(
     target: Target,
     cursor?: AnnotationPoint,
-    capture = true
+    capture = true,
+    region?: AnnotationRegion
   ) {
     setEditingId(undefined);
     discardArmed.current = false;
@@ -148,7 +153,7 @@ export function AnnotationControls({
     if (capture)
       screenshot.current = {
         id,
-        result: captureAnnotationScreenshot(target.element).then(
+        result: captureAnnotationScreenshot(target.element, region).then(
           image => ({ image }),
           error => ({ error })
         ),
@@ -158,7 +163,7 @@ export function AnnotationControls({
       id,
       target: {
         id: target.id,
-        label: target.label.slice(0, 256),
+        label: region ? 'Selected area' : target.label.slice(0, 256),
         kind: target.kind,
         text: (target.element.textContent ?? '')
           .replace(/\s+/g, ' ')
@@ -173,6 +178,22 @@ export function AnnotationControls({
       },
       context: {
         ...point,
+        ...(region
+          ? {
+              region: {
+                x:
+                  (region.x - target.element.getBoundingClientRect().x) /
+                  target.element.getBoundingClientRect().width,
+                y:
+                  (region.y - target.element.getBoundingClientRect().y) /
+                  target.element.getBoundingClientRect().height,
+                width:
+                  region.width / target.element.getBoundingClientRect().width,
+                height:
+                  region.height / target.element.getBoundingClientRect().height,
+              },
+            }
+          : {}),
         search: (location?.search ?? window.location.search).slice(0, 2048),
         hash: (location?.hash ?? window.location.hash).slice(0, 1024),
         displayedInput: input,
@@ -181,7 +202,7 @@ export function AnnotationControls({
             .querySelector('[role=tab][aria-selected=true]')
             ?.textContent?.slice(0, 128) ?? view,
         viewport: { width: window.innerWidth, height: window.innerHeight },
-        rect: geometry(target.element),
+        rect: region ?? geometry(target.element),
       },
       comment: '',
     });
@@ -227,8 +248,13 @@ export function AnnotationControls({
     );
     if (!pin || !target || pending) return;
     setAnnotationMode(true);
-    target.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
     const rect = target.element.getBoundingClientRect();
+    const pointY = rect.y + rect.height * (pin.anchor?.y ?? 0.5);
+    if (pointY < 0 || pointY > window.innerHeight)
+      window.scrollBy({
+        top: pointY - window.innerHeight / 2,
+        behavior: 'smooth',
+      });
     selectTarget(
       target,
       pin.anchor
@@ -239,6 +265,12 @@ export function AnnotationControls({
         : undefined,
       false
     );
+    if (pin.region)
+      setDraft(current =>
+        current
+          ? { ...current, context: { ...current.context, region: pin.region } }
+          : current
+      );
     setEditingId(id);
     setComment(pin.comment ?? '');
   }
@@ -249,7 +281,17 @@ export function AnnotationControls({
     setEditingId(undefined);
     setComment('');
   }
-  const finishFromKeyboard = useEffectEvent(closeAnnotationMode);
+  function closeEditor() {
+    setSelected(undefined);
+    setDraft(undefined);
+    setEditingId(undefined);
+    setComment('');
+    discardArmed.current = false;
+    setShaking(false);
+  }
+  const finishFromKeyboard = useEffectEvent(() =>
+    draft ? closeEditor() : closeAnnotationMode()
+  );
   const captureSelection = useEffectEvent(selectTarget);
   useEffect(() => {
     textareaRef.current?.focus();
@@ -257,7 +299,6 @@ export function AnnotationControls({
   useEffect(() => {
     if (!active) return;
     const root = rootRef.current;
-    const scope = root?.closest<HTMLElement>('.altertable-app-main') ?? root;
     function updateTargets() {
       const selectable = targets(root);
       setAmbiguous(
@@ -274,45 +315,9 @@ export function AnnotationControls({
         attributes: true,
         attributeFilter: ['data-annotation-id', 'data-annotation-label'],
       });
-    function capture(event: Event) {
-      if (!(event.target instanceof Element) || !scope?.contains(event.target))
-        return;
-      const element = event.target.closest<HTMLElement>('[data-annotation-id]');
-      const all = targets(root);
-      const target =
-        all.find(target => target.element === element) ??
-        all.find(target => target.kind === 'app');
-      // Keep request controls available while results update in the background.
-      if (
-        !element &&
-        event.target.closest(
-          '.altertable-variable-bar, .altertable-app-toolbar'
-        )
-      )
-        return;
-      event.preventDefault();
-      event.stopPropagation();
-      if (event.type === 'click' && target && !pending)
-        captureSelection(
-          target,
-          event instanceof MouseEvent && event.detail > 0
-            ? { x: event.clientX, y: event.clientY }
-            : undefined
-        );
-    }
-    function hover(event: PointerEvent) {
-      if (!(event.target instanceof Element)) return;
-      const element = event.target.closest<HTMLElement>('[data-annotation-id]');
-      const all = targets(root);
-      setHovered(
-        scope?.contains(event.target)
-          ? (all.find(target => target.element === element) ??
-              all.find(target => target.kind === 'app'))
-          : undefined
-      );
-    }
     function escape(event: KeyboardEvent) {
       if (event.key === 'Escape' && !pending) {
+        if (document.querySelector('dialog[open], [data-selecting]')) return;
         if (event.isComposing) return;
         event.preventDefault();
         event.stopPropagation();
@@ -321,44 +326,11 @@ export function AnnotationControls({
           discardArmed.current = true;
           setShaking(true);
         } else finishFromKeyboard();
-      } else if (
-        event.code === 'Period' &&
-        event.shiftKey &&
-        (event.metaKey || event.ctrlKey)
-      ) {
-        return;
-      } else if (
-        !pending &&
-        !draft &&
-        ['Tab', 'ArrowRight', 'ArrowLeft', 'Enter'].includes(event.key)
-      ) {
-        const all = targets(root);
-        if (!all.length) return;
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.key === 'Enter' && hovered) captureSelection(hovered);
-        else {
-          const current = all.findIndex(target => target.id === hovered?.id);
-          const direction =
-            event.shiftKey || event.key === 'ArrowLeft' ? -1 : 1;
-          const target = all[(current + direction + all.length) % all.length]!;
-          target.element.scrollIntoView({ block: 'nearest' });
-          setHovered(target);
-        }
-      } else if (event.target instanceof Node && root?.contains(event.target)) {
-        event.preventDefault();
-        event.stopPropagation();
       }
     }
-    document.addEventListener('pointerdown', capture, true);
-    document.addEventListener('click', capture, true);
-    document.addEventListener('pointermove', hover);
     document.addEventListener('keydown', escape, true);
     return () => {
       mutations.disconnect();
-      document.removeEventListener('pointerdown', capture, true);
-      document.removeEventListener('click', capture, true);
-      document.removeEventListener('pointermove', hover);
       document.removeEventListener('keydown', escape, true);
     };
   }, [
@@ -410,7 +382,18 @@ export function AnnotationControls({
         })
       );
       const element = (selected ?? hovered)?.element;
-      setOutline(element?.isConnected ? geometry(element) : undefined);
+      const area = draft?.context.region;
+      const rect = element?.isConnected ? geometry(element) : undefined;
+      setOutline(
+        rect && area
+          ? {
+              x: rect.x + rect.width * area.x,
+              y: rect.y + rect.height * area.y,
+              width: rect.width * area.width,
+              height: rect.height * area.height,
+            }
+          : rect
+      );
     }
     measure();
     const observer = new ResizeObserver(measure);
@@ -422,7 +405,7 @@ export function AnnotationControls({
       window.removeEventListener('resize', measure);
       document.removeEventListener('scroll', measure, true);
     };
-  }, [selected, hovered, presentation.targets, rootRef]);
+  }, [selected, hovered, draft?.context.region, presentation.targets, rootRef]);
 
   async function saveAnnotation() {
     if (!draft || pending) return;
@@ -497,9 +480,36 @@ export function AnnotationControls({
       )}
       {createPortal(
         <>
+          {active && rootRef.current && (
+            <AnnotationSelectionLayer
+              scope={
+                rootRef.current.closest<HTMLElement>('.altertable-app-main') ??
+                rootRef.current
+              }
+              targets={targets(rootRef.current)}
+              disabled={pending}
+              editing={Boolean(draft)}
+              onHover={setHovered}
+              onSelect={(target, point, region) => {
+                if (hasUnsavedChanges && !discardArmed.current) {
+                  discardArmed.current = true;
+                  setShaking(true);
+                  textareaRef.current?.focus();
+                  return;
+                }
+                captureSelection(target, point, true, region);
+              }}
+            />
+          )}
           {outline && presentation.pinsVisible !== false && (
             <div
               aria-hidden
+              data-annotation-ui
+              data-widget={
+                ((selected ?? hovered)?.kind === 'widget' &&
+                  !draft?.context.region) ||
+                undefined
+              }
               className="altertable-annotation-outline"
               style={{
                 left: outline.x,
@@ -512,6 +522,7 @@ export function AnnotationControls({
           {(presentation.pinsVisible === false ? [] : boxes).map(box => (
             <button
               type="button"
+              data-annotation-ui
               onClick={() => openAnnotation(box.id)}
               disabled={pending}
               key={box.id}
@@ -526,18 +537,19 @@ export function AnnotationControls({
             </button>
           ))}
           {active && !selected && presentation.showHint !== false && (
-            <output className="altertable-annotation-hint">
+            <output data-annotation-ui className="altertable-annotation-hint">
               {ambiguous ? (
                 'Some items cannot be annotated.'
               ) : (
                 <>
-                  Point at an item to annotate · <Kbd>Esc</Kbd> to exit
+                  Point at an item or drag to select <Kbd>Esc</Kbd> to exit
                 </>
               )}
             </output>
           )}
           {active && selected && (
             <section
+              data-annotation-ui
               ref={floatingRef}
               style={floatingStyles}
               className="altertable-annotation-composer"

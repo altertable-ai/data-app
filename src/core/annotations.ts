@@ -17,6 +17,8 @@ export type DataAppAnnotationDraft = {
     /** Normalized position within the selected target, stable across scrolling/resizing. */
     anchor?: { x: number; y: number };
     cursor?: { x: number; y: number };
+    /** Normalized custom selection rectangle within the app root. */
+    region?: { x: number; y: number; width: number; height: number };
     screenshot?: {
       mimeType: 'image/png';
       dataUrl: string;
@@ -43,6 +45,7 @@ export type DataAppAnnotationPresentation = {
     number: number;
     comment?: string;
     anchor?: { x: number; y: number };
+    region?: { x: number; y: number; width: number; height: number };
   }[];
   selectedAnnotationId?: string;
   selectedTargetId?: string;
@@ -147,6 +150,24 @@ export function parseDataAppAnnotationDraft(
     const point = object(context.cursor);
     cursor = { x: number(point.x), y: number(point.y) };
   }
+  let region: DataAppAnnotationDraft['context']['region'];
+  if (context.region !== undefined) {
+    const area = object(context.region);
+    region = {
+      x: number(area.x, true),
+      y: number(area.y, true),
+      width: number(area.width, true),
+      height: number(area.height, true),
+    };
+    if (
+      target.kind !== 'app' ||
+      region.width <= 0 ||
+      region.height <= 0 ||
+      region.x + region.width > 1.000001 ||
+      region.y + region.height > 1.000001
+    )
+      throw new Error('Invalid annotation selection.');
+  }
   const draft: DataAppAnnotationDraft = {
     id: text(input.id, 128, true),
     target: {
@@ -159,6 +180,7 @@ export function parseDataAppAnnotationDraft(
     },
     context: {
       ...(anchor ? { anchor } : {}),
+      ...(region ? { region } : {}),
       ...(cursor ? { cursor } : {}),
       ...(screenshot ? { screenshot } : {}),
       search: text(context.search, 2048),
@@ -280,6 +302,22 @@ export function isAnnotationPresentation(
                 Number.isFinite(target.anchor.y) &&
                 target.anchor.y >= 0 &&
                 target.anchor.y <= 1)) &&
+            (target.region === undefined ||
+              (typeof target.region === 'object' &&
+                target.region !== null &&
+                ['x', 'y', 'width', 'height'].every(key => {
+                  const value = (target.region as Record<string, unknown>)[key];
+                  return (
+                    typeof value === 'number' &&
+                    Number.isFinite(value) &&
+                    value >= 0 &&
+                    value <= 1
+                  );
+                }) &&
+                target.region.width > 0 &&
+                target.region.height > 0 &&
+                target.region.x + target.region.width <= 1.000001 &&
+                target.region.y + target.region.height <= 1.000001)) &&
             (target.comment === undefined ||
               (typeof target.comment === 'string' &&
                 target.comment.length <= 2000))

@@ -8,8 +8,9 @@ test('select widgets and custom elements and deliver numbered feedback through t
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
   await frame
-    .getByRole('button', { name: 'Explore revenue', exact: true })
-    .click();
+    .locator('button:visible')
+    .filter({ hasText: /^Explore revenue$/ })
+    .click({ force: true });
   await expect(frame.locator('#result')).not.toHaveText('Chart clicked');
   await frame
     .getByRole('textbox', { name: 'Annotation text' })
@@ -35,7 +36,7 @@ test('select widgets and custom elements and deliver numbered feedback through t
   expect(drafts[0].target.id).toBe('monthly-revenue');
   expect(drafts[0].target.queryNames).toEqual(['revenue']);
   expect(drafts[0].comment).toBe('Compare with last year');
-  await frame.locator('[data-annotation-id="intro"]').click();
+  await frame.locator('[data-annotation-id="intro"]').click({ force: true });
   await frame
     .getByRole('textbox', { name: 'Annotation text' })
     .fill('Make this shorter');
@@ -60,7 +61,9 @@ test('failed delivery retains feedback and supports retry; Escape restores inter
   await page.goto('/bundle-host?annotations&annotation-error');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
-  await frame.locator('[data-annotation-id="customers"]').click();
+  await frame
+    .locator('[data-annotation-id="customers"]')
+    .click({ force: true });
   await frame
     .getByRole('textbox', { name: 'Annotation text' })
     .fill('Show active customers');
@@ -79,7 +82,7 @@ test('failed delivery retains feedback and supports retry; Escape restores inter
     .click();
   await expect(frame.getByLabel('Annotation 1', { exact: true })).toBeVisible();
   await frame
-    .getByRole('button', { name: 'Annotate', exact: true })
+    .getByRole('button', { name: 'Annotation selection' })
     .press('Escape');
   await expect(
     frame.getByRole('region', { name: 'Annotation editor' })
@@ -105,11 +108,14 @@ test('feedback freezes the displayed filters at selection while results change',
   await page.goto('/bundle-host?annotations&annotation-state');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
-  await frame.locator('[data-annotation-id="revenue"]').click();
+  await frame.locator('[data-annotation-id="revenue"]').click({ force: true });
   await frame
     .getByRole('textbox', { name: 'Annotation text' })
     .fill('Compare with last year');
-  await frame.getByRole('button', { name: 'Change displayed period' }).click();
+  await frame
+    .locator('button:visible')
+    .filter({ hasText: 'Change displayed period' })
+    .evaluate(button => (button as HTMLElement).click());
   await frame
     .getByRole('button', { name: 'Add annotation', exact: true })
     .click();
@@ -128,7 +134,7 @@ test('host admission failures explain how to recover without losing the comment'
   await page.goto('/bundle-host?annotations&annotation-limit');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
-  await frame.locator('[data-annotation-id="intro"]').click();
+  await frame.locator('[data-annotation-id="intro"]').click({ force: true });
   await frame
     .getByRole('textbox', { name: 'Annotation text' })
     .fill('Explain this');
@@ -150,8 +156,10 @@ test('keyboard selection opens the floating comment and Enter adds feedback', as
   const frame = page.frameLocator('iframe');
   const trigger = frame.getByRole('button', { name: 'Annotate', exact: true });
   await trigger.click();
-  await trigger.press('Tab');
-  await trigger.press('Enter');
+  const layer = frame.getByRole('button', { name: 'Annotation selection' });
+  await expect(layer).toBeFocused();
+  await layer.press('ArrowRight');
+  await layer.press('Enter');
   const comment = frame.getByRole('textbox', { name: 'Annotation text' });
   await expect(comment).toBeFocused();
   await comment.fill('Compare with last year');
@@ -171,7 +179,7 @@ test('click coordinates anchor the badge and the bridge carries a real PNG of th
     const box = element.getBoundingClientRect();
     return { x: box.x, y: box.y, width: box.width, height: box.height };
   });
-  await widget.click({ position: { x: 30, y: 45 } });
+  await widget.click({ force: true, position: { x: 30, y: 45 } });
   await frame
     .getByRole('textbox', { name: 'Annotation text' })
     .fill('Move the legend below the chart');
@@ -227,6 +235,7 @@ test('blank layout areas select the app root and capture the visible global layo
   const main = frame.locator('.altertable-app-main');
   const root = await main.boundingBox();
   await main.click({
+    force: true,
     position: {
       x: bounds!.x - root!.x + 4,
       y: bounds!.y - root!.y + bounds!.height + 10,
@@ -252,4 +261,135 @@ test('blank layout areas select the app root and capture the visible global layo
       'base64'
     )
   );
+});
+
+test('drag selects a custom screenshot region and reopens its saved outline', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const main = await frame.locator('.altertable-app-main').boundingBox();
+  const iframe = await page.locator('iframe').boundingBox();
+  const x = main!.x + 20;
+  const y = Math.max(main!.y, iframe!.y) + 80;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 180, y + 100, { steps: 8 });
+  await page.mouse.up();
+  const input = frame.getByRole('textbox', { name: 'Annotation text' });
+  await input.fill('Align this area');
+  await input.press('Enter');
+  await expect(
+    frame.getByRole('button', { name: 'Annotation 1', exact: true })
+  ).toBeVisible();
+  const drafts = JSON.parse(
+    (await page.getByLabel('Annotation drafts').textContent()) ?? '[]'
+  );
+  expect(drafts[0].target.label).toBe('Selected area');
+  expect(drafts[0].context.region.width).toBeGreaterThan(0);
+  expect(drafts[0].context.screenshot.width).toBe(180);
+  expect(drafts[0].context.screenshot.height).toBe(100);
+  await writeFile(
+    testInfo.outputPath('captured-region.png'),
+    Buffer.from(drafts[0].context.screenshot.dataUrl.split(',')[1], 'base64')
+  );
+  await frame
+    .getByRole('button', { name: 'Annotation 1', exact: true })
+    .click();
+  await expect(input).toHaveValue('Align this area');
+  await expect(frame.locator('.altertable-annotation-outline')).toHaveCSS(
+    'border-radius',
+    '0px'
+  );
+  await input.press('Escape');
+  await expect(input).toHaveCount(0);
+  await expect(
+    frame.getByRole('button', { name: 'Annotation selection' })
+  ).toBeFocused();
+  await expect(frame.locator('.altertable-app-layout')).toHaveAttribute(
+    'inert',
+    ''
+  );
+});
+
+test('annotation layer blocks app controls and Escape closes only the open editor', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const layer = frame.getByRole('button', { name: 'Annotation selection' });
+  await expect(layer).toBeFocused();
+  await expect(frame.locator('.altertable-app-layout')).toHaveAttribute(
+    'inert',
+    ''
+  );
+  const action = frame
+    .locator('button:visible')
+    .filter({ hasText: /^Explore revenue$/ });
+  expect(
+    await action.evaluate(button => {
+      (button as HTMLElement).focus();
+      return document.activeElement === button;
+    })
+  ).toBe(false);
+  await frame
+    .locator('button:visible')
+    .filter({ hasText: /^Explore revenue$/ })
+    .click({ force: true });
+  await expect(frame.locator('#result')).not.toHaveText('Chart clicked');
+  const input = frame.getByRole('textbox', { name: 'Annotation text' });
+  await expect(input).toBeFocused();
+  await input.press('Escape');
+  await expect(input).toHaveCount(0);
+  await expect(layer).toBeFocused();
+  await layer.press('ArrowRight');
+  await layer.press('Enter');
+  await expect(input).toBeFocused();
+  await input.fill('Change this');
+  await input.press('Escape');
+  await expect(input).toHaveValue('Change this');
+  await input.press('Escape');
+  await expect(input).toHaveCount(0);
+  await expect(layer).toBeFocused();
+  await layer.press('Escape');
+  await expect(layer).toHaveCount(0);
+  await expect(frame.locator('.altertable-app-layout')).not.toHaveAttribute(
+    'inert'
+  );
+  await expect(
+    frame.getByRole('button', { name: 'Annotate', exact: true })
+  ).toBeFocused();
+});
+
+test('custom areas support keyboard selection and Escape cancels only the area', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const layer = frame.getByRole('button', { name: 'Annotation selection' });
+  await layer.press('Shift+Enter');
+  await expect(frame.locator('[data-selecting]')).toBeVisible();
+  await layer.press('Escape');
+  await expect(frame.locator('[data-selecting]')).toHaveCount(0);
+  await expect(layer).toBeFocused();
+  await layer.press('Shift+Enter');
+  await layer.press('ArrowRight');
+  await layer.press('Shift+ArrowDown');
+  await layer.press('Enter');
+  const input = frame.getByRole('textbox', { name: 'Annotation text' });
+  await expect(input).toBeFocused();
+  await input.fill('Space this area evenly');
+  await input.press('Enter');
+  await expect(
+    frame.getByRole('button', { name: 'Annotation 1', exact: true })
+  ).toBeVisible();
+  const drafts = JSON.parse(
+    (await page.getByLabel('Annotation drafts').textContent()) ?? '[]'
+  );
+  expect(drafts[0].context.screenshot.width).toBe(110);
+  expect(drafts[0].context.screenshot.height).toBe(80);
+  expect(drafts[0].context.region).toBeDefined();
 });
