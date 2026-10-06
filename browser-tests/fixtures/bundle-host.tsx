@@ -198,7 +198,7 @@ function Host() {
               <Tooltip
                 content={
                   !embedded
-                    ? 'Change the app theme in its footer'
+                    ? 'In standalone mode, change the app theme in its footer'
                     : theme === 'dark'
                       ? 'Switch to light theme'
                       : 'Switch to dark theme'
@@ -210,7 +210,7 @@ function Host() {
                   disabled={!embedded}
                   aria-label={
                     !embedded
-                      ? 'Change the app theme in its footer'
+                      ? 'In standalone mode, change the app theme in its footer'
                       : theme === 'dark'
                         ? 'Switch to light theme'
                         : 'Switch to dark theme'
