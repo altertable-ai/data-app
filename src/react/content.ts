@@ -26,7 +26,7 @@ export function defineDataContent<Data, Input>(
   options: { date?: (input: Input) => DateRangeRequest } = {}
 ) {
   return {
-    fallback: render({
+    loadingFallback: render({
       loading: true,
       select() {
         return { loading: true };

@@ -127,7 +127,7 @@ const sampleContent = sampleCountsView.content(result => (
         Showing{' '}
         <DataValue
           reading={result.select((_, input) => input.groupName || 'all groups')}
-          fallback={<Skeleton inline />}
+          loadingFallback={<Skeleton inline />}
         >
           {scope => scope}
         </DataValue>
@@ -212,7 +212,7 @@ function App() {
         </TextContent>
         <DataSection
           result={sampleCountsRequest}
-          empty={sampleCountsRequest.empty}
+          emptyFallback={sampleCountsRequest.empty}
           notice="none"
           {...sampleContent}
         />

@@ -223,7 +223,7 @@ test('one composition renders skeleton structure without any result values', () 
       </section>
     )
   );
-  const loading = renderToStaticMarkup(content.fallback);
+  const loading = renderToStaticMarkup(content.loadingFallback);
   expect(
     loading.match(/class="altertable-content-skeleton-row"/g)
   ).toHaveLength(6);
@@ -276,7 +276,7 @@ test('narrative content binds values and scope without evaluating loading data',
       </TextWidget>
     )
   );
-  const loading = renderToStaticMarkup(content.fallback);
+  const loading = renderToStaticMarkup(content.loadingFallback);
   expect(calls).toBe(0);
   expect(loading).toContain('aria-busy="true"');
   expect(loading).toContain('altertable-text-widget-skeleton');

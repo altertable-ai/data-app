@@ -28,8 +28,8 @@ test('initial data errors show a useful recovery action for each failure', () =>
   function render(code: string) {
     return renderToStaticMarkup(
       <DataSection
-        fallback={null}
-        empty={{ title: 'No results' }}
+        loadingFallback={null}
+        emptyFallback={{ title: 'No results' }}
         result={{
           view: {
             kind: 'error' as const,
@@ -582,8 +582,8 @@ test('nested request boundaries keep loading and displayed data local to their s
           view: { kind: 'ready', data: 100, input: 'All accounts' },
           refetch() {},
         }}
-        empty={{ title: 'No accounts' }}
-        fallback={<p>Loading accounts</p>}
+        emptyFallback={{ title: 'No accounts' }}
+        loadingFallback={<p>Loading accounts</p>}
       >
         {(total, scope) => {
           parentRenders++;
@@ -594,8 +594,8 @@ test('nested request boundaries keep loading and displayed data local to their s
               </h2>
               <DataSection
                 result={{ view: childView, refetch() {} }}
-                empty={{ title: 'No revenue' }}
-                fallback={<p>Loading revenue</p>}
+                emptyFallback={{ title: 'No revenue' }}
+                loadingFallback={<p>Loading revenue</p>}
               >
                 {(revenue, period) => {
                   childRenders++;
@@ -647,8 +647,8 @@ test('a null fallback renders no initial content and never runs ready children',
   const html = renderToStaticMarkup(
     <DataSection
       result={{ view: { kind: 'loading' }, refetch() {} }}
-      empty={{ title: 'No results' }}
-      fallback={null}
+      emptyFallback={{ title: 'No results' }}
+      loadingFallback={null}
     >
       {() => {
         called = true;

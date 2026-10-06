@@ -410,7 +410,7 @@ test('bound visual selectors do not run during loading or render an empty result
   ));
   expect(calls).toBe(0);
   expect(
-    renderToStaticMarkup(content.fallback).match(
+    renderToStaticMarkup(content.loadingFallback).match(
       /class="altertable-content-skeleton-row"/g
     )
   ).toHaveLength(6);
@@ -566,7 +566,9 @@ test('bound tables keep their row contract while loading', () => {
     />
   ));
   expect(
-    renderToStaticMarkup(content.fallback).match(/class="altertable-skeleton"/g)
+    renderToStaticMarkup(content.loadingFallback).match(
+      /class="altertable-skeleton"/g
+    )
   ).toHaveLength(3);
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
   expect(
@@ -612,8 +614,8 @@ test('DataApp keeps its children visible while local boundaries own request stat
         <h2>Always visible introduction</h2>
         <DataSection
           result={{ view: state, refetch() {} }}
-          empty={{ title: 'No activity' }}
-          fallback={<p>Loading this section</p>}
+          emptyFallback={{ title: 'No activity' }}
+          loadingFallback={<p>Loading this section</p>}
           notice="none"
         >
           {(count, input) => {

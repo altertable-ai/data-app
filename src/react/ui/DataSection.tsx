@@ -63,10 +63,10 @@ export type SectionResult<Data, Input> = {
 
 export type DataSectionProps<Data, Input = unknown> = {
   result: SectionResult<Data, Input>;
-  empty: EmptyContent;
+  emptyFallback: EmptyContent;
   children: (data: Data, displayedInput: Input) => ReactNode;
   /** Placeholder layout for an initial request; use the ready view's grid without copied values. */
-  fallback: ReactNode;
+  loadingFallback: ReactNode;
   error?: { title: ReactNode; description?: ReactNode; onRetry?: () => void };
   label?: string;
   /** DataApp suppresses this local notice in favor of its page-level toast. */
@@ -79,8 +79,8 @@ export type DataSectionProps<Data, Input = unknown> = {
 export function DataSection<Data, Input>({
   result,
   children,
-  empty,
-  fallback,
+  emptyFallback,
+  loadingFallback,
   error,
   label,
   notice = 'inline',
@@ -95,8 +95,8 @@ export function DataSection<Data, Input>({
       aria-label={label}
       notice={notice}
       dimOnUpdate={dimOnUpdate}
-      fallback={fallback}
-      empty={<EmptyState {...empty} />}
+      loadingFallback={loadingFallback}
+      emptyFallback={<EmptyState {...emptyFallback} />}
       error={cause => {
         const presentation = errorPresentation(cause);
         const retryAction =

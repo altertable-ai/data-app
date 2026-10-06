@@ -135,7 +135,7 @@ function OrderResults({
             reading={result.select(
               (_, input) => input.country || 'all countries'
             )}
-            fallback={inlineFallback}
+            loadingFallback={inlineFallback}
           >
             {scope => scope}
           </DataValue>
@@ -164,7 +164,7 @@ function OrderResults({
                     ? formatMetric(revenue / orderCount, currency)
                     : '—';
                 })}
-                fallback={inlineFallback}
+                loadingFallback={inlineFallback}
               >
                 {value => value}
               </DataValue>{' '}
@@ -184,7 +184,7 @@ function OrderResults({
               reading={result.select(data =>
                 describeWeeklyOrderTrend(data.days)
               )}
-              fallback={inlineFallback}
+              loadingFallback={inlineFallback}
             >
               {text => text}
             </DataValue>
@@ -213,7 +213,7 @@ function OrderResults({
                     ? `${largestValueBand.band}, with ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`
                     : 'No orders.';
                 })}
-                fallback={inlineFallback}
+                loadingFallback={inlineFallback}
               >
                 {text => text}
               </DataValue>
@@ -239,7 +239,7 @@ function OrderResults({
                 ? `${leadingCountry.country} brings in ${formatPercent(leadingCountry.revenue / revenue)} of revenue.`
                 : 'No revenue.';
             })}
-            fallback={inlineFallback}
+            loadingFallback={inlineFallback}
           >
             {text => text}
           </DataValue>
@@ -339,7 +339,7 @@ function App() {
     >
       <DataSection
         result={orderRequest}
-        empty={orderRequest.empty}
+        emptyFallback={orderRequest.empty}
         notice="none"
         {...orderContent}
       />

@@ -91,7 +91,7 @@ test('inline readings retain static prose and render measured zero', () => {
     return renderToStaticMarkup(
       <p>
         Orders:{' '}
-        <DataValue reading={reading} fallback={<span>pending</span>}>
+        <DataValue reading={reading} loadingFallback={<span>pending</span>}>
           {value => {
             renders++;
             return value;

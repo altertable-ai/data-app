@@ -279,7 +279,7 @@ const appWithoutStory: DataAppProps<number> = withoutStory;
 const invalidFallback: DataAppProps<number> = {
   ...analyticalApp,
   // @ts-expect-error DataApp renders the shell; fallback belongs to DataSection.
-  fallback: null,
+  loadingFallback: null,
 };
 const invalidChildren: DataAppProps<number> = {
   ...analyticalApp,

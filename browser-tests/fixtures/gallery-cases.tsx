@@ -823,9 +823,9 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           note="Opt-in inline notice above a local section’s retained content. Widget feedback belongs in its toolbar; page feedback belongs in page actions."
         >
           <DataSection
-            fallback={<ContentSkeleton variant="panel" />}
+            loadingFallback={<ContentSkeleton variant="panel" />}
             result={{ view: dataView, refetch: () => setRequest('ready') }}
-            empty={empty}
+            emptyFallback={empty}
             label="Fixture request"
           >
             {(data, input) => (
@@ -841,8 +841,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         >
           <DataBoundary
             view={dataView}
-            fallback={<ContentSkeleton variant="panel" />}
-            empty={<EmptyState {...empty} />}
+            loadingFallback={<ContentSkeleton variant="panel" />}
+            emptyFallback={<EmptyState {...empty} />}
             error={() => (
               <StatusPanel
                 status="error"
