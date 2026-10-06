@@ -165,7 +165,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     >
       <AppLayout
         {...layoutProps}
-        data-surface={presentation?.surface}
+        data-surface={isEmbedded ? 'embedded' : 'standalone'}
         footer={isEmbedded ? null : layoutProps?.footer}
         footerActions={
           footerActions ??
