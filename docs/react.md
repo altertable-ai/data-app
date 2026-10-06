@@ -301,7 +301,7 @@ evidence. Use `context.finding()` to bind the evidence.
 The callback receives the displayed data and its original input, including
 during refresh or failure. Derive the story from that snapshot so it agrees with
 the visible exploration. Initial loading, empty results, and initial errors have
-no story to present.
+no story to present; the toolbar keeps its story action visible and disabled.
 
 ## Export displayed data as CSV
 
@@ -310,6 +310,7 @@ from the displayed snapshot so the built-in **Export** action is available
 whenever analytical results are shown. Include this alongside the app's story;
 setup and static shells may omit it. One dataset downloads directly as CSV. Multiple
 datasets offer individual CSV downloads and **Export all** as a ZIP archive.
+While no displayed snapshot is available, the export action stays visible and disabled.
 
 Example:
 

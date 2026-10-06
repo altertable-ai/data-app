@@ -81,7 +81,7 @@ empty, error, and stale states, then present the story. Download CSV from the
 standalone and embedded toolbar and verify its filename, columns, raw values,
 and filter scope against the displayed result. Export and Present story must be
 available once analytical results are shown; initial loading, empty, and initial
-errors have neither action. Inspect both experiences
+errors keep both actions visible and disabled. Inspect both experiences
 at phone and desktop widths in light and dark themes.
 
 The app owns its queries, result parsing, business definitions, configuration,

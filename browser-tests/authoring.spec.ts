@@ -28,11 +28,23 @@ test('single-file hosted example queries through the host and preserves displaye
   await expect(app.getByText('Loading data')).toBeVisible();
   await expect(
     app.getByRole('button', { name: 'Present story', exact: true })
-  ).toHaveCount(0);
+  ).toBeDisabled();
+  const stableActions = ['Explore data', 'Export CSV', 'Present story'].map(
+    name => app.getByRole('button', { name, exact: true })
+  );
+  await expect(stableActions[1]!).toBeDisabled();
+  const loadingPositions = await Promise.all(
+    stableActions.map(action => action.boundingBox())
+  );
   release!();
   gate = Promise.resolve();
   await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
   await expect(app.getByText('Beta: 0', { exact: true })).toBeVisible();
+  await expect(stableActions[1]!).toBeEnabled();
+  await expect(stableActions[2]!).toBeEnabled();
+  expect(
+    await Promise.all(stableActions.map(action => action.boundingBox()))
+  ).toEqual(loadingPositions);
   await expect(app.locator('style[data-altertable-styles]')).toHaveCount(1);
   const width = await app
     .locator('html')
@@ -105,7 +117,7 @@ test('single-file hosted example queries through the host and preserves displaye
   ).toBeVisible();
   await expect(
     app.getByRole('button', { name: 'Present story', exact: true })
-  ).toHaveCount(0);
+  ).toBeDisabled();
   await group.fill("O'Reilly");
   await expect.poll(() => requests.at(-1)?.statement).toContain("O''Reilly");
   await expect(
@@ -149,6 +161,12 @@ test('hosted initial query error recovers by retry', async ({ page }) => {
   await expect(
     app.getByText('Couldn’t load results', { exact: true })
   ).toBeVisible();
+  await expect(
+    app.getByRole('button', { name: 'Export CSV', exact: true })
+  ).toBeDisabled();
+  await expect(
+    app.getByRole('button', { name: 'Present story', exact: true })
+  ).toBeDisabled();
   fail = false;
   await app.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
