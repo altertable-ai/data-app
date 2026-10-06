@@ -229,3 +229,21 @@ register `annotationUpdateRoute` under `annotation:update`. This route receives
 app and source version, preserving its captured context. Keep new-draft retry
 admission idempotent. Set `selectedAnnotationId` with a fresh `selectionId` to
 scroll to and reopen a saved annotation from the host list.
+
+### Delivery API
+
+`createAnnotationClient(transport)` from `/client` provides `sendAnnotation(draft)`,
+`updateAnnotation(id, comment)`, and `setMode(active)`. Each accepts an optional
+`{ signal }` for cancellation. React apps use `useDataAppAnnotations()` from `/react`
+to bind this client to the current authenticated iframe bridge. The built-in
+annotation editor uses this same public hook.
+
+```tsx
+const annotations = useDataAppAnnotations();
+await annotations.sendAnnotation(draft);
+await annotations.updateAnnotation(draft.id, 'Compare with last quarter');
+```
+
+A successful call means the outer frame retained the annotation. It does not start
+an agent. The outer app owns the collected annotations, binds them to app identity
+and source version, and submits them through its own chat or agent API.

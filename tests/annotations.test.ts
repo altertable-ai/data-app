@@ -1,3 +1,4 @@
+import { createAnnotationClient } from '@altertable/data-app/client';
 import { expect, test } from 'bun:test';
 import {
   annotationDraftRoute,
@@ -178,4 +179,33 @@ test('editing comments is a separate validated mutation from draft admission', a
     expect(failure).toBeInstanceOf(MessageRoutingError);
   }
   expect(changes).toHaveLength(1);
+});
+
+test('public annotation client delivers validated drafts and edits to the host', async () => {
+  const received: unknown[] = [];
+  const router = createMessageRouter(
+    {
+      'annotation:draft': annotationDraftRoute,
+      'annotation:update': annotationUpdateRoute,
+    },
+    {
+      'annotation:draft'(value) {
+        received.push(value);
+        return null;
+      },
+      'annotation:update'(value) {
+        received.push(value);
+        return null;
+      },
+    }
+  );
+  const client = createAnnotationClient((message, signal) =>
+    router.dispatch(message, { signal: signal ?? new AbortController().signal })
+  );
+  await client.sendAnnotation(draft);
+  await client.updateAnnotation(draft.id, 'Compare last quarter');
+  expect(received).toEqual([
+    { ...draft, comment: draft.comment.trim() },
+    { id: draft.id, comment: 'Compare last quarter' },
+  ]);
 });

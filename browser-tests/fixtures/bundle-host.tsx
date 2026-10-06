@@ -1,14 +1,12 @@
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useRef, useState } from 'react';
+import { Moon, Sun, PanelsTopLeft, AppWindow, Trash2 } from 'lucide-react';
 import {
-  Moon,
-  Sun,
-  PanelsTopLeft,
-  Maximize,
-  MousePointer2,
-  Trash2,
-} from 'lucide-react';
-import { Kbd, Tooltip, TooltipProvider } from '@altertable/data-app/react';
+  AppIcon,
+  Kbd,
+  Tooltip,
+  TooltipProvider,
+} from '@altertable/data-app/react';
 import '@/src/react/ui/Tooltip.css';
 import '@/src/react/ui/Kbd.css';
 import {
@@ -105,7 +103,7 @@ function Host() {
     ? themeControl.label
     : 'In standalone mode, change the app theme in its footer';
   const ThemeIcon = theme === 'dark' ? Sun : Moon;
-  const SurfaceIcon = embedded ? Maximize : PanelsTopLeft;
+  const SurfaceIcon = embedded ? AppWindow : PanelsTopLeft;
   const hasParentPresentation = isPlayground ? embedded : parentPresentation;
   const presentation = hasParentPresentation
     ? ({
@@ -219,7 +217,7 @@ function Host() {
         if (new URLSearchParams(location.search).has('annotation-limit'))
           throw new MessageRoutingError(
             'annotation_limit',
-            'Remove an annotation before adding more feedback.'
+            'Delete an annotation before adding another.'
           );
         if (annotationFailure) throw new Error('Fixture failure');
         setAnnotations(values =>
@@ -286,7 +284,7 @@ function Host() {
       )}
       {annotationFailure && (
         <button onClick={() => setAnnotationFailure(false)}>
-          Allow feedback
+          Allow annotations
         </button>
       )}
       <output aria-label="Annotation drafts">
@@ -336,7 +334,7 @@ function Host() {
                   disabled={!embedded || status !== 'ready'}
                   onClick={() => setAnnotating(value => !value)}
                 >
-                  <MousePointer2 size={16} aria-hidden="true" />
+                  <AppIcon name="annotate" size={16} />
                   {annotations.length > 0 && (
                     <span
                       className="playground-annotation-count"
@@ -388,20 +386,21 @@ function Host() {
         </>
       )}
       {isPlayground && annotating && annotations.length > 0 && (
-        <aside className="playground-feedback" aria-label="Annotation drafts">
+        <aside
+          className="playground-annotations"
+          aria-label="Annotation drafts"
+        >
           {annotations.map((draft, index) => (
             <div key={draft.id}>
               <button
-                className="playground-feedback-open"
+                className="playground-annotation-open"
                 aria-label={`Open annotation ${index + 1}`}
                 onClick={() => {
                   setSelectedAnnotationId(draft.id);
                   setSelectionId(crypto.randomUUID());
                 }}
               >
-                <strong>
-                  {index + 1}. {draft.target.label}
-                </strong>
+                <strong>{draft.target.label}</strong>
                 <span>{draft.comment}</span>
               </button>
               <button

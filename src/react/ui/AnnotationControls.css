@@ -1,3 +1,20 @@
+/* Floating annotation controls intentionally contrast with the app theme. */
+.altertable-annotation-composer,
+.altertable-annotation-hint,
+.altertable-annotation-tooltip {
+  --annotation-surface: var(--at-text, #202124);
+  --annotation-text: var(--at-background, #fff);
+  --annotation-muted: color-mix(
+    in srgb,
+    var(--annotation-text) 65%,
+    var(--annotation-surface)
+  );
+  --annotation-border: color-mix(
+    in srgb,
+    var(--annotation-text) 15%,
+    var(--annotation-surface)
+  );
+}
 .altertable-annotation-outline {
   position: fixed;
   z-index: 1100;
@@ -30,10 +47,10 @@
   width: min(320px, calc(100vw - 24px));
   box-sizing: border-box;
   padding: 8px;
-  border: 1px solid var(--at-border, #e3e6e8);
+  border: 1px solid var(--annotation-border);
   border-radius: 24px;
-  background: var(--at-surface, #fff);
-  color: var(--at-text, #202124);
+  background: var(--annotation-surface);
+  color: var(--annotation-text);
   box-shadow: 0 4px 16px #0002;
   font: 13px/1.5 var(--at-font-body, sans-serif);
 }
@@ -69,10 +86,10 @@
   max-width: calc(100vw - 24px);
   box-sizing: border-box;
   padding: 8px 16px;
-  border: 1px solid var(--at-border, #e3e6e8);
+  border: 1px solid var(--annotation-border);
   border-radius: 24px;
-  background: var(--at-surface, #fff);
-  color: var(--at-text, #202124);
+  background: var(--annotation-surface);
+  color: var(--annotation-text);
   box-shadow: 0 4px 16px #0002;
   font: 13px/1.5 var(--at-font-body, sans-serif);
   pointer-events: none;
@@ -104,4 +121,44 @@
   .altertable-annotation-composer[data-shaking] {
     animation-duration: 1ms;
   }
+}
+
+.altertable-annotation-icon,
+.altertable-annotation-composer textarea::placeholder {
+  color: var(--annotation-muted);
+}
+.altertable-annotation-composer .altertable-annotation-submit {
+  border-radius: 50%;
+  border: 0;
+  background: var(--annotation-text);
+  color: var(--annotation-surface);
+  box-shadow: none;
+}
+.altertable-annotation-composer
+  .altertable-annotation-submit:hover:not(:disabled) {
+  background: color-mix(
+    in srgb,
+    var(--annotation-text) 80%,
+    var(--annotation-surface)
+  );
+}
+.altertable-annotation-tooltip {
+  background: var(--annotation-surface);
+  color: var(--annotation-text);
+  border-color: var(--annotation-border);
+}
+.altertable-annotation-hint .altertable-kbd,
+.altertable-annotation-tooltip .altertable-kbd {
+  background: transparent;
+  color: var(--annotation-muted);
+  border-color: var(--annotation-border);
+}
+
+/* Lucide MessageCircle silhouette, matching AppIcon annotation. */
+.altertable-annotating,
+.altertable-annotating * {
+  cursor:
+    url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22%232f94ff%22%20stroke%3D%22white%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2.992%2016.342a2%202%200%200%201%20.094%201.167l-1.065%203.29a1%201%200%200%200%201.236%201.168l3.413-.998a2%202%200%200%201%201.099.092%2010%2010%200%201%200-4.777-4.719%22%2F%3E%3C%2Fsvg%3E')
+      3 22,
+    crosshair;
 }

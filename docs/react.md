@@ -338,8 +338,8 @@ Example:
 ## Annotate app elements
 
 A host that enables annotations adds **Annotate** to `<DataApp>`'s toolbar.
-Readers click a widget and describe a change in the floating comment box,
-and add feedback to their chat draft. Adding feedback does not start the agent;
+Readers click a widget and describe a change in the floating annotation editor,
+and add annotations to their chat draft. Adding an annotation does not start the agent;
 the reader sends the message from the host's composer.
 
 Built-in widgets expose their labels, evidence IDs, query names, and glossary
@@ -367,6 +367,6 @@ with the app source version; the package does not persist or send chat messages.
 
 Annotation mode supports Shift+Mod+. (Mod is Command on Apple platforms and Ctrl
 elsewhere). Clicking a numbered pin reopens its comment. Enter saves it; Shift+Enter
-inserts a newline. A non-empty comment shakes on the first Escape; pressing Escape
-again discards the local edit and exits annotation mode. Saved annotations remain
-until explicitly removed by the host.
+inserts a newline. An unsaved annotation shakes on the first Escape; pressing Escape
+again discards the local edit and exits annotation mode. Unchanged saved annotations close with a single Escape. Saved annotations remain
+until explicitly deleted by the host.

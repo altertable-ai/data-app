@@ -147,7 +147,14 @@ body:has(.playground-host) #root {
   cursor: default;
 }
 
-.playground-feedback {
+.playground-annotations {
+  --panel-surface: var(--host-text);
+  --panel-text: var(--host-background);
+  --panel-muted: color-mix(
+    in srgb,
+    var(--panel-text) 65%,
+    var(--panel-surface)
+  );
   position: absolute;
   z-index: 2;
   top: 52px;
@@ -155,33 +162,49 @@ body:has(.playground-host) #root {
   width: min(280px, calc(100vw - 24px));
   max-height: 30vh;
   overflow: auto;
-  border: 1px solid var(--host-border);
-  border-radius: 8px;
-  background: var(--host-surface);
-  box-shadow: 0 4px 16px #0002;
+  padding: 4px;
+  border: 1px solid
+    color-mix(in srgb, var(--panel-text) 15%, var(--panel-surface));
+  border-radius: 14px;
+  background: var(--panel-surface);
+  color: var(--panel-text);
+  box-shadow: 0 8px 28px #0003;
 }
-.playground-feedback > div {
+.playground-annotations > div {
   display: flex;
   align-items: start;
   gap: 4px;
-  padding: 12px;
+  padding: 4px;
   overflow-wrap: anywhere;
 }
-.playground-feedback > div + div {
-  border-top: 1px solid var(--host-border);
+.playground-annotations > div + div {
+  border-top: 1px solid
+    color-mix(in srgb, var(--panel-text) 10%, var(--panel-surface));
 }
-.playground-feedback span {
-  color: var(--host-muted);
+.playground-annotations span {
+  color: var(--panel-muted);
 }
-
-.playground-host .playground-feedback-open {
+.playground-host .playground-annotation-open {
   display: grid;
   flex: 1;
   justify-content: stretch;
   text-align: left;
   width: auto;
   height: auto;
+  padding: 8px;
   gap: 4px;
+}
+.playground-host .playground-annotations button {
+  color: var(--panel-muted);
+  border-radius: 8px;
+}
+.playground-host .playground-annotations button:hover:not(:disabled) {
+  color: var(--panel-text);
+  background: color-mix(in srgb, var(--panel-text) 8%, var(--panel-surface));
+}
+.playground-annotation-open strong {
+  color: var(--panel-text);
+  font-weight: 600;
 }
 .playground-annotate {
   position: relative;
@@ -196,8 +219,4 @@ body:has(.playground-host) #root {
   font-size: 10px;
   background: var(--host-text);
   color: var(--host-background);
-}
-
-.playground-feedback-open strong {
-  color: var(--host-text);
 }

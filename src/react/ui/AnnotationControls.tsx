@@ -17,16 +17,13 @@ import {
 import { ArrowUp } from 'lucide-react';
 import { MessageRoutingError } from '@/src/core/messages';
 import { DataAppError } from '@/src/client/transport';
-import { getDataAppTransport } from '@/src/client/iframe';
 import { getDataAppNavigation } from '@/src/client/navigation';
-import { createMessageClient } from '@/src/client/messages';
 import {
-  annotationDraftRoute,
-  annotationModeRoute,
-  annotationUpdateRoute,
   type DataAppAnnotationDraft,
   type DataAppAnnotationPresentation,
 } from '@/src/core/annotations';
+import { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';
+import { AppIcon } from '@/src/react/ui/icons';
 import { Kbd } from '@/src/react/ui/Kbd';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import {
@@ -68,6 +65,7 @@ export function AnnotationControls({
   displayedInput?: unknown;
   view?: string;
 }) {
+  const annotationClient = useDataAppAnnotations();
   const toolbarRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [localActive, setActive] = useState(false);
@@ -77,6 +75,9 @@ export function AnnotationControls({
   const [draft, setDraft] = useState<DataAppAnnotationDraft>();
   const [comment, setComment] = useState('');
   const [editingId, setEditingId] = useState<string>();
+  const savedComment =
+    presentation.targets?.find(pin => pin.id === editingId)?.comment ?? '';
+  const hasUnsavedChanges = Boolean(draft) && comment !== savedComment;
   const [shaking, setShaking] = useState(false);
   const discardArmed = useRef(false);
   const [error, setError] = useState('');
@@ -102,7 +103,7 @@ export function AnnotationControls({
 
   const floatingRef = useMergeRefs([refs.setFloating]);
 
-  function select(target: Target) {
+  function selectTarget(target: Target) {
     setEditingId(undefined);
     discardArmed.current = false;
     setShaking(false);
@@ -160,8 +161,8 @@ export function AnnotationControls({
     }
   }
 
-  function finish() {
-    setMode(false);
+  function closeAnnotationMode() {
+    setAnnotationMode(false);
     setSelected(undefined);
     setDraft(undefined);
     setHovered(undefined);
@@ -171,22 +172,14 @@ export function AnnotationControls({
     setShaking(false);
     toolbarRef.current?.focus();
   }
-  function setMode(value: boolean) {
+  function setAnnotationMode(value: boolean) {
     setActive(value);
-    if (presentation.active !== undefined) {
-      const bridge = getDataAppTransport();
-      if (bridge)
-        void createMessageClient(
-          { 'annotation:mode': annotationModeRoute },
-          bridge.request
-        )
-          .request('annotation:mode', { active: value })
-          .catch(() => {});
-    }
+    if (presentation.active !== undefined)
+      void annotationClient.setMode(value).catch(() => {});
   }
   useShortcut(
     shortcuts.annotate,
-    () => (active ? finish() : setMode(true)),
+    () => (active ? closeAnnotationMode() : setAnnotationMode(true)),
     !pending,
     true
   );
@@ -197,9 +190,9 @@ export function AnnotationControls({
       target => target.id === pin?.targetId
     );
     if (!pin || !target || pending) return;
-    setMode(true);
+    setAnnotationMode(true);
     target.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    select(target);
+    selectTarget(target);
     setEditingId(id);
     setComment(pin.comment ?? '');
   }
@@ -210,14 +203,15 @@ export function AnnotationControls({
     setEditingId(undefined);
     setComment('');
   }
-  const finishFromKeyboard = useEffectEvent(finish);
-  const captureSelection = useEffectEvent(select);
+  const finishFromKeyboard = useEffectEvent(closeAnnotationMode);
+  const captureSelection = useEffectEvent(selectTarget);
   useEffect(() => {
     textareaRef.current?.focus();
   }, [draft?.id, active]);
   useEffect(() => {
     if (!active) return;
     const root = rootRef.current;
+    root?.classList.add('altertable-annotating');
     function updateTargets() {
       const selectable = targets(root);
       setAmbiguous(
@@ -255,7 +249,7 @@ export function AnnotationControls({
         event.preventDefault();
         event.stopPropagation();
         if (event.repeat) return;
-        if (draft && comment.length > 0 && !discardArmed.current) {
+        if (hasUnsavedChanges && !discardArmed.current) {
           discardArmed.current = true;
           setShaking(true);
         } else finishFromKeyboard();
@@ -293,13 +287,23 @@ export function AnnotationControls({
     document.addEventListener('pointermove', hover);
     document.addEventListener('keydown', escape, true);
     return () => {
+      root?.classList.remove('altertable-annotating');
       mutations.disconnect();
       document.removeEventListener('pointerdown', capture, true);
       document.removeEventListener('click', capture, true);
       document.removeEventListener('pointermove', hover);
       document.removeEventListener('keydown', escape, true);
     };
-  }, [active, rootRef, displayedInput, view, pending, draft, hovered, comment]);
+  }, [
+    active,
+    rootRef,
+    displayedInput,
+    view,
+    pending,
+    draft,
+    hovered,
+    hasUnsavedChanges,
+  ]);
 
   useEffect(() => {
     if (presentation.selectedAnnotationId) {
@@ -357,23 +361,14 @@ export function AnnotationControls({
     };
   }, [selected, hovered, presentation.targets, rootRef]);
 
-  async function addFeedback() {
+  async function saveAnnotation() {
     if (!draft || pending) return;
     setPending(true);
     setError('');
     try {
-      const bridge = getDataAppTransport();
-      if (!bridge) throw new Error('No host');
       if (editingId)
-        await createMessageClient(
-          { 'annotation:update': annotationUpdateRoute },
-          bridge.request
-        ).request('annotation:update', { id: editingId, comment });
-      else
-        await createMessageClient(
-          { 'annotation:draft': annotationDraftRoute },
-          bridge.request
-        ).request('annotation:draft', { ...draft, comment });
+        await annotationClient.updateAnnotation(editingId, comment);
+      else await annotationClient.sendAnnotation({ ...draft, comment });
       setEditingId(undefined);
       setSelected(undefined);
       setDraft(undefined);
@@ -384,7 +379,7 @@ export function AnnotationControls({
           error instanceof MessageRoutingError) &&
           error.code === 'annotation_limit'
           ? error.message
-          : 'Could not add feedback. Try again.'
+          : 'Could not save annotation. Try again.'
       );
     } finally {
       setPending(false);
@@ -395,6 +390,7 @@ export function AnnotationControls({
     <>
       {presentation.active === undefined && (
         <Tooltip
+          tooltipProps={{ className: 'altertable-annotation-tooltip' }}
           content={
             <>
               Point at items to change the data app{' '}
@@ -410,9 +406,11 @@ export function AnnotationControls({
             ref={toolbarRef}
             aria-pressed={active}
             disabled={pending}
-            onClick={() => (active ? finish() : setMode(true))}
+            onClick={() =>
+              active ? closeAnnotationMode() : setAnnotationMode(true)
+            }
           >
-            Annotate{' '}
+            <AppIcon name="annotate" size={16} /> Annotate{' '}
             {presentation.targets?.length ? (
               <span className="altertable-annotation-count">
                 {presentation.targets.length}
@@ -457,10 +455,10 @@ export function AnnotationControls({
           {active && !selected && (
             <output className="altertable-annotation-hint">
               {ambiguous ? (
-                'Some elements are unavailable for feedback.'
+                'Some items cannot be annotated.'
               ) : (
                 <>
-                  Click an element to annotate · <Kbd>Esc</Kbd> to exit
+                  Point at an item to annotate · <Kbd>Esc</Kbd> to exit
                 </>
               )}
             </output>
@@ -472,11 +470,16 @@ export function AnnotationControls({
               className="altertable-annotation-composer"
               data-shaking={shaking || undefined}
               onAnimationEnd={() => setShaking(false)}
-              aria-label="Annotate app"
+              aria-label="Annotation editor"
             >
+              <AppIcon
+                name="annotation"
+                size={18}
+                className="altertable-annotation-icon"
+              />
               <textarea
-                aria-label="What should change?"
-                placeholder="Add a comment…"
+                aria-label="Annotation text"
+                placeholder="Add an annotation…"
                 ref={textareaRef}
                 rows={1}
                 maxLength={2000}
@@ -494,21 +497,23 @@ export function AnnotationControls({
                     !event.nativeEvent.isComposing
                   ) {
                     event.preventDefault();
-                    if (comment.trim()) void addFeedback();
+                    if (comment.trim()) void saveAnnotation();
                   }
                 }}
               />
               <Tooltip
+                tooltipProps={{ className: 'altertable-annotation-tooltip' }}
                 content={
                   <>
-                    {editingId ? 'Save feedback' : 'Add feedback'}{' '}
+                    {editingId ? 'Save annotation' : 'Add annotation'}{' '}
                     <Kbd>Enter</Kbd>
                   </>
                 }
               >
                 <Button
-                  aria-label={editingId ? 'Save feedback' : 'Add feedback'}
-                  onClick={() => void addFeedback()}
+                  aria-label={editingId ? 'Save annotation' : 'Add annotation'}
+                  onClick={() => void saveAnnotation()}
+                  className="altertable-annotation-submit"
                   size="icon-compact"
                   variant="elevated"
                   disabled={pending || !comment.trim()}

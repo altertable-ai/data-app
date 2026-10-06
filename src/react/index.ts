@@ -264,3 +264,5 @@ export type {
 } from '@/src/core/reading';
 
 export { AnnotationTarget } from '@/src/react/ui/AnnotationTarget';
+
+export { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';

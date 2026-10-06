@@ -18,12 +18,14 @@ import {
   Info,
   LoaderCircle,
   Minus,
+  MessageCircle,
   Moon,
   Presentation,
   Radio,
   RotateCw,
   Search,
   Square,
+  SquareDashedMousePointer,
   Sun,
   TextWrap,
   X,
@@ -32,6 +34,8 @@ import {
 
 /** Use semantic names to keep icon meaning and optical size consistent across controls. */
 const brandedIcons = {
+  annotate: SquareDashedMousePointer,
+  annotation: MessageCircle,
   cancel: X,
   calendar: CalendarDays,
   clock: Clock3,
