@@ -110,6 +110,7 @@ function startServer() {
 }
 let server = startServer();
 let restartRequested = false;
+let wakeForBuild: (() => void) | undefined;
 let stopping = false;
 let restartTimer: ReturnType<typeof setTimeout> | undefined;
 const readyWatcher = watch(
@@ -120,6 +121,7 @@ const readyWatcher = watch(
     restartTimer = setTimeout(() => {
       restartRequested = true;
       server.kill();
+      wakeForBuild?.();
     }, 50);
   }
 );
@@ -162,12 +164,23 @@ for (const signal of ['SIGINT', 'SIGTERM'] as const)
     readyWatcher.close();
     clearTimeout(restartTimer);
     server.kill();
+    wakeForBuild?.();
     await mockApi.stop();
     process.exit(0);
   });
 while (true) {
   await server.exited;
-  if (stopping || !restartRequested) break;
+  if (stopping) break;
+  if (!restartRequested) {
+    console.error(
+      'Preview server stopped; waiting for a successful package build.'
+    );
+    await new Promise<void>(resolve => {
+      wakeForBuild = resolve;
+    });
+  }
+  if (stopping) break;
+  wakeForBuild = undefined;
   restartRequested = false;
   server = startServer();
 }
