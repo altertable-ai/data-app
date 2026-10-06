@@ -9,6 +9,7 @@ import {
   VisualizationWidget,
   TableWidget,
   DataSection,
+  type DataView,
   dateRangeControl,
   dateRangeVariable,
   defineAppVariables,
@@ -27,6 +28,7 @@ test('initial data errors show a useful recovery action for each failure', () =>
   function render(code: string) {
     return renderToStaticMarkup(
       <DataSection
+        fallback={null}
         empty={{ title: 'No results' }}
         result={{
           view: {
@@ -568,4 +570,93 @@ test('data app skeleton accepts independent header and footer nodes without addi
   );
   expect(withFooter).toContain('<p>About the report</p>');
   expect(withFooter).not.toContain('altertable-data-app-skeleton-header');
+});
+
+test('nested request boundaries keep loading and displayed data local to their subtree', () => {
+  let parentRenders = 0;
+  let childRenders = 0;
+  function render(childView: DataView<number, string>) {
+    return renderToStaticMarkup(
+      <DataSection
+        result={{
+          view: { kind: 'ready', data: 100, input: 'All accounts' },
+          refetch() {},
+        }}
+        empty={{ title: 'No accounts' }}
+        fallback={<p>Loading accounts</p>}
+      >
+        {(total, scope) => {
+          parentRenders++;
+          return (
+            <>
+              <h2>
+                {total} accounts: {scope}
+              </h2>
+              <DataSection
+                result={{ view: childView, refetch() {} }}
+                empty={{ title: 'No revenue' }}
+                fallback={<p>Loading revenue</p>}
+              >
+                {(revenue, period) => {
+                  childRenders++;
+                  return (
+                    <p>
+                      {revenue} revenue: {period}
+                    </p>
+                  );
+                }}
+              </DataSection>
+            </>
+          );
+        }}
+      </DataSection>
+    );
+  }
+  const pending = render({ kind: 'loading' });
+  expect(pending).toContain('100 accounts: All accounts');
+  expect(pending).toContain('Loading revenue');
+  expect(pending).not.toContain('Loading accounts');
+  expect(childRenders).toBe(0);
+  expect(render({ kind: 'ready', data: 0, input: 'March' })).toContain(
+    '0 revenue: March'
+  );
+  for (const kind of ['updating', 'stale-error'] as const) {
+    const html = render({
+      kind,
+      data: 25,
+      displayedInput: 'March',
+      requestedInput: 'April',
+      message: 'Showing March',
+      error: new Error('Unavailable'),
+    });
+    expect(html).toContain('100 accounts: All accounts');
+    expect(html).toContain('25 revenue: March');
+    expect(html).not.toContain('Loading revenue');
+    expect(html).not.toContain('revenue: April');
+  }
+  expect(render({ kind: 'empty', input: 'April' })).toContain('No revenue');
+  const failed = render({ kind: 'error', error: new Error('Unavailable') });
+  expect(failed).toContain('100 accounts: All accounts');
+  expect(failed).toContain('Couldn’t load results');
+  expect(parentRenders).toBe(6);
+  expect(childRenders).toBe(3);
+});
+
+test('a null fallback renders no initial content and never runs ready children', () => {
+  let called = false;
+  const html = renderToStaticMarkup(
+    <DataSection
+      result={{ view: { kind: 'loading' }, refetch() {} }}
+      empty={{ title: 'No results' }}
+      fallback={null}
+    >
+      {() => {
+        called = true;
+        return <p>Ready</p>;
+      }}
+    </DataSection>
+  );
+  expect(called).toBe(false);
+  expect(html).not.toContain('Ready');
+  expect(html).not.toContain('altertable-content-skeleton');
 });

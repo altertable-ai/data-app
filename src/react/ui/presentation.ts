@@ -5,6 +5,10 @@ import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 export type EmptyContent = { title: ReactNode; description?: ReactNode };
 export type SkeletonContent = {
   variant: 'metric' | 'panel' | 'ranking';
+  /**
+   * Placeholder rows, clamped to 0–100.
+   * @default 4
+   */
   rows?: number;
 };
 

@@ -41,7 +41,9 @@ test('embedded toolbar exports displayed results through its host during updates
   await expect(app.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
   release();
   gate = Promise.resolve();
-  await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Alpha: 3', { exact: true }).filter({ visible: true })
+  ).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'sandbox',
     'allow-scripts'

@@ -16,7 +16,7 @@ import {
 } from '@/src/react/ui/searchItems';
 import type { DataReading } from '@/src/core/reading';
 import { formatCount, pluralize } from '@/src/core/format';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { Skeleton } from '@/src/react/ui/Skeleton';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import { Tooltip } from '@/src/react/ui/Tooltip';
@@ -95,17 +95,15 @@ export function TableWidget<Row>(props: TableWidgetProps<Row>) {
   );
 
   if (props.reading) {
-    const { reading, skeletonRows = 5, ...rest } = props;
-    if (reading.loading)
-      return (
-        <ContentSkeleton
-          variant="ranking"
-          rows={skeletonRows}
-          className={rest.className}
-        />
-      );
-
-    return <TableWidgetContent {...rest} rows={reading.value} />;
+    const { reading, skeletonRows, ...rest } = props;
+    return (
+      <TableWidgetContent
+        {...rest}
+        rows={reading.loading ? [] : reading.value}
+        loading={reading.loading}
+        skeletonRows={skeletonRows}
+      />
+    );
   }
 
   return <TableWidgetContent {...props} />;
@@ -125,8 +123,14 @@ function TableWidgetContent<Row>({
   limit,
   pagination,
   empty,
+  loading = false,
+  skeletonRows = 5,
   ...props
-}: TableWidgetBaseProps<Row> & { rows: readonly Row[] }) {
+}: TableWidgetBaseProps<Row> & {
+  rows: readonly Row[];
+  loading?: boolean;
+  skeletonRows?: number;
+}) {
   const keys = rows.map(rowKey);
   invariant(
     keys.every(key =>
@@ -179,7 +183,10 @@ function TableWidgetContent<Row>({
   };
   const table = (
     <>
-      <DataTable searchable={searchable}>
+      <DataTable
+        searchable={loading ? undefined : searchable}
+        aria-busy={loading || undefined}
+      >
         <thead>
           <tr>
             {columns.map(column => (
@@ -189,8 +196,26 @@ function TableWidgetContent<Row>({
             ))}
           </tr>
         </thead>
-        <tbody>
-          {visible.length === 0 ? (
+        <tbody aria-hidden={loading || undefined}>
+          {loading ? (
+            Array.from(
+              {
+                length: Math.min(
+                  100,
+                  Math.max(0, Math.trunc(skeletonRows) || 0)
+                ),
+              },
+              (_, row) => (
+                <tr key={row}>
+                  {columns.map(column => (
+                    <td key={column.id} data-type={column.type}>
+                      <Skeleton style={{ width: '70%', height: '1em' }} />
+                    </td>
+                  ))}
+                </tr>
+              )
+            )
+          ) : visible.length === 0 ? (
             <DataTableEmptyRow colSpan={columns.length} {...empty} />
           ) : (
             visible.map(hit => (
@@ -265,10 +290,11 @@ function TableWidgetContent<Row>({
     <DataWidget
       {...props}
       title={title}
-      count={count}
+      count={loading ? undefined : count}
       description={description}
       action={action}
-      evidence={evidence}
+      evidence={loading ? undefined : evidence}
+      aria-busy={loading || props['aria-busy']}
       footer={
         (pager || insight) && (
           <>

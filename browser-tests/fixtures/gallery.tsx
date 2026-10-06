@@ -249,7 +249,7 @@ function TextExamples() {
         </VariableBar>
         <DataBoundary
           view={view}
-          loading={narrative.loading}
+          fallback={narrative.fallback}
           empty={null}
           error={() => (
             <TextContent>

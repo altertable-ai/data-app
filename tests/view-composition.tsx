@@ -96,11 +96,8 @@ const app: DataAppProps<number> = {
   },
   dataContext: { description: 'Test', glossary: {} },
   aboutEmpty: { glossary: { title: 'Empty' }, queries: { title: 'Empty' } },
-  // @ts-expect-error Primary requests own their empty state.
   request: { view: { kind: 'loading' }, refetch() {} },
-  children() {
-    return null;
-  },
+  children: null,
 };
 void [metric, section, app];
 
@@ -270,11 +267,8 @@ const analyticalApp: Extract<DataAppProps<number>, { request: unknown }> = {
   request: {
     view: { kind: 'loading' },
     refetch() {},
-    empty: { title: 'No results' },
   },
-  children() {
-    return null;
-  },
+  children: null,
 };
 const { csvExport, ...withoutExport } = analyticalApp;
 const { story, ...withoutStory } = analyticalApp;
@@ -282,4 +276,27 @@ const { story, ...withoutStory } = analyticalApp;
 const appWithoutExport: DataAppProps<number> = withoutExport;
 // @ts-expect-error Analytical apps must provide a story of their displayed findings.
 const appWithoutStory: DataAppProps<number> = withoutStory;
-void [csvExport, story, appWithoutExport, appWithoutStory];
+const invalidFallback: DataAppProps<number> = {
+  ...analyticalApp,
+  // @ts-expect-error DataApp renders the shell; fallback belongs to DataSection.
+  fallback: null,
+};
+const invalidChildren: DataAppProps<number> = {
+  ...analyticalApp,
+  // @ts-expect-error DataApp takes ordinary React children, not a ready callback.
+  children: (data: number) => <p>{data}</p>,
+};
+const invalidLoadingProp: DataAppProps<number> = {
+  ...analyticalApp,
+  // @ts-expect-error DataApp does not own loading content.
+  loading: null,
+};
+void [
+  csvExport,
+  story,
+  appWithoutExport,
+  appWithoutStory,
+  invalidFallback,
+  invalidChildren,
+  invalidLoadingProp,
+];

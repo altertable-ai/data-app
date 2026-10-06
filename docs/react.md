@@ -31,8 +31,11 @@ import {
   createDataHooks,
   dateRangeVariable,
   DataApp,
+  DataSection,
   Grid,
   MetricWidget,
+  DataValue,
+  Skeleton,
   VisualizationWidget,
   Ranking,
 } from '@altertable/data-app/react';
@@ -112,11 +115,74 @@ function App() {
           evidence: featureEvidence,
         }),
       ]}
-      {...content}
-    />
+    >
+      <DataSection result={activity} empty={activity.empty} {...content} />
+    </DataApp>
   );
 }
 ```
+
+`DataApp` always renders its children. Its request binds controls, export, story,
+refresh, and inspection; loading belongs to boundaries inside the layout.
+
+Migration: move request-backed `DataApp` render callbacks into `DataSection`
+and remove `DataApp.loading`. Rename `DataSection.loading` and
+`DataBoundary.loading` to `fallback`; `defineDataContent()` and `view.content()`
+also return `fallback` instead of `loading`.
+
+Render static content immediately. Skeletonize only data-dependent content.
+Widgets keep their labels, titles, and descriptions visible while readings load.
+Metric values and chart or table bodies show placeholders. Keep static prose
+outside ready-only render callbacks.
+
+`DataSection` and `DataBoundary` require parent-authored `fallback` content for
+initial loading. Children receive `(data, displayedInput)` only when
+results exist. Use `fallback={null}` to omit a placeholder. Refreshes and failed
+updates keep the displayed results visible.
+
+Place `DataSection` around an independently loading subtree. Use `view.content()`
+to author its layout once for loading and ready states. Bind dynamic slots with
+`result.metric()` and `result.select()`; static content renders in both states.
+
+```tsx
+const revenueContent = revenueView.content(result => (
+  <MetricWidget
+    metric={revenueMetric}
+    description="Paid orders; refunds excluded."
+    reading={result.metric(data => ({ current: data.total }))}
+  />
+));
+function RevenueSection() {
+  const revenue = useView(revenueView);
+  return (
+    <DataSection result={revenue} empty={revenue.empty} {...revenueContent} />
+  );
+}
+```
+
+Each boundary owns one request. Share it across widgets using that request;
+use separate boundaries for independently fetched data. Keep static section
+introductions outside the boundary when they must remain visible on empty or
+error states. Refreshes retain displayed content.
+
+Footer and insight slots accept ordinary React content. Use `DataValue` for a
+dynamic value inside static text, with a parent-authored inline fallback:
+
+```tsx
+<p>
+  Orders in the last 7 days:{' '}
+  <DataValue
+    reading={result.select(data => data.weeklyOrders)}
+    fallback={<Skeleton inline />}
+  >
+    {count => formatCount(count)}
+  </DataValue>
+</p>
+```
+
+Bind the whole sentence when its wording depends on the result. `DataValue`
+does not evaluate its renderer until data is displayed. Its containing widget
+or text panel supplies evidence.
 
 The `date` binding identifies the controlling variable and extracts its range from the operation input. Nested inputs use, for example, `input: (input) => input.period`. The runtime rejects mappings that silently change the selected range or comparison. Non-date views supply `describeInput`; date views can override it when other inputs also need describing.
 
@@ -135,7 +201,7 @@ Bound `<VisualizationWidget>` and `<TableWidget>` components require `evidence` 
 Use the [app helpers](#reuse-app-helpers) for metric formats and values in tables,
 charts, and custom views.
 
-`defineDataContent()` remains available for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `<DataSection>` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
+`defineDataContent()` composes fallbacks and ready children for manually managed requests. Its optional `{ date: (input) => rangeRequest }` binds comparison readings. `<DataSection>` handles independent requests. Low-level widgets, tabs and layout components remain available for custom interfaces.
 
 ## Layout
 
@@ -331,6 +397,12 @@ Example:
     ],
   })}
 >
-  {(data, input) => <Results data={data} input={input} />}
+  <DataSection
+    result={result}
+    empty={result.empty}
+    fallback={<ResultsSkeleton />}
+  >
+    {(data, input) => <Results data={data} input={input} />}
+  </DataSection>
 </DataApp>
 ```

@@ -1,7 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { DataAppError } from '@/src/client/transport';
 import { Button } from '@/src/react/ui/Button';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';
 import type { DataView } from '@/src/core/data-view';
 import { EmptyState } from '@/src/react/ui/EmptyState';
@@ -67,7 +66,7 @@ export type DataSectionProps<Data, Input = unknown> = {
   empty: EmptyContent;
   children: (data: Data, displayedInput: Input) => ReactNode;
   /** Placeholder layout for an initial request; use the ready view's grid without copied values. */
-  loading?: ReactNode;
+  fallback: ReactNode;
   error?: { title: ReactNode; description?: ReactNode; onRetry?: () => void };
   label?: string;
   /** DataApp suppresses this local notice in favor of its page-level toast. */
@@ -81,7 +80,7 @@ export function DataSection<Data, Input>({
   result,
   children,
   empty,
-  loading,
+  fallback,
   error,
   label,
   notice = 'inline',
@@ -96,7 +95,7 @@ export function DataSection<Data, Input>({
       aria-label={label}
       notice={notice}
       dimOnUpdate={dimOnUpdate}
-      loading={loading ?? <ContentSkeleton variant="panel" />}
+      fallback={fallback}
       empty={<EmptyState {...empty} />}
       error={cause => {
         const presentation = errorPresentation(cause);

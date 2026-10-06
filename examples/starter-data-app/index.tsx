@@ -9,6 +9,10 @@ import {
   createDataContext,
   createDataHooks,
   DataApp,
+  DataSection,
+  DataValue,
+  DataWidget,
+  Skeleton,
   Grid,
   Stack,
   TextContent,
@@ -110,6 +114,56 @@ const sampleCountsView = defineDataView({
     description: 'Try Alpha, Beta, or clear the group filter.',
   },
 });
+const totalSamples = sampleDataContext.metric({
+  id: 'total-samples',
+  glossaryId: 'sampleCount',
+  label: 'Total samples',
+  format: { kind: 'count' },
+});
+const sampleContent = sampleCountsView.content(result => (
+  <Stack aria-label="Sample results">
+    <TextContent>
+      <p>
+        Showing{' '}
+        <DataValue
+          reading={result.select((_, input) => input.groupName || 'all groups')}
+          fallback={<Skeleton inline />}
+        >
+          {scope => scope}
+        </DataValue>
+      </p>
+    </TextContent>
+    <Grid columns={2}>
+      <MetricWidget
+        metric={totalSamples}
+        description="Sum of the fixture counts in the selected groups."
+        reading={result.metric(rows => ({
+          current: rows.reduce((sum, row) => sum + row.sampleCount, 0),
+        }))}
+      />
+      <DataWidget
+        title="Counts by group"
+        description="Alpha and Beta demonstrate measured values, including zero."
+        reading={result.select(rows => rows)}
+        evidence={sampleDataContext.evidence({
+          id: 'counts-by-group',
+          glossaryIds: ['sampleCount'],
+        })}
+        isEmpty={rows => rows.length === 0}
+        empty={{ title: 'No matching groups' }}
+        skeleton={{ variant: 'ranking', rows: 2 }}
+      >
+        {rows => (
+          <Stack>
+            {rows.map(({ groupName, sampleCount }) => (
+              <p key={groupName}>{`${groupName}: ${sampleCount}`}</p>
+            ))}
+          </Stack>
+        )}
+      </DataWidget>
+    </Grid>
+  </Stack>
+));
 function App() {
   const sampleCountsRequest = useView(sampleCountsView);
   return (
@@ -152,24 +206,17 @@ function App() {
         )
       }
     >
-      {(sampleCounts, displayedInput) => (
-        <Stack aria-label="Sample results">
-          <TextContent>
-            <h2>Sample counts</h2>
-            <p>Showing {displayedInput.groupName || 'all groups'}</p>
-          </TextContent>
-          <Grid columns={2}>
-            {sampleCounts.map(({ groupName, sampleCount }) => (
-              <MetricWidget
-                key={groupName}
-                label={`${groupName}: ${sampleCount}`}
-                value={sampleCount}
-                format={{ kind: 'count' }}
-              />
-            ))}
-          </Grid>
-        </Stack>
-      )}
+      <Stack>
+        <TextContent>
+          <h2>Sample counts</h2>
+        </TextContent>
+        <DataSection
+          result={sampleCountsRequest}
+          empty={sampleCountsRequest.empty}
+          notice="none"
+          {...sampleContent}
+        />
+      </Stack>
     </DataApp>
   );
 }

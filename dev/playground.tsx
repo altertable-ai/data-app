@@ -10,6 +10,10 @@ import {
   createDataContext,
   createDataHooks,
   DataApp,
+  DataSection,
+  DataValue,
+  Skeleton,
+  type DataContentState,
   type DisplayedSnapshot,
   type CsvExport,
   Grid,
@@ -98,16 +102,24 @@ const orderView = defineDataView({
   },
 });
 
+const orderCountMetric = orderDataContext.metric({
+  id: 'order-count',
+  glossaryId: 'orders',
+  label: 'Orders',
+  format: { kind: 'count' },
+});
+const revenueMetric = orderDataContext.metric({
+  id: 'order-revenue',
+  glossaryId: 'revenue',
+  label: 'Revenue',
+  format: currency,
+});
+const inlineFallback = <Skeleton inline />;
 function OrderResults({
-  data,
-  country,
+  result,
 }: {
-  data: OrderOverview;
-  country: string;
+  result: DataContentState<OrderOverview, { country: string }>;
 }) {
-  const { countries, days, bands } = data;
-  const { orderCount, revenue, leadingCountry, largestValueBand } =
-    summarizeOrders(data);
   return (
     <Stack aria-label="Order results">
       <TextContent>
@@ -117,67 +129,130 @@ function OrderResults({
           revenue come from? Filter by a country code such as US to compare
           markets.
         </p>
-        <p>Showing {country || 'all countries'}</p>
+        <p>
+          Showing{' '}
+          <DataValue
+            reading={result.select(
+              (_, input) => input.country || 'all countries'
+            )}
+            fallback={inlineFallback}
+          >
+            {scope => scope}
+          </DataValue>
+        </p>
       </TextContent>
       <Grid columns={2}>
         <MetricWidget
-          label="Orders"
+          metric={orderCountMetric}
           description="Orders placed in any status."
-          value={orderCount}
-          format={{ kind: 'count' }}
+          reading={result.metric(data => ({
+            current: summarizeOrders(data).orderCount,
+          }))}
         />
         <MetricWidget
-          label="Revenue"
+          metric={revenueMetric}
           description="Paid and pending orders; refunds excluded."
-          value={revenue}
-          format={currency}
+          reading={result.metric(data => ({
+            current: summarizeOrders(data).revenue,
+          }))}
           insight={
-            orderCount > 0
-              ? `${formatMetric(revenue / orderCount, currency)} per order on average.`
-              : undefined
+            <>
+              <DataValue
+                reading={result.select(data => {
+                  const { revenue, orderCount } = summarizeOrders(data);
+                  return orderCount
+                    ? formatMetric(revenue / orderCount, currency)
+                    : '—';
+                })}
+                fallback={inlineFallback}
+              >
+                {value => value}
+              </DataValue>{' '}
+              per order on average.
+            </>
           }
         />
         <VisualizationWidget
           title="Orders per day"
           description="Daily order count. Days without orders stay on the chart as zero."
           evidence={ordersPerDayEvidence}
-          visual={<DailyLineChart days={days} />}
-          insight={describeWeeklyOrderTrend(days)}
-        />
+          reading={result.select(data => data.days)}
+          isEmpty={days => days.length === 0}
+          empty={{ title: 'No orders' }}
+          insight={
+            <DataValue
+              reading={result.select(data =>
+                describeWeeklyOrderTrend(data.days)
+              )}
+              fallback={inlineFallback}
+            >
+              {text => text}
+            </DataValue>
+          }
+        >
+          {days => <DailyLineChart days={days} />}
+        </VisualizationWidget>
         <VisualizationWidget
           title="Order value"
           description="Share of orders by amount, in $50 bands."
           evidence={orderValueEvidence}
-          visual={<OrderValuePieChart bands={bands} />}
+          reading={result.select(data => data.bands)}
+          isEmpty={bands => bands.length === 0}
+          empty={{
+            title: 'No orders',
+            description: 'No orders in the last 30 days.',
+          }}
           insight={
-            largestValueBand
-              ? `Largest band: ${largestValueBand.band}, with ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`
-              : undefined
+            <>
+              Largest band:{' '}
+              <DataValue
+                reading={result.select(data => {
+                  const { largestValueBand, orderCount } =
+                    summarizeOrders(data);
+                  return largestValueBand
+                    ? `${largestValueBand.band}, with ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`
+                    : 'No orders.';
+                })}
+                fallback={inlineFallback}
+              >
+                {text => text}
+              </DataValue>
+            </>
           }
-          empty={
-            bands.length
-              ? undefined
-              : {
-                  title: 'No orders',
-                  description: 'No orders in the last 30 days.',
-                }
-          }
-        />
+        >
+          {bands => <OrderValuePieChart bands={bands} />}
+        </VisualizationWidget>
       </Grid>
       <VisualizationWidget
         title="Revenue by country"
         description="Highest revenue first. Countries whose customers placed no orders show $0."
         evidence={revenueEvidence}
-        visual={<CountryRanking countries={countries} />}
+        reading={result.select(data => data.countries)}
+        isEmpty={countries => countries.length === 0}
+        empty={{ title: 'No countries' }}
+        skeleton={{ variant: 'ranking', rows: 5 }}
         insight={
-          leadingCountry && revenue > 0
-            ? `${leadingCountry.country} brings in ${formatPercent(leadingCountry.revenue / revenue)} of revenue.`
-            : undefined
+          <DataValue
+            reading={result.select(data => {
+              const { leadingCountry, revenue } = summarizeOrders(data);
+              return leadingCountry && revenue > 0
+                ? `${leadingCountry.country} brings in ${formatPercent(leadingCountry.revenue / revenue)} of revenue.`
+                : 'No revenue.';
+            })}
+            fallback={inlineFallback}
+          >
+            {text => text}
+          </DataValue>
         }
-      />
+      >
+        {countries => <CountryRanking countries={countries} />}
+      </VisualizationWidget>
     </Stack>
   );
 }
+const orderContent = orderView.content(result => (
+  <OrderResults result={result} />
+));
 
 type OrderSnapshot = DisplayedSnapshot<OrderOverview, { country: string }>;
 
@@ -262,9 +337,12 @@ function App() {
       csvExport={exportOrders}
       story={presentOrders}
     >
-      {(data, displayedInput) => (
-        <OrderResults data={data} country={displayedInput.country} />
-      )}
+      <DataSection
+        result={orderRequest}
+        empty={orderRequest.empty}
+        notice="none"
+        {...orderContent}
+      />
     </DataApp>
   );
 }

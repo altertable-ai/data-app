@@ -80,3 +80,8 @@
 .altertable-metric-value[data-unavailable] {
   opacity: 0.6;
 }
+
+.altertable-metric-value > .altertable-skeleton {
+  width: 6ch;
+  height: 1em;
+}

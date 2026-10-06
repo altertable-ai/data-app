@@ -90,7 +90,7 @@ createRoot(document.getElementById('root')!).render(
       <DataSection
         result={{ view, refetch() {} }}
         empty={{ title: 'No results' }}
-        loading={<Cards loading />}
+        fallback={<Cards loading />}
       >
         {() => <Cards />}
       </DataSection>
