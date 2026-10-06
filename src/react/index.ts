@@ -150,6 +150,7 @@ export type {
   DatePresetId,
   DateRange,
   DateRangePickerProps,
+  OpenDateRange,
 } from '@/src/react/ui/DateRangePicker';
 export {
   defineAppVariables,
@@ -277,3 +278,6 @@ export {
   VariableDateTimeRangeSelector,
 } from '@/src/react/ui/VariableValueSelector';
 export type { VariableValueSelectorProps } from '@/src/react/ui/VariableValueSelector';
+
+export { DatePicker } from '@/src/react/ui/DatePicker';
+export type { DatePickerProps } from '@/src/react/ui/DatePicker';

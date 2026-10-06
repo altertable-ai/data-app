@@ -477,6 +477,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         <Case title="Bounded date range and comparison">
           <DateRangePicker
             label="Gallery dates"
+            resetValue={{ start: '2026-09-24', end: '2026-09-30' }}
             value={dates}
             onChange={setDates}
             minDate="2026-09-01"

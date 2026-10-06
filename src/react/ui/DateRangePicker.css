@@ -13,8 +13,9 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  min-height: 36px;
-  padding: 0 2px 0 10px;
+  min-height: 38px;
+  max-width: 100%;
+  padding: 0 2px 0 12px;
   border: 1px solid var(--at-border, #e3e6e8);
   border-radius: var(--at-radius-control, 7px);
   background: var(--at-surface, #fff);
@@ -33,26 +34,6 @@
 .altertable-date-range[data-invalid] .react-aria-Group,
 .altertable-date-range:has(.altertable-date-range-error) .react-aria-Group {
   border-color: var(--at-danger, #b42318);
-}
-.altertable-date-range .react-aria-DateInput {
-  display: flex;
-  min-width: 0;
-  white-space: nowrap;
-  font-weight: 560;
-  letter-spacing: -0.01em;
-}
-.altertable-date-range .react-aria-DateSegment {
-  padding: 3px 1px;
-  border-radius: 3px;
-  font-variant-numeric: tabular-nums;
-  outline: none;
-}
-.altertable-date-range .react-aria-DateSegment[data-type='literal'] {
-  color: var(--at-muted, #687078);
-}
-.altertable-date-range .react-aria-DateSegment[data-focused] {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-inset, -1px);
 }
 .altertable-date-range .react-aria-Group > span[aria-hidden] {
   color: var(--at-muted, #687078);
@@ -256,11 +237,14 @@
   cursor: pointer;
 }
 
-.altertable-date-range-popover .react-aria-RangeCalendar {
+.altertable-date-range-popover
+  :is(.react-aria-RangeCalendar, .react-aria-Calendar) {
   width: max-content;
   max-width: calc(100vw - 32px);
 }
-.altertable-date-range-popover .react-aria-RangeCalendar header {
+.altertable-date-range-popover
+  :is(.react-aria-RangeCalendar, .react-aria-Calendar)
+  header {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -458,12 +442,15 @@
   .altertable-date-range-heading {
     padding-bottom: 4px;
   }
-  .altertable-date-range-popover .react-aria-RangeCalendar,
+  .altertable-date-range-popover
+    :is(.react-aria-RangeCalendar, .react-aria-Calendar),
   .altertable-date-range-popover .react-aria-CalendarGrid {
     width: 100%;
     max-width: none;
   }
-  .altertable-date-range-popover .react-aria-RangeCalendar header {
+  .altertable-date-range-popover
+    :is(.react-aria-RangeCalendar, .react-aria-Calendar)
+    header {
     display: grid;
     grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr) 32px;
     gap: 6px;
@@ -490,4 +477,49 @@
   .altertable-date-range-popover[data-entering] {
     animation: none;
   }
+}
+
+.altertable-date-range {
+  min-width: 0;
+  max-width: 100%;
+}
+.altertable-date-range-label {
+  color: var(--at-muted, #687078);
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.altertable-date-range .react-aria-Group > input[type='date'] {
+  width: 93px;
+  min-width: 0;
+  flex: 1 1 93px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}
+.altertable-date-range input[type='date']::-webkit-calendar-picker-indicator {
+  display: none;
+}
+.altertable-date-range .react-aria-Group > .react-aria-Button {
+  flex: none;
+}
+.altertable-date-range .react-aria-Group:hover {
+  background: var(--at-subtle, #f6f7f7);
+}
+.altertable-date-range .react-aria-Group:focus-within {
+  outline: var(--at-focus-outline, 1px solid #687078);
+  outline-offset: var(--at-focus-ring-offset, 2px);
+}
+.altertable-single-date-popover .react-aria-CalendarCell[data-selected] {
+  border-radius: var(--at-radius-control, 7px);
+  background: var(--at-accent, #4779dc);
+  color: var(--at-on-accent, #fff);
 }
