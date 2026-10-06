@@ -30,7 +30,7 @@ export type DisclosedQuery = {
 
 /** Query interface supplied by a server adapter or an authorized iframe bridge. */
 export type Lakehouse = {
-  queryRegistered?(
+  queryById?(
     this: void,
     name: string,
     values: Record<string, unknown>,

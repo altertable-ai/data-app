@@ -33,7 +33,7 @@ test('registered queries forward values unchanged and preserve backend results',
       async queryAll() {
         throw new Error('Raw SQL is unavailable.');
       },
-      async queryRegistered(operation, variables, { limit }) {
+      async queryById(operation, variables, { limit }) {
         requests.push({ operation, variables, limit });
         return {
           columns: [{ name: 'name' }],

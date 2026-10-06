@@ -370,10 +370,10 @@ export function defineOperation<
         const limit = options?.limit ?? operation.policy.maxQueryRows;
         if (typeof statement !== 'string') {
           invariant(
-            context.lakehouse.queryRegistered,
+            context.lakehouse.queryById,
             'A registered query bridge is required.'
           );
-          return context.lakehouse.queryRegistered(name, statement, {
+          return context.lakehouse.queryById(name, statement, {
             limit,
             signal: context.signal,
           });

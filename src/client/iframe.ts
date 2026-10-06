@@ -258,7 +258,7 @@ export function createIframeTransport({
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
-      queryRegistered(name, variables, { limit, signal }) {
+      queryById(name, variables, { limit, signal }) {
         return registeredMessages
           .request(
             'data:query',
