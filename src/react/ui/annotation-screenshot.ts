@@ -1,11 +1,11 @@
 import { toCanvas } from 'html-to-image';
-import type { AnnotationRegion } from '@/src/react/ui/AnnotationSelectionLayer';
+import type { AnnotationRect } from '@/src/react/ui/annotation-targets';
 import type { DataAppAnnotationDraft } from '@/src/core/annotations';
 
 /** Capture the visible target at selection time; never include annotation controls. */
 export async function captureAnnotationScreenshot(
   element: HTMLElement,
-  region?: AnnotationRegion
+  region?: AnnotationRect
 ): Promise<NonNullable<DataAppAnnotationDraft['context']['screenshot']>> {
   const rect = element.getBoundingClientRect();
   const left = Math.max(0, region?.x ?? rect.left);

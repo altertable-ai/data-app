@@ -4,14 +4,8 @@ import { Kbd } from '@/src/react/ui/Kbd';
 import type {
   AnnotationTargetElement,
   AnnotationPoint,
+  AnnotationRect,
 } from '@/src/react/ui/annotation-targets';
-
-export type AnnotationRegion = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
 
 /** Own pointer selection and keyboard focus while the app underneath is inert. */
 export function AnnotationSelectionLayer({
@@ -28,7 +22,7 @@ export function AnnotationSelectionLayer({
   onSelect: (
     target: AnnotationTargetElement,
     point?: AnnotationPoint,
-    region?: AnnotationRegion
+    region?: AnnotationRect
   ) => void;
   disabled: boolean;
   editing: boolean;
@@ -37,9 +31,9 @@ export function AnnotationSelectionLayer({
   const layer = useRef<HTMLButtonElement>(null);
   const start = useRef<AnnotationPoint | undefined>(undefined);
   const keyboardEnd = useRef<AnnotationPoint | undefined>(undefined);
-  const [region, setRegion] = useState<AnnotationRegion>();
-  const [index, setIndex] = useState(0);
-  const current = targets[index];
+  const [region, setRegion] = useState<AnnotationRect>();
+  const [targetIndex, setTargetIndex] = useState(-1);
+  const current = targets[targetIndex];
   useEffect(() => {
     const previouslyFocused = document.activeElement;
     const app = scope.closest<HTMLElement>('.altertable-app-layout') ?? scope;
@@ -67,24 +61,27 @@ export function AnnotationSelectionLayer({
   useEffect(() => {
     if (!editing) layer.current?.focus({ preventScroll: true });
   }, [editing]);
-  function pointAt(point: AnnotationPoint) {
-    return targets
-      .filter(target => {
-        const rect = target.element.getBoundingClientRect();
-        return (
-          point.x >= rect.left &&
-          point.x <= rect.right &&
-          point.y >= rect.top &&
-          point.y <= rect.bottom
-        );
-      })
-      .sort((a, b) => {
-        const first = a.element.getBoundingClientRect();
-        const second = b.element.getBoundingClientRect();
-        return first.width * first.height - second.width * second.height;
-      })[0];
+  function targetAtPoint(point: AnnotationPoint) {
+    let targetAtPointer: AnnotationTargetElement | undefined;
+    let smallestArea = Infinity;
+    for (const target of targets) {
+      const rect = target.element.getBoundingClientRect();
+      if (
+        point.x < rect.left ||
+        point.x > rect.right ||
+        point.y < rect.top ||
+        point.y > rect.bottom
+      )
+        continue;
+      const area = rect.width * rect.height;
+      if (area < smallestArea) {
+        smallestArea = area;
+        targetAtPointer = target;
+      }
+    }
+    return targetAtPointer;
   }
-  function areaBetween(point: AnnotationPoint): AnnotationRegion | undefined {
+  function areaBetween(point: AnnotationPoint): AnnotationRect | undefined {
     if (!start.current) return undefined;
     const left = Math.max(0, Math.min(start.current.x, point.x));
     const top = Math.max(0, Math.min(start.current.y, point.y));
@@ -105,19 +102,24 @@ export function AnnotationSelectionLayer({
       height: Math.max(0, bottom - top),
     };
   }
-  function finishSelection(point: AnnotationPoint) {
-    const area = areaBetween(point);
+  function resetAreaSelection() {
     start.current = undefined;
     keyboardEnd.current = undefined;
     setRegion(undefined);
+  }
+  function finishSelection(point: AnnotationPoint) {
+    const area = areaBetween(point);
+    resetAreaSelection();
     if (disabled) return;
     if (area && area.width >= 8 && area.height >= 8) {
       const root = annotationRoot(scope);
       if (root) onSelect(root, point, area);
     } else {
-      const target = pointAt(point);
+      const target = targetAtPoint(point);
       if (target) {
-        setIndex(targets.findIndex(candidate => candidate.id === target.id));
+        setTargetIndex(
+          targets.findIndex(candidate => candidate.id === target.id)
+        );
         onSelect(target, point);
       }
     }
@@ -133,23 +135,13 @@ export function AnnotationSelectionLayer({
         className="altertable-annotation-selection-layer"
         aria-label="Annotation selection"
         aria-describedby={instructionsId}
-        onFocus={event => {
-          if (
-            !editing &&
-            !disabled &&
-            event.currentTarget.matches(':focus-visible')
-          )
-            onHover(current);
-        }}
         aria-disabled={disabled || editing || undefined}
         tabIndex={disabled || editing ? -1 : 0}
         onKeyDown={event => {
           if (event.key === 'Escape' && start.current) {
             event.preventDefault();
             event.stopPropagation();
-            start.current = undefined;
-            keyboardEnd.current = undefined;
-            setRegion(undefined);
+            resetAreaSelection();
             return;
           }
           if (disabled || editing) return;
@@ -213,16 +205,18 @@ export function AnnotationSelectionLayer({
           ) {
             event.preventDefault();
             if (!targets.length) return;
-            const next =
-              event.key === 'Home'
-                ? 0
-                : event.key === 'End'
-                  ? targets.length - 1
-                  : (index +
-                      (['ArrowLeft', 'ArrowUp'].includes(event.key) ? -1 : 1) +
-                      targets.length) %
-                    targets.length;
-            setIndex(next);
+            const direction = ['ArrowLeft', 'ArrowUp'].includes(event.key)
+              ? -1
+              : 1;
+            let next: number;
+            if (event.key === 'Home') next = 0;
+            else if (event.key === 'End') next = targets.length - 1;
+            else if (targetIndex < 0)
+              next = direction < 0 ? targets.length - 1 : 0;
+            else
+              next =
+                (targetIndex + direction + targets.length) % targets.length;
+            setTargetIndex(next);
             const target = targets[next];
             target?.element.scrollIntoView({ block: 'nearest' });
             onHover(target);
@@ -248,11 +242,12 @@ export function AnnotationSelectionLayer({
           if (disabled || editing) return;
           const point = { x: event.clientX, y: event.clientY };
           if (!start.current) {
-            const target = pointAt(point);
-            if (target)
-              setIndex(
-                targets.findIndex(candidate => candidate.id === target.id)
-              );
+            const target = targetAtPoint(point);
+            setTargetIndex(
+              target
+                ? targets.findIndex(candidate => candidate.id === target.id)
+                : -1
+            );
             onHover(target);
             return;
           }
@@ -266,11 +261,7 @@ export function AnnotationSelectionLayer({
             event.currentTarget.releasePointerCapture(event.pointerId);
           finishSelection(point);
         }}
-        onPointerCancel={() => {
-          start.current = undefined;
-          keyboardEnd.current = undefined;
-          setRegion(undefined);
-        }}
+        onPointerCancel={resetAreaSelection}
       />
       <span id={instructionsId} className="altertable-sr-only">
         Click an item or drag to select an area. Use arrow keys to choose an
@@ -287,7 +278,7 @@ export function AnnotationSelectionLayer({
         {region
           ? `Selected area ${Math.round(region.width)} by ${Math.round(region.height)} pixels.`
           : current
-            ? `${current.label}, ${index + 1} of ${targets.length}`
+            ? `${current.label}, ${targetIndex + 1} of ${targets.length}`
             : 'Annotation mode'}
       </output>
       {region && (

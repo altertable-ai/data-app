@@ -7,6 +7,12 @@
   --bar-border: #3b4248;
   --bar-danger: #ffa6a0;
   --bar-danger-surface: #572723;
+  --bar-accent: var(--at-accent, #405d47);
+  --bar-on-accent: var(--at-on-accent, #fff);
+  --bar-accent-hover: var(
+    --at-accent-hover,
+    color-mix(in srgb, var(--bar-accent) 85%, black)
+  );
   --at-surface: var(--bar-surface);
   --at-text: var(--bar-text);
   --at-muted: var(--bar-muted);
@@ -28,6 +34,12 @@
   --bar-border: #dfe3e6;
   --bar-danger: #b42318;
   --bar-danger-surface: #ffe3e3;
+  --bar-accent: var(--at-accent, #a6c4ad);
+  --bar-on-accent: var(--at-on-accent, #151719);
+  --bar-accent-hover: var(
+    --at-accent-hover,
+    color-mix(in srgb, var(--bar-accent) 85%, white)
+  );
 }
 .altertable-annotation-bar {
   position: fixed;
@@ -66,18 +78,13 @@
   cursor: grabbing;
 }
 .altertable-annotation-bar .altertable-annotation-bar-send {
-  background: var(--at-accent, #405d47);
+  background: var(--bar-accent);
   border-color: transparent;
   border-radius: 12px;
-  color: var(--at-on-accent, #fff);
+  color: var(--bar-on-accent);
   padding-inline: 14px;
-}
-.altertable-annotation-bar
-  .altertable-annotation-bar-send:hover:not(:disabled) {
-  background: var(
-    --at-accent-hover,
-    color-mix(in srgb, var(--at-accent, #405d47) 85%, black)
-  );
+  font-weight: 600;
+  line-height: 1.25;
 }
 .altertable-annotation-bar-panel {
   position: fixed;
@@ -174,11 +181,8 @@
 }
 .altertable-annotation-bar
   .altertable-annotation-bar-send:hover:not(:disabled) {
-  color: var(--at-on-accent, #fff);
-  background: var(
-    --at-accent-hover,
-    color-mix(in srgb, var(--at-accent, #405d47) 85%, black)
-  );
+  color: var(--bar-on-accent);
+  background: var(--bar-accent-hover);
 }
 .altertable-annotation-bar .altertable-button:disabled,
 .altertable-annotation-bar-panel .altertable-button:disabled {
@@ -284,18 +288,6 @@
   width: min(960px, calc(100vw - 32px));
 }
 
-.altertable-annotation-bar[data-theme='dark']
-  .altertable-annotation-bar-send:not(:disabled) {
-  background: var(--at-accent, #a6c4ad);
-  color: var(--at-on-accent, #151719);
-}
-.altertable-annotation-bar[data-theme='dark']
-  .altertable-annotation-bar-send:hover:not(:disabled) {
-  background: var(
-    --at-accent-hover,
-    color-mix(in srgb, var(--at-accent, #a6c4ad) 85%, white)
-  );
-}
 .altertable-annotation-bar
   .altertable-button[aria-label='Discard all annotations'],
 .altertable-annotation-bar-panel

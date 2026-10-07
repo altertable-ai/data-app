@@ -27,16 +27,16 @@ import { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';
 import {
   annotationTargets as targets,
   findAnnotationTarget,
+  normalizeAnnotationRect,
+  projectAnnotationRect,
+  type AnnotationRect,
   annotationGeometry as geometry,
   annotationPoint,
   type AnnotationTargetElement as Target,
   type AnnotationPoint,
 } from '@/src/react/ui/annotation-targets';
 import { captureAnnotationScreenshot } from '@/src/react/ui/annotation-screenshot';
-import {
-  AnnotationSelectionLayer,
-  type AnnotationRegion,
-} from '@/src/react/ui/AnnotationSelectionLayer';
+import { AnnotationSelectionLayer } from '@/src/react/ui/AnnotationSelectionLayer';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Kbd } from '@/src/react/ui/Kbd';
 import { Tooltip } from '@/src/react/ui/Tooltip';
@@ -138,7 +138,7 @@ export function AnnotationControls({
     target: Target,
     cursor?: AnnotationPoint,
     capture = true,
-    region?: AnnotationRegion
+    region?: AnnotationRect
   ) {
     setEditingId(undefined);
     discardArmed.current = false;
@@ -153,7 +153,8 @@ export function AnnotationControls({
     setError('');
     setComment('');
     const id = crypto.randomUUID();
-    const point = annotationPoint(target.element, cursor);
+    const targetRect = geometry(target.element);
+    const point = annotationPoint(targetRect, cursor);
     setCaptureStatus(capture ? 'capturing' : 'ready');
     if (capture)
       screenshot.current = {
@@ -191,18 +192,7 @@ export function AnnotationControls({
         ...point,
         ...(region
           ? {
-              region: {
-                x:
-                  (region.x - target.element.getBoundingClientRect().x) /
-                  target.element.getBoundingClientRect().width,
-                y:
-                  (region.y - target.element.getBoundingClientRect().y) /
-                  target.element.getBoundingClientRect().height,
-                width:
-                  region.width / target.element.getBoundingClientRect().width,
-                height:
-                  region.height / target.element.getBoundingClientRect().height,
-              },
+              region: normalizeAnnotationRect(region, targetRect),
             }
           : {}),
         search: (location?.search ?? window.location.search).slice(0, 2048),
@@ -213,7 +203,7 @@ export function AnnotationControls({
             .querySelector('[role=tab][aria-selected=true]')
             ?.textContent?.slice(0, 128) ?? view,
         viewport: { width: window.innerWidth, height: window.innerHeight },
-        rect: region ?? geometry(target.element),
+        rect: region ?? targetRect,
       },
       comment: '',
     });
@@ -229,15 +219,20 @@ export function AnnotationControls({
     }
   }
 
-  function closeAnnotationMode() {
-    setAnnotationMode(false);
+  function resetEditor() {
     setSelected(undefined);
     setDraft(undefined);
-    setHovered(undefined);
     setEditingId(undefined);
     setComment('');
     discardArmed.current = false;
     setShaking(false);
+    setError('');
+    screenshot.current = undefined;
+  }
+  function closeAnnotationMode() {
+    resetEditor();
+    setAnnotationMode(false);
+    setHovered(undefined);
     toolbarRef.current?.focus();
   }
   function setAnnotationMode(value: boolean) {
@@ -290,16 +285,8 @@ export function AnnotationControls({
     setEditingId(undefined);
     setComment('');
   }
-  function closeEditor() {
-    setSelected(undefined);
-    setDraft(undefined);
-    setEditingId(undefined);
-    setComment('');
-    discardArmed.current = false;
-    setShaking(false);
-  }
   const finishFromKeyboard = useEffectEvent(() =>
-    draft ? closeEditor() : closeAnnotationMode()
+    draft ? resetEditor() : closeAnnotationMode()
   );
   const captureSelection = useEffectEvent(selectTarget);
   useEffect(() => {
@@ -393,16 +380,7 @@ export function AnnotationControls({
       const element = (selected ?? hovered)?.element;
       const area = draft?.context.region;
       const rect = element?.isConnected ? geometry(element) : undefined;
-      setOutline(
-        rect && area
-          ? {
-              x: rect.x + rect.width * area.x,
-              y: rect.y + rect.height * area.y,
-              width: rect.width * area.width,
-              height: rect.height * area.height,
-            }
-          : rect
-      );
+      setOutline(rect && area ? projectAnnotationRect(area, rect) : rect);
     }
     measure();
     const observer = new ResizeObserver(measure);
@@ -438,10 +416,7 @@ export function AnnotationControls({
           context: { ...draft.context, screenshot: result.image },
         });
       }
-      setEditingId(undefined);
-      setSelected(undefined);
-      setDraft(undefined);
-      setComment('');
+      resetEditor();
     } catch (error) {
       setError(
         (error instanceof DataAppError ||
@@ -634,14 +609,7 @@ export function AnnotationControls({
                             }
                           : undefined,
                         true,
-                        region
-                          ? {
-                              x: rect.x + rect.width * region.x,
-                              y: rect.y + rect.height * region.y,
-                              width: rect.width * region.width,
-                              height: rect.height * region.height,
-                            }
-                          : undefined
+                        region ? projectAnnotationRect(region, rect) : undefined
                       );
                       setComment(text);
                     }}

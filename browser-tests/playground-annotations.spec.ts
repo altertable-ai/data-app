@@ -39,6 +39,26 @@ async function review(page: Page) {
   return page.getByRole('dialog', { name: 'Review annotations' });
 }
 
+test('activation leaves widgets unselected until deliberate navigation', async ({
+  page,
+}) => {
+  const frame = await openPlayground(page);
+  const selection = frame.getByRole('button', { name: 'Annotation selection' });
+  const outline = frame.locator('.altertable-annotation-outline');
+  await expect(selection).toBeFocused();
+  await expect(outline).toHaveCount(0);
+  await selection.press('Enter');
+  await expect(
+    frame.getByRole('textbox', { name: 'Annotation text' })
+  ).toHaveCount(0);
+  await selection.press('ArrowRight');
+  await expect(outline).toBeVisible();
+  await selection.press('Enter');
+  await expect(
+    frame.getByRole('textbox', { name: 'Annotation text' })
+  ).toBeFocused();
+});
+
 test('bottom bar reviews, focuses, hides and deletes saved annotations', async ({
   page,
 }, testInfo) => {
@@ -317,7 +337,7 @@ test('submission locks editor mutations until the host responds', async ({
 
 test('hovering never shifts controls and both themes keep readable contrast', async ({
   page,
-}) => {
+}, testInfo) => {
   await openPlayground(page);
   await addAnnotation(page, 'monthly-revenue', 'Compare last year');
   const bar = page.getByRole('toolbar', { name: 'Annotations', exact: true });
@@ -335,6 +355,14 @@ test('hovering never shifts controls and both themes keep readable contrast', as
       await page
         .getByRole('button', { name: 'Switch to light theme', exact: true })
         .click();
+    const send = bar.getByRole('button', {
+      name: 'Send annotations',
+      exact: true,
+    });
+    await expect(send).toHaveCSS('font-weight', '600');
+    await page.screenshot({
+      path: testInfo.outputPath(`annotation-send-${theme}.png`),
+    });
     const buttons = bar.getByRole('button');
     const before = await buttons.evaluateAll(elements =>
       elements.map(element => {

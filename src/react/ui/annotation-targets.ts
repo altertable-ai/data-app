@@ -1,4 +1,10 @@
 export type AnnotationPoint = { x: number; y: number };
+export type AnnotationRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 export type AnnotationTargetElement = {
   element: HTMLElement;
   id: string;
@@ -35,15 +41,19 @@ export function annotationTargets(
     target => found.filter(other => other.id === target.id).length === 1
   );
 }
-export function annotationGeometry(element: HTMLElement) {
+export function annotationGeometry(element: HTMLElement): AnnotationRect {
   const rect = element.getBoundingClientRect();
   return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
 }
-export function annotationPoint(element: HTMLElement, point?: AnnotationPoint) {
-  const rect = element.getBoundingClientRect();
+export function annotationPoint(rect: AnnotationRect, point?: AnnotationPoint) {
   const cursor = point ?? {
-    x: (Math.max(0, rect.left) + Math.min(window.innerWidth, rect.right)) / 2,
-    y: (Math.max(0, rect.top) + Math.min(window.innerHeight, rect.bottom)) / 2,
+    x:
+      (Math.max(0, rect.x) + Math.min(window.innerWidth, rect.x + rect.width)) /
+      2,
+    y:
+      (Math.max(0, rect.y) +
+        Math.min(window.innerHeight, rect.y + rect.height)) /
+      2,
   };
   return {
     cursor,
@@ -76,4 +86,27 @@ export function findAnnotationTarget(
   return id === '__data-app-root'
     ? annotationRoot(root)
     : annotationTargets(root).find(target => target.id === id);
+}
+
+export function normalizeAnnotationRect(
+  area: AnnotationRect,
+  target: AnnotationRect
+): AnnotationRect {
+  return {
+    x: (area.x - target.x) / target.width,
+    y: (area.y - target.y) / target.height,
+    width: area.width / target.width,
+    height: area.height / target.height,
+  };
+}
+export function projectAnnotationRect(
+  area: AnnotationRect,
+  target: AnnotationRect
+): AnnotationRect {
+  return {
+    x: target.x + target.width * area.x,
+    y: target.y + target.height * area.y,
+    width: target.width * area.width,
+    height: target.height * area.height,
+  };
 }
