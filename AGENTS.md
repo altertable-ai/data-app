@@ -11,12 +11,10 @@ and local data app paths, and task-specific documentation.
 
 ## Styling
 
-Use components and typed props before adding CSS. Follow [Styling](docs/styling.md)
-and the [styling reference](docs/style-reference.md). Add app-owned
-classes through `className`; do not copy package root classes onto markup or
-select private descendants. Follow the [UI quality contract](docs/ui-quality.md)
-for hierarchy, responsive composition, readable values, and state behavior. Use supported `--atbl-*` tokens and native control
-hooks from the reference.
+Use components and typed props first; customize through app-owned `className`
+and public tokens. Follow [Styling](docs/styling.md), its
+[reference](docs/style-reference.md), and [UI quality](docs/ui-quality.md).
+Do not copy package classes onto markup or select private descendants.
 
 ## Documentation
 
