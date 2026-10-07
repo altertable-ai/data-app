@@ -74,14 +74,7 @@
 .altertable-button.altertable-widget-heading-trigger:focus-visible,
 .altertable-button.altertable-widget-heading-trigger[data-open='true'] {
   background: transparent;
-}
-.altertable-widget-heading-trigger:hover .altertable-widget-heading-label,
-.altertable-widget-heading-trigger:focus-visible
-  .altertable-widget-heading-label,
-.altertable-widget-heading-trigger[data-open='true']
-  .altertable-widget-heading-label {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  color: var(--at-text, #202124);
 }
 .altertable-widget-heading-trigger > svg {
   display: inline-block;

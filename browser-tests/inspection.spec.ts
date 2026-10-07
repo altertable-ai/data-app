@@ -35,31 +35,48 @@ test('repeated subjects and inspected widgets share one sheet', async ({
   await expect(page.locator('dialog[open]')).toHaveCount(1);
 });
 
-test('inspection headings underline their label with an inline centered chevron', async ({
+test('inspection headings use foreground color with an inline centered chevron', async ({
   page,
   isMobile,
 }) => {
   test.skip(isMobile, 'Hover is a desktop interaction');
-  await page.goto('/inspection-app');
-  const heading = page.getByRole('button', {
-    name: 'Explore Repeated count',
-    exact: true,
-  });
-  await heading.hover();
-  await expect(heading).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(heading.locator('.altertable-widget-heading-label')).toHaveCSS(
-    'text-decoration-line',
-    'underline'
-  );
-  const label = await heading
-    .locator('.altertable-widget-heading-label')
-    .boundingBox();
-  const chevron = await heading.locator('svg').boundingBox();
-  expect(
-    Math.abs(label!.y + label!.height / 2 - (chevron!.y + chevron!.height / 2))
-  ).toBeLessThan(1);
-  expect(chevron!.x - (label!.x + label!.width)).toBeCloseTo(4, 0);
-  await page.screenshot({ path: '/private/tmp/data-app-heading.png' });
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/inspection-app');
+    if (colorScheme === 'dark')
+      await page
+        .getByRole('button', { name: 'Switch to dark theme', exact: true })
+        .click();
+    await expect(page.locator('html')).toHaveCSS('color-scheme', colorScheme);
+    const heading = page.getByRole('button', {
+      name: 'Explore Repeated count',
+      exact: true,
+    });
+    await heading.hover();
+    await expect(heading).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(heading.locator('.altertable-widget-heading-label')).toHaveCSS(
+      'text-decoration-line',
+      'none'
+    );
+    const foreground = await heading.evaluate(
+      element =>
+        getComputedStyle(element.closest('.altertable-data-widget')!).color
+    );
+    await expect(heading).toHaveCSS('color', foreground);
+    const label = await heading
+      .locator('.altertable-widget-heading-label')
+      .boundingBox();
+    const chevron = await heading.locator('svg').boundingBox();
+    expect(
+      Math.abs(
+        label!.y + label!.height / 2 - (chevron!.y + chevron!.height / 2)
+      )
+    ).toBeLessThan(1);
+    expect(chevron!.x - (label!.x + label!.width)).toBeCloseTo(4, 0);
+    await page.screenshot({
+      path: `/private/tmp/data-app-heading-${colorScheme}.png`,
+    });
+  }
 });
 
 test('controlled inspection waits for its owner to accept opening and closing', async ({
