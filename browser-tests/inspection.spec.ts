@@ -38,7 +38,7 @@ test('repeated subjects and inspected widgets share one sheet', async ({
 test('inspection headings use foreground color with a closely spaced optically aligned chevron', async ({
   page,
   isMobile,
-}) => {
+}, testInfo) => {
   test.skip(isMobile, 'Hover is a desktop interaction');
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
@@ -74,7 +74,7 @@ test('inspection headings use foreground color with a closely spaced optically a
     ).toBeLessThan(1);
     expect(chevron!.x - (label!.x + label!.width)).toBeCloseTo(2, 0);
     await page.screenshot({
-      path: `/private/tmp/data-app-heading-${colorScheme}.png`,
+      path: testInfo.outputPath(`data-app-heading-${colorScheme}.png`),
     });
   }
 });
