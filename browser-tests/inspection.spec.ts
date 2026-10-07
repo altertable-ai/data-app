@@ -35,7 +35,7 @@ test('repeated subjects and inspected widgets share one sheet', async ({
   await expect(page.locator('dialog[open]')).toHaveCount(1);
 });
 
-test('inspection headings use foreground color with an inline centered chevron', async ({
+test('inspection headings use foreground color with a closely spaced optically aligned chevron', async ({
   page,
   isMobile,
 }) => {
@@ -69,10 +69,10 @@ test('inspection headings use foreground color with an inline centered chevron',
     const chevron = await heading.locator('svg').boundingBox();
     expect(
       Math.abs(
-        label!.y + label!.height / 2 - (chevron!.y + chevron!.height / 2)
+        label!.y + label!.height / 2 + 1 - (chevron!.y + chevron!.height / 2)
       )
     ).toBeLessThan(1);
-    expect(chevron!.x - (label!.x + label!.width)).toBeCloseTo(4, 0);
+    expect(chevron!.x - (label!.x + label!.width)).toBeCloseTo(2, 0);
     await page.screenshot({
       path: `/private/tmp/data-app-heading-${colorScheme}.png`,
     });
