@@ -110,7 +110,6 @@ function DataWidgetContent({
       }
       variant="ghost"
       className="altertable-widget-heading-trigger"
-      tooltip="Explore this widget"
       shortcut={false}
       title={title}
       headerActions={<WidgetStatusControl status={status} />}

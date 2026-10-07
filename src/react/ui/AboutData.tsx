@@ -314,13 +314,15 @@ function InspectionTrigger({
   useShortcut(shortcuts.aboutData, () => owner.open(inspection), enabled);
   const hint =
     tooltip ??
-    (iconOnly && enabled ? (
-      <>
-        Explore data <Kbd shortcut={shortcuts.aboutData} />
-      </>
-    ) : (
-      'Explore data'
-    ));
+    (iconOnly ? (
+      enabled ? (
+        <>
+          Explore data <Kbd shortcut={shortcuts.aboutData} />
+        </>
+      ) : (
+        'Explore data'
+      )
+    ) : null);
   if (!trigger) return null;
   const {
     id: _subjectId,
@@ -340,39 +342,44 @@ function InspectionTrigger({
     tab: _tab,
     ...buttonProps
   } = props;
-  return (
+  const button = (
+    <Button
+      {...buttonProps}
+      ref={mergedTrigger}
+      variant={variant}
+      size={iconOnly ? 'icon' : 'default'}
+      className={className}
+      data-open={isOpen || undefined}
+      aria-label={
+        buttonProps['aria-label'] ??
+        (iconOnly
+          ? typeof title === 'string'
+            ? `Explore ${title}`
+            : 'Explore data'
+          : undefined)
+      }
+      aria-keyshortcuts={
+        buttonProps['aria-keyshortcuts'] ??
+        (enabled ? ariaKeyShortcuts(shortcuts.aboutData) : undefined)
+      }
+      onClick={event => {
+        onClick?.(event);
+        if (!event.defaultPrevented) owner.open(inspection);
+      }}
+    >
+      {children ?? (
+        <>
+          <AppIcon name="info" />
+          {!iconOnly && 'Explore details'}
+        </>
+      )}
+    </Button>
+  );
+  return hint == null ? (
+    button
+  ) : (
     <Tooltip content={hint} portalRoot={portalRoot}>
-      <Button
-        {...buttonProps}
-        ref={mergedTrigger}
-        variant={variant}
-        size={iconOnly ? 'icon' : 'default'}
-        className={className}
-        data-open={isOpen || undefined}
-        aria-label={
-          buttonProps['aria-label'] ??
-          (iconOnly
-            ? typeof title === 'string'
-              ? `Explore ${title}`
-              : 'Explore data'
-            : undefined)
-        }
-        aria-keyshortcuts={
-          buttonProps['aria-keyshortcuts'] ??
-          (enabled ? ariaKeyShortcuts(shortcuts.aboutData) : undefined)
-        }
-        onClick={event => {
-          onClick?.(event);
-          if (!event.defaultPrevented) owner.open(inspection);
-        }}
-      >
-        {children ?? (
-          <>
-            <AppIcon name="info" />
-            {!iconOnly && 'Explore details'}
-          </>
-        )}
-      </Button>
+      {button}
     </Tooltip>
   );
 }
