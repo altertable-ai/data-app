@@ -41,7 +41,6 @@ and failure.
 | Choose date and field filters              | [Filter variables](react.md#time-views-and-field-filters)  |
 | Handle refresh and stale results           | [Displayed results](react.md#preserve-displayed-results)   |
 | Export displayed data as CSV               | [CSV export](react.md#export-displayed-data-as-csv)        |
-| Enable precise feedback on custom content  | [Annotations](react.md#annotate-app-elements)              |
 | Bind definitions and source evidence       | [Data context](react.md#bind-evidence)                     |
 
 Use the exported types for configuration, appearance, formatting, and component

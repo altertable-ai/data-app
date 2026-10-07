@@ -1,11 +1,11 @@
 import { useEffect, useId, useRef, useState, type ComponentRef } from 'react';
-import { annotationRoot } from '@/src/react/ui/annotation-targets';
+import { annotationRoot } from '@/src/react/annotations/annotation-targets';
 import { Kbd } from '@/src/react/ui/Kbd';
 import type {
   AnnotationTargetElement,
   AnnotationPoint,
   AnnotationRect,
-} from '@/src/react/ui/annotation-targets';
+} from '@/src/react/annotations/annotation-targets';
 
 type AnnotationSelectionLayerProps = {
   scope: HTMLElement;

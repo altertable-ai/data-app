@@ -22,7 +22,7 @@ import type {
   DataAppAnnotationDraft,
   DataAppAnnotationPresentation,
 } from '@/src/core/annotations';
-import { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';
+import { useDataAppAnnotations } from '@/src/react/annotations/useDataAppAnnotations';
 import {
   findAnnotationTarget,
   normalizeAnnotationRect,
@@ -32,20 +32,20 @@ import {
   type AnnotationRect,
   type AnnotationTargetElement,
   type AnnotationPoint,
-} from '@/src/react/ui/annotation-targets';
-import { captureAnnotationScreenshot } from '@/src/react/ui/annotation-screenshot';
-import { AnnotationSelectionLayer } from '@/src/react/ui/AnnotationSelectionLayer';
-import { AnnotationTrigger } from '@/src/react/ui/AnnotationTrigger';
-import { AnnotationEditor } from '@/src/react/ui/AnnotationEditor';
-import { AnnotationMarkers } from '@/src/react/ui/AnnotationMarkers';
+} from '@/src/react/annotations/annotation-targets';
+import { captureAnnotationScreenshot } from '@/src/react/annotations/annotation-screenshot';
+import { AnnotationSelectionLayer } from '@/src/react/annotations/AnnotationSelectionLayer';
+import { AnnotationTrigger } from '@/src/react/annotations/AnnotationTrigger';
+import { AnnotationEditor } from '@/src/react/annotations/AnnotationEditor';
+import { AnnotationMarkers } from '@/src/react/annotations/AnnotationMarkers';
 import {
   useAnnotationTargets,
   useAnnotationGeometry,
-} from '@/src/react/ui/useAnnotationGeometry';
+} from '@/src/react/annotations/useAnnotationGeometry';
 import {
   annotationControlsReducer,
   createAnnotationControlsState,
-} from '@/src/react/ui/annotation-editor-state';
+} from '@/src/react/annotations/annotation-editor-state';
 import { shortcuts, useShortcut } from '@/src/react/ui/shortcuts';
 
 type AnnotationControlsProps = {

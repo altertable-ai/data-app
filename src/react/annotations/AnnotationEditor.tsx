@@ -1,6 +1,6 @@
 import type { ComponentRef, CSSProperties, Ref } from 'react';
 import { ArrowUp } from 'lucide-react';
-import type { AnnotationEditorState } from '@/src/react/ui/annotation-editor-state';
+import type { AnnotationEditorState } from '@/src/react/annotations/annotation-editor-state';
 import { Button } from '@/src/react/ui/Button';
 import { Kbd } from '@/src/react/ui/Kbd';
 import { Tooltip } from '@/src/react/ui/Tooltip';

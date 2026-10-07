@@ -1,5 +1,5 @@
 import type { DataAppAnnotationDraft } from '@/src/core/annotations';
-import type { AnnotationTargetElement } from '@/src/react/ui/annotation-targets';
+import type { AnnotationTargetElement } from '@/src/react/annotations/annotation-targets';
 
 export type AnnotationEditorState = {
   target: AnnotationTargetElement;

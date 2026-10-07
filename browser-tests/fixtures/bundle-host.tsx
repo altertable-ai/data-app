@@ -343,7 +343,7 @@ function Host() {
                 <button
                   aria-label="Annotate"
                   aria-keyshortcuts={ariaKeyShortcuts(shortcuts.annotate)}
-                  className="playground-annotate"
+                  className="playground-annotate altertable-annotation-trigger"
                   aria-pressed={annotating}
                   disabled={
                     !embedded || status !== 'ready' || !annotationsHost.ready

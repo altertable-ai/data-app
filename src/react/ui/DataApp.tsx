@@ -1,4 +1,4 @@
-import { AnnotationControls } from '@/src/react/ui/AnnotationControls';
+import { AnnotationControls } from '@/src/react/annotations/AnnotationControls';
 import { useDataAppPresentation } from '@/src/react/ui/useDataAppPresentation';
 import { useEffect, useRef, type ComponentProps, type ReactNode } from 'react';
 import { useAppAppearance } from '@/src/react/ui/useAppAppearance';

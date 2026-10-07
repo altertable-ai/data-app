@@ -7,8 +7,8 @@ import {
   projectAnnotationRect,
   type AnnotationRect,
   type AnnotationTargetElement,
-} from '@/src/react/ui/annotation-targets';
-import type { AnnotationPin } from '@/src/react/ui/AnnotationMarkers';
+} from '@/src/react/annotations/annotation-targets';
+import type { AnnotationPin } from '@/src/react/annotations/AnnotationMarkers';
 
 type AnnotationRootRef = RefObject<ComponentRef<'div'> | null>;
 

@@ -3,7 +3,7 @@ import {
   annotationControlsReducer,
   createAnnotationControlsState,
   type AnnotationEditorState,
-} from '@/src/react/ui/annotation-editor-state';
+} from '@/src/react/annotations/annotation-editor-state';
 
 const editor: AnnotationEditorState = {
   target: {

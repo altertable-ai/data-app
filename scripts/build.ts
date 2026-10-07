@@ -29,7 +29,7 @@ async function compileStyles(entrypoint: string): Promise<string> {
 const [dataAppStyles, shellStyles, annotationStyles] = await Promise.all([
   compileStyles('src/react/styles.css'),
   compileStyles('src/react/shellStyles.css'),
-  compileStyles('src/react/annotationStyles.css'),
+  compileStyles('src/react/annotations/styles.css'),
 ]);
 
 // Browser entries share chunks so error classes and transport helpers retain

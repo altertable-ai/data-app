@@ -571,7 +571,7 @@ test('blocked local storage retains usable in-memory feedback and reports recove
   await expect(panel).toContainText('Keep working without local storage');
 });
 
-test('review minimizes, trash is actionable, tooltips layer above review and Send uses theme colors', async ({
+test('review minimizes, trash is actionable, tooltips layer above review and Send uses annotation colors', async ({
   page,
 }, testInfo) => {
   await openPlayground(page);
@@ -603,16 +603,38 @@ test('review minimizes, trash is actionable, tooltips layer above review and Sen
     name: 'Send annotations',
     exact: true,
   });
-  await expect(send).toHaveCSS('background-color', 'rgb(166, 196, 173)');
+  await expect(send).toHaveCSS('background-color', 'rgb(192, 38, 211)');
+  await expect(send).toHaveCSS('color', 'rgb(255, 255, 255)');
   await panel
     .getByRole('button', { name: 'Minimize annotation review', exact: true })
     .click();
   await expect(panel).toHaveCount(0);
+  const frame = page.frameLocator('iframe');
+  const pin = frame.getByRole('button', { name: 'Annotation 1', exact: true });
+  await expect(pin).toHaveCSS('background-color', 'rgb(192, 38, 211)');
+  await pin.click();
+  await expect(frame.locator('.altertable-annotation-outline')).toHaveCSS(
+    'border-color',
+    'rgb(192, 38, 211)'
+  );
+  await expect(
+    frame.getByRole('button', { name: 'Save annotation', exact: true })
+  ).toHaveCSS('background-color', 'rgb(192, 38, 211)');
   await expect(
     page.getByRole('toolbar', { name: 'Annotations', exact: true })
   ).toBeVisible();
   await page
     .getByRole('button', { name: 'Switch to light theme', exact: true })
     .click();
-  await expect(send).toHaveCSS('background-color', 'rgb(64, 93, 71)');
+  await expect(send).toHaveCSS('background-color', 'rgb(192, 38, 211)');
+  await expect(send).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await page.locator('.playground-host').evaluate(element => {
+    element.style.setProperty('--at-accent', '#00ff00');
+    element.style.setProperty('--at-on-accent', '#000000');
+  });
+  await expect(send).toHaveCSS('background-color', 'rgb(192, 38, 211)');
+  await expect(send).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await page.screenshot({
+    path: testInfo.outputPath('annotation-magenta-light.png'),
+  });
 });

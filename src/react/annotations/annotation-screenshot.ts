@@ -1,5 +1,5 @@
 import { toCanvas } from 'html-to-image';
-import type { AnnotationRect } from '@/src/react/ui/annotation-targets';
+import type { AnnotationRect } from '@/src/react/annotations/annotation-targets';
 import type { DataAppAnnotationDraft } from '@/src/core/annotations';
 
 /** Capture the visible target at selection time; never include annotation controls. */

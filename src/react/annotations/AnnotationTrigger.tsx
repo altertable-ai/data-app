@@ -32,6 +32,7 @@ export function AnnotationTrigger({
     >
       <Button
         data-annotation-ui
+        className="altertable-annotation-trigger"
         aria-label="Annotate"
         aria-keyshortcuts={ariaKeyShortcuts(shortcuts.annotate)}
         size="compact"

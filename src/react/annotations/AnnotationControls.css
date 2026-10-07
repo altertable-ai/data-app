@@ -19,9 +19,9 @@
   position: fixed;
   z-index: 1100;
   pointer-events: none;
-  border: 2px dashed var(--at-accent, #405d47);
+  border: 2px dashed var(--at-annotation-accent);
   border-radius: 0;
-  background: color-mix(in srgb, var(--at-accent, #405d47) 8%, transparent);
+  background: var(--at-annotation-highlight);
 }
 .altertable-annotation-pin {
   position: fixed;
@@ -34,8 +34,8 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: var(--at-accent, #405d47);
-  color: #fff;
+  background: var(--at-annotation-accent);
+  color: var(--at-annotation-on-accent);
   font: 600 12px var(--at-font, ui-sans-serif, system-ui, sans-serif);
 }
 .altertable-annotation-composer {
@@ -97,13 +97,14 @@
 }
 
 .altertable-annotation-pin:focus-visible {
-  outline: 2px solid var(--at-accent, #405d47);
+  outline: 2px solid var(--at-annotation-accent);
   outline-offset: 2px;
 }
 .altertable-annotation-count {
   border-radius: 20px;
   padding: 0 5px;
-  background: var(--at-subtle);
+  background: var(--at-annotation-accent);
+  color: var(--at-annotation-on-accent);
   font-size: 11px;
 }
 .altertable-annotation-composer[data-shaking] {
@@ -130,17 +131,13 @@
 .altertable-annotation-composer .altertable-annotation-submit {
   border-radius: 50%;
   border: 0;
-  background: var(--annotation-text);
-  color: var(--annotation-surface);
+  background: var(--at-annotation-accent);
+  color: var(--at-annotation-on-accent);
   box-shadow: none;
 }
 .altertable-annotation-composer
   .altertable-annotation-submit:hover:not(:disabled) {
-  background: color-mix(
-    in srgb,
-    var(--annotation-text) 80%,
-    var(--annotation-surface)
-  );
+  background: var(--at-annotation-accent-hover);
 }
 .altertable-annotation-tooltip {
   background: var(--annotation-surface);

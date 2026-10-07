@@ -54,6 +54,7 @@
 
 @import './ui/ExportControl.css';
 
-@import './ui/AnnotationControls.css';
+@import './annotations/colors.css';
+@import './annotations/AnnotationControls.css';
 
-@import './ui/AnnotationBar.css';
+@import './annotations/AnnotationBar.css';

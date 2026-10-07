@@ -1,7 +1,7 @@
 import type {
   AnnotationPoint,
   AnnotationRect,
-} from '@/src/react/ui/annotation-targets';
+} from '@/src/react/annotations/annotation-targets';
 import { Kbd } from '@/src/react/ui/Kbd';
 
 export type AnnotationPin = {

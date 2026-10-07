@@ -158,8 +158,8 @@ body:has(.playground-host) #root {
   min-width: 16px;
   padding: 1px 4px;
   font-size: 10px;
-  background: var(--host-text);
-  color: var(--host-background);
+  background: var(--at-annotation-accent);
+  color: var(--at-annotation-on-accent);
 }
 
 .playground-submission-status {
@@ -185,4 +185,16 @@ body:has(.playground-host) #root {
   color: var(--at-text);
   background: var(--at-surface);
   font-size: 12px;
+}
+
+.playground-controls .playground-annotate[aria-pressed='true'] {
+  background: var(--at-annotation-accent);
+  color: var(--at-annotation-on-accent);
+}
+.playground-controls
+  .playground-annotate[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--at-annotation-accent-hover);
+}
+.playground-controls .playground-annotate:focus-visible {
+  outline-color: var(--at-annotation-accent);
 }

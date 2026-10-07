@@ -263,12 +263,12 @@ export type {
   MetricValues,
 } from '@/src/core/reading';
 
-export { AnnotationTarget } from '@/src/react/ui/AnnotationTarget';
-export type { AnnotationTargetProps } from '@/src/react/ui/AnnotationTarget';
+export { AnnotationTarget } from '@/src/react/annotations/AnnotationTarget';
+export type { AnnotationTargetProps } from '@/src/react/annotations/AnnotationTarget';
 
-export { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';
+export { useDataAppAnnotations } from '@/src/react/annotations/useDataAppAnnotations';
 
-export { AnnotationBar } from '@/src/react/ui/AnnotationBar';
-export type { AnnotationBarProps } from '@/src/react/ui/AnnotationBar';
+export { AnnotationBar } from '@/src/react/annotations/AnnotationBar';
+export type { AnnotationBarProps } from '@/src/react/annotations/AnnotationBar';
 
-export { injectDataAppAnnotationStyles } from '@/src/react/annotationStyles';
+export { injectDataAppAnnotationStyles } from '@/src/react/annotations/styles';

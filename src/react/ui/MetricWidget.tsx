@@ -1,4 +1,4 @@
-import { getAnnotationProps } from '@/src/react/ui/AnnotationTarget';
+import { getAnnotationProps } from '@/src/react/annotations/getAnnotationProps';
 import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
 import {
   WidgetStatusControl,
