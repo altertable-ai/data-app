@@ -16,7 +16,7 @@ export const shortcuts = {
   sendAnnotations: { modifier: 'mod', code: 'Enter', key: 'Enter' },
   refresh: { modifier: 'alt', code: 'KeyR', key: 'R' },
   aboutData: { modifier: 'alt', code: 'KeyI', key: 'I' },
-  playStory: { modifier: 'mod', code: 'Enter', key: 'Enter' },
+  playStory: { modifier: 'mod', shift: true, code: 'Enter', key: 'Enter' },
 } as const satisfies Record<string, Shortcut>;
 
 function isApple(): boolean {
@@ -92,11 +92,12 @@ export function useShortcut(
       )
         return;
       event.preventDefault();
+      event.stopImmediatePropagation();
       action();
     }
 
-    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown, true);
 
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
   }, [modifier, shift, code, enabled, allowWhileEditing, action]);
 }

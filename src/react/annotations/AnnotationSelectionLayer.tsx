@@ -160,6 +160,7 @@ export function AnnotationSelectionLayer({
         aria-disabled={disabled || editing || undefined}
         tabIndex={disabled || editing ? -1 : 0}
         onKeyDown={event => {
+          if (event.altKey || event.ctrlKey || event.metaKey) return;
           if (event.key === 'Escape' && start.current) {
             event.preventDefault();
             event.stopPropagation();

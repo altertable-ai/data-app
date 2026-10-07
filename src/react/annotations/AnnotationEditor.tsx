@@ -56,6 +56,9 @@ export function AnnotationEditor({
           if (
             event.key === 'Enter' &&
             !event.shiftKey &&
+            !event.altKey &&
+            !event.ctrlKey &&
+            !event.metaKey &&
             !event.nativeEvent.isComposing
           ) {
             event.preventDefault();

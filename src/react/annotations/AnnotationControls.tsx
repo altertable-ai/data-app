@@ -247,6 +247,14 @@ export function AnnotationControls({
     else setAnnotationMode(true);
   }
   useShortcut(shortcuts.annotate, toggleAnnotationMode, !pending, true);
+  useShortcut(
+    shortcuts.sendAnnotations,
+    () => void annotationClient.requestSendAnnotations().catch(() => {}),
+    active &&
+      !pending &&
+      !hasUnsavedChanges &&
+      Boolean(presentation.targets?.length)
+  );
 
   function openAnnotation(id: string) {
     const annotation = presentation.targets?.find(pin => pin.id === id);

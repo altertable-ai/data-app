@@ -3,6 +3,8 @@ import {
   useEffectEvent,
   useRef,
   useReducer,
+  useImperativeHandle,
+  type Ref,
   type ComponentRef,
   type CSSProperties,
 } from 'react';
@@ -40,7 +42,13 @@ import {
   useShortcut,
 } from '@/src/react/ui/shortcuts';
 
+export type AnnotationBarHandle = {
+  /** Submit through the same guards, pending state, and retry feedback as the Send button. */
+  send: () => Promise<void>;
+};
+
 export type AnnotationBarProps = {
+  ref?: Ref<AnnotationBarHandle>;
   annotations: readonly DataAppAnnotationDraft[];
   active?: boolean;
   theme?: Theme;
@@ -125,6 +133,7 @@ function annotationBarReducer(
 
 /** Host-owned batch controls. Collection changes and agent submission stay with the outer app. */
 export function AnnotationBar({
+  ref,
   annotations,
   active = true,
   theme = 'light',
@@ -203,6 +212,7 @@ export function AnnotationBar({
   }
   async function send() {
     if (
+      !active ||
       submitting.current ||
       locked ||
       hasUnsavedChanges ||
@@ -222,6 +232,7 @@ export function AnnotationBar({
       dispatch({ type: 'submissionFinished' });
     }
   }
+  useImperativeHandle(ref, () => ({ send }));
   useShortcut(
     shortcuts.sendAnnotations,
     () => void send(),
