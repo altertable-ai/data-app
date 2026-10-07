@@ -173,10 +173,8 @@ function OrderResults({
         <VisualizationWidget
           title="Orders per day"
           description="Daily order count. Days without orders stay on the chart as zero."
-          evidence={ordersPerDayEvidence}
-          reading={result.select(data => data.days)}
-          isEmpty={days => days.length === 0}
-          emptyFallback={{ title: 'No orders' }}
+          dataset={dayDataset}
+          source={result}
           insight={
             <DataValue
               reading={result.select(data =>
@@ -193,13 +191,8 @@ function OrderResults({
         <VisualizationWidget
           title="Order value"
           description="Share of orders by amount, in $50 bands."
-          evidence={orderValueEvidence}
-          reading={result.select(data => data.bands)}
-          isEmpty={bands => bands.length === 0}
-          emptyFallback={{
-            title: 'No orders',
-            description: 'No orders in the last 30 days.',
-          }}
+          dataset={valueDataset}
+          source={result}
           insight={
             <>
               Largest band:{' '}
@@ -224,10 +217,8 @@ function OrderResults({
       <VisualizationWidget
         title="Revenue by country"
         description="Highest revenue first. Countries whose customers placed no orders show $0."
-        evidence={revenueEvidence}
-        reading={result.select(data => data.countries)}
-        isEmpty={countries => countries.length === 0}
-        emptyFallback={{ title: 'No countries' }}
+        dataset={countryDataset}
+        source={result}
         skeleton={{ variant: 'ranking', rows: 5 }}
         insight={
           <DataValue
@@ -258,10 +249,7 @@ const countryDataset = orderView.dataset({
   name: 'Revenue by country',
   select: data => data.countries,
   rowKey: row => row.country,
-  evidence: orderDataContext.evidence({
-    id: 'countries-export',
-    glossaryIds: ['revenue'],
-  }),
+  evidence: revenueEvidence,
   columns: {
     country: { value: row => row.country },
     orderCount: { label: 'Orders', value: row => row.orderCount },
@@ -272,10 +260,7 @@ const dayDataset = orderView.dataset({
   name: 'Orders per day',
   select: data => data.days,
   rowKey: row => row.day,
-  evidence: orderDataContext.evidence({
-    id: 'days-export',
-    glossaryIds: ['orders'],
-  }),
+  evidence: ordersPerDayEvidence,
   columns: {
     day: { value: row => row.day },
     orderCount: { label: 'Orders', value: row => row.orderCount },
@@ -285,10 +270,7 @@ const valueDataset = orderView.dataset({
   name: 'Orders by value',
   select: data => data.bands,
   rowKey: row => row.band,
-  evidence: orderDataContext.evidence({
-    id: 'bands-export',
-    glossaryIds: ['orders'],
-  }),
+  evidence: orderValueEvidence,
   columns: {
     band: { label: 'Order value', value: row => row.band },
     orderCount: { label: 'Orders', value: row => row.orderCount },

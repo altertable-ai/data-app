@@ -4,6 +4,7 @@ import {
   DataApp,
   DataSection,
   MetricWidget,
+  VisualizationWidget,
   TableWidget,
   type DataAppProps,
   type DataSectionProps,
@@ -105,3 +106,48 @@ void view.csvExport;
 void authoring.BarChart;
 // @ts-expect-error Charts accept ordinary arrays; no preparation factory is public.
 void authoring.defineChartItems;
+
+// @ts-expect-error Generic frames belong to direct UI composition.
+void authoring.DataWidget;
+// @ts-expect-error Binding adapters are internal.
+void dataset.props;
+// @ts-expect-error Exports are owned by DataApp.datasets.
+void dataset.csv;
+// @ts-expect-error Request configuration is private after declaration.
+void view.operation;
+// @ts-expect-error Resolved input mapping is private after declaration.
+void view.input;
+// @ts-expect-error Variables are accessed through the displayed result.
+void view.variables;
+// @ts-expect-error Date bindings are private after declaration.
+void view.date;
+// @ts-expect-error Field bindings are private after declaration.
+void view.bindings;
+const boundMetric = view.metric(
+  {
+    id: 'count',
+    label: 'Count',
+    format: { kind: 'count' },
+    evidence: { id: 'count', queryNames: ['count'] },
+  },
+  data => ({ current: data })
+);
+// @ts-expect-error Metric adapters are internal.
+void boundMetric.props;
+<VisualizationWidget dataset={dataset} source={{ data: 1, input: {} }}>
+  {rows => <p>{rows[0]}</p>}
+</VisualizationWidget>;
+<VisualizationWidget
+  dataset={dataset}
+  source={{ loading: true }}
+  viewLabel="View"
+  views={[{ id: 'values', label: 'Values', render: rows => <p>{rows[0]}</p> }]}
+/>;
+<VisualizationWidget
+  dataset={dataset}
+  source={{ data: 1, input: {} }}
+  // @ts-expect-error Empty state is derived from the dataset selection.
+  isEmpty={() => false}
+>
+  {rows => <p>{rows[0]}</p>}
+</VisualizationWidget>;

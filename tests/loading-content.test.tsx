@@ -1,12 +1,9 @@
+import { VisualizationWidget } from '@altertable/data-app/react/ui';
 import { TableWidget } from '@altertable/data-app/react/ui';
 import { MetricWidget } from '@altertable/data-app/react/ui';
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
-import {
-  DataValue,
-  VisualizationWidget,
-  type WidgetEvidence,
-} from '@altertable/data-app/react';
+import { DataValue, type WidgetEvidence } from '@altertable/data-app/react';
 
 const evidence: WidgetEvidence = { id: 'orders', queryNames: ['orders'] };
 

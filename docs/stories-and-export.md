@@ -46,6 +46,6 @@ story={snapshot => {
 
 Use the [format helpers](formatting-and-appearance.md) for story prose.
 
-Pass raw values to CSV export helpers; do not preformat numbers as display
+Dataset accessors return raw values; do not preformat numbers as display
 labels. Null and undefined become empty cells, while measured zero stays zero.
 The helpers handle quoting and spreadsheet formula protection.

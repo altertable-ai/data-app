@@ -1,3 +1,5 @@
+import { createDataHooks } from '@/src/react/hooks';
+import { getViewDefinition } from '@/src/react/view-runtime';
 import { InspectionSheet } from '@/src/react/ui/AboutData';
 import { displayedSnapshot } from '@/src/core/data-view';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
@@ -14,9 +16,8 @@ import {
   dimensionFilter,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
-import { createDataClient } from '@altertable/data-app/client';
+import { createDataClient } from '@/src/client/data-client';
 import {
-  createDataHooks,
   dateRangeVariable,
   textVariable,
   createDataContext,
@@ -144,9 +145,13 @@ test('time view derives its control, input, and displayed period from one declar
     emptyFallback: { title: 'No actions' },
   });
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
-  expect(timed.variables.period.kind).toBe('dateRange');
-  expect(resolveViewInput(timed, { period: input })).toEqual(input);
-  expect(timed.describeInput(input)).toContain('Mar 10–12, 2026');
+  expect(getViewDefinition(timed).variables.period.kind).toBe('dateRange');
+  expect(resolveViewInput(getViewDefinition(timed), { period: input })).toEqual(
+    input
+  );
+  expect(getViewDefinition(timed).describeInput(input)).toContain(
+    'Mar 10–12, 2026'
+  );
 });
 
 test('time view composes other inputs without surrendering its period binding', () => {
@@ -170,12 +175,15 @@ test('time view composes other inputs without surrendering its period binding', 
     emptyFallback: { title: 'No actions' },
   });
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
-  expect(resolveViewInput(timed, { period: input, search: 'billing' })).toEqual(
-    {
+  expect(
+    resolveViewInput(getViewDefinition(timed), {
       period: input,
       search: 'billing',
-    }
-  );
+    })
+  ).toEqual({
+    period: input,
+    search: 'billing',
+  });
 });
 
 test('Present findings use the displayed input and require unique, supported evidence', () => {
@@ -252,22 +260,32 @@ test('nested view inputs preserve dates and dimensions in validation and descrip
     kind: 'include',
     members: [{ kind: 'value', value: 'HTTP' }],
   };
-  const input = resolveViewInput(timed, { period, source: selected });
+  const input = resolveViewInput(getViewDefinition(timed), {
+    period,
+    source: selected,
+  });
   expect(input).toEqual({ request: period, filters: { source: selected } });
-  expect(timed.describeInput(input)).toContain('Mar 10–12, 2026');
-  expect(timed.describeInput(input)).toContain('Source: HTTP');
+  expect(getViewDefinition(timed).describeInput(input)).toContain(
+    'Mar 10–12, 2026'
+  );
+  expect(getViewDefinition(timed).describeInput(input)).toContain(
+    'Source: HTTP'
+  );
   expect(() =>
-    resolveViewInput(Object.assign({}, timed, { bindings: {} }), {
-      period,
-      source: selected,
-    })
+    resolveViewInput(
+      Object.assign({}, getViewDefinition(timed), { bindings: {} }),
+      {
+        period,
+        source: selected,
+      }
+    )
   ).toThrow('source dimension selection');
   expect(() =>
     resolveViewInput(
       {
-        variables: timed.variables,
-        bindings: timed.bindings,
-        date: timed.date,
+        variables: getViewDefinition(timed).variables,
+        bindings: getViewDefinition(timed).bindings,
+        date: getViewDefinition(timed).date,
         input() {
           return {
             request: period,
@@ -281,9 +299,9 @@ test('nested view inputs preserve dates and dimensions in validation and descrip
   expect(() =>
     resolveViewInput(
       {
-        variables: timed.variables,
-        bindings: timed.bindings,
-        input: timed.input,
+        variables: getViewDefinition(timed).variables,
+        bindings: getViewDefinition(timed).bindings,
+        input: getViewDefinition(timed).input,
         date: {
           variable: 'period',
           input(input) {
@@ -419,12 +437,14 @@ test('date bindings reject silently changed ranges and comparisons', () => {
     { start: '2026-03-10', end: '2026-03-12' },
     true
   );
-  expect(resolveViewInput(view, { period: selection })).toEqual(selection);
+  expect(
+    resolveViewInput(getViewDefinition(view), { period: selection })
+  ).toEqual(selection);
   expect(() =>
     resolveViewInput(
       {
-        variables: view.variables,
-        date: view.date,
+        variables: getViewDefinition(view).variables,
+        date: getViewDefinition(view).date,
         input({ period }) {
           return { ...period, comparison: null };
         },
@@ -749,15 +769,17 @@ test('declared view defaults derive operation inputs without dropping explicit m
     emptyFallback: { title: 'No data' },
   };
   const empty = hooks.defineDataView({ ...base, operation: 'empty' });
-  expect(empty.variables).toEqual({});
-  expect(resolveViewInput(empty, {})).toEqual({});
+  expect(getViewDefinition(empty).variables).toEqual({});
+  expect(resolveViewInput(getViewDefinition(empty), {})).toEqual({});
   const variables = { search: textVariable({ key: 'search' }) };
   const search = hooks.defineDataView({
     ...base,
     operation: 'search',
     variables,
   });
-  expect(resolveViewInput(search, { search: 'new' })).toEqual({
+  expect(
+    resolveViewInput(getViewDefinition(search), { search: 'new' })
+  ).toEqual({
     search: 'new',
   });
   const nested = hooks.defineDataView({
@@ -766,7 +788,9 @@ test('declared view defaults derive operation inputs without dropping explicit m
     variables,
     input: values => ({ filters: values }),
   });
-  expect(resolveViewInput(nested, { search: 'new' })).toEqual({
+  expect(
+    resolveViewInput(getViewDefinition(nested), { search: 'new' })
+  ).toEqual({
     filters: { search: 'new' },
   });
 });

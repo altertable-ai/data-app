@@ -7,6 +7,7 @@ import {
   DataApp,
   DataSection,
   TextWidget,
+  VisualizationWidget,
   textVariable,
 } from '@altertable/data-app/react';
 import type { TransportResponse } from '@/src/core/bridge';
@@ -69,15 +70,37 @@ const alphaDataset = alpha.dataset({
   evidence: context.evidence({ id: 'alpha-data', queryNames: ['alpha'] }),
 });
 const alphaContent = alpha.content(result => (
-  <TextWidget
-    title="Alpha"
-    reading={result.select(
-      (data, input) => `${data.count} for ${input.version}`
-    )}
-    evidence={context.evidence({ id: 'alpha', queryNames: ['alpha'] })}
-  >
-    {value => <p data-testid="primary">{value}</p>}
-  </TextWidget>
+  <>
+    <TextWidget
+      title="Alpha"
+      reading={result.select(
+        (data, input) => `${data.count} for ${input.version}`
+      )}
+      evidence={context.evidence({ id: 'alpha', queryNames: ['alpha'] })}
+    >
+      {value => <p data-testid="primary">{value}</p>}
+    </TextWidget>
+    <VisualizationWidget
+      title="Alpha visualization"
+      dataset={alphaDataset}
+      source={result}
+      viewLabel="Alpha view"
+      views={[
+        {
+          id: 'count',
+          label: 'Count',
+          render: rows => <p data-testid="primary-visual">{rows[0]?.count}</p>,
+        },
+        {
+          id: 'doubled',
+          label: 'Doubled',
+          render: rows => (
+            <p data-testid="primary-visual">{rows[0]!.count * 2}</p>
+          ),
+        },
+      ]}
+    />
+  </>
 ));
 const betaContent = beta.content(result => (
   <TextWidget

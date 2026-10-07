@@ -317,7 +317,7 @@ const base = {
   isEmpty: () => false,
   emptyFallback: { title: 'No data' },
 };
-const emptyView = defaults.defineDataView({ ...base, operation: 'empty' });
+defaults.defineDataView({ ...base, operation: 'empty' });
 const searchView = defaults.defineDataView({
   ...base,
   operation: 'search',
@@ -343,7 +343,7 @@ const inheritedSection: DataSectionProps<number> = {
   result: {
     view: { kind: 'empty', input: {} },
     refetch() {},
-    emptyFallback: emptyView.emptyFallback,
+    emptyFallback: { title: 'No results' },
   },
   loadingFallback: null,
   children: value => String(value),

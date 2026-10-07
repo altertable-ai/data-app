@@ -5,7 +5,8 @@ controls, or a deliberately custom shell. Standard data apps use declared views
 and bound widgets from `/react`.
 
 `<DataApp>` here renders a static screen and accepts optional direct CSV data.
-Direct widget forms accept local values or rows. Use `<GettingStarted>` for
+Direct widget forms accept local values or rows. `<DataWidget>` supplies a generic
+frame for deliberately custom content. Use `<GettingStarted>` for
 connection setup. Fetched data belongs to a declared view; avoid inventing
 request states to populate a shell.
 
@@ -26,8 +27,8 @@ styles.
 ## Charts
 
 Import `BarChart`, `LineChart`, `AreaChart`, `PieChart`, or `ScatterChart` from
-`/react/ui`. Compose the visual inside a bound `<VisualizationWidget>` so its
-loading state, evidence, and inspection come from the displayed result.
+`/react/ui`. Compose the visual inside `<VisualizationWidget dataset={dataset} source={result}>`
+so rows, loading state, evidence, and inspection come from that dataset.
 Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
 values must be nonnegative. Use `formatValue` for domain formatting.
 

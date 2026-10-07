@@ -201,9 +201,8 @@ export function createDataHooks<Operations extends DataOperations>(
     > = definition;
     const normalized = { ...metadata, variables, input, describeInput };
     return Object.assign(
-      new DeclaredView<Data, Input>(() => useView(normalized)),
+      new DeclaredView(() => useView(normalized), normalized),
       {
-        ...normalized,
         dataset<Row>(definition: DatasetDefinition<Data, Input, Row>) {
           return bindDataset(definition);
         },

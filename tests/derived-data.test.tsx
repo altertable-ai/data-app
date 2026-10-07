@@ -1,23 +1,29 @@
-import { exportDatasets, displayedScope } from '@/src/react/bindings';
+import { createDataHooks } from '@/src/react/hooks';
+import { DataSection } from '@/src/react/ui/DataSection';
+import {
+  MetricWidget,
+  TableWidget,
+  VisualizationWidget,
+} from '@/src/react/widgets';
+import {
+  exportDatasets,
+  displayedScope,
+  datasetTable,
+  datasetCsv,
+} from '@/src/react/bindings';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { dateRangeVariable } from '@altertable/data-app/react';
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup as renderMarkup } from 'react-dom/server';
 import type { ReactNode } from 'react';
-import { DataAppProvider } from '@altertable/data-app/react/ui';
-import { createDataClient } from '@altertable/data-app/client';
+import { DataAppProvider } from '@/src/react/mount';
+import { createDataClient } from '@/src/client/data-client';
 import {
   defineDateRangeContract,
   type DataOperation,
   type DateRangeRequest,
 } from '@altertable/data-app/contract';
-import {
-  createDataHooks,
-  createDataContext,
-  DataSection,
-  TableWidget,
-  MetricWidget,
-} from '@altertable/data-app/react';
+import { createDataContext } from '@altertable/data-app/react';
 import { displayedSnapshot } from '@/src/core/data-view';
 import { formatCsv, createCsvDownload } from '@/src/react/ui/csv-export';
 
@@ -100,11 +106,11 @@ test('datasets derive loading tables, formatted cells, and raw CSV from one decl
   );
   expect(ready).toContain('1,234');
   expect(ready).toContain('—');
-  expect(counts.props(snapshot).columns[1].type).toBe('number');
-  expect(counts.props(snapshot).columns[2].type).toBeUndefined();
+  expect(datasetTable(counts, snapshot).columns[1].type).toBe('number');
+  expect(datasetTable(counts, snapshot).columns[2].type).toBeUndefined();
   expect(ready).toContain('Yes');
   expect(ready).toContain('No');
-  const csv = counts.csv(snapshot);
+  const csv = datasetCsv(counts, snapshot);
   expect(csv.rows).toEqual([
     ['A', 1234, true],
     ['B', 0, false],
@@ -149,7 +155,7 @@ test('dataset scope and export callbacks retain displayed input through refresh 
     expect(
       exportDatasets([counts], displayed, view.scope(displayed), 'Rows')
         .tables[0].rows
-    ).toEqual(counts.csv(snapshot).rows);
+    ).toEqual(datasetCsv(counts, snapshot).rows);
     const all = exportDatasets(
       [counts, other],
       displayed,
@@ -180,7 +186,7 @@ test('bound metrics derive loading, zero, evidence, and period comparisons for w
     <MetricWidget metric={count} source={{ loading: true }} />
   );
   expect(selections).toBe(0);
-  expect(count.props(snapshot).metric).toBe(metric);
+  expect(count.definition).toBe(metric);
   expect(count.read(snapshot).value.current).toBe(1234);
   expect(
     count.read({
@@ -243,20 +249,17 @@ test('keyed datasets retain explicit accessors and identity for projected rows',
     },
   });
   expect(counts.read(snapshot).value).toBe(snapshot.data);
-  expect(counts.props(snapshot).rowKey(snapshot.data[0]!)).toBe('A');
-  expect(counts.props(snapshot).columns.map(column => column.id)).toEqual([
-    'id',
-    'count',
-    'doubled',
-    'available',
-  ]);
-  expect(counts.csv(snapshot).columns).toEqual([
+  expect(datasetTable(counts, snapshot).rowKey(snapshot.data[0]!)).toBe('A');
+  expect(
+    datasetTable(counts, snapshot).columns.map(column => column.id)
+  ).toEqual(['id', 'count', 'doubled', 'available']);
+  expect(datasetCsv(counts, snapshot).columns).toEqual([
     'Id',
     'Count',
     'Doubled',
     'Available',
   ]);
-  expect(counts.csv(snapshot).rows[0]).toEqual(['A', 1234, 2468, true]);
+  expect(datasetCsv(counts, snapshot).rows[0]).toEqual(['A', 1234, 2468, true]);
   const projection = view.dataset({
     name: 'Projected',
     select: rows => rows.map(row => ({ key: row.id, sampleCount: row.count })),
@@ -267,8 +270,11 @@ test('keyed datasets retain explicit accessors and identity for projected rows',
       sampleCount: { value: row => row.sampleCount },
     },
   });
-  expect(projection.csv(snapshot).columns).toEqual(['Key', 'Sample count']);
-  expect(projection.csv(snapshot).rows[0]).toEqual(['A', 1234]);
+  expect(datasetCsv(projection, snapshot).columns).toEqual([
+    'Key',
+    'Sample count',
+  ]);
+  expect(datasetCsv(projection, snapshot).rows[0]).toEqual(['A', 1234]);
   const composite = view.dataset({
     name: 'Composite',
     select: rows => rows,
@@ -276,7 +282,9 @@ test('keyed datasets retain explicit accessors and identity for projected rows',
     evidence: counts.evidence,
     columns: { id: { value: row => row.id } },
   });
-  expect(composite.props(snapshot).rowKey(snapshot.data[0]!)).toBe('A:true');
+  expect(datasetTable(composite, snapshot).rowKey(snapshot.data[0]!)).toBe(
+    'A:true'
+  );
 });
 
 test('hook scope uses the automatic date description for a manually composed view', () => {
@@ -359,4 +367,37 @@ test('datasets validate empty or blank column declarations at the boundary', () 
   expect(() =>
     view.dataset({ ...definition, columns: { ' ': { value: row => row.id } } })
   ).toThrow('column IDs');
+});
+
+test('dataset visualizations derive displayed rows, evidence, and empty copy without loading selectors', () => {
+  let selections = 0;
+  const counts = dataset(rows => {
+    selections++;
+    return rows;
+  });
+  function visual(source: { loading: true } | typeof snapshot) {
+    return renderToStaticMarkup(
+      <VisualizationWidget dataset={counts} source={source}>
+        {rows => (
+          <p>
+            {rows[0]?.id}: {rows[0]?.count ?? 'missing'}
+          </p>
+        )}
+      </VisualizationWidget>
+    );
+  }
+  expect(visual({ loading: true })).toContain('altertable-content-skeleton');
+  expect(selections).toBe(0);
+  expect(visual(snapshot)).toContain('A: 1234');
+  expect(visual(snapshot)).toContain('Explore Counts');
+  expect(visual({ ...snapshot, data: [] })).toContain('No results');
+  const updating = displayedSnapshot({
+    kind: 'updating',
+    data: snapshot.data,
+    requestedInput: { scope: 'pending' },
+    displayedInput: snapshot.input,
+    message: 'Updating',
+  })!;
+  const rows = counts.read(updating);
+  expect(rows.value).toBe(snapshot.data);
 });

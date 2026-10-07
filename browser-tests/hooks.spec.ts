@@ -211,3 +211,55 @@ test('declared primary sections reuse retained data when mounting during refresh
     page.getByTestId('primary').filter({ visible: true })
   ).toHaveText('2 for 2');
 });
+
+test('published dataset visualizations derive loading, share alternate views with inspection, and retain displayed rows', async ({
+  page,
+}) => {
+  await page.goto('/hooks-app?declared');
+  await page.getByRole('button', { name: 'Show primary', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Alpha visualization', exact: true })
+  ).toBeVisible();
+  await expect(page.getByTestId('primary-visual')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', {
+      name: 'Explore Alpha visualization',
+      exact: true,
+    })
+  ).toHaveCount(0);
+  await page
+    .getByRole('button', { name: 'Resolve alpha 1', exact: true })
+    .click();
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('1');
+  await page.getByRole('tab', { name: 'Doubled', exact: true }).click();
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('2');
+  await page.getByRole('searchbox', { name: 'Version', exact: true }).fill('2');
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('2');
+  await page
+    .getByRole('button', { name: 'Explore Alpha visualization', exact: true })
+    .click();
+  const sheet = page.getByRole('dialog');
+  await expect(sheet.getByTestId('primary-visual')).toHaveText('2');
+  await sheet.getByRole('tab', { name: 'Count', exact: true }).click();
+  await expect(sheet.getByTestId('primary-visual')).toHaveText('1');
+  await sheet.getByRole('tab', { name: 'Queries', exact: true }).click();
+  await expect(sheet).toContainText('SELECT alpha');
+  await expect(sheet).not.toContainText('SELECT beta');
+  await page.keyboard.press('Escape');
+  await expect(sheet).not.toBeVisible();
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('1');
+  await page
+    .getByRole('button', { name: 'Resolve alpha 2', exact: true })
+    .click();
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('2');
+});

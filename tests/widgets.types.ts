@@ -1,8 +1,8 @@
+import type { WidgetEvidence } from '@altertable/data-app/react';
 import type {
   DataWidgetProps,
   VisualizationWidgetProps,
-  WidgetEvidence,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app/react/ui';
 
 // Compile-only assertions: readings always carry evidence and empty-result semantics.
 function verifyBoundWidgets(evidence: WidgetEvidence) {

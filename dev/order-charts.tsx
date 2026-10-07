@@ -8,7 +8,7 @@ import type { CountryRevenue, OrderDay, OrderBand } from '@/dev/orders';
 
 const currency = { kind: 'currency', currency: 'USD' } as const;
 /* oxlint-disable jsx-a11y/prefer-tag-over-role -- Inline SVG needs an image role and accessible name. */
-export function DailyLineChart({ days }: { days: OrderDay[] }) {
+export function DailyLineChart({ days }: { days: readonly OrderDay[] }) {
   const width = 400;
   const height = 160;
   const paddingTop = 18;
@@ -89,7 +89,7 @@ function sliceColor(index: number) {
 function piePoint(angle: number) {
   return `${50 + 50 * Math.sin(angle)},${50 - 50 * Math.cos(angle)}`;
 }
-export function OrderValuePieChart({ bands }: { bands: OrderBand[] }) {
+export function OrderValuePieChart({ bands }: { bands: readonly OrderBand[] }) {
   const total = bands.reduce((total, band) => total + band.orderCount, 0);
   let startAngle = 0;
   const slices: { band: OrderBand; start: number; end: number }[] = [];
@@ -174,7 +174,11 @@ export function OrderValuePieChart({ bands }: { bands: OrderBand[] }) {
   );
 }
 
-export function CountryRanking({ countries }: { countries: CountryRevenue[] }) {
+export function CountryRanking({
+  countries,
+}: {
+  countries: readonly CountryRevenue[];
+}) {
   return (
     <Ranking
       aria-label="Revenue by country"

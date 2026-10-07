@@ -14,8 +14,6 @@ export type { GridProps } from '@/src/react/ui/Grid';
 export { GridItem } from '@/src/react/ui/GridItem';
 export type { GridItemProps } from '@/src/react/ui/GridItem';
 export type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
-export { DataWidget } from '@/src/react/widgets';
-export type { DataWidgetProps } from '@/src/react/widgets';
 export { TextContent } from '@/src/react/ui/TextContent';
 export type { TextContentProps } from '@/src/react/ui/TextContent';
 export { DataValue } from '@/src/react/ui/DataValue';
@@ -24,7 +22,7 @@ export { TextWidget } from '@/src/react/widgets';
 export type { TextWidgetProps } from '@/src/react/widgets';
 export { VisualizationWidget } from '@/src/react/widgets';
 export type { VisualizationWidgetProps } from '@/src/react/widgets';
-export type { VisualizationWidgetView } from '@/src/react/ui/VisualizationWidget';
+export type { VisualizationWidgetView } from '@/src/react/widgets';
 export { TableWidget } from '@/src/react/widgets';
 export type { TableWidgetProps } from '@/src/react/widgets';
 export type {

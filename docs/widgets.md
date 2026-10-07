@@ -2,7 +2,7 @@
 
 ## Choose a widget
 
-Metrics and tables from `/react` consume view bindings and a source. For static displays, use
+Metrics, tables, and visualizations from `/react` consume view bindings and a source. For static displays, use
 [direct UI composition](ui.md).
 Manage requests in the [view and section](views.md); show skeletons for loading
 readings without inventing values. Use `isEmpty` for the predicate and
@@ -13,7 +13,6 @@ readings without inventing values. Use `isEmpty` for the predicate and
 | Metric with formatting, comparison, and evidence | `<MetricWidget>`        |
 | Custom chart or alternate chart views            | `<VisualizationWidget>` |
 | Defined columns, local search, and pagination    | `<TableWidget>`         |
-| Custom content in the standard widget frame      | `<DataWidget>`          |
 | Narrative panel                                  | `<TextWidget>`          |
 | Borderless explanatory prose                     | `<TextContent>`         |
 | One data-dependent phrase within static prose    | `<DataValue>`           |
@@ -46,6 +45,9 @@ const content = activityView.content(result => (
   <Grid columns={2}>
     <MetricWidget metric={total} source={result} />
     <TableWidget dataset={countries} source={result} />
+    <VisualizationWidget dataset={countries} source={result}>
+      {rows => <CountryChart rows={rows} />}
+    </VisualizationWidget>
   </Grid>
 ));
 ```
@@ -54,7 +56,7 @@ Column keys supply unique IDs and readable default labels. Use `label` for a
 specific display/export header. Declare selectors, raw value accessors, and
 row-key callbacks explicitly; row keys must be stable and unique.
 Metric comparisons require a
-view date binding. `read()` returns a loading-aware value for custom visuals;
+view date binding. `read()` returns a loading-aware value for custom prose.
 Pass the binding and `source={snapshot}` to reuse a widget in a story.
 Selectors do not run during loading. Table search, pagination, descriptions, and
 actions remain local choices. For custom cells, use `format: row => ...`; CSV
@@ -80,7 +82,8 @@ filtered data to the text and its related visualization.
 
 `<Ranking>`, `<Breakdown>`, and `<Comparison>`
 compose inside authored widgets. Use [built-in charts](ui.md#charts) from `/react/ui`
-inside a bound `<VisualizationWidget>` for displayed result items. A visualization's `views` declaration keeps
+inside `<VisualizationWidget dataset={dataset} source={result}>` for displayed rows.
+The dataset owns evidence and empty copy; an empty row selection shows that fallback. A visualization's `views` declaration keeps
 alternate-view selection shared with its inspection sheet. Give views stable IDs
 and keep interactive state above the widget, since inspection may render it again.
 

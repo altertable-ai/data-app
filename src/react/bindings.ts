@@ -46,76 +46,118 @@ export type DatasetDefinition<Data, Input, Row> = {
   emptyFallback?: EmptyContent;
 };
 
+export class ExportDataset<Data, Input> {
+  #csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable;
+  constructor(
+    readonly name: string,
+    csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable
+  ) {
+    this.#csv = csv;
+  }
+  static csv<Data, Input>(
+    dataset: ExportDataset<Data, Input>,
+    snapshot: DisplayedSnapshot<Data, Input>
+  ) {
+    return dataset.#csv(snapshot);
+  }
+}
+
+export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
+  readonly evidence: WidgetEvidence;
+  #select: (data: Data, input: Input) => readonly Row[];
+  #table: {
+    title: string;
+    columns: [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
+    rowKey: (row: Row) => string | number;
+    evidence: WidgetEvidence;
+    emptyFallback: EmptyContent;
+  };
+  constructor(definition: DatasetDefinition<Data, Input, Row>) {
+    invariant(!!definition.name.trim(), 'A dataset needs a name.');
+    const ids = Object.keys(definition.columns);
+    invariant(
+      ids.length > 0 && ids.every(id => !!id.trim()),
+      'A dataset needs nonempty column IDs.'
+    );
+    const { select, rowKey } = definition;
+    const fields = Object.entries(definition.columns).map(([id, column]) => ({
+      ...column,
+      id,
+      label:
+        column.label?.trim() ||
+        id
+          .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+          .replace(/[_-]+/g, ' ')
+          .trim()
+          .toLowerCase()
+          .replace(/^./u, letter => letter.toUpperCase()) ||
+        id,
+    }));
+    const columns = fields.map(column => ({
+      id: column.id,
+      header: column.label,
+      type:
+        column.format && typeof column.format !== 'function'
+          ? ('number' as const)
+          : undefined,
+      cell(row: Row): ReactNode {
+        if (typeof column.format === 'function') return column.format(row);
+        const value = column.value(row);
+        if (value === null || value === undefined) return '—';
+        return column.format
+          ? formatMetric(value as number, column.format)
+          : String(value);
+      },
+    })) as [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
+
+    super(definition.name, snapshot => ({
+      name: definition.name,
+      columns: fields.map(column => column.label),
+      rows: select(snapshot.data, snapshot.input).map(row =>
+        fields.map(column => column.value(row))
+      ),
+    }));
+    this.evidence = definition.evidence;
+    this.#select = select;
+    this.#table = {
+      title: definition.name,
+      columns,
+      rowKey,
+      evidence: definition.evidence,
+      emptyFallback: definition.emptyFallback ?? { title: 'No results' },
+    };
+  }
+  read<Source extends ViewSource<Data, Input>>(source: Source) {
+    return readSource<Data, Input, readonly Row[], Source>(
+      source,
+      this.#select
+    );
+  }
+  static table<Data, Input, Row>(
+    dataset: Dataset<Data, Input, Row>,
+    source: ViewSource<Data, Input>
+  ) {
+    return { ...dataset.#table, reading: dataset.read(source) };
+  }
+}
+
 export function bindDataset<Data, Input, Row>(
   definition: DatasetDefinition<Data, Input, Row>
 ) {
-  invariant(!!definition.name.trim(), 'A dataset needs a name.');
-  const ids = Object.keys(definition.columns);
-  invariant(
-    ids.length > 0 && ids.every(id => !!id.trim()),
-    'A dataset needs nonempty column IDs.'
-  );
-  const { select, rowKey } = definition;
-  const fields = Object.entries(definition.columns).map(([id, column]) => ({
-    ...column,
-    id,
-    label:
-      column.label?.trim() ||
-      id
-        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-        .replace(/[_-]+/g, ' ')
-        .trim()
-        .toLowerCase()
-        .replace(/^./u, letter => letter.toUpperCase()) ||
-      id,
-  }));
-  const columns = fields.map(column => ({
-    id: column.id,
-    header: column.label,
-    type:
-      column.format && typeof column.format !== 'function'
-        ? ('number' as const)
-        : undefined,
-    cell(row: Row): ReactNode {
-      if (typeof column.format === 'function') return column.format(row);
-      const value = column.value(row);
-      if (value === null || value === undefined) return '—';
-      return column.format
-        ? formatMetric(value as number, column.format)
-        : String(value);
-    },
-  })) as [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
+  return new Dataset(definition);
+}
 
-  function read<Source extends ViewSource<Data, Input>>(source: Source) {
-    return readSource<Data, Input, readonly Row[], Source>(source, select);
-  }
-
-  return {
-    name: definition.name,
-    evidence: definition.evidence,
-    read,
-    /** Core table props; pagination, search, descriptions, and actions remain app choices. */
-    props<Source extends ViewSource<Data, Input>>(source: Source) {
-      return {
-        title: definition.name,
-        columns,
-        rowKey,
-        evidence: definition.evidence,
-        emptyFallback: definition.emptyFallback ?? { title: 'No results' },
-        reading: read(source),
-      };
-    },
-    /** Raw displayed values, independent of table formatting. */
-    csv(snapshot: DisplayedSnapshot<Data, Input>): CsvTable {
-      return {
-        name: definition.name,
-        columns: fields.map(column => column.label),
-        rows: select(snapshot.data, snapshot.input).map(row =>
-          fields.map(column => column.value(row))
-        ),
-      };
-    },
-  };
+export function datasetTable<Data, Input, Row>(
+  dataset: Dataset<Data, Input, Row>,
+  source: ViewSource<Data, Input>
+) {
+  return Dataset.table(dataset, source);
+}
+export function datasetCsv<Data, Input>(
+  dataset: ExportDataset<Data, Input>,
+  snapshot: DisplayedSnapshot<Data, Input>
+) {
+  return ExportDataset.csv(dataset, snapshot);
 }
 
 export function bindMetric<Data, Input>(
@@ -142,9 +184,6 @@ export function bindMetric<Data, Input>(
   return {
     definition,
     read,
-    props<Source extends ViewSource<Data, Input>>(source: Source) {
-      return { metric: definition, reading: read(source) };
-    },
   };
 }
 
@@ -160,11 +199,6 @@ export function displayedScope<Data, Input>(
       : view.input;
   return { loading: false, value: describeInput(input) };
 }
-
-export type ExportDataset<Data, Input> = {
-  name: string;
-  csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable;
-};
 
 export function exportDatasets<Data, Input>(
   datasets: readonly [
@@ -184,7 +218,7 @@ export function exportDatasets<Data, Input>(
       .slice(0, 200) || 'data';
   return {
     filename,
-    tables: datasets.map(dataset => dataset.csv(snapshot)) as [
+    tables: datasets.map(dataset => datasetCsv(dataset, snapshot)) as [
       CsvTable,
       ...CsvTable[],
     ],

@@ -1,3 +1,4 @@
+import { ExportDataset } from '@/src/react/bindings';
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { DataApp } from '@/src/react/ui/DataApp';
@@ -52,14 +53,14 @@ test('the primary section reuses exactly the app result and independent declarat
         },
       };
     });
-    const dataset = {
-      name: 'Values',
-      csv({ data, input }: { data: number; input: string }) {
+    const dataset = new ExportDataset(
+      'Values',
+      ({ data, input }: { data: number; input: string }) => {
         expect(data).toBe(1);
         expect(input).toBe('old');
         return { name: 'Values', columns: ['Value'], rows: [[data]] };
-      },
-    };
+      }
+    );
     const html = renderToStaticMarkup(
       <DataApp
         view={primary}

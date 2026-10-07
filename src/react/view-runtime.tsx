@@ -16,10 +16,22 @@ export type ViewResult<Data, Input> = {
 };
 
 /** The executor is private; declarations expose data composition, not subscription hooks. */
-export class DeclaredView<Data, Input> {
+export class DeclaredView<Data, Input, Definition = unknown> {
+  #definition: Definition | undefined;
   #useResult: () => ViewResult<Data, Input>;
-  constructor(useResult: () => ViewResult<Data, Input>) {
+  constructor(
+    useResult: () => ViewResult<Data, Input>,
+    definition?: Definition
+  ) {
+    this.#definition = definition;
     this.#useResult = useResult;
+  }
+  static definition<Data, Input, Definition>(
+    view: DeclaredView<Data, Input, Definition>
+  ): Definition {
+    if (view.#definition === undefined)
+      throw new Error('Missing view definition.');
+    return view.#definition;
   }
   static useResult<Data, Input>(
     view: DeclaredView<Data, Input>
@@ -38,3 +50,9 @@ export const PrimaryViewContext = createContext<{
   declaration: object;
   result: ViewResult<unknown, unknown>;
 } | null>(null);
+
+export function getViewDefinition<Data, Input, Definition>(
+  view: DeclaredView<Data, Input, Definition>
+): Definition {
+  return DeclaredView.definition(view);
+}
