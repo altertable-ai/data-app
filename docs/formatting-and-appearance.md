@@ -21,6 +21,26 @@ once with `view.metric()`; comparisons derive from its displayed source. Previou
 values, range labels, and favorable direction belong to that metric and displayed
 input; see [data context](data-context.md) and [views](views.md).
 
+Use compact counts for headline metrics and chart labels so large values remain
+readable. Declare `format: { kind: 'count', compact: true }` on `view.metric()`
+so bound widgets, comparisons, and narrative share the same formatting. Reuse
+the metric's format with `formatMetric()` in story headlines.
+
+```ts
+formatCount(2_200_000, { compact: true }); // "2.2M"
+formatCount(2_200_000); // "2,200,000"
+```
+
+For custom count chart labels, pass a callback such as
+`formatValue={value => formatCount(value, { compact: true })}`. Keep full counts
+in tables used for precise comparisons with `format: { kind: 'count' }`, and
+keep dataset values numeric so CSV exports retain the raw values.
+
+Counts are nonnegative integers. For signed or fractional measures, use
+`formatNumber(value, { notation: 'compact', maximumFractionDigits: 1 })` and
+preserve the measure's units; include `style: 'currency'` and `currency` for money.
+Use `formatPercent()` for ratios.
+
 Import `chartColor()` from `/react` to select colors from the configured palette.
 `<PeriodSummary>` describes reporting periods; `<UpdatedAt>` and
 `<DateTimeTooltip>` expose readable timestamps with exact-date details.

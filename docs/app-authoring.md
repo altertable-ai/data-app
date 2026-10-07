@@ -33,6 +33,10 @@ Skeletonize only the content that needs data. Reuse bindings and the displayed
 source in narrative so values, formatting, and evidence follow filter changes,
 refresh, and failure.
 
+Use compact counts for headline metrics and chart labels, full counts for precise
+table comparisons, and raw numbers for exports. Declare formatting on bindings
+and reuse package helpers; see [format values](formatting-and-appearance.md#format-values).
+
 | Task                                             | Documentation                                                     |
 | ------------------------------------------------ | ----------------------------------------------------------------- |
 | Choose components, CSS tokens, and styling hooks | [Styling](styling.md)                                             |
