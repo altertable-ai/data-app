@@ -106,8 +106,7 @@ function OrderResults({
   country: string;
 }) {
   const { countries, days, bands } = data;
-  const { orderCount, revenue, leadingCountry, largestValueBand } =
-    summarizeOrders(data);
+  const { orderCount, revenue } = summarizeOrders(data);
   return (
     <Stack aria-label="Order results">
       <TextContent>
@@ -131,29 +130,18 @@ function OrderResults({
           description="Paid and pending orders; refunds excluded."
           value={revenue}
           format={currency}
-          insight={
-            orderCount > 0
-              ? `${formatMetric(revenue / orderCount, currency)} per order on average.`
-              : undefined
-          }
         />
         <VisualizationWidget
           title="Orders per day"
           description="Daily order count. Days without orders stay on the chart as zero."
           evidence={ordersPerDayEvidence}
           visual={<DailyLineChart days={days} />}
-          insight={describeWeeklyOrderTrend(days)}
         />
         <VisualizationWidget
           title="Order value"
           description="Share of orders by amount, in $50 bands."
           evidence={orderValueEvidence}
           visual={<OrderValuePieChart bands={bands} />}
-          insight={
-            largestValueBand
-              ? `Largest band: ${largestValueBand.band}, with ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`
-              : undefined
-          }
           empty={
             bands.length
               ? undefined
@@ -169,11 +157,6 @@ function OrderResults({
         description="Highest revenue first. Countries whose customers placed no orders show $0."
         evidence={revenueEvidence}
         visual={<CountryRanking countries={countries} />}
-        insight={
-          leadingCountry && revenue > 0
-            ? `${leadingCountry.country} brings in ${formatPercent(leadingCountry.revenue / revenue)} of revenue.`
-            : undefined
-        }
       />
     </Stack>
   );

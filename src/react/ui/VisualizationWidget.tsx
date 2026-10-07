@@ -14,7 +14,6 @@ type VisualizationWidgetBaseProps = {
   title: ReactNode;
   annotationId?: string;
   description?: ReactNode;
-  insight?: ReactNode;
   action?: ReactNode;
   evidence?: WidgetEvidence;
   status?: WidgetStatus;
@@ -59,8 +58,7 @@ export function VisualizationWidget<Data>(
   if ('views' in props && props.views)
     return <VisualizationWidgetWithViews {...props} />;
   if ('reading' in props) {
-    const { reading, children, isEmpty, empty, skeleton, insight, ...shell } =
-      props;
+    const { reading, children, isEmpty, empty, skeleton, ...shell } = props;
 
     return (
       <DataWidget
@@ -69,7 +67,6 @@ export function VisualizationWidget<Data>(
         isEmpty={isEmpty}
         empty={empty}
         skeleton={skeleton}
-        footer={insight}
       >
         {data => (
           <div className="altertable-visualization-widget-content">
@@ -79,12 +76,12 @@ export function VisualizationWidget<Data>(
       </DataWidget>
     );
   }
-  const { visual, loading = false, insight, ...shell } = props;
+  const { visual, loading = false, ...shell } = props;
   if (loading)
     return <ContentSkeleton variant="panel" className={shell.className} />;
 
   return (
-    <DataWidget {...shell} footer={insight}>
+    <DataWidget {...shell}>
       <div className="altertable-visualization-widget-content">{visual}</div>
     </DataWidget>
   );
@@ -98,7 +95,6 @@ function VisualizationWidgetWithViews<Data>({
   isEmpty,
   empty,
   skeleton,
-  insight,
   ...shell
 }: BoundVisualizationWidgetBase<Data> & {
   views: readonly VisualizationWidgetView<Data>[];
@@ -115,7 +111,6 @@ function VisualizationWidgetWithViews<Data>({
       isEmpty={isEmpty}
       empty={empty}
       skeleton={skeleton}
-      footer={insight}
     >
       {data => (
         <div className="altertable-visualization-widget-content">

@@ -41,7 +41,6 @@ type TableWidgetBaseProps<Row> = {
   columns: readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
   /** Unique, nonempty row identity. Numeric keys must be finite; 1 and "1" collide. */
   rowKey: (row: Row) => string | number;
-  insight?: ReactNode;
   status?: WidgetStatus;
   action?: ReactNode;
   evidence?: WidgetEvidence;
@@ -119,7 +118,6 @@ function TableWidgetContent<Row>({
   columns,
   rows,
   rowKey,
-  insight,
   action,
   evidence,
   search,
@@ -270,14 +268,7 @@ function TableWidgetContent<Row>({
       description={description}
       action={action}
       evidence={evidence}
-      footer={
-        (pager || insight) && (
-          <>
-            {pager}
-            {insight}
-          </>
-        )
-      }
+      footer={pager}
     >
       <div className="altertable-table-widget-content">{table}</div>
     </DataWidget>

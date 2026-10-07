@@ -403,3 +403,7 @@ editing a saved comment preserves its original image. Images are limited to
 Custom areas also work from the keyboard: Shift+Enter starts a rectangle, arrow
 keys resize it, Shift+arrow keys move it, and Enter confirms. Escape cancels the
 rectangle without leaving annotation mode.
+
+
+Widget descriptions explain how to read the displayed data. Narrative commentary
+belongs in `TextContent`; widgets do not provide a freeform `insight` footer slot.

@@ -24,7 +24,6 @@ type MetricWidgetBaseProps = {
   comparison?: MetricComparison;
   evidence?: WidgetEvidence;
   action?: ReactNode;
-  insight?: ReactNode;
   status?: WidgetStatus;
   visual?: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'about' | 'children'>;
@@ -84,7 +83,6 @@ function MetricWidgetContent({
   comparison,
   evidence,
   action,
-  insight,
   status,
   visual,
   className,
@@ -175,7 +173,6 @@ function MetricWidgetContent({
         <small className="altertable-metric-description">{description}</small>
       )}
       {visualization}
-      {insight && <div className="altertable-metric-insight">{insight}</div>}
     </div>
   );
 }

@@ -405,21 +405,18 @@ function Overview() {
             value={20}
             format={{ kind: 'count' }}
             evidence={evidence}
-            insight="12 on Monday · 8 on Wednesday"
           />
           <MetricWidget
             label="Active workspaces"
             value={2}
             format={{ kind: 'count' }}
             evidence={recordsEvidence}
-            insight="Of 23 tracked workspaces"
           />
           <MetricWidget
             label="Workspace activation"
             value={2 / 23}
             format={{ kind: 'ratio', maximumFractionDigits: 1 }}
             evidence={recordsEvidence}
-            insight="Workspaces with at least one event"
           />
         </Grid>
         <Grid columns={2}>
