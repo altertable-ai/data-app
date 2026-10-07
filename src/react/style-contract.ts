@@ -9,7 +9,6 @@ export const dataAppStyleTokens = [
   '--atbl-muted',
   '--atbl-border',
   '--atbl-accent',
-  '--atbl-accent-hover',
   '--atbl-accent-subtle',
   '--atbl-on-accent',
   '--atbl-positive',

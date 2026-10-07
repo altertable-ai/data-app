@@ -373,6 +373,30 @@ test('native and Aria state paint excludes disabled hover and keeps busy geometr
   await expect(action).toHaveCSS('cursor', 'default');
 });
 
+test('search fields apply hover borders only while enabled', async ({
+  page,
+}) => {
+  await page.goto('/gallery?view=filters');
+  const field = page.locator('.altertable-search-input-wrap:visible').first();
+  await field.evaluate(element =>
+    (element as HTMLElement).style.setProperty(
+      '--atbl-control-hover-border',
+      'rgb(255, 0, 0)'
+    )
+  );
+  await field.hover();
+  await expect(field).toHaveCSS('border-top-color', 'rgb(255, 0, 0)');
+  await page.mouse.move(0, 0);
+  const idleBorder = await field.evaluate(
+    element => getComputedStyle(element).borderTopColor
+  );
+  await field
+    .locator('input')
+    .evaluate(element => ((element as HTMLInputElement).disabled = true));
+  await field.hover();
+  await expect(field).toHaveCSS('border-top-color', idleBorder);
+});
+
 test('density changes control geometry without shrinking typography', async ({
   page,
 }) => {

@@ -31,7 +31,6 @@ See [Styling](styling.md) for composition and ownership.
 | Token                  | Scope             | Purpose                                 |
 | ---------------------- | ----------------- | --------------------------------------- |
 | `--atbl-accent`        | Inherited         | Brand accent and selected controls.     |
-| `--atbl-accent-hover`  | Optional override | Hovered accent.                         |
 | `--atbl-accent-subtle` | Optional override | Quiet selected surface.                 |
 | `--atbl-on-accent`     | Inherited         | Foreground on an accent-filled control. |
 

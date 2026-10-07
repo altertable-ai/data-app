@@ -43,6 +43,7 @@ test('authoring validation rejects private, invented and copied package hooks', 
   for (const source of [
     '.app {color:var(--atbl-input-accent)}',
     '.app {color:var(--atbl-unknown)}',
+    '.app {color:var(--atbl-accent-hover)}',
     '.altertable-button-icon {width:12px}',
     '.altertable-made-up {display:flex}',
     '.app {color:var(--at-accent)}',
@@ -95,4 +96,20 @@ test('stable class and public token registries match rendered component sources'
   expect(
     dataAppStyleTokens.some(name => name.startsWith('--atbl-input-'))
   ).toBe(false);
+});
+
+// Public names must affect authored CSS, rather than only describe an inert hook.
+test('public tokens have an authored CSS definition or consumer', async () => {
+  const styles = (
+    await Promise.all(
+      (await Array.fromAsync(new Glob('src/react/**/*.css').scan('.'))).map(
+        path => Bun.file(path).text()
+      )
+    )
+  ).join('\n');
+  for (const name of dataAppStyleTokens) {
+    const definition = new RegExp(`${name}\\s*:`);
+    const consumer = new RegExp(`var\\(\\s*${name}\\s*[,)]`);
+    expect(definition.test(styles) || consumer.test(styles), name).toBe(true);
+  }
 });

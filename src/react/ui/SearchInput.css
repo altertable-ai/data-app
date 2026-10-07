@@ -11,12 +11,6 @@
   background: var(--atbl-surface);
   color: var(--atbl-muted);
 }
-.altertable-search-input-wrap:hover {
-  border-color: var(
-    --atbl-control-hover-border,
-    color-mix(in srgb, var(--atbl-muted) 45%, var(--atbl-border))
-  );
-}
 .altertable-search-input-wrap[data-size='compact'] {
   width: min(100%, 300px);
   min-height: var(--atbl-control-compact-height);

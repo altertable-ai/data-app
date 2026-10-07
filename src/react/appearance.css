@@ -7,7 +7,6 @@
   --atbl-palette-muted: #687078;
   --atbl-palette-border: #e3e6e8;
   --atbl-chart-strength: 100%;
-  --atbl-accent-hover-target: black;
   --atbl-accent-subtle-strength: 12%;
 }
 :root[data-atbl-theme='dark'] {
@@ -55,7 +54,6 @@
     --atbl-input-dark-accent,
     color-mix(in srgb, var(--atbl-input-accent, #405d47) 50%, white)
   );
-  --atbl-accent-hover-target: white;
   --atbl-accent-subtle-strength: 22%;
   --atbl-on-accent: var(--atbl-input-on-accent, var(--atbl-background));
   --atbl-danger: #f97066;
