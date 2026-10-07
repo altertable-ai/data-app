@@ -26,7 +26,14 @@
   color: var(--atbl-muted);
 }
 .starter-connection[data-state='connected'] .starter-connection-icon {
-  background: var(--atbl-accent-subtle);
+  background: var(
+    --atbl-accent-subtle,
+    color-mix(
+      in srgb,
+      var(--atbl-accent) var(--atbl-accent-subtle-strength),
+      var(--atbl-surface)
+    )
+  );
   color: var(--atbl-accent);
 }
 .starter-connection[data-state='error'] .starter-connection-icon {
@@ -42,7 +49,10 @@
 }
 .starter-connection h2 {
   margin: 8px 0 6px;
-  font-family: var(--atbl-font-heading);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-size: clamp(26px, 3.2vw, 36px);
   font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: -0.035em;
@@ -71,7 +81,10 @@
 }
 .starter-next-heading h2 {
   margin: 8px 0 4px;
-  font-family: var(--atbl-font-heading);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-size: clamp(20px, 2.4vw, 26px);
   font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: -0.025em;

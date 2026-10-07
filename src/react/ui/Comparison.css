@@ -26,7 +26,10 @@
 }
 .altertable-comparison-row strong {
   color: var(--atbl-text);
-  font-family: var(--atbl-font-heading);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-weight: var(--atbl-type-emphasis-weight);
   line-height: var(--atbl-type-metric-leading);
   font-size: var(--atbl-type-metric-size);
@@ -67,10 +70,10 @@
   font-variant-numeric: tabular-nums;
 }
 .altertable-comparison-change[data-tone='good'] {
-  color: var(--atbl-positive);
+  color: var(--atbl-positive, var(--atbl-accent));
 }
 .altertable-comparison-change[data-tone='bad'] {
-  color: var(--atbl-negative);
+  color: var(--atbl-negative, var(--atbl-danger));
 }
 .altertable-about-visual .altertable-comparison-visual {
   gap: 12px;

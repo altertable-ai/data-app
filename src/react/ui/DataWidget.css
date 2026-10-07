@@ -12,7 +12,15 @@
   min-height: 30px;
   justify-content: space-between;
   gap: var(--atbl-space-md);
-  padding: var(--atbl-layout-gap) var(--atbl-layout-gap) 0;
+  padding: var(
+      --atbl-layout-gap,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    )
+    var(
+      --atbl-layout-gap,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    )
+    0;
 }
 .altertable-data-widget-header > div:first-child {
   flex: 1;
@@ -26,7 +34,10 @@
 .altertable-data-widget-header h2 {
   margin: 0;
   color: var(--atbl-text);
-  font-family: var(--atbl-font-heading);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-size: var(--atbl-type-widget-size);
   font-weight: var(--atbl-type-heading-weight);
   line-height: var(--atbl-type-heading-leading);
@@ -48,13 +59,25 @@
 }
 .altertable-data-widget-body {
   min-width: 0;
-  padding: var(--atbl-space-md) var(--atbl-layout-gap) var(--atbl-layout-gap);
+  padding: var(--atbl-space-md)
+    var(
+      --atbl-layout-gap,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    )
+    var(
+      --atbl-layout-gap,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    );
 }
 .altertable-data-widget-body[data-padding='flush'] {
   padding: 0;
 }
 .altertable-data-widget-footer {
-  padding: var(--atbl-space-md) var(--atbl-layout-gap);
+  padding: var(--atbl-space-md)
+    var(
+      --atbl-layout-gap,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    );
 }
 .altertable-data-widget-body > .altertable-status-panel {
   margin: 0;

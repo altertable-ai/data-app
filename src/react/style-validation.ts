@@ -18,8 +18,11 @@ export function validateAuthoredStyles(
       kind === 'markup' &&
       name.endsWith('-') &&
       source.slice(match.index + name.length).startsWith('${') &&
-      Object.keys(dataAppStyleTokens).some(token => token.startsWith(name));
-    if (!publicFamily && !Object.hasOwn(dataAppStyleTokens, name))
+      dataAppStyleTokens.some(token => token.startsWith(name));
+    if (
+      !publicFamily &&
+      !(dataAppStyleTokens as readonly string[]).includes(name)
+    )
       diagnostics.add(
         `Unsupported token ${name}. Use a public token from docs/style-reference.md.`
       );

@@ -1,4 +1,4 @@
-/* Generated from style-contract.ts. Run bun run generate:styles. */
+/* Inherited theme defaults. Optional component defaults live at their CSS use sites. */
 :root {
   --atbl-background: var(--atbl-palette-background);
   --atbl-surface: var(--atbl-palette-surface);

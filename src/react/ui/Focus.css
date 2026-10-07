@@ -4,7 +4,10 @@
 [data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]),
 [data-atbl-focus='inset'][data-atbl-internal-focus-state='focused'][data-focused],
 [data-atbl-internal-prose] a:focus-visible {
-  outline: var(--atbl-focus-outline);
+  outline: var(
+    --atbl-focus-outline,
+    1px solid var(--atbl-focus-color, var(--atbl-muted))
+  );
   outline-offset: var(--atbl-focus-ring-offset);
 }
 [data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]),
@@ -17,7 +20,10 @@
   [data-focus-within],
   [data-focus-visible]
 ) {
-  outline: var(--atbl-focus-outline);
+  outline: var(
+    --atbl-focus-outline,
+    1px solid var(--atbl-focus-color, var(--atbl-muted))
+  );
   outline-offset: var(--atbl-focus-ring-inset);
 }
 [data-atbl-focus='group'] input:focus-visible {

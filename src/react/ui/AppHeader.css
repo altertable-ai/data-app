@@ -26,7 +26,10 @@
 }
 .altertable-app-header-primary h1 {
   margin: 0;
-  font-family: var(--atbl-font-heading);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-size: var(--atbl-type-page-size);
   font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: -0.03em;

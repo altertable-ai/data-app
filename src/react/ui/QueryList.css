@@ -95,7 +95,7 @@
   tab-size: 2;
 }
 .altertable-sql-keyword {
-  color: var(--atbl-code-keyword);
+  color: var(--atbl-code-keyword, var(--atbl-accent));
   font-weight: 650;
 }
 .altertable-query-unavailable {

@@ -63,9 +63,9 @@ brand inputs and stops system-theme listening.
 ## Customize tokens
 
 Public `--atbl-*` tokens are the CSS customization contract. The reference marks
-inherited theme values and computed component defaults separately. Inherited
-values are available to app-owned CSS. Computed entries are component override
-points; package styles resolve their defaults where they are used, after local
+inherited theme values and optional component overrides separately. Inherited
+values are available to app-owned CSS. Optional entries are component override
+points; package styles use native CSS fallbacks where they are consumed, after local
 inputs inherit. Override either kind on `:root` for the document or on a
 component for a local adjustment. Portaled UI follows its actual DOM ancestors.
 
@@ -83,9 +83,8 @@ component for a local adjustment. Portaled UI follows its actual DOM ancestors.
 }
 ```
 
-See the generated [styling reference](style-reference.md) for public tokens,
-defaults, stable root selectors, and native control hooks. The generated
-[machine-readable contract](style-contract.json) supports authoring tools and validators.
+See the [styling reference](style-reference.md) for public tokens, stable root
+selectors, and native control hooks.
 
 Appearance settings write private brand inputs rather than inline public tokens,
 so normal author styles can override the presets. `--atbl-input-*`,
@@ -113,22 +112,26 @@ The injected stylesheet declares ordered layers: `atbl.tokens`, `atbl.base`,
 package rules regardless of injection order. System color overrides in forced
 colors mode use important declarations.
 
-`src/react/style-contract.ts` defines public tokens and styling hooks.
-`tokens.css` and the reference are generated from that registry; `appearance.css`
-owns internal palette primitives and appearance presets.
+CSS sources own all default values. `tokens.css` declares inherited theme values;
+`appearance.css` owns internal palette primitives and appearance presets.
+`src/react/style-contract.ts` lists public names for types and authoring validation.
 `base.css` owns component sizing and the document baseline. Component CSS owns
 layout and visual states; shared focus and cursor behavior uses explicit `data-atbl-*` hooks in
 `ui/Focus.css` and `interaction.css`. The full UI and host skeleton use the same
 shared token and component sources.
 
-Consume semantic tokens without literal fallbacks in component styles. Keep
+Consume semantic tokens. Optional overrides use native `var()` fallbacks at their
+consumption sites so local colors, fonts, and spacing compose. Keep
 fixed geometry local unless it represents a shared design decision. Style React
 Aria states with their data attributes and keep selectors inside package
 components. `<Tabs>` provides the scope for tab styling.
 
-Within the package repository, run `bun run generate:styles` after changing the registry. Build checks reject
-stale generated files. `bun run check:styles` validates the reference and shipped
-authored examples; pass file paths or quoted globs to check another app.
+The build bundles the authored stylesheets and embeds their CSS in the explicit
+injector. No token rewriting or reference generation runs during builds. Keep the
+public names and reference aligned when adding hooks.
+
+Within the package repository, `bun run check:styles` validates shipped authored
+examples; pass file paths or quoted globs to check another app.
 Token reference and package control-hook checks run with the unit tests. Browser tests cover host
 isolation, author overrides, cursor and focus states, theme and palette changes,
 contrast, and appearance cleanup.
@@ -149,7 +152,7 @@ Package controls own state paint through private surface roles. Hover and
 pressed surfaces derive from local inputs; selected state wins over pointer
 states; native and Aria disabled states share one opacity and suppress those
 surfaces. Busy cursors preserve geometry. Invalid fields derive error focus
-locally. Override computed state tokens to customize these defaults.
+locally. Override optional state tokens to customize these defaults.
 
 See [UI quality](ui-quality.md) for hierarchy, responsive composition, state
 behavior, and rendered verification.

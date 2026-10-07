@@ -50,7 +50,7 @@
     [aria-disabled='true'],
     :has(> input:disabled)
   ) {
-  background: var(--atbl-control-hover-surface);
+  background: var(--atbl-control-hover-surface, var(--atbl-subtle));
 }
 :where(
     [data-atbl-internal-surface='control'],
@@ -61,7 +61,10 @@
     [aria-disabled='true'],
     :has(> input:disabled)
   ) {
-  background: var(--atbl-control-pressed-surface);
+  background: var(
+    --atbl-control-pressed-surface,
+    color-mix(in srgb, var(--atbl-text) 8%, var(--atbl-surface))
+  );
 }
 :where(
     [data-atbl-internal-surface='control'],
@@ -77,8 +80,18 @@
     [aria-disabled='true'],
     :has(> input:disabled)
   ) {
-  background: var(--atbl-control-selected-surface);
-  color: var(--atbl-control-selected-text);
+  background: var(
+    --atbl-control-selected-surface,
+    var(
+      --atbl-accent-subtle,
+      color-mix(
+        in srgb,
+        var(--atbl-accent) var(--atbl-accent-subtle-strength),
+        var(--atbl-surface)
+      )
+    )
+  );
+  color: var(--atbl-control-selected-text, var(--atbl-accent));
 }
 [data-atbl-internal-surface='field']:is(:hover, [data-hovered]):not(
     :has(input:disabled),
@@ -87,7 +100,10 @@
     [aria-invalid='true'],
     :has(input[aria-invalid='true'])
   ) {
-  border-color: var(--atbl-control-hover-border);
+  border-color: var(
+    --atbl-control-hover-border,
+    color-mix(in srgb, var(--atbl-muted) 45%, var(--atbl-border))
+  );
 }
 [data-atbl-internal-surface='field']:is([data-invalid], [aria-invalid='true']),
 [data-atbl-internal-surface='field']:has(input[aria-invalid='true']) {

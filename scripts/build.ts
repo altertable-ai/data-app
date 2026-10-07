@@ -1,10 +1,6 @@
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import manifest from '@/package.json';
-import { resolveStyleDefaults } from '@/scripts/style-defaults';
-import { generateStyleContract } from '@/scripts/generate-style-contract';
-
-await generateStyleContract(true);
 
 // Watch rebuilds keep declarations and let open pages pick up the new files.
 if (!process.argv.includes('--incremental'))
@@ -28,7 +24,7 @@ async function compileStyles(entrypoint: string): Promise<string> {
     output.path.endsWith('.css')
   );
   if (!stylesheet) throw new Error(`${entrypoint} stylesheet is missing.`);
-  return resolveStyleDefaults(await stylesheet.text());
+  return stylesheet.text();
 }
 const [dataAppStyles, shellStyles] = await Promise.all([
   compileStyles('src/react/styles.css'),

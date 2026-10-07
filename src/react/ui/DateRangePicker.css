@@ -305,7 +305,14 @@
 }
 .altertable-date-range-popover .react-aria-CalendarCell[data-selected] {
   border-radius: 0;
-  background: var(--atbl-accent-subtle);
+  background: var(
+    --atbl-accent-subtle,
+    color-mix(
+      in srgb,
+      var(--atbl-accent) var(--atbl-accent-subtle-strength),
+      var(--atbl-surface)
+    )
+  );
 }
 .altertable-date-range-popover .react-aria-CalendarCell[data-selection-start] {
   border-start-start-radius: var(--atbl-radius-control);

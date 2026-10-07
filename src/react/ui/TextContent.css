@@ -30,7 +30,10 @@
 }
 
 .altertable-text-content h2 {
-  font-family: var(--atbl-font-heading);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-size: var(--atbl-type-section-size);
   font-weight: var(--atbl-type-heading-weight);
   line-height: var(--atbl-type-heading-leading);

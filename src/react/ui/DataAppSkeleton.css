@@ -4,13 +4,19 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: var(--atbl-layout-gap);
+  padding: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
   background: var(--atbl-background);
 }
 .altertable-data-app-skeleton-content {
   display: flex;
   flex-direction: column;
-  gap: var(--atbl-layout-gap);
+  gap: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
   width: 100%;
   max-width: var(--atbl-content-width);
   min-width: 0;
@@ -19,7 +25,10 @@
 .altertable-data-app-skeleton-body {
   display: flex;
   flex-direction: column;
-  gap: var(--atbl-layout-gap);
+  gap: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
   min-width: 0;
 }
 .altertable-data-app-skeleton-header,

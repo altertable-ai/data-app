@@ -3,7 +3,10 @@
   align-content: start;
   gap: 14px;
   min-width: 0;
-  padding: var(--atbl-layout-gap);
+  padding: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
 }
 .altertable-content-skeleton-label {
   width: 38%;

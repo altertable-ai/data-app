@@ -44,8 +44,9 @@ SQL escaping, or authenticated bridge sessions. Avoid tests that repeat trivial
 helpers, file layout, or every component prop.
 
 Follow the [styling contract](docs/styling.md) when changing component CSS.
-Public tokens, root selectors, and native control hooks live in the registry;
-regenerate their CSS and reference with `bun run generate:styles`.
+CSS sources own defaults. Keep public names in `src/react/style-contract.ts` and
+the styling reference aligned when adding customization hooks. Optional component
+overrides use native `var()` fallbacks where their properties are consumed.
 Update the relevant guide when changing public behavior. In documentation prose,
 write functions as `functionName()` and components as `<ComponentName>`. Keep JSDoc for
 constraints, ownership, units, and runtime boundaries; leave implementation
@@ -56,22 +57,21 @@ and [hosted authoring](docs/hosted-apps.md).
 `bun run check` builds first and runs all required source, Markdown, local link, package, and starter
 checks. Build before running consumer tests individually.
 
-| Command                        | Purpose                                                   |
-| ------------------------------ | --------------------------------------------------------- |
-| `bun run build`                | Build JavaScript, declarations, and injected styles       |
-| `bun run check:styles`         | Verify generated styling artifacts and authored app hooks |
-| `bun run generate:styles`      | Generate token CSS and the styling reference              |
-| `bun run typecheck`            | Check source, tests, and scripts                          |
-| `bun run lint`                 | Run type-aware lint checks                                |
-| `bun run lint:md`              | Check Markdown structure and syntax                       |
-| `bun run check:links`          | Validate local files, images, and heading links           |
-| `bun run check:links:external` | Check external URLs (requires network access)             |
-| `bun run format`               | Format source and docs                                    |
-| `bun run test`                 | Verify public contracts and complex isolated logic        |
-| `bun run test:package`         | Verify the npm archive as a consumer                      |
-| `bun run test:starter`         | Typecheck, lint, and build the starter                    |
-| `bun run test:browser`         | Verify browser interactions in Chromium                   |
-| `bun run check:workflows`      | Validate workflows and shell scripts                      |
+| Command                        | Purpose                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `bun run build`                | Build JavaScript, declarations, and injected styles |
+| `bun run check:styles`         | Validate authored app hooks                         |
+| `bun run typecheck`            | Check source, tests, and scripts                    |
+| `bun run lint`                 | Run type-aware lint checks                          |
+| `bun run lint:md`              | Check Markdown structure and syntax                 |
+| `bun run check:links`          | Validate local files, images, and heading links     |
+| `bun run check:links:external` | Check external URLs (requires network access)       |
+| `bun run format`               | Format source and docs                              |
+| `bun run test`                 | Verify public contracts and complex isolated logic  |
+| `bun run test:package`         | Verify the npm archive as a consumer                |
+| `bun run test:starter`         | Typecheck, lint, and build the starter              |
+| `bun run test:browser`         | Verify browser interactions in Chromium             |
+| `bun run check:workflows`      | Validate workflows and shell scripts                |
 
 Markdown checks cover all authored `.md` files, including `AGENTS.md` and the
 starter docs. Oxfmt owns formatting. Release Please owns `CHANGELOG.md`, so

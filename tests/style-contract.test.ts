@@ -88,9 +88,11 @@ test('stable class and public token registries match rendered component sources'
     ).text();
     expect(source).toMatch(new RegExp(String.raw`(?<![\w-])${name}(?![\w-])`));
   }
+  const reference = await Bun.file('docs/style-reference.md').text();
+  for (const name of dataAppStyleTokens) {
+    expect(reference, name).toContain(`\`${name}\``);
+  }
   expect(
-    Object.keys(dataAppStyleTokens).some(name =>
-      name.startsWith('--atbl-input-')
-    )
+    dataAppStyleTokens.some(name => name.startsWith('--atbl-input-'))
   ).toBe(false);
 });

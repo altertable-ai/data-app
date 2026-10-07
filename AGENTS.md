@@ -12,12 +12,12 @@ and local data app paths, and task-specific documentation.
 ## Styling
 
 Use components and typed props before adding CSS. Follow [Styling](docs/styling.md)
-and the generated [styling reference](docs/style-reference.md). Add app-owned
+and the [styling reference](docs/style-reference.md). Add app-owned
 classes through `className`; do not copy package root classes onto markup or
 select private descendants. Follow the [UI quality contract](docs/ui-quality.md)
 for hierarchy, responsive composition, readable values, and state behavior. Use supported `--atbl-*` tokens and native control
 hooks from the reference. Within this package repository, run `bun run check:styles` for authored examples
-and `bun run generate:styles` after editing the registry.
+when changing app styles. CSS sources own defaults; no generation step is needed.
 
 ## Documentation
 

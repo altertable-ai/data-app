@@ -11,7 +11,10 @@
   gap: var(--atbl-space-md);
 }
 .altertable-stack[data-gap='lg'] {
-  gap: var(--atbl-layout-gap);
+  gap: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
 }
 
 .altertable-stack > * {

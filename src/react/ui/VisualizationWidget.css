@@ -1,6 +1,14 @@
 .altertable-visualization-widget-content {
   min-width: 0;
-  padding: var(--atbl-space-md) var(--atbl-layout-gap) var(--atbl-layout-gap);
+  padding: var(--atbl-space-md)
+    var(
+      --atbl-layout-gap,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    )
+    var(
+      --atbl-layout-gap,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    );
 }
 :where(.altertable-data-widget-body)
   > .altertable-visualization-widget-content {

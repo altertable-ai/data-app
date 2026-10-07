@@ -130,7 +130,10 @@
 }
 .altertable-present-copy > h2 {
   margin: 0;
-  font-family: var(--atbl-font-heading);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-size: clamp(30px, 3.8vw, 50px);
   font-weight: 650;
   line-height: 1.1;

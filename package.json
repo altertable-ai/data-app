@@ -105,8 +105,7 @@
     "lint:md": "markdownlint-cli2",
     "check:links": "remark . --ext md --rc-path .remarkrc.json --frail --no-stdout",
     "check:links:external": "remark . --ext md --rc-path .remarkrc-external.json --frail --no-stdout",
-    "generate:styles": "bun run scripts/generate-style-contract.ts",
-    "check:styles": "bun run scripts/generate-style-contract.ts --check && bun run scripts/check-app-styles.ts"
+    "check:styles": "bun run scripts/check-app-styles.ts"
   },
   "dependencies": {
     "@floating-ui/react": "0.27.20",

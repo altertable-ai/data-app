@@ -36,7 +36,10 @@
 .altertable-selectable-bars-bar {
   width: min(30px, 76%);
   border-radius: 5px 5px 0 0;
-  background: var(--atbl-chart-fill);
+  background: var(
+    --atbl-chart-fill,
+    color-mix(in srgb, var(--atbl-accent) 75%, var(--atbl-surface))
+  );
   transition:
     height var(--atbl-duration-slow),
     background var(--atbl-duration-fast);
