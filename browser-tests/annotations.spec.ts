@@ -463,6 +463,11 @@ test('custom areas capture the document margins beyond the app container', async
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
   const iframe = await page.locator('iframe').boundingBox();
+  // Exercise reserved-gutter geometry on platforms with overlay scrollbars too.
+  await frame.locator('body').evaluate(element => {
+    element.style.width = `${document.documentElement.clientWidth - 16}px`;
+  });
+  const body = await frame.locator('body').boundingBox();
   const container = await frame.locator('.altertable-app-main').boundingBox();
   const left = iframe!.x + 2;
   const clientWidth = await frame
@@ -491,7 +496,10 @@ test('custom areas capture the document margins beyond the app container', async
     (await page.getByLabel('Annotation drafts').textContent()) ?? '[]'
   );
   expect(drafts[0].context.rect.x).toBeCloseTo(2, 0);
-  expect(drafts[0].context.rect.width).toBeCloseTo(right - left, 0);
+  expect(drafts[0].context.rect.width).toBeCloseTo(
+    body!.x + body!.width - left,
+    0
+  );
   expect(drafts[0].context.screenshot.height).toBeGreaterThan(0);
   const selection = frame.getByRole('button', { name: 'Annotation selection' });
   await expect(selection).toHaveCSS('outline-style', 'none');

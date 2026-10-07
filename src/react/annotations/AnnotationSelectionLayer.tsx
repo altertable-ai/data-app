@@ -85,17 +85,35 @@ export function AnnotationSelectionLayer({
   }
   function areaBetween(point: AnnotationPoint): AnnotationRect | undefined {
     if (!start.current) return undefined;
-    const left = Math.max(0, Math.min(start.current.x, point.x));
-    const top = Math.max(0, Math.min(start.current.y, point.y));
-    const right = Math.min(
+    // A reserved scrollbar gutter is outside the captured body.
+    const documentRect = annotationRoot(scope)?.element.getBoundingClientRect();
+    const minX = Math.max(0, documentRect?.left ?? 0);
+    const minY = Math.max(0, documentRect?.top ?? 0);
+    const maxX = Math.min(
       window.innerWidth,
       document.documentElement.clientWidth,
-      Math.max(start.current.x, point.x)
+      documentRect?.right ?? window.innerWidth
     );
-    const bottom = Math.min(
+    const maxY = Math.min(
       window.innerHeight,
       document.documentElement.clientHeight,
-      Math.max(start.current.y, point.y)
+      documentRect?.bottom ?? window.innerHeight
+    );
+    const left = Math.min(
+      maxX,
+      Math.max(minX, Math.min(start.current.x, point.x))
+    );
+    const top = Math.min(
+      maxY,
+      Math.max(minY, Math.min(start.current.y, point.y))
+    );
+    const right = Math.max(
+      minX,
+      Math.min(maxX, Math.max(start.current.x, point.x))
+    );
+    const bottom = Math.max(
+      minY,
+      Math.min(maxY, Math.max(start.current.y, point.y))
     );
     return {
       x: left,
