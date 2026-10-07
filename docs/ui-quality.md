@@ -60,6 +60,3 @@ accessible. Keyboard through the real controls, including date segments,
 calendar cells, menus, and retry actions. Inspect screenshots as well as computed
 styles. Apply the same checks to a representative source-backed app with data
 that differs from the sample fixtures.
-
-Package browser tests use synthetic extremes to check composition and states;
-these checks complement inspection of real app content and its source evidence.

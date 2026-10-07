@@ -4,7 +4,7 @@ Use components and typed props first; these names are supported customization ho
 Inherited tokens are available to app-owned CSS. Optional component overrides use
 native CSS fallbacks at the property that consumes them, so local inputs compose.
 
-See [Styling](styling.md) for composition and ownership. CSS sources own defaults.
+See [Styling](styling.md) for composition and ownership.
 
 ## Public tokens
 

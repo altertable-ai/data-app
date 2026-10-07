@@ -16,8 +16,7 @@ and the [styling reference](docs/style-reference.md). Add app-owned
 classes through `className`; do not copy package root classes onto markup or
 select private descendants. Follow the [UI quality contract](docs/ui-quality.md)
 for hierarchy, responsive composition, readable values, and state behavior. Use supported `--atbl-*` tokens and native control
-hooks from the reference. Within this package repository, run `bun run check:styles` for authored examples
-when changing app styles. CSS sources own defaults; no generation step is needed.
+hooks from the reference.
 
 ## Documentation
 
@@ -45,3 +44,6 @@ static displays, and deliberately custom UI; see [direct composition](docs/ui.md
 Prefer derivation over repeated configuration. Keep static context outside loading boundaries. Derive labels, findings, and
 exports from the displayed result and its input. Edit app-owned files; installed
 package files are dependencies.
+
+Keep `docs/` focused on knowledge agents need to build data apps. Put package
+implementation, testing, and release guidance in `CONTRIBUTING.md`.

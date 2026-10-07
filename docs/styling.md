@@ -86,12 +86,9 @@ component for a local adjustment. Portaled UI follows its actual DOM ancestors.
 See the [styling reference](style-reference.md) for public tokens, stable root
 selectors, and native control hooks.
 
-Appearance settings write private brand inputs rather than inline public tokens,
-so normal author styles can override the presets. `--atbl-input-*`,
-`--atbl-palette-*`, and `--atbl-chart-strength` are internal. Component layout
-variables such as `--atbl-grid-column-width` and derivation inputs such as
-`--atbl-accent-subtle-strength` are implementation details. Names outside the
-published registry are internal.
+Appearance settings allow normal author styles to override presets. Use only the
+public tokens in the reference; private variables and descendant selectors may
+change between package versions.
 
 Chart colors fill eight slots by repeating the configured palette as needed.
 Dark themes lighten those colors. Appearance selects a contrasting black or
@@ -105,36 +102,11 @@ cursors. Keyboard focus is shared across native and React Aria controls.
 Reduced-motion styles remain specific to each animation. Forced colors use
 system focus and selection foreground colors.
 
-## Maintain component styles
+## Override package styles
 
-The injected stylesheet declares ordered layers: `atbl.tokens`, `atbl.base`,
-`atbl.components`, and `atbl.interaction`. Normal unlayered author CSS overrides
-package rules regardless of injection order. System color overrides in forced
-colors mode use important declarations.
-
-CSS sources own all default values. `tokens.css` declares inherited theme values;
-`appearance.css` owns internal palette primitives and appearance presets.
-`src/react/style-contract.ts` lists public names for types and authoring validation.
-`base.css` owns component sizing and the document baseline. Component CSS owns
-layout and visual states; shared focus and cursor behavior uses explicit `data-atbl-*` hooks in
-`ui/Focus.css` and `interaction.css`. The full UI and host skeleton use the same
-shared token and component sources.
-
-Consume semantic tokens. Optional overrides use native `var()` fallbacks at their
-consumption sites so local colors, fonts, and spacing compose. Keep
-fixed geometry local unless it represents a shared design decision. Style React
-Aria states with their data attributes and keep selectors inside package
-components. `<Tabs>` provides the scope for tab styling.
-
-The build bundles the authored stylesheets and embeds their CSS in the explicit
-injector. No token rewriting or reference generation runs during builds. Keep the
-public names and reference aligned when adding hooks.
-
-Within the package repository, `bun run check:styles` validates shipped authored
-examples; pass file paths or quoted globs to check another app.
-Token reference and package control-hook checks run with the unit tests. Browser tests cover host
-isolation, author overrides, cursor and focus states, theme and palette changes,
-contrast, and appearance cleanup.
+Package styles use ordered cascade layers. Normal unlayered app CSS overrides
+package rules regardless of injection order. Forced-colors styles use system
+colors for focus and selection.
 
 ## Typography, density, and states
 
