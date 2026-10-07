@@ -285,35 +285,29 @@ function presentOrders({ data, input }: OrderSnapshot) {
     summarizeOrders(data);
   const findings = [];
   if (leadingCountry) {
-    findings.push(
-      orderDataContext.finding({
-        id: 'revenue',
-        headline: `${leadingCountry.country} brought in ${formatMetric(leadingCountry.revenue, currency)}`,
-        context: scope,
-        visual: <CountryRanking countries={countries} />,
-        evidence: { id: 'revenue', glossaryIds: ['revenue'] },
-      })
-    );
+    findings.push({
+      id: 'revenue',
+      headline: `${leadingCountry.country} brought in ${formatMetric(leadingCountry.revenue, currency)}`,
+      context: scope,
+      visual: <CountryRanking countries={countries} />,
+      evidence: countryDataset,
+    });
   }
-  findings.push(
-    orderDataContext.finding({
-      id: 'orders-per-day',
-      headline: `${formatCount(orderCount)} orders over the last 30 days`,
-      context: `${scope} ${describeWeeklyOrderTrend(days)}`,
-      visual: <DailyLineChart days={days} />,
-      evidence: { id: 'orders-per-day', glossaryIds: ['orders'] },
-    })
-  );
+  findings.push({
+    id: 'orders-per-day',
+    headline: `${formatCount(orderCount)} orders over the last 30 days`,
+    context: `${scope} ${describeWeeklyOrderTrend(days)}`,
+    visual: <DailyLineChart days={days} />,
+    evidence: dayDataset,
+  });
   if (largestValueBand) {
-    findings.push(
-      orderDataContext.finding({
-        id: 'order-values',
-        headline: `${largestValueBand.band} is the most common order value`,
-        context: `${scope} ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`,
-        visual: <OrderValuePieChart bands={bands} />,
-        evidence: { id: 'order-values', glossaryIds: ['orderValue'] },
-      })
-    );
+    findings.push({
+      id: 'order-values',
+      headline: `${largestValueBand.band} is the most common order value`,
+      context: `${scope} ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`,
+      visual: <OrderValuePieChart bands={bands} />,
+      evidence: valueDataset,
+    });
   }
   return findings;
 }

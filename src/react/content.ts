@@ -1,3 +1,4 @@
+import { ownedSource } from '@/src/react/source-owner';
 import type { DeclaredView } from '@/src/react/view-runtime';
 import type { ReactNode } from 'react';
 import type { DataReading } from '@/src/core/reading';
@@ -43,7 +44,10 @@ export class ViewContent<Data, Input> {
     describeInput: (input: Input) => string
   ) {
     this.#view = view;
-    this.#layout = defineDataContent(render, { describeInput });
+    this.#layout = defineDataContent(
+      source => render(ownedSource(view, source)),
+      { describeInput }
+    );
   }
   static section<Data, Input>(content: ViewContent<Data, Input>) {
     return { view: content.#view, ...content.#layout };

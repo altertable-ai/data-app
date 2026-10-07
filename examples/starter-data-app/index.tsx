@@ -173,7 +173,7 @@ function App() {
             context: `Demonstration values for ${scope}.`,
             visual: <MetricWidget metric={totalSamples} source={snapshot} />,
             visualKind: 'metric',
-            evidence: totalSamples.definition,
+            evidence: totalSamples,
           },
           {
             id: 'counts-by-group',
@@ -186,7 +186,7 @@ function App() {
                 pagination={false}
               />
             ),
-            evidence: sampleCounts.evidence,
+            evidence: sampleCounts,
           },
         ];
       }}

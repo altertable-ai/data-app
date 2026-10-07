@@ -212,10 +212,13 @@ export function createDataHooks<Operations extends DataOperations>(
             Parameters<Context['evidence']>[0]
           >
         ) {
-          return bindDataset({
-            ...dataset,
-            evidence: definition.dataContext.evidence(dataset.evidence),
-          });
+          return bindDataset(
+            {
+              ...dataset,
+              evidence: definition.dataContext.evidence(dataset.evidence),
+            },
+            view
+          );
         },
         metric(
           metric: Parameters<Context['metric']>[0],
@@ -224,7 +227,8 @@ export function createDataHooks<Operations extends DataOperations>(
           return bindMetric(
             definition.dataContext.metric(metric),
             select,
-            definition.date?.input
+            definition.date?.input,
+            view
           );
         },
         scope(snapshot: DisplayedSnapshot<Data, Input>) {

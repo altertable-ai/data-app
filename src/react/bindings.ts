@@ -1,3 +1,4 @@
+import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
 import type { ReactNode } from 'react';
 import type { DateRangeRequest } from '@/src/core/contract';
@@ -55,18 +56,56 @@ export type DatasetDeclaration<Data, Input, Row> = DatasetDefinition<
   EvidenceDeclaration
 >;
 
-export class ExportDataset<Data, Input> {
+/** Real view ownership and registered references, shared by metrics and datasets. */
+export class RegisteredBinding {
+  #owner?: object;
+  #evidence?: WidgetEvidence;
+  constructor(owner?: object, evidence?: WidgetEvidence) {
+    this.#owner = owner;
+    this.#evidence = evidence;
+  }
+  protected assertSource(source: object) {
+    if (this.#owner) assertSourceOwner(this.#owner, source);
+  }
+  static evidence(binding: RegisteredBinding, owner: object): WidgetEvidence {
+    invariant(
+      binding instanceof RegisteredBinding,
+      'Story evidence must be a registered metric or dataset binding.'
+    );
+    invariant(
+      binding.#owner === owner,
+      'Story evidence must belong to the story view.'
+    );
+    invariant(
+      binding.#evidence,
+      'Story evidence must have registered references.'
+    );
+    return binding.#evidence;
+  }
+}
+export function registeredEvidence(
+  binding: RegisteredBinding,
+  owner: object
+): WidgetEvidence {
+  return RegisteredBinding.evidence(binding, owner);
+}
+
+export class ExportDataset<Data, Input> extends RegisteredBinding {
   #csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable;
   constructor(
     readonly name: string,
-    csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable
+    csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable,
+    owner?: object,
+    evidence?: WidgetEvidence
   ) {
+    super(owner, evidence);
     this.#csv = csv;
   }
   static csv<Data, Input>(
     dataset: ExportDataset<Data, Input>,
     snapshot: DisplayedSnapshot<Data, Input>
   ) {
+    dataset.assertSource(snapshot);
     return dataset.#csv(snapshot);
   }
 }
@@ -81,7 +120,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     evidence: WidgetEvidence;
     emptyFallback: EmptyContent;
   };
-  constructor(definition: DatasetDefinition<Data, Input, Row>) {
+  constructor(definition: DatasetDefinition<Data, Input, Row>, owner?: object) {
     invariant(!!definition.name.trim(), 'A dataset needs a name.');
     const ids = Object.keys(definition.columns);
     invariant(
@@ -119,13 +158,18 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       },
     })) as [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
 
-    super(definition.name, snapshot => ({
-      name: definition.name,
-      columns: fields.map(column => column.label),
-      rows: select(snapshot.data, snapshot.input).map(row =>
-        fields.map(column => column.value(row))
-      ),
-    }));
+    super(
+      definition.name,
+      snapshot => ({
+        name: definition.name,
+        columns: fields.map(column => column.label),
+        rows: select(snapshot.data, snapshot.input).map(row =>
+          fields.map(column => column.value(row))
+        ),
+      }),
+      owner,
+      definition.evidence
+    );
     this.evidence = definition.evidence;
     this.#select = select;
     this.#table = {
@@ -137,6 +181,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     };
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
+    this.assertSource(source);
     return readSource<Data, Input, readonly Row[], Source>(
       source,
       this.#select
@@ -151,9 +196,10 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
 }
 
 export function bindDataset<Data, Input, Row>(
-  definition: DatasetDefinition<Data, Input, Row>
+  definition: DatasetDefinition<Data, Input, Row>,
+  owner?: object
 ) {
-  return new Dataset(definition);
+  return new Dataset(definition, owner);
 }
 
 export function datasetTable<Data, Input, Row>(
@@ -169,18 +215,21 @@ export function datasetCsv<Data, Input>(
   return ExportDataset.csv(dataset, snapshot);
 }
 
-export class Metric<Data, Input> {
+export class Metric<Data, Input> extends RegisteredBinding {
   #select: (data: Data, input: Input) => MetricValues;
   #date?: (input: Input) => DateRangeRequest;
   constructor(
     readonly definition: MetricDefinition,
     select: (data: Data, input: Input) => MetricValues,
-    date?: (input: Input) => DateRangeRequest
+    date?: (input: Input) => DateRangeRequest,
+    owner?: object
   ) {
+    super(owner, definition.evidence);
     this.#select = select;
     this.#date = date;
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
+    this.assertSource(source);
     return readSource<
       Data,
       Input,
@@ -199,9 +248,10 @@ export class Metric<Data, Input> {
 export function bindMetric<Data, Input>(
   definition: MetricDefinition,
   select: (data: Data, input: Input) => MetricValues,
-  date?: (input: Input) => DateRangeRequest
+  date?: (input: Input) => DateRangeRequest,
+  owner?: object
 ) {
-  return new Metric(definition, select, date);
+  return new Metric(definition, select, date, owner);
 }
 
 export function displayedScope<Data, Input>(

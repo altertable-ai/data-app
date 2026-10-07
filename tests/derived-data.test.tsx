@@ -1,3 +1,4 @@
+import { ownedSource } from '@/src/react/source-owner';
 import { sectionContent } from '@/src/react/content';
 import { createDataHooks } from '@/src/react/hooks';
 import { DataSection } from '@/src/react/ui/DataSection';
@@ -13,6 +14,7 @@ import {
   displayedScope,
   datasetTable,
   datasetCsv,
+  registeredEvidence,
 } from '@/src/react/bindings';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { dateRangeVariable } from '@altertable/data-app/react';
@@ -83,7 +85,7 @@ function dataset(
     },
   });
 }
-const snapshot = {
+const snapshot = ownedSource(view, {
   state: 'ready' as const,
   input: { scope: 'displayed' },
   data: [
@@ -91,7 +93,7 @@ const snapshot = {
     { id: 'B', count: 0, available: false },
     { id: 'C', count: null, available: false },
   ],
-};
+});
 
 test('datasets derive loading tables, formatted cells, and raw CSV from one declaration', () => {
   let selections = 0;
@@ -100,7 +102,10 @@ test('datasets derive loading tables, formatted cells, and raw CSV from one decl
     return rows;
   });
   const loading = renderToStaticMarkup(
-    <TableWidget dataset={counts} source={{ loading: true }} />
+    <TableWidget
+      dataset={counts}
+      source={ownedSource(view, { loading: true as const })}
+    />
   );
   expect(selections).toBe(0);
   expect(loading).toContain('Count');
@@ -125,7 +130,10 @@ test('datasets derive loading tables, formatted cells, and raw CSV from one decl
   );
   expect(counts.read(snapshot).value).toBe(snapshot.data);
   const empty = renderToStaticMarkup(
-    <TableWidget dataset={counts} source={{ ...snapshot, data: [] }} />
+    <TableWidget
+      dataset={counts}
+      source={ownedSource(view, { ...snapshot, data: [] })}
+    />
   );
   expect(empty).toContain('No results');
 });
@@ -143,14 +151,17 @@ test('dataset scope and export callbacks retain displayed input through refresh 
     columns: { id: { label: 'ID', value: row => row.id } },
   });
   for (const kind of ['updating', 'stale-error'] as const) {
-    const displayed = displayedSnapshot({
-      kind,
-      data: snapshot.data,
-      displayedInput: { scope: 'Prior / scope' },
-      requestedInput: { scope: 'New scope' },
-      message: 'Prior',
-      error: new Error('Failed'),
-    })!;
+    const displayed = ownedSource(
+      view,
+      displayedSnapshot({
+        kind,
+        data: snapshot.data,
+        displayedInput: { scope: 'Prior / scope' },
+        requestedInput: { scope: 'New scope' },
+        message: 'Prior',
+        error: new Error('Failed'),
+      })!
+    );
     expect(view.scope(displayed)).toBe('Prior / scope');
     expect(
       exportDatasets([counts], displayed, view.scope(displayed), 'Rows')
@@ -189,16 +200,21 @@ test('bound metrics derive loading, zero, evidence, and period comparisons for w
     return { current: rows.reduce((sum, row) => sum + (row.count ?? 0), 0) };
   });
   renderToStaticMarkup(
-    <MetricWidget metric={count} source={{ loading: true }} />
+    <MetricWidget
+      metric={count}
+      source={ownedSource(view, { loading: true as const })}
+    />
   );
   expect(selections).toBe(0);
   expect(count.definition).toEqual(context.metric(metric));
   expect(count.read(snapshot).value.current).toBe(1234);
   expect(
-    count.read({
-      ...snapshot,
-      data: [{ id: 'zero', count: 0, available: true }],
-    }).value.current
+    count.read(
+      ownedSource(view, {
+        ...snapshot,
+        data: [{ id: 'zero', count: 0, available: true }],
+      })
+    ).value.current
   ).toBe(0);
   const calendar = defineDateRangeContract({
     maxRangeDays: 30,
@@ -226,10 +242,14 @@ test('bound metrics derive loading, zero, evidence, and period comparisons for w
     true
   );
   expect(
-    comparison.read({ state: 'ready', data: 3, input: period }).value.period
+    comparison.read(
+      ownedSource(timed, { state: 'ready' as const, data: 3, input: period })
+    ).value.period
   ).toEqual(period);
   expect(
-    comparison.read({ state: 'ready', data: 3, input: period }).value.previous
+    comparison.read(
+      ownedSource(timed, { state: 'ready' as const, data: 3, input: period })
+    ).value.previous
   ).toBe(0);
   expect(() =>
     view.metric(metric, () => ({ current: 1, previous: 0 })).read(snapshot)
@@ -385,7 +405,7 @@ test('dataset visualizations derive displayed rows, evidence, and empty copy wit
   });
   function visual(source: { loading: true } | typeof snapshot) {
     return renderToStaticMarkup(
-      <VisualizationWidget dataset={counts} source={source}>
+      <VisualizationWidget dataset={counts} source={ownedSource(view, source)}>
         {rows => (
           <p>
             {rows[0]?.id}: {rows[0]?.count ?? 'missing'}
@@ -406,7 +426,7 @@ test('dataset visualizations derive displayed rows, evidence, and empty copy wit
     displayedInput: snapshot.input,
     message: 'Updating',
   })!;
-  const rows = counts.read(updating);
+  const rows = counts.read(ownedSource(view, updating));
   expect(rows.value).toBe(snapshot.data);
 });
 
@@ -418,8 +438,14 @@ test('narrative bindings preserve loading, formatting, measured zero, and displa
   });
   const loading = renderToStaticMarkup(
     <>
-      <DataValue metric={total} source={{ loading: true }} />
-      <TextWidget metric={total} source={{ loading: true }} />
+      <DataValue
+        metric={total}
+        source={ownedSource(view, { loading: true as const })}
+      />
+      <TextWidget
+        metric={total}
+        source={ownedSource(view, { loading: true as const })}
+      />
     </>
   );
   expect(selections).toBe(0);
@@ -435,13 +461,19 @@ test('narrative bindings preserve loading, formatting, measured zero, and displa
   expect(ready).toContain('Explore Count');
   expect(
     renderToStaticMarkup(
-      <DataValue metric={total} source={{ ...snapshot, data: [] }} />
+      <DataValue
+        metric={total}
+        source={ownedSource(view, { ...snapshot, data: [] })}
+      />
     )
   ).toContain('>0</span>');
   const counts = dataset();
   expect(
     renderToStaticMarkup(
-      <TextWidget dataset={counts} source={{ ...snapshot, data: [] }}>
+      <TextWidget
+        dataset={counts}
+        source={ownedSource(view, { ...snapshot, data: [] })}
+      >
         {rows => (rows.length ? 'Rows' : 'No recorded rows')}
       </TextWidget>
     )
@@ -496,4 +528,39 @@ test('dataset evidence is registered by its view before data selection', () => {
     })
   ).toThrow('Unknown query name');
   expect(selections).toBe(0);
+});
+
+test('same-shaped foreign sources and story bindings fail before selectors or exports', () => {
+  const foreign = hooks.defineDataView({
+    dataContext: context,
+    operation: 'rows',
+    input: () => ({ scope: 'foreign' }),
+    describeInput: input => input.scope,
+    isEmpty: () => false,
+    emptyFallback: { title: 'Empty' },
+  });
+  let selections = 0;
+  const counts = dataset(rows => {
+    selections++;
+    return rows;
+  });
+  const total = view.metric(metric, () => {
+    selections++;
+    return { current: 1 };
+  });
+  const other = ownedSource(foreign, snapshot);
+  expect(() => counts.read(other)).toThrow('own view');
+  expect(() => total.read(other)).toThrow('own view');
+  expect(() =>
+    counts.read(ownedSource(foreign, { loading: true as const }))
+  ).toThrow('own view');
+  expect(() => counts.read({ ...snapshot })).toThrow('own view');
+  expect(() => datasetCsv(counts, other)).toThrow('own view');
+  expect(selections).toBe(0);
+  expect(registeredEvidence(counts, view)).toBe(counts.evidence);
+  expect(registeredEvidence(total, view)).toBe(total.definition.evidence);
+  expect(() => registeredEvidence(counts, foreign)).toThrow('story view');
+  expect(() => registeredEvidence(counts.evidence as never, view)).toThrow(
+    'registered metric or dataset'
+  );
 });

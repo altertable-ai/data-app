@@ -246,3 +246,27 @@ view.dataset<number>({
   // @ts-expect-error Dataset references use the owning context's registered queries.
   evidence: { id: 'bad', queryNames: ['missing'] },
 });
+
+<DataApp
+  {...app}
+  story={snapshot => [
+    {
+      id: 'count',
+      headline: 'Count',
+      visual: <DataValue metric={boundMetric} source={snapshot} />,
+      evidence: boundMetric,
+    },
+  ]}
+/>;
+<DataApp
+  {...app}
+  story={() => [
+    {
+      id: 'raw',
+      headline: 'Raw',
+      visual: null,
+      // @ts-expect-error Story evidence must be the registered binding, not raw metadata.
+      evidence: boundMetric.definition,
+    },
+  ]}
+/>;

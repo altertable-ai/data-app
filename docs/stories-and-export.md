@@ -11,9 +11,10 @@ Set `story` on `<DataApp>` to enable **Present story** in the toolbar.
 For custom shells, `/react/ui` provides `<PresentStory>`; see [direct UI composition](ui.md). Start from the [data app starter](../examples/starter-data-app/index.tsx).
 
 Return one to four findings with a headline, a visual, and registered source
-evidence. Use `context.finding()` or reuse registered dataset/metric evidence.
+evidence. Set `evidence` to the registered dataset or metric binding. The app
+validates that every finding belongs to its view.
 
-The callback receives the displayed data and its original input, including
+The callback receives the displayed source and its original input, including
 during refresh or failure. Derive the story from that snapshot so it agrees with
 the visible exploration. Initial loading, empty results, and initial errors have
 no story to present; the toolbar keeps its story action visible and disabled.
@@ -39,7 +40,7 @@ story={snapshot => {
     headline: `Tracked identities: ${formatMetric(totalReading.value.current, total.definition.format)}`,
     context: activityView.scope(snapshot),
     visual: <MetricWidget metric={total} source={snapshot} />,
-    evidence: total.definition,
+    evidence: total,
   }];
 }}
 ```

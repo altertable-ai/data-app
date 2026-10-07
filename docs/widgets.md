@@ -65,7 +65,9 @@ specific display/export header. Declare selectors, raw value accessors, and
 row-key callbacks explicitly; row keys must be stable and unique.
 Metric comparisons require a
 view date binding. `read()` returns a loading-aware value for custom prose.
-Pass the binding and `source={snapshot}` to reuse a widget in a story.
+Pass the binding and `source={snapshot}` to reuse a widget in a story. Use the
+source supplied by that binding's own view; reconstructed or foreign sources
+are rejected before selection.
 Selectors do not run during loading. Table search, pagination, descriptions, and
 actions remain local choices. For custom cells, use `format: row => ...`; CSV
 still uses the raw `value` accessor. Datasets default to “No results”; supply
