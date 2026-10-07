@@ -1,0 +1,366 @@
+import { createAnnotationClient } from '@altertable/data-app/client';
+import { expect, test } from 'bun:test';
+import {
+  annotationDraftRoute,
+  annotationModeRoute,
+  annotationEditorStateRoute,
+  annotationUpdateRoute,
+  parseDataAppAnnotationDraft,
+  createMessageRouter,
+  MessageRoutingError,
+  type DataAppAnnotationDraft,
+} from '@altertable/data-app/contract';
+import { isDataAppPresentation } from '@/src/core/presentation';
+const draft: DataAppAnnotationDraft = {
+  id: 'feedback-1',
+  target: {
+    id: 'revenue',
+    label: 'Revenue',
+    kind: 'widget',
+    text: 'Revenue $42',
+    queryNames: ['revenue'],
+    glossaryIds: [],
+  },
+  context: {
+    search: '?period=last-7',
+    hash: '',
+    displayedInput: { period: 'last-30' },
+    view: 'stale-error',
+    viewport: { width: 1000, height: 800 },
+    rect: { x: 10, y: 20, width: 300, height: 200 },
+  },
+  comment: '  Compare with last year  ',
+};
+test('annotation boundaries preserve displayed context and discard unexpected fields', () => {
+  const parsed = parseDataAppAnnotationDraft({
+    ...draft,
+    credentials: 'discard',
+    target: { ...draft.target, html: 'discard' },
+  });
+  expect(parsed).toEqual({ ...draft, comment: 'Compare with last year' });
+  expect(parsed.context.displayedInput).toEqual({ period: 'last-30' });
+});
+test('invalid and oversized feedback cannot reach the host handler', async () => {
+  let calls = 0;
+  const router = createMessageRouter(
+    { 'annotation:draft': annotationDraftRoute },
+    {
+      'annotation:draft'() {
+        calls++;
+        return null;
+      },
+    }
+  );
+  for (const value of [
+    null,
+    { ...draft, comment: ' ' },
+    { ...draft, target: { ...draft.target, kind: 'unknown' } },
+    {
+      ...draft,
+      context: { ...draft.context, displayedInput: 'é'.repeat(6000) },
+    },
+    {
+      ...draft,
+      context: {
+        ...draft.context,
+        rect: { ...draft.context.rect, x: Infinity },
+      },
+    },
+  ]) {
+    const failure = await router
+      .dispatch(
+        { route: 'annotation:draft', payload: value },
+        { signal: new AbortController().signal }
+      )
+      .then(
+        () => undefined,
+        (error: unknown) => error
+      );
+    expect(failure).toBeInstanceOf(MessageRoutingError);
+  }
+  expect(calls).toBe(0);
+});
+test('hosts explicitly advertise annotation support and bounded pin state', () => {
+  expect(isDataAppPresentation({ surface: 'embedded', theme: 'dark' })).toBe(
+    true
+  );
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: {
+        enabled: true,
+        targets: [{ id: '1', targetId: 'revenue', number: 1 }],
+      },
+    })
+  ).toBe(true);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: {
+        enabled: true,
+        targets: [{ id: '1', targetId: 'revenue', number: -1 }],
+      },
+    })
+  ).toBe(false);
+});
+
+test('shell-controlled annotation mode accepts booleans and rejects invalid mode state', async () => {
+  const modes: boolean[] = [];
+  const router = createMessageRouter(
+    { 'annotation:mode': annotationModeRoute },
+    {
+      'annotation:mode'({ active }) {
+        modes.push(active);
+        return null;
+      },
+    }
+  );
+  await router.dispatch(
+    { route: 'annotation:mode', payload: { active: false } },
+    { signal: new AbortController().signal }
+  );
+  expect(modes).toEqual([false]);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: { enabled: true, active: true },
+    })
+  ).toBe(true);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: { enabled: true, active: 'yes' },
+    })
+  ).toBe(false);
+  const failure = await router
+    .dispatch(
+      { route: 'annotation:mode', payload: { active: 'yes' } },
+      { signal: new AbortController().signal }
+    )
+    .catch((error: unknown) => error);
+  expect(failure).toBeInstanceOf(MessageRoutingError);
+});
+
+test('editing comments is a separate validated mutation from draft admission', async () => {
+  const changes: { id: string; comment: string }[] = [];
+  const router = createMessageRouter(
+    { 'annotation:update': annotationUpdateRoute },
+    {
+      'annotation:update'(value) {
+        changes.push(value);
+        return null;
+      },
+    }
+  );
+  await router.dispatch(
+    {
+      route: 'annotation:update',
+      payload: {
+        id: 'feedback-1',
+        comment: '  Compare last quarter  ',
+        context: 'ignored',
+      },
+    },
+    { signal: new AbortController().signal }
+  );
+  expect(changes).toEqual([
+    { id: 'feedback-1', comment: 'Compare last quarter' },
+  ]);
+  for (const comment of ['', ' ', 'x'.repeat(2001)]) {
+    const failure = await router
+      .dispatch(
+        { route: 'annotation:update', payload: { id: 'feedback-1', comment } },
+        { signal: new AbortController().signal }
+      )
+      .catch((error: unknown) => error);
+    expect(failure).toBeInstanceOf(MessageRoutingError);
+  }
+  expect(changes).toHaveLength(1);
+});
+
+test('public annotation client delivers validated drafts and edits to the host', async () => {
+  const received: unknown[] = [];
+  const router = createMessageRouter(
+    {
+      'annotation:draft': annotationDraftRoute,
+      'annotation:update': annotationUpdateRoute,
+    },
+    {
+      'annotation:draft'(value) {
+        received.push(value);
+        return null;
+      },
+      'annotation:update'(value) {
+        received.push(value);
+        return null;
+      },
+    }
+  );
+  const client = createAnnotationClient((message, signal) =>
+    router.dispatch(message, { signal: signal ?? new AbortController().signal })
+  );
+  await client.addAnnotation(draft);
+  await client.updateAnnotation(draft.id, 'Compare last quarter');
+  expect(received).toEqual([
+    { ...draft, comment: draft.comment.trim() },
+    { id: draft.id, comment: 'Compare last quarter' },
+  ]);
+});
+
+test('annotation mode requests and editor reports preserve their explicit payloads and cancellation', async () => {
+  const received: unknown[] = [];
+  const router = createMessageRouter(
+    {
+      'annotation:mode': annotationModeRoute,
+      'annotation:editor': annotationEditorStateRoute,
+    },
+    {
+      'annotation:mode'(request) {
+        received.push(request);
+        return null;
+      },
+      'annotation:editor'(state) {
+        received.push(state);
+        return null;
+      },
+    }
+  );
+  const controller = new AbortController();
+  const client = createAnnotationClient((message, signal) => {
+    expect(signal).toBe(controller.signal);
+    return router.dispatch(message, { signal: controller.signal });
+  });
+  await client.requestAnnotationModeChange(
+    { active: false },
+    { signal: controller.signal }
+  );
+  await client.reportAnnotationEditorState(
+    { hasUnsavedChanges: true },
+    { signal: controller.signal }
+  );
+  expect(received).toEqual([{ active: false }, { hasUnsavedChanges: true }]);
+});
+
+test('editor state and display settings preserve canonical pin data', async () => {
+  const dirty: boolean[] = [];
+  const router = createMessageRouter(
+    { 'annotation:editor': annotationEditorStateRoute },
+    {
+      'annotation:editor'({ hasUnsavedChanges }) {
+        dirty.push(hasUnsavedChanges);
+        return null;
+      },
+    }
+  );
+  const client = createAnnotationClient((message, signal) =>
+    router.dispatch(message, { signal: signal ?? new AbortController().signal })
+  );
+  await client.reportAnnotationEditorState({ hasUnsavedChanges: true });
+  await client.reportAnnotationEditorState({ hasUnsavedChanges: false });
+  expect(dirty).toEqual([true, false]);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: {
+        enabled: true,
+        pinsVisible: false,
+        showHint: false,
+        readOnly: true,
+        targets: [
+          {
+            id: '1',
+            targetId: 'revenue',
+            number: 1,
+            comment: 'Compare last year',
+          },
+        ],
+      },
+    })
+  ).toBe(true);
+  expect(
+    isDataAppPresentation({
+      surface: 'embedded',
+      theme: 'dark',
+      annotations: { enabled: true, readOnly: 'yes' },
+    })
+  ).toBe(false);
+});
+
+test('root captures validate PNG dimensions and preserve exact cursor anchors', () => {
+  const screenshot = {
+    mimeType: 'image/png' as const,
+    dataUrl:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/axFNy8AAAAASUVORK5CYII=',
+    width: 1,
+    height: 1,
+  };
+  const value = {
+    ...draft,
+    target: { ...draft.target, kind: 'app' },
+    context: {
+      ...draft.context,
+      anchor: { x: 0.25, y: 0.5 },
+      cursor: { x: 200, y: 300 },
+      screenshot,
+    },
+  };
+  const parsed = parseDataAppAnnotationDraft(value);
+  expect(parsed.target.kind).toBe('app');
+  expect(parsed.context.screenshot).toEqual(screenshot);
+  expect(parsed.context.anchor).toEqual({ x: 0.25, y: 0.5 });
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      context: { ...value.context, screenshot: { ...screenshot, width: 2 } },
+    })
+  ).toThrow();
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      context: { ...value.context, anchor: { x: 2, y: 0 } },
+    })
+  ).toThrow();
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      context: {
+        ...value.context,
+        screenshot: { ...screenshot, mimeType: 'image/svg+xml' },
+      },
+    })
+  ).toThrow();
+});
+
+test('custom areas require a bounded normalized document region', () => {
+  const value = {
+    ...draft,
+    target: { ...draft.target, kind: 'app' },
+    context: {
+      ...draft.context,
+      region: { x: 0.1, y: 0.2, width: 0.4, height: 0.3 },
+    },
+  };
+  expect(parseDataAppAnnotationDraft(value).context.region).toEqual(
+    value.context.region
+  );
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      target: { ...value.target, kind: 'widget' },
+    })
+  ).toThrow();
+  expect(() =>
+    parseDataAppAnnotationDraft({
+      ...value,
+      context: {
+        ...value.context,
+        region: { x: 0.9, y: 0, width: 0.4, height: 1 },
+      },
+    })
+  ).toThrow();
+});

@@ -805,7 +805,7 @@ test('widget insets align across metrics, visualizations, and loading states', a
   await expect(inspection.getByText('20', { exact: true })).toBeVisible();
   await expect(
     inspection.getByText('12 on Monday · 8 on Wednesday', { exact: true })
-  ).toBeVisible();
+  ).toHaveCount(0);
   await page.keyboard.press('Escape');
 
   await page.getByRole('tab', { name: 'Request states', exact: true }).click();

@@ -1,9 +1,14 @@
+import {
+  isAnnotationPresentation,
+  type DataAppAnnotationPresentation,
+} from '@/src/core/annotations';
 import type { Theme } from '@/src/core/appearance';
 
 /** Presentation owned by the parent shell, delivered only over a trusted bridge. */
 export type DataAppPresentation = {
   surface: 'embedded' | 'standalone';
   theme: Theme;
+  annotations?: DataAppAnnotationPresentation;
 };
 
 export function isDataAppPresentation(
@@ -15,6 +20,8 @@ export function isDataAppPresentation(
   return (
     (presentation.surface === 'embedded' ||
       presentation.surface === 'standalone') &&
-    (presentation.theme === 'light' || presentation.theme === 'dark')
+    (presentation.theme === 'light' || presentation.theme === 'dark') &&
+    (presentation.annotations === undefined ||
+      isAnnotationPresentation(presentation.annotations))
   );
 }

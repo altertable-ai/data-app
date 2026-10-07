@@ -33,3 +33,5 @@ export {
 } from '@/src/client/iframe';
 export { createMessageClient } from '@/src/client/messages';
 export type { DataAppLogger } from '@/src/core/logger';
+
+export { createAnnotationClient } from '@/src/client/annotations';

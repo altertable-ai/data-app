@@ -1,0 +1,287 @@
+.altertable-annotation-bar,
+.altertable-annotation-bar-panel,
+.altertable-tooltip-content:has(> .altertable-annotation-bar-tooltip) {
+  --bar-surface: #202326;
+  --bar-text: #f2f3f4;
+  --bar-muted: #aeb5bc;
+  --bar-border: #3b4248;
+  --bar-danger: #ffa6a0;
+  --bar-danger-surface: #572723;
+  --at-surface: var(--bar-surface);
+  --at-text: var(--bar-text);
+  --at-muted: var(--bar-muted);
+  --at-border: var(--bar-border);
+  --at-focus-outline: 2px solid var(--at-annotation-accent);
+  --at-subtle: color-mix(in srgb, var(--bar-text) 8%, var(--bar-surface));
+  color: var(--bar-text);
+  background: var(--bar-surface);
+  font: 14px/1.5 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  box-sizing: border-box;
+  border: 1px solid var(--bar-border);
+  box-shadow: 0 8px 28px #0003;
+}
+.altertable-annotation-bar[data-theme='dark'],
+.altertable-annotation-bar-panel[data-theme='dark'],
+.altertable-tooltip-content:has(
+  > .altertable-annotation-bar-tooltip[data-theme='dark']
+) {
+  --bar-surface: #f2f3f4;
+  --bar-text: #151719;
+  --bar-muted: #505963;
+  --bar-border: #dfe3e6;
+  --bar-danger: #b42318;
+  --bar-danger-surface: #ffe3e3;
+}
+.altertable-annotation-bar {
+  position: fixed;
+  z-index: 1200;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 18px;
+  max-width: calc(100vw - 24px);
+}
+.altertable-annotation-bar .altertable-button,
+.altertable-annotation-bar-panel .altertable-button {
+  flex-shrink: 0;
+  color: var(--bar-muted);
+  width: auto;
+  font: inherit;
+  cursor: default;
+  transition: none;
+}
+.altertable-annotation-bar .altertable-annotation-bar-count {
+  white-space: nowrap;
+  color: var(--bar-text);
+  padding-inline: 6px;
+}
+.altertable-annotation-bar
+  .altertable-button[aria-label='Move annotation bar'] {
+  cursor: grab;
+  touch-action: none;
+}
+.altertable-annotation-bar
+  .altertable-button[aria-label='Move annotation bar']:active {
+  cursor: grabbing;
+}
+.altertable-annotation-bar .altertable-annotation-bar-send {
+  background: var(--at-annotation-accent);
+  border-color: transparent;
+  border-radius: 12px;
+  color: var(--at-annotation-on-accent);
+  padding-inline: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.altertable-annotation-bar-panel {
+  position: fixed;
+  margin: 0;
+  z-index: 1201;
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(440px, 45vh);
+  overflow: auto;
+  border-radius: 16px;
+  padding: 6px;
+}
+.altertable-annotation-bar-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+}
+.altertable-annotation-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 10px;
+}
+.altertable-annotation-bar-row:hover,
+.altertable-annotation-bar-row:focus-within {
+  background: var(--at-subtle);
+}
+.altertable-annotation-bar-row + .altertable-annotation-bar-row {
+  border-top: 1px solid var(--bar-border);
+}
+.altertable-annotation-bar-panel .altertable-annotation-bar-open {
+  display: grid;
+  flex: 1;
+  text-align: left;
+  justify-content: stretch;
+  height: auto;
+  gap: 2px;
+  padding: 4px 6px;
+  min-width: 0;
+}
+.altertable-annotation-bar-open strong {
+  color: var(--bar-text);
+  font-weight: 600;
+}
+.altertable-annotation-bar-open span {
+  font-size: 13px;
+  color: var(--bar-muted);
+  overflow-wrap: anywhere;
+}
+.altertable-annotation-bar-panel
+  .altertable-annotation-bar-open:hover:not(:disabled) {
+  background: transparent;
+}
+.altertable-annotation-bar-error {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: var(--bar-surface);
+  color: var(--bar-text);
+  border: 1px solid var(--bar-border);
+  font-size: 12px;
+}
+@media (max-width: 420px) {
+  .altertable-annotation-bar {
+    gap: 0;
+    padding: 6px;
+    font-size: 12px;
+  }
+  .altertable-annotation-bar .altertable-annotation-bar-send {
+    padding-inline: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .altertable-annotation-bar .altertable-button[data-size='icon-compact'] {
+    width: 26px;
+    min-width: 26px;
+  }
+}
+
+/* Tooltip portals belong to the document, never the flex toolbar. */
+.altertable-tooltip-content:has(> .altertable-annotation-bar-tooltip) {
+  font-size: 12px;
+  line-height: 1.3;
+}
+.altertable-annotation-bar .altertable-button:hover:not(:disabled),
+.altertable-annotation-bar-panel .altertable-button:hover:not(:disabled) {
+  color: var(--bar-text);
+  background: var(--at-subtle);
+}
+.altertable-annotation-bar
+  .altertable-annotation-bar-send:hover:not(:disabled) {
+  color: var(--at-annotation-on-accent);
+  background: var(--at-annotation-accent-hover);
+}
+.altertable-annotation-bar .altertable-button:disabled,
+.altertable-annotation-bar-panel .altertable-button:disabled {
+  opacity: 1;
+  color: var(--bar-muted);
+}
+.altertable-annotation-bar .altertable-annotation-bar-send:disabled {
+  color: var(--bar-muted);
+  background: var(--at-subtle);
+}
+.altertable-annotation-bar .altertable-annotation-bar-send {
+  position: relative;
+}
+.altertable-annotation-bar-send[data-pending]
+  .altertable-annotation-bar-send-label {
+  visibility: hidden;
+}
+.altertable-annotation-bar-spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  animation: annotation-bar-spin 1s linear infinite;
+}
+@keyframes annotation-bar-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+.altertable-annotation-discard-description {
+  margin: 0;
+  color: var(--at-muted, #687078);
+  font: 14px/1.55 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+}
+.altertable-annotation-discard-confirm {
+  color: var(--at-danger, #b42318);
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-annotation-bar-spinner {
+    animation: none;
+  }
+}
+
+.altertable-annotation-bar .altertable-button[aria-pressed='true'] {
+  color: var(--bar-text);
+  background: var(--at-subtle);
+}
+
+.altertable-annotation-undo {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1202;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius-overlay, 12px);
+  background: var(--at-surface);
+  color: var(--at-text);
+  box-shadow: var(--at-shadow-overlay);
+  font: 13px/1.5 var(--at-font);
+}
+.altertable-annotation-thumbnail {
+  width: 56px;
+  height: 40px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--bar-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bar-surface);
+  cursor: zoom-in;
+}
+.altertable-annotation-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.altertable-annotation-thumbnail:focus-visible {
+  outline: 2px solid var(--at-annotation-accent);
+  outline-offset: 2px;
+}
+.altertable-annotation-preview {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+}
+
+.altertable-annotation-undo[data-bar-visible] {
+  bottom: 88px;
+}
+.altertable-annotation-undo[data-inline] {
+  position: static;
+  margin-top: 6px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.altertable-sheet.altertable-annotation-image-dialog[data-placement='center'] {
+  width: min(960px, calc(100vw - 32px));
+}
+
+.altertable-annotation-bar
+  .altertable-button[aria-label='Discard all annotations'],
+.altertable-annotation-bar-panel
+  .altertable-button[aria-label^='Delete annotation'] {
+  cursor: pointer;
+}

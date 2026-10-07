@@ -56,3 +56,7 @@
 @import './ui/TrendChart.css';
 @import './ui/PieChart.css';
 @import './ui/ScatterChart.css';
+
+@import './annotations/colors.css';
+@import './annotations/AnnotationControls.css';
+@import './annotations/AnnotationBar.css';

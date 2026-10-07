@@ -16,6 +16,8 @@ body:has(.playground-host) #root {
   --at-border: var(--host-border);
   --at-surface: var(--host-surface);
   --at-text: var(--host-text);
+  --at-subtle: var(--host-hover);
+  --at-muted: var(--host-muted);
   color-scheme: dark;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -66,7 +68,7 @@ body:has(.playground-host) #root {
   margin-left: auto;
 }
 
-.playground-host button {
+.playground-controls button {
   appearance: none;
   display: inline-flex;
   align-items: center;
@@ -82,13 +84,13 @@ body:has(.playground-host) #root {
   cursor: pointer;
 }
 
-.playground-host button:not(:disabled):hover,
-.playground-host button[aria-pressed='true'] {
+.playground-controls button:not(:disabled):hover,
+.playground-controls button[aria-pressed='true'] {
   background: var(--host-hover);
   color: var(--host-text);
 }
 
-.playground-host button:focus-visible {
+.playground-controls button:focus-visible {
   outline: 2px solid #7c9dd6;
   outline-offset: 2px;
 }
@@ -140,7 +142,59 @@ body:has(.playground-host) #root {
   border: 1px solid var(--host-border);
 }
 
-.playground-host button:disabled {
+.playground-controls button:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+.playground-annotate {
+  position: relative;
+}
+.playground-annotation-count {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  border-radius: 12px;
+  min-width: 16px;
+  padding: 1px 4px;
+  font-size: 10px;
+  background: var(--at-annotation-accent);
+  color: var(--at-annotation-on-accent);
+}
+
+.playground-submission-status {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: var(--host-text);
+  color: var(--host-background);
+  font: inherit;
+  box-shadow: 0 4px 16px #0002;
+}
+
+.playground-persistence-status {
+  position: fixed;
+  top: 54px;
+  left: 16px;
+  z-index: 1300;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--at-text);
+  background: var(--at-surface);
+  font-size: 12px;
+}
+
+.playground-controls .playground-annotate[aria-pressed='true'] {
+  background: var(--at-annotation-accent);
+  color: var(--at-annotation-on-accent);
+}
+.playground-controls
+  .playground-annotate[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--at-annotation-accent-hover);
+}
+.playground-controls .playground-annotate:focus-visible {
+  outline-color: var(--at-annotation-accent);
 }

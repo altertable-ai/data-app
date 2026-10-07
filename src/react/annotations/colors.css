@@ -1,0 +1,25 @@
+:root {
+  --at-annotation-accent: #c026d3;
+  --at-annotation-accent-hover: #a21caf;
+  --at-annotation-on-accent: #fff;
+  --at-annotation-highlight: color-mix(
+    in srgb,
+    var(--at-annotation-accent) 8%,
+    transparent
+  );
+}
+
+.altertable-annotation-trigger,
+.altertable-annotation-composer {
+  --at-focus-outline: 2px solid var(--at-annotation-accent);
+}
+.altertable-annotation-trigger[aria-pressed='true'],
+.altertable-annotation-trigger:not([aria-pressed]) {
+  background: var(--at-annotation-accent);
+  color: var(--at-annotation-on-accent);
+  border-color: transparent;
+}
+.altertable-annotation-trigger[aria-pressed='true']:hover:not(:disabled),
+.altertable-annotation-trigger:not([aria-pressed]):hover:not(:disabled) {
+  background: var(--at-annotation-accent-hover);
+}
