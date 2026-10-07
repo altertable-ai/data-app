@@ -22,6 +22,8 @@ export function AppFooter({
         <div className="altertable-app-footer-actions">{children}</div>
         {attribution === undefined ? (
           <a
+            data-atbl-focus="ring"
+            data-atbl-control="action"
             href="https://altertable.ai/?utm_source=data_app&utm_medium=referral&utm_campaign=powered_by"
             target="_blank"
             rel="noopener noreferrer"

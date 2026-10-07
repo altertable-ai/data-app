@@ -144,13 +144,27 @@ export function DateRangePicker({
       minValue={minDate ? parseDate(minDate) : undefined}
       maxValue={maxDate ? parseDate(maxDate) : undefined}
     >
-      <Group>
+      <Group data-atbl-focus="group">
         <DateInput slot="start">
-          {segment => <DateSegment segment={segment} />}
+          {segment => (
+            <DateSegment
+              data-atbl-focus="inset"
+              data-atbl-internal-focus-state="focused"
+              data-atbl-control="text"
+              segment={segment}
+            />
+          )}
         </DateInput>
         <span aria-hidden="true">–</span>
         <DateInput slot="end">
-          {segment => <DateSegment segment={segment} />}
+          {segment => (
+            <DateSegment
+              data-atbl-focus="inset"
+              data-atbl-internal-focus-state="focused"
+              data-atbl-control="text"
+              segment={segment}
+            />
+          )}
         </DateInput>
         {comparison?.enabled && (
           <span className="altertable-date-range-comparison">vs prior</span>
@@ -164,6 +178,8 @@ export function DateRangePicker({
               value.end === resetValue.end)
           ) && (
             <button
+              data-atbl-focus="ring"
+              data-atbl-control="action"
               type="button"
               className="altertable-date-range-reset"
               aria-label="Reset date range"
@@ -174,7 +190,11 @@ export function DateRangePicker({
               <AppIcon name="reset" size={14} />
             </button>
           )}
-        <Button aria-label="Choose dates">
+        <Button
+          data-atbl-focus="ring"
+          data-atbl-control="action"
+          aria-label="Choose dates"
+        >
           <AppIcon name="calendar" size={16} />
         </Button>
       </Group>
@@ -194,6 +214,8 @@ export function DateRangePicker({
                 <div className="altertable-date-range-preset-list">
                   {presets.map(preset => (
                     <Button
+                      data-atbl-focus="inset"
+                      data-atbl-control="action"
                       key={preset.id}
                       className="altertable-date-range-preset"
                       aria-current={
@@ -230,7 +252,12 @@ export function DateRangePicker({
                 }
               >
                 <header>
-                  <Button slot="previous" aria-label="Previous month">
+                  <Button
+                    data-atbl-focus="ring"
+                    data-atbl-control="action"
+                    slot="previous"
+                    aria-label="Previous month"
+                  >
                     <AppIcon name="previousMonth" size={16} />
                   </Button>
                   <CalendarMonthPicker format="short">
@@ -241,7 +268,10 @@ export function DateRangePicker({
                         onSelectionChange={key => picker.onChange(Number(key))}
                         className="altertable-calendar-select"
                       >
-                        <Button>
+                        <Button
+                          data-atbl-focus="ring"
+                          data-atbl-control="action"
+                        >
                           <SelectValue />
                           <AppIcon name="disclosure" size={14} />
                         </Button>
@@ -252,6 +282,8 @@ export function DateRangePicker({
                           <ListBox items={picker.items}>
                             {month => (
                               <ListBoxItem
+                                data-atbl-focus="inset"
+                                data-atbl-control="action"
                                 id={String(month.id)}
                                 textValue={month.formatted}
                               >
@@ -271,7 +303,10 @@ export function DateRangePicker({
                         onSelectionChange={key => picker.onChange(Number(key))}
                         className="altertable-calendar-select"
                       >
-                        <Button>
+                        <Button
+                          data-atbl-focus="ring"
+                          data-atbl-control="action"
+                        >
                           <SelectValue />
                           <AppIcon name="disclosure" size={14} />
                         </Button>
@@ -282,6 +317,8 @@ export function DateRangePicker({
                           <ListBox items={picker.items}>
                             {year => (
                               <ListBoxItem
+                                data-atbl-focus="inset"
+                                data-atbl-control="action"
                                 id={String(year.id)}
                                 textValue={year.formatted}
                               >
@@ -293,7 +330,12 @@ export function DateRangePicker({
                       </Select>
                     )}
                   </CalendarYearPicker>
-                  <Button slot="next" aria-label="Next month">
+                  <Button
+                    data-atbl-focus="ring"
+                    data-atbl-control="action"
+                    slot="next"
+                    aria-label="Next month"
+                  >
                     <AppIcon name="nextMonth" size={16} />
                   </Button>
                 </header>
@@ -302,7 +344,13 @@ export function DateRangePicker({
                     {day => <CalendarHeaderCell>{day}</CalendarHeaderCell>}
                   </CalendarGridHeader>
                   <CalendarGridBody>
-                    {date => <CalendarCell date={date} />}
+                    {date => (
+                      <CalendarCell
+                        data-atbl-focus="inset"
+                        data-atbl-control="action"
+                        date={date}
+                      />
+                    )}
                   </CalendarGridBody>
                 </CalendarGrid>
               </RangeCalendar>

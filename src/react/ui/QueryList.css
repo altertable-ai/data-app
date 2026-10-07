@@ -13,7 +13,6 @@
   font-size: 12px;
   font-weight: 600;
   list-style: none;
-  cursor: var(--atbl-cursor-action);
   transition: color var(--atbl-duration-fast) var(--atbl-ease-standard);
 }
 .altertable-query-list summary::-webkit-details-marker {

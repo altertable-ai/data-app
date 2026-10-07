@@ -132,6 +132,8 @@ export function PieChart({
                 }
               >
                 <button
+                  data-atbl-focus="ring"
+                  data-atbl-control="action"
                   type="button"
                   tabIndex={-1}
                   aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}`}

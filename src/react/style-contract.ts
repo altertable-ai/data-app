@@ -1,0 +1,364 @@
+import type { CSSProperties } from 'react';
+
+/** Public styling contract. Generate CSS and the reference with bun run generate:styles. */
+export const dataAppStyleTokens = {
+  '--atbl-background': {
+    default: 'var(--atbl-palette-background)',
+    group: 'Surfaces',
+    description: 'Document canvas.',
+  },
+  '--atbl-surface': {
+    default: 'var(--atbl-palette-surface)',
+    group: 'Surfaces',
+    description: 'Widget and overlay surface.',
+  },
+  '--atbl-subtle': {
+    default: 'var(--atbl-palette-subtle)',
+    group: 'Surfaces',
+    description: 'Quiet surface and hover fill.',
+  },
+  '--atbl-text': {
+    default: 'var(--atbl-palette-text)',
+    group: 'Text and borders',
+    description: 'Primary text.',
+  },
+  '--atbl-muted': {
+    default: 'var(--atbl-palette-muted)',
+    group: 'Text and borders',
+    description: 'Secondary text.',
+  },
+  '--atbl-border': {
+    default: 'var(--atbl-palette-border)',
+    group: 'Text and borders',
+    description: 'Decorative dividers and surface borders.',
+  },
+  '--atbl-accent': {
+    default: 'var(--atbl-input-accent, #405d47)',
+    group: 'Accent and selection',
+    description: 'Brand accent and selected controls.',
+  },
+  '--atbl-accent-hover': {
+    default: 'color-mix(in srgb, var(--atbl-accent) 80%, black)',
+    group: 'Accent and selection',
+    description: 'Hovered accent.',
+  },
+  '--atbl-accent-subtle': {
+    default:
+      'color-mix( in srgb, var(--atbl-accent) 12%, var(--atbl-surface) )',
+    group: 'Accent and selection',
+    description: 'Quiet selected surface.',
+  },
+  '--atbl-on-accent': {
+    default: 'var(--atbl-input-on-accent, #fff)',
+    group: 'Accent and selection',
+    description: 'Foreground on an accent-filled control.',
+  },
+  '--atbl-positive': {
+    default: 'var(--atbl-accent)',
+    group: 'Meaning',
+    description: 'Favorable metric change.',
+  },
+  '--atbl-negative': {
+    default: 'var(--atbl-danger)',
+    group: 'Meaning',
+    description: 'Unfavorable metric change.',
+  },
+  '--atbl-danger': {
+    default: '#b42318',
+    group: 'Meaning',
+    description: 'Error text and invalid controls.',
+  },
+  '--atbl-danger-subtle': {
+    default: 'color-mix( in srgb, var(--atbl-danger) 9%, var(--atbl-surface) )',
+    group: 'Meaning',
+    description: 'Quiet error surface.',
+  },
+  '--atbl-backdrop': {
+    default: 'rgb(15 23 30 / 22%)',
+    group: 'Surfaces',
+    description: 'Modal backdrop.',
+  },
+  '--atbl-code-surface': {
+    default: '#f4f6f9',
+    group: 'Code',
+    description: 'Code block surface.',
+  },
+  '--atbl-code-text': {
+    default: '#273242',
+    group: 'Code',
+    description: 'Code block text.',
+  },
+  '--atbl-code-keyword': {
+    default: 'var(--atbl-accent)',
+    group: 'Code',
+    description: 'SQL keywords.',
+  },
+  '--atbl-chart-fill': {
+    default:
+      'color-mix( in srgb, var(--atbl-accent) 75%, var(--atbl-surface) )',
+    group: 'Charts',
+    description: 'Unselected bar fill.',
+  },
+  '--atbl-control-hover-border': {
+    default: 'color-mix( in srgb, var(--atbl-muted) 45%, var(--atbl-border) )',
+    group: 'Text and borders',
+    description: 'Hovered control border.',
+  },
+  '--atbl-focus-color': {
+    default: 'var(--atbl-muted)',
+    group: 'Focus',
+    description: 'Keyboard focus indicator color.',
+  },
+  '--atbl-focus-outline': {
+    default: '1px solid var(--atbl-focus-color)',
+    group: 'Focus',
+    description: 'Complete keyboard focus outline.',
+  },
+  '--atbl-focus-ring-offset': {
+    default: '2px',
+    group: 'Focus',
+    description: 'Outer outline offset.',
+  },
+  '--atbl-focus-ring-inset': {
+    default: '-1px',
+    group: 'Focus',
+    description: 'Inset outline offset.',
+  },
+  '--atbl-font': {
+    default:
+      "var( --atbl-input-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ui-sans-serif, sans-serif )",
+    group: 'Typography',
+    description: 'Body font stack.',
+  },
+  '--atbl-font-heading': {
+    default: 'var(--atbl-input-font-heading, var(--atbl-font))',
+    group: 'Typography',
+    description: 'Heading and metric font stack.',
+  },
+  '--atbl-mono-font': {
+    default: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+    group: 'Code',
+    description: 'Code font stack.',
+  },
+  '--atbl-space-xs': {
+    default: '5px',
+    group: 'Layout',
+    description: 'Spacing step xs.',
+  },
+  '--atbl-space-sm': {
+    default: '10px',
+    group: 'Layout',
+    description: 'Spacing step sm.',
+  },
+  '--atbl-space-md': {
+    default: '16px',
+    group: 'Layout',
+    description: 'Spacing step md.',
+  },
+  '--atbl-space-lg': {
+    default: '24px',
+    group: 'Layout',
+    description: 'Spacing step lg.',
+  },
+  '--atbl-space-xl': {
+    default: '32px',
+    group: 'Layout',
+    description: 'Spacing step xl.',
+  },
+  '--atbl-layout-gap': {
+    default: 'clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))',
+    group: 'Layout',
+    description: 'Section and widget spacing.',
+  },
+  '--atbl-content-width': {
+    default: '960px',
+    group: 'Layout',
+    description: 'Maximum app content width.',
+  },
+  '--atbl-control-height': {
+    default: '38px',
+    group: 'Layout',
+    description: 'Default button minimum height.',
+  },
+  '--atbl-radius-control': {
+    default: '7px',
+    group: 'Shape',
+    description: 'Control corner radius.',
+  },
+  '--atbl-radius-surface': {
+    default: '12px',
+    group: 'Shape',
+    description: 'Surface corner radius.',
+  },
+  '--atbl-radius-overlay': {
+    default: '16px',
+    group: 'Shape',
+    description: 'Overlay corner radius.',
+  },
+  '--atbl-shadow-surface': {
+    default: '0 3px 16px rgb(20 28 40 / 5%)',
+    group: 'Elevation',
+    description: 'Surface elevation.',
+  },
+  '--atbl-shadow-overlay': {
+    default: '0 18px 50px rgb(0 0 0 / 16%)',
+    group: 'Elevation',
+    description: 'Overlay elevation.',
+  },
+  '--atbl-shadow-control': {
+    default: '0 1px 3px rgb(0 0 0 / 10%)',
+    group: 'Elevation',
+    description: 'Control elevation.',
+  },
+  '--atbl-cursor-action': {
+    default: 'pointer',
+    group: 'Cursors',
+    description: 'Enabled interactive controls.',
+  },
+  '--atbl-cursor-disabled': {
+    default: 'default',
+    group: 'Cursors',
+    description: 'Disabled controls.',
+  },
+  '--atbl-cursor-help': {
+    default: 'help',
+    group: 'Cursors',
+    description: 'Definition and timestamp details.',
+  },
+  '--atbl-duration-fast': {
+    default: '120ms',
+    group: 'Motion',
+    description: 'Fast interaction duration.',
+  },
+  '--atbl-duration-normal': {
+    default: '180ms',
+    group: 'Motion',
+    description: 'Normal interaction duration.',
+  },
+  '--atbl-duration-slow': {
+    default: '240ms',
+    group: 'Motion',
+    description: 'Slow interaction duration.',
+  },
+  '--atbl-ease-standard': {
+    default: 'ease',
+    group: 'Motion',
+    description: 'Standard transition easing.',
+  },
+  '--atbl-ease-enter': {
+    default: 'cubic-bezier(0.2, 0.7, 0.2, 1)',
+    group: 'Motion',
+    description: 'Overlay entrance easing.',
+  },
+  '--atbl-chart-1': {
+    default:
+      'color-mix( in srgb, var(--atbl-input-chart-1, #285fc0) var(--atbl-chart-strength), white )',
+    group: 'Charts',
+    description: 'Categorical chart color 1.',
+  },
+  '--atbl-chart-2': {
+    default:
+      'color-mix( in srgb, var(--atbl-input-chart-2, #a95319) var(--atbl-chart-strength), white )',
+    group: 'Charts',
+    description: 'Categorical chart color 2.',
+  },
+  '--atbl-chart-3': {
+    default:
+      'color-mix( in srgb, var(--atbl-input-chart-3, #147862) var(--atbl-chart-strength), white )',
+    group: 'Charts',
+    description: 'Categorical chart color 3.',
+  },
+  '--atbl-chart-4': {
+    default:
+      'color-mix( in srgb, var(--atbl-input-chart-4, #7243aa) var(--atbl-chart-strength), white )',
+    group: 'Charts',
+    description: 'Categorical chart color 4.',
+  },
+  '--atbl-chart-5': {
+    default:
+      'color-mix( in srgb, var(--atbl-input-chart-5, #aa3958) var(--atbl-chart-strength), white )',
+    group: 'Charts',
+    description: 'Categorical chart color 5.',
+  },
+  '--atbl-chart-6': {
+    default:
+      'color-mix( in srgb, var(--atbl-input-chart-6, #475569) var(--atbl-chart-strength), white )',
+    group: 'Charts',
+    description: 'Categorical chart color 6.',
+  },
+  '--atbl-chart-7': {
+    default:
+      'color-mix( in srgb, var(--atbl-input-chart-7, #285fc0) var(--atbl-chart-strength), white )',
+    group: 'Charts',
+    description: 'Categorical chart color 7.',
+  },
+  '--atbl-chart-8': {
+    default:
+      'color-mix( in srgb, var(--atbl-input-chart-8, #a95319) var(--atbl-chart-strength), white )',
+    group: 'Charts',
+    description: 'Categorical chart color 8.',
+  },
+} as const;
+
+/** Stable component roots for CSS customization; only utilities may be placed on native markup. */
+export const dataAppStyleClasses = {
+  'altertable-app-layout': {
+    component: 'AppLayout',
+    kind: 'root',
+  },
+  'altertable-stack': {
+    component: 'Stack',
+    kind: 'root',
+  },
+  'altertable-grid': {
+    component: 'Grid',
+    kind: 'root',
+  },
+  'altertable-grid-item': {
+    component: 'GridItem',
+    kind: 'root',
+  },
+  'altertable-text-content': {
+    component: 'TextContent',
+    kind: 'root',
+  },
+  'altertable-button': {
+    component: 'Button',
+    kind: 'root',
+  },
+  'altertable-tabs': {
+    component: 'Tabs',
+    kind: 'root',
+  },
+  'altertable-data-widget': {
+    component: 'DataWidget',
+    kind: 'root',
+  },
+  'altertable-metric-widget': {
+    component: 'MetricWidget',
+    kind: 'root',
+  },
+  'altertable-data-app-skeleton': {
+    component: 'DataAppSkeleton',
+    kind: 'root',
+  },
+  'altertable-sr-only': {
+    component: null,
+    kind: 'utility',
+  },
+} as const;
+
+export const dataAppStyleHooks = {
+  'data-atbl-focus': ['ring', 'inset', 'group'],
+  'data-atbl-control': ['action', 'help', 'text'],
+} as const;
+
+export type DataAppStyleToken = keyof typeof dataAppStyleTokens;
+/** React style properties with checked public Altertable custom properties. */
+export type DataAppStyle = CSSProperties &
+  Partial<Record<DataAppStyleToken, string | number>>;
+export type DataAppStyleHooks = {
+  [
+    Name in keyof typeof dataAppStyleHooks
+  ]?: (typeof dataAppStyleHooks)[Name][number];
+};

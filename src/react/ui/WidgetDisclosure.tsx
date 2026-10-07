@@ -18,7 +18,7 @@ export function WidgetDisclosure({
       {...props}
       className={classNames('altertable-widget-disclosure', className)}
     >
-      <summary>
+      <summary data-atbl-focus="ring" data-atbl-control="action">
         {label}
         <AppIcon name="disclosure" size={16} />
       </summary>

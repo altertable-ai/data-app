@@ -9,6 +9,15 @@ both derived from the displayed result. Setup and static screens may omit them.
 Follow [app authoring](docs/app-authoring.md) for the shared workflow, the data app
 and local data app paths, and task-specific documentation.
 
+## Styling
+
+Use components and typed props before adding CSS. Follow [Styling](docs/styling.md)
+and the generated [styling reference](docs/style-reference.md). Add app-owned
+classes through `className`; do not copy package root classes onto markup or
+select private descendants. Use supported `--atbl-*` tokens and native control
+hooks from the reference. Within this package repository, run `bun run check:styles` for authored examples
+and `bun run generate:styles` after editing the registry.
+
 ## Documentation
 
 Use `<Component>` notation for React components. Keep guidance concise; leave

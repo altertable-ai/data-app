@@ -1,13 +1,19 @@
-:where([class^='altertable-'], [class*=' altertable-']):is(
+[data-atbl-control='action'],
+[data-atbl-internal-prose] a {
+  cursor: var(--atbl-cursor-action);
+}
+[data-atbl-control='help'] {
+  cursor: var(--atbl-cursor-help);
+}
+[data-atbl-control='text'] {
+  cursor: text;
+}
+[data-atbl-control]:is(
   :disabled,
   [data-disabled],
-  [aria-disabled='true']
+  [aria-disabled='true'],
+  [data-unavailable]
 ),
-:where([class^='altertable-'], [class*=' altertable-'])
-  :is(button, [role='option'], .react-aria-CalendarCell):is(
-    :disabled,
-    [data-disabled],
-    [aria-disabled='true']
-  ) {
+[data-atbl-control]:has(> input:disabled) {
   cursor: var(--atbl-cursor-disabled);
 }

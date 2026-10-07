@@ -3,6 +3,51 @@
 Data apps use plain CSS and semantic custom properties. The `--atbl-` prefix means
 Altertable and keeps the package's styling names separate from host styles.
 
+## Choose the authoring path
+
+Use components and their typed props first. Add app-owned classes through
+`className` for presentation that the component API does not express. Package
+root classes are stable CSS customization hooks, not replacements for rendering
+their components. Descendant classes and private variables are internal.
+
+| Intent                           | Preferred API                           |
+| -------------------------------- | --------------------------------------- |
+| Space sections                   | `<Stack gap="…">`                       |
+| Arrange peer widgets             | `<Grid>` and `<GridItem>`               |
+| Render narrative prose           | `<TextContent>`                         |
+| Render an action                 | `<Button variant="…" size="…">`         |
+| Style brand, density, or theme   | `config.appearance`, then public tokens |
+| Customize one component          | App-owned `className` and public tokens |
+| Hide accessible explanatory text | `altertable-sr-only` on native markup   |
+
+```tsx
+<Stack gap="md">
+  <TextContent>
+    <h2>Activity</h2>
+    <p>Explore the sources behind this finding.</p>
+  </TextContent>
+  <Button variant="ghost" className="app-action">
+    Explore details
+  </Button>
+</Stack>
+```
+
+Use native control hooks only when a package component does not fit:
+
+```tsx
+<button type="button" data-atbl-control="action" data-atbl-focus="ring">
+  Run custom action
+</button>
+```
+
+These hooks provide cursor and focus treatment. Keep native semantics, disabled
+state, accessible naming, and keyboard behavior on the actual control. Use
+`inset` for focus inside a clipped surface and `group` for an input group whose
+wrapper owns the outline.
+
+For inline customization, `DataAppStyle` checks public custom-property names and
+`DataAppStyleHooks` checks hook values. Prefer a CSS class for reusable styles.
+
 ## Configure appearance
 
 Use `config.appearance` for theme, base palette, accent, chart colors, density,
@@ -28,26 +73,14 @@ Public `--atbl-*` tokens are the CSS customization contract. Override them on
   --atbl-control-height: 40px;
 }
 
-.altertable-button {
+.app-action {
   --atbl-control-height: 40px;
 }
 ```
 
-| Role                 | Tokens                                                                                                                |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Surfaces             | `--atbl-background`, `--atbl-surface`, `--atbl-subtle`, `--atbl-backdrop`                                             |
-| Text and borders     | `--atbl-text`, `--atbl-muted`, `--atbl-border`, `--atbl-control-hover-border`                                         |
-| Accent and selection | `--atbl-accent`, `--atbl-accent-hover`, `--atbl-accent-subtle`, `--atbl-on-accent`                                    |
-| Meaning              | `--atbl-positive`, `--atbl-negative`, `--atbl-danger`, `--atbl-danger-subtle`                                         |
-| Charts               | `--atbl-chart-1` through `--atbl-chart-8`, `--atbl-chart-fill`                                                        |
-| Code                 | `--atbl-code-surface`, `--atbl-code-text`, `--atbl-code-keyword`, `--atbl-mono-font`                                  |
-| Typography           | `--atbl-font`, `--atbl-font-heading`                                                                                  |
-| Layout               | `--atbl-space-xs` through `--atbl-space-xl`, `--atbl-layout-gap`, `--atbl-content-width`, `--atbl-control-height`     |
-| Shape                | `--atbl-radius-control`, `--atbl-radius-surface`, `--atbl-radius-overlay`                                             |
-| Elevation            | `--atbl-shadow-control`, `--atbl-shadow-surface`, `--atbl-shadow-overlay`                                             |
-| Cursors              | `--atbl-cursor-action`, `--atbl-cursor-disabled`, `--atbl-cursor-help`                                                |
-| Focus                | `--atbl-focus-color`, `--atbl-focus-outline`, `--atbl-focus-ring-offset`, `--atbl-focus-ring-inset`                   |
-| Motion               | `--atbl-duration-fast`, `--atbl-duration-normal`, `--atbl-duration-slow`, `--atbl-ease-standard`, `--atbl-ease-enter` |
+See the generated [styling reference](style-reference.md) for public tokens,
+defaults, stable root selectors, and native control hooks. The generated
+[machine-readable contract](style-contract.json) supports authoring tools and validators.
 
 Appearance settings write private brand inputs rather than inline public tokens,
 so normal author styles can override the presets. `--atbl-input-*`,
@@ -73,9 +106,11 @@ The injected stylesheet declares ordered layers: `atbl.tokens`, `atbl.base`,
 package rules regardless of injection order. System color overrides in forced
 colors mode use important declarations.
 
-`src/react/tokens.css` owns semantic defaults and appearance presets.
+`src/react/style-contract.ts` defines public tokens and styling hooks.
+`tokens.css` and the reference are generated from that registry; `appearance.css`
+owns internal palette primitives and appearance presets.
 `base.css` owns component sizing and the document baseline. Component CSS owns
-layout and visual states; shared focus and cursor behavior lives in
+layout and visual states; shared focus and cursor behavior uses explicit `data-atbl-*` hooks in
 `ui/Focus.css` and `interaction.css`. The full UI and host skeleton use the same
 shared token and component sources.
 
@@ -84,6 +119,9 @@ fixed geometry local unless it represents a shared design decision. Style React
 Aria states with their data attributes and keep selectors inside package
 components. `<Tabs>` provides the scope for tab styling.
 
-Token reference checks run with the unit tests. Browser tests cover host
+Within the package repository, run `bun run generate:styles` after changing the registry. Build checks reject
+stale generated files. `bun run check:styles` validates the reference and shipped
+authored examples; pass file paths or quoted globs to check another app.
+Token reference and package control-hook checks run with the unit tests. Browser tests cover host
 isolation, author overrides, cursor and focus states, theme and palette changes,
 contrast, and appearance cleanup.

@@ -69,7 +69,6 @@
   border-radius: var(--atbl-radius-control);
   background: transparent;
   color: var(--atbl-muted);
-  cursor: var(--atbl-cursor-action);
   outline: none;
   transition:
     background-color var(--atbl-duration-fast) var(--atbl-ease-standard),
@@ -92,7 +91,6 @@
   border-radius: var(--atbl-radius-control);
   background: transparent;
   color: var(--atbl-muted);
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-date-range .altertable-date-range-reset:hover {
   background: var(--atbl-subtle);
@@ -185,7 +183,6 @@
   text-align: left;
   line-height: 1.25;
   font: inherit;
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-date-range-popover .altertable-date-range-preset[data-hovered] {
   background: var(--atbl-subtle);
@@ -231,7 +228,6 @@
   gap: 9px;
   margin-top: 10px;
   padding: 10px 4px 2px;
-  cursor: var(--atbl-cursor-action);
 }
 
 .altertable-date-range-popover .react-aria-RangeCalendar {
@@ -256,7 +252,6 @@
   background: transparent;
   color: inherit;
   font: inherit;
-  cursor: var(--atbl-cursor-action);
   outline: none;
 }
 .altertable-date-range-popover
@@ -266,7 +261,6 @@
 .altertable-date-range-popover
   .react-aria-Button:not(.altertable-date-range-preset)[data-disabled] {
   opacity: 0.35;
-  cursor: var(--atbl-cursor-disabled);
 }
 .altertable-date-range-popover .altertable-calendar-select:first-of-type {
   flex: 1;
@@ -310,7 +304,6 @@
   font-variant-numeric: tabular-nums;
   line-height: 1;
   outline: none;
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-date-range-popover .react-aria-CalendarCell[data-outside-month] {
   visibility: hidden;
@@ -353,7 +346,6 @@
 .altertable-date-range-popover .react-aria-CalendarCell[data-unavailable] {
   color: var(--atbl-muted);
   opacity: 0.4;
-  cursor: var(--atbl-cursor-disabled);
 }
 .altertable-date-range-popover .react-aria-CalendarCell[data-unavailable] {
   text-decoration: line-through;
@@ -379,7 +371,6 @@
   padding: 7px 10px;
   border-radius: var(--atbl-radius-control);
   outline: none;
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-calendar-select-popover .react-aria-ListBoxItem[data-selected] {
   font-weight: 650;

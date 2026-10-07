@@ -12,7 +12,6 @@
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  cursor: var(--atbl-cursor-action);
   transition:
     background-color var(--atbl-duration-fast) var(--atbl-ease-standard),
     border-color var(--atbl-duration-fast) var(--atbl-ease-standard),
@@ -47,7 +46,6 @@
 }
 .altertable-button:disabled {
   opacity: 0.5;
-  cursor: var(--atbl-cursor-disabled);
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-button {

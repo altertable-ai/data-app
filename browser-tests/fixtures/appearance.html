@@ -19,22 +19,62 @@
   <body>
     <button class="host-control">Host control</button>
     <div class="altertable-app-layout">
-      <button class="altertable-button">Action</button>
-      <button class="altertable-button" disabled>Disabled action</button>
-      <label class="altertable-checkbox">
+      <button
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-button"
+      >
+        Action
+      </button>
+      <button
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-button"
+        disabled
+      >
+        Disabled action
+      </button>
+      <label
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-checkbox"
+      >
         <input type="checkbox" checked />
         <span class="altertable-selection-mark" data-selected></span>
         Selected
         <small>Muted explanation</small>
       </label>
-      <label class="altertable-checkbox">
+      <label
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-checkbox"
+      >
         <input type="checkbox" disabled />
         Disabled checkbox
       </label>
-      <button class="altertable-glossary-definition-trigger">Definition</button>
-      <button class="altertable-selectable-bars-item">Chart action</button>
+      <button
+        data-atbl-focus="ring"
+        data-atbl-control="help"
+        class="altertable-glossary-definition-trigger"
+      >
+        Definition
+      </button>
+      <button
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-selectable-bars-item"
+      >
+        Chart action
+      </button>
       <div class="altertable-tabs">
-        <button class="react-aria-Tab" data-focus-visible>Tab</button>
+        <button
+          data-atbl-focus="ring"
+          data-atbl-control="action"
+          class="react-aria-Tab"
+          data-focus-visible
+        >
+          Tab
+        </button>
       </div>
       <div class="altertable-metric-widget">Widget</div>
       <div class="altertable-grid" data-columns="1">
@@ -47,10 +87,22 @@
       Portaled tooltip
     </div>
     <div class="altertable-combobox-popover">
-      <div class="react-aria-ListBoxItem" role="option" data-disabled>
+      <div
+        data-atbl-focus="inset"
+        data-atbl-control="action"
+        class="react-aria-ListBoxItem"
+        role="option"
+        data-disabled
+      >
         Disabled option
       </div>
-      <div class="react-aria-ListBoxItem" role="option" data-focus-visible>
+      <div
+        data-atbl-focus="inset"
+        data-atbl-control="action"
+        class="react-aria-ListBoxItem"
+        role="option"
+        data-focus-visible
+      >
         Focused option
       </div>
     </div>

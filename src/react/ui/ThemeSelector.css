@@ -26,7 +26,6 @@
   border-radius: var(--atbl-radius-control);
   background: transparent;
   color: var(--atbl-muted);
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-theme-selector input {
   position: absolute;
@@ -35,7 +34,7 @@
   height: 100%;
   margin: 0;
   opacity: 0;
-  cursor: var(--atbl-cursor-action);
+  cursor: inherit;
 }
 .altertable-theme-selector label:hover {
   color: var(--atbl-text);

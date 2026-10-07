@@ -4,7 +4,6 @@
   align-items: flex-start;
   gap: 9px;
   border-radius: var(--atbl-radius-control);
-  cursor: var(--atbl-cursor-action);
   font: 13px/1.4 var(--atbl-font);
   color: var(--atbl-text);
 }
@@ -19,7 +18,6 @@
 }
 .altertable-checkbox:has(input:disabled) {
   opacity: 0.5;
-  cursor: var(--atbl-cursor-disabled);
 }
 .altertable-checkbox .altertable-selection-mark {
   margin-top: 2px;

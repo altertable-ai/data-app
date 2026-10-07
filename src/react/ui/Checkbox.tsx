@@ -22,7 +22,11 @@ export function Checkbox({
   const descriptionId = useId();
 
   return (
-    <label className={classNames('altertable-checkbox', className)}>
+    <label
+      data-atbl-focus="ring"
+      data-atbl-control="action"
+      className={classNames('altertable-checkbox', className)}
+    >
       <input
         type="checkbox"
         aria-label={label}

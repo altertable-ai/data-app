@@ -35,6 +35,7 @@ refresh, and failure.
 
 | Task                                       | Documentation                                                     |
 | ------------------------------------------ | ----------------------------------------------------------------- |
+| Choose components, CSS tokens, and styling hooks | [Styling](styling.md) |
 | Define queries, inputs, and result parsing | [Operations](contract.md)                                         |
 | Build views, filters, and request states   | [Views](views.md)                                                 |
 | Introduce and explain visualizations       | [Narrative text](widgets.md#narrative-text)                       |

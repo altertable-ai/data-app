@@ -97,6 +97,7 @@ export function DataTableTimestamp({
 
   return (
     <DateTimeTooltip
+      triggerProps={{ 'data-atbl-control': 'help' }}
       date={date}
       timeZone={timeZone}
       triggerProps={{ className: 'altertable-data-table-timestamp' }}

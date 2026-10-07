@@ -195,7 +195,6 @@
   border: 0;
   border-radius: var(--atbl-radius-control);
   background: transparent;
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-present-dots button::before {
   width: 7px;

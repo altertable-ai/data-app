@@ -10,7 +10,6 @@
   text-decoration: underline dotted var(--atbl-muted);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
-  cursor: var(--atbl-cursor-help);
 }
 .altertable-glossary-definition-trigger:hover,
 .altertable-glossary-definition-trigger[data-open='true'] {

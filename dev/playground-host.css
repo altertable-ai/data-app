@@ -13,6 +13,10 @@ body:has(.playground-host) #root {
   --host-text: #f2f3f4;
   --host-muted: #aeb5bc;
   --host-border: #3b4248;
+  --host-focus: #7c9dd6;
+  --host-pending: #c99b73;
+  --host-success: #83ad95;
+  --host-danger: #d68b9d;
   --atbl-border: var(--host-border);
   --atbl-surface: var(--host-surface);
   --atbl-text: var(--host-text);
@@ -89,7 +93,7 @@ body:has(.playground-host) #root {
 }
 
 .playground-host button:focus-visible {
-  outline: 2px solid #7c9dd6;
+  outline: 2px solid var(--host-focus);
   outline-offset: 2px;
 }
 
@@ -97,15 +101,15 @@ body:has(.playground-host) #root {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #c99b73;
+  background: var(--host-pending);
 }
 
 .playground-connection[data-status='ready'] {
-  background: #83ad95;
+  background: var(--host-success);
 }
 
 .playground-connection[data-status='failed'] {
-  background: #d68b9d;
+  background: var(--host-danger);
 }
 
 .playground-stage {

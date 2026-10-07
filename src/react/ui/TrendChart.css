@@ -43,7 +43,6 @@
   padding: 0;
   background: transparent;
   color: var(--atbl-muted);
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-trend-point:focus {
   outline: none;

@@ -367,6 +367,8 @@ export function PresentStory({
                     portalRoot={dialog}
                   >
                     <button
+                      data-atbl-focus="ring"
+                      data-atbl-control="action"
                       type="button"
                       aria-label={`Finding ${itemIndex + 1}: ${item.headline}`}
                       aria-current={itemIndex === index ? 'step' : undefined}

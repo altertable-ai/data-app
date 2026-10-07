@@ -13,6 +13,7 @@ export function GlossaryDefinition({
 }: GlossaryDefinitionProps) {
   return (
     <HelpPopover
+      triggerProps={{ 'data-atbl-control': 'help' }}
       trigger={children ?? entry.term}
       triggerLabel={`Explain ${entry.term}`}
       label={entry.term}

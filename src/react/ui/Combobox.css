@@ -86,7 +86,6 @@
   padding: 8px 10px;
   border-radius: var(--atbl-radius-control);
   outline: none;
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-combobox-popover .react-aria-ListBoxItem small {
   display: block;
@@ -118,7 +117,6 @@
 }
 .altertable-combobox-popover .react-aria-ListBoxItem[data-disabled] {
   opacity: 0.45;
-  cursor: var(--atbl-cursor-disabled);
 }
 .altertable-combobox-empty {
   padding: 12px 10px;

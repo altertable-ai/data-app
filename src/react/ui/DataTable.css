@@ -47,7 +47,6 @@
   color: inherit;
   font: inherit;
   font-variant-numeric: tabular-nums;
-  cursor: var(--atbl-cursor-help);
 }
 .altertable-data-table-timestamp:hover {
   color: var(--atbl-accent);

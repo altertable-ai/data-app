@@ -8,9 +8,9 @@ import { classNames } from '@/src/react/ui/classNames';
 import {
   Tabs as AriaTabs,
   TabList,
-  Tab,
+  Tab as AriaTab,
   TabPanels,
-  TabPanel,
+  TabPanel as AriaTabPanel,
 } from 'react-aria-components/Tabs';
 import {
   searchParams,
@@ -19,7 +19,17 @@ import {
 } from '@/src/react/ui/search';
 
 /** React Aria tabs with keyboard and ARIA behavior; pair each Tab and TabPanel by stable id. */
-export { TabList, Tab, TabPanels, TabPanel };
+export { TabList, TabPanels };
+
+export function Tab(props: ComponentPropsWithRef<typeof AriaTab>) {
+  return (
+    <AriaTab data-atbl-focus="ring" data-atbl-control="action" {...props} />
+  );
+}
+
+export function TabPanel(props: ComponentPropsWithRef<typeof AriaTabPanel>) {
+  return <AriaTabPanel data-atbl-focus="ring" {...props} />;
+}
 
 export function Tabs({
   className,

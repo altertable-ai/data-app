@@ -68,7 +68,7 @@ export function ThemeSelector({
       <legend className="altertable-theme-legend">Color theme</legend>
       {themes.map(({ value, label, icon }) => (
         <Tooltip key={value} content={`${label} theme`}>
-          <label>
+          <label data-atbl-focus="ring" data-atbl-control="action">
             <input
               type="radio"
               name={name}

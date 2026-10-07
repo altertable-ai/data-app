@@ -15,7 +15,6 @@
   font-size: 13px;
   font-weight: 550;
   outline: none;
-  cursor: var(--atbl-cursor-action);
   transition:
     color var(--atbl-duration-fast) var(--atbl-ease-standard),
     border-color var(--atbl-duration-normal) var(--atbl-ease-standard);
@@ -32,7 +31,6 @@
 }
 .altertable-tabs .react-aria-Tab[data-disabled] {
   opacity: 0.45;
-  cursor: var(--atbl-cursor-disabled);
 }
 .altertable-tabs .react-aria-TabPanels {
   min-width: 0;

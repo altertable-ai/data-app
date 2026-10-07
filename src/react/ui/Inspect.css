@@ -6,7 +6,6 @@
   border-radius: var(--atbl-radius-control);
   background: transparent;
   color: var(--atbl-muted);
-  cursor: var(--atbl-cursor-action);
   transition:
     background-color var(--atbl-duration-fast) var(--atbl-ease-standard),
     color var(--atbl-duration-fast) var(--atbl-ease-standard);

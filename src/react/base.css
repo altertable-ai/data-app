@@ -6,7 +6,6 @@
 }
 :where([class^='altertable-'], [class*=' altertable-']) button {
   font: inherit;
-  cursor: var(--atbl-cursor-action);
 }
 /* Only the document UI owner enables the page baseline. Portals share its theme. */
 :root[data-atbl-appearance] {
@@ -27,4 +26,17 @@
 :root[data-atbl-appearance] body,
 :root[data-atbl-appearance] #root {
   margin: 0;
+}
+
+.altertable-sr-only {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

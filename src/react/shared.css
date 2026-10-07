@@ -1,4 +1,5 @@
 @import './tokens.css' layer(atbl.tokens);
+@import './appearance.css' layer(atbl.tokens);
 @import './base.css' layer(atbl.base);
 @import './ui/Skeleton.css' layer(atbl.components);
 @import './ui/Grid.css' layer(atbl.components);

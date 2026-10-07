@@ -15,7 +15,6 @@
 .altertable-pie-slice {
   stroke: var(--atbl-surface);
   stroke-width: 2;
-  cursor: var(--atbl-cursor-action);
   transition: opacity var(--atbl-duration-fast) var(--atbl-ease-standard);
 }
 .altertable-pie-plot
@@ -55,7 +54,6 @@
   text-align: left;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-pie-legend [data-open] > button {
   background: var(--atbl-subtle);

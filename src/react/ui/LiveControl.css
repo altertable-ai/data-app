@@ -55,7 +55,6 @@
   border-radius: 0;
   background: transparent;
   color: var(--atbl-muted);
-  cursor: var(--atbl-cursor-action);
 }
 .altertable-live-frequency > button:hover {
   background: var(--atbl-subtle);
@@ -79,7 +78,6 @@
   padding: 6px 9px;
   border-radius: 4px;
   font-size: 13px;
-  cursor: var(--atbl-cursor-action);
   outline: none;
 }
 .altertable-live-frequency-popover

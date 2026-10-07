@@ -1,6 +1,9 @@
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import manifest from '@/package.json';
+import { generateStyleContract } from '@/scripts/generate-style-contract';
+
+await generateStyleContract(true);
 
 // Watch rebuilds keep declarations and let open pages pick up the new files.
 if (!process.argv.includes('--incremental'))
