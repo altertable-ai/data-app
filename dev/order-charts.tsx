@@ -43,7 +43,7 @@ export function DailyLineChart({ days }: { days: readonly OrderDay[] }) {
       viewBox={`0 0 ${width} ${height}`}
       style={{ width: '100%', height: 'auto', overflow: 'visible' }}
     >
-      <line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke="var(--at-border)" />
+      <line x1={0} x2={width} y1={y(0)} y2={y(0)} stroke="var(--atbl-border)" />
       <polygon
         points={`0,${y(0)} ${points} ${width},${y(0)}`}
         fill={color}
@@ -67,14 +67,14 @@ export function DailyLineChart({ days }: { days: readonly OrderDay[] }) {
           {formatCount(peak.orderCount)}
         </text>
       )}
-      <text x={0} y={height - 4} fill="var(--at-muted)" fontSize={11}>
+      <text x={0} y={height - 4} fill="var(--atbl-muted)" fontSize={11}>
         {first}
       </text>
       <text
         x={width}
         y={height - 4}
         textAnchor="end"
-        fill="var(--at-muted)"
+        fill="var(--atbl-muted)"
         fontSize={11}
       >
         {last}
@@ -84,7 +84,7 @@ export function DailyLineChart({ days }: { days: readonly OrderDay[] }) {
 }
 
 function sliceColor(index: number) {
-  return `var(--at-chart-${index + 1}, var(--at-accent))`;
+  return `var(--atbl-chart-${index + 1}, var(--atbl-accent))`;
 }
 function piePoint(angle: number) {
   return `${50 + 50 * Math.sin(angle)},${50 - 50 * Math.cos(angle)}`;
@@ -131,7 +131,7 @@ export function OrderValuePieChart({ bands }: { bands: readonly OrderBand[] }) {
               key={band.band}
               d={`M50,50 L${piePoint(start)} A50,50 0 ${end - start > Math.PI ? 1 : 0} 1 ${piePoint(end)} Z`}
               fill={sliceColor(index)}
-              stroke="var(--at-surface)"
+              stroke="var(--atbl-surface)"
               strokeWidth={1}
             />
           )
@@ -163,7 +163,7 @@ export function OrderValuePieChart({ bands }: { bands: readonly OrderBand[] }) {
               }}
             />
             <span style={{ flex: 1 }}>{band.band}</span>
-            <span style={{ color: 'var(--at-muted)' }}>
+            <span style={{ color: 'var(--atbl-muted)' }}>
               {formatCount(band.orderCount)} ·{' '}
               {formatPercent(band.orderCount / total)}
             </span>

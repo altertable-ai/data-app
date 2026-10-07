@@ -6,7 +6,7 @@ for sections, `<Grid>` for peer widgets, and `<GridItem>` for spans. Use
 external spacing. Keep widget customization inside the widget so its parent can maintain consistent
 spacing between sections and cards.
 
-By default, section and widget gaps use `--at-layout-gap`, with density configured once
+By default, section and widget gaps use `--atbl-layout-gap`, with density configured once
 in `DataAppConfig.appearance`. The package owns wrapping and span collapse based
 on the available container width.
 

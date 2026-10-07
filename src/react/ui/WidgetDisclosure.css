@@ -7,11 +7,11 @@
   gap: 8px;
   min-height: 38px;
   padding: 0 10px;
-  border-radius: var(--at-radius-control);
-  color: var(--at-text);
+  border-radius: var(--atbl-radius-control);
+  color: var(--atbl-text);
   font-size: 13px;
   font-weight: 600;
-  cursor: var(--at-cursor-action);
+  cursor: var(--atbl-cursor-action);
   list-style: none;
 }
 .altertable-widget-disclosure > summary::-webkit-details-marker {
@@ -19,11 +19,11 @@
 }
 .altertable-widget-disclosure > summary:hover,
 .altertable-widget-disclosure[open] > summary {
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-widget-disclosure > summary svg {
-  color: var(--at-muted);
-  transition: transform var(--at-duration-normal) var(--at-ease-standard);
+  color: var(--atbl-muted);
+  transition: transform var(--atbl-duration-normal) var(--atbl-ease-standard);
 }
 .altertable-widget-disclosure[open] > summary svg {
   transform: rotate(180deg);

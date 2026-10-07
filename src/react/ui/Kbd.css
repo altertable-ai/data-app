@@ -4,11 +4,11 @@
   justify-content: center;
   min-width: 1.6em;
   padding: 2px 5px;
-  border: 1px solid var(--at-border);
+  border: 1px solid var(--atbl-border);
   border-radius: 5px;
-  background: var(--at-subtle);
-  color: var(--at-muted);
-  font: 600 11px/1.2 var(--at-font);
+  background: var(--atbl-subtle);
+  color: var(--atbl-muted);
+  font: 600 11px/1.2 var(--atbl-font);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

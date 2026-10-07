@@ -2,12 +2,12 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: var(--at-layout-gap);
-  border: 1px solid var(--at-border);
-  border-radius: calc(var(--at-radius-surface) * 1.5);
+  padding: var(--atbl-layout-gap);
+  border: 1px solid var(--atbl-border);
+  border-radius: calc(var(--atbl-radius-surface) * 1.5);
   corner-shape: squircle;
-  background: var(--at-surface);
-  box-shadow: var(--at-shadow-surface);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-surface);
 }
 .altertable-metric-widget.altertable-data-widget {
   padding: 0;
@@ -16,7 +16,7 @@
   min-height: 0;
 }
 .altertable-metric-widget > .altertable-data-widget-header h2 {
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -30,12 +30,12 @@
 }
 .altertable-metric-widget > .altertable-data-widget-footer {
   padding-top: 0;
-  padding-bottom: var(--at-layout-gap);
+  padding-bottom: var(--atbl-layout-gap);
 }
 .altertable-metric-value {
-  margin: var(--at-space-sm) 0 2px;
-  color: var(--at-text);
-  font-family: var(--at-font-heading);
+  margin: var(--atbl-space-sm) 0 2px;
+  color: var(--atbl-text);
+  font-family: var(--atbl-font-heading);
   font-size: clamp(26px, 3vw, 34px);
   font-weight: 680;
   line-height: 1.08;
@@ -56,27 +56,27 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-variant-numeric: tabular-nums;
 }
 .altertable-metric-change[data-tone='good'] {
-  color: var(--at-positive);
+  color: var(--atbl-positive);
 }
 .altertable-metric-change[data-tone='bad'] {
-  color: var(--at-negative);
+  color: var(--atbl-negative);
 }
 .altertable-metric-description {
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-size: 12px;
   line-height: 1.45;
 }
 .altertable-metric-visual {
   min-width: 0;
-  margin-top: var(--at-space-sm);
+  margin-top: var(--atbl-space-sm);
 }
 .altertable-metric-insight {
-  margin-top: var(--at-space-sm);
-  color: var(--at-muted);
+  margin-top: var(--atbl-space-sm);
+  color: var(--atbl-muted);
   font-size: 12px;
   line-height: 1.45;
 }

@@ -4,14 +4,15 @@
   max-height: min(65dvh, 560px);
   overflow: auto;
   overscroll-behavior: contain;
-  padding: var(--at-space-md);
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-overlay);
-  background: var(--at-surface);
-  box-shadow: var(--at-shadow-overlay);
-  color: var(--at-text);
-  font: 13px/1.5 var(--at-font);
-  animation: altertable-popover-in var(--at-duration-fast) var(--at-ease-enter);
+  padding: var(--atbl-space-md);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-overlay);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-overlay);
+  color: var(--atbl-text);
+  font: 13px/1.5 var(--atbl-font);
+  animation: altertable-popover-in var(--atbl-duration-fast)
+    var(--atbl-ease-enter);
 }
 @keyframes altertable-popover-in {
   from {

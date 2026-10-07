@@ -1,8 +1,8 @@
-@import './tokens.css' layer(at.tokens);
-@import './base.css' layer(at.base);
-@import './ui/Skeleton.css' layer(at.components);
-@import './ui/Grid.css' layer(at.components);
-@import './ui/DataWidget.css' layer(at.components);
-@import './ui/MetricWidget.css' layer(at.components);
-@import './ui/VisualizationWidget.css' layer(at.components);
-@import './ui/ContentSkeleton.css' layer(at.components);
+@import './tokens.css' layer(atbl.tokens);
+@import './base.css' layer(atbl.base);
+@import './ui/Skeleton.css' layer(atbl.components);
+@import './ui/Grid.css' layer(atbl.components);
+@import './ui/DataWidget.css' layer(atbl.components);
+@import './ui/MetricWidget.css' layer(atbl.components);
+@import './ui/VisualizationWidget.css' layer(atbl.components);
+@import './ui/ContentSkeleton.css' layer(atbl.components);

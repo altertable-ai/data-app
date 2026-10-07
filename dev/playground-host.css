@@ -13,9 +13,9 @@ body:has(.playground-host) #root {
   --host-text: #f2f3f4;
   --host-muted: #aeb5bc;
   --host-border: #3b4248;
-  --at-border: var(--host-border);
-  --at-surface: var(--host-surface);
-  --at-text: var(--host-text);
+  --atbl-border: var(--host-border);
+  --atbl-surface: var(--host-surface);
+  --atbl-text: var(--host-text);
   color-scheme: dark;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);

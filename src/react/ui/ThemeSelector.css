@@ -5,8 +5,8 @@
   margin: 0;
   padding: 3px;
   border: 0;
-  border-radius: var(--at-radius-control);
-  background: var(--at-subtle);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-subtle);
 }
 .altertable-theme-legend {
   position: absolute;
@@ -23,10 +23,10 @@
   width: 30px;
   height: 30px;
   padding: 0;
-  border-radius: var(--at-radius-control);
+  border-radius: var(--atbl-radius-control);
   background: transparent;
-  color: var(--at-muted);
-  cursor: var(--at-cursor-action);
+  color: var(--atbl-muted);
+  cursor: var(--atbl-cursor-action);
 }
 .altertable-theme-selector input {
   position: absolute;
@@ -35,13 +35,13 @@
   height: 100%;
   margin: 0;
   opacity: 0;
-  cursor: var(--at-cursor-action);
+  cursor: var(--atbl-cursor-action);
 }
 .altertable-theme-selector label:hover {
-  color: var(--at-text);
+  color: var(--atbl-text);
 }
 .altertable-theme-selector label:has(input:checked) {
-  background: var(--at-surface);
-  color: var(--at-text);
-  box-shadow: var(--at-shadow-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: var(--atbl-shadow-control);
 }

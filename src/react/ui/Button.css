@@ -3,24 +3,24 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: var(--at-control-height);
+  min-height: var(--atbl-control-height);
   padding: 0 12px;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-control);
-  background: var(--at-surface);
-  color: var(--at-text);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  cursor: var(--at-cursor-action);
+  cursor: var(--atbl-cursor-action);
   transition:
-    background-color var(--at-duration-fast) var(--at-ease-standard),
-    border-color var(--at-duration-fast) var(--at-ease-standard),
-    color var(--at-duration-fast) var(--at-ease-standard);
+    background-color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    border-color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    color var(--atbl-duration-fast) var(--atbl-ease-standard);
   -webkit-tap-highlight-color: transparent;
 }
 .altertable-button:hover:not(:disabled) {
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-button[data-size='icon'] {
   flex: none;
@@ -34,7 +34,7 @@
   box-shadow: none;
 }
 .altertable-button[data-variant='elevated'] {
-  box-shadow: var(--at-shadow-surface);
+  box-shadow: var(--atbl-shadow-surface);
 }
 .altertable-button[data-variant='ghost'] {
   border-color: transparent;
@@ -43,11 +43,11 @@
 }
 .altertable-button[data-variant='ghost']:hover:not(:disabled),
 .altertable-button[data-variant='ghost'][data-open='true'] {
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-button:disabled {
   opacity: 0.5;
-  cursor: var(--at-cursor-disabled);
+  cursor: var(--atbl-cursor-disabled);
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-button {

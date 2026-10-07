@@ -20,7 +20,7 @@ Object.assign(window, {
 for (let index = 1; index <= 8; index++) {
   const swatch = document.createElement('div');
   swatch.dataset.chart = String(index);
-  swatch.style.backgroundColor = `var(--at-chart-${index})`;
+  swatch.style.backgroundColor = `var(--atbl-chart-${index})`;
   document.querySelector('#palette')!.append(swatch);
 }
 

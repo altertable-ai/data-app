@@ -20,21 +20,21 @@
   max-height: 40dvh;
   padding: 10px 12px;
   overflow: auto;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-surface);
-  background: var(--at-surface);
-  box-shadow: var(--at-shadow-overlay);
-  color: var(--at-text);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-overlay);
+  color: var(--atbl-text);
   font-size: 12px;
   line-height: 1.45;
   pointer-events: auto;
 }
 .altertable-data-view-toast > svg {
   flex: none;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
 }
 .altertable-data-view-toast[data-state='error'] > svg {
-  color: var(--at-danger);
+  color: var(--atbl-danger);
 }
 .altertable-data-view-toast > span {
   min-width: 0;

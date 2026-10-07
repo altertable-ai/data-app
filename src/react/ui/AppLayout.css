@@ -6,19 +6,19 @@
 .altertable-app-main {
   display: grid;
   align-content: start;
-  gap: var(--at-layout-gap);
+  gap: var(--atbl-layout-gap);
   min-width: 0;
-  width: min(100% - 48px, var(--at-content-width));
+  width: min(100% - 48px, var(--atbl-content-width));
   margin-inline: auto;
-  padding: var(--at-layout-gap) 0 var(--at-space-md);
+  padding: var(--atbl-layout-gap) 0 var(--atbl-space-md);
 }
 .altertable-app-main[data-surface='standalone'] {
-  padding-bottom: var(--at-space-xl);
+  padding-bottom: var(--atbl-space-xl);
 }
 .altertable-app-body {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--at-layout-gap);
+  gap: var(--atbl-layout-gap);
   min-width: 0;
 }
 .altertable-app-main > *,
@@ -42,6 +42,6 @@
 }
 @media (max-width: 600px) {
   .altertable-app-main {
-    width: min(100% - 32px, var(--at-content-width));
+    width: min(100% - 32px, var(--atbl-content-width));
   }
 }

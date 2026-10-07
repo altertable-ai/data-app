@@ -6,13 +6,13 @@
   min-width: 0;
   min-height: 44px;
   padding: 0 12px;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-control);
-  background: var(--at-surface);
-  color: var(--at-muted);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-muted);
 }
 .altertable-search-input-wrap:hover {
-  border-color: var(--at-control-hover-border);
+  border-color: var(--atbl-control-hover-border);
 }
 .altertable-search-input-wrap[data-size='compact'] {
   width: min(100%, 300px);
@@ -37,7 +37,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: var(--at-text);
+  color: var(--atbl-text);
   font: inherit;
   font-size: 14px;
 }

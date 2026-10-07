@@ -41,7 +41,7 @@ export function PieChart({
     slices.push({
       ...item,
       share,
-      color: `var(--at-chart-${(index % 8) + 1})`,
+      color: `var(--atbl-chart-${(index % 8) + 1})`,
       path: `${share === 1 ? 'M' : 'M110,110 L'}${point(start)} A100,100 0 0 1 ${point(middle)} A100,100 0 0 1 ${point(cursor)} Z`,
     });
   }

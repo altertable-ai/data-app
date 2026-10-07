@@ -1,23 +1,23 @@
 /* Native and React Aria controls share the same keyboard focus treatment. */
-[data-at-focus='ring']:is(:focus-visible, [data-focus-visible]),
-[data-at-focus='inset']:is(:focus-visible, [data-focus-visible]) {
-  outline: var(--at-focus-outline);
-  outline-offset: var(--at-focus-ring-offset);
+[data-atbl-focus='ring']:is(:focus-visible, [data-focus-visible]),
+[data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]) {
+  outline: var(--atbl-focus-outline);
+  outline-offset: var(--atbl-focus-ring-offset);
 }
-[data-at-focus='inset']:is(:focus-visible, [data-focus-visible]) {
-  outline-offset: var(--at-focus-ring-inset);
+[data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]) {
+  outline-offset: var(--atbl-focus-ring-inset);
 }
 
 /* Input groups show one inset outline around the whole control. */
-[data-at-focus='group']:is(
+[data-atbl-focus='group']:is(
   :focus-within,
   [data-focus-within],
   [data-focus-visible]
 ) {
-  outline: var(--at-focus-outline);
-  outline-offset: var(--at-focus-ring-inset);
+  outline: var(--atbl-focus-outline);
+  outline-offset: var(--atbl-focus-ring-inset);
 }
-[data-at-focus='group'] input:focus-visible {
+[data-atbl-focus='group'] input:focus-visible {
   outline: none;
 }
 
@@ -48,8 +48,8 @@
 .altertable-scatter-point:focus-visible,
 .altertable-calendar-select-popover .react-aria-ListBoxItem[data-focus-visible],
 .altertable-export-popover [role='option'][data-focus-visible] {
-  outline: var(--at-focus-outline);
-  outline-offset: var(--at-focus-ring-offset);
+  outline: var(--atbl-focus-outline);
+  outline-offset: var(--atbl-focus-ring-offset);
 }
 .altertable-combobox-popover .react-aria-ListBoxItem[data-focus-visible],
 .altertable-date-range .react-aria-Group[data-focus-within],
@@ -64,6 +64,6 @@
   ):focus-within,
 .altertable-live-control
   .altertable-button:is(:focus-visible, [data-focus-visible]) {
-  outline: var(--at-focus-outline);
-  outline-offset: var(--at-focus-ring-inset);
+  outline: var(--atbl-focus-outline);
+  outline-offset: var(--atbl-focus-ring-inset);
 }

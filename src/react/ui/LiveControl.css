@@ -7,10 +7,10 @@
   align-items: stretch;
   height: 36px;
   overflow: hidden;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-control);
-  background: var(--at-surface);
-  box-shadow: var(--at-shadow-surface);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-surface);
 }
 .altertable-live-control .altertable-button[data-size='icon'] {
   position: relative;
@@ -25,10 +25,10 @@
   box-shadow: none;
 }
 .altertable-live-control[data-active='true'] {
-  border-color: var(--at-accent);
+  border-color: var(--atbl-accent);
 }
 .altertable-live-control[data-active='true'] .altertable-button {
-  color: var(--at-accent);
+  color: var(--atbl-accent);
 }
 .altertable-live-control[data-active='true'] .altertable-button::after {
   position: absolute;
@@ -43,7 +43,7 @@
 .altertable-live-frequency {
   width: 28px;
   height: 34px;
-  border-left: 1px solid var(--at-border);
+  border-left: 1px solid var(--atbl-border);
 }
 .altertable-live-frequency > button {
   display: grid;
@@ -54,21 +54,21 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: var(--at-muted);
-  cursor: var(--at-cursor-action);
+  color: var(--atbl-muted);
+  cursor: var(--atbl-cursor-action);
 }
 .altertable-live-frequency > button:hover {
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-live-frequency-popover {
   z-index: 1000;
   min-width: 190px;
   padding: 4px;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-control);
-  background: var(--at-surface);
-  color: var(--at-text);
-  box-shadow: var(--at-shadow-overlay);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: var(--atbl-shadow-overlay);
 }
 .altertable-live-frequency-popover [role='option'] {
   display: flex;
@@ -79,15 +79,15 @@
   padding: 6px 9px;
   border-radius: 4px;
   font-size: 13px;
-  cursor: var(--at-cursor-action);
+  cursor: var(--atbl-cursor-action);
   outline: none;
 }
 .altertable-live-frequency-popover
   [role='option']:is([data-focused], [data-hovered]) {
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-live-frequency-popover [role='option'][data-selected] {
-  color: var(--at-accent);
+  color: var(--atbl-accent);
   font-weight: 600;
 }
 .altertable-live-frequency-popover [role='option']:not([data-selected]) svg {

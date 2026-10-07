@@ -147,7 +147,7 @@ function fontStack(family: string): string {
 function accentForeground(settings: AppearanceSettings, dark: boolean): string {
   const accent =
     getComputedStyle(document.documentElement).getPropertyValue(
-      '--at-accent'
+      '--atbl-accent'
     ) ||
     (dark
       ? (settings.darkAccentColor ??
@@ -182,26 +182,26 @@ export function applyAppearance(value?: AppearanceOptions): () => void {
   const root = document.documentElement;
   const preference = window.matchMedia('(prefers-color-scheme: dark)');
   const attributes: Record<string, string> = {
-    'data-at-appearance': '',
-    'data-at-base-color': settings.baseColor,
-    'data-at-density': settings.density,
-    'data-at-radius': settings.cornerRadius,
-    'data-at-elevation': settings.elevation,
-    'data-at-theme': '',
+    'data-atbl-appearance': '',
+    'data-atbl-base-color': settings.baseColor,
+    'data-atbl-density': settings.density,
+    'data-atbl-radius': settings.cornerRadius,
+    'data-atbl-elevation': settings.elevation,
+    'data-atbl-theme': '',
   };
   const inputs: Record<string, string> = {
-    '--at-input-font': fontStack(settings.typography.body),
-    '--at-input-font-heading': fontStack(settings.typography.heading),
-    '--at-input-accent': settings.accentColor,
-    '--at-input-dark-accent': settings.darkAccentColor ?? '',
-    '--at-input-on-accent': '',
+    '--atbl-input-font': fontStack(settings.typography.body),
+    '--atbl-input-font-heading': fontStack(settings.typography.heading),
+    '--atbl-input-accent': settings.accentColor,
+    '--atbl-input-dark-accent': settings.darkAccentColor ?? '',
+    '--atbl-input-on-accent': '',
   };
   const chartColors = settings.chartColors.length
     ? settings.chartColors
     : defaults.chartColors;
   // Every categorical slot is defined, including after shrinking a custom palette.
   for (let index = 0; index < 8; index++)
-    inputs[`--at-input-chart-${index + 1}`] =
+    inputs[`--atbl-input-chart-${index + 1}`] =
       chartColors[index % chartColors.length]!;
 
   const previousAttributes = Object.keys(attributes).map(
@@ -226,9 +226,9 @@ export function applyAppearance(value?: AppearanceOptions): () => void {
     const dark =
       settings.theme === 'dark' ||
       (settings.theme === 'system' && preference.matches);
-    root.setAttribute('data-at-theme', dark ? 'dark' : 'light');
+    root.setAttribute('data-atbl-theme', dark ? 'dark' : 'light');
     root.style.setProperty(
-      '--at-input-on-accent',
+      '--atbl-input-on-accent',
       accentForeground(settings, dark)
     );
   }

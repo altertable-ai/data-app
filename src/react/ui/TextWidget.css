@@ -1,6 +1,6 @@
 .altertable-text-widget-skeleton {
   display: grid;
-  gap: var(--at-space-sm);
+  gap: var(--atbl-space-sm);
   max-width: 70ch;
 }
 .altertable-text-widget-skeleton > .altertable-skeleton {

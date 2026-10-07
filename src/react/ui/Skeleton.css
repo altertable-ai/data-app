@@ -1,10 +1,10 @@
 .altertable-skeleton {
   display: block;
-  border-radius: var(--at-radius-control);
-  background: var(--at-subtle);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-subtle);
   opacity: 0;
   animation:
-    altertable-skeleton-in 200ms var(--at-ease-standard) 200ms forwards,
+    altertable-skeleton-in 200ms var(--atbl-ease-standard) 200ms forwards,
     altertable-skeleton-pulse 1.4s ease-in-out 400ms infinite alternate;
 }
 .altertable-skeleton[data-inline] {

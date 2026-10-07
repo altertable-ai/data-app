@@ -7,14 +7,14 @@
   font: inherit;
   font-weight: inherit;
   text-align: inherit;
-  text-decoration: underline dotted var(--at-muted);
+  text-decoration: underline dotted var(--atbl-muted);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
-  cursor: var(--at-cursor-help);
+  cursor: var(--atbl-cursor-help);
 }
 .altertable-glossary-definition-trigger:hover,
 .altertable-glossary-definition-trigger[data-open='true'] {
-  text-decoration-color: var(--at-text);
+  text-decoration-color: var(--atbl-text);
 }
 .altertable-glossary-definition-trigger:focus-visible {
   border-radius: 2px;

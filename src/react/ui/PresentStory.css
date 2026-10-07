@@ -18,12 +18,12 @@
   margin: 0;
   padding: 0;
   border: 0;
-  background: var(--at-background);
-  color: var(--at-text);
+  background: var(--atbl-background);
+  color: var(--atbl-text);
   overscroll-behavior: contain;
   opacity: 0;
   transition:
-    opacity 200ms var(--at-ease-standard),
+    opacity 200ms var(--atbl-ease-standard),
     overlay 200ms allow-discrete,
     display 200ms allow-discrete;
 }
@@ -49,13 +49,13 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: var(--at-space-md);
+  gap: var(--atbl-space-md);
   width: min(100% - 48px, 1200px);
   margin: 0 auto;
 }
 .altertable-present-header {
   min-height: 60px;
-  border-bottom: 1px solid var(--at-border);
+  border-bottom: 1px solid var(--atbl-border);
   font-size: 13px;
 }
 .altertable-present-title {
@@ -76,7 +76,7 @@
   line-height: 24px;
 }
 .altertable-present-connector {
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-weight: 400;
 }
 .altertable-present-title .altertable-app-scope {
@@ -88,7 +88,7 @@
 }
 .altertable-present-count {
   flex: none;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -100,7 +100,7 @@
 }
 .altertable-present-theme {
   display: inline-flex;
-  margin-inline-start: var(--at-space-sm);
+  margin-inline-start: var(--atbl-space-sm);
 }
 .altertable-present-main {
   display: grid;
@@ -109,15 +109,15 @@
   align-content: safe center;
   align-items: start;
   column-gap: clamp(28px, 5vw, 72px);
-  row-gap: var(--at-space-lg);
+  row-gap: var(--atbl-space-lg);
   width: min(100% - 64px, 1100px);
   min-height: 0;
   margin: 0 auto;
-  padding: var(--at-space-lg) 0;
+  padding: var(--atbl-space-lg) 0;
   overflow-y: auto;
   overscroll-behavior-y: contain;
-  animation: altertable-present-step var(--at-duration-slow)
-    var(--at-ease-enter);
+  animation: altertable-present-step var(--atbl-duration-slow)
+    var(--atbl-ease-enter);
 }
 @keyframes altertable-present-step {
   from {
@@ -130,7 +130,7 @@
 }
 .altertable-present-copy > h2 {
   margin: 0;
-  font-family: var(--at-font-heading);
+  font-family: var(--atbl-font-heading);
   font-size: clamp(30px, 3.8vw, 50px);
   font-weight: 650;
   line-height: 1.1;
@@ -142,12 +142,12 @@
   outline: none;
 }
 .altertable-present-explore {
-  margin-top: var(--at-space-lg);
+  margin-top: var(--atbl-space-lg);
 }
 .altertable-present-copy > p {
   max-width: 58ch;
-  margin: var(--at-space-md) 0 0;
-  color: var(--at-muted);
+  margin: var(--atbl-space-md) 0 0;
+  color: var(--atbl-muted);
   font-size: clamp(15px, 1.5vw, 18px);
   line-height: 1.55;
   text-wrap: pretty;
@@ -160,12 +160,12 @@
   min-width: 0;
   min-height: clamp(280px, 48vh, 470px);
   max-height: 62vh;
-  padding: var(--at-space-lg);
+  padding: var(--atbl-space-lg);
   overflow: auto;
   overscroll-behavior: contain;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-surface);
-  background: var(--at-surface);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
 }
 .altertable-present-visual > * {
   width: 100%;
@@ -180,7 +180,7 @@
   min-height: 72px;
 }
 .altertable-present-nav > .altertable-tooltip-trigger > button:disabled {
-  color: var(--at-muted);
+  color: var(--atbl-muted);
 }
 .altertable-present-dots {
   display: flex;
@@ -193,32 +193,32 @@
   height: 44px;
   padding: 0;
   border: 0;
-  border-radius: var(--at-radius-control);
+  border-radius: var(--atbl-radius-control);
   background: transparent;
-  cursor: var(--at-cursor-action);
+  cursor: var(--atbl-cursor-action);
 }
 .altertable-present-dots button::before {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--at-border);
+  background: var(--atbl-border);
   content: '';
   transition:
-    width 200ms var(--at-ease-enter),
-    background-color 200ms var(--at-ease-standard);
+    width 200ms var(--atbl-ease-enter),
+    background-color 200ms var(--atbl-ease-standard);
 }
 .altertable-present-dots button:hover::before {
-  background: var(--at-muted);
+  background: var(--atbl-muted);
 }
 .altertable-present-dots button[aria-current='step']::before {
   width: 20px;
-  background: var(--at-accent);
+  background: var(--atbl-accent);
 }
 @media (max-width: 800px) {
   .altertable-present-main {
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
-    gap: var(--at-space-lg);
+    gap: var(--atbl-space-lg);
     width: min(100% - 40px, 640px);
   }
   .altertable-present-visual {
@@ -238,10 +238,10 @@
   }
   .altertable-present-main {
     width: calc(100% - 32px);
-    padding: var(--at-space-md) 0;
+    padding: var(--atbl-space-md) 0;
   }
   .altertable-present-visual {
-    padding: var(--at-space-md);
+    padding: var(--atbl-space-md);
   }
   .altertable-present-nav {
     min-height: 64px;

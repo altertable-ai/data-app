@@ -9,5 +9,5 @@
     [data-disabled],
     [aria-disabled='true']
   ) {
-  cursor: var(--at-cursor-disabled);
+  cursor: var(--atbl-cursor-disabled);
 }

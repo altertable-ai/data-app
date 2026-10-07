@@ -1,6 +1,6 @@
 # Styling
 
-Data apps use plain CSS and semantic custom properties. The `--at-` prefix means
+Data apps use plain CSS and semantic custom properties. The `--atbl-` prefix means
 Altertable and keeps the package's styling names separate from host styles.
 
 ## Configure appearance
@@ -17,47 +17,47 @@ brand inputs and stops system-theme listening.
 
 ## Customize tokens
 
-Public `--at-*` tokens are the CSS customization contract. Override them on
+Public `--atbl-*` tokens are the CSS customization contract. Override them on
 `:root` to include portaled UI, or on a component for a local adjustment.
 
 ```css
 :root {
-  --at-content-width: 1120px;
-  --at-cursor-action: pointer;
-  --at-cursor-disabled: default;
-  --at-control-height: 40px;
+  --atbl-content-width: 1120px;
+  --atbl-cursor-action: pointer;
+  --atbl-cursor-disabled: default;
+  --atbl-control-height: 40px;
 }
 
 .altertable-button {
-  --at-control-height: 40px;
+  --atbl-control-height: 40px;
 }
 ```
 
-| Role                 | Tokens                                                                                                      |
-| -------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Surfaces             | `--at-background`, `--at-surface`, `--at-subtle`, `--at-backdrop`                                           |
-| Text and borders     | `--at-text`, `--at-muted`, `--at-border`, `--at-control-hover-border`                                       |
-| Accent and selection | `--at-accent`, `--at-accent-hover`, `--at-accent-subtle`, `--at-on-accent`                                  |
-| Meaning              | `--at-positive`, `--at-negative`, `--at-danger`, `--at-danger-subtle`                                       |
-| Charts               | `--at-chart-1` through `--at-chart-8`, `--at-chart-fill`                                                    |
-| Code                 | `--at-code-surface`, `--at-code-text`, `--at-code-keyword`, `--at-mono-font`                                |
-| Typography           | `--at-font`, `--at-font-heading`                                                                            |
-| Layout               | `--at-space-xs` through `--at-space-xl`, `--at-layout-gap`, `--at-content-width`, `--at-control-height`     |
-| Shape                | `--at-radius-control`, `--at-radius-surface`, `--at-radius-overlay`                                         |
-| Elevation            | `--at-shadow-control`, `--at-shadow-surface`, `--at-shadow-overlay`                                         |
-| Cursors              | `--at-cursor-action`, `--at-cursor-disabled`, `--at-cursor-help`                                            |
-| Focus                | `--at-focus-color`, `--at-focus-outline`, `--at-focus-ring-offset`, `--at-focus-ring-inset`                 |
-| Motion               | `--at-duration-fast`, `--at-duration-normal`, `--at-duration-slow`, `--at-ease-standard`, `--at-ease-enter` |
+| Role                 | Tokens                                                                                                                |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Surfaces             | `--atbl-background`, `--atbl-surface`, `--atbl-subtle`, `--atbl-backdrop`                                             |
+| Text and borders     | `--atbl-text`, `--atbl-muted`, `--atbl-border`, `--atbl-control-hover-border`                                         |
+| Accent and selection | `--atbl-accent`, `--atbl-accent-hover`, `--atbl-accent-subtle`, `--atbl-on-accent`                                    |
+| Meaning              | `--atbl-positive`, `--atbl-negative`, `--atbl-danger`, `--atbl-danger-subtle`                                         |
+| Charts               | `--atbl-chart-1` through `--atbl-chart-8`, `--atbl-chart-fill`                                                        |
+| Code                 | `--atbl-code-surface`, `--atbl-code-text`, `--atbl-code-keyword`, `--atbl-mono-font`                                  |
+| Typography           | `--atbl-font`, `--atbl-font-heading`                                                                                  |
+| Layout               | `--atbl-space-xs` through `--atbl-space-xl`, `--atbl-layout-gap`, `--atbl-content-width`, `--atbl-control-height`     |
+| Shape                | `--atbl-radius-control`, `--atbl-radius-surface`, `--atbl-radius-overlay`                                             |
+| Elevation            | `--atbl-shadow-control`, `--atbl-shadow-surface`, `--atbl-shadow-overlay`                                             |
+| Cursors              | `--atbl-cursor-action`, `--atbl-cursor-disabled`, `--atbl-cursor-help`                                                |
+| Focus                | `--atbl-focus-color`, `--atbl-focus-outline`, `--atbl-focus-ring-offset`, `--atbl-focus-ring-inset`                   |
+| Motion               | `--atbl-duration-fast`, `--atbl-duration-normal`, `--atbl-duration-slow`, `--atbl-ease-standard`, `--atbl-ease-enter` |
 
 Appearance settings write private brand inputs rather than inline public tokens,
-so normal author styles can override the presets. `--at-input-*`,
-`--at-palette-*`, and `--at-chart-strength` are internal. Component layout
-variables such as `--at-grid-column-width` are implementation details.
+so normal author styles can override the presets. `--atbl-input-*`,
+`--atbl-palette-*`, and `--atbl-chart-strength` are internal. Component layout
+variables such as `--atbl-grid-column-width` are implementation details.
 
 Chart colors fill eight slots by repeating the configured palette as needed.
 Dark themes lighten those colors. Appearance selects a contrasting black or
-white foreground for the resolved accent. When overriding `--at-accent` directly
-in CSS, also choose an appropriate `--at-on-accent`; verify contrast for custom
+white foreground for the resolved accent. When overriding `--atbl-accent` directly
+in CSS, also choose an appropriate `--atbl-on-accent`; verify contrast for custom
 text, surfaces, focus indicators, and chart marks.
 
 Interactive controls use the action cursor; disabled controls use the disabled
@@ -68,8 +68,8 @@ system focus and selection foreground colors.
 
 ## Maintain component styles
 
-The injected stylesheet declares ordered layers: `at.tokens`, `at.base`,
-`at.components`, and `at.interaction`. Normal unlayered author CSS overrides
+The injected stylesheet declares ordered layers: `atbl.tokens`, `atbl.base`,
+`atbl.components`, and `atbl.interaction`. Normal unlayered author CSS overrides
 package rules regardless of injection order. System color overrides in forced
 colors mode use important declarations.
 

@@ -8,14 +8,14 @@ test('every public data app CSS token reference has a definition', async () => {
   const sources = await Promise.all(files.map(file => Bun.file(file).text()));
   const definitions = new Set(
     sources.flatMap(source =>
-      [...source.matchAll(/(--at-[\w-]+)\s*:/g)].map(match => match[1])
+      [...source.matchAll(/(--atbl-[\w-]+)\s*:/g)].map(match => match[1])
     )
   );
   const unresolved = sources.flatMap((source, index) =>
-    [...source.matchAll(/var\((--at-[\w-]+)/g)]
+    [...source.matchAll(/var\((--atbl-[\w-]+)/g)]
       .filter(
         match =>
-          !match[1].startsWith('--at-input-') && !definitions.has(match[1])
+          !match[1].startsWith('--atbl-input-') && !definitions.has(match[1])
       )
       .map(match => `${files[index]}: ${match[1]}`)
   );
@@ -26,7 +26,7 @@ test('component CSS consumes canonical defaults without alternate token fallback
   const files = await Array.fromAsync(new Glob('src/react/ui/*.css').scan('.'));
   for (const file of files) {
     const css = await Bun.file(file).text();
-    expect(css, file).not.toMatch(/var\(--at-[\w-]+\s*,/);
+    expect(css, file).not.toMatch(/var\(--atbl-[\w-]+\s*,/);
     expect(css, file).not.toMatch(/box-shadow:[^;]*rgb\(/);
   }
 });

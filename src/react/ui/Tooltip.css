@@ -14,15 +14,15 @@
   width: max-content;
   max-width: min(240px, calc(100vw - 24px));
   padding: 6px 9px;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-control);
-  background: var(--at-surface);
-  color: var(--at-text);
-  box-shadow: var(--at-shadow-overlay);
-  font: 500 12px/1.3 var(--at-font);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: var(--atbl-shadow-overlay);
+  font: 500 12px/1.3 var(--atbl-font);
   white-space: normal;
   pointer-events: none;
-  animation: altertable-tooltip-in var(--at-duration-fast) ease-out;
+  animation: altertable-tooltip-in var(--atbl-duration-fast) ease-out;
 }
 .altertable-tooltip-content[data-variant='chart'] {
   display: grid;

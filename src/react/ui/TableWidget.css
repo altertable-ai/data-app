@@ -1,6 +1,6 @@
 .altertable-table-widget-content {
   min-width: 0;
-  padding: var(--at-space-md) var(--at-space-lg) var(--at-space-lg);
+  padding: var(--atbl-space-md) var(--atbl-space-lg) var(--atbl-space-lg);
 }
 :where(.altertable-visualization-widget-content)
   > .altertable-table-widget-content {
@@ -16,7 +16,7 @@
   flex-wrap: wrap;
   gap: 8px 16px;
   padding: 12px 10px 4px;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }

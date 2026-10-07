@@ -1,9 +1,9 @@
 .altertable-tabs .react-aria-TabList {
   display: flex;
-  gap: var(--at-space-lg);
+  gap: var(--atbl-space-lg);
   overflow-x: auto;
   overscroll-behavior-x: none;
-  border-bottom: 1px solid var(--at-border);
+  border-bottom: 1px solid var(--atbl-border);
   scrollbar-width: none;
 }
 .altertable-tabs .react-aria-Tab {
@@ -11,32 +11,32 @@
   margin-bottom: -1px;
   padding: 0 1px 12px;
   border-bottom: 2px solid transparent;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-size: 13px;
   font-weight: 550;
   outline: none;
-  cursor: var(--at-cursor-action);
+  cursor: var(--atbl-cursor-action);
   transition:
-    color var(--at-duration-fast) var(--at-ease-standard),
-    border-color var(--at-duration-normal) var(--at-ease-standard);
+    color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    border-color var(--atbl-duration-normal) var(--atbl-ease-standard);
 }
 .altertable-tabs .react-aria-Tab[data-hovered] {
-  color: var(--at-text);
+  color: var(--atbl-text);
 }
 .altertable-tabs .react-aria-Tab[data-selected] {
-  border-bottom-color: var(--at-accent);
-  color: var(--at-text);
+  border-bottom-color: var(--atbl-accent);
+  color: var(--atbl-text);
 }
 .altertable-tabs .react-aria-Tab[data-focus-visible] {
   border-radius: 2px;
 }
 .altertable-tabs .react-aria-Tab[data-disabled] {
   opacity: 0.45;
-  cursor: var(--at-cursor-disabled);
+  cursor: var(--atbl-cursor-disabled);
 }
 .altertable-tabs .react-aria-TabPanels {
   min-width: 0;
-  padding-block-start: var(--at-space-md);
+  padding-block-start: var(--atbl-space-md);
 }
 .altertable-tabs .react-aria-TabPanel {
   min-width: 0;

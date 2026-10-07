@@ -5,18 +5,18 @@
   box-sizing: border-box;
   width: 16px;
   height: 16px;
-  border: 1px solid var(--at-muted);
+  border: 1px solid var(--atbl-muted);
   border-radius: 4px;
 }
 .altertable-selection-mark[data-selected] {
-  border-color: var(--at-accent);
-  background: var(--at-accent);
+  border-color: var(--atbl-accent);
+  background: var(--atbl-accent);
 }
 .altertable-selection-mark[data-selected]::after {
   width: 4px;
   height: 7px;
   margin-top: -2px;
-  border: solid var(--at-on-accent);
+  border: solid var(--atbl-on-accent);
   border-width: 0 2px 2px 0;
   content: '';
   transform: rotate(45deg);

@@ -6,25 +6,25 @@
 }
 :where([class^='altertable-'], [class*=' altertable-']) button {
   font: inherit;
-  cursor: var(--at-cursor-action);
+  cursor: var(--atbl-cursor-action);
 }
 /* Only the document UI owner enables the page baseline. Portals share its theme. */
-:root[data-at-appearance] {
+:root[data-atbl-appearance] {
   scrollbar-gutter: stable;
-  font-family: var(--at-font);
-  color: var(--at-text);
-  background: var(--at-background);
+  font-family: var(--atbl-font);
+  color: var(--atbl-text);
+  background: var(--atbl-background);
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
-:root[data-at-theme='light'] {
+:root[data-atbl-theme='light'] {
   color-scheme: light;
 }
-:root[data-at-theme='dark'] {
+:root[data-atbl-theme='dark'] {
   color-scheme: dark;
 }
-:root[data-at-appearance] body,
-:root[data-at-appearance] #root {
+:root[data-atbl-appearance] body,
+:root[data-atbl-appearance] #root {
   margin: 0;
 }

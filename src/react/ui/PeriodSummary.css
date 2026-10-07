@@ -6,7 +6,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 7px;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -14,12 +14,12 @@
 }
 .altertable-period-summary-visible > svg,
 .altertable-period-summary-vs {
-  color: var(--at-muted);
+  color: var(--atbl-muted);
 }
 .altertable-period-summary-vs {
   font-weight: 450;
 }
 .altertable-period-summary-current {
-  color: var(--at-text);
+  color: var(--atbl-text);
   font-weight: 650;
 }

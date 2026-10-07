@@ -2,7 +2,7 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--at-space-sm);
+  gap: var(--atbl-space-sm);
 }
 .altertable-refresh-loading {
   display: none;
@@ -28,7 +28,7 @@
   display: block;
 }
 .altertable-refresh-status {
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-size: 11px;
   white-space: nowrap;
 }

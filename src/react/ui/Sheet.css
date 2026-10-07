@@ -15,17 +15,17 @@
   padding: 0;
   overflow: hidden;
   border: 0;
-  border-left: 1px solid var(--at-border);
+  border-left: 1px solid var(--atbl-border);
   border-radius: 0;
-  background: var(--at-surface);
-  color: var(--at-text);
-  box-shadow: var(--at-shadow-overlay);
-  font: 14px/1.55 var(--at-font);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: var(--atbl-shadow-overlay);
+  font: 14px/1.55 var(--atbl-font);
   translate: 100% 0;
   opacity: 0;
   transition:
-    translate var(--at-duration-slow) cubic-bezier(0.22, 1, 0.36, 1),
-    opacity var(--at-duration-slow) var(--at-ease-standard);
+    translate var(--atbl-duration-slow) cubic-bezier(0.22, 1, 0.36, 1),
+    opacity var(--atbl-duration-slow) var(--atbl-ease-standard);
 }
 .altertable-sheet[data-wide] {
   width: min(960px, 100vw);
@@ -46,9 +46,9 @@
   transition-timing-function: ease-in;
 }
 .altertable-sheet::backdrop {
-  background: var(--at-backdrop);
+  background: var(--atbl-backdrop);
   opacity: 0;
-  transition: opacity var(--at-duration-slow) var(--at-ease-standard);
+  transition: opacity var(--atbl-duration-slow) var(--atbl-ease-standard);
 }
 .altertable-sheet[open]::backdrop {
   opacity: 1;
@@ -72,7 +72,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 24px 28px 20px;
-  border-bottom: 1px solid var(--at-border);
+  border-bottom: 1px solid var(--atbl-border);
 }
 .altertable-sheet-header h2 {
   margin: 0;
@@ -84,7 +84,7 @@
 }
 .altertable-sheet-header p {
   margin: 4px 0 0;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -95,7 +95,7 @@
   margin: -4px -8px 0 0;
 }
 .altertable-sheet-close {
-  color: var(--at-muted);
+  color: var(--atbl-muted);
 }
 .altertable-sheet-body {
   min-height: 0;
@@ -105,7 +105,7 @@
 }
 .altertable-sheet-footer {
   padding: 16px 28px;
-  border-top: 1px solid var(--at-border);
+  border-top: 1px solid var(--atbl-border);
 }
 @media (max-width: 960px) {
   .altertable-sheet[data-wide] {

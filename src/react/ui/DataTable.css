@@ -13,24 +13,24 @@
 }
 .altertable-data-table caption {
   padding: 0 0 8px;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-size: 12px;
   text-align: start;
 }
 .altertable-data-table th,
 .altertable-data-table td {
   padding: 9px 10px;
-  border-bottom: 1px solid var(--at-border);
+  border-bottom: 1px solid var(--atbl-border);
   text-align: start;
   white-space: nowrap;
   cursor: default;
 }
 .altertable-data-table thead th {
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   font-weight: 650;
 }
 .altertable-data-table tbody th {
-  color: var(--at-text);
+  color: var(--atbl-text);
   font-weight: 550;
 }
 .altertable-data-table :is(th, td)[data-type='number'] {
@@ -47,10 +47,10 @@
   color: inherit;
   font: inherit;
   font-variant-numeric: tabular-nums;
-  cursor: var(--at-cursor-help);
+  cursor: var(--atbl-cursor-help);
 }
 .altertable-data-table-timestamp:hover {
-  color: var(--at-accent);
+  color: var(--atbl-accent);
 }
 .altertable-data-table-timestamp:focus-visible {
   border-radius: 2px;

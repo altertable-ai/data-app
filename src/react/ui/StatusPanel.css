@@ -2,12 +2,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--at-space-lg);
-  padding: var(--at-space-lg);
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-surface);
-  background: var(--at-surface);
-  color: var(--at-muted);
+  gap: var(--atbl-space-lg);
+  padding: var(--atbl-space-lg);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
+  color: var(--atbl-muted);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -26,7 +26,7 @@
 }
 .altertable-status-panel[data-status='error'] > svg {
   margin-top: 1px;
-  color: var(--at-danger);
+  color: var(--atbl-danger);
 }
 .altertable-status-panel[data-status='error'] .altertable-status-action {
   grid-column: 2;
@@ -35,7 +35,7 @@
   min-width: 0;
 }
 .altertable-status-panel strong {
-  color: var(--at-text);
+  color: var(--atbl-text);
   font-weight: 650;
 }
 .altertable-status-panel p {

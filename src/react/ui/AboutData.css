@@ -6,9 +6,9 @@
   overflow-x: auto;
   overscroll-behavior-x: none;
   overflow-y: hidden;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-surface);
-  background: var(--at-subtle);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-subtle);
 }
 .altertable-about-visual > * {
   min-width: 0;
@@ -18,7 +18,7 @@
 }
 .altertable-about-visual[data-kind='widget'] {
   padding: 0;
-  background: var(--at-surface);
+  background: var(--atbl-surface);
 }
 .altertable-about-body {
   display: grid;
@@ -54,7 +54,7 @@
   z-index: 2;
   margin-top: -24px;
   padding: 24px 0 14px;
-  background: var(--at-surface);
+  background: var(--atbl-surface);
 }
 @media (max-width: 600px) {
   .altertable-about-tabbar {
@@ -72,7 +72,7 @@
   padding: 3px;
   border: 0;
   border-radius: 10px;
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-about-tabs .react-aria-TabPanels {
   padding-top: 14px;
@@ -86,9 +86,9 @@
   font-weight: 600;
 }
 .altertable-about-tabs .react-aria-Tab[data-selected] {
-  background: var(--at-surface);
-  color: var(--at-text);
-  box-shadow: 0 0 0 1px var(--at-border);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: 0 0 0 1px var(--atbl-border);
 }
 .altertable-about-tabs .react-aria-TabPanel {
   min-width: 0;

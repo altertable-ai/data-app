@@ -1,49 +1,53 @@
-/* Public --at-* tokens are the styling contract; --at-input-* and --at-palette-* are internal. */
+/* Public --atbl-* tokens are the styling contract; --atbl-input-* and --atbl-palette-* are internal. */
 :root {
-  --at-palette-background: #ffffff;
-  --at-palette-surface: #ffffff;
-  --at-palette-subtle: #f6f7f7;
-  --at-palette-text: #202124;
-  --at-palette-muted: #687078;
-  --at-palette-border: #e3e6e8;
-  --at-background: var(--at-palette-background);
-  --at-surface: var(--at-palette-surface);
-  --at-subtle: var(--at-palette-subtle);
-  --at-text: var(--at-palette-text);
-  --at-muted: var(--at-palette-muted);
-  --at-border: var(--at-palette-border);
-  --at-accent: var(--at-input-accent, #405d47);
-  --at-accent-hover: color-mix(in srgb, var(--at-accent) 80%, black);
-  --at-accent-subtle: color-mix(
+  --atbl-palette-background: #ffffff;
+  --atbl-palette-surface: #ffffff;
+  --atbl-palette-subtle: #f6f7f7;
+  --atbl-palette-text: #202124;
+  --atbl-palette-muted: #687078;
+  --atbl-palette-border: #e3e6e8;
+  --atbl-background: var(--atbl-palette-background);
+  --atbl-surface: var(--atbl-palette-surface);
+  --atbl-subtle: var(--atbl-palette-subtle);
+  --atbl-text: var(--atbl-palette-text);
+  --atbl-muted: var(--atbl-palette-muted);
+  --atbl-border: var(--atbl-palette-border);
+  --atbl-accent: var(--atbl-input-accent, #405d47);
+  --atbl-accent-hover: color-mix(in srgb, var(--atbl-accent) 80%, black);
+  --atbl-accent-subtle: color-mix(
     in srgb,
-    var(--at-accent) 12%,
-    var(--at-surface)
+    var(--atbl-accent) 12%,
+    var(--atbl-surface)
   );
-  --at-on-accent: var(--at-input-on-accent, #fff);
-  --at-positive: var(--at-accent);
-  --at-negative: var(--at-danger);
-  --at-danger: #b42318;
-  --at-danger-subtle: color-mix(
+  --atbl-on-accent: var(--atbl-input-on-accent, #fff);
+  --atbl-positive: var(--atbl-accent);
+  --atbl-negative: var(--atbl-danger);
+  --atbl-danger: #b42318;
+  --atbl-danger-subtle: color-mix(
     in srgb,
-    var(--at-danger) 9%,
-    var(--at-surface)
+    var(--atbl-danger) 9%,
+    var(--atbl-surface)
   );
-  --at-backdrop: rgb(15 23 30 / 22%);
-  --at-code-surface: #f4f6f9;
-  --at-code-text: #273242;
-  --at-code-keyword: var(--at-accent);
-  --at-chart-fill: color-mix(in srgb, var(--at-accent) 75%, var(--at-surface));
-  --at-control-hover-border: color-mix(
+  --atbl-backdrop: rgb(15 23 30 / 22%);
+  --atbl-code-surface: #f4f6f9;
+  --atbl-code-text: #273242;
+  --atbl-code-keyword: var(--atbl-accent);
+  --atbl-chart-fill: color-mix(
     in srgb,
-    var(--at-muted) 45%,
-    var(--at-border)
+    var(--atbl-accent) 75%,
+    var(--atbl-surface)
   );
-  --at-focus-color: var(--at-muted);
-  --at-focus-outline: 1px solid var(--at-focus-color);
-  --at-focus-ring-offset: 2px;
-  --at-focus-ring-inset: -1px;
-  --at-font: var(
-    --at-input-font,
+  --atbl-control-hover-border: color-mix(
+    in srgb,
+    var(--atbl-muted) 45%,
+    var(--atbl-border)
+  );
+  --atbl-focus-color: var(--atbl-muted);
+  --atbl-focus-outline: 1px solid var(--atbl-focus-color);
+  --atbl-focus-ring-offset: 2px;
+  --atbl-focus-ring-inset: -1px;
+  --atbl-font: var(
+    --atbl-input-font,
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
@@ -51,171 +55,171 @@
     ui-sans-serif,
     sans-serif
   );
-  --at-font-heading: var(--at-input-font-heading, var(--at-font));
-  --at-mono-font: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  --at-space-xs: 5px;
-  --at-space-sm: 10px;
-  --at-space-md: 16px;
-  --at-space-lg: 24px;
-  --at-space-xl: 32px;
-  --at-layout-gap: clamp(var(--at-space-md), 2.5vw, var(--at-space-lg));
-  --at-content-width: 960px;
-  --at-control-height: 38px;
-  --at-radius-control: 7px;
-  --at-radius-surface: 12px;
-  --at-radius-overlay: 16px;
-  --at-shadow-surface: 0 3px 16px rgb(20 28 40 / 5%);
-  --at-shadow-overlay: 0 18px 50px rgb(0 0 0 / 16%);
-  --at-shadow-control: 0 1px 3px rgb(0 0 0 / 10%);
-  --at-cursor-action: pointer;
-  --at-cursor-disabled: default;
-  --at-cursor-help: help;
-  --at-duration-fast: 120ms;
-  --at-duration-normal: 180ms;
-  --at-duration-slow: 240ms;
-  --at-ease-standard: ease;
-  --at-ease-enter: cubic-bezier(0.2, 0.7, 0.2, 1);
-  --at-chart-strength: 100%;
-  --at-chart-1: color-mix(
+  --atbl-font-heading: var(--atbl-input-font-heading, var(--atbl-font));
+  --atbl-mono-font: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --atbl-space-xs: 5px;
+  --atbl-space-sm: 10px;
+  --atbl-space-md: 16px;
+  --atbl-space-lg: 24px;
+  --atbl-space-xl: 32px;
+  --atbl-layout-gap: clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg));
+  --atbl-content-width: 960px;
+  --atbl-control-height: 38px;
+  --atbl-radius-control: 7px;
+  --atbl-radius-surface: 12px;
+  --atbl-radius-overlay: 16px;
+  --atbl-shadow-surface: 0 3px 16px rgb(20 28 40 / 5%);
+  --atbl-shadow-overlay: 0 18px 50px rgb(0 0 0 / 16%);
+  --atbl-shadow-control: 0 1px 3px rgb(0 0 0 / 10%);
+  --atbl-cursor-action: pointer;
+  --atbl-cursor-disabled: default;
+  --atbl-cursor-help: help;
+  --atbl-duration-fast: 120ms;
+  --atbl-duration-normal: 180ms;
+  --atbl-duration-slow: 240ms;
+  --atbl-ease-standard: ease;
+  --atbl-ease-enter: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --atbl-chart-strength: 100%;
+  --atbl-chart-1: color-mix(
     in srgb,
-    var(--at-input-chart-1, #285fc0) var(--at-chart-strength),
+    var(--atbl-input-chart-1, #285fc0) var(--atbl-chart-strength),
     white
   );
-  --at-chart-2: color-mix(
+  --atbl-chart-2: color-mix(
     in srgb,
-    var(--at-input-chart-2, #a95319) var(--at-chart-strength),
+    var(--atbl-input-chart-2, #a95319) var(--atbl-chart-strength),
     white
   );
-  --at-chart-3: color-mix(
+  --atbl-chart-3: color-mix(
     in srgb,
-    var(--at-input-chart-3, #147862) var(--at-chart-strength),
+    var(--atbl-input-chart-3, #147862) var(--atbl-chart-strength),
     white
   );
-  --at-chart-4: color-mix(
+  --atbl-chart-4: color-mix(
     in srgb,
-    var(--at-input-chart-4, #7243aa) var(--at-chart-strength),
+    var(--atbl-input-chart-4, #7243aa) var(--atbl-chart-strength),
     white
   );
-  --at-chart-5: color-mix(
+  --atbl-chart-5: color-mix(
     in srgb,
-    var(--at-input-chart-5, #aa3958) var(--at-chart-strength),
+    var(--atbl-input-chart-5, #aa3958) var(--atbl-chart-strength),
     white
   );
-  --at-chart-6: color-mix(
+  --atbl-chart-6: color-mix(
     in srgb,
-    var(--at-input-chart-6, #475569) var(--at-chart-strength),
+    var(--atbl-input-chart-6, #475569) var(--atbl-chart-strength),
     white
   );
-  --at-chart-7: color-mix(
+  --atbl-chart-7: color-mix(
     in srgb,
-    var(--at-input-chart-7, #285fc0) var(--at-chart-strength),
+    var(--atbl-input-chart-7, #285fc0) var(--atbl-chart-strength),
     white
   );
-  --at-chart-8: color-mix(
+  --atbl-chart-8: color-mix(
     in srgb,
-    var(--at-input-chart-8, #a95319) var(--at-chart-strength),
+    var(--atbl-input-chart-8, #a95319) var(--atbl-chart-strength),
     white
   );
 }
-:root[data-at-theme='dark'] {
-  --at-palette-background: #151719;
-  --at-palette-surface: #202326;
-  --at-palette-subtle: #292d31;
-  --at-palette-text: #f2f3f4;
-  --at-palette-muted: #aeb5bc;
-  --at-palette-border: #3b4248;
+:root[data-atbl-theme='dark'] {
+  --atbl-palette-background: #151719;
+  --atbl-palette-surface: #202326;
+  --atbl-palette-subtle: #292d31;
+  --atbl-palette-text: #f2f3f4;
+  --atbl-palette-muted: #aeb5bc;
+  --atbl-palette-border: #3b4248;
 }
-:root[data-at-base-color='slate'] {
-  --at-palette-background: #f8fafc;
-  --at-palette-surface: #ffffff;
-  --at-palette-subtle: #f1f5f9;
-  --at-palette-text: #17212f;
-  --at-palette-muted: #607083;
-  --at-palette-border: #dce3ea;
+:root[data-atbl-base-color='slate'] {
+  --atbl-palette-background: #f8fafc;
+  --atbl-palette-surface: #ffffff;
+  --atbl-palette-subtle: #f1f5f9;
+  --atbl-palette-text: #17212f;
+  --atbl-palette-muted: #607083;
+  --atbl-palette-border: #dce3ea;
 }
-:root[data-at-base-color='slate'][data-at-theme='dark'] {
-  --at-palette-background: #111820;
-  --at-palette-surface: #1b2530;
-  --at-palette-subtle: #263340;
-  --at-palette-text: #f0f4f8;
-  --at-palette-muted: #a8b5c3;
-  --at-palette-border: #3a4857;
+:root[data-atbl-base-color='slate'][data-atbl-theme='dark'] {
+  --atbl-palette-background: #111820;
+  --atbl-palette-surface: #1b2530;
+  --atbl-palette-subtle: #263340;
+  --atbl-palette-text: #f0f4f8;
+  --atbl-palette-muted: #a8b5c3;
+  --atbl-palette-border: #3a4857;
 }
-:root[data-at-base-color='warm'] {
-  --at-palette-background: #fbfaf8;
-  --at-palette-surface: #ffffff;
-  --at-palette-subtle: #f5f2ed;
-  --at-palette-text: #292723;
-  --at-palette-muted: #736e66;
-  --at-palette-border: #e8e2da;
+:root[data-atbl-base-color='warm'] {
+  --atbl-palette-background: #fbfaf8;
+  --atbl-palette-surface: #ffffff;
+  --atbl-palette-subtle: #f5f2ed;
+  --atbl-palette-text: #292723;
+  --atbl-palette-muted: #736e66;
+  --atbl-palette-border: #e8e2da;
 }
-:root[data-at-base-color='warm'][data-at-theme='dark'] {
-  --at-palette-background: #1b1916;
-  --at-palette-surface: #25221e;
-  --at-palette-subtle: #302c27;
-  --at-palette-text: #f5f1eb;
-  --at-palette-muted: #bcb3a8;
-  --at-palette-border: #494239;
+:root[data-atbl-base-color='warm'][data-atbl-theme='dark'] {
+  --atbl-palette-background: #1b1916;
+  --atbl-palette-surface: #25221e;
+  --atbl-palette-subtle: #302c27;
+  --atbl-palette-text: #f5f1eb;
+  --atbl-palette-muted: #bcb3a8;
+  --atbl-palette-border: #494239;
 }
-:root[data-at-theme='dark'] {
-  --at-accent: var(
-    --at-input-dark-accent,
-    color-mix(in srgb, var(--at-input-accent, #405d47) 50%, white)
+:root[data-atbl-theme='dark'] {
+  --atbl-accent: var(
+    --atbl-input-dark-accent,
+    color-mix(in srgb, var(--atbl-input-accent, #405d47) 50%, white)
   );
-  --at-accent-hover: color-mix(in srgb, var(--at-accent) 80%, white);
-  --at-accent-subtle: color-mix(
+  --atbl-accent-hover: color-mix(in srgb, var(--atbl-accent) 80%, white);
+  --atbl-accent-subtle: color-mix(
     in srgb,
-    var(--at-accent) 22%,
-    var(--at-surface)
+    var(--atbl-accent) 22%,
+    var(--atbl-surface)
   );
-  --at-on-accent: var(--at-input-on-accent, var(--at-background));
-  --at-danger: #f97066;
-  --at-backdrop: rgb(0 0 0 / 55%);
-  --at-code-surface: #242a31;
-  --at-code-text: #e5e9ef;
-  --at-chart-strength: 60%;
+  --atbl-on-accent: var(--atbl-input-on-accent, var(--atbl-background));
+  --atbl-danger: #f97066;
+  --atbl-backdrop: rgb(0 0 0 / 55%);
+  --atbl-code-surface: #242a31;
+  --atbl-code-text: #e5e9ef;
+  --atbl-chart-strength: 60%;
 }
-:root[data-at-density='compact'] {
-  --at-space-xs: 4px;
-  --at-space-sm: 8px;
-  --at-space-md: 12px;
-  --at-space-lg: 18px;
-  --at-space-xl: 24px;
+:root[data-atbl-density='compact'] {
+  --atbl-space-xs: 4px;
+  --atbl-space-sm: 8px;
+  --atbl-space-md: 12px;
+  --atbl-space-lg: 18px;
+  --atbl-space-xl: 24px;
 }
-:root[data-at-density='spacious'] {
-  --at-space-xs: 6px;
-  --at-space-sm: 12px;
-  --at-space-md: 20px;
-  --at-space-lg: 30px;
-  --at-space-xl: 40px;
+:root[data-atbl-density='spacious'] {
+  --atbl-space-xs: 6px;
+  --atbl-space-sm: 12px;
+  --atbl-space-md: 20px;
+  --atbl-space-lg: 30px;
+  --atbl-space-xl: 40px;
 }
-:root[data-at-radius='none'] {
-  --at-radius-control: 0px;
-  --at-radius-surface: 0px;
-  --at-radius-overlay: 0px;
+:root[data-atbl-radius='none'] {
+  --atbl-radius-control: 0px;
+  --atbl-radius-surface: 0px;
+  --atbl-radius-overlay: 0px;
 }
-:root[data-at-radius='small'] {
-  --at-radius-control: 4px;
-  --at-radius-surface: 7px;
-  --at-radius-overlay: 9px;
+:root[data-atbl-radius='small'] {
+  --atbl-radius-control: 4px;
+  --atbl-radius-surface: 7px;
+  --atbl-radius-overlay: 9px;
 }
-:root[data-at-radius='large'] {
-  --at-radius-control: 10px;
-  --at-radius-surface: 18px;
-  --at-radius-overlay: 24px;
+:root[data-atbl-radius='large'] {
+  --atbl-radius-control: 10px;
+  --atbl-radius-surface: 18px;
+  --atbl-radius-overlay: 24px;
 }
-:root[data-at-elevation='flat'] {
-  --at-shadow-surface: none;
-  --at-shadow-overlay: none;
-  --at-shadow-control: none;
+:root[data-atbl-elevation='flat'] {
+  --atbl-shadow-surface: none;
+  --atbl-shadow-overlay: none;
+  --atbl-shadow-control: none;
 }
-:root[data-at-elevation='raised'] {
-  --at-shadow-surface: 0 8px 28px rgb(20 28 40 / 10%);
-  --at-shadow-overlay: 0 24px 72px rgb(0 0 0 / 24%);
+:root[data-atbl-elevation='raised'] {
+  --atbl-shadow-surface: 0 8px 28px rgb(20 28 40 / 10%);
+  --atbl-shadow-overlay: 0 24px 72px rgb(0 0 0 / 24%);
 }
 @media (forced-colors: active) {
   :root {
-    --at-focus-color: Highlight !important;
-    --at-on-accent: HighlightText !important;
+    --atbl-focus-color: Highlight !important;
+    --atbl-on-accent: HighlightText !important;
   }
 }

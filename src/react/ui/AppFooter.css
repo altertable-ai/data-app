@@ -1,15 +1,15 @@
 .altertable-app-footer {
-  color: var(--at-muted);
-  font: 12px/1.4 var(--at-font);
+  color: var(--atbl-muted);
+  font: 12px/1.4 var(--atbl-font);
 }
 .altertable-app-footer-inner {
-  width: min(100% - 48px, var(--at-content-width));
+  width: min(100% - 48px, var(--atbl-content-width));
   margin: 0 auto;
-  padding-block: var(--at-space-lg);
+  padding-block: var(--atbl-space-lg);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--at-space-md);
+  gap: var(--atbl-space-md);
 }
 .altertable-app-footer-actions {
   display: flex;
@@ -28,13 +28,13 @@
   width: 92px;
   height: 16px;
   margin-left: 4px;
-  color: var(--at-text);
+  color: var(--atbl-text);
 }
 .altertable-app-footer a:hover {
-  color: var(--at-text);
+  color: var(--atbl-text);
 }
 @media (max-width: 600px) {
   .altertable-app-footer-inner {
-    width: min(100% - 32px, var(--at-content-width));
+    width: min(100% - 32px, var(--atbl-content-width));
   }
 }

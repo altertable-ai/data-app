@@ -6,11 +6,11 @@
   justify-content: center;
   gap: 5px;
   padding: 24px;
-  color: var(--at-muted);
+  color: var(--atbl-muted);
   text-align: center;
 }
 .altertable-empty-state strong {
-  color: var(--at-text);
+  color: var(--atbl-text);
   font-size: 13px;
   font-weight: 600;
 }

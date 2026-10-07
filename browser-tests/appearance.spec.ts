@@ -73,24 +73,24 @@ test('component injection preserves host controls and supports author overrides 
   expect(
     await page.evaluate(() =>
       getComputedStyle(document.documentElement)
-        .getPropertyValue('--at-accent')
+        .getPropertyValue('--atbl-accent')
         .trim()
     )
   ).toBe('#123456');
   expect(
     await page.evaluate(() =>
       getComputedStyle(document.documentElement)
-        .getPropertyValue('--at-space-md')
+        .getPropertyValue('--atbl-space-md')
         .trim()
     )
   ).toBe('23px');
   expect(
     await page.evaluate(() =>
-      document.documentElement.style.getPropertyValue('--at-accent')
+      document.documentElement.style.getPropertyValue('--atbl-accent')
     )
   ).toBe('');
   await page.addStyleTag({
-    content: ':root[data-override] { --at-cursor-action: grab; }',
+    content: ':root[data-override] { --atbl-cursor-action: grab; }',
   });
   await expect(
     page.getByRole('button', { name: 'Action', exact: true })
@@ -246,28 +246,36 @@ test('system theme changes update presets and cleanup restores prior document st
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/appearance');
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--at-input-accent', '#abcdef');
-    document.documentElement.setAttribute('data-at-density', 'compact');
+    document.documentElement.style.setProperty(
+      '--atbl-input-accent',
+      '#abcdef'
+    );
+    document.documentElement.setAttribute('data-atbl-density', 'compact');
     window.setAppearance({ theme: 'system', density: 'spacious' });
   });
-  await expect(page.locator('html')).toHaveAttribute('data-at-theme', 'light');
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-atbl-theme',
+    'light'
+  );
   await page.emulateMedia({ colorScheme: 'dark' });
-  await expect(page.locator('html')).toHaveAttribute('data-at-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-atbl-theme', 'dark');
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await page.evaluate(() => window.clearAppearance());
-  await expect(page.locator('html')).not.toHaveAttribute('data-at-appearance');
-  await expect(page.locator('html')).not.toHaveAttribute('data-at-theme');
+  await expect(page.locator('html')).not.toHaveAttribute(
+    'data-atbl-appearance'
+  );
+  await expect(page.locator('html')).not.toHaveAttribute('data-atbl-theme');
   await expect(page.locator('html')).toHaveAttribute(
-    'data-at-density',
+    'data-atbl-density',
     'compact'
   );
   expect(
     await page.evaluate(() =>
-      document.documentElement.style.getPropertyValue('--at-input-accent')
+      document.documentElement.style.getPropertyValue('--atbl-input-accent')
     )
   ).toBe('#abcdef');
   await page.emulateMedia({ colorScheme: 'light' });
-  await expect(page.locator('html')).not.toHaveAttribute('data-at-theme');
+  await expect(page.locator('html')).not.toHaveAttribute('data-atbl-theme');
 });
 
 test('default grids retain a single column', async ({ page }) => {
