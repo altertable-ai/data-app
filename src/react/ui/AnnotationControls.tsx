@@ -25,7 +25,7 @@ import {
 } from '@/src/core/annotations';
 import { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';
 import {
-  annotationTargets as targets,
+  discoverAnnotationTargets,
   findAnnotationTarget,
   normalizeAnnotationRect,
   projectAnnotationRect,
@@ -89,7 +89,10 @@ export function AnnotationControls({
   >('ready');
   const [saving, setSaving] = useState(false);
   const pending = saving || presentation.readOnly === true;
-  const [ambiguous, setAmbiguous] = useState(false);
+  const [targetDiscovery, setTargetDiscovery] = useState<{
+    targets: Target[];
+    hasDuplicateIds: boolean;
+  }>({ targets: [], hasDuplicateIds: false });
   const [boxes, setBoxes] = useState<
     {
       id: string;
@@ -296,11 +299,7 @@ export function AnnotationControls({
     if (!active) return;
     const root = rootRef.current;
     function updateTargets() {
-      const selectable = targets(root);
-      setAmbiguous(
-        (root?.querySelectorAll('[data-annotation-id]').length ?? 0) >
-          selectable.length
-      );
+      setTargetDiscovery(discoverAnnotationTargets(root));
     }
     updateTargets();
     const mutations = new MutationObserver(updateTargets);
@@ -309,7 +308,14 @@ export function AnnotationControls({
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['data-annotation-id', 'data-annotation-label'],
+        attributeFilter: [
+          'data-annotation-id',
+          'data-annotation-label',
+          'hidden',
+          'aria-hidden',
+          'style',
+          'class',
+        ],
       });
     function escape(event: KeyboardEvent) {
       if (event.key === 'Escape' && !(pending && draft)) {
@@ -472,7 +478,7 @@ export function AnnotationControls({
                 rootRef.current.closest<HTMLElement>('.altertable-app-main') ??
                 rootRef.current
               }
-              targets={targets(rootRef.current)}
+              targets={targetDiscovery.targets}
               disabled={pending}
               editing={Boolean(draft)}
               onHover={setHovered}
@@ -518,7 +524,7 @@ export function AnnotationControls({
           ))}
           {active && !selected && presentation.showHint !== false && (
             <output data-annotation-ui className="altertable-annotation-hint">
-              {ambiguous ? (
+              {targetDiscovery.hasDuplicateIds ? (
                 'Some items cannot be annotated.'
               ) : (
                 <>

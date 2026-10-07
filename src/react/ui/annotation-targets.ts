@@ -12,12 +12,24 @@ export type AnnotationTargetElement = {
   kind: 'widget' | 'element' | 'app';
 };
 
-export function annotationTargets(
-  root: HTMLElement | null
-): AnnotationTargetElement[] {
+export function discoverAnnotationTargets(root: HTMLElement | null): {
+  targets: AnnotationTargetElement[];
+  hasDuplicateIds: boolean;
+} {
   const found: AnnotationTargetElement[] = Array.from(
     root?.querySelectorAll<HTMLElement>('[data-annotation-id]') ?? []
   ).flatMap(element => {
+    if (
+      element.closest('[aria-hidden="true"]') ||
+      !element.checkVisibility({
+        checkOpacity: true,
+        checkVisibilityCSS: true,
+        contentVisibilityAuto: true,
+      })
+    )
+      return [];
+    const rect = element.getBoundingClientRect();
+    if (!rect.width || !rect.height) return [];
     const id = element.dataset.annotationId;
     const label =
       element.dataset.annotationLabel ??
@@ -37,9 +49,13 @@ export function annotationTargets(
         ]
       : [];
   });
-  return found.filter(
-    target => found.filter(other => other.id === target.id).length === 1
-  );
+  const counts = new Map<string, number>();
+  for (const target of found)
+    counts.set(target.id, (counts.get(target.id) ?? 0) + 1);
+  return {
+    targets: found.filter(target => counts.get(target.id) === 1),
+    hasDuplicateIds: [...counts.values()].some(count => count > 1),
+  };
 }
 export function annotationGeometry(element: HTMLElement): AnnotationRect {
   const rect = element.getBoundingClientRect();
@@ -85,7 +101,7 @@ export function findAnnotationTarget(
 ) {
   return id === '__data-app-root'
     ? annotationRoot(root)
-    : annotationTargets(root).find(target => target.id === id);
+    : discoverAnnotationTargets(root).targets.find(target => target.id === id);
 }
 
 export function normalizeAnnotationRect(

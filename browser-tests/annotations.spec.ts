@@ -517,3 +517,43 @@ test('annotation mode has no selection toolbar and blocks background wheel scrol
     before
   );
 });
+
+test('keyboard navigation skips hidden targets and hidden duplicate IDs', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.locator('.altertable-app-main').evaluate(root => {
+    const hiddenTargets = document.createElement('div');
+    hiddenTargets.innerHTML = `
+      <div hidden><div data-annotation-id="monthly-revenue">Hidden duplicate</div></div>
+      <div style="visibility:hidden"><div data-annotation-id="hidden-visibility">Hidden visibility</div></div>
+      <div style="opacity:0"><div data-annotation-id="hidden-opacity">Hidden opacity</div></div>
+      <div aria-hidden="true"><div data-annotation-id="hidden-accessibility">Hidden from accessibility</div></div>
+      <div data-annotation-id="zero-size" style="width:0;height:0"></div>`;
+    root.prepend(hiddenTargets);
+  });
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = frame.getByRole('button', { name: 'Annotation selection' });
+  const announcement = frame.locator('output[aria-live=polite]');
+  await selection.press('ArrowRight');
+  await expect(announcement).toHaveText('Revenue by month, 1 of 3');
+  await selection.press('ArrowRight');
+  await expect(announcement).toHaveText('Customers, 2 of 3');
+  await selection.press('ArrowRight');
+  await expect(announcement).toHaveText('Introduction, 3 of 3');
+  await selection.press('ArrowRight');
+  await expect(announcement).toHaveText('Revenue by month, 1 of 3');
+  await expect(frame.locator('.altertable-annotation-hint')).not.toHaveText(
+    'Some items cannot be annotated.'
+  );
+  await selection.press('Enter');
+  const input = frame.getByRole('textbox', { name: 'Annotation text' });
+  await input.fill('Visible target only');
+  await input.press('Enter');
+  const output = page.getByLabel('Annotation drafts', { exact: true });
+  await expect(output).toContainText('Visible target only');
+  const drafts = JSON.parse((await output.textContent()) ?? '[]');
+  expect(drafts[0].target.id).toBe('monthly-revenue');
+  expect(drafts[0].context.screenshot).toBeDefined();
+});
