@@ -22,7 +22,7 @@ import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
 import type { SectionResult } from '@/src/react/ui/DataSectionBoundary';
 
-type DataAppBaseProps = {
+export type DataAppBaseProps = {
   children: ReactNode;
   config: DataAppConfig;
   dataContext: DataContext;
@@ -39,23 +39,24 @@ export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   controls?: ReactNode;
 };
 
-export type DataAppProps<Data = unknown, Input = unknown> = DataAppBaseProps &
-  (
-    | {
-        request: DataAppRequest<Data, Input>;
-        /** Findings are always derived from the result currently visible to the reader. */
-        story: BoundStory<Data, Input>;
-        /** Export every distinct dataset in the displayed result. */
-        csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
-        queries?: never;
-      }
-    | {
-        request?: never;
-        story?: never;
-        csvExport?: CsvExport;
-        queries?: DisclosedQuery[];
-      }
-  );
+export type StaticDataAppProps = DataAppBaseProps & {
+  csvExport?: CsvExport;
+  queries?: DisclosedQuery[];
+};
+
+export type DataAppProps<Data = unknown, Input = unknown> =
+  | (DataAppBaseProps & {
+      request: DataAppRequest<Data, Input>;
+      /** Findings are always derived from the result currently visible to the reader. */
+      story: BoundStory<Data, Input>;
+      /** Export every distinct dataset in the displayed result. */
+      csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
+      queries?: never;
+    })
+  | (StaticDataAppProps & {
+      request?: never;
+      story?: never;
+    });
 
 /** Owns the page title, header, gutter, and width; body content uses section headings.
  * The primary request binds the toolbar, controls, refresh, and inspection.

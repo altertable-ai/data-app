@@ -14,6 +14,7 @@ import {
 } from '@/src/react/ui/search';
 import {
   InspectionSheet,
+  resolveAboutTab,
   type AboutDataProps,
   type AboutTab,
 } from '@/src/react/ui/AboutData';
@@ -60,7 +61,7 @@ function createInspectionStore() {
       selection && subjects.get(selection.inspection.key)?.id === id
         ? subjects.get(selection.inspection.key)
         : [...subjects.values()].find(subject => subject.id === id);
-    const tab = params.get('tab') === 'queries' ? 'queries' : 'glossary';
+    const tab = resolveAboutTab(params.get('tab'));
     if (inspection?.props.open === false) inspection.props.onOpenChange?.(true);
     else if (inspection) publish({ inspection, open: true, tab });
     else if (selection?.open) {

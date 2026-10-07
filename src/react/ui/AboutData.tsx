@@ -34,6 +34,15 @@ import {
 import { useInspectionDefaults } from '@/src/react/ui/InspectionContext';
 
 export type AboutTab = 'glossary' | 'queries';
+
+const aboutTabs = new Map<string, AboutTab>([
+  ['glossary', 'glossary'],
+  ['queries', 'queries'],
+]);
+
+export function resolveAboutTab(tab: string | null | undefined): AboutTab {
+  return aboutTabs.get(tab ?? '') ?? 'glossary';
+}
 export type AboutEmpty = {
   glossary: { title: string; description?: string };
   queries: { title: string; description?: string };
@@ -134,10 +143,6 @@ function GlossaryDetail({ entry }: { entry: GlossaryEntry }) {
   );
 }
 
-function resolveTab(tab: string | null | undefined): AboutTab {
-  return tab === 'queries' ? 'queries' : 'glossary';
-}
-
 /**
  * Open state uses `?about=`; tab selection uses `?tab=`. Enable the global shortcut only on the
  * page-level trigger.
@@ -219,7 +224,7 @@ export function InspectionSheet({
       <div className="altertable-about-body">
         <Tabs
           selectedKey={tab}
-          onSelectionChange={key => onTabChange(resolveTab(String(key)))}
+          onSelectionChange={key => onTabChange(resolveAboutTab(String(key)))}
           className="altertable-about-tabs"
         >
           <div className="altertable-about-tabbar">
