@@ -493,9 +493,9 @@
   min-width: 0;
 }
 .altertable-date-range .react-aria-Group > input[type='date'] {
-  width: 78px;
+  width: 72px;
   min-width: 0;
-  flex: 0 1 78px;
+  flex: 0 1 72px;
   padding: 0;
   border: 0;
   outline: none;
@@ -504,6 +504,16 @@
   font: inherit;
   font-size: 11px;
   font-weight: 600;
+  text-align: center;
+}
+.altertable-date-range input[type='date']::-webkit-datetime-edit {
+  padding: 0;
+}
+.altertable-date-range
+  input[type='date']::-webkit-datetime-edit-fields-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 0;
 }
 .altertable-date-range input[type='date']::-webkit-calendar-picker-indicator {
   display: none;
