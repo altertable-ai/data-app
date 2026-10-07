@@ -78,7 +78,6 @@ export type TooltipProps = {
   align?: 'start' | 'center' | 'end';
   placement?: 'top' | 'bottom';
   portalRoot?: RefObject<HTMLElement | null>;
-  tooltipProps?: Omit<ComponentPropsWithRef<'span'>, 'children' | 'role'>;
 } & Omit<ComponentPropsWithRef<'span'>, 'children' | 'content'>;
 
 /** Short visual hint for an already labeled control. variant="chart" follows the cursor
@@ -93,7 +92,6 @@ export function Tooltip({
   align = 'center',
   placement,
   portalRoot,
-  tooltipProps,
   className,
   ref,
   onPointerEnter,
@@ -105,7 +103,7 @@ export function Tooltip({
   ...props
 }: TooltipProps) {
   const tooltipId = useId();
-  const describedBy = tooltipProps?.id ?? tooltipId;
+  const describedBy = tooltipId;
   const timing = useContext(TooltipContext);
   const [open, setOpen] = useState(false);
   const visible = open && content != null;
@@ -224,7 +222,7 @@ export function Tooltip({
     (element: HTMLSpanElement | null) =>
       setDialogRoot(element?.closest('dialog') ?? null),
   ]);
-  const floatingRef = useMergeRefs([refs.setFloating, tooltipProps?.ref]);
+  const floatingRef = useMergeRefs([refs.setFloating]);
 
   return (
     <>
@@ -353,14 +351,10 @@ export function Tooltip({
       {visible && (
         <FloatingPortal root={portalRoot ?? dialogRoot ?? undefined}>
           <span
-            {...tooltipProps}
             ref={floatingRef}
             data-variant={variant}
-            className={classNames(
-              'altertable-tooltip-content',
-              tooltipProps?.className
-            )}
-            style={{ ...tooltipProps?.style, ...floatingStyles }}
+            className="altertable-tooltip-content"
+            style={floatingStyles}
             role="tooltip"
             id={describedBy}
           >

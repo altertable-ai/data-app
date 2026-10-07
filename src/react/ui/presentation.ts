@@ -16,7 +16,7 @@ export type SkeletonContent = {
 export type BoundWidgetReading<Data> = {
   reading: DataReading<Data>;
   isEmpty: (data: Data) => boolean;
-  empty: EmptyContent;
+  emptyFallback: EmptyContent;
   evidence: WidgetEvidence;
   skeleton?: SkeletonContent;
 };

@@ -1,3 +1,4 @@
+import { formatMetric } from '@altertable/data-app/format';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataAppConfig } from '@altertable/data-app/config';
 import {
@@ -11,7 +12,7 @@ import {
   DataApp,
   DataSection,
   DataValue,
-  DataWidget,
+  TableWidget,
   Skeleton,
   Grid,
   Stack,
@@ -97,38 +98,48 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineDataView, useView } = createDataHooks(
-  createDataClient({ operations })
-);
+const { defineDataView } = createDataHooks(createDataClient({ operations }));
 const sampleCountsView = defineDataView({
   operation: 'sampleCountsByGroup',
   variables: {
     groupName: textVariable({ key: 'group', label: 'Group', defaultValue: '' }),
   },
-  input: ({ groupName }) => ({ groupName }),
   describeInput: ({ groupName }) =>
     groupName ? `group ${groupName}` : 'all groups',
   isEmpty: sampleCounts => sampleCounts.length === 0,
-  empty: {
+  emptyFallback: {
     title: 'No matching groups',
     description: 'Try Alpha, Beta, or clear the group filter.',
   },
 });
-const totalSamples = sampleDataContext.metric({
-  id: 'total-samples',
-  glossaryId: 'sampleCount',
-  label: 'Total samples',
-  format: { kind: 'count' },
+const sampleCounts = sampleCountsView.dataset({
+  name: 'Sample counts',
+  select: rows => rows,
+  rowKey: row => row.groupName,
+  columns: {
+    groupName: { label: 'Group', value: row => row.groupName },
+    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+  },
+  evidence: sampleDataContext.evidence({
+    id: 'counts-by-group',
+    glossaryIds: ['sampleCount'],
+  }),
 });
+const totalSamples = sampleCountsView.metric(
+  sampleDataContext.metric({
+    id: 'total-samples',
+    glossaryId: 'sampleCount',
+    label: 'Total samples',
+    format: { kind: 'count' },
+  }),
+  rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
+);
 const sampleContent = sampleCountsView.content(result => (
   <Stack aria-label="Sample results">
     <TextContent>
       <p>
         Showing{' '}
-        <DataValue
-          reading={result.select((_, input) => input.groupName || 'all groups')}
-          loadingFallback={<Skeleton inline />}
-        >
+        <DataValue reading={result.scope} loadingFallback={<Skeleton inline />}>
           {scope => scope}
         </DataValue>
       </p>
@@ -136,86 +147,59 @@ const sampleContent = sampleCountsView.content(result => (
     <Grid columns={2}>
       <MetricWidget
         metric={totalSamples}
+        source={result}
         description="Sum of the fixture counts in the selected groups."
-        reading={result.metric(rows => ({
-          current: rows.reduce((sum, row) => sum + row.sampleCount, 0),
-        }))}
       />
-      <DataWidget
+      <TableWidget
+        dataset={sampleCounts}
+        source={result}
         title="Counts by group"
         description="Alpha and Beta demonstrate measured values, including zero."
-        reading={result.select(rows => rows)}
-        evidence={sampleDataContext.evidence({
-          id: 'counts-by-group',
-          glossaryIds: ['sampleCount'],
-        })}
-        isEmpty={rows => rows.length === 0}
-        empty={{ title: 'No matching groups' }}
-        skeleton={{ variant: 'ranking', rows: 2 }}
-      >
-        {rows => (
-          <Stack>
-            {rows.map(({ groupName, sampleCount }) => (
-              <p key={groupName}>{`${groupName}: ${sampleCount}`}</p>
-            ))}
-          </Stack>
-        )}
-      </DataWidget>
+        pagination={false}
+      />
     </Grid>
   </Stack>
 ));
 function App() {
-  const sampleCountsRequest = useView(sampleCountsView);
   return (
     <DataApp
       config={appConfig}
       dataContext={sampleDataContext}
-      request={sampleCountsRequest}
-      csvExport={({ data: sampleCounts, input }) => ({
-        filename: `sample-counts-${input.groupName || 'all'}.csv`,
-        tables: [
+      view={sampleCountsView}
+      datasets={[sampleCounts]}
+      story={snapshot => {
+        const total = totalSamples.read(snapshot);
+        const scope = sampleCountsView.scope(snapshot);
+        return [
           {
-            name: 'Sample counts',
-            columns: ['Group', 'Sample count'],
-            rows: sampleCounts.map(({ groupName, sampleCount }) => [
-              groupName,
-              sampleCount,
-            ]),
+            id: 'total-samples',
+            headline: `Total samples: ${formatMetric(total.value.current, totalSamples.definition.format)}`,
+            context: `Demonstration values for ${scope}.`,
+            visual: <MetricWidget metric={totalSamples} source={snapshot} />,
+            visualKind: 'metric',
+            evidence: totalSamples.definition,
           },
-        ],
-      })}
-      story={({ data: sampleCounts, input: displayedInput }) =>
-        sampleCounts.map(({ groupName, sampleCount }) =>
-          sampleDataContext.finding({
-            id: `sample-count-${groupName}`,
-            headline: `${groupName} has ${sampleCount} samples`,
-            context: `Demonstration values for ${displayedInput.groupName || 'all groups'}.`,
+          {
+            id: 'counts-by-group',
+            headline: 'Counts by group',
+            context: `Demonstration values for ${scope}.`,
             visual: (
-              <MetricWidget
-                label="Sample count"
-                value={sampleCount}
-                format={{ kind: 'count' }}
+              <TableWidget
+                dataset={sampleCounts}
+                source={snapshot}
+                pagination={false}
               />
             ),
-            visualKind: 'metric',
-            evidence: {
-              id: `sample-count-${groupName}`,
-              glossaryIds: ['sampleCount'],
-            },
-          })
-        )
-      }
+            evidence: sampleCounts.evidence,
+          },
+        ];
+      }}
     >
       <Stack>
         <TextContent>
           <h2>Sample counts</h2>
         </TextContent>
-        <DataSection
-          result={sampleCountsRequest}
-          emptyFallback={sampleCountsRequest.empty}
-          notice="none"
-          {...sampleContent}
-        />
+        <DataSection view={sampleCountsView} {...sampleContent} />
       </Stack>
     </DataApp>
   );

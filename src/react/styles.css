@@ -46,7 +46,6 @@
 @import './ui/WidgetDisclosure.css';
 @import './ui/Comparison.css';
 @import './ui/BarChart.css';
-@import './ui/RefreshRegion.css';
 @import './ui/UpdatedAt.css';
 @import './ui/data-identifiers.css';
 @import './ui/GlossaryDefinition.css';
@@ -55,7 +54,5 @@
 @import './ui/ExportControl.css';
 
 @import './ui/TrendChart.css';
-
 @import './ui/PieChart.css';
-
 @import './ui/ScatterChart.css';

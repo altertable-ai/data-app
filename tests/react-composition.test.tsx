@@ -1,3 +1,5 @@
+import { dateRangeControl } from '@/src/react/ui/variables';
+import { defineAppVariables } from '@/src/react/ui/variables';
 import { expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -8,11 +10,11 @@ import {
   Combobox,
   VisualizationWidget,
   TableWidget,
-  DataSection,
-  type DataView,
-  dateRangeControl,
+} from '@/src/react/ui/index';
+import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { type DataView } from '@/src/core/data-view';
+import {
   dateRangeVariable,
-  defineAppVariables,
   selectVariable,
   textVariable,
 } from '@altertable/data-app/react';
@@ -123,7 +125,7 @@ test('local search preserves table order and highlights original text', () => {
       rowKey(hit: (typeof hits)[number]) {
         return hit.item.id;
       },
-      empty: { title: 'No matching rows' },
+      emptyFallback: { title: 'No matching rows' },
     })
   );
   expect(table).toContain('<mark>Café</mark> &lt;table&gt;');
@@ -167,7 +169,7 @@ test('table search finds a later matching row before applying the display limit'
           },
         ],
       },
-      empty: { title: 'No matching customers' },
+      emptyFallback: { title: 'No matching customers' },
     })
   );
   expect(table).toContain('Café');
@@ -384,7 +386,7 @@ test('table pagination defaults to a bottom footer and supports complete and pre
     rowKey(row: (typeof rows)[number]) {
       return row.id;
     },
-    empty: { title: 'No items' },
+    emptyFallback: { title: 'No items' },
   };
   const paginated = renderToStaticMarkup(<TableWidget {...props} />);
   expect(paginated).toContain('1–10 of 12 results');
@@ -488,7 +490,7 @@ test('table configurations reject duplicate identities and invalid numerical bou
     rowKey(row: { id: string | number }) {
       return row.id;
     },
-    empty: { title: 'No rows' },
+    emptyFallback: { title: 'No rows' },
   };
   expect(() =>
     renderToStaticMarkup(
@@ -517,7 +519,7 @@ test('visualization view identities are validated even while data is loading', (
     isEmpty(rows: string[]) {
       return rows.length === 0;
     },
-    empty: { title: 'No rows' },
+    emptyFallback: { title: 'No rows' },
     evidence: { id: 'rows', queryNames: ['rows'] as [string] },
     viewLabel: 'View',
   };
@@ -659,4 +661,42 @@ test('a null fallback renders no initial content and never runs ready children',
   expect(called).toBe(false);
   expect(html).not.toContain('Ready');
   expect(html).not.toContain('altertable-content-skeleton');
+});
+
+test('independent date variables derive distinct URL keys and preserve both selections', () => {
+  const calendar = defineDateRangeContract({
+    minDate: '2026-01-01',
+    maxDate: '2026-03-31',
+    maxRangeDays: 31,
+    timeZone: 'UTC',
+  });
+  const options = {
+    contract: calendar,
+    defaultValue: { kind: 'preset' as const, id: 'last-7' as const },
+    comparison: true,
+  };
+  const period = dateRangeVariable({ key: 'period', ...options });
+  const cohort = dateRangeVariable({ key: 'cohort', ...options });
+  expect(() => defineAppVariables({ period, cohort })).not.toThrow();
+  const first = {
+    kind: 'dates' as const,
+    start: '2026-03-01',
+    end: '2026-03-07',
+  };
+  const second = {
+    kind: 'dates' as const,
+    start: '2026-03-15',
+    end: '2026-03-21',
+  };
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries({
+    ...period.write(first),
+    ...cohort.write(second),
+  })) {
+    if (value != null) params.set(key, value);
+  }
+  expect(period.read(params)).toEqual(first);
+  expect(cohort.read(params)).toEqual(second);
+  expect(params.get('start')).toBe(first.start);
+  expect(params.get('cohort-start')).toBe(second.start);
 });

@@ -1,6 +1,6 @@
 import type { AppearanceOptions } from '@altertable/data-app/appearance';
 import type { DataAppConfig } from '@altertable/data-app/config';
-import type { TableWidgetProps } from '@altertable/data-app/react';
+import type { TableWidgetProps } from '@altertable/data-app/react/ui';
 
 // Compile-only assertions; the hosted endpoint can enforce these through TypeScript.
 export const configuration = {
@@ -23,7 +23,7 @@ const table = {
   rows: [],
   columns: [{ id: 'id', header: 'ID', cell: () => null }] as const,
   rowKey: () => 'id',
-  empty: { title: 'Empty' },
+  emptyFallback: { title: 'Empty' },
 };
 export const conflictingTable: TableWidgetProps<{}> = {
   ...table,

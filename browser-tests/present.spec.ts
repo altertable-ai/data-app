@@ -14,12 +14,12 @@ test('a hosted story enters fullscreen and restores the exploration on close', a
   await expect(app.locator('html:fullscreen')).toBeVisible();
   const story = app.getByRole('dialog');
   await expect(
-    story.getByRole('heading', { name: 'Alpha has 3 samples' })
+    story.getByRole('heading', { name: 'Total samples: 3' })
   ).toBeVisible();
-  await expect(page).toHaveURL(/present=1.*step=sample-count-Alpha/);
+  await expect(page).toHaveURL(/present=1.*step=total-samples/);
   await story.getByRole('button', { name: 'Next step', exact: true }).click();
   await expect(
-    story.getByRole('heading', { name: 'Beta has 0 samples' })
+    story.getByRole('heading', { name: 'Counts by group' })
   ).toBeVisible();
   await expect(story).toHaveCSS('opacity', '1');
   await page.screenshot({ path: test.info().outputPath('fullscreen.png') });
@@ -54,10 +54,10 @@ test('leaving browser fullscreen closes the story and clears its route', async (
 test('a saved presentation opens without fullscreen or a user gesture', async ({
   page,
 }) => {
-  await page.goto('/starter-data-app?present=1&step=sample-count-Beta');
+  await page.goto('/starter-data-app?present=1&step=counts-by-group');
   const app = page.frameLocator('iframe');
   await expect(
-    app.getByRole('dialog').getByRole('heading', { name: 'Beta has 0 samples' })
+    app.getByRole('dialog').getByRole('heading', { name: 'Counts by group' })
   ).toBeVisible();
   await expect(app.locator(':fullscreen')).toHaveCount(0);
   await expect(page.locator(':fullscreen')).toHaveCount(0);
@@ -74,7 +74,7 @@ test('a host denying fullscreen still allows the story to open and close', async
   await app.getByRole('button', { name: 'Present story', exact: true }).click();
   const story = app.getByRole('dialog');
   await expect(
-    story.getByRole('heading', { name: 'Alpha has 3 samples' })
+    story.getByRole('heading', { name: 'Total samples: 3' })
   ).toBeVisible();
   await expect(page.locator(':fullscreen')).toHaveCount(0);
   await story
@@ -127,7 +127,7 @@ test('a rejected fullscreen request falls back to the presentation modal', async
   await launch.click();
   const story = app.getByRole('dialog');
   await expect(
-    story.getByRole('heading', { name: 'Alpha has 3 samples' })
+    story.getByRole('heading', { name: 'Total samples: 3' })
   ).toBeVisible();
   await expect(app.locator(':fullscreen')).toHaveCount(0);
   await story

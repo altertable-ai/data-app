@@ -13,9 +13,6 @@ import {
   DataSection,
   DataValue,
   Skeleton,
-  type DataContentState,
-  type DisplayedSnapshot,
-  type CsvExport,
   Grid,
   Stack,
   TextContent,
@@ -25,6 +22,8 @@ import {
   textVariable,
   VisualizationWidget,
 } from '@altertable/data-app/react';
+import { type DataContentState } from '@/src/react/content';
+import { type DisplayedSnapshot } from '@/src/core/data-view';
 
 import {
   operations,
@@ -80,9 +79,7 @@ const revenueEvidence = orderDataContext.evidence({
   id: 'revenue',
   glossaryIds: ['revenue', 'orders'],
 });
-const { defineDataView, useView } = createDataHooks(
-  createDataClient({ operations })
-);
+const { defineDataView } = createDataHooks(createDataClient({ operations }));
 const orderView = defineDataView({
   operation: 'orderOverview',
   variables: {
@@ -92,28 +89,33 @@ const orderView = defineDataView({
       defaultValue: '',
     }),
   },
-  input: ({ country }) => ({ country }),
   describeInput: ({ country }) =>
     country ? `country ${country}` : 'all countries',
   isEmpty: ({ countries }) => countries.length === 0,
-  empty: {
+  emptyFallback: {
     title: 'No matching countries',
     description: 'Enter a country code such as US, or clear the filter.',
   },
 });
 
-const orderCountMetric = orderDataContext.metric({
-  id: 'order-count',
-  glossaryId: 'orders',
-  label: 'Orders',
-  format: { kind: 'count' },
-});
-const revenueMetric = orderDataContext.metric({
-  id: 'order-revenue',
-  glossaryId: 'revenue',
-  label: 'Revenue',
-  format: currency,
-});
+const orderCountMetric = orderView.metric(
+  orderDataContext.metric({
+    id: 'order-count',
+    glossaryId: 'orders',
+    label: 'Orders',
+    format: { kind: 'count' },
+  }),
+  data => ({ current: summarizeOrders(data).orderCount })
+);
+const revenueMetric = orderView.metric(
+  orderDataContext.metric({
+    id: 'order-revenue',
+    glossaryId: 'revenue',
+    label: 'Revenue',
+    format: currency,
+  }),
+  data => ({ current: summarizeOrders(data).revenue })
+);
 const inlineFallback = <Skeleton inline />;
 function OrderResults({
   result,
@@ -145,16 +147,12 @@ function OrderResults({
         <MetricWidget
           metric={orderCountMetric}
           description="Orders placed in any status."
-          reading={result.metric(data => ({
-            current: summarizeOrders(data).orderCount,
-          }))}
+          source={result}
         />
         <MetricWidget
           metric={revenueMetric}
           description="Paid and pending orders; refunds excluded."
-          reading={result.metric(data => ({
-            current: summarizeOrders(data).revenue,
-          }))}
+          source={result}
           insight={
             <>
               <DataValue
@@ -178,7 +176,7 @@ function OrderResults({
           evidence={ordersPerDayEvidence}
           reading={result.select(data => data.days)}
           isEmpty={days => days.length === 0}
-          empty={{ title: 'No orders' }}
+          emptyFallback={{ title: 'No orders' }}
           insight={
             <DataValue
               reading={result.select(data =>
@@ -198,7 +196,7 @@ function OrderResults({
           evidence={orderValueEvidence}
           reading={result.select(data => data.bands)}
           isEmpty={bands => bands.length === 0}
-          empty={{
+          emptyFallback={{
             title: 'No orders',
             description: 'No orders in the last 30 days.',
           }}
@@ -229,7 +227,7 @@ function OrderResults({
         evidence={revenueEvidence}
         reading={result.select(data => data.countries)}
         isEmpty={countries => countries.length === 0}
-        empty={{ title: 'No countries' }}
+        emptyFallback={{ title: 'No countries' }}
         skeleton={{ variant: 'ranking', rows: 5 }}
         insight={
           <DataValue
@@ -256,35 +254,46 @@ const orderContent = orderView.content(result => (
 
 type OrderSnapshot = DisplayedSnapshot<OrderOverview, { country: string }>;
 
-function exportOrders({
-  data: { countries, days, bands },
-  input,
-}: OrderSnapshot): CsvExport {
-  return {
-    filename: `orders-${input.country || 'all'}`,
-    tables: [
-      {
-        name: 'Revenue by country',
-        columns: ['Country', 'Orders', 'Revenue'],
-        rows: countries.map(({ country, orderCount, revenue }) => [
-          country,
-          orderCount,
-          revenue,
-        ]),
-      },
-      {
-        name: 'Orders per day',
-        columns: ['Day', 'Orders'],
-        rows: days.map(({ day, orderCount }) => [day, orderCount]),
-      },
-      {
-        name: 'Orders by value',
-        columns: ['Order value', 'Orders'],
-        rows: bands.map(({ band, orderCount }) => [band, orderCount]),
-      },
-    ],
-  };
-}
+const countryDataset = orderView.dataset({
+  name: 'Revenue by country',
+  select: data => data.countries,
+  rowKey: row => row.country,
+  evidence: orderDataContext.evidence({
+    id: 'countries-export',
+    glossaryIds: ['revenue'],
+  }),
+  columns: {
+    country: { value: row => row.country },
+    orderCount: { label: 'Orders', value: row => row.orderCount },
+    revenue: { value: row => row.revenue, format: currency },
+  },
+});
+const dayDataset = orderView.dataset({
+  name: 'Orders per day',
+  select: data => data.days,
+  rowKey: row => row.day,
+  evidence: orderDataContext.evidence({
+    id: 'days-export',
+    glossaryIds: ['orders'],
+  }),
+  columns: {
+    day: { value: row => row.day },
+    orderCount: { label: 'Orders', value: row => row.orderCount },
+  },
+});
+const valueDataset = orderView.dataset({
+  name: 'Orders by value',
+  select: data => data.bands,
+  rowKey: row => row.band,
+  evidence: orderDataContext.evidence({
+    id: 'bands-export',
+    glossaryIds: ['orders'],
+  }),
+  columns: {
+    band: { label: 'Order value', value: row => row.band },
+    orderCount: { label: 'Orders', value: row => row.orderCount },
+  },
+});
 
 function presentOrders({ data, input }: OrderSnapshot) {
   const { countries, days, bands } = data;
@@ -328,21 +337,15 @@ function presentOrders({ data, input }: OrderSnapshot) {
 }
 
 function App() {
-  const orderRequest = useView(orderView);
   return (
     <DataApp
       config={appConfig}
       dataContext={orderDataContext}
-      request={orderRequest}
-      csvExport={exportOrders}
+      view={orderView}
+      datasets={[countryDataset, dayDataset, valueDataset]}
       story={presentOrders}
     >
-      <DataSection
-        result={orderRequest}
-        emptyFallback={orderRequest.empty}
-        notice="none"
-        {...orderContent}
-      />
+      <DataSection view={orderView} {...orderContent} />
     </DataApp>
   );
 }

@@ -8,6 +8,7 @@ import type { DateRangeRequest } from '@/src/core/contract';
 import { invariant } from '@/src/core/invariant';
 
 export type DataContentHelpers<Data, Input> = {
+  scope: DataReading<string>;
   select: <Value>(
     select: (data: Data, input: Input) => Value
   ) => DataReading<Value>;
@@ -23,11 +24,15 @@ export type DataContentState<Data, Input> = DataContentHelpers<Data, Input> &
 /** Selectors run only for displayed data. Date comparisons inherit that result's input. */
 export function defineDataContent<Data, Input>(
   render: (state: DataContentState<Data, Input>) => ReactNode,
-  options: { date?: (input: Input) => DateRangeRequest } = {}
+  options: {
+    date?: (input: Input) => DateRangeRequest;
+    describeInput?: (input: Input) => string;
+  } = {}
 ) {
   return {
     loadingFallback: render({
       loading: true,
+      scope: { loading: true },
       select() {
         return { loading: true };
       },
@@ -40,6 +45,10 @@ export function defineDataContent<Data, Input>(
         loading: false,
         data,
         input,
+        scope: {
+          loading: false,
+          value: options.describeInput?.(input) ?? 'this view',
+        },
         select(select) {
           return { loading: false, value: select(data, input) };
         },

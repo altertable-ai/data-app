@@ -1,21 +1,23 @@
 import { type ReactNode } from 'react';
 import {
   defineChartItems,
-  Breakdown,
   Comparison,
-  DataTable,
-  Grid,
-  GridItem,
-  Ranking,
   BarChart,
   LineChart,
   AreaChart,
   PieChart,
   ScatterChart,
+} from '@altertable/data-app/react';
+import {
+  Breakdown,
+  DataTable,
+  Grid,
+  GridItem,
+  Ranking,
   Stack,
   TextContent,
   VisualizationWidget,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app/react/ui';
 
 const segments = [
   { id: 'product', label: 'Product', value: 45 },

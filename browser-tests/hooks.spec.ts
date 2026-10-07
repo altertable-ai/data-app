@@ -168,3 +168,46 @@ test('facet choices are fetched and displayed separately for each client', async
     page.getByRole('option', { name: 'A category', exact: true })
   ).toHaveCount(0);
 });
+
+test('declared primary sections reuse retained data when mounting during refresh and independent inspection uses its own queries', async ({
+  page,
+}) => {
+  await page.goto('/hooks-app?declared');
+  await expect(page.locator('body')).toHaveAttribute(
+    'data-alpha-requests',
+    '1'
+  );
+  await expect(page.locator('body')).toHaveAttribute('data-beta-requests', '1');
+  await page
+    .getByRole('button', { name: 'Resolve alpha 1', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Resolve beta', exact: true }).click();
+  await expect(
+    page.getByTestId('secondary').filter({ visible: true })
+  ).toHaveText('1');
+  await page.getByRole('searchbox', { name: 'Version', exact: true }).fill('2');
+  await expect(page.locator('body')).toHaveAttribute(
+    'data-alpha-requests',
+    '2'
+  );
+  await page.getByRole('button', { name: 'Show primary', exact: true }).click();
+  await expect(
+    page.getByTestId('primary').filter({ visible: true })
+  ).toHaveText('1 for 1');
+  await expect(page.locator('body')).toHaveAttribute(
+    'data-alpha-requests',
+    '2'
+  );
+  await page.getByRole('button', { name: 'Explore Beta', exact: true }).click();
+  const inspection = page.getByRole('dialog');
+  await inspection.getByRole('tab', { name: 'Queries', exact: true }).click();
+  await expect(inspection).toContainText('SELECT beta');
+  await expect(inspection).not.toContainText('SELECT alpha');
+  await page.keyboard.press('Escape');
+  await page
+    .getByRole('button', { name: 'Resolve alpha 2', exact: true })
+    .click();
+  await expect(
+    page.getByTestId('primary').filter({ visible: true })
+  ).toHaveText('2 for 2');
+});

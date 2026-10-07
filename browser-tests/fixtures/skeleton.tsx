@@ -1,6 +1,6 @@
-import { injectDataAppShellStyles } from '@altertable/data-app/react';
+import { injectDataAppShellStyles } from '@altertable/data-app/react/ui';
 import { createRoot } from 'react-dom/client';
-import { DataAppSkeleton } from '@altertable/data-app/react';
+import { DataAppSkeleton } from '@altertable/data-app/react/ui';
 import { applyAppearance } from '@altertable/data-app/appearance';
 
 const params = new URLSearchParams(location.search);

@@ -7,7 +7,6 @@ export type AppHeaderProps = {
   description?: ReactNode;
   toolbar?: ReactNode;
   children?: ReactNode;
-  headingProps?: Omit<ComponentPropsWithRef<'div'>, 'children'>;
 } & Omit<ComponentPropsWithRef<'header'>, 'children' | 'title'>;
 
 /** Page identity and actions; on narrow screens the scope shares a row with actions. */
@@ -17,7 +16,6 @@ export function AppHeader({
   description,
   toolbar,
   children,
-  headingProps,
   className,
   ...props
 }: AppHeaderProps) {
@@ -26,13 +24,7 @@ export function AppHeader({
       {...props}
       className={classNames('altertable-app-header', className)}
     >
-      <div
-        {...headingProps}
-        className={classNames(
-          'altertable-app-header-heading',
-          headingProps?.className
-        )}
-      >
+      <div className="altertable-app-header-heading">
         <div className="altertable-app-header-primary">
           <h1>{title}</h1>
           {scope && (

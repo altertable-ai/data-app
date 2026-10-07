@@ -13,9 +13,7 @@ import { shortcuts, useShortcut } from '@/src/react/ui/shortcuts';
 export type AppToolbarProps = {
   children?: ReactNode;
   end?: ReactNode;
-  controlsProps?: Omit<ComponentPropsWithRef<'div'>, 'children'>;
   updatedAt?: ReactNode;
-  initialLoading?: boolean;
   requestState?: DataView<unknown, unknown>['kind'];
   refresh?: {
     refreshing: boolean;
@@ -23,8 +21,6 @@ export type AppToolbarProps = {
     onCancel?: () => void;
     label?: string;
     tooltip?: ReactNode;
-    buttonProps?: Omit<ComponentPropsWithRef<'button'>, 'children' | 'onClick'>;
-    statusProps?: ComponentProps<typeof RefreshControl>['statusProps'];
   };
   live?: LiveControlProps;
   aboutData?: ReactNode;
@@ -42,7 +38,6 @@ export type AppToolbarProps = {
 export function AppToolbar({
   children,
   updatedAt,
-  initialLoading = false,
   requestState,
   refresh,
   live,
@@ -50,16 +45,13 @@ export function AppToolbar({
   story,
   csvExport,
   end,
-  controlsProps,
   className,
   role = 'group',
   'aria-label': ariaLabel = 'Page actions',
   ...props
 }: AppToolbarProps) {
   const refreshLabel =
-    refresh?.refreshing && refresh.onCancel
-      ? 'Cancel refresh'
-      : (refresh?.buttonProps?.['aria-label'] ?? 'Refresh data');
+    refresh?.refreshing && refresh.onCancel ? 'Cancel refresh' : 'Refresh data';
 
   function runRefresh() {
     if (refresh && !refresh.refreshing) refresh.onRefresh();
@@ -79,17 +71,15 @@ export function AppToolbar({
       role={role}
       aria-label={ariaLabel}
     >
-      <div
-        {...controlsProps}
-        className={classNames(
-          'altertable-app-toolbar-actions',
-          controlsProps?.className
-        )}
-      >
+      <div className="altertable-app-toolbar-actions">
         {children}
-        {(initialLoading || updatedAt) && (
+        {(requestState === 'loading' || updatedAt) && (
           <span className="altertable-app-toolbar-updated">
-            {initialLoading ? <output>Loading data</output> : updatedAt}
+            {requestState === 'loading' ? (
+              <output>Loading data</output>
+            ) : (
+              updatedAt
+            )}
           </span>
         )}
         {refresh && (
@@ -102,10 +92,8 @@ export function AppToolbar({
                   ? 'Updating data'
                   : refresh.label
             }
-            statusProps={refresh.statusProps}
           >
             <IconButton
-              {...refresh.buttonProps}
               icon="refresh"
               variant="elevated"
               label={refreshLabel}

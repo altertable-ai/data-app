@@ -12,20 +12,23 @@ function verifyBoundWidgets(evidence: WidgetEvidence) {
     isEmpty: (value: number) => value === 0,
     children: (value: number) => String(value),
   };
-  const empty = { title: 'No activity' };
-  const data: DataWidgetProps<number> = { ...content, evidence, empty };
+  const emptyFallback = { title: 'No activity' };
+  const data: DataWidgetProps<number> = { ...content, evidence, emptyFallback };
   const visual: VisualizationWidgetProps<number> = {
     ...content,
     evidence,
-    empty,
+    emptyFallback,
   };
 
   // @ts-expect-error A data reading requires evidence.
-  const dataWithoutEvidence: DataWidgetProps<number> = { ...content, empty };
+  const dataWithoutEvidence: DataWidgetProps<number> = {
+    ...content,
+    emptyFallback,
+  };
   // @ts-expect-error A visual reading requires evidence.
   const visualWithoutEvidence: VisualizationWidgetProps<number> = {
     ...content,
-    empty,
+    emptyFallback,
   };
   // @ts-expect-error A data reading requires an authored empty state.
   const dataWithoutEmpty: DataWidgetProps<number> = { ...content, evidence };

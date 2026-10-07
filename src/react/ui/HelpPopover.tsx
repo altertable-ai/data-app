@@ -37,8 +37,6 @@ export type HelpPopoverProps = {
   triggerLabel: string;
   label: string;
   children: ReactNode;
-  triggerClassName?: string;
-  panelClassName?: string;
   placement?: Placement;
   portalRoot?: RefObject<HTMLElement | null>;
   triggerProps?: HelpPopoverTriggerProps;
@@ -55,8 +53,6 @@ export function HelpPopover({
   triggerLabel,
   label,
   children,
-  triggerClassName,
-  panelClassName,
   portalRoot,
   triggerProps,
   panelProps,
@@ -108,11 +104,11 @@ export function HelpPopover({
         ref={mergedTriggerRef}
         type="button"
         className={classNames(
-          triggerClassName ?? 'altertable-button',
+          triggerProps?.className ? undefined : 'altertable-button',
           triggerProps?.className
         )}
-        data-variant={triggerClassName ? undefined : 'outline'}
-        data-size={triggerClassName ? undefined : 'compact'}
+        data-variant={triggerProps?.className ? undefined : 'outline'}
+        data-size={triggerProps?.className ? undefined : 'compact'}
         data-open={open}
       >
         {trigger}
@@ -129,7 +125,6 @@ export function HelpPopover({
               ref={mergedPanelRef}
               className={classNames(
                 'altertable-help-popover',
-                panelClassName,
                 panelProps?.className
               )}
               style={{ ...panelProps?.style, ...floatingStyles }}

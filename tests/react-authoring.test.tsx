@@ -1,3 +1,8 @@
+import { defineDataContent } from '@/src/react/content';
+import { defineAppVariables } from '@/src/react/ui/variables';
+import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
+import { calendarMetricComparison } from '@/src/react/ui/metric-comparison';
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
@@ -5,18 +10,12 @@ import {
   defineQueryNames,
 } from '@altertable/data-app/contract';
 import {
-  defineDataContent,
   createDataContext,
   dateRangeVariable,
-  defineAppVariables,
   textVariable,
-  ContentSkeleton,
-  WidgetViewTabs,
-  MetricWidget,
-  calendarMetricComparison,
-  TextWidget,
   TextContent,
 } from '@altertable/data-app/react';
+import { MetricWidget, TextWidget } from '@altertable/data-app/react/ui';
 import { describeViewInput, type DataViewDefinition } from '@/src/react/view';
 
 const calendar = defineDateRangeContract({
@@ -69,7 +68,7 @@ test('date requests derive a comparison and reject forged or unavailable ranges'
     isEmpty(data: { count: number }) {
       return data.count === 0;
     },
-    empty: { title: 'No activity' },
+    emptyFallback: { title: 'No activity' },
   } satisfies DataViewDefinition<
     'activity',
     { period: typeof variable },
@@ -244,7 +243,7 @@ test('an empty widget tab renders its authored fallback', () => {
           id: 'orders',
           label: 'Orders',
           isEmpty: true,
-          empty: { title: 'No orders' },
+          emptyFallback: { title: 'No orders' },
           content: <p>Must not render</p>,
         },
       ]}

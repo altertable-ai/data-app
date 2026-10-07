@@ -1,9 +1,9 @@
+import { TableWidget } from '@altertable/data-app/react/ui';
+import { MetricWidget } from '@altertable/data-app/react/ui';
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   DataValue,
-  MetricWidget,
-  TableWidget,
   VisualizationWidget,
   type WidgetEvidence,
 } from '@altertable/data-app/react';
@@ -32,7 +32,7 @@ test('bound chart loading keeps its heading without evaluating data', () => {
       isEmpty={() => {
         throw new Error('No loading data');
       }}
-      empty={{ title: 'No orders' }}
+      emptyFallback={{ title: 'No orders' }}
       skeleton={{ variant: 'ranking', rows: 3 }}
     >
       {() => {
@@ -72,7 +72,7 @@ test('table loading preserves column headings and section attributes', () => {
       rowKey={() => {
         throw new Error('No loading data');
       }}
-      empty={{ title: 'No orders' }}
+      emptyFallback={{ title: 'No orders' }}
     />
   );
   expect(html).toContain('id="orders-table"');

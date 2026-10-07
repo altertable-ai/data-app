@@ -39,14 +39,15 @@ export type DataWidgetProps<Data = unknown> = DataWidgetBaseProps &
         reading?: never;
         isEmpty?: never;
         skeleton?: never;
-        empty?: EmptyContent;
+        emptyFallback?: EmptyContent;
         children: ReactNode;
       }
   );
 
 export function DataWidget<Data>(props: DataWidgetProps<Data>) {
   if (props.reading) {
-    const { reading, isEmpty, empty, skeleton, children, ...shell } = props;
+    const { reading, isEmpty, emptyFallback, skeleton, children, ...shell } =
+      props;
     if (reading.loading)
       return (
         <DataWidgetContent {...shell} evidence={undefined} aria-busy>
@@ -56,7 +57,10 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
     const noData = isEmpty(reading.value);
 
     return (
-      <DataWidgetContent {...shell} empty={noData ? empty : undefined}>
+      <DataWidgetContent
+        {...shell}
+        emptyFallback={noData ? emptyFallback : undefined}
+      >
         {noData ? null : children(reading.value)}
       </DataWidgetContent>
     );
@@ -73,18 +77,21 @@ function DataWidgetContent({
   action,
   status,
   footer,
-  empty,
+  emptyFallback,
   bodyPadding = 'inset',
   children,
   className,
   ...props
-}: DataWidgetBaseProps & { empty?: EmptyContent; children: ReactNode }) {
+}: DataWidgetBaseProps & {
+  emptyFallback?: EmptyContent;
+  children: ReactNode;
+}) {
   const titleId = useId();
-  const content = empty ? <EmptyState {...empty} /> : children;
+  const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
   const visual = (
     <WidgetContent
-      bodyPadding={empty ? 'flush' : bodyPadding}
-      footer={empty ? undefined : footer}
+      bodyPadding={emptyFallback ? 'flush' : bodyPadding}
+      footer={emptyFallback ? undefined : footer}
       status={status}
     >
       {content}
@@ -111,7 +118,7 @@ function DataWidgetContent({
       visual={visual}
       visualKind="widget"
     >
-      {title}
+      <span className="altertable-widget-heading-label">{title}</span>
       <AppIcon name="openDetails" />
     </AboutData>
   );

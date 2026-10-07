@@ -9,12 +9,8 @@ import {
   getDataAppNavigation,
   DataAppError,
 } from '@altertable/data-app/client';
-import {
-  DataApp,
-  mountDataApp,
-  textVariable,
-  useAppVariables,
-} from '@altertable/data-app/react';
+import { DataApp, useAppVariables } from '@altertable/data-app/react/ui';
+import { mountDataApp, textVariable } from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 const config: DataAppConfig = {
   title: 'Embedded report',

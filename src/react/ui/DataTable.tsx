@@ -99,7 +99,7 @@ export function DataTableTimestamp({
     <DateTimeTooltip
       date={date}
       timeZone={timeZone}
-      triggerClassName="altertable-data-table-timestamp"
+      triggerProps={{ className: 'altertable-data-table-timestamp' }}
     >
       <time dateTime={timestamp}>{children ?? timestamp}</time>
     </DateTimeTooltip>

@@ -1,16 +1,24 @@
+import { useDeclaredResult } from '@/src/react/view-runtime';
 import { createDataClient } from '@/src/client/data-client';
 import type { DataAppConfig } from '@/src/core/config';
 import { connectionCheck } from '@/src/core/contract';
 import { createDataHooks } from '@/src/react/hooks';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
-import { DataApp } from '@/src/react/ui/DataApp';
+import { DataApp } from '@/src/react/ui/StaticDataApp';
 import type { DataContext } from '@/src/react/ui/data-context';
 
 const client = /* @__PURE__ */ createDataClient();
-const { useDataQuery } = /* @__PURE__ */ createDataHooks<{
+const { defineDataView } = /* @__PURE__ */ createDataHooks<{
   connection: ReturnType<typeof connectionCheck>;
 }>(client);
+
+const connectionView = defineDataView({
+  operation: 'connection',
+  describeInput: () => 'the connection',
+  isEmpty: () => false,
+  emptyFallback: { title: 'No connection' },
+});
 
 /** Query-backed connection state and next steps for a newly created app. Mount within
  * `DataAppProvider` and register `connection: connectionCheck()` on the server. */
@@ -21,27 +29,28 @@ export function GettingStarted({
   config: DataAppConfig;
   dataContext: DataContext;
 }) {
-  const connection = useDataQuery('connection', {});
-  const state = connection.error
-    ? 'error'
-    : connection.isFetching || !connection.data
-      ? 'checking'
-      : 'connected';
+  const connection = useDeclaredResult(connectionView);
+  const state =
+    connection.view.kind === 'error' || connection.view.kind === 'stale-error'
+      ? 'error'
+      : connection.refreshing || !connection.snapshot
+        ? 'checking'
+        : 'connected';
 
   return (
     <DataApp
       config={config}
       dataContext={dataContext}
       description="Check your lakehouse connection, then build a view around a real question."
-      queries={connection.data?.queries}
-      refresh={{
-        refreshing: connection.isFetching,
-        onRefresh() {
-          return void connection.refetch();
-        },
-        tooltip: 'Check connection',
-        buttonProps: { 'aria-label': 'Check connection' },
-      }}
+      queries={connection.queries}
+      toolbarActions={
+        <Button
+          disabled={connection.refreshing}
+          onClick={() => connection.refetch()}
+        >
+          Check connection
+        </Button>
+      }
     >
       <section
         className="starter-connection"
@@ -73,7 +82,7 @@ export function GettingStarted({
             {state === 'connected'
               ? 'A query completed successfully using this app’s current profile. You’re ready to build your first view.'
               : state === 'error'
-                ? connection.data
+                ? connection.snapshot
                   ? 'An earlier query succeeded, but the latest check failed. Check the profile and try again.'
                   : 'The query could not complete. Check the profile and lakehouse access, then try again.'
                 : 'Running a lightweight query with this app’s current profile.'}
@@ -83,7 +92,7 @@ export function GettingStarted({
           )}
         </div>
         {state === 'error' && (
-          <Button onClick={() => void connection.refetch()}>Try again</Button>
+          <Button onClick={() => connection.refetch()}>Try again</Button>
         )}
       </section>
 

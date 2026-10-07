@@ -39,8 +39,7 @@ export function DateTimeTooltip({
   date,
   timeZone,
   children,
-  triggerClassName,
-  panelClassName,
+  panelProps,
   ...props
 }: DateTimeTooltipProps) {
   const [now, setNow] = useState(Date.now);
@@ -72,10 +71,12 @@ export function DateTimeTooltip({
     <HelpPopover
       {...props}
       placement={props.placement ?? 'bottom'}
-      triggerClassName={triggerClassName}
-      panelClassName={['altertable-date-time-tooltip', panelClassName]
-        .filter(Boolean)
-        .join(' ')}
+      panelProps={{
+        ...panelProps,
+        className: ['altertable-date-time-tooltip', panelProps?.className]
+          .filter(Boolean)
+          .join(' '),
+      }}
       triggerLabel="Show exact date and time"
       label="Date and time details"
       trigger={

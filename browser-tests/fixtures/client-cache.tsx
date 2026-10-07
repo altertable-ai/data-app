@@ -1,3 +1,4 @@
+import { useDeclaredResult } from '@/src/react/view-runtime';
 import { useState } from 'react';
 import { createDataClient } from '@/src/client/index';
 import {
@@ -102,14 +103,14 @@ const view = hooksA.defineDataView({
   isEmpty() {
     return false;
   },
-  empty: { title: 'No data' },
+  emptyFallback: { title: 'No data' },
   describeInput() {
     return 'All categories';
   },
 });
 
 function Panel({ id, hooks }: { id: string; hooks: typeof hooksA }) {
-  const result = hooks.useView(view);
+  const result = useDeclaredResult(hooks.defineDataView(view));
 
   return (
     <section data-testid={id}>

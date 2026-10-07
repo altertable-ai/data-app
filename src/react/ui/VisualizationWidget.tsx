@@ -7,7 +7,13 @@ import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 
 type VisualizationWidgetBaseProps = Pick<
   DataWidgetProps,
-  'title' | 'description' | 'count' | 'action' | 'evidence' | 'status' | 'empty'
+  | 'title'
+  | 'description'
+  | 'count'
+  | 'action'
+  | 'evidence'
+  | 'status'
+  | 'emptyFallback'
 > & {
   /** Controls placed before the supporting insight, such as table pagination. */
   footer?: ReactNode;
@@ -62,7 +68,7 @@ export function VisualizationWidget<Data>(
       reading,
       children,
       isEmpty,
-      empty,
+      emptyFallback,
       skeleton,
       insight,
       footer,
@@ -74,7 +80,7 @@ export function VisualizationWidget<Data>(
         {...shell}
         reading={reading}
         isEmpty={isEmpty}
-        empty={empty}
+        emptyFallback={emptyFallback}
         skeleton={skeleton}
         footer={widgetFooter(footer, insight)}
       >
@@ -121,7 +127,7 @@ function VisualizationWidgetWithViews<Data>({
   viewLabel,
   initialView,
   isEmpty,
-  empty,
+  emptyFallback,
   skeleton,
   insight,
   footer,
@@ -139,7 +145,7 @@ function VisualizationWidgetWithViews<Data>({
       {...shell}
       reading={reading}
       isEmpty={isEmpty}
-      empty={empty}
+      emptyFallback={emptyFallback}
       skeleton={skeleton}
       footer={widgetFooter(footer, insight)}
     >
@@ -152,7 +158,7 @@ function VisualizationWidgetWithViews<Data>({
               label: view.label,
               content: view.render(data),
               isEmpty: false,
-              empty,
+              emptyFallback,
             }))}
             selectedKey={selected}
             onSelectionChange={setSelected}

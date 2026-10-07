@@ -33,6 +33,20 @@ export type TableWidgetColumn<Row> = {
 export type TableWidgetSearch<Row> = Omit<DataTableSearch, 'itemCount'> &
   Pick<SearchItemsOptions<Row>, 'attributes' | 'mode' | 'fuzzyThreshold'>;
 
+export type TableDisplayMode =
+  | {
+      /** Positive integer preview cap after search; disables pagination. */
+      limit: number;
+      pagination?: never;
+    }
+  | {
+      /** Local pagination after search: 10 rows by default, false shows all supplied rows.
+       * pageSize must be a positive integer. Counts refer only to supplied rows.
+       * The widget owns bottom-footer controls and shares the current page with inspection. */
+      pagination?: { pageSize: number } | false;
+      limit?: never;
+    };
+
 type TableWidgetBaseProps<Row> = {
   title: ReactNode;
   count?: number;
@@ -46,21 +60,8 @@ type TableWidgetBaseProps<Row> = {
   evidence?: WidgetEvidence;
   search?: TableWidgetSearch<Row>;
   /** Valid result with no rows; the header remains visible. */
-  empty: EmptyContent;
-} & (
-  | {
-      /** Positive integer preview cap after search; disables pagination. */
-      limit: number;
-      pagination?: never;
-    }
-  | {
-      /** Local pagination after search: 10 rows by default, false shows all supplied rows.
-       * pageSize must be a positive integer. Counts refer only to supplied rows.
-       * The widget owns bottom-footer controls and shares the current page with inspection. */
-      pagination?: { pageSize: number } | false;
-      limit?: never;
-    }
-) &
+  emptyFallback: EmptyContent;
+} & TableDisplayMode &
   Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
 /** Composes VisualizationWidget with DataTable, search, and local pagination.
@@ -124,7 +125,7 @@ function TableWidgetContent<Row>({
   search,
   limit,
   pagination,
-  empty,
+  emptyFallback,
   loading = false,
   skeletonRows = 5,
   ...props
@@ -218,7 +219,7 @@ function TableWidgetContent<Row>({
               )
             )
           ) : visible.length === 0 ? (
-            <DataTableEmptyRow colSpan={columns.length} {...empty} />
+            <DataTableEmptyRow colSpan={columns.length} {...emptyFallback} />
           ) : (
             visible.map(hit => (
               <tr key={rowKey(hit.item)}>

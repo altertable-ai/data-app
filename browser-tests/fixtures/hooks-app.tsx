@@ -1,3 +1,7 @@
+import { useDeclaredResult } from '@/src/react/view-runtime';
+import { DeclaredApp } from '@/browser-tests/fixtures/declared-app';
+import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { defineDataContent } from '@/src/react/content';
 import { ClientCacheApp } from '@/browser-tests/fixtures/client-cache';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -5,13 +9,8 @@ import { injectDataAppStyles } from '@altertable/data-app/react';
 import { createDataClient, type OutputOf } from '@/src/client/index';
 import { defineOperation } from '@/src/core/contract';
 import type { TransportResponse } from '@/src/core/bridge';
-import {
-  createDataHooks,
-  DataAppProvider,
-  DataSection,
-  defineDataContent,
-  TextWidget,
-} from '@/src/react/index';
+import { createDataHooks } from '@/src/react/hooks';
+import { DataAppProvider, TextWidget } from '@altertable/data-app/react/ui';
 
 injectDataAppStyles();
 
@@ -62,7 +61,7 @@ const client = createDataClient<typeof operations>({
     });
   },
 });
-const { useDataView } = createDataHooks(client);
+const { defineDataView } = createDataHooks(client);
 const narrative = defineDataContent<
   OutputOf<(typeof operations)[keyof typeof operations]>,
   { version: number }
@@ -90,14 +89,15 @@ const narrative = defineDataContent<
 function App() {
   const [operation, setOperation] = useState<'alpha' | 'beta'>('alpha');
   const [version, setVersion] = useState(1);
-  const result = useDataView(
-    operation,
-    { version },
-    {
-      isEmpty() {
-        return false;
-      },
-    }
+  const result = useDeclaredResult(
+    defineDataView({
+      operation,
+      variables: {},
+      input: () => ({ version }),
+      describeInput: input => `selection ${input.version}`,
+      isEmpty: () => false,
+      emptyFallback: { title: 'No activity' },
+    })
   );
 
   function settle(failed: boolean) {
@@ -170,7 +170,9 @@ function App() {
 }
 createRoot(document.getElementById('root')!).render(
   <DataAppProvider>
-    {new URLSearchParams(location.search).has('client-cache') ? (
+    {new URLSearchParams(location.search).has('declared') ? (
+      <DeclaredApp />
+    ) : new URLSearchParams(location.search).has('client-cache') ? (
       <ClientCacheApp />
     ) : (
       <App />

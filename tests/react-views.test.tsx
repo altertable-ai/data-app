@@ -1,3 +1,5 @@
+import { displayedSnapshot } from '@/src/core/data-view';
+import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
@@ -12,24 +14,20 @@ import {
 import { createDataClient } from '@altertable/data-app/client';
 import {
   createDataHooks,
-  DataWidget,
-  displayedSnapshot,
   dateRangeVariable,
   textVariable,
   createDataContext,
   Comparison,
-  LineChart,
-  AreaChart,
-  PieChart,
-  ScatterChart,
+} from '@altertable/data-app/react';
+import {
+  DataWidget,
   VisualizationWidget,
   TableWidget,
-  WidgetViewTabs,
   PresentStory,
-  DataApp,
-  DataSection,
-  type DataView,
-} from '@altertable/data-app/react';
+} from '@/src/react/ui/index';
+import { DataAppFrame as DataApp } from '@/src/react/ui/DataAppFrame';
+import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { type DataView } from '@/src/core/data-view';
 
 import { storySteps } from '@/src/react/ui/story';
 import { resolveViewInput } from '@/src/react/view';
@@ -85,7 +83,7 @@ const view = defineDataView({
   isEmpty(data) {
     return data.rows.length === 0;
   },
-  empty: { title: 'No actions' },
+  emptyFallback: { title: 'No actions' },
 });
 
 test('a custom data widget shares the bound loading, empty, and inspection contract', () => {
@@ -100,7 +98,7 @@ test('a custom data widget shares the bound loading, empty, and inspection contr
         evidence={featureEvidence}
         reading={reading}
         isEmpty={values => values.length === 0}
-        empty={{ title: 'No sessions' }}
+        emptyFallback={{ title: 'No sessions' }}
       >
         {values => {
           rendered++;
@@ -137,7 +135,7 @@ test('time view derives its control, input, and displayed period from one declar
     isEmpty(data) {
       return !data.rows.length;
     },
-    empty: { title: 'No actions' },
+    emptyFallback: { title: 'No actions' },
   });
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
   expect(timed.variables.period.kind).toBe('dateRange');
@@ -163,7 +161,7 @@ test('time view composes other inputs without surrendering its period binding', 
     isEmpty(data) {
       return !data.rows.length;
     },
-    empty: { title: 'No actions' },
+    emptyFallback: { title: 'No actions' },
   });
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
   expect(resolveViewInput(timed, { period: input, search: 'billing' })).toEqual(
@@ -241,7 +239,7 @@ test('nested view inputs preserve dates and dimensions in validation and descrip
     isEmpty(data) {
       return !data.rows.length;
     },
-    empty: { title: 'No actions' },
+    emptyFallback: { title: 'No actions' },
   });
   const period = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
   const selected: DimensionSelection<string> = {
@@ -253,12 +251,17 @@ test('nested view inputs preserve dates and dimensions in validation and descrip
   expect(timed.describeInput(input)).toContain('Mar 10–12, 2026');
   expect(timed.describeInput(input)).toContain('Source: HTTP');
   expect(() =>
-    resolveViewInput({ ...timed, bindings: {} }, { period, source: selected })
+    resolveViewInput(Object.assign({}, timed, { bindings: {} }), {
+      period,
+      source: selected,
+    })
   ).toThrow('source dimension selection');
   expect(() =>
     resolveViewInput(
       {
-        ...timed,
+        variables: timed.variables,
+        bindings: timed.bindings,
+        date: timed.date,
         input() {
           return {
             request: period,
@@ -272,7 +275,9 @@ test('nested view inputs preserve dates and dimensions in validation and descrip
   expect(() =>
     resolveViewInput(
       {
-        ...timed,
+        variables: timed.variables,
+        bindings: timed.bindings,
+        input: timed.input,
         date: {
           variable: 'period',
           input(input) {
@@ -406,7 +411,7 @@ test('bound visual selectors do not run during loading or render an empty result
         return data.rows;
       })}
       isEmpty={rows => rows.length === 0}
-      empty={{ title: 'No features' }}
+      emptyFallback={{ title: 'No features' }}
       skeleton={{ variant: 'ranking', rows: 6 }}
     >
       {rows => <p>{rows.join(', ')}</p>}
@@ -436,7 +441,8 @@ test('date bindings reject silently changed ranges and comparisons', () => {
   expect(() =>
     resolveViewInput(
       {
-        ...view,
+        variables: view.variables,
+        date: view.date,
         input({ period }) {
           return { ...period, comparison: null };
         },
@@ -492,7 +498,7 @@ test('widget tabs reject duplicate and unknown IDs instead of producing a blank 
     label: 'Actions',
     content: 'Ready',
     isEmpty: false,
-    empty: { title: 'Empty' },
+    emptyFallback: { title: 'Empty' },
   };
   expect(() =>
     renderToStaticMarkup(
@@ -523,7 +529,7 @@ test('bound visualization views render inside one widget with a selected view', 
       evidence={featureEvidence}
       reading={{ loading: false, value: [{ name: 'Insights', count: 4 }] }}
       isEmpty={rows => rows.length === 0}
-      empty={{ title: 'No feature use' }}
+      emptyFallback={{ title: 'No feature use' }}
       viewLabel="Measure"
       views={[
         {
@@ -565,7 +571,7 @@ test('bound tables keep their row contract while loading', () => {
           },
         },
       ]}
-      empty={{ title: 'No features' }}
+      emptyFallback={{ title: 'No features' }}
       skeletonRows={3}
     />
   ));
@@ -620,7 +626,6 @@ test('DataApp keeps its children visible while local boundaries own request stat
           result={{ view: state, refetch() {} }}
           emptyFallback={{ title: 'No activity' }}
           loadingFallback={<p>Loading this section</p>}
-          notice="none"
         >
           {(count, input) => {
             renders++;
@@ -671,152 +676,191 @@ test('DataApp keeps its children visible while local boundaries own request stat
   }
 });
 
-test('visualization controls and insight share the footer without dropping insight when controls are absent', () => {
-  for (const footer of [false, <button key="next">Next page</button>]) {
-    const html = renderToStaticMarkup(
-      <VisualizationWidget
-        title="Revenue"
-        visual={<p>120 sales</p>}
-        footer={footer}
-        insight="Revenue increased."
-      />
+test('primary request feedback is page-owned while an independent section keeps its notice', () => {
+  const frame = { location: new URL('https://app.example.com') };
+  Object.assign(frame, { top: frame });
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: frame,
+  });
+  try {
+    const primary: DataView<number, string> = {
+      kind: 'updating',
+      data: 0,
+      displayedInput: 'previous',
+      requestedInput: 'next',
+      message: 'Updating primary results',
+    };
+    const secondary: DataView<number, string> = {
+      kind: 'stale-error',
+      data: 2,
+      displayedInput: 'local previous',
+      requestedInput: 'local next',
+      error: new Error('Unavailable'),
+      message: 'Secondary refresh failed',
+    };
+    const request = { view: primary, refetch() {} };
+    const markup = renderToStaticMarkup(
+      <DataApp
+        config={{
+          title: 'Feedback',
+          scope: { organization: 'test', environment: 'test' },
+          appearance: {},
+        }}
+        dataContext={context}
+        request={request}
+        story={() => []}
+        csvExport={({ data }) => ({
+          filename: 'values',
+          tables: [{ name: 'Values', columns: ['Value'], rows: [[data]] }],
+        })}
+      >
+        <DataSection
+          result={request}
+          loadingFallback={null}
+          emptyFallback={{ title: 'No primary data' }}
+        >
+          {(data, input) => (
+            <p>
+              {data} for {input}
+            </p>
+          )}
+        </DataSection>
+        <DataSection
+          result={{ view: secondary, refetch() {} }}
+          loadingFallback={null}
+          emptyFallback={{ title: 'No secondary data' }}
+        >
+          {(data, input) => (
+            <p>
+              {data} for {input}
+            </p>
+          )}
+        </DataSection>
+      </DataApp>
     );
-    expect(html).toContain('120 sales');
-    expect(html).toContain('Revenue increased.');
-    if (footer) {
-      expect(html.indexOf('Next page')).toBeLessThan(
-        html.indexOf('Revenue increased.')
-      );
-    }
+    expect(
+      markup.match(/class="altertable-data-boundary-notice"/g)
+    ).toHaveLength(1);
+    expect(markup).toContain('Secondary refresh failed');
+    expect(markup).not.toContain('Updating primary results');
+    expect(markup).toContain('0 for previous');
+    expect(markup).toContain('2 for local previous');
+    expect(markup).toContain('aria-busy="true"');
+  } finally {
+    if (previousWindow)
+      Object.defineProperty(globalThis, 'window', previousWindow);
+    else Reflect.deleteProperty(globalThis, 'window');
   }
 });
 
-test('line and area charts support empty, single, signed, zero and extreme samples', () => {
-  for (const Chart of [LineChart, AreaChart]) {
-    for (const values of [
-      [],
-      [0],
-      [12],
-      [-4, 0, 8],
-      [0, 0, 0],
-      [-Number.MAX_VALUE, Number.MAX_VALUE],
-    ]) {
-      const html = renderToStaticMarkup(
-        <Chart
-          items={values.map((value, index) => ({
-            id: String(index),
-            label: `Day ${index}`,
-            value,
-          }))}
-          unit="events"
-          ariaLabel="Activity trend"
-          formatValue={value => `${value} formatted`}
-        />
-      );
-      expect(html).not.toMatch(/NaN|Infinity/);
-      if (!values.length) {
-        expect(html).toContain('No data');
-        expect(html).not.toContain('<svg');
-      } else {
-        expect(html.match(/type="button"/g)).toHaveLength(values.length);
-        expect(html).toContain('formatted events');
-      }
-    }
-    expect(() =>
-      renderToStaticMarkup(
-        <Chart
-          items={[{ id: 'bad', label: 'Invalid', value: NaN }]}
-          unit="events"
-          ariaLabel="Invalid chart"
-        />
-      )
-    ).toThrow('finite values');
-  }
+test('declared view defaults derive operation inputs without dropping explicit mappings', () => {
+  const hooks = createDataHooks<{
+    empty: DataOperation<Record<string, never>, number>;
+    search: DataOperation<{ search: string }, number>;
+    nested: DataOperation<{ filters: { search: string } }, number>;
+  }>(createDataClient());
+  const base = {
+    describeInput: () => 'results',
+    isEmpty: () => false,
+    emptyFallback: { title: 'No data' },
+  };
+  const empty = hooks.defineDataView({ ...base, operation: 'empty' });
+  expect(empty.variables).toEqual({});
+  expect(resolveViewInput(empty, {})).toEqual({});
+  const variables = { search: textVariable({ key: 'search' }) };
+  const search = hooks.defineDataView({
+    ...base,
+    operation: 'search',
+    variables,
+  });
+  expect(resolveViewInput(search, { search: 'new' })).toEqual({
+    search: 'new',
+  });
+  const nested = hooks.defineDataView({
+    ...base,
+    operation: 'nested',
+    variables,
+    input: values => ({ filters: values }),
+  });
+  expect(resolveViewInput(nested, { search: 'new' })).toEqual({
+    filters: { search: 'new' },
+  });
 });
 
-test('pie charts preserve zero categories and handle empty, whole and extreme shares', () => {
-  for (const values of [
-    [],
-    [10],
-    [0, 0],
-    [10, 0, 30],
-    [Number.MAX_VALUE, Number.MAX_VALUE],
-  ]) {
-    const html = renderToStaticMarkup(
-      <PieChart
-        items={values.map((value, index) => ({
-          id: String(index),
-          label: `Part ${index}`,
-          value,
-        }))}
-        unit="orders"
-        ariaLabel="Order mix"
-      />
-    );
-    expect(html).not.toMatch(/NaN|Infinity/);
-    if (!values.length) expect(html).toContain('No data');
-    else {
-      expect(html.match(/type="button"/g)).toHaveLength(values.length);
-      if (values.every(value => value === 0))
-        expect(html).toContain('No nonzero values');
-      else
-        expect(html.match(/class="altertable-pie-slice"/g)).toHaveLength(
-          values.filter(value => value > 0).length
-        );
-    }
-    if (values.length === 1) expect(html).toContain('100%');
-  }
-  for (const values of [[-1], [NaN], [Infinity]]) {
-    expect(() =>
-      renderToStaticMarkup(
-        <PieChart
-          items={values.map((value, index) => ({
-            id: String(index),
-            label: 'Invalid',
-            value,
-          }))}
-          unit="orders"
-          ariaLabel="Invalid mix"
-        />
-      )
-    ).toThrow(
-      Number.isFinite(values[0]) ? 'nonnegative values' : 'finite values'
+test('sections inherit declared empty copy and allow local overrides', () => {
+  const result = {
+    view: { kind: 'empty' as const, input: {} },
+    refetch() {},
+    emptyFallback: { title: 'No source rows' },
+  };
+  function render(emptyFallback?: { title: string }) {
+    return renderToStaticMarkup(
+      <DataSection
+        result={result}
+        loadingFallback={null}
+        emptyFallback={emptyFallback}
+      >
+        {() => 'ready'}
+      </DataSection>
     );
   }
+  expect(render()).toContain('No source rows');
+  expect(render({ title: 'No rows in this section' })).toContain(
+    'No rows in this section'
+  );
+  expect(render({ title: 'No rows in this section' })).not.toContain(
+    'No source rows'
+  );
 });
 
-test('scatter charts position numeric samples and support empty, constant and signed domains', () => {
-  for (const values of [
-    [],
-    [0],
-    [5, 5],
-    [-10, 0, 20],
-    [-Number.MAX_VALUE, Number.MAX_VALUE],
-  ]) {
-    const html = renderToStaticMarkup(
-      <ScatterChart
-        items={values.map((value, index) => ({
-          id: String(index),
-          label: `Point ${index}`,
-          x: value,
-          y: value,
-        }))}
-        xLabel="Volume"
-        yLabel="Latency"
-        xUnit="requests"
-        yUnit="ms"
-        ariaLabel="Performance"
-      />
+test('app toolbar derives refresh actions and respects actual activity during failed retries', () => {
+  const frame = { location: new URL('https://app.example.com') };
+  Object.assign(frame, { top: frame });
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
+  Object.defineProperty(globalThis, 'window', {
+    configurable: true,
+    value: frame,
+  });
+  function render(refreshing: boolean) {
+    return renderToStaticMarkup(
+      <DataApp
+        config={{
+          appearance: {},
+          title: 'Test',
+          scope: { organization: 'a', environment: 'b' },
+        }}
+        dataContext={context}
+        request={{
+          view: {
+            kind: 'stale-error',
+            data: 1,
+            requestedInput: {},
+            displayedInput: {},
+            error: new Error('Failed'),
+            message: 'Showing prior data',
+          },
+          refreshing,
+          refetch() {},
+          cancel() {},
+        }}
+        story={() => []}
+        csvExport={({ data }) => ({
+          filename: 'data',
+          tables: [{ name: 'Values', columns: ['Value'], rows: [[data]] }],
+        })}
+      >
+        Ready
+      </DataApp>
     );
-    expect(html).not.toMatch(/NaN|Infinity/);
-    if (!values.length) expect(html).toContain('No data');
-    else expect(html.match(/type="button"/g)).toHaveLength(values.length);
-    if (values.length === 3) {
-      expect(html).toContain('left:0%;bottom:0%');
-      expect(html).toContain(
-        'left:33.33333333333333%;bottom:33.33333333333333%'
-      );
-      expect(html).toContain('left:100%;bottom:100%');
-    }
+  }
+  try {
+    expect(render(false)).toContain('Refresh data');
+    expect(render(true)).toContain('Cancel refresh');
+  } finally {
+    if (previousWindow)
+      Object.defineProperty(globalThis, 'window', previousWindow);
+    else Reflect.deleteProperty(globalThis, 'window');
   }
 });

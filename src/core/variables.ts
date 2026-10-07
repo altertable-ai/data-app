@@ -149,16 +149,13 @@ export type DateRangeSelection =
 
 export type DateRangeVariableOptions = {
   label?: string;
-  /** URL key for a relative preset; explicit dates use startKey and endKey. */
+  /** URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields. */
   key: string;
-  startKey?: string;
-  endKey?: string;
   defaultValue: DateRangeSelection & { comparison?: never };
   contract: DateRangeContract;
   history?: HistoryMode;
   /** Opt into a URL-backed comparison with the preceding equal-length range. */
   comparison?: boolean;
-  comparisonKey?: string;
 };
 
 export type DateRangeVariable = AppVariable<DateRangeSelection> & {
@@ -194,14 +191,14 @@ const PRESET_IDS = new Set<DatePresetId>([
 export function dateRangeVariable({
   key,
   label = 'Date range',
-  startKey = 'start',
-  endKey = 'end',
   defaultValue,
   contract,
   history = 'push',
   comparison = false,
-  comparisonKey = 'compare',
 }: DateRangeVariableOptions): DateRangeVariable {
+  const startKey = key === 'period' ? 'start' : `${key}-start`;
+  const endKey = key === 'period' ? 'end' : `${key}-end`;
+  const comparisonKey = key === 'period' ? 'compare' : `${key}-compare`;
   const bounds = contract.bounds;
 
   function resolve(selection: DateRangeSelection): DateRange {

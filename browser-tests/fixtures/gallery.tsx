@@ -10,38 +10,42 @@ import { getDataAppNavigation } from '@altertable/data-app/client';
 import {
   DataApp,
   HelpPopover,
-  PeriodSummary,
-  VariableBar,
-  Breakdown,
-  Ranking,
   MetricWidget,
-  Button,
   Checkbox,
   Combobox,
   DataWidget,
-  Grid,
   SearchField,
-  BarChart,
-  Stack,
   TableWidget,
-  Tooltip,
   VisualizationWidget,
   TextWidget,
-  TextContent,
-  defineDataContent,
-  DataBoundary,
-  resolveDataView,
   Tabs,
   Tab,
   TabList,
   TabPanels,
   TabPanel,
   useViewTab,
-  writeSearch,
-  type WidgetEvidence,
+} from '@altertable/data-app/react/ui';
+import {
+  PeriodSummary,
+  Breakdown,
+  Ranking,
+  Button,
+  Grid,
+  Stack,
+  Tooltip,
+  TextContent,
   injectDataAppStyles,
+} from '@altertable/data-app/react/ui';
+import { VariableBar } from '@/src/react/ui/VariableBar';
+import {
+  BarChart,
+  type WidgetEvidence,
   mountDataApp,
 } from '@altertable/data-app/react';
+import { defineDataContent } from '@/src/react/content';
+import { DataBoundary } from '@/src/react/ui/DataBoundary';
+import { resolveDataView } from '@/src/core/data-view';
+import { writeSearch } from '@/src/react/ui/search';
 
 const options = [
   { id: 'http', label: 'HTTP' },
@@ -428,7 +432,7 @@ function Overview() {
             reading={{ loading: false, value: bars }}
             evidence={evidence}
             isEmpty={items => items.length === 0}
-            empty={{ title: 'No activity' }}
+            emptyFallback={{ title: 'No activity' }}
             viewLabel="Activity presentation"
             views={[
               {
@@ -476,7 +480,7 @@ function Overview() {
               attributes: [{ name: 'name', getter: row => row.name }],
             }}
             evidence={recordsEvidence}
-            empty={{ title: 'No matching records' }}
+            emptyFallback={{ title: 'No matching records' }}
           />
           <DataWidget title="Activity by source" evidence={recordsEvidence}>
             <Breakdown
