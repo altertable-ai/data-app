@@ -94,6 +94,9 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
             <ListBox aria-label="Export data">
               {csv.tables.map((table, index) => (
                 <ListBoxItem
+                  data-atbl-internal-surface="option"
+                  data-atbl-focus="inset"
+                  data-atbl-control="action"
                   key={index}
                   id={index}
                   textValue={`Export ${table.name} CSV`}
@@ -104,6 +107,9 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
                 </ListBoxItem>
               ))}
               <ListBoxItem
+                data-atbl-internal-surface="option"
+                data-atbl-focus="inset"
+                data-atbl-control="action"
                 id="all"
                 textValue="Export all ZIP"
                 aria-label="Export all ZIP"

@@ -1,14 +1,10 @@
 .altertable-data-identifier {
   padding: 0.06em 0.24em 0.08em;
   border: 1px solid
-    color-mix(in srgb, var(--at-border, #e3e6e8) 65%, var(--at-surface, #fff));
+    color-mix(in srgb, var(--atbl-border) 65%, var(--atbl-surface));
   border-radius: 0.3em;
-  background: color-mix(
-    in srgb,
-    var(--at-subtle, #f6f7f7) 65%,
-    var(--at-surface, #fff)
-  );
-  color: var(--at-text, #202124);
+  background: color-mix(in srgb, var(--atbl-subtle) 65%, var(--atbl-surface));
+  color: var(--atbl-text);
   font-size: 0.85em;
   font-weight: 450;
   line-height: inherit;
@@ -18,7 +14,7 @@
   -webkit-box-decoration-break: clone;
 }
 .altertable-data-identifier-path {
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
 }
 .altertable-data-identifier-name {
   font-weight: 550;

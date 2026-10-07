@@ -4,11 +4,11 @@
   max-height: min(320px, var(--available-height));
   overflow: auto;
   padding: 4px;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-control, 7px);
-  background: var(--at-surface, #fff);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 0.18);
-  color: var(--at-text, #202124);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-overlay);
+  color: var(--atbl-text);
 }
 .altertable-export-popover [role='listbox'] {
   outline: none;
@@ -21,18 +21,14 @@
   min-height: 34px;
   padding: 6px 9px;
   border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
+  font-size: var(--atbl-type-label-size);
   outline: none;
-}
-.altertable-export-popover [role='option']:is([data-focused], [data-hovered]) {
-  background: var(--at-subtle, #f6f7f7);
 }
 
 .altertable-export-format {
   flex: none;
-  color: var(--at-muted, #687078);
-  font-size: 11px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-export-all {
   position: relative;
@@ -43,6 +39,6 @@
   top: -5px;
   right: 0;
   left: 0;
-  border-top: 1px solid var(--at-border, #e3e6e8);
+  border-top: 1px solid var(--atbl-border);
   content: '';
 }

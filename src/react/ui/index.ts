@@ -115,3 +115,9 @@ export type { CsvExport, CsvTable } from '@/src/react/ui/csv-export';
 export type { TableWidgetColumn } from '@/src/react/ui/TableWidget';
 
 export type { DataReading, MetricReading } from '@/src/core/reading';
+
+export type {
+  DataAppStyle,
+  DataAppStyleToken,
+  DataAppStyleHooks,
+} from '@/src/react/style-contract';

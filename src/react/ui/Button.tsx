@@ -20,6 +20,9 @@ export function Button({
 }: ButtonProps) {
   return (
     <button
+      data-atbl-focus="ring"
+      data-atbl-control="action"
+      data-atbl-internal-surface="control"
       {...props}
       type={type}
       disabled={disabled}
@@ -40,6 +43,9 @@ export function PressButton({
   Pick<ButtonProps, 'variant' | 'size'> & { className?: string }) {
   return (
     <AriaButton
+      data-atbl-focus="ring"
+      data-atbl-control="action"
+      data-atbl-internal-surface="control"
       {...props}
       data-variant={variant}
       data-size={size}

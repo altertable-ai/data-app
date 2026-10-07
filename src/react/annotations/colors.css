@@ -1,25 +1,26 @@
+/* Public annotation colors: action/hover fill, contrasting text, and selection highlight. */
 :root {
-  --at-annotation-accent: #c026d3;
-  --at-annotation-accent-hover: #a21caf;
-  --at-annotation-on-accent: #fff;
-  --at-annotation-highlight: color-mix(
-    in srgb,
-    var(--at-annotation-accent) 8%,
-    transparent
-  );
+  --atbl-annotation-accent: #c026d3;
+  --atbl-annotation-accent-hover: #a21caf;
+  --atbl-annotation-on-accent: #fff;
 }
 
 .altertable-annotation-trigger,
 .altertable-annotation-composer {
-  --at-focus-outline: 2px solid var(--at-annotation-accent);
+  --atbl-control-selected-surface: var(--atbl-annotation-accent);
+  --atbl-control-selected-text: var(--atbl-annotation-on-accent);
+  --atbl-focus-outline: 2px solid var(--atbl-annotation-accent);
 }
 .altertable-annotation-trigger[aria-pressed='true'],
 .altertable-annotation-trigger:not([aria-pressed]) {
-  background: var(--at-annotation-accent);
-  color: var(--at-annotation-on-accent);
+  background: var(--atbl-annotation-accent);
+  color: var(--atbl-annotation-on-accent);
   border-color: transparent;
 }
-.altertable-annotation-trigger[aria-pressed='true']:hover:not(:disabled),
-.altertable-annotation-trigger:not([aria-pressed]):hover:not(:disabled) {
-  background: var(--at-annotation-accent-hover);
+.altertable-annotation-trigger[aria-pressed='true']:hover:not(:disabled) {
+  --atbl-control-selected-surface: var(--atbl-annotation-accent-hover);
+}
+.altertable-annotation-trigger:not([aria-pressed]) {
+  --atbl-control-hover-surface: var(--atbl-annotation-accent-hover);
+  --atbl-control-pressed-surface: var(--atbl-annotation-accent-hover);
 }

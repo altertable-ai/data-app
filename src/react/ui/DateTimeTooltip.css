@@ -18,5 +18,5 @@
   overflow-wrap: anywhere;
 }
 .altertable-date-time-label {
-  color: var(--at-muted, #626b73);
+  color: var(--atbl-muted);
 }

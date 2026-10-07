@@ -42,7 +42,7 @@ export async function captureAnnotationScreenshot(
     },
     backgroundColor:
       getComputedStyle(document.documentElement)
-        .getPropertyValue('--at-background')
+        .getPropertyValue('--atbl-background')
         .trim() || '#fff',
     filter: node =>
       !(node instanceof Element && node.closest('[data-annotation-ui]')),

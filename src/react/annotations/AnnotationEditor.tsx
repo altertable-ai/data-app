@@ -33,6 +33,7 @@ export function AnnotationEditor({
     : 'Add annotation';
   return (
     <section
+      data-atbl-focus="group"
       data-annotation-ui
       ref={editorRef}
       style={style}
@@ -42,6 +43,7 @@ export function AnnotationEditor({
       aria-label="Annotation editor"
     >
       <textarea
+        data-atbl-control="text"
         aria-label="Annotation text"
         placeholder="Describe what to change…"
         ref={textareaRef}

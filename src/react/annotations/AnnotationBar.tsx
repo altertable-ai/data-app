@@ -286,6 +286,7 @@ export function AnnotationBar({
             variant="ghost"
             size="icon-compact"
             aria-label="Move annotation bar"
+            data-atbl-internal-drag-handle
             disabled={locked}
             onPointerDown={event => {
               const rect = barRef.current?.getBoundingClientRect();
@@ -473,6 +474,8 @@ export function AnnotationBar({
                 >
                   {annotation.context.screenshot && (
                     <button
+                      data-atbl-focus="ring"
+                      data-atbl-control="action"
                       type="button"
                       className="altertable-annotation-thumbnail"
                       aria-label={`View screenshot of ${annotation.target.label}`}

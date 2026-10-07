@@ -38,7 +38,7 @@ For integrating apps into a host, see [embedding](docs/embed.md).
 ## Development
 
 See [Contributing](CONTRIBUTING.md) for repository structure and focused checks.
-Releases use [Release Please and npm trusted publishing](docs/releasing.md).
+Releases use [Release Please and npm trusted publishing](https://github.com/altertable-ai/data-app/blob/main/.github/RELEASING.md).
 
 ## License
 

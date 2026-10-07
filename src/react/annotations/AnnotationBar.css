@@ -7,15 +7,18 @@
   --bar-border: #3b4248;
   --bar-danger: #ffa6a0;
   --bar-danger-surface: #572723;
-  --at-surface: var(--bar-surface);
-  --at-text: var(--bar-text);
-  --at-muted: var(--bar-muted);
-  --at-border: var(--bar-border);
-  --at-focus-outline: 2px solid var(--at-annotation-accent);
-  --at-subtle: color-mix(in srgb, var(--bar-text) 8%, var(--bar-surface));
+  --atbl-control-selected-surface: var(--atbl-subtle);
+  --atbl-control-selected-text: var(--bar-text);
+  --atbl-control-disabled-opacity: 1;
+  --atbl-surface: var(--bar-surface);
+  --atbl-text: var(--bar-text);
+  --atbl-muted: var(--bar-muted);
+  --atbl-border: var(--bar-border);
+  --atbl-focus-outline: 2px solid var(--atbl-annotation-accent);
+  --atbl-subtle: color-mix(in srgb, var(--bar-text) 8%, var(--bar-surface));
   color: var(--bar-text);
   background: var(--bar-surface);
-  font: 14px/1.5 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  font: 14px/1.5 var(--atbl-font);
   box-sizing: border-box;
   border: 1px solid var(--bar-border);
   box-shadow: 0 8px 28px #0003;
@@ -51,7 +54,6 @@
   color: var(--bar-muted);
   width: auto;
   font: inherit;
-  cursor: default;
   transition: none;
 }
 .altertable-annotation-bar .altertable-annotation-bar-count {
@@ -59,20 +61,21 @@
   color: var(--bar-text);
   padding-inline: 6px;
 }
-.altertable-annotation-bar
-  .altertable-button[aria-label='Move annotation bar'] {
-  cursor: grab;
+.altertable-annotation-bar .altertable-button[data-atbl-internal-drag-handle] {
+  --atbl-cursor-action: grab;
   touch-action: none;
 }
 .altertable-annotation-bar
-  .altertable-button[aria-label='Move annotation bar']:active {
-  cursor: grabbing;
+  .altertable-button[data-atbl-internal-drag-handle]:active {
+  --atbl-cursor-action: grabbing;
 }
 .altertable-annotation-bar .altertable-annotation-bar-send {
-  background: var(--at-annotation-accent);
+  --atbl-control-hover-surface: var(--atbl-annotation-accent-hover);
+  --atbl-control-pressed-surface: var(--atbl-annotation-accent-hover);
+  background: var(--atbl-annotation-accent);
   border-color: transparent;
   border-radius: 12px;
-  color: var(--at-annotation-on-accent);
+  color: var(--atbl-annotation-on-accent);
   padding-inline: 14px;
   font-weight: 600;
   line-height: 1.25;
@@ -102,7 +105,7 @@
 }
 .altertable-annotation-bar-row:hover,
 .altertable-annotation-bar-row:focus-within {
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-annotation-bar-row + .altertable-annotation-bar-row {
   border-top: 1px solid var(--bar-border);
@@ -168,21 +171,20 @@
 .altertable-annotation-bar .altertable-button:hover:not(:disabled),
 .altertable-annotation-bar-panel .altertable-button:hover:not(:disabled) {
   color: var(--bar-text);
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-annotation-bar
   .altertable-annotation-bar-send:hover:not(:disabled) {
-  color: var(--at-annotation-on-accent);
-  background: var(--at-annotation-accent-hover);
+  color: var(--atbl-annotation-on-accent);
+  background: var(--atbl-annotation-accent-hover);
 }
 .altertable-annotation-bar .altertable-button:disabled,
 .altertable-annotation-bar-panel .altertable-button:disabled {
-  opacity: 1;
   color: var(--bar-muted);
 }
 .altertable-annotation-bar .altertable-annotation-bar-send:disabled {
   color: var(--bar-muted);
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 .altertable-annotation-bar .altertable-annotation-bar-send {
   position: relative;
@@ -204,11 +206,11 @@
 }
 .altertable-annotation-discard-description {
   margin: 0;
-  color: var(--at-muted, #687078);
-  font: 14px/1.55 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  color: var(--atbl-muted);
+  font: 14px/1.55 var(--atbl-font);
 }
 .altertable-annotation-discard-confirm {
-  color: var(--at-danger, #b42318);
+  color: var(--atbl-danger);
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-annotation-bar-spinner {
@@ -218,7 +220,7 @@
 
 .altertable-annotation-bar .altertable-button[aria-pressed='true'] {
   color: var(--bar-text);
-  background: var(--at-subtle);
+  background: var(--atbl-subtle);
 }
 
 .altertable-annotation-undo {
@@ -230,12 +232,12 @@
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-overlay, 12px);
-  background: var(--at-surface);
-  color: var(--at-text);
-  box-shadow: var(--at-shadow-overlay);
-  font: 13px/1.5 var(--at-font);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-overlay);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: var(--atbl-shadow-overlay);
+  font: 13px/1.5 var(--atbl-font);
 }
 .altertable-annotation-thumbnail {
   width: 56px;
@@ -246,7 +248,7 @@
   border-radius: 6px;
   overflow: hidden;
   background: var(--bar-surface);
-  cursor: zoom-in;
+  --atbl-cursor-action: zoom-in;
 }
 .altertable-annotation-thumbnail img {
   width: 100%;
@@ -255,7 +257,7 @@
   display: block;
 }
 .altertable-annotation-thumbnail:focus-visible {
-  outline: 2px solid var(--at-annotation-accent);
+  outline: 2px solid var(--atbl-annotation-accent);
   outline-offset: 2px;
 }
 .altertable-annotation-preview {
@@ -277,11 +279,4 @@
 
 .altertable-sheet.altertable-annotation-image-dialog[data-placement='center'] {
   width: min(960px, calc(100vw - 32px));
-}
-
-.altertable-annotation-bar
-  .altertable-button[aria-label='Discard all annotations'],
-.altertable-annotation-bar-panel
-  .altertable-button[aria-label^='Delete annotation'] {
-  cursor: pointer;
 }

@@ -4,8 +4,9 @@
   gap: 6px;
   height: 28px;
   min-width: 0;
-  color: var(--at-muted, #687078);
-  font: 12px/1.4 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  color: var(--atbl-muted);
+  font: var(--atbl-type-meta-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
 }
 .altertable-request-hint > svg,
 .altertable-request-hint > button {
@@ -20,7 +21,7 @@
 .altertable-request-hint[data-state='error']
   .altertable-request-hint-copy
   > svg {
-  color: var(--at-danger, #b42318);
+  color: var(--atbl-danger);
 }
 .altertable-request-hint-spinner {
   animation: altertable-request-hint-spin 900ms linear infinite;
@@ -43,14 +44,15 @@
   flex: none;
   width: 78px;
   height: 30px;
-  color: var(--at-muted, #687078);
-  font: 12px/1.4 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  color: var(--atbl-muted);
+  font: var(--atbl-type-meta-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
 }
 .altertable-widget-status .altertable-button {
   gap: 5px;
 }
 .altertable-widget-status .altertable-button svg {
-  color: var(--at-danger, #b42318);
+  color: var(--atbl-danger);
 }
 .altertable-widget-status-announcement {
   position: absolute;
@@ -72,7 +74,7 @@
 .altertable-widget-status-sweep {
   position: absolute;
   inset: 0;
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
   mask-image: linear-gradient(
     90deg,
     transparent 10%,

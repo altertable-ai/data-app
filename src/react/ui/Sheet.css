@@ -15,17 +15,18 @@
   padding: 0;
   overflow: hidden;
   border: 0;
-  border-left: 1px solid var(--at-border, #e3e6e8);
+  border-left: 1px solid var(--atbl-border);
   border-radius: 0;
-  background: var(--at-surface, #fff);
-  color: var(--at-text, #202124);
-  box-shadow: var(--at-shadow-overlay, 0 18px 50px rgb(20 28 40 / 16%));
-  font: 14px/1.55 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: var(--atbl-shadow-overlay);
+  font: var(--atbl-type-body-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
   translate: 100% 0;
   opacity: 0;
   transition:
-    translate 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 220ms ease;
+    translate var(--atbl-duration-slow) cubic-bezier(0.22, 1, 0.36, 1),
+    opacity var(--atbl-duration-slow) var(--atbl-ease-standard);
 }
 .altertable-sheet[data-wide] {
   width: min(960px, 100vw);
@@ -46,9 +47,9 @@
   transition-timing-function: ease-in;
 }
 .altertable-sheet::backdrop {
-  background: var(--at-backdrop, rgb(15 23 30 / 22%));
+  background: var(--atbl-backdrop);
   opacity: 0;
-  transition: opacity 220ms ease;
+  transition: opacity var(--atbl-duration-slow) var(--atbl-ease-standard);
 }
 .altertable-sheet[open]::backdrop {
   opacity: 1;
@@ -72,7 +73,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 24px 28px 20px;
-  border-bottom: 1px solid var(--at-border, #e3e6e8);
+  border-bottom: 1px solid var(--atbl-border);
 }
 .altertable-sheet-header h2 {
   margin: 0;
@@ -84,8 +85,8 @@
 }
 .altertable-sheet-header p {
   margin: 4px 0 0;
-  color: var(--at-muted, #687078);
-  font-size: 13px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-label-size);
   line-height: 1.45;
 }
 .altertable-sheet-actions {
@@ -95,7 +96,7 @@
   margin: -4px -8px 0 0;
 }
 .altertable-sheet-close {
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
 }
 .altertable-sheet-body {
   min-height: 0;
@@ -105,7 +106,7 @@
 }
 .altertable-sheet-footer {
   padding: 16px 28px;
-  border-top: 1px solid var(--at-border, #e3e6e8);
+  border-top: 1px solid var(--atbl-border);
 }
 @media (max-width: 960px) {
   .altertable-sheet[data-wide] {
@@ -176,8 +177,8 @@
   height: fit-content;
   max-height: calc(100dvh - 32px);
   margin: auto;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-overlay, 12px);
+  border: 1px solid var(--atbl-border, #e3e6e8);
+  border-radius: var(--atbl-radius-overlay);
   translate: 0 0;
 }
 .altertable-sheet[data-placement='center'] .altertable-sheet-shell {

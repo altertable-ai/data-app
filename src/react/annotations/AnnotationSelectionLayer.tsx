@@ -147,6 +147,8 @@ export function AnnotationSelectionLayer({
   return (
     <>
       <button
+        data-atbl-focus="ring"
+        data-atbl-control="action"
         type="button"
         ref={layer}
         data-annotation-ui

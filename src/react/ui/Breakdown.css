@@ -8,13 +8,13 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
-  color: var(--at-muted, #687078);
-  font-size: 12px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-breakdown-summary strong {
   flex: none;
-  color: var(--at-text, #202124);
-  font-size: 13px;
+  color: var(--atbl-text);
+  font-size: var(--atbl-type-label-size);
   font-variant-numeric: tabular-nums;
   font-weight: 650;
 }
@@ -23,7 +23,7 @@
   height: 12px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--at-subtle, #f6f7f7);
+  background: var(--atbl-subtle);
 }
 .altertable-breakdown-bar > span {
   display: block;
@@ -44,8 +44,8 @@
   column-gap: 8px;
   min-width: 0;
   padding: 8px 0;
-  border-bottom: 1px solid var(--at-border, #e3e6e8);
-  font-size: 13px;
+  border-bottom: 1px solid var(--atbl-border);
+  font-size: var(--atbl-type-label-size);
 }
 .altertable-breakdown-row dt {
   display: flex;
@@ -53,7 +53,7 @@
   gap: 7px;
   min-width: 0;
   overflow-wrap: anywhere;
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
 }
 .altertable-breakdown-row dd {
   margin: 0;
@@ -70,14 +70,14 @@
   background: var(--altertable-breakdown-color);
 }
 .altertable-breakdown-row[data-empty='true'] .altertable-breakdown-swatch {
-  border: 1px solid var(--at-border, #e3e6e8);
+  border: 1px solid var(--atbl-border);
   background: transparent;
 }
 .altertable-breakdown-value {
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
   font-weight: 650;
 }
 .altertable-breakdown-share {
   min-width: 4ch;
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
 }

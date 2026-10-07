@@ -33,18 +33,19 @@ Skeletonize only the content that needs data. Reuse bindings and the displayed
 source in narrative so values, formatting, and evidence follow filter changes,
 refresh, and failure.
 
-| Task                                       | Documentation                                                     |
-| ------------------------------------------ | ----------------------------------------------------------------- |
-| Define queries, inputs, and result parsing | [Operations](contract.md)                                         |
-| Build views, filters, and request states   | [Views](views.md)                                                 |
-| Introduce and explain visualizations       | [Narrative text](widgets.md#narrative-text)                       |
-| Find formatters and presentation helpers   | [App helpers](formatting-and-appearance.md)                       |
-| Register source names                      | [Source identifiers](data-context.md#register-source-identifiers) |
-| Choose date and field filters              | [Filter variables](variables.md)                                  |
-| Handle refresh and stale results           | [Displayed results](views.md#preserve-displayed-results)          |
-| Export displayed data as CSV               | [CSV export](stories-and-export.md#export-displayed-data-as-csv)  |
-| Render widgets and custom visuals          | [Widgets](widgets.md)                                             |
-| Bind definitions and source evidence       | [Data context](data-context.md#bind-evidence)                     |
+| Task                                             | Documentation                                                     |
+| ------------------------------------------------ | ----------------------------------------------------------------- |
+| Choose components, CSS tokens, and styling hooks | [Styling](styling.md)                                             |
+| Define queries, inputs, and result parsing       | [Operations](contract.md)                                         |
+| Build views, filters, and request states         | [Views](views.md)                                                 |
+| Introduce and explain visualizations             | [Narrative text](widgets.md#narrative-text)                       |
+| Find formatters and presentation helpers         | [App helpers](formatting-and-appearance.md)                       |
+| Register source names                            | [Source identifiers](data-context.md#register-source-identifiers) |
+| Choose date and field filters                    | [Filter variables](variables.md)                                  |
+| Handle refresh and stale results                 | [Displayed results](views.md#preserve-displayed-results)          |
+| Export displayed data as CSV                     | [CSV export](stories-and-export.md#export-displayed-data-as-csv)  |
+| Render widgets and custom visuals                | [Widgets](widgets.md)                                             |
+| Bind definitions and source evidence             | [Data context](data-context.md#bind-evidence)                     |
 
 Declare reusable [datasets and metrics](widgets.md#declare-datasets-and-metrics)
 on the view so tables, exports, and stories share values and evidence.
@@ -56,6 +57,9 @@ findings that answer the reader's question, rather than every row or chart.
 Use the [standard layout](layout.md) and built-in toolbar actions.
 
 ## Verify the app
+
+Follow the [UI quality contract](ui-quality.md) for hierarchy, responsive
+composition, typography, and control states.
 
 Verify findings against the source and the user's question. Distinguish measured
 zero, unavailable values, and empty results. Check filters, refresh, loading,

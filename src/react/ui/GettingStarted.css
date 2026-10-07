@@ -1,6 +1,6 @@
 .starter-eyebrow {
-  color: var(--at-muted, #687078);
-  font-size: 11px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -11,9 +11,9 @@
   gap: 20px;
   min-width: 0;
   padding: 30px;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-surface, 12px);
-  background: var(--at-surface, #fff);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
 }
 .starter-connection-icon {
   display: grid;
@@ -22,24 +22,23 @@
   width: 48px;
   height: 48px;
   border-radius: 14px;
-  background: var(--at-subtle, #f6f7f7);
-  color: var(--at-muted, #687078);
+  background: var(--atbl-subtle);
+  color: var(--atbl-muted);
 }
 .starter-connection[data-state='connected'] .starter-connection-icon {
-  background: color-mix(
-    in srgb,
-    var(--at-accent, #405d47) 12%,
-    var(--at-surface, #fff)
+  background: var(
+    --atbl-accent-subtle,
+    color-mix(
+      in srgb,
+      var(--atbl-accent) var(--atbl-accent-subtle-strength),
+      var(--atbl-surface)
+    )
   );
-  color: var(--at-accent, #405d47);
+  color: var(--atbl-accent);
 }
 .starter-connection[data-state='error'] .starter-connection-icon {
-  background: color-mix(
-    in srgb,
-    var(--at-danger, #b42318) 9%,
-    var(--at-surface, #fff)
-  );
-  color: var(--at-danger, #b42318);
+  background: var(--atbl-danger-subtle);
+  color: var(--atbl-danger);
 }
 .starter-connection[data-state='checking'] .starter-connection-icon svg {
   animation: starter-spin 1.5s linear infinite;
@@ -50,24 +49,27 @@
 }
 .starter-connection h2 {
   margin: 8px 0 6px;
-  font-family: var(--at-font-heading, inherit);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-size: clamp(26px, 3.2vw, 36px);
-  font-weight: 680;
+  font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: -0.035em;
   line-height: 1.15;
 }
 .starter-connection p {
   max-width: 62ch;
   margin: 0;
-  color: var(--at-muted, #687078);
-  font-size: 14px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-body-size);
   line-height: 1.55;
 }
 .starter-connection small {
   display: block;
   margin-top: 14px;
-  color: var(--at-muted, #687078);
-  font-size: 12px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
 }
 .starter-connection > .altertable-button {
   flex: none;
@@ -79,15 +81,18 @@
 }
 .starter-next-heading h2 {
   margin: 8px 0 4px;
-  font-family: var(--at-font-heading, inherit);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
   font-size: clamp(20px, 2.4vw, 26px);
-  font-weight: 680;
+  font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: -0.025em;
 }
 .starter-next-heading p {
   margin: 0;
-  color: var(--at-muted, #687078);
-  font-size: 14px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-body-size);
   line-height: 1.5;
 }
 .starter-steps {
@@ -102,31 +107,31 @@
 .starter-steps li {
   min-width: 0;
   padding: 20px;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-surface, 12px);
-  background: var(--at-surface, #fff);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
   counter-increment: starter-step;
 }
 .starter-steps li::before {
   display: block;
   margin-bottom: 22px;
-  color: var(--at-accent, #405d47);
-  font-size: 12px;
+  color: var(--atbl-accent);
+  font-size: var(--atbl-type-meta-size);
   font-weight: 700;
   content: '0' counter(starter-step);
 }
 .starter-steps strong {
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
   font-weight: 650;
 }
 .starter-steps p {
   margin: 8px 0 0;
-  color: var(--at-muted, #687078);
-  font-size: 13px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-label-size);
   line-height: 1.5;
 }
 .starter-steps code {
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
   font-size: 0.92em;
   overflow-wrap: anywhere;
 }

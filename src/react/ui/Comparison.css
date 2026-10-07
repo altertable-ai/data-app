@@ -5,8 +5,8 @@
   margin: 0;
 }
 .altertable-comparison-visual figcaption {
-  color: var(--at-muted, #687078);
-  font-size: 13px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-label-size);
   font-weight: 650;
 }
 .altertable-comparison-row {
@@ -16,18 +16,26 @@
 .altertable-comparison-row > div {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
 }
 .altertable-comparison-row > div > span {
-  color: var(--at-muted, #687078);
-  font-size: 13px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-label-size);
 }
 .altertable-comparison-row strong {
-  color: var(--at-text, #202124);
-  font-family: var(--at-font-heading, inherit);
-  font-size: clamp(22px, 3vw, 32px);
+  color: var(--atbl-text);
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
+  font-weight: var(--atbl-type-emphasis-weight);
+  line-height: var(--atbl-type-metric-leading);
+  font-size: var(--atbl-type-metric-size);
   font-variant-numeric: tabular-nums;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
   letter-spacing: -0.04em;
 }
 .altertable-comparison-track {
@@ -36,19 +44,19 @@
   height: 10px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--at-subtle, #f6f7f7);
+  background: var(--atbl-subtle);
 }
 .altertable-comparison-track > span {
   display: block;
   min-width: 2px;
   height: 100%;
   border-radius: inherit;
-  background: var(--at-accent, #405d47);
+  background: var(--atbl-accent);
 }
 .altertable-comparison-row[data-period='previous']
   .altertable-comparison-track
   > span {
-  background: var(--at-muted, #687078);
+  background: var(--atbl-muted);
   opacity: 0.45;
 }
 .altertable-comparison-change {
@@ -56,16 +64,16 @@
   align-items: center;
   gap: 5px;
   margin: 0;
-  color: var(--at-muted, #687078);
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
   font-variant-numeric: tabular-nums;
 }
 .altertable-comparison-change[data-tone='good'] {
-  color: var(--at-accent, #405d47);
+  color: var(--atbl-positive, var(--atbl-accent));
 }
 .altertable-comparison-change[data-tone='bad'] {
-  color: var(--at-danger, #b42318);
+  color: var(--atbl-negative, var(--atbl-danger));
 }
 .altertable-about-visual .altertable-comparison-visual {
   gap: 12px;
@@ -77,7 +85,7 @@
   gap: clamp(22px, 4vh, 38px);
 }
 .altertable-comparison-visual[data-emphasis='story'] figcaption {
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
 }
 .altertable-comparison-visual[data-emphasis='story']
   .altertable-comparison-row[data-period='current']
@@ -95,7 +103,7 @@
 .altertable-comparison-visual[data-emphasis='story']
   .altertable-comparison-row[data-period='previous']
   strong {
-  font-size: clamp(22px, 2.6vw, 30px);
+  font-size: var(--atbl-type-metric-size);
 }
 .altertable-comparison-visual[data-emphasis='story']
   .altertable-comparison-track {
@@ -103,7 +111,7 @@
 }
 .altertable-comparison-visual[data-emphasis='story']
   .altertable-comparison-change {
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
 }
 .altertable-about-visual
   .altertable-comparison-visual[data-emphasis='story']

@@ -1,0 +1,127 @@
+/* Public data-atbl-control: action, help, or text cursor ownership.
+   Disabled and busy states share the corresponding inherited cursor tokens. */
+[data-atbl-control='action'],
+[data-atbl-internal-prose] a {
+  cursor: var(--atbl-cursor-action);
+}
+[data-atbl-control='help'] {
+  cursor: var(--atbl-cursor-help);
+}
+[data-atbl-control='text'] {
+  cursor: text;
+}
+[data-atbl-control]:is(
+  :disabled,
+  [data-disabled],
+  [aria-disabled='true'],
+  [data-unavailable]
+),
+[data-atbl-control]:has(> input:disabled) {
+  cursor: var(--atbl-cursor-disabled);
+}
+
+/* Native and React Aria controls share state precedence: disabled, selected,
+   pressed, hovered, then idle. Busy is independent and preserves geometry. */
+[data-atbl-control='action']:is(
+  :disabled,
+  [data-disabled],
+  [aria-disabled='true']
+),
+[data-atbl-control='help']:is(
+  :disabled,
+  [data-disabled],
+  [aria-disabled='true']
+),
+[data-atbl-control]:has(> input:disabled) {
+  opacity: var(--atbl-control-disabled-opacity);
+}
+[data-atbl-control][aria-busy='true']:not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  cursor: var(--atbl-cursor-busy);
+}
+:where(
+    [data-atbl-internal-surface='control'],
+    [data-atbl-internal-surface='option']
+  ):is(:hover, [data-hovered], [data-focused], [data-open='true']):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  /* Optional enabled-hover fill; otherwise use the local subtle surface. */
+  background: var(--atbl-control-hover-surface, var(--atbl-subtle));
+}
+:where(
+    [data-atbl-internal-surface='control'],
+    [data-atbl-internal-surface='option']
+  ):is(:active, [data-pressed]):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  /* Optional pressed fill; otherwise mix local text into the surface. */
+  background: var(
+    --atbl-control-pressed-surface,
+    color-mix(in srgb, var(--atbl-text) 8%, var(--atbl-surface))
+  );
+}
+:where(
+    [data-atbl-internal-surface='control'],
+    [data-atbl-internal-surface='option']
+  ):is(
+    [aria-pressed='true'],
+    [data-selected],
+    [aria-current='true'],
+    :has(> input:checked)
+  ):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  /* Optional selected fill. --atbl-accent-subtle derives from local accent/surface. */
+  background: var(
+    --atbl-control-selected-surface,
+    var(
+      --atbl-accent-subtle,
+      color-mix(
+        in srgb,
+        var(--atbl-accent) var(--atbl-accent-subtle-strength),
+        var(--atbl-surface)
+      )
+    )
+  );
+  /* Optional selected foreground; defaults to the local accent. */
+  color: var(--atbl-control-selected-text, var(--atbl-accent));
+}
+[data-atbl-internal-surface='field']:is(:hover, [data-hovered]):not(
+    :has(input:disabled),
+    [data-disabled],
+    [data-invalid],
+    [aria-invalid='true'],
+    :has(input[aria-invalid='true'])
+  ) {
+  /* Optional enabled-field hover border; disabled/invalid fields keep their own border. */
+  border-color: var(
+    --atbl-control-hover-border,
+    color-mix(in srgb, var(--atbl-muted) 45%, var(--atbl-border))
+  );
+}
+[data-atbl-internal-surface='field']:is([data-invalid], [aria-invalid='true']),
+[data-atbl-internal-surface='field']:has(input[aria-invalid='true']) {
+  border-color: var(--atbl-danger);
+  --atbl-focus-color: var(--atbl-danger);
+}
+
+[data-atbl-control='text']:is(
+  :disabled,
+  [data-disabled],
+  [aria-disabled='true']
+) {
+  color: var(--atbl-muted);
+}

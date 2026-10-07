@@ -1,7 +1,6 @@
 .altertable-table-widget-content {
   min-width: 0;
-  padding: var(--at-space-md, 16px) var(--at-space-lg, 24px)
-    var(--at-space-lg, 24px);
+  padding: var(--atbl-space-md) var(--atbl-space-lg) var(--atbl-space-lg);
 }
 :where(.altertable-visualization-widget-content)
   > .altertable-table-widget-content {
@@ -17,8 +16,8 @@
   flex-wrap: wrap;
   gap: 8px 16px;
   padding: 12px 10px 4px;
-  color: var(--at-muted, #687078);
-  font-size: 12px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
 .altertable-table-pagination-controls {

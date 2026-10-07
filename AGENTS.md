@@ -9,6 +9,13 @@ both derived from the displayed result. Setup and static screens may omit them.
 Follow [app authoring](docs/app-authoring.md) for the shared workflow, the data app
 and local data app paths, and task-specific documentation.
 
+## Styling
+
+Use components and typed props first; customize through app-owned `className`
+and public tokens. Follow [Styling](docs/styling.md)
+and [UI quality](docs/ui-quality.md).
+Do not copy package classes onto markup or select private descendants.
+
 ## Documentation
 
 Use `<Component>` notation for React components. Keep guidance concise; leave
@@ -35,3 +42,6 @@ static displays, and deliberately custom UI; see [direct composition](docs/ui.md
 Prefer derivation over repeated configuration. Keep static context outside loading boundaries. Derive labels, findings, and
 exports from the displayed result and its input. Edit app-owned files; installed
 package files are dependencies.
+
+Keep `docs/` focused on knowledge agents need to build data apps. Put package
+implementation, testing, and release guidance in `CONTRIBUTING.md`.

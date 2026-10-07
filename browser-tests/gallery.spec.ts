@@ -1082,3 +1082,34 @@ test('chart tooltips dismiss when their chart scrolls horizontally', async ({
   });
   await expect(page.getByRole('tooltip')).toHaveCount(0);
 });
+
+test('date picker hooks preserve segment and calendar keyboard focus', async ({
+  page,
+}) => {
+  await page.goto('/gallery?view=filters#dates');
+  const picker = page.locator('#dates .altertable-date-range').first();
+  await page.keyboard.press('Tab');
+  const segment = picker.getByRole('spinbutton').first();
+  await segment.focus();
+  await expect(segment).toHaveCSS('outline-style', 'solid');
+  await expect(segment).toHaveCSS('outline-offset', '-1px');
+  await expect(picker.locator('[data-atbl-focus="group"]')).toHaveCSS(
+    'outline-style',
+    'solid'
+  );
+  await picker
+    .getByRole('button', { name: 'Choose dates Gallery dates', exact: true })
+    .press('Enter');
+  const popover = page.locator('.altertable-date-range-popover');
+  await expect(popover).toBeVisible();
+  const cell = popover
+    .locator(
+      '.react-aria-CalendarCell:not([data-disabled]):not([data-unavailable]):not([data-outside-month])'
+    )
+    .first();
+  await cell.focus();
+  await expect(cell).toHaveCSS('outline-style', 'solid');
+  await expect(cell).toHaveCSS('outline-offset', '-1px');
+  await page.keyboard.press('Escape');
+  await expect(popover).not.toBeVisible();
+});

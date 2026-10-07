@@ -146,6 +146,7 @@ test('bottom bar reviews, focuses, hides and deletes saved annotations', async (
   await confirmation
     .getByRole('button', { name: 'Cancel', exact: true })
     .click();
+  await expect(confirmation).toBeHidden();
   await expect(bar).toContainText('Annotating · 1');
   await page
     .getByRole('button', { name: 'Discard all annotations', exact: true })
@@ -629,8 +630,8 @@ test('review minimizes, trash is actionable, tooltips layer above review and Sen
   await expect(send).toHaveCSS('background-color', 'rgb(192, 38, 211)');
   await expect(send).toHaveCSS('color', 'rgb(255, 255, 255)');
   await page.locator('.playground-host').evaluate(element => {
-    element.style.setProperty('--at-accent', '#00ff00');
-    element.style.setProperty('--at-on-accent', '#000000');
+    element.style.setProperty('--atbl-accent', '#00ff00');
+    element.style.setProperty('--atbl-on-accent', '#000000');
   });
   await expect(send).toHaveCSS('background-color', 'rgb(192, 38, 211)');
   await expect(send).toHaveCSS('color', 'rgb(255, 255, 255)');

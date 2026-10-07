@@ -2,13 +2,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--at-space-lg, 24px);
-  padding: var(--at-space-lg, 24px);
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-surface, 12px);
-  background: var(--at-surface, #fff);
-  color: var(--at-muted, #687078);
-  font-size: 13px;
+  gap: var(--atbl-space-lg);
+  padding: var(--atbl-space-lg);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-label-size);
   line-height: 1.5;
 }
 .altertable-status-panel[data-status='error'] {
@@ -26,7 +26,7 @@
 }
 .altertable-status-panel[data-status='error'] > svg {
   margin-top: 1px;
-  color: var(--at-danger, #b42318);
+  color: var(--atbl-danger);
 }
 .altertable-status-panel[data-status='error'] .altertable-status-action {
   grid-column: 2;
@@ -35,7 +35,7 @@
   min-width: 0;
 }
 .altertable-status-panel strong {
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
   font-weight: 650;
 }
 .altertable-status-panel p {

@@ -51,6 +51,8 @@ export function AnnotationMarkers({
       {pinsVisible &&
         pins.map(pin => (
           <button
+            data-atbl-focus="ring"
+            data-atbl-control="action"
             type="button"
             data-annotation-ui
             key={pin.id}

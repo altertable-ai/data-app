@@ -4,22 +4,31 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  padding: var(--at-layout-gap, 24px);
-  background: var(--at-background, #fff);
+  padding: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
+  background: var(--atbl-background);
 }
 .altertable-data-app-skeleton-content {
   display: flex;
   flex-direction: column;
-  gap: var(--at-layout-gap, 24px);
+  gap: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
   width: 100%;
-  max-width: var(--at-content-width, 960px);
+  max-width: var(--atbl-content-width);
   min-width: 0;
   margin-inline: auto;
 }
 .altertable-data-app-skeleton-body {
   display: flex;
   flex-direction: column;
-  gap: var(--at-layout-gap, 24px);
+  gap: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
   min-width: 0;
 }
 .altertable-data-app-skeleton-header,
@@ -34,7 +43,7 @@
 .altertable-data-app-skeleton-chart {
   display: flex;
   align-items: flex-end;
-  gap: var(--at-space-sm, 8px);
+  gap: var(--atbl-space-sm);
   height: 180px;
 }
 .altertable-data-app-skeleton-chart > * {
@@ -48,7 +57,7 @@
 .altertable-data-app-skeleton-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
-  gap: var(--at-space-md, 16px);
+  gap: var(--atbl-space-md);
 }
 .altertable-data-app-skeleton-row > * {
   height: 16px;

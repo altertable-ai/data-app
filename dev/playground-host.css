@@ -13,11 +13,16 @@ body:has(.playground-host) #root {
   --host-text: #f2f3f4;
   --host-muted: #aeb5bc;
   --host-border: #3b4248;
-  --at-border: var(--host-border);
-  --at-surface: var(--host-surface);
-  --at-text: var(--host-text);
-  --at-subtle: var(--host-hover);
-  --at-muted: var(--host-muted);
+  --host-focus: #7c9dd6;
+  --host-pending: #c99b73;
+  --host-success: #83ad95;
+  --host-danger: #d68b9d;
+  --host-shadow: 0 4px 16px #0002;
+  --atbl-border: var(--host-border);
+  --atbl-surface: var(--host-surface);
+  --atbl-text: var(--host-text);
+  --atbl-subtle: var(--host-hover);
+  --atbl-muted: var(--host-muted);
   color-scheme: dark;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -91,7 +96,7 @@ body:has(.playground-host) #root {
 }
 
 .playground-controls button:focus-visible {
-  outline: 2px solid #7c9dd6;
+  outline: 2px solid var(--host-focus);
   outline-offset: 2px;
 }
 
@@ -99,15 +104,15 @@ body:has(.playground-host) #root {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #c99b73;
+  background: var(--host-pending);
 }
 
 .playground-connection[data-status='ready'] {
-  background: #83ad95;
+  background: var(--host-success);
 }
 
 .playground-connection[data-status='failed'] {
-  background: #d68b9d;
+  background: var(--host-danger);
 }
 
 .playground-stage {
@@ -146,7 +151,6 @@ body:has(.playground-host) #root {
   opacity: 0.4;
   cursor: default;
 }
-
 .playground-annotate {
   position: relative;
 }
@@ -158,8 +162,8 @@ body:has(.playground-host) #root {
   min-width: 16px;
   padding: 1px 4px;
   font-size: 10px;
-  background: var(--at-annotation-accent);
-  color: var(--at-annotation-on-accent);
+  background: var(--atbl-annotation-accent);
+  color: var(--atbl-annotation-on-accent);
 }
 
 .playground-submission-status {
@@ -172,7 +176,7 @@ body:has(.playground-host) #root {
   background: var(--host-text);
   color: var(--host-background);
   font: inherit;
-  box-shadow: 0 4px 16px #0002;
+  box-shadow: var(--host-shadow);
 }
 
 .playground-persistence-status {
@@ -182,19 +186,19 @@ body:has(.playground-host) #root {
   z-index: 1300;
   padding: 6px 10px;
   border-radius: 8px;
-  color: var(--at-text);
-  background: var(--at-surface);
+  color: var(--atbl-text);
+  background: var(--atbl-surface);
   font-size: 12px;
 }
 
 .playground-controls .playground-annotate[aria-pressed='true'] {
-  background: var(--at-annotation-accent);
-  color: var(--at-annotation-on-accent);
+  background: var(--atbl-annotation-accent);
+  color: var(--atbl-annotation-on-accent);
 }
 .playground-controls
   .playground-annotate[aria-pressed='true']:hover:not(:disabled) {
-  background: var(--at-annotation-accent-hover);
+  background: var(--atbl-annotation-accent-hover);
 }
 .playground-controls .playground-annotate:focus-visible {
-  outline-color: var(--at-annotation-accent);
+  outline-color: var(--atbl-annotation-accent);
 }

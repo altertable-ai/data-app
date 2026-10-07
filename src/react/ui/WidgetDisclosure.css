@@ -7,11 +7,10 @@
   gap: 8px;
   min-height: 38px;
   padding: 0 10px;
-  border-radius: var(--at-radius-control, 7px);
-  color: var(--at-text, #202124);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+  border-radius: var(--atbl-radius-control);
+  color: var(--atbl-text);
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
   list-style: none;
 }
 .altertable-widget-disclosure > summary::-webkit-details-marker {
@@ -19,15 +18,11 @@
 }
 .altertable-widget-disclosure > summary:hover,
 .altertable-widget-disclosure[open] > summary {
-  background: var(--at-subtle, #f6f7f7);
-}
-.altertable-widget-disclosure > summary:focus-visible {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
+  background: var(--atbl-subtle);
 }
 .altertable-widget-disclosure > summary svg {
-  color: var(--at-muted, #687078);
-  transition: transform 160ms ease;
+  color: var(--atbl-muted);
+  transition: transform var(--atbl-duration-normal) var(--atbl-ease-standard);
 }
 .altertable-widget-disclosure[open] > summary svg {
   transform: rotate(180deg);

@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useState } from 'react';
 import {
-  Tabs,
+  useCallback,
+  useEffect,
+  useState,
+  type ComponentPropsWithRef,
+} from 'react';
+import { classNames } from '@/src/react/ui/classNames';
+import {
+  Tabs as AriaTabs,
   TabList,
-  Tab,
+  Tab as AriaTab,
   TabPanels,
-  TabPanel,
+  TabPanel as AriaTabPanel,
 } from 'react-aria-components/Tabs';
 import {
   searchParams,
@@ -13,7 +19,41 @@ import {
 } from '@/src/react/ui/search';
 
 /** React Aria tabs with keyboard and ARIA behavior; pair each Tab and TabPanel by stable id. */
-export { Tabs, TabList, Tab, TabPanels, TabPanel };
+export { TabList, TabPanels };
+
+export function Tab(props: ComponentPropsWithRef<typeof AriaTab>) {
+  return (
+    <AriaTab
+      data-atbl-internal-surface="tab"
+      data-atbl-focus="ring"
+      data-atbl-control="action"
+      {...props}
+    />
+  );
+}
+
+export function TabPanel(props: ComponentPropsWithRef<typeof AriaTabPanel>) {
+  return <AriaTabPanel data-atbl-focus="ring" {...props} />;
+}
+
+export function Tabs({
+  className,
+  ...props
+}: ComponentPropsWithRef<typeof AriaTabs>) {
+  return (
+    <AriaTabs
+      {...props}
+      className={state =>
+        classNames(
+          'altertable-tabs',
+          typeof className === 'function'
+            ? className(state)
+            : (className ?? 'react-aria-Tabs')
+        )
+      }
+    />
+  );
+}
 
 /** Keep a page-level tab in `?view=`; reserve `?tab=` for the inspect sheet. */
 export function useViewTab<View extends string>(

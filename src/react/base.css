@@ -1,0 +1,42 @@
+/* Components may be installed in a host document without taking over its page. */
+:where([class^='altertable-'], [class*=' altertable-']),
+:where([class^='altertable-'], [class*=' altertable-']) *,
+:where([class^='starter-'], [class*=' starter-']) * {
+  box-sizing: border-box;
+}
+:where([class^='altertable-'], [class*=' altertable-']) button {
+  font: inherit;
+}
+/* Only the document UI owner enables the page baseline. Portals share its theme. */
+:root[data-atbl-appearance] {
+  scrollbar-gutter: stable;
+  font-family: var(--atbl-font);
+  color: var(--atbl-text);
+  background: var(--atbl-background);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+:root[data-atbl-theme='light'] {
+  color-scheme: light;
+}
+:root[data-atbl-theme='dark'] {
+  color-scheme: dark;
+}
+:root[data-atbl-appearance] body,
+:root[data-atbl-appearance] #root {
+  margin: 0;
+}
+
+.altertable-sr-only {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

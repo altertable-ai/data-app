@@ -13,10 +13,9 @@
   height: auto;
 }
 .altertable-pie-slice {
-  stroke: var(--at-surface, #fff);
+  stroke: var(--atbl-surface);
   stroke-width: 2;
-  cursor: pointer;
-  transition: opacity 140ms ease;
+  transition: opacity var(--atbl-duration-fast) var(--atbl-ease-standard);
 }
 .altertable-pie-plot
   svg:has(.altertable-pie-slice[data-active])
@@ -29,13 +28,13 @@
   }
 }
 .altertable-pie-empty {
-  fill: var(--at-subtle, #f6f7f7);
-  stroke: var(--at-border, #e3e6e8);
+  fill: var(--atbl-subtle);
+  stroke: var(--atbl-border);
 }
 .altertable-pie-empty-label {
   position: absolute;
-  color: var(--at-muted, #687078);
-  font-size: 12px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-pie-legend {
   display: grid;
@@ -49,16 +48,15 @@
   min-width: 0;
   padding: 8px 4px;
   border: 0;
-  border-bottom: 1px solid var(--at-border, #e3e6e8);
+  border-bottom: 1px solid var(--atbl-border);
   background: transparent;
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
   text-align: left;
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
-  cursor: pointer;
 }
 .altertable-pie-legend [data-open] > button {
-  background: var(--at-subtle, #f6f7f7);
+  background: var(--atbl-subtle);
 }
 .altertable-pie-legend button:focus {
   outline: none;
@@ -75,7 +73,7 @@
   min-width: 0;
 }
 .altertable-pie-legend button > span:last-child {
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
   min-width: 4ch;
   text-align: right;
 }
