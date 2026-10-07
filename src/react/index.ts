@@ -40,8 +40,6 @@ export { Comparison } from '@/src/react/ui/Comparison';
 export type { ComparisonProps } from '@/src/react/ui/Comparison';
 export { MetricWidget } from '@/src/react/widgets';
 export type { MetricWidgetProps } from '@/src/react/widgets';
-export { BarChart } from '@/src/react/ui/BarChart';
-export type { BarChartProps, BarChartItem } from '@/src/react/ui/BarChart';
 export { EmptyState } from '@/src/react/ui/EmptyState';
 export type { EmptyStateProps } from '@/src/react/ui/EmptyState';
 export { Skeleton } from '@/src/react/ui/Skeleton';
@@ -93,21 +91,3 @@ export type {
   MetricReading,
   MetricValues,
 } from '@/src/core/reading';
-
-export { LineChart } from '@/src/react/ui/LineChart';
-export type { LineChartProps, LineChartItem } from '@/src/react/ui/LineChart';
-export { AreaChart } from '@/src/react/ui/AreaChart';
-export type { AreaChartProps, AreaChartItem } from '@/src/react/ui/AreaChart';
-export { PieChart } from '@/src/react/ui/PieChart';
-export type { PieChartProps, PieChartItem } from '@/src/react/ui/PieChart';
-export { ScatterChart } from '@/src/react/ui/ScatterChart';
-export type {
-  ScatterChartProps,
-  ScatterChartItem,
-} from '@/src/react/ui/ScatterChart';
-export { defineChartItems } from '@/src/react/ui/chart-data';
-export type {
-  ChartItem,
-  ChartKind,
-  ValueChartProps,
-} from '@/src/react/ui/chart-data';

@@ -19,6 +19,18 @@ custom inspection and presentation. Supply registered context and evidence, and
 derive findings from the displayed data. Standard widgets and `<DataApp>`
 already own these experiences.
 
-For framework mounting, `<DataAppProvider>` supplies the query provider.
+For framework mounting, `<DataAppProvider>` supplies shared requests and one inspection sheet. Wrap custom shells in it.
 Call `injectDataAppStyles()` before mounting either entry; imports do not install
 styles.
+
+## Charts
+
+Import `BarChart`, `LineChart`, `AreaChart`, `PieChart`, or `ScatterChart` from
+`/react/ui`. Compose the visual inside a bound `<VisualizationWidget>` so its
+loading state, evidence, and inspection come from the displayed result.
+Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
+values must be nonnegative. Use `formatValue` for domain formatting.
+
+Line and area charts show equally spaced samples; include missing periods in the
+input. Pie slices represent mutually exclusive parts of one total. Scatter points
+represent independent X/Y observations.

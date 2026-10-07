@@ -12,7 +12,7 @@ nested period or field-filter inputs. Mappings must preserve the selected values
 
 `dimensionFilter()` from `/contract` requires exactly one option source: fixed `options` or a `facet`.
 Use `defineFacetFilter()` to bind a facet operation and its typed input. `<DimensionPicker>` offers missing values separately and keeps selected values
-available when they have zero matches. `<BarChart>` can share controlled selection with the picker.
+available when they have zero matches.
 
 ## Declare controls once
 

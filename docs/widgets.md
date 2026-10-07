@@ -78,8 +78,9 @@ filtered data to the text and its related visualization.
 
 ## Custom visuals and controls
 
-`<Ranking>`, `<Breakdown>`, `<BarChart>`, and `<Comparison>`
-compose inside authored widgets. A visualization's `views` declaration keeps
+`<Ranking>`, `<Breakdown>`, and `<Comparison>`
+compose inside authored widgets. Use [built-in charts](ui.md#charts) from `/react/ui`
+inside a bound `<VisualizationWidget>` for displayed result items. A visualization's `views` declaration keeps
 alternate-view selection shared with its inspection sheet. Give views stable IDs
 and keep interactive state above the widget, since inspection may render it again.
 

@@ -106,9 +106,5 @@ export type {
   ScatterChartProps,
   ScatterChartItem,
 } from '@/src/react/ui/ScatterChart';
-export { defineChartItems } from '@/src/react/ui/chart-data';
-export type {
-  ChartItem,
-  ChartKind,
-  ValueChartProps,
-} from '@/src/react/ui/chart-data';
+export { BarChart } from '@/src/react/ui/BarChart';
+export type { BarChartProps, BarChartItem } from '@/src/react/ui/BarChart';

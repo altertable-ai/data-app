@@ -1,3 +1,4 @@
+import * as authoring from '@altertable/data-app/react';
 import {
   createDataHooks,
   DataApp,
@@ -72,11 +73,11 @@ const withoutView: DataAppProps<number, Record<string, never>> = {
 void hooks.useView;
 // @ts-expect-error A request state is not a declared view.
 <DataSection view={{ kind: 'ready', data: 1, input: {} }} {...content} />;
-// @ts-expect-error Default metrics require registered definitions and readings.
+// @ts-expect-error Default metrics require view bindings and a displayed source.
 <MetricWidget label="Count" value={1} format={{ kind: 'count' }} />;
 const rawTable: TableWidgetProps<number> = {
   title: 'Rows',
-  // @ts-expect-error Default tables consume readings, not directly authored row state.
+  // @ts-expect-error Default tables derive rows from a dataset binding.
   rows: [1],
   rowKey: (value: number) => String(value),
   columns: [{ id: 'value', header: 'Value', cell: String }],
@@ -84,3 +85,23 @@ const rawTable: TableWidgetProps<number> = {
 };
 <TableWidget {...rawTable} />;
 void [withoutView, useAppVariables, PresentStory, AboutData];
+
+// @ts-expect-error Request subscriptions belong to app and section components.
+void view.useResult;
+// @ts-expect-error Apps derive exports from listed datasets.
+void view.csvExport;
+// @ts-expect-error Raw CSV callbacks are outside the standard data app API.
+<DataApp {...app} csvExport={() => ({ filename: 'manual.csv', tables: [] })} />;
+// @ts-expect-error At least one dataset is required for the app's displayed results.
+<DataApp {...app} datasets={[]} />;
+<TableWidget
+  dataset={dataset}
+  source={{ data: 1, input: {} }}
+  // @ts-expect-error A table derives its reading from the dataset and source.
+  reading={{ loading: false, value: [1] }}
+/>;
+
+// @ts-expect-error Raw charts belong to direct UI composition.
+void authoring.BarChart;
+// @ts-expect-error Charts accept ordinary arrays; no preparation factory is public.
+void authoring.defineChartItems;

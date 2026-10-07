@@ -25,6 +25,7 @@ import {
   TabPanel,
   useViewTab,
 } from '@altertable/data-app/react/ui';
+import { injectDataAppStyles } from '@altertable/data-app/react/ui';
 import {
   PeriodSummary,
   Breakdown,
@@ -34,14 +35,10 @@ import {
   Stack,
   Tooltip,
   TextContent,
-  injectDataAppStyles,
-} from '@altertable/data-app/react/ui';
-import { VariableBar } from '@/src/react/ui/VariableBar';
-import {
-  BarChart,
-  type WidgetEvidence,
-  mountDataApp,
 } from '@altertable/data-app/react';
+import { VariableBar } from '@/src/react/ui/VariableBar';
+import { type WidgetEvidence, mountDataApp } from '@altertable/data-app/react';
+import { BarChart } from '@altertable/data-app/react/ui';
 import { defineDataContent } from '@/src/react/content';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';
 import { resolveDataView } from '@/src/core/data-view';

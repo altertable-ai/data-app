@@ -33,8 +33,9 @@ import {
   Stack,
   Tooltip,
   UpdatedAt,
-} from '@altertable/data-app/react/ui';
-import { Comparison, BarChart } from '@altertable/data-app/react';
+} from '@altertable/data-app/react';
+import { Comparison } from '@altertable/data-app/react';
+import { BarChart } from '@altertable/data-app/react/ui';
 import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';
 import { Kbd } from '@/src/react/ui/Kbd';
@@ -984,21 +985,23 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           <WidgetViewTabs
             label="Empty view tabs"
             selectedKey={view}
-            onSelectionChange={setView}
+            onSelectionChange={key =>
+              setView(key === 'empty' ? 'empty' : 'ready')
+            }
             views={[
               {
                 id: 'ready',
                 label: 'Ready',
                 content: <p>Recorded content</p>,
                 isEmpty: false,
-                empty,
+                emptyFallback: empty,
               },
               {
                 id: 'empty',
                 label: 'Empty',
                 content: null,
                 isEmpty: true,
-                empty,
+                emptyFallback: empty,
               },
             ]}
           />
