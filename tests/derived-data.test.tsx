@@ -2,7 +2,9 @@ import { exportDatasets, displayedScope } from '@/src/react/bindings';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { dateRangeVariable } from '@altertable/data-app/react';
 import { expect, test } from 'bun:test';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { renderToStaticMarkup as renderMarkup } from 'react-dom/server';
+import type { ReactNode } from 'react';
+import { DataAppProvider } from '@altertable/data-app/react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineDateRangeContract,
@@ -18,6 +20,10 @@ import {
 } from '@altertable/data-app/react';
 import { displayedSnapshot } from '@/src/core/data-view';
 import { formatCsv, createCsvDownload } from '@/src/react/ui/csv-export';
+
+function renderToStaticMarkup(content: ReactNode) {
+  return renderMarkup(<DataAppProvider>{content}</DataAppProvider>);
+}
 
 const context = createDataContext({ rows: 'rows' })({
   description: 'Rows',

@@ -4,7 +4,9 @@ import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 import { calendarMetricComparison } from '@/src/react/ui/metric-comparison';
 import { expect, test } from 'bun:test';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { renderToStaticMarkup as renderMarkup } from 'react-dom/server';
+import type { ReactNode } from 'react';
+import { DataAppProvider } from '@altertable/data-app/react/ui';
 import {
   defineDateRangeContract,
   defineQueryNames,
@@ -17,6 +19,10 @@ import {
 } from '@altertable/data-app/react';
 import { MetricWidget, TextWidget } from '@altertable/data-app/react/ui';
 import { describeViewInput, type DataViewDefinition } from '@/src/react/view';
+
+function renderToStaticMarkup(content: ReactNode) {
+  return renderMarkup(<DataAppProvider>{content}</DataAppProvider>);
+}
 
 const calendar = defineDateRangeContract({
   minDate: '2026-01-01',

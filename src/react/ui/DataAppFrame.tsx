@@ -18,6 +18,7 @@ import type { BoundStory } from '@/src/react/ui/story';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { DataViewToast } from '@/src/react/ui/DataViewToast';
+import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
 import type { SectionResult } from '@/src/react/ui/DataSectionBoundary';
 
@@ -146,43 +147,45 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   );
 
   return (
-    <InspectionContext
-      value={{
-        dataContext,
-        queries: request?.queries ?? queries,
-        primaryView: request?.view,
-      }}
-    >
-      <AppLayout
-        footer={isEmbedded ? null : undefined}
-        footerActions={
-          <>
-            {footerActions}
-            {themeController && <ThemeToggle theme={themeController} />}
-          </>
-        }
+    <InspectionProvider>
+      <InspectionContext
+        value={{
+          dataContext,
+          queries: request?.queries ?? queries,
+          primaryView: request?.view,
+        }}
       >
-        {isEmbedded ? (
-          toolbar
-        ) : (
-          <AppHeader
-            scope={scope}
-            title={config.title}
-            description={description}
-            toolbar={toolbar}
-          />
-        )}
-        {request?.controls && <VariableBar>{request?.controls}</VariableBar>}
-        <div ref={bodyRef} className="altertable-app-body">
-          {props.children}
-        </div>
-        {request && (
-          <DataViewToast
-            view={request.view}
-            onRetry={() => void request.refetch()}
-          />
-        )}
-      </AppLayout>
-    </InspectionContext>
+        <AppLayout
+          footer={isEmbedded ? null : undefined}
+          footerActions={
+            <>
+              {footerActions}
+              {themeController && <ThemeToggle theme={themeController} />}
+            </>
+          }
+        >
+          {isEmbedded ? (
+            toolbar
+          ) : (
+            <AppHeader
+              scope={scope}
+              title={config.title}
+              description={description}
+              toolbar={toolbar}
+            />
+          )}
+          {request?.controls && <VariableBar>{request?.controls}</VariableBar>}
+          <div ref={bodyRef} className="altertable-app-body">
+            {props.children}
+          </div>
+          {request && (
+            <DataViewToast
+              view={request.view}
+              onRetry={() => void request.refetch()}
+            />
+          )}
+        </AppLayout>
+      </InspectionContext>
+    </InspectionProvider>
   );
 }

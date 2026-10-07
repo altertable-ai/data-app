@@ -6,6 +6,7 @@ import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
 import skeleton from '@/browser-tests/fixtures/skeleton.html';
 import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
+import inspectionApp from '@/browser-tests/fixtures/inspection-app.html';
 import gallery from '@/browser-tests/fixtures/gallery.html';
 import styles from '@/browser-tests/fixtures/styles.html';
 import layout from '@/browser-tests/fixtures/layout.html';
@@ -133,6 +134,7 @@ Bun.serve({
   development: isDevelopment && { hmr: true },
   routes: {
     '/skeleton': skeleton,
+    '/inspection-app': inspectionApp,
     '/gallery': gallery,
     '/gallery/components': request =>
       Response.redirect(new URL('/gallery?view=widgets', request.url), 302),

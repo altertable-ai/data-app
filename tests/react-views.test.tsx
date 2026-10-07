@@ -1,7 +1,10 @@
+import { InspectionSheet } from '@/src/react/ui/AboutData';
 import { displayedSnapshot } from '@/src/core/data-view';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 import { expect, test } from 'bun:test';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { renderToStaticMarkup as renderMarkup } from 'react-dom/server';
+import type { ReactNode } from 'react';
+import { DataAppProvider } from '@/src/react/mount';
 import {
   defineDateRangeContract,
   defineOperation,
@@ -23,7 +26,6 @@ import {
   DataWidget,
   VisualizationWidget,
   TableWidget,
-  PresentStory,
 } from '@/src/react/ui/index';
 import { DataAppFrame as DataApp } from '@/src/react/ui/DataAppFrame';
 import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
@@ -31,6 +33,10 @@ import { type DataView } from '@/src/core/data-view';
 
 import { storySteps } from '@/src/react/ui/story';
 import { resolveViewInput } from '@/src/react/view';
+
+function renderToStaticMarkup(content: ReactNode) {
+  return renderMarkup(<DataAppProvider>{content}</DataAppProvider>);
+}
 
 const names = defineQueryNames({ activity: 'activity' });
 const context = createDataContext(names)({
@@ -290,49 +296,25 @@ test('nested view inputs preserve dates and dimensions in validation and descrip
   ).toThrow('selected date range');
 });
 
-test('story inspection inherits executed SQL and filters it to the finding evidence', () => {
-  const frame = { location: new URL('https://app.example.com') };
-  Object.assign(frame, { top: frame });
-  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, 'window');
-  Object.defineProperty(globalThis, 'window', {
-    configurable: true,
-    value: frame,
-  });
-  try {
-    const html = renderToStaticMarkup(
-      <DataApp
-        config={{
-          title: 'Activity',
-          scope: { organization: 'Acme', environment: 'production' },
-          appearance: {},
-        }}
-        dataContext={context}
-        queries={[
-          { name: 'activity', statement: 'SELECT 42 AS story_evidence' },
-          { name: 'unrelated', statement: 'SELECT 99 AS unrelated_evidence' },
-        ]}
-      >
-        <PresentStory
-          title="Activity"
-          dataContext={context}
-          findings={[
-            {
-              id: 'concentration',
-              headline: 'Most activity occurred on one day',
-              visual: '42 actions',
-              evidence: featureEvidence,
-            },
-          ]}
-        />
-      </DataApp>
-    );
-    expect(html).toContain('story_evidence');
-    expect(html).not.toContain('unrelated_evidence');
-  } finally {
-    if (previousWindow)
-      Object.defineProperty(globalThis, 'window', previousWindow);
-    else Reflect.deleteProperty(globalThis, 'window');
-  }
+test('story inspection filters executed SQL to the finding evidence', () => {
+  const html = renderToStaticMarkup(
+    <InspectionSheet
+      title="Activity"
+      dataContext={context}
+      references={{ kind: 'ids', ...featureEvidence }}
+      queries={[
+        { name: 'activity', statement: 'SELECT 42 AS story_evidence' },
+        { name: 'unrelated', statement: 'SELECT 99 AS unrelated_evidence' },
+      ]}
+      open
+      tab="queries"
+      onTabChange={() => {}}
+      onOpenChange={() => {}}
+      returnFocus={{ current: null }}
+    />
+  );
+  expect(html).toContain('story_evidence');
+  expect(html).not.toContain('unrelated_evidence');
 });
 
 test('bound metrics share values, formatting, evidence and displayed comparison periods', () => {

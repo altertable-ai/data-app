@@ -1,7 +1,10 @@
 import {
   useEffect,
+  useEffectEvent,
   useRef,
-  useState,
+  useContext,
+  useId,
+  useSyncExternalStore,
   type ComponentPropsWithRef,
   type ReactNode,
   type RefObject,
@@ -15,12 +18,7 @@ import { Button, type ButtonProps } from '@/src/react/ui/Button';
 import { EmptyState } from '@/src/react/ui/EmptyState';
 import { Kbd } from '@/src/react/ui/Kbd';
 import { QueryList } from '@/src/react/ui/QueryList';
-import {
-  searchParams,
-  slug,
-  subscribeSearch,
-  writeSearch,
-} from '@/src/react/ui/search';
+import { slug } from '@/src/react/ui/search';
 import { Sheet, type SheetDialogProps } from '@/src/react/ui/Sheet';
 import { Tabs, TabList, Tab, TabPanels, TabPanel } from '@/src/react/ui/Tabs';
 import {
@@ -29,6 +27,10 @@ import {
   useShortcut,
 } from '@/src/react/ui/shortcuts';
 import { Tooltip } from '@/src/react/ui/Tooltip';
+import {
+  InspectionOwner,
+  InspectionVisual,
+} from '@/src/react/ui/InspectionProvider';
 import { useInspectionDefaults } from '@/src/react/ui/InspectionContext';
 
 export type AboutTab = 'glossary' | 'queries';
@@ -140,34 +142,31 @@ function resolveTab(tab: string | null | undefined): AboutTab {
  * Open state uses `?about=`; tab selection uses `?tab=`. Enable the global shortcut only on the
  * page-level trigger.
  */
-export function AboutData({
+export function InspectionSheet({
   id,
   title,
   description,
   visual,
   visualKind,
-  variant,
   dataContext,
   references,
   queries,
   empty,
-  iconOnly = false,
-  shortcut = true,
-  tooltip,
-  children,
   footer,
-  portalRoot,
   sheetProps,
   headerActions,
-  open: openProp,
+  open,
   onOpenChange,
   tab,
-  trigger = true,
-  className,
-  onClick,
-  ref,
-  ...props
-}: AboutDataProps) {
+  onTabChange,
+  returnFocus,
+}: AboutDataProps & {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  tab: AboutTab;
+  onTabChange: (tab: AboutTab) => void;
+  returnFocus: RefObject<HTMLButtonElement | null>;
+}) {
   const defaults = useInspectionDefaults();
   const resolvedContext = dataContext ?? defaults?.dataContext;
   const resolvedQueries = queries ?? defaults?.queries;
@@ -195,162 +194,185 @@ export function AboutData({
   const hasQueries = (resolvedQueries ?? []).some(
     query => !names || names.includes(query.name)
   );
-  const sheetId = subjectId(subject);
-  const initialTab = resolveTab(tab ?? searchParams().get('tab'));
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(
-    () => searchParams().get('about') === sheetId
-  );
-  const [selectedTab, setSelectedTab] = useState(initialTab);
-  const open = openProp ?? uncontrolledOpen;
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const mergedTrigger = useMergeRefs([triggerRef, ref]);
   const heading = title ?? 'About the data';
   const summary =
     description ??
     resolvedContext?.description ??
     'Glossary and queries for this view.';
-  const shortcutEnabled = trigger && shortcut && !props.disabled;
+  return (
+    <Sheet
+      {...sheetProps}
+      open={open}
+      onOpenChange={onOpenChange}
+      title={heading}
+      description={summary}
+      wide={!!visual && visualKind !== 'metric'}
+      returnFocus={returnFocus}
+      footer={footer}
+      headerActions={headerActions}
+    >
+      {visual && (
+        <div className="altertable-about-visual" data-kind={visualKind}>
+          {visual}
+        </div>
+      )}
+      <div className="altertable-about-body">
+        <Tabs
+          selectedKey={tab}
+          onSelectionChange={key => onTabChange(resolveTab(String(key)))}
+          className="altertable-about-tabs"
+        >
+          <div className="altertable-about-tabbar">
+            <TabList
+              aria-label={
+                typeof heading === 'string' ? heading : 'About the data'
+              }
+            >
+              <Tab id="glossary">Glossary</Tab>
+              <Tab id="queries">Queries</Tab>
+            </TabList>
+          </div>
+          <TabPanels>
+            <TabPanel id="glossary">
+              {listed.length ? (
+                <div className="altertable-about-glossary-list">
+                  {listed.map(entry => (
+                    <GlossaryDetail key={entry.term} entry={entry} />
+                  ))}
+                </div>
+              ) : (
+                <EmptyState {...resolvedEmpty.glossary} />
+              )}
+            </TabPanel>
+            <TabPanel id="queries">
+              {hasQueries ? (
+                <QueryList queries={resolvedQueries} names={names} expanded />
+              ) : (
+                <EmptyState {...resolvedEmpty.queries} />
+              )}
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+      </div>
+    </Sheet>
+  );
+}
+
+export function AboutData(props: AboutDataProps) {
+  const owner = useContext(InspectionOwner);
+  const visual = useContext(InspectionVisual);
+  if (visual) return <span>{props.children ?? props.title}</span>;
+  invariant(owner, 'Inspection requires DataApp or DataAppProvider.');
+  return <InspectionTrigger {...props} />;
+}
+
+function InspectionTrigger({
+  variant = 'ghost',
+  iconOnly = false,
+  shortcut = true,
+  tooltip,
+  children,
+  portalRoot,
+  trigger = true,
+  className,
+  onClick,
+  ref,
+  ...props
+}: AboutDataProps) {
+  const owner = useContext(InspectionOwner)!;
+  const defaults = useInspectionDefaults();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const mergedTrigger = useMergeRefs([triggerRef, ref]);
+  const key = useId();
+  const id = subjectId(props);
+  const isOpen = useSyncExternalStore(
+    owner.subscribe,
+    () => {
+      const selection = owner.snapshot();
+      return !!selection?.open && selection.inspection.key === key;
+    },
+    () => false
+  );
+  const inspection = {
+    key,
+    id,
+    trigger: triggerRef,
+    props: {
+      ...props,
+      dataContext: props.dataContext ?? defaults?.dataContext,
+      queries: props.queries ?? defaults?.queries,
+      empty: props.empty ?? defaults?.empty,
+    },
+  };
+  useEffect(() => owner.register(inspection));
+  useEffect(() => () => owner.remove(key), [owner, key]);
+  const syncControlled = useEffectEvent((open: boolean | undefined) => {
+    owner.controlled(inspection, open);
+  });
+  useEffect(() => syncControlled(props.open), [props.open]);
+  const enabled = trigger && shortcut && !props.disabled;
+  useShortcut(shortcuts.aboutData, () => owner.open(inspection), enabled);
   const hint =
     tooltip ??
-    (iconOnly && shortcutEnabled ? (
+    (iconOnly && enabled ? (
       <>
         Explore data <Kbd shortcut={shortcuts.aboutData} />
       </>
     ) : (
       'Explore data'
     ));
-
-  function setOpen(next: boolean) {
-    onOpenChange?.(next);
-    if (openProp === undefined) setUncontrolledOpen(next);
-    if (next)
-      writeSearch(
-        { about: sheetId, tab: selectedTab },
-        searchParams().get('about') === sheetId ? 'replace' : 'push'
-      );
-    else if (searchParams().get('about') === sheetId)
-      writeSearch({ about: null, tab: null });
-  }
-
-  function selectTab(next: string | number) {
-    const id = resolveTab(String(next));
-    setSelectedTab(id);
-    if (open) writeSearch({ about: sheetId, tab: id });
-  }
-
-  useEffect(() => {
-    function sync() {
-      const about = searchParams().get('about');
-      const urlTab = searchParams().get('tab');
-      if (about === sheetId) {
-        if (openProp === undefined) setUncontrolledOpen(true);
-        if (urlTab) setSelectedTab(resolveTab(urlTab));
-        onOpenChange?.(true);
-      } else if (openProp === undefined) {
-        setUncontrolledOpen(false);
-      }
-    }
-
-    return subscribeSearch(sync);
-  }, [sheetId, openProp, onOpenChange]);
-
-  useShortcut(shortcuts.aboutData, () => setOpen(true), shortcutEnabled);
-  const triggerButton = (
-    <Button
-      {...props}
-      ref={mergedTrigger}
-      variant={variant}
-      size={iconOnly ? 'icon' : 'default'}
-      className={className}
-      data-open={open || undefined}
-      aria-label={
-        props['aria-label'] ??
-        (iconOnly
-          ? title && typeof title === 'string'
-            ? `Explore ${title}`
-            : 'Explore data'
-          : undefined)
-      }
-      aria-keyshortcuts={
-        props['aria-keyshortcuts'] ??
-        (shortcutEnabled ? ariaKeyShortcuts(shortcuts.aboutData) : undefined)
-      }
-      onClick={event => {
-        onClick?.(event);
-        if (!event.defaultPrevented) setOpen(true);
-      }}
-    >
-      {children ?? (
-        <>
-          <AppIcon name="info" />
-          {!iconOnly && 'Explore details'}
-        </>
-      )}
-    </Button>
-  );
-
+  if (!trigger) return null;
+  const {
+    id: _subjectId,
+    title,
+    description: _description,
+    visual: _visual,
+    visualKind: _visualKind,
+    dataContext: _dataContext,
+    references: _references,
+    queries: _queries,
+    empty: _empty,
+    footer: _footer,
+    sheetProps: _sheetProps,
+    headerActions: _headerActions,
+    open: _open,
+    onOpenChange: _onOpenChange,
+    tab: _tab,
+    ...buttonProps
+  } = props;
   return (
-    <>
-      {trigger ? (
-        <Tooltip content={hint} portalRoot={portalRoot}>
-          {triggerButton}
-        </Tooltip>
-      ) : null}
-      <Sheet
-        {...sheetProps}
-        open={open}
-        onOpenChange={setOpen}
-        title={heading}
-        description={summary}
-        wide={!!visual && visualKind !== 'metric'}
-        returnFocus={triggerRef}
-        footer={footer}
-        headerActions={headerActions}
+    <Tooltip content={hint} portalRoot={portalRoot}>
+      <Button
+        {...buttonProps}
+        ref={mergedTrigger}
+        variant={variant}
+        size={iconOnly ? 'icon' : 'default'}
+        className={className}
+        data-open={isOpen || undefined}
+        aria-label={
+          buttonProps['aria-label'] ??
+          (iconOnly
+            ? typeof title === 'string'
+              ? `Explore ${title}`
+              : 'Explore data'
+            : undefined)
+        }
+        aria-keyshortcuts={
+          buttonProps['aria-keyshortcuts'] ??
+          (enabled ? ariaKeyShortcuts(shortcuts.aboutData) : undefined)
+        }
+        onClick={event => {
+          onClick?.(event);
+          if (!event.defaultPrevented) owner.open(inspection);
+        }}
       >
-        {visual && (
-          <div className="altertable-about-visual" data-kind={visualKind}>
-            {visual}
-          </div>
+        {children ?? (
+          <>
+            <AppIcon name="info" />
+            {!iconOnly && 'Explore details'}
+          </>
         )}
-        <div className="altertable-about-body">
-          <Tabs
-            selectedKey={selectedTab}
-            onSelectionChange={selectTab}
-            className="altertable-about-tabs"
-          >
-            <div className="altertable-about-tabbar">
-              <TabList
-                aria-label={
-                  typeof heading === 'string' ? heading : 'About the data'
-                }
-              >
-                <Tab id="glossary">Glossary</Tab>
-                <Tab id="queries">Queries</Tab>
-              </TabList>
-            </div>
-            <TabPanels>
-              <TabPanel id="glossary">
-                {listed.length ? (
-                  <div className="altertable-about-glossary-list">
-                    {listed.map(entry => (
-                      <GlossaryDetail key={entry.term} entry={entry} />
-                    ))}
-                  </div>
-                ) : (
-                  <EmptyState {...resolvedEmpty.glossary} />
-                )}
-              </TabPanel>
-              <TabPanel id="queries">
-                {hasQueries ? (
-                  <QueryList queries={resolvedQueries} names={names} expanded />
-                ) : (
-                  <EmptyState {...resolvedEmpty.queries} />
-                )}
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </div>
-      </Sheet>
-    </>
+      </Button>
+    </Tooltip>
   );
 }
