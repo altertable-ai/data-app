@@ -211,6 +211,40 @@ test('public annotation client delivers validated drafts and edits to the host',
   ]);
 });
 
+test('annotation mode requests and editor reports preserve their explicit payloads and cancellation', async () => {
+  const received: unknown[] = [];
+  const router = createMessageRouter(
+    {
+      'annotation:mode': annotationModeRoute,
+      'annotation:editor': annotationEditorStateRoute,
+    },
+    {
+      'annotation:mode'(request) {
+        received.push(request);
+        return null;
+      },
+      'annotation:editor'(state) {
+        received.push(state);
+        return null;
+      },
+    }
+  );
+  const controller = new AbortController();
+  const client = createAnnotationClient((message, signal) => {
+    expect(signal).toBe(controller.signal);
+    return router.dispatch(message, { signal: controller.signal });
+  });
+  await client.requestAnnotationModeChange(
+    { active: false },
+    { signal: controller.signal }
+  );
+  await client.reportAnnotationEditorState(
+    { hasUnsavedChanges: true },
+    { signal: controller.signal }
+  );
+  expect(received).toEqual([{ active: false }, { hasUnsavedChanges: true }]);
+});
+
 test('editor state and display settings preserve canonical pin data', async () => {
   const dirty: boolean[] = [];
   const router = createMessageRouter(
@@ -225,8 +259,8 @@ test('editor state and display settings preserve canonical pin data', async () =
   const client = createAnnotationClient((message, signal) =>
     router.dispatch(message, { signal: signal ?? new AbortController().signal })
   );
-  await client.setEditorState(true);
-  await client.setEditorState(false);
+  await client.reportAnnotationEditorState({ hasUnsavedChanges: true });
+  await client.reportAnnotationEditorState({ hasUnsavedChanges: false });
   expect(dirty).toEqual([true, false]);
   expect(
     isDataAppPresentation({

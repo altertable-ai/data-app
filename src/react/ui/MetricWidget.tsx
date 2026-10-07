@@ -1,4 +1,4 @@
-import { annotationAttributes } from '@/src/react/ui/AnnotationTarget';
+import { getAnnotationProps } from '@/src/react/ui/AnnotationTarget';
 import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
 import {
   WidgetStatusControl,
@@ -154,7 +154,7 @@ function MetricWidgetContent({
   return (
     <div
       {...props}
-      {...annotationAttributes({
+      {...getAnnotationProps({
         id: annotationId ?? props.id ?? evidence?.id ?? targetId,
         label,
         evidence,

@@ -20,8 +20,12 @@ export function createAnnotationClient(transport: MessageTransport) {
     transport
   );
   return {
-    setEditorState(hasUnsavedChanges: boolean) {
-      return client.request('annotation:editor', { hasUnsavedChanges });
+    /** Report the iframe editor's status so the host can guard batch submission. */
+    reportAnnotationEditorState(
+      state: { hasUnsavedChanges: boolean },
+      options?: { signal?: AbortSignal }
+    ) {
+      return client.request('annotation:editor', state, options);
     },
     addAnnotation(
       draft: DataAppAnnotationDraft,
@@ -36,8 +40,12 @@ export function createAnnotationClient(transport: MessageTransport) {
     ) {
       return client.request('annotation:update', { id, comment }, options);
     },
-    setMode(active: boolean, options?: { signal?: AbortSignal }) {
-      return client.request('annotation:mode', { active }, options);
+    /** Ask the host to change its controlled annotation mode. */
+    requestAnnotationModeChange(
+      request: { active: boolean },
+      options?: { signal?: AbortSignal }
+    ) {
+      return client.request('annotation:mode', request, options);
     },
   };
 }

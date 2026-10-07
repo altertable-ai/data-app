@@ -2,7 +2,8 @@ import {
   useEffect,
   useEffectEvent,
   useRef,
-  useState,
+  useReducer,
+  type ComponentRef,
   type CSSProperties,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -54,6 +55,68 @@ export type AnnotationBarProps = {
   onClose: () => void;
 };
 
+type AnnotationBarState = {
+  position?: { left: number; top: number };
+  reviewOpen: boolean;
+  pending: boolean;
+  error: string;
+  discardOpen: boolean;
+  previewId?: string;
+  observedActive: boolean;
+};
+type AnnotationBarAction =
+  | {
+      type: 'positionMoved';
+      position: NonNullable<AnnotationBarState['position']>;
+    }
+  | { type: 'reviewToggled' }
+  | { type: 'reviewClosed' }
+  | { type: 'previewOpened'; id: string }
+  | { type: 'previewClosed' }
+  | { type: 'discardDialogChanged'; open: boolean }
+  | { type: 'annotationsDiscarded' }
+  | { type: 'submissionStarted' }
+  | { type: 'submissionAccepted' }
+  | { type: 'submissionFailed' }
+  | { type: 'submissionFinished' }
+  | { type: 'annotationModeObserved'; active: boolean };
+
+function annotationBarReducer(
+  state: AnnotationBarState,
+  action: AnnotationBarAction
+): AnnotationBarState {
+  switch (action.type) {
+    case 'positionMoved':
+      return { ...state, position: action.position };
+    case 'reviewToggled':
+      return { ...state, reviewOpen: !state.reviewOpen };
+    case 'reviewClosed':
+      return { ...state, reviewOpen: false };
+    case 'previewOpened':
+      return { ...state, previewId: action.id };
+    case 'previewClosed':
+      return { ...state, previewId: undefined };
+    case 'discardDialogChanged':
+      return { ...state, discardOpen: action.open };
+    case 'annotationsDiscarded':
+      return { ...state, discardOpen: false, reviewOpen: false };
+    case 'submissionStarted':
+      return { ...state, pending: true, error: '' };
+    case 'submissionAccepted':
+      return { ...state, reviewOpen: false };
+    case 'submissionFailed':
+      return { ...state, error: 'Could not send annotations. Try again.' };
+    case 'submissionFinished':
+      return { ...state, pending: false };
+    case 'annotationModeObserved':
+      return {
+        ...state,
+        observedActive: action.active,
+        ...(!action.active ? { reviewOpen: false, previewId: undefined } : {}),
+      };
+  }
+}
+
 /** Host-owned batch controls. Collection changes and agent submission stay with the outer app. */
 export function AnnotationBar({
   annotations,
@@ -73,20 +136,23 @@ export function AnnotationBar({
   onSend,
   onClose,
 }: AnnotationBarProps) {
-  const reviewElement = useRef<HTMLDialogElement>(null);
-  const reviewTrigger = useRef<HTMLButtonElement>(null);
-  const cancelDiscard = useRef<HTMLButtonElement>(null);
-  const barRef = useRef<HTMLDivElement>(null);
+  const reviewElement = useRef<ComponentRef<'dialog'>>(null);
+  const reviewTrigger = useRef<ComponentRef<'button'>>(null);
+  const cancelDiscard = useRef<ComponentRef<'button'>>(null);
+  const barRef = useRef<ComponentRef<'div'>>(null);
   const drag = useRef<
     { x: number; y: number; left: number; top: number } | undefined
   >(undefined);
   const submitting = useRef(false);
-  const [position, setPosition] = useState<{ left: number; top: number }>();
-  const [reviewOpen, setReviewOpen] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState('');
-  const [discardOpen, setDiscardOpen] = useState(false);
-  const [previewId, setPreviewId] = useState<string>();
+  const [state, dispatch] = useReducer(annotationBarReducer, {
+    reviewOpen: false,
+    pending: false,
+    error: '',
+    discardOpen: false,
+    observedActive: active,
+  });
+  const { position, reviewOpen, pending, error, discardOpen, previewId } =
+    state;
   const preview = annotations.find(annotation => annotation.id === previewId);
   const tooltipProps = {
     className: 'altertable-annotation-bar-tooltip',
@@ -106,9 +172,12 @@ export function AnnotationBar({
   function move(left: number, top: number) {
     const rect = barRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setPosition({
-      left: Math.max(12, Math.min(left, window.innerWidth - rect.width - 12)),
-      top: Math.max(12, Math.min(top, window.innerHeight - rect.height - 12)),
+    dispatch({
+      type: 'positionMoved',
+      position: {
+        left: Math.max(12, Math.min(left, window.innerWidth - rect.width - 12)),
+        top: Math.max(12, Math.min(top, window.innerHeight - rect.height - 12)),
+      },
     });
   }
   const keepInViewport = useEffectEvent(() => {
@@ -121,19 +190,13 @@ export function AnnotationBar({
   useEffect(() => {
     if (reviewOpen)
       reviewElement.current
-        ?.querySelector<HTMLButtonElement>('button')
+        ?.querySelector<ComponentRef<'button'>>('button')
         ?.focus();
   }, [reviewOpen]);
-  const [lastActive, setLastActive] = useState(active);
-  if (lastActive !== active) {
-    setLastActive(active);
-    if (!active) {
-      setReviewOpen(false);
-      setPreviewId(undefined);
-    }
-  }
+  if (state.observedActive !== active)
+    dispatch({ type: 'annotationModeObserved', active });
   function closeReview() {
-    setReviewOpen(false);
+    dispatch({ type: 'reviewClosed' });
     reviewTrigger.current?.focus();
   }
   async function send() {
@@ -145,25 +208,23 @@ export function AnnotationBar({
     )
       return;
     submitting.current = true;
-    setPending(true);
-    setError('');
+    dispatch({ type: 'submissionStarted' });
     try {
       const snapshot = annotations.map(parseDataAppAnnotationDraft);
       await onSend(snapshot);
-      setReviewOpen(false);
+      dispatch({ type: 'submissionAccepted' });
     } catch {
-      setError('Could not send annotations. Try again.');
+      dispatch({ type: 'submissionFailed' });
     } finally {
       submitting.current = false;
-      setPending(false);
+      dispatch({ type: 'submissionFinished' });
     }
   }
   useEffect(() => {
     if (discardOpen) cancelDiscard.current?.focus();
   }, [discardOpen]);
   function discardAnnotations() {
-    setDiscardOpen(false);
-    setReviewOpen(false);
+    dispatch({ type: 'annotationsDiscarded' });
     onClear();
     onClose();
   }
@@ -278,7 +339,7 @@ export function AnnotationBar({
             aria-expanded={reviewOpen && annotations.length > 0}
             aria-haspopup="dialog"
             disabled={locked || !annotations.length}
-            onClick={() => setReviewOpen(value => !value)}
+            onClick={() => dispatch({ type: 'reviewToggled' })}
           >
             Annotating · {annotations.length}
           </Button>
@@ -317,7 +378,7 @@ export function AnnotationBar({
               onClick={() =>
                 requestDiscard
                   ? requestDiscard(discardAnnotations)
-                  : setDiscardOpen(true)
+                  : dispatch({ type: 'discardDialogChanged', open: true })
               }
             >
               <Trash2 size={16} aria-hidden />
@@ -421,7 +482,9 @@ export function AnnotationBar({
                       type="button"
                       className="altertable-annotation-thumbnail"
                       aria-label={`View screenshot of ${annotation.target.label}`}
-                      onClick={() => setPreviewId(annotation.id)}
+                      onClick={() =>
+                        dispatch({ type: 'previewOpened', id: annotation.id })
+                      }
                     >
                       <img src={annotation.context.screenshot.dataUrl} alt="" />
                     </button>
@@ -434,7 +497,7 @@ export function AnnotationBar({
                     onClick={() => {
                       onPinsVisibleChange(true);
                       onSelect(annotation.id);
-                      setReviewOpen(false);
+                      dispatch({ type: 'reviewClosed' });
                     }}
                   >
                     <strong>{annotation.target.label}</strong>
@@ -459,7 +522,7 @@ export function AnnotationBar({
       <Sheet
         open={Boolean(preview)}
         onOpenChange={open => {
-          if (!open) setPreviewId(undefined);
+          if (!open) dispatch({ type: 'previewClosed' });
         }}
         placement="center"
         className="altertable-annotation-image-dialog"
@@ -478,7 +541,9 @@ export function AnnotationBar({
       {!requestDiscard && (
         <Sheet
           open={discardOpen}
-          onOpenChange={setDiscardOpen}
+          onOpenChange={open =>
+            dispatch({ type: 'discardDialogChanged', open })
+          }
           placement="center"
           title="Discard all pending annotations?"
           returnFocus={barRef}
@@ -487,7 +552,9 @@ export function AnnotationBar({
               <Button
                 ref={cancelDiscard}
                 variant="ghost"
-                onClick={() => setDiscardOpen(false)}
+                onClick={() =>
+                  dispatch({ type: 'discardDialogChanged', open: false })
+                }
               >
                 Cancel
               </Button>

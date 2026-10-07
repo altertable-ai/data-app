@@ -1,0 +1,51 @@
+import type { ComponentRef, Ref } from 'react';
+import { AppIcon } from '@/src/react/ui/icons';
+import { Button } from '@/src/react/ui/Button';
+import { Kbd } from '@/src/react/ui/Kbd';
+import { Tooltip } from '@/src/react/ui/Tooltip';
+import { shortcuts, ariaKeyShortcuts } from '@/src/react/ui/shortcuts';
+
+type AnnotationTriggerProps = {
+  buttonRef: Ref<ComponentRef<'button'>>;
+  active: boolean;
+  disabled: boolean;
+  count: number;
+  onToggle: () => void;
+};
+
+export function AnnotationTrigger({
+  buttonRef,
+  active,
+  disabled,
+  count,
+  onToggle,
+}: AnnotationTriggerProps) {
+  return (
+    <Tooltip
+      tooltipProps={{ className: 'altertable-annotation-tooltip' }}
+      content={
+        <>
+          Point at items to change the data app{' '}
+          <Kbd shortcut={shortcuts.annotate} />
+        </>
+      }
+    >
+      <Button
+        data-annotation-ui
+        aria-label="Annotate"
+        aria-keyshortcuts={ariaKeyShortcuts(shortcuts.annotate)}
+        size="compact"
+        variant="elevated"
+        ref={buttonRef}
+        aria-pressed={active}
+        disabled={disabled}
+        onClick={onToggle}
+      >
+        <AppIcon name="annotate" size={16} /> Annotate{' '}
+        {count > 0 && (
+          <span className="altertable-annotation-count">{count}</span>
+        )}
+      </Button>
+    </Tooltip>
+  );
+}

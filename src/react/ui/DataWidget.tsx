@@ -1,4 +1,4 @@
-import { annotationAttributes } from '@/src/react/ui/AnnotationTarget';
+import { getAnnotationProps } from '@/src/react/ui/AnnotationTarget';
 import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { formatCount } from '@/src/core/format';
 import { AboutData } from '@/src/react/ui/AboutData';
@@ -124,7 +124,7 @@ function DataWidgetContent({
   return (
     <section
       {...props}
-      {...annotationAttributes({
+      {...getAnnotationProps({
         id: annotationId ?? props.id ?? evidence?.id ?? titleId,
         label: typeof title === 'string' ? title : undefined,
         evidence,

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ComponentRef } from 'react';
 import { annotationRoot } from '@/src/react/ui/annotation-targets';
 import { Kbd } from '@/src/react/ui/Kbd';
 import type {
@@ -7,15 +7,7 @@ import type {
   AnnotationRect,
 } from '@/src/react/ui/annotation-targets';
 
-/** Own pointer selection and keyboard focus while the app underneath is inert. */
-export function AnnotationSelectionLayer({
-  scope,
-  targets,
-  onHover,
-  onSelect,
-  disabled,
-  editing,
-}: {
+type AnnotationSelectionLayerProps = {
   scope: HTMLElement;
   targets: AnnotationTargetElement[];
   onHover: (target: AnnotationTargetElement | undefined) => void;
@@ -26,9 +18,19 @@ export function AnnotationSelectionLayer({
   ) => void;
   disabled: boolean;
   editing: boolean;
-}) {
+};
+
+/** Own pointer selection and keyboard focus while the app underneath is inert. */
+export function AnnotationSelectionLayer({
+  scope,
+  targets,
+  onHover,
+  onSelect,
+  disabled,
+  editing,
+}: AnnotationSelectionLayerProps) {
   const instructionsId = useId();
-  const layer = useRef<HTMLButtonElement>(null);
+  const layer = useRef<ComponentRef<'button'>>(null);
   const start = useRef<AnnotationPoint | undefined>(undefined);
   const keyboardEnd = useRef<AnnotationPoint | undefined>(undefined);
   const [region, setRegion] = useState<AnnotationRect>();

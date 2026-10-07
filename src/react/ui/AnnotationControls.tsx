@@ -3,7 +3,8 @@ import {
   useEffectEvent,
   useRef,
   useMemo,
-  useState,
+  useReducer,
+  type ComponentRef,
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -13,169 +14,150 @@ import {
   offset,
   shift,
   useFloating,
-  useMergeRefs,
 } from '@floating-ui/react';
-import { ArrowUp } from 'lucide-react';
 import { MessageRoutingError } from '@/src/core/messages';
 import { DataAppError } from '@/src/client/transport';
 import { getDataAppNavigation } from '@/src/client/navigation';
-import {
-  type DataAppAnnotationDraft,
-  type DataAppAnnotationPresentation,
+import type {
+  DataAppAnnotationDraft,
+  DataAppAnnotationPresentation,
 } from '@/src/core/annotations';
 import { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';
 import {
-  discoverAnnotationTargets,
   findAnnotationTarget,
   normalizeAnnotationRect,
   projectAnnotationRect,
-  type AnnotationRect,
-  annotationGeometry as geometry,
+  annotationGeometry,
   annotationPoint,
-  type AnnotationTargetElement as Target,
+  type AnnotationRect,
+  type AnnotationTargetElement,
   type AnnotationPoint,
 } from '@/src/react/ui/annotation-targets';
 import { captureAnnotationScreenshot } from '@/src/react/ui/annotation-screenshot';
 import { AnnotationSelectionLayer } from '@/src/react/ui/AnnotationSelectionLayer';
-import { AppIcon } from '@/src/react/ui/icons';
-import { Kbd } from '@/src/react/ui/Kbd';
-import { Tooltip } from '@/src/react/ui/Tooltip';
+import { AnnotationTrigger } from '@/src/react/ui/AnnotationTrigger';
+import { AnnotationEditor } from '@/src/react/ui/AnnotationEditor';
+import { AnnotationMarkers } from '@/src/react/ui/AnnotationMarkers';
 import {
-  shortcuts,
-  useShortcut,
-  ariaKeyShortcuts,
-} from '@/src/react/ui/shortcuts';
-import { Button } from '@/src/react/ui/Button';
+  useAnnotationTargets,
+  useAnnotationGeometry,
+} from '@/src/react/ui/useAnnotationGeometry';
+import {
+  annotationControlsReducer,
+  createAnnotationControlsState,
+} from '@/src/react/ui/annotation-editor-state';
+import { shortcuts, useShortcut } from '@/src/react/ui/shortcuts';
+
+type AnnotationControlsProps = {
+  rootRef: RefObject<ComponentRef<'div'> | null>;
+  presentation: DataAppAnnotationPresentation;
+  displayedInput?: unknown;
+  view?: string;
+};
+type AnnotationSelection = {
+  target: AnnotationTargetElement;
+  cursor?: AnnotationPoint;
+  region?: AnnotationRect;
+  annotation?: NonNullable<DataAppAnnotationPresentation['targets']>[number];
+  comment?: string;
+};
+type AnnotationScreenshot = NonNullable<
+  DataAppAnnotationDraft['context']['screenshot']
+>;
+type ScreenshotCapture = {
+  draftId: string;
+  result: Promise<AnnotationScreenshot | undefined>;
+};
 
 export function AnnotationControls({
   rootRef,
   presentation,
   displayedInput,
   view,
-}: {
-  rootRef: RefObject<HTMLDivElement | null>;
-  presentation: DataAppAnnotationPresentation;
-  displayedInput?: unknown;
-  view?: string;
-}) {
+}: AnnotationControlsProps) {
   const annotationClient = useDataAppAnnotations();
-  const screenshot = useRef<
-    | {
-        id: string;
-        result: Promise<{
-          image?: NonNullable<DataAppAnnotationDraft['context']['screenshot']>;
-          error?: unknown;
-        }>;
-      }
-    | undefined
-  >(undefined);
-  const toolbarRef = useRef<HTMLButtonElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [localActive, setActive] = useState(false);
-  const active = presentation.active ?? localActive;
-  const [hovered, setHovered] = useState<Target>();
-  const [selected, setSelected] = useState<Target>();
-  const [draft, setDraft] = useState<DataAppAnnotationDraft>();
-  const [comment, setComment] = useState('');
-  const [editingId, setEditingId] = useState<string>();
-  const savedComment =
-    presentation.targets?.find(pin => pin.id === editingId)?.comment ?? '';
-  const hasUnsavedChanges = Boolean(draft) && comment !== savedComment;
-  const [shaking, setShaking] = useState(false);
-  const discardArmed = useRef(false);
-  const [error, setError] = useState('');
-  const [captureStatus, setCaptureStatus] = useState<
-    'capturing' | 'ready' | 'failed'
-  >('ready');
-  const [saving, setSaving] = useState(false);
+  const [state, dispatch] = useReducer(
+    annotationControlsReducer,
+    presentation.active ?? false,
+    createAnnotationControlsState
+  );
+  const { editor, hoveredTarget, saving } = state;
+  const active = presentation.active ?? state.annotationModeActive;
   const pending = saving || presentation.readOnly === true;
-  const [targetDiscovery, setTargetDiscovery] = useState<{
-    targets: Target[];
-    hasDuplicateIds: boolean;
-  }>({ targets: [], hasDuplicateIds: false });
-  const [boxes, setBoxes] = useState<
-    {
-      id: string;
-      number: number;
-      anchor: AnnotationPoint;
-      rect: ReturnType<typeof geometry>;
-    }[]
-  >([]);
-  const [outline, setOutline] = useState<ReturnType<typeof geometry>>();
+  const editing = Boolean(editor);
+  const editorDraftId = editor?.draft.id;
+  const selectedTarget = editor?.target;
+  const anchor = editor?.draft.context.anchor;
+  const savedComment =
+    presentation.targets?.find(pin => pin.id === editor?.annotationId)
+      ?.comment ?? '';
+  const hasUnsavedChanges = Boolean(editor) && editor?.comment !== savedComment;
+  const screenshot = useRef<ScreenshotCapture | undefined>(undefined);
+  const toolbarRef = useRef<ComponentRef<'button'>>(null);
+  const textareaRef = useRef<ComponentRef<'textarea'>>(null);
+  const discovery = useAnnotationTargets(rootRef, active);
+  const geometry = useAnnotationGeometry({
+    rootRef,
+    target: editor?.target ?? hoveredTarget,
+    region: editor?.draft.context.region,
+    targets: presentation.targets,
+  });
+  if (state.observedActive !== active)
+    dispatch({ type: 'externalModeObserved', active });
+  if (
+    editor?.annotationId &&
+    !presentation.targets?.some(pin => pin.id === editor.annotationId)
+  ) {
+    dispatch({ type: 'editorClosed' });
+  }
 
   useEffect(() => {
-    void annotationClient.setEditorState(hasUnsavedChanges).catch(() => {});
+    void annotationClient
+      .reportAnnotationEditorState({ hasUnsavedChanges })
+      .catch(() => {});
   }, [annotationClient, hasUnsavedChanges]);
+  useEffect(() => {
+    if (editorDraftId) textareaRef.current?.focus();
+    else screenshot.current = undefined;
+  }, [editorDraftId, active]);
 
-  const reference = useMemo(
-    () =>
-      selected && draft?.context.anchor
-        ? {
-            contextElement: selected.element,
-            getBoundingClientRect() {
-              const rect = selected.element.getBoundingClientRect();
-              return new DOMRect(
-                rect.x + rect.width * draft.context.anchor!.x,
-                rect.y + rect.height * draft.context.anchor!.y,
-                0,
-                0
-              );
-            },
-          }
-        : selected?.element,
-    [selected, draft]
-  );
+  const reference = useMemo(() => {
+    if (!selectedTarget || !anchor) return selectedTarget?.element;
+    return {
+      contextElement: selectedTarget.element,
+      getBoundingClientRect() {
+        const rect = annotationGeometry(selectedTarget.element);
+        return new DOMRect(
+          rect.x + rect.width * anchor.x,
+          rect.y + rect.height * anchor.y,
+          0,
+          0
+        );
+      },
+    };
+  }, [selectedTarget, anchor]);
   const { refs, floatingStyles } = useFloating({
     placement: 'right-start',
     strategy: 'fixed',
     middleware: [offset(8), flip(), shift({ padding: 12, crossAxis: true })],
     whileElementsMounted: autoUpdate,
   });
-
   useEffect(() => {
     refs.setPositionReference(reference ?? null);
   }, [refs, reference]);
-  const floatingRef = useMergeRefs([refs.setFloating]);
 
-  function selectTarget(
-    target: Target,
-    cursor?: AnnotationPoint,
-    capture = true,
-    region?: AnnotationRect
-  ) {
-    setEditingId(undefined);
-    discardArmed.current = false;
-    setShaking(false);
+  function openEditor({
+    target,
+    cursor,
+    region,
+    annotation,
+    comment,
+  }: AnnotationSelection) {
     const location = getDataAppNavigation()?.snapshot();
-    const input =
-      displayedInput === undefined
-        ? undefined
-        : (JSON.parse(JSON.stringify(displayedInput)) as unknown);
-    setSelected(target);
-    setHovered(undefined);
-    setError('');
-    setComment('');
-    const id = crypto.randomUUID();
-    const targetRect = geometry(target.element);
-    const point = annotationPoint(targetRect, cursor);
-    setCaptureStatus(capture ? 'capturing' : 'ready');
-    if (capture)
-      screenshot.current = {
-        id,
-        result: captureAnnotationScreenshot(target.element, region).then(
-          image => {
-            if (screenshot.current?.id === id) setCaptureStatus('ready');
-            return { image };
-          },
-          error => {
-            if (screenshot.current?.id === id) setCaptureStatus('failed');
-            return { error };
-          }
-        ),
-      };
-    else screenshot.current = undefined;
-    setDraft({
-      id,
+    const rect = annotationGeometry(target.element);
+    const point = annotationPoint(rect, cursor);
+    const draft: DataAppAnnotationDraft = {
+      id: crypto.randomUUID(),
       target: {
         id: target.id,
         label: region ? 'Selected area' : target.label.slice(0, 256),
@@ -193,159 +175,145 @@ export function AnnotationControls({
       },
       context: {
         ...point,
-        ...(region
-          ? {
-              region: normalizeAnnotationRect(region, targetRect),
-            }
-          : {}),
+        ...(region ? { region: normalizeAnnotationRect(region, rect) } : {}),
         search: (location?.search ?? window.location.search).slice(0, 2048),
         hash: (location?.hash ?? window.location.hash).slice(0, 1024),
-        displayedInput: input,
+        displayedInput:
+          displayedInput === undefined
+            ? undefined
+            : (JSON.parse(JSON.stringify(displayedInput)) as unknown),
         view:
           target.element
             .querySelector('[role=tab][aria-selected=true]')
             ?.textContent?.slice(0, 128) ?? view,
         viewport: { width: window.innerWidth, height: window.innerHeight },
-        rect: region ?? targetRect,
+        rect: region ?? rect,
       },
       comment: '',
+    };
+    dispatch({
+      type: 'editorOpened',
+      editor: {
+        target,
+        draft,
+        annotationId: annotation?.id,
+        comment: comment ?? annotation?.comment ?? '',
+        captureStatus: annotation ? 'ready' : 'capturing',
+        error: '',
+        discardArmed: false,
+        shaking: false,
+      },
     });
+    screenshot.current = annotation
+      ? undefined
+      : {
+          draftId: draft.id,
+          result: captureAnnotationScreenshot(target.element, region).then(
+            image => {
+              dispatch({
+                type: 'captureCompleted',
+                draftId: draft.id,
+                succeeded: true,
+              });
+              return image;
+            },
+            () => {
+              dispatch({
+                type: 'captureCompleted',
+                draftId: draft.id,
+                succeeded: false,
+              });
+              return undefined;
+            }
+          ),
+        };
   }
 
-  const [lastActive, setLastActive] = useState(active);
-  if (lastActive !== active) {
-    setLastActive(active);
-    if (!active) {
-      setSelected(undefined);
-      setDraft(undefined);
-      setHovered(undefined);
+  function setAnnotationMode(active: boolean) {
+    dispatch({ type: 'annotationModeChanged', active });
+    if (presentation.active !== undefined) {
+      void annotationClient
+        .requestAnnotationModeChange({ active })
+        .catch(() => {});
     }
   }
-
-  function resetEditor() {
-    setSelected(undefined);
-    setDraft(undefined);
-    setEditingId(undefined);
-    setComment('');
-    discardArmed.current = false;
-    setShaking(false);
-    setError('');
-    screenshot.current = undefined;
-  }
   function closeAnnotationMode() {
-    resetEditor();
+    screenshot.current = undefined;
     setAnnotationMode(false);
-    setHovered(undefined);
     toolbarRef.current?.focus();
   }
-  function setAnnotationMode(value: boolean) {
-    setActive(value);
-    if (presentation.active !== undefined)
-      void annotationClient.setMode(value).catch(() => {});
+  function toggleAnnotationMode() {
+    if (active) closeAnnotationMode();
+    else setAnnotationMode(true);
   }
-  useShortcut(
-    shortcuts.annotate,
-    () => (active ? closeAnnotationMode() : setAnnotationMode(true)),
-    !pending,
-    true
-  );
+  useShortcut(shortcuts.annotate, toggleAnnotationMode, !pending, true);
 
   function openAnnotation(id: string) {
-    const pin = presentation.targets?.find(pin => pin.id === id);
-    const target = findAnnotationTarget(rootRef.current, pin?.targetId);
-    if (!pin || !target || pending) return;
+    const annotation = presentation.targets?.find(pin => pin.id === id);
+    const target = findAnnotationTarget(rootRef.current, annotation?.targetId);
+    if (!annotation || !target || pending) return;
     setAnnotationMode(true);
-    const rect = target.element.getBoundingClientRect();
-    const pointY = rect.y + rect.height * (pin.anchor?.y ?? 0.5);
-    if (pointY < 0 || pointY > window.innerHeight)
+    const rect = annotationGeometry(target.element);
+    const cursor = annotation.anchor
+      ? {
+          x: rect.x + rect.width * annotation.anchor.x,
+          y: rect.y + rect.height * annotation.anchor.y,
+        }
+      : undefined;
+    const pointY = cursor?.y ?? rect.y + rect.height / 2;
+    if (pointY < 0 || pointY > window.innerHeight) {
       window.scrollBy({
         top: pointY - window.innerHeight / 2,
         behavior: 'smooth',
       });
-    selectTarget(
+    }
+    openEditor({
       target,
-      pin.anchor
+      cursor,
+      annotation,
+      region: annotation.region
+        ? projectAnnotationRect(annotation.region, rect)
+        : undefined,
+    });
+  }
+  function retryScreenshot() {
+    if (!editor || pending) return;
+    const rect = annotationGeometry(editor.target.element);
+    const { anchor, region } = editor.draft.context;
+    openEditor({
+      target: editor.target,
+      comment: editor.comment,
+      cursor: anchor
         ? {
-            x: rect.x + pin.anchor.x * rect.width,
-            y: rect.y + pin.anchor.y * rect.height,
+            x: rect.x + rect.width * anchor.x,
+            y: rect.y + rect.height * anchor.y,
           }
         : undefined,
-      false
-    );
-    if (pin.region)
-      setDraft(current =>
-        current
-          ? { ...current, context: { ...current.context, region: pin.region } }
-          : current
-      );
-    setEditingId(id);
-    setComment(pin.comment ?? '');
+      region: region ? projectAnnotationRect(region, rect) : undefined,
+    });
   }
   const openFromHost = useEffectEvent(openAnnotation);
-  if (editingId && !presentation.targets?.some(pin => pin.id === editingId)) {
-    setSelected(undefined);
-    setDraft(undefined);
-    setEditingId(undefined);
-    setComment('');
-  }
-  const finishFromKeyboard = useEffectEvent(() =>
-    draft ? resetEditor() : closeAnnotationMode()
-  );
-  const captureSelection = useEffectEvent(selectTarget);
-  useEffect(() => {
-    textareaRef.current?.focus();
-  }, [draft?.id, active]);
+  const selectFromLayer = useEffectEvent(openEditor);
+  const escapeFromKeyboard = useEffectEvent(() => {
+    if (editor) dispatch({ type: 'editorEscaped', hasUnsavedChanges });
+    else closeAnnotationMode();
+  });
   useEffect(() => {
     if (!active) return;
-    const root = rootRef.current;
-    function updateTargets() {
-      setTargetDiscovery(discoverAnnotationTargets(root));
-    }
-    updateTargets();
-    const mutations = new MutationObserver(updateTargets);
-    if (root)
-      mutations.observe(root, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: [
-          'data-annotation-id',
-          'data-annotation-label',
-          'hidden',
-          'aria-hidden',
-          'style',
-          'class',
-        ],
-      });
     function escape(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !(pending && draft)) {
-        if (document.querySelector('dialog[open], [data-selecting]')) return;
-        if (event.isComposing) return;
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.repeat) return;
-        if (hasUnsavedChanges && !discardArmed.current) {
-          discardArmed.current = true;
-          setShaking(true);
-        } else finishFromKeyboard();
-      }
+      if (event.key !== 'Escape' || (pending && editing)) return;
+      if (
+        document.querySelector('dialog[open], [data-selecting]') ||
+        event.isComposing
+      )
+        return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (!event.repeat) escapeFromKeyboard();
     }
     document.addEventListener('keydown', escape, true);
-    return () => {
-      mutations.disconnect();
-      document.removeEventListener('keydown', escape, true);
-    };
-  }, [
-    active,
-    rootRef,
-    displayedInput,
-    view,
-    pending,
-    draft,
-    hovered,
-    hasUnsavedChanges,
-  ]);
-
+    return () => document.removeEventListener('keydown', escape, true);
+  }, [active, pending, editing]);
   useEffect(() => {
     if (presentation.selectedAnnotationId) {
       openFromHost(presentation.selectedAnnotationId);
@@ -355,10 +323,8 @@ export function AnnotationControls({
       rootRef.current,
       presentation.selectedTargetId
     );
-    if (target) {
-      target.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
-    setHovered(target);
+    target?.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    dispatch({ type: 'targetHovered', target });
   }, [
     presentation.selectedTargetId,
     presentation.selectedAnnotationId,
@@ -366,266 +332,103 @@ export function AnnotationControls({
     rootRef,
   ]);
 
-  useEffect(() => {
-    function measure() {
-      setBoxes(
-        (presentation.targets ?? []).flatMap(pin => {
-          const target = findAnnotationTarget(rootRef.current, pin.targetId);
-          return target
-            ? [
-                {
-                  id: pin.id,
-                  number: pin.number,
-                  rect: geometry(target.element),
-                  anchor: pin.anchor ?? { x: 1, y: 0 },
-                },
-              ]
-            : [];
-        })
-      );
-      const element = (selected ?? hovered)?.element;
-      const area = draft?.context.region;
-      const rect = element?.isConnected ? geometry(element) : undefined;
-      setOutline(rect && area ? projectAnnotationRect(area, rect) : rect);
-    }
-    measure();
-    const observer = new ResizeObserver(measure);
-    if (rootRef.current) observer.observe(rootRef.current);
-    window.addEventListener('resize', measure);
-    document.addEventListener('scroll', measure, true);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', measure);
-      document.removeEventListener('scroll', measure, true);
-    };
-  }, [selected, hovered, draft?.context.region, presentation.targets, rootRef]);
-
   async function saveAnnotation() {
-    if (!draft || pending) return;
-    setSaving(true);
-    setError('');
+    if (!editor || pending) return;
+    dispatch({ type: 'saveStarted' });
     try {
-      if (editingId)
-        await annotationClient.updateAnnotation(editingId, comment);
+      if (editor.annotationId)
+        await annotationClient.updateAnnotation(
+          editor.annotationId,
+          editor.comment
+        );
       else {
         const capture = screenshot.current;
-        if (!capture || capture.id !== draft.id)
+        if (!capture || capture.draftId !== editor.draft.id)
           throw new Error('Annotation capture is unavailable.');
-        const result = await capture.result;
-        if (!result.image) {
-          setCaptureStatus('failed');
+        const image = await capture.result;
+        if (!image) {
+          dispatch({
+            type: 'captureCompleted',
+            draftId: editor.draft.id,
+            succeeded: false,
+          });
           return;
         }
         await annotationClient.addAnnotation({
-          ...draft,
-          comment,
-          context: { ...draft.context, screenshot: result.image },
+          ...editor.draft,
+          comment: editor.comment,
+          context: { ...editor.draft.context, screenshot: image },
         });
       }
-      resetEditor();
+      screenshot.current = undefined;
+      dispatch({ type: 'editorClosed' });
     } catch (error) {
-      setError(
-        (error instanceof DataAppError ||
-          error instanceof MessageRoutingError) &&
+      dispatch({
+        type: 'saveFailed',
+        error:
+          (error instanceof DataAppError ||
+            error instanceof MessageRoutingError) &&
           error.code === 'annotation_limit'
-          ? error.message
-          : 'Could not save annotation. Try again.'
-      );
+            ? error.message
+            : 'Could not save annotation. Try again.',
+      });
     } finally {
-      setSaving(false);
+      dispatch({ type: 'saveFinished' });
     }
   }
 
   return (
     <>
       {presentation.active === undefined && (
-        <Tooltip
-          tooltipProps={{ className: 'altertable-annotation-tooltip' }}
-          content={
-            <>
-              Point at items to change the data app{' '}
-              <Kbd shortcut={shortcuts.annotate} />
-            </>
-          }
-        >
-          <Button
-            data-annotation-ui
-            aria-label="Annotate"
-            aria-keyshortcuts={ariaKeyShortcuts(shortcuts.annotate)}
-            size="compact"
-            variant="elevated"
-            ref={toolbarRef}
-            aria-pressed={active}
-            disabled={pending}
-            onClick={() =>
-              active ? closeAnnotationMode() : setAnnotationMode(true)
-            }
-          >
-            <AppIcon name="annotate" size={16} /> Annotate{' '}
-            {presentation.targets?.length ? (
-              <span className="altertable-annotation-count">
-                {presentation.targets.length}
-              </span>
-            ) : null}
-          </Button>
-        </Tooltip>
+        <AnnotationTrigger
+          buttonRef={toolbarRef}
+          active={active}
+          disabled={pending}
+          count={presentation.targets?.length ?? 0}
+          onToggle={toggleAnnotationMode}
+        />
       )}
       {createPortal(
         <>
-          {active && rootRef.current && (
+          {active && discovery.scope && (
             <AnnotationSelectionLayer
-              scope={
-                rootRef.current.closest<HTMLElement>('.altertable-app-main') ??
-                rootRef.current
-              }
-              targets={targetDiscovery.targets}
+              scope={discovery.scope}
+              targets={discovery.targets}
               disabled={pending}
-              editing={Boolean(draft)}
-              onHover={setHovered}
-              onSelect={(target, point, region) =>
-                captureSelection(target, point, true, region)
+              editing={Boolean(editor)}
+              onHover={target => dispatch({ type: 'targetHovered', target })}
+              onSelect={(target, cursor, region) =>
+                selectFromLayer({ target, cursor, region })
               }
             />
           )}
-          {outline && presentation.pinsVisible !== false && (
-            <div
-              aria-hidden
-              data-annotation-ui
-              data-widget={
-                ((selected ?? hovered)?.kind === 'widget' &&
-                  !draft?.context.region) ||
-                undefined
-              }
-              className="altertable-annotation-outline"
-              style={{
-                left: outline.x,
-                top: outline.y,
-                width: outline.width,
-                height: outline.height,
-              }}
-            />
-          )}
-          {(presentation.pinsVisible === false ? [] : boxes).map(box => (
-            <button
-              type="button"
-              data-annotation-ui
-              onClick={() => openAnnotation(box.id)}
-              disabled={pending || Boolean(draft)}
-              key={box.id}
-              className="altertable-annotation-pin"
-              aria-label={`Annotation ${box.number}`}
-              style={{
-                left: box.rect.x + box.rect.width * box.anchor.x - 12,
-                top: box.rect.y + box.rect.height * box.anchor.y - 12,
-              }}
-            >
-              {box.number}
-            </button>
-          ))}
-          {active && !selected && presentation.showHint !== false && (
-            <output data-annotation-ui className="altertable-annotation-hint">
-              {targetDiscovery.hasDuplicateIds ? (
-                'Some items cannot be annotated.'
-              ) : (
-                <>
-                  Point at an item or drag to select <Kbd>Esc</Kbd> to exit
-                </>
-              )}
-            </output>
-          )}
-          {active && selected && (
-            <section
-              data-annotation-ui
-              ref={floatingRef}
+          <AnnotationMarkers
+            outline={active ? geometry.outline : undefined}
+            rounded={
+              (editor?.target ?? hoveredTarget)?.kind === 'widget' &&
+              !editor?.draft.context.region
+            }
+            pins={geometry.pins}
+            pinsVisible={presentation.pinsVisible !== false}
+            disabled={pending || Boolean(editor)}
+            showHint={active && !editor && presentation.showHint !== false}
+            hasDuplicateIds={discovery.hasDuplicateIds}
+            onOpenAnnotation={openAnnotation}
+          />
+          {active && editor && (
+            <AnnotationEditor
+              editor={editor}
+              editorRef={refs.setFloating}
+              textareaRef={textareaRef}
               style={floatingStyles}
-              className="altertable-annotation-composer"
-              data-shaking={shaking || undefined}
-              onAnimationEnd={() => setShaking(false)}
-              aria-label="Annotation editor"
-            >
-              <textarea
-                aria-label="Annotation text"
-                placeholder="Describe what to change…"
-                ref={textareaRef}
-                rows={1}
-                maxLength={2000}
-                value={comment}
-                disabled={pending}
-                onChange={event => {
-                  discardArmed.current = false;
-                  setShaking(false);
-                  setComment(event.target.value);
-                }}
-                onKeyDown={event => {
-                  if (
-                    event.key === 'Enter' &&
-                    !event.shiftKey &&
-                    !event.nativeEvent.isComposing
-                  ) {
-                    event.preventDefault();
-                    if (comment.trim()) void saveAnnotation();
-                  }
-                }}
-              />
-              <Tooltip
-                tooltipProps={{ className: 'altertable-annotation-tooltip' }}
-                content={
-                  <>
-                    {editingId ? 'Save annotation' : 'Add annotation'}{' '}
-                    <Kbd>Enter</Kbd>
-                  </>
-                }
-              >
-                <Button
-                  aria-label={editingId ? 'Save annotation' : 'Add annotation'}
-                  onClick={() => void saveAnnotation()}
-                  className="altertable-annotation-submit"
-                  size="icon-compact"
-                  variant="elevated"
-                  disabled={
-                    pending || !comment.trim() || captureStatus !== 'ready'
-                  }
-                >
-                  <ArrowUp size={16} aria-hidden />
-                </Button>
-              </Tooltip>
-              {captureStatus === 'capturing' && (
-                <output className="altertable-annotation-capture-status">
-                  Capturing screenshot…
-                </output>
-              )}
-              {captureStatus === 'failed' && (
-                <div className="altertable-annotation-capture-status">
-                  <p role="alert">
-                    Screenshot capture failed. Your text is preserved.
-                  </p>
-                  <Button
-                    size="compact"
-                    onClick={() => {
-                      const rect = selected.element.getBoundingClientRect();
-                      const anchor = draft?.context.anchor;
-                      const region = draft?.context.region;
-                      const text = comment;
-                      selectTarget(
-                        selected,
-                        anchor
-                          ? {
-                              x: rect.x + rect.width * anchor.x,
-                              y: rect.y + rect.height * anchor.y,
-                            }
-                          : undefined,
-                        true,
-                        region ? projectAnnotationRect(region, rect) : undefined
-                      );
-                      setComment(text);
-                    }}
-                  >
-                    Retry screenshot
-                  </Button>
-                </div>
-              )}
-              {error && <p role="alert">{error}</p>}
-            </section>
+              disabled={pending}
+              onCommentChange={comment =>
+                dispatch({ type: 'commentChanged', comment })
+              }
+              onSubmit={() => void saveAnnotation()}
+              onRetryScreenshot={retryScreenshot}
+              onShakeEnd={() => dispatch({ type: 'shakeFinished' })}
+            />
           )}
         </>,
         document.body
