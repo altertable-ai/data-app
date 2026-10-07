@@ -36,9 +36,19 @@ export function useAnnotationDrafts({
     return () => store.stopPersistence();
   }, [store]);
   return {
-    ...store,
-    ...state,
+    drafts: state.drafts,
     count: state.drafts.length,
+    ready: state.ready,
+    storageError: state.storageError,
+    persisting: state.persisting,
     deletedAnnotationId: state.deleted?.id,
+    addAnnotation: store.addAnnotation,
+    updateAnnotation: store.updateAnnotation,
+    deleteAnnotation: store.deleteAnnotation,
+    undoDelete: store.undoDelete,
+    dismissUndo: store.dismissUndo,
+    clearAnnotations: store.clearAnnotations,
+    acknowledgeSubmission: store.acknowledgeSubmission,
+    flushPersistence: store.flushPersistence,
   };
 }

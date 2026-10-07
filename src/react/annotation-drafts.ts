@@ -19,25 +19,25 @@ export function createAnnotationDraftStore(
     persisting: false,
     deleted: undefined as DataAppAnnotationDraft | undefined,
   };
-  let enabled = true;
-  let writes = Promise.resolve();
-  let pendingWrites = 0;
-  let restoring: Promise<void> | undefined;
+  let persistenceEnabled = true;
+  let saveQueue = Promise.resolve();
+  let pendingSaveCount = 0;
+  let recoveryPromise: Promise<void> | undefined;
   const listeners = new Set<() => void>();
   function publish() {
     for (const listener of listeners) listener();
   }
-  function changed() {
+  function commitChange() {
     if (persistence) {
-      pendingWrites++;
+      pendingSaveCount++;
       state = { ...state, persisting: true };
     }
     publish();
     if (persistence) {
       const snapshot = { sourceVersion, drafts: state.drafts };
-      writes = writes
+      saveQueue = saveQueue
         .then(async () => {
-          if (!enabled) return;
+          if (!persistenceEnabled) return;
           await persistence.save(snapshot);
           if (state.storageError) {
             state = { ...state, storageError: false };
@@ -49,8 +49,8 @@ export function createAnnotationDraftStore(
           publish();
         })
         .finally(() => {
-          pendingWrites--;
-          state = { ...state, persisting: pendingWrites > 0 };
+          pendingSaveCount--;
+          state = { ...state, persisting: pendingSaveCount > 0 };
           publish();
         });
     }
@@ -79,17 +79,17 @@ export function createAnnotationDraftStore(
         'Delete an annotation before adding another.'
       );
   }
-  function editable() {
+  function assertReady() {
     if (!state.ready)
       throw new MessageRoutingError('busy', 'Annotations are still restoring.');
   }
   function restore() {
-    enabled = true;
+    persistenceEnabled = true;
     if (!persistence || state.ready) return Promise.resolve();
-    restoring ??= (async () => {
+    recoveryPromise ??= (async () => {
       try {
         const snapshot = await persistence.load();
-        if (!enabled) return;
+        if (!persistenceEnabled) return;
         if (snapshot?.sourceVersion === sourceVersion) {
           admit(snapshot.drafts);
           state = { ...state, drafts: snapshot.drafts };
@@ -102,11 +102,11 @@ export function createAnnotationDraftStore(
       state = { ...state, ready: true };
       publish();
     })();
-    return restoring;
+    return recoveryPromise;
   }
   return {
     getSnapshot: () => state,
-    flushPersistence: () => writes,
+    flushPersistence: () => saveQueue,
     subscribe(this: void, listener: () => void) {
       listeners.add(listener);
       return () => {
@@ -115,19 +115,19 @@ export function createAnnotationDraftStore(
     },
     restore,
     stopPersistence() {
-      enabled = false;
+      persistenceEnabled = false;
     },
-    addAnnotation(value: DataAppAnnotationDraft) {
-      editable();
+    addAnnotation(this: void, value: DataAppAnnotationDraft) {
+      assertReady();
       const draft = parseDataAppAnnotationDraft(value);
       if (state.drafts.some(existing => existing.id === draft.id)) return;
       const drafts = [...state.drafts, draft];
       admit(drafts);
       state = { ...state, drafts, deleted: undefined };
-      changed();
+      commitChange();
     },
-    updateAnnotation(id: string, comment: string) {
-      editable();
+    updateAnnotation(this: void, id: string, comment: string) {
+      assertReady();
       const original = state.drafts.find(draft => draft.id === id);
       if (!original)
         throw new MessageRoutingError(
@@ -139,9 +139,9 @@ export function createAnnotationDraftStore(
         ...state,
         drafts: state.drafts.map(draft => (draft.id === id ? updated : draft)),
       };
-      changed();
+      commitChange();
     },
-    deleteAnnotation(id: string) {
+    deleteAnnotation(this: void, id: string) {
       const deleted = state.drafts.find(draft => draft.id === id);
       if (!deleted) return;
       state = {
@@ -149,27 +149,30 @@ export function createAnnotationDraftStore(
         deleted,
         drafts: state.drafts.filter(draft => draft.id !== id),
       };
-      changed();
+      commitChange();
     },
-    undoDelete(id: string) {
+    undoDelete(this: void, id: string) {
       if (state.deleted?.id !== id) return;
       const drafts = [...state.drafts, state.deleted];
       admit(drafts);
       state = { ...state, drafts, deleted: undefined };
-      changed();
+      commitChange();
     },
-    dismissUndo() {
+    dismissUndo(this: void) {
       state = {
         ...state,
         deleted: undefined,
       };
-      changed();
+      commitChange();
     },
-    clearAnnotations() {
+    clearAnnotations(this: void) {
       state = { ...state, drafts: [], deleted: undefined };
-      changed();
+      commitChange();
     },
-    acknowledgeSubmission(snapshot: readonly DataAppAnnotationDraft[]) {
+    acknowledgeSubmission(
+      this: void,
+      snapshot: readonly DataAppAnnotationDraft[]
+    ) {
       const accepted = new Map(
         snapshot.map(draft => [draft.id, JSON.stringify(draft)])
       );
@@ -180,7 +183,7 @@ export function createAnnotationDraftStore(
           draft => accepted.get(draft.id) !== JSON.stringify(draft)
         ),
       };
-      changed();
+      commitChange();
     },
   };
 }
