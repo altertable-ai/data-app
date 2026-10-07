@@ -27,7 +27,7 @@ import {
   Button,
   Checkbox,
   Combobox,
-  ComparisonVisual,
+  Comparison,
   ContentSkeleton,
   DataBoundary,
   DataSection,
@@ -69,7 +69,7 @@ import {
   UpdatedAt,
   WidgetDisclosure,
   WidgetViewTabs,
-  SelectableBarChart,
+  BarChart,
   type DateRange,
   type LiveIntervalSeconds,
   type WidgetStatus,
@@ -232,7 +232,6 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
   const [live, setLive] = useState(false);
   const [interval, setInterval] = useState<LiveIntervalSeconds>(60);
   const [view, setView] = useState<'ready' | 'empty'>('ready');
-  const [selected, setSelected] = useState<string | null>(null);
   const [request, setRequest] = useState<
     'loading' | 'ready' | 'empty' | 'error' | 'updating' | 'stale-error'
   >('ready');
@@ -591,7 +590,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           </Case>
         ))}
         <Case title="Comparison visual" widget>
-          <ComparisonVisual
+          <Comparison
             label="Reduced errors"
             current={{ value: 12, formattedValue: '12' }}
             previous={{ value: 20, formattedValue: '20' }}
@@ -698,10 +697,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               ][index]!
             }
           >
-            <SelectableBarChart
+            <BarChart
               items={items}
-              selectedId={selected}
-              onSelectionChange={setSelected}
               unit="events"
               ariaLabel={`Chart edge ${index}`}
             />

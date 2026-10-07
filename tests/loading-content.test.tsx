@@ -15,7 +15,7 @@ test('metric loading preserves static text and reserves only the value', () => {
     <MetricWidget label="Orders" description="Orders in any status." loading />
   );
   expect(html).toContain('Orders in any status.');
-  expect(html).toContain('>Orders</span>');
+  expect(html).toContain('>Orders</h2>');
   expect(html).toContain('altertable-metric-loading-value');
   expect(html).toContain('aria-busy="true"');
   expect(html).not.toContain('altertable-content-skeleton-label');

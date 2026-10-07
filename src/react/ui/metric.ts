@@ -1,7 +1,7 @@
 import type { MetricFormat } from '@/src/core/format';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import type { MetricReading } from '@/src/core/reading';
-import { calendarMetricComparison } from '@/src/react/ui/comparison';
+import { calendarMetricComparison } from '@/src/react/ui/metric-comparison';
 
 export type MetricDefinition = {
   id: string;

@@ -163,7 +163,7 @@ Use `context.evidence(...)` for bound charts and tables. `<MetricWidget>` uses
 its metric definition for the label, format, and evidence; keep view-specific
 descriptions on the widget.
 
-`<MetricWidget>` and `<ComparisonVisual>` share a metric reading. Comparisons
+`<MetricWidget>` and `<Comparison>` share a metric reading. Comparisons
 follow the displayed result's range.
 
 Use the [app helpers](#reuse-app-helpers) for metric formats and values in tables,
@@ -295,7 +295,7 @@ nested period or field-filter inputs. Mappings must preserve the selected values
 Use `defineFacetFilter()` to bind a facet operation and its typed input. The generated
 `<DimensionPicker>` preserves cached options during refresh and failure, offers
 missing values separately, and retains selected values absent from a result with
-zero counts. `<SelectableBarChart>` can share controlled selection with the picker.
+zero counts. `<BarChart>` exposes values through tooltips.
 
 ## Preserve displayed results
 
@@ -312,6 +312,11 @@ data, or cancellation even under one provider. Keep client instances stable
 across renders to preserve their cache.
 
 ## Findings and inspection
+
+Use `<VisualizationWidget>` to frame a chart or custom data display.
+`<MetricWidget>` and `<TableWidget>` compose it for common metric and table use.
+`<TextWidget>` frames narrative prose. All share `<DataWidget>` for headings,
+feedback, and inspection; use that base directly for other kinds of panels.
 
 `<DataWidget>` composes a body, toolbar feedback, and footer. Widgets and their
 inspection sheets render the same visual and controls. Keep interactive state
@@ -375,3 +380,46 @@ Example:
   </DataSection>
 </DataApp>
 ```
+
+## Choose a visualization
+
+| Scenario                              | Component        | Key constraint                                            |
+| ------------------------------------- | ---------------- | --------------------------------------------------------- |
+| Compare categories                    | `<BarChart>`     | Nonnegative values                                        |
+| Follow a trend                        | `<LineChart>`    | Equally spaced samples in supplied order                  |
+| Emphasize volume over time            | `<AreaChart>`    | Equally spaced samples; fill extends to zero              |
+| Show a few shares of a whole          | `<PieChart>`     | Nonnegative, mutually exclusive parts; total is their sum |
+| Explore relationships or outliers     | `<ScatterChart>` | Numeric X/Y coordinates; both axes include zero           |
+| Compare a metric across periods       | `<Comparison>`   | Use the displayed metric reading                          |
+| Rank categories                       | `<Ranking>`      | Bars scale to the largest item                            |
+| Show shares against an explicit total | `<Breakdown>`    | Mutually exclusive parts of that total                    |
+| Read exact values or records          | `<TableWidget>`  | Use `<DataTable>` for custom table markup                 |
+
+Charts own hover and touch tooltips, with no persistent selection state.
+Tap again, tap outside, scroll, or press Escape to dismiss. Chart points skip Tab.
+Wrap primitives in `<VisualizationWidget>` for a title, insight, and inspection.
+
+Prepare data with `defineChartItems()` before rendering. Literal tuples catch
+duplicate or blank IDs and negative bar/pie values during typechecking.
+Dynamic arrays and non-finite numbers still require runtime validation; the helper
+and direct chart callers use the same checks. Item order is preserved.
+
+```tsx
+const days = defineChartItems('line', [
+  { id: 'mon', label: 'Mon', value: 12 },
+  { id: 'tue', label: 'Tue', value: 8 },
+]);
+
+<VisualizationWidget
+  title="Daily events"
+  visual={
+    <LineChart items={days} unit="events" ariaLabel="Daily event trend" />
+  }
+/>;
+```
+
+Bar, line, area, and pie charts share `items`, `unit`, `ariaLabel`, and optional
+`formatValue`. Scatter items use `x` and `y`; supply `xLabel`, `yLabel`,
+`xUnit`, and `yUnit`, with optional `formatX` and `formatY`.
+See exported types and JSDoc for constraints and the gallery's **Widgets** tab
+for complete examples.

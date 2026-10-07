@@ -134,6 +134,8 @@ Bun.serve({
   routes: {
     '/skeleton': skeleton,
     '/gallery': gallery,
+    '/gallery/components': request =>
+      Response.redirect(new URL('/gallery?view=widgets', request.url), 302),
     '/styles': styles,
     '/layout': layoutHost,
     '/layout-frame': layout,

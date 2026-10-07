@@ -80,10 +80,10 @@ export type {
   WidgetView,
   WidgetViewTabsProps,
 } from '@/src/react/ui/WidgetViewTabs';
-export { ComparisonVisual } from '@/src/react/ui/ComparisonVisual';
-export type { ComparisonVisualProps } from '@/src/react/ui/ComparisonVisual';
-export { calendarMetricComparison } from '@/src/react/ui/comparison';
-export type { MetricComparison } from '@/src/react/ui/comparison';
+export { Comparison } from '@/src/react/ui/Comparison';
+export type { ComparisonProps } from '@/src/react/ui/Comparison';
+export { calendarMetricComparison } from '@/src/react/ui/metric-comparison';
+export type { MetricComparison } from '@/src/react/ui/metric-comparison';
 export {
   DataTable,
   DataTableEmptyRow,
@@ -98,11 +98,8 @@ export type {
 } from '@/src/react/ui/DataTable';
 export { MetricWidget } from '@/src/react/ui/MetricWidget';
 export type { MetricWidgetProps } from '@/src/react/ui/MetricWidget';
-export { SelectableBarChart } from '@/src/react/ui/SelectableBarChart';
-export type {
-  SelectableBarChartProps,
-  SelectableBarItem,
-} from '@/src/react/ui/SelectableBarChart';
+export { BarChart } from '@/src/react/ui/BarChart';
+export type { BarChartProps, BarChartItem } from '@/src/react/ui/BarChart';
 export { DimensionPicker } from '@/src/react/ui/DimensionPicker';
 
 // Request states and freshness
@@ -264,3 +261,24 @@ export type {
   MetricReading,
   MetricValues,
 } from '@/src/core/reading';
+
+export { LineChart } from '@/src/react/ui/LineChart';
+export type { LineChartProps, LineChartItem } from '@/src/react/ui/LineChart';
+export { AreaChart } from '@/src/react/ui/AreaChart';
+export type { AreaChartProps, AreaChartItem } from '@/src/react/ui/AreaChart';
+
+export { PieChart } from '@/src/react/ui/PieChart';
+export type { PieChartProps, PieChartItem } from '@/src/react/ui/PieChart';
+
+export { ScatterChart } from '@/src/react/ui/ScatterChart';
+export type {
+  ScatterChartProps,
+  ScatterChartItem,
+} from '@/src/react/ui/ScatterChart';
+
+export { defineChartItems } from '@/src/react/ui/chart-data';
+export type {
+  ChartItem,
+  ChartKind,
+  ValueChartProps,
+} from '@/src/react/ui/chart-data';

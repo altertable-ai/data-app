@@ -44,8 +44,8 @@
 @import './ui/Breakdown.css';
 @import './ui/Ranking.css';
 @import './ui/WidgetDisclosure.css';
-@import './ui/ComparisonVisual.css';
-@import './ui/SelectableBarChart.css';
+@import './ui/Comparison.css';
+@import './ui/BarChart.css';
 @import './ui/RefreshRegion.css';
 @import './ui/UpdatedAt.css';
 @import './ui/data-identifiers.css';
@@ -53,3 +53,9 @@
 @import './ui/DataAppSkeleton.css';
 
 @import './ui/ExportControl.css';
+
+@import './ui/TrendChart.css';
+
+@import './ui/PieChart.css';
+
+@import './ui/ScatterChart.css';
