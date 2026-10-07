@@ -132,3 +132,88 @@ test('two-column spans collapse before a second track fits', async ({
     }
   }
 });
+
+test('spans follow fitting tracks at custom public gap boundaries', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/layout?span');
+  const grid = page.frameLocator('iframe').getByTestId('cards');
+  for (const [size, minimum] of [
+    ['compact', 192],
+    ['regular', 240],
+    ['wide', 320],
+  ] as const) {
+    for (const columns of [2, 3, 4]) {
+      for (const [gapName, gap] of [
+        ['sm', 0],
+        ['md', 24],
+        ['lg', 80],
+      ] as const) {
+        for (const width of [
+          2 * minimum + gap - 1,
+          2 * minimum + gap - 0.01,
+          2 * minimum + gap,
+          3 * minimum + 2 * gap - 1,
+          3 * minimum + 2 * gap,
+        ]) {
+          await grid.evaluate(
+            (element, options) => {
+              element.setAttribute('data-min-item-width', options.size);
+              element.setAttribute('data-columns', String(options.columns));
+              element.setAttribute('data-gap', options.gapName);
+              const style = (element as HTMLElement).style;
+              style.width = `${options.width}px`;
+              for (const name of [
+                '--atbl-layout-gap',
+                '--atbl-space-sm',
+                '--atbl-space-md',
+              ])
+                style.removeProperty(name);
+              style.setProperty(
+                options.gapName === 'lg'
+                  ? '--atbl-layout-gap'
+                  : `--atbl-space-${options.gapName}`,
+                `${options.gap}px`
+              );
+            },
+            { size, columns, gapName, gap, width }
+          );
+          const geometry = await grid.evaluate(element => {
+            const [first, second] = [...element.children].map(child =>
+              child.getBoundingClientRect()
+            );
+            return {
+              first: first!.width,
+              second: second!.width,
+              columns: getComputedStyle(element).gridTemplateColumns,
+              overflow: element.scrollWidth - element.clientWidth,
+            };
+          });
+          const count = Math.min(
+            columns,
+            Math.floor((width + gap) / (minimum + gap))
+          );
+          const track = (width - (count - 1) * gap) / count;
+          const context = JSON.stringify({
+            size,
+            columns,
+            gapName,
+            gap,
+            width,
+            geometry,
+          });
+          expect(geometry.overflow, context).toBeLessThan(1);
+          expect(geometry.first, context).toBeCloseTo(
+            count === 1 ? width : 2 * track + gap,
+            0
+          );
+          expect(geometry.second, context).toBeCloseTo(
+            count === 1 || (columns === 3 && count < 3) ? width : track,
+            0
+          );
+        }
+      }
+    }
+  }
+});
