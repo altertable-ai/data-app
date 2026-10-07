@@ -144,40 +144,12 @@ function OrderResults({
           metric={revenueMetric}
           description="Paid and pending orders; refunds excluded."
           source={result}
-          insight={
-            <>
-              <DataValue dataset={countryDataset} source={result}>
-                {countries => {
-                  const revenue = countries.reduce(
-                    (sum, row) => sum + row.revenue,
-                    0
-                  );
-                  const orderCount = countries.reduce(
-                    (sum, row) => sum + row.orderCount,
-                    0
-                  );
-                  return orderCount
-                    ? formatMetric(
-                        revenue / orderCount,
-                        revenueMetric.definition.format
-                      )
-                    : '—';
-                }}
-              </DataValue>{' '}
-              per order on average.
-            </>
-          }
         />
         <VisualizationWidget
           title="Orders per day"
           description="Daily order count. Days without orders stay on the chart as zero."
           dataset={dayDataset}
           source={result}
-          insight={
-            <DataValue dataset={dayDataset} source={result}>
-              {describeWeeklyOrderTrend}
-            </DataValue>
-          }
         >
           {days => <DailyLineChart days={days} />}
         </VisualizationWidget>
@@ -186,29 +158,6 @@ function OrderResults({
           description="Share of orders by amount, in $50 bands."
           dataset={valueDataset}
           source={result}
-          insight={
-            <>
-              Largest band:{' '}
-              <DataValue dataset={valueDataset} source={result}>
-                {bands => {
-                  const largest = bands.reduce<
-                    (typeof bands)[number] | undefined
-                  >(
-                    (best, row) =>
-                      !best || row.orderCount > best.orderCount ? row : best,
-                    undefined
-                  );
-                  const orders = bands.reduce(
-                    (sum, row) => sum + row.orderCount,
-                    0
-                  );
-                  return largest && orders
-                    ? `${largest.band}, with ${formatPercent(largest.orderCount / orders)} of orders.`
-                    : 'No orders.';
-                }}
-              </DataValue>
-            </>
-          }
         >
           {bands => <OrderValuePieChart bands={bands} />}
         </VisualizationWidget>
@@ -219,20 +168,6 @@ function OrderResults({
         dataset={countryDataset}
         source={result}
         skeleton={{ variant: 'ranking', rows: 5 }}
-        insight={
-          <DataValue dataset={countryDataset} source={result}>
-            {countries => {
-              const revenue = countries.reduce(
-                (sum, row) => sum + row.revenue,
-                0
-              );
-              const leading = countries[0];
-              return leading && revenue > 0
-                ? `${leading.country} brings in ${formatPercent(leading.revenue / revenue)} of revenue.`
-                : 'No revenue.';
-            }}
-          </DataValue>
-        }
       >
         {countries => <CountryRanking countries={countries} />}
       </VisualizationWidget>

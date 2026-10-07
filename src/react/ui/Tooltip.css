@@ -10,7 +10,7 @@
   min-width: 0;
 }
 .altertable-tooltip-content {
-  z-index: 1000;
+  z-index: 1300;
   width: max-content;
   max-width: min(240px, calc(100vw - 24px));
   padding: 6px 9px;

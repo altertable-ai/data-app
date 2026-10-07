@@ -72,6 +72,7 @@ export function attachDataAppConnection({
   let token = connection.type === 'opaque' ? connection.token : undefined;
   const targetOrigin = connection.type === 'opaque' ? '*' : frameOrigin;
   let currentPresentation: DataAppPresentation | undefined;
+  let presentationIdentity: string | undefined;
   let disposed = false;
   let documentId: string | undefined;
   let sessionId: string | undefined;
@@ -95,12 +96,13 @@ export function attachDataAppConnection({
 
   function setPresentation(value: DataAppPresentation | undefined) {
     if (disposed) return;
-    if (
-      value?.surface === currentPresentation?.surface &&
-      value?.theme === currentPresentation?.theme
-    )
-      return;
-    currentPresentation = value && { ...value };
+    const identity = JSON.stringify(value);
+    if (identity === presentationIdentity) return;
+    presentationIdentity = identity;
+    currentPresentation =
+      identity === undefined
+        ? undefined
+        : (JSON.parse(identity) as DataAppPresentation);
     publishState();
   }
 
@@ -183,9 +185,11 @@ export function attachDataAppConnection({
       return error(id, 'bridge_busy', 'Too many pending data requests.');
     try {
       const body = JSON.stringify(message.payload);
+      // PNG annotation captures have a separate validated 256 KiB image budget.
+      const limit = message.route === 'annotation:draft' ? 384_000 : 16_384;
       if (
         message.payload !== undefined &&
-        (typeof body !== 'string' || body.length > 16_384)
+        (typeof body !== 'string' || body.length > limit)
       )
         throw new Error('Invalid payload');
     } catch {

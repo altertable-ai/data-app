@@ -12,6 +12,7 @@ export type Shortcut = {
 };
 
 export const shortcuts = {
+  annotate: { modifier: 'mod', shift: true, code: 'Period', key: '.' },
   refresh: { modifier: 'alt', code: 'KeyR', key: 'R' },
   aboutData: { modifier: 'alt', code: 'KeyI', key: 'I' },
   playStory: { modifier: 'mod', code: 'Enter', key: 'Enter' },
@@ -60,7 +61,8 @@ export function isEditingTarget(target: EventTarget | null): boolean {
 export function useShortcut(
   shortcut: Shortcut,
   action: () => void,
-  enabled = true
+  enabled = true,
+  allowWhileEditing = false
 ): void {
   const { modifier, shift = false, code } = shortcut;
 
@@ -85,7 +87,7 @@ export function useShortcut(
       if (
         !pressed ||
         document.querySelector('dialog:modal') ||
-        isEditingTarget(event.target)
+        (!allowWhileEditing && isEditingTarget(event.target))
       )
         return;
       event.preventDefault();
@@ -95,5 +97,5 @@ export function useShortcut(
     document.addEventListener('keydown', onKeyDown);
 
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [modifier, shift, code, enabled, action]);
+  }, [modifier, shift, code, enabled, allowWhileEditing, action]);
 }

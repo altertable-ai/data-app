@@ -87,12 +87,6 @@
   min-width: 0;
   margin-top: var(--atbl-space-sm);
 }
-.altertable-metric-insight {
-  margin-top: var(--atbl-space-sm);
-  color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
-  line-height: 1.45;
-}
 .altertable-metric-value[data-unavailable] {
   opacity: 0.6;
 }

@@ -49,12 +49,12 @@ export type TableDisplayMode =
 
 type TableWidgetBaseProps<Row> = {
   title: ReactNode;
+  annotationId?: string;
   count?: number;
   description?: ReactNode;
   columns: readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
   /** Unique, nonempty row identity. Numeric keys must be finite; 1 and "1" collide. */
   rowKey: (row: Row) => string | number;
-  insight?: ReactNode;
   status?: WidgetStatus;
   action?: ReactNode;
   evidence?: WidgetEvidence;
@@ -119,7 +119,6 @@ function TableWidgetContent<Row>({
   columns,
   rows,
   rowKey,
-  insight,
   action,
   evidence,
   search,
@@ -293,13 +292,13 @@ function TableWidgetContent<Row>({
     <VisualizationWidget
       {...props}
       title={title}
+      annotationId={props.annotationId ?? evidence?.id}
       count={loading ? undefined : count}
       description={description}
       action={action}
       evidence={loading ? undefined : evidence}
       aria-busy={loading || props['aria-busy']}
       footer={pager}
-      insight={insight}
       visual={<div className="altertable-table-widget-content">{table}</div>}
     />
   );

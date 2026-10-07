@@ -55,5 +55,8 @@
 @import './ui/TrendChart.css' layer(atbl.components);
 @import './ui/PieChart.css' layer(atbl.components);
 @import './ui/ScatterChart.css' layer(atbl.components);
+@import './annotations/colors.css' layer(atbl.components);
+@import './annotations/AnnotationBar.css' layer(atbl.components);
+@import './annotations/AnnotationControls.css' layer(atbl.components);
 @import './ui/Focus.css' layer(atbl.interaction);
 @import './interaction.css' layer(atbl.interaction);

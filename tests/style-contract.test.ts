@@ -68,7 +68,9 @@ test('new package native and Aria control owners declare interaction hooks', asy
   const controls =
     /<(button|summary|AriaButton|ListBoxItem|DateSegment|CalendarCell|AriaTab|AriaTabPanel)\b([^>]*?)>/g;
   const missing: string[] = [];
-  for await (const path of new Glob('src/react/ui/*.tsx').scan('.')) {
+  for await (const path of new Glob('src/react/{ui,annotations}/*.tsx').scan(
+    '.'
+  )) {
     const source = await Bun.file(path).text();
     for (const [, tag, attributes] of source.matchAll(controls)) {
       if (!attributes?.includes('data-atbl-focus'))
