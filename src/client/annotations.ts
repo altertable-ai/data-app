@@ -23,7 +23,7 @@ export function createAnnotationClient(transport: MessageTransport) {
     setEditorState(hasUnsavedChanges: boolean) {
       return client.request('annotation:editor', { hasUnsavedChanges });
     },
-    sendAnnotation(
+    addAnnotation(
       draft: DataAppAnnotationDraft,
       options?: { signal?: AbortSignal }
     ) {

@@ -232,7 +232,7 @@ scroll to and reopen a saved annotation from the host list.
 
 ### Delivery API
 
-`createAnnotationClient(transport)` from `/client` provides `sendAnnotation(draft)`,
+`createAnnotationClient(transport)` from `/client` provides `addAnnotation(draft)`,
 `updateAnnotation(id, comment)`, and `setMode(active)`. Each accepts an optional
 `{ signal }` for cancellation. React apps use `useDataAppAnnotations()` from `/react`
 to bind this client to the current authenticated iframe bridge. The built-in
@@ -240,7 +240,7 @@ annotation editor uses this same public hook.
 
 ```tsx
 const annotations = useDataAppAnnotations();
-await annotations.sendAnnotation(draft);
+await annotations.addAnnotation(draft);
 await annotations.updateAnnotation(draft.id, 'Compare with last quarter');
 ```
 

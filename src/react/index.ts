@@ -271,3 +271,5 @@ export { AnnotationBar } from '@/src/react/ui/AnnotationBar';
 export type { AnnotationBarProps } from '@/src/react/ui/AnnotationBar';
 
 export { injectDataAppAnnotationStyles } from '@/src/react/annotationStyles';
+
+export { useAnnotationDrafts } from '@/src/react/useAnnotationDrafts';

@@ -203,7 +203,7 @@ test('public annotation client delivers validated drafts and edits to the host',
   const client = createAnnotationClient((message, signal) =>
     router.dispatch(message, { signal: signal ?? new AbortController().signal })
   );
-  await client.sendAnnotation(draft);
+  await client.addAnnotation(draft);
   await client.updateAnnotation(draft.id, 'Compare last quarter');
   expect(received).toEqual([
     { ...draft, comment: draft.comment.trim() },

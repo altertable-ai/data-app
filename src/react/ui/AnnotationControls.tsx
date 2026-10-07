@@ -421,7 +421,7 @@ export function AnnotationControls({
         const result = await capture.result;
         if (!result.image)
           throw new Error('Could not capture the annotation area.');
-        await annotationClient.sendAnnotation({
+        await annotationClient.addAnnotation({
           ...draft,
           comment,
           context: { ...draft.context, screenshot: result.image },
