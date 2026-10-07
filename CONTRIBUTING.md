@@ -4,6 +4,7 @@ Use the Bun and Node.js versions in `.bun-version` and `.node-version`.
 
 ```fish
 bun install --frozen-lockfile
+bash scripts/install-test-browser.sh
 bun run check
 ```
 
@@ -85,9 +86,6 @@ Run `bun run check:links:external` explicitly to check external HTTP(S) links.
 It skips local development URLs and checks reachability without external heading
 validation. It stays outside required checks because third-party availability and
 rate limits can cause failures unrelated to a change.
-
-Run `bash scripts/install-test-browser.sh` once to install Chromium, then
-`bun run check` to verify the complete suite.
 
 Run `bun run dev` to preview UI examples at `http://127.0.0.1:27418/gallery`
 and a playground at `/playground` (`dev/playground.tsx`, querying the demo
