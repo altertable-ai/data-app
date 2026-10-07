@@ -36,12 +36,16 @@ fallbacks minimal.
 
 ## Verify changes
 
-Tests should tell the package's public usage stories: define an operation,
-authorize and query it, compose a view, or embed an app. Exercise published
-entries so build and export mistakes are observable. Test private logic in
-isolation only when its complexity warrants it, such as cancellation, streaming,
-SQL escaping, or authenticated bridge sessions. Avoid tests that repeat trivial
-helpers, file layout, or every component prop.
+Write high-level public API tests with Vitest in `tests/public-api`. Define an
+operation, authorize and query it, compose a view, or embed an app through
+`@altertable/data-app/<entry>`. Assert consumer-visible results and errors. Supply
+data and failures through public dependency injection; do not import private
+source, fabricate internal state, or assert implementation details. Keep setup
+local until repetition warrants sharing it.
+
+`bun run test` runs the public API suite against the built package. During the
+migration, `bun run test:legacy` retains the existing Bun coverage and
+`bun run test:browser` retains the existing browser coverage.
 
 Update the relevant guide when changing public behavior. In documentation prose,
 write functions as `functionName()` and components as `<ComponentName>`. Keep JSDoc for
@@ -62,7 +66,8 @@ checks. Build before running consumer tests individually.
 | `bun run check:links`          | Validate local files, images, and heading links     |
 | `bun run check:links:external` | Check external URLs (requires network access)       |
 | `bun run format`               | Format source and docs                              |
-| `bun run test`                 | Verify public contracts and complex isolated logic  |
+| `bun run test`                 | Verify high-level public API workflows with Vitest  |
+| `bun run test:legacy`          | Retain Bun coverage during the migration            |
 | `bun run test:package`         | Verify the npm archive as a consumer                |
 | `bun run test:starter`         | Typecheck, lint, and build the starter              |
 | `bun run test:browser`         | Verify browser interactions in Chromium             |

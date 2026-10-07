@@ -95,8 +95,9 @@
     "lint": "oxlint --type-aware src tests scripts browser-tests dev examples/starter-data-app",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "test": "bun test ./tests",
-    "check": "bun run build && bun run typecheck && bun run lint && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run test:package && bun run test:starter",
+    "test": "vitest run",
+    "test:legacy": "bun test ./tests --path-ignore-patterns '**/public-api/**'",
+    "check": "bun run build && bun run typecheck && bun run lint && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run test:legacy && bun run test:package && bun run test:starter",
     "test:package": "bun run scripts/check-package.ts",
     "check:workflows": "bash scripts/check-workflows.sh",
     "test:browser": "playwright test --config browser-tests/playwright.config.ts",
@@ -131,7 +132,8 @@
     "remark-lint-no-dead-urls": "2.0.1",
     "remark-validate-links": "13.1.0",
     "testcontainers": "12.2.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
   },
   "peerDependencies": {
     "react": ">=19.2.0",
