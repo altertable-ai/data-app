@@ -781,7 +781,12 @@ test('a report formats values, searches all loaded rows and paginates the visibl
     .poll(() => page.getByText('11.6%', { exact: true }).isVisible())
     .toBe(true);
   await expect
-    .poll(() => page.getByText('—', { exact: true }).isVisible())
+    .poll(() =>
+      page
+        .getByRole('region', { name: 'Unavailable', exact: true })
+        .getByText('—', { exact: true })
+        .isVisible()
+    )
     .toBe(true);
   await expect
     .poll(() =>
@@ -1329,4 +1334,324 @@ test('a failed embedded app can recover with a corrected bundle and bootstrap fa
   await expect
     .poll(() => page.getByRole('alert').textContent())
     .toContain('Could not load');
+});
+
+for (const width of [375, 1280]) {
+  test(`a report remains readable at ${width}px while loading, empty, failed, ready and stale`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    let respond: ((data: number[] | null) => void) | undefined;
+    await page.route('**/layout-data/activity', async route => {
+      const data = await new Promise<number[] | null>(resolve => {
+        respond = resolve;
+      });
+      if (data === null)
+        await route.fulfill({
+          status: 503,
+          json: {
+            error: { code: 'unavailable', message: 'Activity unavailable' },
+          },
+        });
+      else
+        await route.fulfill({
+          json: {
+            data,
+            requestId: 'activity',
+            queriedAt: '2026-10-07T00:00:00Z',
+            queryIds: [],
+            queries: [],
+          },
+        });
+    });
+    async function readable() {
+      await expect
+        .poll(() =>
+          page.getByRole('heading', { name: 'Activity overview' }).isVisible()
+        )
+        .toBe(true);
+      const geometry = await page.getByRole('main').evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        const sections = element.querySelector(
+          '[aria-label="Report sections"]'
+        )!;
+        const children = [...sections.children].map(child =>
+          child.getBoundingClientRect()
+        );
+        return {
+          left: rect.left,
+          right: rect.right,
+          width: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+          gaps: children
+            .slice(1)
+            .map((child, index) => child.top - children[index]!.bottom),
+        };
+      });
+      expect(geometry.left).toBeGreaterThan(0);
+      expect(geometry.right).toBeLessThan(geometry.width);
+      expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.width);
+      expect(geometry.gaps.every(gap => gap > 0)).toBe(true);
+    }
+    await page.goto('/layout');
+    await expect
+      .poll(() => page.getByText('Loading data', { exact: true }).isVisible())
+      .toBe(true);
+    await readable();
+    await expect.poll(() => Boolean(respond)).toBe(true);
+    respond!(null);
+    await expect
+      .poll(() =>
+        page.getByText('Couldn’t load results', { exact: true }).isVisible()
+      )
+      .toBe(true);
+    await readable();
+    respond = undefined;
+    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect.poll(() => Boolean(respond)).toBe(true);
+    respond!([]);
+    await expect
+      .poll(() => page.getByText('No activity', { exact: true }).isVisible())
+      .toBe(true);
+    await readable();
+    respond = undefined;
+    await page
+      .getByRole('button', { name: 'Refresh data', exact: true })
+      .click();
+    await expect.poll(() => Boolean(respond)).toBe(true);
+    respond!([42]);
+    const cards = page.getByLabel('Activity cards');
+    await expect.poll(() => cards.isVisible()).toBe(true);
+    await readable();
+    const positions = await cards.evaluate(element =>
+      [...element.children].map(child => {
+        const rect = child.getBoundingClientRect();
+        return {
+          left: rect.left,
+          width: rect.width,
+          top: rect.top,
+          bottom: rect.bottom,
+        };
+      })
+    );
+    expect(positions[1]!.top).toBeGreaterThan(positions[0]!.bottom);
+    expect(Math.abs(positions[0]!.left - positions[1]!.left)).toBeLessThan(1);
+    if (width === 375)
+      expect(Math.abs(positions[0]!.width - positions[1]!.width)).toBeLessThan(
+        1
+      );
+    else expect(positions[0]!.width).toBeGreaterThan(positions[1]!.width);
+    respond = undefined;
+    await page
+      .getByRole('button', { name: 'Refresh data', exact: true })
+      .click();
+    await expect.poll(() => Boolean(respond)).toBe(true);
+    await readable();
+    expect(await cards.getByText('42', { exact: true }).count()).toBe(2);
+    respond!(null);
+    await expect
+      .poll(() => page.getByText(/Couldn’t refresh/).isVisible())
+      .toBe(true);
+    await readable();
+    expect(await cards.getByText('42', { exact: true }).count()).toBe(2);
+  });
+}
+
+test('a report explicitly installs styles under CSP and can style another document independently', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/styles');
+  const grid = page.getByLabel('Report grid');
+  await expect.poll(() => grid.count()).toBe(1);
+  expect(
+    await grid.evaluate(element => getComputedStyle(element).display)
+  ).toBe('block');
+  await page
+    .getByRole('button', { name: 'Style other report', exact: true })
+    .click();
+  const other = page.frameLocator('iframe').getByLabel('Report grid');
+  await expect
+    .poll(() => other.evaluate(element => getComputedStyle(element).display))
+    .toBe('grid');
+  expect(
+    await grid.evaluate(element => getComputedStyle(element).display)
+  ).toBe('block');
+  await page.getByRole('button', { name: 'Style report', exact: true }).click();
+  await expect
+    .poll(() => grid.evaluate(element => getComputedStyle(element).display))
+    .toBe('grid');
+  await page.getByRole('button', { name: 'Style report', exact: true }).click();
+  expect(await page.locator('#identity').textContent()).toBe(
+    'Reused stylesheet'
+  );
+  expect(errors).toEqual([]);
+});
+
+test('a report formats missing values, precise ratios, localized numbers and calendar ranges without ambiguity', async ({
+  page,
+}) => {
+  await page.goto('/static');
+  for (const row of [
+    'Rounded number 12.35',
+    'Negative zero 0',
+    'Compact count 12.3K',
+    'Fractional count —',
+    'Negative count —',
+    'Nonfinite value —',
+    'Custom missing label Unknown',
+    'Small ratio 0.12%',
+    'Tiny positive ratio <0.01%',
+    'Tiny negative ratio >−0.01%',
+    'Measured zero ratio 0%',
+    'Currency $12.50',
+    'Localized number 1.234,5',
+    'Same month Sep 25–27, 2026',
+    'Cross month Aug 30–Sep 28, 2026',
+    'Cross year Dec 30, 2025–Jan 2, 2026',
+    'Single day Sep 28, 2026',
+    'Singular label 1 event',
+    'Plural label 0 events',
+  ]) {
+    await expect
+      .poll(() => page.getByRole('row', { name: row, exact: true }).isVisible())
+      .toBe(true);
+  }
+});
+
+test('a failing consumer logger cannot interrupt iframe queries', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/bridge-host');
+  const app = page.frameLocator('iframe');
+  await app
+    .getByRole('button', { name: 'Write failing logs', exact: true })
+    .click();
+  await expect
+    .poll(() => app.locator('#result').textContent())
+    .toBe('App continued after logging');
+  await page.getByRole('button', { name: 'Break logger', exact: true }).click();
+  await app.getByRole('button', { name: 'Write logs', exact: true }).click();
+  await app.getByRole('button', { name: 'Query', exact: true }).click();
+  await expect
+    .poll(() => app.locator('#result').textContent())
+    .toContain('"version":1');
+  expect(await page.locator('#logs').textContent()).toBe('[]');
+  expect(errors).toEqual([]);
+  await page.getByRole('button', { name: 'Break logger', exact: true }).click();
+  await app.getByRole('button', { name: 'Write logs', exact: true }).click();
+  await expect
+    .poll(async () => JSON.parse((await page.locator('#logs').textContent())!))
+    .toHaveLength(4);
+});
+
+test('foreign and malformed iframe log messages cannot invoke the host logger', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.addEventListener('message', event => {
+      if (event.data?.type === 'runtime:log')
+        Object.assign(window, { capturedLog: event.data });
+    });
+  });
+  await page.goto('/bridge-host');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Write logs', exact: true }).click();
+  await expect
+    .poll(async () => JSON.parse((await page.locator('#logs').textContent())!))
+    .toHaveLength(4);
+  const original = await page.locator('#logs').textContent();
+  await expect
+    .poll(() =>
+      page.evaluate(() => Boolean(Reflect.get(window, 'capturedLog')))
+    )
+    .toBe(true);
+  const packet = await page.evaluate(() => Reflect.get(window, 'capturedLog'));
+  await page.evaluate(value => window.postMessage(value, '*'), packet);
+  const frame = page.frames().find(frame => frame !== page.mainFrame())!;
+  await frame.evaluate(value => {
+    parent.postMessage({ ...value, sessionId: 'old-session' }, '*');
+    parent.postMessage(
+      { ...value, payload: { method: 'constructor', args: ['failed'] } },
+      '*'
+    );
+    parent.postMessage(
+      { ...value, payload: { method: 'error', args: 'failed' } },
+      '*'
+    );
+  }, packet);
+  await app.getByRole('button', { name: 'Query', exact: true }).click();
+  await expect
+    .poll(() => app.locator('#result').textContent())
+    .toContain('"version":1');
+  expect(await page.locator('#logs').textContent()).toBe(original);
+});
+
+test('an overloaded iframe rejects excess work, releases cancelled requests and settles pending work on disposal', async ({
+  page,
+}) => {
+  await page.goto('/bridge-host');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Flood queries', exact: true }).click();
+  await expect
+    .poll(async () =>
+      Number(
+        await page
+          .getByRole('status', { name: 'Pending requests', exact: true })
+          .textContent()
+      )
+    )
+    .toBeGreaterThan(0);
+  await app.getByRole('button', { name: 'Cancel query', exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        JSON.parse((await app.locator('#result').textContent()) || '[]').length
+    )
+    .toBe(200);
+  const results: string[] = JSON.parse(
+    (await app.locator('#result').textContent())!
+  );
+  expect(results).toContain('bridge_busy');
+  expect(results).toContain('AbortError');
+  expect(
+    results.every(result => result === 'bridge_busy' || result === 'AbortError')
+  ).toBe(true);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Pending requests', exact: true })
+        .textContent()
+    )
+    .toBe('0');
+  await app.getByRole('button', { name: 'Query', exact: true }).click();
+  await expect
+    .poll(() => app.locator('#result').textContent())
+    .toContain('"version":1');
+  await app
+    .getByRole('button', { name: 'Wait for query', exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Pending requests', exact: true })
+        .textContent()
+    )
+    .toBe('1');
+  await app
+    .getByRole('button', { name: 'Dispose transport', exact: true })
+    .click();
+  await expect
+    .poll(() => app.locator('#result').textContent())
+    .toBe('bridge_closed');
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Pending requests', exact: true })
+        .textContent()
+    )
+    .toBe('0');
 });

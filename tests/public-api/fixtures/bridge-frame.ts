@@ -22,6 +22,16 @@ log.addEventListener('click', () => {
   bridge.logger.error('failed');
 });
 document.body.append(log);
+const badLogs = document.createElement('button');
+badLogs.textContent = 'Write failing logs';
+badLogs.addEventListener('click', () => {
+  bridge.logger.log(() => {
+    throw new Error('Failed lazy argument');
+  });
+  bridge.logger.log(document.body);
+  result.textContent = 'App continued after logging';
+});
+document.body.append(badLogs);
 
 function showLocation() {
   location.textContent = window.location.search + window.location.hash;
@@ -41,13 +51,38 @@ document.getElementById('filter')!.addEventListener('click', () => {
 showLocation();
 
 let controller: AbortController;
-for (const action of ['Concurrent queries', 'Wait for query', 'Cancel query']) {
+for (const action of [
+  'Concurrent queries',
+  'Wait for query',
+  'Cancel query',
+  'Flood queries',
+  'Dispose transport',
+]) {
   const button = document.createElement('button');
   button.textContent = action;
   button.addEventListener('click', () => {
     const result = document.getElementById('result')!;
+    if (action === 'Dispose transport') {
+      bridge.dispose();
+      return;
+    }
     if (action === 'Cancel query') {
       controller.abort();
+      return;
+    }
+    if (action === 'Flood queries') {
+      controller = new AbortController();
+      void Promise.all(
+        Array.from({ length: 200 }, () =>
+          messages
+            .request('test:wait', 1, { signal: controller.signal })
+            .catch(error =>
+              error.name === 'AbortError' ? error.name : error.code
+            )
+        )
+      ).then(values => {
+        result.textContent = JSON.stringify(values);
+      });
       return;
     }
     if (action === 'Concurrent queries') {

@@ -1,4 +1,10 @@
-import { StrictMode, useReducer, useState, type ComponentRef } from 'react';
+import {
+  StrictMode,
+  useRef,
+  useReducer,
+  useState,
+  type ComponentRef,
+} from 'react';
 import { createRoot } from 'react-dom/client';
 import { createMessageRouter } from '@altertable/data-app/contract';
 import { createHttpTransport } from '@altertable/data-app/client';
@@ -17,9 +23,11 @@ function Host() {
   const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
   const [generation, bumpGeneration] = useReducer(value => value + 1, 0);
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
+  const brokenLogger = useRef(false);
   const [logging, setLogging] = useState(true);
   const [logs, setLogs] = useState<unknown[][]>([]);
   function record(level: string, args: unknown[]) {
+    if (brokenLogger.current) throw new Error('Consumer logger failed');
     if (!['plain', 'completed', 'slow', 'failed'].includes(String(args[0])))
       return;
     setLogs(previous => [...previous, [version, level, ...args]]);
@@ -64,6 +72,13 @@ function Host() {
       <button onClick={bumpGeneration}>Replace iframe</button>
       <button onClick={bumpVersion}>Change handler</button>
       <button onClick={() => setLogging(!logging)}>Toggle logging</button>
+      <button
+        onClick={() => {
+          brokenLogger.current = !brokenLogger.current;
+        }}
+      >
+        Break logger
+      </button>
       <output id="logs">{JSON.stringify(logs)}</output>
       <DataAppBridge
         iframe={iframe}
