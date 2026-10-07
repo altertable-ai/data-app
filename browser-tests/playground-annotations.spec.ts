@@ -146,6 +146,7 @@ test('bottom bar reviews, focuses, hides and deletes saved annotations', async (
   await confirmation
     .getByRole('button', { name: 'Cancel', exact: true })
     .click();
+  await expect(confirmation).toBeHidden();
   await expect(bar).toContainText('Annotating · 1');
   await page
     .getByRole('button', { name: 'Discard all annotations', exact: true })
