@@ -1,3 +1,4 @@
+import { bindDataset } from '@/src/react/bindings';
 import { defineDataContent } from '@/src/react/content';
 import { defineAppVariables } from '@/src/react/ui/variables';
 import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
@@ -61,6 +62,7 @@ test('date requests derive a comparison and reject forged or unavailable ranges'
   ).toThrow();
   const definition = {
     operation: 'activity',
+    dataContext: { description: 'Activity', glossary: {} },
     variables: { period: variable },
     input({ period }: { period: typeof request }) {
       return period;
@@ -261,17 +263,27 @@ test('an empty widget tab renders its authored fallback', () => {
 
 test('narrative content binds values and scope without evaluating loading data', () => {
   let calls = 0;
+  const rows = bindDataset({
+    name: 'Activity explained',
+    select: (data: { count: number }, input: { region: string }) => {
+      calls++;
+      return [{ count: data.count, region: input.region }];
+    },
+    rowKey: row => row.region,
+    columns: {
+      count: { value: row => row.count },
+      region: { value: row => row.region },
+    },
+    evidence: { id: 'activity-explanation', queryNames: ['activity'] },
+  });
   const content = defineDataContent<{ count: number }, { region: string }>(
     result => (
       <TextWidget
         title="Activity explained"
         evidence={{ id: 'activity-explanation', queryNames: ['activity'] }}
-        reading={result.select((data, input) => {
-          calls++;
-          return { count: data.count, region: input.region };
-        })}
+        reading={rows.read(result)}
       >
-        {({ count, region }) => (
+        {([{ count, region }]) => (
           <p>
             {count === 0
               ? `No activity in ${region}`

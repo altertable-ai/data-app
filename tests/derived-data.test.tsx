@@ -43,16 +43,17 @@ const context = createDataContext({ rows: 'rows' })({
     },
   },
 });
-const metric = context.metric({
+const metric = {
   id: 'count',
   glossaryId: 'count',
   format: { kind: 'count' },
-});
+} as const;
 type Row = { id: string; count: number | null; available: boolean };
 const hooks = createDataHooks<{
   rows: DataOperation<{ scope: string }, readonly Row[]>;
 }>(createDataClient());
 const view = hooks.defineDataView({
+  dataContext: context,
   operation: 'rows',
   input: () => ({ scope: 'current' }),
   describeInput: input => input.scope,
@@ -188,7 +189,7 @@ test('bound metrics derive loading, zero, evidence, and period comparisons for w
     <MetricWidget metric={count} source={{ loading: true }} />
   );
   expect(selections).toBe(0);
-  expect(count.definition).toBe(metric);
+  expect(count.definition).toEqual(context.metric(metric));
   expect(count.read(snapshot).value.current).toBe(1234);
   expect(
     count.read({
@@ -204,6 +205,7 @@ test('bound metrics derive loading, zero, evidence, and period comparisons for w
     timed: DataOperation<DateRangeRequest, number>;
   }>(createDataClient());
   const timed = timeHooks.defineTimeView({
+    dataContext: context,
     operation: 'timed',
     time: {
       contract: calendar,
@@ -313,6 +315,7 @@ test('hook scope uses the automatic date description for a manually composed vie
     defaultValue: { kind: 'dates', start: '2026-03-01', end: '2026-03-03' },
   });
   const dateView = timeHooks.defineDataView({
+    dataContext: context,
     operation: 'timed',
     variables: { period },
     input: values => values.period,
@@ -452,4 +455,16 @@ test('narrative bindings preserve loading, formatting, measured zero, and displa
       <DataValue scope={{ loading: false, value: 'displayed scope' }} />
     )
   ).toContain('displayed scope');
+});
+
+test('views register metric labels and evidence against their own context before reading data', () => {
+  const count = view.metric(metric, rows => ({ current: rows.length }));
+  expect(count.definition.label).toBe('Count');
+  expect(count.definition.evidence.glossaryIds).toEqual(['count']);
+  expect(count.definition.evidence.queryNames).toEqual(['rows']);
+  expect(() =>
+    view.metric({ ...metric, glossaryId: 'missing' as 'count' }, () => {
+      throw new Error('Selector must not run');
+    })
+  ).toThrow('Unknown glossary entry');
 });

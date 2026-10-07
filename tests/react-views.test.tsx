@@ -1,3 +1,7 @@
+import {
+  VisualizationWidget as BoundVisual,
+  TableWidget as BoundTable,
+} from '@/src/react/widgets';
 import { createDataHooks } from '@/src/react/hooks';
 import { getViewDefinition } from '@/src/react/view-runtime';
 import { InspectionSheet } from '@/src/react/ui/AboutData';
@@ -23,11 +27,7 @@ import {
   createDataContext,
   Comparison,
 } from '@altertable/data-app/react';
-import {
-  DataWidget,
-  VisualizationWidget,
-  TableWidget,
-} from '@/src/react/ui/index';
+import { DataWidget, VisualizationWidget } from '@/src/react/ui/index';
 import { DataAppFrame as DataApp } from '@/src/react/ui/DataAppFrame';
 import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
 import { type DataView } from '@/src/core/data-view';
@@ -76,6 +76,7 @@ const { defineDataView, defineTimeView } = createDataHooks<{
   activity: DataOperation<DateRangeRequest, Data>;
 }>(createDataClient());
 const view = defineDataView({
+  dataContext: context,
   operation: 'activity',
   variables: { period },
   input({ period }) {
@@ -134,6 +135,7 @@ test('a custom data widget shares the bound loading, empty, and inspection contr
 
 test('time view derives its control, input, and displayed period from one declaration', () => {
   const timed = defineTimeView({
+    dataContext: context,
     operation: 'activity',
     time: {
       contract: calendar,
@@ -160,6 +162,7 @@ test('time view composes other inputs without surrendering its period binding', 
   }>(createDataClient());
   const search = textVariable({ key: 'search' });
   const timed = defineSearchView({
+    dataContext: context,
     operation: 'search',
     time: {
       contract: calendar,
@@ -233,6 +236,7 @@ test('nested view inputs preserve dates and dimensions in validation and descrip
     nested: DataOperation<Input, Data>;
   }>(createDataClient());
   const timed = defineTimeView({
+    dataContext: context,
     operation: 'nested',
     time: {
       contract: calendar,
@@ -335,6 +339,10 @@ test('story inspection filters executed SQL to the finding evidence', () => {
   expect(html).not.toContain('unrelated_evidence');
 });
 
+const actionValues = view.metric(
+  { id: 'actions', glossaryId: 'actions', format: { kind: 'count' } },
+  data => ({ current: data.current, previous: data.previous })
+);
 test('bound metrics share values, formatting, evidence and displayed comparison periods', () => {
   expect(actions.evidence).toEqual({
     id: 'actions',
@@ -342,10 +350,7 @@ test('bound metrics share values, formatting, evidence and displayed comparison 
     queryNames: ['activity'],
   });
   const content = view.content(result => {
-    const reading = result.metric(data => ({
-      current: data.current,
-      previous: data.previous,
-    }));
+    const reading = actionValues.read(result);
 
     return <Comparison metric={actions} reading={reading} />;
   });
@@ -379,14 +384,17 @@ test('favorable direction colors a comparison without changing its numeric direc
     format: { kind: 'count' },
     favorableDirection: 'down',
   });
+  const fewerValues = view.metric(
+    {
+      id: 'errors',
+      glossaryId: 'actions',
+      format: { kind: 'count' },
+      favorableDirection: 'down',
+    },
+    data => ({ current: data.current, previous: data.previous })
+  );
   const content = view.content(result => (
-    <Comparison
-      metric={fewerIsBetter}
-      reading={result.metric(data => ({
-        current: data.current,
-        previous: data.previous,
-      }))}
-    />
+    <Comparison metric={fewerIsBetter} reading={fewerValues.read(result)} />
   ));
   const input = calendar.request(
     { start: '2026-03-10', end: '2026-03-12' },
@@ -401,21 +409,25 @@ test('favorable direction colors a comparison without changing its numeric direc
 
 test('bound visual selectors do not run during loading or render an empty result', () => {
   let calls = 0;
+  const features = view.dataset({
+    name: 'Features',
+    select: data => {
+      calls++;
+      return data.rows;
+    },
+    rowKey: row => row,
+    columns: { feature: { value: row => row } },
+    evidence: featureEvidence,
+    emptyFallback: { title: 'No features' },
+  });
   const content = view.content(result => (
-    <VisualizationWidget
-      title="Features"
-      evidence={featureEvidence}
-      reading={result.select(data => {
-        calls++;
-
-        return data.rows;
-      })}
-      isEmpty={rows => rows.length === 0}
-      emptyFallback={{ title: 'No features' }}
+    <BoundVisual
+      dataset={features}
+      source={result}
       skeleton={{ variant: 'ranking', rows: 6 }}
     >
       {rows => <p>{rows.join(', ')}</p>}
-    </VisualizationWidget>
+    </BoundVisual>
   ));
   expect(calls).toBe(0);
   expect(
@@ -558,24 +570,16 @@ test('bound visualization views render inside one widget with a selected view', 
 });
 
 test('bound tables keep their row contract while loading', () => {
+  const features = view.dataset({
+    name: 'Features',
+    select: data => data.rows,
+    rowKey: row => row,
+    columns: { feature: { value: row => row } },
+    evidence: featureEvidence,
+    emptyFallback: { title: 'No features' },
+  });
   const content = view.content(result => (
-    <TableWidget
-      title="Features"
-      evidence={featureEvidence}
-      reading={result.select(data => data.rows)}
-      rowKey={row => row}
-      columns={[
-        {
-          id: 'feature',
-          header: 'Feature',
-          cell(row) {
-            return row;
-          },
-        },
-      ]}
-      emptyFallback={{ title: 'No features' }}
-      skeletonRows={3}
-    />
+    <BoundTable dataset={features} source={result} skeletonRows={3} />
   ));
   expect(
     renderToStaticMarkup(content.loadingFallback).match(
@@ -768,11 +772,16 @@ test('declared view defaults derive operation inputs without dropping explicit m
     isEmpty: () => false,
     emptyFallback: { title: 'No data' },
   };
-  const empty = hooks.defineDataView({ ...base, operation: 'empty' });
+  const empty = hooks.defineDataView({
+    dataContext: context,
+    ...base,
+    operation: 'empty',
+  });
   expect(getViewDefinition(empty).variables).toEqual({});
   expect(resolveViewInput(getViewDefinition(empty), {})).toEqual({});
   const variables = { search: textVariable({ key: 'search' }) };
   const search = hooks.defineDataView({
+    dataContext: context,
     ...base,
     operation: 'search',
     variables,
@@ -783,6 +792,7 @@ test('declared view defaults derive operation inputs without dropping explicit m
     search: 'new',
   });
   const nested = hooks.defineDataView({
+    dataContext: context,
     ...base,
     operation: 'nested',
     variables,

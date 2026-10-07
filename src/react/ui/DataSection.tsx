@@ -41,11 +41,15 @@ function IndependentSection<Data, Input>({
   const section = (
     <DataSectionBoundary {...props} result={result} notice="inline" />
   );
-  return defaults ? (
-    <InspectionContext value={{ ...defaults, queries: result.queries }}>
+  return (
+    <InspectionContext
+      value={{
+        ...defaults,
+        dataContext: result.dataContext,
+        queries: result.queries,
+      }}
+    >
       {section}
     </InspectionContext>
-  ) : (
-    section
   );
 }

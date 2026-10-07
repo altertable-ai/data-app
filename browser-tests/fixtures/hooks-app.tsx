@@ -1,6 +1,8 @@
+import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { useDeclaredResult } from '@/src/react/view-runtime';
 import { DeclaredApp } from '@/browser-tests/fixtures/declared-app';
 import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { bindDataset } from '@/src/react/bindings';
 import { defineDataContent } from '@/src/react/content';
 import { ClientCacheApp } from '@/browser-tests/fixtures/client-cache';
 import { useState } from 'react';
@@ -13,6 +15,11 @@ import { createDataHooks } from '@/src/react/hooks';
 import { DataAppProvider, TextWidget } from '@altertable/data-app/react/ui';
 
 injectDataAppStyles();
+
+const context = registerContext({})({
+  description: 'Fixture context',
+  glossary: {},
+});
 
 const operations = {
   alpha: defineOperation({
@@ -62,6 +69,24 @@ const client = createDataClient<typeof operations>({
   },
 });
 const { defineDataView } = createDataHooks(client);
+const narrativeRows = bindDataset({
+  name: 'Activity',
+  select: (
+    data: OutputOf<typeof operations.alpha | typeof operations.beta>,
+    input: { version: number }
+  ) => [
+    {
+      value: 'count' in data ? data.count : data.label,
+      version: input.version,
+    },
+  ],
+  rowKey: row => row.version,
+  columns: {
+    value: { value: row => row.value },
+    version: { value: row => row.version },
+  },
+  evidence: { id: 'fixture', queryNames: ['fixture'] },
+});
 const narrative = defineDataContent<
   OutputOf<(typeof operations)[keyof typeof operations]>,
   { version: number }
@@ -73,12 +98,9 @@ const narrative = defineDataContent<
       id: 'activity-explanation',
       queryNames: ['alpha-evidence', 'beta-evidence'],
     }}
-    reading={result.select((data, input) => ({
-      value: 'count' in data ? data.count : data.label,
-      version: input.version,
-    }))}
+    reading={narrativeRows.read(result)}
   >
-    {({ value, version }) => (
+    {([{ value, version }]) => (
       <p>
         {value} for selection {version}
       </p>
@@ -91,6 +113,7 @@ function App() {
   const [version, setVersion] = useState(1);
   const result = useDeclaredResult(
     defineDataView({
+      dataContext: context,
       operation,
       variables: {},
       input: () => ({ version }),

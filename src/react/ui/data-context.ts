@@ -20,6 +20,18 @@ export type DataContext = {
   queryNames?: Readonly<Record<string, string>>;
 };
 
+export type MetricDeclaration = {
+  id: string;
+  glossaryId: string;
+  label?: string;
+  format: MetricFormat;
+  favorableDirection?: 'up' | 'down';
+  queryNames?: readonly string[];
+};
+export type AuthoringDataContext = DataContext & {
+  metric(definition: MetricDeclaration): MetricDefinition;
+};
+
 function evidenceFor<
   const Context extends DataContext,
   const Names extends Record<string, string> = Record<string, string>,

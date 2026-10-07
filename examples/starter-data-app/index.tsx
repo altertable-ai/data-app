@@ -99,6 +99,7 @@ const sampleDataContext = createDataContext(queryNames)({
 });
 const { defineDataView } = createDataHooks(createDataClient({ operations }));
 const sampleCountsView = defineDataView({
+  dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
   variables: {
     groupName: textVariable({ key: 'group', label: 'Group', defaultValue: '' }),
@@ -125,12 +126,12 @@ const sampleCounts = sampleCountsView.dataset({
   }),
 });
 const totalSamples = sampleCountsView.metric(
-  sampleDataContext.metric({
+  {
     id: 'total-samples',
     glossaryId: 'sampleCount',
     label: 'Total samples',
     format: { kind: 'count' },
-  }),
+  },
   rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
 );
 const sampleContent = sampleCountsView.content(result => (
@@ -160,7 +161,6 @@ function App() {
   return (
     <DataApp
       config={appConfig}
-      dataContext={sampleDataContext}
       view={sampleCountsView}
       datasets={[sampleCounts]}
       story={snapshot => {

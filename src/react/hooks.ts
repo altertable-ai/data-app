@@ -5,7 +5,7 @@ import {
   displayedScope,
   type DatasetDefinition,
 } from '@/src/react/bindings';
-import type { MetricDefinition } from '@/src/react/ui/metric';
+import type { AuthoringDataContext } from '@/src/react/ui/data-context';
 import type { MetricValues } from '@/src/core/reading';
 import type { DisplayedSnapshot } from '@/src/core/data-view';
 import { useState, type ReactNode } from 'react';
@@ -173,13 +173,14 @@ export function createDataHooks<Operations extends DataOperations>(
   function defineDataView<
     Name extends keyof Operations & string,
     const Variables extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
   >(
     definition: DataViewDefinition<
       Name,
       Variables,
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
-    >
+    > & { dataContext: Context }
   ) {
     const variables = defineAppVariables(
       definition.variables ?? {}
@@ -207,10 +208,14 @@ export function createDataHooks<Operations extends DataOperations>(
           return bindDataset(definition);
         },
         metric(
-          metric: MetricDefinition,
+          metric: Parameters<Context['metric']>[0],
           select: (data: Data, input: Input) => MetricValues
         ) {
-          return bindMetric(metric, select, definition.date?.input);
+          return bindMetric(
+            definition.dataContext.metric(metric),
+            select,
+            definition.date?.input
+          );
         },
         scope(snapshot: DisplayedSnapshot<Data, Input>) {
           return describeInput(snapshot.input);
@@ -224,7 +229,6 @@ export function createDataHooks<Operations extends DataOperations>(
           ) => ReactNode
         ) {
           return defineDataContent(render, {
-            date: definition.date?.input,
             describeInput,
           });
         },
@@ -241,9 +245,11 @@ export function createDataHooks<Operations extends DataOperations>(
   function defineTimeView<
     Name extends keyof Operations & string,
     const Additional extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
   >(
     definition: {
       operation: Name;
+      dataContext: Context;
       time: Omit<DateRangeVariableOptions, 'key'>;
       variables?: Additional & { period?: never };
       bindings?: ViewBindings<
@@ -256,8 +262,13 @@ export function createDataHooks<Operations extends DataOperations>(
   ) {
     const period = dateRangeVariable({ ...definition.time, key: 'period' });
 
-    return defineDataView<Name, { period: typeof period } & Additional>({
+    return defineDataView<
+      Name,
+      { period: typeof period } & Additional,
+      Context
+    >({
       operation: definition.operation,
+      dataContext: definition.dataContext,
       variables: { period, ...definition.variables } as {
         period: typeof period;
       } & Additional,
@@ -338,6 +349,7 @@ export function createDataHooks<Operations extends DataOperations>(
 
     return {
       view: request.view,
+      dataContext: definition.dataContext,
       snapshot: request.snapshot,
       scope: displayedScope(request.view, describeInput),
       refetch() {

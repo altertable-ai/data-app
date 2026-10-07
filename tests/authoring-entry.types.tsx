@@ -1,3 +1,4 @@
+import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import * as authoring from '@altertable/data-app/react';
 import {
   createDataHooks,
@@ -22,10 +23,18 @@ import {
   AboutData,
 } from '@altertable/data-app/react/ui';
 
+const context = registerContext({ count: 'count' })({
+  description: 'Fixture context',
+  glossary: {
+    count: { term: 'Count', definition: 'Count', queryNames: ['count'] },
+  },
+});
+
 const hooks = createDataHooks<{
   count: DataOperation<Record<string, never>, number>;
 }>(createDataClient());
 const view = hooks.defineDataView({
+  dataContext: context,
   operation: 'count',
   describeInput: () => 'all',
   isEmpty: () => false,
@@ -130,7 +139,7 @@ const boundMetric = view.metric(
     id: 'count',
     label: 'Count',
     format: { kind: 'count' },
-    evidence: { id: 'count', queryNames: ['count'] },
+    glossaryId: 'count',
   },
   data => ({ current: data })
 );
@@ -182,3 +191,34 @@ type _RawCsvTable = authoring.CsvTable;
 type _RawReading = authoring.DataReading<number>;
 // @ts-expect-error Raw metric readings are direct UI adapters.
 type _RawMetricReading = authoring.MetricReading;
+
+view.content(source => {
+  // @ts-expect-error Readings come from declarations, not anonymous content selectors.
+  void source.select;
+  // @ts-expect-error Metrics are declared through the view.
+  void source.metric;
+  return <DataValue scope={source.scope} />;
+});
+// @ts-expect-error Context belongs to the declared view.
+<DataApp {...app} dataContext={context} />;
+// @ts-expect-error A view must own a registered data context.
+hooks.defineDataView({
+  operation: 'count',
+  describeInput: () => 'all',
+  isEmpty: () => false,
+  emptyFallback: { title: 'Empty' },
+});
+view.metric(
+  // @ts-expect-error Metric registration validates the view's glossary keys.
+  { id: 'bad', glossaryId: 'missing', format: { kind: 'count' } },
+  data => ({ current: data })
+);
+view.metric(
+  // @ts-expect-error Metric registration and binding are one call.
+  context.metric({
+    id: 'count',
+    glossaryId: 'count',
+    format: { kind: 'count' },
+  }),
+  data => ({ current: data })
+);

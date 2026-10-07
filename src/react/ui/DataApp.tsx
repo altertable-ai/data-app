@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import type { DataAppConfig } from '@/src/core/config';
 import type { DisplayedSnapshot } from '@/src/core/data-view';
 import { exportDatasets, type ExportDataset } from '@/src/react/bindings';
-import type { DataContext } from '@/src/react/ui/data-context';
 import type { BoundStory } from '@/src/react/ui/story';
 import { DataAppFrame } from '@/src/react/ui/DataAppFrame';
 import {
@@ -16,7 +15,6 @@ export type DataAppProps<Data, Input = unknown> = {
     scope(snapshot: DisplayedSnapshot<Data, Input>): string;
   };
   config: DataAppConfig;
-  dataContext: DataContext;
   story: BoundStory<Data, Input>;
   datasets: readonly [
     ExportDataset<Data, Input>,
@@ -37,6 +35,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
       <DataAppFrame
         {...frame}
         request={result}
+        dataContext={result.dataContext}
         csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
           exportDatasets(
             datasets,

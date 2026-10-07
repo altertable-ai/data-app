@@ -37,10 +37,17 @@ const countries = activityView.dataset({
     count: { value: row => row.count, format: { kind: 'count' } },
   },
 });
-const total = activityView.metric(trackedIdentities, data => ({
-  current: data.count,
-  previous: data.previousCount,
-}));
+const total = activityView.metric(
+  {
+    id: 'tracked-identities',
+    glossaryId: 'identities',
+    format: { kind: 'count' },
+  },
+  data => ({
+    current: data.count,
+    previous: data.previousCount,
+  })
+);
 const content = activityView.content(result => (
   <Grid columns={2}>
     <MetricWidget metric={total} source={result} />

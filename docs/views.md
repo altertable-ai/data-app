@@ -14,6 +14,7 @@ import type { operations } from '#app/operations.ts';
 const client = createDataClient<typeof operations>();
 const { defineDataView } = createDataHooks(client);
 const activityView = defineDataView({
+  dataContext,
   operation: 'activity',
   describeInput: () => 'all activity',
   isEmpty: data => data.rows.length === 0,
@@ -27,7 +28,6 @@ function App() {
   return (
     <DataApp
       config={config}
-      dataContext={dataContext}
       view={activityView}
       story={story}
       datasets={[activityDataset]}
@@ -90,8 +90,9 @@ charts, and custom views.
 
 ## Preserve displayed results
 
-The callback in `view.content()` receives the displayed result and its original
-input during refreshes and failures. Use that input when labeling the data.
+The callback in `view.content()` receives a displayed source with `loading`,
+`data`, `input`, and `scope`. Bind widgets to that source. Its input remains the
+one that produced the visible data during refreshes and failures.
 
 Keep the client stable across renders; create it outside the component.
 
@@ -106,7 +107,8 @@ Place `<DataSection>` around each independently fetched subtree. Supply
 `loadingFallback`; the section inherits `emptyFallback` from its view, with an
 optional local override. Use `view.content()` to share the widget layout between loading and
 ready data. The section handles initial errors and retries. Pass the same declaration to `DataApp.view` and the primary `DataSection.view`;
-they share one displayed result. Other sections execute their own declared views and inspect their own queries.
+they share one displayed result. Each independent section uses its own view
+context and executed queries.
 Keep related analytical datasets in one view so export and story share a coherent
 snapshot.
 

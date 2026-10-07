@@ -1,3 +1,4 @@
+import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { useDeclaredResult, getViewDefinition } from '@/src/react/view-runtime';
 import { useState } from 'react';
 import { createDataClient } from '@/src/client/index';
@@ -10,6 +11,11 @@ import {
 } from '@/src/core/contract';
 import { createDataHooks } from '@/src/react/hooks';
 import type { TransportResponse } from '@/src/core/bridge';
+
+const context = registerContext({})({
+  description: 'Fixture context',
+  glossary: {},
+});
 
 const policy = { maxQueryRows: 10, maxDurationMs: 1000 };
 const operations = {
@@ -82,6 +88,7 @@ const hooksA = createDataHooks(clientA);
 const hooksAAgain = createDataHooks(clientA);
 const hooksB = createDataHooks(createFixtureClient('b'));
 const view = hooksA.defineDataView({
+  dataContext: context,
   operation: 'metric',
   variables: {
     category: hooksA.defineFacetFilter({
@@ -111,7 +118,11 @@ const view = hooksA.defineDataView({
 
 function Panel({ id, hooks }: { id: string; hooks: typeof hooksA }) {
   const result = useDeclaredResult(
-    hooks.defineDataView(getViewDefinition(view))
+    hooks.defineDataView({
+      ...getViewDefinition(view),
+      dataContext: context,
+      date: undefined,
+    })
   );
 
   return (

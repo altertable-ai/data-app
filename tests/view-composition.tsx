@@ -1,3 +1,4 @@
+import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 import {
   type DataOperation,
@@ -23,6 +24,11 @@ import {
 import { type DataSectionProps } from '@/src/react/ui/DataSectionBoundary';
 import { type DataAppProps } from '@/src/react/ui/DataAppFrame';
 
+const authoringContext = registerContext({})({
+  description: 'Fixture context',
+  glossary: {},
+});
+
 const { defineDataView } = createDataHooks<{
   activity: DataOperation<DateRangeRequest, { count: number }>;
 }>(createDataClient());
@@ -32,6 +38,7 @@ const period = dateRangeVariable({
   contract: defineDateRangeContract({ maxRangeDays: 30, timeZone: 'UTC' }),
 });
 defineDataView({
+  dataContext: authoringContext,
   operation: 'activity',
   variables: { period },
   input({ period }) {
@@ -49,6 +56,7 @@ defineDataView({
   emptyFallback: { title: 'No activity' },
 });
 defineDataView({
+  dataContext: authoringContext,
   operation: 'activity',
   variables: { period },
   // @ts-expect-error Operation input must match the selected operation.
@@ -63,6 +71,7 @@ defineDataView({
 });
 // @ts-expect-error Without a date variable, the input needs an authored description.
 defineDataView({
+  dataContext: authoringContext,
   operation: 'activity',
   variables: { search: textVariable({ key: 'search' }) },
   input() {
@@ -195,6 +204,7 @@ const time = {
 } as const;
 // @ts-expect-error A nested input requires an explicit mapper rather than an implicit cast.
 defineTimeView({
+  dataContext: authoringContext,
   operation: 'nested',
   time,
   isEmpty() {
@@ -203,6 +213,7 @@ defineTimeView({
   emptyFallback: { title: 'Empty' },
 });
 defineTimeView({
+  dataContext: authoringContext,
   operation: 'nested',
   time,
   input({ period }) {
@@ -219,6 +230,7 @@ defineTimeView({
   emptyFallback: { title: 'Empty' },
 });
 defineTimeView({
+  dataContext: authoringContext,
   operation: 'filtered',
   time,
   variables: { search: textVariable({ key: 'search' }) },
@@ -317,28 +329,43 @@ const base = {
   isEmpty: () => false,
   emptyFallback: { title: 'No data' },
 };
-defaults.defineDataView({ ...base, operation: 'empty' });
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'empty',
+});
 const searchView = defaults.defineDataView({
+  dataContext: authoringContext,
   ...base,
   operation: 'search',
   variables: { search: textVariable({ key: 'search' }) },
 });
 // @ts-expect-error Required operation fields cannot be invented from empty variables.
-defaults.defineDataView({ ...base, operation: 'required' });
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'required',
+});
 // @ts-expect-error A nested input requires an explicit mapping.
 defaults.defineDataView({
+  dataContext: authoringContext,
   ...base,
   operation: 'nested',
   variables: { search: textVariable({ key: 'search' }) },
 });
 // @ts-expect-error An additional required field needs an explicit mapping.
 defaults.defineDataView({
+  dataContext: authoringContext,
   ...base,
   operation: 'required',
   variables: { search: textVariable({ key: 'search' }) },
 });
 // @ts-expect-error An object of variables cannot derive a primitive input.
-defaults.defineDataView({ ...base, operation: 'primitive' });
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'primitive',
+});
 const inheritedSection: DataSectionProps<number> = {
   result: {
     view: { kind: 'empty', input: {} },
@@ -352,11 +379,13 @@ void [searchView, inheritedSection];
 
 // @ts-expect-error Optional extra input fields still require an explicit mapping.
 defaults.defineDataView({
+  dataContext: authoringContext,
   ...base,
   operation: 'optional',
   variables: { search: textVariable({ key: 'search' }) },
 });
 defaults.defineDataView({
+  dataContext: authoringContext,
   ...base,
   operation: 'optional',
   variables: { search: textVariable({ key: 'search' }) },
@@ -397,7 +426,11 @@ const rowHooks = createDataHooks<{
     readonly { id: string; count: number | null }[]
   >;
 }>(createDataClient());
-const rowView = rowHooks.defineDataView({ ...base, operation: 'rows' });
+const rowView = rowHooks.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'rows',
+});
 const projectedRows = rowView.dataset({
   name: 'Projection',
   select: rows => rows.map(row => ({ key: row.id, total: row.count })),

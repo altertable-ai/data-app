@@ -17,7 +17,7 @@ Import formatting helpers from `@altertable/data-app/format`.
 | `pluralize()`       | Count-dependent labels                                 |
 
 Missing values render distinctly from measured zero. Define metric formatting
-once with `context.metric()` and use metric readings for comparisons. Previous
+once with `view.metric()`; comparisons derive from its displayed source. Previous
 values, range labels, and favorable direction belong to that metric and displayed
 input; see [data context](data-context.md) and [views](views.md).
 

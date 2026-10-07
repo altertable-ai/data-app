@@ -1,3 +1,4 @@
+import type { DataContext } from '@/src/react/ui/data-context';
 import { createContext } from 'react';
 import type { ReactNode } from 'react';
 import type { DataView, DisplayedSnapshot } from '@/src/core/data-view';
@@ -5,6 +6,7 @@ import type { DisclosedQuery } from '@/src/core/contract';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 
 export type ViewResult<Data, Input> = {
+  dataContext: DataContext;
   view: DataView<Data, Input>;
   snapshot?: DisplayedSnapshot<Data, Input>;
   refetch: () => unknown;

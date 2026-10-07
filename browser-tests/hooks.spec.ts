@@ -200,6 +200,10 @@ test('declared primary sections reuse retained data when mounting during refresh
   );
   await page.getByRole('button', { name: 'Explore Beta', exact: true }).click();
   const inspection = page.getByRole('dialog');
+  await expect(inspection).toContainText('Independent beta');
+  await expect(inspection).toContainText(
+    'Only the beta section owns this glossary entry.'
+  );
   await inspection.getByRole('tab', { name: 'Queries', exact: true }).click();
   await expect(inspection).toContainText('SELECT beta');
   await expect(inspection).not.toContainText('SELECT alpha');

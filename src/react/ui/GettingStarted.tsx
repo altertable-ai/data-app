@@ -1,3 +1,4 @@
+import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { useDeclaredResult } from '@/src/react/view-runtime';
 import { createDataClient } from '@/src/client/data-client';
 import type { DataAppConfig } from '@/src/core/config';
@@ -8,12 +9,18 @@ import { Button } from '@/src/react/ui/Button';
 import { DataApp } from '@/src/react/ui/StaticDataApp';
 import type { DataContext } from '@/src/react/ui/data-context';
 
+const connectionContext = registerContext({})({
+  description: 'Connection setup',
+  glossary: {},
+});
+
 const client = /* @__PURE__ */ createDataClient();
 const { defineDataView } = /* @__PURE__ */ createDataHooks<{
   connection: ReturnType<typeof connectionCheck>;
 }>(client);
 
 const connectionView = defineDataView({
+  dataContext: connectionContext,
   operation: 'connection',
   describeInput: () => 'the connection',
   isEmpty: () => false,

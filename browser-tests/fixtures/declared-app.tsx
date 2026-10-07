@@ -38,7 +38,12 @@ const client = createDataClient<{
   },
 });
 const hooks = createDataHooks(client);
+const context = createDataContext({ alpha: 'alpha', beta: 'beta' })({
+  description: 'Declared views',
+  glossary: {},
+});
 const alpha = hooks.defineDataView({
+  dataContext: context,
   operation: 'alpha',
   variables: {
     version: textVariable({
@@ -52,15 +57,22 @@ const alpha = hooks.defineDataView({
   isEmpty: () => false,
   emptyFallback: { title: 'No alpha' },
 });
+const betaContext = createDataContext({ beta: 'beta' })({
+  description: 'Independent beta context',
+  glossary: {
+    betaCount: {
+      term: 'Independent beta',
+      definition: 'Only the beta section owns this glossary entry.',
+      queryNames: ['beta'],
+    },
+  },
+});
 const beta = hooks.defineDataView({
+  dataContext: betaContext,
   operation: 'beta',
   describeInput: () => 'beta',
   isEmpty: () => false,
   emptyFallback: { title: 'No beta' },
-});
-const context = createDataContext({ alpha: 'alpha', beta: 'beta' })({
-  description: 'Declared views',
-  glossary: {},
 });
 const alphaDataset = alpha.dataset({
   name: 'Alpha',
@@ -108,7 +120,7 @@ const betaDataset = beta.dataset({
   select: data => [data],
   rowKey: () => 'beta',
   columns: { count: { value: row => row.count } },
-  evidence: context.evidence({ id: 'beta', queryNames: ['beta'] }),
+  evidence: betaContext.evidence({ id: 'beta', glossaryIds: ['betaCount'] }),
 });
 const betaContent = beta.content(result => (
   <TextWidget dataset={betaDataset} source={result}>
@@ -139,7 +151,6 @@ export function DeclaredApp() {
         scope: { organization: 'test', environment: 'test' },
         appearance: {},
       }}
-      dataContext={context}
       story={() => []}
       datasets={[alphaDataset]}
     >

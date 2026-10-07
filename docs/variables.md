@@ -27,6 +27,7 @@ snapshots or other input shapes.
 
 ```ts
 const activity = defineTimeView({
+  dataContext,
   operation: 'activity',
   time: { contract: calendar, defaultValue: { kind: 'preset', id: 'last-7' } },
   variables: { region: textVariable({ key: 'region' }) },

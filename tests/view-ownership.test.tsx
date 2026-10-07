@@ -26,6 +26,7 @@ test('the primary section reuses exactly the app result and independent declarat
     let primaryCalls = 0;
     let secondaryCalls = 0;
     const primaryResult = {
+      dataContext: { description: 'Test', glossary: {} },
       view: { kind: 'ready' as const, data: 1, input: 'old' },
       refetch() {},
       cancel() {},
@@ -69,7 +70,6 @@ test('the primary section reuses exactly the app result and independent declarat
           scope: { organization: 'a', environment: 'b' },
           appearance: {},
         }}
-        dataContext={{ description: 'Test', glossary: {} }}
         datasets={[dataset]}
         story={() => []}
       >

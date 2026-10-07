@@ -80,6 +80,7 @@ const revenueEvidence = orderDataContext.evidence({
 });
 const { defineDataView } = createDataHooks(createDataClient({ operations }));
 const orderView = defineDataView({
+  dataContext: orderDataContext,
   operation: 'orderOverview',
   variables: {
     country: textVariable({
@@ -98,21 +99,21 @@ const orderView = defineDataView({
 });
 
 const orderCountMetric = orderView.metric(
-  orderDataContext.metric({
+  {
     id: 'order-count',
     glossaryId: 'orders',
     label: 'Orders',
     format: { kind: 'count' },
-  }),
+  },
   data => ({ current: summarizeOrders(data).orderCount })
 );
 const revenueMetric = orderView.metric(
-  orderDataContext.metric({
+  {
     id: 'order-revenue',
     glossaryId: 'revenue',
     label: 'Revenue',
     format: currency,
-  }),
+  },
   data => ({ current: summarizeOrders(data).revenue })
 );
 function OrderResults({
@@ -321,7 +322,6 @@ function App() {
   return (
     <DataApp
       config={appConfig}
-      dataContext={orderDataContext}
       view={orderView}
       datasets={[countryDataset, dayDataset, valueDataset]}
       story={presentOrders}

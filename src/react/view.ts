@@ -1,3 +1,4 @@
+import type { DataContext } from '@/src/react/ui/data-context';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 import type {
   AppVariableValues,
@@ -58,6 +59,7 @@ export type DataViewDefinition<
   Data,
 > = {
   operation: Name;
+  dataContext: DataContext;
   bindings?: ViewBindings<Variables, Input>;
   /** App-owned semantics: measured zero need not mean an empty result. */
   isEmpty: (data: Data) => boolean;

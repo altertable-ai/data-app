@@ -1,8 +1,7 @@
 # Data context and evidence
 
-Pass the registered context to `<DataApp dataContext={context}>`. Inspection
-shows its description, glossary, and executed query SQL when disclosure is
-permitted. Render registered identifiers where `<DataIdentifier>` is used.
+Set `dataContext: context` in each view. The app and its sections inherit the
+view's description, glossary, and permitted query evidence. Render registered identifiers where `<DataIdentifier>` is used.
 
 Physical source identifiers name inspected tables and columns. Glossary entries
 explain business meaning. Query names link those definitions and displayed claims
@@ -65,12 +64,15 @@ const evidence = context.evidence({
   glossaryIds: ['identities'],
   queryNames: [queries.activity],
 });
-const trackedIdentities = context.metric({
-  id: 'actions',
-  glossaryId: 'identities',
-  label: 'Tracked identities',
-  format: { kind: 'count' },
-});
+// activityView is declared with dataContext: context.
+const trackedIdentities = activityView.metric(
+  {
+    id: 'identities',
+    glossaryId: 'identities',
+    format: { kind: 'count' },
+  },
+  data => ({ current: data.count })
+);
 const finding = context.finding({
   id: 'activity',
   headline: 'What people do',
@@ -81,5 +83,5 @@ const finding = context.finding({
 
 Import `defineQueryNames()` from `/contract` and the context/identifier factories from `/react`. Use the same registry in `defineOperation({ queryNames: queries, ... })`.
 
-Bind a registered metric's calculation with `view.metric(metric, select)` so
-widgets and stories share its reading; see [datasets and metrics](widgets.md#declare-datasets-and-metrics).
+Use `view.metric(definition, select)` to register and bind a metric in one call.
+Widgets and stories share its values and evidence; see [datasets and metrics](widgets.md#declare-datasets-and-metrics).
