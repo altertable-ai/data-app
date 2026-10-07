@@ -1,2 +1,4 @@
+@layer at.tokens, at.base, at.components, at.interaction;
+
 @import './shared.css';
-@import './ui/DataAppSkeleton.css';
+@import './ui/DataAppSkeleton.css' layer(at.components);

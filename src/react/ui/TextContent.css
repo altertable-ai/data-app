@@ -1,7 +1,7 @@
 .altertable-text-content {
   min-width: 0;
   max-width: 70ch;
-  color: var(--at-text, #202124);
+  color: var(--at-text);
   overflow-wrap: anywhere;
   font-size: 14px;
   line-height: 1.65;
@@ -13,22 +13,18 @@
   margin-bottom: 0;
 }
 .altertable-text-content :where(p, ul, ol) {
-  margin-block: 0 var(--at-space-sm, 8px);
+  margin-block: 0 var(--at-space-sm);
 }
 .altertable-text-content :where(ul, ol) {
   padding-inline-start: 1.5em;
 }
 .altertable-text-content a {
-  color: var(--at-accent, #2563eb);
+  color: var(--at-accent);
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
 
 .altertable-text-content a:hover {
-  color: var(--at-text, #202124);
+  color: var(--at-text);
   text-decoration-thickness: 2px;
-}
-.altertable-text-content a:focus-visible {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
 }

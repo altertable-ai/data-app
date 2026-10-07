@@ -3,22 +3,18 @@
   place-items: center;
   flex: none;
   border: 0;
-  border-radius: var(--at-radius-control, 6px);
+  border-radius: var(--at-radius-control);
   background: transparent;
-  color: var(--at-muted, #687078);
-  cursor: pointer;
+  color: var(--at-muted);
+  cursor: var(--at-cursor-action);
   transition:
-    background-color 120ms ease,
-    color 120ms ease;
+    background-color var(--at-duration-fast) var(--at-ease-standard),
+    color var(--at-duration-fast) var(--at-ease-standard);
 }
 .altertable-inspect-trigger:hover,
 .altertable-inspect-trigger[data-open='true'] {
-  background: var(--at-subtle, #f6f7f7);
-  color: var(--at-text, #202124);
-}
-.altertable-inspect-trigger:focus-visible {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
+  background: var(--at-subtle);
+  color: var(--at-text);
 }
 @media (hover: hover) and (pointer: fine) {
   :is(
@@ -26,7 +22,7 @@
     .altertable-data-widget .altertable-data-widget-help
   ) {
     opacity: 0;
-    transition: opacity 120ms ease;
+    transition: opacity var(--at-duration-fast) var(--at-ease-standard);
   }
   :is(
     .altertable-metric-widget:hover .altertable-metric-help,
@@ -82,7 +78,7 @@
   align-self: center;
   translate: 0 1px;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--at-duration-fast) var(--at-ease-standard);
 }
 .altertable-widget-heading-trigger:hover > svg,
 .altertable-widget-heading-trigger:focus-visible > svg,

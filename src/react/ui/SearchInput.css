@@ -6,17 +6,13 @@
   min-width: 0;
   min-height: 44px;
   padding: 0 12px;
-  border: 1px solid var(--at-border, #d9dee2);
-  border-radius: var(--at-radius-control, 8px);
-  background: var(--at-surface, #fff);
-  color: var(--at-muted, #626b73);
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius-control);
+  background: var(--at-surface);
+  color: var(--at-muted);
 }
 .altertable-search-input-wrap:hover {
-  border-color: var(--at-control-hover-border, #a6acb1);
-}
-.altertable-search-input-wrap:focus-within {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-inset, -1px);
+  border-color: var(--at-control-hover-border);
 }
 .altertable-search-input-wrap[data-size='compact'] {
   width: min(100%, 300px);
@@ -41,7 +37,7 @@
   border: 0;
   outline: 0;
   background: transparent;
-  color: var(--at-text, #202124);
+  color: var(--at-text);
   font: inherit;
   font-size: 14px;
 }

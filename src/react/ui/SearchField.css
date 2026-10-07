@@ -19,7 +19,7 @@
 .altertable-search-description,
 .altertable-search-status {
   margin: 0;
-  color: var(--at-muted, #626b73);
+  color: var(--at-muted);
   font-size: 12px;
   line-height: 1.45;
 }

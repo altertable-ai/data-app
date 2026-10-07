@@ -5,7 +5,7 @@
   margin: 0;
 }
 .altertable-comparison-visual figcaption {
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 13px;
   font-weight: 650;
 }
@@ -20,12 +20,12 @@
   gap: 12px;
 }
 .altertable-comparison-row > div > span {
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 13px;
 }
 .altertable-comparison-row strong {
-  color: var(--at-text, #202124);
-  font-family: var(--at-font-heading, inherit);
+  color: var(--at-text);
+  font-family: var(--at-font-heading);
   font-size: clamp(22px, 3vw, 32px);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
@@ -36,19 +36,19 @@
   height: 10px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--at-subtle, #f6f7f7);
+  background: var(--at-subtle);
 }
 .altertable-comparison-track > span {
   display: block;
   min-width: 2px;
   height: 100%;
   border-radius: inherit;
-  background: var(--at-accent, #405d47);
+  background: var(--at-accent);
 }
 .altertable-comparison-row[data-period='previous']
   .altertable-comparison-track
   > span {
-  background: var(--at-muted, #687078);
+  background: var(--at-muted);
   opacity: 0.45;
 }
 .altertable-comparison-change {
@@ -56,16 +56,16 @@
   align-items: center;
   gap: 5px;
   margin: 0;
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 .altertable-comparison-change[data-tone='good'] {
-  color: var(--at-accent, #405d47);
+  color: var(--at-positive);
 }
 .altertable-comparison-change[data-tone='bad'] {
-  color: var(--at-danger, #b42318);
+  color: var(--at-negative);
 }
 .altertable-about-visual .altertable-comparison-visual {
   gap: 12px;

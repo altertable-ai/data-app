@@ -9,12 +9,12 @@
   gap: 6px;
   width: fit-content;
   border-radius: 4px;
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 12px;
   font-weight: 600;
   list-style: none;
-  cursor: pointer;
-  transition: color 120ms ease;
+  cursor: var(--at-cursor-action);
+  transition: color var(--at-duration-fast) var(--at-ease-standard);
 }
 .altertable-query-list summary::-webkit-details-marker {
   display: none;
@@ -25,17 +25,13 @@
   border-block: 4px solid transparent;
   border-inline-start: 5px solid currentColor;
   content: '';
-  transition: rotate 120ms ease;
+  transition: rotate var(--at-duration-fast) var(--at-ease-standard);
 }
 .altertable-query-list[open] summary::before {
   rotate: 90deg;
 }
 .altertable-query-list summary:hover {
-  color: var(--at-text, #202124);
-}
-.altertable-query-list summary:focus-visible {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
+  color: var(--at-text);
 }
 .altertable-query-list figure {
   display: grid;
@@ -43,9 +39,9 @@
   margin: 0;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--at-border, #e3e6e8);
+  border: 1px solid var(--at-border);
   border-radius: 10px;
-  background: var(--at-surface, #fff);
+  background: var(--at-surface);
 }
 .altertable-query-list figcaption {
   display: flex;
@@ -54,10 +50,10 @@
   gap: 12px;
   min-height: 36px;
   padding: 3px 6px 3px 14px;
-  border-bottom: 1px solid var(--at-border, #e3e6e8);
+  border-bottom: 1px solid var(--at-border);
   background: transparent;
-  color: var(--at-text, #202124);
-  font: 600 12px/1.4 var(--at-font, system-ui, sans-serif);
+  color: var(--at-text);
+  font: 600 12px/1.4 var(--at-font);
 }
 .altertable-query-filename {
   display: inline-flex;
@@ -79,36 +75,31 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
 }
 .altertable-query-action:hover:not(:disabled) {
-  color: var(--at-text, #202124);
-  background: var(--at-subtle, #f6f7f7);
-}
-.altertable-query-action:focus-visible {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
+  color: var(--at-text);
+  background: var(--at-subtle);
 }
 .altertable-query-list pre {
   margin: 0;
   padding: 14px 16px 18px;
   border: 0;
   border-radius: 0;
-  background: var(--at-code-surface, #f4f6f9);
-  color: var(--at-code-text, #273242);
-  font: 12px/1.6
-    var(--at-mono-font, ui-monospace, SFMono-Regular, Consolas, monospace);
+  background: var(--at-code-surface);
+  color: var(--at-code-text);
+  font: 12px/1.6 var(--at-mono-font);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   tab-size: 2;
 }
 .altertable-sql-keyword {
-  color: var(--at-accent, #305caf);
+  color: var(--at-code-keyword);
   font-weight: 650;
 }
 .altertable-query-unavailable {
   margin: 0;
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 13px;
 }
 .altertable-query-notebook {
@@ -123,13 +114,13 @@
   padding: 0 0 4px;
 }
 .altertable-query-notebook-header > span {
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 13px;
   font-weight: 450;
 }
 .altertable-query-notebook-header small {
   margin-inline-start: 8px;
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 11px;
   font-weight: 500;
 }
@@ -145,14 +136,14 @@
 }
 .altertable-query-notebook-error {
   padding: 8px 12px;
-  color: var(--at-danger, #b42318);
+  color: var(--at-danger);
   font-size: 12px;
 }
 @media (hover: hover) and (pointer: fine) {
   .altertable-query-actions .altertable-query-action {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 120ms ease;
+    transition: opacity var(--at-duration-fast) var(--at-ease-standard);
   }
   .altertable-query-list figure:hover .altertable-query-action,
   .altertable-query-list figure:focus-within .altertable-query-action,

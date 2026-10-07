@@ -2,12 +2,12 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: var(--at-layout-gap, 24px);
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: calc(var(--at-radius-surface, 12px) * 1.5);
+  padding: var(--at-layout-gap);
+  border: 1px solid var(--at-border);
+  border-radius: calc(var(--at-radius-surface) * 1.5);
   corner-shape: squircle;
-  background: var(--at-surface, #fff);
-  box-shadow: var(--at-shadow-surface, none);
+  background: var(--at-surface);
+  box-shadow: var(--at-shadow-surface);
 }
 .altertable-metric-widget.altertable-data-widget {
   padding: 0;
@@ -16,7 +16,7 @@
   min-height: 0;
 }
 .altertable-metric-widget > .altertable-data-widget-header h2 {
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -30,12 +30,12 @@
 }
 .altertable-metric-widget > .altertable-data-widget-footer {
   padding-top: 0;
-  padding-bottom: var(--at-layout-gap, 24px);
+  padding-bottom: var(--at-layout-gap);
 }
 .altertable-metric-value {
-  margin: var(--at-space-sm, 8px) 0 2px;
-  color: var(--at-text, #202124);
-  font-family: var(--at-font-heading, inherit);
+  margin: var(--at-space-sm) 0 2px;
+  color: var(--at-text);
+  font-family: var(--at-font-heading);
   font-size: clamp(26px, 3vw, 34px);
   font-weight: 680;
   line-height: 1.08;
@@ -56,27 +56,27 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-variant-numeric: tabular-nums;
 }
 .altertable-metric-change[data-tone='good'] {
-  color: var(--at-accent, #405d47);
+  color: var(--at-positive);
 }
 .altertable-metric-change[data-tone='bad'] {
-  color: var(--at-danger, #b42318);
+  color: var(--at-negative);
 }
 .altertable-metric-description {
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 12px;
   line-height: 1.45;
 }
 .altertable-metric-visual {
   min-width: 0;
-  margin-top: var(--at-space-sm, 8px);
+  margin-top: var(--at-space-sm);
 }
 .altertable-metric-insight {
-  margin-top: var(--at-space-sm, 8px);
-  color: var(--at-muted, #687078);
+  margin-top: var(--at-space-sm);
+  color: var(--at-muted);
   font-size: 12px;
   line-height: 1.45;
 }

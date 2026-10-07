@@ -20,21 +20,21 @@
   max-height: 40dvh;
   padding: 10px 12px;
   overflow: auto;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-surface, 12px);
-  background: var(--at-surface, #fff);
-  box-shadow: 0 10px 32px rgb(0 0 0 / 12%);
-  color: var(--at-text, #202124);
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius-surface);
+  background: var(--at-surface);
+  box-shadow: var(--at-shadow-overlay);
+  color: var(--at-text);
   font-size: 12px;
   line-height: 1.45;
   pointer-events: auto;
 }
 .altertable-data-view-toast > svg {
   flex: none;
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
 }
 .altertable-data-view-toast[data-state='error'] > svg {
-  color: var(--at-danger, #b42318);
+  color: var(--at-danger);
 }
 .altertable-data-view-toast > span {
   min-width: 0;

@@ -43,6 +43,7 @@ isolation only when its complexity warrants it, such as cancellation, streaming,
 SQL escaping, or authenticated bridge sessions. Avoid tests that repeat trivial
 helpers, file layout, or every component prop.
 
+Follow the [styling contract](docs/styling.md) when changing component CSS.
 Update the relevant guide when changing public behavior. In documentation prose,
 write functions as `functionName()` and components as `<ComponentName>`. Keep JSDoc for
 constraints, ownership, units, and runtime boundaries; leave implementation

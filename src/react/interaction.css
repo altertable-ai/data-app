@@ -1,0 +1,13 @@
+:where([class^='altertable-'], [class*=' altertable-']):is(
+  :disabled,
+  [data-disabled],
+  [aria-disabled='true']
+),
+:where([class^='altertable-'], [class*=' altertable-'])
+  :is(button, [role='option'], .react-aria-CalendarCell):is(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true']
+  ) {
+  cursor: var(--at-cursor-disabled);
+}

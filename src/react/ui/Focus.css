@@ -1,9 +1,3 @@
-:root {
-  --at-focus-outline: 1px solid var(--at-focus-color, #687078);
-  --at-focus-ring-offset: 2px;
-  --at-focus-ring-inset: -1px;
-}
-
 /* Native and React Aria controls share the same keyboard focus treatment. */
 [data-at-focus='ring']:is(:focus-visible, [data-focus-visible]),
 [data-at-focus='inset']:is(:focus-visible, [data-focus-visible]) {
@@ -20,15 +14,56 @@
   [data-focus-within],
   [data-focus-visible]
 ) {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-inset, -1px);
+  outline: var(--at-focus-outline);
+  outline-offset: var(--at-focus-ring-inset);
 }
 [data-at-focus='group'] input:focus-visible {
   outline: none;
 }
 
-@media (forced-colors: active) {
-  :root {
-    --at-focus-color: Highlight !important;
-  }
+/* Native and React Aria state selectors share one outline contract. */
+.altertable-theme-selector label:has(input:focus-visible),
+.altertable-present-dialog button:focus-visible,
+.altertable-widget-disclosure > summary:focus-visible,
+.altertable-date-range .react-aria-Group .react-aria-Button[data-focus-visible],
+.altertable-date-range .altertable-date-range-reset:focus-visible,
+.altertable-date-range-popover
+  .react-aria-Button:not(.altertable-date-range-preset)[data-focus-visible],
+.altertable-inspect-trigger:focus-visible,
+.altertable-tabs .react-aria-Tab[data-focus-visible],
+.altertable-tabs .react-aria-TabPanel[data-focus-visible],
+.altertable-query-list summary:focus-visible,
+.altertable-query-action:focus-visible,
+.altertable-checkbox:has(input:focus-visible),
+.altertable-glossary-definition-trigger:focus-visible,
+.altertable-button:focus-visible,
+.altertable-button[data-focus-visible],
+.altertable-app-footer a:focus-visible,
+.altertable-data-table-timestamp:focus-visible,
+.altertable-text-content a:focus-visible,
+.altertable-updated-at:focus-visible,
+.altertable-selectable-bars-item:focus-visible,
+.altertable-trend-point:focus-visible,
+.altertable-pie-legend button:focus-visible,
+.altertable-scatter-point:focus-visible,
+.altertable-calendar-select-popover .react-aria-ListBoxItem[data-focus-visible],
+.altertable-export-popover [role='option'][data-focus-visible] {
+  outline: var(--at-focus-outline);
+  outline-offset: var(--at-focus-ring-offset);
+}
+.altertable-combobox-popover .react-aria-ListBoxItem[data-focus-visible],
+.altertable-date-range .react-aria-Group[data-focus-within],
+.altertable-date-range .react-aria-DateSegment[data-focused],
+.altertable-date-range-popover
+  .altertable-date-range-preset[data-focus-visible],
+.altertable-date-range-popover .react-aria-CalendarCell[data-focus-visible],
+.altertable-live-frequency > button[data-focus-visible],
+.altertable-live-frequency-popover [role='option'][data-focus-visible],
+.altertable-search-input-wrap:not(
+    .altertable-combobox-dialog .altertable-search-input-wrap
+  ):focus-within,
+.altertable-live-control
+  .altertable-button:is(:focus-visible, [data-focus-visible]) {
+  outline: var(--at-focus-outline);
+  outline-offset: var(--at-focus-ring-inset);
 }

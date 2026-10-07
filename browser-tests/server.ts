@@ -9,6 +9,7 @@ import hooksApp from '@/browser-tests/fixtures/hooks-app.html';
 import inspectionApp from '@/browser-tests/fixtures/inspection-app.html';
 import gallery from '@/browser-tests/fixtures/gallery.html';
 import styles from '@/browser-tests/fixtures/styles.html';
+import appearance from '@/browser-tests/fixtures/appearance.html';
 import layout from '@/browser-tests/fixtures/layout.html';
 import layoutHost from '@/browser-tests/fixtures/layout-host.html';
 import bundleHost from '@/browser-tests/fixtures/bundle-host.html';
@@ -139,6 +140,7 @@ Bun.serve({
     '/gallery/components': request =>
       Response.redirect(new URL('/gallery?view=widgets', request.url), 302),
     '/styles': styles,
+    '/appearance': appearance,
     '/layout': layoutHost,
     '/layout-frame': layout,
     '/hooks-app': hooksApp,

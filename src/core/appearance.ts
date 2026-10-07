@@ -137,119 +137,115 @@ export function normalizeAppearance(
   };
 }
 
-const palettes = {
-  neutral: {
-    light: ['#ffffff', '#ffffff', '#f6f7f7', '#202124', '#687078', '#e3e6e8'],
-    dark: ['#151719', '#202326', '#292d31', '#f2f3f4', '#aeb5bc', '#3b4248'],
-  },
-  slate: {
-    light: ['#f8fafc', '#ffffff', '#f1f5f9', '#17212f', '#607083', '#dce3ea'],
-    dark: ['#111820', '#1b2530', '#263340', '#f0f4f8', '#a8b5c3', '#3a4857'],
-  },
-  warm: {
-    light: ['#fbfaf8', '#ffffff', '#f5f2ed', '#292723', '#736e66', '#e8e2da'],
-    dark: ['#1b1916', '#25221e', '#302c27', '#f5f1eb', '#bcb3a8', '#494239'],
-  },
-} as const;
-
-const spaces = {
-  compact: ['4px', '8px', '12px', '18px', '24px'],
-  comfortable: ['5px', '10px', '16px', '24px', '32px'],
-  spacious: ['6px', '12px', '20px', '30px', '40px'],
-} as const;
-
-const radii = {
-  none: ['0px', '0px', '0px'],
-  small: ['4px', '7px', '9px'],
-  medium: ['7px', '12px', '16px'],
-  large: ['10px', '18px', '24px'],
-} as const;
-
 function fontStack(family: string): string {
   return family === 'system'
     ? "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ui-sans-serif, sans-serif"
     : `${JSON.stringify(family)}, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ui-sans-serif, sans-serif`;
 }
 
+/** Choose a foreground after the browser resolves the configured CSS color. */
+function accentForeground(settings: AppearanceSettings, dark: boolean): string {
+  const accent =
+    getComputedStyle(document.documentElement).getPropertyValue(
+      '--at-accent'
+    ) ||
+    (dark
+      ? (settings.darkAccentColor ??
+        `color-mix(in srgb, ${settings.accentColor} 50%, white)`)
+      : settings.accentColor);
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 1;
+  const context = canvas.getContext('2d')!;
+  context.fillStyle = accent;
+  context.fillRect(0, 0, 1, 1);
+  const channels = [...context.getImageData(0, 0, 1, 1).data]
+    .slice(0, 3)
+    .map(value => {
+      const channel = value / 255;
+      return channel <= 0.04045
+        ? channel / 12.92
+        : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+  const luminance =
+    channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+  return (luminance + 0.05) / 0.05 > 1.05 / (luminance + 0.05)
+    ? '#000000'
+    : '#ffffff';
+}
+
 /**
- * Install semantic tokens on the document root, including portaled UI. Returns a cleanup for
- * system-theme listening.
+ * Select document-owned appearance presets and brand inputs. Public CSS tokens remain
+ * overridable in stylesheets. Cleanup restores the previous document appearance.
  */
 export function applyAppearance(value?: AppearanceOptions): () => void {
   const settings = normalizeAppearance(value);
   const root = document.documentElement;
   const preference = window.matchMedia('(prefers-color-scheme: dark)');
-  const [xs, sm, md, lg, xl] = spaces[settings.density];
-  const [control, surface, overlay] = radii[settings.cornerRadius];
-  const tokens: Record<string, string> = {
-    '--at-font': fontStack(settings.typography.body),
-    '--at-font-heading': fontStack(settings.typography.heading),
-    '--at-space-xs': xs,
-    '--at-space-sm': sm,
-    '--at-space-md': md,
-    '--at-space-lg': lg,
-    '--at-space-xl': xl,
-    '--at-layout-gap': `clamp(${md}, 2.5vw, ${lg})`,
-    '--at-radius-control': control,
-    '--at-radius-surface': surface,
-    '--at-radius-overlay': overlay,
-    '--at-shadow-overlay':
-      settings.elevation === 'flat'
-        ? 'none'
-        : settings.elevation === 'raised'
-          ? '0 24px 72px rgb(0 0 0 / 24%)'
-          : '0 18px 50px rgb(0 0 0 / 16%)',
-    '--at-shadow-surface':
-      settings.elevation === 'flat'
-        ? 'none'
-        : settings.elevation === 'raised'
-          ? '0 8px 28px rgb(20 28 40 / 10%)'
-          : '0 3px 16px rgb(20 28 40 / 5%)',
+  const attributes: Record<string, string> = {
+    'data-at-appearance': '',
+    'data-at-base-color': settings.baseColor,
+    'data-at-density': settings.density,
+    'data-at-radius': settings.cornerRadius,
+    'data-at-elevation': settings.elevation,
+    'data-at-theme': '',
   };
+  const inputs: Record<string, string> = {
+    '--at-input-font': fontStack(settings.typography.body),
+    '--at-input-font-heading': fontStack(settings.typography.heading),
+    '--at-input-accent': settings.accentColor,
+    '--at-input-dark-accent': settings.darkAccentColor ?? '',
+    '--at-input-on-accent': '',
+  };
+  const chartColors = settings.chartColors.length
+    ? settings.chartColors
+    : defaults.chartColors;
+  // Every categorical slot is defined, including after shrinking a custom palette.
+  for (let index = 0; index < 8; index++)
+    inputs[`--at-input-chart-${index + 1}`] =
+      chartColors[index % chartColors.length]!;
 
-  function applyColors(): void {
+  const previousAttributes = Object.keys(attributes).map(
+    name => [name, root.getAttribute(name)] as const
+  );
+  const previousInputs = Object.keys(inputs).map(
+    name =>
+      [
+        name,
+        root.style.getPropertyValue(name),
+        root.style.getPropertyPriority(name),
+      ] as const
+  );
+  for (const [name, token] of Object.entries(inputs)) {
+    if (token) root.style.setProperty(name, token);
+    else root.style.removeProperty(name);
+  }
+  for (const [name, attribute] of Object.entries(attributes))
+    root.setAttribute(name, attribute);
+
+  function applyTheme(): void {
     const dark =
       settings.theme === 'dark' ||
       (settings.theme === 'system' && preference.matches);
-    const [background, surfaceColor, subtle, text, muted, border] =
-      palettes[settings.baseColor][dark ? 'dark' : 'light'];
-    const accent = dark
-      ? (settings.darkAccentColor ??
-        `color-mix(in srgb, ${settings.accentColor} 50%, white)`)
-      : settings.accentColor;
-    settings.chartColors.forEach((chartColor, index) => {
-      tokens[`--at-chart-${index + 1}`] = dark
-        ? `color-mix(in srgb, ${chartColor} 60%, white)`
-        : chartColor;
-    });
-    Object.assign(tokens, {
-      '--at-background': background,
-      '--at-surface': surfaceColor,
-      '--at-subtle': subtle,
-      '--at-text': text,
-      '--at-muted': muted,
-      '--at-border': border,
-      '--at-accent': accent,
-      '--at-focus-color': muted,
-      '--at-control-hover-border': `color-mix(in srgb, ${muted} 45%, ${border})`,
-      '--at-accent-hover': `color-mix(in srgb, ${accent} 80%, ${dark ? 'white' : 'black'})`,
-      '--at-accent-subtle': `color-mix(in srgb, ${accent} ${dark ? 22 : 12}%, ${surfaceColor})`,
-      '--at-on-accent': dark ? background : '#ffffff',
-      '--at-danger': dark ? '#f97066' : '#b42318',
-      '--at-backdrop': dark ? 'rgb(0 0 0 / 55%)' : 'rgb(15 23 30 / 22%)',
-      '--at-code-surface': dark ? '#242a31' : '#f4f6f9',
-      '--at-code-text': dark ? '#e5e9ef' : '#273242',
-    });
-    root.style.colorScheme = dark ? 'dark' : 'light';
-    for (const [name, token] of Object.entries(tokens))
-      root.style.setProperty(name, token);
+    root.setAttribute('data-at-theme', dark ? 'dark' : 'light');
+    root.style.setProperty(
+      '--at-input-on-accent',
+      accentForeground(settings, dark)
+    );
   }
-  applyColors();
+  applyTheme();
   if (settings.theme === 'system')
-    preference.addEventListener('change', applyColors);
+    preference.addEventListener('change', applyTheme);
 
   return () => {
-    preference.removeEventListener('change', applyColors);
+    preference.removeEventListener('change', applyTheme);
+    for (const [name, attribute] of previousAttributes) {
+      if (attribute === null) root.removeAttribute(name);
+      else root.setAttribute(name, attribute);
+    }
+    for (const [name, token, priority] of previousInputs) {
+      if (token) root.style.setProperty(name, token, priority);
+      else root.style.removeProperty(name);
+    }
   };
 }
 

@@ -7,19 +7,17 @@
   font: inherit;
   font-weight: inherit;
   text-align: inherit;
-  text-decoration: underline dotted var(--at-muted, #687078);
+  text-decoration: underline dotted var(--at-muted);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.2em;
-  cursor: help;
+  cursor: var(--at-cursor-help);
 }
 .altertable-glossary-definition-trigger:hover,
 .altertable-glossary-definition-trigger[data-open='true'] {
-  text-decoration-color: var(--at-text, #202124);
+  text-decoration-color: var(--at-text);
 }
 .altertable-glossary-definition-trigger:focus-visible {
   border-radius: 2px;
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
 }
 .altertable-glossary-definition-popover {
   width: min(320px, calc(100vw - 24px));

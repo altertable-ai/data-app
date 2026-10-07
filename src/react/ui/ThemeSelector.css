@@ -5,8 +5,8 @@
   margin: 0;
   padding: 3px;
   border: 0;
-  border-radius: var(--at-radius-control, 7px);
-  background: var(--at-subtle, #f6f7f7);
+  border-radius: var(--at-radius-control);
+  background: var(--at-subtle);
 }
 .altertable-theme-legend {
   position: absolute;
@@ -23,10 +23,10 @@
   width: 30px;
   height: 30px;
   padding: 0;
-  border-radius: var(--at-radius-control, 7px);
+  border-radius: var(--at-radius-control);
   background: transparent;
-  color: var(--at-muted, #687078);
-  cursor: pointer;
+  color: var(--at-muted);
+  cursor: var(--at-cursor-action);
 }
 .altertable-theme-selector input {
   position: absolute;
@@ -35,17 +35,13 @@
   height: 100%;
   margin: 0;
   opacity: 0;
-  cursor: pointer;
+  cursor: var(--at-cursor-action);
 }
 .altertable-theme-selector label:hover {
-  color: var(--at-text, #202124);
+  color: var(--at-text);
 }
 .altertable-theme-selector label:has(input:checked) {
-  background: var(--at-surface, #fff);
-  color: var(--at-text, #202124);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
-}
-.altertable-theme-selector label:has(input:focus-visible) {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
+  background: var(--at-surface);
+  color: var(--at-text);
+  box-shadow: var(--at-shadow-control);
 }

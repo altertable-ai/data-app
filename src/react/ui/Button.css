@@ -3,24 +3,24 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 38px;
+  min-height: var(--at-control-height);
   padding: 0 12px;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-control, 7px);
-  background: var(--at-surface, #fff);
-  color: var(--at-text, #202124);
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius-control);
+  background: var(--at-surface);
+  color: var(--at-text);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
-  cursor: pointer;
+  cursor: var(--at-cursor-action);
   transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease;
+    background-color var(--at-duration-fast) var(--at-ease-standard),
+    border-color var(--at-duration-fast) var(--at-ease-standard),
+    color var(--at-duration-fast) var(--at-ease-standard);
   -webkit-tap-highlight-color: transparent;
 }
 .altertable-button:hover:not(:disabled) {
-  background: var(--at-subtle, #f6f7f7);
+  background: var(--at-subtle);
 }
 .altertable-button[data-size='icon'] {
   flex: none;
@@ -34,7 +34,7 @@
   box-shadow: none;
 }
 .altertable-button[data-variant='elevated'] {
-  box-shadow: var(--at-shadow-surface, 0 3px 16px rgb(20 28 40 / 5%));
+  box-shadow: var(--at-shadow-surface);
 }
 .altertable-button[data-variant='ghost'] {
   border-color: transparent;
@@ -43,16 +43,11 @@
 }
 .altertable-button[data-variant='ghost']:hover:not(:disabled),
 .altertable-button[data-variant='ghost'][data-open='true'] {
-  background: var(--at-subtle, #f6f7f7);
-}
-.altertable-button:focus-visible,
-.altertable-button[data-focus-visible] {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
+  background: var(--at-subtle);
 }
 .altertable-button:disabled {
   opacity: 0.5;
-  cursor: default;
+  cursor: var(--at-cursor-disabled);
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-button {

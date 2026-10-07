@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--at-space-sm, 8px);
+  gap: var(--at-space-sm);
   min-width: 0;
 }
 .altertable-variable-bar > * {

@@ -4,8 +4,9 @@
   min-width: 0;
   align-items: start;
   align-content: start;
-  --at-grid-gap: var(--at-layout-gap, 24px);
+  --at-grid-gap: var(--at-layout-gap);
   --at-grid-min-item-width: 240px;
+  --at-grid-column-width: 100%;
   gap: var(--at-grid-gap);
   /* The calculated track caps the column count; the minimum lets narrow containers wrap. */
   grid-template-columns: repeat(
@@ -13,7 +14,7 @@
     minmax(
       min(
         100%,
-        max(var(--at-grid-min-item-width), var(--at-grid-column-width, 100%))
+        max(var(--at-grid-min-item-width), var(--at-grid-column-width))
       ),
       1fr
     )
@@ -28,13 +29,13 @@
   align-items: stretch;
 }
 .altertable-grid[data-gap='sm'] {
-  --at-grid-gap: var(--at-space-sm, 8px);
+  --at-grid-gap: var(--at-space-sm);
 }
 .altertable-grid[data-gap='md'] {
-  --at-grid-gap: var(--at-space-md, 16px);
+  --at-grid-gap: var(--at-space-md);
 }
 .altertable-grid[data-gap='lg'] {
-  --at-grid-gap: var(--at-layout-gap, 24px);
+  --at-grid-gap: var(--at-layout-gap);
 }
 .altertable-grid[data-min-item-width='compact'] {
   --at-grid-min-item-width: 192px;

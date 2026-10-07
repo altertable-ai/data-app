@@ -3,14 +3,14 @@
   align-items: center;
   gap: 5px;
   max-width: 100%;
-  color: var(--at-muted, #687078);
-  font: 600 11px/1.2 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  color: var(--at-muted);
+  font: 600 11px/1.2 var(--at-font);
 }
 .altertable-app-scope-organization {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--at-text, #202124);
+  color: var(--at-text);
   font-size: 12px;
   font-weight: 680;
   letter-spacing: 0.06em;
@@ -20,8 +20,8 @@
 .altertable-app-scope-environment {
   padding: 4px 8px;
   border-radius: 999px;
-  background: var(--at-subtle, #f6f7f7);
-  color: var(--at-muted, #687078);
+  background: var(--at-subtle);
+  color: var(--at-muted);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.01em;

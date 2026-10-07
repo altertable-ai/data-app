@@ -13,10 +13,10 @@
   height: auto;
 }
 .altertable-pie-slice {
-  stroke: var(--at-surface, #fff);
+  stroke: var(--at-surface);
   stroke-width: 2;
-  cursor: pointer;
-  transition: opacity 140ms ease;
+  cursor: var(--at-cursor-action);
+  transition: opacity var(--at-duration-fast) var(--at-ease-standard);
 }
 .altertable-pie-plot
   svg:has(.altertable-pie-slice[data-active])
@@ -29,12 +29,12 @@
   }
 }
 .altertable-pie-empty {
-  fill: var(--at-subtle, #f6f7f7);
-  stroke: var(--at-border, #e3e6e8);
+  fill: var(--at-subtle);
+  stroke: var(--at-border);
 }
 .altertable-pie-empty-label {
   position: absolute;
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   font-size: 12px;
 }
 .altertable-pie-legend {
@@ -49,16 +49,16 @@
   min-width: 0;
   padding: 8px 4px;
   border: 0;
-  border-bottom: 1px solid var(--at-border, #e3e6e8);
+  border-bottom: 1px solid var(--at-border);
   background: transparent;
-  color: var(--at-text, #202124);
+  color: var(--at-text);
   text-align: left;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  cursor: pointer;
+  cursor: var(--at-cursor-action);
 }
 .altertable-pie-legend [data-open] > button {
-  background: var(--at-subtle, #f6f7f7);
+  background: var(--at-subtle);
 }
 .altertable-pie-legend button:focus {
   outline: none;
@@ -75,7 +75,7 @@
   min-width: 0;
 }
 .altertable-pie-legend button > span:last-child {
-  color: var(--at-muted, #687078);
+  color: var(--at-muted);
   min-width: 4ch;
   text-align: right;
 }
