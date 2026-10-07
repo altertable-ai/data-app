@@ -158,6 +158,35 @@ standard sheet styling with centered placement.
 
 Forward `draft.context.anchor` into each presentation target to position its pin
 at the original click. `context.cursor` records the selection-time viewport point.
-The `app` target kind identifies global layout instructions. Screenshot payloads
+The `app` target kind identifies custom areas cropped from the app root; the root itself is not selectable. Screenshot payloads
 are bounded PNGs in `context.screenshot`; transmit those bytes through the agent's
 image attachment API and retain metadata/filename association in its instructions.
+
+## Complete annotation host example
+
+The [annotation host example](../examples/annotation-host.tsx) combines an
+account/app-scoped `useAnnotationDrafts` collection with authenticated bridge
+handlers, presentation targets, screenshot review, local recovery, deletion undo,
+and a batch submission callback. The playground uses the same adapter.
+
+`createAnnotationClient(transport)` and `useDataAppAnnotations()` expose
+`addAnnotation(draft)` to retain feedback in the host and `updateAnnotation(id,
+comment)` to edit it. These operations do not start the agent. **Send annotations**
+submits an immutable batch through the host's agent callback. Resolve only after
+acceptance; reject to preserve the batch for retry. `acknowledgeSubmission(snapshot)`
+removes only accepted records that have not changed since that snapshot.
+
+Provide `storageKey` scoped by account, environment, and app to recover drafts
+from IndexedDB. A collection retains its captured `sourceVersion`; older-version
+notes remain available for screenshot review but block new collection and Send
+until discarded. Never relabel old screenshots as a newer app version.
+`persisting` reports local writes and `storageError` reports unavailable recovery
+without removing in-memory feedback. Await `flushPersistence()` before deliberate
+navigation if durability is required. Hosts that already own their collection can
+use `loadAnnotationDrafts` and `saveAnnotationDrafts` from `/client` directly.
+
+`deleteAnnotation(id)` retains the last removed note for `undoDelete(id)`;
+`dismissUndo()` releases it. Adding a new note or acknowledging a submitted batch
+also ends that undo opportunity. Pass `deletedAnnotationId`, `onUndoDelete`, and
+`onDismissUndo` to `AnnotationBar` so the toast works even after deleting the last
+annotation. Set `active` to hide the bar/review while retaining its undo toast.

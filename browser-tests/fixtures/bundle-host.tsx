@@ -1,3 +1,4 @@
+import { useAnnotationHost } from '@/examples/annotation-host';
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useRef, useState } from 'react';
 import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';
@@ -25,7 +26,6 @@ import {
   annotationModeRoute,
   annotationEditorStateRoute,
   annotationUpdateRoute,
-  type DataAppAnnotationDraft,
   createMessageRouter,
   defineMessageRoute,
   sqlQueryRoute,
@@ -54,6 +54,12 @@ const response = await fetch(
       : '/__test/bundle'
 );
 const javascript = await response.text();
+const sourceHash = Array.from(
+  new Uint8Array(
+    await crypto.subtle.digest('SHA-256', new TextEncoder().encode(javascript))
+  ),
+  byte => byte.toString(16).padStart(2, '0')
+).join('');
 
 const connectionLabels: Record<DataAppStatus, string> = {
   connecting: 'Connecting',
@@ -72,17 +78,10 @@ const previewLabels = {
 };
 
 function Host() {
-  const [annotations, setAnnotations] = useState<DataAppAnnotationDraft[]>([]);
   const [annotationFailure, setAnnotationFailure] = useState(
     new URLSearchParams(location.search).has('annotation-error')
   );
-  const [annotating, setAnnotating] = useState(false);
-  const [pinsVisible, setPinsVisible] = useState(true);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [sending, setSending] = useState(false);
   const [sentCount, setSentCount] = useState(0);
-  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string>();
-  const [selectionId, setSelectionId] = useState<string>();
   const hostRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<Theme>('dark');
   const [parentPresentation, setParentPresentation] = useState(true);
@@ -91,6 +90,21 @@ function Host() {
   const [attempt, bumpAttempt] = useReducer(value => value + 1, 0);
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
   const [bundleVersion, bumpBundleVersion] = useReducer(value => value + 1, 1);
+  const annotationsHost = useAnnotationHost({
+    sourceVersion: isPlayground ? `${sourceHash}:${bundleVersion}` : 'fixture',
+    storageKey: isPlayground ? `playground:${location.origin}` : undefined,
+  });
+  const {
+    drafts: annotations,
+    active: annotating,
+    setActive: setAnnotating,
+    pinsVisible,
+    setPinsVisible,
+    hasUnsavedChanges,
+    setHasUnsavedChanges,
+    pending: sending,
+  } = annotationsHost;
+  const { selectedAnnotationId, selectionId } = annotationsHost.presentation;
   const [exportFailure, setExportFailure] = useState(
     new URLSearchParams(location.search).has('export-error')
   );
@@ -128,7 +142,10 @@ function Host() {
                       active: annotating,
                       pinsVisible,
                       showHint: annotations.length === 0,
-                      readOnly: sending,
+                      readOnly:
+                        sending ||
+                        annotationsHost.outdated ||
+                        !annotationsHost.ready,
                     }
                   : {}),
                 ...(selectedAnnotationId
@@ -140,14 +157,16 @@ function Host() {
                       selectionId,
                     }
                   : {}),
-                targets: annotations.map((draft, index) => ({
-                  id: draft.id,
-                  targetId: draft.target.id,
-                  number: index + 1,
-                  comment: draft.comment,
-                  anchor: draft.context.anchor,
-                  region: draft.context.region,
-                })),
+                targets: (annotationsHost.outdated ? [] : annotations).map(
+                  (draft, index) => ({
+                    id: draft.id,
+                    targetId: draft.target.id,
+                    number: index + 1,
+                    comment: draft.comment,
+                    anchor: draft.context.anchor,
+                    region: draft.context.region,
+                  })
+                ),
               },
             }
           : {}),
@@ -217,48 +236,15 @@ function Host() {
       'export:zip': fileExportRoute,
     },
     {
-      'annotation:editor'({ hasUnsavedChanges }) {
-        setHasUnsavedChanges(hasUnsavedChanges);
-        return null;
-      },
-      'annotation:update'({ id, comment }) {
-        if (sending)
-          throw new MessageRoutingError(
-            'busy',
-            'Wait for annotations to finish sending.'
-          );
-        if (!annotations.some(draft => draft.id === id))
-          throw new MessageRoutingError(
-            'invalid_payload',
-            'This annotation is no longer available.'
-          );
-        setAnnotations(values =>
-          values.map(draft => (draft.id === id ? { ...draft, comment } : draft))
-        );
-        return null;
-      },
-      'annotation:mode'({ active }) {
-        setAnnotating(active);
-        return null;
-      },
+      ...annotationsHost.handlers,
       'annotation:draft'(draft) {
-        if (sending)
-          throw new MessageRoutingError(
-            'busy',
-            'Wait for annotations to finish sending.'
-          );
         if (new URLSearchParams(location.search).has('annotation-limit'))
           throw new MessageRoutingError(
             'annotation_limit',
             'Delete an annotation before adding another.'
           );
         if (annotationFailure) throw new Error('Fixture failure');
-        setAnnotations(values =>
-          values.some(value => value.id === draft.id)
-            ? values
-            : [...values, draft]
-        );
-        return null;
+        return annotationsHost.handlers['annotation:draft'](draft);
       },
       'export:csv': downloadExport,
       'export:zip': downloadExport,
@@ -364,7 +350,9 @@ function Host() {
                   aria-keyshortcuts={ariaKeyShortcuts(shortcuts.annotate)}
                   className="playground-annotate"
                   aria-pressed={annotating}
-                  disabled={!embedded || status !== 'ready'}
+                  disabled={
+                    !embedded || status !== 'ready' || !annotationsHost.ready
+                  }
                   onClick={() => setAnnotating(value => !value)}
                 >
                   <AppIcon name="annotate" size={16} />
@@ -418,53 +406,34 @@ function Host() {
           {testControls}
         </>
       )}
-      {isPlayground && annotating && (
+      {isPlayground && (annotating || annotationsHost.deletedAnnotationId) && (
         <AnnotationBar
+          active={annotating}
           annotations={annotations}
           theme={theme}
           pinsVisible={pinsVisible}
           onPinsVisibleChange={setPinsVisible}
           hasUnsavedChanges={hasUnsavedChanges}
-          onSelect={id => {
-            setSelectedAnnotationId(id);
-            setSelectionId(crypto.randomUUID());
-          }}
-          onDelete={id => {
-            setAnnotations(values => values.filter(value => value.id !== id));
-            if (selectedAnnotationId === id) setSelectedAnnotationId(undefined);
-          }}
-          onClear={() => {
-            setAnnotations([]);
-            setSelectedAnnotationId(undefined);
-          }}
+          disabled={sending || !annotationsHost.ready}
+          outdated={annotationsHost.outdated}
+          deletedAnnotationId={annotationsHost.deletedAnnotationId}
+          onUndoDelete={id => annotationsHost.undoDelete(id)}
+          onDismissUndo={() => annotationsHost.dismissUndo()}
+          onSelect={annotationsHost.selectAnnotation}
+          onDelete={annotationsHost.deleteAnnotation}
+          onClear={annotationsHost.clearAnnotations}
           onClose={() => setAnnotating(false)}
           onSend={async batch => {
-            if (sending || hasUnsavedChanges)
-              throw new Error('Annotation submission is unavailable.');
-            setSending(true);
-            try {
+            await annotationsHost.submit(batch, async snapshot => {
               const response = await fetch('/api/annotations', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
-                body: JSON.stringify({ annotations: batch }),
+                body: JSON.stringify({ annotations: snapshot }),
               });
               if (!response.ok)
                 throw new Error('Annotation submission failed.');
-              setAnnotations(values =>
-                values.filter(
-                  value =>
-                    !batch.some(
-                      sent =>
-                        sent.id === value.id && sent.comment === value.comment
-                    )
-                )
-              );
-              setSelectedAnnotationId(undefined);
-              setSentCount(batch.length);
-              setAnnotating(false);
-            } finally {
-              setSending(false);
-            }
+            });
+            setSentCount(batch.length);
           }}
         />
       )}
@@ -474,6 +443,20 @@ function Host() {
           aria-label="Annotation submission"
         >
           Sent {sentCount} annotations to the preview host.
+        </output>
+      )}
+      {isPlayground && annotationsHost.persisting && (
+        <output
+          aria-label="Annotation storage status"
+          className="playground-persistence-status"
+        >
+          Saving annotations locally…
+        </output>
+      )}
+      {isPlayground && annotationsHost.storageError && (
+        <output role="alert">
+          Local annotation recovery is unavailable. Keep this page open until
+          you send your annotations.
         </output>
       )}
       <main className={isPlayground ? 'playground-stage' : undefined}>

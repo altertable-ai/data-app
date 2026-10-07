@@ -390,3 +390,155 @@ test('hovering never shifts controls and both themes keep readable contrast', as
     }
   }
 });
+
+test('review displays screenshot thumbnails and an enlarged captured area', async ({
+  page,
+}, testInfo) => {
+  await openPlayground(page);
+  await addAnnotation(page, 'monthly-revenue', 'Move this chart');
+  const panel = await review(page);
+  const thumbnail = panel.getByRole('button', {
+    name: 'View screenshot of Revenue by month',
+  });
+  await expect(thumbnail.locator('img')).toHaveCSS('object-fit', 'contain');
+  await expect(thumbnail.locator('img')).toHaveAttribute(
+    'src',
+    /^data:image\/png;base64,/
+  );
+  await thumbnail.click();
+  const preview = page.getByRole('dialog', { name: 'Revenue by month' });
+  await expect(
+    preview.getByRole('img', { name: 'Captured area for Revenue by month' })
+  ).toBeVisible();
+  await page.screenshot({
+    path: testInfo.outputPath('annotation-screenshot-preview.png'),
+    animations: 'disabled',
+  });
+  await preview.press('Escape');
+  await expect(preview).not.toBeVisible();
+});
+
+test('playground recovers annotations after reload and supports undoing deletion', async ({
+  page,
+}) => {
+  await openPlayground(page);
+  await addAnnotation(page, 'monthly-revenue', 'Keep this feedback');
+  await page.reload();
+  const trigger = page.getByRole('button', { name: 'Annotate', exact: true });
+  await expect(trigger).toBeEnabled();
+  await expect(trigger).toContainText('1');
+  await trigger.click();
+  const panel = await review(page);
+  await expect(panel).toContainText('Keep this feedback');
+  await panel
+    .getByRole('button', { name: 'Delete annotation 1', exact: true })
+    .click();
+  await expect(
+    page.getByRole('button', { name: 'Undo', exact: true })
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(
+    page.getByRole('toolbar', { name: 'Annotations', exact: true })
+  ).toContainText('1');
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const database = await new Promise<IDBDatabase>(resolve => {
+          const request = indexedDB.open('altertable-annotations', 1);
+          request.onsuccess = () => resolve(request.result);
+        });
+        const count = await new Promise<number>(resolve => {
+          const request = database
+            .transaction('drafts')
+            .objectStore('drafts')
+            .get(`playground:${location.origin}`);
+          request.onsuccess = () =>
+            resolve(request.result?.drafts?.length ?? 0);
+        });
+        database.close();
+        return count;
+      })
+    )
+    .toBe(1);
+  await page.reload();
+  await expect(trigger).toBeEnabled();
+  await expect(trigger).toContainText('1');
+});
+
+test('an older stored app version is reviewed without enabling selection or submission', async ({
+  page,
+}) => {
+  await openPlayground(page);
+  await addAnnotation(page, 'monthly-revenue', 'Earlier version feedback');
+  await page.evaluate(async () => {
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('altertable-annotations', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction('drafts', 'readwrite');
+      const store = transaction.objectStore('drafts');
+      const key = `playground:${location.origin}`;
+      const request = store.get(key);
+      request.onsuccess = () =>
+        store.put({ ...request.result, sourceVersion: 'older-source' }, key);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const panel = await review(page);
+  await expect(panel).toContainText('From an earlier app version');
+  await expect(
+    page.getByRole('button', { name: 'Send annotations', exact: true })
+  ).toBeDisabled();
+  await expect(
+    panel.getByRole('button', { name: 'Open annotation 1', exact: true })
+  ).toBeDisabled();
+  await expect(
+    panel.getByRole('button', { name: 'View screenshot of Revenue by month' })
+  ).toBeEnabled();
+});
+
+test('annotation review is centered above its floating bar', async ({
+  page,
+}) => {
+  await openPlayground(page);
+  await addAnnotation(page, 'customers', 'Show active customers');
+  const panel = await review(page);
+  const bounds = await panel.boundingBox();
+  const bar = await page
+    .getByRole('toolbar', { name: 'Annotations', exact: true })
+    .boundingBox();
+  expect(
+    Math.abs(bounds!.x + bounds!.width / 2 - bar!.x - bar!.width / 2)
+  ).toBeLessThan(2);
+});
+
+test('blocked local storage retains usable in-memory feedback and reports recovery unavailable', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'indexedDB', {
+      configurable: true,
+      value: {
+        open() {
+          throw new Error('Local storage blocked');
+        },
+      },
+    });
+  });
+  await openPlayground(page);
+  await addAnnotation(page, 'customers', 'Keep working without local storage');
+  await expect(page.getByRole('alert')).toContainText(
+    'Local annotation recovery is unavailable'
+  );
+  await expect(
+    page.getByRole('button', { name: 'Send annotations', exact: true })
+  ).toBeEnabled();
+  const panel = await review(page);
+  await expect(panel).toContainText('Keep working without local storage');
+});

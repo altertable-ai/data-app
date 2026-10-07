@@ -9,7 +9,6 @@ export type AnnotationTargetElement = {
 export function annotationTargets(
   root: HTMLElement | null
 ): AnnotationTargetElement[] {
-  const main = root?.closest<HTMLElement>('.altertable-app-main');
   const found: AnnotationTargetElement[] = Array.from(
     root?.querySelectorAll<HTMLElement>('[data-annotation-id]') ?? []
   ).flatMap(element => {
@@ -32,13 +31,6 @@ export function annotationTargets(
         ]
       : [];
   });
-  if (main)
-    found.unshift({
-      element: main,
-      id: '__data-app-root',
-      label: 'App layout',
-      kind: 'app',
-    });
   return found.filter(
     target => found.filter(other => other.id === target.id).length === 1
   );
@@ -66,4 +58,22 @@ export function annotationPoint(element: HTMLElement, point?: AnnotationPoint) {
       ),
     },
   };
+}
+
+/** App root is a crop surface, never a selectable global-layout target. */
+export function annotationRoot(
+  root: HTMLElement | null
+): AnnotationTargetElement | undefined {
+  const element = root?.closest<HTMLElement>('.altertable-app-main');
+  return element
+    ? { element, id: '__data-app-root', label: 'Selected area', kind: 'app' }
+    : undefined;
+}
+export function findAnnotationTarget(
+  root: HTMLElement | null,
+  id: string | undefined
+) {
+  return id === '__data-app-root'
+    ? annotationRoot(root)
+    : annotationTargets(root).find(target => target.id === id);
 }

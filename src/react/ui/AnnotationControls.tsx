@@ -26,6 +26,7 @@ import {
 import { useDataAppAnnotations } from '@/src/react/useDataAppAnnotations';
 import {
   annotationTargets as targets,
+  findAnnotationTarget,
   annotationGeometry as geometry,
   annotationPoint,
   type AnnotationTargetElement as Target,
@@ -83,6 +84,9 @@ export function AnnotationControls({
   const [shaking, setShaking] = useState(false);
   const discardArmed = useRef(false);
   const [error, setError] = useState('');
+  const [captureStatus, setCaptureStatus] = useState<
+    'capturing' | 'ready' | 'failed'
+  >('ready');
   const [saving, setSaving] = useState(false);
   const pending = saving || presentation.readOnly === true;
   const [ambiguous, setAmbiguous] = useState(false);
@@ -150,12 +154,19 @@ export function AnnotationControls({
     setComment('');
     const id = crypto.randomUUID();
     const point = annotationPoint(target.element, cursor);
+    setCaptureStatus(capture ? 'capturing' : 'ready');
     if (capture)
       screenshot.current = {
         id,
         result: captureAnnotationScreenshot(target.element, region).then(
-          image => ({ image }),
-          error => ({ error })
+          image => {
+            if (screenshot.current?.id === id) setCaptureStatus('ready');
+            return { image };
+          },
+          error => {
+            if (screenshot.current?.id === id) setCaptureStatus('failed');
+            return { error };
+          }
         ),
       };
     else screenshot.current = undefined;
@@ -243,9 +254,7 @@ export function AnnotationControls({
 
   function openAnnotation(id: string) {
     const pin = presentation.targets?.find(pin => pin.id === id);
-    const target = targets(rootRef.current).find(
-      target => target.id === pin?.targetId
-    );
+    const target = findAnnotationTarget(rootRef.current, pin?.targetId);
     if (!pin || !target || pending) return;
     setAnnotationMode(true);
     const rect = target.element.getBoundingClientRect();
@@ -316,7 +325,7 @@ export function AnnotationControls({
         attributeFilter: ['data-annotation-id', 'data-annotation-label'],
       });
     function escape(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !pending) {
+      if (event.key === 'Escape' && !(pending && draft)) {
         if (document.querySelector('dialog[open], [data-selecting]')) return;
         if (event.isComposing) return;
         event.preventDefault();
@@ -349,8 +358,9 @@ export function AnnotationControls({
       openFromHost(presentation.selectedAnnotationId);
       return;
     }
-    const target = targets(rootRef.current).find(
-      target => target.id === presentation.selectedTargetId
+    const target = findAnnotationTarget(
+      rootRef.current,
+      presentation.selectedTargetId
     );
     if (target) {
       target.element.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -365,10 +375,9 @@ export function AnnotationControls({
 
   useEffect(() => {
     function measure() {
-      const all = targets(rootRef.current);
       setBoxes(
         (presentation.targets ?? []).flatMap(pin => {
-          const target = all.find(target => target.id === pin.targetId);
+          const target = findAnnotationTarget(rootRef.current, pin.targetId);
           return target
             ? [
                 {
@@ -419,8 +428,10 @@ export function AnnotationControls({
         if (!capture || capture.id !== draft.id)
           throw new Error('Annotation capture is unavailable.');
         const result = await capture.result;
-        if (!result.image)
-          throw new Error('Could not capture the annotation area.');
+        if (!result.image) {
+          setCaptureStatus('failed');
+          return;
+        }
         await annotationClient.addAnnotation({
           ...draft,
           comment,
@@ -490,15 +501,9 @@ export function AnnotationControls({
               disabled={pending}
               editing={Boolean(draft)}
               onHover={setHovered}
-              onSelect={(target, point, region) => {
-                if (hasUnsavedChanges && !discardArmed.current) {
-                  discardArmed.current = true;
-                  setShaking(true);
-                  textareaRef.current?.focus();
-                  return;
-                }
-                captureSelection(target, point, true, region);
-              }}
+              onSelect={(target, point, region) =>
+                captureSelection(target, point, true, region)
+              }
             />
           )}
           {outline && presentation.pinsVisible !== false && (
@@ -524,7 +529,7 @@ export function AnnotationControls({
               type="button"
               data-annotation-ui
               onClick={() => openAnnotation(box.id)}
-              disabled={pending}
+              disabled={pending || Boolean(draft)}
               key={box.id}
               className="altertable-annotation-pin"
               aria-label={`Annotation ${box.number}`}
@@ -596,11 +601,55 @@ export function AnnotationControls({
                   className="altertable-annotation-submit"
                   size="icon-compact"
                   variant="elevated"
-                  disabled={pending || !comment.trim()}
+                  disabled={
+                    pending || !comment.trim() || captureStatus !== 'ready'
+                  }
                 >
                   <ArrowUp size={16} aria-hidden />
                 </Button>
               </Tooltip>
+              {captureStatus === 'capturing' && (
+                <output className="altertable-annotation-capture-status">
+                  Capturing screenshot…
+                </output>
+              )}
+              {captureStatus === 'failed' && (
+                <div className="altertable-annotation-capture-status">
+                  <p role="alert">
+                    Screenshot capture failed. Your text is preserved.
+                  </p>
+                  <Button
+                    size="compact"
+                    onClick={() => {
+                      const rect = selected.element.getBoundingClientRect();
+                      const anchor = draft?.context.anchor;
+                      const region = draft?.context.region;
+                      const text = comment;
+                      selectTarget(
+                        selected,
+                        anchor
+                          ? {
+                              x: rect.x + rect.width * anchor.x,
+                              y: rect.y + rect.height * anchor.y,
+                            }
+                          : undefined,
+                        true,
+                        region
+                          ? {
+                              x: rect.x + rect.width * region.x,
+                              y: rect.y + rect.height * region.y,
+                              width: rect.width * region.width,
+                              height: rect.height * region.height,
+                            }
+                          : undefined
+                      );
+                      setComment(text);
+                    }}
+                  >
+                    Retry screenshot
+                  </Button>
+                </div>
+              )}
               {error && <p role="alert">{error}</p>}
             </section>
           )}

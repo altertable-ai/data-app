@@ -19,7 +19,7 @@
   position: fixed;
   z-index: 1100;
   pointer-events: none;
-  border: 2px solid var(--at-accent, #405d47);
+  border: 2px dashed var(--at-accent, #405d47);
   border-radius: 0;
   background: color-mix(in srgb, var(--at-accent, #405d47) 8%, transparent);
 }
@@ -74,7 +74,7 @@
 .altertable-annotation-composer [role='alert'] {
   flex-basis: 100%;
   padding: 0 8px;
-  color: var(--at-danger, #b42318);
+  color: var(--annotation-text);
   margin: 4px 0;
 }
 .altertable-annotation-hint {
@@ -185,4 +185,38 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+}
+
+.altertable-annotation-selection-tools {
+  position: fixed;
+  z-index: 1102;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius-overlay, 12px);
+  background: var(--at-surface);
+  color: var(--at-text);
+  box-shadow: var(--at-shadow-overlay);
+}
+.altertable-annotation-selection-layer[data-scrolling] {
+  touch-action: pan-x pan-y;
+  cursor: grab;
+}
+
+.altertable-annotation-capture-status {
+  flex-basis: 100%;
+  padding: 0 8px;
+  margin: 4px 0;
+  color: var(--annotation-text);
+  font-size: 12px;
+}
+.altertable-annotation-capture-status p {
+  margin: 0 0 6px;
+}
+
+.altertable-annotation-selection-layer[data-editing] {
+  cursor: default;
 }

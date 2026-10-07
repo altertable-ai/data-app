@@ -20,6 +20,7 @@
     "scripts",
     "browser-tests",
     "dev",
-    "examples/starter-data-app/index.tsx"
+    "examples/starter-data-app/index.tsx",
+    "examples/annotation-host.tsx"
   ]
 }

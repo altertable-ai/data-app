@@ -80,7 +80,7 @@
   position: fixed;
   margin: 0;
   z-index: 1201;
-  width: min(360px, calc(100vw - 24px));
+  width: min(420px, calc(100vw - 24px));
   max-height: min(440px, 45vh);
   overflow: auto;
   border-radius: 16px;
@@ -218,4 +218,70 @@
 .altertable-annotation-bar .altertable-button[aria-pressed='true'] {
   color: var(--bar-text);
   background: var(--at-subtle);
+}
+
+.altertable-annotation-undo {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 1202;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius-overlay, 12px);
+  background: var(--at-surface);
+  color: var(--at-text);
+  box-shadow: var(--at-shadow-overlay);
+  font: 13px/1.5 var(--at-font);
+}
+.altertable-annotation-outdated {
+  margin: 0;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--bar-text);
+  background: var(--at-subtle);
+}
+
+.altertable-annotation-thumbnail {
+  width: 56px;
+  height: 48px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid var(--bar-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bar-surface);
+  cursor: zoom-in;
+}
+.altertable-annotation-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.altertable-annotation-thumbnail:focus-visible {
+  outline: 2px solid var(--bar-text);
+  outline-offset: 2px;
+}
+.altertable-annotation-preview {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+}
+
+.altertable-annotation-undo[data-bar-visible] {
+  bottom: 88px;
+}
+.altertable-annotation-undo[data-inline] {
+  position: static;
+  margin-top: 6px;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.altertable-sheet.altertable-annotation-image-dialog[data-placement='center'] {
+  width: min(960px, calc(100vw - 32px));
 }

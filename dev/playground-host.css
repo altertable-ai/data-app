@@ -174,3 +174,15 @@ body:has(.playground-host) #root {
   font: inherit;
   box-shadow: 0 4px 16px #0002;
 }
+
+.playground-persistence-status {
+  position: fixed;
+  top: 54px;
+  left: 16px;
+  z-index: 1300;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--at-text);
+  background: var(--at-surface);
+  font-size: 12px;
+}

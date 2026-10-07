@@ -224,9 +224,7 @@ test('click coordinates anchor the badge and the bridge carries a real PNG of th
   );
 });
 
-test('blank layout areas select the app root and capture the visible global layout', async ({
-  page,
-}, testInfo) => {
+test('blank layout areas are not selectable', async ({ page }) => {
   await page.goto('/bundle-host?annotations');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
@@ -241,26 +239,10 @@ test('blank layout areas select the app root and capture the visible global layo
       y: bounds!.y - root!.y + bounds!.height + 10,
     },
   });
-  await frame
-    .getByRole('textbox', { name: 'Annotation text' })
-    .fill('Use three columns and reduce the page spacing');
-  await frame
-    .getByRole('button', { name: 'Add annotation', exact: true })
-    .click();
-  const output = page.getByLabel('Annotation drafts', { exact: true });
-  await expect(output).toContainText('Use three columns');
-  const annotations = JSON.parse((await output.textContent())!);
-  expect(annotations[0].target.kind).toBe('app');
-  expect(annotations[0].target.label).toBe('App layout');
-  expect(annotations[0].context.screenshot.width).toBeLessThanOrEqual(1024);
-  expect(annotations[0].context.screenshot.height).toBeLessThanOrEqual(1024);
-  await writeFile(
-    testInfo.outputPath('captured-layout.png'),
-    Buffer.from(
-      annotations[0].context.screenshot.dataUrl.split(',')[1],
-      'base64'
-    )
-  );
+  await expect(
+    frame.getByRole('textbox', { name: 'Annotation text' })
+  ).toHaveCount(0);
+  await expect(frame.locator('.altertable-annotation-outline')).toHaveCount(0);
 });
 
 test('drag selects a custom screenshot region and reopens its saved outline', async ({
@@ -392,4 +374,103 @@ test('custom areas support keyboard selection and Escape cancels only the area',
   expect(drafts[0].context.screenshot.width).toBe(110);
   expect(drafts[0].context.screenshot.height).toBe(80);
   expect(drafts[0].context.region).toBeDefined();
+});
+
+test('custom areas can be selected with two clicks instead of dragging', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await frame.getByRole('button', { name: 'Select area', exact: true }).click();
+  const main = await frame.locator('.altertable-app-main').boundingBox();
+  await page.mouse.click(main!.x + 20, main!.y + 90);
+  await page.mouse.click(main!.x + 170, main!.y + 170);
+  const input = frame.getByRole('textbox', { name: 'Annotation text' });
+  await input.fill('Tidy this area');
+  await input.press('Enter');
+  await expect(
+    frame.getByRole('button', { name: 'Annotation 1', exact: true })
+  ).toBeVisible();
+  const drafts = JSON.parse(
+    (await page.getByLabel('Annotation drafts').textContent()) ?? '[]'
+  );
+  expect(drafts[0].context.screenshot.width).toBe(150);
+  expect(drafts[0].context.screenshot.height).toBe(80);
+});
+
+test('screenshot failure preserves annotation text and retry recaptures the area', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.locator('body').evaluate(() => {
+    const original = Object.getOwnPropertyDescriptor(
+      HTMLCanvasElement.prototype,
+      'toDataURL'
+    )!;
+    Object.defineProperty(window, 'restoreScreenshotCapture', {
+      configurable: true,
+      value: () => {
+        Object.defineProperty(
+          HTMLCanvasElement.prototype,
+          'toDataURL',
+          original
+        );
+      },
+    });
+    HTMLCanvasElement.prototype.toDataURL = () => {
+      throw new Error('Screenshot unavailable');
+    };
+  });
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await frame
+    .locator('[data-annotation-id="customers"]')
+    .click({ force: true });
+  const input = frame.getByRole('textbox', { name: 'Annotation text' });
+  await input.fill('Show active customers');
+  await expect(frame.getByRole('alert')).toHaveText(
+    'Screenshot capture failed. Your text is preserved.'
+  );
+  await expect(
+    frame.getByRole('button', { name: 'Add annotation', exact: true })
+  ).toBeDisabled();
+  await frame.locator('body').evaluate(() => {
+    (
+      window as unknown as Window & { restoreScreenshotCapture: () => void }
+    ).restoreScreenshotCapture();
+  });
+  await frame.getByRole('button', { name: 'Retry screenshot' }).click();
+  await expect(input).toHaveValue('Show active customers');
+  await expect(
+    frame.getByRole('button', { name: 'Add annotation', exact: true })
+  ).toBeEnabled();
+  await input.press('Enter');
+  await expect(
+    frame.getByRole('button', { name: 'Annotation 1', exact: true })
+  ).toBeVisible();
+});
+
+test('an open editor blocks background selection and uses a dashed widget outline', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await frame
+    .locator('[data-annotation-id="customers"]')
+    .click({ force: true });
+  const input = frame.getByRole('textbox', { name: 'Annotation text' });
+  await input.fill('Keep this draft');
+  const outline = frame.locator('.altertable-annotation-outline');
+  const initial = await outline.boundingBox();
+  await frame
+    .locator('[data-annotation-id="monthly-revenue"]')
+    .click({ force: true });
+  await expect(input).toHaveValue('Keep this draft');
+  await expect(outline).toHaveCSS('border-style', 'dashed');
+  expect(await outline.boundingBox()).toEqual(initial);
+  await expect(
+    frame.getByRole('button', { name: 'Select area', exact: true })
+  ).toHaveCount(0);
 });

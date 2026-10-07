@@ -31,7 +31,8 @@
     "examples/starter-data-app",
     "README.md",
     "CONTRIBUTING.md",
-    "AGENTS.md"
+    "AGENTS.md",
+    "examples/annotation-host.tsx"
   ],
   "type": "module",
   "sideEffects": false,
@@ -88,7 +89,7 @@
     "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
     "dev": "bun run scripts/dev.ts",
     "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
-    "lint": "oxlint --type-aware src tests scripts browser-tests dev examples/starter-data-app",
+    "lint": "oxlint --type-aware src tests scripts browser-tests dev examples/starter-data-app examples/annotation-host.tsx",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "bun test ./tests",

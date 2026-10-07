@@ -368,14 +368,12 @@ with the app source version; the package does not persist or send chat messages.
 Annotation mode supports Shift+Mod+. (Mod is Command on Apple platforms and Ctrl
 elsewhere). Clicking a numbered pin reopens its comment. Enter saves it; Shift+Enter
 inserts a newline. An unsaved annotation shakes on the first Escape; pressing Escape
-again discards the local edit and exits annotation mode. Unchanged saved annotations close with a single Escape. Saved annotations remain
+again discards the local edit while keeping annotation mode active. Unchanged saved annotations close with a single Escape. Saved annotations remain
 until explicitly deleted by the host.
 
-Clicking empty space in the app content selects **App layout** for global layout
-instructions. Widget and custom element targets take precedence. Pointer selection
-stores viewport coordinates and a normalized target-relative anchor; badges stay
-at that location as the page scrolls or the target resizes. Keyboard selection
-uses the center of the visible target area.
+Empty app space is not selectable. Select a widget or annotated element, or draw a
+custom area. Use **Select area** to click/tap two corners without dragging; use
+**Scroll app** to scroll or pan while keeping app controls inert.
 
 A PNG of the visible selected area is captured at selection time and travels with
 the saved annotation. Annotation overlays are excluded. Captures are limited to
@@ -393,7 +391,7 @@ Drag across the app to annotate a custom area. Its `context.region` stores a
 normalized rectangle within the app root; `context.rect` retains the viewport
 rectangle at selection time. Hosts forward the region in presentation targets to
 restore its outline when reopening the annotation. Widgets keep rounded outlines;
-app layouts, elements, and custom selections use rectangular outlines.
+elements and custom selections use rectangular outlines.
 
 Screenshots are DOM captures: `html-to-image` clones the selected DOM with its
 computed styles, rasterizes the visible crop to canvas, and encodes a PNG. They
