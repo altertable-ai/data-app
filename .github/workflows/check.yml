@@ -59,7 +59,7 @@ jobs:
         run: bun run check:starter
       - name: Install browser
         run: bash scripts/install-test-browser.sh
-      - name: Test public API workflows
+      - name: Test
         run: bun run test
       - name: Verify lockfile is unchanged
         run: git diff --exit-code -- bun.lock
