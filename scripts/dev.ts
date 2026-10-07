@@ -94,7 +94,7 @@ if (!initialBuildSucceeded) {
   process.exit(1);
 }
 
-const server = Bun.spawn([process.execPath, 'browser-tests/server.ts'], {
+const server = Bun.spawn([process.execPath, 'dev/server.ts'], {
   cwd: root,
   env: {
     ...process.env,

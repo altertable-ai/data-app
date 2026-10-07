@@ -30,7 +30,7 @@ For execution details, see [browser-owned operations](client.md#browser-owned-op
 ```fish
 bun install --frozen-lockfile
 bun run build
-bun browser-tests/server.ts
+bun dev/server.ts
 ```
 
 Open [the starter preview](http://127.0.0.1:27418/starter-data-app).

@@ -43,9 +43,11 @@ data and failures through public dependency injection; do not import private
 source, fabricate internal state, or assert implementation details. Keep setup
 local until repetition warrants sharing it.
 
-`bun run test` runs the public API suite against the built package. During the
-migration, `bun run test:legacy` retains the existing Bun coverage and
-`bun run test:browser` retains the existing browser coverage.
+`bun run test` runs the complete suite against the built package. Browser
+workflows launch Chromium through Playwright from Vitest. They use public
+consumer fixtures, an isolated local server, and a fresh browser context per
+test. Build first; run one file with `bun run test tests/public-api/apps.test.ts`
+or one workflow with `bun run test -t "workflow name"`.
 
 Update the relevant guide when changing public behavior. In documentation prose,
 write functions as `functionName()` and components as `<ComponentName>`. Keep JSDoc for
@@ -67,10 +69,8 @@ checks. Build before running consumer tests individually.
 | `bun run check:links:external` | Check external URLs (requires network access)       |
 | `bun run format`               | Format source and docs                              |
 | `bun run test`                 | Verify high-level public API workflows with Vitest  |
-| `bun run test:legacy`          | Retain Bun coverage during the migration            |
-| `bun run test:package`         | Verify the npm archive as a consumer                |
-| `bun run test:starter`         | Typecheck, lint, and build the starter              |
-| `bun run test:browser`         | Verify browser interactions in Chromium             |
+| `bun run check:package`        | Verify the npm archive as a consumer                |
+| `bun run check:starter`        | Typecheck, lint, and build the starter              |
 | `bun run check:workflows`      | Validate workflows and shell scripts                |
 
 Markdown checks cover all authored `.md` files, including `AGENTS.md` and the
@@ -83,18 +83,18 @@ It skips local development URLs and checks reachability without external heading
 validation. It stays outside required checks because third-party availability and
 rate limits can cause failures unrelated to a change.
 
-For browser changes, run `bash scripts/install-test-browser.sh` once, then
-`bun run test:browser`.
+Run `bash scripts/install-test-browser.sh` once to install Chromium, then
+`bun run check` to verify the complete suite.
 
 Run `bun run dev` to preview UI examples at `http://127.0.0.1:27418/gallery`
 and a playground at `/playground` (`dev/playground.tsx`, querying the demo
 tables `scripts/dev.ts` seeds). It builds once, then rebuilds `dist` when `src`
 changes; open pages reload on package, fixture, and playground edits. Restart it after changing
-`browser-tests/server.ts`; rerun `bun run build` to refresh declarations. Add `?delay=2000` to a host page URL
+`dev/server.ts`; rerun `bun run build` to refresh declarations. Add `?delay=2000` to a host page URL
 to delay its SQL responses and inspect loading states. It needs Docker: SQL runs
 against a mocked Altertable API
 ([altertable-mock](https://github.com/altertable-ai/altertable-mock), DuckDB)
-started with Testcontainers and stopped on exit. Browser tests keep fixtures.
+started with Testcontainers and stopped on exit. Public API tests use their own deterministic consumer fixtures.
 
 Open the **Widgets** tab (`/gallery?view=widgets`) for one ready example of each
 composable data display inside `<VisualizationWidget>`. The other tabs cover
