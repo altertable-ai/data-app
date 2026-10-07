@@ -108,9 +108,9 @@ const content = view.content(source => (
     <p>
       Displayed period: <DataValue scope={source.scope} />
     </p>
-    <p>
+    <output aria-label="Measured events">
       Measured events: <DataValue metric={metric} source={source} />
-    </p>
+    </output>
     <MetricWidget metric={metric} source={source} />
   </>
 ));

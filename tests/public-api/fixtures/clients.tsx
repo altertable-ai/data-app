@@ -82,9 +82,9 @@ function makeApp(id: string) {
   const content = view.content(source => (
     <TextWidget title={`${id} results`} dataset={dataset} source={source}>
       {rows => (
-        <p>
+        <output aria-label={`${id} count`}>
           {id}: {rows[0]}
-        </p>
+        </output>
       )}
     </TextWidget>
   ));

@@ -40,13 +40,16 @@ Write high-level public API tests with Vitest in `tests/public-api`. Define an
 operation, authorize and query it, compose a view, or embed an app through
 `@altertable/data-app/<entry>`. Assert consumer-visible results and errors. Supply
 data and failures through public dependency injection; do not import private
-source, fabricate internal state, or assert implementation details. Keep setup
-local until repetition warrants sharing it.
+source, fabricate internal state, or assert implementation details. Prefer queries by role and accessible name, or by label for form fields. Scope
+content assertions to the relevant region, status, alert, or dialog; use text
+queries for prose with no meaningful role. Do not invent ARIA roles for tests.
+Group browser workflows by consumer capability in `apps-*.test.ts`; keep tests
+self-contained and setup local until repetition warrants sharing it.
 
 `bun run test` runs the complete suite against the built package. Browser
 workflows launch Chromium through Playwright from Vitest. They use public
 consumer fixtures, an isolated local server, and a fresh browser context per
-test. Build first; run one file with `bun run test tests/public-api/apps.test.ts`
+test. Build first; run one file with `bun run test tests/public-api/apps-export.test.ts`
 or one workflow with `bun run test -t "workflow name"`.
 
 Update the relevant guide when changing public behavior. In documentation prose,

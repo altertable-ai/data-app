@@ -79,7 +79,9 @@ function Host() {
       >
         Break logger
       </button>
-      <output id="logs">{JSON.stringify(logs)}</output>
+      <output aria-label="Host logs" id="logs">
+        {JSON.stringify(logs)}
+      </output>
       <DataAppBridge
         iframe={iframe}
         connection={{ type: 'origin', origin: window.location.origin }}

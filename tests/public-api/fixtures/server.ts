@@ -48,7 +48,7 @@ const frameServer = Bun.serve({
   port: 0,
   fetch(): Response {
     return new Response(
-      `<!doctype html><html data-parent-origin="${server.url.origin}"><body><p id="location"></p><p id="result"></p><button id="query">Query</button><button id="filter">Last 7 days</button><script>${frame.replaceAll('</script', '<\\/script')}</script></body></html>`,
+      `<!doctype html><html data-parent-origin="${server.url.origin}"><body><output aria-label="App location" id="location"></output><output aria-label="Query result" id="result"></output><button id="query">Query</button><button id="filter">Last 7 days</button><script>${frame.replaceAll('</script', '<\\/script')}</script></body></html>`,
       { headers: { 'content-type': 'text/html' } }
     );
   },

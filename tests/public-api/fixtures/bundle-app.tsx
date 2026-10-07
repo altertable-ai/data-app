@@ -70,11 +70,13 @@ function App() {
       >
         Reject promise
       </button>
-      <p id="location">
+      <output aria-label="App location" id="location">
         {search}
         {getDataAppNavigation()!.snapshot().hash}
-      </p>
-      <p id="result">{result}</p>
+      </output>
+      <output aria-label="Query result" id="result">
+        {result}
+      </output>
       <button
         onClick={() => {
           void messages
@@ -157,4 +159,5 @@ for (const action of ['Concurrent queries', 'Wait for query', 'Cancel query']) {
 
 const transportResult = document.createElement('output');
 transportResult.id = 'transport-result';
+transportResult.setAttribute('aria-label', 'Transport result');
 document.body.append(transportResult);

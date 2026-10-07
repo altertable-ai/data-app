@@ -89,9 +89,9 @@ const alphaContent = alpha.content(result => (
   <>
     <TextWidget title="Alpha" dataset={alphaDataset} source={result}>
       {rows => (
-        <p data-testid="primary">
+        <output aria-label="Alpha result">
           {rows[0]!.count} for {rows[0]!.version}
-        </p>
+        </output>
       )}
     </TextWidget>
     <VisualizationWidget
@@ -103,13 +103,19 @@ const alphaContent = alpha.content(result => (
         {
           id: 'count',
           label: 'Count',
-          render: rows => <p data-testid="primary-visual">{rows[0]?.count}</p>,
+          render: rows => (
+            <output aria-label="Alpha visualization result">
+              {rows[0]?.count}
+            </output>
+          ),
         },
         {
           id: 'doubled',
           label: 'Doubled',
           render: rows => (
-            <p data-testid="primary-visual">{rows[0]!.count * 2}</p>
+            <output aria-label="Alpha visualization result">
+              {rows[0]!.count * 2}
+            </output>
           ),
         },
       ]}
@@ -125,7 +131,7 @@ const betaDataset = beta.dataset({
 });
 const betaContent = beta.content(result => (
   <TextWidget dataset={betaDataset} source={result}>
-    {rows => <p data-testid="secondary">{rows[0]!.count}</p>}
+    {rows => <output aria-label="Beta result">{rows[0]!.count}</output>}
   </TextWidget>
 ));
 
