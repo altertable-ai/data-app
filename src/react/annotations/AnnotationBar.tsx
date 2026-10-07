@@ -34,6 +34,11 @@ import { TooltipProvider } from '@/src/react/ui/Tooltip';
 import { AnnotationTooltip } from '@/src/react/annotations/AnnotationTooltip';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Kbd } from '@/src/react/ui/Kbd';
+import {
+  ariaKeyShortcuts,
+  shortcuts,
+  useShortcut,
+} from '@/src/react/ui/shortcuts';
 
 export type AnnotationBarProps = {
   annotations: readonly DataAppAnnotationDraft[];
@@ -217,6 +222,11 @@ export function AnnotationBar({
       dispatch({ type: 'submissionFinished' });
     }
   }
+  useShortcut(
+    shortcuts.sendAnnotations,
+    () => void send(),
+    active && !locked && !hasUnsavedChanges && annotations.length > 0
+  );
   useEffect(() => {
     if (discardOpen) cancelDiscard.current?.focus();
   }, [discardOpen]);
@@ -381,9 +391,13 @@ export function AnnotationBar({
           </AnnotationTooltip>
           <AnnotationTooltip
             content={
-              hasUnsavedChanges
-                ? 'Save the open annotation before sending'
-                : 'Send annotations'
+              hasUnsavedChanges ? (
+                'Save the open annotation before sending'
+              ) : (
+                <>
+                  Send annotations <Kbd shortcut={shortcuts.sendAnnotations} />
+                </>
+              )
             }
             theme={theme}
           >
@@ -393,6 +407,7 @@ export function AnnotationBar({
               aria-busy={pending}
               size="compact"
               aria-label="Send annotations"
+              aria-keyshortcuts={ariaKeyShortcuts(shortcuts.sendAnnotations)}
               disabled={locked || hasUnsavedChanges || !annotations.length}
               onClick={() => void send()}
             >

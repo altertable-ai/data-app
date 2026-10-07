@@ -13,6 +13,7 @@ export type Shortcut = {
 
 export const shortcuts = {
   annotate: { modifier: 'mod', shift: true, code: 'Period', key: '.' },
+  sendAnnotations: { modifier: 'mod', code: 'Enter', key: 'Enter' },
   refresh: { modifier: 'alt', code: 'KeyR', key: 'R' },
   aboutData: { modifier: 'alt', code: 'KeyI', key: 'I' },
   playStory: { modifier: 'mod', code: 'Enter', key: 'Enter' },
