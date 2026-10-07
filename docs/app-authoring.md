@@ -58,6 +58,9 @@ Use the [standard layout](layout.md) and built-in toolbar actions.
 
 ## Verify the app
 
+Follow the [UI quality contract](ui-quality.md) for hierarchy, responsive
+composition, typography, and control states.
+
 Verify findings against the source and the user's question. Distinguish measured
 zero, unavailable values, and empty results. Check filters, refresh, loading,
 empty, error, and stale states, then present the story. Download CSV from the

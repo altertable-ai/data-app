@@ -12,7 +12,7 @@
   padding: 0 1px 12px;
   border-bottom: 2px solid transparent;
   color: var(--atbl-muted);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
   font-weight: 550;
   outline: none;
   transition:
@@ -28,9 +28,6 @@
 }
 .altertable-tabs .react-aria-Tab[data-focus-visible] {
   border-radius: 2px;
-}
-.altertable-tabs .react-aria-Tab[data-disabled] {
-  opacity: 0.45;
 }
 .altertable-tabs .react-aria-TabPanels {
   min-width: 0;

@@ -22,6 +22,7 @@ export function Button({
     <button
       data-atbl-focus="ring"
       data-atbl-control="action"
+      data-atbl-internal-surface="control"
       {...props}
       type={type}
       disabled={disabled}
@@ -44,6 +45,7 @@ export function PressButton({
     <AriaButton
       data-atbl-focus="ring"
       data-atbl-control="action"
+      data-atbl-internal-surface="control"
       {...props}
       data-variant={variant}
       data-size={size}

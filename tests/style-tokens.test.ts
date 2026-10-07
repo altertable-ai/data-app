@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test';
 import { Glob } from 'bun';
+import { dataAppStyleTokens } from '@/src/react/style-contract';
 
 // Catch incomplete migrations and new component tokens before an invalid var()
 // silently discards a declaration in the browser.
@@ -11,6 +12,9 @@ test('every public data app CSS token reference has a definition', async () => {
       [...source.matchAll(/(--atbl-[\w-]+)\s*:/g)].map(match => match[1])
     )
   );
+  for (const [name, token] of Object.entries(dataAppStyleTokens)) {
+    if (token.scope === 'component') definitions.add(name);
+  }
   const unresolved = sources.flatMap((source, index) =>
     [...source.matchAll(/var\((--atbl-[\w-]+)/g)]
       .filter(

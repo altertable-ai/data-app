@@ -3,6 +3,9 @@
 Generated from the package styling contract. Use components and typed props first;
 these tokens and root selectors are supported customization hooks.
 
+Computed component tokens are override points; their defaults resolve in package
+styles where they are consumed. Inherited tokens are available to app-owned CSS.
+
 See [Styling](styling.md) for composition and ownership, and the
 [machine-readable contract](style-contract.json) for tooling.
 
@@ -10,125 +13,162 @@ See [Styling](styling.md) for composition and ownership, and the
 
 ### Surfaces
 
-| Token               | Purpose                       | Default                          |
-| ------------------- | ----------------------------- | -------------------------------- |
-| `--atbl-background` | Document canvas.              | `var(--atbl-palette-background)` |
-| `--atbl-surface`    | Widget and overlay surface.   | `var(--atbl-palette-surface)`    |
-| `--atbl-subtle`     | Quiet surface and hover fill. | `var(--atbl-palette-subtle)`     |
-| `--atbl-backdrop`   | Modal backdrop.               | `rgb(15 23 30 / 22%)`            |
+| Token               | Scope                 | Purpose                       | Default                          |
+| ------------------- | --------------------- | ----------------------------- | -------------------------------- |
+| `--atbl-background` | Inherited theme value | Document canvas.              | `var(--atbl-palette-background)` |
+| `--atbl-surface`    | Inherited theme value | Widget and overlay surface.   | `var(--atbl-palette-surface)`    |
+| `--atbl-subtle`     | Inherited theme value | Quiet surface and hover fill. | `var(--atbl-palette-subtle)`     |
+| `--atbl-backdrop`   | Inherited theme value | Modal backdrop.               | `rgb(15 23 30 / 22%)`            |
 
 ### Text and borders
 
-| Token                         | Purpose                                  | Default                                                           |
-| ----------------------------- | ---------------------------------------- | ----------------------------------------------------------------- |
-| `--atbl-text`                 | Primary text.                            | `var(--atbl-palette-text)`                                        |
-| `--atbl-muted`                | Secondary text.                          | `var(--atbl-palette-muted)`                                       |
-| `--atbl-border`               | Decorative dividers and surface borders. | `var(--atbl-palette-border)`                                      |
-| `--atbl-control-hover-border` | Hovered control border.                  | `color-mix( in srgb, var(--atbl-muted) 45%, var(--atbl-border) )` |
+| Token                         | Scope                      | Purpose                                  | Default                                                           |
+| ----------------------------- | -------------------------- | ---------------------------------------- | ----------------------------------------------------------------- |
+| `--atbl-text`                 | Inherited theme value      | Primary text.                            | `var(--atbl-palette-text)`                                        |
+| `--atbl-muted`                | Inherited theme value      | Secondary text.                          | `var(--atbl-palette-muted)`                                       |
+| `--atbl-border`               | Inherited theme value      | Decorative dividers and surface borders. | `var(--atbl-palette-border)`                                      |
+| `--atbl-control-hover-border` | Computed component default | Hovered control border.                  | `color-mix( in srgb, var(--atbl-muted) 45%, var(--atbl-border) )` |
 
 ### Accent and selection
 
-| Token                  | Purpose                                 | Default                                                             |
-| ---------------------- | --------------------------------------- | ------------------------------------------------------------------- |
-| `--atbl-accent`        | Brand accent and selected controls.     | `var(--atbl-input-accent, #405d47)`                                 |
-| `--atbl-accent-hover`  | Hovered accent.                         | `color-mix(in srgb, var(--atbl-accent) 80%, black)`                 |
-| `--atbl-accent-subtle` | Quiet selected surface.                 | `color-mix( in srgb, var(--atbl-accent) 12%, var(--atbl-surface) )` |
-| `--atbl-on-accent`     | Foreground on an accent-filled control. | `var(--atbl-input-on-accent, #fff)`                                 |
+| Token                  | Scope                      | Purpose                                 | Default                                                                                            |
+| ---------------------- | -------------------------- | --------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `--atbl-accent`        | Inherited theme value      | Brand accent and selected controls.     | `var(--atbl-input-accent, #405d47)`                                                                |
+| `--atbl-accent-hover`  | Computed component default | Hovered accent.                         | `color-mix(in srgb, var(--atbl-accent) 80%, var(--atbl-accent-hover-target))`                      |
+| `--atbl-accent-subtle` | Computed component default | Quiet selected surface.                 | `color-mix( in srgb, var(--atbl-accent) var(--atbl-accent-subtle-strength), var(--atbl-surface) )` |
+| `--atbl-on-accent`     | Inherited theme value      | Foreground on an accent-filled control. | `var(--atbl-input-on-accent, #fff)`                                                                |
 
 ### Meaning
 
-| Token                  | Purpose                          | Default                                                            |
-| ---------------------- | -------------------------------- | ------------------------------------------------------------------ |
-| `--atbl-positive`      | Favorable metric change.         | `var(--atbl-accent)`                                               |
-| `--atbl-negative`      | Unfavorable metric change.       | `var(--atbl-danger)`                                               |
-| `--atbl-danger`        | Error text and invalid controls. | `#b42318`                                                          |
-| `--atbl-danger-subtle` | Quiet error surface.             | `color-mix( in srgb, var(--atbl-danger) 9%, var(--atbl-surface) )` |
+| Token                  | Scope                      | Purpose                          | Default                                                            |
+| ---------------------- | -------------------------- | -------------------------------- | ------------------------------------------------------------------ |
+| `--atbl-positive`      | Computed component default | Favorable metric change.         | `var(--atbl-accent)`                                               |
+| `--atbl-negative`      | Computed component default | Unfavorable metric change.       | `var(--atbl-danger)`                                               |
+| `--atbl-danger`        | Inherited theme value      | Error text and invalid controls. | `#b42318`                                                          |
+| `--atbl-danger-subtle` | Inherited theme value      | Quiet error surface.             | `color-mix( in srgb, var(--atbl-danger) 9%, var(--atbl-surface) )` |
 
 ### Code
 
-| Token                 | Purpose             | Default                                                    |
-| --------------------- | ------------------- | ---------------------------------------------------------- |
-| `--atbl-code-surface` | Code block surface. | `#f4f6f9`                                                  |
-| `--atbl-code-text`    | Code block text.    | `#273242`                                                  |
-| `--atbl-code-keyword` | SQL keywords.       | `var(--atbl-accent)`                                       |
-| `--atbl-mono-font`    | Code font stack.    | `ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` |
+| Token                 | Scope                      | Purpose             | Default                                                    |
+| --------------------- | -------------------------- | ------------------- | ---------------------------------------------------------- |
+| `--atbl-code-surface` | Inherited theme value      | Code block surface. | `#f4f6f9`                                                  |
+| `--atbl-code-text`    | Inherited theme value      | Code block text.    | `#273242`                                                  |
+| `--atbl-code-keyword` | Computed component default | SQL keywords.       | `var(--atbl-accent)`                                       |
+| `--atbl-mono-font`    | Inherited theme value      | Code font stack.    | `ui-monospace, SFMono-Regular, Menlo, Consolas, monospace` |
 
 ### Charts
 
-| Token               | Purpose                    | Default                                                                                      |
-| ------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
-| `--atbl-chart-fill` | Unselected bar fill.       | `color-mix( in srgb, var(--atbl-accent) 75%, var(--atbl-surface) )`                          |
-| `--atbl-chart-1`    | Categorical chart color 1. | `color-mix( in srgb, var(--atbl-input-chart-1, #285fc0) var(--atbl-chart-strength), white )` |
-| `--atbl-chart-2`    | Categorical chart color 2. | `color-mix( in srgb, var(--atbl-input-chart-2, #a95319) var(--atbl-chart-strength), white )` |
-| `--atbl-chart-3`    | Categorical chart color 3. | `color-mix( in srgb, var(--atbl-input-chart-3, #147862) var(--atbl-chart-strength), white )` |
-| `--atbl-chart-4`    | Categorical chart color 4. | `color-mix( in srgb, var(--atbl-input-chart-4, #7243aa) var(--atbl-chart-strength), white )` |
-| `--atbl-chart-5`    | Categorical chart color 5. | `color-mix( in srgb, var(--atbl-input-chart-5, #aa3958) var(--atbl-chart-strength), white )` |
-| `--atbl-chart-6`    | Categorical chart color 6. | `color-mix( in srgb, var(--atbl-input-chart-6, #475569) var(--atbl-chart-strength), white )` |
-| `--atbl-chart-7`    | Categorical chart color 7. | `color-mix( in srgb, var(--atbl-input-chart-7, #285fc0) var(--atbl-chart-strength), white )` |
-| `--atbl-chart-8`    | Categorical chart color 8. | `color-mix( in srgb, var(--atbl-input-chart-8, #a95319) var(--atbl-chart-strength), white )` |
+| Token               | Scope                      | Purpose                    | Default                                                                                      |
+| ------------------- | -------------------------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| `--atbl-chart-fill` | Computed component default | Unselected bar fill.       | `color-mix( in srgb, var(--atbl-accent) 75%, var(--atbl-surface) )`                          |
+| `--atbl-chart-1`    | Inherited theme value      | Categorical chart color 1. | `color-mix( in srgb, var(--atbl-input-chart-1, #285fc0) var(--atbl-chart-strength), white )` |
+| `--atbl-chart-2`    | Inherited theme value      | Categorical chart color 2. | `color-mix( in srgb, var(--atbl-input-chart-2, #a95319) var(--atbl-chart-strength), white )` |
+| `--atbl-chart-3`    | Inherited theme value      | Categorical chart color 3. | `color-mix( in srgb, var(--atbl-input-chart-3, #147862) var(--atbl-chart-strength), white )` |
+| `--atbl-chart-4`    | Inherited theme value      | Categorical chart color 4. | `color-mix( in srgb, var(--atbl-input-chart-4, #7243aa) var(--atbl-chart-strength), white )` |
+| `--atbl-chart-5`    | Inherited theme value      | Categorical chart color 5. | `color-mix( in srgb, var(--atbl-input-chart-5, #aa3958) var(--atbl-chart-strength), white )` |
+| `--atbl-chart-6`    | Inherited theme value      | Categorical chart color 6. | `color-mix( in srgb, var(--atbl-input-chart-6, #475569) var(--atbl-chart-strength), white )` |
+| `--atbl-chart-7`    | Inherited theme value      | Categorical chart color 7. | `color-mix( in srgb, var(--atbl-input-chart-7, #285fc0) var(--atbl-chart-strength), white )` |
+| `--atbl-chart-8`    | Inherited theme value      | Categorical chart color 8. | `color-mix( in srgb, var(--atbl-input-chart-8, #a95319) var(--atbl-chart-strength), white )` |
 
 ### Focus
 
-| Token                      | Purpose                          | Default                             |
-| -------------------------- | -------------------------------- | ----------------------------------- |
-| `--atbl-focus-color`       | Keyboard focus indicator color.  | `var(--atbl-muted)`                 |
-| `--atbl-focus-outline`     | Complete keyboard focus outline. | `1px solid var(--atbl-focus-color)` |
-| `--atbl-focus-ring-offset` | Outer outline offset.            | `2px`                               |
-| `--atbl-focus-ring-inset`  | Inset outline offset.            | `-1px`                              |
+| Token                      | Scope                      | Purpose                          | Default                             |
+| -------------------------- | -------------------------- | -------------------------------- | ----------------------------------- |
+| `--atbl-focus-color`       | Computed component default | Keyboard focus indicator color.  | `var(--atbl-muted)`                 |
+| `--atbl-focus-outline`     | Computed component default | Complete keyboard focus outline. | `1px solid var(--atbl-focus-color)` |
+| `--atbl-focus-ring-offset` | Inherited theme value      | Outer outline offset.            | `2px`                               |
+| `--atbl-focus-ring-inset`  | Inherited theme value      | Inset outline offset.            | `-1px`                              |
 
 ### Typography
 
-| Token                 | Purpose                        | Default                                                                                                      |
-| --------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `--atbl-font`         | Body font stack.               | `var( --atbl-input-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ui-sans-serif, sans-serif )` |
-| `--atbl-font-heading` | Heading and metric font stack. | `var(--atbl-input-font-heading, var(--atbl-font))`                                                           |
+| Token                         | Scope                      | Purpose                                  | Default                                                                                                      |
+| ----------------------------- | -------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `--atbl-font`                 | Inherited theme value      | Body font stack.                         | `var( --atbl-input-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, ui-sans-serif, sans-serif )` |
+| `--atbl-font-heading`         | Computed component default | Heading and metric font stack.           | `var(--atbl-input-font-heading, var(--atbl-font))`                                                           |
+| `--atbl-type-emphasis-weight` | Inherited theme value      | Primary title and value emphasis weight. | `680`                                                                                                        |
+| `--atbl-type-meta-weight`     | Inherited theme value      | Supporting metadata weight.              | `500`                                                                                                        |
+| `--atbl-type-page-size`       | Inherited theme value      | Page title size.                         | `clamp(1.375rem, 2.4vw, 1.75rem)`                                                                            |
+| `--atbl-type-section-size`    | Inherited theme value      | Section heading size.                    | `1.25rem`                                                                                                    |
+| `--atbl-type-widget-size`     | Inherited theme value      | Widget heading size.                     | `1.0625rem`                                                                                                  |
+| `--atbl-type-body-size`       | Inherited theme value      | Narrative body text size.                | `.875rem`                                                                                                    |
+| `--atbl-type-label-size`      | Inherited theme value      | Control and metric label size.           | `.8125rem`                                                                                                   |
+| `--atbl-type-meta-size`       | Inherited theme value      | Supporting metadata size.                | `.75rem`                                                                                                     |
+| `--atbl-type-metric-size`     | Inherited theme value      | Prominent metric value size.             | `clamp(1.625rem, 3vw, 2.125rem)`                                                                             |
+| `--atbl-type-heading-weight`  | Inherited theme value      | Section and widget heading weight.       | `650`                                                                                                        |
+| `--atbl-type-label-weight`    | Inherited theme value      | Control label weight.                    | `600`                                                                                                        |
+| `--atbl-type-body-leading`    | Inherited theme value      | Narrative line height.                   | `1.65`                                                                                                       |
+| `--atbl-type-label-leading`   | Inherited theme value      | Control and metadata line height.        | `1.4`                                                                                                        |
+| `--atbl-type-heading-leading` | Inherited theme value      | Section and widget heading line height.  | `1.3`                                                                                                        |
+| `--atbl-type-metric-leading`  | Inherited theme value      | Metric value line height.                | `1.08`                                                                                                       |
+| `--atbl-text-measure`         | Inherited theme value      | Maximum readable prose width.            | `70ch`                                                                                                       |
 
 ### Layout
 
-| Token                   | Purpose                        | Default                                                    |
-| ----------------------- | ------------------------------ | ---------------------------------------------------------- |
-| `--atbl-space-xs`       | Spacing step xs.               | `5px`                                                      |
-| `--atbl-space-sm`       | Spacing step sm.               | `10px`                                                     |
-| `--atbl-space-md`       | Spacing step md.               | `16px`                                                     |
-| `--atbl-space-lg`       | Spacing step lg.               | `24px`                                                     |
-| `--atbl-space-xl`       | Spacing step xl.               | `32px`                                                     |
-| `--atbl-layout-gap`     | Section and widget spacing.    | `clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))` |
-| `--atbl-content-width`  | Maximum app content width.     | `960px`                                                    |
-| `--atbl-control-height` | Default button minimum height. | `38px`                                                     |
+| Token                   | Scope                      | Purpose                        | Default                                                    |
+| ----------------------- | -------------------------- | ------------------------------ | ---------------------------------------------------------- |
+| `--atbl-space-xs`       | Inherited theme value      | Spacing step xs.               | `5px`                                                      |
+| `--atbl-space-sm`       | Inherited theme value      | Spacing step sm.               | `10px`                                                     |
+| `--atbl-space-md`       | Inherited theme value      | Spacing step md.               | `16px`                                                     |
+| `--atbl-space-lg`       | Inherited theme value      | Spacing step lg.               | `24px`                                                     |
+| `--atbl-space-xl`       | Inherited theme value      | Spacing step xl.               | `32px`                                                     |
+| `--atbl-layout-gap`     | Computed component default | Section and widget spacing.    | `clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))` |
+| `--atbl-content-width`  | Inherited theme value      | Maximum app content width.     | `960px`                                                    |
+| `--atbl-control-height` | Inherited theme value      | Default button minimum height. | `2.375rem`                                                 |
 
 ### Shape
 
-| Token                   | Purpose                | Default |
-| ----------------------- | ---------------------- | ------- |
-| `--atbl-radius-control` | Control corner radius. | `7px`   |
-| `--atbl-radius-surface` | Surface corner radius. | `12px`  |
-| `--atbl-radius-overlay` | Overlay corner radius. | `16px`  |
+| Token                   | Scope                 | Purpose                | Default |
+| ----------------------- | --------------------- | ---------------------- | ------- |
+| `--atbl-radius-control` | Inherited theme value | Control corner radius. | `7px`   |
+| `--atbl-radius-surface` | Inherited theme value | Surface corner radius. | `12px`  |
+| `--atbl-radius-overlay` | Inherited theme value | Overlay corner radius. | `16px`  |
 
 ### Elevation
 
-| Token                   | Purpose            | Default                         |
-| ----------------------- | ------------------ | ------------------------------- |
-| `--atbl-shadow-surface` | Surface elevation. | `0 3px 16px rgb(20 28 40 / 5%)` |
-| `--atbl-shadow-overlay` | Overlay elevation. | `0 18px 50px rgb(0 0 0 / 16%)`  |
-| `--atbl-shadow-control` | Control elevation. | `0 1px 3px rgb(0 0 0 / 10%)`    |
+| Token                   | Scope                 | Purpose            | Default                         |
+| ----------------------- | --------------------- | ------------------ | ------------------------------- |
+| `--atbl-shadow-surface` | Inherited theme value | Surface elevation. | `0 3px 16px rgb(20 28 40 / 5%)` |
+| `--atbl-shadow-overlay` | Inherited theme value | Overlay elevation. | `0 18px 50px rgb(0 0 0 / 16%)`  |
+| `--atbl-shadow-control` | Inherited theme value | Control elevation. | `0 1px 3px rgb(0 0 0 / 10%)`    |
 
 ### Cursors
 
-| Token                    | Purpose                           | Default   |
-| ------------------------ | --------------------------------- | --------- |
-| `--atbl-cursor-action`   | Enabled interactive controls.     | `pointer` |
-| `--atbl-cursor-disabled` | Disabled controls.                | `default` |
-| `--atbl-cursor-help`     | Definition and timestamp details. | `help`    |
+| Token                    | Scope                 | Purpose                                                 | Default    |
+| ------------------------ | --------------------- | ------------------------------------------------------- | ---------- |
+| `--atbl-cursor-action`   | Inherited theme value | Enabled interactive controls.                           | `pointer`  |
+| `--atbl-cursor-disabled` | Inherited theme value | Disabled controls.                                      | `default`  |
+| `--atbl-cursor-help`     | Inherited theme value | Definition and timestamp details.                       | `help`     |
+| `--atbl-cursor-busy`     | Inherited theme value | Ongoing action cursor; independent from disabled state. | `progress` |
 
 ### Motion
 
-| Token                    | Purpose                      | Default                          |
-| ------------------------ | ---------------------------- | -------------------------------- |
-| `--atbl-duration-fast`   | Fast interaction duration.   | `120ms`                          |
-| `--atbl-duration-normal` | Normal interaction duration. | `180ms`                          |
-| `--atbl-duration-slow`   | Slow interaction duration.   | `240ms`                          |
-| `--atbl-ease-standard`   | Standard transition easing.  | `ease`                           |
-| `--atbl-ease-enter`      | Overlay entrance easing.     | `cubic-bezier(0.2, 0.7, 0.2, 1)` |
+| Token                    | Scope                 | Purpose                      | Default                          |
+| ------------------------ | --------------------- | ---------------------------- | -------------------------------- |
+| `--atbl-duration-fast`   | Inherited theme value | Fast interaction duration.   | `120ms`                          |
+| `--atbl-duration-normal` | Inherited theme value | Normal interaction duration. | `180ms`                          |
+| `--atbl-duration-slow`   | Inherited theme value | Slow interaction duration.   | `240ms`                          |
+| `--atbl-ease-standard`   | Inherited theme value | Standard transition easing.  | `ease`                           |
+| `--atbl-ease-enter`      | Inherited theme value | Overlay entrance easing.     | `cubic-bezier(0.2, 0.7, 0.2, 1)` |
+
+### Controls
+
+| Token                             | Scope                 | Purpose                                  | Default    |
+| --------------------------------- | --------------------- | ---------------------------------------- | ---------- |
+| `--atbl-control-compact-height`   | Inherited theme value | Explicit compact control minimum height. | `1.875rem` |
+| `--atbl-control-icon-size`        | Inherited theme value | Default action icon size.                | `1rem`     |
+| `--atbl-control-padding-inline`   | Inherited theme value | Control horizontal padding.              | `.75rem`   |
+| `--atbl-control-padding-block`    | Inherited theme value | Control vertical padding.                | `.375rem`  |
+| `--atbl-control-gap`              | Inherited theme value | Control label and icon spacing.          | `.5rem`    |
+| `--atbl-control-disabled-opacity` | Inherited theme value | Disabled control opacity.                | `.5`       |
+
+### States
+
+| Token                             | Scope                      | Purpose                                        | Default                                                        |
+| --------------------------------- | -------------------------- | ---------------------------------------------- | -------------------------------------------------------------- |
+| `--atbl-control-hover-surface`    | Computed component default | Enabled control hover fill.                    | `var(--atbl-subtle)`                                           |
+| `--atbl-control-pressed-surface`  | Computed component default | Pressed control fill.                          | `color-mix(in srgb, var(--atbl-text) 8%, var(--atbl-surface))` |
+| `--atbl-control-selected-surface` | Computed component default | Selected option or toggled control fill.       | `var(--atbl-accent-subtle)`                                    |
+| `--atbl-control-selected-text`    | Computed component default | Selected option or toggled control foreground. | `var(--atbl-accent)`                                           |
 
 ## Stable classes
 

@@ -21,6 +21,7 @@ export function SearchInput({
 }) {
   return (
     <div
+      data-atbl-internal-surface="field"
       data-atbl-focus={focusRing ? 'group' : undefined}
       className="altertable-search-input-wrap"
       data-size={size}

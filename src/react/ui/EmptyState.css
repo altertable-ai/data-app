@@ -11,13 +11,13 @@
 }
 .altertable-empty-state strong {
   color: var(--atbl-text);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-empty-state p {
   max-width: 40ch;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
   line-height: 1.5;
   white-space: normal;
 }

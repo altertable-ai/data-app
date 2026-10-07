@@ -9,12 +9,12 @@
   justify-content: space-between;
   gap: 12px;
   color: var(--atbl-muted);
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-breakdown-summary strong {
   flex: none;
   color: var(--atbl-text);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
   font-variant-numeric: tabular-nums;
   font-weight: 650;
 }
@@ -45,7 +45,7 @@
   min-width: 0;
   padding: 8px 0;
   border-bottom: 1px solid var(--atbl-border);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
 }
 .altertable-breakdown-row dt {
   display: flex;

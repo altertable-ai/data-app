@@ -5,7 +5,7 @@
   align-self: flex-start;
   flex: none;
   align-items: stretch;
-  height: 36px;
+  min-block-size: var(--atbl-control-height);
   overflow: hidden;
   border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-control);
@@ -14,10 +14,10 @@
 }
 .altertable-live-control .altertable-button[data-size='icon'] {
   position: relative;
-  width: 35px;
-  min-width: 35px;
-  min-height: 34px;
-  height: 34px;
+  width: calc(var(--atbl-control-height) - 2px);
+  min-width: calc(var(--atbl-control-height) - 2px);
+  min-height: calc(var(--atbl-control-height) - 2px);
+  min-block-size: calc(var(--atbl-control-height) - 2px);
   padding: 0;
   border: 0;
   border-radius: 0;
@@ -41,8 +41,8 @@
   content: '';
 }
 .altertable-live-frequency {
-  width: 28px;
-  height: 34px;
+  width: calc(var(--atbl-control-height) - 0.5rem);
+  min-block-size: calc(var(--atbl-control-height) - 2px);
   border-left: 1px solid var(--atbl-border);
 }
 .altertable-live-frequency > button {
@@ -74,10 +74,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 34px;
+  min-height: calc(var(--atbl-control-height) - 2px);
   padding: 6px 9px;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
   outline: none;
 }
 .altertable-live-frequency-popover
@@ -86,7 +86,7 @@
 }
 .altertable-live-frequency-popover [role='option'][data-selected] {
   color: var(--atbl-accent);
-  font-weight: 600;
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-live-frequency-popover [role='option']:not([data-selected]) svg {
   visibility: hidden;

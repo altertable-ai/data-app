@@ -7,8 +7,8 @@
   flex-wrap: wrap;
   gap: 4px 7px;
   color: var(--atbl-muted);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--atbl-type-meta-size);
+  font-weight: var(--atbl-type-label-weight);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

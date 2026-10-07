@@ -23,3 +23,10 @@
 [data-atbl-focus='group'] input:focus-visible {
   outline: none;
 }
+
+@media (forced-colors: active) {
+  [data-atbl-focus]:is(:focus-visible, :focus-within, [data-focus-visible]),
+  [data-atbl-internal-prose] a:focus-visible {
+    outline-color: Highlight !important;
+  }
+}

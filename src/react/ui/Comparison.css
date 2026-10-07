@@ -6,7 +6,7 @@
 }
 .altertable-comparison-visual figcaption {
   color: var(--atbl-muted);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
   font-weight: 650;
 }
 .altertable-comparison-row {
@@ -16,18 +16,23 @@
 .altertable-comparison-row > div {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
 }
 .altertable-comparison-row > div > span {
   color: var(--atbl-muted);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
 }
 .altertable-comparison-row strong {
   color: var(--atbl-text);
   font-family: var(--atbl-font-heading);
-  font-size: clamp(22px, 3vw, 32px);
+  font-weight: var(--atbl-type-emphasis-weight);
+  line-height: var(--atbl-type-metric-leading);
+  font-size: var(--atbl-type-metric-size);
   font-variant-numeric: tabular-nums;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
   letter-spacing: -0.04em;
 }
 .altertable-comparison-track {
@@ -57,8 +62,8 @@
   gap: 5px;
   margin: 0;
   color: var(--atbl-muted);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
   font-variant-numeric: tabular-nums;
 }
 .altertable-comparison-change[data-tone='good'] {
@@ -77,7 +82,7 @@
   gap: clamp(22px, 4vh, 38px);
 }
 .altertable-comparison-visual[data-emphasis='story'] figcaption {
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
 }
 .altertable-comparison-visual[data-emphasis='story']
   .altertable-comparison-row[data-period='current']
@@ -95,7 +100,7 @@
 .altertable-comparison-visual[data-emphasis='story']
   .altertable-comparison-row[data-period='previous']
   strong {
-  font-size: clamp(22px, 2.6vw, 30px);
+  font-size: var(--atbl-type-metric-size);
 }
 .altertable-comparison-visual[data-emphasis='story']
   .altertable-comparison-track {
@@ -103,7 +108,7 @@
 }
 .altertable-comparison-visual[data-emphasis='story']
   .altertable-comparison-change {
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
 }
 .altertable-about-visual
   .altertable-comparison-visual[data-emphasis='story']

@@ -10,7 +10,8 @@
   background: var(--atbl-surface);
   box-shadow: var(--atbl-shadow-overlay);
   color: var(--atbl-text);
-  font: 13px/1.5 var(--atbl-font);
+  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
   animation: altertable-popover-in var(--atbl-duration-fast)
     var(--atbl-ease-enter);
 }

@@ -22,7 +22,7 @@
   min-width: 0;
   overflow-wrap: anywhere;
   font-family: var(--atbl-font-heading);
-  font-weight: 600;
+  font-weight: var(--atbl-type-label-weight);
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
@@ -46,6 +46,6 @@
 }
 .altertable-ranking-detail {
   color: var(--atbl-muted);
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
   line-height: 1.45;
 }

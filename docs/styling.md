@@ -62,8 +62,12 @@ brand inputs and stops system-theme listening.
 
 ## Customize tokens
 
-Public `--atbl-*` tokens are the CSS customization contract. Override them on
-`:root` to include portaled UI, or on a component for a local adjustment.
+Public `--atbl-*` tokens are the CSS customization contract. The reference marks
+inherited theme values and computed component defaults separately. Inherited
+values are available to app-owned CSS. Computed entries are component override
+points; package styles resolve their defaults where they are used, after local
+inputs inherit. Override either kind on `:root` for the document or on a
+component for a local adjustment. Portaled UI follows its actual DOM ancestors.
 
 ```css
 :root {
@@ -71,6 +75,7 @@ Public `--atbl-*` tokens are the CSS customization contract. Override them on
   --atbl-cursor-action: pointer;
   --atbl-cursor-disabled: default;
   --atbl-control-height: 40px;
+  --atbl-focus-color: var(--atbl-accent);
 }
 
 .app-action {
@@ -85,7 +90,9 @@ defaults, stable root selectors, and native control hooks. The generated
 Appearance settings write private brand inputs rather than inline public tokens,
 so normal author styles can override the presets. `--atbl-input-*`,
 `--atbl-palette-*`, and `--atbl-chart-strength` are internal. Component layout
-variables such as `--atbl-grid-column-width` are implementation details.
+variables such as `--atbl-grid-column-width` and derivation inputs such as
+`--atbl-accent-subtle-strength` are implementation details. Names outside the
+published registry are internal.
 
 Chart colors fill eight slots by repeating the configured palette as needed.
 Dark themes lighten those colors. Appearance selects a contrasting black or
@@ -125,3 +132,24 @@ authored examples; pass file paths or quoted globs to check another app.
 Token reference and package control-hook checks run with the unit tests. Browser tests cover host
 isolation, author overrides, cursor and focus states, theme and palette changes,
 contrast, and appearance cleanup.
+
+## Typography, density, and states
+
+Page, section, widget, body, label, metadata, and metric roles share semantic
+sizes. Their rem units honor enlarged text; line heights and weights describe
+the role. Use inherited role tokens for custom markup and keep fixed chart
+geometry local.
+
+Comfortable controls use a 2.375rem minimum height. Compact and spacious density
+use 2.125rem and 2.625rem and adjust padding. Explicit compact component sizes
+use their own 1.875rem minimum. Density preserves text size; controls can grow
+when their labels wrap.
+
+Package controls own state paint through private surface roles. Hover and
+pressed surfaces derive from local inputs; selected state wins over pointer
+states; native and Aria disabled states share one opacity and suppress those
+surfaces. Busy cursors preserve geometry. Invalid fields derive error focus
+locally. Override computed state tokens to customize these defaults.
+
+See [UI quality](ui-quality.md) for hierarchy, responsive composition, state
+behavior, and rendered verification.

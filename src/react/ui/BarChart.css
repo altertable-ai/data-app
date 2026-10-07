@@ -46,7 +46,7 @@
 }
 .altertable-selectable-bars-label {
   padding-top: 8px;
-  font-size: 11px;
+  font-size: var(--atbl-type-meta-size);
   white-space: nowrap;
 }
 

@@ -71,7 +71,7 @@
 .altertable-trend-label {
   display: block;
   padding: 8px 3px 0;
-  font-size: 11px;
+  font-size: var(--atbl-type-meta-size);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -10,8 +10,8 @@
   width: fit-content;
   border-radius: 4px;
   color: var(--atbl-muted);
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--atbl-type-meta-size);
+  font-weight: var(--atbl-type-label-weight);
   list-style: none;
   transition: color var(--atbl-duration-fast) var(--atbl-ease-standard);
 }
@@ -52,7 +52,8 @@
   border-bottom: 1px solid var(--atbl-border);
   background: transparent;
   color: var(--atbl-text);
-  font: 600 12px/1.4 var(--atbl-font);
+  font: var(--atbl-type-label-weight)
+    var(--atbl-type-meta-size)/var(--atbl-type-label-leading) var(--atbl-font);
 }
 .altertable-query-filename {
   display: inline-flex;
@@ -87,7 +88,8 @@
   border-radius: 0;
   background: var(--atbl-code-surface);
   color: var(--atbl-code-text);
-  font: 12px/1.6 var(--atbl-mono-font);
+  font: var(--atbl-type-meta-size)/var(--atbl-type-body-leading)
+    var(--atbl-mono-font);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   tab-size: 2;
@@ -99,7 +101,7 @@
 .altertable-query-unavailable {
   margin: 0;
   color: var(--atbl-muted);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
 }
 .altertable-query-notebook {
   gap: 16px;
@@ -114,21 +116,21 @@
 }
 .altertable-query-notebook-header > span {
   color: var(--atbl-muted);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
   font-weight: 450;
 }
 .altertable-query-notebook-header small {
   margin-inline-start: 8px;
   color: var(--atbl-muted);
-  font-size: 11px;
-  font-weight: 500;
+  font-size: var(--atbl-type-meta-size);
+  font-weight: var(--atbl-type-meta-weight);
 }
 .altertable-query-notebook-header .altertable-button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-height: 30px;
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-query-notebook figure {
   border-radius: 10px;
@@ -136,7 +138,7 @@
 .altertable-query-notebook-error {
   padding: 8px 12px;
   color: var(--atbl-danger);
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
 }
 @media (hover: hover) and (pointer: fine) {
   .altertable-query-actions .altertable-query-action {

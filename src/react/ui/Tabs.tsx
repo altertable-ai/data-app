@@ -23,7 +23,12 @@ export { TabList, TabPanels };
 
 export function Tab(props: ComponentPropsWithRef<typeof AriaTab>) {
   return (
-    <AriaTab data-atbl-focus="ring" data-atbl-control="action" {...props} />
+    <AriaTab
+      data-atbl-internal-surface="tab"
+      data-atbl-focus="ring"
+      data-atbl-control="action"
+      {...props}
+    />
   );
 }
 

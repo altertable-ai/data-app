@@ -1,10 +1,10 @@
 .altertable-text-content {
   min-width: 0;
-  max-width: 70ch;
+  max-width: var(--atbl-text-measure);
   color: var(--atbl-text);
   overflow-wrap: anywhere;
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: var(--atbl-type-body-size);
+  line-height: var(--atbl-type-body-leading);
 }
 .altertable-text-content > :first-child {
   margin-top: 0;
@@ -27,4 +27,11 @@
 .altertable-text-content a:hover {
   color: var(--atbl-text);
   text-decoration-thickness: 2px;
+}
+
+.altertable-text-content h2 {
+  font-family: var(--atbl-font-heading);
+  font-size: var(--atbl-type-section-size);
+  font-weight: var(--atbl-type-heading-weight);
+  line-height: var(--atbl-type-heading-leading);
 }

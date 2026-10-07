@@ -26,19 +26,22 @@ export async function generateStyleContract(check = false) {
   const entries = Object.entries(dataAppStyleTokens);
   const css =
     '/* Generated from style-contract.ts. Run bun run generate:styles. */\n:root {\n' +
-    entries.map(([name, token]) => `  ${name}: ${token.default};`).join('\n') +
+    entries
+      .filter(([, token]) => token.scope === 'inherited')
+      .map(([name, token]) => `  ${name}: ${token.default};`)
+      .join('\n') +
     '\n}\n';
   let docs =
-    '# Styling reference\n\nGenerated from the package styling contract. Use components and typed props first;\nthese tokens and root selectors are supported customization hooks.\n\nSee [Styling](styling.md) for composition and ownership, and the\n[machine-readable contract](style-contract.json) for tooling.\n\n## Public tokens\n\n';
+    '# Styling reference\n\nGenerated from the package styling contract. Use components and typed props first;\nthese tokens and root selectors are supported customization hooks.\n\nComputed component tokens are override points; their defaults resolve in package\nstyles where they are consumed. Inherited tokens are available to app-owned CSS.\n\nSee [Styling](styling.md) for composition and ownership, and the\n[machine-readable contract](style-contract.json) for tooling.\n\n## Public tokens\n\n';
   const groups = [...new Set(entries.map(([, token]) => token.group))];
   for (const group of groups) {
-    docs += `### ${group}\n\n| Token | Purpose | Default |\n| --- | --- | --- |\n`;
+    docs += `### ${group}\n\n| Token | Scope | Purpose | Default |\n| --- | --- | --- | --- |\n`;
     docs +=
       entries
         .filter(([, token]) => token.group === group)
         .map(
           ([name, token]) =>
-            `| \`${name}\` | ${token.description} | \`${token.default}\` |`
+            `| \`${name}\` | ${token.scope === 'component' ? 'Computed component default' : 'Inherited theme value'} | ${token.description} | \`${token.default}\` |`
         )
         .join('\n') + '\n\n';
   }

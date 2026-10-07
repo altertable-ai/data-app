@@ -7,6 +7,8 @@
   --atbl-palette-muted: #687078;
   --atbl-palette-border: #e3e6e8;
   --atbl-chart-strength: 100%;
+  --atbl-accent-hover-target: black;
+  --atbl-accent-subtle-strength: 12%;
 }
 :root[data-atbl-theme='dark'] {
   --atbl-palette-background: #151719;
@@ -53,12 +55,8 @@
     --atbl-input-dark-accent,
     color-mix(in srgb, var(--atbl-input-accent, #405d47) 50%, white)
   );
-  --atbl-accent-hover: color-mix(in srgb, var(--atbl-accent) 80%, white);
-  --atbl-accent-subtle: color-mix(
-    in srgb,
-    var(--atbl-accent) 22%,
-    var(--atbl-surface)
-  );
+  --atbl-accent-hover-target: white;
+  --atbl-accent-subtle-strength: 22%;
   --atbl-on-accent: var(--atbl-input-on-accent, var(--atbl-background));
   --atbl-danger: #f97066;
   --atbl-backdrop: rgb(0 0 0 / 55%);
@@ -67,6 +65,9 @@
   --atbl-chart-strength: 60%;
 }
 :root[data-atbl-density='compact'] {
+  --atbl-control-height: 2.125rem;
+  --atbl-control-padding-inline: 0.625rem;
+  --atbl-control-padding-block: 0.25rem;
   --atbl-space-xs: 4px;
   --atbl-space-sm: 8px;
   --atbl-space-md: 12px;
@@ -74,6 +75,9 @@
   --atbl-space-xl: 24px;
 }
 :root[data-atbl-density='spacious'] {
+  --atbl-control-height: 2.625rem;
+  --atbl-control-padding-inline: 1rem;
+  --atbl-control-padding-block: 0.5rem;
   --atbl-space-xs: 6px;
   --atbl-space-sm: 12px;
   --atbl-space-md: 20px;

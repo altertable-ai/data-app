@@ -5,7 +5,8 @@
   height: 28px;
   min-width: 0;
   color: var(--atbl-muted);
-  font: 12px/1.4 var(--atbl-font);
+  font: var(--atbl-type-meta-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
 }
 .altertable-request-hint > svg,
 .altertable-request-hint > button {
@@ -44,7 +45,8 @@
   width: 78px;
   height: 30px;
   color: var(--atbl-muted);
-  font: 12px/1.4 var(--atbl-font);
+  font: var(--atbl-type-meta-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
 }
 .altertable-widget-status .altertable-button {
   gap: 5px;

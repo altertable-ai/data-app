@@ -25,7 +25,7 @@
   background: var(--atbl-surface);
   box-shadow: var(--atbl-shadow-overlay);
   color: var(--atbl-text);
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
   line-height: 1.45;
   pointer-events: auto;
 }

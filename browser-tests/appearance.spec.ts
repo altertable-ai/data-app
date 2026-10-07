@@ -290,3 +290,101 @@ test('default grids retain a single column', async ({ page }) => {
   expect(second!.x).toBe(first!.x);
   expect(second!.width).toBe(first!.width);
 });
+
+test('computed defaults compose local inputs and preserve explicit ancestor overrides', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  await page.evaluate(() => {
+    const button =
+      document.querySelector<HTMLButtonElement>('.altertable-button')!;
+    button.dataset.atblInternalSurface = 'control';
+    button.style.setProperty('--atbl-focus-color', '#ff0000');
+    button.style.setProperty('--atbl-accent', '#ff0000');
+    button.setAttribute('data-focus-visible', '');
+    button.setAttribute('aria-pressed', 'true');
+  });
+  const button = page.getByRole('button', { name: 'Action', exact: true });
+  await expect(button).toHaveCSS('outline-color', 'rgb(255, 0, 0)');
+  await expect
+    .poll(() =>
+      color(page, '.altertable-button:not(:disabled)', 'background-color')
+    )
+    .toEqual([255, 224, 224]);
+  await page.evaluate(() => window.setAppearance({ theme: 'dark' }));
+  await expect
+    .poll(() =>
+      color(page, '.altertable-button:not(:disabled)', 'background-color')
+    )
+    .toEqual([81, 27, 30]);
+  await page.addStyleTag({
+    content:
+      ':root { --atbl-focus-outline: 3px dashed blue; --atbl-control-selected-surface: #123456; }',
+  });
+  await expect(button).toHaveCSS('outline-width', '3px');
+  await expect(button).toHaveCSS('outline-style', 'dashed');
+  await expect(button).toHaveCSS('outline-color', 'rgb(0, 0, 255)');
+  await expect(button).toHaveCSS('background-color', 'rgb(18, 52, 86)');
+});
+
+test('local layout spacing and overlay selection defaults resolve at consumption', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  await page.evaluate(() => {
+    const grid = document.querySelector<HTMLElement>('.altertable-grid')!;
+    grid.style.setProperty('--atbl-space-md', '41px');
+    grid.style.setProperty('--atbl-space-lg', '47px');
+    const overlay = document.querySelector<HTMLElement>(
+      '.altertable-combobox-popover'
+    )!;
+    overlay.style.setProperty('--atbl-accent', '#ff0000');
+    const option = overlay.querySelector<HTMLElement>('[data-focus-visible]')!;
+    option.dataset.atblInternalSurface = 'option';
+    option.setAttribute('data-selected', '');
+  });
+  await expect(page.locator('.altertable-grid')).toHaveCSS('row-gap', '41px');
+  expect(
+    await color(page, "[role='option'][data-selected]", 'background-color')
+  ).toEqual([255, 224, 224]);
+});
+
+test('native and Aria state paint excludes disabled hover and keeps busy geometry', async ({
+  page,
+}) => {
+  await page.goto('/gallery?view=filters');
+  const disabled = page.getByRole('button', {
+    name: 'Disabled categories: HTTP',
+    exact: true,
+  });
+  const before = await disabled.evaluate(
+    element => getComputedStyle(element).backgroundColor
+  );
+  await expect(disabled).toHaveCSS('opacity', '0.5');
+  await disabled.hover();
+  await expect(disabled).toHaveCSS('background-color', before);
+  await page.goto('/appearance');
+  const action = page.getByRole('button', { name: 'Action', exact: true });
+  const bounds = await action.boundingBox();
+  await action.evaluate(element => element.setAttribute('aria-busy', 'true'));
+  await expect(action).toHaveCSS('cursor', 'progress');
+  expect(await action.boundingBox()).toEqual(bounds);
+  await action.evaluate(element => element.setAttribute('disabled', ''));
+  await expect(action).toHaveCSS('cursor', 'default');
+});
+
+test('density changes control geometry without shrinking typography', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  const button = page.getByRole('button', { name: 'Action', exact: true });
+  const heights: number[] = [];
+  for (const density of ['compact', 'comfortable', 'spacious'] as const) {
+    await page.evaluate(density => window.setAppearance({ density }), density);
+    heights.push((await button.boundingBox())!.height);
+    await expect(button).toHaveCSS('font-size', '13px');
+  }
+  heights.forEach((height, index) =>
+    expect(height).toBeCloseTo([34, 38, 42][index]!, 2)
+  );
+});

@@ -8,7 +8,7 @@
   border-radius: var(--atbl-radius-surface);
   background: var(--atbl-surface);
   color: var(--atbl-muted);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
   line-height: 1.5;
 }
 .altertable-status-panel[data-status='error'] {

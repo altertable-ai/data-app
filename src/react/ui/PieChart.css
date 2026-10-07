@@ -34,7 +34,7 @@
 .altertable-pie-empty-label {
   position: absolute;
   color: var(--atbl-muted);
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-pie-legend {
   display: grid;
@@ -52,7 +52,7 @@
   background: transparent;
   color: var(--atbl-text);
   text-align: left;
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
 .altertable-pie-legend [data-open] > button {

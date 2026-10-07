@@ -99,6 +99,7 @@ export function HelpPopover({
   return (
     <>
       <button
+        data-atbl-internal-surface={triggerClassName ? undefined : 'control'}
         data-atbl-focus="ring"
         data-atbl-control="action"
         {...getReferenceProps({

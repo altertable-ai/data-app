@@ -14,7 +14,7 @@
   border: 0;
   border-radius: calc(var(--atbl-radius-control) - 2px);
   color: var(--atbl-muted);
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-widget-view-tabs .react-aria-Tab[data-selected] {
   background: var(--atbl-surface);

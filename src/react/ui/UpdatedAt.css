@@ -5,7 +5,8 @@
   width: fit-content;
   align-self: flex-start;
   color: var(--atbl-muted);
-  font: 12px/1.4 var(--atbl-font);
+  font: var(--atbl-type-meta-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
 }
 .altertable-updated-at:hover {
   color: var(--atbl-text);

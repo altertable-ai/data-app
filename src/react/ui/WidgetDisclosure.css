@@ -9,8 +9,8 @@
   padding: 0 10px;
   border-radius: var(--atbl-radius-control);
   color: var(--atbl-text);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
   list-style: none;
 }
 .altertable-widget-disclosure > summary::-webkit-details-marker {

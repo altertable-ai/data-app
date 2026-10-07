@@ -1,6 +1,6 @@
 .starter-eyebrow {
   color: var(--atbl-muted);
-  font-size: 11px;
+  font-size: var(--atbl-type-meta-size);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -44,7 +44,7 @@
   margin: 8px 0 6px;
   font-family: var(--atbl-font-heading);
   font-size: clamp(26px, 3.2vw, 36px);
-  font-weight: 680;
+  font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: -0.035em;
   line-height: 1.15;
 }
@@ -52,14 +52,14 @@
   max-width: 62ch;
   margin: 0;
   color: var(--atbl-muted);
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
   line-height: 1.55;
 }
 .starter-connection small {
   display: block;
   margin-top: 14px;
   color: var(--atbl-muted);
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
 }
 .starter-connection > .altertable-button {
   flex: none;
@@ -73,13 +73,13 @@
   margin: 8px 0 4px;
   font-family: var(--atbl-font-heading);
   font-size: clamp(20px, 2.4vw, 26px);
-  font-weight: 680;
+  font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: -0.025em;
 }
 .starter-next-heading p {
   margin: 0;
   color: var(--atbl-muted);
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
   line-height: 1.5;
 }
 .starter-steps {
@@ -103,18 +103,18 @@
   display: block;
   margin-bottom: 22px;
   color: var(--atbl-accent);
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
   font-weight: 700;
   content: '0' counter(starter-step);
 }
 .starter-steps strong {
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
   font-weight: 650;
 }
 .starter-steps p {
   margin: 8px 0 0;
   color: var(--atbl-muted);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
   line-height: 1.5;
 }
 .starter-steps code {

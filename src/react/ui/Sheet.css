@@ -20,7 +20,8 @@
   background: var(--atbl-surface);
   color: var(--atbl-text);
   box-shadow: var(--atbl-shadow-overlay);
-  font: 14px/1.55 var(--atbl-font);
+  font: var(--atbl-type-body-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
   translate: 100% 0;
   opacity: 0;
   transition:
@@ -85,7 +86,7 @@
 .altertable-sheet-header p {
   margin: 4px 0 0;
   color: var(--atbl-muted);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
   line-height: 1.45;
 }
 .altertable-sheet-actions {

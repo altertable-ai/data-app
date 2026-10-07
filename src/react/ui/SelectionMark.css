@@ -3,21 +3,22 @@
   flex: none;
   place-items: center;
   box-sizing: border-box;
-  width: 16px;
-  height: 16px;
+  width: 1em;
+  height: 1em;
   border: 1px solid var(--atbl-muted);
-  border-radius: 4px;
+  border-radius: 0.25em;
+  font-size: var(--atbl-control-icon-size);
 }
 .altertable-selection-mark[data-selected] {
   border-color: var(--atbl-accent);
   background: var(--atbl-accent);
 }
 .altertable-selection-mark[data-selected]::after {
-  width: 4px;
-  height: 7px;
-  margin-top: -2px;
+  width: 0.25em;
+  height: 0.4375em;
+  margin-top: -0.125em;
   border: solid var(--atbl-on-accent);
-  border-width: 0 2px 2px 0;
+  border-width: 0 0.125em 0.125em 0;
   content: '';
   transform: rotate(45deg);
 }

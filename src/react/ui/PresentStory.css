@@ -56,7 +56,7 @@
 .altertable-present-header {
   min-height: 60px;
   border-bottom: 1px solid var(--atbl-border);
-  font-size: 13px;
+  font-size: var(--atbl-type-label-size);
 }
 .altertable-present-title {
   display: flex;
@@ -68,7 +68,7 @@
   line-height: 24px;
 }
 .altertable-present-title strong {
-  font-size: 14px;
+  font-size: var(--atbl-type-body-size);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -89,7 +89,7 @@
 .altertable-present-count {
   flex: none;
   color: var(--atbl-muted);
-  font-size: 11px;
+  font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
 .altertable-present-actions {

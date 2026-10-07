@@ -17,3 +17,88 @@
 [data-atbl-control]:has(> input:disabled) {
   cursor: var(--atbl-cursor-disabled);
 }
+
+/* Native and React Aria controls share state precedence: disabled, selected,
+   pressed, hovered, then idle. Busy is independent and preserves geometry. */
+[data-atbl-control='action']:is(
+  :disabled,
+  [data-disabled],
+  [aria-disabled='true']
+),
+[data-atbl-control='help']:is(
+  :disabled,
+  [data-disabled],
+  [aria-disabled='true']
+),
+[data-atbl-control]:has(> input:disabled) {
+  opacity: var(--atbl-control-disabled-opacity);
+}
+[data-atbl-control][aria-busy='true']:not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  cursor: var(--atbl-cursor-busy);
+}
+:where(
+    [data-atbl-internal-surface='control'],
+    [data-atbl-internal-surface='option']
+  ):is(:hover, [data-hovered], [data-focused], [data-open='true']):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  background: var(--atbl-control-hover-surface);
+}
+:where(
+    [data-atbl-internal-surface='control'],
+    [data-atbl-internal-surface='option']
+  ):is(:active, [data-pressed]):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  background: var(--atbl-control-pressed-surface);
+}
+:where(
+    [data-atbl-internal-surface='control'],
+    [data-atbl-internal-surface='option']
+  ):is(
+    [aria-pressed='true'],
+    [data-selected],
+    [aria-current='true'],
+    :has(> input:checked)
+  ):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  background: var(--atbl-control-selected-surface);
+  color: var(--atbl-control-selected-text);
+}
+[data-atbl-internal-surface='field']:is(:hover, [data-hovered]):not(
+    :has(input:disabled),
+    [data-disabled],
+    [data-invalid],
+    [aria-invalid='true'],
+    :has(input[aria-invalid='true'])
+  ) {
+  border-color: var(--atbl-control-hover-border);
+}
+[data-atbl-internal-surface='field']:is([data-invalid], [aria-invalid='true']),
+[data-atbl-internal-surface='field']:has(input[aria-invalid='true']) {
+  border-color: var(--atbl-danger);
+  --atbl-focus-color: var(--atbl-danger);
+}
+
+[data-atbl-control='text']:is(
+  :disabled,
+  [data-disabled],
+  [aria-disabled='true']
+) {
+  color: var(--atbl-muted);
+}

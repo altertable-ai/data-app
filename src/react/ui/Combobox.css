@@ -10,8 +10,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--atbl-muted);
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--atbl-type-meta-size);
+  font-weight: var(--atbl-type-meta-weight);
 }
 .altertable-combobox-value {
   flex: none;
@@ -20,8 +20,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-combobox-trigger > svg {
   flex: none;
@@ -39,7 +39,8 @@
   background: var(--atbl-surface);
   color: var(--atbl-text);
   box-shadow: var(--atbl-shadow-overlay);
-  font: 13px/1.4 var(--atbl-font);
+  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
 }
 .altertable-combobox-dialog {
   outline: none;
@@ -90,7 +91,7 @@
 .altertable-combobox-popover .react-aria-ListBoxItem small {
   display: block;
   color: var(--atbl-muted);
-  font-size: 11px;
+  font-size: var(--atbl-type-meta-size);
   font-weight: 400;
 }
 .altertable-combobox-popover
@@ -114,9 +115,6 @@
 .altertable-combobox-popover .react-aria-ListBoxItem[data-focused],
 .altertable-combobox-popover .react-aria-ListBoxItem[data-hovered] {
   background: var(--atbl-subtle);
-}
-.altertable-combobox-popover .react-aria-ListBoxItem[data-disabled] {
-  opacity: 0.45;
 }
 .altertable-combobox-empty {
   padding: 12px 10px;

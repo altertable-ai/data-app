@@ -234,6 +234,7 @@ export function Combobox(props: ComboboxProps) {
               >
                 {hit => (
                   <ListBoxItem
+                    data-atbl-internal-surface="option"
                     data-atbl-focus="inset"
                     data-atbl-control="action"
                     id={hit.item.id}

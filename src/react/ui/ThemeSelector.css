@@ -20,8 +20,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: var(--atbl-control-compact-height);
+  height: var(--atbl-control-compact-height);
   padding: 0;
   border-radius: var(--atbl-radius-control);
   background: transparent;
@@ -36,11 +36,16 @@
   opacity: 0;
   cursor: inherit;
 }
-.altertable-theme-selector label:hover {
+.altertable-theme-selector label:hover:not(:has(input:disabled)) {
   color: var(--atbl-text);
 }
 .altertable-theme-selector label:has(input:checked) {
   background: var(--atbl-surface);
   color: var(--atbl-text);
   box-shadow: var(--atbl-shadow-control);
+}
+
+.altertable-theme-selector label svg {
+  inline-size: var(--atbl-control-icon-size);
+  block-size: var(--atbl-control-icon-size);
 }

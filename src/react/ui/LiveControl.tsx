@@ -70,6 +70,7 @@ export function LiveControl({
         className="altertable-live-frequency"
       >
         <AriaButton
+          data-atbl-internal-surface="control"
           data-atbl-focus="inset"
           data-atbl-control="action"
           aria-label={`Live update frequency: ${frequency}`}
@@ -84,6 +85,7 @@ export function LiveControl({
           <ListBox aria-label="Live update frequency">
             {intervals.map(interval => (
               <ListBoxItem
+                data-atbl-internal-surface="option"
                 data-atbl-focus="inset"
                 data-atbl-control="action"
                 key={interval.seconds}

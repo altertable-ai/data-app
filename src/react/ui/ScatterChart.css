@@ -4,7 +4,7 @@
 .altertable-scatter-axis-title {
   margin: 14px 0 18px;
   color: var(--atbl-muted);
-  font-size: 11px;
+  font-size: var(--atbl-type-meta-size);
   overflow-wrap: anywhere;
 }
 .altertable-scatter-axes {
@@ -33,7 +33,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--atbl-muted);
-  font-size: 10px;
+  font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
 .altertable-scatter-x-tick {
@@ -45,7 +45,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--atbl-muted);
-  font-size: 10px;
+  font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
 .altertable-scatter-x-tick[data-edge='0'] {
