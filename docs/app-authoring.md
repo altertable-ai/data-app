@@ -55,6 +55,29 @@ reuse a dataset when several visuals derive from the same rows. Present the
 findings that answer the reader's question, rather than every row or chart.
 Use the [standard layout](layout.md) and built-in toolbar actions.
 
+### Organize the exploration
+
+Use sections for a focused question and for findings readers should compare
+side by side. Add app-level `<Tabs>` from `/react/ui` when the exploration has
+distinct analytical questions, such as Overview, Retention, and Segments, each
+with its own context and group of widgets. Lead with the most useful overview
+and label tabs by the question or subject they explore.
+
+Use `<VisualizationWidget>`'s `views` for alternate representations of the same
+dataset, such as a chart and its rows. Keep these choices within the widget;
+use filter variables when the reader is changing the data scope.
+
+Navigation tabs, widget views, and declared data views have different roles.
+A declared view owns inputs, requests, and displayed results; a tab does not
+require a separate data view. Keep related datasets in one view for a coherent
+snapshot. Use independent views and `<DataSection>` boundaries when content
+needs separate requests. Keep filter placement consistent across tabs and make
+each filter's scope clear. Derive findings, story, and export from the displayed
+results and their inputs.
+
+Choose each visual for the question it answers; see
+[visualization selection](widgets.md#choose-a-visualization).
+
 ## Verify the app
 
 Verify findings against the source and the user's question. Distinguish measured
