@@ -135,10 +135,11 @@ export function createAnnotationDraftStore(
           'This annotation is no longer available.'
         );
       const updated = parseDataAppAnnotationDraft({ ...original, comment });
-      state = {
-        ...state,
-        drafts: state.drafts.map(draft => (draft.id === id ? updated : draft)),
-      };
+      const drafts = state.drafts.map(draft =>
+        draft.id === id ? updated : draft
+      );
+      admit(drafts);
+      state = { ...state, drafts };
       commitChange();
     },
     deleteAnnotation(this: void, id: string) {

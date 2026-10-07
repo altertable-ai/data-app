@@ -92,3 +92,48 @@ test('local writes stay ordered, recover from storage failure, and expose durabi
   expect(store.getSnapshot().persisting).toBe(false);
   expect(store.getSnapshot().drafts[0].comment).toBe('Latest edit');
 });
+
+test('an over-limit edit leaves the accepted collection and recovery snapshot unchanged', async () => {
+  let saved:
+    | { sourceVersion: string; drafts: DataAppAnnotationDraft[] }
+    | undefined;
+  const persistence = {
+    load: async () => saved,
+    save: async (snapshot: {
+      sourceVersion: string;
+      drafts: DataAppAnnotationDraft[];
+    }) => {
+      saved = snapshot;
+    },
+  };
+  const store = createAnnotationDraftStore('version-1', persistence);
+  await store.restore();
+  // Each individual draft is valid; the collection crosses its metadata budget only after edits.
+  for (let index = 0; index < 20; index++) {
+    store.addAnnotation({
+      ...draft,
+      id: `draft-${index}`,
+      context: {
+        ...draft.context,
+        displayedInput: { detail: 'x'.repeat(4500) },
+      },
+    });
+  }
+  await store.flushPersistence();
+  for (let index = 0; index < 20; index++) {
+    const before = store.getSnapshot();
+    try {
+      store.updateAnnotation(`draft-${index}`, 'x'.repeat(2000));
+    } catch (error) {
+      expect(error).toHaveProperty('code', 'annotation_limit');
+      expect(store.getSnapshot()).toBe(before);
+      await store.flushPersistence();
+      expect(saved?.drafts).toEqual(before.drafts);
+      const recovered = createAnnotationDraftStore('version-1', persistence);
+      await recovered.restore();
+      expect(recovered.getSnapshot().drafts).toEqual(before.drafts);
+      return;
+    }
+  }
+  throw new Error('Expected the edited collection to reach its limit');
+});
