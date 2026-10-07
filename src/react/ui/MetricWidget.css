@@ -41,6 +41,7 @@
 .altertable-metric-value {
   margin: var(--atbl-space-sm) 0 2px;
   color: var(--atbl-text);
+  /* Optional --atbl-font-heading; otherwise use configured heading/body font. */
   font-family: var(
     --atbl-font-heading,
     var(--atbl-input-font-heading, var(--atbl-font))
@@ -70,6 +71,7 @@
   color: var(--atbl-muted);
   font-variant-numeric: tabular-nums;
 }
+/* Optional metric tones: favorable defaults to local accent, unfavorable to danger. */
 .altertable-metric-change[data-tone='good'] {
   color: var(--atbl-positive, var(--atbl-accent));
 }

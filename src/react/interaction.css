@@ -1,3 +1,5 @@
+/* Public data-atbl-control: action, help, or text cursor ownership.
+   Disabled and busy states share the corresponding inherited cursor tokens. */
 [data-atbl-control='action'],
 [data-atbl-internal-prose] a {
   cursor: var(--atbl-cursor-action);
@@ -50,6 +52,7 @@
     [aria-disabled='true'],
     :has(> input:disabled)
   ) {
+  /* Optional enabled-hover fill; otherwise use the local subtle surface. */
   background: var(--atbl-control-hover-surface, var(--atbl-subtle));
 }
 :where(
@@ -61,6 +64,7 @@
     [aria-disabled='true'],
     :has(> input:disabled)
   ) {
+  /* Optional pressed fill; otherwise mix local text into the surface. */
   background: var(
     --atbl-control-pressed-surface,
     color-mix(in srgb, var(--atbl-text) 8%, var(--atbl-surface))
@@ -80,6 +84,7 @@
     [aria-disabled='true'],
     :has(> input:disabled)
   ) {
+  /* Optional selected fill. --atbl-accent-subtle derives from local accent/surface. */
   background: var(
     --atbl-control-selected-surface,
     var(
@@ -91,6 +96,7 @@
       )
     )
   );
+  /* Optional selected foreground; defaults to the local accent. */
   color: var(--atbl-control-selected-text, var(--atbl-accent));
 }
 [data-atbl-internal-surface='field']:is(:hover, [data-hovered]):not(
@@ -100,6 +106,7 @@
     [aria-invalid='true'],
     :has(input[aria-invalid='true'])
   ) {
+  /* Optional enabled-field hover border; disabled/invalid fields keep their own border. */
   border-color: var(
     --atbl-control-hover-border,
     color-mix(in srgb, var(--atbl-muted) 45%, var(--atbl-border))

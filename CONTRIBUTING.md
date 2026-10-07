@@ -117,5 +117,5 @@ Keep defaults in authored CSS: inherited values in `tokens.css`, presets in
 `appearance.css`, and optional overrides in native `var()` fallbacks at use sites.
 Use the four layers (`atbl.tokens`, `atbl.base`, `atbl.components`,
 `atbl.interaction`) and shared focus/state rules rather than duplicate control
-paint. Keep geometry local; update public names in `style-contract.ts` and the
-[reference](docs/style-reference.md) when adding hooks.
+paint. Keep geometry local. Document public variables beside declarations or
+consumption sites; update the name contract in `style-contract.ts` when adding hooks.

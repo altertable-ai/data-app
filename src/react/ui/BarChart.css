@@ -36,6 +36,7 @@
 .altertable-selectable-bars-bar {
   width: min(30px, 76%);
   border-radius: 5px 5px 0 0;
+  /* Optional bar fill; otherwise derive from local accent and surface. */
   background: var(
     --atbl-chart-fill,
     color-mix(in srgb, var(--atbl-accent) 75%, var(--atbl-surface))

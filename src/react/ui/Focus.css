@@ -1,4 +1,7 @@
-/* Native and React Aria controls share keyboard focus treatment. */
+/* Public data-atbl-focus: ring outside a control, inset inside a clipped surface,
+   group when the input wrapper owns focus. Native keyboard semantics still apply.
+   Optional --atbl-focus-outline replaces the outline; --atbl-focus-color changes
+   its color, defaulting to local muted text. */
 [data-atbl-focus='ring']:is(:focus-visible, [data-focus-visible]),
 [data-atbl-focus='ring']:has(> input:focus-visible),
 [data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]),

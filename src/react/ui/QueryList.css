@@ -94,6 +94,7 @@
   overflow-wrap: anywhere;
   tab-size: 2;
 }
+/* Optional --atbl-code-keyword overrides syntax color; defaults to local accent. */
 .altertable-sql-keyword {
   color: var(--atbl-code-keyword, var(--atbl-accent));
   font-weight: 650;

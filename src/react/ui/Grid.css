@@ -4,6 +4,7 @@
   min-width: 0;
   align-items: start;
   align-content: start;
+  /* Optional public --atbl-layout-gap overrides responsive section/widget spacing. */
   --atbl-grid-gap: var(
     --atbl-layout-gap,
     clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))

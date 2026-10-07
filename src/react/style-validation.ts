@@ -24,7 +24,7 @@ export function validateAuthoredStyles(
       !(dataAppStyleTokens as readonly string[]).includes(name)
     )
       diagnostics.add(
-        `Unsupported token ${name}. Use a public token from docs/style-reference.md.`
+        `Unsupported token ${name}. Use a public token from docs/styling.md.`
       );
   }
   for (const [name] of source.matchAll(/--at-[\w-]+|data-at-[\w-]+/g))

@@ -12,8 +12,8 @@ and local data app paths, and task-specific documentation.
 ## Styling
 
 Use components and typed props first; customize through app-owned `className`
-and public tokens. Follow [Styling](docs/styling.md), its
-[reference](docs/style-reference.md), and [UI quality](docs/ui-quality.md).
+and public tokens. Follow [Styling](docs/styling.md)
+and [UI quality](docs/ui-quality.md).
 Do not copy package classes onto markup or select private descendants.
 
 ## Documentation

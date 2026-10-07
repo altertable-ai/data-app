@@ -10,9 +10,17 @@ Configure theme, palette, accent, typography, density, radius, and elevation thr
 
 ## Customize
 
-Add app-owned classes through `className`. Use only the public tokens and root
-selectors in the [reference](style-reference.md); render package components rather
-than copying their classes onto native markup. Descendant classes are private.
+Add app-owned classes through `className`. Render package components rather than copying their classes onto markup;
+private descendants are not customization hooks. Public names and stable roots
+are listed in the [typed contract](https://github.com/altertable-ai/data-app/blob/main/src/react/style-contract.ts).
+CSS comments document [inherited defaults](https://github.com/altertable-ai/data-app/blob/main/src/react/tokens.css),
+[interaction overrides](https://github.com/altertable-ai/data-app/blob/main/src/react/interaction.css),
+and [focus overrides](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Focus.css).
+Widget-specific overrides live beside their uses in
+[metrics](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/MetricWidget.css),
+[bar charts](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/BarChart.css),
+[code](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/QueryList.css),
+and [layout](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Grid.css).
 The `--atbl-` prefix means Altertable.
 
 ```css
