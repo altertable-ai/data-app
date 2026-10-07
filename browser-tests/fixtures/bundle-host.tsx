@@ -142,10 +142,7 @@ function Host() {
                       active: annotating,
                       pinsVisible,
                       showHint: annotations.length === 0,
-                      readOnly:
-                        sending ||
-                        annotationsHost.outdated ||
-                        !annotationsHost.ready,
+                      readOnly: sending || !annotationsHost.ready,
                     }
                   : {}),
                 ...(selectedAnnotationId
@@ -157,16 +154,14 @@ function Host() {
                       selectionId,
                     }
                   : {}),
-                targets: (annotationsHost.outdated ? [] : annotations).map(
-                  (draft, index) => ({
-                    id: draft.id,
-                    targetId: draft.target.id,
-                    number: index + 1,
-                    comment: draft.comment,
-                    anchor: draft.context.anchor,
-                    region: draft.context.region,
-                  })
-                ),
+                targets: annotations.map((draft, index) => ({
+                  id: draft.id,
+                  targetId: draft.target.id,
+                  number: index + 1,
+                  comment: draft.comment,
+                  anchor: draft.context.anchor,
+                  region: draft.context.region,
+                })),
               },
             }
           : {}),
@@ -415,7 +410,6 @@ function Host() {
           onPinsVisibleChange={setPinsVisible}
           hasUnsavedChanges={hasUnsavedChanges}
           disabled={sending || !annotationsHost.ready}
-          outdated={annotationsHost.outdated}
           deletedAnnotationId={annotationsHost.deletedAnnotationId}
           onUndoDelete={id => annotationsHost.undoDelete(id)}
           onDismissUndo={() => annotationsHost.dismissUndo()}

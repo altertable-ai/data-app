@@ -60,11 +60,11 @@ export function annotationPoint(element: HTMLElement, point?: AnnotationPoint) {
   };
 }
 
-/** App root is a crop surface, never a selectable global-layout target. */
+/** The iframe document is a crop surface, never a selectable global-layout target. */
 export function annotationRoot(
   root: HTMLElement | null
 ): AnnotationTargetElement | undefined {
-  const element = root?.closest<HTMLElement>('.altertable-app-main');
+  const element = root?.ownerDocument.body;
   return element
     ? { element, id: '__data-app-root', label: 'Selected area', kind: 'app' }
     : undefined;

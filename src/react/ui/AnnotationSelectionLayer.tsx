@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Button } from '@/src/react/ui/Button';
 import { annotationRoot } from '@/src/react/ui/annotation-targets';
 import { Kbd } from '@/src/react/ui/Kbd';
 import type {
@@ -39,9 +38,6 @@ export function AnnotationSelectionLayer({
   const start = useRef<AnnotationPoint | undefined>(undefined);
   const keyboardEnd = useRef<AnnotationPoint | undefined>(undefined);
   const [region, setRegion] = useState<AnnotationRegion>();
-  const [pickingArea, setPickingArea] = useState(false);
-  const [scrolling, setScrolling] = useState(false);
-  const panY = useRef<number | undefined>(undefined);
   const [index, setIndex] = useState(0);
   const current = targets[index];
   useEffect(() => {
@@ -49,8 +45,17 @@ export function AnnotationSelectionLayer({
     const app = scope.closest<HTMLElement>('.altertable-app-layout') ?? scope;
     const wasInert = app.inert;
     app.toggleAttribute('inert', true);
+    function blockScroll(event: WheelEvent) {
+      if (event.target === layer.current && !event.ctrlKey && !event.metaKey)
+        event.preventDefault();
+    }
+    document.addEventListener('wheel', blockScroll, {
+      passive: false,
+      capture: true,
+    });
     layer.current?.focus({ preventScroll: true });
     return () => {
+      document.removeEventListener('wheel', blockScroll, true);
       app.toggleAttribute('inert', wasInert);
       if (
         previouslyFocused instanceof HTMLElement &&
@@ -81,17 +86,16 @@ export function AnnotationSelectionLayer({
   }
   function areaBetween(point: AnnotationPoint): AnnotationRegion | undefined {
     if (!start.current) return undefined;
-    const rect = scope.getBoundingClientRect();
-    const left = Math.max(0, rect.left, Math.min(start.current.x, point.x));
-    const top = Math.max(0, rect.top, Math.min(start.current.y, point.y));
+    const left = Math.max(0, Math.min(start.current.x, point.x));
+    const top = Math.max(0, Math.min(start.current.y, point.y));
     const right = Math.min(
       window.innerWidth,
-      rect.right,
+      document.documentElement.clientWidth,
       Math.max(start.current.x, point.x)
     );
     const bottom = Math.min(
       window.innerHeight,
-      rect.bottom,
+      document.documentElement.clientHeight,
       Math.max(start.current.y, point.y)
     );
     return {
@@ -106,14 +110,16 @@ export function AnnotationSelectionLayer({
     start.current = undefined;
     keyboardEnd.current = undefined;
     setRegion(undefined);
-    setPickingArea(false);
     if (disabled) return;
     if (area && area.width >= 8 && area.height >= 8) {
       const root = annotationRoot(scope);
       if (root) onSelect(root, point, area);
     } else {
       const target = pointAt(point);
-      if (target) onSelect(target, point);
+      if (target) {
+        setIndex(targets.findIndex(candidate => candidate.id === target.id));
+        onSelect(target, point);
+      }
     }
   }
   return (
@@ -122,32 +128,38 @@ export function AnnotationSelectionLayer({
         type="button"
         ref={layer}
         data-annotation-ui
-        data-selecting={Boolean(region) || pickingArea || undefined}
-        data-scrolling={scrolling || undefined}
+        data-selecting={Boolean(region) || undefined}
         data-editing={editing || undefined}
         className="altertable-annotation-selection-layer"
         aria-label="Annotation selection"
         aria-describedby={instructionsId}
+        onFocus={event => {
+          if (
+            !editing &&
+            !disabled &&
+            event.currentTarget.matches(':focus-visible')
+          )
+            onHover(current);
+        }}
         aria-disabled={disabled || editing || undefined}
         tabIndex={disabled || editing ? -1 : 0}
         onKeyDown={event => {
-          if (event.key === 'Escape' && (start.current || pickingArea)) {
+          if (event.key === 'Escape' && start.current) {
             event.preventDefault();
             event.stopPropagation();
             start.current = undefined;
             keyboardEnd.current = undefined;
             setRegion(undefined);
-            setPickingArea(false);
             return;
           }
           if (disabled || editing) return;
+          if (event.key === 'PageDown' || event.key === 'PageUp') {
+            event.preventDefault();
+            return;
+          }
           if (event.key === 'Enter' && event.shiftKey && !keyboardEnd.current) {
             event.preventDefault();
-            const rect = scope.getBoundingClientRect();
-            start.current = {
-              x: Math.max(0, rect.left) + 20,
-              y: Math.max(0, rect.top) + 20,
-            };
+            start.current = { x: 20, y: 20 };
             keyboardEnd.current = {
               x: start.current.x + 100,
               y: start.current.y + 80,
@@ -225,14 +237,6 @@ export function AnnotationSelectionLayer({
             return;
           }
           if (event.button !== 0) return;
-          if (scrolling) {
-            if (event.pointerType === 'mouse') {
-              panY.current = event.clientY;
-              event.currentTarget.setPointerCapture(event.pointerId);
-            }
-            return;
-          }
-          if (pickingArea) return;
           event.preventDefault();
           layer.current?.focus({ preventScroll: true });
           keyboardEnd.current = undefined;
@@ -242,32 +246,21 @@ export function AnnotationSelectionLayer({
         }}
         onPointerMove={event => {
           if (disabled || editing) return;
-          if (scrolling) {
-            if (panY.current !== undefined) {
-              window.scrollBy(0, panY.current - event.clientY);
-              panY.current = event.clientY;
-            }
-            return;
-          }
           const point = { x: event.clientX, y: event.clientY };
           if (!start.current) {
-            onHover(pointAt(point));
+            const target = pointAt(point);
+            if (target)
+              setIndex(
+                targets.findIndex(candidate => candidate.id === target.id)
+              );
+            onHover(target);
             return;
           }
           setRegion(areaBetween(point));
         }}
         onPointerUp={event => {
           if (disabled || editing) return;
-          if (scrolling) {
-            panY.current = undefined;
-            return;
-          }
           const point = { x: event.clientX, y: event.clientY };
-          if (pickingArea && !start.current) {
-            start.current = point;
-            setRegion({ ...point, width: 0, height: 0 });
-            return;
-          }
           if (!start.current) return;
           if (event.currentTarget.hasPointerCapture(event.pointerId))
             event.currentTarget.releasePointerCapture(event.pointerId);
@@ -276,49 +269,9 @@ export function AnnotationSelectionLayer({
         onPointerCancel={() => {
           start.current = undefined;
           keyboardEnd.current = undefined;
-          panY.current = undefined;
           setRegion(undefined);
         }}
       />
-      {!editing && (
-        <fieldset
-          data-annotation-ui
-          className="altertable-annotation-selection-tools"
-          aria-label="Selection tools"
-        >
-          <Button
-            size="compact"
-            variant="ghost"
-            disabled={disabled}
-            aria-pressed={pickingArea}
-            onClick={() => {
-              setScrolling(false);
-              setPickingArea(value => !value);
-              start.current = undefined;
-              keyboardEnd.current = undefined;
-              setRegion(undefined);
-              layer.current?.focus({ preventScroll: true });
-            }}
-          >
-            Select area
-          </Button>
-          <Button
-            size="compact"
-            variant="ghost"
-            disabled={disabled}
-            aria-pressed={scrolling}
-            onClick={() => {
-              setScrolling(value => !value);
-              setPickingArea(false);
-              start.current = undefined;
-              keyboardEnd.current = undefined;
-              setRegion(undefined);
-            }}
-          >
-            Scroll app
-          </Button>
-        </fieldset>
-      )}
       <span id={instructionsId} className="altertable-sr-only">
         Click an item or drag to select an area. Use arrow keys to choose an
         item and <Kbd>Enter</Kbd> to annotate it. <Kbd>Shift+Enter</Kbd> starts
@@ -331,13 +284,11 @@ export function AnnotationSelectionLayer({
         aria-live="polite"
         aria-atomic="true"
       >
-        {pickingArea && !region
-          ? 'Click the first corner, then the opposite corner.'
-          : region
-            ? `Selected area ${Math.round(region.width)} by ${Math.round(region.height)} pixels.`
-            : current
-              ? `${current.label}, ${index + 1} of ${targets.length}`
-              : 'Annotation mode'}
+        {region
+          ? `Selected area ${Math.round(region.width)} by ${Math.round(region.height)} pixels.`
+          : current
+            ? `${current.label}, ${index + 1} of ${targets.length}`
+            : 'Annotation mode'}
       </output>
       {region && (
         <div

@@ -34,6 +34,15 @@ export function useAnnotationHost(options: {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string>();
   const [selectionId, setSelectionId] = useState<string>();
+  const scopeKey = `${options.storageKey ?? ''}:${options.sourceVersion}`;
+  const [previousScopeKey, setPreviousScopeKey] = useState(scopeKey);
+  if (previousScopeKey !== scopeKey) {
+    setPreviousScopeKey(scopeKey);
+    setActive(false);
+    setHasUnsavedChanges(false);
+    setSelectedAnnotationId(undefined);
+    setSelectionId(undefined);
+  }
   const submitting = useRef(false);
   const [pending, setPending] = useState(false);
   function writable() {
@@ -76,30 +85,23 @@ export function useAnnotationHost(options: {
     active,
     pinsVisible,
     showHint: collection.drafts.length === 0,
-    readOnly: pending || !collection.ready || collection.outdated,
+    readOnly: pending || !collection.ready,
     selectedAnnotationId,
     selectionId,
-    targets: collection.outdated
-      ? []
-      : collection.drafts.map((draft, index) => ({
-          id: draft.id,
-          targetId: draft.target.id,
-          number: index + 1,
-          comment: draft.comment,
-          anchor: draft.context.anchor,
-          region: draft.context.region,
-        })),
+    targets: collection.drafts.map((draft, index) => ({
+      id: draft.id,
+      targetId: draft.target.id,
+      number: index + 1,
+      comment: draft.comment,
+      anchor: draft.context.anchor,
+      region: draft.context.region,
+    })),
   };
   async function submit(
     snapshot: readonly DataAppAnnotationDraft[],
     submitToAgent: (drafts: readonly DataAppAnnotationDraft[]) => Promise<void>
   ) {
-    if (
-      submitting.current ||
-      hasUnsavedChanges ||
-      collection.outdated ||
-      !collection.ready
-    )
+    if (submitting.current || hasUnsavedChanges || !collection.ready)
       throw new Error('Annotation submission is unavailable.');
     submitting.current = true;
     setPending(true);
@@ -212,7 +214,6 @@ export function AnnotationHost({
           annotations={host.drafts}
           pinsVisible={host.pinsVisible}
           onPinsVisibleChange={host.setPinsVisible}
-          outdated={host.outdated}
           deletedAnnotationId={host.deletedAnnotationId}
           onUndoDelete={id => host.undoDelete(id)}
           onDismissUndo={() => host.dismissUndo()}

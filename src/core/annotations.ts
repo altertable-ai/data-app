@@ -17,7 +17,7 @@ export type DataAppAnnotationDraft = {
     /** Normalized position within the selected target, stable across scrolling/resizing. */
     anchor?: { x: number; y: number };
     cursor?: { x: number; y: number };
-    /** Normalized custom selection rectangle within the app root. */
+    /** Normalized custom selection rectangle within the iframe document. */
     region?: { x: number; y: number; width: number; height: number };
     screenshot?: {
       mimeType: 'image/png';

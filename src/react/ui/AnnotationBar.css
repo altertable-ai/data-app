@@ -66,15 +66,18 @@
   cursor: grabbing;
 }
 .altertable-annotation-bar .altertable-annotation-bar-send {
-  background: #0069d9;
+  background: var(--at-accent, #405d47);
   border-color: transparent;
   border-radius: 12px;
-  color: #fff;
+  color: var(--at-on-accent, #fff);
   padding-inline: 14px;
 }
 .altertable-annotation-bar
   .altertable-annotation-bar-send:hover:not(:disabled) {
-  background: #005bbd;
+  background: var(
+    --at-accent-hover,
+    color-mix(in srgb, var(--at-accent, #405d47) 85%, black)
+  );
 }
 .altertable-annotation-bar-panel {
   position: fixed;
@@ -112,8 +115,8 @@
   text-align: left;
   justify-content: stretch;
   height: auto;
-  gap: 4px;
-  padding: 8px;
+  gap: 2px;
+  padding: 4px 6px;
   min-width: 0;
 }
 .altertable-annotation-bar-open strong {
@@ -171,8 +174,11 @@
 }
 .altertable-annotation-bar
   .altertable-annotation-bar-send:hover:not(:disabled) {
-  color: #fff;
-  background: #005bbd;
+  color: var(--at-on-accent, #fff);
+  background: var(
+    --at-accent-hover,
+    color-mix(in srgb, var(--at-accent, #405d47) 85%, black)
+  );
 }
 .altertable-annotation-bar .altertable-button:disabled,
 .altertable-annotation-bar-panel .altertable-button:disabled {
@@ -236,17 +242,9 @@
   box-shadow: var(--at-shadow-overlay);
   font: 13px/1.5 var(--at-font);
 }
-.altertable-annotation-outdated {
-  margin: 0;
-  padding: 12px;
-  font-size: 13px;
-  color: var(--bar-text);
-  background: var(--at-subtle);
-}
-
 .altertable-annotation-thumbnail {
   width: 56px;
-  height: 48px;
+  height: 40px;
   flex-shrink: 0;
   padding: 0;
   border: 1px solid var(--bar-border);
@@ -284,4 +282,23 @@
 
 .altertable-sheet.altertable-annotation-image-dialog[data-placement='center'] {
   width: min(960px, calc(100vw - 32px));
+}
+
+.altertable-annotation-bar[data-theme='dark']
+  .altertable-annotation-bar-send:not(:disabled) {
+  background: var(--at-accent, #a6c4ad);
+  color: var(--at-on-accent, #151719);
+}
+.altertable-annotation-bar[data-theme='dark']
+  .altertable-annotation-bar-send:hover:not(:disabled) {
+  background: var(
+    --at-accent-hover,
+    color-mix(in srgb, var(--at-accent, #a6c4ad) 85%, white)
+  );
+}
+.altertable-annotation-bar
+  .altertable-button[aria-label='Discard all annotations'],
+.altertable-annotation-bar-panel
+  .altertable-button[aria-label^='Delete annotation'] {
+  cursor: pointer;
 }

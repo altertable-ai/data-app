@@ -20,6 +20,7 @@ import {
   EyeOff,
   Trash2,
   X,
+  Minus,
   LoaderCircle,
 } from 'lucide-react';
 import type { Theme } from '@/src/core/appearance';
@@ -37,7 +38,6 @@ export type AnnotationBarProps = {
   active?: boolean;
   theme?: Theme;
   disabled?: boolean;
-  outdated?: boolean;
   deletedAnnotationId?: string;
   onUndoDelete?: (id: string) => void;
   onDismissUndo?: () => void;
@@ -60,7 +60,6 @@ export function AnnotationBar({
   active = true,
   theme = 'light',
   disabled = false,
-  outdated = false,
   deletedAnnotationId,
   onUndoDelete,
   onDismissUndo,
@@ -142,7 +141,6 @@ export function AnnotationBar({
       submitting.current ||
       locked ||
       hasUnsavedChanges ||
-      outdated ||
       !annotations.length
     )
       return;
@@ -327,11 +325,9 @@ export function AnnotationBar({
           </Tooltip>
           <Tooltip
             content={
-              outdated
-                ? 'Discard annotations from the earlier app version before sending'
-                : hasUnsavedChanges
-                  ? 'Save the open annotation before sending'
-                  : 'Send annotations'
+              hasUnsavedChanges
+                ? 'Save the open annotation before sending'
+                : 'Send annotations'
             }
             tooltipProps={tooltipProps}
           >
@@ -341,9 +337,7 @@ export function AnnotationBar({
               aria-busy={pending}
               size="compact"
               aria-label="Send annotations"
-              disabled={
-                locked || hasUnsavedChanges || outdated || !annotations.length
-              }
+              disabled={locked || hasUnsavedChanges || !annotations.length}
               onClick={() => void send()}
             >
               <span className="altertable-annotation-bar-send-label">Send</span>
@@ -410,18 +404,12 @@ export function AnnotationBar({
               <Button
                 variant="ghost"
                 size="icon-compact"
-                aria-label="Close annotation review"
+                aria-label="Minimize annotation review"
                 onClick={closeReview}
               >
-                <X size={16} aria-hidden />
+                <Minus size={16} aria-hidden />
               </Button>
             </header>
-            {outdated && (
-              <output className="altertable-annotation-outdated">
-                From an earlier app version. Review the screenshots or discard
-                these annotations before collecting new feedback.
-              </output>
-            )}
             <div aria-label="Annotation drafts">
               {annotations.map((annotation, index) => (
                 <div
@@ -442,7 +430,7 @@ export function AnnotationBar({
                     variant="ghost"
                     className="altertable-annotation-bar-open"
                     aria-label={`Open annotation ${index + 1}`}
-                    disabled={locked || outdated}
+                    disabled={locked}
                     onClick={() => {
                       onPinsVisibleChange(true);
                       onSelect(annotation.id);

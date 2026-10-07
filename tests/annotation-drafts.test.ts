@@ -37,7 +37,7 @@ test('host collection acknowledges only unchanged submitted snapshots and suppor
   expect(store.getSnapshot().drafts).toHaveLength(0);
 });
 
-test('duplicate restore calls share hydration and older drafts cannot be collected against a newer version', async () => {
+test('restore calls share hydration and discard older app-version batches', async () => {
   let loads = 0;
   let resolve!: (value: {
     sourceVersion: string;
@@ -49,14 +49,15 @@ test('duplicate restore calls share hydration and older drafts cannot be collect
   }>(done => {
     resolve = done;
   });
-  const saved: string[] = [];
+  const saved: { sourceVersion: string; drafts: DataAppAnnotationDraft[] }[] =
+    [];
   const store = createAnnotationDraftStore('version-2', {
     load: () => {
       loads++;
       return deferred;
     },
     save: async snapshot => {
-      saved.push(snapshot.sourceVersion);
+      saved.push(snapshot);
     },
   });
   const first = store.restore();
@@ -65,16 +66,11 @@ test('duplicate restore calls share hydration and older drafts cannot be collect
   expect(() => store.addAnnotation(draft)).toThrow('still restoring');
   resolve({ sourceVersion: 'version-1', drafts: [draft] });
   await Promise.all([first, second]);
-  expect(store.getSnapshot().outdated).toBe(true);
-  expect(() => store.addAnnotation({ ...draft, id: 'new' })).toThrow(
-    'older annotations'
-  );
-  store.deleteAnnotation(draft.id);
-  await Promise.resolve();
-  expect(saved).toEqual(['version-1']);
-  store.clearAnnotations();
+  expect(store.getSnapshot().drafts).toEqual([]);
+  expect(store.getSnapshot().deleted).toBeUndefined();
+  expect(saved).toEqual([{ sourceVersion: 'version-2', drafts: [] }]);
   store.addAnnotation({ ...draft, id: 'new' });
-  expect(store.getSnapshot().outdated).toBe(false);
+  expect(store.getSnapshot().drafts).toHaveLength(1);
 });
 
 test('local writes stay ordered, recover from storage failure, and expose durability', async () => {

@@ -33,6 +33,12 @@ export function useAnnotationDrafts({
   );
   useEffect(() => {
     void store.restore();
+    return () => store.stopPersistence();
   }, [store]);
-  return { ...store, ...state, deletedAnnotationId: state.deleted?.id };
+  return {
+    ...store,
+    ...state,
+    count: state.drafts.length,
+    deletedAnnotationId: state.deleted?.id,
+  };
 }

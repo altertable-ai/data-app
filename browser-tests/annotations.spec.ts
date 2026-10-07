@@ -376,29 +376,6 @@ test('custom areas support keyboard selection and Escape cancels only the area',
   expect(drafts[0].context.region).toBeDefined();
 });
 
-test('custom areas can be selected with two clicks instead of dragging', async ({
-  page,
-}) => {
-  await page.goto('/bundle-host?annotations');
-  const frame = page.frameLocator('iframe');
-  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
-  await frame.getByRole('button', { name: 'Select area', exact: true }).click();
-  const main = await frame.locator('.altertable-app-main').boundingBox();
-  await page.mouse.click(main!.x + 20, main!.y + 90);
-  await page.mouse.click(main!.x + 170, main!.y + 170);
-  const input = frame.getByRole('textbox', { name: 'Annotation text' });
-  await input.fill('Tidy this area');
-  await input.press('Enter');
-  await expect(
-    frame.getByRole('button', { name: 'Annotation 1', exact: true })
-  ).toBeVisible();
-  const drafts = JSON.parse(
-    (await page.getByLabel('Annotation drafts').textContent()) ?? '[]'
-  );
-  expect(drafts[0].context.screenshot.width).toBe(150);
-  expect(drafts[0].context.screenshot.height).toBe(80);
-});
-
 test('screenshot failure preserves annotation text and retry recaptures the area', async ({
   page,
 }) => {
@@ -474,4 +451,69 @@ test('an open editor blocks background selection and uses a dashed widget outlin
   await expect(
     frame.getByRole('button', { name: 'Select area', exact: true })
   ).toHaveCount(0);
+});
+
+test('custom areas capture the document margins beyond the app container', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const iframe = await page.locator('iframe').boundingBox();
+  const container = await frame.locator('.altertable-app-main').boundingBox();
+  const left = iframe!.x + 2;
+  const clientWidth = await frame
+    .locator('body')
+    .evaluate(() => document.documentElement.clientWidth);
+  const right = iframe!.x + clientWidth - 2;
+  const top = iframe!.y + 80;
+  await page.mouse.move(left, top);
+  await page.mouse.down();
+  await page.mouse.move(right, top + 100, { steps: 6 });
+  await page.mouse.up();
+  const outline = await frame
+    .locator('.altertable-annotation-outline')
+    .boundingBox();
+  expect(outline!.x).toBeLessThan(container!.x);
+  expect(outline!.x + outline!.width).toBeGreaterThan(
+    container!.x + container!.width
+  );
+  const input = frame.getByRole('textbox', { name: 'Annotation text' });
+  await input.fill('Use the surrounding space');
+  await input.press('Enter');
+  await expect(
+    frame.getByRole('button', { name: 'Annotation 1', exact: true })
+  ).toBeVisible();
+  const drafts = JSON.parse(
+    (await page.getByLabel('Annotation drafts').textContent()) ?? '[]'
+  );
+  expect(drafts[0].context.rect.x).toBeCloseTo(2, 0);
+  expect(drafts[0].context.rect.width).toBeCloseTo(right - left, 0);
+  expect(drafts[0].context.screenshot.height).toBeGreaterThan(0);
+  const selection = frame.getByRole('button', { name: 'Annotation selection' });
+  await expect(selection).toHaveCSS('outline-style', 'none');
+});
+
+test('annotation mode has no selection toolbar and blocks background wheel scrolling', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?annotations');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await expect(
+    frame.getByRole('button', { name: 'Select area', exact: true })
+  ).toHaveCount(0);
+  await expect(
+    frame.getByRole('button', { name: 'Scroll app', exact: true })
+  ).toHaveCount(0);
+  const before = await frame.locator('body').evaluate(() => window.scrollY);
+  const iframe = await page.locator('iframe').boundingBox();
+  await page.mouse.move(
+    iframe!.x + iframe!.width / 2,
+    iframe!.y + iframe!.height / 2
+  );
+  await page.mouse.wheel(0, 400);
+  expect(await frame.locator('body').evaluate(() => window.scrollY)).toBe(
+    before
+  );
 });

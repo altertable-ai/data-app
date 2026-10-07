@@ -15,12 +15,11 @@ export function createAnnotationDraftStore(
   let state = {
     drafts: [] as DataAppAnnotationDraft[],
     ready: !persistence,
-    outdated: false,
     storageError: false,
     persisting: false,
     deleted: undefined as DataAppAnnotationDraft | undefined,
   };
-  let retainedVersion = sourceVersion;
+  let enabled = true;
   let writes = Promise.resolve();
   let pendingWrites = 0;
   let restoring: Promise<void> | undefined;
@@ -35,9 +34,10 @@ export function createAnnotationDraftStore(
     }
     publish();
     if (persistence) {
-      const snapshot = { sourceVersion: retainedVersion, drafts: state.drafts };
+      const snapshot = { sourceVersion, drafts: state.drafts };
       writes = writes
         .then(async () => {
+          if (!enabled) return;
           await persistence.save(snapshot);
           if (state.storageError) {
             state = { ...state, storageError: false };
@@ -82,27 +82,19 @@ export function createAnnotationDraftStore(
   function editable() {
     if (!state.ready)
       throw new MessageRoutingError('busy', 'Annotations are still restoring.');
-    if (state.outdated)
-      throw new MessageRoutingError(
-        'invalid_payload',
-        'Discard older annotations before collecting feedback for this version.'
-      );
   }
   function restore() {
+    enabled = true;
     if (!persistence || state.ready) return Promise.resolve();
     restoring ??= (async () => {
       try {
         const snapshot = await persistence.load();
-        if (snapshot) {
+        if (!enabled) return;
+        if (snapshot?.sourceVersion === sourceVersion) {
           admit(snapshot.drafts);
-          retainedVersion = snapshot.sourceVersion;
-          state = {
-            ...state,
-            drafts: snapshot.drafts,
-            outdated:
-              snapshot.sourceVersion !== sourceVersion &&
-              snapshot.drafts.length > 0,
-          };
+          state = { ...state, drafts: snapshot.drafts };
+        } else if (snapshot) {
+          await persistence.save({ sourceVersion, drafts: [] });
         }
       } catch {
         state = { ...state, storageError: true };
@@ -122,6 +114,9 @@ export function createAnnotationDraftStore(
       };
     },
     restore,
+    stopPersistence() {
+      enabled = false;
+    },
     addAnnotation(value: DataAppAnnotationDraft) {
       editable();
       const draft = parseDataAppAnnotationDraft(value);
@@ -164,17 +159,14 @@ export function createAnnotationDraftStore(
       changed();
     },
     dismissUndo() {
-      if (!state.drafts.length) retainedVersion = sourceVersion;
       state = {
         ...state,
         deleted: undefined,
-        outdated: state.drafts.length > 0 && state.outdated,
       };
       changed();
     },
     clearAnnotations() {
-      retainedVersion = sourceVersion;
-      state = { ...state, drafts: [], deleted: undefined, outdated: false };
+      state = { ...state, drafts: [], deleted: undefined };
       changed();
     },
     acknowledgeSubmission(snapshot: readonly DataAppAnnotationDraft[]) {

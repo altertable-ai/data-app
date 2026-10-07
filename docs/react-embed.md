@@ -158,7 +158,7 @@ standard sheet styling with centered placement.
 
 Forward `draft.context.anchor` into each presentation target to position its pin
 at the original click. `context.cursor` records the selection-time viewport point.
-The `app` target kind identifies custom areas cropped from the app root; the root itself is not selectable. Screenshot payloads
+The `app` target kind identifies custom areas cropped from the iframe document; the root itself is not selectable. Screenshot payloads
 are bounded PNGs in `context.screenshot`; transmit those bytes through the agent's
 image attachment API and retain metadata/filename association in its instructions.
 
@@ -177,9 +177,7 @@ acceptance; reject to preserve the batch for retry. `acknowledgeSubmission(snaps
 removes only accepted records that have not changed since that snapshot.
 
 Provide `storageKey` scoped by account, environment, and app to recover drafts
-from IndexedDB. A collection retains its captured `sourceVersion`; older-version
-notes remain available for screenshot review but block new collection and Send
-until discarded. Never relabel old screenshots as a newer app version.
+from IndexedDB. A collection retains its captured `sourceVersion`; a new source version clears the batch and its undo backup. Never relabel old screenshots as a newer app version.
 `persisting` reports local writes and `storageError` reports unavailable recovery
 without removing in-memory feedback. Await `flushPersistence()` before deliberate
 navigation if durability is required. Hosts that already own their collection can
@@ -190,3 +188,8 @@ use `loadAnnotationDrafts` and `saveAnnotationDrafts` from `/client` directly.
 also ends that undo opportunity. Pass `deletedAnnotationId`, `onUndoDelete`, and
 `onDismissUndo` to `AnnotationBar` so the toast works even after deleting the last
 annotation. Set `active` to hide the bar/review while retaining its undo toast.
+
+The host owns the batch count: `useAnnotationDrafts(...).count` (equivalently
+`drafts.length`). This counts saved, currently retained annotations, excluding the
+open editor and deleted notes. Changing the app source version resets that count
+to zero; same-version reloads recover saved annotations.

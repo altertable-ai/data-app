@@ -20,6 +20,9 @@ async function openPlayground(page: Page) {
 }
 async function addAnnotation(page: Page, id: string, text: string) {
   const frame = page.frameLocator('iframe');
+  await expect(
+    frame.getByRole('button', { name: 'Annotation selection' })
+  ).toBeVisible();
   await frame.locator(`[data-annotation-id="${id}"]`).click({ force: true });
   const input = frame.getByRole('textbox', { name: 'Annotation text' });
   await input.fill(text);
@@ -465,7 +468,7 @@ test('playground recovers annotations after reload and supports undoing deletion
   await expect(trigger).toContainText('1');
 });
 
-test('an older stored app version is reviewed without enabling selection or submission', async ({
+test('a new app version clears old annotations and allows collecting a fresh batch', async ({
   page,
 }) => {
   await openPlayground(page);
@@ -489,21 +492,15 @@ test('an older stored app version is reviewed without enabling selection or subm
     database.close();
   });
   await page.reload();
-  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
-  const panel = await review(page);
-  await expect(panel).toContainText('From an earlier app version');
+  const trigger = page.getByRole('button', { name: 'Annotate', exact: true });
+  await expect(trigger).toBeEnabled();
+  await expect(trigger).not.toContainText('1');
   await expect(
-    page.getByRole('button', { name: 'Send annotations', exact: true })
-  ).toBeDisabled();
-  await expect(
-    panel.getByRole('button', { name: 'Open annotation 1', exact: true })
-  ).toBeDisabled();
-  await expect(
-    panel.getByRole('button', { name: 'View screenshot of Revenue by month' })
-  ).toBeEnabled();
-  await expect(
-    page.getByRole('button', { name: 'Exit annotation mode', exact: true })
-  ).toBeEnabled();
+    page.getByRole('toolbar', { name: 'Annotations', exact: true })
+  ).toHaveCount(0);
+  await trigger.click();
+  await addAnnotation(page, 'customers', 'Feedback for the new version');
+  await expect(trigger).toContainText('1');
 });
 
 test('annotation review is centered above its floating bar', async ({
@@ -544,4 +541,50 @@ test('blocked local storage retains usable in-memory feedback and reports recove
   ).toBeEnabled();
   const panel = await review(page);
   await expect(panel).toContainText('Keep working without local storage');
+});
+
+test('review minimizes, trash is actionable, tooltips layer above review and Send uses theme colors', async ({
+  page,
+}, testInfo) => {
+  await openPlayground(page);
+  await addAnnotation(page, 'customers', 'Show active customers');
+  const panel = await review(page);
+  await expect(
+    panel.getByRole('button', { name: 'Delete annotation 1', exact: true })
+  ).toHaveCSS('cursor', 'pointer');
+  const discard = page.getByRole('button', {
+    name: 'Discard all annotations',
+    exact: true,
+  });
+  await expect(discard).toHaveCSS('cursor', 'pointer');
+  await discard.hover();
+  const tooltip = page.getByRole('tooltip', {
+    name: 'Discard all annotations',
+    exact: true,
+  });
+  await expect(tooltip).toBeVisible();
+  expect(
+    Number(await tooltip.evaluate(element => getComputedStyle(element).zIndex))
+  ).toBeGreaterThan(
+    Number(await panel.evaluate(element => getComputedStyle(element).zIndex))
+  );
+  await page.screenshot({
+    path: testInfo.outputPath('annotation-tooltip-over-review.png'),
+  });
+  const send = page.getByRole('button', {
+    name: 'Send annotations',
+    exact: true,
+  });
+  await expect(send).toHaveCSS('background-color', 'rgb(166, 196, 173)');
+  await panel
+    .getByRole('button', { name: 'Minimize annotation review', exact: true })
+    .click();
+  await expect(panel).toHaveCount(0);
+  await expect(
+    page.getByRole('toolbar', { name: 'Annotations', exact: true })
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Switch to light theme', exact: true })
+    .click();
+  await expect(send).toHaveCSS('background-color', 'rgb(64, 93, 71)');
 });

@@ -372,8 +372,7 @@ again discards the local edit while keeping annotation mode active. Unchanged sa
 until explicitly deleted by the host.
 
 Empty app space is not selectable. Select a widget or annotated element, or draw a
-custom area. Use **Select area** to click/tap two corners without dragging; use
-**Scroll app** to scroll or pan while keeping app controls inert.
+custom area. Annotation mode keeps app controls inert and prevents background scrolling.
 
 A PNG of the visible selected area is captured at selection time and travels with
 the saved annotation. Annotation overlays are excluded. Captures are limited to
@@ -388,22 +387,21 @@ opens its editor. Escape closes the editor first, retaining annotation mode. Onl
 an unsaved comment requires a second Escape to discard it.
 
 Drag across the app to annotate a custom area. Its `context.region` stores a
-normalized rectangle within the app root; `context.rect` retains the viewport
+normalized rectangle within the iframe document; `context.rect` retains the viewport
 rectangle at selection time. Hosts forward the region in presentation targets to
 restore its outline when reopening the annotation. Widgets keep rounded outlines;
 elements and custom selections use rectangular outlines.
 
 Screenshots are DOM captures: `html-to-image` clones the selected DOM with its
 computed styles, rasterizes the visible crop to canvas, and encodes a PNG. They
-exclude annotation controls and the outer frame. Custom selections crop the app
-root to the drawn rectangle. Capture begins when the pointer selection ends;
+exclude annotation controls and the outer frame. Custom selections crop the document to the drawn rectangle, including space outside
+the app container. Capture begins when the pointer selection ends;
 editing a saved comment preserves its original image. Images are limited to
 1024 pixels per side and 256 KiB, reducing resolution if necessary.
 
 Custom areas also work from the keyboard: Shift+Enter starts a rectangle, arrow
 keys resize it, Shift+arrow keys move it, and Enter confirms. Escape cancels the
 rectangle without leaving annotation mode.
-
 
 Widget descriptions explain how to read the displayed data. Narrative commentary
 belongs in `TextContent`; widgets do not provide a freeform `insight` footer slot.

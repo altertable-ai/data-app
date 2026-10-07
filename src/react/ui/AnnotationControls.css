@@ -64,6 +64,7 @@
   border-radius: 12px;
   padding: 6px 8px;
   resize: none;
+  overscroll-behavior: contain;
   font: inherit;
   background: transparent;
   color: inherit;
@@ -177,44 +178,13 @@
   touch-action: none;
 }
 .altertable-annotation-selection-layer:focus-visible {
-  outline: 2px solid var(--at-accent);
-  outline-offset: -2px;
+  outline: none;
 }
 .altertable-annotation-hint {
   display: flex;
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-}
-
-.altertable-annotation-selection-tools {
-  position: fixed;
-  z-index: 1102;
-  top: 12px;
-  left: 12px;
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--at-border);
-  border-radius: var(--at-radius-overlay, 12px);
-  background: var(--at-surface);
-  color: var(--at-text);
-  box-shadow: var(--at-shadow-overlay);
-}
-.altertable-annotation-selection-layer[data-scrolling] {
-  touch-action: pan-x pan-y;
-  cursor: grab;
-}
-
-.altertable-annotation-capture-status {
-  flex-basis: 100%;
-  padding: 0 8px;
-  margin: 4px 0;
-  color: var(--annotation-text);
-  font-size: 12px;
-}
-.altertable-annotation-capture-status p {
-  margin: 0 0 6px;
 }
 
 .altertable-annotation-selection-layer[data-editing] {

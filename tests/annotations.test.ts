@@ -302,7 +302,7 @@ test('root captures validate PNG dimensions and preserve exact cursor anchors', 
   ).toThrow();
 });
 
-test('custom areas require a bounded normalized app-root region', () => {
+test('custom areas require a bounded normalized document region', () => {
   const value = {
     ...draft,
     target: { ...draft.target, kind: 'app' },
