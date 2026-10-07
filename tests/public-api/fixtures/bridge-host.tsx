@@ -25,8 +25,10 @@ function Host() {
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
   const brokenLogger = useRef(false);
   const [logging, setLogging] = useState(true);
+  const [loggerCalls, setLoggerCalls] = useState(0);
   const [logs, setLogs] = useState<unknown[][]>([]);
   function record(level: string, args: unknown[]) {
+    setLoggerCalls(previous => previous + 1);
     if (brokenLogger.current) throw new Error('Consumer logger failed');
     if (!['plain', 'completed', 'slow', 'failed'].includes(String(args[0])))
       return;
@@ -79,6 +81,7 @@ function Host() {
       >
         Break logger
       </button>
+      <output aria-label="Logger invocations">{loggerCalls}</output>
       <output aria-label="Host logs" id="logs">
         {JSON.stringify(logs)}
       </output>
@@ -92,7 +95,11 @@ function Host() {
         key={generation}
         ref={setIframe}
         title="Embedded test app"
-        src="/bridge-frame"
+        src={
+          new URLSearchParams(location.search).has('timeout')
+            ? '/bridge-frame?timeout=1'
+            : '/bridge-frame'
+        }
       />
     </>
   );

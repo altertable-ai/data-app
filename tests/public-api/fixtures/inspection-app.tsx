@@ -21,16 +21,20 @@ const evidence: import('@altertable/data-app/react').WidgetEvidence = {
 };
 function ControlledInspection() {
   const [open, setOpen] = useState(false);
-  const [requests, setRequests] = useState(0);
+  const [requests, setRequests] = useState<boolean[]>([]);
   return (
     <>
-      <p data-testid="inspection-requests">{requests}</p>
+      <output aria-label="Inspection requests">
+        {JSON.stringify(requests)}
+      </output>
       <Button onClick={() => setOpen(true)}>Accept open</Button>
       <AboutData
         id="controlled"
         title="Controlled"
         open={open}
-        onOpenChange={() => setRequests(value => value + 1)}
+        onOpenChange={requested =>
+          setRequests(previous => [...previous, requested])
+        }
         shortcut={false}
         headerActions={
           <Button onClick={() => setOpen(false)}>Accept close</Button>

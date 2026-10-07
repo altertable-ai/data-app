@@ -8,6 +8,7 @@ import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
 import inspectionApp from '@/tests/public-api/fixtures/inspection-app.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
 import clients from '@/tests/public-api/fixtures/clients.html';
+import ownership from '@/tests/public-api/fixtures/ownership.html';
 import layout from '@/tests/public-api/fixtures/layout.html';
 import styles from '@/tests/public-api/fixtures/styles.html';
 import staticApp from '@/tests/public-api/fixtures/static.html';
@@ -65,6 +66,7 @@ const server = Bun.serve({
     '/declared-app': declaredApp,
     '/static': staticApp,
     '/layout': layout,
+    '/ownership': ownership,
     '/styles': styles,
     '/time-app': timeApp,
     '/clients': clients,

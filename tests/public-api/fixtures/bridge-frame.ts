@@ -5,7 +5,9 @@ import {
   createDataAppNavigation,
 } from '@altertable/data-app/client';
 const bridge = createIframeTransport({
-  timeoutMs: 1000,
+  timeoutMs: new URLSearchParams(window.location.search).has('timeout')
+    ? 1000
+    : 10000,
   parentOrigin:
     document.documentElement.dataset.parentOrigin ?? window.location.origin,
 });

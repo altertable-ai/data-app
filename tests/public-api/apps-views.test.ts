@@ -124,6 +124,15 @@ test('repeated public widgets share one inspection sheet and controlled inspecti
     .click();
   await expect.poll(() => page.getByRole('dialog').count()).toBe(1);
   await page.keyboard.press('Escape');
+  await page
+    .getByRole('button', { name: 'Controlled inspection', exact: true })
+    .click();
+  const requests = page.getByRole('status', {
+    name: 'Inspection requests',
+    exact: true,
+  });
+  await expect.poll(() => requests.textContent()).toBe('[true]');
+  expect(await page.getByRole('dialog').count()).toBe(0);
   await page.getByRole('button', { name: 'Accept open', exact: true }).click();
   await expect
     .poll(() =>
@@ -133,6 +142,9 @@ test('repeated public widgets share one inspection sheet and controlled inspecti
         .isVisible()
     )
     .toBe(true);
+  await page.getByRole('button', { name: 'Close panel', exact: true }).click();
+  await expect.poll(() => requests.textContent()).toBe('[true,false]');
+  expect(await page.getByRole('dialog').count()).toBe(1);
   await page.getByRole('button', { name: 'Accept close', exact: true }).click();
   await expect.poll(() => page.getByRole('dialog').count()).toBe(0);
 });
@@ -285,4 +297,64 @@ test('separate data clients isolate their results and facet choices when an app 
       page.getByRole('option', { name: 'A category', exact: true }).count()
     )
     .toBe(0);
+});
+
+for (const binding of [
+  'dataset',
+  'metric',
+  'export',
+  'story-dataset',
+  'story-metric',
+]) {
+  test(`a report rejects another same-shaped view's ${binding} binding`, async ({
+    page,
+  }) => {
+    await page.goto(`/ownership?binding=${binding}`);
+    await expect
+      .poll(() => page.getByRole('alert').textContent())
+      .toContain(
+        binding.startsWith('story')
+          ? 'Story evidence must belong to the story view.'
+          : 'A binding requires the displayed source from its own view.'
+      );
+    expect(
+      await page
+        .getByRole('button', { name: 'Present story', exact: true })
+        .count()
+    ).toBe(0);
+    expect(
+      await page
+        .getByRole('button', { name: 'Export CSV', exact: true })
+        .count()
+    ).toBe(0);
+  });
+}
+
+test('a report can display, export and present bindings from its own view', async ({
+  page,
+}) => {
+  await page.goto('/ownership');
+  await expect
+    .poll(() => page.getByRole('row', { name: '7', exact: true }).isVisible())
+    .toBe(true);
+  await expect
+    .poll(() =>
+      page.getByRole('region', { name: 'Count', exact: true }).textContent()
+    )
+    .toContain('7');
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV', exact: true }).click();
+  expect((await download).suggestedFilename()).toMatch(/\.csv$/);
+  await page
+    .getByRole('button', { name: 'Present story', exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('dialog')
+        .getByRole('heading', { name: 'Measured count', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  expect(await page.getByRole('alert').count()).toBe(0);
 });

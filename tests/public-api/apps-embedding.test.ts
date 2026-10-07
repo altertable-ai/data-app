@@ -4,7 +4,7 @@ import { test } from '@/tests/public-api/browser';
 test('a host cancels timed-out queries and aborts old work when the iframe reloads', async ({
   page,
 }) => {
-  await page.goto('/bridge-host');
+  await page.goto('/bridge-host?timeout=1');
   const app = page.frameLocator('iframe');
   await app
     .getByRole('button', { name: 'Wait for query', exact: true })
@@ -174,6 +174,11 @@ test('foreign and malformed iframe log messages cannot invoke the host logger', 
       page.evaluate(() => Boolean(Reflect.get(window, 'capturedLog')))
     )
     .toBe(true);
+  const invocations = page.getByRole('status', {
+    name: 'Logger invocations',
+    exact: true,
+  });
+  const initialCalls = Number(await invocations.textContent());
   const packet = await page.evaluate(() => Reflect.get(window, 'capturedLog'));
   await page.evaluate(value => window.postMessage(value, '*'), packet);
   const frame = page.frames().find(frame => frame !== page.mainFrame())!;
@@ -188,6 +193,18 @@ test('foreign and malformed iframe log messages cannot invoke the host logger', 
       '*'
     );
   }, packet);
+  // Valid logs follow the malformed packets from the same sender, proving delivery has drained.
+  await app.getByRole('button', { name: 'Write logs', exact: true }).click();
+  await expect
+    .poll(async () =>
+      JSON.parse(
+        (await page
+          .getByRole('status', { name: 'Host logs', exact: true })
+          .textContent())!
+      )
+    )
+    .toHaveLength(8);
+  expect(Number(await invocations.textContent())).toBe(initialCalls + 4);
   await app.getByRole('button', { name: 'Query', exact: true }).click();
   await expect
     .poll(() =>
@@ -197,10 +214,12 @@ test('foreign and malformed iframe log messages cannot invoke the host logger', 
     )
     .toContain('"version":1');
   expect(
-    await page
-      .getByRole('status', { name: 'Host logs', exact: true })
-      .textContent()
-  ).toBe(original);
+    JSON.parse(
+      (await page
+        .getByRole('status', { name: 'Host logs', exact: true })
+        .textContent())!
+    )
+  ).toEqual([...JSON.parse(original!), ...JSON.parse(original!)]);
 });
 
 test('an overloaded iframe rejects excess work, releases cancelled requests and settles pending work on disposal', async ({
