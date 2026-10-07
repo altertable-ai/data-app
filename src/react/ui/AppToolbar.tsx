@@ -50,6 +50,14 @@ export function AppToolbar({
   'aria-label': ariaLabel = 'Page actions',
   ...props
 }: AppToolbarProps) {
+  const observation =
+    requestState === 'loading' ? (
+      refresh ? null : (
+        <output>Loading data</output>
+      )
+    ) : (
+      updatedAt
+    );
   const refreshLabel =
     refresh?.refreshing && refresh.onCancel ? 'Cancel refresh' : 'Refresh data';
 
@@ -73,14 +81,8 @@ export function AppToolbar({
     >
       <div className="altertable-app-toolbar-actions">
         {children}
-        {(requestState === 'loading' || updatedAt) && (
-          <span className="altertable-app-toolbar-updated">
-            {requestState === 'loading' ? (
-              <output>Loading data</output>
-            ) : (
-              updatedAt
-            )}
-          </span>
+        {observation && (
+          <span className="altertable-app-toolbar-updated">{observation}</span>
         )}
         {refresh && (
           <RefreshControl

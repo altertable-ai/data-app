@@ -267,3 +267,19 @@ test('published dataset visualizations derive loading, share alternate views wit
     page.getByTestId('primary-visual').filter({ visible: true })
   ).toHaveText('2');
 });
+
+test('the standard toolbar has one activity label during loading and refresh', async ({
+  page,
+}) => {
+  await page.goto('/hooks-app?declared');
+  const progress = page.locator('.altertable-refresh-control');
+  await expect(progress).toHaveAttribute('data-refreshing', '');
+  await expect(page.getByText('Loading data', { exact: true })).toHaveCount(1);
+  await page
+    .getByRole('button', { name: 'Resolve alpha 1', exact: true })
+    .click();
+  await expect(page.getByText('Loading data', { exact: true })).toHaveCount(0);
+  await page.getByRole('searchbox', { name: 'Version', exact: true }).fill('2');
+  await expect(progress).toHaveAttribute('data-refreshing', '');
+  await expect(page.getByText('Updating data', { exact: true })).toHaveCount(1);
+});
