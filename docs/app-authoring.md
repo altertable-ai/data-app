@@ -85,11 +85,6 @@ available once analytical results are shown; initial loading, empty, and initial
 errors keep both actions visible and disabled. Inspect both experiences
 at phone and desktop widths in light and dark themes.
 
-Keep widget `annotationId` values unique and stable so user feedback continues to
-identify the intended visual. When a user supplies annotation feedback, use its
-comment as the requested change and its captured filters/text as context; check
-the current app source when the feedback refers to an earlier version.
-
 The app owns its queries, result parsing, business definitions, configuration,
 and presentation. Credentials, authorization, and enforced access/query limits
 stay backend-owned. Edit app-owned files; installed package files are dependencies.

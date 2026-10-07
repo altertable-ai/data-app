@@ -1,4 +1,4 @@
-import { useAnnotationHost } from '@/examples/annotation-host';
+import { useAnnotationHost } from '@/browser-tests/fixtures/use-annotation-host';
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useRef, useState } from 'react';
 import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';

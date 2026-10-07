@@ -3,7 +3,7 @@ import {
   parseDataAppAnnotationDraft,
   type DataAppAnnotationDraft,
 } from '@/src/core/annotations';
-import type { AnnotationDraftSnapshot } from '@/src/client/annotation-storage';
+import type { AnnotationDraftSnapshot } from '@/browser-tests/fixtures/annotation-storage';
 
 export function createAnnotationDraftStore(
   sourceVersion: string,

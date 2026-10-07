@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { createAnnotationDraftStore } from '@/src/react/annotation-drafts';
+import { createAnnotationDraftStore } from '@/browser-tests/fixtures/annotation-drafts';
 import type { DataAppAnnotationDraft } from '@/src/core/annotations';
 
 const draft: DataAppAnnotationDraft = {

@@ -2,17 +2,19 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   loadAnnotationDrafts,
   saveAnnotationDrafts,
-} from '@/src/client/annotation-storage';
-import { createAnnotationDraftStore } from '@/src/react/annotation-drafts';
+} from '@/browser-tests/fixtures/annotation-storage';
+import { createAnnotationDraftStore } from '@/browser-tests/fixtures/annotation-drafts';
 
 /** Host collection is independent of agent submission. Supply an account/app-scoped key for recovery. */
+type AnnotationDraftsOptions = {
+  sourceVersion: string;
+  storageKey?: string;
+};
+
 export function useAnnotationDrafts({
   sourceVersion,
   storageKey,
-}: {
-  sourceVersion: string;
-  storageKey?: string;
-}) {
+}: AnnotationDraftsOptions) {
   const store = useMemo(
     () =>
       createAnnotationDraftStore(
