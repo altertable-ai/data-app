@@ -40,12 +40,29 @@ afterAll(async () => {
   }
 });
 
-export const test = vitestTest.extend<{ page: Page }>({
+export const test = vitestTest.extend<{ page: Page; mobilePage: Page }>({
   // eslint-disable-next-line no-empty-pattern -- Vitest fixture dependencies use destructuring.
   page: async ({}, use) => {
     const context = await browser.newContext({
       baseURL,
       viewport: { width: 1280, height: 900 },
+    });
+    const page = await context.newPage();
+    page.setDefaultTimeout(10000);
+    try {
+      await use(page);
+    } finally {
+      await context.close();
+    }
+  },
+  // eslint-disable-next-line no-empty-pattern -- Vitest fixture dependencies use destructuring.
+  mobilePage: async ({}, use) => {
+    const context = await browser.newContext({
+      baseURL,
+      viewport: { width: 375, height: 812 },
+      isMobile: true,
+      hasTouch: true,
+      deviceScaleFactor: 3,
     });
     const page = await context.newPage();
     page.setDefaultTimeout(10000);

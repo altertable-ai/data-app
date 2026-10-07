@@ -358,3 +358,62 @@ test('a report can display, export and present bindings from its own view', asyn
     .toBe(true);
   expect(await page.getByRole('alert').count()).toBe(0);
 });
+
+test('a phone reader can select filters, compare periods and inspect results by touch', async ({
+  mobilePage: page,
+}) => {
+  await page.goto('/time-app');
+  await page.getByRole('button', { name: 'Region: All', exact: true }).tap();
+  await page.getByRole('option', { name: 'Europe', exact: true }).tap();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Measured events', exact: true })
+        .textContent()
+    )
+    .toBe('Measured events: 0');
+  await page.getByRole('button', { name: /^Choose dates/ }).tap();
+  await page
+    .getByRole('checkbox', {
+      name: 'Compare with previous period',
+      exact: true,
+    })
+    .tap();
+  await expect.poll(() => page.url()).toContain('compare=previous');
+  await page.touchscreen.tap(8, 8);
+  await expect.poll(() => page.getByRole('dialog').count()).toBe(0);
+  await page.getByRole('button', { name: 'Explore Events', exact: true }).tap();
+  await expect
+    .poll(() =>
+      page.getByRole('dialog', { name: 'Events', exact: true }).isVisible()
+    )
+    .toBe(true);
+  await page.getByRole('button', { name: 'Close panel', exact: true }).tap();
+  await expect.poll(() => page.getByRole('dialog').count()).toBe(0);
+  const selected = page.url();
+  await page.reload();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'Region: Europe', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Measured events', exact: true })
+        .textContent()
+    )
+    .toBe('Measured events: 0');
+  expect(page.url()).toBe(selected);
+  await page.getByRole('button', { name: /^Choose dates/ }).tap();
+  expect(
+    await page
+      .getByRole('checkbox', {
+        name: 'Compare with previous period',
+        exact: true,
+      })
+      .isChecked()
+  ).toBe(true);
+});
