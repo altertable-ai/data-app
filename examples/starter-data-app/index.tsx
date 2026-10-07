@@ -13,7 +13,6 @@ import {
   DataSection,
   DataValue,
   TableWidget,
-  Skeleton,
   Grid,
   Stack,
   TextContent,
@@ -138,10 +137,7 @@ const sampleContent = sampleCountsView.content(result => (
   <Stack aria-label="Sample results">
     <TextContent>
       <p>
-        Showing{' '}
-        <DataValue reading={result.scope} loadingFallback={<Skeleton inline />}>
-          {scope => scope}
-        </DataValue>
+        Showing <DataValue scope={result.scope} />
       </p>
     </TextContent>
     <Grid columns={2}>

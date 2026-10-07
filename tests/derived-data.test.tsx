@@ -4,6 +4,8 @@ import {
   MetricWidget,
   TableWidget,
   VisualizationWidget,
+  DataValue,
+  TextWidget,
 } from '@/src/react/widgets';
 import {
   exportDatasets,
@@ -400,4 +402,54 @@ test('dataset visualizations derive displayed rows, evidence, and empty copy wit
   })!;
   const rows = counts.read(updating);
   expect(rows.value).toBe(snapshot.data);
+});
+
+test('narrative bindings preserve loading, formatting, measured zero, and displayed evidence', () => {
+  let selections = 0;
+  const total = view.metric(metric, rows => {
+    selections++;
+    return { current: rows.reduce((sum, row) => sum + (row.count ?? 0), 0) };
+  });
+  const loading = renderToStaticMarkup(
+    <>
+      <DataValue metric={total} source={{ loading: true }} />
+      <TextWidget metric={total} source={{ loading: true }} />
+    </>
+  );
+  expect(selections).toBe(0);
+  expect(loading).toContain('altertable-skeleton');
+  expect(loading).toContain('Count');
+  const ready = renderToStaticMarkup(
+    <>
+      <DataValue metric={total} source={snapshot} />
+      <TextWidget metric={total} source={snapshot} />
+    </>
+  );
+  expect(ready).toContain('1,234');
+  expect(ready).toContain('Explore Count');
+  expect(
+    renderToStaticMarkup(
+      <DataValue metric={total} source={{ ...snapshot, data: [] }} />
+    )
+  ).toContain('>0</span>');
+  const counts = dataset();
+  expect(
+    renderToStaticMarkup(
+      <TextWidget dataset={counts} source={{ ...snapshot, data: [] }}>
+        {rows => (rows.length ? 'Rows' : 'No recorded rows')}
+      </TextWidget>
+    )
+  ).toContain('No recorded rows');
+  expect(
+    renderToStaticMarkup(
+      <DataValue dataset={counts} source={snapshot}>
+        {rows => rows[0]?.id}
+      </DataValue>
+    )
+  ).toContain('>A</span>');
+  expect(
+    renderToStaticMarkup(
+      <DataValue scope={{ loading: false, value: 'displayed scope' }} />
+    )
+  ).toContain('displayed scope');
 });

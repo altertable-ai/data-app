@@ -4,6 +4,8 @@ import {
   DataApp,
   DataSection,
   MetricWidget,
+  DataValue,
+  TextWidget,
   VisualizationWidget,
   TableWidget,
   type DataAppProps,
@@ -151,3 +153,32 @@ void boundMetric.props;
 >
   {rows => <p>{rows[0]}</p>}
 </VisualizationWidget>;
+
+<DataValue metric={boundMetric} source={{ data: 1, input: {} }} />;
+<TextWidget metric={boundMetric} source={{ data: 1, input: {} }} />;
+<DataValue dataset={dataset} source={{ data: 1, input: {} }}>
+  {rows => rows[0]}
+</DataValue>;
+<TextWidget dataset={dataset} source={{ data: 1, input: {} }}>
+  {rows => <p>{rows[0]}</p>}
+</TextWidget>;
+<DataValue scope={{ loading: true }} />;
+// @ts-expect-error Raw CSV adapters belong to direct UI composition.
+type _RawExport = authoring.CsvExport;
+// @ts-expect-error Raw table adapters belong to direct UI composition.
+type _RawColumn = authoring.TableWidgetColumn<number>;
+// @ts-expect-error Arbitrary readings belong to direct UI composition.
+<DataValue reading={{ loading: false, value: 1 }}>{value => value}</DataValue>;
+<MetricWidget
+  source={{ data: 1, input: {} }}
+  // @ts-expect-error A metric must be created by the declared view.
+  metric={{ definition: boundMetric.definition, read: boundMetric.read }}
+/>;
+
+// @ts-expect-error Raw CSV tables belong to direct UI composition.
+type _RawCsvTable = authoring.CsvTable;
+
+// @ts-expect-error Raw readings are direct UI adapters.
+type _RawReading = authoring.DataReading<number>;
+// @ts-expect-error Raw metric readings are direct UI adapters.
+type _RawMetricReading = authoring.MetricReading;

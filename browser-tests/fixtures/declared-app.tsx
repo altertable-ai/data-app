@@ -64,21 +64,22 @@ const context = createDataContext({ alpha: 'alpha', beta: 'beta' })({
 });
 const alphaDataset = alpha.dataset({
   name: 'Alpha',
-  select: data => [data],
+  select: (data, input) => [{ ...data, version: input.version }],
   rowKey: () => 'alpha',
-  columns: { count: { value: row => row.count } },
+  columns: {
+    count: { value: row => row.count },
+    version: { value: row => row.version },
+  },
   evidence: context.evidence({ id: 'alpha-data', queryNames: ['alpha'] }),
 });
 const alphaContent = alpha.content(result => (
   <>
-    <TextWidget
-      title="Alpha"
-      reading={result.select(
-        (data, input) => `${data.count} for ${input.version}`
+    <TextWidget title="Alpha" dataset={alphaDataset} source={result}>
+      {rows => (
+        <p data-testid="primary">
+          {rows[0]!.count} for {rows[0]!.version}
+        </p>
       )}
-      evidence={context.evidence({ id: 'alpha', queryNames: ['alpha'] })}
-    >
-      {value => <p data-testid="primary">{value}</p>}
     </TextWidget>
     <VisualizationWidget
       title="Alpha visualization"
@@ -102,13 +103,16 @@ const alphaContent = alpha.content(result => (
     />
   </>
 ));
+const betaDataset = beta.dataset({
+  name: 'Beta',
+  select: data => [data],
+  rowKey: () => 'beta',
+  columns: { count: { value: row => row.count } },
+  evidence: context.evidence({ id: 'beta', queryNames: ['beta'] }),
+});
 const betaContent = beta.content(result => (
-  <TextWidget
-    title="Beta"
-    reading={result.select(data => data.count)}
-    evidence={context.evidence({ id: 'beta', queryNames: ['beta'] })}
-  >
-    {value => <p data-testid="secondary">{value}</p>}
+  <TextWidget dataset={betaDataset} source={result}>
+    {rows => <p data-testid="secondary">{rows[0]!.count}</p>}
   </TextWidget>
 ));
 

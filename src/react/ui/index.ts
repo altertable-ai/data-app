@@ -108,3 +108,10 @@ export type {
 } from '@/src/react/ui/ScatterChart';
 export { BarChart } from '@/src/react/ui/BarChart';
 export type { BarChartProps, BarChartItem } from '@/src/react/ui/BarChart';
+
+export { DataValue } from '@/src/react/ui/DataValue';
+export type { DataValueProps } from '@/src/react/ui/DataValue';
+export type { CsvExport, CsvTable } from '@/src/react/ui/csv-export';
+export type { TableWidgetColumn } from '@/src/react/ui/TableWidget';
+
+export type { DataReading, MetricReading } from '@/src/core/reading';

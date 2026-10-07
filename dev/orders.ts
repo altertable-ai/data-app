@@ -148,7 +148,7 @@ function sum<Row>(rows: Row[], value: (row: Row) => number) {
 }
 
 /** Orders in the latest 7 days against the 7 before, for the line chart's takeaway. */
-export function describeWeeklyOrderTrend(days: OrderDay[]) {
+export function describeWeeklyOrderTrend(days: readonly OrderDay[]) {
   const recent = sum(days.slice(-7), day => day.orderCount);
   const previous = sum(days.slice(-14, -7), day => day.orderCount);
   const orders = `${formatCount(recent)} orders in the last 7 days`;

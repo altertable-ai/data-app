@@ -12,7 +12,6 @@ import {
   DataApp,
   DataSection,
   DataValue,
-  Skeleton,
   Grid,
   Stack,
   TextContent,
@@ -116,7 +115,6 @@ const revenueMetric = orderView.metric(
   }),
   data => ({ current: summarizeOrders(data).revenue })
 );
-const inlineFallback = <Skeleton inline />;
 function OrderResults({
   result,
 }: {
@@ -132,15 +130,7 @@ function OrderResults({
           markets.
         </p>
         <p>
-          Showing{' '}
-          <DataValue
-            reading={result.select(
-              (_, input) => input.country || 'all countries'
-            )}
-            loadingFallback={inlineFallback}
-          >
-            {scope => scope}
-          </DataValue>
+          Showing <DataValue scope={result.scope} />
         </p>
       </TextContent>
       <Grid columns={2}>
@@ -155,16 +145,23 @@ function OrderResults({
           source={result}
           insight={
             <>
-              <DataValue
-                reading={result.select(data => {
-                  const { revenue, orderCount } = summarizeOrders(data);
+              <DataValue dataset={countryDataset} source={result}>
+                {countries => {
+                  const revenue = countries.reduce(
+                    (sum, row) => sum + row.revenue,
+                    0
+                  );
+                  const orderCount = countries.reduce(
+                    (sum, row) => sum + row.orderCount,
+                    0
+                  );
                   return orderCount
-                    ? formatMetric(revenue / orderCount, currency)
+                    ? formatMetric(
+                        revenue / orderCount,
+                        revenueMetric.definition.format
+                      )
                     : '—';
-                })}
-                loadingFallback={inlineFallback}
-              >
-                {value => value}
+                }}
               </DataValue>{' '}
               per order on average.
             </>
@@ -176,13 +173,8 @@ function OrderResults({
           dataset={dayDataset}
           source={result}
           insight={
-            <DataValue
-              reading={result.select(data =>
-                describeWeeklyOrderTrend(data.days)
-              )}
-              loadingFallback={inlineFallback}
-            >
-              {text => text}
+            <DataValue dataset={dayDataset} source={result}>
+              {describeWeeklyOrderTrend}
             </DataValue>
           }
         >
@@ -196,17 +188,23 @@ function OrderResults({
           insight={
             <>
               Largest band:{' '}
-              <DataValue
-                reading={result.select(data => {
-                  const { largestValueBand, orderCount } =
-                    summarizeOrders(data);
-                  return largestValueBand
-                    ? `${largestValueBand.band}, with ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`
+              <DataValue dataset={valueDataset} source={result}>
+                {bands => {
+                  const largest = bands.reduce<
+                    (typeof bands)[number] | undefined
+                  >(
+                    (best, row) =>
+                      !best || row.orderCount > best.orderCount ? row : best,
+                    undefined
+                  );
+                  const orders = bands.reduce(
+                    (sum, row) => sum + row.orderCount,
+                    0
+                  );
+                  return largest && orders
+                    ? `${largest.band}, with ${formatPercent(largest.orderCount / orders)} of orders.`
                     : 'No orders.';
-                })}
-                loadingFallback={inlineFallback}
-              >
-                {text => text}
+                }}
               </DataValue>
             </>
           }
@@ -221,16 +219,17 @@ function OrderResults({
         source={result}
         skeleton={{ variant: 'ranking', rows: 5 }}
         insight={
-          <DataValue
-            reading={result.select(data => {
-              const { leadingCountry, revenue } = summarizeOrders(data);
-              return leadingCountry && revenue > 0
-                ? `${leadingCountry.country} brings in ${formatPercent(leadingCountry.revenue / revenue)} of revenue.`
+          <DataValue dataset={countryDataset} source={result}>
+            {countries => {
+              const revenue = countries.reduce(
+                (sum, row) => sum + row.revenue,
+                0
+              );
+              const leading = countries[0];
+              return leading && revenue > 0
+                ? `${leading.country} brings in ${formatPercent(leading.revenue / revenue)} of revenue.`
                 : 'No revenue.';
-            })}
-            loadingFallback={inlineFallback}
-          >
-            {text => text}
+            }}
           </DataValue>
         }
       >

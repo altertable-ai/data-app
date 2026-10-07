@@ -4,7 +4,7 @@ export { injectDataAppStyles } from '@/src/react/styles';
 export type { DataAppStylesOptions } from '@/src/react/styles';
 export { mountDataApp } from '@/src/react/mount';
 export { createDataHooks } from '@/src/react/hooks';
-export type { CsvCell, CsvTable, CsvExport } from '@/src/react/ui/csv-export';
+export type { CsvCell } from '@/src/react/ui/csv-export';
 export { DataApp } from '@/src/react/ui/DataApp';
 export type { DataAppProps } from '@/src/react/ui/DataApp';
 export { Stack } from '@/src/react/ui/Stack';
@@ -16,8 +16,8 @@ export type { GridItemProps } from '@/src/react/ui/GridItem';
 export type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 export { TextContent } from '@/src/react/ui/TextContent';
 export type { TextContentProps } from '@/src/react/ui/TextContent';
-export { DataValue } from '@/src/react/ui/DataValue';
-export type { DataValueProps } from '@/src/react/ui/DataValue';
+export { DataValue } from '@/src/react/widgets';
+export type { DataValueProps } from '@/src/react/widgets';
 export { TextWidget } from '@/src/react/widgets';
 export type { TextWidgetProps } from '@/src/react/widgets';
 export { VisualizationWidget } from '@/src/react/widgets';
@@ -25,10 +25,7 @@ export type { VisualizationWidgetProps } from '@/src/react/widgets';
 export type { VisualizationWidgetView } from '@/src/react/widgets';
 export { TableWidget } from '@/src/react/widgets';
 export type { TableWidgetProps } from '@/src/react/widgets';
-export type {
-  TableWidgetColumn,
-  TableWidgetSearch,
-} from '@/src/react/ui/TableWidget';
+export type { TableWidgetSearch } from '@/src/react/ui/TableWidget';
 export { chartColor } from '@/src/react/ui/chartColor';
 export { Breakdown } from '@/src/react/ui/Breakdown';
 export type { BreakdownItem, BreakdownProps } from '@/src/react/ui/Breakdown';
@@ -84,8 +81,4 @@ export type {
 export { Button } from '@/src/react/ui/Button';
 export type { ButtonProps } from '@/src/react/ui/Button';
 export type { MetricDefinition } from '@/src/react/ui/metric';
-export type {
-  DataReading,
-  MetricReading,
-  MetricValues,
-} from '@/src/core/reading';
+export type { MetricValues } from '@/src/core/reading';

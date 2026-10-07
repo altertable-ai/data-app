@@ -127,12 +127,12 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       emptyFallback: definition.emptyFallback ?? { title: 'No results' },
     };
   }
-  read<Source extends ViewSource<Data, Input>>(source: Source) {
+  read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     return readSource<Data, Input, readonly Row[], Source>(
       source,
       this.#select
     );
-  }
+  };
   static table<Data, Input, Row>(
     dataset: Dataset<Data, Input, Row>,
     source: ViewSource<Data, Input>
@@ -160,31 +160,39 @@ export function datasetCsv<Data, Input>(
   return ExportDataset.csv(dataset, snapshot);
 }
 
-export function bindMetric<Data, Input>(
-  definition: MetricDefinition,
-  select: (data: Data, input: Input) => MetricValues,
-  date?: (input: Input) => DateRangeRequest
-) {
-  function read<Source extends ViewSource<Data, Input>>(source: Source) {
+export class Metric<Data, Input> {
+  #select: (data: Data, input: Input) => MetricValues;
+  #date?: (input: Input) => DateRangeRequest;
+  constructor(
+    readonly definition: MetricDefinition,
+    select: (data: Data, input: Input) => MetricValues,
+    date?: (input: Input) => DateRangeRequest
+  ) {
+    this.#select = select;
+    this.#date = date;
+  }
+  read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     return readSource<
       Data,
       Input,
       MetricValues & { period?: DateRangeRequest },
       Source
     >(source, (data, input) => {
-      const values = select(data, input);
+      const values = this.#select(data, input);
       invariant(
-        values.previous === undefined || date,
+        values.previous === undefined || this.#date,
         'Metric comparisons require a view date binding.'
       );
-      return { ...values, period: date?.(input) };
+      return { ...values, period: this.#date?.(input) };
     });
-  }
-
-  return {
-    definition,
-    read,
   };
+}
+export function bindMetric<Data, Input>(
+  definition: MetricDefinition,
+  select: (data: Data, input: Input) => MetricValues,
+  date?: (input: Input) => DateRangeRequest
+) {
+  return new Metric(definition, select, date);
 }
 
 export function displayedScope<Data, Input>(

@@ -72,9 +72,15 @@ Give text a purpose: frame the question, explain how to interpret a comparison,
 qualify a finding, or suggest what to explore next. Choose the content for the
 reader's question.
 
-For data-dependent text, use `reading={result.select((data, input) => ...)}` and
-provide `evidence`. Derive both the explanation and its scope from those displayed
-values so it stays consistent with the visualizations while filters change.
+For data-dependent text, pass `metric` or `dataset` and `source` to `<TextWidget>`.
+It derives its title and evidence. A metric formats its current value by default;
+use a child renderer for authored prose. Dataset renderers receive displayed rows,
+including an empty selection, so they can explain zero activity.
+
+Use `<DataValue metric={total} source={result} />` for a formatted value inside
+static prose, or pass a dataset and row renderer. Its default loading fallback is
+an inline skeleton. Use `<DataValue scope={result.scope} />` for a scope label.
+All selectors use the displayed source; loading selectors do not run.
 Use `<TextContent>` for static instructions; local filters should feed the same
 filtered data to the text and its related visualization.
 

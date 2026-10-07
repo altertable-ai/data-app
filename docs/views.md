@@ -20,7 +20,7 @@ const activityView = defineDataView({
   emptyFallback: { title: 'No activity' },
 });
 const content = activityView.content(result => (
-  <ActivityWidgets reading={result.select(data => data.rows)} />
+  <ActivityWidgets source={result} />
 ));
 
 function App() {
@@ -40,8 +40,8 @@ function App() {
 
 Omit `variables` when there are no controls. Omit `input` when the resolved
 variables match the operation input; nested or different inputs need a mapper.
-The operation and `ActivityWidgets` are app-owned. The widget renderer handles
-loading readings with skeletons; see [widgets](widgets.md) and the
+The operation and `ActivityWidgets` are app-owned. The bound widgets derive
+loading content from their source; see [widgets](widgets.md) and the
 [complete starter](../examples/starter-data-app/index.tsx). Define
 [filters](variables.md), [context and evidence](data-context.md), and
 [story and datasets](stories-and-export.md) for the app's question.
@@ -57,17 +57,12 @@ Use `<DataValue>` for a dynamic value within static prose:
 
 ```tsx
 <p>
-  Orders in the last 7 days:{' '}
-  <DataValue
-    reading={result.select(data => data.weeklyOrders)}
-    loadingFallback={<Skeleton inline />}
-  >
-    {count => formatCount(count)}
-  </DataValue>
+  Orders in the last 7 days: <DataValue metric={weeklyOrders} source={result} />
 </p>
 ```
 
-Bind the whole sentence when its wording depends on the result.
+Bind the whole sentence with `<TextWidget>` when its wording depends on the result.
+Use `<DataValue scope={result.scope} />` for the displayed scope label.
 
 Use the same [date range contract](contract.md#shared-date-ranges) for the
 operation and its view. For nested inputs, bind the range with
@@ -77,7 +72,7 @@ Use `result.scope` inside `view.content()` as a reading for scope text. In stori
 `view.scope(snapshot)` returns the same label from the displayed input, using
 `describeInput` or the view's date label.
 
-Use `result.variables.bind(name)` for [custom controls](variables.md). Keep
+Declare standard controls in the view's [variables](variables.md). Keep
 local-only filters out of the operation's `input`.
 
 For large tables, use query-backed pagination with a stable sort and total
