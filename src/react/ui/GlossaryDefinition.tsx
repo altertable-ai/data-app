@@ -13,11 +13,13 @@ export function GlossaryDefinition({
 }: GlossaryDefinitionProps) {
   return (
     <HelpPopover
-      triggerProps={{ 'data-atbl-control': 'help' }}
       trigger={children ?? entry.term}
       triggerLabel={`Explain ${entry.term}`}
       label={entry.term}
-      triggerProps={{ className: 'altertable-glossary-definition-trigger' }}
+      triggerProps={{
+        className: 'altertable-glossary-definition-trigger',
+        'data-atbl-control': 'help',
+      }}
       panelProps={{ className: 'altertable-glossary-definition-popover' }}
     >
       <strong>{entry.term}</strong>

@@ -10,22 +10,18 @@
   margin: 0 0 14px;
   padding: 8px 0;
   border: 0;
-  border-radius: var(--atbl-radius-control, 8px);
-  color: var(--atbl-muted, #687078);
+  border-radius: var(--atbl-radius-control);
+  color: var(--atbl-muted);
   background: transparent;
   font-size: var(--atbl-type-meta-size);
   line-height: 1.45;
 }
 .altertable-data-boundary-notice[data-state='stale-error'] {
-  border-color: color-mix(
-    in srgb,
-    var(--atbl-danger, #b42318) 30%,
-    var(--atbl-border, #e3e6e8)
-  );
+  border-color: color-mix(in srgb, var(--atbl-danger) 30%, var(--atbl-border));
 }
 .altertable-data-boundary-notice[data-state='stale-error'] > svg {
   flex: none;
-  color: var(--atbl-danger, #b42318);
+  color: var(--atbl-danger);
 }
 .altertable-data-boundary-message {
   flex: 1 1 240px;

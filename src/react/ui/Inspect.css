@@ -50,6 +50,8 @@
 
 /* Inspection lives on the heading; the toolbar is reserved for actions and status. */
 .altertable-button.altertable-widget-heading-trigger {
+  --atbl-control-hover-surface: transparent;
+  --atbl-control-pressed-surface: transparent;
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
@@ -69,7 +71,7 @@
 .altertable-button.altertable-widget-heading-trigger:focus-visible,
 .altertable-button.altertable-widget-heading-trigger[data-open='true'] {
   background: transparent;
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
 }
 .altertable-widget-heading-trigger > svg {
   display: inline-block;

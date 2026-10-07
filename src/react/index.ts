@@ -5,7 +5,11 @@ export type {
 } from '@/src/react/bindings';
 export { injectDataAppStyles } from '@/src/react/styles';
 export type { DataAppStylesOptions } from '@/src/react/styles';
-export type { DataAppStyle, DataAppStyleToken, DataAppStyleHooks } from '@/src/react/style-contract';
+export type {
+  DataAppStyle,
+  DataAppStyleToken,
+  DataAppStyleHooks,
+} from '@/src/react/style-contract';
 export { mountDataApp } from '@/src/react/mount';
 export { createDataHooks } from '@/src/react/hooks';
 export type { CsvCell } from '@/src/react/ui/csv-export';

@@ -175,7 +175,7 @@ for local customization. Descendant classes are internal.
 
 | Class                          | Owner               | Use                             |
 | ------------------------------ | ------------------- | ------------------------------- |
-| `altertable-app-layout`        | `<AppLayout>`       | Root CSS customization          |
+| `altertable-app-layout`        | `<DataApp>` shell   | Root CSS customization          |
 | `altertable-stack`             | `<Stack>`           | Root CSS customization          |
 | `altertable-grid`              | `<Grid>`            | Root CSS customization          |
 | `altertable-grid-item`         | `<GridItem>`        | Root CSS customization          |

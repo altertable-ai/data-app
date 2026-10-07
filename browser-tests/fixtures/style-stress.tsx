@@ -1,20 +1,23 @@
+import { AppFooter } from '@/src/react/ui/AppFooter';
+import { VariableBar } from '@/src/react/ui/VariableBar';
+import { AppHeader } from '@/src/react/ui/AppHeader';
+import { AppLayout } from '@/src/react/ui/AppLayout';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { applyAppearance } from '@altertable/data-app/appearance';
 import {
-  injectDataAppStyles,
-  AppLayout,
-  AppHeader,
-  Button,
   Combobox,
   DateRangePicker,
   SearchField,
   LiveControl,
-  VariableBar,
-  Grid,
   MetricWidget,
   DataWidget,
   DataTable,
+} from '@altertable/data-app/react/ui';
+import {
+  injectDataAppStyles,
+  Button,
+  Grid,
   Comparison,
   TextContent,
 } from '@altertable/data-app/react';
@@ -39,18 +42,19 @@ function Stress() {
   const [loading, setLoading] = useState(false);
   return (
     <AppLayout
-      footerProps={{
-        attribution: (
-          <a href="#root">
-            Attribution with a deliberately long organization name and
-            explanatory text
-          </a>
-        ),
-      }}
-      footerActions={
-        <Button>
-          Footer action with a very long but meaningful accessible label
-        </Button>
+      footer={
+        <AppFooter
+          attribution={
+            <a href="#root">
+              Attribution with a deliberately long organization name and
+              explanatory text
+            </a>
+          }
+        >
+          <Button>
+            Footer action with a very long but meaningful accessible label
+          </Button>
+        </AppFooter>
       }
     >
       <AppHeader

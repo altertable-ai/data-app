@@ -32,6 +32,10 @@ their components. Descendant classes and private variables are internal.
 </Stack>
 ```
 
+Import layouts and `<Button>` from `/react`; direct controls such as `<Tabs>`
+and custom widget shells come from `/react/ui`. Standard widgets use declared
+views and bindings; see [widgets](widgets.md) and [direct UI composition](ui.md).
+
 Use native control hooks only when a package component does not fit:
 
 ```tsx
