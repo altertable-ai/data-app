@@ -66,8 +66,7 @@ const content = view.content(result => (
   <p>{result.loading ? 'Loading' : result.data}</p>
 ));
 const section: DataSectionProps<number, Record<string, never>> = {
-  view,
-  ...content,
+  content,
 };
 <DataApp {...app}>
   <DataSection {...section} />
@@ -84,7 +83,7 @@ const withoutView: DataAppProps<number, Record<string, never>> = {
 // @ts-expect-error Raw request hooks are outside the authoring API.
 void hooks.useView;
 // @ts-expect-error A request state is not a declared view.
-<DataSection view={{ kind: 'ready', data: 1, input: {} }} {...content} />;
+<DataSection content={{ view, loadingFallback: null, children: () => null }} />;
 // @ts-expect-error Default metrics require view bindings and a displayed source.
 <MetricWidget label="Count" value={1} format={{ kind: 'count' }} />;
 const rawTable: TableWidgetProps<number> = {
@@ -222,3 +221,28 @@ view.metric(
   }),
   data => ({ current: data })
 );
+
+// @ts-expect-error Content carries its own request owner.
+<DataSection content={content} view={view} />;
+// @ts-expect-error Loading layout belongs to view.content.
+<DataSection content={content} loadingFallback={null} />;
+// @ts-expect-error Render callbacks are private section adapters.
+void content.children;
+// @ts-expect-error Request owners are private section adapters.
+void content.view;
+view.dataset<number>({
+  name: 'Bad evidence',
+  select: data => [data],
+  rowKey: row => row,
+  columns: { value: { value: row => row } },
+  // @ts-expect-error Dataset references use the owning context's registered glossary.
+  evidence: { id: 'bad', glossaryIds: ['missing'] },
+});
+view.dataset<number>({
+  name: 'Bad query',
+  select: data => [data],
+  rowKey: row => row,
+  columns: { value: { value: row => row } },
+  // @ts-expect-error Dataset references use the owning context's registered queries.
+  evidence: { id: 'bad', queryNames: ['missing'] },
+});

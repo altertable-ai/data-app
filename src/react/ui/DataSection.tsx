@@ -1,3 +1,4 @@
+import { sectionContent, type ViewContent } from '@/src/react/content';
 import { useContext, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { DataSectionBoundary } from '@/src/react/ui/DataSectionBoundary';
 import {
@@ -6,36 +7,44 @@ import {
 } from '@/src/react/ui/InspectionContext';
 import {
   PrimaryViewContext,
-  type DeclaredView,
   type ViewResult,
   useDeclaredResult,
 } from '@/src/react/view-runtime';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 
 export type DataSectionProps<Data, Input = unknown> = {
-  view: DeclaredView<Data, Input>;
-  children: (data: Data, input: Input) => ReactNode;
-  loadingFallback: ReactNode;
+  content: ViewContent<Data, Input>;
   emptyFallback?: EmptyContent;
   error?: { title: ReactNode; description?: ReactNode; onRetry?: () => void };
   label?: string;
-} & Omit<ComponentPropsWithRef<'div'>, 'children'>;
+} & Omit<ComponentPropsWithRef<'div'>, 'children' | 'content'>;
 
-export function DataSection<Data, Input>(props: DataSectionProps<Data, Input>) {
+export function DataSection<Data, Input>({
+  content,
+  ...presentation
+}: DataSectionProps<Data, Input>) {
   const primary = useContext(PrimaryViewContext);
-  if (primary?.declaration === props.view) {
-    // Identity proves this result belongs to the same typed declaration.
+  const { view, ...section } = sectionContent(content);
+  if (primary?.declaration === view) {
+    // Identity proves the shared result belongs to this content's declaration.
     const result = primary.result as ViewResult<Data, Input>;
-    const { view: _, ...boundary } = props;
-    return <DataSectionBoundary {...boundary} result={result} notice="none" />;
+    return (
+      <DataSectionBoundary
+        {...section}
+        {...presentation}
+        result={result}
+        notice="none"
+      />
+    );
   }
-  return <IndependentSection {...props} />;
+  return <IndependentSection view={view} {...section} {...presentation} />;
 }
 
 function IndependentSection<Data, Input>({
   view,
   ...props
-}: DataSectionProps<Data, Input>) {
+}: Omit<DataSectionProps<Data, Input>, 'content'> &
+  ReturnType<typeof sectionContent<Data, Input>>) {
   const result = useDeclaredResult(view);
   const defaults = useInspectionDefaults();
   const section = (

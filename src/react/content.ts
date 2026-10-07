@@ -1,3 +1,4 @@
+import type { DeclaredView } from '@/src/react/view-runtime';
 import type { ReactNode } from 'react';
 import type { DataReading } from '@/src/core/reading';
 
@@ -30,4 +31,24 @@ export function defineDataContent<Data, Input>(
       });
     },
   };
+}
+
+/** A section's request owner and render layout are declared together. */
+export class ViewContent<Data, Input> {
+  #view: DeclaredView<Data, Input>;
+  #layout: ReturnType<typeof defineDataContent<Data, Input>>;
+  constructor(
+    view: DeclaredView<Data, Input>,
+    render: (source: DataContentState<Data, Input>) => ReactNode,
+    describeInput: (input: Input) => string
+  ) {
+    this.#view = view;
+    this.#layout = defineDataContent(render, { describeInput });
+  }
+  static section<Data, Input>(content: ViewContent<Data, Input>) {
+    return { view: content.#view, ...content.#layout };
+  }
+}
+export function sectionContent<Data, Input>(content: ViewContent<Data, Input>) {
+  return ViewContent.section(content);
 }

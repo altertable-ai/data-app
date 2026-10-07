@@ -84,4 +84,6 @@ const finding = context.finding({
 Import `defineQueryNames()` from `/contract` and the context/identifier factories from `/react`. Use the same registry in `defineOperation({ queryNames: queries, ... })`.
 
 Use `view.metric(definition, select)` to register and bind a metric in one call.
+Declare dataset evidence references inside `view.dataset()`; the view registers
+and validates them too.
 Widgets and stories share its values and evidence; see [datasets and metrics](widgets.md#declare-datasets-and-metrics).

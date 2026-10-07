@@ -1,3 +1,4 @@
+import { sectionContent } from '@/src/react/content';
 import {
   VisualizationWidget as BoundVisual,
   TableWidget as BoundTable,
@@ -359,7 +360,10 @@ test('bound metrics share values, formatting, evidence and displayed comparison 
     true
   );
   const html = renderToStaticMarkup(
-    content.children({ current: 120, previous: 100, rows: ['a'] }, input)
+    sectionContent(content).children(
+      { current: 120, previous: 100, rows: ['a'] },
+      input
+    )
   );
   expect(html).toContain('120');
   expect(html).toContain('20.0%');
@@ -367,12 +371,18 @@ test('bound metrics share values, formatting, evidence and displayed comparison 
   expect(html).toContain('Mar 7–9, 2026');
   expect(
     renderToStaticMarkup(
-      content.children({ current: 0, previous: null, rows: [] }, input)
+      sectionContent(content).children(
+        { current: 0, previous: null, rows: [] },
+        input
+      )
     )
   ).toContain('No comparable previous value');
   expect(
     renderToStaticMarkup(
-      content.children({ current: 120, previous: 0, rows: [] }, input)
+      sectionContent(content).children(
+        { current: 120, previous: 0, rows: [] },
+        input
+      )
     )
   ).not.toContain('Infinity');
 });
@@ -401,7 +411,10 @@ test('favorable direction colors a comparison without changing its numeric direc
     true
   );
   const html = renderToStaticMarkup(
-    content.children({ current: 120, previous: 100, rows: ['a'] }, input)
+    sectionContent(content).children(
+      { current: 120, previous: 100, rows: ['a'] },
+      input
+    )
   );
   expect(html).toContain('data-tone="bad"');
   expect(html).toContain('20.0%');
@@ -417,7 +430,7 @@ test('bound visual selectors do not run during loading or render an empty result
     },
     rowKey: row => row,
     columns: { feature: { value: row => row } },
-    evidence: featureEvidence,
+    evidence: { id: 'features', queryNames: [names.activity] },
     emptyFallback: { title: 'No features' },
   });
   const content = view.content(result => (
@@ -431,14 +444,17 @@ test('bound visual selectors do not run during loading or render an empty result
   ));
   expect(calls).toBe(0);
   expect(
-    renderToStaticMarkup(content.loadingFallback).match(
+    renderToStaticMarkup(sectionContent(content).loadingFallback).match(
       /class="altertable-content-skeleton-row"/g
     )
   ).toHaveLength(6);
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
   expect(
     renderToStaticMarkup(
-      content.children({ current: 0, previous: null, rows: [] }, input)
+      sectionContent(content).children(
+        { current: 0, previous: null, rows: [] },
+        input
+      )
     )
   ).toContain('No features');
   expect(calls).toBe(1);
@@ -575,21 +591,21 @@ test('bound tables keep their row contract while loading', () => {
     select: data => data.rows,
     rowKey: row => row,
     columns: { feature: { value: row => row } },
-    evidence: featureEvidence,
+    evidence: { id: 'features', queryNames: [names.activity] },
     emptyFallback: { title: 'No features' },
   });
   const content = view.content(result => (
     <BoundTable dataset={features} source={result} skeletonRows={3} />
   ));
   expect(
-    renderToStaticMarkup(content.loadingFallback).match(
+    renderToStaticMarkup(sectionContent(content).loadingFallback).match(
       /class="altertable-skeleton"/g
     )
   ).toHaveLength(3);
   const input = calendar.request({ start: '2026-03-10', end: '2026-03-12' });
   expect(
     renderToStaticMarkup(
-      content.children(
+      sectionContent(content).children(
         { current: 1, previous: null, rows: ['Insights'] },
         input
       )
@@ -597,7 +613,10 @@ test('bound tables keep their row contract while loading', () => {
   ).toContain('Insights');
   expect(
     renderToStaticMarkup(
-      content.children({ current: 0, previous: null, rows: [] }, input)
+      sectionContent(content).children(
+        { current: 0, previous: null, rows: [] },
+        input
+      )
     )
   ).toContain('No features');
 });

@@ -32,7 +32,7 @@ function App() {
       story={story}
       datasets={[activityDataset]}
     >
-      <DataSection view={activityView} {...content} />
+      <DataSection content={content} />
     </DataApp>
   );
 }
@@ -78,7 +78,7 @@ local-only filters out of the operation's `input`.
 For large tables, use query-backed pagination with a stable sort and total
 count. Client pagination and search cover only the rows already returned.
 
-Use `context.evidence(...)` for bound charts and tables. `<MetricWidget>` uses
+Declare evidence references on `view.dataset()` for charts and tables. `<MetricWidget>` uses
 its metric definition for the label, format, and evidence; keep view-specific
 descriptions on the widget.
 
@@ -103,14 +103,13 @@ primary `view`. It always renders children, so introductions and static
 context remain visible while a section loads. It requires both
 [story and CSV export](stories-and-export.md) for a data request.
 
-Place `<DataSection>` around each independently fetched subtree. Supply
-`loadingFallback`; the section inherits `emptyFallback` from its view, with an
-optional local override. Use `view.content()` to share the widget layout between loading and
-ready data. The section handles initial errors and retries. Pass the same declaration to `DataApp.view` and the primary `DataSection.view`;
-they share one displayed result. Each independent section uses its own view
-context and executed queries.
-Keep related analytical datasets in one view so export and story share a coherent
-snapshot.
+Place `<DataSection content={content}>` around each independently fetched subtree.
+Declare its shared loading and ready layout with `view.content()`. The section
+inherits empty copy from its view, with an optional local override, and handles
+initial errors and retries. Primary content shares the app's displayed result;
+independent content uses its own context and executed queries.
+
+Keep related datasets in one view so export and story share a coherent snapshot.
 
 | State           | Display                                                   |
 | --------------- | --------------------------------------------------------- |

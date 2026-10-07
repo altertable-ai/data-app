@@ -24,7 +24,7 @@ import {
 import { type DataSectionProps } from '@/src/react/ui/DataSectionBoundary';
 import { type DataAppProps } from '@/src/react/ui/DataAppFrame';
 
-const authoringContext = registerContext({})({
+const authoringContext = registerContext({ numbers: 'numbers' })({
   description: 'Fixture context',
   glossary: {},
 });
@@ -392,7 +392,7 @@ defaults.defineDataView({
   input: values => values,
 });
 
-const evidence = { id: 'numbers', queryNames: ['numbers'] as [string] };
+const evidence = { id: 'numbers', queryNames: ['numbers'] as const };
 const boundDataset = searchView.dataset({
   select: data => [data],
   name: 'Numbers',

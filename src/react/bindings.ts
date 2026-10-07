@@ -1,3 +1,4 @@
+import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
 import type { ReactNode } from 'react';
 import type { DateRangeRequest } from '@/src/core/contract';
 import type { DataView, DisplayedSnapshot } from '@/src/core/data-view';
@@ -37,14 +38,22 @@ export type DatasetColumn<Row> = { label?: string } & (
   | { value: (row: Row) => number | null | undefined; format: MetricFormat }
 );
 
-export type DatasetDefinition<Data, Input, Row> = {
+export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
   name: string;
   select: (data: Data, input: Input) => readonly Row[];
   columns: Record<string, DatasetColumn<NoInfer<Row>>>;
   rowKey: (row: NoInfer<Row>) => string | number;
-  evidence: WidgetEvidence;
+  evidence: Evidence;
   emptyFallback?: EmptyContent;
 };
+
+/** Authoring references are registered by the owning view. */
+export type DatasetDeclaration<Data, Input, Row> = DatasetDefinition<
+  Data,
+  Input,
+  Row,
+  EvidenceDeclaration
+>;
 
 export class ExportDataset<Data, Input> {
   #csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable;

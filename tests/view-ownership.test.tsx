@@ -1,3 +1,4 @@
+import { ViewContent } from '@/src/react/content';
 import { ExportDataset } from '@/src/react/bindings';
 import { expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -73,20 +74,36 @@ test('the primary section reuses exactly the app result and independent declarat
         datasets={[dataset]}
         story={() => []}
       >
-        <DataSection view={primary} loadingFallback={null}>
-          {(data, input) => (
-            <p>
-              {data}:{input}
-            </p>
-          )}
-        </DataSection>
-        <DataSection view={secondary} loadingFallback={null}>
-          {(data, input) => (
-            <p>
-              {data}:{input}
-            </p>
-          )}
-        </DataSection>
+        <DataSection
+          content={
+            new ViewContent(
+              primary,
+              source => (
+                <p>
+                  {source.loading
+                    ? 'loading'
+                    : `${source.data}:${source.input}`}
+                </p>
+              ),
+              () => 'old'
+            )
+          }
+        />
+        <DataSection
+          content={
+            new ViewContent(
+              secondary,
+              source => (
+                <p>
+                  {source.loading
+                    ? 'loading'
+                    : `${source.data}:${source.input}`}
+                </p>
+              ),
+              () => 'secondary'
+            )
+          }
+        />
       </DataApp>
     );
     expect(primaryCalls).toBe(1);

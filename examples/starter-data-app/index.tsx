@@ -120,10 +120,10 @@ const sampleCounts = sampleCountsView.dataset({
     groupName: { label: 'Group', value: row => row.groupName },
     sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
   },
-  evidence: sampleDataContext.evidence({
+  evidence: {
     id: 'counts-by-group',
     glossaryIds: ['sampleCount'],
-  }),
+  },
 });
 const totalSamples = sampleCountsView.metric(
   {
@@ -195,7 +195,7 @@ function App() {
         <TextContent>
           <h2>Sample counts</h2>
         </TextContent>
-        <DataSection view={sampleCountsView} {...sampleContent} />
+        <DataSection content={sampleContent} />
       </Stack>
     </DataApp>
   );

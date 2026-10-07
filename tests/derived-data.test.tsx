@@ -1,3 +1,4 @@
+import { sectionContent } from '@/src/react/content';
 import { createDataHooks } from '@/src/react/hooks';
 import { DataSection } from '@/src/react/ui/DataSection';
 import {
@@ -68,10 +69,10 @@ function dataset(
     select,
     name: 'Counts',
     rowKey: row => row.id,
-    evidence: context.evidence({
+    evidence: {
       id: 'dataset',
       queryNames: [context.queryNames.rows],
-    }),
+    },
     columns: {
       id: { label: 'ID', value: row => row.id },
       count: { value: row => row.count, format: { kind: 'count' } },
@@ -135,10 +136,10 @@ test('dataset scope and export callbacks retain displayed input through refresh 
     name: 'Names',
     select: rows => rows,
     rowKey: row => row.id,
-    evidence: context.evidence({
+    evidence: {
       id: 'dataset',
       queryNames: [context.queryNames.rows],
-    }),
+    },
     columns: { id: { label: 'ID', value: row => row.id } },
   });
   for (const kind of ['updating', 'stale-error'] as const) {
@@ -171,11 +172,13 @@ test('dataset scope and export callbacks retain displayed input through refresh 
   const content = view.content(state => (
     <p>{state.scope.loading ? 'Loading scope' : state.scope.value}</p>
   ));
-  expect(renderToStaticMarkup(content.loadingFallback)).toContain(
-    'Loading scope'
-  );
   expect(
-    renderToStaticMarkup(content.children(snapshot.data, snapshot.input))
+    renderToStaticMarkup(sectionContent(content).loadingFallback)
+  ).toContain('Loading scope');
+  expect(
+    renderToStaticMarkup(
+      sectionContent(content).children(snapshot.data, snapshot.input)
+    )
   ).toContain('displayed');
 });
 
@@ -238,10 +241,10 @@ test('keyed datasets retain explicit accessors and identity for projected rows',
     name: 'Counts',
     select: rows => rows,
     rowKey: row => row.id,
-    evidence: context.evidence({
+    evidence: {
       id: 'counts',
       queryNames: [context.queryNames.rows],
-    }),
+    },
     columns: {
       id: { value: row => row.id },
       count: { value: row => row.count, format: { kind: 'count' } },
@@ -268,7 +271,7 @@ test('keyed datasets retain explicit accessors and identity for projected rows',
     name: 'Projected',
     select: rows => rows.map(row => ({ key: row.id, sampleCount: row.count })),
     rowKey: row => row.key,
-    evidence: counts.evidence,
+    evidence: { id: 'dataset', queryNames: [context.queryNames.rows] },
     columns: {
       key: { value: row => row.key },
       sampleCount: { value: row => row.sampleCount },
@@ -283,7 +286,7 @@ test('keyed datasets retain explicit accessors and identity for projected rows',
     name: 'Composite',
     select: rows => rows,
     rowKey: row => `${row.id}:${row.available}`,
-    evidence: counts.evidence,
+    evidence: { id: 'dataset', queryNames: [context.queryNames.rows] },
     columns: { id: { value: row => row.id } },
   });
   expect(datasetTable(composite, snapshot).rowKey(snapshot.data[0]!)).toBe(
@@ -327,7 +330,7 @@ test('hook scope uses the automatic date description for a manually composed vie
     <p>{result.scope.loading ? 'Loading scope' : result.scope.value}</p>
   ));
   function Scope() {
-    return <DataSection view={dateView} {...dateContent} />;
+    return <DataSection content={dateContent} />;
   }
   function render() {
     return renderToStaticMarkup(
@@ -361,10 +364,10 @@ test('datasets validate empty or blank column declarations at the boundary', () 
     name: 'Rows',
     select: (rows: readonly Row[]) => rows,
     rowKey: (row: Row) => row.id,
-    evidence: context.evidence({
+    evidence: {
       id: 'rows',
-      queryNames: [context.queryNames.rows],
-    }),
+      queryNames: [context.queryNames.rows] as const,
+    },
   };
   expect(() => view.dataset({ ...definition, columns: {} })).toThrow(
     'column IDs'
@@ -467,4 +470,30 @@ test('views register metric labels and evidence against their own context before
       throw new Error('Selector must not run');
     })
   ).toThrow('Unknown glossary entry');
+});
+
+test('dataset evidence is registered by its view before data selection', () => {
+  let selections = 0;
+  const definition = {
+    name: 'Counts',
+    select: (rows: readonly Row[]) => {
+      selections++;
+      return rows;
+    },
+    rowKey: (row: Row) => row.id,
+    columns: { id: { value: (row: Row) => row.id } },
+  };
+  const counts = view.dataset({
+    ...definition,
+    evidence: { id: 'counts', glossaryIds: ['count'] },
+  });
+  expect(counts.evidence.glossaryIds).toEqual(['count']);
+  expect(selections).toBe(0);
+  expect(() =>
+    view.dataset({
+      ...definition,
+      evidence: { id: 'bad', queryNames: ['missing' as 'rows'] },
+    })
+  ).toThrow('Unknown query name');
+  expect(selections).toBe(0);
 });

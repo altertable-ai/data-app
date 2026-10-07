@@ -1,5 +1,8 @@
 /** Declared views, bound widgets, and layouts for data-app authoring. */
-export type { DatasetColumn, DatasetDefinition } from '@/src/react/bindings';
+export type {
+  DatasetColumn,
+  DatasetDeclaration as DatasetDefinition,
+} from '@/src/react/bindings';
 export { injectDataAppStyles } from '@/src/react/styles';
 export type { DataAppStylesOptions } from '@/src/react/styles';
 export { mountDataApp } from '@/src/react/mount';

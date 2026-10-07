@@ -29,7 +29,7 @@ import {
   type DimensionValue,
 } from '@/src/core/dimension';
 import type { EmptyContent } from '@/src/react/ui/presentation';
-import { defineDataContent, type DataContentState } from '@/src/react/content';
+import { ViewContent, type DataContentState } from '@/src/react/content';
 import {
   describeViewInput,
   resolveViewInput,
@@ -201,11 +201,21 @@ export function createDataHooks<Operations extends DataOperations>(
       'variables' | 'input'
     > = definition;
     const normalized = { ...metadata, variables, input, describeInput };
-    return Object.assign(
+    const view = Object.assign(
       new DeclaredView(() => useView(normalized), normalized),
       {
-        dataset<Row>(definition: DatasetDefinition<Data, Input, Row>) {
-          return bindDataset(definition);
+        dataset<Row>(
+          dataset: DatasetDefinition<
+            Data,
+            Input,
+            Row,
+            Parameters<Context['evidence']>[0]
+          >
+        ) {
+          return bindDataset({
+            ...dataset,
+            evidence: definition.dataContext.evidence(dataset.evidence),
+          });
         },
         metric(
           metric: Parameters<Context['metric']>[0],
@@ -227,13 +237,12 @@ export function createDataHooks<Operations extends DataOperations>(
               InputOf<Operations[Name]>
             >
           ) => ReactNode
-        ) {
-          return defineDataContent(render, {
-            describeInput,
-          });
+        ): ViewContent<Data, Input> {
+          return new ViewContent(view, render, describeInput);
         },
       }
     );
+    return view;
   }
 
   /** One time declaration owns the URL picker, operation input, and displayed-period label.

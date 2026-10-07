@@ -82,7 +82,7 @@ const alphaDataset = alpha.dataset({
     count: { value: row => row.count },
     version: { value: row => row.version },
   },
-  evidence: context.evidence({ id: 'alpha-data', queryNames: ['alpha'] }),
+  evidence: { id: 'alpha-data', queryNames: ['alpha'] },
 });
 const alphaContent = alpha.content(result => (
   <>
@@ -120,7 +120,7 @@ const betaDataset = beta.dataset({
   select: data => [data],
   rowKey: () => 'beta',
   columns: { count: { value: row => row.count } },
-  evidence: betaContext.evidence({ id: 'beta', glossaryIds: ['betaCount'] }),
+  evidence: { id: 'beta', glossaryIds: ['betaCount'] },
 });
 const betaContent = beta.content(result => (
   <TextWidget dataset={betaDataset} source={result}>
@@ -158,8 +158,8 @@ export function DeclaredApp() {
       <button onClick={() => resolve('alpha', 2)}>Resolve alpha 2</button>
       <button onClick={() => resolve('beta', 1)}>Resolve beta</button>
       <button onClick={() => setShown(true)}>Show primary</button>
-      {shown && <DataSection view={alpha} {...alphaContent} />}
-      <DataSection view={beta} {...betaContent} />
+      {shown && <DataSection content={alphaContent} />}
+      <DataSection content={betaContent} />
     </DataApp>
   );
 }

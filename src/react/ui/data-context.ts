@@ -28,8 +28,19 @@ export type MetricDeclaration = {
   favorableDirection?: 'up' | 'down';
   queryNames?: readonly string[];
 };
+export type EvidenceDeclaration = { id: string } & (
+  | {
+      glossaryIds: readonly [string, ...string[]];
+      queryNames?: readonly string[];
+    }
+  | {
+      queryNames: readonly [string, ...string[]];
+      glossaryIds?: readonly string[];
+    }
+);
 export type AuthoringDataContext = DataContext & {
   metric(definition: MetricDeclaration): MetricDefinition;
+  evidence(definition: EvidenceDeclaration): WidgetEvidence;
 };
 
 function evidenceFor<

@@ -66,18 +66,18 @@ const orderDataContext = createDataContext(queryNames)({
     },
   },
 });
-const ordersPerDayEvidence = orderDataContext.evidence({
+const ordersPerDayEvidence = {
   id: 'orders-per-day',
   glossaryIds: ['orders'],
-});
-const orderValueEvidence = orderDataContext.evidence({
+} as const;
+const orderValueEvidence = {
   id: 'order-values',
   glossaryIds: ['orderValue'],
-});
-const revenueEvidence = orderDataContext.evidence({
+} as const;
+const revenueEvidence = {
   id: 'revenue',
   glossaryIds: ['revenue', 'orders'],
-});
+} as const;
 const { defineDataView } = createDataHooks(createDataClient({ operations }));
 const orderView = defineDataView({
   dataContext: orderDataContext,
@@ -326,7 +326,7 @@ function App() {
       datasets={[countryDataset, dayDataset, valueDataset]}
       story={presentOrders}
     >
-      <DataSection view={orderView} {...orderContent} />
+      <DataSection content={orderContent} />
     </DataApp>
   );
 }

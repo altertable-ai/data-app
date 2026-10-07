@@ -23,7 +23,8 @@ Use [layout](layout.md) for `<Stack>`, `<Grid>`, and responsive `<GridItem>` spa
 
 ## Declare datasets and metrics
 
-Bind reusable selections to the view. A dataset's columns supply both formatted
+Bind reusable selections to the view. Declare evidence references directly;
+the view validates them against its own context. A dataset's columns supply both formatted
 table cells and raw CSV values. Widgets derive their readings, evidence, and empty fallback from the binding.
 
 ```tsx
@@ -31,7 +32,7 @@ const countries = activityView.dataset({
   name: 'Countries',
   select: data => data.countries,
   rowKey: row => row.country,
-  evidence: countryEvidence,
+  evidence: { id: 'countries', glossaryIds: ['identities'] },
   columns: {
     country: { value: row => row.country },
     count: { value: row => row.count, format: { kind: 'count' } },
