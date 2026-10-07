@@ -25,9 +25,6 @@
   background: var(--atbl-surface);
   transition: border-color var(--atbl-duration-fast) var(--atbl-ease-standard);
 }
-.altertable-date-range .react-aria-Group[data-hovered] {
-  border-color: var(--atbl-control-hover-border);
-}
 .altertable-variable-bar .altertable-date-range .react-aria-Group {
   box-shadow: var(--atbl-shadow-surface);
 }
@@ -83,7 +80,6 @@
 }
 .altertable-date-range .react-aria-Group .react-aria-Button[data-hovered],
 .altertable-date-range .react-aria-Group .react-aria-Button[data-pressed] {
-  background: var(--atbl-subtle);
   color: var(--atbl-text);
 }
 .altertable-date-range .altertable-date-range-reset {
@@ -192,13 +188,8 @@
   line-height: 1.25;
   font: inherit;
 }
-.altertable-date-range-popover .altertable-date-range-preset[data-hovered] {
-  background: var(--atbl-subtle);
-}
 .altertable-date-range-popover
   .altertable-date-range-preset[aria-current='true'] {
-  background: var(--atbl-accent-subtle);
-  color: var(--atbl-accent);
   font-weight: 650;
 }
 .altertable-date-range-footer {
@@ -261,10 +252,6 @@
   color: inherit;
   font: inherit;
   outline: none;
-}
-.altertable-date-range-popover
-  .react-aria-Button:not(.altertable-date-range-preset)[data-hovered] {
-  background: var(--atbl-subtle);
 }
 .altertable-date-range-popover .altertable-calendar-select:first-of-type {
   flex: 1;
@@ -378,10 +365,6 @@
 }
 .altertable-calendar-select-popover .react-aria-ListBoxItem[data-selected] {
   font-weight: 650;
-}
-.altertable-calendar-select-popover .react-aria-ListBoxItem[data-focused],
-.altertable-calendar-select-popover .react-aria-ListBoxItem[data-hovered] {
-  background: var(--atbl-subtle);
 }
 @media (max-width: 620px) {
   .altertable-date-range-popover {

@@ -112,10 +112,6 @@
 .altertable-combobox-option-content {
   min-width: 0;
 }
-.altertable-combobox-popover .react-aria-ListBoxItem[data-focused],
-.altertable-combobox-popover .react-aria-ListBoxItem[data-hovered] {
-  background: var(--atbl-subtle);
-}
 .altertable-combobox-empty {
   padding: 12px 10px;
   color: var(--atbl-muted);

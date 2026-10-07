@@ -40,9 +40,11 @@
   color: var(--atbl-text);
 }
 .altertable-theme-selector label:has(input:checked) {
+  box-shadow: var(--atbl-shadow-control);
+}
+.altertable-theme-selector label:has(input:checked:disabled) {
   background: var(--atbl-surface);
   color: var(--atbl-text);
-  box-shadow: var(--atbl-shadow-control);
 }
 
 .altertable-theme-selector label svg {

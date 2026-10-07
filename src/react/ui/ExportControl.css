@@ -24,9 +24,6 @@
   font-size: var(--atbl-type-label-size);
   outline: none;
 }
-.altertable-export-popover [role='option']:is([data-focused], [data-hovered]) {
-  background: var(--atbl-subtle);
-}
 
 .altertable-export-format {
   flex: none;
