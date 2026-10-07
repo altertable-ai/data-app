@@ -42,7 +42,9 @@ test('embedded toolbar exports displayed results through its host during updates
   release();
   gate = Promise.resolve();
   await expect(
-    app.getByText('Alpha: 3', { exact: true }).filter({ visible: true })
+    app
+      .getByRole('row', { name: 'Alpha 3', exact: true })
+      .filter({ visible: true })
   ).toBeVisible();
   await expect(page.locator('iframe')).toHaveAttribute(
     'sandbox',
@@ -61,7 +63,7 @@ test('embedded toolbar exports displayed results through its host during updates
     .locator('iframe')
     .screenshot({ path: test.info().outputPath('export-toolbar.png') });
   await expectExport(
-    'sample-counts-all.csv',
+    'sample-counts-all-groups.csv',
     '\uFEFFGroup,Sample count\r\nAlpha,3\r\nBeta,0\r\n'
   );
   gate = new Promise<void>(resolve => {
@@ -72,12 +74,14 @@ test('embedded toolbar exports displayed results through its host during updates
     app.getByText('Showing all groups while loading group Beta…')
   ).toBeVisible();
   await expectExport(
-    'sample-counts-all.csv',
+    'sample-counts-all-groups.csv',
     '\uFEFFGroup,Sample count\r\nAlpha,3\r\nBeta,0\r\n'
   );
   release();
   gate = Promise.resolve();
-  await expect(app.getByText('Showing Beta', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Showing group Beta', { exact: true })
+  ).toBeVisible();
   fail = true;
   await app
     .getByRole('searchbox', { name: 'Group', exact: true })
@@ -88,7 +92,7 @@ test('embedded toolbar exports displayed results through its host during updates
     )
   ).toBeVisible();
   await expectExport(
-    'sample-counts-Beta.csv',
+    'sample-counts-group-beta.csv',
     '\uFEFFGroup,Sample count\r\nBeta,0\r\n'
   );
   fail = false;
@@ -123,7 +127,9 @@ test('embedded export failures stay visible and allow retry', async ({
     .click();
   const downloaded = page.waitForEvent('download');
   await app.getByRole('button', { name: 'Try again', exact: true }).click();
-  expect((await downloaded).suggestedFilename()).toBe('sample-counts-all.csv');
+  expect((await downloaded).suggestedFilename()).toBe(
+    'sample-counts-all-groups.csv'
+  );
   await expect(app.getByRole('alert')).toHaveCount(0);
   await expect(button).toBeEnabled();
 });
@@ -136,7 +142,7 @@ for (const embedded of [false, true])
     const app = embedded ? page.frameLocator('iframe') : page;
     const button = app.getByRole('button', { name: 'Export', exact: true });
     await button.focus();
-    await expect(app.getByRole('tooltip')).toHaveText('Export data');
+    await expect(app.getByRole('tooltip')).toHaveText('Export data…');
     await button.press('ArrowDown');
     await expect(
       app.getByRole('option', { name: 'Export Counts CSV', exact: true })

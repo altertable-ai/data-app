@@ -20,13 +20,30 @@ export type DataContext = {
   queryNames?: Readonly<Record<string, string>>;
 };
 
-export function defineDataContext<const Context extends DataContext>(
-  context: Context
-): Context {
-  return context;
-}
+export type MetricDeclaration = {
+  id: string;
+  glossaryId: string;
+  label?: string;
+  format: MetricFormat;
+  favorableDirection?: 'up' | 'down';
+  queryNames?: readonly string[];
+};
+export type EvidenceDeclaration = { id: string } & (
+  | {
+      glossaryIds: readonly [string, ...string[]];
+      queryNames?: readonly string[];
+    }
+  | {
+      queryNames: readonly [string, ...string[]];
+      glossaryIds?: readonly string[];
+    }
+);
+export type AuthoringDataContext = DataContext & {
+  metric(definition: MetricDeclaration): MetricDefinition;
+  evidence(definition: EvidenceDeclaration): WidgetEvidence;
+};
 
-export function evidenceFor<
+function evidenceFor<
   const Context extends DataContext,
   const Names extends Record<string, string> = Record<string, string>,
 >(context: Context, names?: Names) {

@@ -168,3 +168,118 @@ test('facet choices are fetched and displayed separately for each client', async
     page.getByRole('option', { name: 'A category', exact: true })
   ).toHaveCount(0);
 });
+
+test('declared primary sections reuse retained data when mounting during refresh and independent inspection uses its own queries', async ({
+  page,
+}) => {
+  await page.goto('/hooks-app?declared');
+  await expect(page.locator('body')).toHaveAttribute(
+    'data-alpha-requests',
+    '1'
+  );
+  await expect(page.locator('body')).toHaveAttribute('data-beta-requests', '1');
+  await page
+    .getByRole('button', { name: 'Resolve alpha 1', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Resolve beta', exact: true }).click();
+  await expect(
+    page.getByTestId('secondary').filter({ visible: true })
+  ).toHaveText('1');
+  await page.getByRole('searchbox', { name: 'Version', exact: true }).fill('2');
+  await expect(page.locator('body')).toHaveAttribute(
+    'data-alpha-requests',
+    '2'
+  );
+  await page.getByRole('button', { name: 'Show primary', exact: true }).click();
+  await expect(
+    page.getByTestId('primary').filter({ visible: true })
+  ).toHaveText('1 for 1');
+  await expect(page.locator('body')).toHaveAttribute(
+    'data-alpha-requests',
+    '2'
+  );
+  await page.getByRole('button', { name: 'Explore Beta', exact: true }).click();
+  const inspection = page.getByRole('dialog');
+  await expect(inspection).toContainText('Independent beta');
+  await expect(inspection).toContainText(
+    'Only the beta section owns this glossary entry.'
+  );
+  await inspection.getByRole('tab', { name: 'Queries', exact: true }).click();
+  await expect(inspection).toContainText('SELECT beta');
+  await expect(inspection).not.toContainText('SELECT alpha');
+  await page.keyboard.press('Escape');
+  await page
+    .getByRole('button', { name: 'Resolve alpha 2', exact: true })
+    .click();
+  await expect(
+    page.getByTestId('primary').filter({ visible: true })
+  ).toHaveText('2 for 2');
+});
+
+test('published dataset visualizations derive loading, share alternate views with inspection, and retain displayed rows', async ({
+  page,
+}) => {
+  await page.goto('/hooks-app?declared');
+  await page.getByRole('button', { name: 'Show primary', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Alpha visualization', exact: true })
+  ).toBeVisible();
+  await expect(page.getByTestId('primary-visual')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', {
+      name: 'Explore Alpha visualization',
+      exact: true,
+    })
+  ).toHaveCount(0);
+  await page
+    .getByRole('button', { name: 'Resolve alpha 1', exact: true })
+    .click();
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('1');
+  await page.getByRole('tab', { name: 'Doubled', exact: true }).click();
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('2');
+  await page.getByRole('searchbox', { name: 'Version', exact: true }).fill('2');
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('2');
+  await page
+    .getByRole('button', { name: 'Explore Alpha visualization', exact: true })
+    .click();
+  const sheet = page.getByRole('dialog');
+  await expect(sheet.getByTestId('primary-visual')).toHaveText('2');
+  await sheet.getByRole('tab', { name: 'Count', exact: true }).click();
+  await expect(sheet.getByTestId('primary-visual')).toHaveText('1');
+  await sheet.getByRole('tab', { name: 'Queries', exact: true }).click();
+  await expect(sheet).toContainText('SELECT alpha');
+  await expect(sheet).not.toContainText('SELECT beta');
+  await page.keyboard.press('Escape');
+  await expect(sheet).not.toBeVisible();
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('1');
+  await page
+    .getByRole('button', { name: 'Resolve alpha 2', exact: true })
+    .click();
+  await expect(
+    page.getByTestId('primary-visual').filter({ visible: true })
+  ).toHaveText('2');
+});
+
+test('the standard toolbar has one activity label during loading and refresh', async ({
+  page,
+}) => {
+  await page.goto('/hooks-app?declared');
+  const progress = page.locator('.altertable-refresh-control');
+  await expect(progress).toHaveAttribute('data-refreshing', '');
+  await expect(page.getByText('Loading data', { exact: true })).toHaveCount(1);
+  await page
+    .getByRole('button', { name: 'Resolve alpha 1', exact: true })
+    .click();
+  await expect(page.getByText('Loading data', { exact: true })).toHaveCount(0);
+  await page.getByRole('searchbox', { name: 'Version', exact: true }).fill('2');
+  await expect(progress).toHaveAttribute('data-refreshing', '');
+  await expect(page.getByText('Updating data', { exact: true })).toHaveCount(1);
+});

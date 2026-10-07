@@ -55,7 +55,10 @@
 
 /* Inspection lives on the heading; the toolbar is reserved for actions and status. */
 .altertable-button.altertable-widget-heading-trigger {
-  display: inline;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
   min-height: 0;
   padding: 0;
   border: 0;
@@ -67,10 +70,17 @@
   letter-spacing: inherit;
   text-align: left;
 }
+.altertable-button.altertable-widget-heading-trigger:hover:not(:disabled),
+.altertable-button.altertable-widget-heading-trigger:focus-visible,
+.altertable-button.altertable-widget-heading-trigger[data-open='true'] {
+  background: transparent;
+  color: var(--at-text, #202124);
+}
 .altertable-widget-heading-trigger > svg {
   display: inline-block;
-  margin-left: 4px;
-  vertical-align: -2px;
+  flex: none;
+  align-self: center;
+  translate: 0 1px;
   opacity: 0;
   transition: opacity 120ms ease;
 }

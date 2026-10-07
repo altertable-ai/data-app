@@ -1,3 +1,5 @@
+import { createDataContext as registerContext } from '@/src/react/ui/data-context';
+import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 import {
   type DataOperation,
   type DateRangeRequest,
@@ -12,14 +14,20 @@ import {
   createDataHooks,
   dateRangeVariable,
   textVariable,
-  type MetricWidgetProps,
-  type DataSectionProps,
-  type DataAppProps,
   createDataContext,
-  MetricWidget,
-  WidgetViewTabs,
-  type TextWidgetProps,
 } from '@altertable/data-app/react';
+import {
+  type MetricWidgetProps,
+  MetricWidget,
+  type TextWidgetProps,
+} from '@altertable/data-app/react/ui';
+import { type DataSectionProps } from '@/src/react/ui/DataSectionBoundary';
+import { type DataAppProps } from '@/src/react/ui/DataAppFrame';
+
+const authoringContext = registerContext({ numbers: 'numbers' })({
+  description: 'Fixture context',
+  glossary: {},
+});
 
 const { defineDataView } = createDataHooks<{
   activity: DataOperation<DateRangeRequest, { count: number }>;
@@ -30,6 +38,7 @@ const period = dateRangeVariable({
   contract: defineDateRangeContract({ maxRangeDays: 30, timeZone: 'UTC' }),
 });
 defineDataView({
+  dataContext: authoringContext,
   operation: 'activity',
   variables: { period },
   input({ period }) {
@@ -44,9 +53,10 @@ defineDataView({
   isEmpty(data) {
     return data.count === 0;
   },
-  empty: { title: 'No activity' },
+  emptyFallback: { title: 'No activity' },
 });
 defineDataView({
+  dataContext: authoringContext,
   operation: 'activity',
   variables: { period },
   // @ts-expect-error Operation input must match the selected operation.
@@ -57,10 +67,11 @@ defineDataView({
   isEmpty() {
     return false;
   },
-  empty: { title: 'Empty' },
+  emptyFallback: { title: 'Empty' },
 });
 // @ts-expect-error Without a date variable, the input needs an authored description.
 defineDataView({
+  dataContext: authoringContext,
   operation: 'activity',
   variables: { search: textVariable({ key: 'search' }) },
   input() {
@@ -72,13 +83,14 @@ defineDataView({
   isEmpty(data) {
     return data.count === 0;
   },
-  empty: { title: 'No activity' },
+  emptyFallback: { title: 'No activity' },
 });
 // @ts-expect-error Numbers require a format.
 const metric: MetricWidgetProps = { label: 'Orders', value: 123 };
-// @ts-expect-error Secondary requests require an empty state.
+// @ts-expect-error A custom result needs an explicit empty fallback.
 const section: DataSectionProps<number> = {
   result: { view: { kind: 'loading' }, refetch() {} },
+  loadingFallback: null,
   children() {
     return null;
   },
@@ -95,7 +107,6 @@ const app: DataAppProps<number> = {
     scope: { organization: 'a', environment: 'b' },
   },
   dataContext: { description: 'Test', glossary: {} },
-  aboutEmpty: { glossary: { title: 'Empty' }, queries: { title: 'Empty' } },
   request: { view: { kind: 'loading' }, refetch() {} },
   children: null,
 };
@@ -162,7 +173,7 @@ const tabs = [
     label: 'Actions',
     content: null,
     isEmpty: true,
-    empty: { title: 'Empty' },
+    emptyFallback: { title: 'Empty' },
   },
 ] as const;
 const invalidTabs = (
@@ -193,14 +204,16 @@ const time = {
 } as const;
 // @ts-expect-error A nested input requires an explicit mapper rather than an implicit cast.
 defineTimeView({
+  dataContext: authoringContext,
   operation: 'nested',
   time,
   isEmpty() {
     return false;
   },
-  empty: { title: 'Empty' },
+  emptyFallback: { title: 'Empty' },
 });
 defineTimeView({
+  dataContext: authoringContext,
   operation: 'nested',
   time,
   input({ period }) {
@@ -214,16 +227,17 @@ defineTimeView({
   isEmpty() {
     return false;
   },
-  empty: { title: 'Empty' },
+  emptyFallback: { title: 'Empty' },
 });
 defineTimeView({
+  dataContext: authoringContext,
   operation: 'filtered',
   time,
   variables: { search: textVariable({ key: 'search' }) },
   isEmpty() {
     return false;
   },
-  empty: { title: 'Empty' },
+  emptyFallback: { title: 'Empty' },
 });
 
 // @ts-expect-error A dimension needs exactly one option source.
@@ -300,3 +314,147 @@ void [
   invalidChildren,
   invalidLoadingProp,
 ];
+
+// Omitted controls derive an empty operation input.
+const defaults = createDataHooks<{
+  empty: DataOperation<Record<string, never>, number>;
+  search: DataOperation<{ search: string }, number>;
+  nested: DataOperation<{ filters: { search: string } }, number>;
+  required: DataOperation<{ search: string; limit: number }, number>;
+  primitive: DataOperation<string, number>;
+  optional: DataOperation<{ search: string; page?: number }, number>;
+}>(createDataClient());
+const base = {
+  describeInput: () => 'results',
+  isEmpty: () => false,
+  emptyFallback: { title: 'No data' },
+};
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'empty',
+});
+const searchView = defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'search',
+  variables: { search: textVariable({ key: 'search' }) },
+});
+// @ts-expect-error Required operation fields cannot be invented from empty variables.
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'required',
+});
+// @ts-expect-error A nested input requires an explicit mapping.
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'nested',
+  variables: { search: textVariable({ key: 'search' }) },
+});
+// @ts-expect-error An additional required field needs an explicit mapping.
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'required',
+  variables: { search: textVariable({ key: 'search' }) },
+});
+// @ts-expect-error An object of variables cannot derive a primitive input.
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'primitive',
+});
+const inheritedSection: DataSectionProps<number> = {
+  result: {
+    view: { kind: 'empty', input: {} },
+    refetch() {},
+    emptyFallback: { title: 'No results' },
+  },
+  loadingFallback: null,
+  children: value => String(value),
+};
+void [searchView, inheritedSection];
+
+// @ts-expect-error Optional extra input fields still require an explicit mapping.
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'optional',
+  variables: { search: textVariable({ key: 'search' }) },
+});
+defaults.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'optional',
+  variables: { search: textVariable({ key: 'search' }) },
+  input: values => values,
+});
+
+const evidence = { id: 'numbers', queryNames: ['numbers'] as const };
+const boundDataset = searchView.dataset({
+  select: data => [data],
+  name: 'Numbers',
+  rowKey: row => row,
+  columns: { value: { value: row => row, format: { kind: 'count' } } },
+  evidence,
+});
+void boundDataset;
+// @ts-expect-error CSV construction is owned by DataApp datasets.
+void searchView.csvExport;
+searchView.dataset<number>({
+  select: data => [data],
+  name: 'Bad',
+  rowKey: row => row,
+  // @ts-expect-error Raw CSV values must be scalar cells.
+  columns: { bad: { value: (row: number) => ({ row }) } },
+  evidence,
+});
+searchView.dataset<string>({
+  select: () => ['text'],
+  name: 'Bad format',
+  rowKey: row => row,
+  // @ts-expect-error Numeric formatting requires a numeric accessor.
+  columns: { bad: { value: row => row, format: { kind: 'count' } } },
+  evidence,
+});
+
+const rowHooks = createDataHooks<{
+  rows: DataOperation<
+    Record<string, never>,
+    readonly { id: string; count: number | null }[]
+  >;
+}>(createDataClient());
+const rowView = rowHooks.defineDataView({
+  dataContext: authoringContext,
+  ...base,
+  operation: 'rows',
+});
+const projectedRows = rowView.dataset({
+  name: 'Projection',
+  select: rows => rows.map(row => ({ key: row.id, total: row.count })),
+  rowKey: row => row.key,
+  columns: {
+    key: { value: row => row.key },
+    total: { value: row => row.total, format: { kind: 'count' } },
+  },
+  evidence,
+});
+const projectedSnapshot = {
+  state: 'ready' as const,
+  input: {},
+  data: [{ id: 'a', count: 0 }],
+};
+const projectedId: string = projectedRows.read(projectedSnapshot).value[0]!.key;
+// @ts-expect-error Projected fields retain concrete types without annotations.
+const wrongProjectedId: number =
+  projectedRows.read(projectedSnapshot).value[0]!.key;
+// @ts-expect-error Dataset selectors are explicit for every operation shape.
+rowView.dataset({
+  name: 'No selector',
+  rowKey: () => 'row',
+  columns: {},
+  evidence,
+});
+void [projectedId, wrongProjectedId];

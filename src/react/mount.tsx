@@ -1,4 +1,5 @@
 import { useState, type ComponentType, type ReactNode } from 'react';
+import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
 import { getDataAppTransport } from '@/src/client/iframe';
 import { getDataAppNavigation } from '@/src/client/navigation';
 import { createRoot } from 'react-dom/client';
@@ -46,5 +47,9 @@ export function DataAppProvider({ children }: { children: ReactNode }) {
       })
   );
 
-  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={client}>
+      <InspectionProvider>{children}</InspectionProvider>
+    </QueryClientProvider>
+  );
 }

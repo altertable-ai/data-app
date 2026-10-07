@@ -1,20 +1,20 @@
 import { type ReactNode } from 'react';
+import { Comparison } from '@altertable/data-app/react';
 import {
-  defineChartItems,
-  Breakdown,
-  Comparison,
-  DataTable,
-  Grid,
-  GridItem,
-  Ranking,
   BarChart,
   LineChart,
   AreaChart,
   PieChart,
   ScatterChart,
+} from '@altertable/data-app/react/ui';
+import { DataTable, VisualizationWidget } from '@altertable/data-app/react/ui';
+import {
+  Breakdown,
+  Grid,
+  GridItem,
+  Ranking,
   Stack,
   TextContent,
-  VisualizationWidget,
 } from '@altertable/data-app/react';
 
 const segments = [
@@ -28,15 +28,15 @@ const days = [
   { id: 'wed', label: 'Wednesday', value: 16 },
 ];
 
-const ordersByChannel = defineChartItems('bar', [
+const ordersByChannel = [
   { id: 'web', label: 'Web', value: 84 },
   { id: 'app', label: 'App', value: 112 },
   { id: 'store', label: 'Store', value: 67 },
   { id: 'email', label: 'Email', value: 38 },
   { id: 'social', label: 'Social', value: 52 },
   { id: 'partner', label: 'Partner', value: 29 },
-]);
-const dailyResponseTime = defineChartItems('line', [
+];
+const dailyResponseTime = [
   { id: 'mon', label: 'Mon', value: 180 },
   { id: 'tue', label: 'Tue', value: 165 },
   { id: 'wed', label: 'Wed', value: 210 },
@@ -44,24 +44,24 @@ const dailyResponseTime = defineChartItems('line', [
   { id: 'fri', label: 'Fri', value: 155 },
   { id: 'sat', label: 'Sat', value: 142 },
   { id: 'sun', label: 'Sun', value: 150 },
-]);
-const monthlyStorage = defineChartItems('area', [
+];
+const monthlyStorage = [
   { id: 'jan', label: 'Jan', value: 120 },
   { id: 'feb', label: 'Feb', value: 155 },
   { id: 'mar', label: 'Mar', value: 148 },
   { id: 'apr', label: 'Apr', value: 205 },
   { id: 'may', label: 'May', value: 260 },
   { id: 'jun', label: 'Jun', value: 310 },
-]);
+];
 
-const trafficSources = defineChartItems('pie', [
+const trafficSources = [
   { id: 'direct', label: 'Direct', value: 4000 },
   { id: 'organic', label: 'Organic search', value: 3200 },
   { id: 'referral', label: 'Referral', value: 1800 },
   { id: 'social', label: 'Social', value: 1000 },
-]);
+];
 
-const workspaces = defineChartItems('scatter', [
+const workspaces = [
   { id: 'atlas', label: 'Atlas', x: 120, y: 145 },
   { id: 'birch', label: 'Birch', x: 240, y: 160 },
   { id: 'cedar', label: 'Cedar', x: 310, y: 130 },
@@ -74,7 +74,7 @@ const workspaces = defineChartItems('scatter', [
   { id: 'juniper', label: 'Juniper', x: 920, y: 310 },
   { id: 'kite', label: 'Kite', x: 400, y: 350 },
   { id: 'linden', label: 'Linden', x: 1050, y: 280 },
-]);
+];
 
 function Example({
   name,

@@ -3,7 +3,7 @@ import { invariant } from '@/src/core/invariant';
 /** Ordered category or time-series sample. IDs are unique and nonblank; values are finite. */
 export type ChartItem = { id: string; label: string; value: number };
 export type ValueChartProps = {
-  /** Ordered samples; use defineChartItems() to check authored data before rendering. */
+  /** Ordered samples; the chart validates IDs and values when rendering. */
   items: readonly ChartItem[];
   unit: string;
   ariaLabel: string;
@@ -17,59 +17,11 @@ export type ScatterChartItem = {
   x: number;
   y: number;
 };
-export type ChartKind = 'bar' | 'line' | 'area' | 'pie' | 'scatter';
+type ChartKind = 'bar' | 'line' | 'area' | 'pie' | 'scatter';
 type ItemFor<Kind extends ChartKind> = Kind extends 'scatter'
   ? ScatterChartItem
   : ChartItem;
-type Whitespace = ' ' | '\t' | '\n' | '\r';
-type Trim<Value extends string> = Value extends `${Whitespace}${infer Rest}`
-  ? Trim<Rest>
-  : Value extends `${infer Rest}${Whitespace}`
-    ? Trim<Rest>
-    : Value;
-type IsUnion<Value, Whole = Value> = Value extends Whole
-  ? [Whole] extends [Value]
-    ? false
-    : true
-  : never;
-type Invalid<Message extends string> = { readonly chartDataError: Message };
-type CheckItems<
-  Kind extends ChartKind,
-  Items extends readonly { id: string }[],
-  Seen extends string = never,
-> = Items extends readonly [
-  infer First extends { id: string },
-  ...infer Rest extends readonly { id: string }[],
-]
-  ? string extends First['id']
-    ? CheckItems<Kind, Rest, Seen>
-    : IsUnion<First['id']> extends true
-      ? CheckItems<Kind, Rest, Seen>
-      : Trim<First['id']> extends ''
-        ? Invalid<'Chart IDs must not be blank'>
-        : First['id'] extends Seen
-          ? Invalid<`Duplicate chart ID: ${First['id']}`>
-          : Kind extends 'bar' | 'pie'
-            ? First extends { value: infer Value extends number }
-              ? `${Value}` extends `-${string}`
-                ? Invalid<'Bar and pie values must be nonnegative'>
-                : CheckItems<Kind, Rest, Seen | First['id']>
-              : never
-            : CheckItems<Kind, Rest, Seen | First['id']>
-  : unknown;
-
-/** Prepare ordered data before rendering. Literal tuples check IDs and negative bar/pie
- * values at compile time. Dynamic arrays, non-finite numbers, and computed IDs are checked
- * at runtime. Returns the original array; no sorting, deduplication, or mutation. */
-export function defineChartItems<
-  Kind extends ChartKind,
-  const Items extends readonly ItemFor<Kind>[],
->(kind: Kind, items: Items & CheckItems<Kind, Items>): Items {
-  validateChartItems(kind, items);
-  return items;
-}
-
-/** Direct component callers receive the same runtime checks as prepared data. */
+/** Validate the data consumed by every chart. */
 export function validateChartItems<Kind extends ChartKind>(
   kind: Kind,
   items: readonly ItemFor<Kind>[]

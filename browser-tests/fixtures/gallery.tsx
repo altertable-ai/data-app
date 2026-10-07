@@ -10,38 +10,40 @@ import { getDataAppNavigation } from '@altertable/data-app/client';
 import {
   DataApp,
   HelpPopover,
-  PeriodSummary,
-  VariableBar,
-  Breakdown,
-  Ranking,
   MetricWidget,
-  Button,
   Checkbox,
   Combobox,
   DataWidget,
-  Grid,
   SearchField,
-  BarChart,
-  Stack,
   TableWidget,
-  Tooltip,
   VisualizationWidget,
   TextWidget,
-  TextContent,
-  defineDataContent,
-  DataBoundary,
-  resolveDataView,
   Tabs,
   Tab,
   TabList,
   TabPanels,
   TabPanel,
   useViewTab,
-  writeSearch,
-  type WidgetEvidence,
-  injectDataAppStyles,
-  mountDataApp,
+} from '@altertable/data-app/react/ui';
+import { injectDataAppStyles } from '@altertable/data-app/react/ui';
+import {
+  PeriodSummary,
+  Breakdown,
+  Ranking,
+  Button,
+  Grid,
+  Stack,
+  Tooltip,
+  TextContent,
 } from '@altertable/data-app/react';
+import { VariableBar } from '@/src/react/ui/VariableBar';
+import { type WidgetEvidence, mountDataApp } from '@altertable/data-app/react';
+import { BarChart } from '@altertable/data-app/react/ui';
+import { bindDataset } from '@/src/react/bindings';
+import { defineDataContent } from '@/src/react/content';
+import { DataBoundary } from '@/src/react/ui/DataBoundary';
+import { resolveDataView } from '@/src/core/data-view';
+import { writeSearch } from '@/src/react/ui/search';
 
 const options = [
   { id: 'http', label: 'HTTP' },
@@ -132,17 +134,26 @@ const queries = [
 ];
 const views = galleryCategories.map(category => category.id);
 
+const narrativeRows = bindDataset({
+  name: 'Activity for this selection',
+  select: (data: { count: number }, input: { region: string }) => [
+    { count: data.count, region: input.region },
+  ],
+  rowKey: row => row.region,
+  columns: {
+    count: { value: row => row.count },
+    region: { value: row => row.region },
+  },
+  evidence: { id: 'text-activity', queryNames: ['gallery-trend'] },
+});
 const narrative = defineDataContent<{ count: number }, { region: string }>(
   result => (
     <TextWidget
       title="Activity for this selection"
       evidence={{ id: 'text-activity', queryNames: ['gallery-trend'] }}
-      reading={result.select((data, input) => ({
-        count: data.count,
-        region: input.region,
-      }))}
+      reading={narrativeRows.read(result)}
     >
-      {({ count, region }) => (
+      {([{ count, region }]) => (
         <p>
           {count === 0
             ? `No activity was recorded in ${region}.`
@@ -428,7 +439,7 @@ function Overview() {
             reading={{ loading: false, value: bars }}
             evidence={evidence}
             isEmpty={items => items.length === 0}
-            empty={{ title: 'No activity' }}
+            emptyFallback={{ title: 'No activity' }}
             viewLabel="Activity presentation"
             views={[
               {
@@ -476,7 +487,7 @@ function Overview() {
               attributes: [{ name: 'name', getter: row => row.name }],
             }}
             evidence={recordsEvidence}
-            empty={{ title: 'No matching records' }}
+            emptyFallback={{ title: 'No matching records' }}
           />
           <DataWidget title="Activity by source" evidence={recordsEvidence}>
             <Breakdown

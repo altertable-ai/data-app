@@ -93,8 +93,8 @@ are mutually exclusive.
 
 ## Loading an embedded app
 
-Use `<DataAppSkeleton>` from `/react` while the host builds or starts an app.
-Call `injectDataAppShellStyles()` from `/react` before rendering the placeholder.
+Use `<DataAppSkeleton>` from `/react/ui` while the host builds or starts an app.
+Call `injectDataAppShellStyles()` from `/react/ui` before rendering the placeholder.
 The host owns when to show it and supplies any surrounding header or footer.
 `/react/embed` itself remains independent of UI components and styles.
 

@@ -98,3 +98,14 @@ composed apps, variants, and request states.
 Use Conventional Commits and describe behavior changes and verification in PRs.
 Flag breaking API changes. Release Please owns `CHANGELOG.md`; see
 [Releasing](docs/releasing.md) for release setup and recovery.
+
+## Focused public API
+
+Keep exports and options focused on concrete app needs. Prefer defaults and
+derivation from existing state over new knobs; keep implementation details private.
+
+For public changes, update the relevant guide, migrate callers and starters,
+and verify published usage. Flag breaking changes in commits and PRs.
+
+Docs help agents generate data apps: show current usage and focused examples.
+Keep package architecture and contributor rules here.

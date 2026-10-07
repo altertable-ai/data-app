@@ -1,23 +1,29 @@
+import { bindDataset } from '@/src/react/bindings';
+import { defineDataContent } from '@/src/react/content';
+import { defineAppVariables } from '@/src/react/ui/variables';
+import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
+import { calendarMetricComparison } from '@/src/react/ui/metric-comparison';
 import { expect, test } from 'bun:test';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { renderToStaticMarkup as renderMarkup } from 'react-dom/server';
+import type { ReactNode } from 'react';
+import { DataAppProvider } from '@altertable/data-app/react/ui';
 import {
   defineDateRangeContract,
   defineQueryNames,
 } from '@altertable/data-app/contract';
 import {
-  defineDataContent,
   createDataContext,
   dateRangeVariable,
-  defineAppVariables,
   textVariable,
-  ContentSkeleton,
-  WidgetViewTabs,
-  MetricWidget,
-  calendarMetricComparison,
-  TextWidget,
   TextContent,
 } from '@altertable/data-app/react';
+import { MetricWidget, TextWidget } from '@altertable/data-app/react/ui';
 import { describeViewInput, type DataViewDefinition } from '@/src/react/view';
+
+function renderToStaticMarkup(content: ReactNode) {
+  return renderMarkup(<DataAppProvider>{content}</DataAppProvider>);
+}
 
 const calendar = defineDateRangeContract({
   minDate: '2026-01-01',
@@ -56,6 +62,7 @@ test('date requests derive a comparison and reject forged or unavailable ranges'
   ).toThrow();
   const definition = {
     operation: 'activity',
+    dataContext: { description: 'Activity', glossary: {} },
     variables: { period: variable },
     input({ period }: { period: typeof request }) {
       return period;
@@ -69,7 +76,7 @@ test('date requests derive a comparison and reject forged or unavailable ranges'
     isEmpty(data: { count: number }) {
       return data.count === 0;
     },
-    empty: { title: 'No activity' },
+    emptyFallback: { title: 'No activity' },
   } satisfies DataViewDefinition<
     'activity',
     { period: typeof variable },
@@ -244,7 +251,7 @@ test('an empty widget tab renders its authored fallback', () => {
           id: 'orders',
           label: 'Orders',
           isEmpty: true,
-          empty: { title: 'No orders' },
+          emptyFallback: { title: 'No orders' },
           content: <p>Must not render</p>,
         },
       ]}
@@ -256,17 +263,27 @@ test('an empty widget tab renders its authored fallback', () => {
 
 test('narrative content binds values and scope without evaluating loading data', () => {
   let calls = 0;
+  const rows = bindDataset({
+    name: 'Activity explained',
+    select: (data: { count: number }, input: { region: string }) => {
+      calls++;
+      return [{ count: data.count, region: input.region }];
+    },
+    rowKey: row => row.region,
+    columns: {
+      count: { value: row => row.count },
+      region: { value: row => row.region },
+    },
+    evidence: { id: 'activity-explanation', queryNames: ['activity'] },
+  });
   const content = defineDataContent<{ count: number }, { region: string }>(
     result => (
       <TextWidget
         title="Activity explained"
         evidence={{ id: 'activity-explanation', queryNames: ['activity'] }}
-        reading={result.select((data, input) => {
-          calls++;
-          return { count: data.count, region: input.region };
-        })}
+        reading={rows.read(result)}
       >
-        {({ count, region }) => (
+        {([{ count, region }]) => (
           <p>
             {count === 0
               ? `No activity in ${region}`

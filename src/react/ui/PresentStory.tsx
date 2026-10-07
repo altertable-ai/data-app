@@ -15,7 +15,6 @@ import type { DataContext } from '@/src/react/ui/data-context';
 import { AppIcon } from '@/src/react/ui/icons';
 import { IconButton } from '@/src/react/ui/IconButton';
 import { GradientScroll } from '@/src/react/ui/GradientScroll';
-import { classNames } from '@/src/react/ui/classNames';
 import {
   searchParams,
   subscribeSearch,
@@ -48,11 +47,6 @@ export type PresentStoryProps = {
   scope?: ReactNode;
   dataContext: DataContext;
   theme?: ThemeController;
-  launcherProps?: Omit<ComponentPropsWithRef<'span'>, 'children'>;
-  dialogProps?: Omit<
-    ComponentPropsWithRef<'dialog'>,
-    'children' | 'aria-labelledby' | 'open'
-  >;
   headerActions?: ReactNode;
   footer?: ReactNode;
 } & Omit<ComponentPropsWithRef<'button'>, 'title'>;
@@ -80,8 +74,7 @@ const stepKeys: Record<string, (index: number, last: number) => number> = {
 
 /**
  * Uses an already loaded snapshot. Navigation is stored in `?present=1&step=`, and step
- * inspection uses `?about=`. `launcherProps` targets the outer span; `dialogProps` targets the
- * modal.
+ * inspection uses `?about=`. The presentation owns its modal structure.
  */
 export function PresentStory({
   title,
@@ -90,8 +83,6 @@ export function PresentStory({
   scope,
   dataContext,
   theme,
-  launcherProps,
-  dialogProps,
   headerActions,
   footer,
   children,
@@ -111,7 +102,6 @@ export function PresentStory({
   const contextId = useId();
   const [stepId, setStepId] = useState(steps[0]?.id);
   const triggerRef = useMergeRefs([trigger, ref]);
-  const dialogRef = useMergeRefs([dialog, dialogProps?.ref]);
   const index = Math.max(
     0,
     steps.findIndex(step => step.id === stepId)
@@ -243,13 +233,7 @@ export function PresentStory({
 
   return (
     <>
-      <span
-        {...launcherProps}
-        className={classNames(
-          'altertable-present-launch',
-          launcherProps?.className
-        )}
-      >
+      <span className="altertable-present-launch">
         <IconButton
           {...props}
           ref={triggerRef}
@@ -269,26 +253,17 @@ export function PresentStory({
         </IconButton>
       </span>
       <dialog
-        {...dialogProps}
-        ref={dialogRef}
-        className={classNames(
-          'altertable-present-dialog',
-          dialogProps?.className
-        )}
+        ref={dialog}
+        className="altertable-present-dialog"
         aria-labelledby={headlineId}
-        aria-describedby={
-          dialogProps?.['aria-describedby'] ??
-          (step?.context ? contextId : undefined)
-        }
+        aria-describedby={step?.context ? contextId : undefined}
         onClose={event => {
           if (event.target !== event.currentTarget) return;
           exitPresentationFullscreen();
           if (searchParams().get('present') === '1') writePresentation();
           trigger.current?.focus({ preventScroll: true });
-          dialogProps?.onClose?.(event);
         }}
         onKeyDown={event => {
-          dialogProps?.onKeyDown?.(event);
           if (!event.defaultPrevented) handleKeyDown(event);
         }}
       >
