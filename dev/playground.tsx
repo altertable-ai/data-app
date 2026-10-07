@@ -10,8 +10,8 @@ import {
   createDataContext,
   createDataHooks,
   DataApp,
-  type DisplayedSnapshot,
-  type CsvExport,
+  DataSection,
+  DataValue,
   Grid,
   Stack,
   TextContent,
@@ -21,6 +21,8 @@ import {
   textVariable,
   VisualizationWidget,
 } from '@altertable/data-app/react';
+import { type DataContentState } from '@/src/react/content';
+import { type DisplayedSnapshot } from '@/src/core/data-view';
 
 import {
   operations,
@@ -64,22 +66,21 @@ const orderDataContext = createDataContext(queryNames)({
     },
   },
 });
-const ordersPerDayEvidence = orderDataContext.evidence({
+const ordersPerDayEvidence = {
   id: 'orders-per-day',
   glossaryIds: ['orders'],
-});
-const orderValueEvidence = orderDataContext.evidence({
+} as const;
+const orderValueEvidence = {
   id: 'order-values',
   glossaryIds: ['orderValue'],
-});
-const revenueEvidence = orderDataContext.evidence({
+} as const;
+const revenueEvidence = {
   id: 'revenue',
   glossaryIds: ['revenue', 'orders'],
-});
-const { defineDataView, useView } = createDataHooks(
-  createDataClient({ operations })
-);
+} as const;
+const { defineDataView } = createDataHooks(createDataClient({ operations }));
 const orderView = defineDataView({
+  dataContext: orderDataContext,
   operation: 'orderOverview',
   variables: {
     country: textVariable({
@@ -88,25 +89,38 @@ const orderView = defineDataView({
       defaultValue: '',
     }),
   },
-  input: ({ country }) => ({ country }),
   describeInput: ({ country }) =>
     country ? `country ${country}` : 'all countries',
   isEmpty: ({ countries }) => countries.length === 0,
-  empty: {
+  emptyFallback: {
     title: 'No matching countries',
     description: 'Enter a country code such as US, or clear the filter.',
   },
 });
 
+const orderCountMetric = orderView.metric(
+  {
+    id: 'order-count',
+    glossaryId: 'orders',
+    label: 'Orders',
+    format: { kind: 'count' },
+  },
+  data => ({ current: summarizeOrders(data).orderCount })
+);
+const revenueMetric = orderView.metric(
+  {
+    id: 'order-revenue',
+    glossaryId: 'revenue',
+    label: 'Revenue',
+    format: currency,
+  },
+  data => ({ current: summarizeOrders(data).revenue })
+);
 function OrderResults({
-  data,
-  country,
+  result,
 }: {
-  data: OrderOverview;
-  country: string;
+  result: DataContentState<OrderOverview, { country: string }>;
 }) {
-  const { countries, days, bands } = data;
-  const { orderCount, revenue } = summarizeOrders(data);
   return (
     <Stack aria-label="Order results">
       <TextContent>
@@ -116,83 +130,87 @@ function OrderResults({
           revenue come from? Filter by a country code such as US to compare
           markets.
         </p>
-        <p>Showing {country || 'all countries'}</p>
+        <p>
+          Showing <DataValue scope={result.scope} />
+        </p>
       </TextContent>
       <Grid columns={2}>
         <MetricWidget
-          label="Orders"
+          metric={orderCountMetric}
           description="Orders placed in any status."
-          value={orderCount}
-          format={{ kind: 'count' }}
+          source={result}
         />
         <MetricWidget
-          label="Revenue"
+          metric={revenueMetric}
           description="Paid and pending orders; refunds excluded."
-          value={revenue}
-          format={currency}
+          source={result}
         />
         <VisualizationWidget
           title="Orders per day"
           description="Daily order count. Days without orders stay on the chart as zero."
-          evidence={ordersPerDayEvidence}
-          visual={<DailyLineChart days={days} />}
-        />
+          dataset={dayDataset}
+          source={result}
+        >
+          {days => <DailyLineChart days={days} />}
+        </VisualizationWidget>
         <VisualizationWidget
           title="Order value"
           description="Share of orders by amount, in $50 bands."
-          evidence={orderValueEvidence}
-          visual={<OrderValuePieChart bands={bands} />}
-          empty={
-            bands.length
-              ? undefined
-              : {
-                  title: 'No orders',
-                  description: 'No orders in the last 30 days.',
-                }
-          }
-        />
+          dataset={valueDataset}
+          source={result}
+        >
+          {bands => <OrderValuePieChart bands={bands} />}
+        </VisualizationWidget>
       </Grid>
       <VisualizationWidget
         title="Revenue by country"
         description="Highest revenue first. Countries whose customers placed no orders show $0."
-        evidence={revenueEvidence}
-        visual={<CountryRanking countries={countries} />}
-      />
+        dataset={countryDataset}
+        source={result}
+        skeleton={{ variant: 'ranking', rows: 5 }}
+      >
+        {countries => <CountryRanking countries={countries} />}
+      </VisualizationWidget>
     </Stack>
   );
 }
+const orderContent = orderView.content(result => (
+  <OrderResults result={result} />
+));
 
 type OrderSnapshot = DisplayedSnapshot<OrderOverview, { country: string }>;
 
-function exportOrders({
-  data: { countries, days, bands },
-  input,
-}: OrderSnapshot): CsvExport {
-  return {
-    filename: `orders-${input.country || 'all'}`,
-    tables: [
-      {
-        name: 'Revenue by country',
-        columns: ['Country', 'Orders', 'Revenue'],
-        rows: countries.map(({ country, orderCount, revenue }) => [
-          country,
-          orderCount,
-          revenue,
-        ]),
-      },
-      {
-        name: 'Orders per day',
-        columns: ['Day', 'Orders'],
-        rows: days.map(({ day, orderCount }) => [day, orderCount]),
-      },
-      {
-        name: 'Orders by value',
-        columns: ['Order value', 'Orders'],
-        rows: bands.map(({ band, orderCount }) => [band, orderCount]),
-      },
-    ],
-  };
-}
+const countryDataset = orderView.dataset({
+  name: 'Revenue by country',
+  select: data => data.countries,
+  rowKey: row => row.country,
+  evidence: revenueEvidence,
+  columns: {
+    country: { value: row => row.country },
+    orderCount: { label: 'Orders', value: row => row.orderCount },
+    revenue: { value: row => row.revenue, format: currency },
+  },
+});
+const dayDataset = orderView.dataset({
+  name: 'Orders per day',
+  select: data => data.days,
+  rowKey: row => row.day,
+  evidence: ordersPerDayEvidence,
+  columns: {
+    day: { value: row => row.day },
+    orderCount: { label: 'Orders', value: row => row.orderCount },
+  },
+});
+const valueDataset = orderView.dataset({
+  name: 'Orders by value',
+  select: data => data.bands,
+  rowKey: row => row.band,
+  evidence: orderValueEvidence,
+  columns: {
+    band: { label: 'Order value', value: row => row.band },
+    orderCount: { label: 'Orders', value: row => row.orderCount },
+  },
+});
 
 function presentOrders({ data, input }: OrderSnapshot) {
   const { countries, days, bands } = data;
@@ -202,52 +220,42 @@ function presentOrders({ data, input }: OrderSnapshot) {
     summarizeOrders(data);
   const findings = [];
   if (leadingCountry) {
-    findings.push(
-      orderDataContext.finding({
-        id: 'revenue',
-        headline: `${leadingCountry.country} brought in ${formatMetric(leadingCountry.revenue, currency)}`,
-        context: scope,
-        visual: <CountryRanking countries={countries} />,
-        evidence: { id: 'revenue', glossaryIds: ['revenue'] },
-      })
-    );
+    findings.push({
+      id: 'revenue',
+      headline: `${leadingCountry.country} brought in ${formatMetric(leadingCountry.revenue, currency)}`,
+      context: scope,
+      visual: <CountryRanking countries={countries} />,
+      evidence: countryDataset,
+    });
   }
-  findings.push(
-    orderDataContext.finding({
-      id: 'orders-per-day',
-      headline: `${formatCount(orderCount)} orders over the last 30 days`,
-      context: `${scope} ${describeWeeklyOrderTrend(days)}`,
-      visual: <DailyLineChart days={days} />,
-      evidence: { id: 'orders-per-day', glossaryIds: ['orders'] },
-    })
-  );
+  findings.push({
+    id: 'orders-per-day',
+    headline: `${formatCount(orderCount)} orders over the last 30 days`,
+    context: `${scope} ${describeWeeklyOrderTrend(days)}`,
+    visual: <DailyLineChart days={days} />,
+    evidence: dayDataset,
+  });
   if (largestValueBand) {
-    findings.push(
-      orderDataContext.finding({
-        id: 'order-values',
-        headline: `${largestValueBand.band} is the most common order value`,
-        context: `${scope} ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`,
-        visual: <OrderValuePieChart bands={bands} />,
-        evidence: { id: 'order-values', glossaryIds: ['orderValue'] },
-      })
-    );
+    findings.push({
+      id: 'order-values',
+      headline: `${largestValueBand.band} is the most common order value`,
+      context: `${scope} ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`,
+      visual: <OrderValuePieChart bands={bands} />,
+      evidence: valueDataset,
+    });
   }
   return findings;
 }
 
 function App() {
-  const orderRequest = useView(orderView);
   return (
     <DataApp
       config={appConfig}
-      dataContext={orderDataContext}
-      request={orderRequest}
-      csvExport={exportOrders}
+      view={orderView}
+      datasets={[countryDataset, dayDataset, valueDataset]}
       story={presentOrders}
     >
-      {(data, displayedInput) => (
-        <OrderResults data={data} country={displayedInput.country} />
-      )}
+      <DataSection content={orderContent} />
     </DataApp>
   );
 }

@@ -11,7 +11,7 @@ import {
   previousDateRange,
   rowsAsRecords,
 } from '@altertable/data-app/contract';
-import { resolveDataView } from '@altertable/data-app/react';
+import { resolveDataView } from '@/src/core/data-view';
 
 test('starter connection requires a successful bounded query', async () => {
   const query = connectionCheck();

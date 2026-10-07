@@ -27,6 +27,24 @@ test('single-file hosted example queries through the host and preserves displaye
   const app = page.frameLocator('iframe');
   await expect(app.getByText('Loading data')).toBeVisible();
   await expect(
+    app.locator('.altertable-skeleton[data-inline]').first()
+  ).toHaveCSS('vertical-align', 'middle');
+  await expect(
+    app.getByRole('heading', { name: 'Sample counts', exact: true })
+  ).toBeVisible();
+  await expect(app.getByText('Total samples', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Sum of the fixture counts in the selected groups.', {
+      exact: true,
+    })
+  ).toBeVisible();
+  await expect(
+    app.getByRole('heading', { name: 'Counts by group', exact: true })
+  ).toBeVisible();
+  await expect(
+    app.getByRole('row', { name: 'Alpha 3', exact: true })
+  ).toHaveCount(0);
+  await expect(
     app.getByRole('button', { name: 'Present story', exact: true })
   ).toBeDisabled();
   const stableActions = ['Explore data', 'Export CSV', 'Present story'].map(
@@ -38,8 +56,16 @@ test('single-file hosted example queries through the host and preserves displaye
   );
   release!();
   gate = Promise.resolve();
-  await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
-  await expect(app.getByText('Beta: 0', { exact: true })).toBeVisible();
+  await expect(
+    app
+      .getByRole('row', { name: 'Alpha 3', exact: true })
+      .filter({ visible: true })
+  ).toBeVisible();
+  await expect(
+    app
+      .getByRole('row', { name: 'Beta 0', exact: true })
+      .filter({ visible: true })
+  ).toBeVisible();
   await expect(stableActions[1]!).toBeEnabled();
   await expect(stableActions[2]!).toBeEnabled();
   expect(
@@ -54,11 +80,11 @@ test('single-file hosted example queries through the host and preserves displaye
   await app.getByRole('button', { name: 'Present story', exact: true }).click();
   const story = app.getByRole('dialog');
   await expect(
-    story.getByRole('heading', { name: 'Alpha has 3 samples', exact: true })
+    story.getByRole('heading', { name: 'Total samples: 3', exact: true })
   ).toBeVisible();
   await story.getByRole('button', { name: 'Next step', exact: true }).click();
   await expect(
-    story.getByRole('heading', { name: 'Beta has 0 samples', exact: true })
+    story.getByRole('heading', { name: 'Counts by group', exact: true })
   ).toBeVisible();
   await expect(
     story.getByRole('button', { name: 'Explore sources', exact: true })
@@ -88,11 +114,19 @@ test('single-file hosted example queries through the host and preserves displaye
   ).toBeVisible();
   release!();
   gate = Promise.resolve();
-  await expect(app.getByText('Showing Beta', { exact: true })).toBeVisible();
-  await expect(app.getByText('Alpha: 3', { exact: true })).toHaveCount(0);
+  await expect(
+    app.getByText('Showing group Beta', { exact: true })
+  ).toBeVisible();
+  await expect(
+    app
+      .getByRole('row', { name: 'Alpha 3', exact: true })
+      .filter({ visible: true })
+  ).toHaveCount(0);
   fail = true;
   await group.fill('Alpha');
-  await expect(app.getByText('Showing Beta', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Showing group Beta', { exact: true })
+  ).toBeVisible();
   await expect(
     app.getByText(
       'Couldn’t refresh. Showing group Beta while group Alpha is unavailable.'
@@ -100,17 +134,19 @@ test('single-file hosted example queries through the host and preserves displaye
   ).toBeVisible();
   await app.getByRole('button', { name: 'Present story', exact: true }).click();
   await expect(
-    story.getByRole('heading', { name: 'Beta has 0 samples', exact: true })
+    story.getByRole('heading', { name: 'Total samples: 0', exact: true })
   ).toBeVisible();
   await expect(story).toHaveAccessibleDescription(
-    'Demonstration values for Beta.'
+    'Demonstration values for group Beta.'
   );
   await story
     .getByRole('button', { name: 'Exit presentation', exact: true })
     .click();
   fail = false;
   await app.getByRole('button', { name: 'Try again', exact: true }).click();
-  await expect(app.getByText('Showing Alpha', { exact: true })).toBeVisible();
+  await expect(
+    app.getByText('Showing group Alpha', { exact: true })
+  ).toBeVisible();
   await group.fill('missing');
   await expect(
     app.getByText('No matching groups', { exact: true })
@@ -124,11 +160,19 @@ test('single-file hosted example queries through the host and preserves displaye
     app.getByText('No matching groups', { exact: true })
   ).toBeVisible();
   await group.fill('');
-  await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
+  await expect(
+    app
+      .getByRole('row', { name: 'Alpha 3', exact: true })
+      .filter({ visible: true })
+  ).toBeVisible();
   const before = requests.length;
   await app.getByRole('button', { name: 'Refresh data', exact: true }).click();
   await expect.poll(() => requests.length).toBeGreaterThan(before);
-  await expect(app.getByText('Beta: 0', { exact: true })).toBeVisible();
+  await expect(
+    app
+      .getByRole('row', { name: 'Beta 0', exact: true })
+      .filter({ visible: true })
+  ).toBeVisible();
   expect(
     requests.every(
       request =>
@@ -169,7 +213,11 @@ test('hosted initial query error recovers by retry', async ({ page }) => {
   ).toBeDisabled();
   fail = false;
   await app.getByRole('button', { name: 'Retry', exact: true }).click();
-  await expect(app.getByText('Alpha: 3', { exact: true })).toBeVisible();
+  await expect(
+    app
+      .getByRole('row', { name: 'Alpha 3', exact: true })
+      .filter({ visible: true })
+  ).toBeVisible();
 });
 
 test('local starter mounts, queries its server, refreshes and retries a failed check', async ({

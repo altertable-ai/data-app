@@ -3,7 +3,7 @@ import { ArrowUp } from 'lucide-react';
 import type { AnnotationEditorState } from '@/src/react/annotations/annotation-editor-state';
 import { Button } from '@/src/react/ui/Button';
 import { Kbd } from '@/src/react/ui/Kbd';
-import { Tooltip } from '@/src/react/ui/Tooltip';
+import { AnnotationTooltip } from '@/src/react/annotations/AnnotationTooltip';
 
 type AnnotationEditorProps = {
   editor: AnnotationEditorState;
@@ -61,8 +61,7 @@ export function AnnotationEditor({
           }
         }}
       />
-      <Tooltip
-        tooltipProps={{ className: 'altertable-annotation-tooltip' }}
+      <AnnotationTooltip
         content={
           <>
             {submitLabel} <Kbd>Enter</Kbd>
@@ -83,7 +82,7 @@ export function AnnotationEditor({
         >
           <ArrowUp size={16} aria-hidden />
         </Button>
-      </Tooltip>
+      </AnnotationTooltip>
       {editor.captureStatus === 'capturing' && (
         <output className="altertable-annotation-capture-status">
           Capturing screenshot…

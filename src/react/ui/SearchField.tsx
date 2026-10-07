@@ -20,7 +20,6 @@ export type SearchFieldProps = {
     ComponentPropsWithRef<'input'>,
     'type' | 'value' | 'children'
   >;
-  clearButtonProps?: Omit<ComponentPropsWithRef<'button'>, 'type' | 'children'>;
   children?: ReactNode;
 } & Omit<ComponentPropsWithRef<'form'>, 'onChange' | 'onSubmit' | 'children'>;
 
@@ -41,7 +40,6 @@ export function SearchField({
   busy,
   resetValue = '',
   inputProps,
-  clearButtonProps,
   children,
   className,
   ...props
@@ -111,18 +109,10 @@ export function SearchField({
             endAction={
               value !== resetValue && (
                 <Button
-                  {...clearButtonProps}
                   variant="ghost"
                   size="icon-compact"
-                  className={clearButtonProps?.className}
-                  aria-label={
-                    clearButtonProps?.['aria-label'] ??
-                    `Clear ${label.toLowerCase()}`
-                  }
-                  onClick={event => {
-                    clearButtonProps?.onClick?.(event);
-                    if (!event.defaultPrevented) onChange(resetValue);
-                  }}
+                  aria-label={`Clear ${label.toLowerCase()}`}
+                  onClick={() => onChange(resetValue)}
                 >
                   <AppIcon name="reset" size={16} />
                 </Button>

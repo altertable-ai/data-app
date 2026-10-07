@@ -1,3 +1,5 @@
+import { dateRangeControl } from '@/src/react/ui/variables';
+import { defineAppVariables } from '@/src/react/ui/variables';
 import { expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -8,10 +10,11 @@ import {
   Combobox,
   VisualizationWidget,
   TableWidget,
-  DataSection,
-  dateRangeControl,
+} from '@/src/react/ui/index';
+import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { type DataView } from '@/src/core/data-view';
+import {
   dateRangeVariable,
-  defineAppVariables,
   selectVariable,
   textVariable,
 } from '@altertable/data-app/react';
@@ -27,7 +30,8 @@ test('initial data errors show a useful recovery action for each failure', () =>
   function render(code: string) {
     return renderToStaticMarkup(
       <DataSection
-        empty={{ title: 'No results' }}
+        loadingFallback={null}
+        emptyFallback={{ title: 'No results' }}
         result={{
           view: {
             kind: 'error' as const,
@@ -121,7 +125,7 @@ test('local search preserves table order and highlights original text', () => {
       rowKey(hit: (typeof hits)[number]) {
         return hit.item.id;
       },
-      empty: { title: 'No matching rows' },
+      emptyFallback: { title: 'No matching rows' },
     })
   );
   expect(table).toContain('<mark>Café</mark> &lt;table&gt;');
@@ -165,7 +169,7 @@ test('table search finds a later matching row before applying the display limit'
           },
         ],
       },
-      empty: { title: 'No matching customers' },
+      emptyFallback: { title: 'No matching customers' },
     })
   );
   expect(table).toContain('Café');
@@ -382,7 +386,7 @@ test('table pagination defaults to a bottom footer and supports complete and pre
     rowKey(row: (typeof rows)[number]) {
       return row.id;
     },
-    empty: { title: 'No items' },
+    emptyFallback: { title: 'No items' },
   };
   const paginated = renderToStaticMarkup(<TableWidget {...props} />);
   expect(paginated).toContain('1–10 of 12 results');
@@ -486,7 +490,7 @@ test('table configurations reject duplicate identities and invalid numerical bou
     rowKey(row: { id: string | number }) {
       return row.id;
     },
-    empty: { title: 'No rows' },
+    emptyFallback: { title: 'No rows' },
   };
   expect(() =>
     renderToStaticMarkup(
@@ -515,7 +519,7 @@ test('visualization view identities are validated even while data is loading', (
     isEmpty(rows: string[]) {
       return rows.length === 0;
     },
-    empty: { title: 'No rows' },
+    emptyFallback: { title: 'No rows' },
     evidence: { id: 'rows', queryNames: ['rows'] as [string] },
     viewLabel: 'View',
   };
@@ -568,4 +572,131 @@ test('data app skeleton accepts independent header and footer nodes without addi
   );
   expect(withFooter).toContain('<p>About the report</p>');
   expect(withFooter).not.toContain('altertable-data-app-skeleton-header');
+});
+
+test('nested request boundaries keep loading and displayed data local to their subtree', () => {
+  let parentRenders = 0;
+  let childRenders = 0;
+  function render(childView: DataView<number, string>) {
+    return renderToStaticMarkup(
+      <DataSection
+        result={{
+          view: { kind: 'ready', data: 100, input: 'All accounts' },
+          refetch() {},
+        }}
+        emptyFallback={{ title: 'No accounts' }}
+        loadingFallback={<p>Loading accounts</p>}
+      >
+        {(total, scope) => {
+          parentRenders++;
+          return (
+            <>
+              <h2>
+                {total} accounts: {scope}
+              </h2>
+              <DataSection
+                result={{ view: childView, refetch() {} }}
+                emptyFallback={{ title: 'No revenue' }}
+                loadingFallback={<p>Loading revenue</p>}
+              >
+                {(revenue, period) => {
+                  childRenders++;
+                  return (
+                    <p>
+                      {revenue} revenue: {period}
+                    </p>
+                  );
+                }}
+              </DataSection>
+            </>
+          );
+        }}
+      </DataSection>
+    );
+  }
+  const pending = render({ kind: 'loading' });
+  expect(pending).toContain('100 accounts: All accounts');
+  expect(pending).toContain('Loading revenue');
+  expect(pending).not.toContain('Loading accounts');
+  expect(childRenders).toBe(0);
+  expect(render({ kind: 'ready', data: 0, input: 'March' })).toContain(
+    '0 revenue: March'
+  );
+  for (const kind of ['updating', 'stale-error'] as const) {
+    const html = render({
+      kind,
+      data: 25,
+      displayedInput: 'March',
+      requestedInput: 'April',
+      message: 'Showing March',
+      error: new Error('Unavailable'),
+    });
+    expect(html).toContain('100 accounts: All accounts');
+    expect(html).toContain('25 revenue: March');
+    expect(html).not.toContain('Loading revenue');
+    expect(html).not.toContain('revenue: April');
+  }
+  expect(render({ kind: 'empty', input: 'April' })).toContain('No revenue');
+  const failed = render({ kind: 'error', error: new Error('Unavailable') });
+  expect(failed).toContain('100 accounts: All accounts');
+  expect(failed).toContain('Couldn’t load results');
+  expect(parentRenders).toBe(6);
+  expect(childRenders).toBe(3);
+});
+
+test('a null fallback renders no initial content and never runs ready children', () => {
+  let called = false;
+  const html = renderToStaticMarkup(
+    <DataSection
+      result={{ view: { kind: 'loading' }, refetch() {} }}
+      emptyFallback={{ title: 'No results' }}
+      loadingFallback={null}
+    >
+      {() => {
+        called = true;
+        return <p>Ready</p>;
+      }}
+    </DataSection>
+  );
+  expect(called).toBe(false);
+  expect(html).not.toContain('Ready');
+  expect(html).not.toContain('altertable-content-skeleton');
+});
+
+test('independent date variables derive distinct URL keys and preserve both selections', () => {
+  const calendar = defineDateRangeContract({
+    minDate: '2026-01-01',
+    maxDate: '2026-03-31',
+    maxRangeDays: 31,
+    timeZone: 'UTC',
+  });
+  const options = {
+    contract: calendar,
+    defaultValue: { kind: 'preset' as const, id: 'last-7' as const },
+    comparison: true,
+  };
+  const period = dateRangeVariable({ key: 'period', ...options });
+  const cohort = dateRangeVariable({ key: 'cohort', ...options });
+  expect(() => defineAppVariables({ period, cohort })).not.toThrow();
+  const first = {
+    kind: 'dates' as const,
+    start: '2026-03-01',
+    end: '2026-03-07',
+  };
+  const second = {
+    kind: 'dates' as const,
+    start: '2026-03-15',
+    end: '2026-03-21',
+  };
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries({
+    ...period.write(first),
+    ...cohort.write(second),
+  })) {
+    if (value != null) params.set(key, value);
+  }
+  expect(period.read(params)).toEqual(first);
+  expect(cohort.read(params)).toEqual(second);
+  expect(params.get('start')).toBe(first.start);
+  expect(params.get('cohort-start')).toBe(second.start);
 });

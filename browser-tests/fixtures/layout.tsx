@@ -1,17 +1,17 @@
 import { createRoot } from 'react-dom/client';
 import { defineQueryNames } from '@altertable/data-app/contract';
+import { DataAppFrame as DataApp } from '@/src/react/ui/DataAppFrame';
 import {
-  DataApp,
   createDataContext,
   Stack,
   Grid,
   GridItem,
   TextContent,
-  MetricWidget,
-  DataSection,
   injectDataAppStyles,
-  type DataView,
 } from '@altertable/data-app/react';
+import { MetricWidget } from '@altertable/data-app/react/ui';
+import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { type DataView } from '@/src/core/data-view';
 
 const params = new URLSearchParams(location.search);
 injectDataAppStyles();
@@ -80,7 +80,6 @@ createRoot(document.getElementById('root')!).render(
       description: 'Layout fixture',
       glossary: {},
     })}
-    layoutProps={{ footer: null }}
   >
     <Stack data-testid="sections">
       <TextContent>
@@ -89,8 +88,8 @@ createRoot(document.getElementById('root')!).render(
       </TextContent>
       <DataSection
         result={{ view, refetch() {} }}
-        empty={{ title: 'No results' }}
-        loading={<Cards loading />}
+        emptyFallback={{ title: 'No results' }}
+        loadingFallback={<Cards loading />}
       >
         {() => <Cards />}
       </DataSection>

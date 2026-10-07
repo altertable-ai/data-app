@@ -9,7 +9,7 @@ export type WidgetView = {
   id: string;
   label: ReactNode;
   content: ReactNode;
-  empty: EmptyContent;
+  emptyFallback: EmptyContent;
   isEmpty: boolean;
 };
 export type WidgetViewTabsProps<
@@ -50,7 +50,11 @@ export function WidgetViewTabs<const Views extends readonly WidgetView[]>({
         <TabPanels>
           {views.map(view => (
             <TabPanel key={view.id} id={view.id}>
-              {view.isEmpty ? <EmptyState {...view.empty} /> : view.content}
+              {view.isEmpty ? (
+                <EmptyState {...view.emptyFallback} />
+              ) : (
+                view.content
+              )}
             </TabPanel>
           ))}
         </TabPanels>

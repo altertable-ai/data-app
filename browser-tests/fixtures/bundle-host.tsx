@@ -1,12 +1,12 @@
+import { AppIcon } from '@altertable/data-app/react/ui';
+import { Kbd } from '@/src/react/ui/Kbd';
 import { useAnnotationHost } from '@/browser-tests/fixtures/use-annotation-host';
 import type { Theme } from '@altertable/data-app/appearance';
 import { StrictMode, useReducer, useRef, useState } from 'react';
 import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';
 import {
-  AppIcon,
   AnnotationBar,
   injectDataAppAnnotationStyles,
-  Kbd,
   Tooltip,
   TooltipProvider,
 } from '@altertable/data-app/react';
@@ -41,6 +41,7 @@ import { bridgeRoutes } from '@/browser-tests/fixtures/bridge-routes';
 import '@/browser-tests/fixtures/dev-reload';
 import '@/dev/playground-host.css';
 injectDataAppAnnotationStyles();
+const hostOptions = new URLSearchParams(location.search);
 const isPlayground = location.pathname === '/playground';
 if (isPlayground) document.title = 'Playground · Altertable';
 const appPreview = ['/starter-data-app', '/playground'].includes(
@@ -49,7 +50,7 @@ const appPreview = ['/starter-data-app', '/playground'].includes(
 const response = await fetch(
   appPreview
     ? `/__test${location.pathname}`
-    : new URLSearchParams(location.search).has('annotation-state')
+    : hostOptions.has('annotation-state')
       ? '/__test/annotation-state'
       : '/__test/bundle'
 );
@@ -79,7 +80,7 @@ const previewLabels = {
 
 function Host() {
   const [annotationFailure, setAnnotationFailure] = useState(
-    new URLSearchParams(location.search).has('annotation-error')
+    hostOptions.has('annotation-error')
   );
   const [sentCount, setSentCount] = useState(0);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -106,13 +107,11 @@ function Host() {
   } = annotationsHost;
   const { selectedAnnotationId, selectionId } = annotationsHost.presentation;
   const [exportFailure, setExportFailure] = useState(
-    new URLSearchParams(location.search).has('export-error')
+    hostOptions.has('export-error')
   );
-  const [broken, setBroken] = useState(
-    new URLSearchParams(location.search).has('broken')
-  );
-  const urlMode = new URLSearchParams(location.search).has('url');
-  const timeout = new URLSearchParams(location.search).has('timeout');
+  const [broken, setBroken] = useState(hostOptions.has('broken'));
+  const urlMode = hostOptions.has('url');
+  const timeout = hostOptions.has('timeout');
   useShortcut(
     shortcuts.annotate,
     () => setAnnotating(value => !value),
@@ -132,8 +131,7 @@ function Host() {
     ? ({
         surface,
         theme,
-        ...(isPlayground ||
-        new URLSearchParams(location.search).has('annotations')
+        ...(isPlayground || hostOptions.has('annotations')
           ? {
               annotations: {
                 enabled: true,
@@ -170,21 +168,17 @@ function Host() {
   // Extra attributes can still arrive from JavaScript callers or spread objects.
   const iframeProps = {
     hidden: status !== 'ready',
-    allow: new URLSearchParams(location.search).has('no-fullscreen')
+    allow: hostOptions.has('no-fullscreen')
       ? "fullscreen 'none'"
       : 'fullscreen *',
     allowFullScreen: true,
     className: 'app-frame',
-    ...((appPreview ||
-      new URLSearchParams(location.search).has('annotations')) &&
-    !isPlayground
+    ...((appPreview || hostOptions.has('annotations')) && !isPlayground
       ? {
           style: { display: 'block', width: '100%', height: '80vh', border: 0 },
         }
       : {}),
-    ...(new URLSearchParams(location.search).has('lazy')
-      ? { loading: 'lazy' as const }
-      : {}),
+    ...(hostOptions.has('lazy') ? { loading: 'lazy' as const } : {}),
   };
   const forward = createHttpTransport();
   const fileExportRoute = defineMessageRoute({
@@ -233,7 +227,7 @@ function Host() {
     {
       ...annotationsHost.handlers,
       'annotation:draft'(draft) {
-        if (new URLSearchParams(location.search).has('annotation-limit'))
+        if (hostOptions.has('annotation-limit'))
           throw new MessageRoutingError(
             'annotation_limit',
             'Delete an annotation before adding another.'
@@ -483,7 +477,7 @@ function Host() {
                   type: 'bundle',
                   bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
                   javascript: broken
-                    ? new URLSearchParams(location.search).has('syntax')
+                    ? hostOptions.has('syntax')
                       ? 'const ='
                       : 'throw new Error("Broken app")'
                     : `${javascript}\ndocument.body.dataset.bundleVersion = "${bundleVersion}";`,

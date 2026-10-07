@@ -1,19 +1,15 @@
-import { getAnnotationProps } from '@/src/react/annotations/getAnnotationProps';
-import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
-import {
-  WidgetStatusControl,
-  type WidgetStatus,
-} from '@/src/react/ui/RequestHint';
-import { AboutData } from '@/src/react/ui/AboutData';
+import type { ComponentPropsWithRef, ReactNode } from 'react';
+import type { WidgetStatus } from '@/src/react/ui/RequestHint';
+import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import { AppIcon } from '@/src/react/ui/icons';
 import {
   comparisonChange,
   type MetricComparison,
-} from '@/src/react/ui/comparison';
+} from '@/src/react/ui/metric-comparison';
 import { classNames } from '@/src/react/ui/classNames';
 import { formatMetric, type MetricFormat } from '@/src/core/format';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { Skeleton } from '@/src/react/ui/Skeleton';
 import type { MetricReading } from '@/src/core/reading';
 import { metricComparison, type MetricDefinition } from '@/src/react/ui/metric';
 
@@ -37,6 +33,7 @@ type UnboundMetricWidgetProps = MetricWidgetBaseProps &
       ))
   );
 
+/** VisualizationWidget with a formatted metric, optional comparison, and evidence. */
 export type MetricWidgetProps =
   | UnboundMetricWidgetProps
   | (Omit<MetricWidgetBaseProps, 'label' | 'comparison' | 'evidence'> & {
@@ -55,7 +52,14 @@ export function MetricWidget(props: MetricWidgetProps) {
   if ('metric' in props) {
     const { metric, reading, ...rest } = props;
     if (reading.loading)
-      return <MetricWidgetContent {...rest} label={metric.label} loading />;
+      return (
+        <MetricWidgetContent
+          {...rest}
+          annotationId={rest.annotationId ?? metric.evidence?.id}
+          label={metric.label}
+          loading
+        />
+      );
 
     return (
       <MetricWidgetContent
@@ -88,9 +92,48 @@ function MetricWidgetContent({
   className,
   ...props
 }: UnboundMetricWidgetProps) {
-  const targetId = useId();
-  if (loading)
-    return <ContentSkeleton variant="metric" className={className} />;
+  return (
+    <VisualizationWidget
+      {...props}
+      className={classNames('altertable-metric-widget', className)}
+      title={label}
+      annotationId={annotationId}
+      evidence={loading ? undefined : evidence}
+      aria-busy={loading || props['aria-busy']}
+      action={action}
+      status={status}
+      visual={
+        <MetricVisual
+          loading={loading}
+          value={value}
+          content={content}
+          format={format}
+          comparison={comparison}
+          description={description}
+          visual={visual}
+        />
+      }
+    />
+  );
+}
+
+function MetricVisual({
+  loading,
+  value,
+  content,
+  format,
+  comparison,
+  description,
+  visual,
+}: {
+  loading: boolean;
+  value?: number;
+  content?: ReactNode;
+  format?: MetricFormat;
+  comparison?: MetricComparison;
+  description?: ReactNode;
+  visual?: ReactNode;
+}) {
   const shownValue = format ? formatMetric(value as number, format) : content;
   const change = comparison ? comparisonChange(comparison) : null;
   const shownTrend =
@@ -111,7 +154,11 @@ function MetricWidgetContent({
         className="altertable-metric-value"
         data-unavailable={shownValue === '—' || undefined}
       >
-        {shownValue}
+        {loading ? (
+          <Skeleton className="altertable-metric-loading-value" />
+        ) : (
+          shownValue
+        )}
       </strong>
       {shownTrend && (
         <span className="altertable-metric-trend">{shownTrend}</span>
@@ -121,58 +168,13 @@ function MetricWidgetContent({
   const visualization = visual && (
     <div className="altertable-metric-visual">{visual}</div>
   );
-  const feedback = <WidgetStatusControl status={status} />;
-  const help = evidence ? (
-    <AboutData
-      aria-label={`Explore ${label}`}
-      variant="ghost"
-      className="altertable-widget-heading-trigger"
-      tooltip="Explore this metric"
-      references={{
-        kind: 'ids',
-        glossaryIds: evidence.glossaryIds,
-        queryNames: evidence.queryNames,
-      }}
-      shortcut={false}
-      id={evidence.id}
-      title={label}
-      headerActions={feedback}
-      description={description}
-      visual={
-        <div className="altertable-metric-evidence">
-          {reading}
-          {visualization}
-        </div>
-      }
-      visualKind="metric"
-    >
-      {label}
-      <AppIcon name="openDetails" />
-    </AboutData>
-  ) : null;
-
   return (
-    <div
-      {...props}
-      {...getAnnotationProps({
-        id: annotationId ?? props.id ?? evidence?.id ?? targetId,
-        label,
-        evidence,
-      })}
-      className={classNames('altertable-metric-widget', className)}
-    >
-      <div className="altertable-metric-label">
-        <span>{help ?? label}</span>
-        <div className="altertable-metric-help">
-          {feedback}
-          {action}
-        </div>
-      </div>
+    <>
       {reading}
       {description && (
         <small className="altertable-metric-description">{description}</small>
       )}
       {visualization}
-    </div>
+    </>
   );
 }

@@ -91,6 +91,21 @@ against a mocked Altertable API
 ([altertable-mock](https://github.com/altertable-ai/altertable-mock), DuckDB)
 started with Testcontainers and stopped on exit. Browser tests keep fixtures.
 
+Open the **Widgets** tab (`/gallery?view=widgets`) for one ready example of each
+composable data display inside `<VisualizationWidget>`. The other tabs cover
+composed apps, variants, and request states.
+
 Use Conventional Commits and describe behavior changes and verification in PRs.
 Flag breaking API changes. Release Please owns `CHANGELOG.md`; see
 [Releasing](docs/releasing.md) for release setup and recovery.
+
+## Focused public API
+
+Keep exports and options focused on concrete app needs. Prefer defaults and
+derivation from existing state over new knobs; keep implementation details private.
+
+For public changes, update the relevant guide, migrate callers and starters,
+and verify published usage. Flag breaking changes in commits and PRs.
+
+Docs help agents generate data apps: show current usage and focused examples.
+Keep package architecture and contributor rules here.

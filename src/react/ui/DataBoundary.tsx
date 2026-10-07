@@ -6,25 +6,23 @@ import type { DataView } from '@/src/core/data-view';
 
 export type DataBoundaryProps<T, Input = unknown> = {
   view: DataView<T, Input>;
-  loading: ReactNode;
-  empty: ReactNode;
+  loadingFallback: ReactNode;
+  emptyFallback: ReactNode;
   error: (error: Error) => ReactNode;
   staleError?: (error: Error) => ReactNode;
   notice?: 'inline' | 'none';
-  dimOnUpdate?: boolean;
   children: (data: T, displayedInput: Input) => ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** Render one request state at a time. Prior content remains readable during an update.
- * Local boundaries can opt into an inline notice and delayed dimming. */
+ * Feedback ownership is supplied by the containing section. */
 export function DataBoundary<T, Input>({
   view,
-  loading,
-  empty,
+  loadingFallback,
+  emptyFallback,
   error,
   staleError,
   notice = 'none',
-  dimOnUpdate = false,
   children,
   className,
   ...props
@@ -36,9 +34,9 @@ export function DataBoundary<T, Input>({
         className={classNames('altertable-data-boundary', className)}
       >
         {view.kind === 'loading'
-          ? loading
+          ? loadingFallback
           : view.kind === 'empty'
-            ? empty
+            ? emptyFallback
             : error(view.error)}
       </div>
     );
@@ -76,10 +74,7 @@ export function DataBoundary<T, Input>({
           )}
         </div>
       )}
-      <div
-        className="altertable-data-boundary-content"
-        data-updating={(updating && dimOnUpdate) || undefined}
-      >
+      <div className="altertable-data-boundary-content" aria-busy={updating}>
         {children(
           view.data,
           view.kind === 'ready' ? view.input : view.displayedInput

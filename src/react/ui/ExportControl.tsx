@@ -35,7 +35,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
         icon="export"
         variant="elevated"
         label="Export CSV"
-        tooltip="Export data"
+        tooltip="Export data…"
         disabled
       />
     );
@@ -61,7 +61,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
           icon="export"
           variant="elevated"
           label="Export CSV"
-          tooltip="Export data"
+          tooltip="Export data…"
           disabled={status === 'pending'}
           aria-busy={status === 'pending'}
           onClick={() => void download()}
@@ -80,7 +80,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
               );
           }}
         >
-          <Tooltip content="Export data">
+          <Tooltip content="Export data…">
             <PressButton
               variant="elevated"
               size="icon"

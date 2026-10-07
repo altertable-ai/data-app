@@ -58,6 +58,13 @@ try {
     'docs/contract.md',
     'docs/client.md',
     'docs/react.md',
+    'docs/ui.md',
+    'docs/views.md',
+    'docs/variables.md',
+    'docs/widgets.md',
+    'docs/data-context.md',
+    'docs/stories-and-export.md',
+    'docs/formatting-and-appearance.md',
     'docs/server.md',
     'docs/server-bun.md',
     'docs/embed.md',
@@ -123,7 +130,8 @@ try {
   await writeFile(
     join(temporary, 'browser.tsx'),
     `import { createDataClient } from "@altertable/data-app/client";
-import { Grid, DataAppSkeleton, injectDataAppStyles } from "@altertable/data-app/react";
+import { Grid, injectDataAppStyles } from '@altertable/data-app/react';
+import { DataAppSkeleton } from '@altertable/data-app/react/ui';
 injectDataAppStyles();
 import { defineDateRangeContract, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
 import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app/embed";
@@ -340,7 +348,7 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
 
   await writeFile(
     join(temporary, 'shell.tsx'),
-    `import { DataAppSkeleton, injectDataAppShellStyles } from '@altertable/data-app/react';
+    `import { DataAppSkeleton, injectDataAppShellStyles } from '@altertable/data-app/react/ui';
 injectDataAppShellStyles();
 export { DataAppSkeleton };
 `
@@ -417,7 +425,8 @@ export { Grid };
 import React from 'react';
 import * as ReactDOM from 'react-dom';
 import { renderToString } from 'react-dom/server';
-import { MetricWidget, injectDataAppStyles } from '@altertable/data-app/react';
+import { MetricWidget } from '@altertable/data-app/react/ui';
+import { injectDataAppStyles } from '@altertable/data-app/react';
 if (typeof document !== 'undefined' || typeof injectDataAppStyles !== 'function')
   throw new Error('React styles must be importable without a DOM');
 if (React.version !== '19.2.0' || ReactDOM.version !== '19.2.0' || typeof React.useEffectEvent !== 'function')

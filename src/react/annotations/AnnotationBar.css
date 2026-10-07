@@ -1,6 +1,6 @@
 .altertable-annotation-bar,
 .altertable-annotation-bar-panel,
-.altertable-annotation-bar-tooltip {
+.altertable-tooltip-content:has(> .altertable-annotation-bar-tooltip) {
   --bar-surface: #202326;
   --bar-text: #f2f3f4;
   --bar-muted: #aeb5bc;
@@ -22,7 +22,9 @@
 }
 .altertable-annotation-bar[data-theme='dark'],
 .altertable-annotation-bar-panel[data-theme='dark'],
-.altertable-annotation-bar-tooltip[data-theme='dark'] {
+.altertable-tooltip-content:has(
+  > .altertable-annotation-bar-tooltip[data-theme='dark']
+) {
   --bar-surface: #f2f3f4;
   --bar-text: #151719;
   --bar-muted: #505963;
@@ -159,7 +161,7 @@
 }
 
 /* Tooltip portals belong to the document, never the flex toolbar. */
-.altertable-annotation-bar-tooltip {
+.altertable-tooltip-content:has(> .altertable-annotation-bar-tooltip) {
   font-size: 12px;
   line-height: 1.3;
 }

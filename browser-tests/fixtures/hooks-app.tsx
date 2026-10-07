@@ -1,3 +1,9 @@
+import { createDataContext as registerContext } from '@/src/react/ui/data-context';
+import { useDeclaredResult } from '@/src/react/view-runtime';
+import { DeclaredApp } from '@/browser-tests/fixtures/declared-app';
+import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { bindDataset } from '@/src/react/bindings';
+import { defineDataContent } from '@/src/react/content';
 import { ClientCacheApp } from '@/browser-tests/fixtures/client-cache';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -5,15 +11,15 @@ import { injectDataAppStyles } from '@altertable/data-app/react';
 import { createDataClient, type OutputOf } from '@/src/client/index';
 import { defineOperation } from '@/src/core/contract';
 import type { TransportResponse } from '@/src/core/bridge';
-import {
-  createDataHooks,
-  DataAppProvider,
-  DataSection,
-  defineDataContent,
-  TextWidget,
-} from '@/src/react/index';
+import { createDataHooks } from '@/src/react/hooks';
+import { DataAppProvider, TextWidget } from '@altertable/data-app/react/ui';
 
 injectDataAppStyles();
+
+const context = registerContext({})({
+  description: 'Fixture context',
+  glossary: {},
+});
 
 const operations = {
   alpha: defineOperation({
@@ -62,7 +68,25 @@ const client = createDataClient<typeof operations>({
     });
   },
 });
-const { useDataView } = createDataHooks(client);
+const { defineDataView } = createDataHooks(client);
+const narrativeRows = bindDataset({
+  name: 'Activity',
+  select: (
+    data: OutputOf<typeof operations.alpha | typeof operations.beta>,
+    input: { version: number }
+  ) => [
+    {
+      value: 'count' in data ? data.count : data.label,
+      version: input.version,
+    },
+  ],
+  rowKey: row => row.version,
+  columns: {
+    value: { value: row => row.value },
+    version: { value: row => row.version },
+  },
+  evidence: { id: 'fixture', queryNames: ['fixture'] },
+});
 const narrative = defineDataContent<
   OutputOf<(typeof operations)[keyof typeof operations]>,
   { version: number }
@@ -74,12 +98,9 @@ const narrative = defineDataContent<
       id: 'activity-explanation',
       queryNames: ['alpha-evidence', 'beta-evidence'],
     }}
-    reading={result.select((data, input) => ({
-      value: 'count' in data ? data.count : data.label,
-      version: input.version,
-    }))}
+    reading={narrativeRows.read(result)}
   >
-    {({ value, version }) => (
+    {([{ value, version }]) => (
       <p>
         {value} for selection {version}
       </p>
@@ -90,14 +111,16 @@ const narrative = defineDataContent<
 function App() {
   const [operation, setOperation] = useState<'alpha' | 'beta'>('alpha');
   const [version, setVersion] = useState(1);
-  const result = useDataView(
-    operation,
-    { version },
-    {
-      isEmpty() {
-        return false;
-      },
-    }
+  const result = useDeclaredResult(
+    defineDataView({
+      dataContext: context,
+      operation,
+      variables: {},
+      input: () => ({ version }),
+      describeInput: input => `selection ${input.version}`,
+      isEmpty: () => false,
+      emptyFallback: { title: 'No activity' },
+    })
   );
 
   function settle(failed: boolean) {
@@ -162,7 +185,7 @@ function App() {
       </p>
       <DataSection
         result={result}
-        empty={{ title: 'No activity' }}
+        emptyFallback={{ title: 'No activity' }}
         {...narrative}
       />
     </>
@@ -170,7 +193,9 @@ function App() {
 }
 createRoot(document.getElementById('root')!).render(
   <DataAppProvider>
-    {new URLSearchParams(location.search).has('client-cache') ? (
+    {new URLSearchParams(location.search).has('declared') ? (
+      <DeclaredApp />
+    ) : new URLSearchParams(location.search).has('client-cache') ? (
       <ClientCacheApp />
     ) : (
       <App />

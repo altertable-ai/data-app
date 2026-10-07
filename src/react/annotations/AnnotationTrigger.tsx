@@ -2,7 +2,7 @@ import type { ComponentRef, Ref } from 'react';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import { Kbd } from '@/src/react/ui/Kbd';
-import { Tooltip } from '@/src/react/ui/Tooltip';
+import { AnnotationTooltip } from '@/src/react/annotations/AnnotationTooltip';
 import { shortcuts, ariaKeyShortcuts } from '@/src/react/ui/shortcuts';
 
 type AnnotationTriggerProps = {
@@ -21,8 +21,7 @@ export function AnnotationTrigger({
   onToggle,
 }: AnnotationTriggerProps) {
   return (
-    <Tooltip
-      tooltipProps={{ className: 'altertable-annotation-tooltip' }}
+    <AnnotationTooltip
       content={
         <>
           Point at items to change the data app{' '}
@@ -47,6 +46,6 @@ export function AnnotationTrigger({
           <span className="altertable-annotation-count">{count}</span>
         )}
       </Button>
-    </Tooltip>
+    </AnnotationTooltip>
   );
 }

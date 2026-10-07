@@ -30,7 +30,8 @@ import {
   type DataAppAnnotationDraft,
 } from '@/src/core/annotations';
 import { Button } from '@/src/react/ui/Button';
-import { Tooltip, TooltipProvider } from '@/src/react/ui/Tooltip';
+import { TooltipProvider } from '@/src/react/ui/Tooltip';
+import { AnnotationTooltip } from '@/src/react/annotations/AnnotationTooltip';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Kbd } from '@/src/react/ui/Kbd';
 
@@ -154,10 +155,6 @@ export function AnnotationBar({
   const { position, reviewOpen, pending, error, discardOpen, previewId } =
     state;
   const preview = annotations.find(annotation => annotation.id === previewId);
-  const tooltipProps = {
-    className: 'altertable-annotation-bar-tooltip',
-    'data-theme': theme,
-  };
   const locked = disabled || pending;
   const { refs, floatingStyles } = useFloating({
     placement: 'top',
@@ -343,11 +340,11 @@ export function AnnotationBar({
           >
             Annotating · {annotations.length}
           </Button>
-          <Tooltip
+          <AnnotationTooltip
             content={
               pinsVisible ? 'Hide annotation pins' : 'Show annotation pins'
             }
-            tooltipProps={tooltipProps}
+            theme={theme}
           >
             <Button
               variant="ghost"
@@ -365,11 +362,8 @@ export function AnnotationBar({
                 <Eye size={16} aria-hidden />
               )}
             </Button>
-          </Tooltip>
-          <Tooltip
-            content="Discard all annotations"
-            tooltipProps={tooltipProps}
-          >
+          </AnnotationTooltip>
+          <AnnotationTooltip content="Discard all annotations" theme={theme}>
             <Button
               variant="ghost"
               size="icon-compact"
@@ -383,14 +377,14 @@ export function AnnotationBar({
             >
               <Trash2 size={16} aria-hidden />
             </Button>
-          </Tooltip>
-          <Tooltip
+          </AnnotationTooltip>
+          <AnnotationTooltip
             content={
               hasUnsavedChanges
                 ? 'Save the open annotation before sending'
                 : 'Send annotations'
             }
-            tooltipProps={tooltipProps}
+            theme={theme}
           >
             <Button
               className="altertable-annotation-bar-send"
@@ -410,8 +404,8 @@ export function AnnotationBar({
                 />
               )}
             </Button>
-          </Tooltip>
-          <Tooltip
+          </AnnotationTooltip>
+          <AnnotationTooltip
             content={
               <>
                 {hasUnsavedChanges
@@ -420,7 +414,7 @@ export function AnnotationBar({
                 <Kbd>Esc</Kbd>
               </>
             }
-            tooltipProps={tooltipProps}
+            theme={theme}
           >
             <Button
               variant="ghost"
@@ -431,7 +425,7 @@ export function AnnotationBar({
             >
               <X size={16} aria-hidden />
             </Button>
-          </Tooltip>
+          </AnnotationTooltip>
           {error && (
             <output className="altertable-annotation-bar-error" role="alert">
               {error}

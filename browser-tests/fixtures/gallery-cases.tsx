@@ -13,69 +13,70 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { AppHeader } from '@/src/react/ui/AppHeader';
+import { AppScope } from '@/src/react/ui/AppScope';
+import { AppToolbar } from '@/src/react/ui/AppToolbar';
+import { AppFooter } from '@/src/react/ui/AppFooter';
+import { VariableBar } from '@/src/react/ui/VariableBar';
+import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import {
-  AppHeader,
-  AppScope,
-  AppToolbar,
-  AppFooter,
-  VariableBar,
-  DimensionPicker,
-  DataViewToast,
-  AboutData,
-  AppIcon,
   Breakdown,
   Button,
+  DateTimeTooltip,
+  EmptyState,
+  Grid,
+  GridItem,
+  IconButton,
+  PeriodSummary,
+  Ranking,
+  Skeleton,
+  Stack,
+  Tooltip,
+  UpdatedAt,
+} from '@altertable/data-app/react';
+import { Comparison } from '@altertable/data-app/react';
+import { BarChart } from '@altertable/data-app/react/ui';
+import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { DataBoundary } from '@/src/react/ui/DataBoundary';
+import { Kbd } from '@/src/react/ui/Kbd';
+import { StatusPanel } from '@/src/react/ui/StatusPanel';
+import { WidgetDisclosure } from '@/src/react/ui/WidgetDisclosure';
+import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
+import {
+  DimensionPicker,
+  AboutData,
+  AppIcon,
   Checkbox,
   Combobox,
-  ComparisonVisual,
-  ContentSkeleton,
-  DataBoundary,
-  DataSection,
   DataTable,
   DataTableEmptyRow,
   DataTableShare,
   DataTableTimestamp,
   DataWidget,
   DateRangePicker,
-  DateTimeTooltip,
-  EmptyState,
   GlossaryDefinition,
   GlossaryExplanation,
   GradientScroll,
-  Grid,
-  GridItem,
   HelpPopover,
-  IconButton,
-  Kbd,
   LiveControl,
   MetricWidget,
-  PeriodSummary,
   PresentStory,
-  Ranking,
-  RefreshRegion,
   SearchField,
   SearchMatch,
   Sheet,
-  Skeleton,
-  Stack,
-  StatusPanel,
   TableWidget,
   Tabs,
   Tab,
   TabList,
   TabPanel,
   TabPanels,
-  Tooltip,
-  UpdatedAt,
-  WidgetDisclosure,
-  WidgetViewTabs,
-  SelectableBarChart,
   type DateRange,
   type LiveIntervalSeconds,
   type WidgetStatus,
-  type DataView,
   type AppIconName,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app/react/ui';
+import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { type DataView } from '@/src/core/data-view';
 import '@/browser-tests/fixtures/gallery.css';
 
 const dimension = dimensionFilter({
@@ -232,7 +233,6 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
   const [live, setLive] = useState(false);
   const [interval, setInterval] = useState<LiveIntervalSeconds>(60);
   const [view, setView] = useState<'ready' | 'empty'>('ready');
-  const [selected, setSelected] = useState<string | null>(null);
   const [request, setRequest] = useState<
     'loading' | 'ready' | 'empty' | 'error' | 'updating' | 'stale-error'
   >('ready');
@@ -355,7 +355,6 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               value="Retained query"
               onChange={() => {}}
               inputProps={{ disabled: true }}
-              clearButtonProps={{ disabled: true }}
             />
             <SearchMatch
               match={{
@@ -591,7 +590,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           </Case>
         ))}
         <Case title="Comparison visual" widget>
-          <ComparisonVisual
+          <Comparison
             label="Reduced errors"
             current={{ value: 12, formattedValue: '12' }}
             previous={{ value: 20, formattedValue: '20' }}
@@ -606,7 +605,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             rows={[]}
             rowKey={(item: typeof row) => item.id}
             columns={columns}
-            empty={empty}
+            emptyFallback={empty}
           />
         </Case>
         <Case title="One complete row">
@@ -616,7 +615,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             rowKey={item => item.id}
             columns={columns}
             pagination={false}
-            empty={empty}
+            emptyFallback={empty}
           />
         </Case>
         <Case title="Preview cap">
@@ -626,7 +625,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             rowKey={item => item.id}
             columns={columns}
             limit={1}
-            empty={empty}
+            emptyFallback={empty}
           />
         </Case>
         <Case title="Table skeleton">
@@ -637,7 +636,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             rowKey={(item: typeof row) => item.id}
             columns={columns}
             skeletonRows={3}
-            empty={empty}
+            emptyFallback={empty}
           />
         </Case>
         <Case title="Native table, numeric, share and timestamp" widget>
@@ -698,10 +697,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               ][index]!
             }
           >
-            <SelectableBarChart
+            <BarChart
               items={items}
-              selectedId={selected}
-              onSelectionChange={setSelected}
               unit="events"
               ariaLabel={`Chart edge ${index}`}
             />
@@ -792,7 +789,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             rowKey={item => item.id}
             columns={columns}
             status={widgetStatus}
-            empty={empty}
+            emptyFallback={empty}
           />
         </Case>
       </Section>
@@ -823,8 +820,9 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           note="Opt-in inline notice above a local section’s retained content. Widget feedback belongs in its toolbar; page feedback belongs in page actions."
         >
           <DataSection
+            loadingFallback={<ContentSkeleton variant="panel" />}
             result={{ view: dataView, refetch: () => setRequest('ready') }}
-            empty={empty}
+            emptyFallback={empty}
             label="Fixture request"
           >
             {(data, input) => (
@@ -840,8 +838,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         >
           <DataBoundary
             view={dataView}
-            loading={<ContentSkeleton variant="panel" />}
-            empty={<EmptyState {...empty} />}
+            loadingFallback={<ContentSkeleton variant="panel" />}
+            emptyFallback={<EmptyState {...empty} />}
             error={() => (
               <StatusPanel
                 status="error"
@@ -859,9 +857,9 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           </DataBoundary>
         </Case>
         <Case title="Retained content with optional dimming">
-          <RefreshRegion refreshing={request === 'updating'} dimOnUpdate>
+          <div aria-busy={request === 'updating'}>
             <p>The last displayed reading stays here.</p>
-          </RefreshRegion>
+          </div>
         </Case>
       </Section>
       <Section
@@ -987,21 +985,23 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           <WidgetViewTabs
             label="Empty view tabs"
             selectedKey={view}
-            onSelectionChange={setView}
+            onSelectionChange={key =>
+              setView(key === 'empty' ? 'empty' : 'ready')
+            }
             views={[
               {
                 id: 'ready',
                 label: 'Ready',
                 content: <p>Recorded content</p>,
                 isEmpty: false,
-                empty,
+                emptyFallback: empty,
               },
               {
                 id: 'empty',
                 label: 'Empty',
                 content: null,
                 isEmpty: true,
-                empty,
+                emptyFallback: empty,
               },
             ]}
           />

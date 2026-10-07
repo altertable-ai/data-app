@@ -1,3 +1,4 @@
+import type { DataContext } from '@/src/react/ui/data-context';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 import type {
   AppVariableValues,
@@ -35,6 +36,22 @@ export type ViewBindings<
   [Key in keyof Variables]: (input: Input) => ResolvedVariables<Variables>[Key];
 }>;
 
+type SameViewInput<Variables extends VariableCollection, Input> = [
+  ResolvedVariables<Variables>,
+] extends [Input]
+  ? [Input] extends [ResolvedVariables<Variables>]
+    ? [Input] extends [Record<string, never>]
+      ? true
+      : [keyof Input] extends [keyof Variables]
+        ? true
+        : false
+    : false
+  : false;
+type ViewInputMapping<Variables extends VariableCollection, Input> =
+  SameViewInput<Variables, Input> extends true
+    ? { input?: (values: ResolvedVariables<Variables>) => Input }
+    : { input: (values: ResolvedVariables<Variables>) => Input };
+
 export type DataViewDefinition<
   Name extends string,
   Variables extends VariableCollection,
@@ -42,19 +59,36 @@ export type DataViewDefinition<
   Data,
 > = {
   operation: Name;
-  variables: Variables;
-  input: (values: ResolvedVariables<Variables>) => Input;
+  dataContext: DataContext;
   bindings?: ViewBindings<Variables, Input>;
   /** App-owned semantics: measured zero need not mean an empty result. */
   isEmpty: (data: Data) => boolean;
-  empty: EmptyContent;
-} & (
-  | {
-      date: ViewDate<Variables, Input>;
-      describeInput?: (input: Input) => string;
-    }
-  | { date?: never; describeInput: (input: Input) => string }
-);
+  /** Inherited by DataSection unless it supplies its own copy. */
+  emptyFallback: EmptyContent;
+} & (keyof Variables extends never
+  ? { variables?: Variables }
+  : { variables: Variables }) &
+  ViewInputMapping<NoInfer<Variables>, Input> &
+  (
+    | {
+        date: ViewDate<Variables, Input>;
+        describeInput?: (input: Input) => string;
+      }
+    | { date?: never; describeInput: (input: Input) => string }
+  );
+
+export type ResolvedDataViewDefinition<
+  Name extends string,
+  Variables extends VariableCollection,
+  Input,
+  Data,
+> = Omit<
+  DataViewDefinition<Name, Variables, Input, Data>,
+  'variables' | 'input'
+> & {
+  variables: Variables;
+  input: (values: ResolvedVariables<Variables>) => Input;
+};
 
 export function describeViewInput<Input>(definition: {
   variables: VariableCollection;

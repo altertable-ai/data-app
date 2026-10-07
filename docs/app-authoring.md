@@ -27,51 +27,33 @@ readers can inspect the source of each claim.
 
 Connect visualizations with introductions and explanations. Use `<TextWidget>`
 for a narrative panel with the standard widget frame, or `<TextContent>` for
-borderless prose. Bind claims to `result.select((data, input) => ...)` so their
-values and scope follow the displayed results through filter changes, refresh,
-and failure.
+borderless prose. Render static titles, descriptions, and instructions immediately. Use metric and dataset
+bindings for dynamic values and `<DataValue>` for values within static prose.
+Skeletonize only the content that needs data. Reuse bindings and the displayed
+source in narrative so values, formatting, and evidence follow filter changes,
+refresh, and failure.
 
-| Task                                       | Documentation                                              |
-| ------------------------------------------ | ---------------------------------------------------------- |
-| Define queries, inputs, and result parsing | [Operations](contract.md)                                  |
-| Build views, filters, and request states   | [React](react.md)                                          |
-| Introduce and explain visualizations       | [Narrative text](react.md#narrative-text)                  |
-| Find formatters and presentation helpers   | [App helpers](react.md#reuse-app-helpers)                  |
-| Register source names                      | [Source identifiers](react.md#register-source-identifiers) |
-| Choose date and field filters              | [Filter variables](react.md#time-views-and-field-filters)  |
-| Handle refresh and stale results           | [Displayed results](react.md#preserve-displayed-results)   |
-| Export displayed data as CSV               | [CSV export](react.md#export-displayed-data-as-csv)        |
-| Bind definitions and source evidence       | [Data context](react.md#bind-evidence)                     |
+| Task                                       | Documentation                                                     |
+| ------------------------------------------ | ----------------------------------------------------------------- |
+| Define queries, inputs, and result parsing | [Operations](contract.md)                                         |
+| Build views, filters, and request states   | [Views](views.md)                                                 |
+| Introduce and explain visualizations       | [Narrative text](widgets.md#narrative-text)                       |
+| Find formatters and presentation helpers   | [App helpers](formatting-and-appearance.md)                       |
+| Register source names                      | [Source identifiers](data-context.md#register-source-identifiers) |
+| Choose date and field filters              | [Filter variables](variables.md)                                  |
+| Handle refresh and stale results           | [Displayed results](views.md#preserve-displayed-results)          |
+| Export displayed data as CSV               | [CSV export](stories-and-export.md#export-displayed-data-as-csv)  |
+| Render widgets and custom visuals          | [Widgets](widgets.md)                                             |
+| Bind definitions and source evidence       | [Data context](data-context.md#bind-evidence)                     |
 
-Use the exported types for configuration, appearance, formatting, and component
-options. Declare configuration with `satisfies DataAppConfig` so appearance
-fields and values are checked before bundling.
+Declare reusable [datasets and metrics](widgets.md#declare-datasets-and-metrics)
+on the view so tables, exports, and stories share values and evidence.
 
-## Compose the layout
-
-See the [layout contract](layout.md).
-
-## Export the displayed results
-
-Provide `DataApp.csvExport` in every analytical app. The request-backed API
-requires a callback that selects an explicit filename and named datasets with ordered columns and raw
-rows from the displayed snapshot. Follow [CSV export](react.md#export-displayed-data-as-csv)
-and the [starter](../examples/starter-data-app/index.tsx); use the built-in toolbar
-action rather than adding a custom download button.
-
-Export every distinct analytical dataset at its displayed grain, including relevant
-dimensions and measures. Reuse one dataset for charts or metrics derived from the
-same rows. One dataset downloads as CSV; multiple datasets offer individual CSVs
-and **Export all** as a ZIP archive. Use the displayed input for scope labels and filenames. Export the
-bounded result the app already has; do not issue a different query or mix pending
-filters into the visible result. Setup and static screens may omit export.
-
-## Present the findings
-
-Compose a [story](react.md#present-data-with-stories) from the exploration's
-findings. Lead with the answer, then show the evidence and comparisons that
-explain it. Select the findings that matter to the audience; do not turn every
-row or chart into a step.
+Every data app supplies a [story and CSV export](stories-and-export.md)
+from the displayed result. Export all distinct datasets at their displayed grain;
+reuse a dataset when several visuals derive from the same rows. Present the
+findings that answer the reader's question, rather than every row or chart.
+Use the [standard layout](layout.md) and built-in toolbar actions.
 
 ## Verify the app
 
@@ -80,10 +62,9 @@ zero, unavailable values, and empty results. Check filters, refresh, loading,
 empty, error, and stale states, then present the story. Download CSV from the
 standalone and embedded toolbar and verify its filename, columns, raw values,
 and filter scope against the displayed result. Export and Present story must be
-available once analytical results are shown; initial loading, empty, and initial
+available once results are shown; initial loading, empty, and initial
 errors keep both actions visible and disabled. Inspect both experiences
 at phone and desktop widths in light and dark themes.
 
-The app owns its queries, result parsing, business definitions, configuration,
-and presentation. Credentials, authorization, and enforced access/query limits
-stay backend-owned. Edit app-owned files; installed package files are dependencies.
+Keep credentials, authorization, and enforced query limits in the host/backend.
+Edit app-owned files; installed package files are dependencies.

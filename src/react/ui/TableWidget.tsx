@@ -2,7 +2,7 @@ import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { invariant } from '@/src/core/invariant';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
-import { DataWidget } from '@/src/react/ui/DataWidget';
+import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import {
   DataTable,
   DataTableEmptyRow,
@@ -16,7 +16,7 @@ import {
 } from '@/src/react/ui/searchItems';
 import type { DataReading } from '@/src/core/reading';
 import { formatCount, pluralize } from '@/src/core/format';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
+import { Skeleton } from '@/src/react/ui/Skeleton';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import { Tooltip } from '@/src/react/ui/Tooltip';
@@ -33,6 +33,20 @@ export type TableWidgetColumn<Row> = {
 export type TableWidgetSearch<Row> = Omit<DataTableSearch, 'itemCount'> &
   Pick<SearchItemsOptions<Row>, 'attributes' | 'mode' | 'fuzzyThreshold'>;
 
+export type TableDisplayMode =
+  | {
+      /** Positive integer preview cap after search; disables pagination. */
+      limit: number;
+      pagination?: never;
+    }
+  | {
+      /** Local pagination after search: 10 rows by default, false shows all supplied rows.
+       * pageSize must be a positive integer. Counts refer only to supplied rows.
+       * The widget owns bottom-footer controls and shares the current page with inspection. */
+      pagination?: { pageSize: number } | false;
+      limit?: never;
+    };
+
 type TableWidgetBaseProps<Row> = {
   title: ReactNode;
   annotationId?: string;
@@ -46,24 +60,13 @@ type TableWidgetBaseProps<Row> = {
   evidence?: WidgetEvidence;
   search?: TableWidgetSearch<Row>;
   /** Valid result with no rows; the header remains visible. */
-  empty: EmptyContent;
-} & (
-  | {
-      /** Positive integer preview cap after search; disables pagination. */
-      limit: number;
-      pagination?: never;
-    }
-  | {
-      /** Local pagination after search: 10 rows by default, false shows all supplied rows.
-       * pageSize must be a positive integer. Counts refer only to supplied rows.
-       * The widget owns bottom-footer controls and shares the current page with inspection. */
-      pagination?: { pageSize: number } | false;
-      limit?: never;
-    }
-) &
+  emptyFallback: EmptyContent;
+} & TableDisplayMode &
   Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
-/** Column definitions own both header and body semantics; the first column is the row header. */
+/** Composes VisualizationWidget with DataTable, search, and local pagination.
+ * Columns own header and body semantics; the first column is the row header.
+ * Use DataTable inside VisualizationWidget directly for custom table markup. */
 export type TableWidgetProps<Row> = TableWidgetBaseProps<Row> &
   (
     | { rows: readonly Row[]; reading?: never; skeletonRows?: never }
@@ -95,17 +98,15 @@ export function TableWidget<Row>(props: TableWidgetProps<Row>) {
   );
 
   if (props.reading) {
-    const { reading, skeletonRows = 5, ...rest } = props;
-    if (reading.loading)
-      return (
-        <ContentSkeleton
-          variant="ranking"
-          rows={skeletonRows}
-          className={rest.className}
-        />
-      );
-
-    return <TableWidgetContent {...rest} rows={reading.value} />;
+    const { reading, skeletonRows, ...rest } = props;
+    return (
+      <TableWidgetContent
+        {...rest}
+        rows={reading.loading ? [] : reading.value}
+        loading={reading.loading}
+        skeletonRows={skeletonRows}
+      />
+    );
   }
 
   return <TableWidgetContent {...props} />;
@@ -123,9 +124,15 @@ function TableWidgetContent<Row>({
   search,
   limit,
   pagination,
-  empty,
+  emptyFallback,
+  loading = false,
+  skeletonRows = 5,
   ...props
-}: TableWidgetBaseProps<Row> & { rows: readonly Row[] }) {
+}: TableWidgetBaseProps<Row> & {
+  rows: readonly Row[];
+  loading?: boolean;
+  skeletonRows?: number;
+}) {
   const keys = rows.map(rowKey);
   invariant(
     keys.every(key =>
@@ -178,7 +185,10 @@ function TableWidgetContent<Row>({
   };
   const table = (
     <>
-      <DataTable searchable={searchable}>
+      <DataTable
+        searchable={loading ? undefined : searchable}
+        aria-busy={loading || undefined}
+      >
         <thead>
           <tr>
             {columns.map(column => (
@@ -188,9 +198,27 @@ function TableWidgetContent<Row>({
             ))}
           </tr>
         </thead>
-        <tbody>
-          {visible.length === 0 ? (
-            <DataTableEmptyRow colSpan={columns.length} {...empty} />
+        <tbody aria-hidden={loading || undefined}>
+          {loading ? (
+            Array.from(
+              {
+                length: Math.min(
+                  100,
+                  Math.max(0, Math.trunc(skeletonRows) || 0)
+                ),
+              },
+              (_, row) => (
+                <tr key={row}>
+                  {columns.map(column => (
+                    <td key={column.id} data-type={column.type}>
+                      <Skeleton style={{ width: '70%', height: '1em' }} />
+                    </td>
+                  ))}
+                </tr>
+              )
+            )
+          ) : visible.length === 0 ? (
+            <DataTableEmptyRow colSpan={columns.length} {...emptyFallback} />
           ) : (
             visible.map(hit => (
               <tr key={rowKey(hit.item)}>
@@ -261,16 +289,17 @@ function TableWidgetContent<Row>({
   );
 
   return (
-    <DataWidget
+    <VisualizationWidget
       {...props}
       title={title}
-      count={count}
+      annotationId={props.annotationId ?? evidence?.id}
+      count={loading ? undefined : count}
       description={description}
       action={action}
-      evidence={evidence}
+      evidence={loading ? undefined : evidence}
+      aria-busy={loading || props['aria-busy']}
       footer={pager}
-    >
-      <div className="altertable-table-widget-content">{table}</div>
-    </DataWidget>
+      visual={<div className="altertable-table-widget-content">{table}</div>}
+    />
   );
 }

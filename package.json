@@ -78,6 +78,10 @@
     "./react/embed": {
       "types": "./dist/types/react/embed/index.d.ts",
       "import": "./dist/react/embed/index.js"
+    },
+    "./react/ui": {
+      "types": "./dist/types/react/ui/index.d.ts",
+      "import": "./dist/react/ui/index.js"
     }
   },
   "publishConfig": {

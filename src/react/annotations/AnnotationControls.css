@@ -1,7 +1,7 @@
 /* Floating annotation controls intentionally contrast with the app theme. */
 .altertable-annotation-composer,
 .altertable-annotation-hint,
-.altertable-annotation-tooltip {
+.altertable-tooltip-content:has(> .altertable-annotation-tooltip) {
   --annotation-surface: var(--at-text, #202124);
   --annotation-text: var(--at-background, #fff);
   --annotation-muted: color-mix(
@@ -139,7 +139,7 @@
   .altertable-annotation-submit:hover:not(:disabled) {
   background: var(--at-annotation-accent-hover);
 }
-.altertable-annotation-tooltip {
+.altertable-tooltip-content:has(> .altertable-annotation-tooltip) {
   background: var(--annotation-surface);
   color: var(--annotation-text);
   border-color: var(--annotation-border);

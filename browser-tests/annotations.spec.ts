@@ -107,6 +107,9 @@ test('feedback freezes the displayed filters at selection while results change',
 }) => {
   await page.goto('/bundle-host?annotations&annotation-state');
   const frame = page.frameLocator('iframe');
+  await expect(
+    frame.locator('.altertable-data-view-toast[data-state=updating]')
+  ).toBeVisible();
   await frame.getByRole('button', { name: 'Annotate', exact: true }).click();
   await frame.locator('[data-annotation-id="revenue"]').click({ force: true });
   await frame

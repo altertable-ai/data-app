@@ -1,3 +1,4 @@
+import { formatMetric } from '@altertable/data-app/format';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataAppConfig } from '@altertable/data-app/config';
 import {
@@ -9,6 +10,9 @@ import {
   createDataContext,
   createDataHooks,
   DataApp,
+  DataSection,
+  DataValue,
+  TableWidget,
   Grid,
   Stack,
   TextContent,
@@ -93,83 +97,106 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineDataView, useView } = createDataHooks(
-  createDataClient({ operations })
-);
+const { defineDataView } = createDataHooks(createDataClient({ operations }));
 const sampleCountsView = defineDataView({
+  dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
   variables: {
     groupName: textVariable({ key: 'group', label: 'Group', defaultValue: '' }),
   },
-  input: ({ groupName }) => ({ groupName }),
   describeInput: ({ groupName }) =>
     groupName ? `group ${groupName}` : 'all groups',
   isEmpty: sampleCounts => sampleCounts.length === 0,
-  empty: {
+  emptyFallback: {
     title: 'No matching groups',
     description: 'Try Alpha, Beta, or clear the group filter.',
   },
 });
+const sampleCounts = sampleCountsView.dataset({
+  name: 'Sample counts',
+  select: rows => rows,
+  rowKey: row => row.groupName,
+  columns: {
+    groupName: { label: 'Group', value: row => row.groupName },
+    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+  },
+  evidence: {
+    id: 'counts-by-group',
+    glossaryIds: ['sampleCount'],
+  },
+});
+const totalSamples = sampleCountsView.metric(
+  {
+    id: 'total-samples',
+    glossaryId: 'sampleCount',
+    label: 'Total samples',
+    format: { kind: 'count' },
+  },
+  rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
+);
+const sampleContent = sampleCountsView.content(result => (
+  <Stack aria-label="Sample results">
+    <TextContent>
+      <p>
+        Showing <DataValue scope={result.scope} />
+      </p>
+    </TextContent>
+    <Grid columns={2}>
+      <MetricWidget
+        metric={totalSamples}
+        source={result}
+        description="Sum of the fixture counts in the selected groups."
+      />
+      <TableWidget
+        dataset={sampleCounts}
+        source={result}
+        title="Counts by group"
+        description="Alpha and Beta demonstrate measured values, including zero."
+        pagination={false}
+      />
+    </Grid>
+  </Stack>
+));
 function App() {
-  const sampleCountsRequest = useView(sampleCountsView);
   return (
     <DataApp
       config={appConfig}
-      dataContext={sampleDataContext}
-      request={sampleCountsRequest}
-      csvExport={({ data: sampleCounts, input }) => ({
-        filename: `sample-counts-${input.groupName || 'all'}.csv`,
-        tables: [
+      view={sampleCountsView}
+      datasets={[sampleCounts]}
+      story={snapshot => {
+        const total = totalSamples.read(snapshot);
+        const scope = sampleCountsView.scope(snapshot);
+        return [
           {
-            name: 'Sample counts',
-            columns: ['Group', 'Sample count'],
-            rows: sampleCounts.map(({ groupName, sampleCount }) => [
-              groupName,
-              sampleCount,
-            ]),
+            id: 'total-samples',
+            headline: `Total samples: ${formatMetric(total.value.current, totalSamples.definition.format)}`,
+            context: `Demonstration values for ${scope}.`,
+            visual: <MetricWidget metric={totalSamples} source={snapshot} />,
+            visualKind: 'metric',
+            evidence: totalSamples,
           },
-        ],
-      })}
-      story={({ data: sampleCounts, input: displayedInput }) =>
-        sampleCounts.map(({ groupName, sampleCount }) =>
-          sampleDataContext.finding({
-            id: `sample-count-${groupName}`,
-            headline: `${groupName} has ${sampleCount} samples`,
-            context: `Demonstration values for ${displayedInput.groupName || 'all groups'}.`,
+          {
+            id: 'counts-by-group',
+            headline: 'Counts by group',
+            context: `Demonstration values for ${scope}.`,
             visual: (
-              <MetricWidget
-                label="Sample count"
-                value={sampleCount}
-                format={{ kind: 'count' }}
+              <TableWidget
+                dataset={sampleCounts}
+                source={snapshot}
+                pagination={false}
               />
             ),
-            visualKind: 'metric',
-            evidence: {
-              id: `sample-count-${groupName}`,
-              glossaryIds: ['sampleCount'],
-            },
-          })
-        )
-      }
+            evidence: sampleCounts,
+          },
+        ];
+      }}
     >
-      {(sampleCounts, displayedInput) => (
-        <Stack aria-label="Sample results">
-          <TextContent>
-            <h2>Sample counts</h2>
-            <p>Showing {displayedInput.groupName || 'all groups'}</p>
-          </TextContent>
-          <Grid columns={2}>
-            {sampleCounts.map(({ groupName, sampleCount }) => (
-              <MetricWidget
-                key={groupName}
-                label={`${groupName}: ${sampleCount}`}
-                value={sampleCount}
-                format={{ kind: 'count' }}
-              />
-            ))}
-          </Grid>
-        </Stack>
-      )}
+      <Stack>
+        <TextContent>
+          <h2>Sample counts</h2>
+        </TextContent>
+        <DataSection content={sampleContent} />
+      </Stack>
     </DataApp>
   );
 }

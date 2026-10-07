@@ -43,6 +43,7 @@ const browser = await Bun.build({
     'src/client/index.ts',
     'src/embed/index.ts',
     'src/react/index.ts',
+    'src/react/ui/index.ts',
     'src/react/embed/index.ts',
   ],
   root: 'src',
