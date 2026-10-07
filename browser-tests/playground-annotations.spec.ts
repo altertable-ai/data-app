@@ -501,6 +501,9 @@ test('an older stored app version is reviewed without enabling selection or subm
   await expect(
     panel.getByRole('button', { name: 'View screenshot of Revenue by month' })
   ).toBeEnabled();
+  await expect(
+    page.getByRole('button', { name: 'Exit annotation mode', exact: true })
+  ).toBeEnabled();
 });
 
 test('annotation review is centered above its floating bar', async ({

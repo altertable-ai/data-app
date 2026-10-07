@@ -128,7 +128,8 @@ export function AnnotationSelectionLayer({
         className="altertable-annotation-selection-layer"
         aria-label="Annotation selection"
         aria-describedby={instructionsId}
-        tabIndex={0}
+        aria-disabled={disabled || editing || undefined}
+        tabIndex={disabled || editing ? -1 : 0}
         onKeyDown={event => {
           if (event.key === 'Escape' && (start.current || pickingArea)) {
             event.preventDefault();
@@ -219,7 +220,11 @@ export function AnnotationSelectionLayer({
           }
         }}
         onPointerDown={event => {
-          if (disabled || editing || event.button !== 0) return;
+          if (disabled || editing) {
+            event.preventDefault();
+            return;
+          }
+          if (event.button !== 0) return;
           if (scrolling) {
             if (event.pointerType === 'mouse') {
               panY.current = event.clientY;

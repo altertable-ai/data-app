@@ -468,6 +468,7 @@ test('an open editor blocks background selection and uses a dashed widget outlin
     .locator('[data-annotation-id="monthly-revenue"]')
     .click({ force: true });
   await expect(input).toHaveValue('Keep this draft');
+  await expect(input).toBeFocused();
   await expect(outline).toHaveCSS('border-style', 'dashed');
   expect(await outline.boundingBox()).toEqual(initial);
   await expect(

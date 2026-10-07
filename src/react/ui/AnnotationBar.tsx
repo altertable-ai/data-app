@@ -371,7 +371,7 @@ export function AnnotationBar({
               variant="ghost"
               size="icon-compact"
               aria-label="Exit annotation mode"
-              disabled={locked || hasUnsavedChanges || outdated}
+              disabled={locked || hasUnsavedChanges}
               onClick={onClose}
             >
               <X size={16} aria-hidden />
