@@ -51,5 +51,6 @@ Use package controls when possible. For a custom native control:
 
 These hooks provide cursor and focus styling; keep native semantics, accessible
 names, disabled state, and keyboard behavior. `DataAppStyleHooks` checks hook
-values. Use `inset` focus inside clipped surfaces and `group` when a wrapper owns
-an input's outline. See [UI quality](ui-quality.md) for rendered verification.
+values. Use `default` for tooltip targets that only reveal information on hover
+or tap, and `action` for controls that perform an action. Use `inset` focus inside
+clipped surfaces and `group` when a wrapper owns an input's outline. See [UI quality](ui-quality.md) for rendered verification.

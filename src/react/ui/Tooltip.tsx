@@ -23,6 +23,7 @@ import {
   useFloating,
   useMergeRefs,
 } from '@floating-ui/react';
+import { TooltipSurface } from '@/src/react/ui/TooltipSurface';
 import { classNames } from '@/src/react/ui/classNames';
 
 const chartPointerPositions = new WeakMap<Document, { x: number; y: number }>();
@@ -350,16 +351,15 @@ export function Tooltip({
       </span>
       {visible && (
         <FloatingPortal root={portalRoot ?? dialogRoot ?? undefined}>
-          <span
+          <TooltipSurface
             ref={floatingRef}
             data-variant={variant}
-            className="altertable-tooltip-content"
             style={floatingStyles}
             role="tooltip"
             id={describedBy}
           >
             {content}
-          </span>
+          </TooltipSurface>
         </FloatingPortal>
       )}
     </>

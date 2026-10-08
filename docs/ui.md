@@ -44,7 +44,8 @@ Pass `{ allowShift: true }` when the handler also supports Shift gestures.
 
 Choose a chart using the [visualization guide](widgets.md#choose-a-visualization).
 Import `<BarChart>`, `<LineChart>`, `<AreaChart>`, `<PieChart>`, or `<ScatterChart>` from
-`/react/ui`. Compose the visual inside `<VisualizationWidget dataset={dataset} source={result}>`
+`/react/ui`; `<ComposedChart>` exposes the series primitives for custom plots.
+Compose the visual inside `<VisualizationWidget dataset={dataset} source={result}>`
 so rows, loading state, evidence, and inspection come from that dataset.
 Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
 values must be nonnegative. Use `formatValue` for domain formatting.
@@ -55,3 +56,48 @@ intervals. Distinguish a missing observation from measured zero when preparing
 the samples. Pie slices represent mutually exclusive parts of one total; shares
 use the sum of supplied items, so include Other when showing a subset of the
 whole. Scatter points represent independent X/Y observations.
+
+### Composed charts
+
+Use `<ComposedChart>` from `/react/ui` for multiple series or mixed marks inside
+`<VisualizationWidget>`. Pass the displayed rows and select fields with `dataKey`.
+`<ComposedChart.Bar>`, `<ComposedChart.Line>`, and `<ComposedChart.Area>` share the
+standalone charts' themed series primitives; axes, scatter, tooltip, and reference
+primitives are also available.
+
+```tsx
+<VisualizationWidget dataset={revenue} source={result}>
+  {rows => (
+    <ComposedChart data={rows} ariaLabel="Monthly revenue and target in euros">
+      <ComposedChart.XAxis dataKey="month" />
+      <ComposedChart.YAxis />
+      <ComposedChart.Tooltip />
+      <ComposedChart.Legend />
+      <ComposedChart.Bar dataKey="revenue" name="Revenue (€)" />
+      <ComposedChart.Line
+        dataKey="target"
+        name="Target (€)"
+        stroke="var(--atbl-chart-2)"
+      />
+    </ComposedChart>
+  )}
+</VisualizationWidget>
+```
+
+Label series and units clearly. See component JSDoc and the
+[Recharts API](https://recharts.github.io/en-US/api/ComposedChart/) for options.
+The dataset owns loading, empty results, evidence, CSV, and story content; keep
+its columns aligned with the displayed measures.
+
+### Legends
+
+Include `<ComposedChart.Legend />` to derive labels and markers from the series;
+omit it when no legend is needed. For any chart, compose `<ChartLegend>` with
+`<ChartLegend.Item>`, `<ChartLegend.Marker>`, and `<ChartLegend.Label>` using the
+same names and colors as the plot.
+`<PieChart>` includes a legend by default; `showLegend={false}` omits it.
+
+Legends align cells in a container-responsive grid, truncate labels, and reserve
+an overflow cell for “+X more.” Use `maxVisibleItems` to choose the limit or
+`layout="vertical"` for a list. Legends describe series; authored toggles or a
+composed legend's `onClick` leave series visibility to the app.

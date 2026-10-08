@@ -1,5 +1,8 @@
-/* Public data-atbl-control: action, help, or text cursor ownership.
+/* Public data-atbl-control: default, action, help, or text cursor ownership.
    Disabled and busy states share the corresponding inherited cursor tokens. */
+[data-atbl-control='default'] {
+  cursor: default;
+}
 [data-atbl-control='action'],
 [data-atbl-internal-prose] a {
   cursor: var(--atbl-cursor-action);

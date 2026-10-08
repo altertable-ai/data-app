@@ -122,3 +122,16 @@ export type {
   DataAppStyleToken,
   DataAppStyleHooks,
 } from '@/src/react/style-contract';
+
+export { ComposedChart } from '@/src/react/ui/ComposedChart';
+export type { ComposedChartProps } from '@/src/react/ui/ComposedChart';
+
+export { ChartLegend } from '@/src/react/ui/ChartLegend';
+export type {
+  ChartLegendProps,
+  ChartLegendItemProps,
+  ChartLegendMarkerProps,
+  ChartLegendLabelProps,
+  ChartLegendMarkerKind,
+} from '@/src/react/ui/ChartLegend';
+export type { ComposedChartLegendProps } from '@/src/react/ui/ComposedChartLegend';

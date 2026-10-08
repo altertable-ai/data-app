@@ -1,0 +1,91 @@
+.altertable-chart-legend-container {
+  container: atbl-chart-legend / inline-size;
+  min-width: 0;
+  width: 100%;
+}
+.altertable-chart-legend {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: var(--atbl-space-sm) var(--atbl-space-md);
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  list-style: none;
+  color: var(--atbl-text);
+  font-size: var(--atbl-type-meta-size);
+  line-height: var(--atbl-type-label-leading);
+  font-variant-numeric: tabular-nums;
+}
+.altertable-chart-legend[data-layout='vertical'] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.altertable-chart-legend[data-align='center'] {
+  justify-content: center;
+}
+.altertable-chart-legend[data-align='end'] {
+  justify-content: end;
+}
+.altertable-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--atbl-space-xs);
+  min-width: 0;
+  max-width: 100%;
+}
+.altertable-chart-legend-item[data-inactive] {
+  opacity: var(--atbl-control-disabled-opacity);
+}
+.altertable-chart-legend-marker {
+  display: block;
+  width: 20px;
+  height: 12px;
+  flex: none;
+}
+.altertable-chart-legend-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.altertable-chart-legend-action {
+  display: flex;
+  align-items: center;
+  gap: inherit;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.altertable-chart-legend[data-layout='vertical'][data-align='center'] {
+  justify-items: center;
+}
+.altertable-chart-legend[data-layout='vertical'][data-align='end'] {
+  justify-items: end;
+}
+
+.altertable-chart-legend-overflow {
+  min-width: 0;
+  color: var(--atbl-muted);
+}
+@container atbl-chart-legend (min-width: 240px) {
+  .altertable-chart-legend[data-layout='horizontal'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container atbl-chart-legend (min-width: 480px) {
+  .altertable-chart-legend[data-layout='horizontal'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@container atbl-chart-legend (min-width: 720px) {
+  .altertable-chart-legend[data-layout='horizontal'] {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

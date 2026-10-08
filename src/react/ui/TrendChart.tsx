@@ -1,5 +1,17 @@
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import {
+  AreaChart as RechartsAreaChart,
+  LineChart as RechartsLineChart,
+  ReferenceLine,
+} from 'recharts';
+import {
+  ChartArea,
+  ChartLine,
+  ChartDot,
+  ChartXAxis,
+  ChartYAxis,
+} from '@/src/react/ui/chart-primitives';
 import type { ValueChartProps } from '@/src/react/ui/chart-data';
 import { validateChartItems } from '@/src/react/ui/chart-data';
 
@@ -12,6 +24,8 @@ export function TrendChart({
   area = false,
 }: ValueChartProps & { area?: boolean }) {
   validateChartItems(area ? 'area' : 'line', items);
+  const Plot = area ? RechartsAreaChart : RechartsLineChart;
+  const [activeIndex, setActiveIndex] = useState<number>();
   const scrollport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const element = scrollport.current;
@@ -29,19 +43,6 @@ export function TrendChart({
     (max, item) => Math.max(max, item.value / magnitude),
     0
   );
-  const span = high - low || 1;
-  function y(value: number) {
-    return 208 - ((value / magnitude - low) / span) * 196;
-  }
-  const points = items.map((item, index) => ({
-    x: ((index + 0.5) / items.length) * 1000,
-    y: y(item.value),
-  }));
-  const path = points
-    .map((point, index) => `${index ? 'L' : 'M'}${point.x},${point.y}`)
-    .join(' ');
-  const first = points[0];
-  const last = points.at(-1);
   return (
     <section className="altertable-trend-chart" aria-label={ariaLabel}>
       {items.length === 0 && <span>No data</span>}
@@ -52,37 +53,58 @@ export function TrendChart({
               className="altertable-trend-plot"
               style={{ minWidth: items.length * 40 }}
             >
-              <svg
-                viewBox="0 0 1000 220"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <line
-                  className="altertable-trend-baseline"
-                  x1="0"
-                  x2="1000"
-                  y1={y(0)}
-                  y2={y(0)}
-                  vectorEffect="non-scaling-stroke"
-                />
-                {area && first && last && (
-                  <path
-                    className="altertable-trend-fill"
-                    d={`${path} L${last.x},${y(0)} L${first.x},${y(0)} Z`}
+              <div className="altertable-chart-canvas" aria-hidden="true">
+                <Plot
+                  data={items.map(item => ({
+                    ...item,
+                    plotValue: item.value / magnitude,
+                  }))}
+                  title={ariaLabel}
+                  responsive
+                  width="100%"
+                  height={220}
+                  margin={{ top: 12, right: 0, bottom: 12, left: 0 }}
+                  accessibilityLayer={false}
+                  tabIndex={-1}
+                >
+                  <ChartXAxis hide dataKey="id" scale="band" />
+                  <ChartYAxis
+                    hide
+                    domain={[low, high === low ? low + 1 : high]}
                   />
-                )}
-                <path
-                  className="altertable-trend-line"
-                  d={path}
-                  vectorEffect="non-scaling-stroke"
-                />
-              </svg>
+                  <ReferenceLine y={0} stroke="var(--atbl-border)" />
+                  {area && (
+                    <ChartArea
+                      dataKey="plotValue"
+                      stroke="none"
+                      fill="var(--atbl-accent)"
+                      dot={false}
+                      activeDot={false}
+                    />
+                  )}
+                  <ChartLine
+                    dataKey="plotValue"
+                    dot={({ cx, cy, index }) => (
+                      <ChartDot
+                        cx={cx}
+                        cy={cy}
+                        active={index === activeIndex}
+                      />
+                    )}
+                    activeDot={false}
+                  />
+                </Plot>
+              </div>
               <div className="altertable-trend-points">
                 {items.map((item, index) => (
                   <Tooltip
                     key={item.id}
                     variant="chart"
+                    onOpenChange={open =>
+                      setActiveIndex(current =>
+                        open ? index : current === index ? undefined : current
+                      )
+                    }
                     content={
                       <>
                         <strong>{item.label}</strong>
@@ -95,18 +117,13 @@ export function TrendChart({
                   >
                     <button
                       data-atbl-focus="ring"
-                      data-atbl-control="action"
+                      data-atbl-control="default"
                       type="button"
                       tabIndex={-1}
                       className="altertable-trend-point"
                       aria-label={`${item.label}: ${formatValue(item.value)} ${unit}`}
                     >
-                      <span className="altertable-trend-hit">
-                        <span
-                          className="altertable-trend-dot"
-                          style={{ top: `${(points[index]!.y / 220) * 100}%` }}
-                        />
-                      </span>
+                      <span className="altertable-trend-hit" />
                       <span className="altertable-trend-label">
                         {item.label}
                       </span>
