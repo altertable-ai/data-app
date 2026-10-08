@@ -95,7 +95,7 @@ if (!initialBuildSucceeded) {
 }
 
 function startServer() {
-  return Bun.spawn([process.execPath, 'browser-tests/server.ts'], {
+  return Bun.spawn([process.execPath, 'dev/server.ts'], {
     cwd: root,
     env: {
       ...process.env,

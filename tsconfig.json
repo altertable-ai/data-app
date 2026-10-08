@@ -15,10 +15,10 @@
     }
   },
   "include": [
+    "vitest.config.ts",
     "src",
     "tests",
     "scripts",
-    "browser-tests",
     "dev",
     "examples/starter-data-app/index.tsx"
   ]

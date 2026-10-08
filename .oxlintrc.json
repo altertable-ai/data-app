@@ -29,5 +29,33 @@
         }
       }
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["tests/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": ["bun:test", "@playwright/test"],
+            "patterns": [
+              {
+                "group": ["./**", "../**", ".", ".."],
+                "message": "Use repository-root @/ imports for test fixtures."
+              },
+              {
+                "group": [
+                  "@/src/**",
+                  "@/dev/**",
+                  "**/dist/**",
+                  "@altertable/data-app/dist/**"
+                ],
+                "message": "Test consumer workflows through @altertable/data-app/<entry>, not private implementation modules."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

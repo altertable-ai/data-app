@@ -16,7 +16,7 @@ command = "bun run dev"
 [[actions]]
 name = "Preview gallery"
 icon = "run"
-command = "bun run build && bun install --frozen-lockfile && bun browser-tests/server.ts"
+command = "bun run build && bun install --frozen-lockfile && bun dev/server.ts"
 
 [[actions]]
 name = "Check"
@@ -24,9 +24,9 @@ icon = "test"
 command = "bun run check"
 
 [[actions]]
-name = "Browser tests"
+name = "Tests"
 icon = "test"
-command = "bun run build && bun install --frozen-lockfile && bun run test:browser"
+command = "bun run build && bun install --frozen-lockfile && bun run test"
 
 [[actions]]
 name = "Build"

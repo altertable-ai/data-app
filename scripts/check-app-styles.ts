@@ -1,10 +1,12 @@
 import { Glob } from 'bun';
 import { validateAuthoredStyles } from '@/src/react/style-validation';
 
+await import('@/scripts/check-style-integrity');
+
 const requested = process.argv.slice(2);
 const paths = requested.length
   ? requested
-  : ['examples/**/*.{tsx,css,html}', 'dev/**/*.{tsx,css,html}'];
+  : ['examples/**/*.{tsx,css,html}', 'dev/*.{tsx,css,html}'];
 let failed = false;
 for (const pattern of paths) {
   let matched = false;

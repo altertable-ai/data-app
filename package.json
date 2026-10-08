@@ -92,16 +92,15 @@
     "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
     "dev": "bun run scripts/dev.ts",
     "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
-    "lint": "oxlint --type-aware src tests scripts browser-tests dev examples/starter-data-app",
+    "lint": "oxlint --type-aware src tests scripts dev examples/starter-data-app vitest.config.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "test": "bun test ./tests",
-    "check": "bun run build && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run test:package && bun run test:starter",
-    "test:package": "bun run scripts/check-package.ts",
+    "test": "vitest run",
+    "check": "bun run build && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:package && bun run check:starter",
+    "check:package": "bun run scripts/check-package.ts",
     "check:workflows": "bash scripts/check-workflows.sh",
-    "test:browser": "playwright test --config browser-tests/playwright.config.ts",
-    "lint:fix": "oxlint --type-aware --fix src tests scripts browser-tests",
-    "test:starter": "bun run scripts/check-starter.ts",
+    "lint:fix": "oxlint --type-aware --fix src tests scripts dev vitest.config.ts",
+    "check:starter": "bun run scripts/check-starter.ts",
     "lint:md": "markdownlint-cli2",
     "check:links": "remark . --ext md --rc-path .remarkrc.json --frail --no-stdout",
     "check:links:external": "remark . --ext md --rc-path .remarkrc-external.json --frail --no-stdout",
@@ -118,7 +117,6 @@
     "react-aria-components": "1.21.1"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
     "@types/bun": "1.4.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
@@ -126,6 +124,7 @@
     "oxfmt": "0.70.0",
     "oxlint": "1.85.0",
     "oxlint-tsgolint": "7.0.2003",
+    "playwright": "1.63.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "remark-cli": "12.0.1",
@@ -133,7 +132,8 @@
     "remark-lint-no-dead-urls": "2.0.1",
     "remark-validate-links": "13.1.0",
     "testcontainers": "12.2.0",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
   },
   "peerDependencies": {
     "react": ">=19.2.0",
