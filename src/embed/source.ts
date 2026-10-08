@@ -1,3 +1,5 @@
+import { randomUuid } from '@/src/core/uuid';
+import { runtimeHtml } from '@/src/embed/runtime-html';
 import { PARENT_PARAM } from '@/src/core/bridge';
 import {
   attachDataAppConnection,
@@ -10,7 +12,8 @@ export type DataAppSource =
   | { type: 'url'; url: string }
   | {
       type: 'bundle';
-      bootstrapUrl: string;
+      /** Omit to use the packaged, network-isolated data document. */
+      bootstrapUrl?: string;
       javascript: string;
     };
 export type DataAppSourceOptions = DataAppHostOptions & {
@@ -32,10 +35,16 @@ export function attachDataAppSource({
   const host = iframe.ownerDocument.defaultView;
   if (!host) throw new Error('The iframe requires a host window.');
   const url = new URL(
-    source.type === 'url' ? source.url : source.bootstrapUrl,
+    source.type === 'url'
+      ? source.url
+      : (source.bootstrapUrl ??
+          `data:text/html;charset=utf-8,${encodeURIComponent(runtimeHtml(host.location.origin))}`),
     host.location.href
   );
-  if (!/^https?:$/.test(url.protocol))
+  if (
+    !(source.type === 'bundle' && source.bootstrapUrl === undefined) &&
+    !/^https?:$/.test(url.protocol)
+  )
     throw new Error('Data apps require an HTTP(S) URL.');
   const opaque = source.type === 'bundle';
   if (!opaque && url.origin === host.location.origin)
@@ -71,7 +80,7 @@ export function attachDataAppSource({
   const bridge = attachDataAppConnection({
     iframe,
     connection: opaque
-      ? { type: 'opaque', token: crypto.randomUUID() }
+      ? { type: 'opaque', token: randomUuid() }
       : { type: 'origin', origin: url.origin },
     javascript: opaque ? source.javascript : undefined,
     presentation,

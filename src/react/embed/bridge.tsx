@@ -98,7 +98,7 @@ function SourceBridge(props: SourceBridgeProps) {
       iframe,
       source:
         type === 'url'
-          ? { type, url }
+          ? { type, url: url! }
           : {
               type,
               bootstrapUrl: url,

@@ -1,3 +1,4 @@
+import { randomUuid } from '@/src/core/uuid';
 import { createHttpTransport, DataAppError } from '@/src/client/transport';
 import { getDataAppTransport, localFrameBridge } from '@/src/client/iframe';
 import {
@@ -97,7 +98,7 @@ function createOperationClient<Operations extends DataOperations>(options: {
   return {
     async query(name, input, { signal } = {}) {
       signal?.throwIfAborted();
-      const requestId = crypto.randomUUID();
+      const requestId = randomUuid();
       if (!Object.hasOwn(options.operations, name))
         throw new DataAppError(
           'Unknown data operation.',

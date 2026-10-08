@@ -1,3 +1,4 @@
+import { randomUuid } from '@/src/core/uuid';
 import {
   createIframeTransport,
   installDataAppTransport,
@@ -13,7 +14,7 @@ export function startDataAppBootstrap({
 }) {
   let loaded: string | undefined;
   let failed = false;
-  const bundleSource = `altertable-data-app-${crypto.randomUUID()}.js`;
+  const bundleSource = `altertable-data-app-${randomUuid()}.js`;
   const bridge = createIframeTransport({
     parentOrigin,
     window: frame,

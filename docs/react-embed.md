@@ -45,10 +45,11 @@ The local URL must have a different origin from its shell. For hosted bundles,
 replace `source` with:
 
 ```tsx
-source={{ type: 'bundle', bootstrapUrl, javascript }}
+source={{ type: 'bundle', javascript }}
 ```
 
-The host supplies those bundle values. See [embedding](embed.md) for trust,
+The host supplies the JavaScript bundle. Omit `bootstrapUrl` for the packaged
+opaque bootstrap, or supply an HTTP(S) URL for an external bootstrap. See [embedding](embed.md) for trust,
 sandbox, CSP, and bootstrap setup.
 
 Source URL or JavaScript content changes replace the entire iframe. Change the
