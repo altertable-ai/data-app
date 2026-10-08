@@ -103,9 +103,9 @@ function Host() {
     sourceVersion: isPlayground ? `${sourceHash}:${bundleVersion}` : 'fixture',
     storageKey: isPlayground ? `playground:${location.origin}` : undefined,
   });
-  const annotationBar = useRef<AnnotationBarHandle>(null);
-  const requestAnnotationSend = useEffectEvent(async () => {
-    await annotationBar.current?.send();
+  const annotationBarRef = useRef<AnnotationBarHandle>(null);
+  const sendAnnotations = useEffectEvent(async () => {
+    await annotationBarRef.current?.send();
     return null;
   });
   const {
@@ -240,7 +240,7 @@ function Host() {
     },
     {
       ...annotationsHost.handlers,
-      'annotation:send': requestAnnotationSend,
+      'annotation:send': sendAnnotations,
       'annotation:draft'(draft) {
         if (hostOptions.has('annotation-limit'))
           throw new MessageRoutingError(
@@ -412,7 +412,7 @@ function Host() {
       )}
       {isPlayground && (annotating || annotationsHost.deletedAnnotationId) && (
         <AnnotationBar
-          ref={annotationBar}
+          ref={annotationBarRef}
           active={annotating}
           annotations={annotations}
           theme={theme}

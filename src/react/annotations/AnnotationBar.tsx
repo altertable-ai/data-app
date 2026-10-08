@@ -170,6 +170,8 @@ export function AnnotationBar({
     state;
   const preview = annotations.find(annotation => annotation.id === previewId);
   const locked = disabled || pending;
+  const canSend =
+    active && !locked && !hasUnsavedChanges && annotations.length > 0;
   const { refs, floatingStyles } = useFloating({
     placement: 'top',
     strategy: 'fixed',
@@ -211,14 +213,7 @@ export function AnnotationBar({
     reviewTrigger.current?.focus();
   }
   async function send() {
-    if (
-      !active ||
-      submitting.current ||
-      locked ||
-      hasUnsavedChanges ||
-      !annotations.length
-    )
-      return;
+    if (submitting.current || !canSend) return;
     submitting.current = true;
     dispatch({ type: 'submissionStarted' });
     try {
@@ -233,11 +228,7 @@ export function AnnotationBar({
     }
   }
   useImperativeHandle(ref, () => ({ send }));
-  useShortcut(
-    shortcuts.sendAnnotations,
-    () => void send(),
-    active && !locked && !hasUnsavedChanges && annotations.length > 0
-  );
+  useShortcut(shortcuts.sendAnnotations, () => void send(), canSend);
   useEffect(() => {
     if (discardOpen) cancelDiscard.current?.focus();
   }, [discardOpen]);
@@ -419,7 +410,7 @@ export function AnnotationBar({
               size="compact"
               aria-label="Send annotations"
               aria-keyshortcuts={ariaKeyShortcuts(shortcuts.sendAnnotations)}
-              disabled={locked || hasUnsavedChanges || !annotations.length}
+              disabled={!canSend}
               onClick={() => void send()}
             >
               <span className="altertable-annotation-bar-send-label">Send</span>

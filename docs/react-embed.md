@@ -106,12 +106,3 @@ Prop updates publish trusted state without reloading the iframe or reconnecting
 the session. Resolve system preference in the parent to `'light'` or `'dark'`.
 Inside an embedded surface, `<DataApp>` retains toolbar actions and hides its header
 and footer. See [parent presentation](embed.md#parent-presentation).
-
-## Sending annotations
-
-Mod+Enter sends saved annotations; Mod+Shift+Enter presents the story. The host
-owns batch submission. Register `annotation:send` with `annotationSendRoute` from
-`/contract` to receive send requests while focus is inside the iframe. When using
-`<AnnotationBar>`, pass a ref and call its `send()` method from that handler to
-reuse the button's submission guards and retry feedback. Unsaved edits and pending
-submissions block sending.

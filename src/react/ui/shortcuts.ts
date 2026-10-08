@@ -81,10 +81,10 @@ export function useShortcut(
         return;
       const apple = isApple();
       const mod = apple ? event.metaKey : event.ctrlKey;
-      const pressed = {
-        alt: event.altKey && !event.ctrlKey && !event.metaKey,
-        mod: mod && !event.altKey && !(apple ? event.ctrlKey : event.metaKey),
-      }[modifier];
+      const pressed =
+        modifier === 'alt'
+          ? event.altKey && !event.ctrlKey && !event.metaKey
+          : mod && !event.altKey && !(apple ? event.ctrlKey : event.metaKey);
       if (
         !pressed ||
         document.querySelector('dialog:modal') ||
