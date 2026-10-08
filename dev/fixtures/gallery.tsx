@@ -556,22 +556,6 @@ function Gallery() {
 
   return (
     <DataApp
-      csvExport={{
-        filename: 'gallery',
-        tables: [
-          {
-            name: 'Counts',
-            columns: ['Name', 'Count'],
-            rows: [
-              ['München, "East"', 0],
-              ['Two\nlines', null],
-            ],
-          },
-          ...(new URLSearchParams(location.search).has('multiple-exports')
-            ? [{ name: 'Summary', columns: ['Total'], rows: [[0]] }]
-            : []),
-        ],
-      }}
       config={config}
       dataContext={dataContext}
       queries={queries}
