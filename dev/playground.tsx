@@ -524,7 +524,6 @@ function presentOrders(snapshot: OrderSnapshot) {
 function App() {
   return (
     <DataApp
-      config={dataApp.config}
       view={orderView}
       datasets={[
         countryDataset,
@@ -541,4 +540,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+mountDataApp({ app: dataApp, component: App });

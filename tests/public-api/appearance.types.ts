@@ -10,7 +10,7 @@ const dataApp = defineDataApp({
   queries: {},
 });
 
-void dataApp.config;
+void dataApp;
 
 export const invalidTheme: AppearanceOptions = {
   // @ts-expect-error Themes use the supported preferences.

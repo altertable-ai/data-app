@@ -8,8 +8,8 @@ should import their operation types using `import type`.
 ## Execute named queries
 
 Declare SQL once with `defineDataApp()` to preserve exact query and parameter
-names. Define operations with `dataApp.defineOperation()` and pass `dataApp.config`
-to rendering and mounting APIs. Use `{ defaultValue }` for a fallback or `{}` for a required value.
+names. Define operations with `dataApp.defineOperation()` and mount with
+`mountDataApp({ app: dataApp, component: App })`. Use `{ defaultValue }` for a fallback or `{}` for a required value.
 
 ```ts
 import { defineDataApp } from '@altertable/data-app/config';
@@ -67,7 +67,7 @@ export const calendar = defineDateRangeContract({
 ```
 
 `parseEmptyInput()`, `parseTrue()`, `parseCount()`, and `parseDateRangeInput()` validate
-common inputs and results. `connectionCheck(dataApp.config.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
+common inputs and results. `connectionCheck(dataApp.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
 analysis result.
 
 See [server authorization](server.md) and [React views](react.md) for the two

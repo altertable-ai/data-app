@@ -104,7 +104,6 @@ function App() {
   return (
     <AuthoringBoundary>
       <DataApp
-        config={dataApp.config}
         view={own.view}
         datasets={[binding === 'export' ? other.dataset : own.dataset]}
         story={snapshot => [
@@ -129,4 +128,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+mountDataApp({ app: dataApp, component: App });

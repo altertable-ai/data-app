@@ -3,7 +3,7 @@ import { dataApp } from "#config";
 
 const connectionQueryNames = { connection: "connection" } satisfies Record<
   string,
-  keyof typeof dataApp.config.queries
+  keyof typeof dataApp.queries
 >;
 
 /** Setup context only. Replace it with the exploration's scope, exact definitions, limitations,

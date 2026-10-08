@@ -564,7 +564,6 @@ function Gallery() {
 
   return (
     <DataApp
-      config={dataApp.config}
       dataContext={dataContext}
       queries={queries}
       description="Explore the patterns behind useful data apps. Start with a working dashboard, then try the controls, displays, and states that fit your use case."
@@ -613,4 +612,4 @@ function Gallery() {
 }
 
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: Gallery });
+mountDataApp({ app: dataApp, component: Gallery });

@@ -36,7 +36,7 @@ const operation = dataApp.defineOperation({
     // @ts-expect-error Parameterless queries also reject keys from variables.
     await context.query('ping', extraParams);
     await context.query('products');
-    // @ts-expect-error Only dataApp.config's declared query names are accepted.
+    // @ts-expect-error Only dataApp's declared query names are accepted.
     await context.query('inventedQuery');
     await context.query('signUps', { days: 14 });
     // @ts-expect-error Parameter keys belong to the selected query.

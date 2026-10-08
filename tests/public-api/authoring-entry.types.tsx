@@ -17,6 +17,7 @@ import {
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
 import {
+  DataAppProvider,
   DataApp as StaticApp,
   MetricWidget as StaticMetric,
   useAppVariables,
@@ -49,7 +50,6 @@ const dataApp = defineDataApp({
 });
 
 const base = {
-  config: dataApp.config,
   dataContext: { description: 'Test', glossary: {} },
   children: null,
 };
@@ -274,3 +274,34 @@ view.dataset<number>({
     },
   ]}
 />;
+
+// @ts-expect-error App identity comes from the root provider, not component props.
+<DataApp {...app} config={dataApp} />;
+
+// @ts-expect-error Mounting requires an app identity.
+authoring.mountDataApp({ component: () => null });
+
+authoring.mountDataApp({
+  // @ts-expect-error Root APIs require a defined app, not a bare configuration.
+  app: {
+    title: 'Undeclared',
+    scope: { organization: 'a', environment: 'b' },
+    appearance: {},
+    queries: {},
+  },
+  component: () => null,
+});
+
+DataAppProvider({
+  // @ts-expect-error Custom roots require the same defined app as mounting.
+  app: {
+    title: 'Undeclared',
+    scope: { organization: 'a', environment: 'b' },
+    appearance: {},
+    queries: {},
+  },
+  children: null,
+});
+
+// @ts-expect-error App fields are direct; there is no separate configuration wrapper.
+void dataApp.config;

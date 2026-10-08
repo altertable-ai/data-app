@@ -73,12 +73,7 @@ const content = view.content(result => (
 ));
 function App() {
   return (
-    <DataApp
-      config={dataApp.config}
-      view={view}
-      datasets={[dataset]}
-      story={() => []}
-    >
+    <DataApp view={view} datasets={[dataset]} story={() => []}>
       <Stack aria-label="Report sections">
         <TextContent>
           <h2>Activity overview</h2>
@@ -93,4 +88,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+mountDataApp({ app: dataApp, component: App });

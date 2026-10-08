@@ -1,5 +1,6 @@
 import { defineDataApp } from '@altertable/data-app/config';
 import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import {
   formatPercent,
   formatNumber,
@@ -11,6 +12,7 @@ import {
 import { mountDataApp, injectDataAppStyles } from '@altertable/data-app/react';
 import {
   DataApp,
+  DataAppProvider,
   MetricWidget,
   TableWidget,
   LineChart,
@@ -68,7 +70,6 @@ function App() {
   const [search, setSearch] = useState('');
   return (
     <DataApp
-      config={dataApp.config}
       dataContext={{ description: 'Activity data', glossary: {} }}
       csvExport={{
         filename: 'gallery',
@@ -77,6 +78,9 @@ function App() {
           : [counts],
       }}
     >
+      {new URLSearchParams(location.search).has('identity') && (
+        <output aria-label="Document title at render">{document.title}</output>
+      )}
       <MetricWidget
         label="Total events"
         value={12345}
@@ -136,4 +140,25 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+if (new URLSearchParams(location.search).has('custom-root')) {
+  createRoot(document.getElementById('root')!).render(
+    <DataAppProvider app={dataApp}>
+      <section aria-label="First app">
+        <App />
+      </section>
+      <DataAppProvider
+        app={{
+          ...dataApp,
+          title: 'Second report',
+          scope: { organization: 'other', environment: 'preview' },
+        }}
+      >
+        <section aria-label="Second app">
+          <App />
+        </section>
+      </DataAppProvider>
+    </DataAppProvider>
+  );
+} else {
+  mountDataApp({ app: dataApp, component: App });
+}

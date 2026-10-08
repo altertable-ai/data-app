@@ -129,7 +129,7 @@ if (!isDevelopment) process.env.NODE_ENV = 'production';
 serveLocalApp({
   page: starterPage,
   operations: starterOperations,
-  title: starterApp.config.title,
+  title: starterApp.title,
   port: port + 2,
 });
 const loadFrameBundle = await createBundleLoader('./fixtures/bridge-frame.ts');

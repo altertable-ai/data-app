@@ -45,9 +45,9 @@ Bundle apps pass their operation registry as a value:
 import { connectionCheck } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
 
-// dataApp.config declares a connection query.
+// dataApp declares a connection query.
 const client = createDataClient({
-  operations: { connection: connectionCheck(dataApp.config.queries) },
+  operations: { connection: connectionCheck(dataApp.queries) },
 });
 const response = await client.query('connection', {});
 ```

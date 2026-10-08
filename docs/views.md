@@ -26,12 +26,7 @@ const content = activityView.content(result => (
 
 function App() {
   return (
-    <DataApp
-      config={config}
-      view={activityView}
-      story={story}
-      datasets={[activityDataset]}
-    >
+    <DataApp view={activityView} story={story} datasets={[activityDataset]}>
       <DataSection content={content} />
     </DataApp>
   );

@@ -162,7 +162,6 @@ const sampleContent = sampleCountsView.content(result => (
 function App() {
   return (
     <DataApp
-      config={dataApp.config}
       view={sampleCountsView}
       datasets={[sampleCounts]}
       story={snapshot => {
@@ -203,4 +202,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+mountDataApp({ app: dataApp, component: App });

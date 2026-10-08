@@ -47,7 +47,6 @@ function App() {
   const [count, setCount] = useState(1);
   return (
     <DataApp
-      config={dataApp.config}
       dataContext={{ description: 'Counts', glossary: {} }}
       queries={[{ name: 'counts', statement: 'SELECT 1 AS count' }]}
     >
@@ -75,4 +74,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+mountDataApp({ app: dataApp, component: App });

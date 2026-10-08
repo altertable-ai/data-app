@@ -3,7 +3,7 @@ import { useDataAppPresentation } from '@/src/react/ui/useDataAppPresentation';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useAppAppearance } from '@/src/react/ui/useAppAppearance';
 import type { DisclosedQuery } from '@/src/core/contract';
-import type { DataAppConfig } from '@/src/core/config';
+import { useDataApp } from '@/src/react/app-context';
 import type { CsvExport } from '@/src/react/ui/csv-export';
 import {
   displayedSnapshot,
@@ -25,7 +25,6 @@ import type { SectionResult } from '@/src/react/ui/DataSectionBoundary';
 
 export type DataAppBaseProps = {
   children: ReactNode;
-  config: DataAppConfig;
   dataContext: DataContext;
   description?: ReactNode;
   toolbarActions?: ReactNode;
@@ -64,7 +63,6 @@ export type DataAppProps<Data = unknown, Input = unknown> =
  * Children always render; compose DataSection boundaries around independently loading content. */
 export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   const {
-    config,
     dataContext,
     description,
     request,
@@ -72,12 +70,10 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
     footerActions,
     toolbarActions,
   } = props;
+  const app = useDataApp();
   const presentation = useDataAppPresentation();
   const isEmbedded = presentation?.surface === 'embedded';
-  const themeController = useAppAppearance(
-    config.appearance,
-    presentation?.theme
-  );
+  const themeController = useAppAppearance(app.appearance, presentation?.theme);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,8 +88,8 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   const story = findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
-      organization={config.scope.organization}
-      environment={config.scope.environment}
+      organization={app.scope.organization}
+      environment={app.scope.environment}
     />
   );
   const toolbar = (
@@ -124,7 +120,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
         story
           ? {
               ...story,
-              title: config.title,
+              title: app.title,
               scope,
               dataContext,
               theme: themeController,
@@ -179,7 +175,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
           ) : (
             <AppHeader
               scope={scope}
-              title={config.title}
+              title={app.title}
               description={description}
               toolbar={toolbar}
             />

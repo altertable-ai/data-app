@@ -103,7 +103,6 @@ function App() {
   const [selected, setSelected] = useState(a);
   return (
     <DataApp
-      config={dataApp.config}
       view={selected.view}
       datasets={[selected.dataset]}
       story={() => []}
@@ -125,4 +124,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+mountDataApp({ app: dataApp, component: App });

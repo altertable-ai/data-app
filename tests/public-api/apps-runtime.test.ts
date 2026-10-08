@@ -89,3 +89,46 @@ test('a failed embedded app can recover with a corrected bundle and bootstrap fa
     .poll(() => page.getByRole('alert').textContent())
     .toContain('Could not load');
 });
+
+test('mounting sets document identity before rendering and supplies it to the app', async ({
+  page,
+}) => {
+  await page.goto('/static?identity');
+  const title = 'Activity report • test/test • Altertable app';
+  await expect
+    .poll(() => page.getByLabel('Document title at render').textContent())
+    .toBe(title);
+  expect(await page.title()).toBe(title);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('heading', { name: 'Activity report', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+});
+
+test('custom roots inherit the nearest app identity without component configuration', async ({
+  page,
+}) => {
+  await page.goto('/static?custom-root');
+  const first = page.getByRole('region', { name: 'First app', exact: true });
+  const second = page.getByRole('region', { name: 'Second app', exact: true });
+  await expect
+    .poll(() =>
+      first
+        .getByRole('heading', { name: 'Activity report', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      second
+        .getByRole('heading', { name: 'Second report', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  await expect
+    .poll(() => second.getByText('other', { exact: true }).isVisible())
+    .toBe(true);
+});

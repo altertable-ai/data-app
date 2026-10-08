@@ -62,7 +62,7 @@ test('config queries execute defaults and overrides with shared browser and HTTP
   expect(result.queries).toEqual([
     {
       name: 'products',
-      statement: dataApp.config.queries.products.statement,
+      statement: dataApp.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
       queryId: 'q1',
     },
@@ -89,15 +89,15 @@ test('config queries execute defaults and overrides with shared browser and HTTP
   await overridden.query('products', {});
   expect(statements).toEqual([
     {
-      statement: dataApp.config.queries.products.statement,
+      statement: dataApp.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
     },
     {
-      statement: dataApp.config.queries.products.statement,
+      statement: dataApp.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
     },
     {
-      statement: dataApp.config.queries.products.statement,
+      statement: dataApp.queries.products.statement,
       params: { orgId: 'org-1', limit: 5 },
     },
   ]);
@@ -146,7 +146,7 @@ test('HTTP authorization supplies protected parameter values and callers cannot 
   }
   expect(statements).toEqual([
     {
-      statement: dataApp.config.queries.products.statement,
+      statement: dataApp.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
     },
   ]);
@@ -323,6 +323,6 @@ test('app definitions keep their query registries independent', async () => {
     { statement: 'SELECT $limit', params: { limit: 3 } },
     { statement: 'SELECT $limit + 1', params: { limit: 7 } },
   ]);
-  expect(firstApp.config.title).toBe('First');
-  expect(secondApp.config.title).toBe('Second');
+  expect(firstApp.title).toBe('First');
+  expect(secondApp.title).toBe('Second');
 });

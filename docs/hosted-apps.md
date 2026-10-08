@@ -4,11 +4,13 @@ Follow the [shared authoring flow](app-authoring.md) using [index.tsx](../exampl
 one file with public package imports; omit server files, HTML, credentials, and
 relative or app-alias imports.
 
-Declare `const dataApp = defineDataApp({ ... })` at module top level,
-using `defineDataApp()` from `/config`.
-Pass literal values throughout, without spreads, computed keys, variable references,
-other calls, or template interpolation. This lets the backend bundler extract the argument
-through its AST by recognizing the imported call; the variable name is unrestricted. An export is only needed for imports by other modules. Static apps use `queries: {}`.
+Declare exactly one top-level `const app = defineDataApp({ ... })` using the named
+import from `/config`. Its direct literal argument contains identity, appearance, and
+queries; keep executable composition outside it. Use schema-valid literals without
+spreads, computed keys, references, calls, or template interpolation. The backend extracts
+and validates that argument before bundling, without evaluating app code or parsing SQL.
+Import aliases and any variable name are allowed; export only for other modules.
+Static apps use `queries: {}`.
 
 Replace the sample config queries, parsers, filters, data context, CSV export, story, and configuration with
 an exploration of the source data you inspected. The starter uses two SQL

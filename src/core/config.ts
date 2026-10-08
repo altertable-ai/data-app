@@ -17,17 +17,32 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
     queries: Queries;
   };
 
+/** An app declaration with operations bound to its query registry. */
+export type DataAppDefinition<
+  Queries extends QueryDefinitions = QueryDefinitions,
+> = DataAppConfig<Queries> & {
+  defineOperation<Input, Output>(
+    operation: Omit<
+      Parameters<typeof defineOperation<Input, Output, Queries>>[0],
+      'queries'
+    >
+  ): ReturnType<typeof defineOperation<Input, Output, Queries>>;
+};
+
 /**
  * Define the app's query source of truth while preserving exact query and parameter names.
- * Use `app.defineOperation()` to bind operations to these queries and `app.config`
- * with React and mounting APIs. Static apps use `queries: {}`.
+ * Use `app.defineOperation()` to bind operations to these queries. Pass the app once
+ * to `mountDataApp({ app, component })` or `<DataAppProvider app={app}>`.
+ * This declaration does not execute queries or mount UI. Static apps use `queries: {}`.
  *
- * Declare `const app = defineDataApp({ ... })` at module top level.
- * For backend AST extraction, pass a direct object literal with literal values throughout:
- * no spreads, computed keys, variable references, calls, or interpolated template strings
- * inside the argument, so the backend can extract it by recognizing the imported
- * `defineDataApp` call, regardless of variable name. Export the app
- * only when another module imports it. TypeScript checks the shape, not AST syntax.
+ * Declare exactly one module-level const initialized with `defineDataApp({ ... })` in the app's
+ * declaration source. The backend extracts the argument before bundling by resolving
+ * the named `defineDataApp` import, including import aliases. Variable name is arbitrary;
+ * export only for imports by other modules. The argument must be a direct object literal
+ * containing schema-valid objects, arrays, strings (including templates without interpolation),
+ * finite signed numbers, booleans, and null. No spreads, computed keys, references, calls,
+ * or callbacks inside it. The backend validates extracted data without evaluating app code.
+ * TypeScript checks the shape, not AST syntax. Keep executable composition outside the call.
  *
  * SQL passes unchanged to the backend, which interprets placeholders such as `$orgId`.
  * Declare every parameter with `{ defaultValue: value }` or `{}` for a required value.
@@ -36,9 +51,9 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
  */
 export function defineDataApp<const Queries extends QueryDefinitions>(
   config: DataAppConfig<Queries>
-) {
+): DataAppDefinition<Queries> {
   return {
-    config,
+    ...config,
     defineOperation<Input, Output>(
       operation: Omit<
         Parameters<typeof defineOperation<Input, Output, Queries>>[0],

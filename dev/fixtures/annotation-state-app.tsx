@@ -103,7 +103,6 @@ const content = view.content(source => (
 function App() {
   return (
     <DataApp
-      config={dataApp.config}
       view={view}
       story={() => []}
       datasets={[dataset]}
@@ -118,4 +117,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+mountDataApp({ app: dataApp, component: App });

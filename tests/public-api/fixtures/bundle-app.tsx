@@ -22,7 +22,7 @@ const dataApp = defineDataApp({
 });
 const bridge = getDataAppTransport()!;
 const data = createDataClient({
-  operations: { connection: connectionCheck(dataApp.config.queries) },
+  operations: { connection: connectionCheck(dataApp.queries) },
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = {
@@ -52,7 +52,6 @@ function App() {
           { name: 'Summary', columns: ['Total'], rows: [[0]] },
         ],
       }}
-      config={dataApp.config}
       dataContext={{ description: 'Test report', glossary: {} }}
       description="Report description"
       toolbarActions={<button>Custom toolbar action</button>}
@@ -127,7 +126,7 @@ function App() {
 injectDataAppStyles();
 
 mountDataApp({
-  config: dataApp.config,
+  app: dataApp,
   component: App,
 });
 

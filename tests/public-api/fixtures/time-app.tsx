@@ -124,15 +124,10 @@ const dataApp = defineDataApp({
 });
 function App() {
   return (
-    <DataApp
-      config={dataApp.config}
-      view={view}
-      datasets={[dataset]}
-      story={() => []}
-    >
+    <DataApp view={view} datasets={[dataset]} story={() => []}>
       <DataSection content={content} />
     </DataApp>
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: dataApp.config, component: App });
+mountDataApp({ app: dataApp, component: App });

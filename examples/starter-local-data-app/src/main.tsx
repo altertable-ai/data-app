@@ -4,4 +4,4 @@ import { dataApp as app } from "#config";
 
 injectDataAppStyles();
 
-mountDataApp({ config: app.config, component: App });
+mountDataApp({ app, component: App });
