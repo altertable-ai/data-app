@@ -60,18 +60,17 @@ export function DimensionPicker<T extends DimensionValue>({
           : `${option.count.toLocaleString()} matches`,
     };
   });
+  let missingOption: ChoiceOption | undefined;
   if (filter.allowMissing) {
     const member = { kind: 'missing' as const };
     const id = dimensionMemberKey(member);
     byKey.set(id, member);
+    missingOption = {
+      id,
+      label: 'No value',
+      description: `Records without a ${filter.label.toLocaleLowerCase()} value`,
+    };
   }
-  const missingOption = filter.allowMissing
-    ? {
-        id: dimensionMemberKey({ kind: 'missing' }),
-        label: 'No value',
-        description: `Records without a ${filter.label.toLocaleLowerCase()} value`,
-      }
-    : undefined;
 
   const picker =
     filter.selectionMode === 'single' ? (

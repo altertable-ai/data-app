@@ -21,7 +21,13 @@ export type NumberFilterPickerProps = {
   onChange: (value: NumberSelection) => void;
   disabled?: boolean;
 };
-type Mode = 'all' | 'range' | NumberOperator;
+type NumberCondition = 'all' | 'range' | NumberOperator;
+
+const conditionOptions = [
+  { id: 'all', label: 'Any value' },
+  { id: 'range', label: 'Between' },
+  ...Object.entries(numberOperatorLabels).map(([id, label]) => ({ id, label })),
+];
 
 /** Edit a numeric predicate in a panel. Apply commits one complete value; dismissing discards the draft. */
 export function NumberFilterPicker({
@@ -31,17 +37,16 @@ export function NumberFilterPicker({
   disabled,
 }: NumberFilterPickerProps) {
   const [open, setOpen] = useState(false);
+  const summary = filter.describe?.(value);
   return (
     <DialogTrigger isOpen={open} onOpenChange={setOpen}>
       <PressButton
         className="altertable-picker-trigger"
-        aria-label={`${filter.label}: ${filter.describe?.(value)}`}
+        aria-label={`${filter.label}: ${summary}`}
         isDisabled={disabled}
       >
         <span className="altertable-picker-label">{filter.label}</span>
-        <strong className="altertable-picker-value">
-          {filter.describe?.(value)}
-        </strong>
+        <strong className="altertable-picker-value">{summary}</strong>
         <AppIcon name="disclosure" size={14} />
       </PressButton>
       <Popover
@@ -78,10 +83,10 @@ function NumberFilterEditor({
   onApply: (value: NumberSelection) => void;
   onCancel: () => void;
 }) {
-  const [mode, setMode] = useState<Mode>(
+  const [condition, setCondition] = useState<NumberCondition>(
     value.kind === 'comparison' ? value.operator : value.kind
   );
-  const [number, setNumber] = useState<number | null>(
+  const [comparisonValue, setComparisonValue] = useState<number | null>(
     value.kind === 'comparison'
       ? value.value
       : value.kind === 'range'
@@ -94,12 +99,17 @@ function NumberFilterEditor({
   const [rangeValid, setRangeValid] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const selection: NumberSelection =
-    mode === 'all'
+    condition === 'all'
       ? { kind: 'all' }
-      : mode === 'range'
+      : condition === 'range'
         ? { kind: 'range', ...range }
-        : { kind: 'comparison', operator: mode, value: number ?? NaN };
-  const valid = filter.valid(selection) && (mode !== 'range' || rangeValid);
+        : {
+            kind: 'comparison',
+            operator: condition,
+            value: comparisonValue ?? NaN,
+          };
+  const valid =
+    filter.valid(selection) && (condition !== 'range' || rangeValid);
   return (
     <form
       className="altertable-number-filter-editor"
@@ -112,22 +122,15 @@ function NumberFilterEditor({
       <h3>{filter.label}</h3>
       <Select
         label="Condition"
-        value={mode}
+        value={condition}
         onChange={next => {
-          setMode(next as Mode);
+          setCondition(next as NumberCondition);
           setRangeValid(true);
           setSubmitted(false);
         }}
-        options={[
-          { id: 'all', label: 'Any value' },
-          { id: 'range', label: 'Between' },
-          ...Object.entries(numberOperatorLabels).map(([id, label]) => ({
-            id,
-            label,
-          })),
-        ]}
+        options={conditionOptions}
       />
-      {mode === 'range' ? (
+      {condition === 'range' ? (
         <NumberRangeField
           label="Bounds"
           value={range}
@@ -136,11 +139,11 @@ function NumberFilterEditor({
           min={filter.min}
           max={filter.max}
         />
-      ) : mode !== 'all' ? (
+      ) : condition !== 'all' ? (
         <NumberField
           label="Value"
-          value={number}
-          onChange={setNumber}
+          value={comparisonValue}
+          onChange={setComparisonValue}
           minValue={filter.min}
           maxValue={filter.max}
         />
@@ -148,7 +151,7 @@ function NumberFilterEditor({
       {submitted && (
         <p role="alert" className="altertable-number-filter-feedback">
           {!valid
-            ? mode === 'range'
+            ? condition === 'range'
               ? 'Enter at least one bound.'
               : 'Enter a value.'
             : null}
@@ -164,7 +167,7 @@ function NumberFilterEditor({
         <PressButton
           type="submit"
           variant="primary"
-          isDisabled={mode === 'range' && !rangeValid}
+          isDisabled={condition === 'range' && !rangeValid}
         >
           Apply
         </PressButton>

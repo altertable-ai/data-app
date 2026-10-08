@@ -172,29 +172,36 @@ export function useViewVariables<Variables extends VariableCollection>(
           }
         />
       );
-    } else {
-      const binding = {
-        label: definition.label ?? name,
-        value: value as string,
-        onChange: (next: string) =>
-          variables.set(
-            name,
-            next as AppVariableValues<Variables>[typeof name]
-          ),
-        resetValue: definition.defaultValue,
-      };
-      if (definition.kind === 'choice')
-        controls.push(
-          <Select
-            key={name}
-            label={binding.label}
-            value={binding.value}
-            onChange={binding.onChange}
-            options={definition.options}
-          />
-        );
-      else if (definition.kind === 'search')
-        controls.push(<SearchField key={name} {...binding} />);
+    } else if (definition.kind === 'choice') {
+      controls.push(
+        <Select
+          key={name}
+          label={definition.label ?? name}
+          value={value as string}
+          options={definition.options}
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
+    } else if (definition.kind === 'search') {
+      controls.push(
+        <SearchField
+          key={name}
+          label={definition.label ?? name}
+          value={value as string}
+          resetValue={definition.defaultValue}
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
     }
   }
   const hasActiveFilters = Object.entries(definitions).some(
