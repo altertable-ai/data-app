@@ -47,7 +47,7 @@ export function FilterActions({
       <legend className="altertable-sr-only">Filter actions</legend>
       {onClear && (
         <IconButton
-          icon="close"
+          icon="clearFilters"
           label="Clear filters"
           variant="ghost"
           onClick={onClear}
