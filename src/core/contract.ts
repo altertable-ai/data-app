@@ -429,3 +429,15 @@ export type {
   SqlQueryInput,
 } from '@/src/core/messages';
 export type { TransportResponse } from '@/src/core/bridge';
+
+export {
+  annotationDraftRoute,
+  annotationModeRoute,
+  annotationEditorStateRoute,
+  annotationUpdateRoute,
+  parseDataAppAnnotationDraft,
+} from '@/src/core/annotations';
+export type {
+  DataAppAnnotationDraft,
+  DataAppAnnotationPresentation,
+} from '@/src/core/annotations';

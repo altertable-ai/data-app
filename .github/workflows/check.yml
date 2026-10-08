@@ -47,6 +47,8 @@ jobs:
         run: bun run typecheck
       - name: Lint
         run: bun run lint
+      - name: Check authored styles
+        run: bun run check:styles
       - name: Lint Markdown
         run: bun run lint:md
       - name: Check local Markdown links

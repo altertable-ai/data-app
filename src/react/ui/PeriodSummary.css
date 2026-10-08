@@ -6,20 +6,20 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 7px;
-  color: var(--at-muted, #687078);
-  font-size: 12px;
-  font-weight: 600;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+  font-weight: var(--atbl-type-label-weight);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .altertable-period-summary-visible > svg,
 .altertable-period-summary-vs {
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
 }
 .altertable-period-summary-vs {
   font-weight: 450;
 }
 .altertable-period-summary-current {
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
   font-weight: 650;
 }

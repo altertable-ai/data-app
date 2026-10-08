@@ -1,59 +1,48 @@
-.react-aria-TabList {
+.altertable-tabs .react-aria-TabList {
   display: flex;
-  gap: var(--at-space-lg, 24px);
+  gap: var(--atbl-space-lg);
   overflow-x: auto;
   overscroll-behavior-x: none;
-  border-bottom: 1px solid var(--at-border, #e3e6e8);
+  border-bottom: 1px solid var(--atbl-border);
   scrollbar-width: none;
 }
-.react-aria-Tab {
+.altertable-tabs .react-aria-Tab {
   flex: none;
   margin-bottom: -1px;
   padding: 0 1px 12px;
   border-bottom: 2px solid transparent;
-  color: var(--at-muted, #687078);
-  font-size: 13px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-label-size);
   font-weight: 550;
   outline: none;
-  cursor: pointer;
   transition:
-    color 120ms ease,
-    border-color 160ms ease;
+    color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    border-color var(--atbl-duration-normal) var(--atbl-ease-standard);
 }
-.react-aria-Tab[data-hovered] {
-  color: var(--at-text, #202124);
+.altertable-tabs .react-aria-Tab[data-hovered] {
+  color: var(--atbl-text);
 }
-.react-aria-Tab[data-selected] {
-  border-bottom-color: var(--at-accent, #4779dc);
-  color: var(--at-text, #202124);
+.altertable-tabs .react-aria-Tab[data-selected] {
+  border-bottom-color: var(--atbl-accent);
+  color: var(--atbl-text);
 }
-.react-aria-Tab[data-focus-visible] {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
+.altertable-tabs .react-aria-Tab[data-focus-visible] {
   border-radius: 2px;
 }
-.react-aria-Tab[data-disabled] {
-  opacity: 0.45;
-  cursor: default;
-}
-.react-aria-TabPanels {
+.altertable-tabs .react-aria-TabPanels {
   min-width: 0;
-  padding-block-start: var(--at-space-md, 16px);
+  padding-block-start: var(--atbl-space-md);
 }
-.react-aria-TabPanel {
+.altertable-tabs .react-aria-TabPanel {
   min-width: 0;
   outline: none;
 }
 /* Retained inactive panels preserve state without taking part in layout. */
-.react-aria-TabPanel[data-inert] {
+.altertable-tabs .react-aria-TabPanel[data-inert] {
   display: none;
 }
-.react-aria-TabPanel[data-focus-visible] {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
-}
 @media (prefers-reduced-motion: reduce) {
-  .react-aria-Tab {
+  .altertable-tabs .react-aria-Tab {
     transition: none;
   }
 }

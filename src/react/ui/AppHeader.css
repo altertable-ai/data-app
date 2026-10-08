@@ -1,6 +1,6 @@
 .altertable-app-header {
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--at-border, #e3e6e8);
+  border-bottom: 1px solid var(--atbl-border);
 }
 .altertable-app-header-heading {
   min-width: 0;
@@ -19,26 +19,29 @@
   min-width: 0;
 }
 .altertable-app-header-connector {
-  color: var(--at-muted, #687078);
-  font-size: 11px;
-  font-weight: 600;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+  font-weight: var(--atbl-type-label-weight);
   line-height: 1.2;
 }
 .altertable-app-header-primary h1 {
   margin: 0;
-  font-family: var(--at-font-heading, inherit);
-  font-size: clamp(22px, 2.4vw, 28px);
-  font-weight: 680;
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
+  font-size: var(--atbl-type-page-size);
+  font-weight: var(--atbl-type-emphasis-weight);
   letter-spacing: -0.03em;
   line-height: 1.15;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
 .altertable-app-header-heading > p {
-  max-width: 68ch;
+  max-width: var(--atbl-text-measure);
   margin: 4px 0 0;
-  color: var(--at-muted, #687078);
-  font-size: 13px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-label-size);
   line-height: 1.45;
   text-wrap: pretty;
 }

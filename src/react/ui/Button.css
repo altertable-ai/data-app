@@ -2,57 +2,43 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 38px;
-  padding: 0 12px;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-control, 7px);
-  background: var(--at-surface, #fff);
-  color: var(--at-text, #202124);
+  gap: var(--atbl-control-gap);
+  min-height: var(--atbl-control-height);
+  padding: var(--atbl-control-padding-block) var(--atbl-control-padding-inline);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
+  line-height: var(--atbl-type-label-leading);
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
   transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease;
+    background-color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    border-color var(--atbl-duration-fast) var(--atbl-ease-standard),
+    color var(--atbl-duration-fast) var(--atbl-ease-standard);
   -webkit-tap-highlight-color: transparent;
-}
-.altertable-button:hover:not(:disabled) {
-  background: var(--at-subtle, #f6f7f7);
 }
 .altertable-button[data-size='icon'] {
   flex: none;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
+  width: var(--atbl-control-height);
+  min-width: var(--atbl-control-height);
+  height: var(--atbl-control-height);
+  min-height: var(--atbl-control-height);
   padding: 0;
 }
 .altertable-button[data-variant='outline'] {
   box-shadow: none;
 }
 .altertable-button[data-variant='elevated'] {
-  box-shadow: var(--at-shadow-surface, 0 3px 16px rgb(20 28 40 / 5%));
+  box-shadow: var(--atbl-shadow-surface);
 }
 .altertable-button[data-variant='ghost'] {
   border-color: transparent;
   background: transparent;
   box-shadow: none;
-}
-.altertable-button[data-variant='ghost']:hover:not(:disabled),
-.altertable-button[data-variant='ghost'][data-open='true'] {
-  background: var(--at-subtle, #f6f7f7);
-}
-.altertable-button:focus-visible,
-.altertable-button[data-focus-visible] {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
-}
-.altertable-button:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 @media (prefers-reduced-motion: reduce) {
   .altertable-button {
@@ -61,15 +47,20 @@
 }
 
 .altertable-button[data-size='compact'] {
-  min-height: 30px;
-  padding: 0 8px;
-  font-size: 12px;
+  min-height: var(--atbl-control-compact-height);
+  padding: 0.25rem 0.5rem;
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-button[data-size='icon-compact'] {
   flex: none;
-  width: 30px;
-  min-width: 30px;
-  height: 30px;
-  min-height: 30px;
+  width: var(--atbl-control-compact-height);
+  min-width: var(--atbl-control-compact-height);
+  height: var(--atbl-control-compact-height);
+  min-height: var(--atbl-control-compact-height);
   padding: 0;
+}
+
+.altertable-button[data-size^='icon'] > svg {
+  inline-size: var(--atbl-control-icon-size);
+  block-size: var(--atbl-control-icon-size);
 }

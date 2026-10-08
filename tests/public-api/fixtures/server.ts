@@ -8,6 +8,8 @@ import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
 import inspectionApp from '@/tests/public-api/fixtures/inspection-app.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
 import clients from '@/tests/public-api/fixtures/clients.html';
+import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
+import appearance from '@/tests/public-api/fixtures/appearance.html';
 import ownership from '@/tests/public-api/fixtures/ownership.html';
 import layout from '@/tests/public-api/fixtures/layout.html';
 import styles from '@/tests/public-api/fixtures/styles.html';
@@ -26,10 +28,12 @@ async function bundle(entry: string) {
     throw new Error(result.logs.map(log => log.message).join('\n'));
   return result.outputs[0]!.text();
 }
-const [app, starter, frame] = await Promise.all([
+const [app, starter, frame, annotations, annotationState] = await Promise.all([
   bundle('tests/public-api/fixtures/bundle-app.tsx'),
   bundle('examples/starter-data-app/index.tsx'),
   bundle('tests/public-api/fixtures/bridge-frame.ts'),
+  bundle('tests/public-api/fixtures/annotations-app.tsx'),
+  bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
 ]);
 const { default: worker } = await import(
   import.meta.resolve('@altertable/data-app/worker')
@@ -67,6 +71,8 @@ const server = Bun.serve({
     '/static': staticApp,
     '/layout': layout,
     '/ownership': ownership,
+    '/annotations-host': annotationsHost,
+    '/appearance': appearance,
     '/styles': styles,
     '/time-app': timeApp,
     '/clients': clients,
@@ -79,6 +85,10 @@ const server = Bun.serve({
         frameURL: frameServer.url.href,
         localURL: local.url.href,
       });
+    if (url.pathname === '/__test/annotations')
+      return new Response(annotations);
+    if (url.pathname === '/__test/annotation-state')
+      return new Response(annotationState);
     if (url.pathname === '/__test/bundle') return new Response(app);
     if (url.pathname === '/__test/starter-data-app')
       return new Response(starter);

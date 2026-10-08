@@ -24,16 +24,3 @@ For execution details, see [browser-owned operations](client.md#browser-owned-op
 4. Confirm the host can query the same catalogs, tables, and fields.
    [Verify the app](app-authoring.md#verify-the-app) in the hosted runtime against
    the local version's filters and findings.
-
-## Preview in this repository
-
-```fish
-bun install --frozen-lockfile
-bun run build
-bun dev/server.ts
-```
-
-Open [the starter preview](http://127.0.0.1:27418/starter-data-app).
-Its test host executes the sample SQL through the iframe bridge using SQLite.
-
-For checks, see [Contributing](../CONTRIBUTING.md).

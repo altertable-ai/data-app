@@ -94,6 +94,8 @@ export function TrendChart({
                     className="altertable-chart-column"
                   >
                     <button
+                      data-atbl-focus="ring"
+                      data-atbl-control="action"
                       type="button"
                       tabIndex={-1}
                       className="altertable-trend-point"

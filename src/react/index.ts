@@ -5,6 +5,11 @@ export type {
 } from '@/src/react/bindings';
 export { injectDataAppStyles } from '@/src/react/styles';
 export type { DataAppStylesOptions } from '@/src/react/styles';
+export type {
+  DataAppStyle,
+  DataAppStyleToken,
+  DataAppStyleHooks,
+} from '@/src/react/style-contract';
 export { mountDataApp } from '@/src/react/mount';
 export { createDataHooks } from '@/src/react/hooks';
 export type { CsvCell } from '@/src/react/ui/csv-export';
@@ -85,3 +90,13 @@ export { Button } from '@/src/react/ui/Button';
 export type { ButtonProps } from '@/src/react/ui/Button';
 export type { MetricDefinition } from '@/src/react/ui/metric';
 export type { MetricValues } from '@/src/core/reading';
+
+export { AnnotationTarget } from '@/src/react/annotations/AnnotationTarget';
+export type { AnnotationTargetProps } from '@/src/react/annotations/AnnotationTarget';
+
+export { useDataAppAnnotations } from '@/src/react/annotations/useDataAppAnnotations';
+
+export { AnnotationBar } from '@/src/react/annotations/AnnotationBar';
+export type { AnnotationBarProps } from '@/src/react/annotations/AnnotationBar';
+
+export { injectDataAppAnnotationStyles } from '@/src/react/annotations/styles';

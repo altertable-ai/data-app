@@ -7,6 +7,7 @@ export type TextContentProps = ComponentPropsWithRef<'div'>;
 export function TextContent({ className, ...props }: TextContentProps) {
   return (
     <div
+      data-atbl-internal-prose
       {...props}
       className={classNames('altertable-text-content', className)}
     />

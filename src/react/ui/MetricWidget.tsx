@@ -15,11 +15,11 @@ import { metricComparison, type MetricDefinition } from '@/src/react/ui/metric';
 
 type MetricWidgetBaseProps = {
   label: string;
+  annotationId?: string;
   description?: ReactNode;
   comparison?: MetricComparison;
   evidence?: WidgetEvidence;
   action?: ReactNode;
-  insight?: ReactNode;
   status?: WidgetStatus;
   visual?: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'about' | 'children'>;
@@ -52,7 +52,14 @@ export function MetricWidget(props: MetricWidgetProps) {
   if ('metric' in props) {
     const { metric, reading, ...rest } = props;
     if (reading.loading)
-      return <MetricWidgetContent {...rest} label={metric.label} loading />;
+      return (
+        <MetricWidgetContent
+          {...rest}
+          annotationId={rest.annotationId ?? metric.evidence?.id}
+          label={metric.label}
+          loading
+        />
+      );
 
     return (
       <MetricWidgetContent
@@ -71,6 +78,7 @@ export function MetricWidget(props: MetricWidgetProps) {
 
 function MetricWidgetContent({
   label,
+  annotationId,
   value,
   content,
   format,
@@ -79,7 +87,6 @@ function MetricWidgetContent({
   comparison,
   evidence,
   action,
-  insight,
   status,
   visual,
   className,
@@ -90,15 +97,11 @@ function MetricWidgetContent({
       {...props}
       className={classNames('altertable-metric-widget', className)}
       title={label}
+      annotationId={annotationId}
       evidence={loading ? undefined : evidence}
       aria-busy={loading || props['aria-busy']}
       action={action}
       status={status}
-      insight={
-        insight != null && (
-          <div className="altertable-metric-insight">{insight}</div>
-        )
-      }
       visual={
         <MetricVisual
           loading={loading}

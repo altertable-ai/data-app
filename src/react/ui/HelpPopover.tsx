@@ -21,12 +21,14 @@ import {
   useRole,
   type Placement,
 } from '@floating-ui/react';
+import type { DataAppStyleHooks } from '@/src/react/style-contract';
 import { classNames } from '@/src/react/ui/classNames';
 
 export type HelpPopoverTriggerProps = Omit<
   ComponentPropsWithRef<'button'>,
   'children' | 'type'
->;
+> &
+  DataAppStyleHooks;
 export type HelpPopoverPanelProps = Omit<
   ComponentPropsWithRef<'section'>,
   'children' | 'role'
@@ -97,6 +99,11 @@ export function HelpPopover({
   return (
     <>
       <button
+        data-atbl-internal-surface={
+          triggerProps?.className ? undefined : 'control'
+        }
+        data-atbl-focus="ring"
+        data-atbl-control="action"
         {...getReferenceProps({
           ...triggerProps,
           'aria-label': triggerProps?.['aria-label'] ?? triggerLabel,

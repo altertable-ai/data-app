@@ -194,6 +194,7 @@ export function Combobox(props: ComboboxProps) {
           className="altertable-combobox-dialog"
         >
           <SearchInput
+            focusRing={false}
             size="compact"
             loading={loading}
             ref={searchRef}
@@ -233,6 +234,9 @@ export function Combobox(props: ComboboxProps) {
               >
                 {hit => (
                   <ListBoxItem
+                    data-atbl-internal-surface="option"
+                    data-atbl-focus="inset"
+                    data-atbl-control="action"
                     id={hit.item.id}
                     data-missing={
                       hit.item.id === missingOption?.id || undefined

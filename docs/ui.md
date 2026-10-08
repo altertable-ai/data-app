@@ -26,12 +26,16 @@ styles.
 
 ## Charts
 
-Import `BarChart`, `LineChart`, `AreaChart`, `PieChart`, or `ScatterChart` from
+Choose a chart using the [visualization guide](widgets.md#choose-a-visualization).
+Import `<BarChart>`, `<LineChart>`, `<AreaChart>`, `<PieChart>`, or `<ScatterChart>` from
 `/react/ui`. Compose the visual inside `<VisualizationWidget dataset={dataset} source={result}>`
 so rows, loading state, evidence, and inspection come from that dataset.
 Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
 values must be nonnegative. Use `formatValue` for domain formatting.
 
 Line and area charts show equally spaced samples; include missing periods in the
-input. Pie slices represent mutually exclusive parts of one total. Scatter points
-represent independent X/Y observations.
+input. These charts space items evenly, so they do not represent irregular time
+intervals. Distinguish a missing observation from measured zero when preparing
+the samples. Pie slices represent mutually exclusive parts of one total; shares
+use the sum of supplied items, so include Other when showing a subset of the
+whole. Scatter points represent independent X/Y observations.

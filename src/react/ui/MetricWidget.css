@@ -2,12 +2,15 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding: var(--at-layout-gap, 24px);
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: calc(var(--at-radius-surface, 12px) * 1.5);
+  padding: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
+  border: 1px solid var(--atbl-border);
+  border-radius: calc(var(--atbl-radius-surface) * 1.5);
   corner-shape: squircle;
-  background: var(--at-surface, #fff);
-  box-shadow: var(--at-shadow-surface, none);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-surface);
 }
 .altertable-metric-widget.altertable-data-widget {
   padding: 0;
@@ -16,10 +19,10 @@
   min-height: 0;
 }
 .altertable-metric-widget > .altertable-data-widget-header h2 {
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
   font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
   letter-spacing: normal;
 }
 .altertable-metric-widget > .altertable-data-widget-body {
@@ -30,16 +33,25 @@
 }
 .altertable-metric-widget > .altertable-data-widget-footer {
   padding-top: 0;
-  padding-bottom: var(--at-layout-gap, 24px);
+  padding-bottom: var(
+    --atbl-layout-gap,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
 }
 .altertable-metric-value {
-  margin: var(--at-space-sm, 8px) 0 2px;
-  color: var(--at-text, #202124);
-  font-family: var(--at-font-heading, inherit);
-  font-size: clamp(26px, 3vw, 34px);
-  font-weight: 680;
-  line-height: 1.08;
+  margin: var(--atbl-space-sm) 0 2px;
+  color: var(--atbl-text);
+  /* Optional --atbl-font-heading; otherwise use configured heading/body font. */
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
+  font-size: var(--atbl-type-metric-size);
+  font-weight: var(--atbl-type-emphasis-weight);
+  line-height: var(--atbl-type-metric-leading);
   letter-spacing: -0.04em;
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
   font-variant-numeric: tabular-nums;
 }
 .altertable-metric-reading {
@@ -50,35 +62,30 @@
   gap: 4px;
 }
 .altertable-metric-trend {
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-metric-change {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
   font-variant-numeric: tabular-nums;
 }
+/* Optional metric tones: favorable defaults to local accent, unfavorable to danger. */
 .altertable-metric-change[data-tone='good'] {
-  color: var(--at-accent, #405d47);
+  color: var(--atbl-positive, var(--atbl-accent));
 }
 .altertable-metric-change[data-tone='bad'] {
-  color: var(--at-danger, #b42318);
+  color: var(--atbl-negative, var(--atbl-danger));
 }
 .altertable-metric-description {
-  color: var(--at-muted, #687078);
-  font-size: 12px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
   line-height: 1.45;
 }
 .altertable-metric-visual {
   min-width: 0;
-  margin-top: var(--at-space-sm, 8px);
-}
-.altertable-metric-insight {
-  margin-top: var(--at-space-sm, 8px);
-  color: var(--at-muted, #687078);
-  font-size: 12px;
-  line-height: 1.45;
+  margin-top: var(--atbl-space-sm);
 }
 .altertable-metric-value[data-unavailable] {
   opacity: 0.6;

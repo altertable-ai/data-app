@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.66.0](https://github.com/altertable-ai/data-app/compare/v0.65.0...v0.66.0) (2026-10-07)
+
+
+### ⚠ BREAKING CHANGES
+
+* **styles:** Public styling variables use the --atbl- namespace instead of --at-. Update custom CSS overrides to the new names.
+* **annotations:** Remove the freeform insight footer prop from metric, visualization and table widgets. Use TextContent or TextWidget for narrative; table footer controls remain supported.
+* **react:** derive data apps from owned views and bindings ([#41](https://github.com/altertable-ai/data-app/issues/41))
+* **react:** add composable charts and responsive widget gallery ([#38](https://github.com/altertable-ai/data-app/issues/38))
+* **react:** keep static content visible during loading ([#39](https://github.com/altertable-ai/data-app/issues/39))
+
+### Features
+
+* **annotations:** add screenshot-backed visual feedback ([#42](https://github.com/altertable-ai/data-app/issues/42)) ([c78ee8f](https://github.com/altertable-ai/data-app/commit/c78ee8fb5be9fe208116fd18dc0717800e4f64de))
+* **react:** add composable charts and responsive widget gallery ([#38](https://github.com/altertable-ai/data-app/issues/38)) ([6361335](https://github.com/altertable-ai/data-app/commit/63613359cdaa8df215794d29cbe8613015454150))
+
+
+### Bug Fixes
+
+* **react:** align export UI with toolbar controls ([#34](https://github.com/altertable-ai/data-app/issues/34)) ([73c5638](https://github.com/altertable-ai/data-app/commit/73c5638931767e20db9c1b6e04e790b35673b0a0))
+* **react:** increase bottom padding in standalone data apps ([#40](https://github.com/altertable-ai/data-app/issues/40)) ([8bea4f7](https://github.com/altertable-ai/data-app/commit/8bea4f7f32e4f4a9a4f1a169bd6de4edac94f207))
+
+
+### Code Refactoring
+
+* **react:** derive data apps from owned views and bindings ([#41](https://github.com/altertable-ai/data-app/issues/41)) ([def008a](https://github.com/altertable-ai/data-app/commit/def008a29daae60c75bf28dd48b24e79e8c9a962))
+* **react:** keep static content visible during loading ([#39](https://github.com/altertable-ai/data-app/issues/39)) ([c507f29](https://github.com/altertable-ai/data-app/commit/c507f298c1d9cc856de470aecd1645dd1a85ac79))
+* **styles:** consolidate authored CSS and styling contracts ([d2bfe8d](https://github.com/altertable-ai/data-app/commit/d2bfe8d922fb693541dc88e6cc750503170a7b8c))
+
 ## [0.65.0](https://github.com/altertable-ai/data-app/compare/v0.64.0...v0.65.0) (2026-10-02)
 
 

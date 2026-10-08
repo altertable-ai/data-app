@@ -1,10 +1,10 @@
 .altertable-text-content {
   min-width: 0;
-  max-width: 70ch;
-  color: var(--at-text, #202124);
+  max-width: var(--atbl-text-measure);
+  color: var(--atbl-text);
   overflow-wrap: anywhere;
-  font-size: 14px;
-  line-height: 1.65;
+  font-size: var(--atbl-type-body-size);
+  line-height: var(--atbl-type-body-leading);
 }
 .altertable-text-content > :first-child {
   margin-top: 0;
@@ -13,22 +13,28 @@
   margin-bottom: 0;
 }
 .altertable-text-content :where(p, ul, ol) {
-  margin-block: 0 var(--at-space-sm, 8px);
+  margin-block: 0 var(--atbl-space-sm);
 }
 .altertable-text-content :where(ul, ol) {
   padding-inline-start: 1.5em;
 }
 .altertable-text-content a {
-  color: var(--at-accent, #2563eb);
+  color: var(--atbl-accent);
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
 
 .altertable-text-content a:hover {
-  color: var(--at-text, #202124);
+  color: var(--atbl-text);
   text-decoration-thickness: 2px;
 }
-.altertable-text-content a:focus-visible {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-offset, 2px);
+
+.altertable-text-content h2 {
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
+  font-size: var(--atbl-type-section-size);
+  font-weight: var(--atbl-type-heading-weight);
+  line-height: var(--atbl-type-heading-leading);
 }

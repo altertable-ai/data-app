@@ -3,8 +3,8 @@
 }
 .altertable-scatter-axis-title {
   margin: 14px 0 18px;
-  color: var(--at-muted, #687078);
-  font-size: 11px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
   overflow-wrap: anywhere;
 }
 .altertable-scatter-axes {
@@ -13,13 +13,13 @@
 .altertable-scatter-plot {
   position: relative;
   height: 220px;
-  border-left: 1px solid var(--at-border, #dae4dd);
+  border-left: 1px solid var(--atbl-border);
 }
 .altertable-scatter-gridline {
   position: absolute;
   left: 0;
   right: 0;
-  border-top: 1px solid var(--at-border, #dae4dd);
+  border-top: 1px solid var(--atbl-border);
   pointer-events: none;
 }
 .altertable-scatter-gridline > span {
@@ -32,8 +32,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--at-muted, #687078);
-  font-size: 10px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
 .altertable-scatter-x-tick {
@@ -44,8 +44,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--at-muted, #687078);
-  font-size: 10px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
 .altertable-scatter-x-tick[data-edge='0'] {
@@ -66,16 +66,15 @@
   background: transparent;
   display: grid;
   place-items: center;
-  cursor: pointer;
   border-radius: 50%;
 }
 .altertable-scatter-point > span {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--at-accent, #405d47);
+  background: var(--atbl-accent);
   opacity: 0.65;
-  border: 1px solid var(--at-surface, #fff);
+  border: 1px solid var(--atbl-surface);
 }
 .altertable-scatter-tooltip[data-open] {
   z-index: 1;

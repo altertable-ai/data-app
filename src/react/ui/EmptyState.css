@@ -6,18 +6,18 @@
   justify-content: center;
   gap: 5px;
   padding: 24px;
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
   text-align: center;
 }
 .altertable-empty-state strong {
-  color: var(--at-text, #202124);
-  font-size: 13px;
-  font-weight: 600;
+  color: var(--atbl-text);
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-empty-state p {
   max-width: 40ch;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
   line-height: 1.5;
   white-space: normal;
 }

@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+  <head>
+    <!-- Author CSS precedes injection to exercise layer precedence in either order. -->
+    <style>
+      :root[data-override] {
+        --atbl-accent: #123456;
+        --atbl-cursor-action: crosshair;
+        --atbl-space-md: 23px;
+      }
+      .altertable-button[data-override] {
+        background: rgb(12, 34, 56);
+      }
+      .host-control {
+        font: 17px monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="host-control">Host control</button>
+    <div class="altertable-app-layout">
+      <button
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-button"
+      >
+        Action
+      </button>
+      <button
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-button"
+        disabled
+      >
+        Disabled action
+      </button>
+      <label
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-checkbox"
+      >
+        <input type="checkbox" checked />
+        <span class="altertable-selection-mark" data-selected></span>
+        Selected
+        <small>Muted explanation</small>
+      </label>
+      <label
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-checkbox"
+      >
+        <input type="checkbox" disabled />
+        Disabled checkbox
+      </label>
+      <button
+        data-atbl-focus="ring"
+        data-atbl-control="help"
+        class="altertable-glossary-definition-trigger"
+      >
+        Definition
+      </button>
+      <button
+        data-atbl-focus="ring"
+        data-atbl-control="action"
+        class="altertable-selectable-bars-item"
+      >
+        Chart action
+      </button>
+      <div class="altertable-tabs">
+        <button
+          data-atbl-focus="ring"
+          data-atbl-control="action"
+          class="react-aria-Tab"
+          data-focus-visible
+        >
+          Tab
+        </button>
+      </div>
+      <div class="altertable-metric-widget">Widget</div>
+      <div class="altertable-grid" data-columns="1">
+        <div>First grid item</div>
+        <div>Second grid item</div>
+      </div>
+      <div class="altertable-selectable-bars-bar">Bar</div>
+    </div>
+    <div class="altertable-tooltip-content" role="tooltip">
+      Portaled tooltip
+    </div>
+    <div class="altertable-combobox-popover">
+      <div
+        data-atbl-focus="inset"
+        data-atbl-control="action"
+        class="react-aria-ListBoxItem"
+        role="option"
+        data-disabled
+      >
+        Disabled option
+      </div>
+      <div
+        data-atbl-focus="inset"
+        data-atbl-control="action"
+        class="react-aria-ListBoxItem"
+        role="option"
+        data-focus-visible
+      >
+        Focused option
+      </div>
+    </div>
+    <div class="host-tabs"><div class="react-aria-Tab">Host tab</div></div>
+    <div id="palette"></div>
+    <script type="module" src="./appearance.ts"></script>
+  </body>
+</html>

@@ -17,6 +17,7 @@ mountDataApp({ config, component: App });
 
 Call `injectDataAppStyles()` before mounting; no separate stylesheet is needed.
 For a restrictive CSP, pass the permitted nonce on the first call.
+See [Styling](styling.md) for appearance, CSS tokens, and overrides.
 
 Use `/react` for declared views, bound widgets, and layouts. Use
 [`/react/ui`](ui.md) for setup/static screens and direct UI composition.

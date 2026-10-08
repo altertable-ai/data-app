@@ -20,21 +20,21 @@
   max-height: 40dvh;
   padding: 10px 12px;
   overflow: auto;
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-surface, 12px);
-  background: var(--at-surface, #fff);
-  box-shadow: 0 10px 32px rgb(0 0 0 / 12%);
-  color: var(--at-text, #202124);
-  font-size: 12px;
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-overlay);
+  color: var(--atbl-text);
+  font-size: var(--atbl-type-meta-size);
   line-height: 1.45;
   pointer-events: auto;
 }
 .altertable-data-view-toast > svg {
   flex: none;
-  color: var(--at-muted, #687078);
+  color: var(--atbl-muted);
 }
 .altertable-data-view-toast[data-state='error'] > svg {
-  color: var(--at-danger, #b42318);
+  color: var(--atbl-danger);
 }
 .altertable-data-view-toast > span {
   min-width: 0;

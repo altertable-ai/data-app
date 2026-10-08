@@ -66,6 +66,7 @@ checks. Build before running consumer tests individually.
 | Command                        | Purpose                                             |
 | ------------------------------ | --------------------------------------------------- |
 | `bun run build`                | Build JavaScript, declarations, and injected styles |
+| `bun run check:styles`         | Validate authored styling hooks                     |
 | `bun run typecheck`            | Check source, tests, and scripts                    |
 | `bun run lint`                 | Run type-aware lint checks                          |
 | `bun run lint:md`              | Check Markdown structure and syntax                 |
@@ -103,7 +104,7 @@ composed apps, variants, and request states.
 
 Use Conventional Commits and describe behavior changes and verification in PRs.
 Flag breaking API changes. Release Please owns `CHANGELOG.md`; see
-[Releasing](docs/releasing.md) for release setup and recovery.
+[Releasing](https://github.com/altertable-ai/data-app/blob/main/.github/RELEASING.md) for release setup and recovery.
 
 ## Focused public API
 
@@ -115,3 +116,12 @@ and verify published usage. Flag breaking changes in commits and PRs.
 
 Docs help agents generate data apps: show current usage and focused examples.
 Keep package architecture and contributor rules here.
+
+## Component CSS
+
+Keep defaults in authored CSS: inherited values in `tokens.css`, presets in
+`appearance.css`, and optional overrides in native `var()` fallbacks at use sites.
+Use the four layers (`atbl.tokens`, `atbl.base`, `atbl.components`,
+`atbl.interaction`) and shared focus/state rules rather than duplicate control
+paint. Keep geometry local. Document public variables beside declarations or
+consumption sites; update the name contract in `style-contract.ts` when adding hooks.

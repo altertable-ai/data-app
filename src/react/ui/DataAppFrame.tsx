@@ -1,3 +1,4 @@
+import { AnnotationControls } from '@/src/react/annotations/AnnotationControls';
 import { useDataAppPresentation } from '@/src/react/ui/useDataAppPresentation';
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useAppAppearance } from '@/src/react/ui/useAppAppearance';
@@ -143,6 +144,14 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
         />
       }
     >
+      {presentation?.annotations?.enabled && (
+        <AnnotationControls
+          rootRef={bodyRef}
+          presentation={presentation.annotations}
+          displayedInput={snapshot?.input}
+          view={snapshot?.state}
+        />
+      )}
       {toolbarActions}
     </AppToolbar>
   );

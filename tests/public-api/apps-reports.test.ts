@@ -299,3 +299,31 @@ test('a report formats missing values, precise ratios, localized numbers and cal
       .toBe(true);
   }
 });
+
+test('an author can override public control tokens and apply and restore appearance', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  const action = page.getByRole('button', {
+    name: 'Custom action',
+    exact: true,
+  });
+  await expect
+    .poll(() => action.evaluate(element => getComputedStyle(element).height))
+    .toBe('60px');
+  const originalColor = await action.evaluate(
+    element => getComputedStyle(element).color
+  );
+  await page
+    .getByRole('button', { name: 'Apply appearance', exact: true })
+    .click();
+  await expect
+    .poll(() => action.evaluate(element => getComputedStyle(element).color))
+    .toBe('rgb(51, 102, 153)');
+  await page
+    .getByRole('button', { name: 'Restore appearance', exact: true })
+    .click();
+  await expect
+    .poll(() => action.evaluate(element => getComputedStyle(element).color))
+    .toBe(originalColor);
+});

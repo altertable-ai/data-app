@@ -9,7 +9,13 @@ import {
   getDataAppNavigation,
   DataAppError,
 } from '@altertable/data-app/client';
-import { DataApp, useAppVariables } from '@altertable/data-app/react/ui';
+import {
+  DataApp,
+  DataWidget,
+  MetricWidget,
+  useAppVariables,
+} from '@altertable/data-app/react/ui';
+import { AnnotationTarget } from '@altertable/data-app/react';
 import { mountDataApp, textVariable } from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
 const config: DataAppConfig = {
@@ -53,6 +59,23 @@ function App() {
       toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}
     >
+      <DataWidget
+        title="Revenue by month"
+        evidence={{ id: 'monthly-revenue', queryNames: ['revenue'] }}
+      >
+        <button onClick={() => setResult('Chart clicked')}>
+          Explore revenue
+        </button>
+      </DataWidget>
+      <MetricWidget
+        label="Customers"
+        annotationId="customers"
+        value={42}
+        format={{ kind: 'count' }}
+      />
+      <AnnotationTarget annotationId="intro" label="Introduction">
+        <p>Revenue is growing.</p>
+      </AnnotationTarget>
       <button onClick={() => setCrashed(true)}>Crash render</button>
       <button
         onClick={() =>

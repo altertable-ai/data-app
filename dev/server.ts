@@ -4,11 +4,14 @@ import { operations as starterOperations } from '@/examples/starter-local-data-a
 import starterConfig from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
+import { parseDataAppAnnotationDraft } from '@altertable/data-app/contract';
 import skeleton from '@/dev/fixtures/skeleton.html';
 import hooksApp from '@/dev/fixtures/hooks-app.html';
 import inspectionApp from '@/dev/fixtures/inspection-app.html';
 import gallery from '@/dev/fixtures/gallery.html';
 import styles from '@/dev/fixtures/styles.html';
+import appearance from '@/dev/fixtures/appearance.html';
+import styleStress from '@/dev/fixtures/style-stress.html';
 import layout from '@/dev/fixtures/layout.html';
 import layoutHost from '@/dev/fixtures/layout-host.html';
 import bundleHost from '@/dev/fixtures/bundle-host.html';
@@ -49,6 +52,7 @@ async function createBundleLoader(entry: string) {
 
 /** Pages reload when sources outside their own module graph change. */
 function createReloadHandler(paths: string[]) {
+  const sessionId = crypto.randomUUID();
   const clients = new Set<ReadableStreamDefaultController<string>>();
   let pending: ReturnType<typeof setTimeout> | undefined;
   for (const path of paths)
@@ -64,6 +68,7 @@ function createReloadHandler(paths: string[]) {
       new ReadableStream<string>({
         start(client) {
           clients.add(client);
+          client.enqueue(`event: ready\ndata: ${sessionId}\n\n`);
           request.signal.addEventListener('abort', () =>
             clients.delete(client)
           );
@@ -83,6 +88,9 @@ const { default: worker } = (await import(
   import.meta.resolve('@altertable/data-app/worker')
 )) as typeof import('@/src/worker');
 const loadFixtureBundle = await createBundleLoader('./fixtures/bundle-app.tsx');
+const loadAnnotationStateBundle = await createBundleLoader(
+  './fixtures/annotation-state-app.tsx'
+);
 // Tests exercise the hosted starter; `bun run dev` serves the playground, which
 // queries the demo tables it seeds into the mocked API.
 const hostedApps = {
@@ -94,6 +102,9 @@ const hostedApps = {
 };
 const hostedApp = hostedApps[isDevelopment ? 'development' : 'test'];
 const loadHostedAppBundle = await createBundleLoader(hostedApp.entry);
+const loadPlaygroundBundle = isDevelopment
+  ? loadHostedAppBundle
+  : await createBundleLoader('../dev/playground.tsx');
 const serveReloadEvents =
   isDevelopment &&
   createReloadHandler([
@@ -139,23 +150,71 @@ Bun.serve({
     '/gallery/components': request =>
       Response.redirect(new URL('/gallery?view=widgets', request.url), 302),
     '/styles': styles,
+    '/appearance': appearance,
+    '/style-stress': styleStress,
     '/layout': layoutHost,
     '/layout-frame': layout,
     '/hooks-app': hooksApp,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,
+    '/playground': bundleHost,
     [hostedApp.path]: bundleHost,
   },
   async fetch(request, server) {
     const path = new URL(request.url).pathname;
     if (path === '/') return new Response('Embedding test server');
+    if (path === '/api/annotations' && request.method === 'POST') {
+      try {
+        const input = (await request.json()) as { annotations?: unknown[] };
+        if (
+          !Array.isArray(input.annotations) ||
+          input.annotations.length === 0 ||
+          input.annotations.length > 50
+        )
+          throw new Error('Invalid annotation batch.');
+        const annotations = input.annotations.map(parseDataAppAnnotationDraft);
+        if (
+          new TextEncoder().encode(
+            JSON.stringify(
+              annotations.map(annotation => ({
+                ...annotation,
+                context: { ...annotation.context, screenshot: undefined },
+              }))
+            )
+          ).byteLength > 120_000
+        )
+          throw new Error('Annotation batch is too large.');
+        const imageBytes = annotations.reduce((total, annotation) => {
+          const encoded = annotation.context.screenshot?.dataUrl.split(',')[1];
+          return (
+            total +
+            (encoded
+              ? (encoded.length / 4) * 3 -
+                (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0)
+              : 0)
+          );
+        }, 0);
+        if (imageBytes > 4 * 1024 * 1024)
+          throw new Error('Annotation images are too large.');
+        return Response.json({ acceptedCount: annotations.length });
+      } catch {
+        return Response.json(
+          { error: 'Invalid annotation batch.' },
+          { status: 400 }
+        );
+      }
+    }
     if (serveReloadEvents && path === '/__dev/reload') {
       server.timeout(request, 0);
       return serveReloadEvents(request);
     }
+    if (path === '/__test/playground')
+      return new Response(await loadPlaygroundBundle());
     if (path === `/__test${hostedApp.path}`)
       return new Response(await loadHostedAppBundle());
+    if (path === '/__test/annotation-state')
+      return new Response(await loadAnnotationStateBundle());
     if (path === '/__test/bundle')
       return new Response(await loadFixtureBundle());
     if (path === '/__test/silent')
