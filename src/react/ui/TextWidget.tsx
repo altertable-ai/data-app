@@ -11,7 +11,8 @@ type TextWidgetBaseProps = Omit<
   'reading' | 'children' | 'isEmpty' | 'empty' | 'skeleton' | 'bodyPadding'
 >;
 
-/** Framed narrative context. Bind claims and scope to the same displayed reading.
+/** Narrative sibling of VisualizationWidget, composing DataWidget with TextContent.
+ * Use TextContent directly for borderless prose. Bind claims and scope to the same displayed reading.
  * The renderer handles every ready value, including zero and empty collections. */
 export type TextWidgetProps<Data = unknown> = TextWidgetBaseProps &
   (

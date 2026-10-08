@@ -1,13 +1,19 @@
+import { DeclaredView } from '@/src/react/view-runtime';
+import {
+  bindDataset,
+  bindMetric,
+  displayedScope,
+  type DatasetDefinition,
+} from '@/src/react/bindings';
+import type { AuthoringDataContext } from '@/src/react/ui/data-context';
+import type { MetricValues } from '@/src/core/reading';
+import type { DisplayedSnapshot } from '@/src/core/data-view';
 import { useState, type ReactNode } from 'react';
 import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DataOperations, DateRangeRequest } from '@/src/core/contract';
 import type { DataClient } from '@/src/client/data-client';
 import type { InputOf, OutputOf } from '@/src/core/operation-types';
 import { displayedSnapshot, resolveDataView } from '@/src/core/data-view';
-import {
-  reportingPeriodText,
-  type ReportingPeriod,
-} from '@/src/react/ui/PeriodSummary';
 import {
   defineAppVariables,
   type VariableCollection,
@@ -23,11 +29,12 @@ import {
   type DimensionValue,
 } from '@/src/core/dimension';
 import type { EmptyContent } from '@/src/react/ui/presentation';
-import { defineDataContent, type DataContentState } from '@/src/react/content';
+import { ViewContent, type DataContentState } from '@/src/react/content';
 import {
   describeViewInput,
   resolveViewInput,
   type DataViewDefinition,
+  type ResolvedDataViewDefinition,
   type ResolvedVariables,
   type ViewBindings,
 } from '@/src/react/view';
@@ -61,26 +68,15 @@ type TimeInputMapping<Additional extends VariableCollection, Input> =
         input: (values: ResolvedVariables<TimeVariables<Additional>>) => Input;
       };
 
-/**
- * `placeholderData` may belong to an earlier input. Use `useDataView` to distinguish initial
- * loading, refreshes, and changed-input requests.
- */
+/** Bind declared operations to URL variables, displayed readings, and request feedback. */
 export function createDataHooks<Operations extends DataOperations>(
   client: DataClient<Operations>
 ) {
   const clientScope = getClientScope(client);
 
-  type QueryOptions = {
-    enabled?: boolean;
-    staleTime?: number;
-    gcTime?: number;
-    refetchOnWindowFocus?: boolean;
-  };
-
   function useDataQuery<Name extends keyof Operations & string>(
     name: Name,
-    input: InputOf<Operations[Name]>,
-    options?: QueryOptions
+    input: InputOf<Operations[Name]>
   ) {
     const queryClient = useQueryClient();
     const queryKey = ['data-operation', clientScope, name, input] as const;
@@ -95,12 +91,6 @@ export function createDataHooks<Operations extends DataOperations>(
           ? previousData
           : undefined;
       },
-      enabled: options?.enabled,
-      ...(options?.staleTime !== undefined && { staleTime: options.staleTime }),
-      ...(options?.gcTime !== undefined && { gcTime: options.gcTime }),
-      ...(options?.refetchOnWindowFocus !== undefined && {
-        refetchOnWindowFocus: options.refetchOnWindowFocus,
-      }),
     });
 
     return {
@@ -116,22 +106,17 @@ export function createDataHooks<Operations extends DataOperations>(
    * `DataApp.request` or `DataSection.result`.
    * `isEmpty` is app-owned so a measured zero remains valid. Previous-input data
    * stays labeled through refreshes and errors. Input equality uses React Query's
-   * stable key hash by default; override `sameInput` for a custom equivalence rule. */
+   * stable key hash. */
 
   function useDataView<Name extends keyof Operations & string>(
     name: Name,
     input: InputOf<Operations[Name]>,
-    options: QueryOptions & {
+    options: {
       isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
       describeInput?: (input: InputOf<Operations[Name]>) => string;
-      period?: (input: InputOf<Operations[Name]>) => ReportingPeriod;
-      sameInput?: (
-        left: InputOf<Operations[Name]>,
-        right: InputOf<Operations[Name]>
-      ) => boolean;
     }
   ) {
-    const query = useDataQuery(name, input, options);
+    const query = useDataQuery(name, input);
     const [last, setLast] = useState<{
       clientScope: string;
       name: Name;
@@ -147,10 +132,12 @@ export function createDataHooks<Operations extends DataOperations>(
     ) {
       setLast({ clientScope, name, response: query.data });
     }
-    const sameInput =
-      options.sameInput ??
-      ((left: InputOf<Operations[Name]>, right: InputOf<Operations[Name]>) =>
-        hashKey([left]) === hashKey([right]));
+    function sameInput(
+      left: InputOf<Operations[Name]>,
+      right: InputOf<Operations[Name]>
+    ) {
+      return hashKey([left]) === hashKey([right]);
+    }
     const response =
       query.data ??
       (last?.clientScope === clientScope && last.name === name
@@ -167,12 +154,7 @@ export function createDataHooks<Operations extends DataOperations>(
       pending: query.isFetching,
       error: query.error instanceof Error ? query.error : undefined,
       sameInput,
-      describe:
-        options.describeInput ??
-        (input =>
-          options.period
-            ? reportingPeriodText(options.period(input))
-            : 'this view'),
+      describe: options.describeInput ?? (() => 'this view'),
       isEmpty: options.isEmpty,
     });
 
@@ -182,44 +164,89 @@ export function createDataHooks<Operations extends DataOperations>(
       snapshot: displayedSnapshot(view),
       response,
       queries: response?.queries,
-      refresh: {
-        refreshing: query.isFetching,
-        onRefresh() {
-          return void query.refetch();
-        },
-        onCancel: query.cancel,
-      },
+      refreshing: query.isFetching,
     };
   }
 
+  /** Omitted variables resolve to {}; matching operation inputs derive from those values.
+   * Supply a mapper for nested or different input shapes. */
   function defineDataView<
     Name extends keyof Operations & string,
-    const Variables extends VariableCollection,
+    const Variables extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
   >(
     definition: DataViewDefinition<
       Name,
       Variables,
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
-    >
+    > & { dataContext: Context }
   ) {
-    const variables = defineAppVariables(definition.variables);
+    const variables = defineAppVariables(
+      definition.variables ?? {}
+    ) as Variables;
+    const input =
+      definition.input ??
+      ((values: ResolvedVariables<Variables>) =>
+        values as unknown as InputOf<Operations[Name]>);
 
-    return {
+    const describeInput = describeViewInput<InputOf<Operations[Name]>>({
       ...definition,
       variables,
-      describeInput: describeViewInput<InputOf<Operations[Name]>>(definition),
-      content(
-        render: (
-          state: DataContentState<
-            OutputOf<Operations[Name]>,
-            InputOf<Operations[Name]>
+    });
+    type Data = OutputOf<Operations[Name]>;
+    type Input = InputOf<Operations[Name]>;
+    const metadata: Omit<
+      DataViewDefinition<Name, Variables, Input, Data>,
+      'variables' | 'input'
+    > = definition;
+    const normalized = { ...metadata, variables, input, describeInput };
+    const view = Object.assign(
+      new DeclaredView(() => useView(normalized), normalized),
+      {
+        dataset<Row>(
+          dataset: DatasetDefinition<
+            Data,
+            Input,
+            Row,
+            Parameters<Context['evidence']>[0]
           >
-        ) => ReactNode
-      ) {
-        return defineDataContent(render, { date: definition.date?.input });
-      },
-    };
+        ) {
+          return bindDataset(
+            {
+              ...dataset,
+              evidence: definition.dataContext.evidence(dataset.evidence),
+            },
+            view
+          );
+        },
+        metric(
+          metric: Parameters<Context['metric']>[0],
+          select: (data: Data, input: Input) => MetricValues
+        ) {
+          return bindMetric(
+            definition.dataContext.metric(metric),
+            select,
+            definition.date?.input,
+            view
+          );
+        },
+        scope(snapshot: DisplayedSnapshot<Data, Input>) {
+          return describeInput(snapshot.input);
+        },
+        content(
+          render: (
+            state: DataContentState<
+              OutputOf<Operations[Name]>,
+              InputOf<Operations[Name]>
+            >
+          ) => ReactNode
+        ): ViewContent<Data, Input> {
+          return new ViewContent(view, render, describeInput);
+        },
+      }
+    );
+    return view;
   }
 
   /** One time declaration owns the URL picker, operation input, and displayed-period label.
@@ -231,9 +258,11 @@ export function createDataHooks<Operations extends DataOperations>(
   function defineTimeView<
     Name extends keyof Operations & string,
     const Additional extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
   >(
     definition: {
       operation: Name;
+      dataContext: Context;
       time: Omit<DateRangeVariableOptions, 'key'>;
       variables?: Additional & { period?: never };
       bindings?: ViewBindings<
@@ -241,13 +270,18 @@ export function createDataHooks<Operations extends DataOperations>(
         InputOf<Operations[Name]>
       >;
       isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
-      empty: EmptyContent;
+      emptyFallback: EmptyContent;
     } & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>>
   ) {
     const period = dateRangeVariable({ ...definition.time, key: 'period' });
 
-    return defineDataView<Name, { period: typeof period } & Additional>({
+    return defineDataView<
+      Name,
+      { period: typeof period } & Additional,
+      Context
+    >({
       operation: definition.operation,
+      dataContext: definition.dataContext,
       variables: { period, ...definition.variables } as {
         period: typeof period;
       } & Additional,
@@ -270,7 +304,7 @@ export function createDataHooks<Operations extends DataOperations>(
         },
       },
       isEmpty: definition.isEmpty,
-      empty: definition.empty,
+      emptyFallback: definition.emptyFallback,
     });
   }
 
@@ -298,7 +332,7 @@ export function createDataHooks<Operations extends DataOperations>(
     Name extends keyof Operations & string,
     const Variables extends VariableCollection,
   >(
-    definition: DataViewDefinition<
+    definition: ResolvedDataViewDefinition<
       Name,
       Variables,
       InputOf<Operations[Name]>,
@@ -315,34 +349,37 @@ export function createDataHooks<Operations extends DataOperations>(
           })
           .then(response => response.data)
     );
+    const describeInput =
+      describeViewInput<InputOf<Operations[Name]>>(definition);
     const request = useDataView(
       definition.operation,
       resolveViewInput(definition, variables.resolved),
       {
         ...definition,
-        describeInput: describeViewInput<InputOf<Operations[Name]>>(definition),
+        describeInput,
       }
     );
 
     return {
-      ...request,
       view: request.view,
+      dataContext: definition.dataContext,
       snapshot: request.snapshot,
-      refetch: request.refetch,
-      refresh: request.refresh,
+      scope: displayedScope(request.view, describeInput),
+      refetch() {
+        void request.refetch();
+      },
+      cancel: request.cancel,
+      refreshing: request.refreshing,
       queries: request.queries,
-      empty: definition.empty,
+      emptyFallback: definition.emptyFallback,
       controls: variables.controls,
       variables,
     };
   }
 
   return {
-    useDataQuery,
-    useDataView,
     defineDataView,
     defineTimeView,
     defineFacetFilter,
-    useView,
   };
 }

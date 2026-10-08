@@ -1,27 +1,30 @@
 import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
-import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
-import { DataWidget } from '@/src/react/ui/DataWidget';
-import type { WidgetStatus } from '@/src/react/ui/RequestHint';
-import type {
-  EmptyContent,
-  BoundWidgetReading,
-} from '@/src/react/ui/presentation';
+import { DataWidget, type DataWidgetProps } from '@/src/react/ui/DataWidget';
+import type { BoundWidgetReading } from '@/src/react/ui/presentation';
 import { ContentSkeletonBody } from '@/src/react/ui/ContentSkeleton';
 import { validateWidgetViews } from '@/src/react/ui/widget-views';
 import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 
-type VisualizationWidgetBaseProps = {
-  title: ReactNode;
-  description?: ReactNode;
-  insight?: ReactNode;
-  action?: ReactNode;
-  evidence?: WidgetEvidence;
-  status?: WidgetStatus;
-  empty?: EmptyContent;
+type VisualizationWidgetBaseProps = Pick<
+  DataWidgetProps,
+  | 'title'
+  | 'annotationId'
+  | 'description'
+  | 'count'
+  | 'action'
+  | 'evidence'
+  | 'status'
+  | 'emptyFallback'
+> & {
+  /** Footer controls, such as table pagination. */
+  footer?: ReactNode;
 } & Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
 type UnboundVisualizationWidgetProps = VisualizationWidgetBaseProps &
-  ({ loading: true; visual?: never } | { loading?: false; visual: ReactNode });
+  (
+    | { loading: true; loadingContent?: ReactNode; visual?: never }
+    | { loading?: false; visual: ReactNode; loadingContent?: never }
+  );
 
 export type VisualizationWidgetView<Data> = {
   /** Stable, nonempty identity; unique within this widget. */
@@ -36,8 +39,10 @@ type BoundVisualizationWidgetBase<Data> = VisualizationWidgetBaseProps &
     loading?: never;
   };
 
-/** The widget owns alternate-view selection and shares it with inspection.
- * Custom chart interactions remain controlled by the caller, above both mounts. */
+/** DataWidget frame for charts, DataTable, metrics, or a custom data display.
+ * Owns alternate-view selection and shares it with inspection. Built-in charts own
+ * transient tooltips; lift persistent custom interactions above both mounts.
+ * For narrative prose use the sibling TextWidget, which composes DataWidget directly. */
 export type VisualizationWidgetProps<Data = unknown> =
   | UnboundVisualizationWidgetProps
   | (BoundVisualizationWidgetBase<Data> & {
@@ -52,23 +57,31 @@ export type VisualizationWidgetProps<Data = unknown> =
       children?: never;
     });
 
+/** Compose an unframed visual with the shared heading and inspection. */
 export function VisualizationWidget<Data>(
   props: VisualizationWidgetProps<Data>
 ) {
   if ('views' in props && props.views)
     return <VisualizationWidgetWithViews {...props} />;
   if ('reading' in props) {
-    const { reading, children, isEmpty, empty, skeleton, insight, ...shell } =
-      props;
+    const {
+      reading,
+      children,
+      isEmpty,
+      emptyFallback,
+      skeleton,
+      footer,
+      ...shell
+    } = props;
 
     return (
       <DataWidget
         {...shell}
         reading={reading}
         isEmpty={isEmpty}
-        empty={empty}
+        emptyFallback={emptyFallback}
         skeleton={skeleton}
-        footer={insight}
+        footer={footer}
       >
         {data => (
           <div className="altertable-visualization-widget-content">
@@ -78,16 +91,18 @@ export function VisualizationWidget<Data>(
       </DataWidget>
     );
   }
-  const { visual, loading = false, insight, ...shell } = props;
+  const { visual, loading = false, loadingContent, footer, ...shell } = props;
   if (loading)
     return (
-      <DataWidget {...shell} evidence={undefined} footer={insight} aria-busy>
-        <ContentSkeletonBody variant="panel" />
+      <DataWidget {...shell} evidence={undefined} footer={footer} aria-busy>
+        <div className="altertable-visualization-widget-content">
+          {loadingContent ?? <ContentSkeletonBody variant="panel" />}
+        </div>
       </DataWidget>
     );
 
   return (
-    <DataWidget {...shell} footer={insight}>
+    <DataWidget {...shell} footer={footer}>
       <div className="altertable-visualization-widget-content">{visual}</div>
     </DataWidget>
   );
@@ -99,9 +114,9 @@ function VisualizationWidgetWithViews<Data>({
   viewLabel,
   initialView,
   isEmpty,
-  empty,
+  emptyFallback,
   skeleton,
-  insight,
+  footer,
   ...shell
 }: BoundVisualizationWidgetBase<Data> & {
   views: readonly VisualizationWidgetView<Data>[];
@@ -116,9 +131,9 @@ function VisualizationWidgetWithViews<Data>({
       {...shell}
       reading={reading}
       isEmpty={isEmpty}
-      empty={empty}
+      emptyFallback={emptyFallback}
       skeleton={skeleton}
-      footer={insight}
+      footer={footer}
     >
       {data => (
         <div className="altertable-visualization-widget-content">
@@ -129,7 +144,7 @@ function VisualizationWidgetWithViews<Data>({
               label: view.label,
               content: view.render(data),
               isEmpty: false,
-              empty,
+              emptyFallback,
             }))}
             selectedKey={selected}
             onSelectionChange={setSelected}

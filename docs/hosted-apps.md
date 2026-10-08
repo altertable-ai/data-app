@@ -30,23 +30,17 @@ follow the [registered query route](embed.md#registered-query-route).
 
 ## Convert a local data app
 
-1. Combine the operation orchestration, parsers, views, story, and CSV export into the
-   [single-file starter](../examples/starter-data-app/index.tsx) format.
+1. Combine the app's operations and parsers, data context, views, story,
+   CSV export, configuration, and browser entry into one `index.tsx`, following the
+   [single-file starter](../examples/starter-data-app/index.tsx).
 2. Move SQL from local server operations into `queries.json`, replace interpolated
    inputs with `$name` parameters, and replace statement calls with
-   `query(id, values)`. Use `createDataClient({ operations })` in the browser.
-3. Remove local serving files and app-alias imports. Confirm the host can access
-   the same catalogs, then follow the [shared verification steps](app-authoring.md#verify-the-app).
-
-## Preview in this repository
-
-```fish
-bun install --frozen-lockfile
-bun run build
-bun browser-tests/server.ts
-```
-
-Open [the starter preview](http://127.0.0.1:27418/starter-data-app).
-Its test host returns fixture results through the registered query bridge.
-
-For checks, see [Contributing](../CONTRIBUTING.md).
+   `query(id, values)`.
+3. Replace the HTTP client with `createDataClient({ operations })`, using the
+   operation registry as a value. See [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps)
+   for execution through the host.
+4. Remove the Bun server, HTML, server adapters, credentials, and relative or
+   app-alias imports.
+5. Confirm the host can query the same catalogs, tables, and fields.
+   [Verify the app](app-authoring.md#verify-the-app) in the hosted runtime against
+   the local version's filters and findings.

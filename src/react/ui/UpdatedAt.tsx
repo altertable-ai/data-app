@@ -16,7 +16,7 @@ export function UpdatedAt({
   locale,
   label = 'Updated',
   children,
-  triggerClassName,
+  triggerProps,
   ...props
 }: UpdatedAtProps) {
   const [now, setNow] = useState(Date.now);
@@ -43,9 +43,12 @@ export function UpdatedAt({
     <DateTimeTooltip
       {...props}
       date={date}
-      triggerClassName={['altertable-updated-at', triggerClassName]
-        .filter(Boolean)
-        .join(' ')}
+      triggerProps={{
+        ...triggerProps,
+        className: ['altertable-updated-at', triggerProps?.className]
+          .filter(Boolean)
+          .join(' '),
+      }}
     >
       {children ?? (
         <time dateTime={date.toISOString()}>

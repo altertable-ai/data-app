@@ -10,22 +10,18 @@
   margin: 0 0 14px;
   padding: 8px 0;
   border: 0;
-  border-radius: var(--at-radius-control, 8px);
-  color: var(--at-muted, #687078);
+  border-radius: var(--atbl-radius-control);
+  color: var(--atbl-muted);
   background: transparent;
-  font-size: 12px;
+  font-size: var(--atbl-type-meta-size);
   line-height: 1.45;
 }
 .altertable-data-boundary-notice[data-state='stale-error'] {
-  border-color: color-mix(
-    in srgb,
-    var(--at-danger, #b42318) 30%,
-    var(--at-border, #e3e6e8)
-  );
+  border-color: color-mix(in srgb, var(--atbl-danger) 30%, var(--atbl-border));
 }
 .altertable-data-boundary-notice[data-state='stale-error'] > svg {
   flex: none;
-  color: var(--at-danger, #b42318);
+  color: var(--atbl-danger);
 }
 .altertable-data-boundary-message {
   flex: 1 1 240px;
@@ -45,18 +41,7 @@
     transform: rotate(360deg);
   }
 }
-.altertable-data-boundary-content {
-  transition: opacity 180ms ease;
-}
-.altertable-data-boundary-content[data-updating='true'] {
-  opacity: 0.58;
-  transition: opacity 180ms ease 450ms;
-}
 @media (prefers-reduced-motion: reduce) {
-  .altertable-data-boundary-content,
-  .altertable-data-boundary-content[data-updating='true'] {
-    transition: none;
-  }
   .altertable-data-boundary-spinner {
     animation: none;
   }

@@ -215,7 +215,9 @@ export function QueryList({
       {...props}
       className={classNames('altertable-query-list', className)}
     >
-      <summary>{summary}</summary>
+      <summary data-atbl-focus="ring" data-atbl-control="action">
+        {summary}
+      </summary>
       {figures}
     </details>
   );

@@ -1,34 +1,41 @@
-:root {
-  --at-focus-outline: 1px solid var(--at-focus-color, #687078);
-  --at-focus-ring-offset: 2px;
-  --at-focus-ring-inset: -1px;
+/* Public data-atbl-focus: ring outside a control, inset inside a clipped surface,
+   group when the input wrapper owns focus. Native keyboard semantics still apply.
+   Optional --atbl-focus-outline replaces the outline; --atbl-focus-color changes
+   its color, defaulting to local muted text. */
+[data-atbl-focus='ring']:is(:focus-visible, [data-focus-visible]),
+[data-atbl-focus='ring']:has(> input:focus-visible),
+[data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]),
+[data-atbl-focus='inset'][data-atbl-internal-focus-state='focused'][data-focused],
+[data-atbl-internal-prose] a:focus-visible {
+  outline: var(
+    --atbl-focus-outline,
+    1px solid var(--atbl-focus-color, var(--atbl-muted))
+  );
+  outline-offset: var(--atbl-focus-ring-offset);
 }
-
-/* Native and React Aria controls share the same keyboard focus treatment. */
-[data-at-focus='ring']:is(:focus-visible, [data-focus-visible]),
-[data-at-focus='inset']:is(:focus-visible, [data-focus-visible]) {
-  outline: var(--at-focus-outline);
-  outline-offset: var(--at-focus-ring-offset);
+[data-atbl-focus='inset']:is(:focus-visible, [data-focus-visible]),
+[data-atbl-focus='inset'][data-atbl-internal-focus-state='focused'][data-focused] {
+  outline-offset: var(--atbl-focus-ring-inset);
 }
-[data-at-focus='inset']:is(:focus-visible, [data-focus-visible]) {
-  outline-offset: var(--at-focus-ring-inset);
-}
-
-/* Input groups show one inset outline around the whole control. */
-[data-at-focus='group']:is(
+/* Input groups own the outline instead of their individual text inputs. */
+[data-atbl-focus='group']:is(
   :focus-within,
   [data-focus-within],
   [data-focus-visible]
 ) {
-  outline: var(--at-focus-outline, 1px solid #687078);
-  outline-offset: var(--at-focus-ring-inset, -1px);
+  outline: var(
+    --atbl-focus-outline,
+    1px solid var(--atbl-focus-color, var(--atbl-muted))
+  );
+  outline-offset: var(--atbl-focus-ring-inset);
 }
-[data-at-focus='group'] input:focus-visible {
+[data-atbl-focus='group'] input:focus-visible {
   outline: none;
 }
 
 @media (forced-colors: active) {
-  :root {
-    --at-focus-color: Highlight !important;
+  [data-atbl-focus]:is(:focus-visible, :focus-within, [data-focus-visible]),
+  [data-atbl-internal-prose] a:focus-visible {
+    outline-color: Highlight !important;
   }
 }

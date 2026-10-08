@@ -1,0 +1,78 @@
+.altertable-trend-chart {
+  min-width: 0;
+}
+.altertable-trend-scroll {
+  overflow-x: auto;
+  margin: 12px 0 14px;
+  padding: 3px;
+}
+.altertable-trend-plot {
+  position: relative;
+}
+.altertable-trend-plot > svg {
+  position: absolute;
+  inset: 0 0 auto;
+  width: 100%;
+  height: 220px;
+  pointer-events: none;
+  overflow: visible;
+}
+.altertable-trend-baseline {
+  stroke: var(--atbl-border);
+  stroke-width: 1;
+}
+.altertable-trend-line {
+  fill: none;
+  stroke: var(--atbl-accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.altertable-trend-fill {
+  fill: var(--atbl-accent);
+  opacity: 0.14;
+}
+.altertable-trend-points {
+  position: relative;
+  display: flex;
+}
+.altertable-trend-point {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--atbl-muted);
+}
+.altertable-trend-point:focus {
+  outline: none;
+}
+.altertable-trend-hit {
+  display: block;
+  position: relative;
+  height: 220px;
+}
+.altertable-trend-dot {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 2px solid var(--atbl-accent);
+  border-radius: 50%;
+  background: var(--atbl-surface);
+}
+.altertable-chart-column[data-open] .altertable-trend-dot {
+  background: var(--atbl-accent);
+  width: 11px;
+  height: 11px;
+}
+.altertable-trend-label {
+  display: block;
+  padding: 8px 3px 0;
+  font-size: var(--atbl-type-meta-size);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

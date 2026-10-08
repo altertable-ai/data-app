@@ -21,12 +21,14 @@ import {
   useRole,
   type Placement,
 } from '@floating-ui/react';
+import type { DataAppStyleHooks } from '@/src/react/style-contract';
 import { classNames } from '@/src/react/ui/classNames';
 
 export type HelpPopoverTriggerProps = Omit<
   ComponentPropsWithRef<'button'>,
   'children' | 'type'
->;
+> &
+  DataAppStyleHooks;
 export type HelpPopoverPanelProps = Omit<
   ComponentPropsWithRef<'section'>,
   'children' | 'role'
@@ -37,8 +39,6 @@ export type HelpPopoverProps = {
   triggerLabel: string;
   label: string;
   children: ReactNode;
-  triggerClassName?: string;
-  panelClassName?: string;
   placement?: Placement;
   portalRoot?: RefObject<HTMLElement | null>;
   triggerProps?: HelpPopoverTriggerProps;
@@ -55,8 +55,6 @@ export function HelpPopover({
   triggerLabel,
   label,
   children,
-  triggerClassName,
-  panelClassName,
   portalRoot,
   triggerProps,
   panelProps,
@@ -101,6 +99,11 @@ export function HelpPopover({
   return (
     <>
       <button
+        data-atbl-internal-surface={
+          triggerProps?.className ? undefined : 'control'
+        }
+        data-atbl-focus="ring"
+        data-atbl-control="action"
         {...getReferenceProps({
           ...triggerProps,
           'aria-label': triggerProps?.['aria-label'] ?? triggerLabel,
@@ -108,11 +111,11 @@ export function HelpPopover({
         ref={mergedTriggerRef}
         type="button"
         className={classNames(
-          triggerClassName ?? 'altertable-button',
+          triggerProps?.className ? undefined : 'altertable-button',
           triggerProps?.className
         )}
-        data-variant={triggerClassName ? undefined : 'outline'}
-        data-size={triggerClassName ? undefined : 'compact'}
+        data-variant={triggerProps?.className ? undefined : 'outline'}
+        data-size={triggerProps?.className ? undefined : 'compact'}
         data-open={open}
       >
         {trigger}
@@ -129,7 +132,6 @@ export function HelpPopover({
               ref={mergedPanelRef}
               className={classNames(
                 'altertable-help-popover',
-                panelClassName,
                 panelProps?.className
               )}
               style={{ ...panelProps?.style, ...floatingStyles }}

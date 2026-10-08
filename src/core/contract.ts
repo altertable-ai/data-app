@@ -446,3 +446,15 @@ export type { TransportResponse } from '@/src/core/bridge';
 
 export { registeredQueryRoute } from '@/src/core/messages';
 export type { RegisteredQueryInput } from '@/src/core/messages';
+
+export {
+  annotationDraftRoute,
+  annotationModeRoute,
+  annotationEditorStateRoute,
+  annotationUpdateRoute,
+  parseDataAppAnnotationDraft,
+} from '@/src/core/annotations';
+export type {
+  DataAppAnnotationDraft,
+  DataAppAnnotationPresentation,
+} from '@/src/core/annotations';

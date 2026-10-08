@@ -4,11 +4,12 @@
   justify-content: center;
   min-width: 1.6em;
   padding: 2px 5px;
-  border: 1px solid var(--at-border, #e3e6e8);
+  border: 1px solid var(--atbl-border);
   border-radius: 5px;
-  background: var(--at-subtle, #f6f7f7);
-  color: var(--at-muted, #687078);
-  font: 600 11px/1.2 var(--at-font, ui-sans-serif, system-ui, sans-serif);
+  background: var(--atbl-subtle);
+  color: var(--atbl-muted);
+  font: var(--atbl-type-label-weight)
+    var(--atbl-type-meta-size)/var(--atbl-type-label-leading) var(--atbl-font);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

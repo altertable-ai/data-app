@@ -1,0 +1,198 @@
+/* Floating annotation controls intentionally contrast with the app theme. */
+.altertable-annotation-composer,
+.altertable-annotation-hint,
+.altertable-tooltip-content:has(> .altertable-annotation-tooltip) {
+  --annotation-surface: var(--atbl-text);
+  --annotation-text: var(--atbl-background);
+  --annotation-muted: color-mix(
+    in srgb,
+    var(--annotation-text) 65%,
+    var(--annotation-surface)
+  );
+  --annotation-border: color-mix(
+    in srgb,
+    var(--annotation-text) 15%,
+    var(--annotation-surface)
+  );
+}
+.altertable-annotation-outline {
+  position: fixed;
+  z-index: 1100;
+  pointer-events: none;
+  border: 2px dashed var(--atbl-annotation-accent);
+  border-radius: 0;
+  /* Optional highlight composes from the local annotation accent. */
+  background: var(
+    --atbl-annotation-highlight,
+    color-mix(in srgb, var(--atbl-annotation-accent) 8%, transparent)
+  );
+}
+.altertable-annotation-pin {
+  --atbl-focus-outline: 2px solid var(--atbl-annotation-accent);
+  position: fixed;
+  z-index: 1101;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--atbl-annotation-accent);
+  color: var(--atbl-annotation-on-accent);
+  font: 600 12px var(--atbl-font);
+}
+.altertable-annotation-composer {
+  z-index: 1102;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: min(320px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px solid var(--annotation-border);
+  border-radius: 24px;
+  background: var(--annotation-surface);
+  color: var(--annotation-text);
+  box-shadow: 0 4px 16px #0002;
+  font: 14px/1.5 var(--atbl-font);
+}
+.altertable-annotation-composer textarea {
+  flex: 1;
+  min-width: 0;
+  field-sizing: content;
+  max-height: min(160px, 30vh);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 12px;
+  padding: 6px 8px;
+  resize: none;
+  overscroll-behavior: contain;
+  font: inherit;
+  background: transparent;
+  color: inherit;
+}
+.altertable-annotation-composer textarea:focus-visible {
+  outline: none;
+}
+.altertable-annotation-composer [role='alert'] {
+  flex-basis: 100%;
+  padding: 0 8px;
+  color: var(--annotation-text);
+  margin: 4px 0;
+}
+.altertable-annotation-hint {
+  position: fixed;
+  z-index: 1102;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+  padding: 8px 16px;
+  border: 1px solid var(--annotation-border);
+  border-radius: 24px;
+  background: var(--annotation-surface);
+  color: var(--annotation-text);
+  box-shadow: 0 4px 16px #0002;
+  font: 13px/1.5 var(--atbl-font);
+  pointer-events: none;
+}
+
+.altertable-annotation-pin:focus-visible {
+  outline: 2px solid var(--atbl-annotation-accent);
+  outline-offset: 2px;
+}
+.altertable-annotation-count {
+  border-radius: 20px;
+  padding: 0 5px;
+  background: var(--atbl-annotation-accent);
+  color: var(--atbl-annotation-on-accent);
+  font-size: 11px;
+}
+.altertable-annotation-composer[data-shaking] {
+  animation: annotation-shake 220ms ease-in-out;
+}
+@keyframes annotation-shake {
+  25%,
+  75% {
+    translate: -4px 0;
+  }
+  50% {
+    translate: 4px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-annotation-composer[data-shaking] {
+    animation-duration: 1ms;
+  }
+}
+
+.altertable-annotation-composer textarea::placeholder {
+  color: var(--annotation-muted);
+}
+.altertable-annotation-composer .altertable-annotation-submit {
+  --atbl-control-hover-surface: var(--atbl-annotation-accent-hover);
+  --atbl-control-pressed-surface: var(--atbl-annotation-accent-hover);
+  border-radius: 50%;
+  border: 0;
+  background: var(--atbl-annotation-accent);
+  color: var(--atbl-annotation-on-accent);
+  box-shadow: none;
+}
+.altertable-annotation-composer
+  .altertable-annotation-submit:hover:not(:disabled) {
+  background: var(--atbl-annotation-accent-hover);
+}
+.altertable-tooltip-content:has(> .altertable-annotation-tooltip) {
+  background: var(--annotation-surface);
+  color: var(--annotation-text);
+  border-color: var(--annotation-border);
+}
+.altertable-annotation-hint .altertable-kbd,
+.altertable-annotation-tooltip .altertable-kbd {
+  background: transparent;
+  color: var(--annotation-muted);
+  border-color: var(--annotation-border);
+}
+
+@media (pointer: coarse) {
+  .altertable-annotation-composer textarea {
+    font-size: 16px;
+  }
+}
+
+.altertable-annotation-outline[data-widget] {
+  border-radius: var(--atbl-radius-surface);
+}
+.altertable-annotation-selection-layer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  z-index: 1099;
+  --atbl-cursor-action: crosshair;
+  /* Keyboard target outlines are rendered on the selected item, not the full-page layer. */
+  --atbl-focus-outline: none;
+  touch-action: none;
+}
+.altertable-annotation-selection-layer:focus-visible {
+  outline: none;
+}
+.altertable-annotation-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.altertable-annotation-selection-layer[data-editing] {
+  --atbl-cursor-action: default;
+}

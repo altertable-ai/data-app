@@ -31,7 +31,6 @@ type SharedProps = {
   missingOption?: ComboboxOption;
   disabled?: boolean;
   placeholder?: string;
-  searchable?: boolean;
   emptyMessage?: string;
   /** Known options remain selectable while refreshing; unavailable selected IDs are retained. */
   loading?: boolean;
@@ -43,8 +42,6 @@ export type SingleComboboxProps = SharedProps & {
   value: string;
   onChange: (value: string) => void;
   resetValue?: string;
-  /** Return a valid option for custom input; the caller retains selected custom options. */
-  customValue?: (text: string) => ComboboxOption | null;
   values?: never;
   maxSelected?: never;
   emptySelectionLabel?: never;
@@ -74,16 +71,9 @@ export function Combobox(props: ComboboxProps) {
   const popupId = useId();
   const chosen = multiple ? props.values : [props.value];
   const selected = new Set(chosen);
-  const custom =
-    !multiple && props.customValue ? props.customValue(search) : null;
   const selectedOptions = [
     ...options,
     ...(missingOption ? [missingOption] : []),
-    ...(custom &&
-    !options.some(option => option.id === custom.id) &&
-    missingOption?.id !== custom.id
-      ? [custom]
-      : []),
   ];
   const labels = chosen.map(
     id => selectedOptions.find(option => option.id === id)?.label ?? id
@@ -163,7 +153,6 @@ export function Combobox(props: ComboboxProps) {
       if (id !== undefined) {
         props.onChange(id);
         setOpen(false);
-        if (props.customValue) setSearch('');
       }
     }
   }
@@ -204,30 +193,22 @@ export function Combobox(props: ComboboxProps) {
           aria-label={`${label} options`}
           className="altertable-combobox-dialog"
         >
-          {props.searchable !== false && (
-            <SearchInput
-              size="compact"
-              loading={loading}
-              ref={searchRef}
-              aria-label={`Search ${label.toLocaleLowerCase()} values`}
-              aria-describedby={statusId}
-              placeholder={props.placeholder ?? 'Search values'}
-              value={search}
-              onChange={event => setSearch(event.currentTarget.value)}
-              onKeyDown={event => {
-                if (event.key === 'Enter' && custom && !multiple) {
-                  event.preventDefault();
-                  props.onChange(custom.id);
-                  setOpen(false);
-                  setSearch('');
-                  return;
-                }
-                if (event.key !== 'ArrowDown' || !matches.length) return;
-                event.preventDefault();
-                listRef.current?.focus();
-              }}
-            />
-          )}
+          <SearchInput
+            focusRing={false}
+            size="compact"
+            loading={loading}
+            ref={searchRef}
+            aria-label={`Search ${label.toLocaleLowerCase()} values`}
+            aria-describedby={statusId}
+            placeholder={props.placeholder ?? 'Search values'}
+            value={search}
+            onChange={event => setSearch(event.currentTarget.value)}
+            onKeyDown={event => {
+              if (event.key !== 'ArrowDown' || !matches.length) return;
+              event.preventDefault();
+              listRef.current?.focus();
+            }}
+          />
           <output
             id={statusId}
             className="altertable-combobox-status"
@@ -253,6 +234,9 @@ export function Combobox(props: ComboboxProps) {
               >
                 {hit => (
                   <ListBoxItem
+                    data-atbl-internal-surface="option"
+                    data-atbl-focus="inset"
+                    data-atbl-control="action"
                     id={hit.item.id}
                     data-missing={
                       hit.item.id === missingOption?.id || undefined

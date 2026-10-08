@@ -1,0 +1,102 @@
+.altertable-scatter-chart {
+  min-width: 0;
+}
+.altertable-scatter-axis-title {
+  margin: 14px 0 18px;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+  overflow-wrap: anywhere;
+}
+.altertable-scatter-axes {
+  padding: 0 12px 24px 48px;
+}
+.altertable-scatter-plot {
+  position: relative;
+  height: 220px;
+  border-left: 1px solid var(--atbl-border);
+}
+.altertable-scatter-gridline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--atbl-border);
+  pointer-events: none;
+}
+.altertable-scatter-gridline > span {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 0;
+  transform: translateY(-50%);
+  width: 40px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+  font-variant-numeric: tabular-nums;
+}
+.altertable-scatter-x-tick {
+  position: absolute;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  max-width: 32%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+  font-variant-numeric: tabular-nums;
+}
+.altertable-scatter-x-tick[data-edge='0'] {
+  transform: none;
+}
+.altertable-scatter-x-tick[data-edge='2'] {
+  transform: translateX(-100%);
+}
+.altertable-scatter-x-title {
+  margin: 8px 0 16px;
+  text-align: center;
+}
+.altertable-scatter-point {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.altertable-scatter-point > span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--atbl-accent);
+  opacity: 0.65;
+  border: 1px solid var(--atbl-surface);
+}
+.altertable-scatter-tooltip[data-open] {
+  z-index: 1;
+}
+.altertable-scatter-tooltip[data-open] .altertable-scatter-point > span {
+  width: 12px;
+  height: 12px;
+  opacity: 1;
+}
+.altertable-scatter-plot:has([data-open])
+  .altertable-scatter-tooltip:not([data-open])
+  .altertable-scatter-point
+  > span {
+  opacity: 0.3;
+}
+.altertable-scatter-point:focus {
+  outline: none;
+}
+
+.altertable-tooltip-trigger.altertable-scatter-tooltip[data-variant='chart'] {
+  position: absolute;
+  transform: translate(-50%, 50%);
+  width: 24px;
+  height: 24px;
+}

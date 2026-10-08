@@ -35,7 +35,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
         icon="export"
         variant="elevated"
         label="Export CSV"
-        tooltip="Export data"
+        tooltip="Export data…"
         disabled
       />
     );
@@ -61,7 +61,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
           icon="export"
           variant="elevated"
           label="Export CSV"
-          tooltip="Export data"
+          tooltip="Export data…"
           disabled={status === 'pending'}
           aria-busy={status === 'pending'}
           onClick={() => void download()}
@@ -80,7 +80,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
               );
           }}
         >
-          <Tooltip content="Export data">
+          <Tooltip content="Export data…">
             <PressButton
               variant="elevated"
               size="icon"
@@ -94,6 +94,9 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
             <ListBox aria-label="Export data">
               {csv.tables.map((table, index) => (
                 <ListBoxItem
+                  data-atbl-internal-surface="option"
+                  data-atbl-focus="inset"
+                  data-atbl-control="action"
                   key={index}
                   id={index}
                   textValue={`Export ${table.name} CSV`}
@@ -104,6 +107,9 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
                 </ListBoxItem>
               ))}
               <ListBoxItem
+                data-atbl-internal-surface="option"
+                data-atbl-focus="inset"
+                data-atbl-control="action"
                 id="all"
                 textValue="Export all ZIP"
                 aria-label="Export all ZIP"

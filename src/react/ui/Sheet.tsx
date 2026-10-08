@@ -26,6 +26,7 @@ export type SheetProps = {
   headerActions?: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
+  placement?: 'side' | 'center';
   returnFocus?: RefObject<HTMLElement | null>;
 } & SheetDialogProps;
 
@@ -42,6 +43,7 @@ export function Sheet({
   headerActions,
   footer,
   wide,
+  placement = 'side',
   returnFocus,
   className,
   onCancel,
@@ -88,6 +90,7 @@ export function Sheet({
       ref={dialogRef}
       className={classNames('altertable-sheet', className)}
       data-wide={wide || undefined}
+      data-placement={placement}
       aria-labelledby={titleId}
       aria-describedby={
         props['aria-describedby'] ?? (description ? descriptionId : undefined)

@@ -4,14 +4,16 @@
   max-height: min(65dvh, 560px);
   overflow: auto;
   overscroll-behavior: contain;
-  padding: var(--at-space-md, 16px);
-  border: 1px solid var(--at-border, #e3e6e8);
-  border-radius: var(--at-radius-overlay, 12px);
-  background: var(--at-surface, #fff);
-  box-shadow: var(--at-shadow-overlay, 0 18px 50px rgb(20 28 40 / 16%));
-  color: var(--at-text, #202124);
-  font: 13px/1.5 var(--at-font, ui-sans-serif, system-ui, sans-serif);
-  animation: altertable-popover-in 140ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  padding: var(--atbl-space-md);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-overlay);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-overlay);
+  color: var(--atbl-text);
+  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
+  animation: altertable-popover-in var(--atbl-duration-fast)
+    var(--atbl-ease-enter);
 }
 @keyframes altertable-popover-in {
   from {

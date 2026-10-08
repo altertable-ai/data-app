@@ -58,6 +58,13 @@ try {
     'docs/contract.md',
     'docs/client.md',
     'docs/react.md',
+    'docs/ui.md',
+    'docs/views.md',
+    'docs/variables.md',
+    'docs/widgets.md',
+    'docs/data-context.md',
+    'docs/stories-and-export.md',
+    'docs/formatting-and-appearance.md',
     'docs/server.md',
     'docs/server-bun.md',
     'docs/embed.md',
@@ -93,6 +100,34 @@ try {
     packageDirectory,
     '--strip-components=1',
   ]);
+  await writeFile(
+    join(temporary, 'package.json'),
+    JSON.stringify({ name: 'packed-data-app-consumer', type: 'module' })
+  );
+  const consumerTests = join(temporary, 'tests/public-api');
+  await mkdir(consumerTests, { recursive: true });
+  for (const name of [
+    'operations.test.ts',
+    'messages.test.ts',
+    'worker.test.ts',
+  ]) {
+    await writeFile(
+      join(consumerTests, name),
+      await readFile(join(root, 'tests/public-api', name), 'utf8')
+    );
+  }
+  await run(
+    [
+      'node',
+      join(root, 'node_modules/vitest/vitest.mjs'),
+      'run',
+      '--root',
+      temporary,
+      '--config',
+      join(root, 'vitest.config.ts'),
+    ],
+    temporary
+  );
   for (const path of paths) {
     if (path.endsWith('.d.ts')) {
       const declaration = await readFile(join(packageDirectory, path), 'utf8');
@@ -123,7 +158,8 @@ try {
   await writeFile(
     join(temporary, 'browser.tsx'),
     `import { createDataClient } from "@altertable/data-app/client";
-import { Grid, DataAppSkeleton, injectDataAppStyles } from "@altertable/data-app/react";
+import { Grid, injectDataAppStyles } from '@altertable/data-app/react';
+import { DataAppSkeleton } from '@altertable/data-app/react/ui';
 injectDataAppStyles();
 import { defineDateRangeContract, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
 import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app/embed";
@@ -135,35 +171,6 @@ export const api = { createDataClient, Grid, DataAppSkeleton, defineDateRangeCon
     join(temporary, 'embed.tsx'),
     `import { DataAppBridge } from "@altertable/data-app/react/embed";
 export { DataAppBridge };
-`
-  );
-  await writeFile(
-    join(temporary, 'bridge.ts'),
-    `import { attachDataAppBridge } from "@altertable/data-app/embed";
-import { createMessageRouter, defineMessageRoute, MessageRoutingError } from "@altertable/data-app/contract";
-const events = new EventTarget();
-const sent = [];
-const target = { postMessage(message) { sent.push(message); } };
-const iframe = Object.assign(new EventTarget(), { contentWindow: target });
-const host = Object.assign(events, { location: { search: "", hash: "" } });
-const router = createMessageRouter({ "test:denied": defineMessageRoute({ input() { return null; }, output() { return null; } }) }, {
-  "test:denied"() { throw new MessageRoutingError("forbidden", "Denied", "request"); }
-});
-const bridgeHost = attachDataAppBridge({ iframe, window: host, connection: { type: "origin", origin: "https://app.example" }, onMessage: router.dispatch });
-function receive(message) {
-  events.dispatchEvent(Object.assign(new Event("message"), {
-    source: target, origin: "https://app.example", data: { channel: "altertable:data-app", version: 1, documentId: "document", ...message }
-  }));
-}
-try {
-  receive({ type: "bridge:ready" });
-  const sessionId = sent.at(-1).sessionId;
-  receive({ type: "bridge:request", sessionId, id: "call", route: "test:denied", payload: null });
-  await new Promise(resolve => setTimeout(resolve, 0));
-  const response = sent.at(-1);
-  if (response.code !== "forbidden" || response.message !== "Denied" || response.requestId !== "request")
-    throw new Error("Public routed errors lost identity across packed entries");
-} finally { bridgeHost.dispose(); }
 `
   );
   await writeFile(
@@ -200,62 +207,14 @@ if (typeof createDataHandler !== "function" || typeof localLakehouse !== "functi
     join(temporary, 'tsconfig.json'),
   ]);
   await run(['bun', join(temporary, 'server.ts')], temporary);
-  await run(['bun', join(temporary, 'bridge.ts')], temporary);
-  await writeFile(
-    join(temporary, 'worker-asset.mjs'),
-    `import { readFile } from 'node:fs/promises';
-import { runInNewContext } from 'node:vm';
-import { strict as assert } from 'node:assert';
-
-const asset = await readFile(new URL(import.meta.resolve('@altertable/data-app/worker')), 'utf8');
-assert(!/^import\\s|\\bimport\\s*\\(/m.test(asset), 'Worker must have no runtime imports');
-assert(!/react-query|react-dom|attachNavigation|createAppLocation|Bun\\.|process\\./.test(asset));
-// Simulate loading the one uploaded ESM module; consumers only resolve/read it.
-const { default: worker } = await import('data:text/javascript;base64,' + Buffer.from(asset).toString('base64'));
-const response = await worker.fetch(new Request('https://test-report-app-1.example.test/'), {
-  DOMAIN_NAME: 'example.test', PARENT_ORIGINS: 'https://host.example',
-});
-assert.equal(response.status, 200);
-const html = await response.text();
-assert(html.includes('data-parent-origin="https://host.example"'));
-const source = html.match(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\b[^>]*>/i)[1];
-assert(!/createAppLocation|attachNavigation|replaceState|pushState|navigation:update/.test(source));
-
-function execute(parentOrigin) {
-  const sent = [];
-  const listeners = new Map();
-  const parent = { postMessage(message, origin) { sent.push({ message, origin }); } };
-  const frame = {
-    parent,
-    addEventListener(type, listener) { listeners.set(type, listener); },
-    removeEventListener(type) { listeners.delete(type); },
-  };
-  runInNewContext(source, {
-    document: { currentScript: { dataset: { parentOrigin } } },
-    window: frame,
-    URL,
-    crypto: { randomUUID() { return 'document'; } },
-  });
-  return { sent, listeners, parent, frame };
-}
-
-assert.throws(() => execute(undefined), /Missing trusted parent origin/);
-assert.throws(() => execute('https://host.example/path'), /Expected an exact parent origin/);
-const { sent, listeners, parent } = execute('https://host.example');
-const message = { channel: 'altertable:data-app', version: 1, type: 'bridge:connect', documentId: 'host', token: 'token' };
-listeners.get('message')({ origin: 'https://other.example', source: parent, data: message });
-assert.equal(sent.length, 0);
-listeners.get('message')({ origin: 'https://host.example', source: {}, data: message });
-assert.equal(sent.length, 0);
-listeners.get('message')({ origin: 'https://host.example', source: parent, data: message });
-assert.equal(sent.length, 1);
-assert.equal(sent[0].origin, 'https://host.example');
-assert.equal(sent[0].message.type, 'bridge:ready');
-assert.equal(sent[0].message.token, 'token');
-assert.equal(sent[0].message.documentId, 'document');
-`
+  const workerAsset = await readFile(
+    join(packageDirectory, 'dist/worker.js'),
+    'utf8'
   );
-  await run(['node', join(temporary, 'worker-asset.mjs')], temporary);
+  if (/^import\s|\bimport\s*\(/m.test(workerAsset))
+    throw new Error('Worker must have no runtime imports.');
+  if (/react-query|react-dom|Bun\.|process\./.test(workerAsset))
+    throw new Error('Worker contains unsupported runtime dependencies.');
   await run(
     [
       'node',
@@ -340,7 +299,7 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
 
   await writeFile(
     join(temporary, 'shell.tsx'),
-    `import { DataAppSkeleton, injectDataAppShellStyles } from '@altertable/data-app/react';
+    `import { DataAppSkeleton, injectDataAppShellStyles } from '@altertable/data-app/react/ui';
 injectDataAppShellStyles();
 export { DataAppSkeleton };
 `
@@ -417,7 +376,8 @@ export { Grid };
 import React from 'react';
 import * as ReactDOM from 'react-dom';
 import { renderToString } from 'react-dom/server';
-import { MetricWidget, injectDataAppStyles } from '@altertable/data-app/react';
+import { MetricWidget } from '@altertable/data-app/react/ui';
+import { injectDataAppStyles } from '@altertable/data-app/react';
 if (typeof document !== 'undefined' || typeof injectDataAppStyles !== 'function')
   throw new Error('React styles must be importable without a DOM');
 if (React.version !== '19.2.0' || ReactDOM.version !== '19.2.0' || typeof React.useEffectEvent !== 'function')

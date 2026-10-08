@@ -10,7 +10,6 @@ export type RefreshControlProps = {
   refreshing: boolean;
   children: ReactNode;
   label?: string;
-  statusProps?: Omit<ComponentPropsWithRef<'div'>, 'children' | 'role'>;
   status?: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
@@ -19,7 +18,6 @@ export function RefreshControl({
   refreshing,
   children,
   label = 'Refreshing data',
-  statusProps,
   status,
   className,
   ...props
@@ -51,11 +49,7 @@ export function RefreshControl({
       data-refreshing={showProgress ? '' : undefined}
     >
       <div
-        {...statusProps}
-        className={classNames(
-          'altertable-refresh-status',
-          statusProps?.className
-        )}
+        className="altertable-refresh-status"
         aria-live="polite"
         aria-atomic="true"
       >

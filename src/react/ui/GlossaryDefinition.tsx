@@ -16,8 +16,11 @@ export function GlossaryDefinition({
       trigger={children ?? entry.term}
       triggerLabel={`Explain ${entry.term}`}
       label={entry.term}
-      triggerClassName="altertable-glossary-definition-trigger"
-      panelClassName="altertable-glossary-definition-popover"
+      triggerProps={{
+        className: 'altertable-glossary-definition-trigger',
+        'data-atbl-control': 'help',
+      }}
+      panelProps={{ className: 'altertable-glossary-definition-popover' }}
     >
       <strong>{entry.term}</strong>
       <div>{entry.definition}</div>

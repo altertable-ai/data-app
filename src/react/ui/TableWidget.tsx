@@ -2,7 +2,7 @@ import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { invariant } from '@/src/core/invariant';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
-import { DataWidget } from '@/src/react/ui/DataWidget';
+import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
 import {
   DataTable,
   DataTableEmptyRow,
@@ -33,21 +33,7 @@ export type TableWidgetColumn<Row> = {
 export type TableWidgetSearch<Row> = Omit<DataTableSearch, 'itemCount'> &
   Pick<SearchItemsOptions<Row>, 'attributes' | 'mode' | 'fuzzyThreshold'>;
 
-type TableWidgetBaseProps<Row> = {
-  title: ReactNode;
-  count?: number;
-  description?: ReactNode;
-  columns: readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
-  /** Unique, nonempty row identity. Numeric keys must be finite; 1 and "1" collide. */
-  rowKey: (row: Row) => string | number;
-  insight?: ReactNode;
-  status?: WidgetStatus;
-  action?: ReactNode;
-  evidence?: WidgetEvidence;
-  search?: TableWidgetSearch<Row>;
-  /** Valid result with no rows; the header remains visible. */
-  empty: EmptyContent;
-} & (
+export type TableDisplayMode =
   | {
       /** Positive integer preview cap after search; disables pagination. */
       limit: number;
@@ -59,11 +45,28 @@ type TableWidgetBaseProps<Row> = {
        * The widget owns bottom-footer controls and shares the current page with inspection. */
       pagination?: { pageSize: number } | false;
       limit?: never;
-    }
-) &
+    };
+
+type TableWidgetBaseProps<Row> = {
+  title: ReactNode;
+  annotationId?: string;
+  count?: number;
+  description?: ReactNode;
+  columns: readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
+  /** Unique, nonempty row identity. Numeric keys must be finite; 1 and "1" collide. */
+  rowKey: (row: Row) => string | number;
+  status?: WidgetStatus;
+  action?: ReactNode;
+  evidence?: WidgetEvidence;
+  search?: TableWidgetSearch<Row>;
+  /** Valid result with no rows; the header remains visible. */
+  emptyFallback: EmptyContent;
+} & TableDisplayMode &
   Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
-/** Column definitions own both header and body semantics; the first column is the row header. */
+/** Composes VisualizationWidget with DataTable, search, and local pagination.
+ * Columns own header and body semantics; the first column is the row header.
+ * Use DataTable inside VisualizationWidget directly for custom table markup. */
 export type TableWidgetProps<Row> = TableWidgetBaseProps<Row> &
   (
     | { rows: readonly Row[]; reading?: never; skeletonRows?: never }
@@ -116,13 +119,12 @@ function TableWidgetContent<Row>({
   columns,
   rows,
   rowKey,
-  insight,
   action,
   evidence,
   search,
   limit,
   pagination,
-  empty,
+  emptyFallback,
   loading = false,
   skeletonRows = 5,
   ...props
@@ -216,7 +218,7 @@ function TableWidgetContent<Row>({
               )
             )
           ) : visible.length === 0 ? (
-            <DataTableEmptyRow colSpan={columns.length} {...empty} />
+            <DataTableEmptyRow colSpan={columns.length} {...emptyFallback} />
           ) : (
             visible.map(hit => (
               <tr key={rowKey(hit.item)}>
@@ -287,24 +289,17 @@ function TableWidgetContent<Row>({
   );
 
   return (
-    <DataWidget
+    <VisualizationWidget
       {...props}
       title={title}
+      annotationId={props.annotationId ?? evidence?.id}
       count={loading ? undefined : count}
       description={description}
       action={action}
       evidence={loading ? undefined : evidence}
       aria-busy={loading || props['aria-busy']}
-      footer={
-        (pager || insight) && (
-          <>
-            {pager}
-            {insight}
-          </>
-        )
-      }
-    >
-      <div className="altertable-table-widget-content">{table}</div>
-    </DataWidget>
+      footer={pager}
+      visual={<div className="altertable-table-widget-content">{table}</div>}
+    />
   );
 }

@@ -1,4 +1,4 @@
-import { rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import manifest from '@/package.json';
 
@@ -26,9 +26,10 @@ async function compileStyles(entrypoint: string): Promise<string> {
   if (!stylesheet) throw new Error(`${entrypoint} stylesheet is missing.`);
   return stylesheet.text();
 }
-const [dataAppStyles, shellStyles] = await Promise.all([
+const [dataAppStyles, shellStyles, annotationStyles] = await Promise.all([
   compileStyles('src/react/styles.css'),
   compileStyles('src/react/shellStyles.css'),
+  compileStyles('src/react/annotations/styles.css'),
 ]);
 
 // Browser entries share chunks so error classes and transport helpers retain
@@ -42,6 +43,7 @@ const browser = await Bun.build({
     'src/client/index.ts',
     'src/embed/index.ts',
     'src/react/index.ts',
+    'src/react/ui/index.ts',
     'src/react/embed/index.ts',
   ],
   root: 'src',
@@ -53,6 +55,7 @@ const browser = await Bun.build({
   define: {
     DATA_APP_STYLES: JSON.stringify(dataAppStyles),
     SHELL_STYLES: JSON.stringify(shellStyles),
+    ANNOTATION_STYLES: JSON.stringify(annotationStyles),
   },
   external,
   naming: { entry: '[dir]/[name].[ext]', chunk: 'chunks/[name]-[hash].[ext]' },
@@ -104,3 +107,11 @@ for (const result of results) {
       throw new Error(`Unexpected build output: ${output.path}`);
   }
 }
+
+// The dev runner restarts only after every JavaScript output is available.
+// Keep this signal outside dist: clean builds remove that directory.
+await mkdir('node_modules/.cache', { recursive: true });
+await writeFile(
+  'node_modules/.cache/data-app-build-ready',
+  crypto.randomUUID()
+);

@@ -5,22 +5,22 @@
   gap: 4px;
   padding: 3px;
   border: 0;
-  border-radius: var(--at-radius-control, 7px);
-  background: var(--at-subtle, #f6f7f7);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-subtle);
 }
 .altertable-widget-view-tabs .react-aria-Tab {
   margin: 0;
   padding: 6px 11px;
   border: 0;
-  border-radius: calc(var(--at-radius-control, 7px) - 2px);
-  color: var(--at-muted, #687078);
-  font-size: 12px;
+  border-radius: calc(var(--atbl-radius-control) - 2px);
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
 }
 .altertable-widget-view-tabs .react-aria-Tab[data-selected] {
-  background: var(--at-surface, #fff);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
-  color: var(--at-text, #202124);
+  background: var(--atbl-surface);
+  box-shadow: var(--atbl-shadow-control);
+  color: var(--atbl-text);
 }
 .altertable-widget-view-tabs .react-aria-TabPanels {
-  padding-block-start: var(--at-space-md, 16px);
+  padding-block-start: var(--atbl-space-md);
 }

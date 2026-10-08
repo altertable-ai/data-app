@@ -47,22 +47,22 @@ jobs:
         run: bun run typecheck
       - name: Lint
         run: bun run lint
+      - name: Check authored styles
+        run: bun run check:styles
       - name: Lint Markdown
         run: bun run lint:md
       - name: Check local Markdown links
         run: bun run check:links
       - name: Check formatting
         run: bun run format:check
-      - name: Test source
-        run: bun run test
       - name: Verify packed consumer
-        run: bun run test:package
+        run: bun run check:package
       - name: Verify starter integration
-        run: bun run test:starter
+        run: bun run check:starter
       - name: Install browser
         run: bash scripts/install-test-browser.sh
-      - name: Test embedding in Chromium
-        run: bun run test:browser
+      - name: Test
+        run: bun run test
       - name: Verify lockfile is unchanged
         run: git diff --exit-code -- bun.lock
 

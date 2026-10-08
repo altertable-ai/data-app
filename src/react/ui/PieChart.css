@@ -1,0 +1,84 @@
+.altertable-pie-chart {
+  min-width: 0;
+}
+.altertable-pie-plot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 12px 0 14px;
+}
+.altertable-pie-plot svg {
+  display: block;
+  width: min(100%, 220px);
+  height: auto;
+}
+.altertable-pie-slice {
+  stroke: var(--atbl-surface);
+  stroke-width: 2;
+  transition: opacity var(--atbl-duration-fast) var(--atbl-ease-standard);
+}
+.altertable-pie-plot
+  svg:has(.altertable-pie-slice[data-active])
+  .altertable-pie-slice:not([data-active]) {
+  opacity: 0.3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-pie-slice {
+    transition: none;
+  }
+}
+.altertable-pie-empty {
+  fill: var(--atbl-subtle);
+  stroke: var(--atbl-border);
+}
+.altertable-pie-empty-label {
+  position: absolute;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+}
+.altertable-pie-legend {
+  display: grid;
+  margin-bottom: 14px;
+}
+.altertable-pie-legend button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--atbl-border);
+  background: transparent;
+  color: var(--atbl-text);
+  text-align: left;
+  font-size: var(--atbl-type-meta-size);
+  font-variant-numeric: tabular-nums;
+}
+.altertable-pie-legend [data-open] > button {
+  background: var(--atbl-subtle);
+}
+.altertable-pie-legend button:focus {
+  outline: none;
+}
+.altertable-pie-key {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: none;
+}
+.altertable-pie-label {
+  flex: 1;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.altertable-pie-legend button > span:last-child {
+  color: var(--atbl-muted);
+  min-width: 4ch;
+  text-align: right;
+}
+
+.altertable-tooltip-trigger.altertable-pie-tooltip[data-variant='chart'] {
+  width: min(100%, 220px);
+  height: auto;
+}
