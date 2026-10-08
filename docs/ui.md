@@ -24,6 +24,22 @@ For framework mounting, `<DataAppProvider>` supplies shared requests and one ins
 Call `injectDataAppStyles()` before mounting either entry; imports do not install
 styles.
 
+## Keyboard actions
+
+Use `isPlainKeyEvent()` from `/react/ui` in custom key handlers so local actions
+leave shortcut modifiers and IME composition untouched:
+
+```tsx
+onKeyDown={event => {
+  if (event.key === 'Enter' && isPlainKeyEvent(event.nativeEvent)) {
+    event.preventDefault();
+    submit();
+  }
+}}
+```
+
+Pass `{ allowShift: true }` when the handler also supports Shift gestures.
+
 ## Charts
 
 Choose a chart using the [visualization guide](widgets.md#choose-a-visualization).

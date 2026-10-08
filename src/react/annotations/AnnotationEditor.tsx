@@ -3,6 +3,7 @@ import { ArrowUp } from 'lucide-react';
 import type { AnnotationEditorState } from '@/src/react/annotations/annotation-editor-state';
 import { Button } from '@/src/react/ui/Button';
 import { Kbd } from '@/src/react/ui/Kbd';
+import { isPlainKeyEvent } from '@/src/react/ui/keyboard';
 import { AnnotationTooltip } from '@/src/react/annotations/AnnotationTooltip';
 
 type AnnotationEditorProps = {
@@ -53,14 +54,7 @@ export function AnnotationEditor({
         disabled={disabled}
         onChange={event => onCommentChange(event.target.value)}
         onKeyDown={event => {
-          if (
-            event.key === 'Enter' &&
-            !event.shiftKey &&
-            !event.altKey &&
-            !event.ctrlKey &&
-            !event.metaKey &&
-            !event.nativeEvent.isComposing
-          ) {
+          if (event.key === 'Enter' && isPlainKeyEvent(event.nativeEvent)) {
             event.preventDefault();
             if (editor.comment.trim()) onSubmit();
           }
