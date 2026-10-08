@@ -32,12 +32,26 @@ for (const failure of [false, true]) {
       exact: true,
     });
     await selection.press('ArrowRight');
+    await selection.dispatchEvent('keydown', {
+      key: 'Enter',
+      code: 'Enter',
+      isComposing: true,
+    });
+    expect(
+      await app.getByRole('textbox', { name: 'Annotation text' }).count()
+    ).toBe(0);
     await selection.press('Enter');
     const comment = app.getByRole('textbox', {
       name: 'Annotation text',
       exact: true,
     });
     await comment.fill('Compare with last year');
+    await comment.dispatchEvent('keydown', {
+      key: 'Enter',
+      code: 'Enter',
+      isComposing: true,
+    });
+    expect(await comment.inputValue()).toBe('Compare with last year');
     await app
       .getByRole('button', { name: 'Add annotation', exact: true })
       .click();
@@ -127,4 +141,80 @@ test('feedback retains the displayed input while a newer filter is still loading
   expect(draft.context.displayedInput).toEqual({ period: 'last-30' });
   expect(draft.context.view).toBe('updating');
   expect(draft.target.text).toContain('42');
+});
+
+test('Mod+Enter sends the saved batch from iframe or host focus and preserves drafts for retry', async ({
+  page,
+}) => {
+  await page.goto(
+    '/annotations-host?annotations&annotation-send&annotation-send-error'
+  );
+  const app = page.frameLocator('iframe');
+  const modifier = await page.evaluate(() =>
+    /Macintosh|Mac OS X|iPhone|iPad/.test(navigator.userAgent)
+      ? 'Meta'
+      : 'Control'
+  );
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('ArrowRight');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Compare with last year');
+  await comment.press('Enter');
+  const send = page.getByRole('button', {
+    name: 'Send annotations',
+    exact: true,
+  });
+  await expect.poll(() => send.isEnabled()).toBe(true);
+  expect(await send.getAttribute('aria-keyshortcuts')).toBe(
+    'Meta+Enter Control+Enter'
+  );
+  await send.hover();
+  await expect
+    .poll(() => page.getByRole('tooltip').locator('kbd').textContent())
+    .toBe(modifier === 'Meta' ? '⌘↩' : 'Ctrl+Enter');
+  await selection.press('ArrowRight');
+  await selection.press('Enter');
+  await comment.fill('Unsaved edit');
+  await expect.poll(() => send.isDisabled()).toBe(true);
+  await comment.press(`${modifier}+Enter`);
+  expect(await comment.inputValue()).toBe('Unsaved edit');
+  await comment.press('Escape');
+  await comment.press('Escape');
+  await expect.poll(() => comment.count()).toBe(0);
+  await expect.poll(() => send.isEnabled()).toBe(true);
+  await selection.press('ArrowRight');
+  await selection.press(`${modifier}+Enter`);
+  await expect
+    .poll(() => page.getByRole('alert').textContent())
+    .toBe('Could not send annotations. Try again.');
+  expect(await comment.count()).toBe(0);
+  expect(await app.getByRole('dialog').count()).toBe(0);
+  const drafts = page.getByRole('status', {
+    name: 'Annotation drafts',
+    exact: true,
+  });
+  const snapshot = JSON.parse((await drafts.textContent())!);
+  expect(snapshot).toHaveLength(1);
+  await page
+    .getByRole('button', { name: 'Allow submission', exact: true })
+    .click();
+  await send.press(`${modifier}+Enter`);
+  await expect
+    .poll(async () => JSON.parse((await drafts.textContent())!))
+    .toEqual([]);
+  expect(
+    JSON.parse(
+      (await page
+        .getByRole('status', { name: 'Submitted annotations' })
+        .textContent())!
+    )
+  ).toEqual(snapshot);
 });
