@@ -87,7 +87,6 @@ export function DimensionPicker<T extends DimensionValue>({
         }}
         options={[{ id: allKey, label: 'All' }, ...choices]}
         missingOption={missingOption}
-        resetValue={allKey}
         loading={loading}
         error={error}
         onRetry={onRetry}

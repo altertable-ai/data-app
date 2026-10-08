@@ -12,6 +12,20 @@ test('single and multiple searchable values preserve their selection behavior', 
     name: 'Country values',
     exact: true,
   });
+  const triggerWidth = await page
+    .getByRole('button', { name: 'Country: United Kingdom', exact: true })
+    .evaluate(element => element.getBoundingClientRect().width);
+  const panelWidth = await page
+    .getByRole('dialog')
+    .evaluate(element => element.getBoundingClientRect().width);
+  expect(Math.abs(panelWidth - triggerWidth)).toBeGreaterThan(20);
+  const rows = await list.getByRole('option').evaluateAll(elements =>
+    elements.map(element => ({
+      top: element.getBoundingClientRect().top,
+      bottom: element.getBoundingClientRect().bottom,
+    }))
+  );
+  expect(rows[1]!.top - rows[0]!.bottom).toBeGreaterThanOrEqual(1);
   expect(await list.getAttribute('aria-multiselectable')).not.toBe('true');
   expect(await list.getByRole('option', { selected: true }).count()).toBe(1);
   await page.getByRole('searchbox').fill('France');
@@ -21,7 +35,7 @@ test('single and multiple searchable values preserve their selection behavior', 
   await page
     .getByRole('button', { name: 'Country: France', exact: true })
     .click();
-  await page.getByRole('button', { name: 'Clear selection' }).click();
+  await list.getByRole('option', { name: 'All', exact: true }).click();
   expect(
     await page
       .getByRole('button', { name: 'Country: All', exact: true })
@@ -45,6 +59,14 @@ test('single and multiple searchable values preserve their selection behavior', 
   expect(await multiple.getByRole('option', { selected: true }).count()).toBe(
     1
   );
+  await page.getByRole('searchbox').focus();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.getByRole('dialog').count()).toBe(0);
+  expect(
+    await page
+      .getByRole('button', { name: 'Countries: United Kingdom', exact: true })
+      .count()
+  ).toBe(1);
 });
 
 test('menus distinguish exclusive choices, toggles, and commands with keyboard focus return', async ({

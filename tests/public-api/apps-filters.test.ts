@@ -1,6 +1,16 @@
 import { expect } from 'vitest';
+import type { Page, Locator } from 'playwright';
 import { test } from '@/tests/public-api/browser';
 
+async function choose(
+  page: Page,
+  scope: Page | Locator,
+  label: string,
+  option: string
+) {
+  await scope.getByRole('button', { name: new RegExp(` ${label}$`) }).click();
+  await page.getByRole('option', { name: option, exact: true }).click();
+}
 function decode(text: string | null) {
   return JSON.parse(text ?? '{}');
 }
@@ -15,9 +25,19 @@ test('visible single choices, independent choices, and numeric fields preserve t
       .getByRole('status', { name: 'Primitive values' })
       .textContent();
   }
-  await region.getByRole('combobox', { name: 'Currency' }).selectOption('usd');
+  const currency = region.getByRole('button', { name: / Currency$/ });
+  await currency.focus();
+  await currency.press('ArrowDown');
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
+  await expect.poll(async () => decode(await values()).currency).toBe('usd');
+  await expect
+    .poll(() =>
+      currency.evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
   const controlHeight = await region
-    .getByRole('combobox', { name: 'Currency' })
+    .getByRole('button', { name: 'US dollar Currency', exact: true })
     .evaluate(element => element.getBoundingClientRect().height);
   for (const name of ['Cancel', 'Apply filters'])
     expect(
@@ -74,15 +94,11 @@ test('generated filters apply typed predicates and clear restrictions atomically
   await expect
     .poll(async () => decode(await displayed.textContent()).active)
     .toEqual({ kind: 'is', value: true });
-  await page
-    .getByRole('combobox', { name: 'Active', exact: true })
-    .selectOption('false');
+  await choose(page, page, 'Active', 'No');
   await expect
     .poll(async () => decode(await displayed.textContent()).active)
     .toEqual({ kind: 'is', value: false });
-  await page
-    .getByRole('combobox', { name: 'Display', exact: true })
-    .selectOption('b');
+  await choose(page, page, 'Display', 'Beta');
   await page.getByRole('button', { name: 'Tags: None', exact: true }).click();
   await page
     .getByRole('listbox', { name: 'Tags values' })
@@ -90,34 +106,57 @@ test('generated filters apply typed predicates and clear restrictions atomically
     .click();
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
+  const beforeNumberEdit = page.url();
   await page
-    .getByRole('combobox', { name: 'Amount', exact: true })
-    .selectOption('gte');
-  const amount = page.getByLabel('Amount value', { exact: true });
+    .getByRole('button', { name: 'Amount: At least 10', exact: true })
+    .click();
+  const panel = page.getByRole('dialog', {
+    name: 'Amount filter',
+    exact: true,
+  });
+  await choose(page, panel, 'Condition', 'At least');
+  const amount = panel.getByLabel('Value', { exact: true });
   await amount.fill('0');
   await amount.press('Tab');
+  expect(page.url()).toBe(beforeNumberEdit);
+  expect(decode(await displayed.textContent()).amount).toEqual({
+    kind: 'range',
+    min: 10,
+  });
+  await panel.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Amount: At least 10', exact: true })
+    .click();
+  await choose(page, panel, 'Condition', 'At least');
+  await amount.fill('0');
+  await amount.press('Tab');
+  await panel.getByRole('button', { name: 'Apply', exact: true }).click();
   await expect
     .poll(async () => decode(await displayed.textContent()).amount)
     .toEqual({ kind: 'comparison', operator: 'gte', value: 0 });
   await page
-    .getByRole('combobox', { name: 'Amount', exact: true })
-    .selectOption('range');
-  await expect
-    .poll(async () => decode(await displayed.textContent()).amount)
-    .toEqual({ kind: 'range', min: 0 });
-  await page
-    .getByRole('combobox', { name: 'Amount', exact: true })
-    .selectOption('gte');
-  await expect
-    .poll(async () => decode(await displayed.textContent()).amount)
-    .toEqual({ kind: 'comparison', operator: 'gte', value: 0 });
+    .getByRole('button', { name: 'Amount: At least 0', exact: true })
+    .click();
+  await choose(page, panel, 'Condition', 'Between');
+  await panel.getByLabel('Minimum', { exact: true }).fill('10');
+  await panel.getByLabel('Minimum', { exact: true }).press('Tab');
+  await panel.getByLabel('Maximum', { exact: true }).fill('5');
+  await panel.getByLabel('Maximum', { exact: true }).press('Tab');
+  expect(
+    await panel.getByRole('button', { name: 'Apply', exact: true }).isDisabled()
+  ).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => panel.count()).toBe(0);
+  expect(decode(await displayed.textContent()).amount).toEqual({
+    kind: 'comparison',
+    operator: 'gte',
+    value: 0,
+  });
   await page.getByRole('button', { name: 'Country: All', exact: true }).click();
   await page.getByRole('option', { name: 'France', exact: true }).click();
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
-  await page
-    .getByRole('combobox', { name: 'Country matching' })
-    .selectOption('exclude');
+  await choose(page, page, 'Country matching', 'Exclude');
   await expect
     .poll(async () => decode(await displayed.textContent()).country.kind)
     .toBe('exclude');
@@ -143,28 +182,14 @@ test('generated filters apply typed predicates and clear restrictions atomically
     .poll(() => page.getByRole('tooltip').textContent())
     .toBe('Clear filters');
   const selectedURL = page.url();
-  const countryClear = page.getByRole('button', {
-    name: 'Clear country',
-    exact: true,
-  });
-  await countryClear.click();
-  await expect
-    .poll(async () => decode(await displayed.textContent()).country)
-    .toEqual({ kind: 'all' });
+  expect(
+    await page
+      .getByRole('button', { name: 'Clear country', exact: true })
+      .count()
+  ).toBe(0);
   expect(await page.getByRole('list', { name: 'Active filters' }).count()).toBe(
     0
   );
-  await expect
-    .poll(() =>
-      page
-        .getByRole('button', { name: 'Country: All', exact: true })
-        .evaluate(element => element === document.activeElement)
-    )
-    .toBe(true);
-  await page.goBack();
-  await expect
-    .poll(async () => decode(await displayed.textContent()).country.kind)
-    .toBe('exclude');
   await page
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
@@ -200,6 +225,18 @@ test('generated filters apply typed predicates and clear restrictions atomically
   await expect
     .poll(async () => decode(await displayed.textContent()).amount)
     .toEqual({ kind: 'range', min: 10 });
+  await page
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Amount: Any', exact: true }).click();
+  await choose(page, panel, 'Condition', 'Equals');
+  await panel.getByRole('button', { name: 'Apply', exact: true }).click();
+  expect(await panel.getByRole('alert').textContent()).toBe('Enter a value.');
+  await panel.getByLabel('Value', { exact: true }).fill('5');
+  await panel.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect
+    .poll(async () => decode(await displayed.textContent()).amount)
+    .toEqual({ kind: 'comparison', operator: 'eq', value: 5 });
 });
 
 test('mobile numeric entry and compact selects enforce the shared 16px minimum', async ({
@@ -208,7 +245,7 @@ test('mobile numeric entry and compact selects enforce the shared 16px minimum',
   await page.goto('/controls');
   const region = page.getByRole('region', { name: 'Filter primitives' });
   for (const field of [
-    region.getByRole('combobox', { name: 'Currency' }),
+    region.getByRole('button', { name: / Currency$/ }),
     region.getByLabel('Threshold'),
   ])
     expect(

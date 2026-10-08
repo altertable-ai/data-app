@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
 import { FilterActions } from '@/src/react/ui/FilterActions';
-import { NumberFilterControl } from '@/src/react/ui/NumberFilterControl';
+import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
   NumberFilter,
   NumberSelection,
@@ -117,7 +117,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       );
     } else if (definition.kind === 'numberFilter') {
       controls.push(
-        <NumberFilterControl
+        <NumberFilterPicker
           key={name}
           filter={definition as NumberFilter}
           value={value as NumberSelection}

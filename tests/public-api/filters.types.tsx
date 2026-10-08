@@ -4,6 +4,7 @@ import {
   Radio,
   CheckboxGroup,
   Checkbox,
+  NumberFilterPicker,
   NumberField,
   NumberRangeField,
   Select,
@@ -46,6 +47,11 @@ const controls = (
       label="Segments"
       value="a"
       options={options}
+      onChange={() => {}}
+    />
+    <NumberFilterPicker
+      filter={numberFilter({ key: 'amount', label: 'Amount' })}
+      value={{ kind: 'all' }}
       onChange={() => {}}
     />
     <NumberField label="Value" value={null} onChange={() => {}} />

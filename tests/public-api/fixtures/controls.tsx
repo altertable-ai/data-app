@@ -54,7 +54,6 @@ function App() {
         options={options}
         value={country}
         onChange={setCountry}
-        resetValue="all"
       />
       <ChoicePicker
         selectionMode="multiple"

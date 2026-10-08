@@ -22,7 +22,7 @@ export function RadioGroup({
       {...props}
       className={classNames('altertable-radio-group', className)}
     >
-      <Label>{label}</Label>
+      <Label className="altertable-control-label">{label}</Label>
       {children}
     </AriaRadioGroup>
   );
@@ -64,15 +64,17 @@ export function SegmentedControl({
       orientation="horizontal"
       className={classNames('altertable-segmented-control', className)}
     >
-      {options.map(option => (
-        <Radio
-          key={option.id}
-          value={option.id}
-          data-atbl-internal-surface="option"
-        >
-          {option.label}
-        </Radio>
-      ))}
+      <div className="altertable-segmented-options">
+        {options.map(option => (
+          <Radio
+            key={option.id}
+            value={option.id}
+            data-atbl-internal-surface="option"
+          >
+            {option.label}
+          </Radio>
+        ))}
+      </div>
     </RadioGroup>
   );
 }

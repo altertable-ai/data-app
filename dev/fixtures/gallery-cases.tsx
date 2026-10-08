@@ -374,14 +374,13 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         <Case title="Composed filter controls">
           <FilterControlsPreview />
         </Case>
-        <Case title="Single select and reset">
+        <Case title="Single choice">
           <ChoicePicker
             selectionMode="single"
-            label="Resettable category"
+            label="Category"
             options={options}
             value={single}
             onChange={setSingle}
-            resetValue="http"
           />
         </Case>
         <Case title="At selection capacity">

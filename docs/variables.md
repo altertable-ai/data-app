@@ -144,8 +144,9 @@ const active = booleanFilter({ key: 'active', label: 'Active' });
 ```
 
 Use `parseNumberSelection()` and `parseBooleanSelection()` in the operation's
-input parser with the same filter declarations. Only complete, valid numeric
-predicates reach operation input; invalid range drafts stay in the control.
+input parser with the same filter declarations. Numeric predicates generate `<NumberFilterPicker>` panels. Draft edits reach
+operation input only after Apply; Cancel and dismissal preserve the applied
+value. Invalid ranges disable Apply.
 Input mappings and bindings must preserve these predicates unchanged, as with
 categorical filters. Use the parsed operator and values to build the app's
 bounded query.

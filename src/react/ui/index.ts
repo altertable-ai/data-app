@@ -163,3 +163,6 @@ export { VariableBar } from '@/src/react/ui/VariableBar';
 export type { VariableBarProps } from '@/src/react/ui/VariableBar';
 export { FilterActions } from '@/src/react/ui/FilterActions';
 export type { FilterActionsProps } from '@/src/react/ui/FilterActions';
+
+export { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
+export type { NumberFilterPickerProps } from '@/src/react/ui/NumberFilterPicker';

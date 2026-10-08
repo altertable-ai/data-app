@@ -1,25 +1,9 @@
-.altertable-choice-picker-control {
-  position: relative;
-  display: inline-flex;
+.altertable-picker-trigger {
   max-width: min(100%, 340px, 75vw);
-}
-.altertable-choice-picker-control[data-has-clear]
-  .altertable-choice-picker-trigger {
-  padding-inline-end: calc(
-    var(--atbl-control-height) + var(--atbl-control-padding-inline)
-  );
-}
-.altertable-choice-picker-clear {
-  position: absolute;
-  inset-inline-end: 0;
-  top: 0;
-}
-.altertable-choice-picker-trigger {
-  max-width: 100%;
   box-sizing: border-box;
   text-align: left;
 }
-.altertable-choice-picker-label {
+.altertable-picker-label {
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -29,7 +13,7 @@
   font-size: var(--atbl-type-meta-size);
   font-weight: var(--atbl-type-meta-weight);
 }
-.altertable-choice-picker-value {
+.altertable-picker-value {
   flex: none;
   min-width: 0;
   max-width: 55%;
@@ -39,16 +23,16 @@
   font-size: var(--atbl-type-label-size);
   font-weight: var(--atbl-type-label-weight);
 }
-.altertable-choice-picker-trigger > svg {
+.altertable-picker-trigger > svg {
   flex: none;
   margin-left: auto;
   color: var(--atbl-muted);
 }
 .altertable-choice-picker-popover {
   z-index: 150;
-  min-width: max(var(--trigger-width), 240px);
-  max-width: min(340px, calc(100vw - 24px));
-  padding: 8px;
+  width: min(300px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 0;
   overflow: hidden;
   border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-surface);
@@ -63,8 +47,8 @@
 }
 /* Picker search uses a stable divider instead of a nested field surface. */
 .altertable-choice-picker-dialog .altertable-search-input-wrap {
-  width: calc(100% + 16px);
-  margin: -8px -8px 8px;
+  width: 100%;
+  margin: 0;
   padding: 6px 17px;
   box-sizing: border-box;
   border: 0;
@@ -92,15 +76,19 @@
 }
 .altertable-choice-picker-options {
   max-height: min(320px, 60dvh);
-  margin-top: 4px;
+  scroll-padding-block: 8px;
 }
 .altertable-choice-picker-popover .react-aria-ListBox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
   outline: none;
 }
 .altertable-choice-picker-popover .react-aria-ListBoxItem {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 6px;
   padding: 8px 10px;
   border-radius: var(--atbl-radius-control);
   outline: none;
@@ -134,8 +122,8 @@
   color: var(--atbl-muted);
 }
 .altertable-choice-picker-actions {
-  margin-top: 4px;
-  padding-top: 4px;
+  margin: 0 8px;
+  padding: 4px 0;
   border-top: 1px solid var(--atbl-border);
   display: flex;
   justify-content: flex-start;

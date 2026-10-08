@@ -44,6 +44,8 @@ export type NumberRangeFieldProps = {
   label: string;
   value: NumberRange;
   onChange: (value: NumberRange) => void;
+  /** Reports whether the current draft interval can be committed. */
+  onValidityChange?: (valid: boolean) => void;
   min?: number;
   max?: number;
   disabled?: boolean;
@@ -54,6 +56,7 @@ export function NumberRangeField({
   label,
   value,
   onChange,
+  onValidityChange,
   min,
   max,
   disabled,
@@ -70,12 +73,10 @@ export function NumberRangeField({
   function change(bound: 'min' | 'max', number: number | null) {
     const next = { ...draft, [bound]: number ?? undefined };
     setDraft(next);
-    if (
-      next.min === undefined ||
-      next.max === undefined ||
-      next.min <= next.max
-    )
-      onChange(next);
+    const valid =
+      next.min === undefined || next.max === undefined || next.min <= next.max;
+    onValidityChange?.(valid);
+    if (valid) onChange(next);
   }
   return (
     <fieldset

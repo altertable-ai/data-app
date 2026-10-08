@@ -1,4 +1,3 @@
-import { NumberFilterControl } from '@/src/react/ui/NumberFilterControl';
 import { useState } from 'react';
 import { Stack } from '@altertable/data-app/react';
 import {
@@ -22,14 +21,12 @@ import {
   MenuPopover,
   MenuSeparator,
   MenuTrigger,
-  NumberField,
-  NumberRangeField,
+  NumberFilterPicker,
   Radio,
   RadioGroup,
   SearchField,
   SegmentedControl,
   Select,
-  type NumberRange,
 } from '@altertable/data-app/react/ui';
 
 const options = [
@@ -55,6 +52,14 @@ const amountFilter = numberFilter({
   label: 'Order amount',
   min: 0,
 });
+const exactAmountFilter = numberFilter({
+  key: 'gallery-exact',
+  label: 'Order value',
+});
+const rangeAmountFilter = numberFilter({
+  key: 'gallery-range',
+  label: 'Order value range',
+});
 const activeFilter = booleanFilter({ key: 'gallery-active', label: 'Active' });
 
 /** Local controlled examples: every callback updates the visible value directly. */
@@ -65,8 +70,16 @@ export function FilterControlsPreview() {
   const [period, setPeriod] = useState('daily');
   const [states, setStates] = useState<string[]>(['paid']);
   const [archived, setArchived] = useState(false);
-  const [amount, setAmount] = useState<number | null>(0);
-  const [range, setRange] = useState<NumberRange>({ min: 10, max: 100 });
+  const [amount, setAmount] = useState<NumberSelection>({
+    kind: 'comparison',
+    operator: 'eq',
+    value: 0,
+  });
+  const [range, setRange] = useState<NumberSelection>({
+    kind: 'range',
+    min: 10,
+    max: 100,
+  });
   const [country, setCountry] = useState<DimensionSelection<string>>({
     kind: 'include',
     members: [{ kind: 'value', value: 'AT' }],
@@ -140,19 +153,19 @@ export function FilterControlsPreview() {
         />
       </FilterBar>
       <FilterBar aria-label="Numeric filters">
-        <NumberField
-          label="Minimum order value"
+        <NumberFilterPicker
+          filter={exactAmountFilter}
           value={amount}
           onChange={setAmount}
         />
-        <NumberRangeField
-          label="Order value range"
+        <NumberFilterPicker
+          filter={rangeAmountFilter}
           value={range}
           onChange={setRange}
         />
       </FilterBar>
       <FilterBar aria-label="Numeric and boolean predicates">
-        <NumberFilterControl
+        <NumberFilterPicker
           filter={amountFilter}
           value={amountSelection}
           onChange={setAmountSelection}
