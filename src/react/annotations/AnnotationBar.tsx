@@ -3,6 +3,8 @@ import {
   useEffectEvent,
   useRef,
   useReducer,
+  useImperativeHandle,
+  type Ref,
   type ComponentRef,
   type CSSProperties,
 } from 'react';
@@ -34,8 +36,15 @@ import { TooltipProvider } from '@/src/react/ui/Tooltip';
 import { AnnotationTooltip } from '@/src/react/annotations/AnnotationTooltip';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Kbd } from '@/src/react/ui/Kbd';
+import { shortcuts } from '@/src/react/ui/shortcuts';
+
+export type AnnotationBarHandle = {
+  /** Submit through the same guards, pending state, and retry feedback as the Send button. */
+  send: () => Promise<void>;
+};
 
 export type AnnotationBarProps = {
+  ref?: Ref<AnnotationBarHandle>;
   annotations: readonly DataAppAnnotationDraft[];
   active?: boolean;
   theme?: Theme;
@@ -120,6 +129,7 @@ function annotationBarReducer(
 
 /** Host-owned batch controls. Collection changes and agent submission stay with the outer app. */
 export function AnnotationBar({
+  ref,
   annotations,
   active = true,
   theme = 'light',
@@ -156,6 +166,8 @@ export function AnnotationBar({
     state;
   const preview = annotations.find(annotation => annotation.id === previewId);
   const locked = disabled || pending;
+  const canSend =
+    active && !locked && !hasUnsavedChanges && annotations.length > 0;
   const { refs, floatingStyles } = useFloating({
     placement: 'top',
     strategy: 'fixed',
@@ -197,13 +209,7 @@ export function AnnotationBar({
     reviewTrigger.current?.focus();
   }
   async function send() {
-    if (
-      submitting.current ||
-      locked ||
-      hasUnsavedChanges ||
-      !annotations.length
-    )
-      return;
+    if (submitting.current || !canSend) return;
     submitting.current = true;
     dispatch({ type: 'submissionStarted' });
     try {
@@ -217,6 +223,7 @@ export function AnnotationBar({
       dispatch({ type: 'submissionFinished' });
     }
   }
+  useImperativeHandle(ref, () => ({ send }));
   useEffect(() => {
     if (discardOpen) cancelDiscard.current?.focus();
   }, [discardOpen]);
@@ -381,9 +388,13 @@ export function AnnotationBar({
           </AnnotationTooltip>
           <AnnotationTooltip
             content={
-              hasUnsavedChanges
-                ? 'Save the open annotation before sending'
-                : 'Send annotations'
+              hasUnsavedChanges ? (
+                'Save the open annotation before sending'
+              ) : (
+                <>
+                  Send annotations <Kbd shortcut={shortcuts.sendAnnotations} />
+                </>
+              )
             }
             theme={theme}
           >
@@ -393,7 +404,7 @@ export function AnnotationBar({
               aria-busy={pending}
               size="compact"
               aria-label="Send annotations"
-              disabled={locked || hasUnsavedChanges || !annotations.length}
+              disabled={!canSend}
               onClick={() => void send()}
             >
               <span className="altertable-annotation-bar-send-label">Send</span>

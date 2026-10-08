@@ -232,6 +232,18 @@ export const annotationEditorStateRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 
+/** Request host-owned batch submission without transferring ownership of drafts. */
+export const annotationSendRoute = /* @__PURE__ */ defineMessageRoute({
+  input(value: unknown): null {
+    if (value !== null) throw new Error('Invalid annotation send request.');
+    return null;
+  },
+  output(value: unknown): null {
+    if (value !== null) throw new Error('Invalid annotation response.');
+    return null;
+  },
+});
+
 export const annotationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): { id: string; comment: string } {
     const input = object(value);

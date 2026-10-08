@@ -13,9 +13,10 @@ export type Shortcut = {
 
 export const shortcuts = {
   annotate: { modifier: 'mod', shift: true, code: 'Period', key: '.' },
+  sendAnnotations: { modifier: 'mod', code: 'Enter', key: 'Enter' },
   refresh: { modifier: 'alt', code: 'KeyR', key: 'R' },
   aboutData: { modifier: 'alt', code: 'KeyI', key: 'I' },
-  playStory: { modifier: 'mod', code: 'Enter', key: 'Enter' },
+  playStory: { modifier: 'mod', shift: true, code: 'Enter', key: 'Enter' },
 } as const satisfies Record<string, Shortcut>;
 
 function isApple(): boolean {
@@ -57,6 +58,25 @@ export function isEditingTarget(target: EventTarget | null): boolean {
   );
 }
 
+export function matchesShortcut(
+  event: KeyboardEvent,
+  shortcut: Shortcut
+): boolean {
+  if (
+    event.defaultPrevented ||
+    event.repeat ||
+    event.isComposing ||
+    event.shiftKey !== (shortcut.shift ?? false) ||
+    event.code !== shortcut.code
+  )
+    return false;
+  const apple = isApple();
+  const mod = apple ? event.metaKey : event.ctrlKey;
+  return shortcut.modifier === 'alt'
+    ? event.altKey && !event.ctrlKey && !event.metaKey
+    : mod && !event.altKey && !(apple ? event.ctrlKey : event.metaKey);
+}
+
 /** Bind a page-level shortcut. Ignored while typing or while a modal layer is open. */
 export function useShortcut(
   shortcut: Shortcut,
@@ -64,38 +84,23 @@ export function useShortcut(
   enabled = true,
   allowWhileEditing = false
 ): void {
-  const { modifier, shift = false, code } = shortcut;
-
   useEffect(() => {
     if (!enabled) return;
 
     function onKeyDown(event: KeyboardEvent) {
       if (
-        event.defaultPrevented ||
-        event.repeat ||
-        event.isComposing ||
-        event.shiftKey !== shift ||
-        event.code !== code
-      )
-        return;
-      const apple = isApple();
-      const mod = apple ? event.metaKey : event.ctrlKey;
-      const pressed = {
-        alt: event.altKey && !event.ctrlKey && !event.metaKey,
-        mod: mod && !event.altKey && !(apple ? event.ctrlKey : event.metaKey),
-      }[modifier];
-      if (
-        !pressed ||
+        !matchesShortcut(event, shortcut) ||
         document.querySelector('dialog:modal') ||
         (!allowWhileEditing && isEditingTarget(event.target))
       )
         return;
       event.preventDefault();
+      event.stopImmediatePropagation();
       action();
     }
 
-    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown, true);
 
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [modifier, shift, code, enabled, allowWhileEditing, action]);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [shortcut, enabled, allowWhileEditing, action]);
 }
