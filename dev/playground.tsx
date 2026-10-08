@@ -1,5 +1,6 @@
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataAppConfig } from '@altertable/data-app/config';
+import { dimensionFilter } from '@altertable/data-app/contract';
 import {
   formatCount,
   formatMetric,
@@ -18,7 +19,6 @@ import {
   injectDataAppStyles,
   mountDataApp,
   MetricWidget,
-  textVariable,
   VisualizationWidget,
 } from '@altertable/data-app/react';
 import { type DataContentState } from '@/src/react/content';
@@ -83,18 +83,41 @@ const orderView = defineDataView({
   dataContext: orderDataContext,
   operation: 'orderOverview',
   variables: {
-    country: textVariable({
+    country: dimensionFilter<string>({
       key: 'country',
       label: 'Country',
-      defaultValue: '',
+      valueType: 'string',
+      selection: 'single',
+      options: [
+        { value: 'AT', label: 'Austria' },
+        { value: 'FI', label: 'Finland' },
+        { value: 'FR', label: 'France' },
+        { value: 'GB', label: 'United Kingdom' },
+        { value: 'US', label: 'United States' },
+      ],
     }),
+  },
+  input: ({ country }) => ({
+    country:
+      country.kind === 'include' && country.members[0]?.kind === 'value'
+        ? country.members[0].value
+        : '',
+  }),
+  bindings: {
+    country: input =>
+      input.country
+        ? {
+            kind: 'include',
+            members: [{ kind: 'value', value: input.country }],
+          }
+        : { kind: 'all' },
   },
   describeInput: ({ country }) =>
     country ? `country ${country}` : 'all countries',
   isEmpty: ({ countries }) => countries.length === 0,
   emptyFallback: {
     title: 'No matching countries',
-    description: 'Enter a country code such as US, or clear the filter.',
+    description: 'Choose another country, or clear the filter.',
   },
 });
 
@@ -127,8 +150,7 @@ function OrderResults({
         <h2>Orders</h2>
         <p>
           How much did customers order over the last 30 days, and where does the
-          revenue come from? Filter by a country code such as US to compare
-          markets.
+          revenue come from? Choose a country to compare markets.
         </p>
         <p>
           Showing <DataValue scope={result.scope} />
