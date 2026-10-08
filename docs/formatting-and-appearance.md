@@ -16,10 +16,21 @@ Import formatting helpers from `@altertable/data-app/format`.
 | `formatDateRange()` | Inclusive calendar ranges                              |
 | `pluralize()`       | Count-dependent labels                                 |
 
-Missing values render distinctly from measured zero. Define metric formatting
-once with `view.metric()`; comparisons derive from its displayed source. Previous
-values, range labels, and favorable direction belong to that metric and displayed
-input; see [data context](data-context.md) and [views](views.md).
+Missing values render distinctly from measured zero. Declare formatting once on
+`view.metric()` so widgets, comparisons, and narrative share it; reuse the
+definition with `formatMetric()` in story headlines.
+
+Use compact counts for headline metrics and chart labels. Declare count metrics
+with `format: { kind: 'count', compact: true }`. Keep full counts in tables used
+for precise comparisons and raw numeric values in datasets for CSV export.
+
+```ts
+formatCount(2_200_000, { compact: true }); // "2.2M"
+formatCount(2_200_000); // "2,200,000"
+```
+
+For signed or fractional measures, use `formatNumber()` with
+`notation: 'compact'` and preserve the measure's units.
 
 Import `chartColor()` from `/react` to select colors from the configured palette.
 `<PeriodSummary>` describes reporting periods; `<UpdatedAt>` and

@@ -67,7 +67,7 @@ const operations = {
       const queryResult = await query(
         queryNames.sampleCountsByGroup,
         `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 3), ('Beta', 0))
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
 SELECT group_name, sample_count FROM sample_counts
 WHERE '${escapedGroupName}' = '' OR group_name = '${escapedGroupName}'
 ORDER BY group_name LIMIT 10`
@@ -92,7 +92,8 @@ const sampleDataContext = createDataContext(queryNames)({
   glossary: {
     sampleCount: {
       term: 'Sample count',
-      definition: 'A fixture value: Alpha is 3 and Beta is a measured zero.',
+      definition:
+        'A fixture value: Alpha is 2,200,000 and Beta is a measured zero.',
       queryNames: [queryNames.sampleCountsByGroup],
     },
   },
@@ -130,7 +131,7 @@ const totalSamples = sampleCountsView.metric(
     id: 'total-samples',
     glossaryId: 'sampleCount',
     label: 'Total samples',
-    format: { kind: 'count' },
+    format: { kind: 'count', compact: true },
   },
   rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
 );
