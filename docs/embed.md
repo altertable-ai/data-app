@@ -38,9 +38,7 @@ const source = {
 Omit `bootstrapUrl` to load the SDK's packaged bootstrap as a `data:` document.
 This supports MCP hosts that permit opaque child frames but block remote frame
 URLs. The SDK embeds the exact host origin and applies a CSP that prohibits
-direct network access. Data requests go through the host's dispatcher. SDK
-identifiers use cryptographic randomness even when the opaque document lacks
-`crypto.randomUUID()`.
+direct network access. Data requests go through the host's dispatcher.
 
 Supply an HTTP(S) `bootstrapUrl` to use an externally served trusted bootstrap,
 such as the [Worker asset](worker.md).
