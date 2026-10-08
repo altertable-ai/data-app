@@ -16,6 +16,15 @@ test('visible single choices, independent choices, and numeric fields preserve t
       .textContent();
   }
   await region.getByRole('combobox', { name: 'Currency' }).selectOption('usd');
+  const controlHeight = await region
+    .getByRole('combobox', { name: 'Currency' })
+    .evaluate(element => element.getBoundingClientRect().height);
+  for (const name of ['Cancel', 'Apply filters'])
+    expect(
+      await region
+        .getByRole('button', { name, exact: true })
+        .evaluate(element => element.getBoundingClientRect().height)
+    ).toBe(controlHeight);
   const radios = region.getByRole('radiogroup', { name: 'Metric' });
   await radios.getByRole('radio', { name: 'Orders', exact: true }).focus();
   await page.keyboard.press('ArrowDown');

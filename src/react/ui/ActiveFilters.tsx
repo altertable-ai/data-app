@@ -53,13 +53,9 @@ export function FilterActions({
           onClick={onClear}
         />
       )}
-      {onCancel && (
-        <Button size="compact" onClick={onCancel}>
-          Cancel
-        </Button>
-      )}
+      {onCancel && <Button onClick={onCancel}>Cancel</Button>}
       {onApply && (
-        <Button size="compact" variant="elevated" onClick={onApply}>
+        <Button variant="elevated" onClick={onApply}>
           Apply filters
         </Button>
       )}

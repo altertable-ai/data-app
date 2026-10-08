@@ -10,6 +10,7 @@ import {
   Checkbox,
   NumberField,
   NumberRangeField,
+  FilterActions,
   MenuTrigger,
   MenuButton,
   MenuPopover,
@@ -139,6 +140,10 @@ function App() {
           label="Order amount"
           value={range}
           onChange={setRange}
+        />
+        <FilterActions
+          onApply={() => setActions(count => count + 1)}
+          onCancel={() => setActions(0)}
         />
         <output aria-label="Primitive values">
           {JSON.stringify({
