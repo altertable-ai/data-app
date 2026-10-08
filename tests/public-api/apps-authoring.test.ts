@@ -74,7 +74,7 @@ describe('authoring', () => {
       .toBe(true);
     await expect
       .poll(() =>
-        app.getByRole('row', { name: 'Alpha 3', exact: true }).count()
+        app.getByRole('row', { name: 'Alpha 2,200,000', exact: true }).count()
       )
       .toBe(0);
     await expect
@@ -94,7 +94,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('row', { name: 'Alpha 3', exact: true })
+          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
           .filter({ visible: true })
           .isVisible()
       )
@@ -122,7 +122,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         story
-          .getByRole('heading', { name: 'Total samples: 3', exact: true })
+          .getByRole('heading', { name: 'Total samples: 2.2M', exact: true })
           .isVisible()
       )
       .toBe(true);
@@ -180,7 +180,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('row', { name: 'Alpha 3', exact: true })
+          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
           .filter({ visible: true })
           .count()
       )
@@ -273,7 +273,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('row', { name: 'Alpha 3', exact: true })
+          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
           .filter({ visible: true })
           .isVisible()
       )
@@ -345,7 +345,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('row', { name: 'Alpha 3', exact: true })
+          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
           .filter({ visible: true })
           .isVisible()
       )

@@ -69,7 +69,7 @@ const total = activityView.metric(
   {
     id: 'tracked-identities',
     glossaryId: 'identities',
-    format: { kind: 'count' },
+    format: { kind: 'count', compact: true },
   },
   data => ({
     current: data.count,

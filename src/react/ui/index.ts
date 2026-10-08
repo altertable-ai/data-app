@@ -1,6 +1,7 @@
 /** Direct UI composition and static screens. Requests use declared views from /react. */
 export { injectDataAppShellStyles } from '@/src/react/shellStyles';
 export { DataAppProvider } from '@/src/react/mount';
+export { isPlainKeyEvent } from '@/src/react/ui/keyboard';
 export { GettingStarted } from '@/src/react/ui/GettingStarted';
 export { DataWidget } from '@/src/react/ui/DataWidget';
 export type { WidgetStatus } from '@/src/react/ui/RequestHint';

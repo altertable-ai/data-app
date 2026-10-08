@@ -413,6 +413,7 @@ export {
   annotationDraftRoute,
   annotationModeRoute,
   annotationEditorStateRoute,
+  annotationSendRoute,
   annotationUpdateRoute,
   parseDataAppAnnotationDraft,
 } from '@/src/core/annotations';

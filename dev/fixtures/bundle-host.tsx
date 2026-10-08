@@ -2,10 +2,17 @@ import { AppIcon } from '@altertable/data-app/react/ui';
 import { Kbd } from '@/src/react/ui/Kbd';
 import { useAnnotationHost } from '@/dev/fixtures/use-annotation-host';
 import type { Theme } from '@altertable/data-app/appearance';
-import { StrictMode, useReducer, useRef, useState } from 'react';
+import {
+  StrictMode,
+  useEffectEvent,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
 import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';
 import {
   AnnotationBar,
+  type AnnotationBarHandle,
   injectDataAppAnnotationStyles,
   Tooltip,
   TooltipProvider,
@@ -25,6 +32,7 @@ import {
   annotationDraftRoute,
   annotationModeRoute,
   annotationEditorStateRoute,
+  annotationSendRoute,
   annotationUpdateRoute,
   createMessageRouter,
   defineMessageRoute,
@@ -95,6 +103,11 @@ function Host() {
   const annotationsHost = useAnnotationHost({
     sourceVersion: isPlayground ? `${sourceHash}:${bundleVersion}` : 'fixture',
     storageKey: isPlayground ? `playground:${location.origin}` : undefined,
+  });
+  const annotationBarRef = useRef<AnnotationBarHandle>(null);
+  const sendAnnotations = useEffectEvent(async () => {
+    await annotationBarRef.current?.send();
+    return null;
   });
   const {
     drafts: annotations,
@@ -219,12 +232,14 @@ function Host() {
     'annotation:draft': annotationDraftRoute,
     'annotation:mode': annotationModeRoute,
     'annotation:editor': annotationEditorStateRoute,
+    'annotation:send': annotationSendRoute,
     'annotation:update': annotationUpdateRoute,
     'export:csv': fileExportRoute,
     'export:zip': fileExportRoute,
   };
   const handlers = {
     ...annotationsHost.handlers,
+    'annotation:send': sendAnnotations,
     'annotation:draft'(
       draft: Parameters<
         (typeof annotationsHost.handlers)['annotation:draft']
@@ -414,6 +429,7 @@ function Host() {
       )}
       {isPlayground && (annotating || annotationsHost.deletedAnnotationId) && (
         <AnnotationBar
+          ref={annotationBarRef}
           active={annotating}
           annotations={annotations}
           theme={theme}

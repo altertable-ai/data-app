@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState, type ComponentRef } from 'react';
 import { annotationRoot } from '@/src/react/annotations/annotation-targets';
 import { Kbd } from '@/src/react/ui/Kbd';
+import { isPlainKeyEvent } from '@/src/react/ui/keyboard';
 import type {
   AnnotationTargetElement,
   AnnotationPoint,
@@ -160,6 +161,7 @@ export function AnnotationSelectionLayer({
         aria-disabled={disabled || editing || undefined}
         tabIndex={disabled || editing ? -1 : 0}
         onKeyDown={event => {
+          if (!isPlainKeyEvent(event.nativeEvent, { allowShift: true })) return;
           if (event.key === 'Escape' && start.current) {
             event.preventDefault();
             event.stopPropagation();

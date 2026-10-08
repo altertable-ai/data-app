@@ -3,6 +3,7 @@ import {
   annotationUpdateRoute,
   annotationModeRoute,
   annotationEditorStateRoute,
+  annotationSendRoute,
   type DataAppAnnotationDraft,
 } from '@/src/core/annotations';
 import type { MessageTransport } from '@/src/core/messages';
@@ -16,10 +17,15 @@ export function createAnnotationClient(transport: MessageTransport) {
       'annotation:update': annotationUpdateRoute,
       'annotation:mode': annotationModeRoute,
       'annotation:editor': annotationEditorStateRoute,
+      'annotation:send': annotationSendRoute,
     },
     transport
   );
   return {
+    /** Ask the host to submit its saved annotations using its existing send guards. */
+    requestSendAnnotations(options?: { signal?: AbortSignal }) {
+      return client.request('annotation:send', null, options);
+    },
     /** Report the iframe editor's status so the host can guard batch submission. */
     reportAnnotationEditorState(
       state: { hasUnsavedChanges: boolean },

@@ -298,7 +298,7 @@ Bun.serve({
       return Response.json({
         columns: [{ name: 'group_name' }, { name: 'sample_count' }],
         rows: [
-          ['Alpha', 3],
+          ['Alpha', 2200000],
           ['Beta', 0],
         ]
           .filter(([group]) => !groupName || group === groupName)

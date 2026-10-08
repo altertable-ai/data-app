@@ -426,6 +426,15 @@ export function AnnotationControls({
                 dispatch({ type: 'commentChanged', comment })
               }
               onSubmit={() => void saveAnnotation()}
+              onSend={() => {
+                if (
+                  pending ||
+                  hasUnsavedChanges ||
+                  !presentation.targets?.length
+                )
+                  return;
+                void annotationClient.requestSendAnnotations().catch(() => {});
+              }}
               onRetryScreenshot={retryScreenshot}
               onShakeEnd={() => dispatch({ type: 'shakeFinished' })}
             />

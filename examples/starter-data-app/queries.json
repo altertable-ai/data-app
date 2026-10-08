@@ -1,3 +1,3 @@
 {
-  "sample-counts-by-group": "WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 3), ('Beta', 0)) SELECT group_name, sample_count FROM sample_counts WHERE $groupName = '' OR group_name = $groupName ORDER BY group_name LIMIT 10"
+  "sample-counts-by-group": "WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0)) SELECT group_name, sample_count FROM sample_counts WHERE $groupName = '' OR group_name = $groupName ORDER BY group_name LIMIT 10"
 }

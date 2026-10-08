@@ -3,6 +3,12 @@ import { ArrowUp } from 'lucide-react';
 import type { AnnotationEditorState } from '@/src/react/annotations/annotation-editor-state';
 import { Button } from '@/src/react/ui/Button';
 import { Kbd } from '@/src/react/ui/Kbd';
+import { isPlainKeyEvent } from '@/src/react/ui/keyboard';
+import {
+  ariaKeyShortcuts,
+  matchesShortcut,
+  shortcuts,
+} from '@/src/react/ui/shortcuts';
 import { AnnotationTooltip } from '@/src/react/annotations/AnnotationTooltip';
 
 type AnnotationEditorProps = {
@@ -13,6 +19,7 @@ type AnnotationEditorProps = {
   disabled: boolean;
   onCommentChange: (comment: string) => void;
   onSubmit: () => void;
+  onSend: () => void;
   onRetryScreenshot: () => void;
   onShakeEnd: () => void;
 };
@@ -25,6 +32,7 @@ export function AnnotationEditor({
   disabled,
   onCommentChange,
   onSubmit,
+  onSend,
   onRetryScreenshot,
   onShakeEnd,
 }: AnnotationEditorProps) {
@@ -45,6 +53,7 @@ export function AnnotationEditor({
       <textarea
         data-atbl-control="text"
         aria-label="Annotation text"
+        aria-keyshortcuts={`Enter ${ariaKeyShortcuts(shortcuts.sendAnnotations)}`}
         placeholder="Describe what to change…"
         ref={textareaRef}
         rows={1}
@@ -53,11 +62,14 @@ export function AnnotationEditor({
         disabled={disabled}
         onChange={event => onCommentChange(event.target.value)}
         onKeyDown={event => {
-          if (
-            event.key === 'Enter' &&
-            !event.shiftKey &&
-            !event.nativeEvent.isComposing
-          ) {
+          if (matchesShortcut(event.nativeEvent, shortcuts.sendAnnotations)) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.nativeEvent.stopImmediatePropagation();
+            onSend();
+            return;
+          }
+          if (event.key === 'Enter' && isPlainKeyEvent(event.nativeEvent)) {
             event.preventDefault();
             if (editor.comment.trim()) onSubmit();
           }

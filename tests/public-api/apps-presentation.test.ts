@@ -11,7 +11,15 @@ describe('present', () => {
       name: 'Present story',
       exact: true,
     });
-    await launch.click();
+    await expect
+      .poll(() => launch.getAttribute('aria-keyshortcuts'))
+      .toBe('Meta+Shift+Enter Control+Shift+Enter');
+    const modifier = await launch.evaluate(() =>
+      /Macintosh|Mac OS X|iPhone|iPad/.test(navigator.userAgent)
+        ? 'Meta'
+        : 'Control'
+    );
+    await launch.press(`${modifier}+Shift+Enter`);
     await expect
       .poll(() => page.locator('iframe:fullscreen').isVisible())
       .toBe(true);
@@ -21,7 +29,7 @@ describe('present', () => {
     const story = app.getByRole('dialog');
     await expect
       .poll(() =>
-        story.getByRole('heading', { name: 'Total samples: 3' }).isVisible()
+        story.getByRole('heading', { name: 'Total samples: 2.2M' }).isVisible()
       )
       .toBe(true);
     await expect
@@ -80,7 +88,7 @@ describe('present', () => {
     const story = app.getByRole('dialog');
     await expect
       .poll(() =>
-        story.getByRole('heading', { name: 'Total samples: 3' }).isVisible()
+        story.getByRole('heading', { name: 'Total samples: 2.2M' }).isVisible()
       )
       .toBe(true);
     await expect.poll(() => page.locator(':fullscreen').count()).toBe(0);
