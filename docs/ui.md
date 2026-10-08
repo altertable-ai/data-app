@@ -146,4 +146,5 @@ remain local until Apply; Cancel and dismissal discard them. Use `<NumberField>`
 and `<NumberRangeField>` as inline input primitives when composing forms.
 
 Use `<Button variant="primary">` for the main committing action, such as Apply.
-Use outline and ghost buttons for secondary actions.
+Primary buttons use the theme foreground as their fill and the theme background
+for contrasting text. Use outline and ghost buttons for secondary actions.
