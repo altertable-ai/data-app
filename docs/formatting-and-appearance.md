@@ -58,7 +58,8 @@ const dataApp = defineDataApp({
 Scope labels describe the configured connection; they do not grant access.
 `dataAppTitle()` produces the scoped document title used by `mountDataApp()`.
 
-Description is an optional static subtitle. Omit appearance to use the standard defaults.
+Title and description explain the app and can be revised when regenerating it.
+Omit appearance to use the standard defaults.
 
 Appearance controls the brand palette, typography, density, corner radius, and
 elevation. Those settings apply consistently to the app instead of tuning each

@@ -2,6 +2,7 @@ import { defineDataApp } from "@altertable/data-app";
 
 export const dataApp = defineDataApp({
   title: "Getting started",
+  description: "Check your lakehouse connection, then build an exploration.",
   scope: {
     organization: "Your organization",
     environment: "your environment",

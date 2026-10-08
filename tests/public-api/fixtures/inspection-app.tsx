@@ -13,6 +13,7 @@ import {
 } from '@altertable/data-app/react/ui';
 const dataApp = defineDataApp({
   title: 'Inspection ownership',
+  description: 'Inspect query evidence for displayed results.',
   scope: { organization: 'Test', environment: 'local' },
   queries: {},
 });

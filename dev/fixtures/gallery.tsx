@@ -98,6 +98,8 @@ const rows = workspaces.map((name, id) => ({
 }));
 const dataApp = defineDataApp({
   title: 'Data app gallery',
+  description:
+    'Explore data app components and presentation patterns with sample data.',
   scope: { organization: 'Demo workspace', environment: 'Sample data' },
   appearance: { theme: 'light' },
   queries: {},

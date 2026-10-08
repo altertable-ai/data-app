@@ -20,6 +20,7 @@ import { mountDataApp, searchVariable } from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const dataApp = defineDataApp({
   title: 'Embedded report',
+  description: 'Explore embedded queries and host interactions.',
   scope: { organization: 'test', environment: 'prod' },
   appearance: { theme: 'system' },
   queries: {

@@ -44,6 +44,7 @@ const view = hooks.defineDataView({
 });
 const dataApp = defineDataApp({
   title: 'Test',
+  description: 'Verify app authoring contracts.',
   scope: { organization: 'a', environment: 'b' },
   appearance: {},
   queries: {},
@@ -285,6 +286,7 @@ authoring.mountDataApp({
   // @ts-expect-error Root APIs require a defined app, not a bare configuration.
   app: {
     title: 'Undeclared',
+    description: 'Verify root app contracts.',
     scope: { organization: 'a', environment: 'b' },
     appearance: {},
     queries: {},
@@ -296,6 +298,7 @@ DataAppProvider({
   // @ts-expect-error Custom roots require the same defined app as mounting.
   app: {
     title: 'Undeclared',
+    description: 'Verify root app contracts.',
     scope: { organization: 'a', environment: 'b' },
     appearance: {},
     queries: {},

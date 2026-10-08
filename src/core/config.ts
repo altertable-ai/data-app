@@ -12,8 +12,8 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
     title: string;
     /** Display labels; scope does not grant data access. */
     scope: { organization: string; environment: string };
-    /** Static subtitle; dynamic narrative belongs to views and results. */
-    description?: string;
+    /** Explain what the app helps readers explore. */
+    description: string;
     /** Omit to use the standard appearance. */
     appearance?: AppearanceOptions;
     /** Named SQL statements and parameter defaults used by app operations. */

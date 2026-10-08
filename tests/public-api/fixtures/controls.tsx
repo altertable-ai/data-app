@@ -24,6 +24,7 @@ import {
 
 const dataApp = defineDataApp({
   title: 'Controls',
+  description: 'Explore filter controls and their selected values.',
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });

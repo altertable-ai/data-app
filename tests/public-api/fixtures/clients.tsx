@@ -95,6 +95,7 @@ const a = makeApp('A');
 const b = makeApp('B');
 const dataApp = defineDataApp({
   title: 'Client isolation',
+  description: 'Explore independent client requests and cache state.',
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });

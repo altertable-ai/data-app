@@ -21,6 +21,7 @@ import { rowsAsRecords } from '@altertable/data-app/contract';
 
 const dataApp = defineDataApp({
   title: 'Products',
+  description: 'Explore products for the selected organization.',
   scope: { organization: 'demo', environment: 'production' },
   appearance: { theme: 'system' },
   queries: {

@@ -2,6 +2,8 @@ import { defineDataApp } from '@altertable/data-app';
 
 export const dataApp = defineDataApp({
   title: 'Orders',
+  description:
+    'Explore revenue, orders, and products across countries and reporting periods.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {

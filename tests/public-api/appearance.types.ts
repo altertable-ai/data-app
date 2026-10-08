@@ -5,6 +5,7 @@ import type { TableWidgetProps } from '@altertable/data-app/react/ui';
 // Compile-only assertions; the hosted endpoint can enforce these through TypeScript.
 const dataApp = defineDataApp({
   title: 'Example',
+  description: 'Explore example metrics and appearance.',
   scope: { organization: 'demo', environment: 'test' },
   appearance: { theme: 'system', typography: { heading: 'Georgia' } },
   queries: {},

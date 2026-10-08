@@ -118,6 +118,7 @@ const content = view.content(source => (
 ));
 const dataApp = defineDataApp({
   title: 'Calendar activity',
+  description: 'Explore activity by reporting period.',
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });

@@ -12,6 +12,7 @@ import { createDataHandler } from '@altertable/data-app/server';
 
 const dataApp = defineDataApp({
   title: 'Products',
+  description: 'Explore products for the selected organization.',
   scope: { organization: 'demo', environment: 'test' },
   appearance: { theme: 'system' },
   queries: {
@@ -284,6 +285,7 @@ test('SQL placeholders and syntax are passed to the backend without inspection',
 test('app definitions keep their query registries independent', async () => {
   const firstApp = defineDataApp({
     title: 'First',
+    description: 'Verify the first independent query registry.',
     scope: { organization: 'demo', environment: 'test' },
     appearance: {},
     queries: {
@@ -295,6 +297,7 @@ test('app definitions keep their query registries independent', async () => {
   });
   const secondApp = defineDataApp({
     title: 'Second',
+    description: 'Verify the second independent query registry.',
     scope: { organization: 'demo', environment: 'test' },
     appearance: {},
     queries: {
@@ -331,6 +334,7 @@ test('app definitions keep their query registries independent', async () => {
 test('the app owns one immutable registry independent of later caller mutations', async () => {
   const input = {
     title: 'Owned registry',
+    description: 'Verify registry ownership and parameter defaults.',
     scope: { organization: 'demo', environment: 'test' },
     queries: {
       selected: {

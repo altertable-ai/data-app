@@ -20,6 +20,7 @@ import {
 
 const dataApp = defineDataApp({
   title: 'Sample counts',
+  description: 'Explore sample counts by group.',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {

@@ -16,6 +16,7 @@ import { type DataView } from '@/src/core/data-view';
 
 const dataApp = defineDataApp({
   title: 'Layout contract',
+  description: 'Explore responsive layouts and loading states.',
   scope: { organization: 'demo', environment: 'test' },
   appearance: { density: 'comfortable', theme: 'light' },
   queries: {},

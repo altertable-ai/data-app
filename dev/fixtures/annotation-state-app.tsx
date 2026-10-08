@@ -20,6 +20,8 @@ type PeriodInput = { period: string };
 
 const dataApp = defineDataApp({
   title: 'Displayed context',
+  description:
+    'Inspect annotations and evidence for the displayed reporting period.',
   scope: { organization: 'test', environment: 'prod' },
   appearance: { theme: 'system' },
   queries: {},

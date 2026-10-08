@@ -182,7 +182,7 @@ import { createDataHandler } from "@altertable/data-app/server";
 import { localLakehouse } from "@altertable/data-app/server/bun";
 if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
-const app = defineDataApp({ title: "Server app", scope: { organization: "demo", environment: "test" }, queries: {} });
+const app = defineDataApp({ title: "Server app", description: "Declare an app on the server.", scope: { organization: "demo", environment: "test" }, queries: {} });
 if (typeof app.defineOperation !== "function") throw new Error("App declaration is unavailable on the server");
 `
   );

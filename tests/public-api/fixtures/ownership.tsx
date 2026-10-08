@@ -14,6 +14,7 @@ import {
 } from '@altertable/data-app/react';
 const dataApp = defineDataApp({
   title: 'Binding ownership',
+  description: 'Verify that displayed bindings follow their owning view.',
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });

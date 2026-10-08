@@ -7,6 +7,7 @@ import {
 
 const dataApp = defineDataApp({
   title: 'Typed queries',
+  description: 'Verify named query and parameter contracts.',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
   queries: {
@@ -80,6 +81,7 @@ void connection.queryNames.inventedQuery;
 // @ts-expect-error Every app config declares its query registry, including static apps.
 defineDataApp({
   title: 'Missing queries',
+  description: 'An app without a declared query registry.',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
 });
@@ -99,6 +101,7 @@ defineOperation({
 
 defineDataApp({
   title: 'Invalid config',
+  description: 'Validate application configuration.',
   scope: { organization: 'demo', environment: 'test' },
   // @ts-expect-error Config helpers reject unsupported appearance settings.
   appearance: { theme: 'invented' },
@@ -107,6 +110,7 @@ defineDataApp({
 
 defineDataApp({
   title: 'Invalid config',
+  description: 'Validate application configuration.',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
   // @ts-expect-error Config helpers reject unknown config fields.
@@ -116,6 +120,7 @@ defineDataApp({
 
 defineDataApp({
   title: 'Invalid declarations',
+  description: 'Validate query parameter declarations.',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
   queries: {
@@ -161,14 +166,14 @@ dataApp.defineOperation({
 
 defineDataApp({
   title: 'Minimal app',
-  description: 'Optional static subtitle',
+  description: 'Explore the declared query results.',
   scope: { organization: 'demo', environment: 'test' },
   queries: {},
 });
 
 defineDataApp({
   title: 'Invalid subtitle',
-  // @ts-expect-error A declared description is static text, not executable composition.
+  // @ts-expect-error A declared description is text, not executable composition.
   description: () => 'Dynamic subtitle',
   scope: { organization: 'demo', environment: 'test' },
   queries: {},
@@ -182,6 +187,7 @@ const mutableQueries = {
 };
 const immutableApp = defineDataApp({
   title: 'Owned queries',
+  description: 'Inspect immutable query defaults.',
   scope: { organization: 'demo', environment: 'test' },
   queries: mutableQueries,
 });
@@ -191,3 +197,10 @@ immutableApp.queries = mutableQueries;
 immutableApp.queries.products.statement = 'SELECT 2';
 // @ts-expect-error Parameter defaults cannot diverge from the bound operation registry.
 immutableApp.queries.products.params.limit.defaultValue = 7;
+
+// @ts-expect-error Every app declares what it helps readers explore.
+defineDataApp({
+  title: 'Missing description',
+  scope: { organization: 'demo', environment: 'test' },
+  queries: {},
+});

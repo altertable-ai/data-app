@@ -25,6 +25,7 @@ import {
 } from '@altertable/data-app/react';
 const dataApp = defineDataApp({
   title: 'Filter workflows',
+  description: 'Explore how filters change displayed results.',
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });

@@ -144,6 +144,7 @@ function resolve(name: 'alpha' | 'beta', version: number) {
 
 export const dataApp = defineDataApp({
   title: 'Declared views',
+  description: 'Explore independent views and their request states.',
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });

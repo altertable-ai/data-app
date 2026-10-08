@@ -19,6 +19,7 @@ import {
 } from '@altertable/data-app/react';
 const dataApp = defineDataApp({
   title: 'Responsive report',
+  description: 'Explore the report across screen sizes.',
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });
