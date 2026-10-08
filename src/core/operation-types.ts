@@ -1,4 +1,3 @@
-import type { QueryVariableDefinitions } from '@/src/core/query-variables';
 /** Shared operation, query, and response contracts; independent of delivery adapters. */
 export type OperationContracts = Record<
   string,
@@ -28,12 +27,18 @@ export type DisclosedQuery = {
   queryId?: string;
 };
 
+/** Named DuckDB prepared-statement parameter values for a registered query; `$country` reads `country`. */
+export type QueryValues = Record<string, unknown>;
+
+/** Registered SQL statements keyed by query ID. */
+export type DataAppRegistration = { queries: Record<string, string> };
+
 /** Query interface supplied by a server adapter or an authorized iframe bridge. */
 export type Lakehouse = {
   queryById?(
     this: void,
     name: string,
-    values: Record<string, unknown>,
+    values: QueryValues,
     options: { limit: number; signal: AbortSignal }
   ): Promise<QueryResult>;
   queryAll(
@@ -58,7 +63,6 @@ export type DataOperation<Input, Output> = {
   run: (context: OperationContext, input: Input) => Promise<Output>;
   checks: readonly Input[];
   queryNames?: Readonly<Record<string, string>>;
-  variables?: QueryVariableDefinitions;
   policy: {
     maxQueryRows: number;
     maxDurationMs: number;

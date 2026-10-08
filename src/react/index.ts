@@ -266,18 +266,5 @@ export type {
   MetricValues,
 } from '@/src/core/reading';
 
-export { queryVariable } from '@/src/core/variables';
-export type { QueryVariable } from '@/src/core/variables';
-export {
-  VariableValueSelector,
-  VariableTextSelector,
-  VariableBooleanSelector,
-  VariableIntervalSelector,
-  VariableDurationSelector,
-  VariableDateTimeSelector,
-  VariableDateTimeRangeSelector,
-} from '@/src/react/ui/VariableValueSelector';
-export type { VariableValueSelectorProps } from '@/src/react/ui/VariableValueSelector';
-
 export { DatePicker } from '@/src/react/ui/DatePicker';
 export type { DatePickerProps } from '@/src/react/ui/DatePicker';

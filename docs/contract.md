@@ -7,29 +7,34 @@ should import their operation types using `import type`.
 
 ## Execute named queries
 
-Hosted operations call registered query IDs with typed values. For example,
-`event-count` can reference `SELECT count(*) FROM events WHERE country = {{country}}`
-in the separate query map. See [hosted registration](hosted-apps.md#create-and-update-registration)
-for the app's deliverables.
+Hosted operations call registered query IDs with parameter values. Registered SQL
+uses DuckDB prepared-statement parameters: `event-count` can reference
+`SELECT count(*) FROM events WHERE country = $country` in the separate query map.
+See [hosted registration](hosted-apps.md#create-and-update-registration) for the
+app's deliverables.
 
 ```ts
 import {
   defineOperation,
   defineQueryNames,
-  type QueryVariableDefinitions,
-  type QueryVariableValues,
   parseCount,
 } from '@altertable/data-app/contract';
 
 const queryNames = defineQueryNames({ count: 'event-count' });
-const variables = [
-  { name: 'country', type: 'STRING', nullable: false, default: 'FR' },
-] as const satisfies QueryVariableDefinitions;
+function parseCountry(value: unknown): { country: string } {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !('country' in value) ||
+    typeof value.country !== 'string'
+  )
+    throw new Error('Expected a country.');
+  return { country: value.country };
+}
 const operations = {
   eventCount: defineOperation({
     queryNames,
-    variables,
-    input: value => value as QueryVariableValues<typeof variables>,
+    input: parseCountry,
     output: parseCount,
     checks: [{ country: 'FR' }],
     policy: { maxQueryRows: 1, maxDurationMs: 15000 },
@@ -42,67 +47,16 @@ const operations = {
 ```
 
 `query(id, values)` inherits the operation's limit and cancellation signal;
-`{ limit }` can lower the row bound. Pass only the variables used by that query.
-An operation may execute several named queries. Local server operations keep
-`query(id, statement)`; see [local authoring](local-data-apps.md).
+`{ limit }` can lower the row bound. `values` maps each `$name` parameter in that
+statement to its value, keyed without `$`. An operation may execute several named
+queries. Local server operations keep `query(id, statement)`; see
+[local authoring](local-data-apps.md).
 
-## Query variables
-
-Each definition requires `name`, `type`, `nullable`, and a valid `default`.
-Names must be unique. Missing values use the default; null requires `nullable: true`. Optional `options`
-restrict the selector choices. The backend validates definitions and values,
-applies defaults, and resolves SQL placeholders.
-
-`VariableValue<Type>` gives the value type;
-`QueryVariableValues<typeof variables>` derives inputs keyed by name.
-
-| Type            | Value                                                              |
-| --------------- | ------------------------------------------------------------------ |
-| `STRING`        | `string`                                                           |
-| `INTEGER`       | Safe integer                                                       |
-| `FLOAT`         | Finite number                                                      |
-| `BOOLEAN`       | `boolean`                                                          |
-| `INTERVAL`      | `HOURLY`, `DAILY`, `WEEKLY`, `MONTHLY`, `QUARTERLY`, `YEARLY`      |
-| `DURATION`      | `{ amount: integer, unit: HOUR/DAY/WEEK/MONTH/YEAR }`              |
-| `DATETIME`      | `Date` (ISO timestamp with timezone in JSON) or `RelativeDateTime` |
-| `DATETIMERANGE` | `{ from, to }`, each a datetime or null                            |
-
-`RelativeDateTime` is `{ anchor, offset }`. Use `RELATIVE_ANCHOR_NOW` or
-`RELATIVE_ANCHOR_START_OF_` followed by `TODAY`, `YESTERDAY`, `TOMORROW`,
-`WEEK`, `MONTH`, or `YEAR` for the anchor. `offset` is an ordered array of
-`{ amount: integer, unit }`; units are `SECOND`, `MINUTE`, `HOUR`, `DAY`, `WEEK`,
-`MONTH`, and `YEAR`. Dates serialize to ISO strings across JSON. Relative selections stay relative.
-
-Use [`queryVariable()` and the selectors](react.md#query-variable-selectors) to
-bind these definitions to existing view controls and URL state.
-
-## SQL variable syntax
-
-These placeholders are Altertable syntax, resolved by the query backend.
-
-| SQL                                      | Behavior                                                                 |
-| ---------------------------------------- | ------------------------------------------------------------------------ |
-| `country = {{country}}`                  | Insert a typed value; do not add quotes around STRING or DATETIME        |
-| `{{equals(country, country)}}`           | Equality, or `country IS NULL` for null                                  |
-| `{{not_equals(country, country)}}`       | Inequality, or `country IS NOT NULL` for null                            |
-| `{{between(created_at, period)}}`        | DATETIMERANGE predicate with open-bound support                          |
-| `created_at BETWEEN {{period}}`          | Inclusive range; absent from/to default to epoch/execution time          |
-| `date_trunc('{{interval}}', created_at)` | INTERVAL expands to `hour`, `day`, `week`, `month`, `quarter`, or `year` |
-| `created_at > now() - {{duration}}`      | DURATION expands to an SQL interval                                      |
-
-`between()` includes both endpoints when both exist. With only `from`, it uses
-`>`; with only `to`, it uses `<`; null or two absent endpoints means `IS NULL`.
-Use explicit datetime variables with `>=` and `<` for a half-open reporting range.
-SQL comparisons to a plain null placeholder retain normal SQL null semantics.
-For optional filters, write the condition explicitly, such as
-`{{country}} IS NULL OR country = {{country}}`.
-
-Use simple variable names such as `country`; expressions, dotted access, arrays,
-and identifier substitution are unsupported. Helper column arguments must be
-fixed SQL identifiers, optionally qualified or quoted. Do not quote placeholders
-except for the `INTERVAL` example above, or embed them in strings or identifiers.
-Use standard SQL strings without backslash escapes. `LIKE` wildcards retain their
-SQL meaning. The backend resolves relative dates and timezones at execution time.
+Values cross the bridge as JSON: pass strings, numbers, booleans, or null. Dates
+serialize as ISO strings, so cast them in SQL, such as `$start::TIMESTAMPTZ`.
+The operation's `input` parser validates values in the browser; the backend binds
+them as statement parameters, never as SQL text. For an optional filter, write the
+condition explicitly, such as `$country = '' OR country = $country`.
 
 ## Shared date ranges
 

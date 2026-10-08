@@ -1,5 +1,3 @@
-import { VariableValueSelector } from '@/src/react/ui/VariableValueSelector';
-import type { VariableValue } from '@/src/core/query-variables';
 import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { SearchField } from '@/src/react/ui/SearchField';
@@ -86,21 +84,6 @@ export function useViewVariables<Variables extends VariableCollection>(
               next as AppVariableValues<Variables>[typeof name]
             )
           )}
-        />
-      );
-    } else if (definition.kind === 'query') {
-      controls.push(
-        <VariableValueSelector
-          key={name}
-          label={definition.label ?? name}
-          definition={definition.definition}
-          value={value as VariableValue | null}
-          onChange={next =>
-            variables.set(
-              name,
-              next as AppVariableValues<Variables>[typeof name]
-            )
-          }
         />
       );
     } else if (definition.kind === 'dimension') {

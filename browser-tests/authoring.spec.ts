@@ -101,14 +101,7 @@ test('single-file hosted example queries through the host and preserves displaye
     .click();
   expect(requests.length).toBe(queryCountBeforeStory);
   async function selectGroup(value: string) {
-    await app.getByRole('button', { name: /^Group:/ }).click();
-    if (value === '') {
-      await app.getByRole('option', { name: 'Empty', exact: true }).click();
-      return;
-    }
-    const search = app.getByRole('searchbox', { name: 'Search group values' });
-    await search.fill(value);
-    await search.press('Enter');
+    await app.getByRole('searchbox', { name: 'Group' }).fill(value);
   }
   gate = new Promise<void>(resolve => {
     release = resolve;

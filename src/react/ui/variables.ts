@@ -18,7 +18,6 @@ import {
 } from '@/src/core/variables';
 export {
   defineAppVariables,
-  queryVariable,
   textVariable,
   selectVariable,
   dateRangeVariable,

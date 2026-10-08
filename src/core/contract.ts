@@ -1,7 +1,3 @@
-import {
-  type QueryVariableDefinitions,
-  type QueryVariableValues,
-} from '@/src/core/query-variables';
 /**
  * Shared operation contracts and input/output validation for browser and server.
  * @module @altertable/data-app/contract
@@ -13,11 +9,14 @@ import { invariant } from '@/src/core/invariant';
 import type { DateRange as DateRangeInput } from '@/src/core/date-range';
 import type {
   QueryResult,
+  QueryValues,
   DataOperation,
   OperationContext,
 } from '@/src/core/operation-types';
 export type {
   QueryResult,
+  QueryValues,
+  DataAppRegistration,
   DisclosedQuery,
   Lakehouse,
   OperationContext,
@@ -309,12 +308,9 @@ export class DataSourceError extends Error {
   }
 }
 
-export type OperationQuery<
-  Names extends Readonly<Record<string, string>>,
-  Variables extends QueryVariableDefinitions = QueryVariableDefinitions,
-> = (
+export type OperationQuery<Names extends Readonly<Record<string, string>>> = (
   name: Names[keyof Names],
-  statementOrValues: string | Partial<QueryVariableValues<Variables>>,
+  statementOrValues: string | QueryValues,
   options?: { limit?: number }
 ) => Promise<QueryResult>;
 
@@ -322,18 +318,11 @@ export function defineOperation<
   Input,
   Output,
   const Names extends Readonly<Record<string, string>> = Record<string, never>,
-  const Variables extends QueryVariableDefinitions = readonly [],
 >(
-  operation: Omit<
-    DataOperation<Input, Output>,
-    'run' | 'queryNames' | 'variables'
-  > & {
+  operation: Omit<DataOperation<Input, Output>, 'run' | 'queryNames'> & {
     queryNames?: Names;
-    variables?: Variables;
     run: (
-      context: OperationContext & {
-        query: OperationQuery<NoInfer<Names>, NoInfer<Variables>>;
-      },
+      context: OperationContext & { query: OperationQuery<NoInfer<Names>> },
       input: Input
     ) => Promise<Output>;
   }
@@ -358,7 +347,7 @@ export function defineOperation<
     run(context, input) {
       function query(
         name: Names[keyof Names],
-        statementOrValues: string | Partial<QueryVariableValues<Variables>>,
+        statementOrValues: string | QueryValues,
         options?: { limit?: number }
       ): Promise<QueryResult> {
         invariant(
@@ -455,30 +444,5 @@ export type {
 } from '@/src/core/messages';
 export type { TransportResponse } from '@/src/core/bridge';
 
-export {
-  variableValueTypes,
-  histogramIntervals,
-  durationUnits,
-  relativeUnits,
-  relativeAnchors,
-} from '@/src/core/query-variables';
-export type {
-  VariableValueType,
-  VariableValue,
-  VariableValues,
-  HistogramInterval,
-  DurationUnit,
-  Duration,
-  RelativeUnit,
-  RelativeAnchor,
-  RelativeOffset,
-  RelativeDateTime,
-  AbsoluteOrRelativeDateTime,
-  DateTimeRange,
-  QueryVariableDefinition,
-  QueryVariableDefinitions,
-  QueryVariableValues,
-} from '@/src/core/query-variables';
-export type { DataAppRegistration } from '@/src/core/query-variables';
 export { registeredQueryRoute } from '@/src/core/messages';
 export type { RegisteredQueryInput } from '@/src/core/messages';

@@ -118,7 +118,7 @@ const router = createMessageRouter(
 ```
 
 The route accepts `RegisteredQueryInput` (`{ operation, variables, limit }`) and
-returns `QueryResult`. Here `operation` identifies one registered SQL statement, rather
+returns `QueryResult`. `variables` maps statement parameter names to values. Here `operation` identifies one registered SQL statement, rather
 than the browser operation that may orchestrate several queries.
 
 The host supplies `appRevision` and `executeRegisteredQueryForCurrentViewer()`.

@@ -3,8 +3,6 @@ import type { DataAppConfig } from '@altertable/data-app/config';
 import {
   defineOperation,
   defineQueryNames,
-  type QueryVariableDefinitions,
-  type QueryVariableValues,
   parseCount,
 } from '@altertable/data-app/contract';
 import {
@@ -21,15 +19,23 @@ import {
   injectDataAppStyles,
   mountDataApp,
   MetricWidget,
-  queryVariable,
+  textVariable,
 } from '@altertable/data-app/react';
 
 const queryNames = defineQueryNames({
   sampleCountsByGroup: 'sample-counts-by-group',
 });
-const queryVariables = [
-  { name: 'groupName', nullable: false, type: 'STRING', default: '' },
-] as const satisfies QueryVariableDefinitions;
+function parseGroupInput(value: unknown): { groupName: string } {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    !('groupName' in value) ||
+    typeof value.groupName !== 'string' ||
+    value.groupName.length > 100
+  )
+    throw new Error('Expected a group name of at most 100 characters.');
+  return { groupName: value.groupName };
+}
 function parseSampleCounts(
   value: unknown
 ): { groupName: string; sampleCount: number }[] {
@@ -47,8 +53,7 @@ function parseSampleCounts(
 const operations = {
   sampleCountsByGroup: defineOperation({
     queryNames,
-    variables: queryVariables,
-    input: value => value as QueryVariableValues<typeof queryVariables>,
+    input: parseGroupInput,
     output: parseSampleCounts,
     checks: [
       { groupName: '' },
@@ -92,10 +97,7 @@ const { defineDataView, useView } = createDataHooks(
 const sampleCountsView = defineDataView({
   operation: 'sampleCountsByGroup',
   variables: {
-    groupName: queryVariable(queryVariables[0], {
-      key: 'group',
-      label: 'Group',
-    }),
+    groupName: textVariable({ key: 'group', label: 'Group' }),
   },
   input: ({ groupName }) => ({ groupName }),
   describeInput: ({ groupName }) =>

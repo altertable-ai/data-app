@@ -869,23 +869,13 @@ test('host stops the handshake when a send diagnostic disposes the bridge', () =
   }
 });
 
-test('registered queries send only their ID, JSON variable values and bounded limit', async () => {
+test('registered queries send only their ID, JSON parameter values and bounded limit', async () => {
   const { createDataClient } = await import('@altertable/data-app/client');
   const { defineOperation } = await import('@altertable/data-app/contract');
   const { bridge, receive, sent } = harness();
   try {
-    const variables = [
-      {
-        name: 'when',
-        nullable: false,
-        default: new Date('2026-10-01T00:00:00Z'),
-        type: 'DATETIME',
-      },
-      { name: 'unused', nullable: false, type: 'STRING', default: '' },
-    ] as const;
     const operation = defineOperation({
       queryNames: { time: 'time' },
-      variables,
       input: value => value as { when: Date; unused: string },
       output: (value: unknown) => value,
       checks: [{ when: new Date('2026-10-01T00:00:00Z'), unused: '' }],

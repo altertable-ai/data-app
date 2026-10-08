@@ -1,58 +1,24 @@
 import { expect, test } from '@playwright/test';
 
-test('variable selectors preserve types and simple UTC dates', async ({
-  page,
-}) => {
+test('date pickers validate fields and keep open ranges', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/query-variables');
+  await page.goto('/date-pickers');
   async function values() {
     return JSON.parse((await page.getByTestId('values').textContent())!);
   }
-  async function enter(label: string, value: string) {
-    await page.getByRole('button', { name: new RegExp(`^${label}:`) }).click();
-    const input = page.getByRole('searchbox', {
-      name: `Search ${label.toLowerCase()} values`,
-    });
-    await input.fill(value);
-    await input.press('Enter');
-  }
-  await enter('Text', "O'Reilly");
-  await enter('Count', '4');
-  await enter('Fraction', '2.75');
-  expect((await values()).Text).toBe("O'Reilly");
-  expect((await values()).Count).toBe(4);
-  expect((await values()).Fraction).toBe(2.75);
-  await enter('Count', '2.75');
-  await expect(page.locator('.altertable-combobox-empty')).toBeVisible();
-  expect((await values()).Count).toBe(4);
-  await page.keyboard.press('Escape');
-  await page.getByRole('button', { name: /^Enabled:/ }).click();
-  await page.getByRole('option', { name: 'True', exact: true }).click();
-  expect((await values()).Enabled).toBe(true);
-  await page.getByRole('button', { name: /^Enabled:/ }).click();
-  await page.getByRole('option', { name: 'Null', exact: true }).click();
-  expect((await values()).Enabled).toBeNull();
-  await page.getByRole('button', { name: /^Interval:/ }).click();
-  await page.getByRole('option', { name: 'Month', exact: true }).click();
-  expect((await values()).Interval).toBe('MONTHLY');
-  await page.getByRole('button', { name: /^Duration:/ }).click();
-  await page
-    .getByRole('option', { name: 'Previous month', exact: true })
-    .click();
-  expect((await values()).Duration).toEqual({ amount: 1, unit: 'MONTH' });
   const date = page
     .locator('input[type=date]')
     .and(page.getByLabel('Date', { exact: true }));
   await expect(date).toHaveValue('2026-10-01');
   await date.fill('2026-10-02');
-  expect((await values()).Date).toBe('2026-10-02T00:00:00.000Z');
+  expect((await values()).Date).toBe('2026-10-02');
   await date.fill('');
   await expect(page.getByRole('alert')).toHaveText('Choose a date.');
-  expect((await values()).Date).toBe('2026-10-02T00:00:00.000Z');
+  expect((await values()).Date).toBe('2026-10-02');
   await date.fill('2026-10-03');
   await expect(page.getByRole('alert')).toHaveCount(0);
-  expect((await values()).Date).toBe('2026-10-03T00:00:00.000Z');
+  expect((await values()).Date).toBe('2026-10-03');
 
   const from = page.getByLabel('Period from', { exact: true });
   const to = page.getByLabel('Period to', { exact: true });
@@ -60,23 +26,23 @@ test('variable selectors preserve types and simple UTC dates', async ({
   await expect(to).toHaveValue('');
   await to.fill('2026-09-30');
   expect((await values()).Period).toEqual({
-    from: '2026-09-01T00:00:00.000Z',
-    to: '2026-09-30T23:59:59.999Z',
+    start: '2026-09-01',
+    end: '2026-09-30',
   });
   await from.fill('2026-10-01');
   await expect(page.getByRole('alert')).toHaveText(
     'End date must be on or after start date.'
   );
-  expect((await values()).Period.from).toBe('2026-09-01T00:00:00.000Z');
+  expect((await values()).Period.start).toBe('2026-09-01');
   await to.fill('2026-10-02');
   expect((await values()).Period).toEqual({
-    from: '2026-10-01T00:00:00.000Z',
-    to: '2026-10-02T23:59:59.999Z',
+    start: '2026-10-01',
+    end: '2026-10-02',
   });
   await from.fill('');
-  expect((await values()).Period.from).toBeNull();
+  expect((await values()).Period.start).toBeNull();
   await to.fill('');
-  expect((await values()).Period).toEqual({ from: null, to: null });
+  expect((await values()).Period).toEqual({ start: null, end: null });
   for (const theme of ['light', 'dark']) {
     if (theme === 'dark')
       await page.getByRole('button', { name: 'Toggle theme' }).click();
@@ -87,7 +53,7 @@ test('variable selectors preserve types and simple UTC dates', async ({
       )
     ).toBe(true);
     await page.screenshot({
-      path: test.info().outputPath(`variables-${theme}.png`),
+      path: test.info().outputPath(`date-pickers-${theme}.png`),
       fullPage: true,
     });
   }
@@ -97,7 +63,7 @@ test('variable selectors preserve types and simple UTC dates', async ({
 test('single and range controls share calendar navigation and range presets', async ({
   page,
 }) => {
-  await page.goto('/query-variables');
+  await page.goto('/date-pickers');
   async function values() {
     return JSON.parse((await page.getByTestId('values').textContent())!);
   }
@@ -125,7 +91,7 @@ test('single and range controls share calendar navigation and range presets', as
     .filter({ hasText: /^12$/ })
     .click();
   await expect(dialog).toHaveCount(0);
-  expect((await values()).Date).toBe('2027-12-12T00:00:00.000Z');
+  expect((await values()).Date).toBe('2027-12-12');
 
   await page.getByRole('button', { name: /^Choose dates\b/ }).click();
   dialog = page.getByRole('dialog');
@@ -142,9 +108,9 @@ test('single and range controls share calendar navigation and range presets', as
     .click();
   await expect(dialog).toHaveCount(0);
   const period = (await values()).Period;
-  expect(new Date(period.to).getTime() - new Date(period.from).getTime()).toBe(
-    7 * 86400000 - 1
-  );
+  expect(
+    new Date(period.end).getTime() - new Date(period.start).getTime()
+  ).toBe(6 * 86400000);
   await page.getByRole('button', { name: /^Choose dates\b/ }).click();
   dialog = page.getByRole('dialog');
   await dialog
@@ -161,8 +127,8 @@ test('single and range controls share calendar navigation and range presets', as
     .click();
   await expect(dialog).toHaveCount(0);
   const selected = (await values()).Period;
-  expect(selected.from).toMatch(/-10T00:00:00.000Z$/);
-  expect(selected.to).toMatch(/-15T23:59:59.999Z$/);
+  expect(selected.start).toMatch(/-10$/);
+  expect(selected.end).toMatch(/-15$/);
 });
 
 test('existing range picker retains bounds and comparison controls', async ({

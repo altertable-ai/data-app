@@ -1,8 +1,4 @@
 import {
-  type QueryVariableDefinition,
-  type QueryVariableValues,
-} from '@/src/core/query-variables';
-import {
   availableDatePresets,
   type DatePresetId,
   type DateRange,
@@ -36,10 +32,7 @@ export type AppVariable<
 
 export type VariableCollection = Record<
   string,
-  | AppVariable<string>
-  | DateRangeVariable
-  | DimensionVariable<any>
-  | QueryVariable<any>
+  AppVariable<string> | DateRangeVariable | DimensionVariable<any>
 >;
 export type AppVariableValues<Variables> = {
   [Key in keyof Variables]: Variables[Key] extends DimensionVariable<
@@ -330,74 +323,4 @@ export function dateRangeVariable({
   );
 
   return variable;
-}
-
-export type QueryVariable<
-  Definition extends QueryVariableDefinition = QueryVariableDefinition,
-> = AppVariable<
-  QueryVariableValues<readonly [Definition]>[Definition['name']],
-  'query'
-> & { definition: Definition };
-
-/** Adapt the frontend variable contract to existing URL state and generated view controls. */
-export function queryVariable<const Definition extends QueryVariableDefinition>(
-  definition: Definition,
-  {
-    key,
-    label = key,
-    history = 'push',
-  }: { key: string; label?: string; history?: HistoryMode }
-): QueryVariable<Definition> {
-  const defaultValue =
-    definition.default as QueryVariable<Definition>['defaultValue'];
-  function decode(value: unknown) {
-    // URL state serializes dates as strings; restore them for date controls.
-    if (definition.type === 'DATETIME' && typeof value === 'string')
-      return new Date(value);
-    if (
-      definition.type === 'DATETIMERANGE' &&
-      value &&
-      typeof value === 'object'
-    ) {
-      const range = value as { from?: unknown; to?: unknown };
-      return Object.fromEntries(
-        Object.entries(range).map(([key, endpoint]) => [
-          key,
-          typeof endpoint === 'string' ? new Date(endpoint) : endpoint,
-        ])
-      );
-    }
-    return value;
-  }
-  return {
-    kind: 'query',
-    definition,
-    label,
-    history,
-    urlKeys: [key],
-    defaultValue,
-    read(params) {
-      const value = params.get(key);
-      if (value === null) return defaultValue;
-      try {
-        return decode(JSON.parse(value)) as typeof defaultValue;
-      } catch {
-        return defaultValue;
-      }
-    },
-    write(value) {
-      return {
-        [key]:
-          JSON.stringify(value) === JSON.stringify(defaultValue)
-            ? null
-            : JSON.stringify(value),
-      };
-    },
-    valid() {
-      return true; // Query values are validated by the backend.
-    },
-    same(left, right) {
-      return JSON.stringify(left) === JSON.stringify(right);
-    },
-  };
 }

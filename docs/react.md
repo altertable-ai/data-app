@@ -376,52 +376,8 @@ Example:
 </DataApp>
 ```
 
-## Query variable selectors
-
-Type definitions with `QueryVariableDefinitions` from `/contract`.
-Adapt a definition with `queryVariable()` from `/react`:
-
-```ts
-const variables = [
-  {
-    name: 'country',
-    type: 'STRING',
-    nullable: false,
-    default: 'FR',
-    options: ['FR', 'GB', 'US'],
-  },
-] as const satisfies QueryVariableDefinitions;
-const country = queryVariable(variables[0], {
-  key: 'country',
-  label: 'Country',
-});
-```
-
-Pass `{ country }` to a view's `variables`. `useView()` generates the selector,
-keeps its value typed, and handles URL state through the existing variable APIs.
-
-`<VariableValueSelector>` accepts `definition`, `label`, `value`, and `onChange`.
-It renders a control for each frontend variable type:
-
-- `STRING`, `INTEGER`, `FLOAT`: searchable values with custom typed input.
-- `BOOLEAN`: True, False, and Null when nullable.
-- `INTERVAL`: Hour, Day, Week, Month, Quarter, Year.
-- `DURATION`: None when nullable, Previous week, Previous month, Previous year.
-- `DATETIME`: compact date field and calendar, with month/year navigation.
-  Selecting a date sets it to midnight UTC.
-- `DATETIMERANGE`: the shared `<DateRangePicker>` with From/To fields, calendar,
-  and quick ranges. The end date includes the whole day; clearing either field
-  leaves that endpoint open.
-
-Nullable controls offer a Null, None, or Clear choice. Date fields use UTC;
-relative values are displayed as resolved dates and preserved until edited.
-
-The individual controlled selectors are also exported:
-`<VariableTextSelector>`, `<VariableBooleanSelector>`, `<VariableIntervalSelector>`,
-`<VariableDurationSelector>`, `<VariableDateTimeSelector>`, and
-`<VariableDateTimeRangeSelector>`. See [query variables](contract.md#query-variables) for value types and validation.
+## Date pickers
 
 `<DatePicker>` and `<DateRangePicker>` share compact controls and calendar
 navigation. The range picker retains date bounds, maximum range, reset,
-comparison, and footer options. Query selectors adapt their values to these
-pickers; single-date controls have no range presets.
+comparison, and footer options. Single-date controls have no range presets.

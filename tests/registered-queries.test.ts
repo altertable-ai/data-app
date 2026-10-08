@@ -5,22 +5,14 @@ import {
   defineQueryNames,
   registeredQueryRoute,
   createMessageRouter,
-  type QueryVariableDefinitions,
-  type QueryVariableValues,
 } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
-import { queryVariable } from '@altertable/data-app/react';
-
-const variables = [
-  { name: 'name', nullable: false, type: 'STRING', default: '' },
-] as const satisfies QueryVariableDefinitions;
 
 test('registered queries forward values unchanged and preserve backend results', async () => {
   const queryNames = defineQueryNames({ search: 'find-person' });
   const operation = defineOperation({
     queryNames,
-    variables,
-    input: value => value as QueryVariableValues<typeof variables>,
+    input: value => value as { name: string },
     output: (value: unknown) => value,
     checks: [{ name: 'Alice' }],
     policy: { maxQueryRows: 5, maxDurationMs: 1000, exposeSql: true },
@@ -57,7 +49,7 @@ test('registered queries forward values unchanged and preserve backend results',
   });
 });
 
-test('registered route validates the envelope and leaves variable validation to the backend', async () => {
+test('registered route validates the envelope and leaves value validation to the backend', async () => {
   const requests: unknown[] = [];
   const router = createMessageRouter(
     { 'data:query': registeredQueryRoute },
@@ -88,24 +80,4 @@ test('registered route validates the envelope and leaves variable validation to 
       context
     )
   );
-});
-
-test('date controls restore dates from URL state without resolving relative values', () => {
-  const variable = queryVariable(
-    {
-      name: 'date',
-      type: 'DATETIME',
-      nullable: false,
-      default: new Date('2026-09-01T00:00:00Z'),
-    },
-    { key: 'date' }
-  );
-  const next = new Date('2026-10-01T00:00:00Z');
-  expect(
-    variable.read(new URLSearchParams({ date: variable.write(next).date! }))
-  ).toEqual(next);
-  const relative = { anchor: 'RELATIVE_ANCHOR_NOW' as const, offset: [] };
-  expect(
-    variable.read(new URLSearchParams({ date: JSON.stringify(relative) }))
-  ).toEqual(relative);
 });

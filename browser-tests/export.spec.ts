@@ -50,10 +50,7 @@ test('embedded toolbar exports displayed results through its host during updates
   );
 
   async function selectGroup(value: string) {
-    await app.getByRole('button', { name: /^Group:/ }).click();
-    const search = app.getByRole('searchbox', { name: 'Search group values' });
-    await search.fill(value);
-    await search.press('Enter');
+    await app.getByRole('searchbox', { name: 'Group' }).fill(value);
   }
 
   async function expectExport(filename: string, csv: string) {

@@ -1,4 +1,4 @@
-import queryVariables from '@/browser-tests/fixtures/query-variables.html';
+import datePickers from '@/browser-tests/fixtures/date-pickers.html';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
@@ -132,7 +132,7 @@ Bun.serve({
   development: isDevelopment && { hmr: true },
   routes: {
     '/skeleton': skeleton,
-    '/query-variables': queryVariables,
+    '/date-pickers': datePickers,
     '/gallery': gallery,
     '/styles': styles,
     '/layout': layoutHost,

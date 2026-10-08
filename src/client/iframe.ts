@@ -12,7 +12,7 @@ import {
   MessageRoutingError,
   type RoutedMessage,
 } from '@/src/core/messages';
-import type { Lakehouse } from '@/src/core/contract';
+import type { Lakehouse, QueryValues } from '@/src/core/contract';
 import { createMessageClient } from '@/src/client/messages';
 import { DataAppError } from '@/src/client/transport';
 import { createBridgeLogger, logBridgeMessage } from '@/src/client/logger';
@@ -258,16 +258,13 @@ export function createIframeTransport({
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
-      queryById(name, variables, { limit, signal }) {
+      queryById(name, values, { limit, signal }) {
         return registeredMessages
           .request(
             'data:query',
             {
               operation: name,
-              variables: JSON.parse(JSON.stringify(variables)) as Record<
-                string,
-                unknown
-              >,
+              variables: JSON.parse(JSON.stringify(values)) as QueryValues,
               limit,
             },
             { signal }

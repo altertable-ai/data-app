@@ -12,31 +12,29 @@ For execution details, see [browser-owned operations](client.md#browser-owned-op
 
 ## Create and update registration
 
-Produce three artifacts, as shown in the starter:
+Produce two artifacts, as shown in the starter:
 
 - [App source](../examples/starter-data-app/index.tsx): calls `query(id, values)`
   through browser-owned operations.
 - [queries.json](../examples/starter-data-app/queries.json): maps query IDs to SQL
-  templates. Keep this map out of the browser bundle.
-- [variables.json](../examples/starter-data-app/variables.json): lists the
-  [typed variable definitions](contract.md#query-variables), which app code may
-  also use for typed inputs and controls.
+  statements with [DuckDB parameters](contract.md#execute-named-queries) such as
+  `$groupName`. Keep this map out of the browser bundle.
 
-Submit all three together on creation and every source update. Queries and
-variables are complete replacements, including removals and empty collections.
+Submit both together on creation and every source update. Queries are a complete
+replacement, including removals and an empty collection.
 Follow the [hosted build skill](https://github.com/altertable-ai/skills/blob/main/skills/build-data-app/SKILL.md)
 for the create/update tool workflow.
 
-The backend validates registration and query values. Host implementers should
+The backend validates registration and binds query values. Host implementers should
 follow the [registered query route](embed.md#registered-query-route).
 
 ## Convert a local data app
 
 1. Combine the operation orchestration, parsers, views, story, and CSV export into the
    [single-file starter](../examples/starter-data-app/index.tsx) format.
-2. Move SQL from local server operations into `queries.json`, define typed variables
-   in `variables.json`, and replace statement calls with `query(id, values)`. Use
-   `createDataClient({ operations })` in the browser.
+2. Move SQL from local server operations into `queries.json`, replace interpolated
+   inputs with `$name` parameters, and replace statement calls with
+   `query(id, values)`. Use `createDataClient({ operations })` in the browser.
 3. Remove local serving files and app-alias imports. Confirm the host can access
    the same catalogs, then follow the [shared verification steps](app-authoring.md#verify-the-app).
 

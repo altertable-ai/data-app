@@ -1,6 +1,7 @@
 import type {
   TransportResponse,
   QueryResult,
+  QueryValues,
   OperationContracts,
   DataQueryInput,
   DataQueryBody,
@@ -328,7 +329,8 @@ export const dataAppRoutes = {
 /** Registered statement delivery uses data:query in bundle hosts; HTTP operation hosts retain defineDataQueryRoute(). */
 export type RegisteredQueryInput = {
   operation: string;
-  variables: Record<string, unknown>;
+  /** Prepared-statement parameter values keyed by name. */
+  variables: QueryValues;
   limit: number;
 };
 export const registeredQueryRoute = defineMessageRoute({
