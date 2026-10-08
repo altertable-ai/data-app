@@ -112,18 +112,12 @@
   display: none;
 }
 .altertable-filter-bar,
-.altertable-filter-actions,
-.altertable-active-filters {
+.altertable-filter-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--atbl-space-sm);
   min-width: 0;
-}
-.altertable-active-filters {
-  padding: 0;
-  margin: 0;
-  list-style: none;
 }
 .altertable-filter-bar > * {
   max-width: 100%;
@@ -150,7 +144,7 @@
   margin-bottom: var(--atbl-space-xs);
 }
 
-/* Inline filter rows share the regular control height, including removable chips. */
+/* Inline filter rows share the regular control height. */
 :is(.altertable-filter-bar, .altertable-variable-bar) .altertable-select,
 :is(.altertable-filter-bar, .altertable-variable-bar) .altertable-number-field {
   flex-direction: row;

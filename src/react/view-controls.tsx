@@ -1,12 +1,7 @@
 import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
-import { Fragment } from 'react';
 import { Select } from '@/src/react/ui/Select';
-import {
-  ActiveFilters,
-  FilterActions,
-  type ActiveFilter,
-} from '@/src/react/ui/ActiveFilters';
+import { FilterActions } from '@/src/react/ui/FilterActions';
 import { NumberFilterControl } from '@/src/react/ui/NumberFilterControl';
 import type {
   NumberFilter,
@@ -202,34 +197,18 @@ export function useViewVariables<Variables extends VariableCollection>(
         controls.push(<SearchField key={name} {...binding} />);
     }
   }
-  const active: ActiveFilter[] = [];
-  for (const [name, definition] of Object.entries(definitions)) {
-    const variable = definition as AppVariable<any>;
-    const value = variables.values[name];
-    if (
-      variable.clearValue !== undefined &&
-      !variable.same(value, variable.clearValue)
-    )
-      active.push({
-        id: name,
-        label: `${variable.label ?? name}: ${variable.describe?.(value) ?? String(value)}`,
-        onRemove: () =>
-          variables.update(
-            { [name]: variable.clearValue } as Partial<
-              AppVariableValues<Variables>
-            >,
-            'push'
-          ),
-      });
-  }
-  if (active.length)
+  const hasActiveFilters = Object.entries(definitions).some(
+    ([name, definition]) => {
+      const variable = definition as AppVariable<any>;
+      return (
+        variable.clearValue !== undefined &&
+        !variable.same(variables.values[name], variable.clearValue)
+      );
+    }
+  );
+  if (hasActiveFilters)
     controls.push(
-      <Fragment key="filter-actions">
-        <ActiveFilters filters={active} />
-        <FilterActions
-          onClear={active.length ? variables.clearAll : undefined}
-        />
-      </Fragment>
+      <FilterActions key="filter-actions" onClear={variables.clearAll} />
     );
 
   return {

@@ -1,36 +1,5 @@
 import { Button } from '@/src/react/ui/Button';
 import { IconButton } from '@/src/react/ui/IconButton';
-import { AppIcon } from '@/src/react/ui/icons';
-export type FilterChipProps = { label: string; onRemove: () => void };
-export function FilterChip({ label, onRemove }: FilterChipProps) {
-  return (
-    <Button
-      className="altertable-filter-chip"
-      aria-label={`Remove ${label}`}
-      onClick={onRemove}
-    >
-      {label}
-      <AppIcon name="close" size={14} />
-    </Button>
-  );
-}
-export type ActiveFilter = FilterChipProps & { id: string };
-export function ActiveFilters({
-  filters,
-}: {
-  filters: readonly ActiveFilter[];
-}) {
-  if (!filters.length) return null;
-  return (
-    <ul className="altertable-active-filters" aria-label="Active filters">
-      {filters.map(filter => (
-        <li key={filter.id}>
-          <FilterChip label={filter.label} onRemove={filter.onRemove} />
-        </li>
-      ))}
-    </ul>
-  );
-}
 export type FilterActionsProps = {
   onClear?: () => void;
 } & (

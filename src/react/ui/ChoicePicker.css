@@ -1,5 +1,21 @@
-.altertable-choice-picker-trigger {
+.altertable-choice-picker-control {
+  position: relative;
+  display: inline-flex;
   max-width: min(100%, 340px, 75vw);
+}
+.altertable-choice-picker-control[data-has-clear]
+  .altertable-choice-picker-trigger {
+  padding-inline-end: calc(
+    var(--atbl-control-height) + var(--atbl-control-padding-inline)
+  );
+}
+.altertable-choice-picker-clear {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 0;
+}
+.altertable-choice-picker-trigger {
+  max-width: 100%;
   box-sizing: border-box;
   text-align: left;
 }

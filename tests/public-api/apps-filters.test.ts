@@ -125,10 +125,6 @@ test('generated filters apply typed predicates and clear restrictions atomically
     name: 'Country: France',
     exact: true,
   });
-  const chip = page.getByRole('button', {
-    name: 'Remove Country: Exclude: France',
-    exact: true,
-  });
   const clear = page.getByRole('button', {
     name: 'Clear filters',
     exact: true,
@@ -136,10 +132,9 @@ test('generated filters apply typed predicates and clear restrictions atomically
   const height = await countryButton.evaluate(
     element => element.getBoundingClientRect().height
   );
-  for (const control of [chip, clear])
-    expect(
-      await control.evaluate(element => element.getBoundingClientRect().height)
-    ).toBe(height);
+  expect(
+    await clear.evaluate(element => element.getBoundingClientRect().height)
+  ).toBe(height);
   expect(
     await page.getByRole('button', { name: 'Reset filters' }).count()
   ).toBe(0);
@@ -148,6 +143,28 @@ test('generated filters apply typed predicates and clear restrictions atomically
     .poll(() => page.getByRole('tooltip').textContent())
     .toBe('Clear filters');
   const selectedURL = page.url();
+  const countryClear = page.getByRole('button', {
+    name: 'Clear country',
+    exact: true,
+  });
+  await countryClear.click();
+  await expect
+    .poll(async () => decode(await displayed.textContent()).country)
+    .toEqual({ kind: 'all' });
+  expect(await page.getByRole('list', { name: 'Active filters' }).count()).toBe(
+    0
+  );
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'Country: All', exact: true })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+  await page.goBack();
+  await expect
+    .poll(async () => decode(await displayed.textContent()).country.kind)
+    .toBe('exclude');
   await page
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();

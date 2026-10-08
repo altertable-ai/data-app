@@ -136,7 +136,7 @@ and emit only valid intervals. Numeric input and compact selects respect the
 shared mobile text-size minimum.
 
 Use `<FilterBar>` to arrange predicates and `<VariableBar>` for mixed app
-parameters. `<ActiveFilters>` composes removable `<FilterChip>` items from applied
-values. `<FilterActions>` provides one Clear icon with a tooltip, plus optional paired
+parameters. Each filter shows its current value and provides its own clear action.
+`<FilterActions>` provides one Clear icon with a tooltip, plus optional paired
 Apply/Cancel actions for app-owned drafts. The caller owns those actions; the
 components do not infer query state.

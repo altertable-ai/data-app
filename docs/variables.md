@@ -157,13 +157,13 @@ Set `allowExclusion: true` on `dimensionFilter()` to support
 alongside selected members. `dimensionPredicate()` retains missing records when
 excluding named values; selecting the missing member excludes missing records.
 
-Generated controls show removable active-filter chips and one Clear icon with
-a tooltip. Clear removes restrictions from search and predicate filters.
+Generated controls show active values within each filter and one collective
+Clear icon with a tooltip. Clear removes restrictions from search and predicate filters.
 `resetAll()` restores all
 configured variable defaults, including fixed choices and periods. Nonempty
 default filters can therefore be active immediately after Reset.
 
 Direct `useAppVariables()` callers can use `clearAll()` and `resetAll()` for one
 atomic history update. `<FilterActions>` also supports app-owned draft state
-with paired Apply/Cancel handlers; derive queries and active chips from applied
+with paired Apply/Cancel handlers; derive queries and visible controls from applied
 values while a draft is being edited.

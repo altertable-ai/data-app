@@ -10,7 +10,6 @@ import {
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 import {
-  ActiveFilters,
   Checkbox,
   CheckboxGroup,
   ChoicePicker,
@@ -81,16 +80,6 @@ export function FilterControlsPreview() {
     kind: 'all',
   });
   const [action, setAction] = useState('Choose an action');
-  const active =
-    country.kind === 'all'
-      ? []
-      : [
-          {
-            id: 'country',
-            label: `Country: ${countryFilter.describe(country)}`,
-            onRemove: () => setCountry({ kind: 'all' }),
-          },
-        ];
   return (
     <Stack gap="lg">
       <FilterBar aria-label="Search and fixed choices">
@@ -195,7 +184,6 @@ export function FilterControlsPreview() {
           value={country}
           onChange={setCountry}
         />
-        <ActiveFilters filters={active} />
         <FilterActions onClear={() => setCountry({ kind: 'all' })} />
       </FilterBar>
       <FilterBar aria-label="Draft actions and command menu">

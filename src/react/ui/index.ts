@@ -161,13 +161,5 @@ export { FilterBar } from '@/src/react/ui/FilterBar';
 export type { FilterBarProps } from '@/src/react/ui/FilterBar';
 export { VariableBar } from '@/src/react/ui/VariableBar';
 export type { VariableBarProps } from '@/src/react/ui/VariableBar';
-export {
-  ActiveFilters,
-  FilterChip,
-  FilterActions,
-} from '@/src/react/ui/ActiveFilters';
-export type {
-  ActiveFilter,
-  FilterChipProps,
-  FilterActionsProps,
-} from '@/src/react/ui/ActiveFilters';
+export { FilterActions } from '@/src/react/ui/FilterActions';
+export type { FilterActionsProps } from '@/src/react/ui/FilterActions';

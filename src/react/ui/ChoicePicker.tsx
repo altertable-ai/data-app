@@ -9,6 +9,7 @@ import {
 } from 'react-aria-components';
 import { invariant } from '@/src/core/invariant';
 import { PressButton as Button } from '@/src/react/ui/Button';
+import { IconButton } from '@/src/react/ui/IconButton';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 import { RequestHint } from '@/src/react/ui/RequestHint';
 import { SearchInput } from '@/src/react/ui/SearchInput';
@@ -67,6 +68,7 @@ export function ChoicePicker(props: ChoicePickerProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const statusId = useId();
   const popupId = useId();
@@ -163,144 +165,161 @@ export function ChoicePicker(props: ChoicePickerProps) {
     else if (props.resetValue !== undefined) props.onChange(props.resetValue);
     setOpen(false);
     setSearch('');
+    triggerRef.current?.focus();
   }
 
   return (
-    <DialogTrigger
-      isOpen={open}
-      onOpenChange={next => {
-        setOpen(next);
-        if (!next) setSearch('');
-      }}
+    <div
+      className="altertable-choice-picker-control"
+      data-has-clear={canClear || undefined}
     >
-      <Button
-        aria-haspopup="dialog"
-        aria-controls={open ? popupId : undefined}
-        className="altertable-choice-picker-trigger"
-        isDisabled={disabled}
-        aria-label={`${label}: ${display}`}
+      <DialogTrigger
+        isOpen={open}
+        onOpenChange={next => {
+          setOpen(next);
+          if (!next) setSearch('');
+        }}
       >
-        <span className="altertable-choice-picker-label" aria-hidden="true">
-          {label}
-        </span>
-        <strong className="altertable-choice-picker-value" aria-hidden="true">
-          {display}
-        </strong>
-        <AppIcon name="disclosure" size={14} />
-      </Button>
-      <Popover
-        className="altertable-choice-picker-popover"
-        placement="bottom start"
-      >
-        <Dialog
-          id={popupId}
-          aria-label={`${label} options`}
-          className="altertable-choice-picker-dialog"
+        <Button
+          ref={triggerRef}
+          aria-haspopup="dialog"
+          aria-controls={open ? popupId : undefined}
+          className="altertable-choice-picker-trigger"
+          isDisabled={disabled}
+          aria-label={`${label}: ${display}`}
         >
-          <SearchInput
-            focusRing={false}
-            size="compact"
-            loading={loading}
-            ref={searchRef}
-            aria-label={`Search ${label.toLocaleLowerCase()} values`}
-            aria-describedby={statusId}
-            placeholder={props.placeholder ?? 'Search values'}
-            value={search}
-            onChange={event => setSearch(event.currentTarget.value)}
-            onKeyDown={event => {
-              if (event.key !== 'ArrowDown' || !matches.length) return;
-              event.preventDefault();
-              listRef.current?.focus();
-            }}
-          />
-          <output
-            id={statusId}
-            className="altertable-choice-picker-status"
-            aria-live={error ? 'off' : 'polite'}
+          <span className="altertable-choice-picker-label" aria-hidden="true">
+            {label}
+          </span>
+          <strong className="altertable-choice-picker-value" aria-hidden="true">
+            {display}
+          </strong>
+          <AppIcon name="disclosure" size={14} />
+        </Button>
+        <Popover
+          className="altertable-choice-picker-popover"
+          placement="bottom start"
+        >
+          <Dialog
+            id={popupId}
+            aria-label={`${label} options`}
+            className="altertable-choice-picker-dialog"
           >
-            {error ? `${matches.length} available values` : feedback}
-            {atLimit
-              ? `. Maximum of ${props.maxSelected} selections reached.`
-              : ''}
-          </output>
-          <GradientScroll className="altertable-choice-picker-options">
-            {matches.length > 0 ? (
-              <ListBox
-                aria-busy={loading || undefined}
-                ref={listRef}
-                items={matches}
-                aria-label={`${label} values`}
-                aria-describedby={statusId}
-                selectionMode={multiple ? 'multiple' : 'single'}
-                selectionBehavior="toggle"
-                escapeKeyBehavior="none"
-                disallowEmptySelection={!multiple}
-                selectedKeys={selected}
-                onSelectionChange={select}
-              >
-                {hit => (
-                  <ListBoxItem
-                    data-atbl-internal-surface="option"
-                    data-atbl-focus="inset"
-                    data-atbl-control="action"
-                    id={hit.item.id}
-                    data-missing={
-                      hit.item.id === missingOption?.id || undefined
-                    }
-                    textValue={hit.item.label}
-                    isDisabled={atLimit && !selected.has(hit.item.id)}
-                  >
-                    <SelectionMark
-                      selected={selected.has(hit.item.id)}
-                      multiple={multiple}
-                    />
-                    <span className="altertable-choice-picker-option-content">
-                      <span>
-                        <SearchMatch match={hit.matches.label} />
+            <SearchInput
+              focusRing={false}
+              size="compact"
+              loading={loading}
+              ref={searchRef}
+              aria-label={`Search ${label.toLocaleLowerCase()} values`}
+              aria-describedby={statusId}
+              placeholder={props.placeholder ?? 'Search values'}
+              value={search}
+              onChange={event => setSearch(event.currentTarget.value)}
+              onKeyDown={event => {
+                if (event.key !== 'ArrowDown' || !matches.length) return;
+                event.preventDefault();
+                listRef.current?.focus();
+              }}
+            />
+            <output
+              id={statusId}
+              className="altertable-choice-picker-status"
+              aria-live={error ? 'off' : 'polite'}
+            >
+              {error ? `${matches.length} available values` : feedback}
+              {atLimit
+                ? `. Maximum of ${props.maxSelected} selections reached.`
+                : ''}
+            </output>
+            <GradientScroll className="altertable-choice-picker-options">
+              {matches.length > 0 ? (
+                <ListBox
+                  aria-busy={loading || undefined}
+                  ref={listRef}
+                  items={matches}
+                  aria-label={`${label} values`}
+                  aria-describedby={statusId}
+                  selectionMode={multiple ? 'multiple' : 'single'}
+                  selectionBehavior="toggle"
+                  escapeKeyBehavior="none"
+                  disallowEmptySelection={!multiple}
+                  selectedKeys={selected}
+                  onSelectionChange={select}
+                >
+                  {hit => (
+                    <ListBoxItem
+                      data-atbl-internal-surface="option"
+                      data-atbl-focus="inset"
+                      data-atbl-control="action"
+                      id={hit.item.id}
+                      data-missing={
+                        hit.item.id === missingOption?.id || undefined
+                      }
+                      textValue={hit.item.label}
+                      isDisabled={atLimit && !selected.has(hit.item.id)}
+                    >
+                      <SelectionMark
+                        selected={selected.has(hit.item.id)}
+                        multiple={multiple}
+                      />
+                      <span className="altertable-choice-picker-option-content">
+                        <span>
+                          <SearchMatch match={hit.matches.label} />
+                        </span>
+                        {hit.item.description && (
+                          <small>
+                            <SearchMatch match={hit.matches.description} />
+                          </small>
+                        )}
                       </span>
-                      {hit.item.description && (
-                        <small>
-                          <SearchMatch match={hit.matches.description} />
-                        </small>
-                      )}
-                    </span>
-                  </ListBoxItem>
-                )}
-              </ListBox>
-            ) : loading && !error ? (
-              <div
-                className="altertable-choice-picker-skeletons"
-                aria-hidden="true"
-              >
-                {[0, 1, 2].map(row => (
-                  <Skeleton key={row} />
-                ))}
-              </div>
-            ) : (
-              <div className="altertable-choice-picker-empty">
-                {error ? 'Values are unavailable' : feedback}
+                    </ListBoxItem>
+                  )}
+                </ListBox>
+              ) : loading && !error ? (
+                <div
+                  className="altertable-choice-picker-skeletons"
+                  aria-hidden="true"
+                >
+                  {[0, 1, 2].map(row => (
+                    <Skeleton key={row} />
+                  ))}
+                </div>
+              ) : (
+                <div className="altertable-choice-picker-empty">
+                  {error ? 'Values are unavailable' : feedback}
+                </div>
+              )}
+            </GradientScroll>
+            {error && (
+              <RequestHint
+                status={{
+                  kind: 'error',
+                  message: 'Couldn’t load values',
+                  onRetry,
+                }}
+                retryLabel="Try again"
+              />
+            )}
+            {canClear && (
+              <div className="altertable-choice-picker-actions">
+                <Button variant="ghost" size="compact" onPress={clear}>
+                  Clear selection
+                </Button>
               </div>
             )}
-          </GradientScroll>
-          {error && (
-            <RequestHint
-              status={{
-                kind: 'error',
-                message: 'Couldn’t load values',
-                onRetry,
-              }}
-              retryLabel="Try again"
-            />
-          )}
-          {canClear && (
-            <div className="altertable-choice-picker-actions">
-              <Button variant="ghost" size="compact" onPress={clear}>
-                Clear selection
-              </Button>
-            </div>
-          )}
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
+          </Dialog>
+        </Popover>
+      </DialogTrigger>
+      {canClear && (
+        <IconButton
+          icon="close"
+          label={`Clear ${label.toLowerCase()}`}
+          variant="ghost"
+          className="altertable-choice-picker-clear"
+          disabled={disabled}
+          onClick={clear}
+        />
+      )}
+    </div>
   );
 }
