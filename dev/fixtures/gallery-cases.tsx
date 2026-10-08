@@ -295,19 +295,23 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
       <Section id="buttons" title="Buttons and selection">
         <Case title="Every button variant and size">
           <VariableBar aria-label="Demo controls">
-            {(['elevated', 'outline', 'ghost'] as const).map(variant =>
-              (['default', 'compact'] as const).map(size => (
-                <Button
-                  key={`${variant}-${size}`}
-                  variant={variant}
-                  size={size}
-                >
-                  {variant} · {size}
-                </Button>
-              ))
+            {(['primary', 'elevated', 'outline', 'ghost'] as const).map(
+              variant =>
+                (['default', 'compact'] as const).map(size => (
+                  <Button
+                    key={`${variant}-${size}`}
+                    variant={variant}
+                    size={size}
+                  >
+                    {variant} · {size}
+                  </Button>
+                ))
             )}
             <IconButton icon="refresh" label="Refresh fixture" />
             <IconButton icon="info" label="Disabled information" disabled />
+            <Button disabled variant="primary">
+              Disabled primary
+            </Button>
             <Button disabled variant="ghost">
               Disabled ghost
             </Button>

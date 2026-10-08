@@ -44,6 +44,7 @@
   min-width: 0;
 }
 .altertable-number-range-field legend {
+  padding: 0;
   margin-bottom: var(--atbl-space-xs);
   font-size: var(--atbl-type-label-size);
 }

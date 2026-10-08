@@ -3,7 +3,7 @@ import { Button as AriaButton } from 'react-aria-components';
 import { classNames } from '@/src/react/ui/classNames';
 
 export type ButtonProps = ComponentPropsWithRef<'button'> & {
-  variant?: 'elevated' | 'outline' | 'ghost';
+  variant?: 'primary' | 'elevated' | 'outline' | 'ghost';
   size?: 'default' | 'compact' | 'icon' | 'icon-compact';
 };
 

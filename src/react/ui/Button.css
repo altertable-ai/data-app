@@ -29,6 +29,21 @@
   min-height: var(--atbl-control-height);
   padding: 0;
 }
+.altertable-button[data-variant='primary'] {
+  border-color: var(--atbl-accent);
+  background: var(--atbl-accent);
+  color: var(--atbl-on-accent);
+  --atbl-control-hover-surface: color-mix(
+    in srgb,
+    var(--atbl-accent) 92%,
+    var(--atbl-text)
+  );
+  --atbl-control-pressed-surface: color-mix(
+    in srgb,
+    var(--atbl-accent) 84%,
+    var(--atbl-text)
+  );
+}
 .altertable-button[data-variant='outline'] {
   box-shadow: none;
 }

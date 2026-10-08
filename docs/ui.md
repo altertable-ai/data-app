@@ -144,3 +144,6 @@ components do not infer query state.
 `<NumberFilterPicker>` composes numeric fields inside a dedicated popover. Edits
 remain local until Apply; Cancel and dismissal discard them. Use `<NumberField>`
 and `<NumberRangeField>` as inline input primitives when composing forms.
+
+Use `<Button variant="primary">` for the main committing action, such as Apply.
+Use outline and ghost buttons for secondary actions.

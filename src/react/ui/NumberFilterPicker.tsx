@@ -163,7 +163,7 @@ function NumberFilterEditor({
         <PressButton onPress={onCancel}>Cancel</PressButton>
         <PressButton
           type="submit"
-          variant="elevated"
+          variant="primary"
           isDisabled={mode === 'range' && !rangeValid}
         >
           Apply

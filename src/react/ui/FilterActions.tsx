@@ -24,7 +24,7 @@ export function FilterActions({
       )}
       {onCancel && <Button onClick={onCancel}>Cancel</Button>}
       {onApply && (
-        <Button variant="elevated" onClick={onApply}>
+        <Button variant="primary" onClick={onApply}>
           Apply filters
         </Button>
       )}
