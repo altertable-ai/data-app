@@ -9,6 +9,7 @@ import skeleton from '@/dev/fixtures/skeleton.html';
 import hooksApp from '@/dev/fixtures/hooks-app.html';
 import inspectionApp from '@/dev/fixtures/inspection-app.html';
 import gallery from '@/dev/fixtures/gallery.html';
+import chartLegends from '@/dev/fixtures/chart-legends.html';
 import styles from '@/dev/fixtures/styles.html';
 import appearance from '@/dev/fixtures/appearance.html';
 import styleStress from '@/dev/fixtures/style-stress.html';
@@ -147,6 +148,7 @@ Bun.serve({
     '/skeleton': skeleton,
     '/inspection-app': inspectionApp,
     '/gallery': gallery,
+    '/chart-legends': chartLegends,
     '/gallery/components': request =>
       Response.redirect(new URL('/gallery?view=widgets', request.url), 302),
     '/styles': styles,

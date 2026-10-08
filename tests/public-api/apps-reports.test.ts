@@ -327,3 +327,29 @@ test('an author can override public control tokens and apply and restore appeara
     .poll(() => action.evaluate(element => getComputedStyle(element).color))
     .toBe(originalColor);
 });
+
+for (const width of [320, 1280]) {
+  test(`app content keeps bottom breathing room with and without its footer at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    for (const embedded of [true, false]) {
+      await page.goto(embedded ? '/bundle-host' : '/static');
+      const app = embedded ? page.frameLocator('iframe') : page;
+      await expect.poll(() => app.getByRole('main').isVisible()).toBe(true);
+      const geometry = await app.getByRole('main').evaluate(main => {
+        const body = main.querySelector('.altertable-app-body')!;
+        return {
+          padding: Number.parseFloat(getComputedStyle(main).paddingBottom),
+          gap:
+            main.getBoundingClientRect().bottom -
+            body.getBoundingClientRect().bottom,
+          footer: !!document.querySelector('.altertable-app-footer'),
+        };
+      });
+      expect(geometry.footer).toBe(!embedded);
+      expect(geometry.padding).toBeGreaterThanOrEqual(64);
+      expect(geometry.gap).toBeGreaterThanOrEqual(geometry.padding - 1);
+    }
+  });
+}

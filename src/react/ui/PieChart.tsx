@@ -1,10 +1,14 @@
+import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useState } from 'react';
 import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
 import { validateChartItems } from '@/src/react/ui/chart-data';
 
 export type PieChartItem = ChartItem;
-export type PieChartProps = ValueChartProps;
+export type PieChartProps = ValueChartProps & {
+  /** Omit the built-in key when composing a separate ChartLegend. */
+  showLegend?: boolean;
+};
 
 /** Nonnegative, mutually exclusive parts; shares use the sum of supplied items.
  * Include Other to represent the whole. Zero values remain in the legend; all-zero
@@ -14,6 +18,7 @@ export function PieChart({
   items,
   unit,
   ariaLabel,
+  showLegend = true,
   formatValue = value => new Intl.NumberFormat().format(value),
 }: PieChartProps) {
   validateChartItems('pie', items);
@@ -93,8 +98,11 @@ export function PieChart({
                         className="altertable-pie-slice"
                         data-active={
                           item.id ===
-                            (plotOpen && previewId ? previewId : legendId) ||
-                          undefined
+                            (plotOpen && previewId
+                              ? previewId
+                              : showLegend
+                                ? legendId
+                                : null) || undefined
                         }
                         onPointerDown={event => {
                           if (plotOpen && previewId !== item.id)
@@ -119,36 +127,42 @@ export function PieChart({
               </span>
             )}
           </div>
-          <div className="altertable-pie-legend">
-            {slices.map(item => (
-              <Tooltip
-                key={item.id}
-                variant="chart"
-                content={detail(item)}
-                onOpenChange={open =>
-                  setLegendId(current =>
-                    open ? item.id : current === item.id ? null : current
-                  )
-                }
-              >
-                <button
-                  data-atbl-focus="ring"
-                  data-atbl-control="action"
-                  type="button"
-                  tabIndex={-1}
-                  aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}`}
-                >
-                  <span
-                    className="altertable-pie-key"
-                    style={{ background: item.color }}
-                  />
-                  <span className="altertable-pie-label">{item.label}</span>
-                  <strong>{formatValue(item.value)}</strong>
-                  <span>{percent(item.share)}</span>
-                </button>
-              </Tooltip>
-            ))}
-          </div>
+          {showLegend && (
+            <ChartLegend
+              layout="vertical"
+              aria-label={`${ariaLabel} legend`}
+              className="altertable-pie-legend"
+            >
+              {slices.map(item => (
+                <ChartLegend.Item key={item.id}>
+                  <Tooltip
+                    variant="chart"
+                    content={detail(item)}
+                    onOpenChange={open =>
+                      setLegendId(current =>
+                        open ? item.id : current === item.id ? null : current
+                      )
+                    }
+                  >
+                    <button
+                      data-atbl-focus="ring"
+                      data-atbl-control="default"
+                      type="button"
+                      tabIndex={-1}
+                      aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}`}
+                    >
+                      <ChartLegend.Marker kind="slice" color={item.color} />
+                      <ChartLegend.Label className="altertable-pie-label">
+                        {item.label}
+                      </ChartLegend.Label>
+                      <strong>{formatValue(item.value)}</strong>
+                      <span>{percent(item.share)}</span>
+                    </button>
+                  </Tooltip>
+                </ChartLegend.Item>
+              ))}
+            </ChartLegend>
+          )}
         </>
       )}
     </section>

@@ -166,3 +166,16 @@ export type { FilterActionsProps } from '@/src/react/ui/FilterActions';
 
 export { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 export type { NumberFilterPickerProps } from '@/src/react/ui/NumberFilterPicker';
+
+export { ComposedChart } from '@/src/react/ui/ComposedChart';
+export type { ComposedChartProps } from '@/src/react/ui/ComposedChart';
+
+export { ChartLegend } from '@/src/react/ui/ChartLegend';
+export type {
+  ChartLegendProps,
+  ChartLegendItemProps,
+  ChartLegendMarkerProps,
+  ChartLegendLabelProps,
+  ChartLegendMarkerKind,
+} from '@/src/react/ui/ChartLegend';
+export type { ComposedChartLegendProps } from '@/src/react/ui/ComposedChartLegend';

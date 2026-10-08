@@ -134,6 +134,23 @@ export const dataAppStyleClasses = {
     component: 'DataAppSkeleton',
     kind: 'root',
   },
+  'altertable-chart-legend': { component: 'ChartLegend', kind: 'root' },
+  'altertable-chart-legend-item': {
+    component: 'ChartLegend.Item',
+    kind: 'root',
+  },
+  'altertable-chart-legend-marker': {
+    component: 'ChartLegend.Marker',
+    kind: 'root',
+  },
+  'altertable-chart-legend-label': {
+    component: 'ChartLegend.Label',
+    kind: 'root',
+  },
+  'altertable-composed-chart': {
+    component: 'ComposedChart',
+    kind: 'root',
+  },
   'altertable-sr-only': {
     component: null,
     kind: 'utility',
@@ -142,7 +159,7 @@ export const dataAppStyleClasses = {
 
 export const dataAppStyleHooks = {
   'data-atbl-focus': ['ring', 'inset', 'group'],
-  'data-atbl-control': ['action', 'help', 'text'],
+  'data-atbl-control': ['default', 'action', 'help', 'text'],
 } as const;
 
 export type DataAppStyleToken = (typeof dataAppStyleTokens)[number];

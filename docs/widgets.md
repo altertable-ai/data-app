@@ -28,22 +28,25 @@ Choose the component by the reader's question. Compose dataset visuals inside
 charts come from `/react/ui`; `<Ranking>`, `<Breakdown>`, and `<Comparison>`
 are also available from `/react`.
 
-| Question or need                                          | Component        | Guidance                                                                                                           |
-| --------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------ |
-| How do categories compare?                                | `<BarChart>`     | Compare nonnegative category values; order by value for rank or by a meaningful category order.                    |
-| Which items lead?                                         | `<Ranking>`      | Use a compact ordered list with values and optional detail. Tracks scale to the largest visible item, not a total. |
-| How does a measure change over time?                      | `<LineChart>`    | Use ordered, equally spaced samples to emphasize the trend.                                                        |
-| How large is the measure over time?                       | `<AreaChart>`    | Use the same samples as a line chart when filled magnitude relative to zero helps answer the question.             |
-| What makes up the whole?                                  | `<PieChart>`     | Use a few mutually exclusive parts of one total; include the remainder as Other.                                   |
-| What share of an observed total does each part represent? | `<Breakdown>`    | Use a compact display of values and shares with an explicit total, including when only some parts are shown.       |
-| How are two numeric measures related?                     | `<ScatterChart>` | Use independent X/Y observations to explore relationships, clusters, and outliers.                                 |
-| How did one metric change between periods?                | `<Comparison>`   | Use the metric reading and its displayed comparison period.                                                        |
-| What are the exact values or row details?                 | `<TableWidget>`  | Use a bound table for lookup, search, and precise comparisons.                                                     |
+| Question or need                                          | Component         | Guidance                                                                                                           |
+| --------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------ |
+| How do categories compare?                                | `<BarChart>`      | Compare nonnegative category values; order by value for rank or by a meaningful category order.                    |
+| Which items lead?                                         | `<Ranking>`       | Use a compact ordered list with values and optional detail. Tracks scale to the largest visible item, not a total. |
+| How does a measure change over time?                      | `<LineChart>`     | Use ordered, equally spaced samples to emphasize the trend.                                                        |
+| How large is the measure over time?                       | `<AreaChart>`     | Use the same samples as a line chart when filled magnitude relative to zero helps answer the question.             |
+| What makes up the whole?                                  | `<PieChart>`      | Use a few mutually exclusive parts of one total; include the remainder as Other.                                   |
+| What share of an observed total does each part represent? | `<Breakdown>`     | Use a compact display of values and shares with an explicit total, including when only some parts are shown.       |
+| How do several measures relate on one plot?               | `<ComposedChart>` | Compose bars, lines, areas, or scatter series; label units clearly and use separate axes for different units.      |
+| How are two numeric measures related?                     | `<ScatterChart>`  | Use independent X/Y observations to explore relationships, clusters, and outliers.                                 |
+| How did one metric change between periods?                | `<Comparison>`    | Use the metric reading and its displayed comparison period.                                                        |
+| What are the exact values or row details?                 | `<TableWidget>`   | Use a bound table for lookup, search, and precise comparisons.                                                     |
 
 Prefer bars or a ranking when readers need to compare similarly sized categories;
 use a pie for a simple composition question. Prefer a line when the trend is
 enough; use area when the fill adds meaning. Keep exact values available in a
-table when they matter. Follow the [chart input constraints](ui.md#charts).
+table when they matter. Follow the [chart input constraints](ui.md#charts). For multiple or mixed series,
+use the [composed chart primitives](ui.md#composed-charts) within the same bound
+visualization workflow.
 
 Use widget `views` when a chart and another representation answer the same
 question from the same dataset.

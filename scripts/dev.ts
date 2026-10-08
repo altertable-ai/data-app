@@ -1,40 +1,10 @@
 import { watch } from 'node:fs';
 import { resolve } from 'node:path';
 import { GenericContainer, Wait } from 'testcontainers';
+import { seedStatements } from '@/dev/seed';
 
 const root = resolve(import.meta.dir, '..');
 const mockApiPort = 15000;
-
-/** Demo tables queried by `dev/playground.tsx`. Orders land in its 30-day window;
- * Linus never orders, so FI stays a measured zero. */
-const seedStatements = [
-  'CREATE SCHEMA demo',
-  'CREATE TABLE demo.customers (id INTEGER, name VARCHAR, country VARCHAR, created_at TIMESTAMP)',
-  'CREATE TABLE demo.orders (id INTEGER, customer_id INTEGER, amount DECIMAL(10, 2), status VARCHAR, ordered_at TIMESTAMP)',
-  'CREATE TABLE demo.events (id INTEGER, customer_id INTEGER, name VARCHAR, properties JSON, occurred_at TIMESTAMP)',
-  `INSERT INTO demo.customers VALUES
-    (1, 'Ada', 'FR', TIMESTAMP '2026-09-01 09:00:00'),
-    (2, 'Grace', 'US', TIMESTAMP '2026-09-03 14:30:00'),
-    (3, 'Linus', 'FI', TIMESTAMP '2026-09-12 11:15:00'),
-    (4, 'Margaret', 'US', TIMESTAMP '2026-09-14 08:40:00'),
-    (5, 'Alan', 'GB', TIMESTAMP '2026-09-18 17:05:00'),
-    (6, 'Hedy', 'AT', TIMESTAMP '2026-09-21 10:20:00')`,
-  `INSERT INTO demo.orders
-    SELECT i,
-      [1, 2, 4, 5, 6, 2, 4, 2, 1, 5, 4][(i * 7 + i // 13) % 11 + 1],
-      CAST(15 + (i * i * 7 + i * 13) % 185 + (i % 100) / 100 AS DECIMAL(10, 2)),
-      CASE WHEN i % 11 = 0 THEN 'refunded' WHEN i % 7 = 0 THEN 'pending' ELSE 'paid' END,
-      CAST(current_date AS TIMESTAMP)
-        - to_days(CAST(least(29, floor(30 * pow((i * 0.618034) % 1, 1.2))) AS INTEGER))
-        + to_minutes(CAST((i * 53) % 1440 AS INTEGER))
-    FROM range(1, 241) t(i)`,
-  `INSERT INTO demo.events
-    SELECT id, id, 'signed_up', json_object('country', country), created_at
-    FROM demo.customers
-    UNION ALL
-    SELECT 100 + id, customer_id, 'checkout', json_object('order_id', id, 'amount', amount), ordered_at
-    FROM demo.orders`,
-];
 
 async function seedMockApi(apiUrl: string) {
   for (const statement of seedStatements) {

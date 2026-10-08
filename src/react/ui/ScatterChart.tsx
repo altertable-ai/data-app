@@ -115,7 +115,7 @@ export function ScatterChart({
                 >
                   <button
                     data-atbl-focus="ring"
-                    data-atbl-control="action"
+                    data-atbl-control="default"
                     type="button"
                     tabIndex={-1}
                     className="altertable-scatter-point"

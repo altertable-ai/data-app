@@ -90,7 +90,7 @@ rate limits can cause failures unrelated to a change.
 
 Run `bun run dev` to preview UI examples at `http://127.0.0.1:27418/gallery`
 and a playground at `/playground` (`dev/playground.tsx`, querying the demo
-tables `scripts/dev.ts` seeds). It builds once, then rebuilds `dist` when `src`
+tables from `dev/seed.ts` that `scripts/dev.ts` seeds). It builds once, then rebuilds `dist` when `src`
 changes; open pages reload on package, fixture, and playground edits. Restart it after changing
 `dev/server.ts`; rerun `bun run build` to refresh declarations. Add `?delay=2000` to a host page URL
 to delay its SQL responses and inspect loading states. It needs Docker: SQL runs
