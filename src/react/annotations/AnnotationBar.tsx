@@ -36,11 +36,7 @@ import { TooltipProvider } from '@/src/react/ui/Tooltip';
 import { AnnotationTooltip } from '@/src/react/annotations/AnnotationTooltip';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Kbd } from '@/src/react/ui/Kbd';
-import {
-  ariaKeyShortcuts,
-  shortcuts,
-  useShortcut,
-} from '@/src/react/ui/shortcuts';
+import { shortcuts } from '@/src/react/ui/shortcuts';
 
 export type AnnotationBarHandle = {
   /** Submit through the same guards, pending state, and retry feedback as the Send button. */
@@ -228,7 +224,6 @@ export function AnnotationBar({
     }
   }
   useImperativeHandle(ref, () => ({ send }));
-  useShortcut(shortcuts.sendAnnotations, () => void send(), canSend);
   useEffect(() => {
     if (discardOpen) cancelDiscard.current?.focus();
   }, [discardOpen]);
@@ -409,7 +404,6 @@ export function AnnotationBar({
               aria-busy={pending}
               size="compact"
               aria-label="Send annotations"
-              aria-keyshortcuts={ariaKeyShortcuts(shortcuts.sendAnnotations)}
               disabled={!canSend}
               onClick={() => void send()}
             >

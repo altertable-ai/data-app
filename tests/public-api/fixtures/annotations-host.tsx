@@ -32,6 +32,7 @@ function Host() {
   const [sendFailed, setSendFailed] = useState(
     params.has('annotation-send-error')
   );
+  const [sendAttempts, setSendAttempts] = useState(0);
   const [submitted, setSubmitted] = useState<readonly DataAppAnnotationDraft[]>(
     []
   );
@@ -80,6 +81,7 @@ function Host() {
   return (
     <>
       <output aria-label="Annotation drafts">{JSON.stringify(drafts)}</output>
+      <output aria-label="Send attempts">{sendAttempts}</output>
       <output aria-label="Submitted annotations">
         {JSON.stringify(submitted)}
       </output>
@@ -101,6 +103,7 @@ function Host() {
             onClear={() => setDrafts([])}
             onClose={() => setActive(false)}
             onSend={async snapshot => {
+              setSendAttempts(value => value + 1);
               if (sendFailed) throw new Error('Submission rejected');
               setSubmitted(snapshot);
               setDrafts([]);

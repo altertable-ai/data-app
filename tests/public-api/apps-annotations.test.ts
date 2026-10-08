@@ -143,7 +143,7 @@ test('feedback retains the displayed input while a newer filter is still loading
   expect(draft.target.text).toContain('42');
 });
 
-test('Mod+Enter sends the saved batch from iframe or host focus and preserves drafts for retry', async ({
+test('Mod+Enter sends only from the focused annotation input and preserves drafts for retry', async ({
   page,
 }) => {
   await page.goto(
@@ -173,29 +173,33 @@ test('Mod+Enter sends the saved batch from iframe or host focus and preserves dr
     exact: true,
   });
   await expect.poll(() => send.isEnabled()).toBe(true);
-  expect(await send.getAttribute('aria-keyshortcuts')).toBe(
-    'Meta+Enter Control+Enter'
-  );
   await send.hover();
   await expect
     .poll(() => page.getByRole('tooltip').locator('kbd').textContent())
     .toBe(modifier === 'Meta' ? '⌘↩' : 'Ctrl+Enter');
   await selection.press('ArrowRight');
-  await selection.press('Enter');
+  await selection.press(`${modifier}+Enter`);
+  await send.press(`${modifier}+Enter`);
+  await app
+    .getByRole('button', { name: 'Annotation 1', exact: true })
+    .press('Enter');
+  expect(await comment.getAttribute('aria-keyshortcuts')).toBe(
+    'Enter Meta+Enter Control+Enter'
+  );
   await comment.fill('Unsaved edit');
   await expect.poll(() => send.isDisabled()).toBe(true);
   await comment.press(`${modifier}+Enter`);
   expect(await comment.inputValue()).toBe('Unsaved edit');
-  await comment.press('Escape');
-  await comment.press('Escape');
-  await expect.poll(() => comment.count()).toBe(0);
+  await comment.fill('Compare with last year');
   await expect.poll(() => send.isEnabled()).toBe(true);
-  await selection.press('ArrowRight');
-  await selection.press(`${modifier}+Enter`);
+  await comment.press(`${modifier}+Enter`);
   await expect
     .poll(() => page.getByRole('alert').textContent())
     .toBe('Could not send annotations. Try again.');
-  expect(await comment.count()).toBe(0);
+  expect(await comment.inputValue()).toBe('Compare with last year');
+  expect(
+    await page.getByRole('status', { name: 'Send attempts' }).textContent()
+  ).toBe('1');
   expect(await app.getByRole('dialog').count()).toBe(0);
   const drafts = page.getByRole('status', {
     name: 'Annotation drafts',
@@ -206,10 +210,13 @@ test('Mod+Enter sends the saved batch from iframe or host focus and preserves dr
   await page
     .getByRole('button', { name: 'Allow submission', exact: true })
     .click();
-  await send.press(`${modifier}+Enter`);
+  await comment.press(`${modifier}+Enter`);
   await expect
     .poll(async () => JSON.parse((await drafts.textContent())!))
     .toEqual([]);
+  expect(
+    await page.getByRole('status', { name: 'Send attempts' }).textContent()
+  ).toBe('2');
   expect(
     JSON.parse(
       (await page
