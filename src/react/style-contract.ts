@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 
 /** Public custom-property names for authoring types and validation. CSS owns their defaults. */
 export const dataAppStyleTokens = [
+  '--atbl-control-text-size',
   '--atbl-annotation-accent',
   '--atbl-annotation-accent-hover',
   '--atbl-annotation-on-accent',

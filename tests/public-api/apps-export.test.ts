@@ -181,7 +181,7 @@ describe('export', () => {
       await expect
         .poll(() =>
           app
-            .getByRole('option', { name: 'Export Counts CSV', exact: true })
+            .getByRole('menuitem', { name: 'Export Counts CSV', exact: true })
             .evaluate(
               element => element === element.ownerDocument.activeElement
             )
@@ -189,7 +189,7 @@ describe('export', () => {
         .toBe(true);
       let downloaded = page.waitForEvent('download');
       await app
-        .getByRole('option', { name: 'Export Summary CSV', exact: true })
+        .getByRole('menuitem', { name: 'Export Summary CSV', exact: true })
         .click();
       let download = await downloaded;
       expect(download.suggestedFilename()).toBe('Summary.csv');
@@ -197,7 +197,7 @@ describe('export', () => {
       await button.click();
       downloaded = page.waitForEvent('download');
       await app
-        .getByRole('option', { name: 'Export all ZIP', exact: true })
+        .getByRole('menuitem', { name: 'Export all ZIP', exact: true })
         .click();
       download = await downloaded;
       expect(download.suggestedFilename()).toBe('gallery.zip');
@@ -210,13 +210,13 @@ describe('export', () => {
       await button.click();
       downloaded = page.waitForEvent('download');
       await app
-        .getByRole('option', { name: 'Export all ZIP', exact: true })
+        .getByRole('menuitem', { name: 'Export all ZIP', exact: true })
         .click();
       expect((await downloaded).suggestedFilename()).toBe('gallery.zip');
       await button.click();
 
-      await app.getByRole('listbox').press('Escape');
-      await expect.poll(() => app.getByRole('listbox').count()).toBe(0);
+      await app.getByRole('menu').press('Escape');
+      await expect.poll(() => app.getByRole('menu').count()).toBe(0);
       await expect
         .poll(() =>
           button.evaluate(

@@ -40,6 +40,49 @@ onKeyDown={event => {
 
 Pass `{ allowShift: true }` when the handler also supports Shift gestures.
 
+## Choose a selection control
+
+Use `<DimensionPicker>` for typed field filters and `<Combobox>` for searchable
+values. A single value uses a checkmark and closes after selection; multiple
+values use checkbox indicators and keep the popup open. These pickers expose
+listbox options, including search and loading feedback.
+
+Use `<MenuTrigger>`, `<MenuButton>`, `<MenuPopover>`, `<Menu>`, and `<MenuItem>`
+for commands or short choice menus
+such as sort order or display mode. Actions use `onAction`. Set
+`selectionMode="single"` for mutually exclusive choices (radio menu items), or
+`selectionMode="multiple"` for independent toggles (checkbox menu items). Menus
+support arrow keys, typeahead, Escape, and focus return to their trigger. Keep
+search fields and other form inputs outside menus.
+
+```tsx
+<MenuTrigger>
+  <MenuButton>Sort order</MenuButton>
+  <MenuPopover>
+    <Menu
+      aria-label="Sort order"
+      selectionMode="single"
+      selectedKeys={[sortOrder]}
+      onSelectionChange={keys => {
+        if (keys !== 'all') setSortOrder(String([...keys][0]));
+      }}
+    >
+      <MenuItem id="highest">Highest first</MenuItem>
+      <MenuItem id="lowest">Lowest first</MenuItem>
+    </Menu>
+  </MenuPopover>
+</MenuTrigger>
+```
+
+`<MenuButton>` accepts text or icons; give icon-only buttons an accessible name.
+`<MenuPopover>` owns placement and popup styling.
+
+Use `<MenuSection>` to group choices with their own selection state and
+`<MenuSeparator>` between groups or commands. Menu selection closes the popup
+by default; set `shouldCloseOnSelect={false}` for repeated toggles. Selection
+indicators derive from the menu or section's selection mode; do not add checkbox
+markup to single-choice items.
+
 ## Charts
 
 Choose a chart using the [visualization guide](widgets.md#choose-a-visualization).

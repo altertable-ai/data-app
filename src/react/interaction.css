@@ -9,6 +9,14 @@
 }
 [data-atbl-control='text'] {
   cursor: text;
+  font-size: var(--atbl-control-text-size);
+}
+
+/* Text controls keep a 16px floor on narrow or touch viewports to avoid focus zoom. */
+@media (max-width: 560px), (any-pointer: coarse) {
+  [data-atbl-control='text'] {
+    font-size: max(16px, var(--atbl-control-text-size));
+  }
 }
 [data-atbl-control]:is(
   :disabled,

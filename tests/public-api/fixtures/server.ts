@@ -15,6 +15,7 @@ import layout from '@/tests/public-api/fixtures/layout.html';
 import styles from '@/tests/public-api/fixtures/styles.html';
 import staticApp from '@/tests/public-api/fixtures/static.html';
 import declaredApp from '@/tests/public-api/fixtures/declared-app.html';
+import controls from '@/tests/public-api/fixtures/controls.html';
 
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
 async function bundle(entry: string) {
@@ -68,6 +69,7 @@ const server = Bun.serve({
     '/bridge-frame': bridgeFrame,
     '/inspection-app': inspectionApp,
     '/declared-app': declaredApp,
+    '/controls': controls,
     '/static': staticApp,
     '/layout': layout,
     '/ownership': ownership,

@@ -11,6 +11,7 @@
 @import './ui/SelectionMark.css' layer(atbl.components);
 @import './ui/SearchMatch.css' layer(atbl.components);
 @import './ui/Combobox.css' layer(atbl.components);
+@import './ui/Menu.css' layer(atbl.components);
 @import './ui/Checkbox.css' layer(atbl.components);
 @import './ui/DateRangePicker.css' layer(atbl.components);
 @import './ui/EmptyState.css' layer(atbl.components);

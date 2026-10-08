@@ -55,6 +55,21 @@ export { SearchMatch } from '@/src/react/ui/SearchMatch';
 export type { SearchMatchProps } from '@/src/react/ui/SearchMatch';
 export { Combobox } from '@/src/react/ui/Combobox';
 export type { ComboboxOption, ComboboxProps } from '@/src/react/ui/Combobox';
+export {
+  MenuTrigger,
+  MenuButton,
+  MenuPopover,
+  Menu,
+  MenuItem,
+  MenuSection,
+  MenuSeparator,
+} from '@/src/react/ui/Menu';
+export type {
+  MenuTriggerProps,
+  MenuPopoverProps,
+  MenuProps,
+  MenuItemProps,
+} from '@/src/react/ui/Menu';
 export { GradientScroll } from '@/src/react/ui/GradientScroll';
 export type { GradientScrollProps } from '@/src/react/ui/GradientScroll';
 export {

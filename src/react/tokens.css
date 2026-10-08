@@ -2,6 +2,8 @@
    Input/palette variables referenced here are private. Optional component overrides
    are documented at their var() consumption sites, so local inputs compose. */
 :root {
+  /* Editable text size; compact controls retain this size. Mobile styles enforce 16px. */
+  --atbl-control-text-size: var(--atbl-type-body-size);
   /* Canvas, widget surfaces, and modal backdrop. */
   --atbl-background: var(--atbl-palette-background);
   --atbl-surface: var(--atbl-palette-surface);

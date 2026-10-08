@@ -228,7 +228,8 @@ export function Combobox(props: ComboboxProps) {
                 aria-label={`${label} values`}
                 aria-describedby={statusId}
                 selectionMode={multiple ? 'multiple' : 'single'}
-                selectionBehavior={multiple ? 'toggle' : 'replace'}
+                selectionBehavior="toggle"
+                disallowEmptySelection={!multiple}
                 selectedKeys={selected}
                 onSelectionChange={select}
               >
@@ -244,7 +245,10 @@ export function Combobox(props: ComboboxProps) {
                     textValue={hit.item.label}
                     isDisabled={atLimit && !selected.has(hit.item.id)}
                   >
-                    <SelectionMark selected={selected.has(hit.item.id)} />
+                    <SelectionMark
+                      selected={selected.has(hit.item.id)}
+                      multiple={multiple}
+                    />
                     <span className="altertable-combobox-option-content">
                       <span>
                         <SearchMatch match={hit.matches.label} />

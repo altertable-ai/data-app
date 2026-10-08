@@ -96,3 +96,9 @@ alongside its period. Use `parseFacetOptions()` to validate facet results, and
 `dimensionPredicate()` to build a bounded SQL filter from parsed selections.
 For the operation's input parser, use `parseDimensionSelection(value, region)` from `/contract`.
 A dimension without an explicit selection represents all members.
+
+Choose `selection: 'single'` when one value replaces another. Its picker closes
+after choosing a value and shows a checkmark for the current choice. Use
+`selection: 'multiple'` for independent values; checkbox indicators and an open
+popup allow repeated selections. `All` is an explicit choice for a single-value
+filter and the meaning of an empty selection for a multiple-value filter.

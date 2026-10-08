@@ -5,8 +5,13 @@ import {
   type CsvTable,
 } from '@/src/react/ui/csv-export';
 import { IconButton } from '@/src/react/ui/IconButton';
-import { ListBox, ListBoxItem, Popover, Select } from 'react-aria-components';
-import { PressButton } from '@/src/react/ui/Button';
+import {
+  MenuTrigger,
+  MenuButton,
+  MenuPopover,
+  Menu,
+  MenuItem,
+} from '@/src/react/ui/Menu';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Toast } from '@/src/react/ui/Toast';
 import { Tooltip } from '@/src/react/ui/Tooltip';
@@ -67,36 +72,32 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
           onClick={() => void download()}
         />
       ) : (
-        <Select
-          aria-label="Export data"
-          isOpen={open}
-          onOpenChange={setOpen}
-          isDisabled={status === 'pending'}
-          selectedKey={null}
-          onSelectionChange={key => {
-            if (key !== null)
-              void download(
-                key === 'all' ? undefined : csv.tables[Number(key)]
-              );
-          }}
-        >
+        <MenuTrigger isOpen={open} onOpenChange={setOpen}>
           <Tooltip content="Export data…">
-            <PressButton
+            <MenuButton
               variant="elevated"
               size="icon"
               aria-label="Export"
+              isDisabled={status === 'pending'}
               aria-busy={status === 'pending'}
             >
               <AppIcon name="export" />
-            </PressButton>
+            </MenuButton>
           </Tooltip>
-          <Popover placement="bottom end" className="altertable-export-popover">
-            <ListBox aria-label="Export data">
+          <MenuPopover
+            placement="bottom end"
+            className="altertable-export-popover"
+          >
+            <Menu
+              aria-label="Export data"
+              onAction={key =>
+                void download(
+                  key === 'all' ? undefined : csv.tables[Number(key)]
+                )
+              }
+            >
               {csv.tables.map((table, index) => (
-                <ListBoxItem
-                  data-atbl-internal-surface="option"
-                  data-atbl-focus="inset"
-                  data-atbl-control="action"
+                <MenuItem
                   key={index}
                   id={index}
                   textValue={`Export ${table.name} CSV`}
@@ -104,12 +105,9 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
                 >
                   <span>Export {table.name}</span>
                   <span className="altertable-export-format">CSV</span>
-                </ListBoxItem>
+                </MenuItem>
               ))}
-              <ListBoxItem
-                data-atbl-internal-surface="option"
-                data-atbl-focus="inset"
-                data-atbl-control="action"
+              <MenuItem
                 id="all"
                 textValue="Export all ZIP"
                 aria-label="Export all ZIP"
@@ -117,10 +115,10 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
               >
                 <span>Export all</span>
                 <span className="altertable-export-format">ZIP</span>
-              </ListBoxItem>
-            </ListBox>
-          </Popover>
-        </Select>
+              </MenuItem>
+            </Menu>
+          </MenuPopover>
+        </MenuTrigger>
       )}
     </>
   );

@@ -45,7 +45,7 @@
 .altertable-combobox-dialog {
   outline: none;
 }
-/* Menu search uses the panel edge and a divider instead of a nested field surface. */
+/* Picker search uses a stable divider instead of a nested field surface. */
 .altertable-combobox-dialog .altertable-search-input-wrap {
   width: calc(100% + 16px);
   margin: -8px -8px 8px;
@@ -57,7 +57,6 @@
 }
 .altertable-combobox-dialog .altertable-search-input-wrap:focus-within {
   outline: none;
-  border-bottom-color: var(--atbl-border);
 }
 .altertable-combobox-dialog .altertable-search-input-wrap > svg {
   opacity: 0.65;
