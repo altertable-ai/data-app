@@ -1,9 +1,9 @@
-.altertable-combobox-trigger {
+.altertable-choice-picker-trigger {
   max-width: min(100%, 340px, 75vw);
   box-sizing: border-box;
   text-align: left;
 }
-.altertable-combobox-label {
+.altertable-choice-picker-label {
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -13,7 +13,7 @@
   font-size: var(--atbl-type-meta-size);
   font-weight: var(--atbl-type-meta-weight);
 }
-.altertable-combobox-value {
+.altertable-choice-picker-value {
   flex: none;
   min-width: 0;
   max-width: 55%;
@@ -23,12 +23,12 @@
   font-size: var(--atbl-type-label-size);
   font-weight: var(--atbl-type-label-weight);
 }
-.altertable-combobox-trigger > svg {
+.altertable-choice-picker-trigger > svg {
   flex: none;
   margin-left: auto;
   color: var(--atbl-muted);
 }
-.altertable-combobox-popover {
+.altertable-choice-picker-popover {
   z-index: 150;
   min-width: max(var(--trigger-width), 240px);
   max-width: min(340px, calc(100vw - 24px));
@@ -42,11 +42,11 @@
   font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
     var(--atbl-font);
 }
-.altertable-combobox-dialog {
+.altertable-choice-picker-dialog {
   outline: none;
 }
 /* Picker search uses a stable divider instead of a nested field surface. */
-.altertable-combobox-dialog .altertable-search-input-wrap {
+.altertable-choice-picker-dialog .altertable-search-input-wrap {
   width: calc(100% + 16px);
   margin: -8px -8px 8px;
   padding: 6px 17px;
@@ -55,16 +55,18 @@
   border-bottom: 1px solid var(--atbl-border);
   border-radius: 0;
 }
-.altertable-combobox-dialog .altertable-search-input-wrap:focus-within {
+.altertable-choice-picker-dialog .altertable-search-input-wrap:focus-within {
   outline: none;
 }
-.altertable-combobox-dialog .altertable-search-input-wrap > svg {
+.altertable-choice-picker-dialog .altertable-search-input-wrap > svg {
   opacity: 0.65;
 }
-.altertable-combobox-dialog .altertable-search-input-wrap:focus-within > svg {
+.altertable-choice-picker-dialog
+  .altertable-search-input-wrap:focus-within
+  > svg {
   opacity: 1;
 }
-.altertable-combobox-status {
+.altertable-choice-picker-status {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -72,14 +74,14 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.altertable-combobox-options {
+.altertable-choice-picker-options {
   max-height: min(320px, 60dvh);
   margin-top: 4px;
 }
-.altertable-combobox-popover .react-aria-ListBox {
+.altertable-choice-picker-popover .react-aria-ListBox {
   outline: none;
 }
-.altertable-combobox-popover .react-aria-ListBoxItem {
+.altertable-choice-picker-popover .react-aria-ListBoxItem {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -87,18 +89,18 @@
   border-radius: var(--atbl-radius-control);
   outline: none;
 }
-.altertable-combobox-popover .react-aria-ListBoxItem small {
+.altertable-choice-picker-popover .react-aria-ListBoxItem small {
   display: block;
   color: var(--atbl-muted);
   font-size: var(--atbl-type-meta-size);
   font-weight: 400;
 }
-.altertable-combobox-popover
+.altertable-choice-picker-popover
   .react-aria-ListBoxItem[data-missing]:not(:first-child) {
   position: relative;
   margin-top: 9px;
 }
-.altertable-combobox-popover
+.altertable-choice-picker-popover
   .react-aria-ListBoxItem[data-missing]:not(:first-child)::before {
   content: '';
   position: absolute;
@@ -108,14 +110,14 @@
   border-top: 1px solid var(--atbl-border);
   pointer-events: none;
 }
-.altertable-combobox-option-content {
+.altertable-choice-picker-option-content {
   min-width: 0;
 }
-.altertable-combobox-empty {
+.altertable-choice-picker-empty {
   padding: 12px 10px;
   color: var(--atbl-muted);
 }
-.altertable-combobox-actions {
+.altertable-choice-picker-actions {
   margin-top: 4px;
   padding-top: 4px;
   border-top: 1px solid var(--atbl-border);
@@ -123,19 +125,20 @@
   justify-content: flex-start;
 }
 
-.altertable-combobox-dialog > .altertable-request-hint {
+.altertable-choice-picker-dialog > .altertable-request-hint {
   margin: 4px 10px 0;
 }
-.altertable-combobox-skeletons {
+.altertable-choice-picker-skeletons {
   display: grid;
   gap: 10px;
   padding: 10px;
 }
-.altertable-combobox-skeletons > span {
+.altertable-choice-picker-skeletons > span {
   height: 24px;
 }
 
-.altertable-combobox-dialog > .altertable-request-hint[data-state='error'] {
+.altertable-choice-picker-dialog
+  > .altertable-request-hint[data-state='error'] {
   display: flex;
   flex-direction: column;
   align-items: center;

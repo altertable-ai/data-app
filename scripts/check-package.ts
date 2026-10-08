@@ -325,7 +325,7 @@ export { DataAppSkeleton };
       throw new Error(`Packed shell build omitted shared ${component} styles.`);
   }
   if (
-    /\.altertable-(button|combobox|data-table|date-range-picker)\b|data-altertable-styles/.test(
+    /\.altertable-(button|choice-picker|data-table|date-range-picker)\b|data-altertable-styles/.test(
       shellSource
     )
   )

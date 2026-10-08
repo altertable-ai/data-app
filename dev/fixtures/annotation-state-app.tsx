@@ -12,7 +12,7 @@ import {
   createDataContext,
   injectDataAppStyles,
   mountDataApp,
-  textVariable,
+  searchVariable,
 } from '@altertable/data-app/react';
 
 type PeriodInput = { period: string };
@@ -59,7 +59,7 @@ const view = defineDataView({
   dataContext: context,
   operation: 'counts',
   variables: {
-    period: textVariable({
+    period: searchVariable({
       key: 'period',
       label: 'Period',
       defaultValue: 'last-30',

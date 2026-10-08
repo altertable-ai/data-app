@@ -87,7 +87,7 @@ const orderView = defineDataView({
       key: 'country',
       label: 'Country',
       valueType: 'string',
-      selection: 'single',
+      selectionMode: 'single',
       options: [
         { value: 'AT', label: 'Austria' },
         { value: 'FI', label: 'Finland' },

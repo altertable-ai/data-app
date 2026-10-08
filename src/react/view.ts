@@ -1,12 +1,12 @@
 import type { DataContext } from '@/src/react/ui/data-context';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 import type {
+  AppVariable,
   AppVariableValues,
   DateRangeVariable,
   VariableCollection,
 } from '@/src/core/variables';
 import type { DateRangeRequest } from '@/src/core/contract';
-import type { DimensionVariable } from '@/src/core/dimension';
 import { invariant } from '@/src/core/invariant';
 
 export type ResolvedVariables<Variables extends VariableCollection> = {
@@ -111,13 +111,15 @@ export function describeViewInput<Input>(definition: {
       dateBinding.input(input)
     );
     const filters = Object.entries(definition.variables)
-      .filter(([, variable]) => variable.kind === 'dimension')
+      .filter(([, variable]) =>
+        ['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind)
+      )
       .map(([key, filter]) => {
-        const dimension = filter as DimensionVariable<any>;
+        const variable = filter as AppVariable<any>;
         const selected = readViewBinding(definition, key, input);
 
-        return dimension.valid(selected as never)
-          ? `${dimension.label}: ${dimension.describe(selected as never)}`
+        return variable.valid(selected as never)
+          ? `${variable.label}: ${variable.describe?.(selected as never)}`
           : null;
       })
       .filter(Boolean);
@@ -159,13 +161,14 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
     );
   }
   for (const [key, variable] of Object.entries(definition.variables)) {
-    if (variable.kind !== 'dimension') continue;
-    const filter = variable as DimensionVariable<any>;
+    if (!['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind))
+      continue;
+    const filter = variable as AppVariable<any>;
     const selected = values[key] as never;
     const mapped = readViewBinding(definition, key, input);
     invariant(
       filter.valid(mapped as never) && filter.same(selected, mapped as never),
-      `The operation input must preserve the ${key} dimension selection.`
+      `The operation input must preserve the ${key} filter selection.`
     );
   }
 

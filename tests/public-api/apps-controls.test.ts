@@ -65,9 +65,9 @@ test('menus distinguish exclusive choices, toggles, and commands with keyboard f
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect.poll(() => menu.count()).toBe(0);
-  expect(
-    await trigger.evaluate(element => element === document.activeElement)
-  ).toBe(true);
+  await expect
+    .poll(() => trigger.evaluate(element => element === document.activeElement))
+    .toBe(true);
   await trigger.click();
   expect(
     await menu
@@ -86,9 +86,9 @@ test('menus distinguish exclusive choices, toggles, and commands with keyboard f
   await trigger.click();
   await page.keyboard.press('Escape');
   await expect.poll(() => menu.count()).toBe(0);
-  expect(
-    await trigger.evaluate(element => element === document.activeElement)
-  ).toBe(true);
+  await expect
+    .poll(() => trigger.evaluate(element => element === document.activeElement))
+    .toBe(true);
   await page
     .getByRole('button', { name: 'Visible columns', exact: true })
     .click();

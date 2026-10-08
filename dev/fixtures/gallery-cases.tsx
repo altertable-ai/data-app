@@ -1,3 +1,4 @@
+import { FilterControlsPreview } from '@/dev/fixtures/filter-controls';
 import {
   gallerySections,
   type GalleryCategory,
@@ -47,7 +48,7 @@ import {
   AboutData,
   AppIcon,
   Checkbox,
-  Combobox,
+  ChoicePicker,
   DataTable,
   DataTableEmptyRow,
   DataTableShare,
@@ -83,7 +84,7 @@ const dimension = dimensionFilter({
   key: 'fixture_dimension',
   label: 'Typed interface',
   valueType: 'string',
-  selection: 'multiple',
+  selectionMode: 'multiple',
   allowMissing: true,
   options: [
     { value: 'null', label: 'Literal null', count: 0 },
@@ -369,9 +370,13 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           </Stack>
         </Case>
       </Section>
-      <Section id="picker-edges" title="Picker edge cases">
+      <Section id="picker-edges" title="Filter controls">
+        <Case title="Composed filter controls">
+          <FilterControlsPreview />
+        </Case>
         <Case title="Single select and reset">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Resettable category"
             options={options}
             value={single}
@@ -380,7 +385,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="At selection capacity">
-          <Combobox
+          <ChoicePicker
+            selectionMode="multiple"
             label="At capacity"
             options={options}
             values={multi}
@@ -390,7 +396,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Retained unavailable selection">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Unavailable category"
             options={[]}
             value="Previously selected"
@@ -399,7 +406,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Failure without cached options">
-          <Combobox
+          <ChoicePicker
+            selectionMode="multiple"
             label="No cached categories"
             options={uncached === 'ready' ? options : []}
             values={[]}
@@ -412,7 +420,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="One option">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="One category"
             options={[options[0]!]}
             value="http"
@@ -420,7 +429,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Long options and descriptions">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Verbose category"
             options={[
               {
@@ -436,7 +446,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Hundred options and scroll edges">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Many categories"
             options={Array.from({ length: 100 }, (_, id) => ({
               id: String(id),
@@ -460,7 +471,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             >
               Start picker cycle
             </Button>
-            <Combobox
+            <ChoicePicker
+              selectionMode="single"
               label="Cycling categories"
               options={options}
               value="http"
@@ -1102,7 +1114,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             style={{ maxWidth: 320 }}
             data-testid="narrow-controls"
           >
-            <Combobox
+            <ChoicePicker
+              selectionMode="single"
               label="A deliberately long category label for narrow layouts"
               options={options}
               value="postgres"

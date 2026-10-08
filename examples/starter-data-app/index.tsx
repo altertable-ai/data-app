@@ -19,7 +19,7 @@ import {
   injectDataAppStyles,
   mountDataApp,
   MetricWidget,
-  textVariable,
+  searchVariable,
 } from '@altertable/data-app/react';
 
 const queryNames = defineQueryNames({
@@ -103,7 +103,11 @@ const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
   variables: {
-    groupName: textVariable({ key: 'group', label: 'Group', defaultValue: '' }),
+    groupName: searchVariable({
+      key: 'group',
+      label: 'Group',
+      defaultValue: '',
+    }),
   },
   describeInput: ({ groupName }) =>
     groupName ? `group ${groupName}` : 'all groups',

@@ -61,7 +61,7 @@ function makeApp(id: string) {
     key: 'category',
     label: 'Category',
     valueType: 'string',
-    selection: 'single',
+    selectionMode: 'single',
     facet: { operation: 'categories', input: () => ({}) },
   });
   const view = hooks.defineDataView({

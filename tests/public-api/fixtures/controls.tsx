@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { mountDataApp, injectDataAppStyles } from '@altertable/data-app/react';
 import {
-  Combobox,
+  ChoicePicker,
+  Select,
+  RadioGroup,
+  Radio,
+  SegmentedControl,
+  CheckboxGroup,
+  Checkbox,
+  NumberField,
+  NumberRangeField,
   MenuTrigger,
   MenuButton,
   MenuPopover,
@@ -31,16 +39,24 @@ function App() {
   const [countries, setCountries] = useState<string[]>(['fr']);
   const [sort, setSort] = useState('highest');
   const [actions, setActions] = useState(0);
+  const [currency, setCurrency] = useState('eur');
+  const [metric, setMetric] = useState('orders');
+  const [grouping, setGrouping] = useState('daily');
+  const [states, setStates] = useState<string[]>(['paid']);
+  const [threshold, setThreshold] = useState<number | null>(0);
+  const [range, setRange] = useState<{ min?: number; max?: number }>({});
   return (
     <main style={inputStyle}>
-      <Combobox
+      <ChoicePicker
+        selectionMode="single"
         label="Country"
         options={options}
         value={country}
         onChange={setCountry}
         resetValue="all"
       />
-      <Combobox
+      <ChoicePicker
+        selectionMode="multiple"
         label="Countries"
         options={options.slice(1)}
         values={countries}
@@ -87,6 +103,54 @@ function App() {
           </Menu>
         </MenuPopover>
       </MenuTrigger>
+      <section aria-label="Filter primitives">
+        <Select
+          label="Currency"
+          value={currency}
+          onChange={setCurrency}
+          options={[
+            { id: 'eur', label: 'Euro' },
+            { id: 'usd', label: 'US dollar' },
+          ]}
+        />
+        <RadioGroup label="Metric" value={metric} onChange={setMetric}>
+          <Radio value="orders">Orders</Radio>
+          <Radio value="revenue">Revenue</Radio>
+        </RadioGroup>
+        <SegmentedControl
+          label="Grouping"
+          value={grouping}
+          onChange={setGrouping}
+          options={[
+            { id: 'daily', label: 'Daily' },
+            { id: 'monthly', label: 'Monthly' },
+          ]}
+        />
+        <CheckboxGroup label="States" values={states} onChange={setStates}>
+          <Checkbox value="paid" label="Paid" />
+          <Checkbox value="pending" label="Pending" />
+        </CheckboxGroup>
+        <NumberField
+          label="Threshold"
+          value={threshold}
+          onChange={setThreshold}
+        />
+        <NumberRangeField
+          label="Order amount"
+          value={range}
+          onChange={setRange}
+        />
+        <output aria-label="Primitive values">
+          {JSON.stringify({
+            currency,
+            metric,
+            grouping,
+            states,
+            threshold,
+            range,
+          })}
+        </output>
+      </section>
       <output aria-label="Refresh count">{actions}</output>
     </main>
   );

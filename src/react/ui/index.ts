@@ -53,8 +53,11 @@ export type {
 } from '@/src/react/ui/searchItems';
 export { SearchMatch } from '@/src/react/ui/SearchMatch';
 export type { SearchMatchProps } from '@/src/react/ui/SearchMatch';
-export { Combobox } from '@/src/react/ui/Combobox';
-export type { ComboboxOption, ComboboxProps } from '@/src/react/ui/Combobox';
+export { ChoicePicker } from '@/src/react/ui/ChoicePicker';
+export type {
+  ChoiceOption,
+  ChoicePickerProps,
+} from '@/src/react/ui/ChoicePicker';
 export {
   MenuTrigger,
   MenuButton,
@@ -137,3 +140,34 @@ export type {
   DataAppStyleToken,
   DataAppStyleHooks,
 } from '@/src/react/style-contract';
+
+export { Select } from '@/src/react/ui/Select';
+export type { SelectProps } from '@/src/react/ui/Select';
+export { RadioGroup, Radio, SegmentedControl } from '@/src/react/ui/RadioGroup';
+export type {
+  RadioGroupProps,
+  RadioProps,
+  SegmentedControlProps,
+} from '@/src/react/ui/RadioGroup';
+export { CheckboxGroup } from '@/src/react/ui/CheckboxGroup';
+export type { CheckboxGroupProps } from '@/src/react/ui/CheckboxGroup';
+export { NumberField, NumberRangeField } from '@/src/react/ui/NumberField';
+export type {
+  NumberFieldProps,
+  NumberRangeFieldProps,
+  NumberRange,
+} from '@/src/react/ui/NumberField';
+export { FilterBar } from '@/src/react/ui/FilterBar';
+export type { FilterBarProps } from '@/src/react/ui/FilterBar';
+export { VariableBar } from '@/src/react/ui/VariableBar';
+export type { VariableBarProps } from '@/src/react/ui/VariableBar';
+export {
+  ActiveFilters,
+  FilterChip,
+  FilterActions,
+} from '@/src/react/ui/ActiveFilters';
+export type {
+  ActiveFilter,
+  FilterChipProps,
+  FilterActionsProps,
+} from '@/src/react/ui/ActiveFilters';

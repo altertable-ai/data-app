@@ -1,7 +1,21 @@
 import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
+import { Fragment } from 'react';
+import { Select } from '@/src/react/ui/Select';
+import {
+  ActiveFilters,
+  FilterActions,
+  type ActiveFilter,
+} from '@/src/react/ui/ActiveFilters';
+import { NumberFilterControl } from '@/src/react/ui/NumberFilterControl';
+import type {
+  NumberFilter,
+  NumberSelection,
+  BooleanSelection,
+} from '@/src/core/filters';
+import type { AppVariable } from '@/src/core/variables';
 import { SearchField } from '@/src/react/ui/SearchField';
-import { Combobox } from '@/src/react/ui/Combobox';
+import { ChoicePicker } from '@/src/react/ui/ChoicePicker';
 import { DateRangePicker } from '@/src/react/ui/DateRangePicker';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
 import {
@@ -106,26 +120,117 @@ export function useViewVariables<Variables extends VariableCollection>(
           }
         />
       );
+    } else if (definition.kind === 'numberFilter') {
+      controls.push(
+        <NumberFilterControl
+          key={name}
+          filter={definition as NumberFilter}
+          value={value as NumberSelection}
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
+    } else if (definition.kind === 'booleanFilter') {
+      const selected = value as BooleanSelection;
+      controls.push(
+        <Select
+          key={name}
+          label={definition.label}
+          value={selected.kind === 'all' ? 'all' : String(selected.value)}
+          options={[
+            { id: 'all', label: 'Any' },
+            { id: 'true', label: 'Yes' },
+            { id: 'false', label: 'No' },
+          ]}
+          onChange={next =>
+            variables.set(
+              name,
+              (next === 'all'
+                ? { kind: 'all' }
+                : {
+                    kind: 'is',
+                    value: next === 'true',
+                  }) as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
+    } else if (definition.kind === 'multiChoice') {
+      controls.push(
+        <ChoicePicker
+          key={name}
+          selectionMode="multiple"
+          label={definition.label ?? name}
+          options={definition.options}
+          values={value as readonly string[]}
+          maxSelected={definition.maxSelected}
+          emptySelectionLabel="None"
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
     } else {
       const binding = {
         label: definition.label ?? name,
         value: value as string,
-        onChange(next: string) {
-          return variables.set(
+        onChange: (next: string) =>
+          variables.set(
             name,
             next as AppVariableValues<Variables>[typeof name]
-          );
-        },
+          ),
         resetValue: definition.defaultValue,
       };
-      if (definition.kind === 'select' && definition.options)
+      if (definition.kind === 'choice')
         controls.push(
-          <Combobox key={name} {...binding} options={[...definition.options]} />
+          <Select
+            key={name}
+            label={binding.label}
+            value={binding.value}
+            onChange={binding.onChange}
+            options={definition.options}
+          />
         );
-      else if (definition.kind === 'text')
+      else if (definition.kind === 'search')
         controls.push(<SearchField key={name} {...binding} />);
     }
   }
+  const active: ActiveFilter[] = [];
+  for (const [name, definition] of Object.entries(definitions)) {
+    const variable = definition as AppVariable<any>;
+    const value = variables.values[name];
+    if (
+      variable.clearValue !== undefined &&
+      !variable.same(value, variable.clearValue)
+    )
+      active.push({
+        id: name,
+        label: `${variable.label ?? name}: ${variable.describe?.(value) ?? String(value)}`,
+        onRemove: () =>
+          variables.update(
+            { [name]: variable.clearValue } as Partial<
+              AppVariableValues<Variables>
+            >,
+            'push'
+          ),
+      });
+  }
+  if (active.length)
+    controls.push(
+      <Fragment key="filter-actions">
+        <ActiveFilters filters={active} />
+        <FilterActions
+          onClear={active.length ? variables.clearAll : undefined}
+        />
+      </Fragment>
+    );
 
   return {
     ...variables,
