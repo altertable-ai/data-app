@@ -53,8 +53,10 @@
 @import './ui/DataAppSkeleton.css' layer(atbl.components);
 @import './ui/ExportControl.css' layer(atbl.components);
 @import './ui/TrendChart.css' layer(atbl.components);
+@import './ui/ChartLegend.css' layer(atbl.components);
 @import './ui/PieChart.css' layer(atbl.components);
 @import './ui/ScatterChart.css' layer(atbl.components);
+@import './ui/ComposedChart.css' layer(atbl.components);
 @import './annotations/colors.css' layer(atbl.components);
 @import './annotations/AnnotationBar.css' layer(atbl.components);
 @import './annotations/AnnotationControls.css' layer(atbl.components);

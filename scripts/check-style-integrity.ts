@@ -6,7 +6,12 @@ import {
 } from '@/src/react/style-contract';
 const files = await Array.fromAsync(new Glob('src/react/**/*.css').scan('.'));
 const sources = await Promise.all(files.map(path => Bun.file(path).text()));
-const styles = sources.join('\n');
+const tokenConsumers = await Promise.all(
+  (await Array.fromAsync(new Glob('src/react/**/*.{ts,tsx}').scan('.'))).map(
+    path => Bun.file(path).text()
+  )
+);
+const styles = [...sources, ...tokenConsumers].join('\n');
 const definitions = new Set(
   sources.flatMap(source =>
     [...source.matchAll(/(--atbl-[\w-]+)\s*:/g)].map(match => match[1])
@@ -29,7 +34,7 @@ for (const [index, source] of sources.entries()) {
 for (const [name, hook] of Object.entries(dataAppStyleClasses)) {
   const source = await Bun.file(
     hook.kind === 'root'
-      ? `src/react/ui/${hook.component}.tsx`
+      ? `src/react/ui/${hook.component.split('.')[0]}.tsx`
       : 'src/react/base.css'
   ).text();
   assert(

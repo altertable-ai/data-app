@@ -2,10 +2,10 @@ import { type ReactNode } from 'react';
 import { Comparison } from '@altertable/data-app/react';
 import {
   BarChart,
-  LineChart,
   AreaChart,
   PieChart,
   ScatterChart,
+  ComposedChart,
 } from '@altertable/data-app/react/ui';
 import { DataTable, VisualizationWidget } from '@altertable/data-app/react/ui';
 import {
@@ -61,6 +61,31 @@ const trafficSources = [
   { id: 'social', label: 'Social', value: 1000 },
 ];
 
+const revenueAndConversion = [
+  { month: 'Jan', revenue: 42, forecast: 40, conversion: 2.4 },
+  { month: 'Feb', revenue: 48, forecast: 46, conversion: 2.7 },
+  { month: 'Mar', revenue: 45, forecast: 52, conversion: 2.5 },
+  { month: 'Apr', revenue: 62, forecast: 58, conversion: 3.1 },
+  { month: 'May', revenue: 71, forecast: 64, conversion: 3.4 },
+  { month: 'Jun', revenue: 78, forecast: 70, conversion: 3.8 },
+];
+
+const serviceSeries = ['API', 'Search', 'Exports'].map((name, index) => ({
+  key: `service${index}`,
+  name,
+  dots: name !== 'Search',
+  color: `var(--atbl-chart-${index + 1})`,
+}));
+const serviceResponseTimes = dailyResponseTime.map((day, dayIndex) => ({
+  day: day.label,
+  ...Object.fromEntries(
+    serviceSeries.map((series, index) => [
+      series.key,
+      65 + index * 18 + Math.round(Math.sin(dayIndex * 1.2 + index) * 24),
+    ])
+  ),
+}));
+
 const workspaces = [
   { id: 'atlas', label: 'Atlas', x: 120, y: 145 },
   { id: 'birch', label: 'Birch', x: 240, y: 160 },
@@ -114,6 +139,51 @@ export function GalleryBasics() {
           </TextContent>
           <Grid columns={2} minItemWidth="wide">
             <Example
+              name="ComposedChart"
+              description="Revenue and forecast in €k on the left; conversion in % on the right."
+              span={2}
+            >
+              <ComposedChart
+                data={revenueAndConversion}
+                ariaLabel="Monthly revenue, forecast, and conversion"
+                margin={{ top: 12, right: 0, bottom: 0, left: 0 }}
+              >
+                <ComposedChart.ReferenceLine
+                  yAxisId="revenue"
+                  y={0}
+                  stroke="var(--atbl-border)"
+                />
+                <ComposedChart.XAxis dataKey="month" />
+                <ComposedChart.YAxis yAxisId="revenue" width={42} unit="k" />
+                <ComposedChart.YAxis
+                  yAxisId="conversion"
+                  orientation="right"
+                  width={42}
+                  unit="%"
+                  domain={[0, 5]}
+                />
+                <ComposedChart.Tooltip />
+                <ComposedChart.Legend />
+                <ComposedChart.Area
+                  dataKey="forecast"
+                  name="Forecast (€k)"
+                  yAxisId="revenue"
+                  stroke="var(--atbl-chart-2)"
+                />
+                <ComposedChart.Bar
+                  dataKey="revenue"
+                  name="Revenue (€k)"
+                  yAxisId="revenue"
+                />
+                <ComposedChart.Line
+                  dataKey="conversion"
+                  name="Conversion (%)"
+                  yAxisId="conversion"
+                  stroke="var(--atbl-chart-3)"
+                />
+              </ComposedChart>
+            </Example>
+            <Example
               name="BarChart"
               description="Orders by sales channel. Compare six distinct categories."
             >
@@ -125,13 +195,26 @@ export function GalleryBasics() {
             </Example>
             <Example
               name="LineChart"
-              description="Daily response time over one week. Spot spikes and improvements."
+              description="Daily response time across three services over one week."
             >
-              <LineChart
-                items={dailyResponseTime}
-                unit="ms"
-                ariaLabel="Daily response time"
-              />
+              <ComposedChart
+                data={serviceResponseTimes}
+                ariaLabel="Response time across three services"
+              >
+                <ComposedChart.XAxis dataKey="day" />
+                <ComposedChart.YAxis width={48} unit="ms" />
+                <ComposedChart.Tooltip />
+                <ComposedChart.Legend />
+                {serviceSeries.map(series => (
+                  <ComposedChart.Line
+                    key={series.key}
+                    dataKey={series.key}
+                    name={series.name}
+                    stroke={series.color}
+                    dot={series.dots}
+                  />
+                ))}
+              </ComposedChart>
             </Example>
             <Example
               name="AreaChart"

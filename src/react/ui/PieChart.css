@@ -37,7 +37,7 @@
   font-size: var(--atbl-type-meta-size);
 }
 .altertable-pie-legend {
-  display: grid;
+  gap: 0;
   margin-bottom: 14px;
 }
 .altertable-pie-legend button {
@@ -60,12 +60,6 @@
 }
 .altertable-pie-legend button:focus {
   outline: none;
-}
-.altertable-pie-key {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  flex: none;
 }
 .altertable-pie-label {
   flex: 1;

@@ -21,7 +21,7 @@ type ChartKind = 'bar' | 'line' | 'area' | 'pie' | 'scatter';
 type ItemFor<Kind extends ChartKind> = Kind extends 'scatter'
   ? ScatterChartItem
   : ChartItem;
-/** Validate the data consumed by every chart. */
+/** Validate standalone item-based chart inputs. */
 export function validateChartItems<Kind extends ChartKind>(
   kind: Kind,
   items: readonly ItemFor<Kind>[]
