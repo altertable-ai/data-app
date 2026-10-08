@@ -40,9 +40,9 @@ Import `chartColor()` from `/react` to select colors from the configured palette
 ## Configure identity and appearance
 
 ```ts
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Product activity',
   scope: { organization: 'Acme', environment: 'Production' },
   appearance: {

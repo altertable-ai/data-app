@@ -1,4 +1,4 @@
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { useState } from 'react';
 import {
   formatPercent,
@@ -16,7 +16,7 @@ import {
   LineChart,
   PieChart,
 } from '@altertable/data-app/react/ui';
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Activity report',
   scope: { organization: 'test', environment: 'test' },
   appearance: {},
@@ -68,7 +68,7 @@ function App() {
   const [search, setSearch] = useState('');
   return (
     <DataApp
-      config={DATA_APP_CONFIG}
+      config={dataApp.config}
       dataContext={{ description: 'Activity data', glossary: {} }}
       csvExport={{
         filename: 'gallery',
@@ -136,4 +136,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: DATA_APP_CONFIG, component: App });
+mountDataApp({ config: dataApp.config, component: App });

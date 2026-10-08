@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
-import { DATA_APP_CONFIG } from '@/dev/app';
+import { dataApp } from '@/dev/app';
 import {
   formatCount,
   formatMetric,
@@ -524,7 +524,7 @@ function presentOrders(snapshot: OrderSnapshot) {
 function App() {
   return (
     <DataApp
-      config={DATA_APP_CONFIG}
+      config={dataApp.config}
       view={orderView}
       datasets={[
         countryDataset,
@@ -541,4 +541,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: DATA_APP_CONFIG, component: App });
+mountDataApp({ config: dataApp.config, component: App });

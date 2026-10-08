@@ -1,7 +1,7 @@
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
-import { DATA_APP_CONFIG as starterConfig } from '@/examples/starter-local-data-app/app';
+import { dataApp as starterApp } from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
 import {
@@ -129,7 +129,7 @@ if (!isDevelopment) process.env.NODE_ENV = 'production';
 serveLocalApp({
   page: starterPage,
   operations: starterOperations,
-  title: starterConfig.title,
+  title: starterApp.config.title,
   port: port + 2,
 });
 const loadFrameBundle = await createBundleLoader('./fixtures/bridge-frame.ts');

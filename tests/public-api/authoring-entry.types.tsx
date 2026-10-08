@@ -1,4 +1,4 @@
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { createDataContext as registerContext } from '@altertable/data-app/react';
 import * as authoring from '@altertable/data-app/react';
 import {
@@ -41,7 +41,7 @@ const view = hooks.defineDataView({
   isEmpty: () => false,
   emptyFallback: { title: 'Empty' },
 });
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Test',
   scope: { organization: 'a', environment: 'b' },
   appearance: {},
@@ -49,7 +49,7 @@ const DATA_APP_CONFIG = defineDataAppConfig({
 });
 
 const base = {
-  config: DATA_APP_CONFIG,
+  config: dataApp.config,
   dataContext: { description: 'Test', glossary: {} },
   children: null,
 };

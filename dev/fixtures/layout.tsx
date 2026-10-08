@@ -1,4 +1,4 @@
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { createRoot } from 'react-dom/client';
 import { defineQueryNames } from '@altertable/data-app/contract';
 import { DataAppFrame as DataApp } from '@/src/react/ui/DataAppFrame';
@@ -14,7 +14,7 @@ import { MetricWidget } from '@altertable/data-app/react/ui';
 import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
 import { type DataView } from '@/src/core/data-view';
 
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Layout contract',
   scope: { organization: 'demo', environment: 'test' },
   appearance: { density: 'comfortable', theme: 'light' },
@@ -76,7 +76,7 @@ function Cards({ loading = false }: { loading?: boolean }) {
 createRoot(document.getElementById('root')!).render(
   <DataApp
     config={{
-      ...DATA_APP_CONFIG,
+      ...dataApp.config,
       appearance: {
         density:
           params.get('density') === 'spacious' ? 'spacious' : 'comfortable',

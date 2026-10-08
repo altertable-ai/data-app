@@ -1,9 +1,9 @@
 import { createDataContext } from "@altertable/data-app/react";
-import { DATA_APP_CONFIG } from "#config";
+import { dataApp } from "#config";
 
 const connectionQueryNames = { connection: "connection" } satisfies Record<
   string,
-  keyof typeof DATA_APP_CONFIG.queries
+  keyof typeof dataApp.config.queries
 >;
 
 /** Setup context only. Replace it with the exploration's scope, exact definitions, limitations,

@@ -1,7 +1,7 @@
 import { formatMetric } from '@altertable/data-app/format';
 import { createDataClient } from '@altertable/data-app/client';
-import { defineDataAppConfig } from '@altertable/data-app/config';
-import { defineOperation, parseCount } from '@altertable/data-app/contract';
+import { defineDataApp } from '@altertable/data-app/config';
+import { parseCount } from '@altertable/data-app/contract';
 import {
   createDataContext,
   createDataHooks,
@@ -18,7 +18,7 @@ import {
   searchVariable,
 } from '@altertable/data-app/react';
 
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Sample counts',
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
@@ -62,8 +62,7 @@ function parseSampleCounts(
   });
 }
 const operations = {
-  sampleCountsByGroup: defineOperation({
-    queries: DATA_APP_CONFIG.queries,
+  sampleCountsByGroup: dataApp.defineOperation({
     input: parseSampleCountFilter,
     output: parseSampleCounts,
     checks: [
@@ -163,7 +162,7 @@ const sampleContent = sampleCountsView.content(result => (
 function App() {
   return (
     <DataApp
-      config={DATA_APP_CONFIG}
+      config={dataApp.config}
       view={sampleCountsView}
       datasets={[sampleCounts]}
       story={snapshot => {
@@ -204,4 +203,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: DATA_APP_CONFIG, component: App });
+mountDataApp({ config: dataApp.config, component: App });

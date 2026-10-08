@@ -5,7 +5,7 @@ import {
   gallerySections,
 } from '@/dev/fixtures/gallery-catalog';
 import { useEffect, useState } from 'react';
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { getDataAppNavigation } from '@altertable/data-app/client';
 import {
   DataApp,
@@ -96,7 +96,7 @@ const rows = workspaces.map((name, id) => ({
   source: id % 2 === 0 ? 'HTTP' : 'Postgres',
   events: id === 0 ? 12 : id === 1 ? 8 : 0,
 }));
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Data app gallery',
   scope: { organization: 'Demo workspace', environment: 'Sample data' },
   appearance: { theme: 'light' },
@@ -564,7 +564,7 @@ function Gallery() {
 
   return (
     <DataApp
-      config={DATA_APP_CONFIG}
+      config={dataApp.config}
       dataContext={dataContext}
       queries={queries}
       description="Explore the patterns behind useful data apps. Start with a working dashboard, then try the controls, displays, and states that fit your use case."
@@ -613,4 +613,4 @@ function Gallery() {
 }
 
 injectDataAppStyles();
-mountDataApp({ config: DATA_APP_CONFIG, component: Gallery });
+mountDataApp({ config: dataApp.config, component: Gallery });

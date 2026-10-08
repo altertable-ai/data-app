@@ -1,7 +1,6 @@
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  defineOperation,
   numberFilter,
   booleanFilter,
   dimensionFilter,
@@ -24,7 +23,7 @@ import {
   choiceVariable,
   multiChoiceVariable,
 } from '@altertable/data-app/react';
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Filter workflows',
   scope: { organization: 'test', environment: 'test' },
   appearance: {},
@@ -81,8 +80,7 @@ const defaults: Input = {
   active: active.defaultValue,
   country: country.defaultValue,
 };
-const operation = defineOperation({
-  queries: DATA_APP_CONFIG.queries,
+const operation = dataApp.defineOperation({
   input(value: unknown): Input {
     const input = value as Input;
     if (
@@ -146,7 +144,7 @@ const content = view.content(source => (
 function App() {
   return (
     <DataApp
-      config={DATA_APP_CONFIG}
+      config={dataApp.config}
       view={view}
       datasets={[dataset]}
       story={() => []}
@@ -156,4 +154,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: DATA_APP_CONFIG, component: App });
+mountDataApp({ config: dataApp.config, component: App });

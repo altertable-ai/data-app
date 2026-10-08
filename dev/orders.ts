@@ -1,6 +1,5 @@
-import { DATA_APP_CONFIG } from '@/dev/app';
+import { dataApp } from '@/dev/app';
 import {
-  defineOperation,
   dimensionFilter,
   parseDimensionSelection,
   parseCount,
@@ -144,8 +143,7 @@ const checkRange = calendar.request(
   true
 );
 export const operations = {
-  orderOverview: defineOperation({
-    queries: DATA_APP_CONFIG.queries,
+  orderOverview: dataApp.defineOperation({
     input: parseInput,
     output: parseOrderOverview,
     checks: [

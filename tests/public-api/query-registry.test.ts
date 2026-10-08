@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
@@ -10,7 +10,7 @@ import {
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Products',
   scope: { organization: 'demo', environment: 'test' },
   appearance: { theme: 'system' },
@@ -23,8 +23,7 @@ const DATA_APP_CONFIG = defineDataAppConfig({
 });
 
 function products(values: Record<string, unknown> = {}) {
-  return defineOperation({
-    queries: DATA_APP_CONFIG.queries,
+  return dataApp.defineOperation({
     input: parseEmptyInput,
     output: (value: unknown) => value,
     checks: [{}],
@@ -63,7 +62,7 @@ test('config queries execute defaults and overrides with shared browser and HTTP
   expect(result.queries).toEqual([
     {
       name: 'products',
-      statement: DATA_APP_CONFIG.queries.products.statement,
+      statement: dataApp.config.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
       queryId: 'q1',
     },
@@ -90,15 +89,15 @@ test('config queries execute defaults and overrides with shared browser and HTTP
   await overridden.query('products', {});
   expect(statements).toEqual([
     {
-      statement: DATA_APP_CONFIG.queries.products.statement,
+      statement: dataApp.config.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
     },
     {
-      statement: DATA_APP_CONFIG.queries.products.statement,
+      statement: dataApp.config.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
     },
     {
-      statement: DATA_APP_CONFIG.queries.products.statement,
+      statement: dataApp.config.queries.products.statement,
       params: { orgId: 'org-1', limit: 5 },
     },
   ]);
@@ -147,7 +146,7 @@ test('HTTP authorization supplies protected parameter values and callers cannot 
   }
   expect(statements).toEqual([
     {
-      statement: DATA_APP_CONFIG.queries.products.statement,
+      statement: dataApp.config.queries.products.statement,
       params: { orgId: 'org-1', limit: 10 },
     },
   ]);
@@ -225,8 +224,7 @@ test('query delivery preserves SQL and parameter values for backend interpretati
 test('registered operation context exposes only named execution and rejects raw SQL and unknown names', async () => {
   const statements: DeliveredQuery[] = [];
   for (const raw of [true, false]) {
-    const operation = defineOperation({
-      queries: DATA_APP_CONFIG.queries,
+    const operation = dataApp.defineOperation({
       input: parseEmptyInput,
       output: (value: unknown) => value,
       checks: [{}],
@@ -280,4 +278,51 @@ test('SQL placeholders and syntax are passed to the backend without inspection',
       params: { value: 'raw\nvalue\0' },
     },
   ]);
+});
+
+test('app definitions keep their query registries independent', async () => {
+  const firstApp = defineDataApp({
+    title: 'First',
+    scope: { organization: 'demo', environment: 'test' },
+    appearance: {},
+    queries: {
+      count: {
+        statement: 'SELECT $limit',
+        params: { limit: { defaultValue: 3 } },
+      },
+    },
+  });
+  const secondApp = defineDataApp({
+    title: 'Second',
+    scope: { organization: 'demo', environment: 'test' },
+    appearance: {},
+    queries: {
+      count: {
+        statement: 'SELECT $limit + 1',
+        params: { limit: { defaultValue: 7 } },
+      },
+    },
+  });
+  const statements: DeliveredQuery[] = [];
+  for (const app of [firstApp, secondApp]) {
+    const count = app.defineOperation({
+      input: parseEmptyInput,
+      output: (value: unknown) => value,
+      checks: [{}],
+      policy: { maxQueryRows: 20, maxDurationMs: 1000 },
+      async run({ query }) {
+        return query('count');
+      },
+    });
+    await createDataClient({
+      operations: { count },
+      lakehouse: source(statements),
+    }).query('count', {});
+  }
+  expect(statements).toEqual([
+    { statement: 'SELECT $limit', params: { limit: 3 } },
+    { statement: 'SELECT $limit + 1', params: { limit: 7 } },
+  ]);
+  expect(firstApp.config.title).toBe('First');
+  expect(secondApp.config.title).toBe('Second');
 });

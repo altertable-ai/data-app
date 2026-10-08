@@ -1,11 +1,11 @@
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import {
   defineOperation,
   parseEmptyInput,
   connectionCheck,
 } from '@altertable/data-app/contract';
 
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Typed queries',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
@@ -22,8 +22,7 @@ const DATA_APP_CONFIG = defineDataAppConfig({
   },
 });
 
-const operation = defineOperation({
-  queries: DATA_APP_CONFIG.queries,
+const operation = dataApp.defineOperation({
   input: parseEmptyInput,
   output: (value: unknown) => value,
   checks: [{}],
@@ -37,7 +36,7 @@ const operation = defineOperation({
     // @ts-expect-error Parameterless queries also reject keys from variables.
     await context.query('ping', extraParams);
     await context.query('products');
-    // @ts-expect-error Only DATA_APP_CONFIG's declared query names are accepted.
+    // @ts-expect-error Only dataApp.config's declared query names are accepted.
     await context.query('inventedQuery');
     await context.query('signUps', { days: 14 });
     // @ts-expect-error Parameter keys belong to the selected query.
@@ -60,7 +59,7 @@ const connection = connectionCheck({
 void connection.queryNames.inventedQuery;
 
 // @ts-expect-error Every app config declares its query registry, including static apps.
-defineDataAppConfig({
+defineDataApp({
   title: 'Missing queries',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
@@ -79,7 +78,7 @@ defineOperation({
   },
 });
 
-defineDataAppConfig({
+defineDataApp({
   title: 'Invalid config',
   scope: { organization: 'demo', environment: 'test' },
   // @ts-expect-error Config helpers reject unsupported appearance settings.
@@ -87,7 +86,7 @@ defineDataAppConfig({
   queries: {},
 });
 
-defineDataAppConfig({
+defineDataApp({
   title: 'Invalid config',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
@@ -96,7 +95,7 @@ defineDataAppConfig({
   queries: {},
 });
 
-defineDataAppConfig({
+defineDataApp({
   title: 'Invalid declarations',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
@@ -111,5 +110,32 @@ defineDataAppConfig({
       // @ts-expect-error Defaults must be scalar SQL values.
       params: { value: { defaultValue: [] } },
     },
+  },
+});
+
+const typedOperation = dataApp.defineOperation({
+  input: (value: unknown) => Number(value),
+  output: (value: unknown) => String(value),
+  checks: [2],
+  policy: { maxQueryRows: 10, maxDurationMs: 1000 },
+  async run({ query }, input) {
+    await query('products', { limit: input });
+    return String(input);
+  },
+});
+const typedInput: number = typedOperation.input(2);
+const typedOutput: string = typedOperation.output('2');
+void typedInput;
+void typedOutput;
+
+dataApp.defineOperation({
+  // @ts-expect-error Bound operations cannot replace the app's query registry.
+  queries: {},
+  input: parseEmptyInput,
+  output: (value: unknown) => value,
+  checks: [{}],
+  policy: { maxQueryRows: 10, maxDurationMs: 1000 },
+  async run() {
+    return true;
   },
 });

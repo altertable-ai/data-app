@@ -1,4 +1,4 @@
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { useState } from 'react';
 import {
   createDataClient,
@@ -93,7 +93,7 @@ function makeApp(id: string) {
 }
 const a = makeApp('A');
 const b = makeApp('B');
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Client isolation',
   scope: { organization: 'test', environment: 'test' },
   appearance: {},
@@ -103,7 +103,7 @@ function App() {
   const [selected, setSelected] = useState(a);
   return (
     <DataApp
-      config={DATA_APP_CONFIG}
+      config={dataApp.config}
       view={selected.view}
       datasets={[selected.dataset]}
       story={() => []}
@@ -125,4 +125,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: DATA_APP_CONFIG, component: App });
+mountDataApp({ config: dataApp.config, component: App });

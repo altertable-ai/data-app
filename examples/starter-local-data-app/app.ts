@@ -1,6 +1,6 @@
-import { defineDataAppConfig } from "@altertable/data-app/config";
+import { defineDataApp } from "@altertable/data-app/config";
 
-export const DATA_APP_CONFIG = defineDataAppConfig({
+export const dataApp = defineDataApp({
   title: "Getting started",
   scope: {
     organization: "Your organization",

@@ -1,5 +1,5 @@
 import { injectDataAppStyles } from '@altertable/data-app/react';
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { connectionCheck } from '@altertable/data-app/contract';
 import { useState } from 'react';
 import {
@@ -18,7 +18,7 @@ import {
 import { AnnotationTarget } from '@altertable/data-app/react';
 import { mountDataApp, searchVariable } from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Embedded report',
   scope: { organization: 'test', environment: 'prod' },
   appearance: { theme: 'system' },
@@ -28,7 +28,7 @@ const DATA_APP_CONFIG = defineDataAppConfig({
 });
 const bridge = getDataAppTransport()!;
 const data = createDataClient({
-  operations: { connection: connectionCheck(DATA_APP_CONFIG.queries) },
+  operations: { connection: connectionCheck(dataApp.config.queries) },
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = {
@@ -58,7 +58,7 @@ function App() {
           { name: 'Summary', columns: ['Total'], rows: [[0]] },
         ],
       }}
-      config={DATA_APP_CONFIG}
+      config={dataApp.config}
       dataContext={{ description: 'Test report', glossary: {} }}
       description="Report description"
       toolbarActions={<button>Custom toolbar action</button>}
@@ -151,6 +151,6 @@ document.body.dataset.executions = String(
 injectDataAppStyles();
 
 mountDataApp({
-  config: DATA_APP_CONFIG,
+  config: dataApp.config,
   component: App,
 });

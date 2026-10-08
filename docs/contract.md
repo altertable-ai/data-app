@@ -7,14 +7,15 @@ should import their operation types using `import type`.
 
 ## Execute named queries
 
-Declare SQL once with `defineDataAppConfig()` to preserve exact query and parameter
-names. Use `{ defaultValue }` for a fallback or `{}` for a required value.
+Declare SQL once with `defineDataApp()` to preserve exact query and parameter
+names. Define operations with `dataApp.defineOperation()` and pass `dataApp.config`
+to rendering and mounting APIs. Use `{ defaultValue }` for a fallback or `{}` for a required value.
 
 ```ts
-import { defineDataAppConfig } from '@altertable/data-app/config';
-import { defineOperation, rowsAsRecords } from '@altertable/data-app/contract';
+import { defineDataApp } from '@altertable/data-app/config';
+import { rowsAsRecords } from '@altertable/data-app/contract';
 
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Products',
   scope: { organization: 'demo', environment: 'production' },
   appearance: { theme: 'system' },
@@ -26,8 +27,7 @@ const DATA_APP_CONFIG = defineDataAppConfig({
   },
 });
 
-const products = defineOperation({
-  queries: DATA_APP_CONFIG.queries,
+const products = dataApp.defineOperation({
   input: parseProductInput,
   output: parseProducts,
   checks: [{}],
@@ -67,7 +67,7 @@ export const calendar = defineDateRangeContract({
 ```
 
 `parseEmptyInput()`, `parseTrue()`, `parseCount()`, and `parseDateRangeInput()` validate
-common inputs and results. `connectionCheck(DATA_APP_CONFIG.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
+common inputs and results. `connectionCheck(dataApp.config.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
 analysis result.
 
 See [server authorization](server.md) and [React views](react.md) for the two

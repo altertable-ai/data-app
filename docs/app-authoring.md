@@ -7,8 +7,8 @@ queries, definitions, and evidence.
 
 ## Inspect the data
 
-Use `DATA_APP_CONFIG.queries` as the source of truth. Generate
-operations with `queries: DATA_APP_CONFIG.queries` and execute them by
+Declare the query source of truth with `defineDataApp()`. Generate
+operations with `dataApp.defineOperation()` and execute queries by
 name with parameter values. Do not add queries or rewrite the supplied SQL.
 Derive displays, exports, and findings from their results. See
 [named queries](contract.md#execute-named-queries).

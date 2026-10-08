@@ -1,16 +1,16 @@
 import type { AppearanceOptions } from '@altertable/data-app/appearance';
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import type { TableWidgetProps } from '@altertable/data-app/react/ui';
 
 // Compile-only assertions; the hosted endpoint can enforce these through TypeScript.
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Example',
   scope: { organization: 'demo', environment: 'test' },
   appearance: { theme: 'system', typography: { heading: 'Georgia' } },
   queries: {},
 });
 
-void DATA_APP_CONFIG;
+void dataApp.config;
 
 export const invalidTheme: AppearanceOptions = {
   // @ts-expect-error Themes use the supported preferences.

@@ -1,10 +1,7 @@
 import { injectDataAppStyles, mountDataApp } from '@altertable/data-app/react';
-import {
-  DeclaredApp,
-  DATA_APP_CONFIG,
-} from '@/tests/public-api/fixtures/declared-app';
+import { DeclaredApp, dataApp } from '@/tests/public-api/fixtures/declared-app';
 injectDataAppStyles();
 mountDataApp({
-  config: DATA_APP_CONFIG,
+  config: dataApp.config,
   component: DeclaredApp,
 });

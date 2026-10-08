@@ -1,4 +1,4 @@
-import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app/config';
 import { useState } from 'react';
 import {
   mountDataApp,
@@ -11,7 +11,7 @@ import {
   MetricWidget,
   AboutData,
 } from '@altertable/data-app/react/ui';
-const DATA_APP_CONFIG = defineDataAppConfig({
+const dataApp = defineDataApp({
   title: 'Inspection ownership',
   scope: { organization: 'Test', environment: 'local' },
   appearance: {},
@@ -51,7 +51,7 @@ function App() {
   const [count, setCount] = useState(1);
   return (
     <DataApp
-      config={DATA_APP_CONFIG}
+      config={dataApp.config}
       dataContext={{ description: 'Counts', glossary: {} }}
       queries={[
         {
@@ -92,4 +92,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: DATA_APP_CONFIG, component: App });
+mountDataApp({ config: dataApp.config, component: App });
