@@ -41,7 +41,6 @@ export function AnnotationEditor({
     : 'Add annotation';
   return (
     <section
-      data-atbl-focus="group"
       data-annotation-ui
       ref={editorRef}
       style={style}
