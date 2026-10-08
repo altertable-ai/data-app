@@ -1,11 +1,10 @@
 import { injectDataAppStyles, mountDataApp } from '@altertable/data-app/react';
-import { DeclaredApp } from '@/tests/public-api/fixtures/declared-app';
+import {
+  DeclaredApp,
+  DATA_APP_CONFIG,
+} from '@/tests/public-api/fixtures/declared-app';
 injectDataAppStyles();
 mountDataApp({
-  config: {
-    title: 'Declared views',
-    scope: { organization: 'test', environment: 'test' },
-    appearance: {},
-  },
+  config: DATA_APP_CONFIG,
   component: DeclaredApp,
 });

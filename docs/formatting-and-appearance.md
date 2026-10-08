@@ -40,9 +40,9 @@ Import `chartColor()` from `/react` to select colors from the configured palette
 ## Configure identity and appearance
 
 ```ts
-import type { DataAppConfig } from '@altertable/data-app/config';
+import { defineDataAppConfig } from '@altertable/data-app/config';
 
-const config = {
+const DATA_APP_CONFIG = defineDataAppConfig({
   title: 'Product activity',
   scope: { organization: 'Acme', environment: 'Production' },
   appearance: {
@@ -50,7 +50,8 @@ const config = {
     accentColor: '#405d47',
     density: 'comfortable',
   },
-} satisfies DataAppConfig;
+  queries: {},
+});
 ```
 
 Scope labels describe the configured connection; they do not grant access.

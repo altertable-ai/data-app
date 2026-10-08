@@ -28,7 +28,7 @@ const connectionView = defineDataView({
 });
 
 /** Query-backed connection state and next steps for a newly created app. Mount within
- * `DataAppProvider` and register `connection: connectionCheck()` on the server. */
+ * `DataAppProvider` and register `connection: connectionCheck(DATA_APP_CONFIG.queries)` on the server. */
 export function GettingStarted({
   config,
   dataContext,

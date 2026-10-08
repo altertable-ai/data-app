@@ -1,3 +1,4 @@
+import { defineDataAppConfig } from '@altertable/data-app/config';
 import { useState } from 'react';
 import { mountDataApp, injectDataAppStyles } from '@altertable/data-app/react';
 import {
@@ -21,11 +22,12 @@ import {
   type DataAppStyle,
 } from '@altertable/data-app/react/ui';
 
-const config = {
+const DATA_APP_CONFIG = defineDataAppConfig({
   title: 'Controls',
   scope: { organization: 'test', environment: 'test' },
   appearance: {},
-};
+  queries: {},
+});
 const options = [
   { id: 'all', label: 'All' },
   { id: 'fr', label: 'France' },
@@ -160,4 +162,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ config: DATA_APP_CONFIG, component: App });

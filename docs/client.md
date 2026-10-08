@@ -24,8 +24,7 @@ implementation. Calls POST JSON to `/api/data/:operation`; the client sends
 operation inputs rather than SQL or credentials.
 
 `DataResponse` contains `data`, the exact request `input`, `requestId`,
-`queriedAt`, and `queryIds`. `queries` is present when the operation exposes SQL
-and the execution runtime permits disclosure. Use the returned input when labeling stale data during a refresh.
+`queriedAt`, `queryIds`, and executed `queries`. Use the returned input when labeling stale data during a refresh.
 HTTP and iframe delivery validate the same success envelope: data, request ID,
 query timestamp, query IDs, and optional query evidence. Malformed responses
 reject with `invalid_response`.
@@ -46,17 +45,17 @@ Bundle apps pass their operation registry as a value:
 import { connectionCheck } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
 
+// DATA_APP_CONFIG declares a connection query.
 const client = createDataClient({
-  operations: { connection: connectionCheck() },
+  operations: { connection: connectionCheck(DATA_APP_CONFIG.queries) },
 });
 const response = await client.query('connection', {});
 ```
 
 The client runs input parsing, operation logic, and output parsing in the browser.
-Operation policy bounds rows, duration, and response size and records query evidence. Each query sends `{ statement, limit }`
+Operation policy bounds rows, duration, and response size and records query evidence. Each query sends `{ statement, limit, params? }`
 to the installed iframe bridge's `data:sql` route; the host needs no operation
-registry. SQL is visible in the browser, even when `exposeSql` is false; that flag
-only controls evidence in the returned response. Credentials remain backend-owned.
+registry. Results include query evidence. Credentials remain backend-owned.
 
 The trusted bootstrap installs the bridge for bundle apps. A custom runtime must
 install it before querying. An explicit `lakehouse` can supply another authorized

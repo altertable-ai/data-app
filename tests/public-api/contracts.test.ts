@@ -47,6 +47,9 @@ test('a calendar and dimension declaration validates and escapes the input used 
       ],
     },
   };
+  expect(dimensionPredicate('region', input.region, ['region'])).toBe(
+    "(region IN ('O''Brien') OR region IS NULL)"
+  );
   const statements: string[] = [];
   const operations = {
     activity: defineOperation({
@@ -59,13 +62,22 @@ test('a calendar and dimension declaration validates and escapes the input used 
       },
       output: parseCount,
       checks: [input],
-      queryNames: { activity: 'activity' },
-      policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
+      queries: {
+        activity: {
+          statement:
+            'SELECT count FROM activity WHERE region = $region OR region IS NULL',
+          params: { region: {} },
+        },
+      },
+      policy: { maxQueryRows: 1, maxDurationMs: 1000 },
       async run({ query }, selected) {
-        const result = await query(
-          'activity',
-          `SELECT count FROM activity WHERE ${dimensionPredicate('region', selected.region, ['region'])}`
-        );
+        const result = await query('activity', {
+          region:
+            selected.region.kind === 'include' &&
+            selected.region.members[0]?.kind === 'value'
+              ? selected.region.members[0].value
+              : null,
+        });
         return parseCount(result.rows[0]![0]);
       },
     }),
@@ -86,7 +98,7 @@ test('a calendar and dimension declaration validates and escapes the input used 
     end: '2026-03-03',
   });
   expect(statements).toEqual([
-    "SELECT count FROM activity WHERE (region IN ('O''Brien') OR region IS NULL)",
+    'SELECT count FROM activity WHERE region = $region OR region IS NULL',
   ]);
   expect(
     region.read(
@@ -131,10 +143,11 @@ test('authoring a view rejects invalid datasets and unregistered evidence', () =
     createDataClient({
       operations: {
         rows: defineOperation({
+          queries: {},
           input: value => value as { group: string },
           output: parseCount,
           checks: [{ group: '' }],
-          policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+          policy: { maxQueryRows: 1, maxDurationMs: 1000 },
           async run() {
             return 1;
           },

@@ -11,7 +11,11 @@ async function verifyClientOptions(
   transport: DataTransport,
   request: typeof fetch
 ) {
-  const operations = { connection: connectionCheck() };
+  const operations = {
+    connection: connectionCheck({
+      connection: { statement: 'SELECT 1', params: {} },
+    }),
+  };
   createDataClient<typeof operations>();
   createDataClient<typeof operations>({});
   createDataClient<typeof operations>({ transport });

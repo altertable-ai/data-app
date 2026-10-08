@@ -23,6 +23,7 @@ const context = registerContext({})({
 
 const operations = {
   alpha: defineOperation({
+    queries: {},
     input(value: unknown) {
       return value as { version: number };
     },
@@ -30,12 +31,13 @@ const operations = {
       return value as { kind: 'alpha'; count: number };
     },
     checks: [{ version: 1 }],
-    policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run() {
       return { kind: 'alpha', count: 1 };
     },
   }),
   beta: defineOperation({
+    queries: {},
     input(value: unknown) {
       return value as { version: number };
     },
@@ -43,7 +45,7 @@ const operations = {
       return value as { kind: 'beta'; label: string };
     },
     checks: [{ version: 1 }],
-    policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run() {
       return { kind: 'beta', label: 'Beta' };
     },

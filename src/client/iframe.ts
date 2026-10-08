@@ -252,9 +252,13 @@ export function createIframeTransport({
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
-      queryAll(statement, { limit, signal }) {
+      queryAll(statement, { limit, signal, params }) {
         return messages
-          .request('data:sql', { statement, limit }, { signal })
+          .request(
+            'data:sql',
+            { statement, limit, ...(params === undefined ? {} : { params }) },
+            { signal }
+          )
           .catch(rethrowDataMessageError);
       },
     } satisfies Lakehouse,

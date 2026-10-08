@@ -121,14 +121,24 @@ const server = Bun.serve({
       );
     }
     if (url.pathname === '/api/sql') {
-      const { statement, limit } = (await request.json()) as {
+      const { statement, limit, params } = (await request.json()) as {
         statement: string;
         limit: number;
+        params?: Record<string, string | number>;
       };
       if (statement.trim().startsWith('WITH sample_counts(') && limit === 10)
         return Response.json({
           columns: [{ name: 'group_name' }, { name: 'sample_count' }],
-          rows: database.query(statement).values(),
+          rows: database
+            .query(statement)
+            .values(
+              Object.fromEntries(
+                Object.entries(params ?? {}).map(([key, value]) => [
+                  `$${key}`,
+                  value,
+                ])
+              )
+            ),
           queryId: 'sample-query',
         });
       if (statement === 'SELECT 1 AS connection_check' && limit === 1)

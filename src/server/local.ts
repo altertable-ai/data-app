@@ -32,7 +32,6 @@ export function serveLocalApp({
     routes: { '/': page },
     fetch: createDataHandler(operations, async () => ({
       lakehouse: localLakehouse(),
-      canDiscloseSql: true,
     })),
   });
   console.log(`${title} running at ${server.url}`);
@@ -46,7 +45,7 @@ export function localLakehouse(
   request: typeof fetch = fetch
 ): Lakehouse {
   return {
-    async queryAll(statement, { limit, signal }) {
+    async queryAll(statement, { limit, signal, params }) {
       const proxyUrl = environment.ALTERTABLE_DATA_PROXY_URL;
       const proxyToken = environment.ALTERTABLE_DATA_PROXY_TOKEN;
       const username = environment.ALTERTABLE_LAKEHOUSE_USERNAME;
@@ -70,7 +69,11 @@ export function localLakehouse(
                 : `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
               'content-type': 'application/json',
             },
-            body: JSON.stringify({ statement, limit }),
+            body: JSON.stringify({
+              statement,
+              limit,
+              ...(params === undefined ? {} : { params }),
+            }),
             signal,
           }
         );

@@ -6,6 +6,18 @@
 import { parseDate, today } from '@internationalized/date';
 import { formatDateRange } from '@/src/core/format';
 import { invariant } from '@/src/core/invariant';
+import {
+  snapshotQueries,
+  resolveQueryParameters,
+  type QueryDefinitions,
+  type QueryParameters,
+  type QueryParameterValue,
+} from '@/src/core/queries';
+export type {
+  QueryDefinitions,
+  QueryParameters,
+  QueryParameterValue,
+} from '@/src/core/queries';
 import type { DateRange as DateRangeInput } from '@/src/core/date-range';
 import type {
   QueryResult,
@@ -305,25 +317,33 @@ export class DataSourceError extends Error {
   }
 }
 
-export type OperationQuery<Names extends Readonly<Record<string, string>>> = (
-  name: Names[keyof Names],
-  statement: string,
+export type RegisteredQuery<Queries extends QueryDefinitions> = <
+  Name extends keyof Queries & string,
+>(
+  name: Name,
+  params?: keyof Queries[Name]['params'] extends never
+    ? Record<string, never>
+    : Partial<Record<keyof Queries[Name]['params'], QueryParameterValue>>,
   options?: { limit?: number }
 ) => Promise<QueryResult>;
 
 export function defineOperation<
   Input,
   Output,
-  const Names extends Readonly<Record<string, string>> = Record<string, never>,
+  const Queries extends QueryDefinitions,
 >(
   operation: Omit<DataOperation<Input, Output>, 'run' | 'queryNames'> & {
-    queryNames?: Names;
+    queries: Queries;
     run: (
-      context: OperationContext & { query: OperationQuery<NoInfer<Names>> },
+      context: Pick<OperationContext, 'signal'> & {
+        query: RegisteredQuery<NoInfer<Queries>>;
+      },
       input: Input
     ) => Promise<Output>;
   }
-): DataOperation<Input, Output> & { queryNames?: Names } {
+): Omit<DataOperation<Input, Output>, 'queryNames'> & {
+  queryNames: { readonly [Name in keyof Queries & string]: Name };
+} {
   invariant(
     Array.isArray(operation.checks) &&
       operation.checks.length > 0 &&
@@ -336,53 +356,54 @@ export function defineOperation<
           operation.policy.maxResponseBytes > 0)),
     'Each data operation needs check inputs and positive row and duration limits.'
   );
-  if (operation.queryNames) defineQueryNames(operation.queryNames);
+  const queries = snapshotQueries(operation.queries);
+  const queryNames = Object.fromEntries(
+    Object.keys(queries).map(name => [name, name])
+  ) as { readonly [Name in keyof Queries & string]: Name };
   for (const input of operation.checks) operation.input(input);
 
   return {
     ...operation,
+    queryNames,
     run(context, input) {
       function query(
-        name: Names[keyof Names],
-        statement: string,
+        name: keyof Queries & string,
+        values: Partial<QueryParameters> = {},
         options?: { limit?: number }
-      ): Promise<QueryResult> {
-        invariant(
-          operation.queryNames &&
-            Object.values(operation.queryNames).includes(name),
-          `Unknown query name: ${name}.`
+      ) {
+        invariant(Object.hasOwn(queries, name), `Unknown query name: ${name}.`);
+        const definition = queries[name]!;
+        const params = resolveQueryParameters(
+          definition.params,
+          values,
+          context.queryParams ?? {}
         );
-
-        return context.lakehouse.queryAll(statement, {
+        return context.lakehouse.queryAll(definition.statement, {
           name,
+          params,
           limit: options?.limit ?? operation.policy.maxQueryRows,
           signal: context.signal,
         });
       }
-
-      return operation.run({ ...context, query }, input);
+      return operation.run({ signal: context.signal, query }, input);
     },
   };
 }
 
-export const connectionQueryNames = defineQueryNames({
-  connection: 'connection-check',
-});
-
-/** Success requires a bounded SQL query; it does not establish access to a particular dataset. */
-export function connectionCheck(): DataOperation<Record<string, never>, true> {
+/** A connectivity probe uses the app's registered connection query. */
+export function connectionCheck<
+  const Queries extends QueryDefinitions & {
+    connection: QueryDefinitions[string];
+  },
+>(queries: Queries) {
   return defineOperation({
+    queries,
     input: parseEmptyInput,
     output: parseTrue,
     checks: [{}],
-    queryNames: connectionQueryNames,
-    policy: { maxQueryRows: 1, maxDurationMs: 15_000, exposeSql: true },
+    policy: { maxQueryRows: 1, maxDurationMs: 15_000 },
     async run({ query }): Promise<true> {
-      await query(
-        connectionQueryNames.connection,
-        'SELECT 1 AS connection_check'
-      );
-
+      await query('connection');
       return true;
     },
   });

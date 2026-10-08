@@ -1,11 +1,7 @@
 import { formatMetric } from '@altertable/data-app/format';
 import { createDataClient } from '@altertable/data-app/client';
-import type { DataAppConfig } from '@altertable/data-app/config';
-import {
-  defineOperation,
-  defineQueryNames,
-  parseCount,
-} from '@altertable/data-app/contract';
+import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineOperation, parseCount } from '@altertable/data-app/contract';
 import {
   createDataContext,
   createDataHooks,
@@ -22,8 +18,23 @@ import {
   searchVariable,
 } from '@altertable/data-app/react';
 
-const queryNames = defineQueryNames({
-  sampleCountsByGroup: 'sample-counts-by-group',
+const DATA_APP_CONFIG = defineDataAppConfig({
+  title: 'Sample counts',
+  scope: { organization: 'demo', environment: 'sample' },
+  appearance: { theme: 'system' },
+  queries: {
+    sampleCountsByGroup: {
+      statement: `
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
+SELECT group_name, sample_count FROM sample_counts
+WHERE $groupName = '' OR group_name = $groupName
+ORDER BY group_name LIMIT $limit`,
+      params: {
+        groupName: { defaultValue: '' },
+        limit: { defaultValue: 10 },
+      },
+    },
+  },
 });
 function parseSampleCountFilter(value: unknown) {
   if (
@@ -52,7 +63,7 @@ function parseSampleCounts(
 }
 const operations = {
   sampleCountsByGroup: defineOperation({
-    queryNames,
+    queries: DATA_APP_CONFIG.queries,
     input: parseSampleCountFilter,
     output: parseSampleCounts,
     checks: [
@@ -60,18 +71,9 @@ const operations = {
       { groupName: 'Alpha' },
       { groupName: 'missing' },
     ],
-    policy: { maxQueryRows: 10, maxDurationMs: 15000, exposeSql: true },
+    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
-      // Portable sample data, not a production table. Escape the validated SQL literal.
-      const escapedGroupName = groupName.replaceAll("'", "''");
-      const queryResult = await query(
-        queryNames.sampleCountsByGroup,
-        `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
-SELECT group_name, sample_count FROM sample_counts
-WHERE '${escapedGroupName}' = '' OR group_name = '${escapedGroupName}'
-ORDER BY group_name LIMIT 10`
-      );
+      const queryResult = await query('sampleCountsByGroup', { groupName });
       return parseSampleCounts(
         queryResult.rows.map(([groupName, sampleCount]) => ({
           groupName,
@@ -81,11 +83,7 @@ ORDER BY group_name LIMIT 10`
     },
   }),
 };
-const appConfig: DataAppConfig = {
-  title: 'Sample counts',
-  scope: { organization: 'demo', environment: 'sample' },
-  appearance: { theme: 'system' },
-};
+const queryNames = operations.sampleCountsByGroup.queryNames;
 const sampleDataContext = createDataContext(queryNames)({
   description:
     'Two SQL VALUES rows demonstrate the host query path. Replace them with inspected source data before publishing findings.',
@@ -165,7 +163,7 @@ const sampleContent = sampleCountsView.content(result => (
 function App() {
   return (
     <DataApp
-      config={appConfig}
+      config={DATA_APP_CONFIG}
       view={sampleCountsView}
       datasets={[sampleCounts]}
       story={snapshot => {
@@ -206,4 +204,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: appConfig, component: App });
+mountDataApp({ config: DATA_APP_CONFIG, component: App });

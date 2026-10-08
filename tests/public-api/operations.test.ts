@@ -13,10 +13,10 @@ function operation() {
     input: parseCount,
     output: parseCount,
     checks: [3],
-    queryNames: { count: 'count' },
-    policy: { maxQueryRows: 2, maxDurationMs: 100, exposeSql: true },
+    queries: { count: { statement: 'SELECT $count', params: { count: {} } } },
+    policy: { maxQueryRows: 2, maxDurationMs: 100 },
     async run({ query }, input) {
-      const result = await query('count', `SELECT ${input}`, { limit: 8 });
+      const result = await query('count', { count: input }, { limit: 8 });
       return result.rows[0]![0];
     },
   });
@@ -24,8 +24,9 @@ function operation() {
 
 function lakehouse(): Lakehouse {
   return {
-    async queryAll(statement, { limit, signal }) {
-      expect(statement).toBe('SELECT 3');
+    async queryAll(statement, { limit, signal, params }) {
+      expect(statement).toBe('SELECT $count');
+      expect(params).toEqual({ count: 3 });
       expect(limit).toBe(2);
       expect(signal.aborted).toBe(false);
       return { columns: [{ name: 'count' }], rows: [[3]], queryId: 'q1' };
@@ -41,11 +42,17 @@ test('browser and HTTP operations share parsing, bounds, and query evidence', as
     data: 3,
     input: 3,
     queryIds: ['q1'],
-    queries: [{ name: 'count', statement: 'SELECT 3', queryId: 'q1' }],
+    queries: [
+      {
+        name: 'count',
+        statement: 'SELECT $count',
+        params: { count: 3 },
+        queryId: 'q1',
+      },
+    ],
   });
   const handler = createDataHandler(operations, async () => ({
     lakehouse: lakehouse(),
-    canDiscloseSql: true,
   }));
   const http = createDataClient<typeof operations>({
     endpoint: 'http://localhost/api/data',
@@ -106,7 +113,6 @@ test('browser and HTTP execution preserve public source failures across package 
   });
   const handler = createDataHandler(operations, async () => ({
     lakehouse: source,
-    canDiscloseSql: false,
   }));
   const response = await handler(
     new Request('http://localhost/api/data/count', {
@@ -156,13 +162,6 @@ test('browser execution enforces output, row, and response byte bounds', async (
       code: 'query_failed',
     });
   }
-  const hidden = createDataClient({
-    operations: {
-      count: { ...base, policy: { ...base.policy, exposeSql: false } },
-    },
-    lakehouse: source,
-  });
-  expect((await hidden.query('count', 3)).queries).toBeUndefined();
 });
 
 test('browser operations settle ignored deadlines and preserve caller cancellation', async () => {
@@ -208,10 +207,10 @@ test('an authorized client queries an operation with validated input and query e
       input: parseCount,
       output: parseCount,
       checks: [3],
-      queryNames: { count: 'count' },
-      policy: { maxQueryRows: 2, maxDurationMs: 1000, exposeSql: true },
+      queries: { count: { statement: 'SELECT $count', params: { count: {} } } },
+      policy: { maxQueryRows: 2, maxDurationMs: 1000 },
       async run({ query }, input) {
-        const result = await query('count', `SELECT ${input}`);
+        const result = await query('count', { count: input });
         return result.rows[0]![0];
       },
     }),
@@ -220,7 +219,6 @@ test('an authorized client queries an operation with validated input and query e
   const handler = createDataHandler(operations, async () => {
     if (!authorized) throw new Error('Access denied');
     return {
-      canDiscloseSql: true,
       lakehouse: {
         async queryAll() {
           return {
@@ -245,7 +243,14 @@ test('an authorized client queries an operation with validated input and query e
     data: 3,
     input: 3,
     queryIds: ['query-1'],
-    queries: [{ name: 'count', statement: 'SELECT 3', queryId: 'query-1' }],
+    queries: [
+      {
+        name: 'count',
+        statement: 'SELECT $count',
+        params: { count: 3 },
+        queryId: 'query-1',
+      },
+    ],
   });
   await expect(client.query('count', -1)).rejects.toMatchObject({
     code: 'invalid_input',

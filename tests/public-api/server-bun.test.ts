@@ -16,13 +16,21 @@ test('local lakehouse delivers CLI proxy queries with authentication and query e
           authorization: 'Bearer run-token',
         });
 
+        if (typeof options?.body !== 'string')
+          throw new Error('Expected a JSON request body.');
+        expect(JSON.parse(options.body)).toEqual({
+          statement: 'SELECT $value',
+          limit: 1,
+          params: { value: 1 },
+        });
         return new Response('{"query_id":"q1"}\n["value"]\n[1]\n');
       },
       { preconnect() {} }
     )
   );
   expect(
-    await proxied.queryAll('SELECT 1', {
+    await proxied.queryAll('SELECT $value', {
+      params: { value: 1 },
       limit: 1,
       signal: new AbortController().signal,
     })

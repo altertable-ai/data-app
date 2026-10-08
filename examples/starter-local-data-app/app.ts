@@ -1,6 +1,6 @@
-import type { DataAppConfig } from "@altertable/data-app/config";
+import { defineDataAppConfig } from "@altertable/data-app/config";
 
-export default {
+export const DATA_APP_CONFIG = defineDataAppConfig({
   title: "Getting started",
   scope: {
     organization: "Your organization",
@@ -18,4 +18,5 @@ export default {
       heading: "system",
     },
   },
-} satisfies DataAppConfig;
+  queries: { connection: { statement: "SELECT 1 AS connection_check", params: {} } },
+});

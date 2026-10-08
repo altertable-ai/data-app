@@ -1,8 +1,7 @@
+import { DATA_APP_CONFIG } from '@/dev/app';
 import {
   defineOperation,
-  defineQueryNames,
   dimensionFilter,
-  dimensionPredicate,
   parseDimensionSelection,
   parseCount,
   type DateRangeRequest,
@@ -61,14 +60,6 @@ export type OrderOverview = {
   items: OrderItem[];
   previous: OrderTotals | null;
 };
-export const queryNames = defineQueryNames({
-  ordersByCountry: 'orders-by-country',
-  ordersByDay: 'orders-by-day',
-  ordersByValue: 'orders-by-value',
-  previousPeriod: 'previous-period',
-  orders: 'recent-orders',
-  items: 'order-items',
-});
 function parseInput(value: unknown): OrderInput {
   if (!value || typeof value !== 'object')
     throw new Error('Expected order filters.');
@@ -148,17 +139,13 @@ function parseOrderOverview(value: unknown): OrderOverview {
         : totals(data.previous as Record<string, unknown>),
   };
 }
-const aggregates = `count(o.id) AS order_count,
-  CAST(coalesce(sum(o.amount) FILTER (WHERE o.status = 'paid'), 0) AS DOUBLE) AS revenue,
-  CAST(coalesce(sum(o.amount), 0) AS DOUBLE) AS order_value,
-  CAST(coalesce(sum(o.amount) FILTER (WHERE o.status = 'refunded'), 0) AS DOUBLE) AS refunds`;
 const checkRange = calendar.request(
   { start: calendar.bounds().maxDate, end: calendar.bounds().maxDate },
   true
 );
 export const operations = {
   orderOverview: defineOperation({
-    queryNames,
+    queries: DATA_APP_CONFIG.queries,
     input: parseInput,
     output: parseOrderOverview,
     checks: [
@@ -168,17 +155,15 @@ export const operations = {
         country: { kind: 'include', members: [{ kind: 'value', value: 'FI' }] },
       },
     ] satisfies OrderInput[],
-    policy: { maxQueryRows: 300, maxDurationMs: 15000, exposeSql: true },
+    policy: { maxQueryRows: 300, maxDurationMs: 15000 },
     async run({ query }, { country, period }) {
-      const filter =
-        dimensionPredicate('c.country', country, ['c.country']) || 'TRUE';
-      function rangeSql(range: DateRangeRequest['range']) {
-        return `o.ordered_at >= DATE '${range.start}' AND o.ordered_at < DATE '${range.end}' + INTERVAL 1 DAY`;
-      }
-      const scope = `${rangeSql(period.range)} AND ${filter}`;
-      const recentOrders = `SELECT o.id, c.name AS customer, c.country, CAST(o.ordered_at AS DATE) AS day, o.status, o.campaign, CAST(o.amount AS DOUBLE) AS amount
-        FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
-        WHERE ${scope} ORDER BY o.ordered_at DESC, o.id DESC LIMIT 100`;
+      const member = country.kind === 'all' ? undefined : country.members[0];
+      const params = {
+        start: period.range.start,
+        end: period.range.end,
+        countryMode: country.kind,
+        country: member?.kind === 'value' ? member.value : null,
+      };
       const [
         countryResult,
         dayResult,
@@ -187,40 +172,17 @@ export const operations = {
         orderResult,
         itemResult,
       ] = await Promise.all([
-        query(
-          queryNames.ordersByCountry,
-          `SELECT c.country, ${aggregates}
-          FROM demo.customers c LEFT JOIN demo.orders o ON o.customer_id = c.id AND ${rangeSql(period.range)}
-          WHERE ${filter} GROUP BY c.country ORDER BY revenue DESC, c.country`
-        ),
-        query(
-          queryNames.ordersByDay,
-          `SELECT CAST(g.day AS DATE) AS day, count(o.id) AS order_count
-          FROM generate_series(DATE '${period.range.start}', DATE '${period.range.end}', INTERVAL 1 DAY) g(day)
-          LEFT JOIN (SELECT o.id, o.ordered_at FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id WHERE ${scope}) o
-          ON CAST(o.ordered_at AS DATE) = CAST(g.day AS DATE) GROUP BY 1 ORDER BY 1`
-        ),
-        query(
-          queryNames.ordersByValue,
-          `SELECT CASE WHEN o.amount < 100 THEN 'Under $100' WHEN o.amount < 250 THEN '$100–250' WHEN o.amount < 500 THEN '$250–500' ELSE '$500 and over' END AS band, count(*) AS order_count
-          FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id WHERE ${scope}
-          GROUP BY band ORDER BY min(o.amount)`
-        ),
-        // Keep a disclosed query for every registered evidence source, even when comparison is off.
-        query(
-          queryNames.previousPeriod,
-          `SELECT ${aggregates}
-          FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
-          WHERE ${period.comparison ? rangeSql(period.comparison) : 'FALSE'} AND ${filter}`
-        ),
-        query(queryNames.orders, recentOrders),
-        query(
-          queryNames.items,
-          `WITH recent AS (${recentOrders})
-          SELECT i.order_id, p.name, p.category, i.quantity, CAST(i.unit_price AS DOUBLE) AS unit_price
-          FROM recent r JOIN demo.order_items i ON i.order_id = r.id JOIN demo.products p ON p.id = i.product_id
-          ORDER BY i.order_id DESC, p.id`
-        ),
+        query('ordersByCountry', params),
+        query('ordersByDay', params),
+        query('ordersByValue', params),
+        query('previousPeriod', {
+          ...params,
+          start: period.comparison?.start ?? period.range.start,
+          end: period.comparison?.end ?? period.range.end,
+          enabled: period.comparison !== null,
+        }),
+        query('orders', params),
+        query('items', params),
       ]);
       return parseOrderOverview({
         countries: countryResult.rows.map(
@@ -268,6 +230,8 @@ export const operations = {
     },
   }),
 };
+export const queryNames = operations.orderOverview.queryNames;
+
 function sum<Row>(rows: readonly Row[], value: (row: Row) => number) {
   return rows.reduce((total, row) => total + value(row), 0);
 }

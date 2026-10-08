@@ -1,3 +1,4 @@
+import { defineDataAppConfig } from '@altertable/data-app/config';
 import {
   createDataClient,
   createHttpTransport,
@@ -16,11 +17,12 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app/react';
-const config = {
+const DATA_APP_CONFIG = defineDataAppConfig({
   title: 'Responsive report',
   scope: { organization: 'test', environment: 'test' },
   appearance: {},
-};
+  queries: {},
+});
 const hooks = createDataHooks(
   createDataClient<{
     activity: DataOperation<Record<string, never>, number[]>;
@@ -71,7 +73,12 @@ const content = view.content(result => (
 ));
 function App() {
   return (
-    <DataApp config={config} view={view} datasets={[dataset]} story={() => []}>
+    <DataApp
+      config={DATA_APP_CONFIG}
+      view={view}
+      datasets={[dataset]}
+      story={() => []}
+    >
       <Stack aria-label="Report sections">
         <TextContent>
           <h2>Activity overview</h2>
@@ -86,4 +93,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ config: DATA_APP_CONFIG, component: App });

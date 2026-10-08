@@ -7,30 +7,47 @@ should import their operation types using `import type`.
 
 ## Execute named queries
 
-The app supplies `calendar`, `parseActivity()`, `checkInput`, `buildActivitySql()`,
-and `parseActivityRows()` in this example.
+Declare SQL once with `defineDataAppConfig()` to preserve exact query and parameter
+names. Use `{ defaultValue }` for a fallback or `{}` for a required value.
 
 ```ts
-import {
-  defineOperation,
-  defineQueryNames,
-} from '@altertable/data-app/contract';
+import { defineDataAppConfig } from '@altertable/data-app/config';
+import { defineOperation, rowsAsRecords } from '@altertable/data-app/contract';
 
-const queries = defineQueryNames({ activity: 'feature-activity' });
-const activity = defineOperation({
-  queryNames: queries,
-  input: calendar.parseRequest,
-  output: parseActivity,
-  checks: [checkInput],
-  policy: { maxQueryRows: 100, maxDurationMs: 15000, exposeSql: true },
+const DATA_APP_CONFIG = defineDataAppConfig({
+  title: 'Products',
+  scope: { organization: 'demo', environment: 'production' },
+  appearance: { theme: 'system' },
+  queries: {
+    products: {
+      statement: 'SELECT * FROM products WHERE org_id = $orgId LIMIT $limit',
+      params: { orgId: {}, limit: { defaultValue: 10 } },
+    },
+  },
+});
+
+const products = defineOperation({
+  queries: DATA_APP_CONFIG.queries,
+  input: parseProductInput,
+  output: parseProducts,
+  checks: [{}],
+  policy: { maxQueryRows: 100, maxDurationMs: 15000 },
   async run({ query }, input) {
-    const result = await query(queries.activity, buildActivitySql(input));
-    return parseActivityRows(result);
+    const result = await query('products', input);
+    return rowsAsRecords(result, ['org_id']);
   },
 });
 ```
 
-`query()` inherits the operation's limit and cancellation signal; `{ limit }` can lower a particular query's bound. Names are checked by TypeScript and at runtime. Responses include executed SQL and query IDs when disclosure is allowed. HTTP browser modules import operation types with `import type`. Bundle apps import their browser-owned operation registry as a value and use [browser execution](client.md#browser-owned-operations-for-bundle-apps). Never bundle credentials or server adapters.
+The app supplies `parseProductInput()` and `parseProducts()`. Validate filter values
+in the input parser. `{}` declares a required parameter; `{ defaultValue }` supplies
+a fallback. `query(name, params, { limit })` executes only registered queries and
+inherits the operation's row limit and cancellation signal.
+
+SQL and resolved parameter values pass unchanged to the backend. Results include
+query evidence; use `products.queryNames` with `createDataContext()` to bind it.
+For HTTP apps, authorization can supply protected `queryParams`, such as `orgId`.
+The host/backend enforces data access and limits.
 
 ## Shared date ranges
 
@@ -50,8 +67,7 @@ export const calendar = defineDateRangeContract({
 ```
 
 `parseEmptyInput()`, `parseTrue()`, `parseCount()`, and `parseDateRangeInput()` validate
-common inputs and results. `connectionCheck()` defines a bounded connectivity
-operation. A successful connectivity check confirms access; it is not an
+common inputs and results. `connectionCheck(DATA_APP_CONFIG.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
 analysis result.
 
 See [server authorization](server.md) and [React views](react.md) for the two

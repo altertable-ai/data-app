@@ -9,7 +9,12 @@ describe('authoring', () => {
   }) => {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    const requests: { statement: string; limit: number; host: boolean }[] = [];
+    const requests: {
+      statement: string;
+      limit: number;
+      host: boolean;
+      params: { groupName: string; limit: number };
+    }[] = [];
     let fail = false;
     let release: (() => void) | undefined;
     let gate = new Promise<void>(resolve => {
@@ -253,7 +258,7 @@ describe('authoring', () => {
       )
       .toBe(true);
     await group.fill("O'Reilly");
-    await expect.poll(() => requests.at(-1)?.statement).toContain("O''Reilly");
+    await expect.poll(() => requests.at(-1)?.params.groupName).toBe("O'Reilly");
     await expect
       .poll(() =>
         app
@@ -289,7 +294,8 @@ describe('authoring', () => {
         request =>
           request.host &&
           request.limit === 10 &&
-          request.statement.includes('LIMIT 10')
+          request.params.limit === 10 &&
+          request.statement === requests[0]?.statement
       )
     ).toBe(true);
     await expect

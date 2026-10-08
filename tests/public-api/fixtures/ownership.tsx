@@ -1,3 +1,4 @@
+import { defineDataAppConfig } from '@altertable/data-app/config';
 import { Component, type ReactNode } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
@@ -11,11 +12,12 @@ import {
   mountDataApp,
   injectDataAppStyles,
 } from '@altertable/data-app/react';
-const config = {
+const DATA_APP_CONFIG = defineDataAppConfig({
   title: 'Binding ownership',
   scope: { organization: 'test', environment: 'test' },
   appearance: {},
-};
+  queries: {},
+});
 const context = createDataContext({ rows: 'rows' })({
   description: 'Same-shaped views with separate ownership',
   glossary: {
@@ -102,7 +104,7 @@ function App() {
   return (
     <AuthoringBoundary>
       <DataApp
-        config={config}
+        config={DATA_APP_CONFIG}
         view={own.view}
         datasets={[binding === 'export' ? other.dataset : own.dataset]}
         story={snapshot => [
@@ -127,4 +129,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ config: DATA_APP_CONFIG, component: App });

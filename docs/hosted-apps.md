@@ -4,7 +4,13 @@ Follow the [shared authoring flow](app-authoring.md) using [index.tsx](../exampl
 one file with public package imports; omit server files, HTML, credentials, and
 relative or app-alias imports.
 
-Replace the sample SQL, parsers, filters, data context, CSV export, story, and configuration with
+Declare `const DATA_APP_CONFIG = defineDataAppConfig({ ... })` at module top level,
+using `defineDataAppConfig()` from `/config`.
+Pass literal values throughout, without spreads, computed keys, variable references,
+other calls, or template interpolation. This lets the backend bundler extract the argument
+through its AST; an export is only needed for imports by other modules. Static apps use `queries: {}`.
+
+Replace the sample config queries, parsers, filters, data context, CSV export, story, and configuration with
 an exploration of the source data you inspected. The starter uses two SQL
 `VALUES` rows, so it needs no production table.
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
-import type { DataAppConfig } from '@altertable/data-app/config';
+import { DATA_APP_CONFIG } from '@/dev/app';
 import {
   formatCount,
   formatMetric,
@@ -45,11 +45,6 @@ import {
 } from '@/dev/order-charts';
 
 const currency: MetricFormat = { kind: 'currency', currency: 'USD' };
-const appConfig = {
-  title: 'Orders',
-  scope: { organization: 'demo', environment: 'sample' },
-  appearance: { theme: 'system' },
-} satisfies DataAppConfig;
 const identifiers = defineDataIdentifiers({
   tables: {
     orders: { catalog: 'memory', schema: 'demo', name: 'orders' },
@@ -529,7 +524,7 @@ function presentOrders(snapshot: OrderSnapshot) {
 function App() {
   return (
     <DataApp
-      config={appConfig}
+      config={DATA_APP_CONFIG}
       view={orderView}
       datasets={[
         countryDataset,
@@ -546,4 +541,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config: appConfig, component: App });
+mountDataApp({ config: DATA_APP_CONFIG, component: App });

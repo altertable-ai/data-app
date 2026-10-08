@@ -1,5 +1,5 @@
 import { injectDataAppStyles } from '@altertable/data-app/react';
-import type { DataAppConfig } from '@altertable/data-app/config';
+import { defineDataAppConfig } from '@altertable/data-app/config';
 import { connectionCheck } from '@altertable/data-app/contract';
 import { useState } from 'react';
 import {
@@ -12,14 +12,17 @@ import {
 import { DataApp, useAppVariables } from '@altertable/data-app/react/ui';
 import { mountDataApp, searchVariable } from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
-const config: DataAppConfig = {
+const DATA_APP_CONFIG = defineDataAppConfig({
   title: 'Embedded report',
   scope: { organization: 'test', environment: 'prod' },
   appearance: { theme: 'system' },
-};
+  queries: {
+    connection: { statement: 'SELECT 1 AS connection_check', params: {} },
+  },
+});
 const bridge = getDataAppTransport()!;
 const data = createDataClient({
-  operations: { connection: connectionCheck() },
+  operations: { connection: connectionCheck(DATA_APP_CONFIG.queries) },
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = {
@@ -49,7 +52,7 @@ function App() {
           { name: 'Summary', columns: ['Total'], rows: [[0]] },
         ],
       }}
-      config={config}
+      config={DATA_APP_CONFIG}
       dataContext={{ description: 'Test report', glossary: {} }}
       description="Report description"
       toolbarActions={<button>Custom toolbar action</button>}
@@ -124,7 +127,7 @@ function App() {
 injectDataAppStyles();
 
 mountDataApp({
-  config,
+  config: DATA_APP_CONFIG,
   component: App,
 });
 

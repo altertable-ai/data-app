@@ -15,7 +15,7 @@ export const handleDataRequest = createDataHandler(
     const viewer = await authenticate(request);
     return {
       lakehouse: await lakehouseFor(viewer, operation),
-      canDiscloseSql: false,
+      queryParams: { orgId: viewer.organizationId },
     };
   }
 );
@@ -23,12 +23,12 @@ export const handleDataRequest = createDataHandler(
 
 The app supplies `authenticate()` and `lakehouseFor()`, then routes `/api/data/*`
 requests to the handler. Authorize every viewer and operation, and scope the
-returned lakehouse to the viewer's permitted data. Origin and Fetch Metadata
+returned lakehouse to the viewer's permitted data. Supply trusted registry
+parameters through `queryParams`; query callers cannot override these values. Origin and Fetch Metadata
 checks reject cross-site browser requests; they do not authenticate viewers.
 
 The handler validates operation input and output, enforces query row and duration
-bounds, propagates cancellation, and returns request IDs with errors. SQL is
-disclosed only when both the operation policy and `canDiscloseSql` allow it.
+bounds, propagates cancellation, and returns query evidence and request IDs.
 Keep credentials and operation implementations on the server.
 
 See [operation contracts](contract.md), the [client](client.md), and the

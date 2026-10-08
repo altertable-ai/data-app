@@ -38,8 +38,7 @@ registry.
 ## Bind evidence
 
 ```tsx
-const queries = defineQueryNames({ activity: 'feature-activity' });
-// In the server operation: queryNames: queries
+const queries = activity.queryNames;
 const context = createDataContext(queries)({
   identifiers: identifiers.definitions,
   description: (
@@ -81,7 +80,9 @@ const finding = context.finding({
 });
 ```
 
-Import `defineQueryNames()` from `/contract` and the context/identifier factories from `/react`. Use the same registry in `defineOperation({ queryNames: queries, ... })`.
+Query inspection shows the executed SQL and resolved parameters; copy actions include both.
+
+Import context and identifier factories from `/react`. Use the operation’s derived `queryNames` for evidence.
 
 Use `view.metric(definition, select)` to register and bind a metric in one call.
 Declare dataset evidence references inside `view.dataset()`; the view registers

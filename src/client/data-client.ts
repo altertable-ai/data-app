@@ -15,8 +15,7 @@ import type {
 export type { InputOf, OutputOf } from '@/src/core/operation-types';
 
 /**
- * Parsed operation data and query evidence. `queries` is present only when SQL disclosure is
- * allowed.
+ * Parsed operation data and query evidence.
  */
 export type DataResponse<Output, Input = unknown> = DataQueryBody<Output> & {
   /** The exact browser input that produced this response. */
@@ -123,7 +122,6 @@ function createOperationClient<Operations extends DataOperations>(options: {
           {
             lakehouse,
             signal: signal ?? new AbortController().signal,
-            includeSql: true,
             requestId,
             operationName: name,
           }

@@ -1,3 +1,4 @@
+import { defineDataAppConfig } from '@altertable/data-app/config';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
@@ -148,16 +149,19 @@ function resolve(name: 'alpha' | 'beta', version: number) {
   });
 }
 
+export const DATA_APP_CONFIG = defineDataAppConfig({
+  title: 'Declared views',
+  scope: { organization: 'test', environment: 'test' },
+  appearance: {},
+  queries: {},
+});
+
 export function DeclaredApp() {
   const [shown, setShown] = useState(false);
   return (
     <DataApp
       view={alpha}
-      config={{
-        title: 'Declared views',
-        scope: { organization: 'test', environment: 'test' },
-        appearance: {},
-      }}
+      config={DATA_APP_CONFIG}
       story={() => []}
       datasets={[alphaDataset]}
     >
