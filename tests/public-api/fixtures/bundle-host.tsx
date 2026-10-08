@@ -5,14 +5,13 @@ import { createHttpTransport } from '@altertable/data-app/client';
 import {
   createMessageRouter,
   defineMessageRoute,
-  sqlQueryRoute,
   registeredQueryRoute,
-  navigationUpdateRoute,
   DataSourceError,
+  type MessageContext,
 } from '@altertable/data-app/contract';
 import {
   createNavigationHandler,
-  createSqlQueryHandler,
+  createRegisteredQueryHandler,
   type DataAppStatus,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
@@ -61,76 +60,63 @@ function Host() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     return null;
   }
-  const appRouter = createMessageRouter(
-    {
-      ...bridgeRoutes,
-      'data:sql': sqlQueryRoute,
-      'export:csv': fileRoute,
-      'export:zip': fileRoute,
+  const handlers = {
+    'test:wait'(_input: number, { signal }: MessageContext) {
+      setPendingRequests(value => value + 1);
+      return new Promise<number>((_resolve, reject) => {
+        signal.addEventListener(
+          'abort',
+          () => {
+            setPendingRequests(value => value - 1);
+            setCancelledRequests(value => value + 1);
+            reject(signal.reason);
+          },
+          { once: true }
+        );
+      });
     },
-    {
-      'test:wait'(_input, { signal }) {
-        setPendingRequests(value => value + 1);
-        return new Promise<number>((_resolve, reject) => {
-          signal.addEventListener(
-            'abort',
-            () => {
-              setPendingRequests(value => value - 1);
-              setCancelledRequests(value => value + 1);
-              reject(signal.reason);
-            },
-            { once: true }
-          );
-        });
-      },
-      'test:echo'({ period }) {
-        setEchoRequests(value => value + 1);
-        return { period, version };
-      },
-      'data:query': ({ operation, input }, { signal }) =>
-        forward(operation, input, signal),
-      'navigation:update': createNavigationHandler(),
-      'data:sql': createSqlQueryHandler(async () => ({
-        async queryAll(statement, { limit, signal }) {
-          const response = await fetch('/api/sql', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ statement, limit }),
-            signal,
-          });
-          if (!response.ok) throw new DataSourceError('unavailable');
-          return response.json();
-        },
-      })),
-      'export:csv': download,
-      'export:zip': download,
-    }
-  );
-  // The hosted starter sends registered query IDs and values, never SQL.
-  const starterRouter = createMessageRouter(
-    {
-      'data:query': registeredQueryRoute,
-      'navigation:update': navigationUpdateRoute,
-      'export:csv': fileRoute,
-      'export:zip': fileRoute,
+    'test:echo'({ period }: { period: string }) {
+      setEchoRequests(value => value + 1);
+      return { period, version };
     },
-    {
-      async 'data:query'(query, { signal }) {
-        const response = await fetch('/api/registered-query', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(query),
-          signal,
-        });
-        if (!response.ok) throw new DataSourceError('unavailable');
-        return response.json();
-      },
-      'navigation:update': createNavigationHandler(),
-      'export:csv': download,
-      'export:zip': download,
-    }
-  );
-  const router = starter ? starterRouter : appRouter;
+    'navigation:update': createNavigationHandler(),
+    'export:csv': download,
+    'export:zip': download,
+  };
+  const routes = {
+    ...bridgeRoutes,
+    'export:csv': fileRoute,
+    'export:zip': fileRoute,
+  };
+  // Bundle apps send registered query IDs and values; URL apps keep HTTP operation envelopes.
+  const router = params.has('url')
+    ? createMessageRouter(routes, {
+        ...handlers,
+        'data:query': ({ operation, input }, { signal }) =>
+          forward(operation, input, signal),
+      })
+    : createMessageRouter(
+        { ...routes, 'data:query': registeredQueryRoute },
+        {
+          ...handlers,
+          'data:query': createRegisteredQueryHandler(async query => {
+            if (query.operation === 'forbidden-check')
+              throw new Error('Denied');
+            return {
+              async queryById(operation, variables, { limit, signal }) {
+                const response = await fetch('/api/registered-query', {
+                  method: 'POST',
+                  headers: { 'content-type': 'application/json' },
+                  body: JSON.stringify({ operation, variables, limit }),
+                  signal,
+                });
+                if (!response.ok) throw new DataSourceError('unavailable');
+                return response.json();
+              },
+            };
+          }),
+        }
+      );
   return (
     <>
       <output aria-label="Echo requests">{echoRequests}</output>

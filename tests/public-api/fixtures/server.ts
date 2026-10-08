@@ -1,6 +1,7 @@
 import { serveLocalApp } from '@altertable/data-app/server/bun';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { operations } from '@/examples/starter-local-data-app/src/operations';
+import queries from '@/examples/starter-local-data-app/src/queries.json';
 import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
 import bridgeHost from '@/tests/public-api/fixtures/bridge-host.html';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
@@ -43,6 +44,7 @@ process.env.NODE_ENV = 'production';
 const local = serveLocalApp({
   page: starterPage,
   operations,
+  queries,
   title: 'Local starter',
   port: 0,
 });
@@ -108,17 +110,32 @@ const server = Bun.serve({
     if (url.pathname === '/proxy/query') {
       if (request.headers.get('authorization') !== 'Bearer fixture-token')
         return new Response('Denied', { status: 403 });
+      const { statement, params } = (await request.json()) as {
+        statement: string;
+        params: unknown;
+      };
+      if (
+        statement !== 'SELECT 1 AS connection_check' ||
+        JSON.stringify(params) !== '{}'
+      )
+        return new Response('Unexpected query', { status: 400 });
       return new Response(
         '{"query_id":"starter-query"}\n["connection_check"]\n[1]\n'
       );
     }
-    // Fixed backend fixture for the hosted starter; no SQL engine.
+    // Fixed backend fixture for registered queries; no SQL engine.
     if (url.pathname === '/api/registered-query') {
       const { operation, variables, limit } = (await request.json()) as {
         operation: string;
         variables: { groupName?: string };
         limit: number;
       };
+      if (operation === 'connection-check' && limit === 1)
+        return Response.json({
+          columns: [{ name: 'connection_check' }],
+          rows: [[1]],
+          queryId: 'connection-query',
+        });
       if (operation !== 'sample-counts-by-group')
         return new Response('Unknown query', { status: 400 });
       const groupName = variables.groupName ?? '';
@@ -132,19 +149,6 @@ const server = Bun.serve({
           .slice(0, limit),
         queryId: 'sample-query',
       });
-    }
-    if (url.pathname === '/api/sql') {
-      const { statement, limit } = (await request.json()) as {
-        statement: string;
-        limit: number;
-      };
-      if (statement === 'SELECT 1 AS connection_check' && limit === 1)
-        return Response.json({
-          columns: [{ name: 'connection_check' }],
-          rows: [[1]],
-          queryId: 'sql-query',
-        });
-      return new Response('Unexpected query', { status: 400 });
     }
     if (url.pathname === '/api/data/forbidden')
       return Response.json(

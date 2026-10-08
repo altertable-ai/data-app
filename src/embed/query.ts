@@ -3,17 +3,20 @@ import { toDataOperationFailure } from '@/src/core/operation';
 import {
   MessageRoutingError,
   type MessageContext,
-  type SqlQueryInput,
+  type RegisteredQueryInput,
 } from '@/src/core/messages';
 
-/** Authorize every SQL request and supply a backend that independently enforces access and query limits. */
-export function createSqlQueryHandler(
+/** Authorize every registered query and supply a backend that resolves the trusted statement and enforces access and query limits. */
+export function createRegisteredQueryHandler(
   authorize: (
-    query: SqlQueryInput,
+    query: RegisteredQueryInput,
     context: MessageContext
   ) => Promise<Lakehouse>
 ) {
-  async function handleSqlQuery(input: SqlQueryInput, context: MessageContext) {
+  async function handleRegisteredQuery(
+    input: RegisteredQueryInput,
+    context: MessageContext
+  ) {
     const requestId = crypto.randomUUID();
     context.signal.throwIfAborted();
     let lakehouse: Lakehouse;
@@ -29,7 +32,7 @@ export function createSqlQueryHandler(
     }
     context.signal.throwIfAborted();
     try {
-      return await lakehouse.queryAll(input.statement, {
+      return await lakehouse.queryById(input.operation, input.variables, {
         limit: input.limit,
         signal: context.signal,
       });
@@ -41,5 +44,5 @@ export function createSqlQueryHandler(
     }
   }
 
-  return handleSqlQuery;
+  return handleRegisteredQuery;
 }

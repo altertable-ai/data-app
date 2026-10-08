@@ -2,7 +2,7 @@ import { createDataContext as registerContext } from '@/src/react/ui/data-contex
 import { useDeclaredResult } from '@/src/react/view-runtime';
 import { createDataClient } from '@/src/client/data-client';
 import type { DataAppConfig } from '@/src/core/config';
-import { connectionCheck } from '@/src/core/contract';
+import type { DataOperation } from '@/src/core/contract';
 import { createDataHooks } from '@/src/react/hooks';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
@@ -16,7 +16,7 @@ const connectionContext = registerContext({})({
 
 const client = /* @__PURE__ */ createDataClient();
 const { defineDataView } = /* @__PURE__ */ createDataHooks<{
-  connection: ReturnType<typeof connectionCheck>;
+  connection: DataOperation<Record<string, never>, true>;
 }>(client);
 
 const connectionView = defineDataView({
@@ -28,7 +28,8 @@ const connectionView = defineDataView({
 });
 
 /** Query-backed connection state and next steps for a newly created app. Mount within
- * `DataAppProvider` and register `connection: connectionCheck()` on the server. */
+ * `DataAppProvider` and register a `connection` operation on the server that takes `{}`,
+ * runs a bounded probe query, and returns `true`. */
 export function GettingStarted({
   config,
   dataContext,

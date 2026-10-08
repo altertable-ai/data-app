@@ -8,7 +8,6 @@ import {
 } from '@/src/core/bridge';
 import {
   defineDataQueryRoute,
-  sqlQueryRoute,
   MessageRoutingError,
   type RoutedMessage,
 } from '@/src/core/messages';
@@ -206,7 +205,7 @@ export function createIframeTransport({
   }
 
   const messages = createMessageClient(
-    { 'data:query': defineDataQueryRoute(), 'data:sql': sqlQueryRoute },
+    { 'data:query': defineDataQueryRoute() },
     requestMessage
   );
 
@@ -269,11 +268,6 @@ export function createIframeTransport({
             },
             { signal }
           )
-          .catch(rethrowDataMessageError);
-      },
-      queryAll(statement, { limit, signal }) {
-        return messages
-          .request('data:sql', { statement, limit }, { signal })
           .catch(rethrowDataMessageError);
       },
     } satisfies Lakehouse,

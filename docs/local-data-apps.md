@@ -5,10 +5,11 @@ Use the starter's README for setup and its AGENTS.md to find app-owned files.
 Replace the connectivity screen with the exploration, CSV export, and story from the
 [shared authoring flow](app-authoring.md).
 
-| Task                                    | Documentation                            |
-| --------------------------------------- | ---------------------------------------- |
-| Serve locally with Bun                  | [Bun server](server-bun.md)              |
-| Execute and authorize server operations | [Server](server.md)                      |
-| Call operations from the browser        | [HTTP client](client.md#http-operations) |
+| Task                                    | Documentation                                      |
+| --------------------------------------- | -------------------------------------------------- |
+| Register SQL and call queries           | [Named queries](contract.md#execute-named-queries) |
+| Serve locally with Bun                  | [Bun server](server-bun.md)                        |
+| Execute and authorize server operations | [Server](server.md)                                |
+| Call operations from the browser        | [HTTP client](client.md#http-operations)           |
 
 You can also [convert the local app to a hosted data app](hosted-apps.md#convert-a-local-data-app).

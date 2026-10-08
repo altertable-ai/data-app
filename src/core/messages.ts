@@ -273,26 +273,51 @@ export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
     return null;
   },
 });
-export type SqlQueryInput = { statement: string; limit: number };
+export const dataAppRoutes = {
+  'data:query': /* @__PURE__ */ defineDataQueryRoute(),
+  'navigation:update': navigationUpdateRoute,
+};
 
-/** SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits. */
-export const sqlQueryRoute = defineMessageRoute({
-  input(value: unknown): SqlQueryInput {
-    if (!value || typeof value !== 'object')
-      throw new Error('Invalid SQL query.');
-    const query = value as { statement?: unknown; limit?: unknown };
+/** Registered statement delivery uses data:query in bundle hosts; HTTP operation hosts retain defineDataQueryRoute().
+ * Hosts must resolve the statement from trusted registration and enforce backend access and resource limits. */
+export type RegisteredQueryInput = {
+  operation: string;
+  /** Prepared-statement parameter values keyed by name. */
+  variables: QueryValues;
+  limit: number;
+};
+export const registeredQueryRoute = defineMessageRoute({
+  input(value: unknown): RegisteredQueryInput {
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new Error('Invalid query.');
+    const query = value as RegisteredQueryInput;
     if (
-      typeof query.statement !== 'string' ||
-      !query.statement.trim() ||
-      typeof query.limit !== 'number' ||
+      Object.keys(query).some(
+        key => !['operation', 'variables', 'limit'].includes(key)
+      ) ||
+      typeof query.operation !== 'string' ||
+      !query.operation.trim() ||
+      query.operation.length > 256 ||
+      !query.variables ||
+      typeof query.variables !== 'object' ||
+      Array.isArray(query.variables) ||
+      !Object.values(query.variables).every(
+        value =>
+          value === null ||
+          ['string', 'boolean'].includes(typeof value) ||
+          (typeof value === 'number' && Number.isFinite(value))
+      ) ||
       !Number.isSafeInteger(query.limit) ||
       query.limit < 1
     )
-      throw new Error('Invalid SQL query.');
-
-    return { statement: query.statement, limit: query.limit };
+      throw new Error('Invalid registered query.');
+    return {
+      operation: query.operation,
+      variables: query.variables,
+      limit: query.limit,
+    };
   },
-  output(value: unknown, input: SqlQueryInput): QueryResult {
+  output(value: unknown, input: RegisteredQueryInput): QueryResult {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid query result.');
     const result = value as QueryResult;
@@ -318,47 +343,5 @@ export const sqlQueryRoute = defineMessageRoute({
       rows: result.rows,
       ...(result.queryId === undefined ? {} : { queryId: result.queryId }),
     };
-  },
-});
-
-export const dataAppRoutes = {
-  'data:query': /* @__PURE__ */ defineDataQueryRoute(),
-  'navigation:update': navigationUpdateRoute,
-};
-
-/** Registered statement delivery uses data:query in bundle hosts; HTTP operation hosts retain defineDataQueryRoute(). */
-export type RegisteredQueryInput = {
-  operation: string;
-  /** Prepared-statement parameter values keyed by name. */
-  variables: QueryValues;
-  limit: number;
-};
-export const registeredQueryRoute = defineMessageRoute({
-  input(value: unknown): RegisteredQueryInput {
-    if (!value || typeof value !== 'object' || Array.isArray(value))
-      throw new Error('Invalid query.');
-    const query = value as RegisteredQueryInput;
-    if (
-      Object.keys(query).some(
-        key => !['operation', 'variables', 'limit'].includes(key)
-      ) ||
-      typeof query.operation !== 'string' ||
-      !query.operation.trim() ||
-      query.operation.length > 256 ||
-      !query.variables ||
-      typeof query.variables !== 'object' ||
-      Array.isArray(query.variables) ||
-      !Number.isSafeInteger(query.limit) ||
-      query.limit < 1
-    )
-      throw new Error('Invalid registered query.');
-    return {
-      operation: query.operation,
-      variables: query.variables,
-      limit: query.limit,
-    };
-  },
-  output(value: unknown, input: RegisteredQueryInput): QueryResult {
-    return sqlQueryRoute.output(value, { statement: '', limit: input.limit });
   },
 });

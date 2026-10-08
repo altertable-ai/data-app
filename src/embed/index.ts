@@ -15,7 +15,7 @@ export type { DataAppSource } from '@/src/embed/source';
 export { startDataAppBootstrap } from '@/src/embed/bootstrap';
 export { createNavigationHandler } from '@/src/embed/navigation';
 
-export { createSqlQueryHandler } from '@/src/embed/sql';
+export { createRegisteredQueryHandler } from '@/src/embed/query';
 
 export type { DataAppPresentation } from '@/src/core/presentation';
 export type { DataAppLogger } from '@/src/core/logger';

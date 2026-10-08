@@ -28,16 +28,15 @@ import {
   annotationUpdateRoute,
   createMessageRouter,
   defineMessageRoute,
-  sqlQueryRoute,
   registeredQueryRoute,
-  navigationUpdateRoute,
   DataSourceError,
+  type QueryValues,
 } from '@altertable/data-app/contract';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
   type DataAppStatus,
   createNavigationHandler,
-  createSqlQueryHandler,
+  createRegisteredQueryHandler,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
 import '@/dev/fixtures/dev-reload';
@@ -215,78 +214,67 @@ function Host() {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
     return null;
   }
-  const legacyRouter = createMessageRouter(
-    {
-      ...bridgeRoutes,
-      'annotation:draft': annotationDraftRoute,
-      'annotation:mode': annotationModeRoute,
-      'annotation:editor': annotationEditorStateRoute,
-      'annotation:update': annotationUpdateRoute,
-      'data:sql': sqlQueryRoute,
-      'export:csv': fileExportRoute,
-      'export:zip': fileExportRoute,
+  const routes = {
+    ...bridgeRoutes,
+    'annotation:draft': annotationDraftRoute,
+    'annotation:mode': annotationModeRoute,
+    'annotation:editor': annotationEditorStateRoute,
+    'annotation:update': annotationUpdateRoute,
+    'export:csv': fileExportRoute,
+    'export:zip': fileExportRoute,
+  };
+  const handlers = {
+    ...annotationsHost.handlers,
+    'annotation:draft'(
+      draft: Parameters<
+        (typeof annotationsHost.handlers)['annotation:draft']
+      >[0]
+    ) {
+      if (hostOptions.has('annotation-limit'))
+        throw new MessageRoutingError(
+          'annotation_limit',
+          'Delete an annotation before adding another.'
+        );
+      if (annotationFailure) throw new Error('Fixture failure');
+      return annotationsHost.handlers['annotation:draft'](draft);
     },
-    {
-      ...annotationsHost.handlers,
-      'annotation:draft'(draft) {
-        if (hostOptions.has('annotation-limit'))
-          throw new MessageRoutingError(
-            'annotation_limit',
-            'Delete an annotation before adding another.'
-          );
-        if (annotationFailure) throw new Error('Fixture failure');
-        return annotationsHost.handlers['annotation:draft'](draft);
-      },
-      'export:csv': downloadExport,
-      'export:zip': downloadExport,
-      'data:sql': createSqlQueryHandler(async () => ({
-        async queryAll(statement, { limit, signal }) {
-          const response = await fetch('/api/sql', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ statement, limit }),
-            signal,
-          });
-          if (!response.ok) throw new DataSourceError('unavailable');
-          return response.json();
-        },
-      })),
-      'test:echo'({ period }) {
-        return { period, version };
-      },
-      'data:query'({ operation, input }, { signal }) {
-        return forward(operation, input, signal);
-      },
-      'navigation:update': createNavigationHandler(),
-    }
-  );
-
-  const router =
-    location.pathname === '/starter-data-app'
-      ? createMessageRouter(
-          {
-            'export:csv': fileExportRoute,
-            'export:zip': fileExportRoute,
-            'data:query': registeredQueryRoute,
-            'navigation:update': navigationUpdateRoute,
-          },
-          {
-            'export:csv': downloadExport,
-            'export:zip': downloadExport,
-            'data:query': async (query, { signal }) => {
-              const response = await fetch('/api/registered-query', {
-                method: 'POST',
-                headers: { 'content-type': 'application/json' },
-                body: JSON.stringify(query),
-                signal,
-              });
-              if (!response.ok) throw new DataSourceError('unavailable');
-              return response.json();
-            },
-            'navigation:update': createNavigationHandler(),
-          }
-        )
-      : legacyRouter;
+    'export:csv': downloadExport,
+    'export:zip': downloadExport,
+    'test:echo'({ period }: { period: string }) {
+      return { period, version };
+    },
+    'navigation:update': createNavigationHandler(),
+  };
+  async function queryRegistered(
+    operation: string,
+    variables: QueryValues,
+    { limit, signal }: { limit: number; signal: AbortSignal }
+  ) {
+    const response = await fetch('/api/registered-query', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ operation, variables, limit }),
+      signal,
+    });
+    if (!response.ok) throw new DataSourceError('unavailable');
+    return response.json();
+  }
+  // Bundle apps send registered query IDs and values; URL apps keep HTTP operation envelopes.
+  const router = urlMode
+    ? createMessageRouter(routes, {
+        ...handlers,
+        'data:query': ({ operation, input }, { signal }) =>
+          forward(operation, input, signal),
+      })
+    : createMessageRouter(
+        { ...routes, 'data:query': registeredQueryRoute },
+        {
+          ...handlers,
+          'data:query': createRegisteredQueryHandler(async () => ({
+            queryById: queryRegistered,
+          })),
+        }
+      );
 
   const presentationControls = (
     <>

@@ -19,11 +19,11 @@ const totalsOperation = defineOperation({
   },
   policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
   async run({ lakehouse, signal }) {
-    const result = await lakehouse.queryAll('SELECT 1', {
-      limit: 20,
-      signal,
-      name: 'totals',
-    });
+    const result = await lakehouse.queryById(
+      'totals',
+      {},
+      { limit: 20, signal }
+    );
 
     return result.rows.length;
   },
@@ -42,10 +42,15 @@ test('HTTP operations validate inputs, enforce row policy, and disclose permitte
   const handle = createDataHandler({ totals: totalsOperation }, async () => ({
     canDiscloseSql: true,
     lakehouse: {
-      async queryAll(_statement: string, options: { limit: number }) {
+      async queryById(_name, _values, options) {
         requestedLimit = options.limit;
 
-        return { columns: [], rows: [[1]], queryId: 'query-1' };
+        return {
+          columns: [],
+          rows: [[1]],
+          queryId: 'query-1',
+          statement: 'SELECT 1',
+        };
       },
     },
   }));
@@ -65,11 +70,7 @@ test('HTTP operations validate inputs, enforce row policy, and disclose permitte
       totals: {
         ...totalsOperation,
         async run({ lakehouse, signal }) {
-          await lakehouse.queryAll('SELECT 1', {
-            limit: 1,
-            signal,
-            name: 'other',
-          });
+          await lakehouse.queryById('other', {}, { limit: 1, signal });
 
           return 1;
         },
@@ -78,7 +79,7 @@ test('HTTP operations validate inputs, enforce row policy, and disclose permitte
     async () => ({
       canDiscloseSql: true,
       lakehouse: {
-        async queryAll() {
+        async queryById() {
           return { columns: [], rows: [] };
         },
       },
@@ -90,7 +91,7 @@ test('HTTP operations validate inputs, enforce row policy, and disclose permitte
     async () => ({
       canDiscloseSql: false,
       lakehouse: {
-        async queryAll() {
+        async queryById() {
           return { columns: [], rows: [[1]] };
         },
       },
@@ -109,7 +110,7 @@ test('HTTP requests require JSON and an allowed same-origin delivery context', a
   const handle = createDataHandler({ totals: totalsOperation }, async () => ({
     canDiscloseSql: false,
     lakehouse: {
-      async queryAll() {
+      async queryById() {
         return { columns: [], rows: [] };
       },
     },
@@ -154,6 +155,7 @@ test('HTTP requests require JSON and an allowed same-origin delivery context', a
 
 test('HTTP handlers hide private failures and preserve adapter authentication errors', async () => {
   const source = localLakehouse(
+    { totals: 'SELECT 1' },
     {
       ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
       ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
@@ -168,7 +170,7 @@ test('HTTP handlers hide private failures and preserve adapter authentication er
   const failing = createDataHandler({ totals: totalsOperation }, async () => ({
     canDiscloseSql: false,
     lakehouse: {
-      async queryAll() {
+      async queryById() {
         throw new Error('private upstream detail');
       },
     },
@@ -248,7 +250,7 @@ function cancellableRequest(controller: AbortController) {
 const cancellationAccess = {
   canDiscloseSql: false,
   lakehouse: {
-    async queryAll() {
+    async queryById() {
       return { columns: [], rows: [] };
     },
   },

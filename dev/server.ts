@@ -1,6 +1,8 @@
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
+import starterQueries from '@/examples/starter-local-data-app/src/queries.json';
+import playgroundQueries from '@/dev/queries.json';
 import starterConfig from '@/examples/starter-local-data-app/app';
 import { watch } from 'node:fs';
 import { parseDataAppAnnotationDraft } from '@altertable/data-app/contract';
@@ -114,7 +116,9 @@ const serveReloadEvents =
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
 // `bun run dev` provides a mocked Altertable API; tests keep deterministic fixtures.
 const lakehouse =
-  isDevelopment && process.env.ALTERTABLE_API_BASE ? localLakehouse() : null;
+  isDevelopment && process.env.ALTERTABLE_API_BASE
+    ? localLakehouse(playgroundQueries)
+    : null;
 if (!lakehouse) {
   process.env.ALTERTABLE_DATA_PROXY_URL = `http://127.0.0.1:${port}/__test/proxy`;
   process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'local-test-fixture';
@@ -123,6 +127,7 @@ if (!isDevelopment) process.env.NODE_ENV = 'production';
 serveLocalApp({
   page: starterPage,
   operations: starterOperations,
+  queries: starterQueries,
   title: starterConfig.title,
   port: port + 2,
 });
@@ -246,13 +251,44 @@ Bun.serve({
         '{"query_id":"starter-query"}\n["connection_check"]\n[1]\n'
       );
     }
-    // Fixed backend fixture for the hosted starter; no SQL template engine.
     if (path === '/api/registered-query') {
+      const delay = isDevelopment
+        ? Number(
+            new URL(
+              request.headers.get('referer') ?? request.url
+            ).searchParams.get('delay')
+          )
+        : 0;
+      if (delay > 0) await Bun.sleep(Math.min(delay, 30_000));
       const query = (await request.json()) as {
         operation: string;
-        variables: { groupName?: string };
+        variables: Record<string, string>;
         limit: number;
       };
+      // `bun run dev` runs playground queries against the mocked Altertable API.
+      if (lakehouse && Object.hasOwn(playgroundQueries, query.operation)) {
+        try {
+          const { columns, rows, queryId } = await lakehouse.queryById(
+            query.operation,
+            query.variables,
+            { limit: query.limit, signal: request.signal }
+          );
+          return Response.json({ columns, rows, queryId });
+        } catch (error) {
+          console.error('Mocked Altertable API query failed:', error);
+          return Response.json(
+            { error: error instanceof Error ? error.message : String(error) },
+            { status: 502 }
+          );
+        }
+      }
+      // Fixed backend fixtures for the starter and connection check; no SQL engine.
+      if (query.operation === 'connection-check' && query.limit === 1)
+        return Response.json({
+          columns: [{ name: 'connection_check' }],
+          rows: [[1]],
+          queryId: 'connection-query',
+        });
       if (query.operation !== 'sample-counts-by-group')
         return Response.json(
           { error: 'Unknown fixture query' },
@@ -268,48 +304,6 @@ Bun.serve({
           .filter(([group]) => !groupName || group === groupName)
           .slice(0, query.limit),
         queryId: 'sample-query',
-      });
-    }
-    if (path === '/api/sql') {
-      const delay = isDevelopment
-        ? Number(
-            new URL(
-              request.headers.get('referer') ?? request.url
-            ).searchParams.get('delay')
-          )
-        : 0;
-      if (delay > 0) await Bun.sleep(Math.min(delay, 30_000));
-      const query = (await request.json()) as {
-        statement: string;
-        limit: number;
-      };
-      if (lakehouse) {
-        try {
-          const { columns, rows, queryId } = await lakehouse.queryAll(
-            query.statement,
-            { limit: query.limit, signal: request.signal }
-          );
-          return Response.json({ columns, rows, queryId });
-        } catch (error) {
-          console.error('Mocked Altertable API query failed:', error);
-          return Response.json(
-            { error: error instanceof Error ? error.message : String(error) },
-            { status: 502 }
-          );
-        }
-      }
-      if (
-        query.statement !== 'SELECT 1 AS connection_check' ||
-        query.limit !== 1
-      )
-        return Response.json(
-          { error: 'Unexpected SQL request' },
-          { status: 400 }
-        );
-      return Response.json({
-        columns: [{ name: 'connection_check' }],
-        rows: [[1]],
-        queryId: 'sql-query',
       });
     }
     if (path === '/api/data/forbidden')

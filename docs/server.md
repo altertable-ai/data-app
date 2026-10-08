@@ -23,12 +23,14 @@ export const handleDataRequest = createDataHandler(
 
 The app supplies `authenticate()` and `lakehouseFor()`, then routes `/api/data/*`
 requests to the handler. Authorize every viewer and operation, and scope the
-returned lakehouse to the viewer's permitted data. Origin and Fetch Metadata
+returned lakehouse to the viewer's permitted data. Its `queryById()` resolves
+registered statements and binds the values as parameters. Origin and Fetch Metadata
 checks reject cross-site browser requests; they do not authenticate viewers.
 
 The handler validates operation input and output, enforces query row and duration
 bounds, propagates cancellation, and returns request IDs with errors. SQL is
-disclosed only when both the operation policy and `canDiscloseSql` allow it.
+disclosed only when the lakehouse returns the statement and both the operation
+policy and `canDiscloseSql` allow it.
 Keep credentials and operation implementations on the server.
 
 See [operation contracts](contract.md), the [client](client.md), and the

@@ -60,7 +60,7 @@ const operation = defineOperation({
 const client = createDataClient({
   operations: { activity: operation },
   lakehouse: {
-    async queryAll() {
+    async queryById() {
       return { columns: [], rows: [] };
     },
   },

@@ -74,7 +74,7 @@ export async function executeDataOperation(
   }
 }
 
-/** Query evidence follows statement invocation order; query IDs retain completion order. */
+/** Query evidence follows invocation order; query IDs retain completion order. */
 function createOperationLakehouse(
   operation: Operation,
   source: Lakehouse,
@@ -85,63 +85,50 @@ function createOperationLakehouse(
   const queries: DisclosedQuery[] = [];
   const lakehouse: Lakehouse = {
     async queryById(name, values, options) {
-      if (!source.queryById)
-        throw new Error('A registered query bridge is required.');
       if (!Number.isSafeInteger(options.limit) || options.limit < 1)
         throw new Error('Query needs a positive row limit.');
       if (
         !operation.queryNames ||
         !Object.values(operation.queryNames).includes(name)
       )
-        throw new Error('Unknown registered query name.');
-      const limit = Math.min(options.limit, operation.policy.maxQueryRows);
-      const result = await source.queryById(name, values, {
-        limit,
-        signal: AbortSignal.any([signal, options.signal]),
-      });
-      if (result.rows.length > limit)
-        throw new Error('Result exceeds row limit.');
-      if (result.queryId) queryIds.push(result.queryId);
-      return result;
-    },
-    async queryAll(statement, options) {
-      if (!Number.isInteger(options.limit) || options.limit < 1)
-        throw new Error('Query needs a positive row limit.');
-      if (
-        operation.queryNames &&
-        !Object.values(operation.queryNames).includes(options.name ?? '')
-      )
         throw new Error(
           `Query name is not registered for operation ${operationName}.`
         );
-      const query: DisclosedQuery = {
-        name: options.name ?? `Query ${queries.length + 1}`,
-        statement,
-      };
-      queries.push(query);
       const limit = Math.min(options.limit, operation.policy.maxQueryRows);
+      // Reserve the slot before awaiting so disclosed queries keep invocation order.
+      const disclosed: DisclosedQuery = { name, statement: '' };
+      queries.push(disclosed);
       let result;
       try {
-        result = await source.queryAll(statement, {
+        result = await source.queryById(name, values, {
           limit,
           signal: AbortSignal.any([signal, options.signal]),
         });
       } catch (error) {
-        if (error instanceof DataSourceError) error.queryName = query.name;
+        if (error instanceof DataSourceError) error.queryName = name;
         throw error;
       }
-      if (result.rows.length > limit)
+      const { statement, ...queryResult } = result;
+      if (queryResult.rows.length > limit)
         throw new Error('Result exceeds row limit.');
-      if (result.queryId) {
-        query.queryId = result.queryId;
-        queryIds.push(result.queryId);
+      if (statement) disclosed.statement = statement;
+      if (queryResult.queryId) {
+        disclosed.queryId = queryResult.queryId;
+        queryIds.push(queryResult.queryId);
       }
 
-      return result;
+      return queryResult;
     },
   };
 
-  return { lakehouse, queries, queryIds };
+  return {
+    lakehouse,
+    queryIds,
+    /** Only statements the source returned are disclosable. */
+    get queries() {
+      return queries.filter(query => query.statement);
+    },
+  };
 }
 
 /** Settle cancellation even when operation code or its lakehouse ignores the signal. */

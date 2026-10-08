@@ -7,11 +7,11 @@ should import their operation types using `import type`.
 
 ## Execute named queries
 
-Hosted operations call registered query IDs with parameter values. Registered SQL
-uses DuckDB prepared-statement parameters: `event-count` can reference
-`SELECT count(*) FROM events WHERE country = $country` in the separate query map.
-See [hosted registration](hosted-apps.md#create-and-update-registration) for the
-app's deliverables.
+Operations call registered query IDs with parameter values. Each app keeps its SQL
+in a `queries.json` map that uses DuckDB prepared-statement parameters:
+`event-count` can reference `SELECT count(*) FROM events WHERE country = $country`.
+See [hosted registration](hosted-apps.md#create-and-update-registration) and the
+[local Bun server](server-bun.md) for where the map is read.
 
 ```ts
 import {
@@ -49,13 +49,14 @@ const operations = {
 `query(id, values)` inherits the operation's limit and cancellation signal;
 `{ limit }` can lower the row bound. `values` maps each `$name` parameter in that
 statement to its value, keyed without `$`. An operation may execute several named
-queries. Local server operations keep `query(id, statement)`; see
-[local authoring](local-data-apps.md).
+queries.
 
-Values cross the bridge as JSON: pass strings, numbers, booleans, or null. Dates
-serialize as ISO strings, so cast them in SQL, such as `$start::TIMESTAMPTZ`.
-The operation's `input` parser validates values in the browser; the backend binds
-them as statement parameters, never as SQL text. For an optional filter, write the
+Values are JSON scalars: strings, numbers, booleans, or null, at most 8 KiB in
+total. Pass dates as ISO strings and cast them in SQL, such as
+`$start::TIMESTAMPTZ`. Arrays and objects are rejected; pass a list as a JSON
+string, such as `list_contains(from_json($countries, '["VARCHAR"]'), country)`.
+The operation's `input` parser validates values; the backend binds them as
+statement parameters, never as SQL text. For an optional filter, write the
 condition explicitly, such as `$country = '' OR country = $country`.
 
 ## Shared date ranges
@@ -76,9 +77,7 @@ export const calendar = defineDateRangeContract({
 ```
 
 `parseEmptyInput()`, `parseTrue()`, `parseCount()`, and `parseDateRangeInput()` validate
-common inputs and results. `connectionCheck()` defines a bounded connectivity
-operation. A successful connectivity check confirms access; it is not an
-analysis result.
+common inputs and results.
 
 See [server authorization](server.md) and [React views](react.md) for the two
 sides of an operation.

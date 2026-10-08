@@ -1,8 +1,11 @@
 import { expect, test } from 'vitest';
 import { localLakehouse } from '@altertable/data-app/server/bun';
 
+const queries = { one: 'SELECT $value AS value' };
+
 test('local lakehouse delivers CLI proxy queries with authentication and query evidence', async () => {
   const proxied = localLakehouse(
+    queries,
     {
       ALTERTABLE_DATA_PROXY_URL: 'http://127.0.0.1:1234',
       ALTERTABLE_DATA_PROXY_TOKEN: 'run-token',
@@ -15,6 +18,11 @@ test('local lakehouse delivers CLI proxy queries with authentication and query e
         expect(options?.headers).toMatchObject({
           authorization: 'Bearer run-token',
         });
+        expect(JSON.parse(options?.body as string)).toEqual({
+          statement: 'SELECT $value AS value',
+          limit: 1,
+          params: { value: 1 },
+        });
 
         return new Response('{"query_id":"q1"}\n["value"]\n[1]\n');
       },
@@ -22,11 +30,43 @@ test('local lakehouse delivers CLI proxy queries with authentication and query e
     )
   );
   expect(
-    await proxied.queryAll('SELECT 1', {
-      limit: 1,
-      signal: new AbortController().signal,
-    })
-  ).toMatchObject({ rows: [[1]], queryId: 'q1' });
+    await proxied.queryById(
+      'one',
+      { value: 1 },
+      { limit: 1, signal: new AbortController().signal }
+    )
+  ).toMatchObject({
+    rows: [[1]],
+    queryId: 'q1',
+    statement: 'SELECT $value AS value',
+  });
+});
+
+test('local lakehouse rejects unregistered query IDs before sending SQL', async () => {
+  let requests = 0;
+  const source = localLakehouse(
+    queries,
+    {
+      ALTERTABLE_DATA_PROXY_URL: 'http://proxy',
+      ALTERTABLE_DATA_PROXY_TOKEN: 't',
+    },
+    Object.assign(
+      async () => {
+        requests++;
+        return new Response('{}\n["value"]\n[1]\n');
+      },
+      { preconnect() {} }
+    )
+  );
+  for (const name of ['missing', 'toString', '__proto__'])
+    await expect(
+      source.queryById(
+        name,
+        {},
+        { limit: 1, signal: new AbortController().signal }
+      )
+    ).rejects.toMatchObject({ reason: 'query_rejected' });
+  expect(requests).toBe(0);
 });
 
 test('local lakehouse rejects malformed NDJSON metadata, columns and rows', async () => {
@@ -40,6 +80,7 @@ test('local lakehouse rejects malformed NDJSON metadata, columns and rows', asyn
     '{}\n["value"]\n[1,2]\n',
   ]) {
     const source = localLakehouse(
+      queries,
       {
         ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
         ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
@@ -47,7 +88,7 @@ test('local lakehouse rejects malformed NDJSON metadata, columns and rows', asyn
       Object.assign(async () => new Response(body), { preconnect() {} })
     );
     const error = await source
-      .queryAll('SELECT 1', { limit: 1, signal: new AbortController().signal })
+      .queryById('one', {}, { limit: 1, signal: new AbortController().signal })
       .catch(error => error);
     expect(error).toBeInstanceOf(Error);
   }
@@ -67,6 +108,7 @@ test('local lakehouse accepts string and typed column headers, empty results and
     ['{}\n[1]\n', { columns: [], rows: [[1]] }],
   ] as const) {
     const source = localLakehouse(
+      queries,
       {
         ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
         ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
@@ -74,10 +116,11 @@ test('local lakehouse accepts string and typed column headers, empty results and
       Object.assign(async () => new Response(body), { preconnect() {} })
     );
     expect(
-      await source.queryAll('SELECT 1', {
-        limit: 1,
-        signal: new AbortController().signal,
-      })
+      await source.queryById(
+        'one',
+        {},
+        { limit: 1, signal: new AbortController().signal }
+      )
     ).toMatchObject(expected);
   }
 });

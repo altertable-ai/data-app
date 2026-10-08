@@ -5,13 +5,13 @@ import {
   defineDataQueryRoute,
   navigationUpdateRoute,
   MessageRoutingError,
-  sqlQueryRoute,
+  registeredQueryRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
 import { createMessageClient } from '@altertable/data-app/client';
 import {
   createNavigationHandler,
-  createSqlQueryHandler,
+  createRegisteredQueryHandler,
 } from '@altertable/data-app/embed';
 
 function number(value: unknown): number {
@@ -208,28 +208,37 @@ test('routing checks cancellation before and after handlers', async () => {
   ).toMatchObject({ name: 'AbortError' });
 });
 
-test('a SQL message client rejects malformed requests and malformed upstream results', async () => {
-  const input = { statement: 'SELECT 1', limit: 1 };
+test('a registered query client rejects malformed requests and malformed upstream results', async () => {
+  const input = { operation: 'count', variables: { country: 'FR' }, limit: 1 };
   const result = { columns: [{ name: 'n' }], rows: [[1]], queryId: 'q' };
   let response: unknown = result;
   const router = createMessageRouter(
-    { 'data:sql': sqlQueryRoute },
-    { 'data:sql': () => response as typeof result }
+    { 'data:query': registeredQueryRoute },
+    { 'data:query': () => response as typeof result }
   );
-  const client = createMessageClient({ 'data:sql': sqlQueryRoute }, message =>
-    router.dispatch(message, context())
+  const client = createMessageClient(
+    { 'data:query': registeredQueryRoute },
+    message => router.dispatch(message, context())
   );
-  await expect(client.request('data:sql', input)).resolves.toEqual(result);
+  await expect(client.request('data:query', input)).resolves.toEqual(result);
+  response = { ...result, statement: 'SELECT private' };
+  await expect(client.request('data:query', input)).resolves.toEqual(result);
+  response = result;
   for (const payload of [
     null,
     {},
-    { statement: '', limit: 1 },
-    { statement: 'SELECT 1', limit: 0 },
-    { statement: 'SELECT 1', limit: 1.5 },
-    { statement: 'SELECT 1', limit: Number.MAX_SAFE_INTEGER + 1 },
+    { ...input, operation: '' },
+    { ...input, limit: 0 },
+    { ...input, limit: 1.5 },
+    { ...input, limit: Number.MAX_SAFE_INTEGER + 1 },
+    { ...input, statement: 'SELECT 1' },
+    { ...input, variables: ['FR'] },
+    { ...input, variables: { country: ['FR'] } },
+    { ...input, variables: { country: { code: 'FR' } } },
+    { ...input, variables: { count: Number.NaN } },
   ]) {
     await expect(
-      router.dispatch({ route: 'data:sql', payload }, context())
+      router.dispatch({ route: 'data:query', payload }, context())
     ).rejects.toMatchObject({ code: 'invalid_payload' });
   }
   for (const body of [
@@ -240,39 +249,49 @@ test('a SQL message client rejects malformed requests and malformed upstream res
     { ...result, queryId: 1 },
   ]) {
     response = body;
-    await expect(client.request('data:sql', input)).rejects.toMatchObject({
+    await expect(client.request('data:query', input)).rejects.toMatchObject({
       code: 'invalid_response',
     });
   }
 });
 
-test('SQL host authorizes each request, preserves source errors, and hides private failures', async () => {
+test('registered query host authorizes each request, preserves source errors, and hides private failures', async () => {
   let authorizations = 0;
   const router = createMessageRouter(
-    { 'data:sql': sqlQueryRoute },
+    { 'data:query': registeredQueryRoute },
     {
-      'data:sql': createSqlQueryHandler(async ({ statement }, { signal }) => {
-        authorizations++;
-        expect(signal.aborted).toBe(false);
-        if (statement === 'denied') throw new Error('private auth');
-        return {
-          async queryAll(_, options) {
-            expect(options.signal).toBe(signal);
-            if (statement === 'busy') throw new DataSourceError('rate_limited');
-            throw new Error('private query');
-          },
-        };
-      }),
+      'data:query': createRegisteredQueryHandler(
+        async ({ operation }, { signal }) => {
+          authorizations++;
+          expect(signal.aborted).toBe(false);
+          if (operation === 'denied') throw new Error('private auth');
+          return {
+            async queryById(name, values, options) {
+              expect(name).toBe(operation);
+              expect(values).toEqual({ country: 'FR' });
+              expect(options.signal).toBe(signal);
+              if (name === 'busy') throw new DataSourceError('rate_limited');
+              throw new Error('private query');
+            },
+          };
+        }
+      ),
     }
   );
   const ctx = context();
-  for (const [statement, code] of [
+  for (const [operation, code] of [
     ['denied', 'forbidden'],
     ['busy', 'source_rate_limited'],
     ['failure', 'query_failed'],
   ]) {
     const error = await router
-      .dispatch({ route: 'data:sql', payload: { statement, limit: 1 } }, ctx)
+      .dispatch(
+        {
+          route: 'data:query',
+          payload: { operation, variables: { country: 'FR' }, limit: 1 },
+        },
+        ctx
+      )
       .catch(error => error);
     expect(error).toBeInstanceOf(MessageRoutingError);
     if (!(error instanceof MessageRoutingError))
@@ -286,7 +305,10 @@ test('SQL host authorizes each request, preserves source errors, and hides priva
   cancelled.abort();
   const error = await router
     .dispatch(
-      { route: 'data:sql', payload: { statement: 'busy', limit: 1 } },
+      {
+        route: 'data:query',
+        payload: { operation: 'busy', variables: { country: 'FR' }, limit: 1 },
+      },
       { signal: cancelled.signal }
     )
     .catch(error => error);
@@ -294,15 +316,15 @@ test('SQL host authorizes each request, preserves source errors, and hides priva
   expect(authorizations).toBe(3);
 });
 
-test('SQL host authentication failures give browser viewers actionable messages', async () => {
+test('registered query host authentication failures give browser viewers actionable messages', async () => {
   for (const reason of ['unauthorized', 'forbidden'] as const) {
-    const handler = createSqlQueryHandler(async () => ({
-      async queryAll() {
+    const handler = createRegisteredQueryHandler(async () => ({
+      async queryById() {
         throw new DataSourceError(reason);
       },
     }));
     const error = await handler(
-      { statement: 'SELECT 1', limit: 1 },
+      { operation: 'count', variables: {}, limit: 1 },
       context()
     ).catch(error => error);
     expect(error.message).not.toMatch(/altertable|profile|CLI/);

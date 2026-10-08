@@ -1,6 +1,6 @@
 import { injectDataAppStyles } from '@altertable/data-app/react';
 import type { DataAppConfig } from '@altertable/data-app/config';
-import { connectionCheck } from '@altertable/data-app/contract';
+import { connectionOperation } from '@/tests/public-api/fixtures/connection';
 import { useState } from 'react';
 import {
   createMessageClient,
@@ -25,7 +25,7 @@ const config: DataAppConfig = {
 };
 const bridge = getDataAppTransport()!;
 const data = createDataClient({
-  operations: { connection: connectionCheck() },
+  operations: { connection: connectionOperation() },
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = { period: textVariable({ key: 'period', history: 'push' }) };
@@ -119,7 +119,7 @@ function App() {
       <button
         onClick={() => {
           void createDataClient<{
-            forbidden: ReturnType<typeof connectionCheck>;
+            forbidden: ReturnType<typeof connectionOperation>;
           }>()
             .query('forbidden', {})
             .catch(error =>

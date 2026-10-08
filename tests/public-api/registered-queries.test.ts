@@ -22,9 +22,6 @@ test('registered queries forward values unchanged and preserve backend results',
   const client = createDataClient({
     operations: { search: operation },
     lakehouse: {
-      async queryAll() {
-        throw new Error('Raw SQL is unavailable.');
-      },
       async queryById(operation, variables, { limit }) {
         requests.push({ operation, variables, limit });
         return {
@@ -49,7 +46,7 @@ test('registered queries forward values unchanged and preserve backend results',
   });
 });
 
-test('registered route validates the envelope and leaves value validation to the backend', async () => {
+test('registered route validates the envelope, leaves scalar value checks to the backend, and offers no SQL route', async () => {
   const requests: unknown[] = [];
   const router = createMessageRouter(
     { 'data:query': registeredQueryRoute },

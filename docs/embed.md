@@ -99,79 +99,51 @@ and iframe isolation do not grant access to data or execute SQL.
 
 ## Registered query route
 
-For registered bundle apps, attach `registeredQueryRoute` to `data:query`:
+Bundle apps send registered query IDs and values through `data:query`. Attach
+`registeredQueryRoute` and authorize each query with `createRegisteredQueryHandler()`:
 
 ```ts
 import {
   createMessageRouter,
   registeredQueryRoute,
 } from '@altertable/data-app/contract';
+import { createRegisteredQueryHandler } from '@altertable/data-app/embed';
 
 const router = createMessageRouter(
   { 'data:query': registeredQueryRoute },
   {
-    'data:query': async (query, { signal }) => {
-      return executeRegisteredQueryForCurrentViewer(appRevision, query, signal);
-    },
-  }
-);
-```
-
-The route accepts `RegisteredQueryInput` (`{ operation, variables, limit }`) and
-returns `QueryResult`. `variables` maps statement parameter names to values. Here `operation` identifies one registered SQL statement, rather
-than the browser operation that may orchestrate several queries.
-
-The host supplies `appRevision` and `executeRegisteredQueryForCurrentViewer()`.
-Resolve the revision from the trusted session and forward requests to the backend
-for registration lookup, value validation, execution, viewer authorization, and
-resource limits. Never accept registration or authorization scope from the iframe.
-**Do not expose `data:sql` for registered apps:** it would bypass registration.
-
-For HTTP-style operation envelopes, use
-[`defineDataQueryRoute()`](contract.md#message-routes) instead.
-
-## SQL query route
-
-Hosts permitting statement-based queries register `sqlQueryRoute`:
-
-```ts
-import {
-  createMessageRouter,
-  sqlQueryRoute,
-} from '@altertable/data-app/contract';
-import { createSqlQueryHandler } from '@altertable/data-app/embed';
-
-const router = createMessageRouter(
-  { 'data:sql': sqlQueryRoute },
-  {
-    'data:sql': createSqlQueryHandler(async (query, { signal }) => {
-      return authorizedLakehouseForCurrentViewer(query, signal);
+    'data:query': createRegisteredQueryHandler(async (query, { signal }) => {
+      return authorizedLakehouseForCurrentViewer(appRevision, query, signal);
     }),
   }
 );
 // Supply router.dispatch as the shell's onMessage handler.
 ```
 
-The host supplies `authorizedLakehouseForCurrentViewer()`. Its backend must enforce
-viewer/dataset permissions, permitted query behavior, maximum rows, execution
-time, concurrency, and response size independently of browser policy. Route
-validation is not SQL authorization. `createSqlQueryHandler()` calls authorization
-for each query, forwards cancellation, and preserves `DataSourceError` reasons
-as public `source_*` errors with request IDs. Authorization failures return
-`forbidden`; unknown query errors are hidden. Custom handlers can return deliberate
-public failures with `MessageRoutingError`.
+The route accepts `RegisteredQueryInput` (`{ operation, variables, limit }`) and
+returns `QueryResult`. `variables` maps statement parameter names to JSON scalar
+values. Here `operation` identifies one registered SQL statement, rather than the
+browser operation that may orchestrate several queries. The route rejects other
+fields, non-scalar values, unsafe or nonpositive limits, malformed results, and
+results exceeding the requested limit. It never returns a statement to the iframe.
 
-`SqlQueryInput` (exported from `/contract`) carries
-`{ statement: string, limit: number }`; responses are
-`{ columns: { name: string, type?: string }[], rows: unknown[][], queryId?: string }`.
-The route rejects empty statements, unsafe or nonpositive limits, malformed
-results, and results exceeding the requested limit. The bridge's existing payload
-and pending-call limits apply, and cancellation reaches the handler's signal.
+The host supplies `appRevision` and `authorizedLakehouseForCurrentViewer()`.
+Resolve the revision from the trusted session; its lakehouse's `queryById()`
+looks up the registered statement and sends the values as bind parameters. Its
+backend must enforce viewer/dataset permissions, maximum rows, execution time,
+concurrency, and response size independently of browser policy. Never accept
+registration or authorization scope from the iframe.
+
+`createRegisteredQueryHandler()` calls authorization for each query, forwards
+cancellation, and preserves `DataSourceError` reasons as public `source_*` errors
+with request IDs. Authorization failures return `forbidden`; unknown query errors
+are hidden. Custom handlers can return deliberate public failures with
+`MessageRoutingError`. The bridge's payload and pending-call limits apply.
 Operation names and inputs stay in the app; query evidence is assembled there.
 
-`dataAppRoutes` retains named `data:query` and navigation routes for existing
-server-backed hosts. SQL hosts opt into `data:sql`; they need no named-operation
-handler unless they also serve HTTP-style apps.
+For HTTP-style operation envelopes, use
+[`defineDataQueryRoute()`](contract.md#message-routes) instead. `dataAppRoutes`
+retains that named `data:query` route and navigation for server-backed hosts.
 
 ## Parent presentation
 

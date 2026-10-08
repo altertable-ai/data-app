@@ -10,7 +10,6 @@ import {
   defineDateRangeContract,
   dimensionFilter,
   parseDimensionSelection,
-  dimensionPredicate,
   parseCount,
   type DateRangeRequest,
   type DimensionSelection,
@@ -47,7 +46,7 @@ test('a calendar and dimension declaration validates and escapes the input used 
       ],
     },
   };
-  const statements: string[] = [];
+  const requests: unknown[] = [];
   const operations = {
     activity: defineOperation({
       input(value: unknown) {
@@ -62,10 +61,17 @@ test('a calendar and dimension declaration validates and escapes the input used 
       queryNames: { activity: 'activity' },
       policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
       async run({ query }, selected) {
-        const result = await query(
-          'activity',
-          `SELECT count FROM activity WHERE ${dimensionPredicate('region', selected.region, ['region'])}`
-        );
+        const members =
+          selected.region.kind === 'all' ? [] : selected.region.members;
+        const result = await query('activity', {
+          all: selected.region.kind === 'all',
+          regions: JSON.stringify(
+            members.flatMap(member =>
+              member.kind === 'value' ? [member.value] : []
+            )
+          ),
+          missing: members.some(member => member.kind === 'missing'),
+        });
         return parseCount(result.rows[0]![0]);
       },
     }),
@@ -73,8 +79,8 @@ test('a calendar and dimension declaration validates and escapes the input used 
   const client = createDataClient({
     operations,
     lakehouse: {
-      async queryAll(statement) {
-        statements.push(statement);
+      async queryById(name, values) {
+        requests.push({ name, values });
         return { columns: [{ name: 'count' }], rows: [[0]] };
       },
     },
@@ -85,8 +91,11 @@ test('a calendar and dimension declaration validates and escapes the input used 
     start: '2026-03-01',
     end: '2026-03-03',
   });
-  expect(statements).toEqual([
-    "SELECT count FROM activity WHERE (region IN ('O''Brien') OR region IS NULL)",
+  expect(requests).toEqual([
+    {
+      name: 'activity',
+      values: { all: false, regions: '["O\'Brien"]', missing: true },
+    },
   ]);
   expect(
     region.read(
@@ -113,7 +122,7 @@ test('a calendar and dimension declaration validates and escapes the input used 
       },
     })
   ).rejects.toMatchObject({ code: 'invalid_input' });
-  expect(statements).toHaveLength(1);
+  expect(requests).toHaveLength(1);
 });
 
 test('authoring a view rejects invalid datasets and unregistered evidence', () => {
@@ -141,7 +150,7 @@ test('authoring a view rejects invalid datasets and unregistered evidence', () =
         }),
       },
       lakehouse: {
-        async queryAll() {
+        async queryById() {
           return { columns: [], rows: [] };
         },
       },

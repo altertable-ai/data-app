@@ -27,28 +27,24 @@ export type DisclosedQuery = {
   queryId?: string;
 };
 
+/** A DuckDB bind value; the backend accepts JSON scalars only. */
+export type QueryValue = string | number | boolean | null;
+
 /** Named DuckDB prepared-statement parameter values for a registered query; `$country` reads `country`. */
-export type QueryValues = Record<string, unknown>;
+export type QueryValues = Readonly<Record<string, QueryValue>>;
 
 /** Registered SQL statements keyed by query ID. */
 export type DataAppRegistration = { queries: Record<string, string> };
 
 /** Query interface supplied by a server adapter or an authorized iframe bridge. */
 export type Lakehouse = {
-  queryById?(
+  /** Run the statement registered under `name`. Return `statement` only where it may be disclosed. */
+  queryById(
     this: void,
     name: string,
     values: QueryValues,
     options: { limit: number; signal: AbortSignal }
-  ): Promise<QueryResult>;
-  queryAll(
-    statement: string,
-    options: {
-      limit: number;
-      signal: AbortSignal;
-      name?: string;
-    }
-  ): Promise<QueryResult>;
+  ): Promise<QueryResult & { statement?: string }>;
 };
 
 export type OperationContext = { lakehouse: Lakehouse; signal: AbortSignal };

@@ -81,54 +81,13 @@ export const operations = {
     input: parseCountryFilter,
     output: parseOrderOverview,
     checks: [{ country: '' }, { country: 'US' }, { country: 'missing' }],
-    policy: { maxQueryRows: 50, maxDurationMs: 15000, exposeSql: true },
+    policy: { maxQueryRows: 50, maxDurationMs: 15000 },
     async run({ query }, { country }) {
-      // Demo tables seeded by `bun run dev`. Escape the validated SQL literal.
-      const escapedCountry = country.replaceAll("'", "''");
-      const countryFilter = `('${escapedCountry}' = '' OR c.country = '${escapedCountry}')`;
-      const recentOrders = `o.ordered_at >= current_date - INTERVAL 29 DAY`;
+      // Demo tables seeded by `bun run dev`; statements live in dev/queries.json.
       const [countries, days, bands] = await Promise.all([
-        query(
-          queryNames.ordersByCountry,
-          `
-SELECT c.country,
-  count(o.id) AS order_count,
-  CAST(coalesce(sum(o.amount) FILTER (WHERE o.status <> 'refunded'), 0) AS DOUBLE) AS revenue
-FROM demo.customers c
-LEFT JOIN demo.orders o ON o.customer_id = c.id AND ${recentOrders}
-WHERE ${countryFilter}
-GROUP BY c.country
-ORDER BY revenue DESC, c.country LIMIT 50`
-        ),
-        query(
-          queryNames.ordersByDay,
-          `
-SELECT CAST(g.day AS DATE) AS day, count(o.id) AS order_count
-FROM generate_series(
-  current_date - INTERVAL 29 DAY, CAST(current_date AS TIMESTAMP), INTERVAL 1 DAY
-) g(day)
-LEFT JOIN (
-  SELECT o.id, o.ordered_at
-  FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
-  WHERE ${countryFilter}
-) o ON CAST(o.ordered_at AS DATE) = CAST(g.day AS DATE)
-GROUP BY 1 ORDER BY 1 LIMIT 50`
-        ),
-        query(
-          queryNames.ordersByValue,
-          `
-SELECT CASE
-    WHEN o.amount < 50 THEN 'Under $50'
-    WHEN o.amount < 100 THEN '$50–100'
-    WHEN o.amount < 150 THEN '$100–150'
-    ELSE '$150 and over'
-  END AS band,
-  count(*) AS order_count
-FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
-WHERE ${recentOrders} AND ${countryFilter}
-GROUP BY band
-ORDER BY min(o.amount) LIMIT 50`
-        ),
+        query(queryNames.ordersByCountry, { country }),
+        query(queryNames.ordersByDay, { country }),
+        query(queryNames.ordersByValue, { country }),
       ]);
       return parseOrderOverview({
         countries: countries.rows.map(([country, orderCount, revenue]) => ({

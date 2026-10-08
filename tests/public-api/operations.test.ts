@@ -16,7 +16,7 @@ function operation() {
     queryNames: { count: 'count' },
     policy: { maxQueryRows: 2, maxDurationMs: 100, exposeSql: true },
     async run({ query }, input) {
-      const result = await query('count', `SELECT ${input}`, { limit: 8 });
+      const result = await query('count', { value: input }, { limit: 8 });
       return result.rows[0]![0];
     },
   });
@@ -24,11 +24,17 @@ function operation() {
 
 function lakehouse(): Lakehouse {
   return {
-    async queryAll(statement, { limit, signal }) {
-      expect(statement).toBe('SELECT 3');
+    async queryById(name, values, { limit, signal }) {
+      expect(name).toBe('count');
+      expect(values).toEqual({ value: 3 });
       expect(limit).toBe(2);
       expect(signal.aborted).toBe(false);
-      return { columns: [{ name: 'count' }], rows: [[3]], queryId: 'q1' };
+      return {
+        columns: [{ name: 'count' }],
+        rows: [[3]],
+        queryId: 'q1',
+        statement: 'SELECT $value',
+      };
     },
   };
 }
@@ -41,7 +47,7 @@ test('browser and HTTP operations share parsing, bounds, and query evidence', as
     data: 3,
     input: 3,
     queryIds: ['q1'],
-    queries: [{ name: 'count', statement: 'SELECT 3', queryId: 'q1' }],
+    queries: [{ name: 'count', statement: 'SELECT $value', queryId: 'q1' }],
   });
   const handler = createDataHandler(operations, async () => ({
     lakehouse: lakehouse(),
@@ -66,7 +72,7 @@ test('browser and HTTP operations share parsing, bounds, and query evidence', as
 test('browser operations reject malformed inputs, unknown operations, and private execution failures', async () => {
   let calls = 0;
   const source: Lakehouse = {
-    async queryAll() {
+    async queryById() {
       calls++;
       throw new Error('private SQL and credentials');
     },
@@ -94,7 +100,7 @@ test('browser operations reject malformed inputs, unknown operations, and privat
 test('browser and HTTP execution preserve public source failures across package entries', async () => {
   const operations = { count: operation() };
   const source: Lakehouse = {
-    async queryAll() {
+    async queryById() {
       throw new DataSourceError('rate_limited');
     },
   };
@@ -137,7 +143,7 @@ test('browser execution enforces output, row, and response byte bounds', async (
     {
       operation: base,
       lakehouse: {
-        async queryAll() {
+        async queryById() {
           return { columns: [{ name: 'count' }], rows: [[3], [3], [3]] };
         },
       },
@@ -168,7 +174,7 @@ test('browser execution enforces output, row, and response byte bounds', async (
 test('browser operations settle ignored deadlines and preserve caller cancellation', async () => {
   const base = operation();
   const hanging: Lakehouse = {
-    queryAll() {
+    queryById() {
       return new Promise(() => {});
     },
   };
@@ -193,7 +199,7 @@ test('browser operations settle ignored deadlines and preserve caller cancellati
   ).toBe(reason);
 });
 
-test('browser operation clients require a SQL adapter', async () => {
+test('browser operation clients require a query adapter', async () => {
   const operations = { count: operation() };
   expect(
     await createDataClient({ operations })
@@ -211,7 +217,7 @@ test('an authorized client queries an operation with validated input and query e
       queryNames: { count: 'count' },
       policy: { maxQueryRows: 2, maxDurationMs: 1000, exposeSql: true },
       async run({ query }, input) {
-        const result = await query('count', `SELECT ${input}`);
+        const result = await query('count', { value: input });
         return result.rows[0]![0];
       },
     }),
@@ -222,11 +228,12 @@ test('an authorized client queries an operation with validated input and query e
     return {
       canDiscloseSql: true,
       lakehouse: {
-        async queryAll() {
+        async queryById() {
           return {
             columns: [{ name: 'count' }],
             rows: [[3]],
             queryId: 'query-1',
+            statement: 'SELECT $value',
           };
         },
       },
@@ -245,7 +252,9 @@ test('an authorized client queries an operation with validated input and query e
     data: 3,
     input: 3,
     queryIds: ['query-1'],
-    queries: [{ name: 'count', statement: 'SELECT 3', queryId: 'query-1' }],
+    queries: [
+      { name: 'count', statement: 'SELECT $value', queryId: 'query-1' },
+    ],
   });
   await expect(client.query('count', -1)).rejects.toMatchObject({
     code: 'invalid_input',

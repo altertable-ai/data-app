@@ -15,6 +15,7 @@ import type {
 } from '@/src/core/operation-types';
 export type {
   QueryResult,
+  QueryValue,
   QueryValues,
   DataAppRegistration,
   DisclosedQuery,
@@ -310,7 +311,7 @@ export class DataSourceError extends Error {
 
 export type OperationQuery<Names extends Readonly<Record<string, string>>> = (
   name: Names[keyof Names],
-  statementOrValues: string | QueryValues,
+  values: QueryValues,
   options?: { limit?: number }
 ) => Promise<QueryResult>;
 
@@ -347,7 +348,7 @@ export function defineOperation<
     run(context, input) {
       function query(
         name: Names[keyof Names],
-        statementOrValues: string | QueryValues,
+        values: QueryValues,
         options?: { limit?: number }
       ): Promise<QueryResult> {
         invariant(
@@ -356,20 +357,8 @@ export function defineOperation<
           `Unknown query name: ${name}.`
         );
 
-        const limit = options?.limit ?? operation.policy.maxQueryRows;
-        if (typeof statementOrValues !== 'string') {
-          invariant(
-            context.lakehouse.queryById,
-            'A registered query bridge is required.'
-          );
-          return context.lakehouse.queryById(name, statementOrValues, {
-            limit,
-            signal: context.signal,
-          });
-        }
-        return context.lakehouse.queryAll(statementOrValues, {
-          name,
-          limit,
+        return context.lakehouse.queryById(name, values, {
+          limit: options?.limit ?? operation.policy.maxQueryRows,
           signal: context.signal,
         });
       }
@@ -379,34 +368,10 @@ export function defineOperation<
   };
 }
 
-export const connectionQueryNames = defineQueryNames({
-  connection: 'connection-check',
-});
-
-/** Success requires a bounded SQL query; it does not establish access to a particular dataset. */
-export function connectionCheck(): DataOperation<Record<string, never>, true> {
-  return defineOperation({
-    input: parseEmptyInput,
-    output: parseTrue,
-    checks: [{}],
-    queryNames: connectionQueryNames,
-    policy: { maxQueryRows: 1, maxDurationMs: 15_000, exposeSql: true },
-    async run({ query }): Promise<true> {
-      await query(
-        connectionQueryNames.connection,
-        'SELECT 1 AS connection_check'
-      );
-
-      return true;
-    },
-  });
-}
-
 export {
   dimensionFilter,
   parseDimensionSelection,
   parseFacetOptions,
-  dimensionPredicate,
 } from '@/src/core/dimension';
 export type {
   DimensionSelection,
@@ -423,7 +388,7 @@ export {
   MessageRoutingError,
   dataAppRoutes,
   navigationUpdateRoute,
-  sqlQueryRoute,
+  registeredQueryRoute,
 } from '@/src/core/messages';
 export type {
   MessageContext,
@@ -440,12 +405,9 @@ export type {
   DataQueryBody,
   DataQueryRoute,
   NavigationUpdate,
-  SqlQueryInput,
+  RegisteredQueryInput,
 } from '@/src/core/messages';
 export type { TransportResponse } from '@/src/core/bridge';
-
-export { registeredQueryRoute } from '@/src/core/messages';
-export type { RegisteredQueryInput } from '@/src/core/messages';
 
 export {
   annotationDraftRoute,

@@ -3,7 +3,8 @@ import {
   type DataClientOptions,
   type DataTransport,
 } from '@altertable/data-app/client';
-import { connectionCheck, type Lakehouse } from '@altertable/data-app/contract';
+import type { Lakehouse } from '@altertable/data-app/contract';
+import { connectionOperation } from '@/tests/public-api/fixtures/connection';
 
 // Compile-only assertions: invalid configurations must never run.
 async function verifyClientOptions(
@@ -11,7 +12,7 @@ async function verifyClientOptions(
   transport: DataTransport,
   request: typeof fetch
 ) {
-  const operations = { connection: connectionCheck() };
+  const operations = { connection: connectionOperation() };
   createDataClient<typeof operations>();
   createDataClient<typeof operations>({});
   createDataClient<typeof operations>({ transport });

@@ -5,25 +5,35 @@
  */
 import {
   DataSourceError,
+  type DataAppRegistration,
   type Lakehouse,
   type QueryResult,
 } from '@/src/core/contract';
 import type { DataOperations } from '@/src/core/contract';
 import { createDataHandler } from '@/src/server/handler';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 /** Serve one app on localhost through the CLI's lakehouse proxy during development.
  * Hosted servers must authorize every viewer and must use `createDataHandler` directly. */
 export function serveLocalApp({
   page,
   operations,
+  queries,
   title,
   port = Number(process.env.PORT ?? 25837),
 }: {
   page: Bun.HTMLBundle;
   operations: DataOperations;
+  /** SQL statements keyed by query ID. Defaults to `queries.json` beside the server entry,
+   * re-read on each request so edits apply without a restart. */
+  queries?: DataAppRegistration['queries'];
   title: string;
   port?: number;
 }) {
+  const queriesPath = join(dirname(Bun.main), 'queries.json');
+  const loadQueries = queries ? () => queries : () => readQueries(queriesPath);
+  loadQueries();
   const server = Bun.serve({
     hostname: '127.0.0.1',
     port,
@@ -31,7 +41,18 @@ export function serveLocalApp({
     idleTimeout: 60,
     routes: { '/': page },
     fetch: createDataHandler(operations, async () => ({
-      lakehouse: localLakehouse(),
+      lakehouse: {
+        queryById(name, values, options) {
+          let current;
+          try {
+            current = loadQueries();
+          } catch (error) {
+            console.error(error);
+            throw error;
+          }
+          return localLakehouse(current).queryById(name, values, options);
+        },
+      },
       canDiscloseSql: true,
     })),
   });
@@ -40,13 +61,40 @@ export function serveLocalApp({
   return server;
 }
 
-/** Server-only lakehouse adapter. Local development uses the selected CLI profile's proxy. */
+function readQueries(path: string): DataAppRegistration['queries'] {
+  let queries: unknown;
+  try {
+    queries = JSON.parse(readFileSync(path, 'utf8'));
+  } catch (error) {
+    throw new Error(`Could not read registered queries from ${path}.`, {
+      cause: error,
+    });
+  }
+  if (
+    !queries ||
+    typeof queries !== 'object' ||
+    Array.isArray(queries) ||
+    !Object.values(queries).every(statement => typeof statement === 'string')
+  )
+    throw new Error(`${path} must map query IDs to SQL statements.`);
+
+  return queries as DataAppRegistration['queries'];
+}
+
+/** Server-only lakehouse adapter. Resolves query IDs from `queries` and sends values as DuckDB
+ * bind parameters. Local development uses the selected CLI profile's proxy. */
 export function localLakehouse(
+  queries: DataAppRegistration['queries'],
   environment: Record<string, string | undefined> = process.env,
   request: typeof fetch = fetch
 ): Lakehouse {
   return {
-    async queryAll(statement, { limit, signal }) {
+    async queryById(name, values, { limit, signal }) {
+      const statement = Object.hasOwn(queries, name)
+        ? queries[name]
+        : undefined;
+      if (typeof statement !== 'string')
+        throw new DataSourceError('query_rejected');
       const proxyUrl = environment.ALTERTABLE_DATA_PROXY_URL;
       const proxyToken = environment.ALTERTABLE_DATA_PROXY_TOKEN;
       const username = environment.ALTERTABLE_LAKEHOUSE_USERNAME;
@@ -70,7 +118,7 @@ export function localLakehouse(
                 : `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
               'content-type': 'application/json',
             },
-            body: JSON.stringify({ statement, limit }),
+            body: JSON.stringify({ statement, limit, params: values }),
             signal,
           }
         );
@@ -93,7 +141,7 @@ export function localLakehouse(
       }
       const body = await readQueryBody(response);
 
-      return parseQueryResult(body, limit);
+      return { ...parseQueryResult(body, limit), statement };
     },
   };
 }

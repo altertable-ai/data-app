@@ -44,8 +44,8 @@ trust.
 The Worker enforces a restrictive CSP with configured `frame-ancestors`,
 `no-referrer`, and `nosniff`. App scripts load through the authenticated bridge. Apps own styling and
 navigation. Bundle apps execute their operation registry in the browser and send
-SQL through the [host query route](embed.md#sql-query-route); the Worker does not
-resolve operation names or execute queries. Data requests require backend authorization.
+registered query IDs and values through the [host query route](embed.md#registered-query-route);
+the Worker does not resolve operation names or execute queries. Data requests require backend authorization.
 
 If Terraform reads a file, copy the resolved `/worker` asset unchanged to that
 file during deployment preparation. Configure `DOMAIN_NAME`, `PARENT_ORIGINS`,

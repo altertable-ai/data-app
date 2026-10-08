@@ -448,7 +448,7 @@ for (const source of ['bundle', 'url']) {
             .getByRole('status', { name: 'Query result', exact: true })
             .textContent()
         )
-        .toContain('sql-query');
+        .toContain('connection-query');
       await app
         .getByRole('button', { name: 'Denied query', exact: true })
         .click();
@@ -459,7 +459,8 @@ for (const source of ['bundle', 'url']) {
             .textContent()
         )
         .toBe('{"publicError":true,"code":"forbidden"}');
-      expect(requests).toEqual(['host', 'host']);
+      // The denied query stops at host authorization and never reaches the backend.
+      expect(requests).toEqual(['host']);
     }
     await app.getByRole('button', { name: 'Last 7 days', exact: true }).click();
     await expect.poll(() => page.url()).toContain('period=last-7');

@@ -1,6 +1,6 @@
 import { injectDataAppStyles } from '@altertable/data-app/react';
 import type { DataAppConfig } from '@altertable/data-app/config';
-import { connectionCheck } from '@altertable/data-app/contract';
+import { connectionOperation } from '@/tests/public-api/fixtures/connection';
 import { useState } from 'react';
 import {
   createMessageClient,
@@ -19,7 +19,11 @@ const config: DataAppConfig = {
 };
 const bridge = getDataAppTransport()!;
 const data = createDataClient({
-  operations: { connection: connectionCheck() },
+  operations: {
+    connection: connectionOperation(),
+    // The host refuses to authorize this registered query.
+    forbidden: connectionOperation('forbidden-check'),
+  },
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = { period: textVariable({ key: 'period', history: 'push' }) };
@@ -97,18 +101,14 @@ function App() {
       </button>
       <button
         onClick={() => {
-          void createDataClient<{
-            forbidden: ReturnType<typeof connectionCheck>;
-          }>()
-            .query('forbidden', {})
-            .catch(error =>
-              setResult(
-                JSON.stringify({
-                  publicError: error instanceof DataAppError,
-                  code: error.code,
-                })
-              )
-            );
+          void data.query('forbidden', {}).catch(error =>
+            setResult(
+              JSON.stringify({
+                publicError: error instanceof DataAppError,
+                code: error.code,
+              })
+            )
+          );
         }}
       >
         Denied query

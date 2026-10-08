@@ -92,7 +92,9 @@ const region = defineFacetFilter({
 
 The client registry defines the `regions` operation and its typed period input;
 import `DateRangeRequest` from `/contract`. Put `region` in the view's `variables`
-alongside its period. Use `parseFacetOptions()` to validate facet results, and
-`dimensionPredicate()` to build a bounded SQL filter from parsed selections.
+alongside its period. Use `parseFacetOptions()` to validate facet results.
+Bind a parsed selection as scalar parameters: whether it includes all members,
+the selected values as a JSON string, and whether it includes missing values,
+such as `$all OR list_contains(from_json($regions, '["VARCHAR"]'), region) OR ($missing AND region IS NULL)`.
 For the operation's input parser, use `parseDimensionSelection(value, region)` from `/contract`.
 A dimension without an explicit selection represents all members.
