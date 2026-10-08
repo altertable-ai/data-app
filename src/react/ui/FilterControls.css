@@ -244,7 +244,7 @@
 .altertable-number-filter-actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--atbl-space-sm);
+  gap: var(--atbl-space-xs);
 }
 .altertable-number-filter-actions > [data-variant='ghost'] {
   margin-inline-end: auto;
