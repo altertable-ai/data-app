@@ -40,10 +40,11 @@ Import `chartColor()` from `/react` to select colors from the configured palette
 ## Configure identity and appearance
 
 ```ts
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 
 const dataApp = defineDataApp({
   title: 'Product activity',
+  description: 'Explore product usage and trends.',
   scope: { organization: 'Acme', environment: 'Production' },
   appearance: {
     theme: 'system',
@@ -56,6 +57,8 @@ const dataApp = defineDataApp({
 
 Scope labels describe the configured connection; they do not grant access.
 `dataAppTitle()` produces the scoped document title used by `mountDataApp()`.
+
+Description is an optional static subtitle. Omit appearance to use the standard defaults.
 
 Appearance controls the brand palette, typography, density, corner radius, and
 elevation. Those settings apply consistently to the app instead of tuning each

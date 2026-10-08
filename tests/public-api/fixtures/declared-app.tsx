@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
@@ -152,7 +152,6 @@ function resolve(name: 'alpha' | 'beta', version: number) {
 export const dataApp = defineDataApp({
   title: 'Declared views',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
   queries: {},
 });
 

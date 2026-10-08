@@ -157,14 +157,16 @@ try {
   }
   await writeFile(
     join(temporary, 'browser.tsx'),
-    `import { createDataClient } from "@altertable/data-app/client";
+    `import { defineDataApp } from "@altertable/data-app";
+import { createDataClient } from "@altertable/data-app/client";
 import { Grid, injectDataAppStyles } from '@altertable/data-app/react';
 import { DataAppSkeleton } from '@altertable/data-app/react/ui';
 injectDataAppStyles();
 import { defineDateRangeContract, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
 import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app/embed";
 import { DataAppBridge } from "@altertable/data-app/react/embed";
-export const api = { createDataClient, Grid, DataAppSkeleton, defineDateRangeContract, createMessageRouter, defineMessageRoute, attachDataAppBridge, startDataAppBootstrap, DataAppBridge };
+export const app = defineDataApp({ title: "Packed app", description: "Portable declaration", scope: { organization: "demo", environment: "test" }, queries: {} });
+export const api = { defineDataApp, createDataClient, Grid, DataAppSkeleton, defineDateRangeContract, createMessageRouter, defineMessageRoute, attachDataAppBridge, startDataAppBootstrap, DataAppBridge };
 `
   );
   await writeFile(
@@ -175,10 +177,13 @@ export { DataAppBridge };
   );
   await writeFile(
     join(temporary, 'server.ts'),
-    `import { createDataHandler } from "@altertable/data-app/server";
+    `import { defineDataApp } from "@altertable/data-app";
+import { createDataHandler } from "@altertable/data-app/server";
 import { localLakehouse } from "@altertable/data-app/server/bun";
 if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
+const app = defineDataApp({ title: "Server app", scope: { organization: "demo", environment: "test" }, queries: {} });
+if (typeof app.defineOperation !== "function") throw new Error("App declaration is unavailable on the server");
 `
   );
   await writeFile(

@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import {
   createDataClient,
@@ -96,7 +96,6 @@ const b = makeApp('B');
 const dataApp = defineDataApp({
   title: 'Client isolation',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
   queries: {},
 });
 function App() {

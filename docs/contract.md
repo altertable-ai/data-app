@@ -2,17 +2,21 @@
 
 Import operation definitions, parsers, and shared types from
 `@altertable/data-app/contract`. This entry is safe to import in browser and server
-modules. For HTTP apps, keep SQL and operation implementations on the server; browser modules
-should import their operation types using `import type`.
+modules. The app declaration is browser-safe and includes its SQL registry. For HTTP apps,
+keep operation implementations, credentials, and authorization on the server; browser modules
+import operation types using `import type`.
 
 ## Execute named queries
 
 Declare SQL once with `defineDataApp()` to preserve exact query and parameter
-names. Define operations with `dataApp.defineOperation()` and mount with
+names. Use stable `lowerCamelCase` IDs describing the result, such as `products`,
+`productsByCategory`, or `dailyRevenue`. Use plural names for row lists; keep parameter
+values in `params`.
+The app owns an immutable registry snapshot. Define operations with `dataApp.defineOperation()` and mount with
 `mountDataApp({ app: dataApp, component: App })`. Use `{ defaultValue }` for a fallback or `{}` for a required value.
 
 ```ts
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { rowsAsRecords } from '@altertable/data-app/contract';
 
 const dataApp = defineDataApp({

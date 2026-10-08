@@ -26,6 +26,7 @@ import type { SectionResult } from '@/src/react/ui/DataSectionBoundary';
 export type DataAppBaseProps = {
   children: ReactNode;
   dataContext: DataContext;
+  /** Override the declared subtitle; null hides it. */
   description?: ReactNode;
   toolbarActions?: ReactNode;
   footerActions?: ReactNode;
@@ -176,7 +177,9 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
             <AppHeader
               scope={scope}
               title={app.title}
-              description={description}
+              description={
+                description === undefined ? app.description : description
+              }
               toolbar={toolbar}
             />
           )}

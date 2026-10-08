@@ -1,6 +1,6 @@
 import { formatMetric } from '@altertable/data-app/format';
 import { createDataClient } from '@altertable/data-app/client';
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { parseCount } from '@altertable/data-app/contract';
 import {
   createDataContext,

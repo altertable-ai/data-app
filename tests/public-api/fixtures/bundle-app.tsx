@@ -1,5 +1,5 @@
 import { injectDataAppStyles } from '@altertable/data-app/react';
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { connectionCheck } from '@altertable/data-app/contract';
 import { useState } from 'react';
 import {

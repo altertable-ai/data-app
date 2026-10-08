@@ -32,24 +32,28 @@ export function isQueryParameters(value: unknown): value is QueryParameters {
 export function snapshotQueries(
   definitions: QueryDefinitions
 ): QueryDefinitions {
-  return Object.fromEntries(
-    Object.entries(definitions).map(([name, query]) => {
-      invariant(
-        !!name.trim() && !!query.statement.trim(),
-        'Queries need a name and SQL statement.'
-      );
-      const params = Object.fromEntries(
-        Object.entries(query.params).map(([key, declaration]) => {
-          invariant(
-            !Object.hasOwn(declaration, 'defaultValue') ||
-              isQueryParameterValue(declaration.defaultValue),
-            `Invalid default for parameter ${key} in query ${name}.`
-          );
-          return [key, { ...declaration }];
-        })
-      );
-      return [name, { statement: query.statement, params }];
-    })
+  return Object.freeze(
+    Object.fromEntries(
+      Object.entries(definitions).map(([name, query]) => {
+        invariant(
+          !!name.trim() && !!query.statement.trim(),
+          'Queries need a name and SQL statement.'
+        );
+        const params = Object.freeze(
+          Object.fromEntries(
+            Object.entries(query.params).map(([key, declaration]) => {
+              invariant(
+                !Object.hasOwn(declaration, 'defaultValue') ||
+                  isQueryParameterValue(declaration.defaultValue),
+                `Invalid default for parameter ${key} in query ${name}.`
+              );
+              return [key, Object.freeze({ ...declaration })];
+            })
+          )
+        );
+        return [name, Object.freeze({ statement: query.statement, params })];
+      })
+    )
   );
 }
 

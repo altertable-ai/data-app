@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import {
   createDataClient,
   createHttpTransport,
@@ -20,7 +20,6 @@ import {
 const dataApp = defineDataApp({
   title: 'Responsive report',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
   queries: {},
 });
 const hooks = createDataHooks(

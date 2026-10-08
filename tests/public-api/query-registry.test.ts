@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
@@ -29,6 +29,7 @@ function products(values: Record<string, unknown> = {}) {
     checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {
+      // @ts-expect-error Exercise runtime validation of an untyped parameter bag.
       return query('products', values);
     },
   });
@@ -325,4 +326,64 @@ test('app definitions keep their query registries independent', async () => {
   ]);
   expect(firstApp.title).toBe('First');
   expect(secondApp.title).toBe('Second');
+});
+
+test('the app owns one immutable registry independent of later caller mutations', async () => {
+  const input = {
+    title: 'Owned registry',
+    scope: { organization: 'demo', environment: 'test' },
+    queries: {
+      selected: {
+        statement: 'SELECT $value',
+        params: { value: { defaultValue: 3 } },
+      },
+    },
+  };
+  const originalQueries = input.queries;
+  const app = defineDataApp(input);
+  input.queries = {
+    selected: {
+      statement: 'SELECT $value + 1',
+      params: { value: { defaultValue: 7 } },
+    },
+  };
+  originalQueries.selected.statement = 'SELECT 99';
+  originalQueries.selected.params.value.defaultValue = 99;
+  expect(Reflect.set(app, 'queries', input.queries)).toBe(false);
+  expect(Reflect.set(app.queries, 'selected', input.queries.selected)).toBe(
+    false
+  );
+  expect(Reflect.set(app.queries.selected, 'statement', 'SELECT 99')).toBe(
+    false
+  );
+  expect(
+    Reflect.set(app.queries.selected.params, 'value', { defaultValue: 99 })
+  ).toBe(false);
+  expect(
+    Reflect.set(app.queries.selected.params.value, 'defaultValue', 99)
+  ).toBe(false);
+  const operation = app.defineOperation({
+    input: parseEmptyInput,
+    output: (value: unknown) => value,
+    checks: [{}],
+    policy: { maxQueryRows: 20, maxDurationMs: 1000 },
+    async run({ query }) {
+      return query('selected');
+    },
+  });
+  const statements: DeliveredQuery[] = [];
+  await createDataClient({
+    operations: { selected: operation },
+    lakehouse: source(statements),
+  }).query('selected', {});
+  expect(app.queries.selected).toEqual({
+    statement: 'SELECT $value',
+    params: { value: { defaultValue: 3 } },
+  });
+  expect(statements).toEqual([
+    {
+      statement: app.queries.selected.statement,
+      params: { value: app.queries.selected.params.value.defaultValue },
+    },
+  ]);
 });

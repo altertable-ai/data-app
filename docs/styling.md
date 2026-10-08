@@ -5,7 +5,7 @@ and `<TextContent>` for prose. Standard widgets use [views and bindings](widgets
 custom controls and direct widget shells use [`/react/ui`](ui.md).
 
 Configure theme, palette, accent, typography, density, radius, and elevation through
-`config.appearance`; see [appearance](formatting-and-appearance.md). Call
+`app.appearance`; see [appearance](formatting-and-appearance.md). Call
 `injectDataAppStyles()` before mounting. Use one `<DataApp>` per document.
 
 ## Customize

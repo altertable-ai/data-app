@@ -132,3 +132,40 @@ test('custom roots inherit the nearest app identity without component configurat
     .poll(() => second.getByText('other', { exact: true }).isVisible())
     .toBe(true);
 });
+
+test('app descriptions are inherited and presentation can override or hide them', async ({
+  page,
+}) => {
+  await page.goto('/static');
+  await expect
+    .poll(() =>
+      page
+        .getByText('Explore activity across groups.', { exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  await page.goto('/static?override-description');
+  await expect
+    .poll(() =>
+      page.getByText('Custom activity subtitle.', { exact: true }).isVisible()
+    )
+    .toBe(true);
+  expect(
+    await page
+      .getByText('Explore activity across groups.', { exact: true })
+      .count()
+  ).toBe(0);
+  await page.goto('/static?hide-description');
+  await expect
+    .poll(() =>
+      page
+        .getByRole('heading', { name: 'Activity report', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  expect(
+    await page
+      .getByText('Explore activity across groups.', { exact: true })
+      .count()
+  ).toBe(0);
+});

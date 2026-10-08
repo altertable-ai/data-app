@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 
 export const dataApp = defineDataApp({
   title: 'Orders',

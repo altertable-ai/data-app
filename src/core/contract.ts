@@ -317,13 +317,24 @@ export class DataSourceError extends Error {
   }
 }
 
+type RegisteredQueryParameters<
+  Queries extends QueryDefinitions,
+  Name extends keyof Queries,
+> = keyof Queries[Name]['params'] extends never
+  ? Record<string, never>
+  : Partial<Record<keyof Queries[Name]['params'], QueryParameterValue>>;
+
 export type RegisteredQuery<Queries extends QueryDefinitions> = <
   Name extends keyof Queries & string,
+  const Params extends object = {},
 >(
   name: Name,
-  params?: keyof Queries[Name]['params'] extends never
-    ? Record<string, never>
-    : Partial<Record<keyof Queries[Name]['params'], QueryParameterValue>>,
+  params?: Params &
+    NoInfer<RegisteredQueryParameters<Queries, Name>> &
+    NoInfer<
+      Record<Exclude<keyof Params, keyof Queries[Name]['params']>, never>
+    > &
+    NoInfer<Params extends (...args: never[]) => unknown ? never : object>,
   options?: { limit?: number }
 ) => Promise<QueryResult>;
 

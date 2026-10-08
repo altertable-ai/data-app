@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   numberFilter,
@@ -26,7 +26,6 @@ import {
 const dataApp = defineDataApp({
   title: 'Filter workflows',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
   queries: {},
 });
 const amount = numberFilter({

@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { Component, type ReactNode } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
@@ -15,7 +15,6 @@ import {
 const dataApp = defineDataApp({
   title: 'Binding ownership',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
   queries: {},
 });
 const context = createDataContext({ rows: 'rows' })({

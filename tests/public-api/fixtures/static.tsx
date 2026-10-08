@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
@@ -20,8 +20,8 @@ import {
 } from '@altertable/data-app/react/ui';
 const dataApp = defineDataApp({
   title: 'Activity report',
+  description: 'Explore activity across groups.',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
   queries: {},
 });
 const rows = [
@@ -70,6 +70,13 @@ function App() {
   const [search, setSearch] = useState('');
   return (
     <DataApp
+      description={
+        new URLSearchParams(location.search).has('override-description')
+          ? 'Custom activity subtitle.'
+          : new URLSearchParams(location.search).has('hide-description')
+            ? null
+            : undefined
+      }
       dataContext={{ description: 'Activity data', glossary: {} }}
       csvExport={{
         filename: 'gallery',

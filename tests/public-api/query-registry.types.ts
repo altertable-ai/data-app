@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import {
   defineOperation,
   parseEmptyInput,
@@ -36,6 +36,25 @@ const operation = dataApp.defineOperation({
     // @ts-expect-error Parameterless queries also reject keys from variables.
     await context.query('ping', extraParams);
     await context.query('products');
+    // @ts-expect-error Parameter values must be a keyed object, not a callback.
+    await context.query('products', () => {});
+    // @ts-expect-error Parameterless queries reject callbacks too.
+    await context.query('ping', () => {});
+    interface ProductParams {
+      limit: number;
+    }
+    const typedParams: ProductParams = { limit: 1 };
+    await context.query('products', typedParams);
+    const validParams = { limit: 1 };
+    await context.query('products', validParams);
+    const unexpectedParams = { limit: 1, invented: [] };
+    // @ts-expect-error Declared queries reject extra keys carried through variables.
+    await context.query('products', unexpectedParams);
+    // @ts-expect-error Spreads must not bypass the selected parameter declaration.
+    await context.query('products', { ...unexpectedParams });
+    const scalarExtra = { limit: 1, invented: 2 };
+    // @ts-expect-error Extra scalar parameters also remain undeclared.
+    await context.query('products', scalarExtra);
     // @ts-expect-error Only dataApp's declared query names are accepted.
     await context.query('inventedQuery');
     await context.query('signUps', { days: 14 });
@@ -139,3 +158,36 @@ dataApp.defineOperation({
     return true;
   },
 });
+
+defineDataApp({
+  title: 'Minimal app',
+  description: 'Optional static subtitle',
+  scope: { organization: 'demo', environment: 'test' },
+  queries: {},
+});
+
+defineDataApp({
+  title: 'Invalid subtitle',
+  // @ts-expect-error A declared description is static text, not executable composition.
+  description: () => 'Dynamic subtitle',
+  scope: { organization: 'demo', environment: 'test' },
+  queries: {},
+});
+
+const mutableQueries = {
+  products: {
+    statement: 'SELECT $limit',
+    params: { limit: { defaultValue: 1 } },
+  },
+};
+const immutableApp = defineDataApp({
+  title: 'Owned queries',
+  scope: { organization: 'demo', environment: 'test' },
+  queries: mutableQueries,
+});
+// @ts-expect-error App registry ownership cannot be replaced.
+immutableApp.queries = mutableQueries;
+// @ts-expect-error Registry statements remain immutable even for mutable inputs.
+immutableApp.queries.products.statement = 'SELECT 2';
+// @ts-expect-error Parameter defaults cannot diverge from the bound operation registry.
+immutableApp.queries.products.params.limit.defaultValue = 7;

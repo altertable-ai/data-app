@@ -5,7 +5,7 @@ import {
   gallerySections,
 } from '@/dev/fixtures/gallery-catalog';
 import { useEffect, useState } from 'react';
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { getDataAppNavigation } from '@altertable/data-app/client';
 import {
   DataApp,

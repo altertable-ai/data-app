@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineDateRangeContract,
@@ -119,7 +119,6 @@ const content = view.content(source => (
 const dataApp = defineDataApp({
   title: 'Calendar activity',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
   queries: {},
 });
 function App() {

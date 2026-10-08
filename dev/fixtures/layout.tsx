@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { createRoot } from 'react-dom/client';
 import { defineQueryNames } from '@altertable/data-app/contract';
 import { DataAppFrame as DataApp } from '@/src/react/ui/DataAppFrame';

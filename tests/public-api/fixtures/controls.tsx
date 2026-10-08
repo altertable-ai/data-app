@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import { mountDataApp, injectDataAppStyles } from '@altertable/data-app/react';
 import {
@@ -25,7 +25,6 @@ import {
 const dataApp = defineDataApp({
   title: 'Controls',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
   queries: {},
 });
 const options = [

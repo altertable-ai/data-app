@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import {
   mountDataApp,
@@ -14,7 +14,6 @@ import {
 const dataApp = defineDataApp({
   title: 'Inspection ownership',
   scope: { organization: 'Test', environment: 'local' },
-  appearance: {},
   queries: {},
 });
 const evidence: import('@altertable/data-app/react').WidgetEvidence = {

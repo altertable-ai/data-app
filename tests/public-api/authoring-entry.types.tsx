@@ -1,4 +1,4 @@
-import { defineDataApp } from '@altertable/data-app/config';
+import { defineDataApp } from '@altertable/data-app';
 import { createDataContext as registerContext } from '@altertable/data-app/react';
 import * as authoring from '@altertable/data-app/react';
 import {
