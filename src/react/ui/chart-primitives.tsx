@@ -47,6 +47,8 @@ export function ChartBar<Row = unknown, Value = number | null>(
   );
 }
 
+/** Themed hollow sample dots are enabled by default; dot=false hides them.
+ * activeDot independently controls the hovered point. Native dot props and renderers remain available. */
 export function ChartLine<Row = unknown, Value = number | null>({
   stroke = accent,
   dot,
@@ -76,6 +78,7 @@ export function ChartLine<Row = unknown, Value = number | null>({
   );
 }
 
+/** Filled series with the same sample-dot and activeDot options as ChartLine. */
 export function ChartArea<Row = unknown, Value = number | null>({
   stroke = accent,
   dot,

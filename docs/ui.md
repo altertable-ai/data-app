@@ -68,10 +68,8 @@ primitives are also available.
 </VisualizationWidget>
 ```
 
-Label series and units clearly. Use matching `yAxisId` values for different units
-and `stackId` for stacks. Keep missing measures as `null`; choose `connectNulls`
-deliberately. `dot={false}` hides sample dots; `activeDot` controls the hovered
-point. Other options retain the [Recharts API](https://recharts.github.io/en-US/api/ComposedChart/).
+Label series and units clearly. See component JSDoc and the
+[Recharts API](https://recharts.github.io/en-US/api/ComposedChart/) for options.
 The dataset owns loading, empty results, evidence, CSV, and story content; keep
 its columns aligned with the displayed measures.
 

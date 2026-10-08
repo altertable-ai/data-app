@@ -12,6 +12,15 @@ type LegendContentProps = ComposedChartLegendProps & {
   payload?: readonly LegendPayload[];
 };
 
+const legendMarkerKinds: Partial<
+  Record<NonNullable<LegendPayload['type']>, ChartLegendMarkerKind>
+> = {
+  square: 'area',
+  rect: 'bar',
+  line: 'line',
+  plainline: 'line',
+};
+
 function LegendContent({
   payload = [],
   maxVisibleItems,
@@ -51,14 +60,7 @@ function LegendContent({
       {payload.map((entry, index) => {
         if (entry.type === 'none') return null;
         const type = iconType ?? entry.type;
-        const kind: ChartLegendMarkerKind =
-          type === 'square'
-            ? 'area'
-            : type === 'rect'
-              ? 'bar'
-              : type === 'line' || type === 'plainline'
-                ? 'line'
-                : 'point';
+        const kind = legendMarkerKinds[type ?? 'none'] ?? 'point';
         const formatLabel = entry.formatter ?? formatter;
         const label = formatLabel
           ? formatLabel(entry.value, entry, index)

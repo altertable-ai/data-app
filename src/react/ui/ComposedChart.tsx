@@ -38,7 +38,9 @@ export type ComposedChartProps<Row = unknown> = Omit<
 /** Compose Cartesian series inside VisualizationWidget. Defaults to responsive
  * full width and 300px height. Children retain native Recharts props and behavior,
  * including stacking, numeric/time axes, missing values, tooltips, and keyboard
- * navigation. Use public chart tokens for series colors. Dataset bindings own
+ * navigation. Match yAxisId on axes and series for different units; use stackId
+ * for stacks. Preserve missing measures as null and choose connectNulls deliberately.
+ * Use public chart tokens for series colors. Dataset bindings own
  * loading, empty results, evidence, and CSV; this primitive owns only the plot. */
 function ComposedChartRoot<Row>({
   data,
