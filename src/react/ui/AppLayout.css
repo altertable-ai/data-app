@@ -17,10 +17,7 @@
       --atbl-layout-gap,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     )
-    0 var(--atbl-space-md);
-}
-.altertable-app-main[data-surface='standalone'] {
-  padding-bottom: var(--atbl-space-xl);
+    0 calc(2 * var(--atbl-space-xl));
 }
 .altertable-app-body {
   display: grid;
