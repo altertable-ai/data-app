@@ -29,6 +29,21 @@
   min-height: var(--atbl-control-height);
   padding: 0;
 }
+.altertable-button[data-variant='primary'] {
+  border-color: var(--atbl-text);
+  background: var(--atbl-text);
+  color: var(--atbl-background);
+  --atbl-control-hover-surface: color-mix(
+    in srgb,
+    var(--atbl-text) 92%,
+    var(--atbl-background)
+  );
+  --atbl-control-pressed-surface: color-mix(
+    in srgb,
+    var(--atbl-text) 84%,
+    var(--atbl-background)
+  );
+}
 .altertable-button[data-variant='outline'] {
   box-shadow: none;
 }

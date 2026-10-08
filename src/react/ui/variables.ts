@@ -18,13 +18,18 @@ import {
 } from '@/src/core/variables';
 export {
   defineAppVariables,
-  textVariable,
-  selectVariable,
+  searchVariable,
+  choiceVariable,
+  multiChoiceVariable,
   dateRangeVariable,
 } from '@/src/core/variables';
 export type {
   AppVariable,
   AppVariableValues,
+  ChoiceOption,
+  ChoiceVariable,
+  MultiChoiceVariable,
+  SearchVariable,
   DateRangeSelection,
   DateRangeVariable,
   DateRangeVariableOptions,
@@ -175,6 +180,29 @@ export function useAppVariables<const Variables extends VariableCollection>(
     set(name, variable.defaultValue);
   }
 
+  function resetAll() {
+    update(
+      Object.fromEntries(
+        Object.entries(definitions).map(([name, variable]) => [
+          name,
+          variable.defaultValue,
+        ])
+      ) as AppVariableValues<Variables>,
+      'push'
+    );
+  }
+
+  function clearAll() {
+    update(
+      Object.fromEntries(
+        Object.entries(definitions)
+          .filter(([, variable]) => variable.clearValue !== undefined)
+          .map(([name, variable]) => [name, variable.clearValue])
+      ) as Partial<AppVariableValues<Variables>>,
+      'push'
+    );
+  }
+
   function bind<Key extends keyof Variables & string>(name: Key) {
     const variable = definitions[name] as unknown as AppVariable<
       AppVariableValues<Variables>[Key]
@@ -189,5 +217,5 @@ export function useAppVariables<const Variables extends VariableCollection>(
     };
   }
 
-  return { values, set, reset, update, bind };
+  return { values, set, reset, resetAll, clearAll, update, bind };
 }

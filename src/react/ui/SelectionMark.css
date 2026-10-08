@@ -5,11 +5,13 @@
   box-sizing: border-box;
   width: 1em;
   height: 1em;
-  border: 1px solid var(--atbl-muted);
-  border-radius: 0.25em;
   font-size: var(--atbl-control-icon-size);
 }
-.altertable-selection-mark[data-selected] {
+.altertable-selection-mark[data-multiple] {
+  border: 1px solid var(--atbl-muted);
+  border-radius: 0.25em;
+}
+.altertable-selection-mark[data-multiple][data-selected] {
   border-color: var(--atbl-accent);
   background: var(--atbl-accent);
 }
@@ -17,8 +19,11 @@
   width: 0.25em;
   height: 0.4375em;
   margin-top: -0.125em;
-  border: solid var(--atbl-on-accent);
+  border: solid currentColor;
   border-width: 0 0.125em 0.125em 0;
   content: '';
   transform: rotate(45deg);
+}
+.altertable-selection-mark[data-multiple][data-selected]::after {
+  border-color: var(--atbl-on-accent);
 }

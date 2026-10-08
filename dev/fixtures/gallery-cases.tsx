@@ -1,3 +1,4 @@
+import { FilterControlsPreview } from '@/dev/fixtures/filter-controls';
 import {
   gallerySections,
   type GalleryCategory,
@@ -47,7 +48,7 @@ import {
   AboutData,
   AppIcon,
   Checkbox,
-  Combobox,
+  ChoicePicker,
   DataTable,
   DataTableEmptyRow,
   DataTableShare,
@@ -83,7 +84,7 @@ const dimension = dimensionFilter({
   key: 'fixture_dimension',
   label: 'Typed interface',
   valueType: 'string',
-  selection: 'multiple',
+  selectionMode: 'multiple',
   allowMissing: true,
   options: [
     { value: 'null', label: 'Literal null', count: 0 },
@@ -294,19 +295,23 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
       <Section id="buttons" title="Buttons and selection">
         <Case title="Every button variant and size">
           <VariableBar aria-label="Demo controls">
-            {(['elevated', 'outline', 'ghost'] as const).map(variant =>
-              (['default', 'compact'] as const).map(size => (
-                <Button
-                  key={`${variant}-${size}`}
-                  variant={variant}
-                  size={size}
-                >
-                  {variant} · {size}
-                </Button>
-              ))
+            {(['primary', 'elevated', 'outline', 'ghost'] as const).map(
+              variant =>
+                (['default', 'compact'] as const).map(size => (
+                  <Button
+                    key={`${variant}-${size}`}
+                    variant={variant}
+                    size={size}
+                  >
+                    {variant} · {size}
+                  </Button>
+                ))
             )}
             <IconButton icon="refresh" label="Refresh fixture" />
             <IconButton icon="info" label="Disabled information" disabled />
+            <Button disabled variant="primary">
+              Disabled primary
+            </Button>
             <Button disabled variant="ghost">
               Disabled ghost
             </Button>
@@ -369,18 +374,22 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           </Stack>
         </Case>
       </Section>
-      <Section id="picker-edges" title="Picker edge cases">
-        <Case title="Single select and reset">
-          <Combobox
-            label="Resettable category"
+      <Section id="picker-edges" title="Filter controls">
+        <Case title="Composed filter controls">
+          <FilterControlsPreview />
+        </Case>
+        <Case title="Single choice">
+          <ChoicePicker
+            selectionMode="single"
+            label="Category"
             options={options}
             value={single}
             onChange={setSingle}
-            resetValue="http"
           />
         </Case>
         <Case title="At selection capacity">
-          <Combobox
+          <ChoicePicker
+            selectionMode="multiple"
             label="At capacity"
             options={options}
             values={multi}
@@ -390,7 +399,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Retained unavailable selection">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Unavailable category"
             options={[]}
             value="Previously selected"
@@ -399,7 +409,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Failure without cached options">
-          <Combobox
+          <ChoicePicker
+            selectionMode="multiple"
             label="No cached categories"
             options={uncached === 'ready' ? options : []}
             values={[]}
@@ -412,7 +423,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="One option">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="One category"
             options={[options[0]!]}
             value="http"
@@ -420,7 +432,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Long options and descriptions">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Verbose category"
             options={[
               {
@@ -436,7 +449,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Hundred options and scroll edges">
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Many categories"
             options={Array.from({ length: 100 }, (_, id) => ({
               id: String(id),
@@ -460,7 +474,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             >
               Start picker cycle
             </Button>
-            <Combobox
+            <ChoicePicker
+              selectionMode="single"
               label="Cycling categories"
               options={options}
               value="http"
@@ -1102,7 +1117,8 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             style={{ maxWidth: 320 }}
             data-testid="narrow-controls"
           >
-            <Combobox
+            <ChoicePicker
+              selectionMode="single"
               label="A deliberately long category label for narrow layouts"
               options={options}
               value="postgres"

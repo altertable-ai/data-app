@@ -29,7 +29,7 @@ const region = dimensionFilter<string>({
   key: 'region',
   label: 'Region',
   valueType: 'string',
-  selection: 'single',
+  selectionMode: 'single',
   allowMissing: true,
   options: [
     { value: 'Europe', label: 'Europe' },

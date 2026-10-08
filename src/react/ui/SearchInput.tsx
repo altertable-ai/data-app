@@ -9,11 +9,10 @@ export function SearchInput({
   endAction,
   loading = false,
   className,
-  onKeyDown,
   ...props
 }: Omit<ComponentPropsWithRef<'input'>, 'size' | 'children'> & {
   size?: 'default' | 'compact';
-  /** Menu search delegates focus indication to the active option. */
+  /** Picker search delegates focus indication to the active option. */
   focusRing?: boolean;
   endAction?: ReactNode;
   /** Replaces the search glyph in its existing space; input and results remain usable. */
@@ -21,7 +20,7 @@ export function SearchInput({
 }) {
   return (
     <div
-      data-atbl-internal-surface="field"
+      data-atbl-internal-surface={focusRing ? 'field' : undefined}
       data-atbl-focus={focusRing ? 'group' : undefined}
       className="altertable-search-input-wrap"
       data-size={size}
@@ -34,22 +33,6 @@ export function SearchInput({
       <input
         data-atbl-control="text"
         {...props}
-        onKeyDown={event => {
-          onKeyDown?.(event);
-          if (
-            !event.defaultPrevented &&
-            event.key === 'Escape' &&
-            !event.currentTarget.value
-          ) {
-            event.preventDefault();
-            event.stopPropagation();
-            event.currentTarget.blur();
-            // Keep keyboard dismissal within a modal menu after leaving its search field.
-            event.currentTarget
-              .closest<HTMLElement>('[role="dialog"]')
-              ?.focus();
-          }
-        }}
         type="search"
         className={classNames('altertable-search-input', className)}
       />

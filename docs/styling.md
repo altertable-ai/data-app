@@ -36,6 +36,12 @@ are consumed, so local colors, fonts, and spacing compose. Portals inherit from
 their actual DOM ancestors. Normal unlayered app CSS overrides package rules.
 `DataAppStyle` checks public inline custom-property names.
 
+`--atbl-control-text-size` controls editable text, including compact search fields,
+date segments, and annotation editors. It defaults to the body text size.
+Package controls and custom controls with `data-atbl-control="text"` enforce a
+16px minimum on narrow or touch viewports to prevent browser focus zoom. Keep
+that minimum when adding app-owned input styles.
+
 When overriding `--atbl-accent` directly, also choose `--atbl-on-accent` with
 sufficient contrast. Prefer appearance configuration for brand and chart colors.
 

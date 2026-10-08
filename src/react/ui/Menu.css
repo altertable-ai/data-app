@@ -1,0 +1,31 @@
+.altertable-menu-popover {
+  z-index: 150;
+  min-width: max(var(--trigger-width), 180px);
+  max-width: min(340px, calc(100vw - 24px));
+  padding: 8px;
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: var(--atbl-shadow-overlay);
+  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
+}
+.altertable-menu {
+  max-height: min(320px, 60dvh);
+  overflow: auto;
+  outline: none;
+}
+.altertable-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: var(--atbl-radius-control);
+  outline: none;
+}
+.altertable-menu-separator {
+  height: 1px;
+  margin: 4px 0;
+  background: var(--atbl-border);
+}

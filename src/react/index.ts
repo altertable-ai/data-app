@@ -54,13 +54,18 @@ export type { UpdatedAtProps } from '@/src/react/ui/UpdatedAt';
 export { DateTimeTooltip } from '@/src/react/ui/DateTimeTooltip';
 export type { DateTimeTooltipProps } from '@/src/react/ui/DateTimeTooltip';
 export {
-  textVariable,
-  selectVariable,
+  searchVariable,
+  choiceVariable,
+  multiChoiceVariable,
   dateRangeVariable,
 } from '@/src/react/ui/variables';
 export type {
   AppVariable,
   AppVariableValues,
+  ChoiceOption,
+  ChoiceVariable,
+  MultiChoiceVariable,
+  SearchVariable,
   DateRangeSelection,
   DateRangeVariable,
   DateRangeVariableOptions,

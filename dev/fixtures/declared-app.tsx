@@ -8,7 +8,7 @@ import {
   DataSection,
   TextWidget,
   VisualizationWidget,
-  textVariable,
+  searchVariable,
 } from '@altertable/data-app/react';
 import type { TransportResponse } from '@/src/core/bridge';
 
@@ -46,7 +46,7 @@ const alpha = hooks.defineDataView({
   dataContext: context,
   operation: 'alpha',
   variables: {
-    version: textVariable({
+    version: searchVariable({
       key: 'version',
       label: 'Version',
       defaultValue: '1',

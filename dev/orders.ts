@@ -15,7 +15,7 @@ export const countryFilter = dimensionFilter({
   key: 'country',
   label: 'Country',
   valueType: 'string',
-  selection: 'single',
+  selectionMode: 'single',
   options: countries,
 });
 export type OrderInput = {

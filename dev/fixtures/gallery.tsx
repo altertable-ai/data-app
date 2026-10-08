@@ -12,7 +12,7 @@ import {
   HelpPopover,
   MetricWidget,
   Checkbox,
-  Combobox,
+  ChoicePicker,
   DataWidget,
   SearchField,
   TableWidget,
@@ -220,7 +220,8 @@ function TextExamples() {
           </p>
         </TextWidget>
         <VariableBar>
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Narrative region"
             options={[
               { id: 'Europe', label: 'Europe' },
@@ -318,7 +319,8 @@ function QuickControls() {
           onChange={setQuery}
         />
         <VariableBar aria-label="Demo controls">
-          <Combobox
+          <ChoicePicker
+            selectionMode="multiple"
             label="Categories"
             options={options}
             values={categories}
@@ -331,7 +333,8 @@ function QuickControls() {
               description: 'Records without a category value',
             }}
           />
-          <Combobox
+          <ChoicePicker
+            selectionMode="multiple"
             label="Loading categories"
             options={loading ? [] : options}
             values={[]}
@@ -343,14 +346,16 @@ function QuickControls() {
           <Button size="compact" onClick={() => setLoading(false)}>
             Complete loading
           </Button>
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Refreshing categories"
             options={options}
             value="http"
             onChange={() => {}}
             loading
           />
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Failed categories"
             options={options}
             value="http"
@@ -358,7 +363,8 @@ function QuickControls() {
             error={error}
             onRetry={() => setError(false)}
           />
-          <Combobox
+          <ChoicePicker
+            selectionMode="multiple"
             label="Empty categories"
             options={[]}
             values={[]}
@@ -366,7 +372,8 @@ function QuickControls() {
             maxSelected={2}
             emptySelectionLabel="Choose categories"
           />
-          <Combobox
+          <ChoicePicker
+            selectionMode="single"
             label="Disabled categories"
             options={options}
             value="http"

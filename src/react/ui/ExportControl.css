@@ -10,10 +10,10 @@
   box-shadow: var(--atbl-shadow-overlay);
   color: var(--atbl-text);
 }
-.altertable-export-popover [role='listbox'] {
+.altertable-export-popover [role='menu'] {
   outline: none;
 }
-.altertable-export-popover [role='option'] {
+.altertable-export-popover [role='menuitem'] {
   display: flex;
   align-items: center;
   justify-content: space-between;

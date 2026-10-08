@@ -18,7 +18,6 @@
 }
 .altertable-search-input-wrap[data-size='compact'] .altertable-search-input {
   min-block-size: calc(var(--atbl-control-compact-height) - 2px);
-  font-size: var(--atbl-type-meta-size);
 }
 
 .altertable-search-input {
@@ -33,7 +32,7 @@
   background: transparent;
   color: var(--atbl-text);
   font: inherit;
-  font-size: var(--atbl-type-body-size);
+  font-size: var(--atbl-control-text-size);
 }
 .altertable-search-input::-webkit-search-cancel-button {
   display: none;
@@ -53,12 +52,5 @@
 @media (prefers-reduced-motion: reduce) {
   .altertable-search-input-spinner {
     animation: none;
-  }
-}
-
-@media (max-width: 560px) {
-  .altertable-search-input,
-  .altertable-search-input-wrap[data-size='compact'] .altertable-search-input {
-    font-size: max(1rem, 16px);
   }
 }

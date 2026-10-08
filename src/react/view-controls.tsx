@@ -1,7 +1,16 @@
 import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
+import { Select } from '@/src/react/ui/Select';
+import { FilterActions } from '@/src/react/ui/FilterActions';
+import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
+import type {
+  NumberFilter,
+  NumberSelection,
+  BooleanSelection,
+} from '@/src/core/filters';
+import type { AppVariable } from '@/src/core/variables';
 import { SearchField } from '@/src/react/ui/SearchField';
-import { Combobox } from '@/src/react/ui/Combobox';
+import { ChoicePicker } from '@/src/react/ui/ChoicePicker';
 import { DateRangePicker } from '@/src/react/ui/DateRangePicker';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
 import {
@@ -106,26 +115,108 @@ export function useViewVariables<Variables extends VariableCollection>(
           }
         />
       );
-    } else {
-      const binding = {
-        label: definition.label ?? name,
-        value: value as string,
-        onChange(next: string) {
-          return variables.set(
-            name,
-            next as AppVariableValues<Variables>[typeof name]
-          );
-        },
-        resetValue: definition.defaultValue,
-      };
-      if (definition.kind === 'select' && definition.options)
-        controls.push(
-          <Combobox key={name} {...binding} options={[...definition.options]} />
-        );
-      else if (definition.kind === 'text')
-        controls.push(<SearchField key={name} {...binding} />);
+    } else if (definition.kind === 'numberFilter') {
+      controls.push(
+        <NumberFilterPicker
+          key={name}
+          filter={definition as NumberFilter}
+          value={value as NumberSelection}
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
+    } else if (definition.kind === 'booleanFilter') {
+      const selected = value as BooleanSelection;
+      controls.push(
+        <Select
+          key={name}
+          label={definition.label}
+          value={selected.kind === 'all' ? 'all' : String(selected.value)}
+          options={[
+            { id: 'all', label: 'Any' },
+            { id: 'true', label: 'Yes' },
+            { id: 'false', label: 'No' },
+          ]}
+          onChange={next =>
+            variables.set(
+              name,
+              (next === 'all'
+                ? { kind: 'all' }
+                : {
+                    kind: 'is',
+                    value: next === 'true',
+                  }) as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
+    } else if (definition.kind === 'multiChoice') {
+      controls.push(
+        <ChoicePicker
+          key={name}
+          selectionMode="multiple"
+          label={definition.label ?? name}
+          options={definition.options}
+          values={value as readonly string[]}
+          maxSelected={definition.maxSelected}
+          emptySelectionLabel="None"
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
+    } else if (definition.kind === 'choice') {
+      controls.push(
+        <Select
+          key={name}
+          label={definition.label ?? name}
+          value={value as string}
+          options={definition.options}
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
+    } else if (definition.kind === 'search') {
+      controls.push(
+        <SearchField
+          key={name}
+          label={definition.label ?? name}
+          value={value as string}
+          resetValue={definition.defaultValue}
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
     }
   }
+  const hasActiveFilters = Object.entries(definitions).some(
+    ([name, definition]) => {
+      const variable = definition as AppVariable<any>;
+      return (
+        variable.clearValue !== undefined &&
+        !variable.same(variables.values[name], variable.clearValue)
+      );
+    }
+  );
+  if (hasActiveFilters)
+    controls.push(
+      <FilterActions key="filter-actions" onClear={variables.clearAll} />
+    );
 
   return {
     ...variables,

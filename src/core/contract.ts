@@ -442,3 +442,17 @@ export type {
   DataAppAnnotationDraft,
   DataAppAnnotationPresentation,
 } from '@/src/core/annotations';
+
+export {
+  numberFilter,
+  booleanFilter,
+  parseNumberSelection,
+  parseBooleanSelection,
+} from '@/src/core/filters';
+export type {
+  NumberSelection,
+  NumberOperator,
+  NumberFilter,
+  BooleanSelection,
+  BooleanFilter,
+} from '@/src/core/filters';

@@ -6,6 +6,7 @@ import type {
 const style = {
   padding: '8px',
   '--atbl-control-height': '40px',
+  '--atbl-control-text-size': '18px',
 } satisfies DataAppStyle;
 const hooks = {
   'data-atbl-focus': 'ring',

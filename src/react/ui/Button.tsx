@@ -1,12 +1,9 @@
 import type { ComponentPropsWithRef } from 'react';
-import {
-  Button as AriaButton,
-  type ButtonProps as AriaButtonProps,
-} from 'react-aria-components';
+import { Button as AriaButton } from 'react-aria-components';
 import { classNames } from '@/src/react/ui/classNames';
 
 export type ButtonProps = ComponentPropsWithRef<'button'> & {
-  variant?: 'elevated' | 'outline' | 'ghost';
+  variant?: 'primary' | 'elevated' | 'outline' | 'ghost';
   size?: 'default' | 'compact' | 'icon' | 'icon-compact';
 };
 
@@ -39,7 +36,7 @@ export function PressButton({
   size = 'default',
   className,
   ...props
-}: Omit<AriaButtonProps, 'className'> &
+}: Omit<ComponentPropsWithRef<typeof AriaButton>, 'className'> &
   Pick<ButtonProps, 'variant' | 'size'> & { className?: string }) {
   return (
     <AriaButton

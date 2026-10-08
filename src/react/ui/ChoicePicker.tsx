@@ -18,17 +18,14 @@ import { SelectionMark } from '@/src/react/ui/SelectionMark';
 import { SearchMatch } from '@/src/react/ui/SearchMatch';
 import { searchItems } from '@/src/react/ui/searchItems';
 
-/** IDs are nonempty and unique across ordinary and missing options. */
-export type ComboboxOption = {
-  id: string;
-  label: string;
-  description?: string;
-};
+import type { ChoiceOption } from '@/src/core/variables';
+export type { ChoiceOption } from '@/src/core/variables';
+
 type SharedProps = {
   label: string;
-  options: ComboboxOption[];
+  options: readonly ChoiceOption[];
   /** Separate source state, rendered last with a divider and the shared option component. */
-  missingOption?: ComboboxOption;
+  missingOption?: ChoiceOption;
   disabled?: boolean;
   placeholder?: string;
   emptyMessage?: string;
@@ -38,15 +35,16 @@ type SharedProps = {
   error?: boolean;
   onRetry?: () => void;
 };
-export type SingleComboboxProps = SharedProps & {
+export type SingleChoicePickerProps = SharedProps & {
+  selectionMode: 'single';
   value: string;
   onChange: (value: string) => void;
-  resetValue?: string;
   values?: never;
   maxSelected?: never;
   emptySelectionLabel?: never;
 };
-export type MultiComboboxProps = SharedProps & {
+export type MultiChoicePickerProps = SharedProps & {
+  selectionMode: 'multiple';
   values: readonly string[];
   onChange: (values: string[]) => void;
   /** Positive integer; at capacity, only unselected options are disabled. */
@@ -54,13 +52,14 @@ export type MultiComboboxProps = SharedProps & {
   /** Meaning of an empty selection belongs to the caller, e.g. All or Select a value. */
   emptySelectionLabel: string;
   value?: never;
-  resetValue?: never;
 };
-export type ComboboxProps = SingleComboboxProps | MultiComboboxProps;
+export type ChoicePickerProps =
+  | SingleChoicePickerProps
+  | MultiChoicePickerProps;
 
 /** Searchable selection picker with one focus and popup model for single and multiple values. */
-export function Combobox(props: ComboboxProps) {
-  const multiple = 'values' in props && props.values !== undefined;
+export function ChoicePicker(props: ChoicePickerProps) {
+  const multiple = props.selectionMode === 'multiple';
   const { label, options, missingOption, disabled, loading, error, onRetry } =
     props;
   const [open, setOpen] = useState(false);
@@ -81,32 +80,26 @@ export function Combobox(props: ComboboxProps) {
   const ids = selectedOptions.map(option => option.id);
   invariant(
     ids.every(id => !!id.trim()) && new Set(ids).size === ids.length,
-    'Combobox option IDs must be nonempty and unique.'
+    'ChoicePicker option IDs must be nonempty and unique.'
   );
   invariant(
     !multiple ||
       (Number.isSafeInteger(props.maxSelected) && props.maxSelected >= 1),
-    'Combobox maxSelected must be a positive integer.'
+    'ChoicePicker maxSelected must be a positive integer.'
   );
   invariant(
     !multiple ||
       (new Set(chosen).size === chosen.length &&
         chosen.length <= props.maxSelected),
-    'Combobox selection must be unique and within maxSelected.'
+    'ChoicePicker selection must be unique and within maxSelected.'
   );
   invariant(
     loading || error || chosen.every(id => ids.includes(id)),
-    'Combobox selection must refer to available option IDs.'
-  );
-  invariant(
-    multiple ||
-      props.resetValue === undefined ||
-      ids.includes(props.resetValue),
-    'Combobox resetValue must refer to an available option ID.'
+    'ChoicePicker selection must refer to available option IDs.'
   );
   invariant(
     !multiple || !!props.emptySelectionLabel.trim(),
-    'Combobox emptySelectionLabel must describe the empty selection.'
+    'ChoicePicker emptySelectionLabel must describe the empty selection.'
   );
   const display = multiple
     ? labels.join(', ') || props.emptySelectionLabel
@@ -128,9 +121,7 @@ export function Combobox(props: ComboboxProps) {
     ],
   });
   const atLimit = multiple && chosen.length >= props.maxSelected;
-  const canClear = multiple
-    ? chosen.length > 0
-    : props.resetValue !== undefined && props.value !== props.resetValue;
+  const canClear = multiple && chosen.length > 0;
   const feedback = error
     ? 'Couldn’t load values'
     : loading
@@ -153,13 +144,13 @@ export function Combobox(props: ComboboxProps) {
       if (id !== undefined) {
         props.onChange(id);
         setOpen(false);
+        setSearch('');
       }
     }
   }
 
   function clear() {
     if (multiple) props.onChange([]);
-    else if (props.resetValue !== undefined) props.onChange(props.resetValue);
     setOpen(false);
     setSearch('');
   }
@@ -175,23 +166,26 @@ export function Combobox(props: ComboboxProps) {
       <Button
         aria-haspopup="dialog"
         aria-controls={open ? popupId : undefined}
-        className="altertable-combobox-trigger"
+        className="altertable-picker-trigger"
         isDisabled={disabled}
         aria-label={`${label}: ${display}`}
       >
-        <span className="altertable-combobox-label" aria-hidden="true">
+        <span className="altertable-picker-label" aria-hidden="true">
           {label}
         </span>
-        <strong className="altertable-combobox-value" aria-hidden="true">
+        <strong className="altertable-picker-value" aria-hidden="true">
           {display}
         </strong>
         <AppIcon name="disclosure" size={14} />
       </Button>
-      <Popover className="altertable-combobox-popover" placement="bottom start">
+      <Popover
+        className="altertable-choice-picker-popover"
+        placement="bottom start"
+      >
         <Dialog
           id={popupId}
           aria-label={`${label} options`}
-          className="altertable-combobox-dialog"
+          className="altertable-choice-picker-dialog"
         >
           <SearchInput
             focusRing={false}
@@ -211,7 +205,7 @@ export function Combobox(props: ComboboxProps) {
           />
           <output
             id={statusId}
-            className="altertable-combobox-status"
+            className="altertable-choice-picker-status"
             aria-live={error ? 'off' : 'polite'}
           >
             {error ? `${matches.length} available values` : feedback}
@@ -219,7 +213,7 @@ export function Combobox(props: ComboboxProps) {
               ? `. Maximum of ${props.maxSelected} selections reached.`
               : ''}
           </output>
-          <GradientScroll className="altertable-combobox-options">
+          <GradientScroll className="altertable-choice-picker-options">
             {matches.length > 0 ? (
               <ListBox
                 aria-busy={loading || undefined}
@@ -228,7 +222,9 @@ export function Combobox(props: ComboboxProps) {
                 aria-label={`${label} values`}
                 aria-describedby={statusId}
                 selectionMode={multiple ? 'multiple' : 'single'}
-                selectionBehavior={multiple ? 'toggle' : 'replace'}
+                selectionBehavior="toggle"
+                escapeKeyBehavior="none"
+                disallowEmptySelection={!multiple}
                 selectedKeys={selected}
                 onSelectionChange={select}
               >
@@ -244,8 +240,11 @@ export function Combobox(props: ComboboxProps) {
                     textValue={hit.item.label}
                     isDisabled={atLimit && !selected.has(hit.item.id)}
                   >
-                    <SelectionMark selected={selected.has(hit.item.id)} />
-                    <span className="altertable-combobox-option-content">
+                    <SelectionMark
+                      selected={selected.has(hit.item.id)}
+                      multiple={multiple}
+                    />
+                    <span className="altertable-choice-picker-option-content">
                       <span>
                         <SearchMatch match={hit.matches.label} />
                       </span>
@@ -259,13 +258,16 @@ export function Combobox(props: ComboboxProps) {
                 )}
               </ListBox>
             ) : loading && !error ? (
-              <div className="altertable-combobox-skeletons" aria-hidden="true">
+              <div
+                className="altertable-choice-picker-skeletons"
+                aria-hidden="true"
+              >
                 {[0, 1, 2].map(row => (
                   <Skeleton key={row} />
                 ))}
               </div>
             ) : (
-              <div className="altertable-combobox-empty">
+              <div className="altertable-choice-picker-empty">
                 {error ? 'Values are unavailable' : feedback}
               </div>
             )}
@@ -281,7 +283,7 @@ export function Combobox(props: ComboboxProps) {
             />
           )}
           {canClear && (
-            <div className="altertable-combobox-actions">
+            <div className="altertable-choice-picker-actions">
               <Button variant="ghost" size="compact" onPress={clear}>
                 Clear selection
               </Button>

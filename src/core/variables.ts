@@ -8,21 +8,21 @@ import type {
   DimensionSelection,
   DimensionVariable,
 } from '@/src/core/dimension';
+import type { NumberFilter, BooleanFilter } from '@/src/core/filters';
 import { invariant } from '@/src/core/invariant';
 
 import type { HistoryMode } from '@/src/core/navigation';
 export type { HistoryMode } from '@/src/core/navigation';
 
 /** An app-owned value with one URL representation. Controls never parse or write routes. */
-export type AppVariable<
-  Value,
-  Kind extends string = Value extends string ? 'text' | 'select' : 'dateRange',
-> = {
+export type AppVariable<Value, Kind extends string = string> = {
   kind: Kind;
   label?: string;
-  options?: readonly { id: string; label: string }[];
   urlKeys: readonly string[];
   defaultValue: Value;
+  /** Unrestricted value, when this variable represents a filter. */
+  clearValue?: Value;
+  describe?: (value: Value) => string;
   history: HistoryMode;
   read: (params: URLSearchParams) => Value;
   write: (value: Value) => Record<string, string | null>;
@@ -32,7 +32,13 @@ export type AppVariable<
 
 export type VariableCollection = Record<
   string,
-  AppVariable<string> | DateRangeVariable | DimensionVariable<any>
+  | SearchVariable
+  | ChoiceVariable
+  | MultiChoiceVariable
+  | DateRangeVariable
+  | DimensionVariable<any>
+  | NumberFilter
+  | BooleanFilter
 >;
 export type AppVariableValues<Variables> = {
   [Key in keyof Variables]: Variables[Key] extends DimensionVariable<
@@ -73,18 +79,30 @@ type ScalarVariableOptions = {
   history?: HistoryMode;
 };
 
-/** A local text filter. Typing replaces the current history entry by default. */
-export function textVariable({
+export type SearchVariable = AppVariable<string, 'search'>;
+export type ChoiceOption = { id: string; label: string; description?: string };
+export type ChoiceVariable = AppVariable<string, 'choice'> & {
+  options: readonly ChoiceOption[];
+};
+export type MultiChoiceVariable = AppVariable<
+  readonly string[],
+  'multiChoice'
+> & { options: readonly ChoiceOption[]; maxSelected: number };
+
+/** Search query state; typing replaces history by default. */
+export function searchVariable({
   key,
   label,
   defaultValue = '',
   history = 'replace',
-}: ScalarVariableOptions): AppVariable<string> {
+}: ScalarVariableOptions): SearchVariable {
   return {
-    kind: 'text',
+    kind: 'search',
     label: label ?? key,
     urlKeys: [key],
     defaultValue,
+    clearValue: '',
+    describe: value => value,
     history,
     read(params) {
       return params.get(key) ?? defaultValue;
@@ -101,45 +119,122 @@ export function textVariable({
   };
 }
 
-/** A single choice. Supply values when the option set is known before data loads. */
-export function selectVariable({
+/** Validate labeled choices before controls or URL state consume them. */
+export function validateChoiceOptions(options: readonly ChoiceOption[]) {
+  invariant(
+    options.length > 0 &&
+      options.every(option => !!option.id.trim() && !!option.label.trim()) &&
+      new Set(options.map(option => option.id)).size === options.length,
+    'Choices require nonempty, unique IDs and labels.'
+  );
+}
+
+export function choiceVariable({
   key,
   label,
   defaultValue,
-  values,
+  options,
   history = 'push',
 }: ScalarVariableOptions & {
   defaultValue: string;
-  values?: readonly string[];
-}): AppVariable<string> {
-  invariant(
-    !values || values.includes(defaultValue),
-    `Select variable ${key} must include its default value.`
-  );
-
+  options: readonly ChoiceOption[];
+}): ChoiceVariable {
+  validateChoiceOptions(options);
   function valid(value: string) {
-    return typeof value === 'string' && (!values || values.includes(value));
+    return (
+      typeof value === 'string' && options.some(option => option.id === value)
+    );
   }
-
+  invariant(
+    valid(defaultValue),
+    `Choice variable ${key} must include its default value.`
+  );
   return {
-    kind: 'select',
+    kind: 'choice',
     label: label ?? key,
-    options: values?.map(id => ({ id, label: id })),
+    options,
     urlKeys: [key],
     defaultValue,
     history,
+    describe: value => options.find(option => option.id === value)!.label,
     read(params) {
       const value = params.get(key);
-
       return value !== null && valid(value) ? value : defaultValue;
     },
     write(value) {
       return { [key]: value === defaultValue ? null : value };
     },
     valid,
-    same(left, right) {
-      return left === right;
+    same: (left, right) => left === right,
+  };
+}
+
+export function multiChoiceVariable({
+  key,
+  label,
+  defaultValue = [],
+  options,
+  maxSelected = options.length,
+  history = 'push',
+}: Omit<ScalarVariableOptions, 'defaultValue'> & {
+  defaultValue?: readonly string[];
+  options: readonly ChoiceOption[];
+  maxSelected?: number;
+}): MultiChoiceVariable {
+  validateChoiceOptions(options);
+  invariant(
+    Number.isSafeInteger(maxSelected) &&
+      maxSelected >= 1 &&
+      maxSelected <= options.length,
+    'Invalid choice selection limit.'
+  );
+  function valid(value: readonly string[]) {
+    return (
+      Array.isArray(value) &&
+      value.length <= maxSelected &&
+      new Set(value).size === value.length &&
+      value.every(id => options.some(option => option.id === id))
+    );
+  }
+  function same(left: readonly string[], right: readonly string[]) {
+    return left.length === right.length && left.every(id => right.includes(id));
+  }
+  invariant(valid(defaultValue), `Invalid default choices for ${key}.`);
+  return {
+    kind: 'multiChoice',
+    label: label ?? key,
+    options,
+    maxSelected,
+    urlKeys: [key],
+    defaultValue,
+    history,
+    describe: values =>
+      values
+        .map(id => options.find(option => option.id === id)!.label)
+        .join(', ') || 'None',
+    read(params) {
+      const raw = params.get(key);
+      if (raw === null || raw.length > 4096) return defaultValue;
+      try {
+        const values = JSON.parse(raw);
+        return valid(values) ? values : defaultValue;
+      } catch {
+        return defaultValue;
+      }
     },
+    write(value) {
+      return {
+        [key]: same(value, defaultValue)
+          ? null
+          : JSON.stringify(
+              options
+                .filter(option => value.includes(option.id))
+                .map(option => option.id)
+            ),
+      };
+    },
+    valid,
+    same,
   };
 }
 
@@ -158,7 +253,7 @@ export type DateRangeVariableOptions = {
   comparison?: boolean;
 };
 
-export type DateRangeVariable = AppVariable<DateRangeSelection> & {
+export type DateRangeVariable = AppVariable<DateRangeSelection, 'dateRange'> & {
   kind: 'dateRange';
   supportsComparison: boolean;
   input: (selection: DateRangeSelection) => DateRangeRequest;
@@ -236,6 +331,8 @@ export function dateRangeVariable({
   const variable: DateRangeVariable = {
     kind: 'dateRange',
     label,
+    describe: selection =>
+      contract.describeInput(variable.input(selection).range),
     supportsComparison: comparison,
     input(selection) {
       return contract.request(

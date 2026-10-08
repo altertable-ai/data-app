@@ -10,7 +10,7 @@ import {
   DataAppError,
 } from '@altertable/data-app/client';
 import { DataApp, useAppVariables } from '@altertable/data-app/react/ui';
-import { mountDataApp, textVariable } from '@altertable/data-app/react';
+import { mountDataApp, searchVariable } from '@altertable/data-app/react';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const config: DataAppConfig = {
   title: 'Embedded report',
@@ -22,7 +22,9 @@ const data = createDataClient({
   operations: { connection: connectionCheck() },
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
-const variables = { period: textVariable({ key: 'period', history: 'push' }) };
+const variables = {
+  period: searchVariable({ key: 'period', history: 'push' }),
+};
 
 function App() {
   const [crashed, setCrashed] = useState(false);

@@ -3,7 +3,7 @@ import { createDataClient } from '@altertable/data-app/client';
 import {
   createDataHooks,
   createDataContext,
-  textVariable,
+  searchVariable,
 } from '@altertable/data-app/react';
 import {
   defineOperation,
@@ -27,7 +27,7 @@ test('a calendar and dimension declaration validates and escapes the input used 
     key: 'region',
     label: 'Region',
     valueType: 'string',
-    selection: 'multiple',
+    selectionMode: 'multiple',
     allowMissing: true,
     options: [
       { value: "O'Brien", label: 'Named region' },
@@ -150,7 +150,7 @@ test('authoring a view rejects invalid datasets and unregistered evidence', () =
   const view = hooks.defineDataView({
     dataContext: context,
     operation: 'rows',
-    variables: { group: textVariable({ key: 'group' }) },
+    variables: { group: searchVariable({ key: 'group' }) },
     describeInput: input => input.group,
     isEmpty: () => false,
     emptyFallback: { title: 'Empty' },

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { applyAppearance } from '@altertable/data-app/appearance';
 import {
-  Combobox,
+  ChoicePicker,
   DateRangePicker,
   SearchField,
   LiveControl,
@@ -69,7 +69,8 @@ function Stress() {
         </p>
       </TextContent>
       <VariableBar aria-label="Stress controls">
-        <Combobox
+        <ChoicePicker
+          selectionMode="single"
           label="Organization and geographic reporting region"
           options={[
             {

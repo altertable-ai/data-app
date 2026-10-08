@@ -95,7 +95,7 @@ const view = hooksA.defineDataView({
       key: 'category',
       label: 'Category',
       valueType: 'string',
-      selection: 'single',
+      selectionMode: 'single',
       facet: {
         operation: 'facet',
         input() {

@@ -7,28 +7,27 @@ export type DimensionMember<T extends DimensionValue = DimensionValue> =
   | { kind: 'missing' };
 export type DimensionSelection<T extends DimensionValue = DimensionValue> =
   | { kind: 'all' }
-  | { kind: 'include'; members: readonly DimensionMember<T>[] };
+  | { kind: 'include' | 'exclude'; members: readonly DimensionMember<T>[] };
 export type DimensionOption<T extends DimensionValue = DimensionValue> = {
   value: T;
   label: string;
   count?: number;
 };
-export type DimensionVariable<T extends DimensionValue = DimensionValue> = Omit<
-  AppVariable<DimensionSelection<T>, 'dimension'>,
-  'options'
-> & {
-  label: string;
-  selection: 'single' | 'multiple';
-  valueType: 'string' | 'number';
-  allowMissing: boolean;
-  maxSelected: number;
-  options: readonly DimensionOption<T>[];
-  facet?: {
-    operation: string;
-    input: (values: Record<string, unknown>) => unknown;
+export type DimensionVariable<T extends DimensionValue = DimensionValue> =
+  AppVariable<DimensionSelection<T>, 'dimension'> & {
+    label: string;
+    selectionMode: 'single' | 'multiple';
+    valueType: 'string' | 'number';
+    allowMissing: boolean;
+    allowExclusion: boolean;
+    maxSelected: number;
+    options: readonly DimensionOption<T>[];
+    facet?: {
+      operation: string;
+      input: (values: Record<string, unknown>) => unknown;
+    };
+    describe: (selection: DimensionSelection<T>) => string;
   };
-  describe: (selection: DimensionSelection<T>) => string;
-};
 
 const allSelection: DimensionSelection<never> = { kind: 'all' };
 
@@ -42,8 +41,9 @@ export type DimensionFilterOptions<T extends DimensionValue> = {
   key: string;
   label: string;
   valueType: T extends number ? 'number' : 'string';
-  selection: 'single' | 'multiple';
+  selectionMode: 'single' | 'multiple';
   allowMissing?: boolean;
+  allowExclusion?: boolean;
   maxSelected?: number;
   history?: HistoryMode;
 } & (
@@ -62,7 +62,7 @@ export type DimensionFilterOptions<T extends DimensionValue> = {
 export function dimensionFilter<const T extends DimensionValue>(
   config: DimensionFilterOptions<T>
 ): DimensionVariable<T> {
-  const { key, label, selection, valueType } = config;
+  const { key, label, selectionMode, valueType } = config;
   const options = config.options ?? [];
   const optionKeys = options.map(option =>
     dimensionMemberKey({ kind: 'value', value: option.value })
@@ -84,12 +84,13 @@ export function dimensionFilter<const T extends DimensionValue>(
     'Dimension options need typed values, labels, and nonnegative counts.'
   );
   const allowed = new Set(optionKeys);
-  const maxSelected = config.maxSelected ?? (selection === 'single' ? 1 : 20);
+  const maxSelected =
+    config.maxSelected ?? (selectionMode === 'single' ? 1 : 20);
   invariant(
     Number.isInteger(maxSelected) &&
       maxSelected >= 1 &&
       maxSelected <= 50 &&
-      (selection !== 'single' || maxSelected === 1),
+      (selectionMode !== 'single' || maxSelected === 1),
     'Dimension selection limit is invalid.'
   );
   const allowMissing = config.allowMissing ?? false;
@@ -110,7 +111,8 @@ export function dimensionFilter<const T extends DimensionValue>(
     if (!value || typeof value !== 'object') return false;
     if (value.kind === 'all') return true;
     if (
-      value.kind !== 'include' ||
+      (value.kind !== 'include' &&
+        !(config.allowExclusion && value.kind === 'exclude')) ||
       !Array.isArray(value.members) ||
       !value.members.length ||
       value.members.length > maxSelected
@@ -124,22 +126,26 @@ export function dimensionFilter<const T extends DimensionValue>(
   function encode(value: DimensionSelection<T>) {
     return value.kind === 'all'
       ? null
-      : JSON.stringify(
-          value.members.map(member =>
+      : JSON.stringify({
+          kind: value.kind,
+          members: value.members.map(member =>
             member.kind === 'missing' ? ['m'] : ['v', member.value]
-          )
-        );
+          ),
+        });
   }
 
   function parse(raw: string | null): DimensionSelection<T> {
     if (raw === null) return defaultValue;
     if (raw.length > 4096) return defaultValue;
     try {
-      const tokens = JSON.parse(raw);
-      if (!Array.isArray(tokens)) return defaultValue;
+      const parsed = JSON.parse(raw);
+      const tokens = Array.isArray(parsed)
+        ? { kind: 'include', members: parsed }
+        : parsed;
+      if (!tokens || !Array.isArray(tokens.members)) return defaultValue;
       const value = {
-        kind: 'include' as const,
-        members: tokens.map(token =>
+        kind: tokens.kind,
+        members: tokens.members.map((token: unknown) =>
           Array.isArray(token) && token.length === 1 && token[0] === 'm'
             ? { kind: 'missing' as const }
             : Array.isArray(token) && token.length === 2 && token[0] === 'v'
@@ -160,13 +166,15 @@ export function dimensionFilter<const T extends DimensionValue>(
     kind: 'dimension',
     label,
     valueType,
-    selection,
+    selectionMode,
     options,
     facet: config.facet,
     allowMissing,
+    allowExclusion: config.allowExclusion ?? false,
     maxSelected,
     urlKeys: [key],
     defaultValue,
+    clearValue: allSelection,
     history: config.history ?? 'push',
     valid,
     same(left, right) {
@@ -181,14 +189,14 @@ export function dimensionFilter<const T extends DimensionValue>(
     describe(value) {
       return value.kind === 'all'
         ? `All ${label.toLocaleLowerCase()}`
-        : value.members
+        : `${value.kind === 'exclude' ? 'Exclude: ' : ''}${value.members
             .map(member =>
               member.kind === 'missing'
                 ? 'Missing'
                 : (options.find(option => option.value === member.value)
                     ?.label ?? String(member.value))
             )
-            .join(', ');
+            .join(', ')}`;
     },
   };
 }
@@ -286,5 +294,11 @@ export function dimensionPredicate<
     ...(missing ? [`${column} IS NULL`] : []),
   ];
 
-  return `(${clauses.join(' OR ')})`;
+  const predicate = `(${clauses.join(' OR ')})`;
+  // Excluding values retains missing records unless missing itself is excluded.
+  return selection.kind === 'exclude'
+    ? missing
+      ? `NOT ${predicate}`
+      : `(${column} IS NULL OR NOT ${predicate})`
+    : predicate;
 }
