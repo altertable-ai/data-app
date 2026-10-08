@@ -36,6 +36,7 @@ const bootstrap = await Bun.build({
   entrypoints: ['src/embed/standalone.ts'],
   target: 'browser',
   format: 'iife',
+  minify: true,
 });
 
 if (!bootstrap.success) throw new Error('Could not build bootstrap.');
