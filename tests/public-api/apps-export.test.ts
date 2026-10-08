@@ -55,7 +55,7 @@ describe('export', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('row', { name: 'Alpha 3', exact: true })
+          .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
           .filter({ visible: true })
           .isVisible()
       )
@@ -76,7 +76,7 @@ describe('export', () => {
 
     await expectExport(
       'sample-counts-all-groups.csv',
-      '\uFEFFGroup,Sample count\r\nAlpha,3\r\nBeta,0\r\n'
+      '\uFEFFGroup,Sample count\r\nAlpha,2200000\r\nBeta,0\r\n'
     );
     gate = new Promise<void>(resolve => {
       release = resolve;
@@ -94,7 +94,7 @@ describe('export', () => {
       .toBe(true);
     await expectExport(
       'sample-counts-all-groups.csv',
-      '\uFEFFGroup,Sample count\r\nAlpha,3\r\nBeta,0\r\n'
+      '\uFEFFGroup,Sample count\r\nAlpha,2200000\r\nBeta,0\r\n'
     );
     release();
     gate = Promise.resolve();

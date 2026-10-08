@@ -21,7 +21,7 @@ describe('present', () => {
     const story = app.getByRole('dialog');
     await expect
       .poll(() =>
-        story.getByRole('heading', { name: 'Total samples: 3' }).isVisible()
+        story.getByRole('heading', { name: 'Total samples: 2.2M' }).isVisible()
       )
       .toBe(true);
     await expect
@@ -80,7 +80,7 @@ describe('present', () => {
     const story = app.getByRole('dialog');
     await expect
       .poll(() =>
-        story.getByRole('heading', { name: 'Total samples: 3' }).isVisible()
+        story.getByRole('heading', { name: 'Total samples: 2.2M' }).isVisible()
       )
       .toBe(true);
     await expect.poll(() => page.locator(':fullscreen').count()).toBe(0);
