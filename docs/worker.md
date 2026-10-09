@@ -28,7 +28,8 @@ and these string bindings:
 | `PARENT_ORIGINS` | Space-separated trusted HTTP(S) origins; first exact origin is the default | `https://app.example.com https://*.preview.example.com` |
 
 The Worker serves only `/` on a single preview label under `DOMAIN_NAME` matching
-`/^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)+-app-[1-9][0-9]*$/`. Other hosts and paths
+`/^(?=.{1,63}$)[a-z0-9]+(?:-+[a-z0-9]+)+$/`
+(any hyphenated lowercase DNS label; the host keeps each app's label unique). Other hosts and paths
 return 404. GET returns HTML; HEAD returns the same headers with no body. Other
 methods return 405 with `Allow: GET, HEAD`.
 

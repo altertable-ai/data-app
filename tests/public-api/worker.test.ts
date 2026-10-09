@@ -8,7 +8,8 @@ const bindings = {
   DOMAIN_NAME: 'altertableusercontent.dev',
   PARENT_ORIGINS: 'https://altertable.dev https://*.preview.altertable.dev',
 };
-const previewUrl = 'https://my-report-app-1.altertableusercontent.dev/';
+const previewUrl =
+  'https://acme-prod-report-03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/';
 
 function request(parent?: string, method = 'GET', config = bindings) {
   const url = new URL(previewUrl);
@@ -34,13 +35,23 @@ describe('published Worker', () => {
   });
 
   test.each([
+    'https://acme-prod-report-03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/',
+    'https://acme--03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/',
+    'https://my-report-app-1.altertableusercontent.dev/',
+    `https://${'a'.repeat(37)}-03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/`,
+  ])('serves valid preview URL %s', url => {
+    expect(worker.fetch(new Request(url), bindings).status).toBe(200);
+  });
+
+  test.each([
     'https://altertableusercontent.dev/',
-    'https://report-app-1.altertableusercontent.dev/',
-    'https://my-report-app-0.altertableusercontent.dev/',
-    'https://my-report-app-01.altertableusercontent.dev/',
-    'https://nested.my-report-app-1.altertableusercontent.dev/',
-    'https://my-report-app-1.altertableusercontent.dev.evil.example/',
-    `https://${'a'.repeat(60)}-b-app-1.altertableusercontent.dev/`,
+    'https://03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/',
+    'https://-03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/',
+    'https://acme-.altertableusercontent.dev/',
+    'https://acme_prod-03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/',
+    'https://nested.acme-03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/',
+    'https://acme-03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev.evil.example/',
+    `https://${'a'.repeat(38)}-03gyrydq17xftovxkqhaybeyi.altertableusercontent.dev/`,
     `${previewUrl}asset.js`,
   ])('rejects invalid preview URL %s', url => {
     expect(worker.fetch(new Request(url), bindings).status).toBe(404);
