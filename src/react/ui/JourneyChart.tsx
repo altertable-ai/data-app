@@ -2,13 +2,8 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { invariant } from '@/src/core/invariant';
 import { Button } from '@/src/react/ui/Button';
 import { classNames } from '@/src/react/ui/classNames';
-import {
-  type AnalyticsChartProps,
-  formatAnalyticsValue,
-  formatAnalyticsRate,
-  validateAnalyticsCount,
-  validateAnalyticsIds,
-} from '@/src/react/ui/analytics-chart-data';
+import type { CountChartProps } from '@/src/react/ui/chart-data';
+import { formatNumber, formatPercent } from '@/src/core/format';
 import {
   buildJourneyFlow,
   limitJourneyFlow,
@@ -17,7 +12,7 @@ import {
 } from '@/src/react/ui/journey-flow';
 
 export type { JourneyChartPath } from '@/src/react/ui/journey-flow';
-export type JourneyChartProps = AnalyticsChartProps & {
+export type JourneyChartProps = CountChartProps & {
   /** Full paths and their population counts. Branches and outcomes are derived internally. */
   paths: readonly JourneyChartPath[];
 };
@@ -29,12 +24,20 @@ export function JourneyChart({
   unit,
   ariaLabel,
   className,
-  formatValue = formatAnalyticsValue,
+  formatValue = formatNumber,
 }: JourneyChartProps) {
-  validateAnalyticsIds('journey path', paths);
+  const ids = new Set<string>();
   let total = 0;
   for (const path of paths) {
-    validateAnalyticsCount('journey', path.count);
+    invariant(
+      path.id.trim().length > 0 && !ids.has(path.id),
+      'journey path chart IDs must be nonblank and unique.'
+    );
+    ids.add(path.id);
+    invariant(
+      Number.isFinite(path.count) && path.count >= 0,
+      'journey chart counts must be finite and nonnegative.'
+    );
     total += path.count;
     invariant(
       path.steps.length > 0 &&
@@ -88,9 +91,7 @@ function JourneyFlow({
     .filter(node => node.depth === 0)
     .reduce((sum, node) => sum + node.count, 0);
   function percent(count: number) {
-    return formatAnalyticsRate(
-      startingCount > 0 ? count / startingCount : null
-    );
+    return formatPercent(startingCount > 0 ? count / startingCount : null);
   }
   const nodeWidth = 176;
   const nodeHeight = 96;

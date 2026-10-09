@@ -1,16 +1,12 @@
-import { Fragment, useEffect, useId, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { invariant } from '@/src/core/invariant';
+import { useSvgId } from '@/src/react/ui/useSvgId';
 import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { ComposedChart } from '@/src/react/ui/ComposedChart';
 import { ChartTooltipContent } from '@/src/react/ui/chart-primitives';
 import { classNames } from '@/src/react/ui/classNames';
-import {
-  type AnalyticsChartProps,
-  formatAnalyticsValue,
-  formatAnalyticsRate,
-  validateAnalyticsCount,
-  validateAnalyticsIds,
-} from '@/src/react/ui/analytics-chart-data';
+import type { CountChartProps } from '@/src/react/ui/chart-data';
+import { formatNumber, formatPercent } from '@/src/core/format';
 
 /** Ordered step with a unique, nonblank ID. */
 export type FunnelChartStep = { id: string; label: string };
@@ -21,7 +17,7 @@ export type FunnelChartSeries = {
   /** Finite, nonnegative counts aligned with steps and nonincreasing. */
   values: readonly number[];
 };
-export type FunnelChartProps = AnalyticsChartProps & {
+export type FunnelChartProps = CountChartProps & {
   steps: readonly FunnelChartStep[];
   series: readonly FunnelChartSeries[];
 };
@@ -34,9 +30,9 @@ export function FunnelChart({
   unit,
   ariaLabel,
   className,
-  formatValue = formatAnalyticsValue,
+  formatValue = formatNumber,
 }: FunnelChartProps) {
-  const chartId = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const chartId = useSvgId();
   const [highlighted, setHighlighted] = useState<{
     id: string;
     conversion: boolean;
@@ -60,15 +56,29 @@ export function FunnelChart({
     cancelClear();
     clearTimer.current = setTimeout(() => setHighlighted(null), 100);
   }
-  validateAnalyticsIds('funnel step', steps);
-  validateAnalyticsIds('funnel series', series);
+  for (const [kind, items] of [
+    ['funnel step', steps],
+    ['funnel series', series],
+  ] as const) {
+    const ids = new Set<string>();
+    for (const item of items) {
+      invariant(
+        item.id.trim().length > 0 && !ids.has(item.id),
+        `${kind} chart IDs must be nonblank and unique.`
+      );
+      ids.add(item.id);
+    }
+  }
   for (const item of series) {
     invariant(
       item.values.length === steps.length,
       'funnel chart counts must align with steps.'
     );
     item.values.forEach((value, index) => {
-      validateAnalyticsCount('funnel', value);
+      invariant(
+        Number.isFinite(value) && value >= 0,
+        'funnel chart counts must be finite and nonnegative.'
+      );
       invariant(
         index === 0 || value <= item.values[index - 1]!,
         'funnel chart counts must be nonincreasing.'
@@ -118,14 +128,13 @@ export function FunnelChart({
               <div key={item.id}>
                 <span>
                   <ChartLegend.Marker
+                    kind="square"
                     color={`var(--atbl-chart-${(index % 8) + 1})`}
                   />
                   {item.label}
                 </span>
                 <strong>
-                  {formatAnalyticsRate(
-                    reading(item, steps.length - 1).conversion
-                  )}
+                  {formatPercent(reading(item, steps.length - 1).conversion)}
                 </strong>
               </div>
             ))}
@@ -272,7 +281,7 @@ export function FunnelChart({
                             0,
                           formatter: () => (
                             <>
-                              {formatAnalyticsRate(
+                              {formatPercent(
                                 conversion ? value.conversion : value.dropOff
                               )}{' '}
                               {conversion ? 'conversion' : 'drop-off'}
@@ -308,7 +317,7 @@ export function FunnelChart({
                     <span key={item.id}>
                       {' '}
                       · {item.label}: {formatValue(value.current)} {unit},{' '}
-                      {formatAnalyticsRate(value.conversion)} conversion,{' '}
+                      {formatPercent(value.conversion)} conversion,{' '}
                       {formatValue(value.dropped)} dropped off
                     </span>
                   );

@@ -19,7 +19,6 @@ import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { TooltipSurface } from '@/src/react/ui/TooltipSurface';
 
 import { chartBarFill } from '@/src/react/ui/chartColor';
-export { chartBarFill } from '@/src/react/ui/chartColor';
 const accent = 'var(--atbl-accent)';
 /** Hollow sample marker shared by standalone and composed series. */
 export function ChartDot({
@@ -183,6 +182,7 @@ export function ChartTooltipContent(
                 className="altertable-chart-tooltip-row"
               >
                 <ChartLegend.Marker
+                  kind="square"
                   className="altertable-chart-tooltip-marker"
                   color={
                     entry.color ??

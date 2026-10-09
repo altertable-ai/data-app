@@ -1,3 +1,4 @@
+import { chartBarFill } from '@/src/react/ui/chartColor';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useLayoutEffect, useRef, useState } from 'react';
 
@@ -12,7 +13,6 @@ import {
   ChartBar,
   ChartXAxis,
   ChartYAxis,
-  chartBarFill,
 } from '@/src/react/ui/chart-primitives';
 
 export type BarChartItem = ChartItem;

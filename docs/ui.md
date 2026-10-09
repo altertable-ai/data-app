@@ -100,6 +100,8 @@ the samples. Pie slices represent mutually exclusive parts of one total; shares
 use the sum of supplied items, so include Other when showing a subset of the
 whole. Scatter points represent independent X/Y observations.
 
+Use `useSvgId()` for stable IDs when composing custom SVG definitions.
+
 ### Product analytics charts
 
 Use `<FunnelChart>`, `<RetentionChart>`, and `<JourneyChart>` from `/react/ui`
@@ -151,8 +153,9 @@ its columns aligned with the displayed measures.
 Include `<ComposedChart.Legend />` to derive labels and colored square markers from the series;
 omit it when no legend is needed. For any chart, compose `<ChartLegend>` with
 `<ChartLegend.Item>`, `<ChartLegend.Marker>`, and `<ChartLegend.Label>` using the
-same names and colors as the plot. `<ChartLegend.Marker>` defaults to a square,
-shared with chart tooltips and funnel summaries.
+same names and colors as the plot. Square markers are
+shared with chart tooltips and funnel summaries. Pass `kind="square"` explicitly
+when composing a marker.
 `<PieChart>` includes a legend by default; `showLegend={false}` omits it.
 
 Legends align cells in a container-responsive grid, truncate labels, and reserve

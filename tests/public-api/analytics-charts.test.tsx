@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
+  useSvgId,
   FunnelChart,
   RetentionChart,
   JourneyChart,
@@ -197,4 +198,61 @@ test('journey starts with two prefix-aware steps and derives population counts a
       />
     )
   ).toThrow(/unique/);
+});
+
+test('SVG definition IDs are distinct and preserve different React identifier prefixes', () => {
+  function Gradient() {
+    const id = useSvgId();
+    return (
+      <svg>
+        <defs>
+          <linearGradient id={id} />
+        </defs>
+        <rect fill={`url(#${id})`} />
+      </svg>
+    );
+  }
+  const markup = renderToStaticMarkup(
+    <>
+      <Gradient />
+      <Gradient />
+    </>,
+    { identifierPrefix: 'report: west' }
+  );
+  const ids = [...markup.matchAll(/id="([^"]+)"/g)].map(match => match[1]!);
+  expect(ids).toHaveLength(2);
+  expect(new Set(ids).size).toBe(2);
+  for (const id of ids) {
+    expect(id).toMatch(/^[a-zA-Z][a-zA-Z0-9_-]*$/);
+    expect(markup).toContain(`url(#${id})`);
+  }
+  expect(
+    renderToStaticMarkup(<Gradient />, { identifierPrefix: 'report: west' })
+  ).not.toBe(
+    renderToStaticMarkup(<Gradient />, { identifierPrefix: 'reportwest' })
+  );
+});
+
+test('journey terminal labels follow their conversion outcome', () => {
+  for (const [converted, label] of [
+    [true, 'Converted'],
+    [false, 'Drop-off'],
+    [null, 'End of path'],
+  ] as const) {
+    const html = renderToStaticMarkup(
+      <JourneyChart
+        {...shared}
+        paths={[
+          {
+            id: 'start',
+            steps: [{ event: 'Start', property: null }],
+            count: 10,
+            converted,
+            truncated: false,
+          },
+        ]}
+      />
+    );
+    expect(html).toContain(`${label}, step 2, 10.0 users`);
+  }
 });

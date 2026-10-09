@@ -25,6 +25,13 @@ export type JourneyNode = {
   hiddenBranchCount?: number;
 };
 
+const journeyOutcomeLabels = {
+  truncated: 'More steps',
+  'drop-off': 'Drop-off',
+  converted: 'Converted',
+  end: 'End of path',
+} as const;
+
 export function journeyNodes(
   path: JourneyChartPath
 ): Omit<JourneyNode, 'count' | 'pathKeys'>[] {
@@ -46,17 +53,9 @@ export function journeyNodes(
       : path.converted === true
         ? 'converted'
         : 'end';
-  const label =
-    outcome === 'truncated'
-      ? 'More steps'
-      : outcome === 'drop-off'
-        ? 'Drop-off'
-        : outcome === 'converted'
-          ? 'Converted'
-          : 'End of path';
   nodes.push({
     key: JSON.stringify([nodes.length, outcome]),
-    label,
+    label: journeyOutcomeLabels[outcome],
     depth: nodes.length,
     outcome,
   });

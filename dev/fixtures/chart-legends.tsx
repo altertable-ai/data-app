@@ -125,7 +125,7 @@ createRoot(document.getElementById('root')!).render(
           <ChartLegend aria-label="Regional services legend">
             {serviceSeries.map(series => (
               <ChartLegend.Item key={series.key}>
-                <ChartLegend.Marker color={series.color} />
+                <ChartLegend.Marker kind="square" color={series.color} />
                 <ChartLegend.Label>{series.label}</ChartLegend.Label>
               </ChartLegend.Item>
             ))}
