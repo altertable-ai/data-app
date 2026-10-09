@@ -20,3 +20,11 @@
 .altertable-composed-chart-legend-above {
   padding-bottom: var(--atbl-space-md);
 }
+
+/* A pointer press can retain :focus-visible on an already keyboard-focused SVG. */
+.altertable-composed-chart[data-atbl-internal-pointer-focus] {
+  --atbl-focus-outline: none;
+}
+.altertable-composed-chart [data-atbl-focus='inset']:focus:not(:focus-visible) {
+  outline: none;
+}

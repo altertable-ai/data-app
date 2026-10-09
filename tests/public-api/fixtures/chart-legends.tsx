@@ -8,6 +8,9 @@ import {
   LineChart,
   AreaChart,
   PieChart,
+  FunnelChart,
+  RetentionChart,
+  JourneyChart,
   ComposedChart,
   VisualizationWidget,
   injectDataAppStyles,
@@ -197,7 +200,7 @@ createRoot(document.getElementById('root')!).render(
           <ChartLegend aria-label="Regional services legend">
             {serviceSeries.map(series => (
               <ChartLegend.Item key={series.key}>
-                <ChartLegend.Marker kind="line" color={series.color} />
+                <ChartLegend.Marker color={series.color} />
                 <ChartLegend.Label>{series.label}</ChartLegend.Label>
               </ChartLegend.Item>
             ))}
@@ -251,6 +254,167 @@ createRoot(document.getElementById('root')!).render(
           unit="ms"
           ariaLabel="Standalone pie"
           formatValue={formatValue}
+        />
+      </Example>
+
+      <Example
+        name="FunnelChart"
+        description="Activation by plan. Filled columns show conversion; hatching shows drop-off from the previous step."
+      >
+        <FunnelChart
+          ariaLabel="Activation funnel"
+          unit="users"
+          steps={[
+            { id: 'visit', label: 'Visited' },
+            { id: 'signup', label: 'Signed up' },
+            { id: 'activate', label: 'Activated' },
+          ]}
+          series={[
+            { id: 'free', label: 'Free plan', values: [1000, 600, 240] },
+            { id: 'paid', label: 'Paid plan', values: [500, 400, 300] },
+          ]}
+        />
+      </Example>
+      <Example
+        name="RetentionChart"
+        description="Weekly return rates by signup cohort. Dotted tails mark periods still accumulating."
+      >
+        <RetentionChart
+          ariaLabel="Weekly retention"
+          unit="users"
+          series={[
+            {
+              id: 'sep1',
+              label: 'Sep 1',
+              cohortSize: 100,
+              points: [
+                { offset: 0, label: 'Week 0', rate: 1, retainedCount: 100 },
+                { offset: 1, label: 'Week 1', rate: 0.4, retainedCount: 40 },
+                { offset: 2, label: 'Week 2', rate: 0, retainedCount: 0 },
+                {
+                  offset: 7,
+                  label: 'Week 7',
+                  rate: 0.2,
+                  retainedCount: 20,
+                  incomplete: true,
+                },
+              ],
+            },
+            {
+              id: 'sep8',
+              label: 'Sep 8',
+              cohortSize: 80,
+              points: [
+                { offset: 0, label: 'Week 0', rate: 1, retainedCount: 80 },
+                {
+                  offset: 1,
+                  label: 'Week 1',
+                  rate: 0.6,
+                  retainedCount: 48,
+                  incomplete: true,
+                },
+                { offset: 2, label: 'Week 2', rate: null, retainedCount: null },
+              ],
+            },
+          ]}
+        />
+      </Example>
+      <Example
+        name="JourneyChart"
+        span={2}
+        description="Explore onboarding paths one branch at a time. Counts and flows use the Step 1 population."
+      >
+        <JourneyChart
+          ariaLabel="Onboarding journey"
+          unit="users"
+          paths={[
+            {
+              id: 'a',
+              steps: [
+                { event: 'Signed up', property: null },
+                { event: 'Workspace created', property: null },
+                { event: 'Report created', property: null },
+                { event: 'Subscribed', property: null },
+              ],
+              count: 460,
+              converted: true,
+              truncated: false,
+            },
+            {
+              id: 'b',
+              steps: [
+                { event: 'Signed up', property: null },
+                { event: 'Workspace created', property: null },
+                { event: 'Integration connected', property: null },
+                { event: 'Subscribed', property: null },
+              ],
+              count: 240,
+              converted: true,
+              truncated: false,
+            },
+            {
+              id: 'c',
+              steps: [
+                { event: 'Signed up', property: null },
+                { event: 'Workspace created', property: null },
+              ],
+              count: 180,
+              converted: false,
+              truncated: false,
+            },
+            {
+              id: 'd',
+              steps: [
+                { event: 'Signed up', property: null },
+                { event: 'Documentation viewed', property: null },
+                { event: 'Workspace created', property: null },
+              ],
+              count: 80,
+              converted: null,
+              truncated: true,
+            },
+            {
+              id: 'e',
+              steps: [
+                { event: 'Signed up', property: null },
+                { event: 'Documentation viewed', property: null },
+              ],
+              count: 40,
+              converted: false,
+              truncated: false,
+            },
+            {
+              id: 'f',
+              steps: [
+                { event: 'Signed up', property: null },
+                { event: 'Search', property: null },
+                { event: 'Signed up', property: null },
+              ],
+              count: 30,
+              converted: null,
+              truncated: false,
+            },
+            {
+              id: 'g',
+              steps: [
+                { event: 'Signed up', property: null },
+                { event: 'Settings', property: null },
+              ],
+              count: 20,
+              converted: null,
+              truncated: true,
+            },
+            {
+              id: 'h',
+              steps: [
+                { event: 'Signed up', property: null },
+                { event: 'Invite sent', property: null },
+              ],
+              count: 10,
+              converted: null,
+              truncated: true,
+            },
+          ]}
         />
       </Example>
     </Grid>

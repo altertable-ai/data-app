@@ -15,10 +15,11 @@ import {
   type LineProps,
   type AreaProps,
 } from 'recharts';
+import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { TooltipSurface } from '@/src/react/ui/TooltipSurface';
 
-export const chartBarFill =
-  'var(--atbl-chart-fill, color-mix(in srgb, var(--atbl-accent) 75%, var(--atbl-surface)))';
+import { chartBarFill } from '@/src/react/ui/chartColor';
+export { chartBarFill } from '@/src/react/ui/chartColor';
 const accent = 'var(--atbl-accent)';
 /** Hollow sample marker shared by standalone and composed series. */
 export function ChartDot({
@@ -153,7 +154,7 @@ export function ChartGrid(props: ComponentProps<typeof CartesianGrid>) {
   );
 }
 
-function ChartTooltipContent(
+export function ChartTooltipContent(
   props: ComponentProps<typeof DefaultTooltipContent> & { active?: boolean }
 ) {
   if (!props.active) return null;
@@ -161,6 +162,48 @@ function ChartTooltipContent(
     <TooltipSurface data-variant="chart" role="tooltip">
       <DefaultTooltipContent
         {...props}
+        separator=""
+        payload={props.payload?.map(entry => ({
+          ...entry,
+          unit: undefined,
+          formatter: (value, name, _item, index, payload) => {
+            const formatter = entry.formatter ?? props.formatter;
+            const formatted = formatter
+              ? formatter(value, name, entry, index, props.payload ?? payload)
+              : Array.isArray(value)
+                ? value.join(' ~ ')
+                : value;
+            if (formatted == null) return null;
+            const [displayValue, displayName] = Array.isArray(formatted)
+              ? formatted
+              : [formatted, name];
+            return [
+              <span
+                key={entry.graphicalItemId}
+                className="altertable-chart-tooltip-row"
+              >
+                <ChartLegend.Marker
+                  className="altertable-chart-tooltip-marker"
+                  color={
+                    entry.color ??
+                    entry.stroke ??
+                    entry.fill ??
+                    'var(--atbl-accent)'
+                  }
+                />
+                <span className="altertable-chart-tooltip-reading">
+                  {displayName}
+                  {displayName !== undefined && displayName !== ''
+                    ? (props.separator ?? ' : ')
+                    : ''}
+                  {displayValue}
+                  {entry.unit}
+                </span>
+              </span>,
+              '',
+            ];
+          },
+        }))}
         contentStyle={{
           margin: 0,
           padding: 0,
@@ -176,7 +219,12 @@ function ChartTooltipContent(
           lineHeight: 1.2,
           ...props.labelStyle,
         }}
-        itemStyle={{ paddingTop: 2, paddingBottom: 0, ...props.itemStyle }}
+        itemStyle={{
+          color: 'var(--atbl-text)',
+          paddingTop: 2,
+          paddingBottom: 0,
+          ...props.itemStyle,
+        }}
       />
     </TooltipSurface>
   );

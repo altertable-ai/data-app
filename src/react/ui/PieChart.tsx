@@ -151,7 +151,7 @@ export function PieChart({
                       tabIndex={-1}
                       aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}`}
                     >
-                      <ChartLegend.Marker kind="slice" color={item.color} />
+                      <ChartLegend.Marker color={item.color} />
                       <ChartLegend.Label className="altertable-pie-label">
                         {item.label}
                       </ChartLegend.Label>

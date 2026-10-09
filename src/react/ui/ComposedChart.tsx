@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import { useState, type ComponentProps } from 'react';
 import { ComposedChartLegend as Legend } from '@/src/react/ui/ComposedChartLegend';
 import {
   ComposedChart as RechartsComposedChart,
@@ -51,12 +51,20 @@ function ComposedChartRoot<Row>({
   className,
   ...props
 }: ComposedChartProps<Row>) {
+  const [pointerFocus, setPointerFocus] = useState(false);
   return (
     <section
       className={['altertable-composed-chart', className]
         .filter(Boolean)
         .join(' ')}
       aria-label={ariaLabel}
+      data-atbl-internal-pointer-focus={pointerFocus || undefined}
+      onPointerDownCapture={() => setPointerFocus(true)}
+      onKeyDownCapture={() => setPointerFocus(false)}
+      onBlurCapture={event => {
+        if (!event.currentTarget.contains(event.relatedTarget))
+          setPointerFocus(false);
+      }}
     >
       <RechartsComposedChart
         data-atbl-focus="inset"

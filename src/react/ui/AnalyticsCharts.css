@@ -1,0 +1,109 @@
+.altertable-funnel-chart,
+.altertable-retention-chart,
+.altertable-journey-chart {
+  min-width: 0;
+  font-size: var(--atbl-type-meta-size);
+  font-variant-numeric: tabular-nums;
+}
+.altertable-funnel-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+.altertable-funnel-summary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.altertable-funnel-summary span {
+  color: var(--atbl-muted);
+}
+.altertable-funnel-summary .altertable-chart-legend-marker {
+  margin-right: 6px;
+}
+.altertable-funnel-summary strong {
+  font-size: var(--atbl-type-section-size);
+  font-weight: var(--atbl-type-emphasis-weight);
+}
+.altertable-funnel-scroll,
+.altertable-journey-scroll {
+  width: 100%;
+  overflow: auto;
+}
+.altertable-journey-scroll {
+  max-height: 900px;
+}
+.altertable-analytics-note {
+  color: var(--atbl-muted);
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.altertable-journey-plot {
+  position: relative;
+}
+.altertable-journey-plot > svg {
+  position: absolute;
+  inset: 0;
+}
+.altertable-journey-stage {
+  position: absolute;
+  top: 0;
+  color: var(--atbl-muted);
+}
+.altertable-journey-node {
+  position: absolute;
+}
+.altertable-journey-bar {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  background: var(--atbl-muted);
+}
+.altertable-journey-bar[data-event] {
+  background: var(--atbl-chart-5);
+}
+.altertable-journey-label {
+  position: absolute;
+  bottom: 100%;
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 64px;
+  padding: 8px 36px 8px 8px;
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-surface);
+  background: var(--atbl-surface);
+  color: var(--atbl-muted);
+  overflow-wrap: anywhere;
+}
+.altertable-journey-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--atbl-text);
+  font-weight: var(--atbl-type-label-weight);
+}
+.altertable-journey-expand {
+  position: absolute;
+  right: 4px;
+  bottom: 100%;
+  margin-bottom: 12px;
+}
+.altertable-journey-more {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+}
+
+.altertable-funnel-tooltip-detail {
+  display: block;
+  color: var(--atbl-muted);
+  overflow-wrap: anywhere;
+}

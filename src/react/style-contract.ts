@@ -147,6 +147,9 @@ export const dataAppStyleClasses = {
     component: 'ChartLegend.Label',
     kind: 'root',
   },
+  'altertable-funnel-chart': { component: 'FunnelChart', kind: 'root' },
+  'altertable-retention-chart': { component: 'RetentionChart', kind: 'root' },
+  'altertable-journey-chart': { component: 'JourneyChart', kind: 'root' },
   'altertable-composed-chart': {
     component: 'ComposedChart',
     kind: 'root',

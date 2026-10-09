@@ -5,3 +5,6 @@ export function chartColor(id: string): string {
 
   return `var(--atbl-chart-${((hash >>> 0) % 8) + 1})`;
 }
+
+export const chartBarFill =
+  'var(--atbl-chart-fill, color-mix(in srgb, var(--atbl-accent) 75%, var(--atbl-surface)))';

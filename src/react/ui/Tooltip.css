@@ -46,3 +46,19 @@
     animation: none;
   }
 }
+
+.altertable-chart-tooltip-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.altertable-chart-tooltip-marker {
+  width: 8px;
+  height: 8px;
+  margin-top: 0.3em;
+  flex-shrink: 0;
+}
+.altertable-chart-tooltip-reading {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
