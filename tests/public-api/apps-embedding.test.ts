@@ -412,6 +412,13 @@ for (const source of ['bundle', 'packaged', 'url']) {
       `/bundle-host?${source === 'url' ? 'url=1&' : source === 'packaged' ? 'packaged=1&' : ''}period=last-30#totals`
     );
     const app = page.frameLocator('iframe');
+    await expect
+      .poll(() =>
+        app
+          .getByRole('status', { name: 'App location', exact: true })
+          .textContent()
+      )
+      .toContain('period=last-30');
     if (source === 'packaged') {
       await expect
         .poll(() => page.locator('iframe').getAttribute('src'))
@@ -434,13 +441,6 @@ for (const source of ['bundle', 'packaged', 'url']) {
         }, new URL('/api/sql', page.url()).href)
       ).toBe(true);
     }
-    await expect
-      .poll(() =>
-        app
-          .getByRole('status', { name: 'App location', exact: true })
-          .textContent()
-      )
-      .toContain('period=last-30');
     await app.getByRole('button', { name: 'Query', exact: true }).click();
     await expect
       .poll(() =>
