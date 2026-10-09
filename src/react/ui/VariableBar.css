@@ -139,6 +139,7 @@
 }
 .altertable-display-option .altertable-select-trigger {
   min-width: 0;
+  font-weight: 400;
 }
 .altertable-display-option .react-aria-SelectValue {
   overflow: hidden;
