@@ -412,6 +412,13 @@ test('touch panning preserves unfinished comments and an outside tap dismisses t
     exact: true,
   });
   await comment.fill('Keep this unfinished touch comment');
+  const frame = page.frames().find(frame => frame.parentFrame())!;
+  const scrollingStopped = frame.evaluate(
+    () =>
+      new Promise<void>(resolve => {
+        document.addEventListener('scrollend', () => resolve(), { once: true });
+      })
+  );
   const client = await page.context().newCDPSession(page);
   const x = layer!.x + layer!.width / 2;
   const y = layer!.y + layer!.height - 60;
@@ -429,12 +436,24 @@ test('touch panning preserves unfinished comments and an outside tap dismisses t
     type: 'touchEnd',
     touchPoints: [],
   });
-  const frame = page.frames().find(frame => frame.parentFrame())!;
+  await scrollingStopped;
   await expect
     .poll(() => frame.evaluate(() => window.scrollY))
     .toBeGreaterThan(50);
   expect(await comment.inputValue()).toBe('Keep this unfinished touch comment');
-  await page.touchscreen.tap(layer!.x + 10, layer!.y + 20);
+  const currentLayer = await selection.boundingBox();
+  const composer = await app
+    .getByRole('region', { name: 'Annotation editor', exact: true })
+    .boundingBox();
+  const outsideY =
+    composer!.y + composer!.height / 2 <
+    currentLayer!.y + currentLayer!.height / 2
+      ? currentLayer!.y + currentLayer!.height - 80
+      : currentLayer!.y + 80;
+  await page.touchscreen.tap(
+    currentLayer!.x + currentLayer!.width / 2,
+    outsideY
+  );
   await expect.poll(() => comment.count()).toBe(0);
   await selection.press('Home');
   await selection.press('Enter');

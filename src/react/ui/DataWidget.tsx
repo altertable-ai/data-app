@@ -103,30 +103,31 @@ function DataWidgetContent({
   );
   const explicitAnnotationId = annotationId ?? props.id;
   const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
-  const help = evidence && !busy && (
-    <AboutData
-      id={evidence.id}
-      references={{
-        kind: 'ids',
-        glossaryIds: evidence.glossaryIds,
-        queryNames: evidence.queryNames,
-      }}
-      aria-label={
-        typeof title === 'string' ? `Explore ${title}` : 'Explore this widget'
-      }
-      variant="ghost"
-      className="altertable-widget-heading-trigger"
-      shortcut={false}
-      title={title}
-      headerActions={<WidgetStatusControl status={status} />}
-      description={description}
-      visual={visual}
-      visualKind="widget"
-    >
-      <span className="altertable-widget-heading-label">{title}</span>
-      <AppIcon name="openDetails" />
-    </AboutData>
-  );
+  const help =
+    evidence && !busy ? (
+      <AboutData
+        id={evidence.id}
+        references={{
+          kind: 'ids',
+          glossaryIds: evidence.glossaryIds,
+          queryNames: evidence.queryNames,
+        }}
+        aria-label={
+          typeof title === 'string' ? `Explore ${title}` : 'Explore this widget'
+        }
+        variant="ghost"
+        className="altertable-widget-heading-trigger"
+        shortcut={false}
+        title={title}
+        headerActions={<WidgetStatusControl status={status} />}
+        description={description}
+        visual={visual}
+        visualKind="widget"
+      >
+        <span className="altertable-widget-heading-label">{title}</span>
+        <AppIcon name="openDetails" />
+      </AboutData>
+    ) : undefined;
 
   return (
     <section
