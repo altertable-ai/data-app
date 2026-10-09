@@ -13,6 +13,7 @@ import {
   DataApp,
   DataWidget,
   MetricWidget,
+  TextWidget,
   useAppVariables,
 } from '@altertable/data-app/react/ui';
 import { AnnotationTarget } from '@altertable/data-app/react';
@@ -78,6 +79,21 @@ function App() {
         value={42}
         format={{ kind: 'count' }}
       />
+      <TextWidget
+        title="Average trip duration"
+        evidence={{ id: 'monthly-revenue', queryNames: ['revenue'] }}
+      >
+        20.0 minutes from start to end.
+      </TextWidget>
+      <TextWidget title="Trip narrative">
+        An automatically identified narrative.
+      </TextWidget>
+      <TextWidget title="Explicit narrative" annotationId="explicit-narrative">
+        An explicitly identified narrative.
+      </TextWidget>
+      {new URLSearchParams(getDataAppNavigation()!.snapshot().search).has(
+        'annotation-scroll'
+      ) && <div style={{ height: 1600 }}>Long report</div>}
       <AnnotationTarget annotationId="intro" label="Introduction">
         <p>Revenue is growing.</p>
       </AnnotationTarget>

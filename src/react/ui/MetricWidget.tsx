@@ -52,14 +52,7 @@ export function MetricWidget(props: MetricWidgetProps) {
   if ('metric' in props) {
     const { metric, reading, ...rest } = props;
     if (reading.loading)
-      return (
-        <MetricWidgetContent
-          {...rest}
-          annotationId={rest.annotationId ?? metric.evidence?.id}
-          label={metric.label}
-          loading
-        />
-      );
+      return <MetricWidgetContent {...rest} label={metric.label} loading />;
 
     return (
       <MetricWidgetContent

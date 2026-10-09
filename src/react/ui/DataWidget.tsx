@@ -18,6 +18,7 @@ import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
 type DataWidgetBaseProps = {
   title: ReactNode;
+  /** Unique stable target for persisted feedback; defaults to this widget instance. */
   annotationId?: string;
   count?: number;
   description?: ReactNode;
@@ -52,12 +53,7 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
       props;
     if (reading.loading)
       return (
-        <DataWidgetContent
-          {...shell}
-          annotationId={shell.annotationId ?? shell.evidence?.id}
-          evidence={undefined}
-          aria-busy
-        >
+        <DataWidgetContent {...shell} evidence={undefined} aria-busy>
           <ContentSkeletonBody variant="panel" {...skeleton} />
         </DataWidgetContent>
       );
@@ -134,7 +130,7 @@ function DataWidgetContent({
     <section
       {...props}
       {...getAnnotationProps({
-        id: annotationId ?? props.id ?? evidence?.id ?? titleId,
+        id: annotationId ?? props.id ?? titleId,
         label: typeof title === 'string' ? title : undefined,
         evidence,
       })}

@@ -292,7 +292,6 @@ function TableWidgetContent<Row>({
     <VisualizationWidget
       {...props}
       title={title}
-      annotationId={props.annotationId ?? evidence?.id}
       count={loading ? undefined : count}
       description={description}
       action={action}

@@ -147,6 +147,50 @@ export function AnnotationControls({
     refs.setPositionReference(reference ?? null);
   }, [refs, reference]);
 
+  const dismissFromPointer = useEffectEvent((event: PointerEvent) => {
+    if (!editor || pending) return false;
+    const editorElement = refs.floating.current;
+    if (editorElement && event.composedPath().includes(editorElement))
+      return false;
+    if (event.pointerType !== 'touch') event.preventDefault();
+    event.stopImmediatePropagation();
+    dispatch({ type: 'editorClosed' });
+    return true;
+  });
+  useEffect(() => {
+    if (!active) return;
+    let dismissed = false;
+    function dismissOutside(event: PointerEvent) {
+      dismissed = dismissFromPointer(event);
+    }
+    function consumeClick(event: MouseEvent) {
+      if (!dismissed) return;
+      dismissed = false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+    function cancelPointer() {
+      dismissed = false;
+    }
+    document.addEventListener('pointerdown', dismissOutside, true);
+    document.addEventListener('click', consumeClick, true);
+    document.addEventListener('pointercancel', cancelPointer, true);
+    return () => {
+      document.removeEventListener('pointerdown', dismissOutside, true);
+      document.removeEventListener('click', consumeClick, true);
+      document.removeEventListener('pointercancel', cancelPointer, true);
+    };
+  }, [active]);
+  useEffect(() => {
+    if (!editing || pending) return;
+    function dismissOnBlur() {
+      dispatch({ type: 'editorClosed' });
+    }
+    // Parent-frame clicks do not propagate into the iframe document.
+    window.addEventListener('blur', dismissOnBlur);
+    return () => window.removeEventListener('blur', dismissOnBlur);
+  }, [editing, pending]);
+
   function openEditor({
     target,
     cursor,

@@ -118,6 +118,9 @@ function Host() {
       <DataAppBridge
         key={version}
         title="Feedback app"
+        iframeProps={{
+          style: { display: 'block', width: '100%', height: 600 },
+        }}
         source={{ type: 'bundle', bootstrapUrl: '/__test/runtime', javascript }}
         presentation={{
           surface: 'embedded',
