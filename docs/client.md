@@ -15,8 +15,9 @@ const response = await client.query('activity', input, { signal });
 ```
 
 The app defines `operations`, `input`, and an optional cancellation `signal`.
-Operation input and output types are inferred from the server registry. Keep the
-registry import type-only so its SQL and implementation stay on the server.
+Operation input and output types are inferred from the server operation map. Keep the
+server operation map import type-only so its implementations stay on the server.
+The shared app declaration contains the query registry and is browser-safe.
 
 The default endpoint is `/api/data`. Override it with
 `createDataClient({ endpoint, fetch })` to change the base URL or supply a Fetch

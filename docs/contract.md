@@ -12,8 +12,8 @@ Declare SQL once with `defineDataApp()` to preserve exact query and parameter
 names. Use stable `lowerCamelCase` IDs describing the result, such as `products`,
 `productsByCategory`, or `dailyRevenue`. Use plural names for row lists; keep parameter
 values in `params`.
-The app owns an immutable registry snapshot. Define operations with `dataApp.defineOperation()` and mount with
-`mountDataApp({ app: dataApp, component: App })`. Use `{ defaultValue }` for a fallback or `{}` for a required value.
+The app owns an immutable registry snapshot. Define operations with
+`dataApp.defineOperation()`.
 
 ```ts
 import { defineDataApp } from '@altertable/data-app';
@@ -44,8 +44,9 @@ const products = dataApp.defineOperation({
 });
 ```
 
-The app supplies `parseProductInput()` and `parseProducts()`. Validate filter values
-in the input parser. `{}` declares a required parameter; `{ defaultValue }` supplies
+`parseProductInput()` and `parseProducts()` are app-owned example functions, not
+package exports. Implement them to validate operation inputs and results. Validate
+filter values in the input parser. `{}` declares a required parameter; `{ defaultValue }` supplies
 a fallback. `query(name, params, { limit })` executes only registered queries and
 inherits the operation's row limit and cancellation signal.
 

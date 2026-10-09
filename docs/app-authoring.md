@@ -9,7 +9,8 @@ queries, definitions, and evidence.
 
 Declare the query source of truth with `defineDataApp()`. Generate
 operations with `dataApp.defineOperation()` and execute queries by
-name with parameter values. Do not add queries or rewrite the supplied SQL.
+name with parameter values. When a query registry is supplied, use only its queries
+and preserve its SQL. Otherwise, inspect the data and declare the queries the app needs.
 Derive displays, exports, and findings from their results. See
 [named queries](contract.md#execute-named-queries).
 
@@ -40,7 +41,7 @@ readers can inspect the source of each claim.
 
 Connect visualizations with introductions and explanations. Use `<TextWidget>`
 for a narrative panel with the standard widget frame, or `<TextContent>` for
-borderless prose. Render static titles, descriptions, and instructions immediately. Use metric and dataset
+borderless prose. Render the app title, description, and instructions immediately. Use metric and dataset
 bindings for dynamic values and `<DataValue>` for values within static prose.
 Skeletonize only the content that needs data. Reuse bindings and the displayed
 source in narrative so values, formatting, and evidence follow filter changes,

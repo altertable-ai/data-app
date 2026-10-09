@@ -1,7 +1,8 @@
 # Data context and evidence
 
-Set `dataContext: context` in each view. The app and its sections inherit the
-view's description, glossary, and permitted query evidence. Render registered identifiers where `<DataIdentifier>` is used.
+Set `dataContext: context` in each view for source descriptions, glossary, and
+permitted query evidence. App inspection and the view's sections use that context.
+Render registered identifiers where `<DataIdentifier>` is used.
 
 Physical source identifiers name inspected tables and columns. Glossary entries
 explain business meaning. Query names link those definitions and displayed claims
