@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.67.0](https://github.com/altertable-ai/data-app/compare/v0.66.0...v0.67.0) (2026-10-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **app:** define portable manifests with a typed query registry ([#55](https://github.com/altertable-ai/data-app/issues/55))
+* **filters:** add explicit choice controls and typed predicates
+
+### Features
+
+* **annotations:** send batches with Mod+Enter ([#46](https://github.com/altertable-ai/data-app/issues/46)) ([0e1b941](https://github.com/altertable-ai/data-app/commit/0e1b94106c6870dc85d41fbd8a5a8eaf6e89cb71))
+* **app:** define portable manifests with a typed query registry ([#55](https://github.com/altertable-ai/data-app/issues/55)) ([d92b1a2](https://github.com/altertable-ai/data-app/commit/d92b1a29f2b933422b0b0499bd104909ca405e3d))
+* **charts:** add composed chart primitives and shared legends ([#52](https://github.com/altertable-ai/data-app/issues/52)) ([5b4fbff](https://github.com/altertable-ai/data-app/commit/5b4fbffca07a3b2a897336cadde54d93b7ed64c7))
+* **dev:** enrich the commerce playground and polish demo layout ([#50](https://github.com/altertable-ai/data-app/issues/50)) ([e6b83d2](https://github.com/altertable-ai/data-app/commit/e6b83d234f7b4c280811710d5ed3b574fd6d3951))
+* **filters:** add explicit choice controls and typed predicates ([4c950a7](https://github.com/altertable-ai/data-app/commit/4c950a7cd4b0010515996bdbb57f478fe567a72c))
+
+
+### Bug Fixes
+
+* **annotations:** remove floating editor focus outline ([#48](https://github.com/altertable-ai/data-app/issues/48)) ([b67ce02](https://github.com/altertable-ai/data-app/commit/b67ce02fdc273ac4678ef1f6cb6b545d5da4216e))
+
 ## [0.66.0](https://github.com/altertable-ai/data-app/compare/v0.65.0...v0.66.0) (2026-10-07)
 
 
