@@ -33,6 +33,10 @@
 
 /* Native and React Aria controls share state precedence: disabled, selected,
    pressed, hovered, then idle. Busy is independent and preserves geometry. */
+:where([data-atbl-internal-surface='option']) {
+  --atbl-control-selected-surface: var(--atbl-subtle);
+  --atbl-control-selected-text: var(--atbl-text);
+}
 [data-atbl-control='action']:is(
   :disabled,
   [data-disabled],

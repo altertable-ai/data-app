@@ -10,7 +10,7 @@
   min-width: 0;
 }
 .altertable-primary-controls {
-  gap: var(--atbl-space-xs);
+  gap: calc((var(--atbl-space-xs) + var(--atbl-space-sm)) / 2);
 }
 .altertable-variable-searches > .altertable-search-landmark {
   flex: 1 1 280px;

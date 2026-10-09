@@ -49,7 +49,8 @@
 .altertable-choice-picker-dialog .altertable-search-input-wrap {
   width: 100%;
   margin: 0;
-  padding: 6px 17px;
+  padding: 6px 18px;
+  gap: calc(6px + var(--atbl-control-icon-size) - 17px);
   box-sizing: border-box;
   border: 0;
   border-bottom: 1px solid var(--atbl-border);
