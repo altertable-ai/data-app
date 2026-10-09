@@ -1,5 +1,7 @@
 import {
   Children,
+  createContext,
+  useContext,
   useId,
   useRef,
   useState,
@@ -13,6 +15,9 @@ import { FilterActions } from '@/src/react/ui/FilterActions';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { Stack } from '@/src/react/ui/Stack';
 import { Tooltip } from '@/src/react/ui/Tooltip';
+
+/** The page layout owns focus outside the control bar. */
+export const ViewControlFocusContext = createContext<(() => void) | null>(null);
 
 export function ViewControlBar({
   primaryFilters,
@@ -29,6 +34,7 @@ export function ViewControlBar({
   changedDisplayOptionCount: number;
   onClear?: () => void;
 }) {
+  const focusFallback = useContext(ViewControlFocusContext);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const secondaryFiltersId = useId();
   const moreFiltersRef = useRef<ComponentRef<'button'>>(null);
@@ -40,21 +46,15 @@ export function ViewControlBar({
 
   function clearFilters() {
     const controls = primaryControlsRef.current;
-    const main = controls?.closest('main');
     const focusTarget =
       moreFiltersRef.current ??
       controls?.querySelector<HTMLElement>(
         ':is(button[aria-haspopup], button[aria-expanded], input, select):not(:disabled):not([aria-disabled="true"])'
-      ) ??
-      main?.querySelector<HTMLElement>(
-        'input[type="search"]:not(:disabled):not([aria-disabled="true"])'
-      ) ??
-      main?.querySelector<HTMLElement>(
-        'button:not(:disabled):not([aria-disabled="true"])'
       );
     onClear?.();
     setFiltersExpanded(false);
-    focusTarget?.focus();
+    if (focusTarget) focusTarget.focus();
+    else focusFallback?.();
   }
 
   return (

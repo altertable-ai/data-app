@@ -294,16 +294,22 @@ const client = createDataClient({
 });
 const { defineDataView } = createDataHooks(client);
 const displayOnly = new URLSearchParams(location.search).has('displayOnly');
+const searchOnly = new URLSearchParams(location.search).has('searchOnly');
 const view = defineDataView({
   operation: 'customers',
-  variables: displayOnly
-    ? {
-        search: variables.search,
-        sort: variables.sort,
-        direction: variables.direction,
-      }
-    : variables,
+  variables: searchOnly
+    ? { search: variables.search }
+    : displayOnly
+      ? {
+          search: variables.search,
+          sort: variables.sort,
+          direction: variables.direction,
+        }
+      : variables,
   input: values => ({
+    search: variables.search.defaultValue,
+    sort: variables.sort.defaultValue,
+    direction: variables.direction.defaultValue,
     country: { kind: 'all' as const },
     segment: { kind: 'all' as const },
     active: { kind: 'all' as const },
@@ -361,6 +367,7 @@ function App() {
   return (
     <DataApp
       view={view}
+      showSearch={!new URLSearchParams(location.search).has('hideSearch')}
       datasets={[customers]}
       story={snapshot => [
         {

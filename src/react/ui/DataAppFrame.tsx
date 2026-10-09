@@ -1,6 +1,7 @@
 import { AnnotationControls } from '@/src/react/annotations/AnnotationControls';
 import { useDataAppPresentation } from '@/src/react/ui/useDataAppPresentation';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
+import { ViewControlFocusContext } from '@/src/react/view-control-bar';
 import { useAppAppearance } from '@/src/react/ui/useAppAppearance';
 import type { DisclosedQuery } from '@/src/core/contract';
 import { useDataApp } from '@/src/react/app-context';
@@ -85,7 +86,15 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   const presentation = useDataAppPresentation();
   const isEmbedded = presentation?.surface === 'embedded';
   const themeController = useAppAppearance(app.appearance, presentation?.theme);
-  const bodyRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<ComponentRef<'div'>>(null);
+  const searchRegionRef = useRef<ComponentRef<typeof VariableBar>>(null);
+
+  function focusAfterClear() {
+    const search = searchRegionRef.current?.querySelector<
+      ComponentRef<'input'>
+    >('input[type="search"]:not(:disabled):not([aria-disabled="true"])');
+    (search ?? bodyRef.current)?.focus();
+  }
 
   useEffect(() => {
     if (import.meta.env?.DEV && bodyRef.current?.querySelector('h1'))
@@ -166,6 +175,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   const searchRegion =
     request?.searchControls && props.showSearch !== false ? (
       <VariableBar
+        ref={searchRegionRef}
         className="altertable-variable-searches"
         aria-label="Search variables"
       >
@@ -208,12 +218,14 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
             />
           )}
           {(searchRegion != null || filterRegion != null) && (
-            <Stack gap="sm">
-              {searchRegion}
-              {filterRegion}
-            </Stack>
+            <ViewControlFocusContext value={focusAfterClear}>
+              <Stack gap="sm">
+                {searchRegion}
+                {filterRegion}
+              </Stack>
+            </ViewControlFocusContext>
           )}
-          <div ref={bodyRef} className="altertable-app-body">
+          <div ref={bodyRef} tabIndex={-1} className="altertable-app-body">
             {props.children}
           </div>
           {request && (

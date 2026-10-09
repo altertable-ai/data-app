@@ -343,6 +343,46 @@ test('search with display-only controls keeps one view controls bar', async ({
     .toBe(9);
 });
 
+for (const hiddenSearch of [false, true]) {
+  test(`Clear restores focus when the last controls disappear and search is ${hiddenSearch ? 'hidden' : 'visible'}`, async ({
+    page,
+  }) => {
+    await page.goto(
+      `/filter-presentation?searchOnly&q=Beacon${hiddenSearch ? '&hideSearch' : ''}`
+    );
+    await expect
+      .poll(() => page.getByRole('table').getByRole('row').count())
+      .toBe(2);
+    await page.getByRole('button', { name: 'Clear', exact: true }).click();
+    await expect
+      .poll(() => page.getByRole('table').getByRole('row').count())
+      .toBe(9);
+    expect(
+      await page
+        .getByRole('group', { name: 'View controls', exact: true })
+        .count()
+    ).toBe(0);
+    if (hiddenSearch) {
+      await page.keyboard.press('Tab');
+      await expect
+        .poll(() =>
+          page
+            .getByRole('button', { name: 'Explore Customers', exact: true })
+            .evaluate(element => element === document.activeElement)
+        )
+        .toBe(true);
+    } else {
+      await expect
+        .poll(() =>
+          page
+            .getByRole('searchbox', { name: 'Search customers', exact: true })
+            .evaluate(element => element === document.activeElement)
+        )
+        .toBe(true);
+    }
+  });
+}
+
 test('hidden control regions leave no empty row between the header and content', async ({
   page,
 }) => {
