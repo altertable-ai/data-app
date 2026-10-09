@@ -334,6 +334,13 @@ test('search with display-only controls does not create an empty scope row', asy
   });
   await options.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect
+    .poll(() =>
+      options
+        .getByRole('button', { name: 'Display options', exact: true })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+  await expect
     .poll(() => page.getByRole('table').getByRole('row').count())
     .toBe(9);
 });
@@ -362,12 +369,12 @@ test('hidden control regions leave no empty row between the header and content',
   ).toBe(0);
 });
 
-test('custom filters retain automatic search controls and URL state', async ({
+test('automatic filters retain separate search controls and URL state', async ({
   page,
 }) => {
-  await page.goto('/filters?customControls');
+  await page.goto('/filters');
   const search = page.getByRole('group', { name: 'Search variables' });
-  const filters = page.getByRole('region', { name: 'Custom filters' });
+  const filters = page.getByRole('group', { name: 'Filters', exact: true });
   expect(
     await search.getByRole('searchbox', { name: 'Search', exact: true }).count()
   ).toBe(1);
@@ -390,6 +397,33 @@ test('custom filters retain automatic search controls and URL state', async ({
     .poll(async () => decode(await displayed.textContent()).search)
     .toBe('');
   expect(await search.getByRole('searchbox').inputValue()).toBe('');
+  await expect
+    .poll(() =>
+      filters
+        .getByRole('button', { name: 'Beta Display', exact: true })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+});
+
+test('hiding filters preserves their URL values and leaves automatic search available', async ({
+  page,
+}) => {
+  await page.goto('/filters?hideFilters&choice=b');
+  const search = page.getByRole('searchbox', { name: 'Search', exact: true });
+  expect(await search.isVisible()).toBe(true);
+  expect(
+    await page.getByRole('group', { name: 'Filters', exact: true }).count()
+  ).toBe(0);
+  const displayed = page.getByRole('status', { name: 'Displayed filters' });
+  await expect
+    .poll(async () => decode(await displayed.textContent()).choice)
+    .toBe('b');
+  await search.fill('France');
+  await expect
+    .poll(async () => decode(await displayed.textContent()).search)
+    .toBe('France');
+  expect(new URL(page.url()).searchParams.get('choice')).toBe('b');
 });
 
 test('hiding search preserves its URL value and leaves filters available', async ({

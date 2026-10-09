@@ -24,6 +24,7 @@ export function ViewFilterControls({
   const [expanded, setExpanded] = useState(false);
   const secondaryId = useId();
   const filterToggleRef = useRef<HTMLButtonElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
   const hasScope =
     groups.scope.primary.length + groups.scope.secondary.length > 0;
   const hasDisplay =
@@ -34,6 +35,7 @@ export function ViewFilterControls({
   return (
     <Stack gap="sm">
       <VariableBar
+        ref={controlsRef}
         className="altertable-primary-controls"
         aria-label={hasScope || !hasDisplay ? 'Filters' : 'View options'}
       >
@@ -70,9 +72,22 @@ export function ViewFilterControls({
         {onClear && (
           <FilterActions
             onClear={() => {
+              const controls = controlsRef.current;
+              const main = controls?.closest('main');
+              const focusTarget =
+                filterToggleRef.current ??
+                controls?.querySelector<HTMLElement>(
+                  ':is(button[aria-haspopup], button[aria-expanded], input, select):not(:disabled):not([aria-disabled="true"])'
+                ) ??
+                main?.querySelector<HTMLElement>(
+                  'input[type="search"]:not(:disabled)'
+                ) ??
+                main?.querySelector<HTMLElement>(
+                  'button:not(:disabled):not([aria-disabled="true"])'
+                );
               onClear();
               setExpanded(false);
-              filterToggleRef.current?.focus();
+              focusTarget?.focus();
             }}
           />
         )}

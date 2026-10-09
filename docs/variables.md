@@ -21,10 +21,8 @@ Use `searchVariable()`, `choiceVariable()`, and `dateRangeVariable()` in a view'
 Search controls occupy a dedicated row above the other variables and filters.
 Search appears automatically when the view declares a search variable.
 Set `<DataApp showSearch={false}>` to hide its row without changing search values.
-Use `<DataApp renderFilters={filterControls => ...}>` to compose the filter region.
-The callback receives the composed region with state and change handlers already bound.
-Return `null` to hide the region.
-The callback runs only when filter controls exist.
+Filters and display options also appear automatically from declared variables.
+Set `<DataApp showFilters={false}>` to hide that region without changing its values.
 Keep local search out of the operation input when it only filters loaded rows.
 
 ### Organize controls by intent

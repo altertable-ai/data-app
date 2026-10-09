@@ -45,8 +45,8 @@ export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
 export type DataAppControlProps = {
   /** Show declared search controls. Defaults to true; hiding preserves their values. */
   showSearch?: boolean;
-  /** Wrap or replace the composed filter region, including display options and secondary controls. */
-  renderFilters?: (filterControls: ReactNode) => ReactNode;
+  /** Show declared filter controls, including display options. Defaults to true; hiding preserves their values. */
+  showFilters?: boolean;
 };
 
 export type StaticDataAppProps = DataAppBaseProps & {
@@ -172,11 +172,10 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
         {request.searchControls}
       </VariableBar>
     ) : null;
-  const filterRegion = request?.filterControls
-    ? props.renderFilters
-      ? props.renderFilters(request.filterControls)
-      : request.filterControls
-    : null;
+  const filterRegion =
+    request?.filterControls && props.showFilters !== false
+      ? request.filterControls
+      : null;
 
   return (
     <InspectionProvider>
