@@ -27,6 +27,13 @@ Choose the execution path:
 
 Lead with a supported finding and expose the relevant fields as filter variables. Use a date filter for questions worth exploring over time,
 or a fixed period snapshot for a deliberate historical analysis.
+
+Use relevant user-controlled query parameters as app filters. Map filter values to
+declared parameters through operation inputs, and reuse query defaults when they
+match the initial selection. One filter may supply several parameters, such as a
+date range supplying `start` and `end`. Keep protected parameters, such as `orgId`,
+and internal execution settings out of filter controls.
+
 Register inspected tables and fields with `defineDataIdentifiers()` and use
 `<DataIdentifier>` when naming sources. Register terms and query evidence so
 readers can inspect the source of each claim.
