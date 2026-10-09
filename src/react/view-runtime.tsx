@@ -14,7 +14,7 @@ export type ViewResult<Data, Input> = {
   refreshing: boolean;
   queries?: DisclosedQuery[];
   searchControls?: ReactNode;
-  variableControls?: ReactNode;
+  filterControls?: ReactNode;
   emptyFallback: EmptyContent;
 };
 

@@ -155,17 +155,17 @@ function App() {
         hideControls
           ? () => null
           : customControls
-            ? controls => (
-                <section aria-label="Custom search">{controls}</section>
+            ? searchControls => (
+                <section aria-label="Custom search">{searchControls}</section>
               )
             : undefined
       }
-      renderVariables={
+      renderFilters={
         hideControls
           ? () => null
           : customControls
-            ? controls => (
-                <section aria-label="Custom variables">{controls}</section>
+            ? filterControls => (
+                <section aria-label="Custom filters">{filterControls}</section>
               )
             : undefined
       }

@@ -39,14 +39,14 @@ export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   refreshing?: boolean;
   cancel?: () => unknown;
   searchControls?: ReactNode;
-  variableControls?: ReactNode;
+  filterControls?: ReactNode;
 };
 
 export type DataAppControlRenderers = {
   /** Compose generated search controls; replaces the default search row. */
-  renderSearch?: (controls: ReactNode) => ReactNode;
-  /** Compose generated variables and filter actions; replaces the default variable bar. */
-  renderVariables?: (controls: ReactNode) => ReactNode;
+  renderSearch?: (searchControls: ReactNode) => ReactNode;
+  /** Compose generated dates, choices, predicates, and clear action; replaces the default variable bar. */
+  renderFilters?: (filterControls: ReactNode) => ReactNode;
 };
 
 export type StaticDataAppProps = DataAppBaseProps & {
@@ -175,11 +175,11 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
       </VariableBar>
     )
   ) : null;
-  const variableRegion = request?.variableControls ? (
-    props.renderVariables ? (
-      props.renderVariables(request.variableControls)
+  const filterRegion = request?.filterControls ? (
+    props.renderFilters ? (
+      props.renderFilters(request.filterControls)
     ) : (
-      <VariableBar>{request.variableControls}</VariableBar>
+      <VariableBar>{request.filterControls}</VariableBar>
     )
   ) : null;
 
@@ -213,10 +213,10 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
               toolbar={toolbar}
             />
           )}
-          {(searchRegion != null || variableRegion != null) && (
+          {(searchRegion != null || filterRegion != null) && (
             <Stack gap="sm">
               {searchRegion}
-              {variableRegion}
+              {filterRegion}
             </Stack>
           )}
           <div ref={bodyRef} className="altertable-app-body">

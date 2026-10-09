@@ -374,7 +374,7 @@ export function createDataHooks<Operations extends DataOperations>(
       queries: request.queries,
       emptyFallback: definition.emptyFallback,
       searchControls: variables.searchControls,
-      variableControls: variables.variableControls,
+      filterControls: variables.filterControls,
       variables,
     };
   }

@@ -39,16 +39,16 @@ test('hidden control regions leave no empty row between the header and content',
   ).toBe(0);
 });
 
-test('custom search and variable slots retain generated controls and URL state', async ({
+test('custom search and filter slots retain generated controls and URL state', async ({
   page,
 }) => {
   await page.goto('/filters?customControls');
   const search = page.getByRole('region', { name: 'Custom search' });
-  const variables = page.getByRole('region', { name: 'Custom variables' });
+  const filters = page.getByRole('region', { name: 'Custom filters' });
   expect(
     await search.getByRole('searchbox', { name: 'Search', exact: true }).count()
   ).toBe(1);
-  expect(await variables.getByRole('searchbox').count()).toBe(0);
+  expect(await filters.getByRole('searchbox').count()).toBe(0);
   expect(
     await search.getByRole('button', { name: 'Alpha Display' }).count()
   ).toBe(0);
@@ -58,11 +58,11 @@ test('custom search and variable slots retain generated controls and URL state',
     .poll(async () => decode(await displayed.textContent()).search)
     .toBe('France');
   expect(new URL(page.url()).searchParams.get('q')).toBe('France');
-  await choose(page, variables, 'Display', 'Beta');
+  await choose(page, filters, 'Display', 'Beta');
   await expect
     .poll(async () => decode(await displayed.textContent()).choice)
     .toBe('b');
-  await variables
+  await filters
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect
