@@ -1,4 +1,5 @@
 /** Shared operation, query, and response contracts; independent of delivery adapters. */
+import type { QueryParameters } from '@/src/core/queries';
 export type OperationContracts = Record<
   string,
   {
@@ -20,10 +21,11 @@ export type QueryResult = {
   queryId?: string;
 };
 
-/** One named statement an operation ran. Returned only when SQL disclosure is allowed. */
+/** One registered statement an operation ran, with its parameter values. */
 export type DisclosedQuery = {
   name: string;
   statement: string;
+  params?: QueryParameters;
   queryId?: string;
 };
 
@@ -31,11 +33,20 @@ export type DisclosedQuery = {
 export type Lakehouse = {
   queryAll(
     statement: string,
-    options: { limit: number; signal: AbortSignal; name?: string }
+    options: {
+      limit: number;
+      signal: AbortSignal;
+      name?: string;
+      params?: QueryParameters;
+    }
   ): Promise<QueryResult>;
 };
 
-export type OperationContext = { lakehouse: Lakehouse; signal: AbortSignal };
+export type OperationContext = {
+  lakehouse: Lakehouse;
+  signal: AbortSignal;
+  queryParams?: QueryParameters;
+};
 
 /**
  * Parsers run in the operation executor's runtime: server for HTTP apps, browser for bundle apps.
@@ -51,7 +62,6 @@ export type DataOperation<Input, Output> = {
     maxQueryRows: number;
     maxDurationMs: number;
     maxResponseBytes?: number;
-    exposeSql?: boolean;
   };
 };
 

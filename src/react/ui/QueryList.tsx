@@ -43,7 +43,15 @@ function SqlCode({ statement }: { statement: string }) {
   );
 }
 
-function QueryFigure({ name, statement }: { name: string; statement: string }) {
+function queryText({ statement, params }: DisclosedQuery): string {
+  const sql = formatSql(statement);
+  return params && Object.keys(params).length
+    ? `-- Parameters: ${JSON.stringify(params)}\n${sql}`
+    : sql;
+}
+
+function QueryFigure(query: DisclosedQuery) {
+  const { name, statement, params } = query;
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>(
     'idle'
   );
@@ -57,7 +65,7 @@ function QueryFigure({ name, statement }: { name: string; statement: string }) {
 
   async function copySql() {
     try {
-      await navigator.clipboard.writeText(formatSql(statement));
+      await navigator.clipboard.writeText(queryText(query));
       setCopyState('copied');
     } catch {
       setCopyState('error');
@@ -99,6 +107,23 @@ function QueryFigure({ name, statement }: { name: string; statement: string }) {
       <pre>
         <SqlCode statement={statement} />
       </pre>
+      {params && Object.keys(params).length > 0 && (
+        <div className="altertable-query-parameters">
+          <span>Parameters</span>
+          <dl aria-label={`Parameters for ${name}`}>
+            {Object.entries(params).map(([key, value]) => (
+              <div key={key}>
+                <dt>
+                  <code>${key}</code>
+                </dt>
+                <dd>
+                  <code>{JSON.stringify(value)}</code>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
     </figure>
   );
 }
@@ -123,8 +148,9 @@ function QueryNotebook({
 
   async function copyAll() {
     const sql = queries
-      .map(({ name, statement }) => {
-        const formatted = formatSql(statement);
+      .map(query => {
+        const { name } = query;
+        const formatted = queryText(query);
 
         return `-- ${name.endsWith('.sql') ? name : `${name}.sql`}\n${formatted.endsWith(';') ? formatted : `${formatted};`}`;
       })
@@ -164,11 +190,7 @@ function QueryNotebook({
         </output>
       )}
       {queries.map(query => (
-        <QueryFigure
-          key={query.name}
-          name={query.name}
-          statement={query.statement}
-        />
+        <QueryFigure key={query.name} {...query} />
       ))}
     </section>
   );
@@ -202,11 +224,7 @@ export function QueryList({
     ) : null;
   }
   const figures = shown.map(query => (
-    <QueryFigure
-      key={query.name}
-      name={query.name}
-      statement={query.statement}
-    />
+    <QueryFigure key={query.name} {...query} />
   ));
   if (expanded) return <QueryNotebook queries={shown} className={className} />;
 

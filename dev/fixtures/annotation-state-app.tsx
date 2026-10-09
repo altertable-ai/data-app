@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { useEffect } from 'react';
 import {
   createDataClient,
@@ -17,11 +18,14 @@ import {
 
 type PeriodInput = { period: string };
 
-const config = {
+const dataApp = defineDataApp({
   title: 'Displayed context',
+  description:
+    'Inspect annotations and evidence for the displayed reporting period.',
   scope: { organization: 'test', environment: 'prod' },
-  appearance: { theme: 'system' as const },
-};
+  appearance: { theme: 'system' },
+  queries: {},
+});
 function changePeriod(period: string) {
   const navigation = getDataAppNavigation()!;
   navigation.update({ ...navigation.snapshot(), search: `?period=${period}` });
@@ -101,7 +105,6 @@ const content = view.content(source => (
 function App() {
   return (
     <DataApp
-      config={config}
       view={view}
       story={() => []}
       datasets={[dataset]}
@@ -116,4 +119,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ app: dataApp, component: App });

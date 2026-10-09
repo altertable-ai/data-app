@@ -1,6 +1,6 @@
+import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  defineOperation,
   numberFilter,
   booleanFilter,
   dimensionFilter,
@@ -23,6 +23,12 @@ import {
   choiceVariable,
   multiChoiceVariable,
 } from '@altertable/data-app/react';
+const dataApp = defineDataApp({
+  title: 'Filter workflows',
+  description: 'Explore how filters change displayed results.',
+  scope: { organization: 'test', environment: 'test' },
+  queries: {},
+});
 const amount = numberFilter({
   key: 'amount',
   label: 'Amount',
@@ -74,7 +80,7 @@ const defaults: Input = {
   active: active.defaultValue,
   country: country.defaultValue,
 };
-const operation = defineOperation({
+const operation = dataApp.defineOperation({
   input(value: unknown): Input {
     const input = value as Input;
     if (
@@ -95,7 +101,7 @@ const operation = defineOperation({
     return value as Input;
   },
   checks: [defaults],
-  policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+  policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run(_context, input) {
     return input;
   },
@@ -134,17 +140,13 @@ const content = view.content(source => (
     )}
   </TextWidget>
 ));
-const config = {
-  title: 'Filter workflows',
-  scope: { organization: 'test', environment: 'test' },
-  appearance: {},
-};
+
 function App() {
   return (
-    <DataApp config={config} view={view} datasets={[dataset]} story={() => []}>
+    <DataApp view={view} datasets={[dataset]} story={() => []}>
       <DataSection content={content} />
     </DataApp>
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ app: dataApp, component: App });

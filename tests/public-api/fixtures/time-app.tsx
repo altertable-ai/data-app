@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineDateRangeContract,
@@ -38,6 +39,7 @@ const region = dimensionFilter<string>({
 });
 type Input = { period: DateRangeRequest; region: DimensionSelection<string> };
 const operation = defineOperation({
+  queries: {},
   input(value: unknown): Input {
     const input = value as Input;
     return {
@@ -52,7 +54,7 @@ const operation = defineOperation({
       region: { kind: 'all' as const },
     },
   ],
-  policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+  policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run(_context, input) {
     return input.region.kind === 'all' ? 12 : 0;
   },
@@ -114,17 +116,18 @@ const content = view.content(source => (
     <MetricWidget metric={metric} source={source} />
   </>
 ));
-const config = {
+const dataApp = defineDataApp({
   title: 'Calendar activity',
+  description: 'Explore activity by reporting period.',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
-};
+  queries: {},
+});
 function App() {
   return (
-    <DataApp config={config} view={view} datasets={[dataset]} story={() => []}>
+    <DataApp view={view} datasets={[dataset]} story={() => []}>
       <DataSection content={content} />
     </DataApp>
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ app: dataApp, component: App });

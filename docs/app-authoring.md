@@ -7,6 +7,13 @@ queries, definitions, and evidence.
 
 ## Inspect the data
 
+Declare the query source of truth with `defineDataApp()`. Generate
+operations with `dataApp.defineOperation()` and execute queries by
+name with parameter values. When a query registry is supplied, use only its queries
+and preserve its SQL. Otherwise, inspect the data and declare the queries the app needs.
+Derive displays, exports, and findings from their results. See
+[named queries](contract.md#execute-named-queries).
+
 Inspect the relevant catalogs, tables, and fields, their time coverage, and
 existing definitions. Choose a question the available data can answer.
 
@@ -21,13 +28,20 @@ Choose the execution path:
 
 Lead with a supported finding and expose the relevant fields as filter variables. Use a date filter for questions worth exploring over time,
 or a fixed period snapshot for a deliberate historical analysis.
+
+Use relevant user-controlled query parameters as app filters. Map filter values to
+declared parameters through operation inputs, and reuse query defaults when they
+match the initial selection. One filter may supply several parameters, such as a
+date range supplying `start` and `end`. Keep protected parameters, such as `orgId`,
+and internal execution settings out of filter controls.
+
 Register inspected tables and fields with `defineDataIdentifiers()` and use
 `<DataIdentifier>` when naming sources. Register terms and query evidence so
 readers can inspect the source of each claim.
 
 Connect visualizations with introductions and explanations. Use `<TextWidget>`
 for a narrative panel with the standard widget frame, or `<TextContent>` for
-borderless prose. Render static titles, descriptions, and instructions immediately. Use metric and dataset
+borderless prose. Render the app title, description, and instructions immediately. Use metric and dataset
 bindings for dynamic values and `<DataValue>` for values within static prose.
 Skeletonize only the content that needs data. Reuse bindings and the displayed
 source in narrative so values, formatting, and evidence follow filter changes,

@@ -1,3 +1,4 @@
+import { isQueryParameters, type QueryParameters } from '@/src/core/queries';
 import type {
   TransportResponse,
   QueryResult,
@@ -229,6 +230,7 @@ export function defineDataQueryRoute<
               typeof query === 'object' &&
               typeof query.name === 'string' &&
               typeof query.statement === 'string' &&
+              (query.params === undefined || isQueryParameters(query.params)) &&
               (query.queryId === undefined || typeof query.queryId === 'string')
           ))
       )
@@ -272,24 +274,39 @@ export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
     return null;
   },
 });
-export type SqlQueryInput = { statement: string; limit: number };
+export type SqlQueryInput = {
+  statement: string;
+  limit: number;
+  params?: QueryParameters;
+};
 
 /** SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits. */
 export const sqlQueryRoute = defineMessageRoute({
   input(value: unknown): SqlQueryInput {
     if (!value || typeof value !== 'object')
       throw new Error('Invalid SQL query.');
-    const query = value as { statement?: unknown; limit?: unknown };
+    const query = value as {
+      statement?: unknown;
+      limit?: unknown;
+      params?: unknown;
+    };
     if (
       typeof query.statement !== 'string' ||
       !query.statement.trim() ||
       typeof query.limit !== 'number' ||
       !Number.isSafeInteger(query.limit) ||
-      query.limit < 1
+      query.limit < 1 ||
+      (query.params !== undefined && !isQueryParameters(query.params))
     )
       throw new Error('Invalid SQL query.');
 
-    return { statement: query.statement, limit: query.limit };
+    return {
+      statement: query.statement,
+      limit: query.limit,
+      ...(query.params === undefined
+        ? {}
+        : { params: query.params as QueryParameters }),
+    };
   },
   output(value: unknown, input: SqlQueryInput): QueryResult {
     if (!value || typeof value !== 'object')

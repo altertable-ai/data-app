@@ -136,7 +136,8 @@ as public `source_*` errors with request IDs. Authorization failures return
 public failures with `MessageRoutingError`.
 
 `SqlQueryInput` (exported from `/contract`) carries
-`{ statement: string, limit: number }`; responses are
+`{ statement: string, limit: number, params?: QueryParameters }`; the backend
+interprets the unchanged statement and parameter values. Responses are
 `{ columns: { name: string, type?: string }[], rows: unknown[][], queryId?: string }`.
 The route rejects empty statements, unsafe or nonpositive limits, malformed
 results, and results exceeding the requested limit. The bridge's existing payload

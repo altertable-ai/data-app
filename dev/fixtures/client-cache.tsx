@@ -20,6 +20,7 @@ const context = registerContext({})({
 const policy = { maxQueryRows: 10, maxDurationMs: 1000 };
 const operations = {
   metric: defineOperation({
+    queries: {},
     input(value: unknown) {
       return value as { category: DimensionSelection<string> };
     },
@@ -31,6 +32,7 @@ const operations = {
     },
   }),
   facet: defineOperation({
+    queries: {},
     input: parseEmptyInput,
     output(value: unknown) {
       return value as DimensionOption<string>[];

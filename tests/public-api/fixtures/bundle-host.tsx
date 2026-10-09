@@ -90,11 +90,11 @@ function Host() {
         forward(operation, input, signal),
       'navigation:update': createNavigationHandler(),
       'data:sql': createSqlQueryHandler(async () => ({
-        async queryAll(statement, { limit, signal }) {
+        async queryAll(statement, { limit, signal, params }) {
           const response = await fetch('/api/sql', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ statement, limit }),
+            body: JSON.stringify({ statement, limit, params }),
             signal,
           });
           if (!response.ok) throw new DataSourceError('unavailable');

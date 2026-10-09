@@ -32,6 +32,7 @@ export function createSqlQueryHandler(
     try {
       return await lakehouse.queryAll(input.statement, {
         limit: input.limit,
+        ...(input.params === undefined ? {} : { params: input.params }),
         signal: context.signal,
       });
     } catch (error) {

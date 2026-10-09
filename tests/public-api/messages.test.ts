@@ -227,6 +227,8 @@ test('a SQL message client rejects malformed requests and malformed upstream res
     { statement: 'SELECT 1', limit: 0 },
     { statement: 'SELECT 1', limit: 1.5 },
     { statement: 'SELECT 1', limit: Number.MAX_SAFE_INTEGER + 1 },
+    { statement: 'SELECT $value', limit: 1, params: { value: [] } },
+    { statement: 'SELECT $value', limit: 1, params: null },
   ]) {
     await expect(
       router.dispatch({ route: 'data:sql', payload }, context())
@@ -311,4 +313,36 @@ test('SQL host authentication failures give browser viewers actionable messages'
       message: expect.stringContaining('app owner'),
     });
   }
+});
+
+test('SQL delivery forwards statements and parameters unchanged through host authorization', async () => {
+  const input = {
+    statement: 'SELECT $value',
+    limit: 1,
+    params: { value: "raw\n' $value" },
+  };
+  let calls = 0;
+  const router = createMessageRouter(
+    { 'data:sql': sqlQueryRoute },
+    {
+      'data:sql': createSqlQueryHandler(async (query, { signal }) => {
+        expect(query).toEqual(input);
+        return {
+          async queryAll(statement, options) {
+            calls++;
+            expect(statement).toBe(input.statement);
+            expect(options).toEqual({ limit: 1, params: input.params, signal });
+            return {
+              columns: [{ name: 'value' }],
+              rows: [[input.params.value]],
+            };
+          },
+        };
+      }),
+    }
+  );
+  expect(
+    await router.dispatch({ route: 'data:sql', payload: input }, context())
+  ).toMatchObject({ rows: [[input.params.value]] });
+  expect(calls).toBe(1);
 });

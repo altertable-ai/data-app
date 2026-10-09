@@ -1,7 +1,8 @@
-import type { DataAppConfig } from "@altertable/data-app/config";
+import { defineDataApp } from "@altertable/data-app";
 
-export default {
+export const dataApp = defineDataApp({
   title: "Getting started",
+  description: "Check your lakehouse connection, then build an exploration.",
   scope: {
     organization: "Your organization",
     environment: "your environment",
@@ -18,4 +19,5 @@ export default {
       heading: "system",
     },
   },
-} satisfies DataAppConfig;
+  queries: { connection: { statement: "SELECT 1 AS connection_check", params: {} } },
+});

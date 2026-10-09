@@ -90,12 +90,13 @@ const region = defineFacetFilter({
 });
 ```
 
-The client registry defines the `regions` operation and its typed period input;
+The client's operation map defines `regions` and its typed period input;
 import `DateRangeRequest` from `/contract`. Put `region` in the view's `variables`
-alongside its period. Use `parseFacetOptions()` to validate facet results, and
-`dimensionPredicate()` to build a bounded SQL filter from parsed selections.
+alongside its period. Use `parseFacetOptions()` to validate facet results.
 For the operation's input parser, use `parseDimensionSelection(value, region)` from `/contract`.
 A dimension without an explicit selection represents all members.
+Map parsed selections to the query's declared parameters; do not construct SQL
+from filter values. Choose selection modes supported by the registered query.
 
 Choose `selectionMode: 'single'` when one value replaces another. Its picker closes
 after choosing a value and shows a checkmark for the current choice. Use
@@ -148,15 +149,15 @@ input parser with the same filter declarations. Numeric predicates generate `<Nu
 operation input only after Apply; Cancel and dismissal preserve the applied
 value. Invalid ranges disable Apply.
 Input mappings and bindings must preserve these predicates unchanged, as with
-categorical filters. Use the parsed operator and values to build the app's
-bounded query.
+categorical filters. Map parsed operators and values to declared query parameters;
+offer only operators supported by the registered query.
 
 ## Exclusion, clear, and reset
 
 Set `allowExclusion: true` on `dimensionFilter()` to support
 `{ kind: 'exclude', members }`. `<DimensionPicker>` then exposes Include/Exclude
-alongside selected members. `dimensionPredicate()` retains missing records when
-excluding named values; selecting the missing member excludes missing records.
+alongside selected members. Enable exclusion only when the registered query supports
+it, including the intended behavior for missing values.
 
 Generated controls show active values within each filter and one collective
 Clear icon with a tooltip. Clear removes restrictions from search and predicate filters.

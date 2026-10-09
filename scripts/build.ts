@@ -46,6 +46,7 @@ const bootstrapScript = await bootstrap.outputs[0]!.text();
 // their identity across public entry points. Hosts do not import the app UI.
 const browser = await Bun.build({
   entrypoints: [
+    'src/index.ts',
     'src/core/contract.ts',
     'src/core/config.ts',
     'src/core/format.ts',

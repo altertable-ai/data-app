@@ -94,6 +94,53 @@
   overflow-wrap: anywhere;
   tab-size: 2;
 }
+.altertable-query-parameters {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+  padding: 10px 14px;
+  border-top: 1px solid var(--atbl-border);
+  color: var(--atbl-muted);
+  font: var(--atbl-type-meta-size)/var(--atbl-type-body-leading)
+    var(--atbl-font);
+}
+.altertable-query-parameters dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+}
+.altertable-query-parameters dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 3px 8px;
+  border: 1px solid var(--atbl-border);
+  border-radius: 6px;
+  background: var(--atbl-subtle);
+  overflow-wrap: anywhere;
+}
+.altertable-query-parameters dt,
+.altertable-query-parameters dd {
+  min-width: 0;
+  margin: 0;
+}
+.altertable-query-parameters dt {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+.altertable-query-parameters dd {
+  color: var(--atbl-text);
+}
+.altertable-query-parameters code {
+  font-family: var(--atbl-mono-font);
+}
 /* Optional --atbl-code-keyword overrides syntax color; defaults to local accent. */
 .altertable-sql-keyword {
   color: var(--atbl-code-keyword, var(--atbl-accent));

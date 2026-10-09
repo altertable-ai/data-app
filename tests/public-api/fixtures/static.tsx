@@ -1,4 +1,6 @@
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import {
   formatPercent,
   formatNumber,
@@ -10,16 +12,18 @@ import {
 import { mountDataApp, injectDataAppStyles } from '@altertable/data-app/react';
 import {
   DataApp,
+  DataAppProvider,
   MetricWidget,
   TableWidget,
   LineChart,
   PieChart,
 } from '@altertable/data-app/react/ui';
-const config = {
+const dataApp = defineDataApp({
   title: 'Activity report',
+  description: 'Explore activity across groups.',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
-};
+  queries: {},
+});
 const rows = [
   { id: 'first', name: 'Café <table>', count: 1234 },
   { id: 'second', name: 'Measured zero', count: 0 },
@@ -66,7 +70,13 @@ function App() {
   const [search, setSearch] = useState('');
   return (
     <DataApp
-      config={config}
+      description={
+        new URLSearchParams(location.search).has('override-description')
+          ? 'Custom activity subtitle.'
+          : new URLSearchParams(location.search).has('hide-description')
+            ? null
+            : undefined
+      }
       dataContext={{ description: 'Activity data', glossary: {} }}
       csvExport={{
         filename: 'gallery',
@@ -75,6 +85,9 @@ function App() {
           : [counts],
       }}
     >
+      {new URLSearchParams(location.search).has('identity') && (
+        <output aria-label="Document title at render">{document.title}</output>
+      )}
       <MetricWidget
         label="Total events"
         value={12345}
@@ -134,4 +147,25 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+if (new URLSearchParams(location.search).has('custom-root')) {
+  createRoot(document.getElementById('root')!).render(
+    <DataAppProvider app={dataApp}>
+      <section aria-label="First app">
+        <App />
+      </section>
+      <DataAppProvider
+        app={{
+          ...dataApp,
+          title: 'Second report',
+          scope: { organization: 'other', environment: 'preview' },
+        }}
+      >
+        <section aria-label="Second app">
+          <App />
+        </section>
+      </DataAppProvider>
+    </DataAppProvider>
+  );
+} else {
+  mountDataApp({ app: dataApp, component: App });
+}

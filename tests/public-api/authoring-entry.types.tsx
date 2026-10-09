@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { createDataContext as registerContext } from '@altertable/data-app/react';
 import * as authoring from '@altertable/data-app/react';
 import {
@@ -16,6 +17,7 @@ import {
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
 import {
+  DataAppProvider,
   DataApp as StaticApp,
   MetricWidget as StaticMetric,
   useAppVariables,
@@ -40,12 +42,15 @@ const view = hooks.defineDataView({
   isEmpty: () => false,
   emptyFallback: { title: 'Empty' },
 });
+const dataApp = defineDataApp({
+  title: 'Test',
+  description: 'Verify app authoring contracts.',
+  scope: { organization: 'a', environment: 'b' },
+  appearance: {},
+  queries: {},
+});
+
 const base = {
-  config: {
-    title: 'Test',
-    scope: { organization: 'a', environment: 'b' },
-    appearance: {},
-  },
   dataContext: { description: 'Test', glossary: {} },
   children: null,
 };
@@ -270,3 +275,36 @@ view.dataset<number>({
     },
   ]}
 />;
+
+// @ts-expect-error App identity comes from the root provider, not component props.
+<DataApp {...app} config={dataApp} />;
+
+// @ts-expect-error Mounting requires an app identity.
+authoring.mountDataApp({ component: () => null });
+
+authoring.mountDataApp({
+  // @ts-expect-error Root APIs require a defined app, not a bare configuration.
+  app: {
+    title: 'Undeclared',
+    description: 'Verify root app contracts.',
+    scope: { organization: 'a', environment: 'b' },
+    appearance: {},
+    queries: {},
+  },
+  component: () => null,
+});
+
+DataAppProvider({
+  // @ts-expect-error Custom roots require the same defined app as mounting.
+  app: {
+    title: 'Undeclared',
+    description: 'Verify root app contracts.',
+    scope: { organization: 'a', environment: 'b' },
+    appearance: {},
+    queries: {},
+  },
+  children: null,
+});
+
+// @ts-expect-error App fields are direct; there is no separate configuration wrapper.
+void dataApp.config;

@@ -1,7 +1,7 @@
 import { injectDataAppStyles, mountDataApp } from "@altertable/data-app/react";
 import { App } from "#app/App.tsx";
-import app from "#config";
+import { dataApp as app } from "#config";
 
 injectDataAppStyles();
 
-mountDataApp({ config: app, component: App });
+mountDataApp({ app, component: App });
