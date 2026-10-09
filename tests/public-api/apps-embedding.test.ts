@@ -452,6 +452,13 @@ for (const source of ['bundle', 'packaged', 'url']) {
     await page
       .getByRole('button', { name: 'Change handler', exact: true })
       .click();
+    await expect
+      .poll(() =>
+        page
+          .getByRole('status', { name: 'Handler version', exact: true })
+          .textContent()
+      )
+      .toBe('2');
     await app.getByRole('button', { name: 'Query', exact: true }).click();
     await expect
       .poll(() =>
@@ -524,7 +531,11 @@ for (const source of ['bundle', 'packaged', 'url']) {
         }
       })
     ).toBe(true);
-    await frame.evaluate(() => location.reload());
+    await Promise.all([
+      page.waitForEvent('framenavigated', navigated => navigated === frame),
+      frame.evaluate(() => location.reload()),
+    ]);
+    await frame.waitForLoadState('load');
     await expect
       .poll(() =>
         app
