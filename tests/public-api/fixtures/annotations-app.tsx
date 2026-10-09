@@ -39,6 +39,16 @@ const variables = {
 
 function App() {
   const [crashed, setCrashed] = useState(false);
+  const params = new URLSearchParams(getDataAppNavigation()!.snapshot().search);
+  const [showSharedNarrative, setShowSharedNarrative] = useState(
+    !params.has('annotation-existing')
+  );
+  const [loadingNarrative, setLoadingNarrative] = useState(
+    params.has('annotation-loading')
+  );
+  const [showExplicitCollision, setShowExplicitCollision] = useState(
+    params.has('annotation-explicit-collision')
+  );
   const state = useAppVariables(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
@@ -79,12 +89,35 @@ function App() {
         value={42}
         format={{ kind: 'count' }}
       />
-      <TextWidget
-        title="Average trip duration"
-        evidence={{ id: 'monthly-revenue', queryNames: ['revenue'] }}
-      >
-        20.0 minutes from start to end.
-      </TextWidget>
+      {showSharedNarrative && (
+        <TextWidget
+          title="Average trip duration"
+          evidence={{ id: 'monthly-revenue', queryNames: ['revenue'] }}
+        >
+          20.0 minutes from start to end.
+        </TextWidget>
+      )}
+      {params.has('annotation-loading') && (
+        <TextWidget
+          title="Loading narrative"
+          evidence={{ id: 'loading-narrative', queryNames: ['revenue'] }}
+          reading={
+            loadingNarrative
+              ? { loading: true }
+              : { loading: false, value: 'Ready narrative' }
+          }
+        >
+          {value => value}
+        </TextWidget>
+      )}
+      {showExplicitCollision && (
+        <TextWidget
+          title="Explicitly identified revenue"
+          annotationId="monthly-revenue"
+        >
+          Author-controlled identity.
+        </TextWidget>
+      )}
       <TextWidget title="Trip narrative">
         An automatically identified narrative.
       </TextWidget>
@@ -97,6 +130,15 @@ function App() {
       <AnnotationTarget annotationId="intro" label="Introduction">
         <p>Revenue is growing.</p>
       </AnnotationTarget>
+      <button onClick={() => setShowSharedNarrative(value => !value)}>
+        Toggle shared narrative
+      </button>
+      <button onClick={() => setLoadingNarrative(value => !value)}>
+        Toggle narrative loading
+      </button>
+      <button onClick={() => setShowExplicitCollision(value => !value)}>
+        Toggle explicit target
+      </button>
       <button onClick={() => setCrashed(true)}>Crash render</button>
       <button
         onClick={() =>

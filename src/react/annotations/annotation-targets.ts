@@ -52,9 +52,18 @@ export function discoverAnnotationTargets(root: HTMLElement | null): {
   const counts = new Map<string, number>();
   for (const target of found)
     counts.set(target.id, (counts.get(target.id) ?? 0) + 1);
+  const resolved = found.map(target => {
+    const fallbackId = target.element.dataset.annotationFallbackId;
+    return counts.get(target.id)! > 1 && fallbackId
+      ? { ...target, id: fallbackId }
+      : target;
+  });
+  const resolvedCounts = new Map<string, number>();
+  for (const target of resolved)
+    resolvedCounts.set(target.id, (resolvedCounts.get(target.id) ?? 0) + 1);
   return {
-    targets: found.filter(target => counts.get(target.id) === 1),
-    hasDuplicateIds: [...counts.values()].some(count => count > 1),
+    targets: resolved.filter(target => resolvedCounts.get(target.id) === 1),
+    hasDuplicateIds: [...resolvedCounts.values()].some(count => count > 1),
   };
 }
 export function annotationGeometry(element: HTMLElement): AnnotationRect {
@@ -95,13 +104,24 @@ export function annotationRoot(
     ? { element, id: '__data-app-root', label: 'Selected area', kind: 'app' }
     : undefined;
 }
+export function annotationTargetLookup(root: HTMLElement | null) {
+  const targets = discoverAnnotationTargets(root).targets;
+  const byId = new Map(targets.map(target => [target.id, target]));
+  // A saved fallback still resolves if its evidence ID later becomes unique.
+  for (const target of targets) {
+    const fallbackId = target.element.dataset.annotationFallbackId;
+    if (fallbackId && !byId.has(fallbackId)) byId.set(fallbackId, target);
+  }
+  const app = annotationRoot(root);
+  if (app) byId.set(app.id, app);
+  return byId;
+}
+
 export function findAnnotationTarget(
   root: HTMLElement | null,
   id: string | undefined
 ) {
-  return id === '__data-app-root'
-    ? annotationRoot(root)
-    : discoverAnnotationTargets(root).targets.find(target => target.id === id);
+  return id === undefined ? undefined : annotationTargetLookup(root).get(id);
 }
 
 export function normalizeAnnotationRect(

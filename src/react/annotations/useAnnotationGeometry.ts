@@ -3,7 +3,7 @@ import type { DataAppAnnotationPresentation } from '@/src/core/annotations';
 import {
   annotationGeometry,
   discoverAnnotationTargets,
-  annotationRoot,
+  annotationTargetLookup,
   projectAnnotationRect,
   type AnnotationRect,
   type AnnotationTargetElement,
@@ -75,14 +75,9 @@ export function useAnnotationGeometry({
   }>({ pins: [] });
   useEffect(() => {
     function measure() {
-      const byId = new Map(
-        (targets?.length
-          ? discoverAnnotationTargets(rootRef.current).targets
-          : []
-        ).map(target => [target.id, target])
-      );
-      const root = annotationRoot(rootRef.current);
-      if (root) byId.set(root.id, root);
+      const byId = targets?.length
+        ? annotationTargetLookup(rootRef.current)
+        : new Map<string, AnnotationTargetElement>();
       const pins = (targets ?? []).flatMap(pin => {
         const target = byId.get(pin.targetId);
         return target

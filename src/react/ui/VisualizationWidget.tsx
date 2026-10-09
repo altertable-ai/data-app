@@ -94,7 +94,7 @@ export function VisualizationWidget<Data>(
   const { visual, loading = false, loadingContent, footer, ...shell } = props;
   if (loading)
     return (
-      <DataWidget {...shell} evidence={undefined} footer={footer} aria-busy>
+      <DataWidget {...shell} footer={footer} aria-busy>
         <div className="altertable-visualization-widget-content">
           {loadingContent ?? <ContentSkeletonBody variant="panel" />}
         </div>

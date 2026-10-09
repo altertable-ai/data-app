@@ -52,7 +52,14 @@ export function MetricWidget(props: MetricWidgetProps) {
   if ('metric' in props) {
     const { metric, reading, ...rest } = props;
     if (reading.loading)
-      return <MetricWidgetContent {...rest} label={metric.label} loading />;
+      return (
+        <MetricWidgetContent
+          {...rest}
+          label={metric.label}
+          evidence={metric.evidence}
+          loading
+        />
+      );
 
     return (
       <MetricWidgetContent
@@ -91,7 +98,7 @@ function MetricWidgetContent({
       className={classNames('altertable-metric-widget', className)}
       title={label}
       annotationId={annotationId}
-      evidence={loading ? undefined : evidence}
+      evidence={evidence}
       aria-busy={loading || props['aria-busy']}
       action={action}
       status={status}
