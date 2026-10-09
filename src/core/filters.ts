@@ -1,5 +1,9 @@
 import { invariant } from '@/src/core/invariant';
-import type { AppVariable, HistoryMode } from '@/src/core/variables';
+import type {
+  AppVariable,
+  HistoryMode,
+  VariablePresentation,
+} from '@/src/core/variables';
 
 export type NumberOperator = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte';
 export type NumberSelection =
@@ -21,6 +25,7 @@ type FilterOptions<Value> = {
   label: string;
   defaultValue?: Value;
   history?: HistoryMode;
+  presentation?: VariablePresentation;
 };
 const all = { kind: 'all' } as const;
 export const numberOperatorLabels: Record<NumberOperator, string> = {
@@ -40,6 +45,7 @@ export function numberFilter({
   max,
   defaultValue = all,
   history = 'push',
+  presentation,
 }: FilterOptions<NumberSelection> & {
   min?: number;
   max?: number;
@@ -92,6 +98,7 @@ export function numberFilter({
   invariant(valid(defaultValue), `Invalid default for ${label}.`);
   return {
     kind: 'numberFilter',
+    presentation,
     label,
     min,
     max,
@@ -142,6 +149,7 @@ export function booleanFilter({
   label,
   defaultValue = all,
   history = 'push',
+  presentation,
 }: FilterOptions<BooleanSelection>): BooleanFilter {
   invariant(!!key.trim(), 'Boolean filter requires a URL key.');
   function valid(value: BooleanSelection) {
@@ -158,6 +166,7 @@ export function booleanFilter({
   invariant(valid(defaultValue), `Invalid default for ${label}.`);
   return {
     kind: 'booleanFilter',
+    presentation,
     label,
     defaultValue,
     clearValue: all,

@@ -61,6 +61,7 @@ export {
 } from '@/src/react/ui/variables';
 export type {
   AppVariable,
+  VariablePresentation,
   AppVariableValues,
   ChoiceOption,
   ChoiceVariable,

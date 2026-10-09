@@ -15,6 +15,137 @@ function decode(text: string | null) {
   return JSON.parse(text ?? '{}');
 }
 
+test('presentation groups disclose secondary restrictions and preserve them across history', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation');
+  const scope = page.getByRole('group', { name: 'Filters', exact: true });
+  const display = page.getByRole('group', {
+    name: 'Display options',
+    exact: true,
+  });
+  const more = scope.getByRole('button', {
+    name: 'More filters (1 active)',
+    exact: true,
+  });
+  const table = page.getByRole('table');
+  await expect.poll(() => table.getByRole('row').count()).toBe(8);
+  expect(
+    await scope.getByRole('button', { name: 'Monthly spend Sort by' }).count()
+  ).toBe(0);
+  expect(
+    await display.getByRole('button', { name: 'Monthly spend Sort by' }).count()
+  ).toBe(1);
+  expect(
+    await scope.getByRole('button', { name: 'Any Active account' }).count()
+  ).toBe(0);
+  await more.focus();
+  await more.press('Space');
+  expect(await more.getAttribute('aria-expanded')).toBe('true');
+  const secondary = scope.getByRole('group', {
+    name: 'Secondary filters',
+    exact: true,
+  });
+  await choose(page, secondary, 'Active account', 'Yes');
+  await expect.poll(() => table.getByRole('row').count()).toBe(6);
+  const appliedURL = page.url();
+  await scope
+    .getByRole('button', { name: 'More filters (2 active)', exact: true })
+    .click();
+  expect(await secondary.count()).toBe(0);
+  await page.reload();
+  await expect.poll(() => table.getByRole('row').count()).toBe(6);
+  expect(
+    await scope
+      .getByRole('button', { name: 'More filters (2 active)', exact: true })
+      .count()
+  ).toBe(1);
+  await scope
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  await expect.poll(() => table.getByRole('row').count()).toBe(9);
+  expect(
+    await scope
+      .getByRole('button', { name: 'More filters', exact: true })
+      .count()
+  ).toBe(1);
+  await page.goBack();
+  await expect.poll(() => page.url()).toBe(appliedURL);
+  await expect.poll(() => table.getByRole('row').count()).toBe(6);
+
+  await display
+    .getByRole('button', { name: 'More display options', exact: true })
+    .click();
+  await choose(page, display, 'Order', 'Ascending');
+  await expect
+    .poll(() => table.getByRole('rowheader').first().textContent())
+    .toBe('Atelier North');
+  expect(
+    await display
+      .getByRole('button', {
+        name: 'More display options (1 changed)',
+        exact: true,
+      })
+      .count()
+  ).toBe(1);
+  await scope
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  expect(new URL(page.url()).searchParams.get('direction')).toBe('asc');
+});
+
+test('expanded filter groups fit a phone viewport', async ({
+  mobilePage: page,
+}) => {
+  await page.goto('/filter-presentation');
+  await page
+    .getByRole('button', { name: 'More filters (1 active)', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'More display options', exact: true })
+    .click();
+  expect(
+    await page.getByRole('button', { name: 'Any Active account' }).isVisible()
+  ).toBe(true);
+  expect(
+    await page.getByRole('button', { name: 'Descending Order' }).isVisible()
+  ).toBe(true);
+  await page.addStyleTag({ content: ':root { font-size: 20px; }' });
+  for (const width of [375, 320]) {
+    await page.setViewportSize({ width, height: 812 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth
+      )
+    ).toBe(true);
+  }
+});
+
+test('search with display-only controls does not create an empty scope row', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation?displayOnly');
+  await page
+    .getByRole('searchbox', { name: 'Search customers' })
+    .fill('Beacon');
+  await expect
+    .poll(() => page.getByRole('table').getByRole('row').count())
+    .toBe(2);
+  expect(
+    await page.getByRole('group', { name: 'Filters', exact: true }).count()
+  ).toBe(0);
+  const display = page.getByRole('group', {
+    name: 'Display options',
+    exact: true,
+  });
+  await display
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  await expect
+    .poll(() => page.getByRole('table').getByRole('row').count())
+    .toBe(9);
+});
+
 test('hidden control regions leave no empty row between the header and content', async ({
   page,
 }) => {

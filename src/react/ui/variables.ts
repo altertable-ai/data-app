@@ -24,6 +24,7 @@ export {
   dateRangeVariable,
 } from '@/src/core/variables';
 export type {
+  VariablePresentation,
   AppVariable,
   AppVariableValues,
   ChoiceOption,

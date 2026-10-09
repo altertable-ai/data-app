@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
-import { FilterActions } from '@/src/react/ui/FilterActions';
+import {
+  ViewFilterControls,
+  type ControlGroup,
+} from '@/src/react/view-filter-controls';
 import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
   NumberFilter,
@@ -78,14 +81,18 @@ export function useViewVariables<Variables extends VariableCollection>(
   const facetState = new Map(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
-  const filterControls: ReactNode[] = [];
+  const groups: Record<'scope' | 'display', ControlGroup> = {
+    scope: { primary: [], secondary: [], activeSecondaryCount: 0 },
+    display: { primary: [], secondary: [], activeSecondaryCount: 0 },
+  };
   const searchControls: ReactNode[] = [];
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const definition = definitions[name]!;
     const value = variables.values[name];
+    let control: ReactNode = null;
     if (definition.kind === 'dateRange') {
       const selection = value as DateRangeSelection;
-      filterControls.push(
+      control = (
         <DateRangePicker
           key={name}
           {...dateRangeControl(definition, selection, next =>
@@ -99,7 +106,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     } else if (definition.kind === 'dimension') {
       const filter = definition as DimensionVariable;
       const facet = facetState.get(name);
-      filterControls.push(
+      control = (
         <DimensionPicker
           key={name}
           filter={filter}
@@ -117,7 +124,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     } else if (definition.kind === 'numberFilter') {
-      filterControls.push(
+      control = (
         <NumberFilterPicker
           key={name}
           filter={definition as NumberFilter}
@@ -132,7 +139,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       );
     } else if (definition.kind === 'booleanFilter') {
       const selected = value as BooleanSelection;
-      filterControls.push(
+      control = (
         <Select
           key={name}
           label={definition.label}
@@ -156,7 +163,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     } else if (definition.kind === 'multiChoice') {
-      filterControls.push(
+      control = (
         <ChoicePicker
           key={name}
           selectionMode="multiple"
@@ -174,7 +181,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     } else if (definition.kind === 'choice') {
-      filterControls.push(
+      control = (
         <Select
           key={name}
           label={definition.label ?? name}
@@ -204,6 +211,19 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     }
+    if (definition.kind === 'search') continue;
+    const groupName = definition.presentation?.group ?? 'scope';
+    const group = groups[groupName];
+    const prominence = definition.presentation?.prominence ?? 'primary';
+    group[prominence].push(control);
+    if (prominence === 'secondary') {
+      const variable = definition as AppVariable<any>;
+      const baseline =
+        groupName === 'display'
+          ? variable.defaultValue
+          : (variable.clearValue ?? variable.defaultValue);
+      if (!variable.same(value, baseline)) group.activeSecondaryCount++;
+    }
   }
   const hasActiveFilters = Object.entries(definitions).some(
     ([name, definition]) => {
@@ -214,15 +234,20 @@ export function useViewVariables<Variables extends VariableCollection>(
       );
     }
   );
-  if (hasActiveFilters)
-    filterControls.push(
-      <FilterActions key="filter-actions" onClear={variables.clearAll} />
-    );
+  const hasControls = Object.values(groups).some(
+    group => group.primary.length || group.secondary.length
+  );
 
   return {
     ...variables,
     resolved,
     searchControls: searchControls.length ? searchControls : null,
-    filterControls: filterControls.length ? filterControls : null,
+    filterControls:
+      hasControls || hasActiveFilters ? (
+        <ViewFilterControls
+          groups={groups}
+          onClear={hasActiveFilters ? variables.clearAll : undefined}
+        />
+      ) : null,
   };
 }

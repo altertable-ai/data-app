@@ -1,0 +1,322 @@
+import { defineDataApp } from '@altertable/data-app';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  booleanFilter,
+  dimensionFilter,
+  numberFilter,
+  parseBooleanSelection,
+  parseDimensionSelection,
+  parseNumberSelection,
+} from '@altertable/data-app/contract';
+import {
+  choiceVariable,
+  searchVariable,
+  createDataHooks,
+  createDataContext,
+  DataApp,
+  DataSection,
+  TableWidget,
+  TextContent,
+  injectDataAppStyles,
+  mountDataApp,
+  type AppVariableValues,
+} from '@altertable/data-app/react';
+
+const dataApp = defineDataApp({
+  title: 'Customer explorer',
+  description:
+    'Find customer accounts, narrow the scope, and choose how to view the results. Sample data.',
+  scope: { organization: 'Demo', environment: 'Preview' },
+  queries: {},
+});
+
+const variables = {
+  search: searchVariable({ key: 'q', label: 'Search customers' }),
+  country: dimensionFilter<string>({
+    key: 'country',
+    label: 'Country',
+    valueType: 'string',
+    selectionMode: 'multiple',
+    options: [
+      { value: 'FR', label: 'France' },
+      { value: 'UK', label: 'United Kingdom' },
+      { value: 'DE', label: 'Germany' },
+    ],
+  }),
+  segment: dimensionFilter<string>({
+    key: 'segment',
+    label: 'Segment',
+    valueType: 'string',
+    selectionMode: 'single',
+    options: [
+      { value: 'Enterprise', label: 'Enterprise' },
+      { value: 'Growth', label: 'Growth' },
+    ],
+  }),
+  active: booleanFilter({
+    key: 'active',
+    label: 'Active account',
+    presentation: { prominence: 'secondary' },
+  }),
+  spend: numberFilter({
+    key: 'spend',
+    label: 'Monthly spend (€)',
+    min: 0,
+    defaultValue: { kind: 'comparison', operator: 'gte', value: 100 },
+    presentation: { prominence: 'secondary' },
+  }),
+  sort: choiceVariable({
+    key: 'sort',
+    label: 'Sort by',
+    defaultValue: 'spend',
+    options: [
+      { id: 'spend', label: 'Monthly spend' },
+      { id: 'name', label: 'Customer name' },
+    ],
+    presentation: { group: 'display' },
+  }),
+  direction: choiceVariable({
+    key: 'direction',
+    label: 'Order',
+    defaultValue: 'desc',
+    options: [
+      { id: 'desc', label: 'Descending' },
+      { id: 'asc', label: 'Ascending' },
+    ],
+    presentation: { group: 'display', prominence: 'secondary' },
+  }),
+};
+type Input = AppVariableValues<typeof variables>;
+const records = [
+  {
+    name: 'Atelier North',
+    country: 'FR',
+    segment: 'Growth',
+    active: true,
+    spend: 420,
+  },
+  {
+    name: 'Beacon Labs',
+    country: 'UK',
+    segment: 'Enterprise',
+    active: true,
+    spend: 2400,
+  },
+  {
+    name: 'Cedar Studio',
+    country: 'DE',
+    segment: 'Growth',
+    active: false,
+    spend: 180,
+  },
+  {
+    name: 'Delta Works',
+    country: 'FR',
+    segment: 'Enterprise',
+    active: true,
+    spend: 1850,
+  },
+  {
+    name: 'Elm & Co',
+    country: 'UK',
+    segment: 'Growth',
+    active: false,
+    spend: 75,
+  },
+  {
+    name: 'Foundry Team',
+    country: 'DE',
+    segment: 'Enterprise',
+    active: true,
+    spend: 3200,
+  },
+  {
+    name: 'Grove Partners',
+    country: 'FR',
+    segment: 'Growth',
+    active: false,
+    spend: 290,
+  },
+  {
+    name: 'Harbor Systems',
+    country: 'UK',
+    segment: 'Enterprise',
+    active: true,
+    spend: 980,
+  },
+];
+function includes(selection: Input['country'], value: string) {
+  if (selection.kind === 'all') return true;
+  const selected = selection.members.some(
+    member => member.kind === 'value' && member.value === value
+  );
+  return selection.kind === 'exclude' ? !selected : selected;
+}
+function matchesSpend(selection: Input['spend'], value: number) {
+  if (selection.kind === 'all') return true;
+  if (selection.kind === 'range')
+    return (
+      (selection.min === undefined || value >= selection.min) &&
+      (selection.max === undefined || value <= selection.max)
+    );
+  switch (selection.operator) {
+    case 'eq':
+      return value === selection.value;
+    case 'ne':
+      return value !== selection.value;
+    case 'gt':
+      return value > selection.value;
+    case 'gte':
+      return value >= selection.value;
+    case 'lt':
+      return value < selection.value;
+    case 'lte':
+      return value <= selection.value;
+  }
+}
+const operation = dataApp.defineOperation({
+  input(value: unknown): Input {
+    const input = value as Input;
+    if (
+      !input ||
+      !variables.search.valid(input.search) ||
+      !variables.sort.valid(input.sort) ||
+      !variables.direction.valid(input.direction)
+    )
+      throw new Error('Invalid customer inputs');
+    return {
+      ...input,
+      country: parseDimensionSelection(input.country, variables.country),
+      segment: parseDimensionSelection(input.segment, variables.segment),
+      active: parseBooleanSelection(input.active, variables.active),
+      spend: parseNumberSelection(input.spend, variables.spend),
+    };
+  },
+  output: (value: unknown) => value as { rows: typeof records },
+  checks: [
+    Object.fromEntries(
+      Object.entries(variables).map(([name, variable]) => [
+        name,
+        variable.defaultValue,
+      ])
+    ) as Input,
+  ],
+  policy: { maxQueryRows: 20, maxDurationMs: 1000 },
+  async run(_context, input) {
+    const rows = records
+      .filter(
+        row =>
+          row.name
+            .toLocaleLowerCase()
+            .includes(input.search.toLocaleLowerCase()) &&
+          includes(input.country, row.country) &&
+          includes(input.segment, row.segment) &&
+          (input.active.kind === 'all' || row.active === input.active.value) &&
+          matchesSpend(input.spend, row.spend)
+      )
+      .sort((left, right) => {
+        const order =
+          input.sort === 'name'
+            ? left.name.localeCompare(right.name)
+            : left.spend - right.spend;
+        return input.direction === 'asc' ? order : -order;
+      });
+    return { rows };
+  },
+});
+const client = createDataClient({
+  operations: { customers: operation },
+  lakehouse: {
+    async queryAll() {
+      return { columns: [], rows: [] };
+    },
+  },
+});
+const { defineDataView } = createDataHooks(client);
+const displayOnly = new URLSearchParams(location.search).has('displayOnly');
+const view = defineDataView({
+  operation: 'customers',
+  variables: displayOnly
+    ? {
+        search: variables.search,
+        sort: variables.sort,
+        direction: variables.direction,
+      }
+    : variables,
+  input: values => ({
+    country: { kind: 'all' as const },
+    segment: { kind: 'all' as const },
+    active: { kind: 'all' as const },
+    spend: { kind: 'all' as const },
+    ...values,
+  }),
+  dataContext: createDataContext({ customers: 'customers' })({
+    description: 'Illustrative customer account records.',
+    glossary: {},
+  }),
+  describeInput: input =>
+    input.search ? `Customers matching “${input.search}”` : 'Customer accounts',
+  isEmpty: () => false,
+  emptyFallback: {
+    title: 'No matching customers',
+    description: 'Try a different search or clear filters.',
+  },
+});
+const customers = view.dataset({
+  name: 'Customers',
+  select: data => data.rows,
+  rowKey: row => row.name,
+  columns: {
+    name: { label: 'Customer', value: row => row.name },
+    country: {
+      label: 'Country',
+      value: row =>
+        ({ FR: 'France', UK: 'United Kingdom', DE: 'Germany' })[row.country] ??
+        row.country,
+    },
+    segment: { label: 'Segment', value: row => row.segment },
+    active: {
+      label: 'Account',
+      value: row => (row.active ? 'Active' : 'Inactive'),
+    },
+    spend: {
+      label: 'Monthly spend',
+      value: row => row.spend,
+      format: { kind: 'currency', currency: 'EUR' },
+    },
+  },
+  evidence: { id: 'customers', queryNames: ['customers'] },
+  emptyFallback: {
+    title: 'No matching customers',
+    description: 'Try a different search or clear filters.',
+  },
+});
+const content = view.content(source => (
+  <TableWidget dataset={customers} source={source} pagination={false} />
+));
+function App() {
+  return (
+    <DataApp
+      view={view}
+      datasets={[customers]}
+      story={snapshot => [
+        {
+          id: 'matching-customers',
+          headline: `${snapshot.data.rows.length} customer accounts match this selection`,
+          context:
+            'Sample records, using the currently displayed search and filters.',
+          visual: (
+            <TextContent>
+              <p>{snapshot.data.rows.length} matching accounts</p>
+            </TextContent>
+          ),
+          evidence: customers,
+        },
+      ]}
+    >
+      <DataSection content={content} />
+    </DataApp>
+  );
+}
+injectDataAppStyles();
+mountDataApp({ app: dataApp, component: App });

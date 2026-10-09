@@ -22,10 +22,44 @@ Search controls occupy a dedicated row above the other variables and filters.
 Search appears automatically when the view declares a search variable.
 Set `<DataApp showSearch={false}>` to hide its row without changing search values.
 Use `<DataApp renderFilters={filterControls => ...}>` to compose the filter region.
-The callback receives generated controls with state and change handlers already bound,
-and replaces the default variable bar. Return `null` to hide the region.
+The callback receives the composed region with state and change handlers already bound.
+Return `null` to hide the region.
 The callback runs only when filter controls exist.
 Keep local search out of the operation input when it only filters loaded rows.
+
+### Organize controls by intent
+
+Declare controls in reader priority order. Keep the period and most useful scope
+filters visible; place less frequent restrictions behind More filters. Choose useful
+defaults from the available data rather than exposing every field.
+
+Set `presentation.group` to `display` for controls that change ordering or presentation
+rather than which records are included. Scope controls and display options have
+separate rows. Set `presentation.prominence` to `secondary` for either group to put
+its controls behind a disclosure. Both properties are optional; defaults are
+`scope` and `primary`. Declaration order is preserved within each group.
+
+```ts
+const active = booleanFilter({
+  key: 'active',
+  label: 'Active account',
+  presentation: { prominence: 'secondary' },
+});
+const sort = choiceVariable({
+  key: 'sort',
+  label: 'Sort by',
+  options: [{ id: 'name', label: 'Customer name' }],
+  defaultValue: 'name',
+  presentation: { group: 'display' },
+});
+```
+
+The disclosure counts active secondary controls, including restrictions present by
+default. Each control counts once, regardless of how many values it selects.
+Scope controls use their unrestricted value when available, otherwise their default;
+display options count changes from their defaults. Collapsing a group keeps its
+applied values. Presentation metadata does not change URL state, query inputs, or
+clear/reset behavior. Search retains its dedicated row.
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,
 maximum range, time zone, and comparison rules. `defineTimeView()` is the compact

@@ -1,4 +1,8 @@
-import type { AppVariable, HistoryMode } from '@/src/core/variables';
+import type {
+  AppVariable,
+  HistoryMode,
+  VariablePresentation,
+} from '@/src/core/variables';
 import { invariant } from '@/src/core/invariant';
 
 export type DimensionValue = string | number;
@@ -46,6 +50,7 @@ export type DimensionFilterOptions<T extends DimensionValue> = {
   allowExclusion?: boolean;
   maxSelected?: number;
   history?: HistoryMode;
+  presentation?: VariablePresentation;
 } & (
   | { options: readonly DimensionOption<T>[]; facet?: never }
   | {
@@ -164,6 +169,7 @@ export function dimensionFilter<const T extends DimensionValue>(
 
   return {
     kind: 'dimension',
+    presentation: config.presentation,
     label,
     valueType,
     selectionMode,
