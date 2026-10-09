@@ -15,6 +15,38 @@ function decode(text: string | null) {
   return JSON.parse(text ?? '{}');
 }
 
+test('generated search has its own row above filters with consistent hover borders', async ({
+  page,
+}) => {
+  await page.goto('/filters');
+  const search = page.getByRole('group', { name: 'Search variables' });
+  const field = search.getByRole('searchbox').locator('..');
+  const display = page.getByRole('button', { name: 'Alpha Display' });
+  const country = page.getByRole('button', {
+    name: 'Country: All',
+    exact: true,
+  });
+  for (const width of [1280, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    const searchBox = await search.boundingBox();
+    const filterBox = await display.boundingBox();
+    expect(searchBox!.y + searchBox!.height).toBeLessThan(filterBox!.y);
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await field.hover();
+  const border = await field.evaluate(
+    element => getComputedStyle(element).borderColor
+  );
+  for (const control of [display, country]) {
+    await control.hover();
+    await expect
+      .poll(() =>
+        control.evaluate(element => getComputedStyle(element).borderColor)
+      )
+      .toBe(border);
+  }
+});
+
 test('visible single choices, independent choices, and numeric fields preserve their distinct values', async ({
   page,
 }) => {

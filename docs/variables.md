@@ -18,6 +18,7 @@ available when they have zero matches.
 
 Use `searchVariable()`, `choiceVariable()`, and `dateRangeVariable()` in a view's
 `variables`. `<DataApp view={view}>` generates their controls and keeps values in the URL.
+Search controls occupy a dedicated row above the other variables and filters.
 Keep local search out of the operation input when it only filters loaded rows.
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,

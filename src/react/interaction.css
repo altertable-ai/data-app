@@ -110,14 +110,20 @@
   /* Optional selected foreground; defaults to the local accent. */
   color: var(--atbl-control-selected-text, var(--atbl-accent));
 }
-[data-atbl-internal-surface='field']:is(:hover, [data-hovered]):not(
+:where(
+    [data-atbl-internal-surface='field'],
+    [data-atbl-internal-surface='control'][data-variant='outline'],
+    [data-atbl-internal-surface='control'][data-variant='elevated']
+  ):is(:hover, [data-hovered]):not(
+    :disabled,
     :has(input:disabled),
     [data-disabled],
+    [aria-disabled='true'],
     [data-invalid],
     [aria-invalid='true'],
     :has(input[aria-invalid='true'])
   ) {
-  /* Optional enabled-field hover border; disabled/invalid fields keep their own border. */
+  /* Bordered controls share hover paint; disabled/invalid controls keep their border. */
   border-color: var(
     --atbl-control-hover-border,
     color-mix(in srgb, var(--atbl-muted) 45%, var(--atbl-border))

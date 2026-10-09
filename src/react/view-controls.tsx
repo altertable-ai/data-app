@@ -10,6 +10,7 @@ import type {
 } from '@/src/core/filters';
 import type { AppVariable } from '@/src/core/variables';
 import { SearchField } from '@/src/react/ui/SearchField';
+import { VariableBar } from '@/src/react/ui/VariableBar';
 import { ChoicePicker } from '@/src/react/ui/ChoicePicker';
 import { DateRangePicker } from '@/src/react/ui/DateRangePicker';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
@@ -79,6 +80,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
   const controls: ReactNode[] = [];
+  const searches: ReactNode[] = [];
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const definition = definitions[name]!;
     const value = variables.values[name];
@@ -188,7 +190,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     } else if (definition.kind === 'search') {
-      controls.push(
+      searches.push(
         <SearchField
           key={name}
           label={definition.label ?? name}
@@ -216,6 +218,17 @@ export function useViewVariables<Variables extends VariableCollection>(
   if (hasActiveFilters)
     controls.push(
       <FilterActions key="filter-actions" onClear={variables.clearAll} />
+    );
+
+  if (searches.length)
+    controls.unshift(
+      <VariableBar
+        key="searches"
+        className="altertable-variable-searches"
+        aria-label="Search variables"
+      >
+        {searches}
+      </VariableBar>
     );
 
   return {
