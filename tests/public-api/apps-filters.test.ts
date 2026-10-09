@@ -29,7 +29,9 @@ test('generated search has its own row above filters with consistent hover borde
   for (const width of [1280, 375]) {
     await page.setViewportSize({ width, height: 900 });
     const searchBox = await search.boundingBox();
+    const fieldBox = await field.boundingBox();
     const filterBox = await display.boundingBox();
+    expect(fieldBox!.width).toBeCloseTo(searchBox!.width, 0);
     expect(searchBox!.y + searchBox!.height).toBeLessThan(filterBox!.y);
   }
   await page.setViewportSize({ width: 1280, height: 900 });
