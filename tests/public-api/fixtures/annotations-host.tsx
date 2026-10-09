@@ -23,32 +23,34 @@ const javascript = await fetch(
     ? '/__test/annotation-state'
     : '/__test/annotations'
 ).then(response => response.text());
+const initialAnnotations: DataAppAnnotationDraft[] = params.has(
+  'annotation-existing'
+)
+  ? [
+      {
+        id: 'persisted-revenue',
+        target: {
+          id: 'monthly-revenue',
+          label: 'Revenue by month',
+          kind: 'widget',
+          text: 'Revenue',
+          queryNames: ['revenue'],
+          glossaryIds: [],
+        },
+        context: {
+          search: '',
+          hash: '',
+          viewport: { width: 1280, height: 600 },
+          rect: { x: 0, y: 0, width: 100, height: 100 },
+          anchor: { x: 1, y: 0 },
+        },
+        comment: 'Persisted feedback from the previous SDK',
+      },
+    ]
+  : [];
+
 function Host() {
-  const [drafts, setDrafts] = useState<DataAppAnnotationDraft[]>(
-    params.has('annotation-existing')
-      ? [
-          {
-            id: 'persisted-revenue',
-            target: {
-              id: 'monthly-revenue',
-              label: 'Revenue by month',
-              kind: 'widget',
-              text: 'Revenue',
-              queryNames: ['revenue'],
-              glossaryIds: [],
-            },
-            context: {
-              search: '',
-              hash: '',
-              viewport: { width: 1280, height: 600 },
-              rect: { x: 0, y: 0, width: 100, height: 100 },
-              anchor: { x: 1, y: 0 },
-            },
-            comment: 'Persisted feedback from the previous SDK',
-          },
-        ]
-      : []
-  );
+  const [drafts, setDrafts] = useState(initialAnnotations);
   const [failed, setFailed] = useState(params.has('annotation-error'));
   const [version, setVersion] = useState(1);
   const [active, setActive] = useState(false);

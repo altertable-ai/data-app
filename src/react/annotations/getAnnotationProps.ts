@@ -1,7 +1,7 @@
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
 type AnnotationPropsOptions = {
-  id?: string;
+  id: string;
   label?: string;
   fallbackId?: string;
   evidence?: WidgetEvidence;
@@ -16,7 +16,7 @@ export function getAnnotationProps({
   kind = 'widget',
 }: AnnotationPropsOptions) {
   return {
-    'data-annotation-id': id ?? evidence?.id,
+    'data-annotation-id': id,
     'data-annotation-fallback-id': fallbackId,
     'data-annotation-label': label?.slice(0, 256),
     'data-annotation-kind': kind,

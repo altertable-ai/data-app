@@ -12,11 +12,21 @@ export type AnnotationTargetElement = {
   kind: 'widget' | 'element' | 'app';
 };
 
+function duplicateTargetIds(targets: readonly AnnotationTargetElement[]) {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const { id } of targets) {
+    if (seen.has(id)) duplicates.add(id);
+    else seen.add(id);
+  }
+  return duplicates;
+}
+
 export function discoverAnnotationTargets(root: HTMLElement | null): {
   targets: AnnotationTargetElement[];
   hasDuplicateIds: boolean;
 } {
-  const found: AnnotationTargetElement[] = Array.from(
+  const visibleTargets: AnnotationTargetElement[] = Array.from(
     root?.querySelectorAll<HTMLElement>('[data-annotation-id]') ?? []
   ).flatMap(element => {
     if (
@@ -49,21 +59,19 @@ export function discoverAnnotationTargets(root: HTMLElement | null): {
         ]
       : [];
   });
-  const counts = new Map<string, number>();
-  for (const target of found)
-    counts.set(target.id, (counts.get(target.id) ?? 0) + 1);
-  const resolved = found.map(target => {
+  const duplicatePrimaryIds = duplicateTargetIds(visibleTargets);
+  const resolvedTargets = visibleTargets.map(target => {
     const fallbackId = target.element.dataset.annotationFallbackId;
-    return counts.get(target.id)! > 1 && fallbackId
+    return duplicatePrimaryIds.has(target.id) && fallbackId
       ? { ...target, id: fallbackId }
       : target;
   });
-  const resolvedCounts = new Map<string, number>();
-  for (const target of resolved)
-    resolvedCounts.set(target.id, (resolvedCounts.get(target.id) ?? 0) + 1);
+  const duplicateResolvedIds = duplicateTargetIds(resolvedTargets);
   return {
-    targets: resolved.filter(target => resolvedCounts.get(target.id) === 1),
-    hasDuplicateIds: [...resolvedCounts.values()].some(count => count > 1),
+    targets: resolvedTargets.filter(
+      target => !duplicateResolvedIds.has(target.id)
+    ),
+    hasDuplicateIds: duplicateResolvedIds.size > 0,
   };
 }
 export function annotationGeometry(element: HTMLElement): AnnotationRect {
@@ -104,7 +112,7 @@ export function annotationRoot(
     ? { element, id: '__data-app-root', label: 'Selected area', kind: 'app' }
     : undefined;
 }
-export function annotationTargetLookup(root: HTMLElement | null) {
+export function indexAnnotationTargets(root: HTMLElement | null) {
   const targets = discoverAnnotationTargets(root).targets;
   const byId = new Map(targets.map(target => [target.id, target]));
   // A saved fallback still resolves if its evidence ID later becomes unique.
@@ -121,7 +129,7 @@ export function findAnnotationTarget(
   root: HTMLElement | null,
   id: string | undefined
 ) {
-  return id === undefined ? undefined : annotationTargetLookup(root).get(id);
+  return id === undefined ? undefined : indexAnnotationTargets(root).get(id);
 }
 
 export function normalizeAnnotationRect(

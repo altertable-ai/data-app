@@ -101,8 +101,9 @@ function DataWidgetContent({
       {content}
     </WidgetContent>
   );
-  const loading = props['aria-busy'] === true || props['aria-busy'] === 'true';
-  const help = evidence && !loading && (
+  const explicitAnnotationId = annotationId ?? props.id;
+  const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
+  const help = evidence && !busy && (
     <AboutData
       id={evidence.id}
       references={{
@@ -131,9 +132,9 @@ function DataWidgetContent({
     <section
       {...props}
       {...getAnnotationProps({
-        id: annotationId ?? props.id ?? evidence?.id ?? titleId,
+        id: explicitAnnotationId ?? evidence?.id ?? titleId,
         fallbackId:
-          annotationId === undefined && props.id === undefined && evidence?.id
+          explicitAnnotationId === undefined && evidence?.id
             ? titleId
             : undefined,
         label: typeof title === 'string' ? title : undefined,

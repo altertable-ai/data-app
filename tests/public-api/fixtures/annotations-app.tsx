@@ -124,9 +124,9 @@ function App() {
       <TextWidget title="Explicit narrative" annotationId="explicit-narrative">
         An explicitly identified narrative.
       </TextWidget>
-      {new URLSearchParams(getDataAppNavigation()!.snapshot().search).has(
-        'annotation-scroll'
-      ) && <div style={{ height: 1600 }}>Long report</div>}
+      {params.has('annotation-scroll') && (
+        <div style={{ height: 1600 }}>Long report</div>
+      )}
       <AnnotationTarget annotationId="intro" label="Introduction">
         <p>Revenue is growing.</p>
       </AnnotationTarget>

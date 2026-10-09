@@ -251,7 +251,7 @@ export function attachDataAppConnection({
     send('stateUpdate', { state: hostState() });
   }
 
-  function dismissAnnotationEditor(event: MouseEvent) {
+  function publishAnnotationDismissal(event: MouseEvent) {
     if (
       !currentPresentation?.annotations?.enabled ||
       event.composedPath().includes(iframe)
@@ -281,7 +281,7 @@ export function attachDataAppConnection({
     host.removeEventListener('message', receive);
     host.removeEventListener('popstate', publishState);
     host.removeEventListener('pagehide', cancelAll);
-    host.removeEventListener('click', dismissAnnotationEditor, true);
+    host.removeEventListener('click', publishAnnotationDismissal, true);
   }
 
   setPresentation(presentation);
@@ -289,7 +289,7 @@ export function attachDataAppConnection({
   host.addEventListener('message', receive);
   host.addEventListener('popstate', publishState);
   host.addEventListener('pagehide', cancelAll);
-  host.addEventListener('click', dismissAnnotationEditor, true);
+  host.addEventListener('click', publishAnnotationDismissal, true);
   // Reconnect an already-loaded iframe when its host bridge mounts again.
   onStatusChange?.('connecting');
   send('connect', {});

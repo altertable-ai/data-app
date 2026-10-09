@@ -5,6 +5,8 @@ export type AnnotationEditorState = {
   target: AnnotationTargetElement;
   draft: DataAppAnnotationDraft;
   annotationId?: string;
+  /** Epoch milliseconds, comparable to host interaction timestamps. */
+  openedAt: number;
   comment: string;
   captureStatus: 'capturing' | 'ready' | 'failed';
   error: string;

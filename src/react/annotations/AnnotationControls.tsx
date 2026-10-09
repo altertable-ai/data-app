@@ -93,7 +93,7 @@ export function AnnotationControls({
     presentation.targets?.find(pin => pin.id === editor?.annotationId)
       ?.comment ?? '';
   const hasUnsavedChanges = Boolean(editor) && editor?.comment !== savedComment;
-  const editorOpenedAt = useRef(0);
+  const editorOpenedAt = editor?.openedAt;
   const screenshot = useRef<ScreenshotCapture | undefined>(undefined);
   const toolbarRef = useRef<ComponentRef<'button'>>(null);
   const textareaRef = useRef<ComponentRef<'textarea'>>(null);
@@ -102,7 +102,7 @@ export function AnnotationControls({
     rootRef,
     target: editor?.target ?? hoveredTarget,
     region: editor?.draft.context.region,
-    targets: presentation.targets,
+    annotations: presentation.targets,
   });
   if (state.observedActive !== active)
     dispatch({ type: 'externalModeObserved', active });
@@ -160,19 +160,19 @@ export function AnnotationControls({
   });
   useEffect(() => {
     if (!active) return;
-    let outsideEditor = false;
+    let startedOutsideEditor = false;
     function startPointer(event: PointerEvent) {
-      outsideEditor = isOutsideEditor(event);
+      startedOutsideEditor = isOutsideEditor(event);
     }
     function finishClick(event: MouseEvent) {
-      if (!outsideEditor) return;
-      outsideEditor = false;
+      if (!startedOutsideEditor) return;
+      startedOutsideEditor = false;
       event.preventDefault();
       event.stopImmediatePropagation();
       dismissEditor();
     }
     function cancelPointer() {
-      outsideEditor = false;
+      startedOutsideEditor = false;
     }
     document.addEventListener('pointerdown', startPointer, true);
     document.addEventListener('click', finishClick, true);
@@ -186,10 +186,11 @@ export function AnnotationControls({
   useEffect(() => {
     if (
       presentation.dismissal &&
-      presentation.dismissal.occurredAt > editorOpenedAt.current
+      editorOpenedAt !== undefined &&
+      presentation.dismissal.occurredAt > editorOpenedAt
     )
       dismissEditor();
-  }, [presentation.dismissal]);
+  }, [presentation.dismissal, editorOpenedAt]);
 
   function openEditor({
     target,
@@ -198,7 +199,7 @@ export function AnnotationControls({
     annotation,
     comment,
   }: AnnotationSelection) {
-    editorOpenedAt.current = performance.timeOrigin + performance.now();
+    const openedAt = performance.timeOrigin + performance.now();
     const location = getDataAppNavigation()?.snapshot();
     const rect = annotationGeometry(target.element);
     const point = annotationPoint(rect, cursor);
@@ -243,6 +244,7 @@ export function AnnotationControls({
         target,
         draft,
         annotationId: annotation?.id,
+        openedAt,
         comment: comment ?? annotation?.comment ?? '',
         captureStatus: annotation ? 'ready' : 'capturing',
         error: '',
