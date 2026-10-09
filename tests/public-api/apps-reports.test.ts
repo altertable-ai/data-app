@@ -420,6 +420,44 @@ test('neutral defaults agree before and after theme application and open trigger
     .toBe('rgb(128, 64, 192)');
 });
 
+test('active live updates keep their semantic foreground, dot and border across themes', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  const live = page.getByRole('button', {
+    name: 'Pause live updates',
+    exact: true,
+  });
+  for (const customized of [false, true]) {
+    if (customized)
+      await page
+        .getByRole('button', { name: 'Customize status', exact: true })
+        .click();
+    for (const theme of ['light', 'dark']) {
+      await page
+        .getByRole('button', { name: `Apply neutral ${theme}`, exact: true })
+        .click();
+      await page.mouse.move(0, 0);
+      const positive = customized
+        ? 'rgb(128, 64, 192)'
+        : theme === 'light'
+          ? 'rgb(20, 120, 98)'
+          : 'rgb(107, 195, 154)';
+      await expect
+        .poll(() =>
+          live.evaluate(element => [
+            getComputedStyle(element).color,
+            getComputedStyle(element.querySelector('svg')!).color,
+            getComputedStyle(element, '::after').backgroundColor,
+            getComputedStyle(element.closest('.altertable-live-control')!)
+              .borderColor,
+          ])
+        )
+        .toEqual([positive, positive, positive, positive]);
+    }
+  }
+});
+
 for (const width of [320, 1280]) {
   test(`app content keeps bottom breathing room with and without its footer at ${width}px`, async ({
     page,

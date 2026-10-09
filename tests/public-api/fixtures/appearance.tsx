@@ -10,6 +10,7 @@ import {
 } from '@altertable/data-app/react';
 import {
   Select,
+  LiveControl,
   ChoicePicker,
   NumberFilterPicker,
 } from '@altertable/data-app/react/ui';
@@ -20,6 +21,7 @@ const actionStyle: DataAppStyle = {
 };
 function App() {
   const [customStatus, setCustomStatus] = useState(false);
+  const [live, setLive] = useState(true);
   return (
     <main>
       {customStatus && <style>{':root { --atbl-positive: #8040c0; }'}</style>}
@@ -51,6 +53,12 @@ function App() {
           Apply neutral {theme}
         </Button>
       ))}
+      <LiveControl
+        enabled={live}
+        onChange={setLive}
+        intervalSeconds={60}
+        onIntervalChange={() => {}}
+      />
       <NumberFilterPicker
         filter={numberFilter({ key: 'orders', label: 'Orders' })}
         value={{ kind: 'all' }}

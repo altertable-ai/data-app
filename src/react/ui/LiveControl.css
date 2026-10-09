@@ -28,6 +28,7 @@
   border-color: var(--atbl-positive);
 }
 .altertable-live-control[data-active='true'] .altertable-button {
+  --atbl-control-selected-text: var(--atbl-positive);
   color: var(--atbl-positive);
 }
 .altertable-live-control[data-active='true'] .altertable-button::after {
