@@ -44,6 +44,7 @@ export function ViewFilterControls({
             }
           >
             <Button
+              variant="ghost"
               ref={filterToggleRef}
               aria-label={filterLabel}
               aria-expanded={expanded}
@@ -101,6 +102,7 @@ function DisplayOptionsPopover({ controls }: { controls: ControlGroup }) {
     <DialogTrigger isOpen={open} onOpenChange={setOpen}>
       <Tooltip content={label} className="altertable-display-options-trigger">
         <PressButton
+          variant="ghost"
           size="icon"
           aria-label={label}
           data-open={open}

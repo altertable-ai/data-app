@@ -59,7 +59,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
     await more
       .locator('svg')
       .evaluate(element => getComputedStyle(element).transform)
-  ).toBe('matrix(-1, 0, 0, -1, 0, 0)');
+  ).toBe('matrix(0, -1, 1, 0, 0, 0)');
   const secondary = page.getByRole('group', {
     name: 'Secondary filters',
     exact: true,
