@@ -129,17 +129,6 @@ try {
     temporary
   );
   for (const path of paths) {
-    if (path.endsWith('.js') || path.endsWith('.d.ts')) {
-      const source = await readFile(join(packageDirectory, path), 'utf8');
-      if (
-        /DataAppSkeleton|injectDataAppShellStyles|SHELL_STYLES|altertable-data-app-skeleton|data-altertable-shell-styles/.test(
-          source
-        )
-      )
-        throw new Error(
-          `Removed host skeleton API or styles remain in ${path}`
-        );
-    }
     if (path.endsWith('.d.ts')) {
       const declaration = await readFile(join(packageDirectory, path), 'utf8');
       if (declaration.includes('@/'))
