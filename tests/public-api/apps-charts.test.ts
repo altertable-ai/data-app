@@ -188,6 +188,7 @@ test('product analytics charts preserve frontend funnel stacks, numeric retentio
   mobilePage,
 }) => {
   for (const current of [page, mobilePage]) {
+    await current.emulateMedia({ reducedMotion: 'reduce' });
     await current.setViewportSize({ width: 320, height: 900 });
     await current.goto('/chart-legends');
     const funnel = current.getByRole('region', {
@@ -226,6 +227,11 @@ test('product analytics charts preserve frontend funnel stacks, numeric retentio
       name: 'Onboarding journey',
       exact: true,
     });
+    async function activateBranch(name: string) {
+      const button = journey.getByRole('button', { name, exact: true });
+      if (current === mobilePage) await button.tap();
+      else await button.click();
+    }
     await expect
       .poll(() =>
         journey
@@ -239,12 +245,17 @@ test('product analytics charts preserve frontend funnel stacks, numeric retentio
     expect(
       await journey.getByRole('region', { name: /Report created/ }).count()
     ).toBe(0);
-    await journey
-      .getByRole('button', {
-        name: 'More after Workspace created, step 2',
-        exact: true,
-      })
-      .click();
+    await activateBranch('More after Workspace created, step 2');
+    await expect
+      .poll(() =>
+        journey
+          .getByRole('button', {
+            name: 'Less after Workspace created, step 2',
+            exact: true,
+          })
+          .getAttribute('aria-expanded')
+      )
+      .toBe('true');
     await expect
       .poll(() =>
         journey
@@ -265,18 +276,8 @@ test('product analytics charts preserve frontend funnel stacks, numeric retentio
           .count()
       )
       .toBe(1);
-    await journey
-      .getByRole('button', {
-        name: 'More after Report created, step 3',
-        exact: true,
-      })
-      .click();
-    await journey
-      .getByRole('button', {
-        name: 'More after Subscribed, step 4',
-        exact: true,
-      })
-      .click();
+    await activateBranch('More after Report created, step 3');
+    await activateBranch('More after Subscribed, step 4');
     await expect
       .poll(() =>
         journey
@@ -287,20 +288,13 @@ test('product analytics charts preserve frontend funnel stacks, numeric retentio
           .count()
       )
       .toBe(1);
-    await journey
-      .getByRole('button', {
-        name: 'Less after Workspace created, step 2',
-        exact: true,
-      })
-      .click();
+    await activateBranch('Less after Workspace created, step 2');
     await expect
       .poll(() =>
         journey.getByRole('region', { name: /Report created/ }).count()
       )
       .toBe(0);
-    await journey
-      .getByRole('button', { name: 'Show more events at step 2', exact: true })
-      .click();
+    await activateBranch('Show more events at step 2');
     await expect
       .poll(() =>
         journey
@@ -319,9 +313,7 @@ test('product analytics charts preserve frontend funnel stacks, numeric retentio
         })
         .count()
     ).toBe(0);
-    await journey
-      .getByRole('button', { name: 'More after Search, step 2', exact: true })
-      .click();
+    await activateBranch('More after Search, step 2');
     await expect
       .poll(() =>
         journey
