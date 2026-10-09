@@ -31,7 +31,7 @@
   cursor: var(--atbl-cursor-disabled);
 }
 
-/* Native and React Aria controls share state precedence: disabled, selected,
+/* Native and React Aria controls share state precedence: disabled, selected, open,
    pressed, hovered, then idle. Busy is independent and preserves geometry. */
 [data-atbl-control='action']:is(
   :disabled,
@@ -81,6 +81,29 @@
     color-mix(in srgb, var(--atbl-text) 8%, var(--atbl-surface))
   );
 }
+/* A popup's open trigger is a persistent state, distinct from pointer press. */
+:where([data-atbl-internal-surface='control']):is(
+    [aria-expanded='true'],
+    [data-open='true']
+  ):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  background: var(--atbl-control-open-surface, var(--atbl-surface));
+}
+:where([data-atbl-internal-surface='control']):is(
+    [data-variant='outline'],
+    [data-variant='elevated']
+  ):is([aria-expanded='true'], [data-open='true']):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  border-color: var(--atbl-control-open-border, var(--atbl-muted));
+}
 :where([data-atbl-internal-surface='control']):is(
     [aria-pressed='true'],
     [data-selected],
@@ -92,20 +115,9 @@
     [aria-disabled='true'],
     :has(> input:disabled)
   ) {
-  /* Optional selected fill. --atbl-accent-subtle derives from local accent/surface. */
-  background: var(
-    --atbl-control-selected-surface,
-    var(
-      --atbl-accent-subtle,
-      color-mix(
-        in srgb,
-        var(--atbl-accent) var(--atbl-accent-subtle-strength),
-        var(--atbl-surface)
-      )
-    )
-  );
-  /* Optional selected foreground; defaults to the local accent. */
-  color: var(--atbl-control-selected-text, var(--atbl-accent));
+  /* Selection uses the base palette unless the app supplies selected-state tokens. */
+  background: var(--atbl-control-selected-surface, var(--atbl-subtle));
+  color: var(--atbl-control-selected-text, var(--atbl-text));
 }
 :where([data-atbl-internal-surface='option'])[data-selected]:not(
     :disabled,
@@ -116,6 +128,43 @@
   /* Option defaults use the base palette; app-selected overrides still inherit. */
   background: var(--atbl-control-selected-surface, var(--atbl-subtle));
   color: var(--atbl-control-selected-text, var(--atbl-text));
+}
+/* Selected rows retain selection while providing pointer feedback. */
+:where([data-atbl-internal-surface='option'])[data-selected]:is(
+    :hover,
+    [data-hovered]
+  ):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  background: var(
+    --atbl-control-hover-surface,
+    color-mix(
+      in srgb,
+      var(--atbl-text) 4%,
+      var(--atbl-control-selected-surface, var(--atbl-subtle))
+    )
+  );
+}
+:where([data-atbl-internal-surface='option'])[data-selected]:is(
+    :active,
+    [data-pressed]
+  ):not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  background: var(
+    --atbl-control-pressed-surface,
+    color-mix(
+      in srgb,
+      var(--atbl-text) 8%,
+      var(--atbl-control-selected-surface, var(--atbl-subtle))
+    )
+  );
 }
 :where(
     [data-atbl-internal-surface='field'],

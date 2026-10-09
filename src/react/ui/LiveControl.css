@@ -25,10 +25,10 @@
   box-shadow: none;
 }
 .altertable-live-control[data-active='true'] {
-  border-color: var(--atbl-accent);
+  border-color: var(--atbl-positive);
 }
 .altertable-live-control[data-active='true'] .altertable-button {
-  color: var(--atbl-accent);
+  color: var(--atbl-positive);
 }
 .altertable-live-control[data-active='true'] .altertable-button::after {
   position: absolute;

@@ -17,7 +17,11 @@ import {
 } from '@altertable/data-app/react/ui';
 
 injectDataAppStyles();
-applyAppearance({ theme: 'light' });
+applyAppearance(
+  new URLSearchParams(location.search).has('palette')
+    ? { theme: 'light', accentColor: '#cc5500', chartColors: ['#8040c0'] }
+    : { theme: 'light' }
+);
 
 const revenueAndConversion = [
   { month: 'Jan', revenue: 42, forecast: 40, conversion: 2.4 },

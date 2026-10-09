@@ -16,11 +16,15 @@
   --atbl-border: var(--atbl-palette-border);
 
   /* Accent and its foreground. Override both together to preserve contrast. */
-  --atbl-accent: var(--atbl-input-accent, #405d47);
-  --atbl-on-accent: var(--atbl-input-on-accent, #fff);
+  --atbl-accent: var(--atbl-palette-accent);
+  --atbl-on-accent: var(--atbl-palette-on-accent);
+
+  /* Semantic outcomes are independent of brand and chart colors. */
+  --atbl-positive: var(--atbl-palette-positive);
+  --atbl-negative: var(--atbl-danger);
 
   /* Errors and quiet error surfaces. */
-  --atbl-danger: #b42318;
+  --atbl-danger: var(--atbl-palette-danger);
   --atbl-danger-subtle: color-mix(
     in srgb,
     var(--atbl-danger) 9%,

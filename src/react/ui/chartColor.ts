@@ -7,4 +7,4 @@ export function chartColor(id: string): string {
 }
 
 export const chartBarFill =
-  'var(--atbl-chart-fill, color-mix(in srgb, var(--atbl-accent) 75%, var(--atbl-surface)))';
+  'var(--atbl-chart-fill, color-mix(in srgb, var(--atbl-chart-1) 75%, var(--atbl-surface)))';

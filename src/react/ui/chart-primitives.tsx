@@ -19,11 +19,11 @@ import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { TooltipSurface } from '@/src/react/ui/TooltipSurface';
 
 import { chartBarFill } from '@/src/react/ui/chartColor';
-const accent = 'var(--atbl-accent)';
+const seriesColor = 'var(--atbl-chart-1)';
 /** Hollow sample marker shared by standalone and composed series. */
 export function ChartDot({
   active = false,
-  stroke = accent,
+  stroke = seriesColor,
   fill = active ? stroke : 'var(--atbl-surface)',
   r = active ? 4.5 : 3,
   ...props
@@ -40,7 +40,7 @@ export function ChartBar<Row = unknown, Value = number | null>(
       fill={chartBarFill}
       radius={[5, 5, 0, 0]}
       maxBarSize={30}
-      activeBar={{ fill: accent }}
+      activeBar={{ fill: seriesColor }}
       isAnimationActive={false}
       {...props}
     />
@@ -50,7 +50,7 @@ export function ChartBar<Row = unknown, Value = number | null>(
 /** Themed hollow sample dots are enabled by default; dot=false hides them.
  * activeDot independently controls the hovered point. Native dot props and renderers remain available. */
 export function ChartLine<Row = unknown, Value = number | null>({
-  stroke = accent,
+  stroke = seriesColor,
   dot,
   activeDot,
   ...props
@@ -80,7 +80,7 @@ export function ChartLine<Row = unknown, Value = number | null>({
 
 /** Filled series with the same sample-dot and activeDot options as ChartLine. */
 export function ChartArea<Row = unknown, Value = number | null>({
-  stroke = accent,
+  stroke = seriesColor,
   dot,
   activeDot,
   ...props
@@ -115,7 +115,11 @@ export function ChartScatter<Row = unknown, Value = number>(
   props: ComponentProps<typeof Scatter<Row, Value>>
 ) {
   return (
-    <Scatter<Row, Value> fill={accent} isAnimationActive={false} {...props} />
+    <Scatter<Row, Value>
+      fill={seriesColor}
+      isAnimationActive={false}
+      {...props}
+    />
   );
 }
 
@@ -188,7 +192,7 @@ export function ChartTooltipContent(
                     entry.color ??
                     entry.stroke ??
                     entry.fill ??
-                    'var(--atbl-accent)'
+                    'var(--atbl-chart-1)'
                   }
                 />
                 <span className="altertable-chart-tooltip-reading">

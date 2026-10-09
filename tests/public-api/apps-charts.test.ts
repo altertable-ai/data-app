@@ -1,6 +1,29 @@
 import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 
+test('standalone series use the configured chart palette independently of brand accent', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends?palette');
+  for (const name of ['Standalone line', 'Standalone area']) {
+    const chart = page.getByRole('region', { name, exact: true });
+    await expect
+      .poll(() =>
+        chart.locator('.recharts-line-curve').evaluateAll(elements =>
+          elements.map(element => {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 1;
+            const context = canvas.getContext('2d')!;
+            context.fillStyle = getComputedStyle(element).stroke;
+            context.fillRect(0, 0, 1, 1);
+            return [...context.getImageData(0, 0, 1, 1).data];
+          })
+        )
+      )
+      .toEqual([[128, 64, 192, 255]]);
+  }
+});
+
 test('mixed chart series describe their measures and inspect the same monthly values with the keyboard', async ({
   page,
 }) => {

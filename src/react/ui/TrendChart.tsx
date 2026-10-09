@@ -77,7 +77,7 @@ export function TrendChart({
                     <ChartArea
                       dataKey="plotValue"
                       stroke="none"
-                      fill="var(--atbl-accent)"
+                      fill="var(--atbl-chart-1)"
                       dot={false}
                       activeDot={false}
                     />

@@ -88,6 +88,8 @@ export const dataAppStyleTokens = [
   '--atbl-cursor-busy',
   '--atbl-control-hover-surface',
   '--atbl-control-pressed-surface',
+  '--atbl-control-open-surface',
+  '--atbl-control-open-border',
   '--atbl-control-selected-surface',
   '--atbl-control-selected-text',
 ] as const;

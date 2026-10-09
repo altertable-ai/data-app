@@ -10,7 +10,6 @@ export const dataApp = defineDataApp({
   appearance: {
     theme: "light",
     baseColor: "neutral",
-    accentColor: "#405d47",
     density: "comfortable",
     cornerRadius: "medium",
     elevation: "subtle",

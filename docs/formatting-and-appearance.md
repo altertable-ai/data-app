@@ -49,7 +49,6 @@ const dataApp = defineDataApp({
   appearance: {
     theme: 'system',
     baseColor: 'neutral',
-    accentColor: '#405d47',
     density: 'comfortable',
   },
   queries: {},
@@ -63,14 +62,15 @@ Title and description explain the app and can be revised when regenerating it.
 Omit appearance to use the standard defaults.
 
 `baseColor` chooses the palette for surfaces, text, and borders: neutral, slate,
-or warm. It is independent of `accentColor`, which defaults to green and supplies
-emphasis for checked controls and selected dates. Primary buttons use the text
-color; dropdown selections use the base palette. Chart colors are configured
-separately through `chartColors`.
+or warm. The default UI is neutral in both light and dark themes; no color
+settings are required. `accentColor` and optional `darkAccentColor` add brand
+emphasis to checked controls, selected dates, links, and navigation. Primary
+buttons and dropdown rows use the base palette.
 
-For a monochrome app, declare `baseColor: 'neutral'`, `accentColor: '#202124'`,
-and `darkAccentColor: '#f2f3f4'`. Setting the base palette alone does not remove
-the accent. Both palettes adapt to the resolved light or dark theme.
+Status colors are independent of branding: `--atbl-positive` identifies favorable
+outcomes and connected/live states; `--atbl-negative` defaults to the danger
+color. Chart colors are configured separately through `chartColors`: standalone
+series derive their colors from the first slot, while categorical series use the palette.
 
 Appearance controls the brand palette, typography, density, corner radius, and
 elevation. Those settings apply consistently to the app instead of tuning each

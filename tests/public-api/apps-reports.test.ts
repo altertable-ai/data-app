@@ -343,6 +343,7 @@ test('option lists use the base palette and honor inherited selection overrides'
         .click();
     for (const name of triggers) {
       await page.getByRole('button', { name, exact: true }).click();
+      await page.mouse.move(0, 0);
       const option = page.getByRole('option', { selected: true });
       await expect
         .poll(() =>
@@ -360,6 +361,63 @@ test('option lists use the base palette and honor inherited selection overrides'
       await expect.poll(() => page.getByRole('option').count()).toBe(0);
     }
   }
+});
+
+test('neutral defaults agree before and after theme application and open triggers have a steady state', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  const accent = page.getByRole('button', {
+    name: 'Custom action',
+    exact: true,
+  });
+  const original = await accent.evaluate(
+    element => getComputedStyle(element).color
+  );
+  for (const theme of ['light', 'dark']) {
+    await page
+      .getByRole('button', { name: `Apply neutral ${theme}`, exact: true })
+      .click();
+    await expect
+      .poll(() => accent.evaluate(element => getComputedStyle(element).color))
+      .toBe(theme === 'light' ? original : 'rgb(242, 243, 244)');
+    for (const name of ['Name Sort by', 'Segment: Enterprise', 'Orders: Any']) {
+      const trigger = page.getByRole('button', { name, exact: true });
+      await trigger.click();
+      await page.mouse.move(0, 0);
+      await expect
+        .poll(() =>
+          trigger.evaluate(element => {
+            const s = getComputedStyle(element);
+            return [s.backgroundColor, s.borderColor];
+          })
+        )
+        .toEqual(
+          theme === 'dark'
+            ? ['rgb(32, 35, 38)', 'rgb(174, 181, 188)']
+            : ['rgb(255, 255, 255)', 'rgb(104, 112, 120)']
+        );
+      await page.keyboard.press('Escape');
+      await expect
+        .poll(() => trigger.getAttribute('aria-expanded'))
+        .toBe('false');
+    }
+  }
+  await page
+    .getByRole('button', { name: 'Apply appearance', exact: true })
+    .click();
+  const outcome = page
+    .getByRole('figure', { name: 'Revenue comparison' })
+    .getByText('100.0% vs previous period', { exact: true });
+  await expect
+    .poll(() => outcome.evaluate(element => getComputedStyle(element).color))
+    .toBe('rgb(107, 195, 154)');
+  await page
+    .getByRole('button', { name: 'Customize status', exact: true })
+    .click();
+  await expect
+    .poll(() => outcome.evaluate(element => getComputedStyle(element).color))
+    .toBe('rgb(128, 64, 192)');
 });
 
 for (const width of [320, 1280]) {

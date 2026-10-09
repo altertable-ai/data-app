@@ -51,7 +51,7 @@
   min-width: 2px;
   height: 100%;
   border-radius: inherit;
-  background: var(--atbl-accent);
+  background: var(--atbl-chart-1);
 }
 .altertable-comparison-row[data-period='previous']
   .altertable-comparison-track
@@ -70,10 +70,10 @@
   font-variant-numeric: tabular-nums;
 }
 .altertable-comparison-change[data-tone='good'] {
-  color: var(--atbl-positive, var(--atbl-accent));
+  color: var(--atbl-positive);
 }
 .altertable-comparison-change[data-tone='bad'] {
-  color: var(--atbl-negative, var(--atbl-danger));
+  color: var(--atbl-negative);
 }
 .altertable-about-visual .altertable-comparison-visual {
   gap: 12px;

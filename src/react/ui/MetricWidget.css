@@ -71,12 +71,12 @@
   color: var(--atbl-muted);
   font-variant-numeric: tabular-nums;
 }
-/* Optional metric tones: favorable defaults to local accent, unfavorable to danger. */
+/* Semantic outcomes remain independent of the brand accent. */
 .altertable-metric-change[data-tone='good'] {
-  color: var(--atbl-positive, var(--atbl-accent));
+  color: var(--atbl-positive);
 }
 .altertable-metric-change[data-tone='bad'] {
-  color: var(--atbl-negative, var(--atbl-danger));
+  color: var(--atbl-negative);
 }
 .altertable-metric-description {
   color: var(--atbl-muted);

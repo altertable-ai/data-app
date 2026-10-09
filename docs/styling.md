@@ -43,13 +43,20 @@ Package controls and custom controls with `data-atbl-control="text"` enforce a
 that minimum when adding app-owned input styles.
 
 When overriding `--atbl-accent` directly, also choose `--atbl-on-accent` with
-sufficient contrast. Prefer appearance configuration for brand and chart colors.
+sufficient contrast. The default accent is neutral. Prefer appearance configuration
+for brand and chart colors; semantic status colors remain independent.
 
 Selected options default to `--atbl-subtle` and `--atbl-text`, so a brand accent
 does not color every filter selection. Override `--atbl-control-selected-surface`
 and `--atbl-control-selected-text` together to customize selected controls,
-including dropdown options. These overrides inherit from the document or a
+including dropdown options. Selected rows retain their selection with distinct
+hover and press feedback. These overrides inherit from the document or a
 component; place document-wide overrides on `:root` to include portaled menus.
+
+Open popup triggers use `--atbl-surface` and a muted border rather than retaining
+pointer-press paint. Override `--atbl-control-open-surface` and
+`--atbl-control-open-border` to customize this state. Hover, press, open, and
+selection tokens describe interactions; base palette tokens describe surfaces.
 
 ## Native controls
 

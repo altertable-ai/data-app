@@ -6,6 +6,10 @@
   --atbl-palette-text: #202124;
   --atbl-palette-muted: #687078;
   --atbl-palette-border: #e3e6e8;
+  --atbl-palette-accent: var(--atbl-input-accent, var(--atbl-text));
+  --atbl-palette-on-accent: var(--atbl-input-on-accent, #fff);
+  --atbl-palette-positive: #147862;
+  --atbl-palette-danger: #b42318;
   --atbl-chart-strength: 100%;
   --atbl-accent-subtle-strength: 12%;
 }
@@ -50,13 +54,11 @@
   --atbl-palette-border: #494239;
 }
 :root[data-atbl-theme='dark'] {
-  --atbl-accent: var(
-    --atbl-input-dark-accent,
-    color-mix(in srgb, var(--atbl-input-accent, #405d47) 50%, white)
-  );
+  --atbl-palette-accent: var(--atbl-input-dark-accent, var(--atbl-text));
   --atbl-accent-subtle-strength: 22%;
-  --atbl-on-accent: var(--atbl-input-on-accent, var(--atbl-background));
-  --atbl-danger: #f97066;
+  --atbl-palette-on-accent: var(--atbl-input-on-accent, var(--atbl-background));
+  --atbl-palette-positive: #6bc39a;
+  --atbl-palette-danger: #f97066;
   --atbl-backdrop: rgb(0 0 0 / 55%);
   --atbl-code-surface: #242a31;
   --atbl-code-text: #e5e9ef;

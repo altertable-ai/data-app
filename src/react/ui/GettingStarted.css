@@ -26,15 +26,8 @@
   color: var(--atbl-muted);
 }
 .starter-connection[data-state='connected'] .starter-connection-icon {
-  background: var(
-    --atbl-accent-subtle,
-    color-mix(
-      in srgb,
-      var(--atbl-accent) var(--atbl-accent-subtle-strength),
-      var(--atbl-surface)
-    )
-  );
-  color: var(--atbl-accent);
+  background: color-mix(in srgb, var(--atbl-positive) 12%, var(--atbl-surface));
+  color: var(--atbl-positive);
 }
 .starter-connection[data-state='error'] .starter-connection-icon {
   background: var(--atbl-danger-subtle);

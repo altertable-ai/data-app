@@ -27,11 +27,6 @@ const dataApp = defineDataApp({
   description:
     'Find customer accounts, narrow the scope, and choose how to view the results. Sample data.',
   scope: { organization: 'Demo', environment: 'Preview' },
-  appearance: {
-    baseColor: 'neutral',
-    accentColor: '#202124',
-    darkAccentColor: '#f2f3f4',
-  },
   queries: {},
 });
 
