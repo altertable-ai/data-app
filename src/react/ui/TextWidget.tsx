@@ -37,7 +37,7 @@ export function TextWidget<Data>(props: TextWidgetProps<Data>) {
     <DataWidget
       {...shell}
       className={classNames('altertable-text-widget', className)}
-      evidence={loading ? undefined : shell.evidence}
+      evidence={shell.evidence}
       aria-busy={loading || shell['aria-busy']}
     >
       <TextContent>

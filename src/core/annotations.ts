@@ -50,6 +50,8 @@ export type DataAppAnnotationPresentation = {
   selectedAnnotationId?: string;
   selectedTargetId?: string;
   selectionId?: string;
+  /** Confirmed host click outside the iframe; occurredAt is epoch milliseconds. */
+  dismissal?: { id: string; occurredAt: number };
 };
 
 function object(value: unknown): Record<string, unknown> {
@@ -287,6 +289,13 @@ export function isAnnotationPresentation(
     (input.selectedAnnotationId === undefined ||
       (typeof input.selectedAnnotationId === 'string' &&
         input.selectedAnnotationId.length <= 128)) &&
+    (input.dismissal === undefined ||
+      (input.dismissal !== null &&
+        typeof input.dismissal === 'object' &&
+        typeof input.dismissal.id === 'string' &&
+        input.dismissal.id.length <= 128 &&
+        typeof input.dismissal.occurredAt === 'number' &&
+        Number.isFinite(input.dismissal.occurredAt))) &&
     (input.selectionId === undefined ||
       (typeof input.selectionId === 'string' &&
         input.selectionId.length <= 128)) &&

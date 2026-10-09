@@ -42,17 +42,8 @@ export function AnnotationSelectionLayer({
     const app = scope.closest<HTMLElement>('.altertable-app-layout') ?? scope;
     const wasInert = app.inert;
     app.toggleAttribute('inert', true);
-    function blockScroll(event: WheelEvent) {
-      if (event.target === layer.current && !event.ctrlKey && !event.metaKey)
-        event.preventDefault();
-    }
-    document.addEventListener('wheel', blockScroll, {
-      passive: false,
-      capture: true,
-    });
     layer.current?.focus({ preventScroll: true });
     return () => {
-      document.removeEventListener('wheel', blockScroll, true);
       app.toggleAttribute('inert', wasInert);
       if (
         previouslyFocused instanceof HTMLElement &&
@@ -128,6 +119,11 @@ export function AnnotationSelectionLayer({
     keyboardEnd.current = undefined;
     setRegion(undefined);
   }
+  useEffect(() => {
+    document.addEventListener('scroll', resetAreaSelection, true);
+    return () =>
+      document.removeEventListener('scroll', resetAreaSelection, true);
+  }, []);
   function finishSelection(point: AnnotationPoint) {
     const area = areaBetween(point);
     resetAreaSelection();
@@ -171,6 +167,11 @@ export function AnnotationSelectionLayer({
           if (disabled || editing) return;
           if (event.key === 'PageDown' || event.key === 'PageUp') {
             event.preventDefault();
+            resetAreaSelection();
+            window.scrollBy({
+              top:
+                window.innerHeight * 0.8 * (event.key === 'PageDown' ? 1 : -1),
+            });
             return;
           }
           if (event.key === 'Enter' && event.shiftKey && !keyboardEnd.current) {
@@ -251,16 +252,17 @@ export function AnnotationSelectionLayer({
         }}
         onPointerDown={event => {
           if (disabled || editing) {
-            event.preventDefault();
+            if (event.pointerType !== 'touch') event.preventDefault();
             return;
           }
           if (event.button !== 0) return;
-          event.preventDefault();
+          if (event.pointerType !== 'touch') event.preventDefault();
           layer.current?.focus({ preventScroll: true });
           keyboardEnd.current = undefined;
           start.current = { x: event.clientX, y: event.clientY };
           setRegion({ ...start.current, width: 0, height: 0 });
-          event.currentTarget.setPointerCapture(event.pointerId);
+          if (event.pointerType !== 'touch')
+            event.currentTarget.setPointerCapture(event.pointerId);
         }}
         onPointerMove={event => {
           if (disabled || editing) return;
@@ -288,7 +290,8 @@ export function AnnotationSelectionLayer({
         onPointerCancel={resetAreaSelection}
       />
       <span id={instructionsId} className="altertable-sr-only">
-        Click an item or drag to select an area. Use arrow keys to choose an
+        Click an item or drag with a mouse or pen to select an area. Scroll or
+        use Page Up/Down to move through the app. Use arrow keys to choose an
         item and <Kbd>Enter</Kbd> to annotate it. <Kbd>Shift+Enter</Kbd> starts
         a custom area; arrows resize it, Shift+arrows move it, and{' '}
         <Kbd>Enter</Kbd> confirms. <Kbd>Esc</Kbd> cancels an area, closes the

@@ -18,6 +18,7 @@ import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
 type DataWidgetBaseProps = {
   title: ReactNode;
+  /** Unique stable target for persisted feedback; overrides automatic evidence identity. */
   annotationId?: string;
   count?: number;
   description?: ReactNode;
@@ -52,12 +53,7 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
       props;
     if (reading.loading)
       return (
-        <DataWidgetContent
-          {...shell}
-          annotationId={shell.annotationId ?? shell.evidence?.id}
-          evidence={undefined}
-          aria-busy
-        >
+        <DataWidgetContent {...shell} aria-busy>
           <ContentSkeletonBody variant="panel" {...skeleton} />
         </DataWidgetContent>
       );
@@ -105,36 +101,43 @@ function DataWidgetContent({
       {content}
     </WidgetContent>
   );
-  const help = evidence && (
-    <AboutData
-      id={evidence.id}
-      references={{
-        kind: 'ids',
-        glossaryIds: evidence.glossaryIds,
-        queryNames: evidence.queryNames,
-      }}
-      aria-label={
-        typeof title === 'string' ? `Explore ${title}` : 'Explore this widget'
-      }
-      variant="ghost"
-      className="altertable-widget-heading-trigger"
-      shortcut={false}
-      title={title}
-      headerActions={<WidgetStatusControl status={status} />}
-      description={description}
-      visual={visual}
-      visualKind="widget"
-    >
-      <span className="altertable-widget-heading-label">{title}</span>
-      <AppIcon name="openDetails" />
-    </AboutData>
-  );
+  const explicitAnnotationId = annotationId ?? props.id;
+  const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
+  const help =
+    evidence && !busy ? (
+      <AboutData
+        id={evidence.id}
+        references={{
+          kind: 'ids',
+          glossaryIds: evidence.glossaryIds,
+          queryNames: evidence.queryNames,
+        }}
+        aria-label={
+          typeof title === 'string' ? `Explore ${title}` : 'Explore this widget'
+        }
+        variant="ghost"
+        className="altertable-widget-heading-trigger"
+        shortcut={false}
+        title={title}
+        headerActions={<WidgetStatusControl status={status} />}
+        description={description}
+        visual={visual}
+        visualKind="widget"
+      >
+        <span className="altertable-widget-heading-label">{title}</span>
+        <AppIcon name="openDetails" />
+      </AboutData>
+    ) : undefined;
 
   return (
     <section
       {...props}
       {...getAnnotationProps({
-        id: annotationId ?? props.id ?? evidence?.id ?? titleId,
+        id: explicitAnnotationId ?? evidence?.id ?? titleId,
+        fallbackId:
+          explicitAnnotationId === undefined && evidence?.id
+            ? titleId
+            : undefined,
         label: typeof title === 'string' ? title : undefined,
         evidence,
       })}

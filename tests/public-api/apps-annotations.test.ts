@@ -26,6 +26,9 @@ for (const failure of [false, true]) {
       `/annotations-host?annotations${failure ? '&annotation-error' : ''}`
     );
     const app = page.frameLocator('iframe');
+    const revenueCard = await app
+      .getByRole('region', { name: 'Revenue by month', exact: true })
+      .boundingBox();
     await app.getByRole('button', { name: 'Annotate', exact: true }).click();
     const selection = app.getByRole('button', {
       name: 'Annotation selection',
@@ -63,6 +66,12 @@ for (const failure of [false, true]) {
       await page
         .getByRole('button', { name: 'Allow annotations', exact: true })
         .click();
+      await expect.poll(() => comment.count()).toBe(0);
+      await page.mouse.click(
+        revenueCard!.x + revenueCard!.width / 2,
+        revenueCard!.y + revenueCard!.height / 2
+      );
+      await comment.fill('Compare with last year');
       await app
         .getByRole('button', { name: 'Add annotation', exact: true })
         .click();
@@ -210,6 +219,7 @@ test('Mod+Enter sends only from the focused annotation input and preserves draft
   await page
     .getByRole('button', { name: 'Allow submission', exact: true })
     .click();
+  await app.getByRole('button', { name: 'Annotation 1', exact: true }).click();
   await comment.press(`${modifier}+Enter`);
   await expect
     .poll(async () => JSON.parse((await drafts.textContent())!))
@@ -224,4 +234,544 @@ test('Mod+Enter sends only from the focused annotation input and preserves draft
         .textContent())!
     )
   ).toEqual(snapshot);
+});
+
+test('narrative cards sharing evidence remain separate whole-card annotation targets', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations');
+  const app = page.frameLocator('iframe');
+  const narrative = app.getByRole('region', {
+    name: 'Average trip duration',
+    exact: true,
+  });
+  const card = await narrative.boundingBox();
+  expect(card).toBeTruthy();
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.mouse.click(card!.x + card!.width / 2, card!.y + card!.height / 2);
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Explain this duration');
+  await app
+    .getByRole('button', { name: 'Add annotation', exact: true })
+    .click();
+  const output = page.getByRole('status', {
+    name: 'Annotation drafts',
+    exact: true,
+  });
+  await expect
+    .poll(async () => JSON.parse((await output.textContent()) || '[]').length)
+    .toBe(1);
+  const [draft] = JSON.parse((await output.textContent())!);
+  expect(draft.target.label).toBe('Average trip duration');
+  expect(draft.target.kind).toBe('widget');
+  expect(draft.target.queryNames).toEqual(['revenue']);
+  expect(draft.context.rect.width).toBeCloseTo(card!.width, 0);
+  expect(draft.context.rect.height).toBeCloseTo(card!.height, 0);
+});
+
+test('outside clicks cancel unfinished edits and require a second click to select another card', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations');
+  const app = page.frameLocator('iframe');
+  const card = await app
+    .getByRole('region', { name: 'Customers', exact: true })
+    .boundingBox();
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('ArrowRight');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Saved feedback');
+  await app
+    .getByRole('button', { name: 'Add annotation', exact: true })
+    .click();
+  await app.getByRole('button', { name: 'Annotation 1', exact: true }).click();
+  await comment.fill('Unfinished edit');
+  await comment.click();
+  expect(await comment.inputValue()).toBe('Unfinished edit');
+  await page.mouse.click(card!.x + card!.width / 2, card!.y + card!.height / 2);
+  await expect.poll(() => comment.count()).toBe(0);
+  await page.mouse.click(card!.x + card!.width / 2, card!.y + card!.height / 2);
+  await expect.poll(() => comment.inputValue()).toBe('');
+  await comment.fill('Unfinished new comment');
+  await page
+    .getByRole('button', { name: 'Allow annotations', exact: true })
+    .click();
+  await expect.poll(() => comment.count()).toBe(0);
+  const drafts = JSON.parse(
+    (await page
+      .getByRole('status', { name: 'Annotation drafts', exact: true })
+      .textContent())!
+  );
+  expect(drafts).toHaveLength(1);
+  expect(drafts[0].comment).toBe('Saved feedback');
+});
+
+test('annotation mode scrolls by wheel and page keys while selected geometry follows the card', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations&annotation-scroll');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('ArrowRight');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  const before = await app
+    .getByRole('region', { name: 'Annotation editor', exact: true })
+    .boundingBox();
+  const layer = await selection.boundingBox();
+  await page.mouse.move(layer!.x + 10, layer!.y + layer!.height / 2);
+  await page.mouse.wheel(0, 60);
+  await expect
+    .poll(
+      async () =>
+        (await app
+          .getByRole('region', { name: 'Annotation editor', exact: true })
+          .boundingBox())!.y
+    )
+    .toBeLessThan(before!.y - 20);
+  await comment.press('Escape');
+  const frame = page.frames().find(frame => frame.parentFrame());
+  const scrollY = await frame!.evaluate(() => window.scrollY);
+  await selection.press('PageDown');
+  await expect
+    .poll(() => frame!.evaluate(() => window.scrollY))
+    .toBeGreaterThan(scrollY + 100);
+});
+
+for (const [title, expectedId] of [
+  ['Trip narrative', undefined],
+  ['Explicit narrative', 'explicit-narrative'],
+] as const) {
+  test(`${title} has a whole-card target without evidence`, async ({
+    page,
+  }) => {
+    await page.goto('/annotations-host?annotations');
+    const app = page.frameLocator('iframe');
+    await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+    const selection = app.getByRole('button', {
+      name: 'Annotation selection',
+      exact: true,
+    });
+    await selection.press('Home');
+    for (let index = 0; index < (title === 'Trip narrative' ? 3 : 4); index++)
+      await selection.press('ArrowRight');
+    await selection.press('Enter');
+    await app
+      .getByRole('textbox', { name: 'Annotation text', exact: true })
+      .fill('Narrative feedback');
+    await app
+      .getByRole('button', { name: 'Add annotation', exact: true })
+      .click();
+    const drafts = page.getByRole('status', {
+      name: 'Annotation drafts',
+      exact: true,
+    });
+    await expect
+      .poll(async () => JSON.parse((await drafts.textContent()) || '[]').length)
+      .toBe(1);
+    const [draft] = JSON.parse((await drafts.textContent())!);
+    expect(draft.target.label).toBe(title);
+    expect(draft.target.id).toBeTruthy();
+    if (expectedId) expect(draft.target.id).toBe(expectedId);
+  });
+}
+
+test('touch panning preserves unfinished comments and an outside tap dismisses them', async ({
+  mobilePage: page,
+}) => {
+  await page.goto('/annotations-host?annotations&annotation-scroll');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  const layer = await selection.boundingBox();
+  await selection.press('Home');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Keep this unfinished touch comment');
+  const frame = page.frames().find(frame => frame.parentFrame())!;
+  const scrollingStopped = frame.evaluate(
+    () =>
+      new Promise<void>(resolve => {
+        document.addEventListener('scrollend', () => resolve(), { once: true });
+      })
+  );
+  const client = await page.context().newCDPSession(page);
+  const x = layer!.x + layer!.width / 2;
+  const y = layer!.y + layer!.height - 60;
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x, y }],
+  });
+  for (let distance = 20; distance <= 200; distance += 20) {
+    await client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x, y: y - distance }],
+    });
+  }
+  await client.send('Input.dispatchTouchEvent', {
+    type: 'touchEnd',
+    touchPoints: [],
+  });
+  await scrollingStopped;
+  await expect
+    .poll(() => frame.evaluate(() => window.scrollY))
+    .toBeGreaterThan(50);
+  expect(await comment.inputValue()).toBe('Keep this unfinished touch comment');
+  const currentLayer = await selection.boundingBox();
+  const composer = await app
+    .getByRole('region', { name: 'Annotation editor', exact: true })
+    .boundingBox();
+  const outsideY =
+    composer!.y + composer!.height / 2 <
+    currentLayer!.y + currentLayer!.height / 2
+      ? currentLayer!.y + currentLayer!.height - 80
+      : currentLayer!.y + 80;
+  await page.touchscreen.tap(
+    currentLayer!.x + currentLayer!.width / 2,
+    outsideY
+  );
+  await expect.poll(() => comment.count()).toBe(0);
+  await selection.press('Home');
+  await selection.press('Enter');
+  await app
+    .getByRole('textbox', { name: 'Annotation text', exact: true })
+    .press('Escape');
+  const revenue = await app
+    .getByText('Explore revenue', { exact: true })
+    .boundingBox();
+  await page.touchscreen.tap(
+    revenue!.x + revenue!.width / 2,
+    revenue!.y + revenue!.height / 2
+  );
+  await expect
+    .poll(() =>
+      app.getByRole('textbox', { name: 'Annotation text', exact: true }).count()
+    )
+    .toBe(1);
+});
+
+test('mouse region selection and saved pins follow the report while scrolling', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations&annotation-scroll');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const layer = await app
+    .getByRole('button', { name: 'Annotation selection', exact: true })
+    .boundingBox();
+  await page.mouse.move(layer!.x + 30, layer!.y + 130);
+  await page.mouse.down();
+  await page.mouse.move(layer!.x + 180, layer!.y + 200, { steps: 5 });
+  await page.mouse.up();
+  await app
+    .getByRole('textbox', { name: 'Annotation text', exact: true })
+    .fill('Change this area');
+  await app
+    .getByRole('button', { name: 'Add annotation', exact: true })
+    .click();
+  const pin = app.getByRole('button', { name: 'Annotation 1', exact: true });
+  await expect.poll(() => pin.isVisible()).toBe(true);
+  const before = await pin.boundingBox();
+  await page.mouse.move(layer!.x + 10, layer!.y + 300);
+  await page.mouse.wheel(0, 60);
+  await expect
+    .poll(async () => (await pin.boundingBox())!.y)
+    .toBeCloseTo(before!.y - 60, 0);
+  await pin.click();
+  await expect
+    .poll(() =>
+      app
+        .getByRole('textbox', { name: 'Annotation text', exact: true })
+        .inputValue()
+    )
+    .toBe('Change this area');
+  const drafts = JSON.parse(
+    (await page
+      .getByRole('status', { name: 'Annotation drafts', exact: true })
+      .textContent())!
+  );
+  expect(drafts[0].context.region).toBeTruthy();
+});
+
+test('window deactivation and tab switching preserve unfinished comments until a confirmed host click', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('Home');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Keep this unfinished comment when I return');
+  const frame = page.frames().find(frame => frame.parentFrame())!;
+  await frame.evaluate(() => window.dispatchEvent(new Event('blur')));
+  expect(await comment.inputValue()).toBe(
+    'Keep this unfinished comment when I return'
+  );
+  const otherTab = await page.context().newPage();
+  await otherTab.goto('/');
+  await otherTab.bringToFront();
+  await page.bringToFront();
+  expect(await comment.inputValue()).toBe(
+    'Keep this unfinished comment when I return'
+  );
+  await otherTab.close();
+  await page
+    .getByRole('button', { name: 'Allow annotations', exact: true })
+    .click();
+  await expect.poll(() => comment.count()).toBe(0);
+  expect(
+    JSON.parse(
+      (await page
+        .getByRole('status', { name: 'Annotation drafts', exact: true })
+        .textContent())!
+    )
+  ).toEqual([]);
+});
+
+test('a delayed host dismissal cannot close an editor opened by a later selection', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    if (window.parent === window) return;
+    let replaying = false;
+    window.addEventListener('message', event => {
+      if (replaying || !event.data?.state?.presentation?.annotations?.dismissal)
+        return;
+      event.stopImmediatePropagation();
+      setTimeout(() => {
+        replaying = true;
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: event.data,
+            origin: event.origin,
+            source: event.source,
+          })
+        );
+        replaying = false;
+        document.body.dataset.dismissalDelivered = 'true';
+      }, 2000);
+    });
+  });
+  await page.goto('/annotations-host?annotations');
+  const app = page.frameLocator('iframe');
+  const card = await app
+    .getByRole('region', { name: 'Customers', exact: true })
+    .boundingBox();
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('Home');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Previous comment');
+  await page
+    .getByRole('button', { name: 'Allow annotations', exact: true })
+    .click();
+  await page.mouse.click(card!.x + card!.width / 2, card!.y + card!.height / 2);
+  await expect.poll(() => comment.count()).toBe(0);
+  await page.mouse.click(card!.x + card!.width / 2, card!.y + card!.height / 2);
+  await comment.fill('New comment after the host click');
+  const frame = page.frames().find(frame => frame.parentFrame())!;
+  await expect
+    .poll(() => frame.evaluate(() => document.body.dataset.dismissalDelivered))
+    .toBe('true');
+  expect(await comment.inputValue()).toBe('New comment after the host click');
+});
+
+test('persisted evidence-derived targets survive reloads and remain unresolved when ambiguous', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations&annotation-existing');
+  const app = page.frameLocator('iframe');
+  const pin = app.getByRole('button', { name: 'Annotation 1', exact: true });
+  await expect.poll(() => pin.count()).toBe(1);
+  await pin.click();
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  expect(await comment.inputValue()).toBe(
+    'Persisted feedback from the previous SDK'
+  );
+  await comment.press('Escape');
+  await app
+    .getByRole('button', { name: 'Annotation selection', exact: true })
+    .press('Escape');
+  await app
+    .getByRole('button', { name: 'Toggle shared narrative', exact: true })
+    .click();
+  await expect.poll(() => pin.count()).toBe(0);
+  await app
+    .getByRole('button', { name: 'Toggle shared narrative', exact: true })
+    .click();
+  await expect.poll(() => pin.count()).toBe(1);
+  await page.getByRole('button', { name: 'Replace app', exact: true }).click();
+  await expect.poll(() => pin.count()).toBe(1);
+  await pin.press('Enter');
+  expect(await comment.inputValue()).toBe(
+    'Persisted feedback from the previous SDK'
+  );
+});
+
+test('saved collision fallback targets still resolve when their evidence becomes unique', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('Home');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Feedback on the revenue card');
+  await app
+    .getByRole('button', { name: 'Add annotation', exact: true })
+    .click();
+  const output = page.getByRole('status', {
+    name: 'Annotation drafts',
+    exact: true,
+  });
+  await expect
+    .poll(async () => JSON.parse((await output.textContent()) || '[]').length)
+    .toBe(1);
+  const [draft] = JSON.parse((await output.textContent())!);
+  expect(draft.target.id).not.toBe('monthly-revenue');
+  await selection.press('Escape');
+  await app
+    .getByRole('button', { name: 'Toggle shared narrative', exact: true })
+    .click();
+  const pin = app.getByRole('button', { name: 'Annotation 1', exact: true });
+  await expect.poll(() => pin.count()).toBe(1);
+  await pin.press('Enter');
+  expect(await comment.inputValue()).toBe('Feedback on the revenue card');
+});
+
+test('explicit annotation identities remain authoritative alongside automatic evidence collisions', async ({
+  page,
+}) => {
+  await page.goto(
+    '/annotations-host?annotations&annotation-explicit-collision'
+  );
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('Home');
+  for (let index = 0; index < 3; index++) await selection.press('ArrowRight');
+  await selection.press('Enter');
+  await app
+    .getByRole('textbox', { name: 'Annotation text', exact: true })
+    .fill('Explicit target feedback');
+  await app
+    .getByRole('button', { name: 'Add annotation', exact: true })
+    .click();
+  const output = page.getByRole('status', {
+    name: 'Annotation drafts',
+    exact: true,
+  });
+  await expect
+    .poll(async () => JSON.parse((await output.textContent()) || '[]').length)
+    .toBe(1);
+  const [draft] = JSON.parse((await output.textContent())!);
+  expect(draft.target).toMatchObject({
+    id: 'monthly-revenue',
+    label: 'Explicitly identified revenue',
+  });
+});
+
+test('a narrative retains its legacy evidence identity from loading through ready', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations&annotation-loading');
+  const app = page.frameLocator('iframe');
+  expect(
+    await app
+      .getByRole('button', { name: 'Explore Loading narrative', exact: true })
+      .count()
+  ).toBe(0);
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('Home');
+  for (let index = 0; index < 3; index++) await selection.press('ArrowRight');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Feedback while loading');
+  await app
+    .getByRole('button', { name: 'Add annotation', exact: true })
+    .click();
+  const output = page.getByRole('status', {
+    name: 'Annotation drafts',
+    exact: true,
+  });
+  await expect
+    .poll(async () => JSON.parse((await output.textContent()) || '[]').length)
+    .toBe(1);
+  const [draft] = JSON.parse((await output.textContent())!);
+  expect(draft.target.id).toBe('loading-narrative');
+  await selection.press('Escape');
+  await app
+    .getByRole('button', { name: 'Toggle narrative loading', exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      app
+        .getByRole('button', { name: 'Explore Loading narrative', exact: true })
+        .count()
+    )
+    .toBe(1);
+  const pin = app.getByRole('button', { name: 'Annotation 1', exact: true });
+  await expect.poll(() => pin.count()).toBe(1);
+  await pin.press('Enter');
+  expect(await comment.inputValue()).toBe('Feedback while loading');
 });

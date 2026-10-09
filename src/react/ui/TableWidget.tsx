@@ -292,11 +292,10 @@ function TableWidgetContent<Row>({
     <VisualizationWidget
       {...props}
       title={title}
-      annotationId={props.annotationId ?? evidence?.id}
       count={loading ? undefined : count}
       description={description}
       action={action}
-      evidence={loading ? undefined : evidence}
+      evidence={evidence}
       aria-busy={loading || props['aria-busy']}
       footer={pager}
       visual={<div className="altertable-table-widget-content">{table}</div>}

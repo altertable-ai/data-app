@@ -55,8 +55,8 @@ export function MetricWidget(props: MetricWidgetProps) {
       return (
         <MetricWidgetContent
           {...rest}
-          annotationId={rest.annotationId ?? metric.evidence?.id}
           label={metric.label}
+          evidence={metric.evidence}
           loading
         />
       );
@@ -98,7 +98,7 @@ function MetricWidgetContent({
       className={classNames('altertable-metric-widget', className)}
       title={label}
       annotationId={annotationId}
-      evidence={loading ? undefined : evidence}
+      evidence={evidence}
       aria-busy={loading || props['aria-busy']}
       action={action}
       status={status}
