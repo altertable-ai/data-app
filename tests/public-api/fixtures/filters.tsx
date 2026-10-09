@@ -142,8 +142,34 @@ const content = view.content(source => (
 ));
 
 function App() {
+  const hideControls = new URLSearchParams(location.search).has('hideControls');
+  const customControls = new URLSearchParams(location.search).has(
+    'customControls'
+  );
   return (
-    <DataApp view={view} datasets={[dataset]} story={() => []}>
+    <DataApp
+      view={view}
+      datasets={[dataset]}
+      story={() => []}
+      renderSearch={
+        hideControls
+          ? () => null
+          : customControls
+            ? controls => (
+                <section aria-label="Custom search">{controls}</section>
+              )
+            : undefined
+      }
+      renderVariables={
+        hideControls
+          ? () => null
+          : customControls
+            ? controls => (
+                <section aria-label="Custom variables">{controls}</section>
+              )
+            : undefined
+      }
+    >
       <DataSection content={content} />
     </DataApp>
   );

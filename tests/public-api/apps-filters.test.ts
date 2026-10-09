@@ -15,6 +15,62 @@ function decode(text: string | null) {
   return JSON.parse(text ?? '{}');
 }
 
+test('hidden control regions leave no empty row between the header and content', async ({
+  page,
+}) => {
+  await page.goto('/filters?hideControls');
+  const main = page.getByRole('main');
+  const header = await main
+    .locator('header')
+    .filter({
+      has: page.getByRole('heading', { name: 'Filter workflows', exact: true }),
+    })
+    .boundingBox();
+  const result = await page
+    .getByRole('region', { name: 'Result', exact: true })
+    .boundingBox();
+  const gap = await main.evaluate(element =>
+    parseFloat(getComputedStyle(element).rowGap)
+  );
+  expect(result!.y - header!.y - header!.height).toBeCloseTo(gap, 0);
+  expect(await page.getByRole('searchbox').count()).toBe(0);
+  expect(
+    await page.getByRole('button', { name: 'Alpha Display' }).count()
+  ).toBe(0);
+});
+
+test('custom search and variable slots retain generated controls and URL state', async ({
+  page,
+}) => {
+  await page.goto('/filters?customControls');
+  const search = page.getByRole('region', { name: 'Custom search' });
+  const variables = page.getByRole('region', { name: 'Custom variables' });
+  expect(
+    await search.getByRole('searchbox', { name: 'Search', exact: true }).count()
+  ).toBe(1);
+  expect(await variables.getByRole('searchbox').count()).toBe(0);
+  expect(
+    await search.getByRole('button', { name: 'Alpha Display' }).count()
+  ).toBe(0);
+  const displayed = page.getByRole('status', { name: 'Displayed filters' });
+  await search.getByRole('searchbox').fill('France');
+  await expect
+    .poll(async () => decode(await displayed.textContent()).search)
+    .toBe('France');
+  expect(new URL(page.url()).searchParams.get('q')).toBe('France');
+  await choose(page, variables, 'Display', 'Beta');
+  await expect
+    .poll(async () => decode(await displayed.textContent()).choice)
+    .toBe('b');
+  await variables
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  await expect
+    .poll(async () => decode(await displayed.textContent()).search)
+    .toBe('');
+  expect(await search.getByRole('searchbox').inputValue()).toBe('');
+});
+
 test('generated search has its own row above filters with consistent hover borders', async ({
   page,
 }) => {

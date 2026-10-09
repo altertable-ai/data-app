@@ -10,7 +10,6 @@ import type {
 } from '@/src/core/filters';
 import type { AppVariable } from '@/src/core/variables';
 import { SearchField } from '@/src/react/ui/SearchField';
-import { VariableBar } from '@/src/react/ui/VariableBar';
 import { ChoicePicker } from '@/src/react/ui/ChoicePicker';
 import { DateRangePicker } from '@/src/react/ui/DateRangePicker';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
@@ -79,14 +78,14 @@ export function useViewVariables<Variables extends VariableCollection>(
   const facetState = new Map(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
-  const controls: ReactNode[] = [];
-  const searches: ReactNode[] = [];
+  const variableControls: ReactNode[] = [];
+  const searchControls: ReactNode[] = [];
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const definition = definitions[name]!;
     const value = variables.values[name];
     if (definition.kind === 'dateRange') {
       const selection = value as DateRangeSelection;
-      controls.push(
+      variableControls.push(
         <DateRangePicker
           key={name}
           {...dateRangeControl(definition, selection, next =>
@@ -100,7 +99,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     } else if (definition.kind === 'dimension') {
       const filter = definition as DimensionVariable;
       const facet = facetState.get(name);
-      controls.push(
+      variableControls.push(
         <DimensionPicker
           key={name}
           filter={filter}
@@ -118,7 +117,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     } else if (definition.kind === 'numberFilter') {
-      controls.push(
+      variableControls.push(
         <NumberFilterPicker
           key={name}
           filter={definition as NumberFilter}
@@ -133,7 +132,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       );
     } else if (definition.kind === 'booleanFilter') {
       const selected = value as BooleanSelection;
-      controls.push(
+      variableControls.push(
         <Select
           key={name}
           label={definition.label}
@@ -157,7 +156,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     } else if (definition.kind === 'multiChoice') {
-      controls.push(
+      variableControls.push(
         <ChoicePicker
           key={name}
           selectionMode="multiple"
@@ -175,7 +174,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     } else if (definition.kind === 'choice') {
-      controls.push(
+      variableControls.push(
         <Select
           key={name}
           label={definition.label ?? name}
@@ -190,7 +189,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
     } else if (definition.kind === 'search') {
-      searches.push(
+      searchControls.push(
         <SearchField
           key={name}
           label={definition.label ?? name}
@@ -216,24 +215,14 @@ export function useViewVariables<Variables extends VariableCollection>(
     }
   );
   if (hasActiveFilters)
-    controls.push(
+    variableControls.push(
       <FilterActions key="filter-actions" onClear={variables.clearAll} />
-    );
-
-  if (searches.length)
-    controls.unshift(
-      <VariableBar
-        key="searches"
-        className="altertable-variable-searches"
-        aria-label="Search variables"
-      >
-        {searches}
-      </VariableBar>
     );
 
   return {
     ...variables,
     resolved,
-    controls: controls.length ? controls : null,
+    searchControls: searchControls.length ? searchControls : null,
+    variableControls: variableControls.length ? variableControls : null,
   };
 }

@@ -18,6 +18,7 @@ import type { DataContext } from '@/src/react/ui/data-context';
 import type { BoundStory } from '@/src/react/ui/story';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { VariableBar } from '@/src/react/ui/VariableBar';
+import { Stack } from '@/src/react/ui/Stack';
 import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
@@ -37,7 +38,15 @@ export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   /** Actual request activity, including retries with retained data. */
   refreshing?: boolean;
   cancel?: () => unknown;
-  controls?: ReactNode;
+  searchControls?: ReactNode;
+  variableControls?: ReactNode;
+};
+
+export type DataAppControlRenderers = {
+  /** Compose generated search controls; replaces the default search row. */
+  renderSearch?: (controls: ReactNode) => ReactNode;
+  /** Compose generated variables and filter actions; replaces the default variable bar. */
+  renderVariables?: (controls: ReactNode) => ReactNode;
 };
 
 export type StaticDataAppProps = DataAppBaseProps & {
@@ -46,14 +55,15 @@ export type StaticDataAppProps = DataAppBaseProps & {
 };
 
 export type DataAppProps<Data = unknown, Input = unknown> =
-  | (DataAppBaseProps & {
-      request: DataAppRequest<Data, Input>;
-      /** Findings are always derived from the result currently visible to the reader. */
-      story: BoundStory<Data, Input>;
-      /** Export every distinct dataset in the displayed result. */
-      csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
-      queries?: never;
-    })
+  | (DataAppBaseProps &
+      DataAppControlRenderers & {
+        request: DataAppRequest<Data, Input>;
+        /** Findings are always derived from the result currently visible to the reader. */
+        story: BoundStory<Data, Input>;
+        /** Export every distinct dataset in the displayed result. */
+        csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
+        queries?: never;
+      })
   | (StaticDataAppProps & {
       request?: never;
       story?: never;
@@ -153,6 +163,26 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
     </AppToolbar>
   );
 
+  const searchRegion = request?.searchControls ? (
+    props.renderSearch ? (
+      props.renderSearch(request.searchControls)
+    ) : (
+      <VariableBar
+        className="altertable-variable-searches"
+        aria-label="Search variables"
+      >
+        {request.searchControls}
+      </VariableBar>
+    )
+  ) : null;
+  const variableRegion = request?.variableControls ? (
+    props.renderVariables ? (
+      props.renderVariables(request.variableControls)
+    ) : (
+      <VariableBar>{request.variableControls}</VariableBar>
+    )
+  ) : null;
+
   return (
     <InspectionProvider>
       <InspectionContext
@@ -183,7 +213,12 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
               toolbar={toolbar}
             />
           )}
-          {request?.controls && <VariableBar>{request?.controls}</VariableBar>}
+          {(searchRegion != null || variableRegion != null) && (
+            <Stack gap="sm">
+              {searchRegion}
+              {variableRegion}
+            </Stack>
+          )}
           <div ref={bodyRef} className="altertable-app-body">
             {props.children}
           </div>

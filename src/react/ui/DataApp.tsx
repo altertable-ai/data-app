@@ -10,6 +10,7 @@ import type { StoryFinding } from '@/src/react/ui/story';
 import {
   DataAppFrame,
   type DataAppBaseProps,
+  type DataAppControlRenderers,
 } from '@/src/react/ui/DataAppFrame';
 import {
   PrimaryViewContext,
@@ -20,21 +21,22 @@ import {
 export type DataAppProps<Data, Input = unknown> = Omit<
   DataAppBaseProps,
   'dataContext'
-> & {
-  view: DeclaredView<Data, Input> & {
-    scope(snapshot: DisplayedSnapshot<Data, Input>): string;
+> &
+  DataAppControlRenderers & {
+    view: DeclaredView<Data, Input> & {
+      scope(snapshot: DisplayedSnapshot<Data, Input>): string;
+    };
+    story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
+      StoryFinding,
+      'evidence'
+    > & {
+      evidence: RegisteredBinding;
+    })[];
+    datasets: readonly [
+      ExportDataset<Data, Input>,
+      ...ExportDataset<Data, Input>[],
+    ];
   };
-  story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
-    StoryFinding,
-    'evidence'
-  > & {
-    evidence: RegisteredBinding;
-  })[];
-  datasets: readonly [
-    ExportDataset<Data, Input>,
-    ...ExportDataset<Data, Input>[],
-  ];
-};
 
 /** Executes the primary view and owns its controls, inspection, exports, and stories. */
 export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {

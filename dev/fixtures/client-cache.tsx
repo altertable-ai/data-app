@@ -130,7 +130,8 @@ function Panel({ id, hooks }: { id: string; hooks: typeof hooksA }) {
   return (
     <section data-testid={id}>
       <p data-testid="value">{result.snapshot?.data ?? 'pending'}</p>
-      {result.controls}
+      {result.searchControls}
+      {result.variableControls}
       <button onClick={() => void result.cancel()}>Cancel</button>
     </section>
   );

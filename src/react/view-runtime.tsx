@@ -13,7 +13,8 @@ export type ViewResult<Data, Input> = {
   cancel: () => unknown;
   refreshing: boolean;
   queries?: DisclosedQuery[];
-  controls?: ReactNode;
+  searchControls?: ReactNode;
+  variableControls?: ReactNode;
   emptyFallback: EmptyContent;
 };
 
