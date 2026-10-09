@@ -1,10 +1,7 @@
 import type { ReactNode } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
-import {
-  ViewFilterControls,
-  type ControlGroup,
-} from '@/src/react/view-filter-controls';
+import { ViewControlBar } from '@/src/react/view-control-bar';
 import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
   NumberFilter,
@@ -81,24 +78,24 @@ export function useViewVariables<Variables extends VariableCollection>(
   const facetState = new Map(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
-  const groups: Record<'scope' | 'display', ControlGroup> = {
-    scope: {
-      primary: [],
-      secondary: [],
-      activeCount: 0,
-      activeSecondaryCount: 0,
-    },
-    display: {
-      primary: [],
-      secondary: [],
-      activeCount: 0,
-      activeSecondaryCount: 0,
-    },
+  const filters: { primary: ReactNode[]; secondary: ReactNode[] } = {
+    primary: [],
+    secondary: [],
   };
+  const displayOptions: typeof filters = { primary: [], secondary: [] };
+  let activeSecondaryFilterCount = 0;
+  let changedDisplayOptionCount = 0;
+  let hasActiveFilters = false;
   const searchControls: ReactNode[] = [];
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const definition = definitions[name]!;
     const value = variables.values[name];
+    const variable = definition as AppVariable<any>;
+    if (
+      variable.clearValue !== undefined &&
+      !variable.same(value, variable.clearValue)
+    )
+      hasActiveFilters = true;
     const groupName = definition.presentation?.group ?? 'scope';
     let control: ReactNode = null;
     if (definition.kind === 'dateRange') {
@@ -225,9 +222,9 @@ export function useViewVariables<Variables extends VariableCollection>(
       );
     }
     if (definition.kind === 'search') continue;
-    const group = groups[groupName];
+    const controls = groupName === 'display' ? displayOptions : filters;
     const prominence = definition.presentation?.prominence ?? 'primary';
-    group[prominence].push(
+    controls[prominence].push(
       groupName === 'scope' && prominence === 'secondary' ? (
         <div key={name} className="altertable-secondary-field">
           {definition.kind !== 'booleanFilter' &&
@@ -245,28 +242,23 @@ export function useViewVariables<Variables extends VariableCollection>(
         control
       )
     );
-    const variable = definition as AppVariable<any>;
     const baseline =
       groupName === 'display'
         ? variable.defaultValue
         : (variable.clearValue ?? variable.defaultValue);
     if (!variable.same(value, baseline)) {
-      group.activeCount++;
-      if (prominence === 'secondary') group.activeSecondaryCount++;
+      if (groupName === 'display') changedDisplayOptionCount++;
+      else if (prominence === 'secondary') activeSecondaryFilterCount++;
     }
   }
-  const hasActiveFilters = Object.entries(definitions).some(
-    ([name, definition]) => {
-      const variable = definition as AppVariable<any>;
-      return (
-        variable.clearValue !== undefined &&
-        !variable.same(variables.values[name], variable.clearValue)
-      );
-    }
-  );
-  const hasControls = Object.values(groups).some(
-    group => group.primary.length || group.secondary.length
-  );
+  const orderedDisplayOptions = [
+    ...displayOptions.primary,
+    ...displayOptions.secondary,
+  ];
+  const hasControls =
+    filters.primary.length > 0 ||
+    filters.secondary.length > 0 ||
+    orderedDisplayOptions.length > 0;
 
   return {
     ...variables,
@@ -274,8 +266,12 @@ export function useViewVariables<Variables extends VariableCollection>(
     searchControls: searchControls.length ? searchControls : null,
     filterControls:
       hasControls || hasActiveFilters ? (
-        <ViewFilterControls
-          groups={groups}
+        <ViewControlBar
+          primaryFilters={filters.primary}
+          secondaryFilters={filters.secondary}
+          activeSecondaryFilterCount={activeSecondaryFilterCount}
+          displayOptions={orderedDisplayOptions}
+          changedDisplayOptionCount={changedDisplayOptionCount}
           onClear={hasActiveFilters ? variables.clearAll : undefined}
         />
       ) : null,

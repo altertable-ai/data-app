@@ -17,12 +17,10 @@ available when they have zero matches.
 ## Declare controls once
 
 Use `searchVariable()`, `choiceVariable()`, and `dateRangeVariable()` in a view's
-`variables`. `<DataApp view={view}>` generates their controls and keeps values in the URL.
-Search controls occupy a dedicated row above the other variables and filters.
-Search appears automatically when the view declares a search variable.
-Set `<DataApp showSearch={false}>` to hide its row without changing search values.
-Filters and display options also appear automatically from declared variables.
-Set `<DataApp showFilters={false}>` to hide that region without changing its values.
+`variables`. `<DataApp view={view}>` generates search, filters, and display options
+and keeps their values in the URL. Search occupies its own row above the controls.
+Set `showSearch={false}` or `showFilters={false}` on `<DataApp>` to hide the
+corresponding region while preserving its values; `showFilters` includes display options.
 Keep local search out of the operation input when it only filters loaded rows.
 
 ### Organize controls by intent
@@ -37,8 +35,8 @@ Set `presentation.group` to `display` for controls that change ordering or prese
 rather than which records are included. Display options live in a popover opened
 by the sliders icon alongside the filters. Set `presentation.prominence` to `secondary`
 to collapse less frequent scope filters behind More filters, or place display options
-in the popover's secondary section. Both properties are optional; defaults are
-`scope` and `primary`. Declaration order is preserved within each group.
+after primary display options. Defaults are `scope` and `primary`.
+Declaration order is preserved within each priority.
 
 ```ts
 const active = booleanFilter({
@@ -55,12 +53,11 @@ const sort = choiceVariable({
 });
 ```
 
-More filters shows an active count, including restrictions present by default. Each
-control counts once, regardless of how many values it selects. Scope controls use
-their unrestricted value when available, otherwise their default. The display-options
-trigger indicates changes from defaults across its whole panel. Collapsing filters
-or dismissing display options keeps applied values. Presentation metadata does not
-change URL state, query inputs, or clear/reset behavior. Search retains its dedicated row.
+More filters counts active secondary restrictions, including those applied by default.
+Each control counts once against its unrestricted value when available, otherwise its
+default. The display-options indicator shows changes from defaults. Collapsing either panel
+preserves applied values; presentation metadata does not change query inputs or
+clear/reset behavior.
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,
 maximum range, time zone, and comparison rules. `defineTimeView()` is the compact

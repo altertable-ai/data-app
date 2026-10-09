@@ -19,7 +19,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
   page,
 }) => {
   await page.goto('/filter-presentation');
-  const scope = page.getByRole('group', { name: 'Filters', exact: true });
+  const scope = page.getByRole('group', { name: 'View controls', exact: true });
   const display = page.getByRole('dialog', {
     name: 'Display options',
     exact: true,
@@ -315,7 +315,7 @@ test('display settings retain nested calendar changes and dismiss one overlay at
     .toBe(true);
 });
 
-test('search with display-only controls does not create an empty scope row', async ({
+test('search with display-only controls keeps one view controls bar', async ({
   page,
 }) => {
   await page.goto('/filter-presentation?displayOnly');
@@ -325,13 +325,11 @@ test('search with display-only controls does not create an empty scope row', asy
   await expect
     .poll(() => page.getByRole('table').getByRole('row').count())
     .toBe(2);
-  expect(
-    await page.getByRole('group', { name: 'Filters', exact: true }).count()
-  ).toBe(0);
   const options = page.getByRole('group', {
-    name: 'View options',
+    name: 'View controls',
     exact: true,
   });
+  expect(await options.count()).toBe(1);
   await options.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect
     .poll(() =>
@@ -374,7 +372,10 @@ test('automatic filters retain separate search controls and URL state', async ({
 }) => {
   await page.goto('/filters');
   const search = page.getByRole('group', { name: 'Search variables' });
-  const filters = page.getByRole('group', { name: 'Filters', exact: true });
+  const filters = page.getByRole('group', {
+    name: 'View controls',
+    exact: true,
+  });
   expect(
     await search.getByRole('searchbox', { name: 'Search', exact: true }).count()
   ).toBe(1);
@@ -413,7 +414,9 @@ test('hiding filters preserves their URL values and leaves automatic search avai
   const search = page.getByRole('searchbox', { name: 'Search', exact: true });
   expect(await search.isVisible()).toBe(true);
   expect(
-    await page.getByRole('group', { name: 'Filters', exact: true }).count()
+    await page
+      .getByRole('group', { name: 'View controls', exact: true })
+      .count()
   ).toBe(0);
   const displayed = page.getByRole('status', { name: 'Displayed filters' });
   await expect

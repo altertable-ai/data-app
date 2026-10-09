@@ -114,14 +114,9 @@
     var(--atbl-font);
 }
 .altertable-display-options-dialog {
-  outline: none;
-}
-.altertable-display-options-section {
   display: grid;
   gap: var(--atbl-space-sm);
-}
-.altertable-display-options-section + .altertable-display-options-section {
-  margin-block-start: var(--atbl-space-sm);
+  outline: none;
 }
 .altertable-display-option > * {
   width: 100%;
