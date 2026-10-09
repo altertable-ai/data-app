@@ -66,6 +66,7 @@ for (const failure of [false, true]) {
       await page
         .getByRole('button', { name: 'Allow annotations', exact: true })
         .click();
+      await expect.poll(() => comment.count()).toBe(0);
       await page.mouse.click(
         revenueCard!.x + revenueCard!.width / 2,
         revenueCard!.y + revenueCard!.height / 2
@@ -393,7 +394,7 @@ for (const [title, expectedId] of [
   });
 }
 
-test('touch panning scrolls in annotation mode without creating a region', async ({
+test('touch panning preserves unfinished comments and an outside tap dismisses them', async ({
   mobilePage: page,
 }) => {
   await page.goto('/annotations-host?annotations&annotation-scroll');
@@ -404,6 +405,13 @@ test('touch panning scrolls in annotation mode without creating a region', async
     exact: true,
   });
   const layer = await selection.boundingBox();
+  await selection.press('Home');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Keep this unfinished touch comment');
   const client = await page.context().newCDPSession(page);
   const x = layer!.x + layer!.width / 2;
   const y = layer!.y + layer!.height - 60;
@@ -425,17 +433,21 @@ test('touch panning scrolls in annotation mode without creating a region', async
   await expect
     .poll(() => frame.evaluate(() => window.scrollY))
     .toBeGreaterThan(50);
-  expect(
-    await app
-      .getByRole('textbox', { name: 'Annotation text', exact: true })
-      .count()
-  ).toBe(0);
+  expect(await comment.inputValue()).toBe('Keep this unfinished touch comment');
+  await page.touchscreen.tap(layer!.x + 10, layer!.y + 20);
+  await expect.poll(() => comment.count()).toBe(0);
   await selection.press('Home');
   await selection.press('Enter');
   await app
     .getByRole('textbox', { name: 'Annotation text', exact: true })
     .press('Escape');
-  await page.touchscreen.tap(layer!.x + 80, layer!.y + 130);
+  const revenue = await app
+    .getByText('Explore revenue', { exact: true })
+    .boundingBox();
+  await page.touchscreen.tap(
+    revenue!.x + revenue!.width / 2,
+    revenue!.y + revenue!.height / 2
+  );
   await expect
     .poll(() =>
       app.getByRole('textbox', { name: 'Annotation text', exact: true }).count()
@@ -484,4 +496,102 @@ test('mouse region selection and saved pins follow the report while scrolling', 
       .textContent())!
   );
   expect(drafts[0].context.region).toBeTruthy();
+});
+
+test('window deactivation and tab switching preserve unfinished comments until a confirmed host click', async ({
+  page,
+}) => {
+  await page.goto('/annotations-host?annotations');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('Home');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Keep this unfinished comment when I return');
+  const frame = page.frames().find(frame => frame.parentFrame())!;
+  await frame.evaluate(() => window.dispatchEvent(new Event('blur')));
+  expect(await comment.inputValue()).toBe(
+    'Keep this unfinished comment when I return'
+  );
+  const otherTab = await page.context().newPage();
+  await otherTab.goto('/');
+  await otherTab.bringToFront();
+  await page.bringToFront();
+  expect(await comment.inputValue()).toBe(
+    'Keep this unfinished comment when I return'
+  );
+  await otherTab.close();
+  await page
+    .getByRole('button', { name: 'Allow annotations', exact: true })
+    .click();
+  await expect.poll(() => comment.count()).toBe(0);
+  expect(
+    JSON.parse(
+      (await page
+        .getByRole('status', { name: 'Annotation drafts', exact: true })
+        .textContent())!
+    )
+  ).toEqual([]);
+});
+
+test('a delayed host dismissal cannot close an editor opened by a later selection', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    if (window.parent === window) return;
+    let replaying = false;
+    window.addEventListener('message', event => {
+      if (replaying || !event.data?.state?.presentation?.annotations?.dismissal)
+        return;
+      event.stopImmediatePropagation();
+      setTimeout(() => {
+        replaying = true;
+        window.dispatchEvent(
+          new MessageEvent('message', {
+            data: event.data,
+            origin: event.origin,
+            source: event.source,
+          })
+        );
+        replaying = false;
+        document.body.dataset.dismissalDelivered = 'true';
+      }, 2000);
+    });
+  });
+  await page.goto('/annotations-host?annotations');
+  const app = page.frameLocator('iframe');
+  const card = await app
+    .getByRole('region', { name: 'Customers', exact: true })
+    .boundingBox();
+  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  const selection = app.getByRole('button', {
+    name: 'Annotation selection',
+    exact: true,
+  });
+  await selection.press('Home');
+  await selection.press('Enter');
+  const comment = app.getByRole('textbox', {
+    name: 'Annotation text',
+    exact: true,
+  });
+  await comment.fill('Previous comment');
+  await page
+    .getByRole('button', { name: 'Allow annotations', exact: true })
+    .click();
+  await page.mouse.click(card!.x + card!.width / 2, card!.y + card!.height / 2);
+  await expect.poll(() => comment.count()).toBe(0);
+  await page.mouse.click(card!.x + card!.width / 2, card!.y + card!.height / 2);
+  await comment.fill('New comment after the host click');
+  const frame = page.frames().find(frame => frame.parentFrame())!;
+  await expect
+    .poll(() => frame.evaluate(() => document.body.dataset.dismissalDelivered))
+    .toBe('true');
+  expect(await comment.inputValue()).toBe('New comment after the host click');
 });

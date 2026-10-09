@@ -93,6 +93,7 @@ export function AnnotationControls({
     presentation.targets?.find(pin => pin.id === editor?.annotationId)
       ?.comment ?? '';
   const hasUnsavedChanges = Boolean(editor) && editor?.comment !== savedComment;
+  const editorOpenedAt = useRef(0);
   const screenshot = useRef<ScreenshotCapture | undefined>(undefined);
   const toolbarRef = useRef<ComponentRef<'button'>>(null);
   const textareaRef = useRef<ComponentRef<'textarea'>>(null);
@@ -147,49 +148,48 @@ export function AnnotationControls({
     refs.setPositionReference(reference ?? null);
   }, [refs, reference]);
 
-  const dismissFromPointer = useEffectEvent((event: PointerEvent) => {
+  const isOutsideEditor = useEffectEvent((event: PointerEvent) => {
     if (!editor || pending) return false;
     const editorElement = refs.floating.current;
-    if (editorElement && event.composedPath().includes(editorElement))
-      return false;
-    if (event.pointerType !== 'touch') event.preventDefault();
-    event.stopImmediatePropagation();
-    dispatch({ type: 'editorClosed' });
-    return true;
+    return Boolean(
+      editorElement && !event.composedPath().includes(editorElement)
+    );
+  });
+  const dismissEditor = useEffectEvent(() => {
+    if (!pending) dispatch({ type: 'editorClosed' });
   });
   useEffect(() => {
     if (!active) return;
-    let dismissed = false;
-    function dismissOutside(event: PointerEvent) {
-      dismissed = dismissFromPointer(event);
+    let outsideEditor = false;
+    function startPointer(event: PointerEvent) {
+      outsideEditor = isOutsideEditor(event);
     }
-    function consumeClick(event: MouseEvent) {
-      if (!dismissed) return;
-      dismissed = false;
+    function finishClick(event: MouseEvent) {
+      if (!outsideEditor) return;
+      outsideEditor = false;
       event.preventDefault();
       event.stopImmediatePropagation();
+      dismissEditor();
     }
     function cancelPointer() {
-      dismissed = false;
+      outsideEditor = false;
     }
-    document.addEventListener('pointerdown', dismissOutside, true);
-    document.addEventListener('click', consumeClick, true);
+    document.addEventListener('pointerdown', startPointer, true);
+    document.addEventListener('click', finishClick, true);
     document.addEventListener('pointercancel', cancelPointer, true);
     return () => {
-      document.removeEventListener('pointerdown', dismissOutside, true);
-      document.removeEventListener('click', consumeClick, true);
+      document.removeEventListener('pointerdown', startPointer, true);
+      document.removeEventListener('click', finishClick, true);
       document.removeEventListener('pointercancel', cancelPointer, true);
     };
   }, [active]);
   useEffect(() => {
-    if (!editing || pending) return;
-    function dismissOnBlur() {
-      dispatch({ type: 'editorClosed' });
-    }
-    // Parent-frame clicks do not propagate into the iframe document.
-    window.addEventListener('blur', dismissOnBlur);
-    return () => window.removeEventListener('blur', dismissOnBlur);
-  }, [editing, pending]);
+    if (
+      presentation.dismissal &&
+      presentation.dismissal.occurredAt > editorOpenedAt.current
+    )
+      dismissEditor();
+  }, [presentation.dismissal]);
 
   function openEditor({
     target,
@@ -198,6 +198,7 @@ export function AnnotationControls({
     annotation,
     comment,
   }: AnnotationSelection) {
+    editorOpenedAt.current = performance.timeOrigin + performance.now();
     const location = getDataAppNavigation()?.snapshot();
     const rect = annotationGeometry(target.element);
     const point = annotationPoint(rect, cursor);
