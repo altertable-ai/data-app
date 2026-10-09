@@ -1,7 +1,7 @@
 {
   "name": "@altertable/data-app",
   "version": "0.68.0",
-  "description": "Contracts, transport, and React UI for Altertable data apps",
+  "description": "A TypeScript and React toolkit with APIs, components, and authoring guides for developers and AI agents to build data apps powered by Altertable.",
   "keywords": [
     "altertable",
     "analytics",
@@ -29,6 +29,7 @@
     "dist",
     "docs",
     "examples/starter-data-app",
+    "examples/starter-local-data-app",
     "README.md",
     "CONTRIBUTING.md",
     "AGENTS.md"
