@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { invariant } from '@/src/core/invariant';
 import { Button } from '@/src/react/ui/Button';
 import { classNames } from '@/src/react/ui/classNames';
-import type { PopulationChartProps } from '@/src/react/ui/chart-data';
+import type { CountChartProps } from '@/src/react/ui/chart-data';
 import { formatNumber, formatPercent } from '@/src/core/format';
 import {
   buildJourneyFlow,
@@ -12,7 +12,7 @@ import {
 } from '@/src/react/ui/journey-flow';
 
 export type { JourneyChartPath } from '@/src/react/ui/journey-flow';
-export type JourneyChartProps = PopulationChartProps & {
+export type JourneyChartProps = CountChartProps & {
   /** Full paths and their population counts. Branches and outcomes are derived internally. */
   paths: readonly JourneyChartPath[];
 };

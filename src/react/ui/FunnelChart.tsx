@@ -5,7 +5,7 @@ import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { ComposedChart } from '@/src/react/ui/ComposedChart';
 import { ChartTooltipContent } from '@/src/react/ui/chart-primitives';
 import { classNames } from '@/src/react/ui/classNames';
-import type { PopulationChartProps } from '@/src/react/ui/chart-data';
+import type { CountChartProps } from '@/src/react/ui/chart-data';
 import { formatNumber, formatPercent } from '@/src/core/format';
 
 /** Ordered step with a unique, nonblank ID. */
@@ -17,7 +17,7 @@ export type FunnelChartSeries = {
   /** Finite, nonnegative counts aligned with steps and nonincreasing. */
   values: readonly number[];
 };
-export type FunnelChartProps = PopulationChartProps & {
+export type FunnelChartProps = CountChartProps & {
   steps: readonly FunnelChartStep[];
   series: readonly FunnelChartSeries[];
 };

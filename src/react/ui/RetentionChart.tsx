@@ -4,7 +4,7 @@ import { ComposedChart } from '@/src/react/ui/ComposedChart';
 import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { TooltipSurface } from '@/src/react/ui/TooltipSurface';
 import { classNames } from '@/src/react/ui/classNames';
-import type { PopulationChartProps } from '@/src/react/ui/chart-data';
+import type { CountChartProps } from '@/src/react/ui/chart-data';
 import { formatNumber, formatPercent } from '@/src/core/format';
 
 export type RetentionChartPoint = {
@@ -27,7 +27,7 @@ export type RetentionChartSeries = {
   cohortSize: number;
   points: readonly RetentionChartPoint[];
 };
-export type RetentionChartProps = PopulationChartProps & {
+export type RetentionChartProps = CountChartProps & {
   series: readonly RetentionChartSeries[];
 };
 

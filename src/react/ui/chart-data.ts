@@ -10,7 +10,7 @@ export type ValueChartProps = {
   formatValue?: (value: number) => string;
 };
 
-export type PopulationChartProps = {
+export type CountChartProps = {
   /** Accessible measure and scope description. */
   ariaLabel: string;
   /** Population unit, such as users or sessions. */
