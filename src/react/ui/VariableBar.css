@@ -9,6 +9,9 @@
   max-width: 100%;
   min-width: 0;
 }
+.altertable-primary-controls {
+  gap: var(--atbl-space-xs);
+}
 .altertable-variable-searches > .altertable-search-landmark {
   flex: 1 1 280px;
   max-width: 25rem;
@@ -75,9 +78,10 @@
 }
 .altertable-filter-disclosure {
   color: var(--atbl-muted);
+  transform: rotate(-90deg);
 }
 [data-open='true'] > .altertable-filter-disclosure {
-  transform: rotate(-90deg);
+  transform: none;
 }
 .altertable-display-options-trigger {
   margin-inline-start: auto;
@@ -117,9 +121,7 @@
   gap: var(--atbl-space-sm);
 }
 .altertable-display-options-section + .altertable-display-options-section {
-  margin-block-start: var(--atbl-space-md);
-  padding-block-start: var(--atbl-space-md);
-  border-top: 1px solid var(--atbl-border);
+  margin-block-start: var(--atbl-space-sm);
 }
 .altertable-display-option > * {
   width: 100%;

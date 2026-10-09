@@ -15,7 +15,7 @@
   border-color: var(--atbl-accent);
   background: var(--atbl-accent);
 }
-.altertable-selection-mark[data-selected]::after {
+.altertable-selection-mark[data-multiple][data-selected]::after {
   width: 0.25em;
   height: 0.4375em;
   margin-top: -0.125em;

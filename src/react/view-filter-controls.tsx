@@ -34,6 +34,7 @@ export function ViewFilterControls({
   return (
     <Stack gap="sm">
       <VariableBar
+        className="altertable-primary-controls"
         aria-label={hasScope || !hasDisplay ? 'Filters' : 'View options'}
       >
         {groups.scope.primary}

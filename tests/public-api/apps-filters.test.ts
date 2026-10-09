@@ -59,7 +59,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
     await more
       .locator('svg')
       .evaluate(element => getComputedStyle(element).transform)
-  ).toBe('matrix(0, -1, 1, 0, 0, 0)');
+  ).toBe('none');
   const secondary = page.getByRole('group', {
     name: 'Secondary filters',
     exact: true,
@@ -88,9 +88,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
       .getByRole('button', { name: 'More filters (2 active)', exact: true })
       .count()
   ).toBe(1);
-  await scope
-    .getByRole('button', { name: 'Clear filters', exact: true })
-    .click();
+  await scope.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect.poll(() => table.getByRole('row').count()).toBe(9);
   expect(
     await scope
@@ -173,9 +171,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
     heading!.y + heading!.height / 2
   );
   await expect.poll(() => display.count()).toBe(0);
-  await scope
-    .getByRole('button', { name: 'Clear filters', exact: true })
-    .click();
+  await scope.getByRole('button', { name: 'Clear', exact: true }).click();
   expect(new URL(page.url()).searchParams.get('direction')).toBe('asc');
 });
 
@@ -244,9 +240,7 @@ test('secondary filter fields remain ordered and clear closes the panel', async 
       .getByRole('button', { name: 'More filters (3 active)', exact: true })
       .count()
   ).toBe(1);
-  await page
-    .getByRole('button', { name: 'Clear filters', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect.poll(() => secondary.count()).toBe(0);
   const closed = page.getByRole('button', {
     name: 'More filters',
@@ -338,9 +332,7 @@ test('search with display-only controls does not create an empty scope row', asy
     name: 'View options',
     exact: true,
   });
-  await options
-    .getByRole('button', { name: 'Clear filters', exact: true })
-    .click();
+  await options.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect
     .poll(() => page.getByRole('table').getByRole('row').count())
     .toBe(9);
@@ -393,9 +385,7 @@ test('custom filters retain automatic search controls and URL state', async ({
   await expect
     .poll(async () => decode(await displayed.textContent()).choice)
     .toBe('b');
-  await filters
-    .getByRole('button', { name: 'Clear filters', exact: true })
-    .click();
+  await filters.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect
     .poll(async () => decode(await displayed.textContent()).search)
     .toBe('');
@@ -416,9 +406,7 @@ test('hiding search preserves its URL value and leaves filters available', async
     .poll(async () => decode(await displayed.textContent()).choice)
     .toBe('b');
   expect(new URL(page.url()).searchParams.get('q')).toBe('France');
-  await page
-    .getByRole('button', { name: 'Clear filters', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect
     .poll(async () => decode(await displayed.textContent()).search)
     .toBe('');
@@ -608,7 +596,7 @@ test('generated filters apply typed predicates and clear restrictions atomically
     exact: true,
   });
   const clear = page.getByRole('button', {
-    name: 'Clear filters',
+    name: 'Clear',
     exact: true,
   });
   const height = await countryButton.evaluate(
@@ -620,7 +608,7 @@ test('generated filters apply typed predicates and clear restrictions atomically
   expect(
     await page.getByRole('button', { name: 'Reset filters' }).count()
   ).toBe(0);
-  expect(await clear.textContent()).toBe('Clear filters');
+  expect(await clear.textContent()).toBe('Clear');
   expect(await clear.locator('svg').count()).toBe(0);
   const selectedURL = page.url();
   expect(
@@ -631,9 +619,7 @@ test('generated filters apply typed predicates and clear restrictions atomically
   expect(await page.getByRole('list', { name: 'Active filters' }).count()).toBe(
     0
   );
-  await page
-    .getByRole('button', { name: 'Clear filters', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect
     .poll(async () => decode(await displayed.textContent()))
     .toMatchObject({
@@ -666,9 +652,7 @@ test('generated filters apply typed predicates and clear restrictions atomically
   await expect
     .poll(async () => decode(await displayed.textContent()).amount)
     .toEqual({ kind: 'range', min: 10 });
-  await page
-    .getByRole('button', { name: 'Clear filters', exact: true })
-    .click();
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await page.getByRole('button', { name: 'Amount: Any', exact: true }).click();
   await choose(page, panel, 'Condition', 'Equals');
   await panel.getByRole('button', { name: 'Apply', exact: true }).click();

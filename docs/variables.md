@@ -204,7 +204,7 @@ alongside selected members. Enable exclusion only when the registered query supp
 it, including the intended behavior for missing values.
 
 Generated controls show active values within each filter and one collective
-Clear filters action. Clear removes restrictions from search and predicate filters,
+Clear action. Clear removes restrictions from search and predicate filters,
 then closes More filters.
 `resetAll()` restores all
 configured variable defaults, including fixed choices and periods. Nonempty

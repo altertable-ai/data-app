@@ -1,4 +1,5 @@
 import { Button } from '@/src/react/ui/Button';
+import { Tooltip } from '@/src/react/ui/Tooltip';
 export type FilterActionsProps = {
   onClear?: () => void;
 } & (
@@ -14,9 +15,11 @@ export function FilterActions({
     <fieldset className="altertable-filter-actions">
       <legend className="altertable-sr-only">Filter actions</legend>
       {onClear && (
-        <Button variant="ghost" onClick={onClear}>
-          Clear filters
-        </Button>
+        <Tooltip content="Clear all filters">
+          <Button variant="ghost" onClick={onClear}>
+            Clear
+          </Button>
+        </Tooltip>
       )}
       {onCancel && <Button onClick={onCancel}>Cancel</Button>}
       {onApply && (
