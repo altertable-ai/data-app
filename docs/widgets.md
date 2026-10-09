@@ -21,19 +21,6 @@ Use [layout](layout.md) for `<Stack>`, `<Grid>`, and responsive `<GridItem>` spa
 `<Skeleton>` supports custom fallback content; `/react/ui` supplies
 `<DataAppSkeleton>` for iframe startup.
 
-## Annotate widgets
-
-Widgets, including `<TextWidget>`, register the whole card as an annotation
-target. Automatic IDs identify each rendered widget independently of its evidence.
-Use a unique `annotationId` when feedback must retain its target across app changes.
-
-Annotation mode supports scrolling, touch panning, and Page Up/Down. Click a
-card or drag with a mouse or pen to select an area; keyboard area selection uses
-Shift+Enter. Clicking outside the comment editor cancels unfinished text without
-saving it or changing saved annotations. Select another target with a second click.
-Escape first warns about unsaved text;
-a second Escape cancels it.
-
 ## Choose a visualization
 
 Choose the component by the reader's question. Compose dataset visuals inside
