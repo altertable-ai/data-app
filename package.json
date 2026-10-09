@@ -29,6 +29,7 @@
     "dist",
     "docs",
     "examples/starter-data-app",
+    "examples/starter-local-data-app",
     "README.md",
     "CONTRIBUTING.md",
     "AGENTS.md"

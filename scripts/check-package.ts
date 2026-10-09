@@ -71,6 +71,12 @@ try {
     'docs/react-embed.md',
     'docs/worker.md',
     'examples/starter-data-app/index.tsx',
+    'examples/starter-local-data-app/README.md',
+    'examples/starter-local-data-app/AGENTS.md',
+    'examples/starter-local-data-app/package.json',
+    'examples/starter-local-data-app/app.ts',
+    'examples/starter-local-data-app/src/App.tsx',
+    'examples/starter-local-data-app/src/server.ts',
   ];
   for (const value of Object.values(manifest.exports)) {
     for (const path of Object.values(value)) required.push(path.slice(2));
