@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app",
-  "version": "0.66.0",
+  "version": "0.67.0",
   "description": "Contracts, transport, and React UI for Altertable data apps",
   "keywords": [
     "altertable",
@@ -36,6 +36,10 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./contract": {
       "types": "./dist/types/core/contract.d.ts",
       "import": "./dist/core/contract.js"

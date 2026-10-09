@@ -1,14 +1,10 @@
 import { expect, test } from 'vitest';
-import {
-  defineOperation,
-  defineQueryNames,
-  parseCount,
-} from '@altertable/data-app/contract';
+import { defineOperation, parseCount } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { localLakehouse } from '@altertable/data-app/server/bun';
 const totalsOperation = defineOperation({
   checks: [1],
-  queryNames: defineQueryNames({ totals: 'totals' }),
+  queries: { totals: { statement: 'SELECT 1', params: {} } },
   input(value: unknown) {
     if (value !== 1) throw new Error('Bad input');
 
@@ -17,13 +13,9 @@ const totalsOperation = defineOperation({
   output(value: unknown) {
     return value as number;
   },
-  policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: true },
-  async run({ lakehouse, signal }) {
-    const result = await lakehouse.queryAll('SELECT 1', {
-      limit: 20,
-      signal,
-      name: 'totals',
-    });
+  policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+  async run({ query }) {
+    const result = await query('totals', {}, { limit: 20 });
 
     return result.rows.length;
   },
@@ -37,10 +29,9 @@ function totalsRequest(value: unknown) {
   });
 }
 
-test('HTTP operations validate inputs, enforce row policy, and disclose permitted evidence', async () => {
+test('HTTP operations validate inputs, enforce row policy, and return query evidence', async () => {
   let requestedLimit = 0;
   const handle = createDataHandler({ totals: totalsOperation }, async () => ({
-    canDiscloseSql: true,
     lakehouse: {
       async queryAll(_statement: string, options: { limit: number }) {
         requestedLimit = options.limit;
@@ -76,7 +67,6 @@ test('HTTP operations validate inputs, enforce row policy, and disclose permitte
       },
     },
     async () => ({
-      canDiscloseSql: true,
       lakehouse: {
         async queryAll() {
           return { columns: [], rows: [] };
@@ -85,20 +75,6 @@ test('HTTP operations validate inputs, enforce row policy, and disclose permitte
     })
   );
   expect((await unregistered(totalsRequest(1))).status).toBe(502);
-  const restricted = createDataHandler(
-    { totals: totalsOperation },
-    async () => ({
-      canDiscloseSql: false,
-      lakehouse: {
-        async queryAll() {
-          return { columns: [], rows: [[1]] };
-        },
-      },
-    })
-  );
-  expect(await (await restricted(totalsRequest(1))).json()).not.toHaveProperty(
-    'queries'
-  );
   expect((await handle(totalsRequest(2))).status).toBe(400);
   expect(
     (await handle(new Request('http://localhost/api/data/other'))).status
@@ -107,7 +83,6 @@ test('HTTP operations validate inputs, enforce row policy, and disclose permitte
 
 test('HTTP requests require JSON and an allowed same-origin delivery context', async () => {
   const handle = createDataHandler({ totals: totalsOperation }, async () => ({
-    canDiscloseSql: false,
     lakehouse: {
       async queryAll() {
         return { columns: [], rows: [] };
@@ -166,7 +141,6 @@ test('HTTP handlers hide private failures and preserve adapter authentication er
     )
   );
   const failing = createDataHandler({ totals: totalsOperation }, async () => ({
-    canDiscloseSql: false,
     lakehouse: {
       async queryAll() {
         throw new Error('private upstream detail');
@@ -181,7 +155,6 @@ test('HTTP handlers hide private failures and preserve adapter authentication er
   const sourceFailure = createDataHandler(
     { totals: totalsOperation },
     async () => ({
-      canDiscloseSql: false,
       lakehouse: source,
     })
   );
@@ -205,6 +178,7 @@ test('HTTP handlers hide private failures and preserve adapter authentication er
 
 function cancellationOperation(run: (signal: AbortSignal) => Promise<number>) {
   return defineOperation({
+    queries: {},
     input(value: unknown) {
       return value;
     },
@@ -212,7 +186,7 @@ function cancellationOperation(run: (signal: AbortSignal) => Promise<number>) {
       return parseCount(value);
     },
     checks: [{}],
-    policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     run({ signal }) {
       return run(signal);
     },
@@ -246,7 +220,6 @@ function cancellableRequest(controller: AbortController) {
 }
 
 const cancellationAccess = {
-  canDiscloseSql: false,
   lakehouse: {
     async queryAll() {
       return { columns: [], rows: [] };

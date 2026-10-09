@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import { mountDataApp, injectDataAppStyles } from '@altertable/data-app/react';
 import {
@@ -21,11 +22,12 @@ import {
   type DataAppStyle,
 } from '@altertable/data-app/react/ui';
 
-const config = {
+const dataApp = defineDataApp({
   title: 'Controls',
+  description: 'Explore filter controls and their selected values.',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
-};
+  queries: {},
+});
 const options = [
   { id: 'all', label: 'All' },
   { id: 'fr', label: 'France' },
@@ -160,4 +162,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ app: dataApp, component: App });

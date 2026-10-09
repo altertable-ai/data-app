@@ -1,6 +1,6 @@
 import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { useDeclaredResult } from '@/src/react/view-runtime';
-import { DeclaredApp } from '@/dev/fixtures/declared-app';
+import { DeclaredApp, dataApp } from '@/dev/fixtures/declared-app';
 import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
 import { bindDataset } from '@/src/react/bindings';
 import { defineDataContent } from '@/src/react/content';
@@ -23,6 +23,7 @@ const context = registerContext({})({
 
 const operations = {
   alpha: defineOperation({
+    queries: {},
     input(value: unknown) {
       return value as { version: number };
     },
@@ -30,12 +31,13 @@ const operations = {
       return value as { kind: 'alpha'; count: number };
     },
     checks: [{ version: 1 }],
-    policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run() {
       return { kind: 'alpha', count: 1 };
     },
   }),
   beta: defineOperation({
+    queries: {},
     input(value: unknown) {
       return value as { version: number };
     },
@@ -43,7 +45,7 @@ const operations = {
       return value as { kind: 'beta'; label: string };
     },
     checks: [{ version: 1 }],
-    policy: { maxQueryRows: 1, maxDurationMs: 1000, exposeSql: false },
+    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run() {
       return { kind: 'beta', label: 'Beta' };
     },
@@ -192,7 +194,7 @@ function App() {
   );
 }
 createRoot(document.getElementById('root')!).render(
-  <DataAppProvider>
+  <DataAppProvider app={dataApp}>
     {new URLSearchParams(location.search).has('declared') ? (
       <DeclaredApp />
     ) : new URLSearchParams(location.search).has('client-cache') ? (

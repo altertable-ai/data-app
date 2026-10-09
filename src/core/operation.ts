@@ -12,9 +12,8 @@ type OperationExecutionOptions = {
   operationName: string;
   lakehouse: Lakehouse;
   signal: AbortSignal;
-  /** Include query evidence in the response; this does not keep browser-owned SQL private. */
-  includeSql: boolean;
   requestId: string;
+  queryParams?: OperationContext['queryParams'];
 };
 
 /** Shared operation execution. Adapters own authorization, delivery, and public errors. */
@@ -25,8 +24,8 @@ export async function executeDataOperation(
     operationName,
     lakehouse,
     signal: requestSignal,
-    includeSql,
     requestId,
+    queryParams,
   }: OperationExecutionOptions
 ) {
   requestSignal.throwIfAborted();
@@ -51,15 +50,14 @@ export async function executeDataOperation(
     const output = await runOperation(operation, input, {
       lakehouse: execution.lakehouse,
       signal,
+      queryParams,
     });
     const body: DataQueryBody<unknown> = {
       data: operation.output(output),
       requestId,
       queriedAt: new Date().toISOString(),
       queryIds: execution.queryIds,
-      ...(operation.policy.exposeSql && includeSql
-        ? { queries: execution.queries }
-        : {}),
+      queries: execution.queries,
     };
     const serializedBody = JSON.stringify(body);
     const responseBytes = new TextEncoder().encode(serializedBody).byteLength;
@@ -97,6 +95,7 @@ function createOperationLakehouse(
       const query: DisclosedQuery = {
         name: options.name ?? `Query ${queries.length + 1}`,
         statement,
+        ...(options.params === undefined ? {} : { params: options.params }),
       };
       queries.push(query);
       const limit = Math.min(options.limit, operation.policy.maxQueryRows);
@@ -104,6 +103,7 @@ function createOperationLakehouse(
       try {
         result = await source.queryAll(statement, {
           limit,
+          ...(options.params === undefined ? {} : { params: options.params }),
           signal: AbortSignal.any([signal, options.signal]),
         });
       } catch (error) {
@@ -128,7 +128,7 @@ function createOperationLakehouse(
 async function runOperation(
   operation: Operation,
   input: unknown,
-  { lakehouse, signal }: OperationContext
+  { lakehouse, signal, queryParams }: OperationContext
 ) {
   let abort: (() => void) | undefined;
   try {
@@ -147,7 +147,10 @@ async function runOperation(
       Promise.resolve().then(() => {
         signal.throwIfAborted();
 
-        return operation.run({ lakehouse, signal }, input as never);
+        return operation.run(
+          { lakehouse, signal, queryParams },
+          input as never
+        );
       }),
     ]);
   } finally {

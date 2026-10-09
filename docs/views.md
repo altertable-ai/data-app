@@ -26,12 +26,7 @@ const content = activityView.content(result => (
 
 function App() {
   return (
-    <DataApp
-      config={config}
-      view={activityView}
-      story={story}
-      datasets={[activityDataset]}
-    >
+    <DataApp view={activityView} story={story} datasets={[activityDataset]}>
       <DataSection content={content} />
     </DataApp>
   );
@@ -65,8 +60,9 @@ Bind the whole sentence with `<TextWidget>` when its wording depends on the resu
 Use `<DataValue scope={result.scope} />` for the displayed scope label.
 
 Use the same [date range contract](contract.md#shared-date-ranges) for the
-operation and its view. For nested inputs, bind the range with
-`input: input => input.period`.
+operation and its view. For nested inputs in `defineTimeView()`, use
+`bindings.period` to extract the selected period; see the
+[time-view example](variables.md#declare-controls-once).
 
 Use `result.scope` inside `view.content()` as a reading for scope text. In stories and exports,
 `view.scope(snapshot)` returns the same label from the displayed input, using

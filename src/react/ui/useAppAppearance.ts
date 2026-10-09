@@ -9,7 +9,7 @@ import {
 
 /** The parent theme takes precedence; only standalone viewers receive controls. */
 export function useAppAppearance(
-  appearance: AppearanceOptions,
+  appearance: AppearanceOptions | undefined,
   hostTheme?: Theme
 ) {
   const [controller] = useState(() =>

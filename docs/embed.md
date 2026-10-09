@@ -31,10 +31,17 @@ A bundle source has this shape:
 ```ts
 const source = {
   type: 'bundle' as const,
-  bootstrapUrl: 'https://my-report-app-1.apps.example.net/',
   javascript: bundle.javascript,
 };
 ```
+
+Omit `bootstrapUrl` to load the SDK's packaged bootstrap as a `data:` document.
+This supports MCP hosts that permit opaque child frames but block remote frame
+URLs. The SDK embeds the exact host origin and applies a CSP that prohibits
+direct network access. Data requests go through the host's dispatcher.
+
+Supply an HTTP(S) `bootstrapUrl` to use an externally served trusted bootstrap,
+such as the [Worker asset](worker.md).
 
 The host provides a self-contained JavaScript bundle. React bridges replace the
 iframe whenever its JavaScript content changes. Serve the bootstrap page with a CSP compatible with the bundle.
@@ -129,7 +136,8 @@ as public `source_*` errors with request IDs. Authorization failures return
 public failures with `MessageRoutingError`.
 
 `SqlQueryInput` (exported from `/contract`) carries
-`{ statement: string, limit: number }`; responses are
+`{ statement: string, limit: number, params?: QueryParameters }`; the backend
+interprets the unchanged statement and parameter values. Responses are
 `{ columns: { name: string, type?: string }[], rows: unknown[][], queryId?: string }`.
 The route rejects empty statements, unsafe or nonpositive limits, malformed
 results, and results exceeding the requested limit. The bridge's existing payload

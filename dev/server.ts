@@ -1,10 +1,13 @@
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
-import starterConfig from '@/examples/starter-local-data-app/app';
+import { dataApp as starterApp } from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
-import { parseDataAppAnnotationDraft } from '@altertable/data-app/contract';
+import {
+  parseDataAppAnnotationDraft,
+  type QueryParameters,
+} from '@altertable/data-app/contract';
 import skeleton from '@/dev/fixtures/skeleton.html';
 import hooksApp from '@/dev/fixtures/hooks-app.html';
 import inspectionApp from '@/dev/fixtures/inspection-app.html';
@@ -126,7 +129,7 @@ if (!isDevelopment) process.env.NODE_ENV = 'production';
 serveLocalApp({
   page: starterPage,
   operations: starterOperations,
-  title: starterConfig.title,
+  title: starterApp.title,
   port: port + 2,
 });
 const loadFrameBundle = await createBundleLoader('./fixtures/bridge-frame.ts');
@@ -262,12 +265,13 @@ Bun.serve({
       const query = (await request.json()) as {
         statement: string;
         limit: number;
+        params?: QueryParameters;
       };
       if (lakehouse) {
         try {
           const { columns, rows, queryId } = await lakehouse.queryAll(
             query.statement,
-            { limit: query.limit, signal: request.signal }
+            { limit: query.limit, signal: request.signal, params: query.params }
           );
           return Response.json({ columns, rows, queryId });
         } catch (error) {
@@ -282,7 +286,16 @@ Bun.serve({
         query.statement.trim().startsWith('WITH sample_counts(') &&
         query.limit === 10
       ) {
-        const rows = fixtureDatabase.query(query.statement).values();
+        const rows = fixtureDatabase
+          .query(query.statement)
+          .values(
+            Object.fromEntries(
+              Object.entries(query.params ?? {}).map(([key, value]) => [
+                `$${key}`,
+                value,
+              ])
+            )
+          );
         return Response.json({
           columns: [{ name: 'group_name' }, { name: 'sample_count' }],
           rows,

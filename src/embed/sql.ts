@@ -1,3 +1,4 @@
+import { randomUuid } from '@/src/core/uuid';
 import type { Lakehouse } from '@/src/core/contract';
 import { toDataOperationFailure } from '@/src/core/operation';
 import {
@@ -14,7 +15,7 @@ export function createSqlQueryHandler(
   ) => Promise<Lakehouse>
 ) {
   async function handleSqlQuery(input: SqlQueryInput, context: MessageContext) {
-    const requestId = crypto.randomUUID();
+    const requestId = randomUuid();
     context.signal.throwIfAborted();
     let lakehouse: Lakehouse;
     try {
@@ -31,6 +32,7 @@ export function createSqlQueryHandler(
     try {
       return await lakehouse.queryAll(input.statement, {
         limit: input.limit,
+        ...(input.params === undefined ? {} : { params: input.params }),
         signal: context.signal,
       });
     } catch (error) {

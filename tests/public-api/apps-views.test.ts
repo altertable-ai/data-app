@@ -417,3 +417,83 @@ test('a phone reader can select filters, compare periods and inspect results by 
       .isChecked()
   ).toBe(true);
 });
+
+test('query inspection displays and copies resolved parameters without interpolating SQL', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator.clipboard, 'writeText', {
+      value: async (value: string) => {
+        (window as typeof window & { copiedQuery: string }).copiedQuery = value;
+      },
+    });
+  });
+  await page.goto('/inspection-app');
+  await page
+    .getByRole('button', { name: 'Explore Summary', exact: true })
+    .click();
+  const inspection = page.getByRole('dialog');
+  await inspection.getByRole('tab', { name: 'Queries', exact: true }).click();
+  const params = {
+    count: 1,
+    label: "a'\n$label",
+    enabled: false,
+    nullable: null,
+  };
+  const parameters = inspection.getByLabel('Parameters for counts', {
+    exact: true,
+  });
+  await expect
+    .poll(() => parameters.locator('dt').allTextContents())
+    .toEqual(Object.keys(params).map(key => `$${key}`));
+  await expect
+    .poll(() => parameters.locator('dd').allTextContents())
+    .toEqual(Object.values(params).map(value => JSON.stringify(value)));
+  await expect
+    .poll(() => inspection.textContent())
+    .toContain('SELECT $count AS count');
+  function copied() {
+    return page.evaluate(
+      () => (window as typeof window & { copiedQuery: string }).copiedQuery
+    );
+  }
+  const query = `-- Parameters: ${JSON.stringify(params)}\nSELECT $count AS count`;
+  await inspection.getByRole('figure').hover();
+  await inspection
+    .getByRole('button', { name: 'Copy SQL for counts', exact: true })
+    .click();
+  await expect.poll(copied).toBe(query);
+  await inspection
+    .getByRole('button', { name: 'Copy all', exact: true })
+    .click();
+  await expect.poll(copied).toBe(`-- counts.sql\n${query};`);
+});
+
+test('query parameters remain readable within a phone-width inspection sheet', async ({
+  mobilePage,
+}) => {
+  await mobilePage.setViewportSize({ width: 320, height: 760 });
+  await mobilePage.emulateMedia({ reducedMotion: 'reduce' });
+  await mobilePage.goto('/inspection-app?long-parameter');
+  await mobilePage
+    .getByRole('button', { name: 'Explore Summary', exact: true })
+    .click();
+  const inspection = mobilePage.getByRole('dialog');
+  await inspection.getByRole('tab', { name: 'Queries', exact: true }).click();
+  const parameters = inspection.getByLabel('Parameters for counts', {
+    exact: true,
+  });
+  await expect
+    .poll(() => parameters.locator('dd').nth(1).textContent())
+    .toBe(JSON.stringify('Long parameter value '.repeat(10)));
+  expect(
+    await parameters.evaluate(element => {
+      const bounds = element.getBoundingClientRect();
+      return (
+        bounds.left >= 0 &&
+        bounds.right <= window.innerWidth &&
+        element.scrollWidth <= element.clientWidth
+      );
+    })
+  ).toBe(true);
+});

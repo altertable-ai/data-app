@@ -6,16 +6,20 @@ import {
   DataSourceError,
   type DataOperations,
   type Lakehouse,
+  type QueryParameters,
 } from '@/src/core/contract';
 
 /** Authorization result for one viewer request. A hosted adapter must scope its lakehouse client. */
-export type RequestAccess = { lakehouse: Lakehouse; canDiscloseSql: boolean };
+export type RequestAccess = {
+  lakehouse: Lakehouse;
+  /** Trusted values shared across queries; each query uses only its declared keys. */
+  queryParams?: QueryParameters;
+};
 
 /**
  * Execute named operations on the server. The app supplies operations and viewer authorization.
  * JSON, Origin, and Fetch Metadata checks reject cross-site browser POSTs; they do not
- * authenticate another local process. SQL is returned only when both the operation and
- * authorization result permit disclosure.
+ * authenticate another local process. Query evidence accompanies every result.
  */
 export function createDataHandler(
   operations: DataOperations,
@@ -107,10 +111,10 @@ export function createDataHandler(
     try {
       const { serializedBody } = await executeDataOperation(operation, input, {
         lakehouse: access.lakehouse,
-        includeSql: access.canDiscloseSql,
         signal,
         requestId,
         operationName: name,
+        queryParams: access.queryParams,
       });
       return new Response(serializedBody, {
         headers: {

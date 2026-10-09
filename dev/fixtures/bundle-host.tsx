@@ -253,11 +253,11 @@ function Host() {
       'export:csv': downloadExport,
       'export:zip': downloadExport,
       'data:sql': createSqlQueryHandler(async () => ({
-        async queryAll(statement, { limit, signal }) {
+        async queryAll(statement, { limit, signal, params }) {
           const response = await fetch('/api/sql', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ statement, limit }),
+            body: JSON.stringify({ statement, limit, params }),
             signal,
           });
           if (!response.ok) throw new DataSourceError('unavailable');

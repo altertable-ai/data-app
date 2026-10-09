@@ -1,7 +1,6 @@
 import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { useDeclaredResult } from '@/src/react/view-runtime';
 import { createDataClient } from '@/src/client/data-client';
-import type { DataAppConfig } from '@/src/core/config';
 import { connectionCheck } from '@/src/core/contract';
 import { createDataHooks } from '@/src/react/hooks';
 import { AppIcon } from '@/src/react/ui/icons';
@@ -28,14 +27,8 @@ const connectionView = defineDataView({
 });
 
 /** Query-backed connection state and next steps for a newly created app. Mount within
- * `DataAppProvider` and register `connection: connectionCheck()` on the server. */
-export function GettingStarted({
-  config,
-  dataContext,
-}: {
-  config: DataAppConfig;
-  dataContext: DataContext;
-}) {
+ * `DataAppProvider` and register `connection: connectionCheck(app.queries)` on the server. */
+export function GettingStarted({ dataContext }: { dataContext: DataContext }) {
   const connection = useDeclaredResult(connectionView);
   const state =
     connection.view.kind === 'error' || connection.view.kind === 'stale-error'
@@ -46,7 +39,6 @@ export function GettingStarted({
 
   return (
     <DataApp
-      config={config}
       dataContext={dataContext}
       description="Check your lakehouse connection, then build a view around a real question."
       queries={connection.queries}

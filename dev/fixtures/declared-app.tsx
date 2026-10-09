@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
@@ -141,19 +142,17 @@ function resolve(name: 'alpha' | 'beta', version: number) {
   });
 }
 
+export const dataApp = defineDataApp({
+  title: 'Declared views',
+  description: 'Explore independent views and their request states.',
+  scope: { organization: 'test', environment: 'test' },
+  queries: {},
+});
+
 export function DeclaredApp() {
   const [shown, setShown] = useState(false);
   return (
-    <DataApp
-      view={alpha}
-      config={{
-        title: 'Declared views',
-        scope: { organization: 'test', environment: 'test' },
-        appearance: {},
-      }}
-      story={() => []}
-      datasets={[alphaDataset]}
-    >
+    <DataApp view={alpha} story={() => []} datasets={[alphaDataset]}>
       <button onClick={() => resolve('alpha', 1)}>Resolve alpha 1</button>
       <button onClick={() => resolve('alpha', 2)}>Resolve alpha 2</button>
       <button onClick={() => resolve('beta', 1)}>Resolve beta</button>

@@ -302,7 +302,7 @@ test('an overloaded iframe rejects excess work, releases cancelled requests and 
     .toBe('0');
 });
 
-for (const mode of ['bridge-host', 'bundle-host']) {
+for (const mode of ['bridge-host', 'bundle-host', 'bundle-host?packaged=1']) {
   test(`the ${mode} correlates concurrent queries and cancels host work when its caller aborts`, async ({
     page,
   }) => {
@@ -399,7 +399,7 @@ for (const mode of ['bridge-host', 'bundle-host']) {
   });
 }
 
-for (const source of ['bundle', 'url']) {
+for (const source of ['bundle', 'packaged', 'url']) {
   test(`an embedded ${source} app queries through the host and restores navigation after reload`, async ({
     page,
   }) => {
@@ -409,9 +409,31 @@ for (const source of ['bundle', 'url']) {
         requests.push(request.frame() === page.mainFrame() ? 'host' : 'app');
     });
     await page.goto(
-      `/bundle-host?${source === 'url' ? 'url=1&' : ''}period=last-30#totals`
+      `/bundle-host?${source === 'url' ? 'url=1&' : source === 'packaged' ? 'packaged=1&' : ''}period=last-30#totals`
     );
     const app = page.frameLocator('iframe');
+    if (source === 'packaged') {
+      await expect
+        .poll(() => page.locator('iframe').getAttribute('src'))
+        .toMatch(/^data:text\/html/);
+      await expect
+        .poll(() => page.locator('iframe').getAttribute('sandbox'))
+        .toBe('allow-scripts');
+      const frame = page.frames().find(frame => frame !== page.mainFrame())!;
+      expect(await frame.evaluate(() => typeof crypto.randomUUID)).toBe(
+        'undefined'
+      );
+      expect(
+        await frame.evaluate(async url => {
+          try {
+            await fetch(url);
+            return false;
+          } catch {
+            return true;
+          }
+        }, new URL('/api/sql', page.url()).href)
+      ).toBe(true);
+    }
     await expect
       .poll(() =>
         app
@@ -430,6 +452,13 @@ for (const source of ['bundle', 'url']) {
     await page
       .getByRole('button', { name: 'Change handler', exact: true })
       .click();
+    await expect
+      .poll(() =>
+        page
+          .getByRole('status', { name: 'Handler version', exact: true })
+          .textContent()
+      )
+      .toBe('2');
     await app.getByRole('button', { name: 'Query', exact: true }).click();
     await expect
       .poll(() =>
@@ -438,7 +467,7 @@ for (const source of ['bundle', 'url']) {
           .textContent()
       )
       .toContain('"version":2');
-    if (source === 'bundle') {
+    if (source !== 'url') {
       await app
         .getByRole('button', { name: 'Data query', exact: true })
         .click();
@@ -460,6 +489,18 @@ for (const source of ['bundle', 'url']) {
         )
         .toBe('{"publicError":true,"code":"forbidden"}');
       expect(requests).toEqual(['host', 'host']);
+    }
+    if (source !== 'url') {
+      await page
+        .getByRole('button', { name: 'Change theme', exact: true })
+        .click();
+      await expect
+        .poll(() =>
+          app
+            .locator('html')
+            .evaluate(element => getComputedStyle(element).colorScheme)
+        )
+        .toBe('light');
     }
     await app.getByRole('button', { name: 'Last 7 days', exact: true }).click();
     await expect.poll(() => page.url()).toContain('period=last-7');
@@ -490,7 +531,11 @@ for (const source of ['bundle', 'url']) {
         }
       })
     ).toBe(true);
-    await frame.evaluate(() => location.reload());
+    await Promise.all([
+      page.waitForEvent('framenavigated', navigated => navigated === frame),
+      frame.evaluate(() => location.reload()),
+    ]);
+    await frame.waitForLoadState('load');
     await expect
       .poll(() =>
         app

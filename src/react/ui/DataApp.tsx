@@ -1,3 +1,4 @@
+import { useDataApp } from '@/src/react/app-context';
 import { ownedSource } from '@/src/react/source-owner';
 import {
   registeredEvidence,
@@ -38,6 +39,7 @@ export type DataAppProps<Data, Input = unknown> = Omit<
 /** Executes the primary view and owns its controls, inspection, exports, and stories. */
 export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   const { view, datasets, story, ...frame } = props;
+  const app = useDataApp();
   const result = useDeclaredResult(view);
   return (
     <PrimaryViewContext value={{ declaration: view, result }}>
@@ -56,7 +58,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
             datasets,
             ownedSource(view, snapshot),
             view.scope(snapshot),
-            frame.config.title
+            app.title
           )
         }
       />

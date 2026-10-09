@@ -1,7 +1,8 @@
 # Data context and evidence
 
-Set `dataContext: context` in each view. The app and its sections inherit the
-view's description, glossary, and permitted query evidence. Render registered identifiers where `<DataIdentifier>` is used.
+Set `dataContext: context` in each view for source descriptions, glossary, and
+permitted query evidence. App inspection and the view's sections use that context.
+Render registered identifiers where `<DataIdentifier>` is used.
 
 Physical source identifiers name inspected tables and columns. Glossary entries
 explain business meaning. Query names link those definitions and displayed claims
@@ -38,8 +39,7 @@ registry.
 ## Bind evidence
 
 ```tsx
-const queries = defineQueryNames({ activity: 'feature-activity' });
-// In the server operation: queryNames: queries
+const queries = activity.queryNames;
 const context = createDataContext(queries)({
   identifiers: identifiers.definitions,
   description: (
@@ -81,7 +81,9 @@ const finding = context.finding({
 });
 ```
 
-Import `defineQueryNames()` from `/contract` and the context/identifier factories from `/react`. Use the same registry in `defineOperation({ queryNames: queries, ... })`.
+Query inspection shows the executed SQL and resolved parameters; copy actions include both.
+
+Import context and identifier factories from `/react`. Use the operation’s derived `queryNames` for evidence.
 
 Use `view.metric(definition, select)` to register and bind a metric in one call.
 Declare dataset evidence references inside `view.dataset()`; the view registers

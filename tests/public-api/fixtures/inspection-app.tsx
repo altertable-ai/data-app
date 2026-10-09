@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import {
   mountDataApp,
@@ -10,11 +11,12 @@ import {
   MetricWidget,
   AboutData,
 } from '@altertable/data-app/react/ui';
-const config = {
+const dataApp = defineDataApp({
   title: 'Inspection ownership',
+  description: 'Inspect query evidence for displayed results.',
   scope: { organization: 'Test', environment: 'local' },
-  appearance: {},
-};
+  queries: {},
+});
 const evidence: import('@altertable/data-app/react').WidgetEvidence = {
   id: 'shared',
   queryNames: ['counts'],
@@ -49,9 +51,21 @@ function App() {
   const [count, setCount] = useState(1);
   return (
     <DataApp
-      config={config}
       dataContext={{ description: 'Counts', glossary: {} }}
-      queries={[{ name: 'counts', statement: 'SELECT 1 AS count' }]}
+      queries={[
+        {
+          name: 'counts',
+          statement: 'SELECT $count AS count',
+          params: {
+            count,
+            label: new URLSearchParams(location.search).has('long-parameter')
+              ? 'Long parameter value '.repeat(10)
+              : "a'\n$label",
+            enabled: false,
+            nullable: null,
+          },
+        },
+      ]}
     >
       {new URLSearchParams(location.search).has('controlled') && (
         <ControlledInspection />
@@ -77,4 +91,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ app: dataApp, component: App });

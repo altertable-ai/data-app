@@ -1,25 +1,30 @@
 import { useState, type ComponentType, type ReactNode } from 'react';
+import { DataAppContext } from '@/src/react/app-context';
 import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
 import { getDataAppTransport } from '@/src/client/iframe';
 import { getDataAppNavigation } from '@/src/client/navigation';
 import { createRoot } from 'react-dom/client';
 import { invariant } from '@/src/core/invariant';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { dataAppTitle, type DataAppConfig } from '@/src/core/config';
+import {
+  dataAppTitle,
+  type DataAppDefinition,
+  type QueryDefinitions,
+} from '@/src/core/config';
 
 /** Mount once per document; installs document identity and the shared request provider. */
-export function mountDataApp({
-  config,
+export function mountDataApp<const Queries extends QueryDefinitions>({
+  app,
   component: Component,
   root = document.getElementById('root'),
 }: {
-  config: DataAppConfig;
+  app: DataAppDefinition<Queries>;
   component: ComponentType;
   root?: HTMLElement | null;
 }): void {
   invariant(root, 'Data app root element is missing.');
   document.documentElement.lang = navigator.language;
-  document.title = dataAppTitle(config);
+  document.title = dataAppTitle(app);
   getDataAppNavigation();
   createRoot(root, {
     onUncaughtError(error) {
@@ -27,13 +32,20 @@ export function mountDataApp({
       getDataAppTransport()?.fail();
     },
   }).render(
-    <DataAppProvider>
+    <DataAppProvider app={app}>
       <Component />
     </DataAppProvider>
   );
 }
 
-export function DataAppProvider({ children }: { children: ReactNode }) {
+/** Provide one app identity and shared requests to a custom React root. */
+export function DataAppProvider<const Queries extends QueryDefinitions>({
+  app,
+  children,
+}: {
+  app: DataAppDefinition<Queries>;
+  children: ReactNode;
+}) {
   const [client] = useState(
     () =>
       new QueryClient({
@@ -48,8 +60,10 @@ export function DataAppProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={client}>
-      <InspectionProvider>{children}</InspectionProvider>
-    </QueryClientProvider>
+    <DataAppContext value={app}>
+      <QueryClientProvider client={client}>
+        <InspectionProvider>{children}</InspectionProvider>
+      </QueryClientProvider>
+    </DataAppContext>
   );
 }

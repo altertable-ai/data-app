@@ -1,5 +1,10 @@
 import { createDataContext } from "@altertable/data-app/react";
-import { connectionQueryNames } from "@altertable/data-app/contract";
+import { dataApp } from "#config";
+
+const connectionQueryNames = { connection: "connection" } satisfies Record<
+  string,
+  keyof typeof dataApp.queries
+>;
 
 /** Setup context only. Replace it with the exploration's scope, exact definitions, limitations,
  * and query evidence after inspecting the source data. */

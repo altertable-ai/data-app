@@ -32,10 +32,21 @@ const [dataAppStyles, shellStyles, annotationStyles] = await Promise.all([
   compileStyles('src/react/annotations/styles.css'),
 ]);
 
+const bootstrap = await Bun.build({
+  entrypoints: ['src/embed/standalone.ts'],
+  target: 'browser',
+  format: 'iife',
+  minify: true,
+});
+
+if (!bootstrap.success) throw new Error('Could not build bootstrap.');
+const bootstrapScript = await bootstrap.outputs[0]!.text();
+
 // Browser entries share chunks so error classes and transport helpers retain
 // their identity across public entry points. Hosts do not import the app UI.
 const browser = await Bun.build({
   entrypoints: [
+    'src/index.ts',
     'src/core/contract.ts',
     'src/core/config.ts',
     'src/core/format.ts',
@@ -53,6 +64,7 @@ const browser = await Bun.build({
   format: 'esm',
   splitting: true,
   define: {
+    DATA_APP_BOOTSTRAP: JSON.stringify(bootstrapScript),
     DATA_APP_STYLES: JSON.stringify(dataAppStyles),
     SHELL_STYLES: JSON.stringify(shellStyles),
     ANNOTATION_STYLES: JSON.stringify(annotationStyles),
@@ -62,13 +74,6 @@ const browser = await Bun.build({
   sourcemap: 'external',
 });
 
-const bootstrap = await Bun.build({
-  entrypoints: ['src/embed/standalone.ts'],
-  target: 'browser',
-  format: 'iife',
-});
-
-if (!bootstrap.success) throw new Error('Could not build bootstrap.');
 const worker = await Bun.build({
   entrypoints: ['src/worker/index.ts'],
   outdir: 'dist',
@@ -76,7 +81,7 @@ const worker = await Bun.build({
   format: 'esm',
   naming: 'worker.js',
   define: {
-    DATA_APP_BOOTSTRAP: JSON.stringify(await bootstrap.outputs[0]!.text()),
+    DATA_APP_BOOTSTRAP: JSON.stringify(bootstrapScript),
   },
 });
 

@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { createRoot } from 'react-dom/client';
 import { defineQueryNames } from '@altertable/data-app/contract';
 import { DataAppFrame as DataApp } from '@/src/react/ui/DataAppFrame';
@@ -9,9 +10,17 @@ import {
   TextContent,
   injectDataAppStyles,
 } from '@altertable/data-app/react';
-import { MetricWidget } from '@altertable/data-app/react/ui';
+import { DataAppProvider, MetricWidget } from '@altertable/data-app/react/ui';
 import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
 import { type DataView } from '@/src/core/data-view';
+
+const dataApp = defineDataApp({
+  title: 'Layout contract',
+  description: 'Explore responsive layouts and loading states.',
+  scope: { organization: 'demo', environment: 'test' },
+  appearance: { density: 'comfortable', theme: 'light' },
+  queries: {},
+});
 
 const params = new URLSearchParams(location.search);
 injectDataAppStyles();
@@ -66,36 +75,38 @@ function Cards({ loading = false }: { loading?: boolean }) {
   );
 }
 createRoot(document.getElementById('root')!).render(
-  <DataApp
-    config={{
-      title: 'Layout contract',
-      scope: { organization: 'demo', environment: 'test' },
+  <DataAppProvider
+    app={{
+      ...dataApp,
       appearance: {
         density:
           params.get('density') === 'spacious' ? 'spacious' : 'comfortable',
         theme: params.get('theme') === 'dark' ? 'dark' : 'light',
       },
     }}
-    dataContext={createDataContext(defineQueryNames({}))({
-      description: 'Layout fixture',
-      glossary: {},
-    })}
   >
-    <Stack data-testid="sections">
+    <DataApp
+      dataContext={createDataContext(defineQueryNames({}))({
+        description: 'Layout fixture',
+        glossary: {},
+      })}
+    >
+      <Stack data-testid="sections">
+        <TextContent>
+          <h2>Layout contract</h2>
+          <p>Shared spacing at every width.</p>
+        </TextContent>
+        <DataSection
+          result={{ view, refetch() {} }}
+          emptyFallback={{ title: 'No results' }}
+          loadingFallback={<Cards loading />}
+        >
+          {() => <Cards />}
+        </DataSection>
+      </Stack>
       <TextContent>
-        <h2>Layout contract</h2>
-        <p>Shared spacing at every width.</p>
+        <p>Following section</p>
       </TextContent>
-      <DataSection
-        result={{ view, refetch() {} }}
-        emptyFallback={{ title: 'No results' }}
-        loadingFallback={<Cards loading />}
-      >
-        {() => <Cards />}
-      </DataSection>
-    </Stack>
-    <TextContent>
-      <p>Following section</p>
-    </TextContent>
-  </DataApp>
+    </DataApp>
+  </DataAppProvider>
 );

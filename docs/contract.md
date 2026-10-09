@@ -2,35 +2,58 @@
 
 Import operation definitions, parsers, and shared types from
 `@altertable/data-app/contract`. This entry is safe to import in browser and server
-modules. For HTTP apps, keep SQL and operation implementations on the server; browser modules
-should import their operation types using `import type`.
+modules. The app declaration is browser-safe and includes its SQL registry. For HTTP apps,
+keep operation implementations, credentials, and authorization on the server; browser modules
+import operation types using `import type`.
 
 ## Execute named queries
 
-The app supplies `calendar`, `parseActivity()`, `checkInput`, `buildActivitySql()`,
-and `parseActivityRows()` in this example.
+Declare SQL once with `defineDataApp()` to preserve exact query and parameter
+names. Use stable `lowerCamelCase` IDs describing the result, such as `products`,
+`productsByCategory`, or `dailyRevenue`. Use plural names for row lists; keep parameter
+values in `params`.
+The app owns an immutable registry snapshot. Define operations with
+`dataApp.defineOperation()`.
 
 ```ts
-import {
-  defineOperation,
-  defineQueryNames,
-} from '@altertable/data-app/contract';
+import { defineDataApp } from '@altertable/data-app';
+import { rowsAsRecords } from '@altertable/data-app/contract';
 
-const queries = defineQueryNames({ activity: 'feature-activity' });
-const activity = defineOperation({
-  queryNames: queries,
-  input: calendar.parseRequest,
-  output: parseActivity,
-  checks: [checkInput],
-  policy: { maxQueryRows: 100, maxDurationMs: 15000, exposeSql: true },
+const dataApp = defineDataApp({
+  title: 'Products',
+  description: 'Explore products for the selected organization.',
+  scope: { organization: 'demo', environment: 'production' },
+  appearance: { theme: 'system' },
+  queries: {
+    products: {
+      statement: 'SELECT * FROM products WHERE org_id = $orgId LIMIT $limit',
+      params: { orgId: {}, limit: { defaultValue: 10 } },
+    },
+  },
+});
+
+const products = dataApp.defineOperation({
+  input: parseProductInput,
+  output: parseProducts,
+  checks: [{}],
+  policy: { maxQueryRows: 100, maxDurationMs: 15000 },
   async run({ query }, input) {
-    const result = await query(queries.activity, buildActivitySql(input));
-    return parseActivityRows(result);
+    const result = await query('products', input);
+    return rowsAsRecords(result, ['org_id']);
   },
 });
 ```
 
-`query()` inherits the operation's limit and cancellation signal; `{ limit }` can lower a particular query's bound. Names are checked by TypeScript and at runtime. Responses include executed SQL and query IDs when disclosure is allowed. HTTP browser modules import operation types with `import type`. Bundle apps import their browser-owned operation registry as a value and use [browser execution](client.md#browser-owned-operations-for-bundle-apps). Never bundle credentials or server adapters.
+`parseProductInput()` and `parseProducts()` are app-owned example functions, not
+package exports. Validate
+filter values in the input parser. `{}` declares a required parameter; `{ defaultValue }` supplies
+a fallback. `query(name, params, { limit })` executes only registered queries and
+inherits the operation's row limit and cancellation signal.
+
+SQL and resolved parameter values pass unchanged to the backend. Results include
+query evidence; use `products.queryNames` with `createDataContext()` to bind it.
+For HTTP apps, authorization can supply protected `queryParams`, such as `orgId`.
+The host/backend enforces data access and limits.
 
 ## Shared date ranges
 
@@ -50,8 +73,7 @@ export const calendar = defineDateRangeContract({
 ```
 
 `parseEmptyInput()`, `parseTrue()`, `parseCount()`, and `parseDateRangeInput()` validate
-common inputs and results. `connectionCheck()` defines a bounded connectivity
-operation. A successful connectivity check confirms access; it is not an
+common inputs and results. `connectionCheck(dataApp.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
 analysis result.
 
 See [server authorization](server.md) and [React views](react.md) for the two

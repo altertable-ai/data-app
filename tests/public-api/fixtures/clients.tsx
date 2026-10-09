@@ -1,3 +1,4 @@
+import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import {
   createDataClient,
@@ -92,16 +93,16 @@ function makeApp(id: string) {
 }
 const a = makeApp('A');
 const b = makeApp('B');
-const config = {
+const dataApp = defineDataApp({
   title: 'Client isolation',
+  description: 'Explore independent client requests and cache state.',
   scope: { organization: 'test', environment: 'test' },
-  appearance: {},
-};
+  queries: {},
+});
 function App() {
   const [selected, setSelected] = useState(a);
   return (
     <DataApp
-      config={config}
       view={selected.view}
       datasets={[selected.dataset]}
       story={() => []}
@@ -123,4 +124,4 @@ function App() {
   );
 }
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ app: dataApp, component: App });

@@ -1,3 +1,4 @@
+import { randomUuid } from '@/src/core/uuid';
 import {
   useEffect,
   useEffectEvent,
@@ -157,7 +158,7 @@ export function AnnotationControls({
     const rect = annotationGeometry(target.element);
     const point = annotationPoint(rect, cursor);
     const draft: DataAppAnnotationDraft = {
-      id: crypto.randomUUID(),
+      id: randomUuid(),
       target: {
         id: target.id,
         label: region ? 'Selected area' : target.label.slice(0, 256),

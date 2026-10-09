@@ -5,14 +5,15 @@ React 19.2 or newer and React DOM 19.2 or newer are peer dependencies.
 
 ## Mount the app
 
-Use `mountDataApp({ config, component })` to mount into `#root`. When mounting
-through another framework, import `<DataAppProvider>` from `/react/ui`.
+Use `mountDataApp({ app, component })` to mount into `#root`. When mounting
+through another framework, wrap the root in `<DataAppProvider app={app}>` from `/react/ui`.
+`<DataApp>` inherits identity and appearance from that root. Mounting sets the document title before React renders.
 
 ```tsx
 import { injectDataAppStyles, mountDataApp } from '@altertable/data-app/react';
 
 injectDataAppStyles();
-mountDataApp({ config, component: App });
+mountDataApp({ app, component: App });
 ```
 
 Call `injectDataAppStyles()` before mounting; no separate stylesheet is needed.

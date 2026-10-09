@@ -24,6 +24,6 @@ server-only `ALTERTABLE_LAKEHOUSE_USERNAME` and
 `ALTERTABLE_LAKEHOUSE_PASSWORD`, with an optional `ALTERTABLE_API_BASE`.
 Missing credentials fail the query. Keep these variables out of browser code.
 
-Local serving permits SQL disclosure and does not authenticate hosted viewers.
+Local serving does not authenticate hosted viewers.
 Use [the portable server handler](server.md) with per-request authorization when
 hosting an app for other people.

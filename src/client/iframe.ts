@@ -1,3 +1,4 @@
+import { randomUuid } from '@/src/core/uuid';
 import { createBridgeEndpoint } from '@/src/core/bridge-endpoint';
 import {
   PARENT_PARAM,
@@ -45,7 +46,7 @@ export function createIframeTransport({
 }) {
   if (new URL(parentOrigin).origin !== parentOrigin)
     throw new Error('Expected an exact parent origin.');
-  const documentId = crypto.randomUUID();
+  const documentId = randomUuid();
   let token: string | undefined;
   let sessionId: string | undefined;
   let disposed = false;
@@ -141,7 +142,7 @@ export function createIframeTransport({
         return reject(
           new DataAppError('Too many pending data requests.', 'bridge_busy')
         );
-      const id = crypto.randomUUID();
+      const id = randomUuid();
       let sent = false;
 
       function cleanup() {
@@ -252,9 +253,13 @@ export function createIframeTransport({
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
-      queryAll(statement, { limit, signal }) {
+      queryAll(statement, { limit, signal, params }) {
         return messages
-          .request('data:sql', { statement, limit }, { signal })
+          .request(
+            'data:sql',
+            { statement, limit, ...(params === undefined ? {} : { params }) },
+            { signal }
+          )
           .catch(rethrowDataMessageError);
       },
     } satisfies Lakehouse,

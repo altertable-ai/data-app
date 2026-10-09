@@ -41,6 +41,7 @@ function Host() {
   const [pendingRequests, setPendingRequests] = useState(0);
   const [cancelledRequests, setCancelledRequests] = useState(0);
 
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [status, setStatus] = useState<DataAppStatus>('connecting');
   const [attempt, retry] = useReducer(value => value + 1, 0);
   const [version, changeHandler] = useReducer(value => value + 1, 1);
@@ -89,11 +90,11 @@ function Host() {
         forward(operation, input, signal),
       'navigation:update': createNavigationHandler(),
       'data:sql': createSqlQueryHandler(async () => ({
-        async queryAll(statement, { limit, signal }) {
+        async queryAll(statement, { limit, signal, params }) {
           const response = await fetch('/api/sql', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ statement, limit }),
+            body: JSON.stringify({ statement, limit, params }),
             signal,
           });
           if (!response.ok) throw new DataSourceError('unavailable');
@@ -109,7 +110,13 @@ function Host() {
       <output aria-label="Echo requests">{echoRequests}</output>
       <output aria-label="Pending requests">{pendingRequests}</output>
       <output aria-label="Cancelled requests">{cancelledRequests}</output>
+      <output aria-label="Handler version">{version}</output>
       <button onClick={changeHandler}>Change handler</button>
+      <button
+        onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}
+      >
+        Change theme
+      </button>
       <button
         onClick={() => {
           setBroken(false);
@@ -135,7 +142,7 @@ function Host() {
           allowFullScreen: true,
           style: { width: '100%', height: '80vh', border: 0 },
         }}
-        presentation={{ theme: 'dark', surface: 'embedded' }}
+        presentation={{ theme, surface: 'embedded' }}
         source={
           params.has('url')
             ? {
@@ -144,7 +151,9 @@ function Host() {
               }
             : {
                 type: 'bundle',
-                bootstrapUrl: `/__test/${params.has('timeout') ? 'silent' : 'runtime'}`,
+                bootstrapUrl: params.has('packaged')
+                  ? undefined
+                  : `/__test/${params.has('timeout') ? 'silent' : 'runtime'}`,
                 javascript: broken
                   ? params.has('syntax')
                     ? 'const ='
