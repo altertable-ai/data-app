@@ -3,7 +3,7 @@ import type { DataAppAnnotationPresentation } from '@/src/core/annotations';
 import {
   annotationGeometry,
   discoverAnnotationTargets,
-  findAnnotationTarget,
+  annotationRoot,
   projectAnnotationRect,
   type AnnotationRect,
   type AnnotationTargetElement,
@@ -75,8 +75,16 @@ export function useAnnotationGeometry({
   }>({ pins: [] });
   useEffect(() => {
     function measure() {
+      const byId = new Map(
+        (targets?.length
+          ? discoverAnnotationTargets(rootRef.current).targets
+          : []
+        ).map(target => [target.id, target])
+      );
+      const root = annotationRoot(rootRef.current);
+      if (root) byId.set(root.id, root);
       const pins = (targets ?? []).flatMap(pin => {
-        const target = findAnnotationTarget(rootRef.current, pin.targetId);
+        const target = byId.get(pin.targetId);
         return target
           ? [
               {
@@ -96,15 +104,24 @@ export function useAnnotationGeometry({
         outline: rect && region ? projectAnnotationRect(region, rect) : rect,
       });
     }
+    let frame: number | undefined;
+    function scheduleMeasure() {
+      if (frame !== undefined) return;
+      frame = requestAnimationFrame(() => {
+        frame = undefined;
+        measure();
+      });
+    }
     measure();
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(scheduleMeasure);
     if (rootRef.current) observer.observe(rootRef.current);
-    window.addEventListener('resize', measure);
-    document.addEventListener('scroll', measure, true);
+    window.addEventListener('resize', scheduleMeasure);
+    document.addEventListener('scroll', scheduleMeasure, true);
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', measure);
-      document.removeEventListener('scroll', measure, true);
+      if (frame !== undefined) cancelAnimationFrame(frame);
+      window.removeEventListener('resize', scheduleMeasure);
+      document.removeEventListener('scroll', scheduleMeasure, true);
     };
   }, [rootRef, target, region, targets]);
   return geometry;
