@@ -328,6 +328,40 @@ test('an author can override public control tokens and apply and restore appeara
     .toBe(originalColor);
 });
 
+test('option lists use the base palette and honor inherited selection overrides', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  await page
+    .getByRole('button', { name: 'Apply appearance', exact: true })
+    .click();
+  const triggers = ['Name Sort by', 'Segment: Enterprise'];
+  for (const customized of [false, true]) {
+    if (customized)
+      await page
+        .getByRole('button', { name: 'Customize selection', exact: true })
+        .click();
+    for (const name of triggers) {
+      await page.getByRole('button', { name, exact: true }).click();
+      const option = page.getByRole('option', { selected: true });
+      await expect
+        .poll(() =>
+          option.evaluate(element => {
+            const style = getComputedStyle(element);
+            return [style.backgroundColor, style.color];
+          })
+        )
+        .toEqual(
+          customized
+            ? ['rgb(51, 102, 153)', 'rgb(255, 255, 255)']
+            : ['rgb(41, 45, 49)', 'rgb(242, 243, 244)']
+        );
+      await page.keyboard.press('Escape');
+      await expect.poll(() => page.getByRole('option').count()).toBe(0);
+    }
+  }
+});
+
 for (const width of [320, 1280]) {
   test(`app content keeps bottom breathing room with and without its footer at ${width}px`, async ({
     page,

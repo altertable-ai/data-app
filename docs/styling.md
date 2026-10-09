@@ -45,6 +45,12 @@ that minimum when adding app-owned input styles.
 When overriding `--atbl-accent` directly, also choose `--atbl-on-accent` with
 sufficient contrast. Prefer appearance configuration for brand and chart colors.
 
+Selected options default to `--atbl-subtle` and `--atbl-text`, so a brand accent
+does not color every filter selection. Override `--atbl-control-selected-surface`
+and `--atbl-control-selected-text` together to customize selected controls,
+including dropdown options. These overrides inherit from the document or a
+component; place document-wide overrides on `:root` to include portaled menus.
+
 ## Native controls
 
 Use package controls when possible. For a custom native control:

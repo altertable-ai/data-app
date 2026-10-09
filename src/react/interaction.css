@@ -33,10 +33,6 @@
 
 /* Native and React Aria controls share state precedence: disabled, selected,
    pressed, hovered, then idle. Busy is independent and preserves geometry. */
-:where([data-atbl-internal-surface='option']) {
-  --atbl-control-selected-surface: var(--atbl-subtle);
-  --atbl-control-selected-text: var(--atbl-text);
-}
 [data-atbl-control='action']:is(
   :disabled,
   [data-disabled],
@@ -85,10 +81,7 @@
     color-mix(in srgb, var(--atbl-text) 8%, var(--atbl-surface))
   );
 }
-:where(
-    [data-atbl-internal-surface='control'],
-    [data-atbl-internal-surface='option']
-  ):is(
+:where([data-atbl-internal-surface='control']):is(
     [aria-pressed='true'],
     [data-selected],
     [aria-current='true'],
@@ -113,6 +106,16 @@
   );
   /* Optional selected foreground; defaults to the local accent. */
   color: var(--atbl-control-selected-text, var(--atbl-accent));
+}
+:where([data-atbl-internal-surface='option'])[data-selected]:not(
+    :disabled,
+    [data-disabled],
+    [aria-disabled='true'],
+    :has(> input:disabled)
+  ) {
+  /* Option defaults use the base palette; app-selected overrides still inherit. */
+  background: var(--atbl-control-selected-surface, var(--atbl-subtle));
+  color: var(--atbl-control-selected-text, var(--atbl-text));
 }
 :where(
     [data-atbl-internal-surface='field'],

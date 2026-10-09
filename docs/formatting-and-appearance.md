@@ -48,6 +48,7 @@ const dataApp = defineDataApp({
   scope: { organization: 'Acme', environment: 'Production' },
   appearance: {
     theme: 'system',
+    baseColor: 'neutral',
     accentColor: '#405d47',
     density: 'comfortable',
   },
@@ -60,6 +61,16 @@ Scope labels describe the configured connection; they do not grant access.
 
 Title and description explain the app and can be revised when regenerating it.
 Omit appearance to use the standard defaults.
+
+`baseColor` chooses the palette for surfaces, text, and borders: neutral, slate,
+or warm. It is independent of `accentColor`, which defaults to green and supplies
+emphasis for checked controls and selected dates. Primary buttons use the text
+color; dropdown selections use the base palette. Chart colors are configured
+separately through `chartColors`.
+
+For a monochrome app, declare `baseColor: 'neutral'`, `accentColor: '#202124'`,
+and `darkAccentColor: '#f2f3f4'`. Setting the base palette alone does not remove
+the accent. Both palettes adapt to the resolved light or dark theme.
 
 Appearance controls the brand palette, typography, density, corner radius, and
 elevation. Those settings apply consistently to the app instead of tuning each

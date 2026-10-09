@@ -7,7 +7,9 @@ export type ThemePreference = Theme | 'system';
 
 export type AppearanceSettings = {
   theme: ThemePreference;
+  /** Palette for surfaces, text, and borders; independent of the accent. */
   baseColor: 'neutral' | 'slate' | 'warm';
+  /** Emphasis color for checked controls and selected dates; options use the base palette. */
   accentColor: string;
   darkAccentColor?: string;
   chartColors: string[];
