@@ -11,7 +11,8 @@ import operation types using `import type`.
 Declare SQL once with `defineDataApp()` to preserve exact query and parameter
 names. Use stable `lowerCamelCase` IDs describing the result, such as `products`,
 `productsByCategory`, or `dailyRevenue`. Use plural names for row lists; keep parameter
-values in `params`.
+values in `params`. Every query must include `params`; use `{}` when it declares no
+parameters.
 The app owns an immutable registry snapshot. Define operations with
 `dataApp.defineOperation()`.
 
