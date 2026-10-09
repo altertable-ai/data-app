@@ -45,7 +45,7 @@ const products = dataApp.defineOperation({
 ```
 
 `parseProductInput()` and `parseProducts()` are app-owned example functions, not
-package exports. Implement them to validate operation inputs and results. Validate
+package exports. Validate
 filter values in the input parser. `{}` declares a required parameter; `{ defaultValue }` supplies
 a fallback. `query(name, params, { limit })` executes only registered queries and
 inherits the operation's row limit and cancellation signal.
