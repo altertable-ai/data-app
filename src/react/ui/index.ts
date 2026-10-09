@@ -197,3 +197,5 @@ export type {
   JourneyChartProps,
   JourneyChartPath,
 } from '@/src/react/ui/JourneyChart';
+
+export { useSvgId } from '@/src/react/ui/useSvgId';

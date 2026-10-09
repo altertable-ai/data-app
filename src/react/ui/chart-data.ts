@@ -10,6 +10,16 @@ export type ValueChartProps = {
   formatValue?: (value: number) => string;
 };
 
+export type PopulationChartProps = {
+  /** Accessible measure and scope description. */
+  ariaLabel: string;
+  /** Population unit, such as users or sessions. */
+  unit: string;
+  /** Formats counts; rates use percentage formatting. */
+  formatValue?: (value: number) => string;
+  className?: string;
+};
+
 /** Independent observation on two finite numeric axes. */
 export type ScatterChartItem = {
   id: string;

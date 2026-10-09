@@ -4,13 +4,8 @@ import { ComposedChart } from '@/src/react/ui/ComposedChart';
 import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { TooltipSurface } from '@/src/react/ui/TooltipSurface';
 import { classNames } from '@/src/react/ui/classNames';
-import {
-  type AnalyticsChartProps,
-  formatAnalyticsValue,
-  formatAnalyticsRate,
-  validateAnalyticsCount,
-  validateAnalyticsIds,
-} from '@/src/react/ui/analytics-chart-data';
+import type { PopulationChartProps } from '@/src/react/ui/chart-data';
+import { formatNumber, formatPercent } from '@/src/core/format';
 
 export type RetentionChartPoint = {
   /** Nonnegative integer, unique per series; uneven offsets retain their distance. */
@@ -32,7 +27,7 @@ export type RetentionChartSeries = {
   cohortSize: number;
   points: readonly RetentionChartPoint[];
 };
-export type RetentionChartProps = AnalyticsChartProps & {
+export type RetentionChartProps = PopulationChartProps & {
   series: readonly RetentionChartSeries[];
 };
 
@@ -43,12 +38,20 @@ export function RetentionChart({
   unit,
   ariaLabel,
   className,
-  formatValue = formatAnalyticsValue,
+  formatValue = formatNumber,
 }: RetentionChartProps) {
-  validateAnalyticsIds('retention series', series);
+  const ids = new Set<string>();
   const offsets = new Map<number, string>();
   for (const item of series) {
-    validateAnalyticsCount('retention', item.cohortSize);
+    invariant(
+      item.id.trim().length > 0 && !ids.has(item.id),
+      'retention series chart IDs must be nonblank and unique.'
+    );
+    ids.add(item.id);
+    invariant(
+      Number.isFinite(item.cohortSize) && item.cohortSize >= 0,
+      'retention chart counts must be finite and nonnegative.'
+    );
     const seen = new Set<number>();
     for (const point of item.points) {
       invariant(
@@ -68,7 +71,10 @@ export function RetentionChart({
         'retention chart unobserved rates and counts must both be null.'
       );
       if (point.retainedCount !== null) {
-        validateAnalyticsCount('retention', point.retainedCount);
+        invariant(
+          Number.isFinite(point.retainedCount) && point.retainedCount >= 0,
+          'retention chart counts must be finite and nonnegative.'
+        );
         invariant(
           point.retainedCount <= item.cohortSize,
           'retention chart retained counts cannot exceed cohort size.'
@@ -172,7 +178,7 @@ export function RetentionChart({
                           {item.label}:{' '}
                           {point.rate === null
                             ? 'Not observed'
-                            : `${formatAnalyticsRate(point.rate)} · ${formatValue(point.retainedCount!)} / ${formatValue(item.cohortSize)} ${unit}${point.incomplete ? ' · Incomplete period' : ''}`}
+                            : `${formatPercent(point.rate)} · ${formatValue(point.retainedCount!)} / ${formatValue(item.cohortSize)} ${unit}${point.incomplete ? ' · Incomplete period' : ''}`}
                         </span>
                       );
                     })}
@@ -185,6 +191,7 @@ export function RetentionChart({
             {series.map((item, index) => (
               <ChartLegend.Item key={item.id}>
                 <ChartLegend.Marker
+                  kind="square"
                   color={`var(--atbl-chart-${(index % 8) + 1})`}
                 />
                 <ChartLegend.Label>{item.label}</ChartLegend.Label>
@@ -201,7 +208,7 @@ export function RetentionChart({
                     · {point.label}:{' '}
                     {point.rate === null
                       ? 'Not observed'
-                      : `${formatAnalyticsRate(point.rate)} · ${formatValue(point.retainedCount!)} / ${formatValue(item.cohortSize)} ${unit}${point.incomplete ? ' · Incomplete period' : ''}`}
+                      : `${formatPercent(point.rate)} · ${formatValue(point.retainedCount!)} / ${formatValue(item.cohortSize)} ${unit}${point.incomplete ? ' · Incomplete period' : ''}`}
                   </span>
                 ))}
               </li>

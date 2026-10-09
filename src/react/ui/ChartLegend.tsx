@@ -96,13 +96,13 @@ export type ChartLegendMarkerProps = Omit<
   ComponentPropsWithRef<'svg'>,
   'children'
 > & {
-  kind?: ChartLegendMarkerKind;
+  kind: ChartLegendMarkerKind;
 };
 
 /** Decorative mark; color accepts public palette tokens or any CSS color.
  * Defaults match the shared bar or accent-colored series primitives. */
 function ChartLegendMarker({
-  kind = 'square',
+  kind,
   color = kind === 'bar' ? chartBarFill : 'var(--atbl-accent)',
   className,
   style,

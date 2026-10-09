@@ -76,3 +76,7 @@ const charts = (
 );
 void charts;
 void missingName;
+
+// @ts-expect-error Marker geometry must be deliberate when composing a legend.
+const unspecifiedMarker = <ChartLegend.Marker color="var(--atbl-chart-1)" />;
+void unspecifiedMarker;
