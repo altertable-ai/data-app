@@ -67,7 +67,7 @@ describe('runtime-errors', () => {
 test('a failed embedded app can recover with a corrected bundle and bootstrap failures settle', async ({
   page,
 }) => {
-  await page.goto('/bundle-host?broken=1');
+  await page.goto('/bundle-host?packaged=1&broken=1');
   await expect
     .poll(() => page.getByRole('alert').textContent())
     .toContain('Could not load');

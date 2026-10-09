@@ -31,10 +31,17 @@ A bundle source has this shape:
 ```ts
 const source = {
   type: 'bundle' as const,
-  bootstrapUrl: 'https://my-report-app-1.apps.example.net/',
   javascript: bundle.javascript,
 };
 ```
+
+Omit `bootstrapUrl` to load the SDK's packaged bootstrap as a `data:` document.
+This supports MCP hosts that permit opaque child frames but block remote frame
+URLs. The SDK embeds the exact host origin and applies a CSP that prohibits
+direct network access. Data requests go through the host's dispatcher.
+
+Supply an HTTP(S) `bootstrapUrl` to use an externally served trusted bootstrap,
+such as the [Worker asset](worker.md).
 
 The host provides a self-contained JavaScript bundle. React bridges replace the
 iframe whenever its JavaScript content changes. Serve the bootstrap page with a CSP compatible with the bundle.

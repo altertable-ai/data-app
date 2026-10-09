@@ -1,3 +1,4 @@
+import { randomUuid } from '@/src/core/uuid';
 import { DeclaredView } from '@/src/react/view-runtime';
 import {
   bindDataset,
@@ -45,7 +46,7 @@ const clientScopes = new WeakMap<object, string>();
 function getClientScope(client: object): string {
   let scope = clientScopes.get(client);
   if (!scope) {
-    scope = crypto.randomUUID();
+    scope = randomUuid();
     clientScopes.set(client, scope);
   }
 

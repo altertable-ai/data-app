@@ -1,3 +1,4 @@
+import { randomUuid } from '@/src/core/uuid';
 import { createBridgeEndpoint } from '@/src/core/bridge-endpoint';
 import type { DataAppPresentation } from '@/src/core/presentation';
 import type { DataAppLogger } from '@/src/core/logger';
@@ -130,7 +131,7 @@ export function attachDataAppConnection({
         if (message.documentId !== documentId) {
           cancelAll();
           documentId = message.documentId;
-          sessionId = crypto.randomUUID();
+          sessionId = randomUuid();
         }
         onStatusChange?.('connected');
         if (disposed) return;
@@ -239,7 +240,7 @@ export function attachDataAppConnection({
   }
 
   function load() {
-    if (connection.type === 'opaque') token = crypto.randomUUID();
+    if (connection.type === 'opaque') token = randomUuid();
     cancelAll();
     documentId = undefined;
     sessionId = undefined;
