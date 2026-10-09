@@ -94,10 +94,10 @@ are mutually exclusive.
 
 ## Loading an embedded app
 
-Use `<DataAppSkeleton>` from `/react/ui` while the host builds or starts an app.
-Call `injectDataAppShellStyles()` from `/react/ui` before rendering the placeholder.
-The host owns when to show it and supplies any surrounding header or footer.
-`/react/embed` itself remains independent of UI components and styles.
+The host owns loading and generation UI while an app starts. Use a neutral
+status that does not imply a particular app layout. `/react/embed` remains
+independent of UI components and styles. Once the app loads, its query and
+widget loading states describe the content they replace.
 
 ## Parent-owned presentation
 

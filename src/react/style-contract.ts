@@ -130,10 +130,6 @@ export const dataAppStyleClasses = {
     component: 'MetricWidget',
     kind: 'root',
   },
-  'altertable-data-app-skeleton': {
-    component: 'DataAppSkeleton',
-    kind: 'root',
-  },
   'altertable-chart-legend': { component: 'ChartLegend', kind: 'root' },
   'altertable-chart-legend-item': {
     component: 'ChartLegend.Item',

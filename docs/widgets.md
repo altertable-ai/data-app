@@ -18,8 +18,7 @@ readings without inventing values. Use `isEmpty` for the predicate and
 | One data-dependent phrase within static prose    | `<DataValue>`           |
 
 Use [layout](layout.md) for `<Stack>`, `<Grid>`, and responsive `<GridItem>` spans.
-`<Skeleton>` supports custom fallback content; `/react/ui` supplies
-`<DataAppSkeleton>` for iframe startup.
+`<Skeleton>` supports custom fallback content.
 
 ## Choose a visualization
 
