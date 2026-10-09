@@ -42,9 +42,9 @@ export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   filterControls?: ReactNode;
 };
 
-export type DataAppControlRenderers = {
-  /** Compose generated search controls; replaces the default search row. */
-  renderSearch?: (searchControls: ReactNode) => ReactNode;
+export type DataAppControlProps = {
+  /** Show declared search controls. Defaults to true; hiding preserves their values. */
+  showSearch?: boolean;
   /** Compose generated dates, choices, predicates, and clear action; replaces the default variable bar. */
   renderFilters?: (filterControls: ReactNode) => ReactNode;
 };
@@ -56,7 +56,7 @@ export type StaticDataAppProps = DataAppBaseProps & {
 
 export type DataAppProps<Data = unknown, Input = unknown> =
   | (DataAppBaseProps &
-      DataAppControlRenderers & {
+      DataAppControlProps & {
         request: DataAppRequest<Data, Input>;
         /** Findings are always derived from the result currently visible to the reader. */
         story: BoundStory<Data, Input>;
@@ -163,18 +163,15 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
     </AppToolbar>
   );
 
-  const searchRegion = request?.searchControls ? (
-    props.renderSearch ? (
-      props.renderSearch(request.searchControls)
-    ) : (
+  const searchRegion =
+    request?.searchControls && props.showSearch !== false ? (
       <VariableBar
         className="altertable-variable-searches"
         aria-label="Search variables"
       >
         {request.searchControls}
       </VariableBar>
-    )
-  ) : null;
+    ) : null;
   const filterRegion = request?.filterControls ? (
     props.renderFilters ? (
       props.renderFilters(request.filterControls)

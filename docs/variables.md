@@ -19,10 +19,12 @@ available when they have zero matches.
 Use `searchVariable()`, `choiceVariable()`, and `dateRangeVariable()` in a view's
 `variables`. `<DataApp view={view}>` generates their controls and keeps values in the URL.
 Search controls occupy a dedicated row above the other variables and filters.
-Use `<DataApp renderSearch={searchControls => ...} renderFilters={filterControls => ...}>`
-to compose each region independently. Each callback receives its generated controls
-with state and change handlers already bound, and replaces that region's default
-wrapper. Return `null` to hide a region. Callbacks run only when their region has controls.
+Search appears automatically when the view declares a search variable.
+Set `<DataApp showSearch={false}>` to hide its row without changing search values.
+Use `<DataApp renderFilters={filterControls => ...}>` to compose the filter region.
+The callback receives generated controls with state and change handlers already bound,
+and replaces the default variable bar. Return `null` to hide the region.
+The callback runs only when filter controls exist.
 Keep local search out of the operation input when it only filters loaded rows.
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,

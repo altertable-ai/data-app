@@ -10,7 +10,7 @@ import type { StoryFinding } from '@/src/react/ui/story';
 import {
   DataAppFrame,
   type DataAppBaseProps,
-  type DataAppControlRenderers,
+  type DataAppControlProps,
 } from '@/src/react/ui/DataAppFrame';
 import {
   PrimaryViewContext,
@@ -22,7 +22,7 @@ export type DataAppProps<Data, Input = unknown> = Omit<
   DataAppBaseProps,
   'dataContext'
 > &
-  DataAppControlRenderers & {
+  DataAppControlProps & {
     view: DeclaredView<Data, Input> & {
       scope(snapshot: DisplayedSnapshot<Data, Input>): string;
     };

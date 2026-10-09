@@ -142,6 +142,7 @@ const content = view.content(source => (
 ));
 
 function App() {
+  const hideSearch = new URLSearchParams(location.search).has('hideSearch');
   const hideControls = new URLSearchParams(location.search).has('hideControls');
   const customControls = new URLSearchParams(location.search).has(
     'customControls'
@@ -151,15 +152,7 @@ function App() {
       view={view}
       datasets={[dataset]}
       story={() => []}
-      renderSearch={
-        hideControls
-          ? () => null
-          : customControls
-            ? searchControls => (
-                <section aria-label="Custom search">{searchControls}</section>
-              )
-            : undefined
-      }
+      showSearch={hideControls || hideSearch ? false : undefined}
       renderFilters={
         hideControls
           ? () => null

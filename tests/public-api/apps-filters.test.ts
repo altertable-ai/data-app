@@ -39,11 +39,11 @@ test('hidden control regions leave no empty row between the header and content',
   ).toBe(0);
 });
 
-test('custom search and filter slots retain generated controls and URL state', async ({
+test('custom filters retain automatic search controls and URL state', async ({
   page,
 }) => {
   await page.goto('/filters?customControls');
-  const search = page.getByRole('region', { name: 'Custom search' });
+  const search = page.getByRole('group', { name: 'Search variables' });
   const filters = page.getByRole('region', { name: 'Custom filters' });
   expect(
     await search.getByRole('searchbox', { name: 'Search', exact: true }).count()
@@ -69,6 +69,28 @@ test('custom search and filter slots retain generated controls and URL state', a
     .poll(async () => decode(await displayed.textContent()).search)
     .toBe('');
   expect(await search.getByRole('searchbox').inputValue()).toBe('');
+});
+
+test('hiding search preserves its URL value and leaves filters available', async ({
+  page,
+}) => {
+  await page.goto('/filters?hideSearch&q=France');
+  const displayed = page.getByRole('status', { name: 'Displayed filters' });
+  await expect
+    .poll(async () => decode(await displayed.textContent()).search)
+    .toBe('France');
+  expect(await page.getByRole('searchbox').count()).toBe(0);
+  await choose(page, page, 'Display', 'Beta');
+  await expect
+    .poll(async () => decode(await displayed.textContent()).choice)
+    .toBe('b');
+  expect(new URL(page.url()).searchParams.get('q')).toBe('France');
+  await page
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  await expect
+    .poll(async () => decode(await displayed.textContent()).search)
+    .toBe('');
 });
 
 test('generated search has its own row above filters with consistent hover borders', async ({
