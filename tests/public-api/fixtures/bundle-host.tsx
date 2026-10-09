@@ -110,6 +110,7 @@ function Host() {
       <output aria-label="Echo requests">{echoRequests}</output>
       <output aria-label="Pending requests">{pendingRequests}</output>
       <output aria-label="Cancelled requests">{cancelledRequests}</output>
+      <output aria-label="Handler version">{version}</output>
       <button onClick={changeHandler}>Change handler</button>
       <button
         onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}
