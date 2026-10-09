@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.69.0](https://github.com/altertable-ai/data-app/compare/v0.68.0...v0.69.0) (2026-10-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **react:** remove obsolete host skeleton APIs ([#63](https://github.com/altertable-ai/data-app/issues/63))
+
+### Bug Fixes
+
+* **annotations:** restore widget targets, dismissal, and scrolling ([#64](https://github.com/altertable-ai/data-app/issues/64)) ([71d6940](https://github.com/altertable-ai/data-app/commit/71d694043f05a81eafd9fd12ba182a2c2f74f508))
+
+
+### Code Refactoring
+
+* **react:** remove obsolete host skeleton APIs ([#63](https://github.com/altertable-ai/data-app/issues/63)) ([2fa4efd](https://github.com/altertable-ai/data-app/commit/2fa4efd7e8686ce172785c483d1f84dcecd765d5))
+
 ## [0.68.0](https://github.com/altertable-ai/data-app/compare/v0.67.0...v0.68.0) (2026-10-09)
 
 

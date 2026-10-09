@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app",
-  "version": "0.68.0",
+  "version": "0.69.0",
   "description": "A TypeScript and React toolkit with APIs, components, and authoring guides for developers and AI agents to build data apps powered by Altertable.",
   "keywords": [
     "altertable",
