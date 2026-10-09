@@ -52,7 +52,6 @@
 @import './ui/UpdatedAt.css' layer(atbl.components);
 @import './ui/data-identifiers.css' layer(atbl.components);
 @import './ui/GlossaryDefinition.css' layer(atbl.components);
-@import './ui/DataAppSkeleton.css' layer(atbl.components);
 @import './ui/ExportControl.css' layer(atbl.components);
 @import './ui/TrendChart.css' layer(atbl.components);
 @import './ui/ChartLegend.css' layer(atbl.components);
