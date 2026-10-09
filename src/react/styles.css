@@ -59,6 +59,7 @@
 @import './ui/PieChart.css' layer(atbl.components);
 @import './ui/ScatterChart.css' layer(atbl.components);
 @import './ui/ComposedChart.css' layer(atbl.components);
+@import './ui/AnalyticsCharts.css' layer(atbl.components);
 @import './annotations/colors.css' layer(atbl.components);
 @import './annotations/AnnotationBar.css' layer(atbl.components);
 @import './annotations/AnnotationControls.css' layer(atbl.components);

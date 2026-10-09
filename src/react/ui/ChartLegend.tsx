@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
-import { chartBarFill } from '@/src/react/ui/chart-primitives';
+import { chartBarFill } from '@/src/react/ui/chartColor';
 
 export type ChartLegendProps = {
   children: ReactNode;
@@ -85,18 +85,24 @@ function ChartLegendItem({
   );
 }
 
-export type ChartLegendMarkerKind = 'bar' | 'line' | 'area' | 'point' | 'slice';
+export type ChartLegendMarkerKind =
+  | 'square'
+  | 'bar'
+  | 'line'
+  | 'area'
+  | 'point'
+  | 'slice';
 export type ChartLegendMarkerProps = Omit<
   ComponentPropsWithRef<'svg'>,
   'children'
 > & {
-  kind: ChartLegendMarkerKind;
+  kind?: ChartLegendMarkerKind;
 };
 
 /** Decorative mark; color accepts public palette tokens or any CSS color.
  * Defaults match the shared bar or accent-colored series primitives. */
 function ChartLegendMarker({
-  kind,
+  kind = 'square',
   color = kind === 'bar' ? chartBarFill : 'var(--atbl-accent)',
   className,
   style,
@@ -107,11 +113,12 @@ function ChartLegendMarker({
       {...props}
       aria-hidden="true"
       focusable="false"
-      viewBox="0 0 20 12"
+      viewBox={kind === 'square' ? '0 0 8 8' : '0 0 20 12'}
       data-kind={kind}
       className={classNames('altertable-chart-legend-marker', className)}
       style={{ color, ...style }}
     >
+      {kind === 'square' && <rect width="8" height="8" fill="currentColor" />}
       {kind === 'bar' && (
         <path d="M6 11V3Q6 1 8 1H12Q14 1 14 3V11Z" fill="currentColor" />
       )}

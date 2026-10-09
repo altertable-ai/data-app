@@ -179,3 +179,21 @@ export type {
   ChartLegendMarkerKind,
 } from '@/src/react/ui/ChartLegend';
 export type { ComposedChartLegendProps } from '@/src/react/ui/ComposedChartLegend';
+
+export { FunnelChart } from '@/src/react/ui/FunnelChart';
+export type {
+  FunnelChartProps,
+  FunnelChartStep,
+  FunnelChartSeries,
+} from '@/src/react/ui/FunnelChart';
+export { RetentionChart } from '@/src/react/ui/RetentionChart';
+export type {
+  RetentionChartProps,
+  RetentionChartPoint,
+  RetentionChartSeries,
+} from '@/src/react/ui/RetentionChart';
+export { JourneyChart } from '@/src/react/ui/JourneyChart';
+export type {
+  JourneyChartProps,
+  JourneyChartPath,
+} from '@/src/react/ui/JourneyChart';

@@ -4,6 +4,9 @@ import {
   BarChart,
   AreaChart,
   PieChart,
+  FunnelChart,
+  RetentionChart,
+  JourneyChart,
   ScatterChart,
   ComposedChart,
 } from '@altertable/data-app/react/ui';
@@ -248,6 +251,210 @@ export function GalleryBasics() {
                 xUnit="requests"
                 yUnit="ms"
                 ariaLabel="Workspace performance"
+              />
+            </Example>
+
+            <Example
+              name="FunnelChart"
+              description="Activation by plan. Filled columns show conversion; hatching shows drop-off from the previous step."
+            >
+              <FunnelChart
+                ariaLabel="Activation funnel"
+                unit="users"
+                steps={[
+                  { id: 'visit', label: 'Visited' },
+                  { id: 'signup', label: 'Signed up' },
+                  { id: 'activate', label: 'Activated' },
+                ]}
+                series={[
+                  { id: 'free', label: 'Free plan', values: [1000, 600, 240] },
+                  { id: 'paid', label: 'Paid plan', values: [500, 400, 300] },
+                ]}
+              />
+            </Example>
+            <Example
+              name="RetentionChart"
+              description="Users returning each week after signup. Illustrative cohorts as of Oct 9; dotted tails mark the current partial week."
+            >
+              <RetentionChart
+                ariaLabel="Weekly signup retention"
+                unit="users"
+                series={[
+                  {
+                    id: 'sep7',
+                    label: 'Sep 7 signups',
+                    cohortSize: 1000,
+                    points: [
+                      {
+                        offset: 0,
+                        label: 'Week 0',
+                        rate: 1,
+                        retainedCount: 1000,
+                      },
+                      {
+                        offset: 1,
+                        label: 'Week 1',
+                        rate: 0.47,
+                        retainedCount: 470,
+                      },
+                      {
+                        offset: 2,
+                        label: 'Week 2',
+                        rate: 0.39,
+                        retainedCount: 390,
+                      },
+                      {
+                        offset: 3,
+                        label: 'Week 3',
+                        rate: 0.34,
+                        retainedCount: 340,
+                      },
+                      {
+                        offset: 4,
+                        label: 'Week 4',
+                        rate: 0.31,
+                        retainedCount: 310,
+                        incomplete: true,
+                      },
+                    ],
+                  },
+                  {
+                    id: 'sep14',
+                    label: 'Sep 14 signups',
+                    cohortSize: 800,
+                    points: [
+                      {
+                        offset: 0,
+                        label: 'Week 0',
+                        rate: 1,
+                        retainedCount: 800,
+                      },
+                      {
+                        offset: 1,
+                        label: 'Week 1',
+                        rate: 0.5,
+                        retainedCount: 400,
+                      },
+                      {
+                        offset: 2,
+                        label: 'Week 2',
+                        rate: 0.43,
+                        retainedCount: 344,
+                      },
+                      {
+                        offset: 3,
+                        label: 'Week 3',
+                        rate: 0.38,
+                        retainedCount: 304,
+                        incomplete: true,
+                      },
+                      {
+                        offset: 4,
+                        label: 'Week 4',
+                        rate: null,
+                        retainedCount: null,
+                      },
+                    ],
+                  },
+                ]}
+              />
+            </Example>
+            <Example
+              name="JourneyChart"
+              span={2}
+              description="Explore onboarding paths one branch at a time. Counts and flows use the Step 1 population."
+            >
+              <JourneyChart
+                ariaLabel="Onboarding journey"
+                unit="users"
+                paths={[
+                  {
+                    id: 'a',
+                    steps: [
+                      { event: 'Signed up', property: null },
+                      { event: 'Workspace created', property: null },
+                      { event: 'Report created', property: null },
+                      { event: 'Subscribed', property: null },
+                    ],
+                    count: 460,
+                    converted: true,
+                    truncated: false,
+                  },
+                  {
+                    id: 'b',
+                    steps: [
+                      { event: 'Signed up', property: null },
+                      { event: 'Workspace created', property: null },
+                      { event: 'Integration connected', property: null },
+                      { event: 'Subscribed', property: null },
+                    ],
+                    count: 240,
+                    converted: true,
+                    truncated: false,
+                  },
+                  {
+                    id: 'c',
+                    steps: [
+                      { event: 'Signed up', property: null },
+                      { event: 'Workspace created', property: null },
+                    ],
+                    count: 180,
+                    converted: false,
+                    truncated: false,
+                  },
+                  {
+                    id: 'd',
+                    steps: [
+                      { event: 'Signed up', property: null },
+                      { event: 'Documentation viewed', property: null },
+                      { event: 'Workspace created', property: null },
+                    ],
+                    count: 80,
+                    converted: null,
+                    truncated: true,
+                  },
+                  {
+                    id: 'e',
+                    steps: [
+                      { event: 'Signed up', property: null },
+                      { event: 'Documentation viewed', property: null },
+                    ],
+                    count: 40,
+                    converted: false,
+                    truncated: false,
+                  },
+                  {
+                    id: 'f',
+                    steps: [
+                      { event: 'Signed up', property: null },
+                      { event: 'Search', property: null },
+                      { event: 'Signed up', property: null },
+                    ],
+                    count: 30,
+                    converted: null,
+                    truncated: false,
+                  },
+                  {
+                    id: 'g',
+                    steps: [
+                      { event: 'Signed up', property: null },
+                      { event: 'Settings', property: null },
+                    ],
+                    count: 20,
+                    converted: null,
+                    truncated: true,
+                  },
+                  {
+                    id: 'h',
+                    steps: [
+                      { event: 'Signed up', property: null },
+                      { event: 'Invite sent', property: null },
+                    ],
+                    count: 10,
+                    converted: null,
+                    truncated: true,
+                  },
+                ]}
               />
             </Example>
           </Grid>

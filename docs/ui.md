@@ -100,6 +100,20 @@ the samples. Pie slices represent mutually exclusive parts of one total; shares
 use the sum of supplied items, so include Other when showing a subset of the
 whole. Scatter points represent independent X/Y observations.
 
+### Product analytics charts
+
+Use `<FunnelChart>`, `<RetentionChart>`, and `<JourneyChart>` from `/react/ui`
+inside `<VisualizationWidget>`. Derive inputs from the displayed rows; the
+binding owns loading, evidence, CSV, and story content. Types and JSDoc describe
+input constraints; the gallery includes complete examples.
+
+- `<FunnelChart>` compares ordered step counts across populations. Each series
+  uses its first step as the baseline; hatching shows previous-step drop-off.
+- `<RetentionChart>` plots query-defined rates and retained counts by interval
+  offset. Use `null` for unobserved periods; `incomplete` produces a dotted tail.
+- `<JourneyChart>` derives expandable branches and outcomes from full paths.
+  Truncated paths stop at the last loaded event.
+
 ### Composed charts
 
 Use `<ComposedChart>` from `/react/ui` for multiple series or mixed marks inside
@@ -134,10 +148,11 @@ its columns aligned with the displayed measures.
 
 ### Legends
 
-Include `<ComposedChart.Legend />` to derive labels and markers from the series;
+Include `<ComposedChart.Legend />` to derive labels and colored square markers from the series;
 omit it when no legend is needed. For any chart, compose `<ChartLegend>` with
 `<ChartLegend.Item>`, `<ChartLegend.Marker>`, and `<ChartLegend.Label>` using the
-same names and colors as the plot.
+same names and colors as the plot. `<ChartLegend.Marker>` defaults to a square,
+shared with chart tooltips and funnel summaries.
 `<PieChart>` includes a legend by default; `showLegend={false}` omits it.
 
 Legends align cells in a container-responsive grid, truncate labels, and reserve

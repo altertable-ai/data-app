@@ -38,10 +38,15 @@
   opacity: var(--atbl-control-disabled-opacity);
 }
 .altertable-chart-legend-marker {
-  display: block;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  vertical-align: middle;
+  flex: none;
+}
+.altertable-chart-legend-marker:not([data-kind='square']) {
   width: 20px;
   height: 12px;
-  flex: none;
 }
 .altertable-chart-legend-label {
   min-width: 0;

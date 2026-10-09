@@ -29,7 +29,7 @@ function LegendContent({
   align,
   labelStyle,
   iconType,
-  iconSize = 20,
+  iconSize = 8,
   inactiveColor = 'var(--atbl-muted)',
   position,
   verticalAlign,
@@ -60,7 +60,9 @@ function LegendContent({
       {payload.map((entry, index) => {
         if (entry.type === 'none') return null;
         const type = iconType ?? entry.type;
-        const kind = legendMarkerKinds[type ?? 'none'] ?? 'point';
+        const kind = iconType
+          ? (legendMarkerKinds[type ?? 'none'] ?? 'point')
+          : 'square';
         const formatLabel = entry.formatter ?? formatter;
         const label = formatLabel
           ? formatLabel(entry.value, entry, index)
@@ -72,7 +74,10 @@ function LegendContent({
                 <ChartLegend.Marker
                   kind={kind}
                   color={entry.inactive ? inactiveColor : entry.color}
-                  style={{ width: iconSize, height: iconSize * 0.6 }}
+                  style={{
+                    width: iconSize,
+                    height: kind === 'square' ? iconSize : iconSize * 0.6,
+                  }}
                 />
               ))}
             <ChartLegend.Label style={labelStyle}>{label}</ChartLegend.Label>
@@ -121,7 +126,7 @@ export function ComposedChartLegend({
 }: ComposedChartLegendProps) {
   return (
     <Legend
-      iconSize={20}
+      iconSize={8}
       inactiveColor="var(--atbl-muted)"
       content={<LegendContent maxVisibleItems={maxVisibleItems} />}
       {...props}

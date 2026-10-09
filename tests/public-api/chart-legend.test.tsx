@@ -41,7 +41,7 @@ test('pie category legends use shared primitives and can be omitted', () => {
     );
   }
   expect(render()).toContain('altertable-chart-legend');
-  expect(render()).toContain('data-kind="slice"');
+  expect(render()).toContain('data-kind="square"');
   expect(render(false)).not.toContain('altertable-chart-legend');
   expect(render(false)).toContain('altertable-pie-slice');
 });
