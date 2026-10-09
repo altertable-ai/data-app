@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.68.0](https://github.com/altertable-ai/data-app/compare/v0.67.0...v0.68.0) (2026-10-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **charts:** apply post-merge review feedback ([#59](https://github.com/altertable-ai/data-app/issues/59))
+
+### Features
+
+* **charts:** add funnel, retention, and journey visualizations ([#57](https://github.com/altertable-ai/data-app/issues/57)) ([48e8e44](https://github.com/altertable-ai/data-app/commit/48e8e44f36cf2a53b21ca6c815581761a29e8ead))
+
+
+### Bug Fixes
+
+* **charts:** apply post-merge review feedback ([#59](https://github.com/altertable-ai/data-app/issues/59)) ([8789d8e](https://github.com/altertable-ai/data-app/commit/8789d8eb4fdbe74f021f8873723a111c1d7aa93e))
+* **worker:** accept any hyphenated preview host label ([#61](https://github.com/altertable-ai/data-app/issues/61)) ([28f0bc2](https://github.com/altertable-ai/data-app/commit/28f0bc2e4412d1e0fd2b1a582469808f9de00f10))
+
 ## [0.67.0](https://github.com/altertable-ai/data-app/compare/v0.66.0...v0.67.0) (2026-10-09)
 
 
