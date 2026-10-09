@@ -32,11 +32,14 @@ Keep local search out of the operation input when it only filters loaded rows.
 Declare controls in reader priority order. Keep the period and most useful scope
 filters visible; place less frequent restrictions behind More filters. Choose useful
 defaults from the available data rather than exposing every field.
+Declare each label once. Generated secondary controls place it above the input;
+do not add a separate heading or repeat it inside the value.
 
 Set `presentation.group` to `display` for controls that change ordering or presentation
-rather than which records are included. Scope controls and display options have
-separate rows. Set `presentation.prominence` to `secondary` for either group to put
-its controls behind a disclosure. Both properties are optional; defaults are
+rather than which records are included. Display options live in a popover opened
+by the sliders icon alongside the filters. Set `presentation.prominence` to `secondary`
+to collapse less frequent scope filters behind More filters, or place display options
+in the popover's secondary section. Both properties are optional; defaults are
 `scope` and `primary`. Declaration order is preserved within each group.
 
 ```ts
@@ -54,12 +57,12 @@ const sort = choiceVariable({
 });
 ```
 
-The disclosure counts active secondary controls, including restrictions present by
-default. Each control counts once, regardless of how many values it selects.
-Scope controls use their unrestricted value when available, otherwise their default;
-display options count changes from their defaults. Collapsing a group keeps its
-applied values. Presentation metadata does not change URL state, query inputs, or
-clear/reset behavior. Search retains its dedicated row.
+More filters shows an active count, including restrictions present by default. Each
+control counts once, regardless of how many values it selects. Scope controls use
+their unrestricted value when available, otherwise their default. The display-options
+trigger indicates changes from defaults across its whole panel. Collapsing filters
+or dismissing display options keeps applied values. Presentation metadata does not
+change URL state, query inputs, or clear/reset behavior. Search retains its dedicated row.
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,
 maximum range, time zone, and comparison rules. `defineTimeView()` is the compact
@@ -201,7 +204,8 @@ alongside selected members. Enable exclusion only when the registered query supp
 it, including the intended behavior for missing values.
 
 Generated controls show active values within each filter and one collective
-Clear icon with a tooltip. Clear removes restrictions from search and predicate filters.
+Clear filters action. Clear removes restrictions from search and predicate filters,
+then closes More filters.
 `resetAll()` restores all
 configured variable defaults, including fixed choices and periods. Nonempty
 default filters can therefore be active immediately after Reset.

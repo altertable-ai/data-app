@@ -20,7 +20,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
 }) => {
   await page.goto('/filter-presentation');
   const scope = page.getByRole('group', { name: 'Filters', exact: true });
-  const display = page.getByRole('group', {
+  const display = page.getByRole('dialog', {
     name: 'Display options',
     exact: true,
   });
@@ -28,24 +28,52 @@ test('presentation groups disclose secondary restrictions and preserve them acro
     name: 'More filters (1 active)',
     exact: true,
   });
+  expect(await more.locator('svg').count()).toBe(1);
+  await more.hover();
+  await expect
+    .poll(() => page.getByRole('tooltip').textContent())
+    .toBe('Show additional filters');
   const table = page.getByRole('table');
   await expect.poll(() => table.getByRole('row').count()).toBe(8);
   expect(
     await scope.getByRole('button', { name: 'Monthly spend Sort by' }).count()
   ).toBe(0);
   expect(
-    await display.getByRole('button', { name: 'Monthly spend Sort by' }).count()
+    await page.getByRole('button', { name: 'Monthly spend Sort by' }).count()
+  ).toBe(0);
+  expect(
+    await page
+      .getByRole('button', { name: 'Display options', exact: true })
+      .count()
   ).toBe(1);
+  const visibleLines = (await page.getByRole('main').innerText()).split('\n');
+  expect(visibleLines).not.toContain('Filters');
+  expect(visibleLines).not.toContain('Display options');
   expect(
     await scope.getByRole('button', { name: 'Any Active account' }).count()
   ).toBe(0);
   await more.focus();
   await more.press('Space');
   expect(await more.getAttribute('aria-expanded')).toBe('true');
-  const secondary = scope.getByRole('group', {
+  expect(
+    await more
+      .locator('svg')
+      .evaluate(element => getComputedStyle(element).transform)
+  ).toBe('matrix(-1, 0, 0, -1, 0, 0)');
+  const secondary = page.getByRole('group', {
     name: 'Secondary filters',
     exact: true,
   });
+  expect(
+    await secondary.getByText('Active account', { exact: true }).count()
+  ).toBe(1);
+  const labelBox = await secondary
+    .getByText('Active account', { exact: true })
+    .boundingBox();
+  const inputBox = await secondary
+    .getByRole('button', { name: 'Any Active account', exact: true })
+    .boundingBox();
+  expect(labelBox!.y + labelBox!.height).toBeLessThan(inputBox!.y);
   await choose(page, secondary, 'Active account', 'Yes');
   await expect.poll(() => table.getByRole('row').count()).toBe(6);
   const appliedURL = page.url();
@@ -73,21 +101,78 @@ test('presentation groups disclose secondary restrictions and preserve them acro
   await expect.poll(() => page.url()).toBe(appliedURL);
   await expect.poll(() => table.getByRole('row').count()).toBe(6);
 
-  await display
-    .getByRole('button', { name: 'More display options', exact: true })
-    .click();
+  const tableBefore = await table.boundingBox();
+  const heading = await page
+    .getByRole('heading', { name: 'Customer explorer', exact: true })
+    .boundingBox();
+  const displayTrigger = page.getByRole('button', {
+    name: 'Display options',
+    exact: true,
+  });
+  await displayTrigger.focus();
+  await displayTrigger.press('Enter');
+  expect((await table.boundingBox())!.y).toBe(tableBefore!.y);
   await choose(page, display, 'Order', 'Ascending');
   await expect
     .poll(() => table.getByRole('rowheader').first().textContent())
     .toBe('Atelier North');
   expect(
-    await display
+    await page
       .getByRole('button', {
-        name: 'More display options (1 changed)',
+        name: 'Display options (1 changed)',
         exact: true,
       })
       .count()
   ).toBe(1);
+  await choose(page, display, 'Sort by', 'Customer name');
+  expect(
+    await page
+      .getByRole('button', { name: 'Display options (2 changed)', exact: true })
+      .count()
+  ).toBe(1);
+  await display.getByRole('button', { name: 'Customer name Sort by' }).click();
+  const selectionButton = await display
+    .getByRole('button', { name: 'Customer name Sort by' })
+    .boundingBox();
+  await expect
+    .poll(async () => {
+      const menu = await page.getByRole('listbox').locator('..').boundingBox();
+      return Math.abs(
+        menu!.x + menu!.width - selectionButton!.x - selectionButton!.width
+      );
+    })
+    .toBeLessThan(1);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.getByRole('listbox').count()).toBe(0);
+  expect(await display.count()).toBe(1);
+  await expect
+    .poll(() =>
+      display.evaluate(element => element.contains(document.activeElement))
+    )
+    .toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => display.count()).toBe(0);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', {
+          name: 'Display options (2 changed)',
+          exact: true,
+        })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+  await page
+    .getByRole('button', { name: 'Display options (2 changed)', exact: true })
+    .click();
+  expect(
+    await display.getByRole('button', { name: 'Customer name Sort by' }).count()
+  ).toBe(1);
+  await page.mouse.click(
+    heading!.x + heading!.width / 2,
+    heading!.y + heading!.height / 2
+  );
+  await expect.poll(() => display.count()).toBe(0);
   await scope
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
@@ -102,7 +187,7 @@ test('expanded filter groups fit a phone viewport', async ({
     .getByRole('button', { name: 'More filters (1 active)', exact: true })
     .click();
   await page
-    .getByRole('button', { name: 'More display options', exact: true })
+    .getByRole('button', { name: 'Display options', exact: true })
     .click();
   expect(
     await page.getByRole('button', { name: 'Any Active account' }).isVisible()
@@ -121,6 +206,121 @@ test('expanded filter groups fit a phone viewport', async ({
   }
 });
 
+test('secondary filter fields remain ordered and clear closes the panel', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation');
+  const toggle = page.getByRole('button', {
+    name: 'More filters (1 active)',
+    exact: true,
+  });
+  await toggle.click();
+  const secondary = page.getByRole('group', {
+    name: 'Secondary filters',
+    exact: true,
+  });
+  const labels = await secondary
+    .getByRole('button')
+    .evaluateAll(elements =>
+      elements.map(element => (element as HTMLElement).innerText)
+    );
+  expect(labels).toEqual(['Any', 'All', 'All', 'At least 100', 'Any']);
+  await secondary
+    .getByRole('button', { name: 'Billing status: All', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'Overdue', exact: true }).click();
+  await secondary
+    .getByRole('button', { name: 'Account owner: All', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'Amira', exact: true }).click();
+  await page.getByRole('option', { name: 'Jonas', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.getByRole('dialog').count()).toBe(0);
+  await expect
+    .poll(() => page.getByRole('table').getByRole('row').count())
+    .toBe(2);
+  expect(
+    await page
+      .getByRole('button', { name: 'More filters (3 active)', exact: true })
+      .count()
+  ).toBe(1);
+  await page
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  await expect.poll(() => secondary.count()).toBe(0);
+  const closed = page.getByRole('button', {
+    name: 'More filters',
+    exact: true,
+  });
+  expect(await closed.getAttribute('aria-expanded')).toBe('false');
+  await expect
+    .poll(() => closed.evaluate(element => element === document.activeElement))
+    .toBe(true);
+  await expect
+    .poll(() => page.getByRole('table').getByRole('row').count())
+    .toBe(9);
+  await closed.click();
+  expect(
+    await secondary
+      .getByRole('button', { name: 'Billing status: All', exact: true })
+      .count()
+  ).toBe(1);
+  expect(
+    await secondary
+      .getByRole('button', { name: 'Account owner: All', exact: true })
+      .count()
+  ).toBe(1);
+});
+
+test('display settings retain nested calendar changes and dismiss one overlay at a time', async ({
+  page,
+}) => {
+  await page.goto('/time-app?displayDate');
+  const display = page.getByRole('dialog', {
+    name: 'Display options',
+    exact: true,
+  });
+  await page
+    .getByRole('button', { name: 'Display options', exact: true })
+    .click();
+  await display.getByRole('button', { name: /^Choose dates/ }).click();
+  const calendar = page.getByRole('dialog').filter({
+    has: page.getByRole('checkbox', {
+      name: 'Compare with previous period',
+      exact: true,
+    }),
+  });
+  await calendar
+    .getByRole('checkbox', {
+      name: 'Compare with previous period',
+      exact: true,
+    })
+    .check();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('compare'))
+    .toBe('previous');
+  await page.keyboard.press('Escape');
+  await expect.poll(() => calendar.count()).toBe(0);
+  expect(await display.isVisible()).toBe(true);
+  await expect
+    .poll(() =>
+      display.evaluate(element => element.contains(document.activeElement))
+    )
+    .toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => display.count()).toBe(0);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', {
+          name: 'Display options (1 changed)',
+          exact: true,
+        })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+});
+
 test('search with display-only controls does not create an empty scope row', async ({
   page,
 }) => {
@@ -134,11 +334,11 @@ test('search with display-only controls does not create an empty scope row', asy
   expect(
     await page.getByRole('group', { name: 'Filters', exact: true }).count()
   ).toBe(0);
-  const display = page.getByRole('group', {
-    name: 'Display options',
+  const options = page.getByRole('group', {
+    name: 'View options',
     exact: true,
   });
-  await display
+  await options
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect
@@ -420,10 +620,8 @@ test('generated filters apply typed predicates and clear restrictions atomically
   expect(
     await page.getByRole('button', { name: 'Reset filters' }).count()
   ).toBe(0);
-  await clear.hover();
-  await expect
-    .poll(() => page.getByRole('tooltip').textContent())
-    .toBe('Clear filters');
+  expect(await clear.textContent()).toBe('Clear filters');
+  expect(await clear.locator('svg').count()).toBe(0);
   const selectedURL = page.url();
   expect(
     await page

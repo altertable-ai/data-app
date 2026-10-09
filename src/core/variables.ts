@@ -17,7 +17,7 @@ export type { HistoryMode } from '@/src/core/navigation';
 export type VariablePresentation = {
   /** Scope changes the included data; display changes its presentation. Defaults to scope. */
   group?: 'scope' | 'display';
-  /** Secondary controls appear in a disclosure. Defaults to primary. */
+  /** Secondary scope controls are collapsed; secondary display options follow the primary panel section. Defaults to primary. */
   prominence?: 'primary' | 'secondary';
 };
 

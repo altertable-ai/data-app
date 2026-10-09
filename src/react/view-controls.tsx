@@ -82,13 +82,24 @@ export function useViewVariables<Variables extends VariableCollection>(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
   const groups: Record<'scope' | 'display', ControlGroup> = {
-    scope: { primary: [], secondary: [], activeSecondaryCount: 0 },
-    display: { primary: [], secondary: [], activeSecondaryCount: 0 },
+    scope: {
+      primary: [],
+      secondary: [],
+      activeCount: 0,
+      activeSecondaryCount: 0,
+    },
+    display: {
+      primary: [],
+      secondary: [],
+      activeCount: 0,
+      activeSecondaryCount: 0,
+    },
   };
   const searchControls: ReactNode[] = [];
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const definition = definitions[name]!;
     const value = variables.values[name];
+    const groupName = definition.presentation?.group ?? 'scope';
     let control: ReactNode = null;
     if (definition.kind === 'dateRange') {
       const selection = value as DateRangeSelection;
@@ -142,6 +153,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       control = (
         <Select
           key={name}
+          align={groupName === 'display' ? 'end' : 'start'}
           label={definition.label}
           value={selected.kind === 'all' ? 'all' : String(selected.value)}
           options={[
@@ -184,6 +196,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       control = (
         <Select
           key={name}
+          align={groupName === 'display' ? 'end' : 'start'}
           label={definition.label ?? name}
           value={value as string}
           options={definition.options}
@@ -212,17 +225,34 @@ export function useViewVariables<Variables extends VariableCollection>(
       );
     }
     if (definition.kind === 'search') continue;
-    const groupName = definition.presentation?.group ?? 'scope';
     const group = groups[groupName];
     const prominence = definition.presentation?.prominence ?? 'primary';
-    group[prominence].push(control);
-    if (prominence === 'secondary') {
-      const variable = definition as AppVariable<any>;
-      const baseline =
-        groupName === 'display'
-          ? variable.defaultValue
-          : (variable.clearValue ?? variable.defaultValue);
-      if (!variable.same(value, baseline)) group.activeSecondaryCount++;
+    group[prominence].push(
+      groupName === 'scope' && prominence === 'secondary' ? (
+        <div key={name} className="altertable-secondary-field">
+          {definition.kind !== 'booleanFilter' &&
+            definition.kind !== 'choice' && (
+              <span
+                className="altertable-secondary-field-label"
+                aria-hidden="true"
+              >
+                {definition.label ?? name}
+              </span>
+            )}
+          {control}
+        </div>
+      ) : (
+        control
+      )
+    );
+    const variable = definition as AppVariable<any>;
+    const baseline =
+      groupName === 'display'
+        ? variable.defaultValue
+        : (variable.clearValue ?? variable.defaultValue);
+    if (!variable.same(value, baseline)) {
+      group.activeCount++;
+      if (prominence === 'secondary') group.activeSecondaryCount++;
     }
   }
   const hasActiveFilters = Object.entries(definitions).some(

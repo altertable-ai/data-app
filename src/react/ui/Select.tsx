@@ -23,6 +23,8 @@ export type SelectProps = {
   name?: string;
   id?: string;
   className?: string;
+  /** Align the popup with the selection button. Defaults to start. */
+  align?: 'start' | 'end';
 };
 /** Labeled single selection with keyboard navigation and a styled listbox. */
 export function Select({
@@ -33,6 +35,7 @@ export function Select({
   disabled,
   required,
   className,
+  align = 'start',
   ...props
 }: SelectProps) {
   validateChoiceOptions(options);
@@ -54,7 +57,10 @@ export function Select({
         <SelectValue>{selected.label}</SelectValue>
         <AppIcon name="disclosure" size={14} />
       </PressButton>
-      <Popover className="altertable-select-popover" placement="bottom start">
+      <Popover
+        className="altertable-select-popover"
+        placement={`bottom ${align}`}
+      >
         <ListBox
           items={options}
           aria-label={`${label} values`}

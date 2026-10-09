@@ -84,6 +84,9 @@ const view = createDataHooks(client).defineTimeView({
     contract: calendar,
     defaultValue: { kind: 'dates', start: '2026-03-04', end: '2026-03-06' },
     comparison: true,
+    presentation: new URLSearchParams(location.search).has('displayDate')
+      ? { group: 'display' }
+      : undefined,
   },
   variables: { region },
   isEmpty: () => false,

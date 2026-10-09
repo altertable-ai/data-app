@@ -58,11 +58,41 @@ const variables = {
     label: 'Active account',
     presentation: { prominence: 'secondary' },
   }),
+  billing: dimensionFilter<string>({
+    key: 'billing',
+    label: 'Billing status',
+    valueType: 'string',
+    selectionMode: 'single',
+    options: [
+      { value: 'Current', label: 'Current' },
+      { value: 'Overdue', label: 'Overdue' },
+    ],
+    presentation: { prominence: 'secondary' },
+  }),
+  owner: dimensionFilter<string>({
+    key: 'owner',
+    label: 'Account owner',
+    valueType: 'string',
+    selectionMode: 'multiple',
+    options: [
+      { value: 'Amira', label: 'Amira' },
+      { value: 'Jonas', label: 'Jonas' },
+      { value: 'Lea', label: 'Lea' },
+    ],
+    presentation: { prominence: 'secondary' },
+  }),
   spend: numberFilter({
     key: 'spend',
     label: 'Monthly spend (€)',
     min: 0,
     defaultValue: { kind: 'comparison', operator: 'gte', value: 100 },
+    presentation: { prominence: 'secondary' },
+  }),
+  orders: numberFilter({
+    key: 'orders',
+    label: 'Open orders',
+    min: 0,
+    max: 50,
     presentation: { prominence: 'secondary' },
   }),
   sort: choiceVariable({
@@ -90,6 +120,9 @@ type Input = AppVariableValues<typeof variables>;
 const records = [
   {
     name: 'Atelier North',
+    billing: 'Current',
+    owner: 'Amira',
+    orders: 3,
     country: 'FR',
     segment: 'Growth',
     active: true,
@@ -97,6 +130,9 @@ const records = [
   },
   {
     name: 'Beacon Labs',
+    billing: 'Current',
+    owner: 'Jonas',
+    orders: 12,
     country: 'UK',
     segment: 'Enterprise',
     active: true,
@@ -104,6 +140,9 @@ const records = [
   },
   {
     name: 'Cedar Studio',
+    billing: 'Overdue',
+    owner: 'Lea',
+    orders: 0,
     country: 'DE',
     segment: 'Growth',
     active: false,
@@ -111,6 +150,9 @@ const records = [
   },
   {
     name: 'Delta Works',
+    billing: 'Current',
+    owner: 'Amira',
+    orders: 7,
     country: 'FR',
     segment: 'Enterprise',
     active: true,
@@ -118,6 +160,9 @@ const records = [
   },
   {
     name: 'Elm & Co',
+    billing: 'Overdue',
+    owner: 'Jonas',
+    orders: 0,
     country: 'UK',
     segment: 'Growth',
     active: false,
@@ -125,6 +170,9 @@ const records = [
   },
   {
     name: 'Foundry Team',
+    billing: 'Current',
+    owner: 'Lea',
+    orders: 18,
     country: 'DE',
     segment: 'Enterprise',
     active: true,
@@ -132,6 +180,9 @@ const records = [
   },
   {
     name: 'Grove Partners',
+    billing: 'Overdue',
+    owner: 'Amira',
+    orders: 1,
     country: 'FR',
     segment: 'Growth',
     active: false,
@@ -139,6 +190,9 @@ const records = [
   },
   {
     name: 'Harbor Systems',
+    billing: 'Current',
+    owner: 'Jonas',
+    orders: 4,
     country: 'UK',
     segment: 'Enterprise',
     active: true,
@@ -152,7 +206,7 @@ function includes(selection: Input['country'], value: string) {
   );
   return selection.kind === 'exclude' ? !selected : selected;
 }
-function matchesSpend(selection: Input['spend'], value: number) {
+function matchesNumber(selection: Input['spend'], value: number) {
   if (selection.kind === 'all') return true;
   if (selection.kind === 'range')
     return (
@@ -190,6 +244,9 @@ const operation = dataApp.defineOperation({
       segment: parseDimensionSelection(input.segment, variables.segment),
       active: parseBooleanSelection(input.active, variables.active),
       spend: parseNumberSelection(input.spend, variables.spend),
+      billing: parseDimensionSelection(input.billing, variables.billing),
+      owner: parseDimensionSelection(input.owner, variables.owner),
+      orders: parseNumberSelection(input.orders, variables.orders),
     };
   },
   output: (value: unknown) => value as { rows: typeof records },
@@ -211,8 +268,11 @@ const operation = dataApp.defineOperation({
             .includes(input.search.toLocaleLowerCase()) &&
           includes(input.country, row.country) &&
           includes(input.segment, row.segment) &&
+          includes(input.billing, row.billing) &&
+          includes(input.owner, row.owner) &&
           (input.active.kind === 'all' || row.active === input.active.value) &&
-          matchesSpend(input.spend, row.spend)
+          matchesNumber(input.spend, row.spend) &&
+          matchesNumber(input.orders, row.orders)
       )
       .sort((left, right) => {
         const order =
@@ -248,6 +308,9 @@ const view = defineDataView({
     segment: { kind: 'all' as const },
     active: { kind: 'all' as const },
     spend: { kind: 'all' as const },
+    billing: { kind: 'all' as const },
+    owner: { kind: 'all' as const },
+    orders: { kind: 'all' as const },
     ...values,
   }),
   dataContext: createDataContext({ customers: 'customers' })({

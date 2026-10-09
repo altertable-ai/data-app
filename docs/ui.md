@@ -201,7 +201,7 @@ shared mobile text-size minimum.
 
 Use `<FilterBar>` to arrange predicates and `<VariableBar>` for mixed app
 parameters. Each filter shows its current value; categorical single selection includes All.
-`<FilterActions>` provides one Clear icon with a tooltip, plus optional paired
+`<FilterActions>` provides a text Clear filters action, plus optional paired
 Apply/Cancel actions for app-owned drafts. The caller owns those actions; the
 components do not infer query state.
 
