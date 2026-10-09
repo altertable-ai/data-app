@@ -105,7 +105,7 @@ const server = Bun.serve({
     if (url.pathname === '/__test/runtime')
       return worker.fetch(
         new Request(
-          `https://test-report-app-1.example.test/${url.search}`,
+          `https://test-report-03gyrydq17xftovxkqhaybeyi.example.test/${url.search}`,
           request
         ),
         {

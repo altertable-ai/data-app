@@ -6,7 +6,8 @@ interface WorkerBindings {
   PARENT_ORIGINS: string;
 }
 
-const TOKEN_RE = /^(?=.{1,63}$)[a-z0-9]+(?:-[a-z0-9]+)+-app-[1-9][0-9]*$/;
+// Hosts own the label format (e.g. `<prefix>-<base36 id>` or legacy `<prefix>-app-<n>`); accept any hyphenated DNS label.
+const TOKEN_RE = /^(?=.{1,63}$)[a-z0-9]+(?:-+[a-z0-9]+)+$/;
 function isPreviewHost(hostname: string, domainName: string) {
   const suffix = `.${domainName}`;
 
