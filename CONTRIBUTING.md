@@ -117,6 +117,19 @@ and verify published usage. Flag breaking changes in commits and PRs.
 Docs help agents generate data apps: show current usage and focused examples.
 Keep package architecture and contributor rules here.
 
+## UI platform principles
+
+Design defaults that let agents build useful data apps with minimal configuration:
+
+- Express user intent through small typed props and explicit ownership.
+- Derive values from the displayed source rather than asking authors to repeat them.
+- Configure only semantics that cannot be inferred reliably, such as which filters affect a dataset.
+- Keep data structures simple, data flow direct, and names specific to their purpose.
+- Compose existing primitives; remove unnecessary wrappers and intermediate state.
+- Let components own loading, keyboard behavior, focus recovery, and responsive layout.
+- Document the default path with one short authoring example; keep constraints in TypeScript and JSDoc.
+- Verify public behavior across loading, empty, updating, and ready states.
+
 ## Component CSS
 
 Keep defaults in authored CSS: inherited values in `tokens.css`, presets in
