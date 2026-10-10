@@ -4,8 +4,7 @@ import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
 import {
   ViewControlBar,
-  type FilterControl,
-  type ActiveFilterSummary,
+  type ActiveFilterControl,
 } from '@/src/react/view-control-bar';
 import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
@@ -88,8 +87,8 @@ export function useViewVariables<Variables extends VariableCollection>(
     primary: [],
     secondary: [],
   };
-  const allFilters: FilterControl[] = [];
-  const activeSecondaryFilters: ActiveFilterSummary[] = [];
+  const allFilters: ReactNode[] = [];
+  const activeSecondaryFilters: ActiveFilterControl[] = [];
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
@@ -129,7 +128,20 @@ export function useViewVariables<Variables extends VariableCollection>(
       clearedFilters[name] = variable.clearValue;
       if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
     }
-    function renderControl(labelPlacement: ControlLabelPlacement) {
+    function renderControl(
+      labelPlacement: ControlLabelPlacement,
+      onDeactivate?: () => void
+    ) {
+      function setControlValue(
+        next: AppVariableValues<Variables>[typeof name]
+      ) {
+        variables.set(name, next);
+        if (
+          onDeactivate &&
+          variable.same(next, variable.clearValue ?? variable.defaultValue)
+        )
+          onDeactivate();
+      }
       let control: ReactNode = null;
       if (definition.kind === 'dateRange') {
         const selection = value as DateRangeSelection;
@@ -140,10 +152,7 @@ export function useViewVariables<Variables extends VariableCollection>(
               labelPlacement === 'inline' ? undefined : labelPlacement
             }
             {...dateRangeControl(definition, selection, next =>
-              variables.set(
-                name,
-                next as AppVariableValues<Variables>[typeof name]
-              )
+              setControlValue(next as AppVariableValues<Variables>[typeof name])
             )}
           />
         );
@@ -161,10 +170,7 @@ export function useViewVariables<Variables extends VariableCollection>(
             error={!!facet?.isError}
             onRetry={() => void facet?.refetch()}
             onChange={next =>
-              variables.set(
-                name,
-                next as AppVariableValues<Variables>[typeof name]
-              )
+              setControlValue(next as AppVariableValues<Variables>[typeof name])
             }
           />
         );
@@ -176,10 +182,7 @@ export function useViewVariables<Variables extends VariableCollection>(
             filter={definition as NumberFilter}
             value={value as NumberSelection}
             onChange={next =>
-              variables.set(
-                name,
-                next as AppVariableValues<Variables>[typeof name]
-              )
+              setControlValue(next as AppVariableValues<Variables>[typeof name])
             }
           />
         );
@@ -198,8 +201,7 @@ export function useViewVariables<Variables extends VariableCollection>(
               { id: 'false', label: 'No' },
             ]}
             onChange={next =>
-              variables.set(
-                name,
+              setControlValue(
                 (next === 'all'
                   ? { kind: 'all' }
                   : {
@@ -222,10 +224,7 @@ export function useViewVariables<Variables extends VariableCollection>(
             maxSelected={definition.maxSelected}
             emptySelectionLabel="None"
             onChange={next =>
-              variables.set(
-                name,
-                next as AppVariableValues<Variables>[typeof name]
-              )
+              setControlValue(next as AppVariableValues<Variables>[typeof name])
             }
           />
         );
@@ -239,10 +238,7 @@ export function useViewVariables<Variables extends VariableCollection>(
             value={value as string}
             options={definition.options}
             onChange={next =>
-              variables.set(
-                name,
-                next as AppVariableValues<Variables>[typeof name]
-              )
+              setControlValue(next as AppVariableValues<Variables>[typeof name])
             }
           />
         );
@@ -258,37 +254,12 @@ export function useViewVariables<Variables extends VariableCollection>(
       displayOptions[prominence].push(renderControl(labelPlacement));
       if (active) changedDisplayOptionCount++;
     } else {
-      allFilters.push({
-        id: name,
-        label: definition.label ?? name,
-        control: renderControl('above'),
-      });
+      allFilters.push(renderControl('above'));
       if (active && prominence === 'secondary') {
-        let summary = variable.describe?.(value) ?? String(value);
-        let fullValue = summary;
-        if (definition.kind === 'dimension') {
-          const selection = value as DimensionSelection;
-          if (selection.kind !== 'all') {
-            const options = facetState.get(name)?.data ?? definition.options;
-            fullValue = `${selection.kind === 'exclude' ? 'Exclude: ' : ''}${selection.members
-              .map(member =>
-                member.kind === 'missing'
-                  ? 'Missing'
-                  : (options.find(option => option.value === member.value)
-                      ?.label ?? String(member.value))
-              )
-              .join(', ')}`;
-            summary =
-              selection.members.length > 2
-                ? `${selection.kind === 'exclude' ? 'Exclude: ' : ''}${selection.members.length} selected`
-                : fullValue;
-          }
-        }
         activeSecondaryFilters.push({
           id: name,
           label: definition.label ?? name,
-          value: summary,
-          fullValue,
+          renderControl: onDeactivate => renderControl('inline', onDeactivate),
           onClear:
             variable.clearValue === undefined
               ? undefined

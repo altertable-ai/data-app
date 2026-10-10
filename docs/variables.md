@@ -39,9 +39,8 @@ rather than which records are included. Display options live in a popover opened
 by the sliders icon alongside the filters. Set `presentation.prominence` to `secondary`
 to place less frequent scope filters in the Filters sheet, or place display options
 after primary display options. Defaults are `scope` and `primary`.
-Active secondary filters appear as removable summaries below the primary controls.
-Select a summary to open its filter in the sheet; remove it to clear only that
-restriction. Labels and values derive from the variable declaration. Search and
+Active secondary filters appear as compact pickers below the primary controls.
+Edit them directly or use their clear button to remove only that restriction. Labels and values derive from the variable declaration. Search and
 display options remain separate. Declaration order is preserved within each priority.
 
 ```ts

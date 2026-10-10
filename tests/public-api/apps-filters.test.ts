@@ -1036,7 +1036,7 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
     await page
       .getByRole('button', { name: 'No Active account', exact: true })
       .count()
-  ).toBe(0);
+  ).toBe(1);
   await controls
     .getByRole('button', { name: 'Filters (2 active)', exact: true })
     .click();
@@ -1139,7 +1139,7 @@ test('left filter sheet clears predicates while preserving search and display se
   ).toBe(0);
 });
 
-test('secondary filter summaries edit their field and clear only their restriction', async ({
+test('compact secondary filters edit directly and clear only their restriction', async ({
   page,
 }) => {
   await page.goto(
@@ -1150,29 +1150,18 @@ test('secondary filter summaries edit their field and clear only their restricti
     exact: true,
   });
   const edit = summaries.getByRole('button', {
-    name: 'Edit Active account: No',
+    name: 'No Active account',
     exact: true,
   });
   await expect.poll(() => edit.isVisible()).toBe(true);
   await edit.click();
-  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
-  const field = sheet.getByRole('group', {
-    name: 'Active account',
-    exact: true,
-  });
+  expect(
+    await page.getByRole('dialog', { name: 'Filters', exact: true }).count()
+  ).toBe(0);
+  await page.getByRole('option', { name: 'Yes', exact: true }).click();
   await expect
-    .poll(() => field.evaluate(element => element === document.activeElement))
-    .toBe(true);
-  await page.keyboard.press('Tab');
-  await expect
-    .poll(() =>
-      field
-        .getByRole('button')
-        .evaluate(element => element === document.activeElement)
-    )
-    .toBe(true);
-  await page.keyboard.press('Escape');
-  await expect.poll(() => sheet.count()).toBe(0);
+    .poll(() => new URL(page.url()).searchParams.get('active'))
+    .toBe('true');
   await summaries
     .getByRole('button', { name: 'Clear Active account', exact: true })
     .click();
@@ -1189,9 +1178,27 @@ test('secondary filter summaries edit their field and clear only their restricti
         .evaluate(element => element === document.activeElement)
     )
     .toBe(true);
+  await page.goto('/filter-presentation?spend=all&active=false');
+  await page
+    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('button', { name: 'No Active account', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'Any', exact: true }).click();
+  await expect
+    .poll(() =>
+      page.getByRole('group', { name: 'Active filters', exact: true }).count()
+    )
+    .toBe(0);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'Filters', exact: true })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
 });
 
-test('secondary summaries keep full selection labels and compact large selections', async ({
+test('compact secondary pickers retain full labels and edit multiple selections', async ({
   page,
 }) => {
   const params = new URLSearchParams({
@@ -1211,14 +1218,19 @@ test('secondary summaries keep full selection labels and compact large selection
     exact: true,
   });
   const edit = summaries.getByRole('button', {
-    name: 'Edit Account owner: Amira, Jonas, Lea',
+    name: 'Account owner: Amira, Jonas, Lea',
     exact: true,
   });
-  await expect.poll(() => edit.innerText()).toBe('Account owner: 3 selected');
-  await edit.focus();
+  await expect.poll(() => edit.isVisible()).toBe(true);
+  await edit.click();
+  await page.getByRole('option', { name: 'Jonas', exact: true }).click();
   await expect
-    .poll(() => page.getByRole('tooltip').innerText())
-    .toBe('Account owner: Amira, Jonas, Lea');
+    .poll(() => new URL(page.url()).searchParams.get('owner'))
+    .toContain('Amira');
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('owner'))
+    .not.toContain('Jonas');
+  await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 360, height: 760 });
   expect(
     await summaries.evaluate(

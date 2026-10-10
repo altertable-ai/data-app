@@ -2,7 +2,7 @@ import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   Children,
   useId,
-  useEffect,
+  useCallback,
   useRef,
   useState,
   type ComponentRef,
@@ -16,12 +16,10 @@ import { VariableBar } from '@/src/react/ui/VariableBar';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
-export type FilterControl = { id: string; label: string; control: ReactNode };
-export type ActiveFilterSummary = {
+export type ActiveFilterControl = {
   id: string;
   label: string;
-  value: string;
-  fullValue: string;
+  renderControl: (onDeactivate: () => void) => ReactNode;
   onClear?: () => void;
 };
 
@@ -35,8 +33,8 @@ export function ViewControlBar({
   onClear,
 }: {
   primaryFilters: ReactNode[];
-  allFilters: FilterControl[];
-  activeSecondaryFilters: ActiveFilterSummary[];
+  allFilters: ReactNode[];
+  activeSecondaryFilters: ActiveFilterControl[];
   activeFilterCount: number;
   displayOptions: ReactNode[];
   changedDisplayOptionCount: number;
@@ -44,18 +42,10 @@ export function ViewControlBar({
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersId = useId();
-  const [selectedFilterId, setSelectedFilterId] = useState<string | null>(null);
-  const filterFields = useRef(new Map<string, ComponentRef<'fieldset'>>());
-  useEffect(() => {
-    if (!filtersOpen || !selectedFilterId) return;
-    const frame = requestAnimationFrame(() => {
-      const field = filterFields.current.get(selectedFilterId);
-      field?.scrollIntoView({ block: 'nearest' });
-      field?.focus({ preventScroll: true });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [filtersOpen, selectedFilterId]);
   const filtersButtonRef = useRef<ComponentRef<'button'>>(null);
+  const focusFilters = useCallback(() => {
+    requestAnimationFrame(() => filtersButtonRef.current?.focus());
+  }, []);
   const filtersButtonLabel = activeFilterCount
     ? `Filters (${activeFilterCount} active)`
     : 'Filters';
@@ -81,10 +71,7 @@ export function ViewControlBar({
               aria-expanded={filtersOpen}
               aria-controls={filtersId}
               data-open={filtersOpen}
-              onClick={() => {
-                setSelectedFilterId(null);
-                setFiltersOpen(true);
-              }}
+              onClick={() => setFiltersOpen(true)}
             >
               <AppIcon name="filters" />
               Filters
@@ -109,38 +96,11 @@ export function ViewControlBar({
             aria-label="Active filters"
           >
             {activeSecondaryFilters.map(filter => (
-              <div className="altertable-active-filter" key={filter.id}>
-                <Tooltip content={`${filter.label}: ${filter.fullValue}`}>
-                  <Button
-                    variant="ghost"
-                    className="altertable-active-filter-label"
-                    aria-label={`Edit ${filter.label}: ${filter.fullValue}`}
-                    onClick={() => {
-                      setSelectedFilterId(filter.id);
-                      setFiltersOpen(true);
-                    }}
-                  >
-                    <span>
-                      {filter.label}: {filter.value}
-                    </span>
-                  </Button>
-                </Tooltip>
-                {filter.onClear && (
-                  <Tooltip content={`Clear ${filter.label}`}>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label={`Clear ${filter.label}`}
-                      onClick={() => {
-                        filter.onClear?.();
-                        filtersButtonRef.current?.focus();
-                      }}
-                    >
-                      <AppIcon name="close" size={14} />
-                    </Button>
-                  </Tooltip>
-                )}
-              </div>
+              <ActiveFilter
+                key={filter.id}
+                filter={filter}
+                onDeactivate={focusFilters}
+              />
             ))}
           </fieldset>
         )}
@@ -176,25 +136,41 @@ export function ViewControlBar({
             aria-label="All filters"
             className="altertable-sheet-filters"
           >
-            {allFilters.map(filter => (
-              <fieldset
-                key={filter.id}
-                aria-label={filter.label}
-                tabIndex={-1}
-                className="altertable-sheet-filter"
-                data-atbl-focus="ring"
-                ref={element => {
-                  if (element) filterFields.current.set(filter.id, element);
-                  else filterFields.current.delete(filter.id);
-                }}
-              >
-                {filter.control}
-              </fieldset>
-            ))}
+            {allFilters}
           </VariableBar>
         </Sheet>
       )}
     </>
+  );
+}
+
+function ActiveFilter({
+  filter,
+  onDeactivate,
+}: {
+  filter: ActiveFilterControl;
+  onDeactivate: () => void;
+}) {
+  return (
+    <div className="altertable-active-filter">
+      {filter.renderControl(onDeactivate)}
+      {filter.onClear && (
+        <Tooltip content={`Clear ${filter.label}`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="altertable-active-filter-clear"
+            aria-label={`Clear ${filter.label}`}
+            onClick={() => {
+              filter.onClear?.();
+              onDeactivate();
+            }}
+          >
+            <AppIcon name="close" size={14} />
+          </Button>
+        </Tooltip>
+      )}
+    </div>
   );
 }
 
