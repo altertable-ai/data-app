@@ -105,3 +105,53 @@
 .altertable-filter-sheet {
   width: min(420px, 100vw);
 }
+
+.altertable-active-filters,
+.altertable-sheet-filter {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.altertable-active-filters {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--atbl-space-xs);
+}
+.altertable-active-filter {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+}
+.altertable-active-filter > :first-child {
+  min-width: 0;
+}
+.altertable-active-filter-label {
+  min-width: 0;
+  font-weight: normal;
+}
+.altertable-active-filter-label > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.altertable-sheet-filter > * {
+  width: 100%;
+  min-width: 0;
+}
+.altertable-active-filter .altertable-button {
+  min-height: 2rem;
+  font-size: var(--atbl-type-meta-size);
+  padding-block: var(--atbl-space-xs);
+}
+.altertable-active-filter .altertable-button[data-size='icon'] {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0;
+}

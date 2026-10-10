@@ -2,6 +2,7 @@ import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   Children,
   useId,
+  useEffect,
   useRef,
   useState,
   type ComponentRef,
@@ -15,8 +16,18 @@ import { VariableBar } from '@/src/react/ui/VariableBar';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
+export type FilterControl = { id: string; label: string; control: ReactNode };
+export type ActiveFilterSummary = {
+  id: string;
+  label: string;
+  value: string;
+  fullValue: string;
+  onClear?: () => void;
+};
+
 export function ViewControlBar({
   primaryFilters,
+  activeSecondaryFilters,
   allFilters,
   activeFilterCount,
   displayOptions,
@@ -24,7 +35,8 @@ export function ViewControlBar({
   onClear,
 }: {
   primaryFilters: ReactNode[];
-  allFilters: ReactNode[];
+  allFilters: FilterControl[];
+  activeSecondaryFilters: ActiveFilterSummary[];
   activeFilterCount: number;
   displayOptions: ReactNode[];
   changedDisplayOptionCount: number;
@@ -32,6 +44,17 @@ export function ViewControlBar({
 }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersId = useId();
+  const [selectedFilterId, setSelectedFilterId] = useState<string | null>(null);
+  const filterFields = useRef(new Map<string, ComponentRef<'fieldset'>>());
+  useEffect(() => {
+    if (!filtersOpen || !selectedFilterId) return;
+    const frame = requestAnimationFrame(() => {
+      const field = filterFields.current.get(selectedFilterId);
+      field?.scrollIntoView({ block: 'nearest' });
+      field?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [filtersOpen, selectedFilterId]);
   const filtersButtonRef = useRef<ComponentRef<'button'>>(null);
   const filtersButtonLabel = activeFilterCount
     ? `Filters (${activeFilterCount} active)`
@@ -58,7 +81,10 @@ export function ViewControlBar({
               aria-expanded={filtersOpen}
               aria-controls={filtersId}
               data-open={filtersOpen}
-              onClick={() => setFiltersOpen(true)}
+              onClick={() => {
+                setSelectedFilterId(null);
+                setFiltersOpen(true);
+              }}
             >
               <AppIcon name="filters" />
               Filters
@@ -76,6 +102,47 @@ export function ViewControlBar({
           <DisplayOptionsPopover changedCount={changedDisplayOptionCount}>
             {displayOptions}
           </DisplayOptionsPopover>
+        )}
+        {activeSecondaryFilters.length > 0 && (
+          <fieldset
+            className="altertable-active-filters"
+            aria-label="Active filters"
+          >
+            {activeSecondaryFilters.map(filter => (
+              <div className="altertable-active-filter" key={filter.id}>
+                <Tooltip content={`${filter.label}: ${filter.fullValue}`}>
+                  <Button
+                    variant="ghost"
+                    className="altertable-active-filter-label"
+                    aria-label={`Edit ${filter.label}: ${filter.fullValue}`}
+                    onClick={() => {
+                      setSelectedFilterId(filter.id);
+                      setFiltersOpen(true);
+                    }}
+                  >
+                    <span>
+                      {filter.label}: {filter.value}
+                    </span>
+                  </Button>
+                </Tooltip>
+                {filter.onClear && (
+                  <Tooltip content={`Clear ${filter.label}`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Clear ${filter.label}`}
+                      onClick={() => {
+                        filter.onClear?.();
+                        filtersButtonRef.current?.focus();
+                      }}
+                    >
+                      <AppIcon name="close" size={14} />
+                    </Button>
+                  </Tooltip>
+                )}
+              </div>
+            ))}
+          </fieldset>
         )}
       </VariableBar>
       {allFilters.length > 0 && (
@@ -109,7 +176,21 @@ export function ViewControlBar({
             aria-label="All filters"
             className="altertable-sheet-filters"
           >
-            {allFilters}
+            {allFilters.map(filter => (
+              <fieldset
+                key={filter.id}
+                aria-label={filter.label}
+                tabIndex={-1}
+                className="altertable-sheet-filter"
+                data-atbl-focus="ring"
+                ref={element => {
+                  if (element) filterFields.current.set(filter.id, element);
+                  else filterFields.current.delete(filter.id);
+                }}
+              >
+                {filter.control}
+              </fieldset>
+            ))}
           </VariableBar>
         </Sheet>
       )}

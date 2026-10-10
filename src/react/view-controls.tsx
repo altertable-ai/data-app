@@ -2,7 +2,11 @@ import type { ReactNode } from 'react';
 import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
-import { ViewControlBar } from '@/src/react/view-control-bar';
+import {
+  ViewControlBar,
+  type FilterControl,
+  type ActiveFilterSummary,
+} from '@/src/react/view-control-bar';
 import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
   NumberFilter,
@@ -84,7 +88,8 @@ export function useViewVariables<Variables extends VariableCollection>(
     primary: [],
     secondary: [],
   };
-  const allFilters: ReactNode[] = [];
+  const allFilters: FilterControl[] = [];
+  const activeSecondaryFilters: ActiveFilterSummary[] = [];
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
@@ -253,7 +258,43 @@ export function useViewVariables<Variables extends VariableCollection>(
       displayOptions[prominence].push(renderControl(labelPlacement));
       if (active) changedDisplayOptionCount++;
     } else {
-      allFilters.push(renderControl('above'));
+      allFilters.push({
+        id: name,
+        label: definition.label ?? name,
+        control: renderControl('above'),
+      });
+      if (active && prominence === 'secondary') {
+        let summary = variable.describe?.(value) ?? String(value);
+        let fullValue = summary;
+        if (definition.kind === 'dimension') {
+          const selection = value as DimensionSelection;
+          if (selection.kind !== 'all') {
+            const options = facetState.get(name)?.data ?? definition.options;
+            fullValue = `${selection.kind === 'exclude' ? 'Exclude: ' : ''}${selection.members
+              .map(member =>
+                member.kind === 'missing'
+                  ? 'Missing'
+                  : (options.find(option => option.value === member.value)
+                      ?.label ?? String(member.value))
+              )
+              .join(', ')}`;
+            summary =
+              selection.members.length > 2
+                ? `${selection.kind === 'exclude' ? 'Exclude: ' : ''}${selection.members.length} selected`
+                : fullValue;
+          }
+        }
+        activeSecondaryFilters.push({
+          id: name,
+          label: definition.label ?? name,
+          value: summary,
+          fullValue,
+          onClear:
+            variable.clearValue === undefined
+              ? undefined
+              : () => variables.set(name, variable.clearValue),
+        });
+      }
       if (prominence === 'primary')
         primaryFilters.push(renderControl('inline'));
       if (active) activeFilterCount++;
@@ -273,6 +314,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       hasControls || hasActiveFilters ? (
         <ViewControlBar
           primaryFilters={primaryFilters}
+          activeSecondaryFilters={activeSecondaryFilters}
           allFilters={allFilters}
           activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}

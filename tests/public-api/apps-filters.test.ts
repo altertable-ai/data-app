@@ -995,7 +995,7 @@ test('filter actions stay balanced with long selections and Show results preserv
   expect(await show.isEnabled()).toBe(true);
 });
 
-test('filter bar leads with the sheet and keeps secondary filters in the sheet', async ({
+test('filter bar leads with the sheet and summarizes active secondary filters', async ({
   page,
 }) => {
   await page.goto('/filter-presentation?spend=all');
@@ -1031,7 +1031,7 @@ test('filter bar leads with the sheet and keeps secondary filters in the sheet',
   ).toBe(1);
   expect(
     await page.getByRole('group', { name: 'Active filters' }).count()
-  ).toBe(0);
+  ).toBe(1);
   expect(
     await page
       .getByRole('button', { name: 'No Active account', exact: true })
@@ -1137,4 +1137,97 @@ test('left filter sheet clears predicates while preserving search and display se
   expect(
     await controls.getByRole('button', { name: 'Clear', exact: true }).count()
   ).toBe(0);
+});
+
+test('secondary filter summaries edit their field and clear only their restriction', async ({
+  page,
+}) => {
+  await page.goto(
+    '/filter-presentation?spend=all&q=Foundry&active=false&sort=name&direction=asc'
+  );
+  const summaries = page.getByRole('group', {
+    name: 'Active filters',
+    exact: true,
+  });
+  const edit = summaries.getByRole('button', {
+    name: 'Edit Active account: No',
+    exact: true,
+  });
+  await expect.poll(() => edit.isVisible()).toBe(true);
+  await edit.click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  const field = sheet.getByRole('group', {
+    name: 'Active account',
+    exact: true,
+  });
+  await expect
+    .poll(() => field.evaluate(element => element === document.activeElement))
+    .toBe(true);
+  await page.keyboard.press('Tab');
+  await expect
+    .poll(() =>
+      field
+        .getByRole('button')
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => sheet.count()).toBe(0);
+  await summaries
+    .getByRole('button', { name: 'Clear Active account', exact: true })
+    .click();
+  await expect.poll(() => summaries.count()).toBe(0);
+  const params = new URL(page.url()).searchParams;
+  expect(params.get('q')).toBe('Foundry');
+  expect(params.get('sort')).toBe('name');
+  expect(params.get('direction')).toBe('asc');
+  expect(params.has('active')).toBe(false);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'Filters', exact: true })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+});
+
+test('secondary summaries keep full selection labels and compact large selections', async ({
+  page,
+}) => {
+  const params = new URLSearchParams({
+    spend: 'all',
+    owner: JSON.stringify({
+      kind: 'include',
+      members: [
+        ['v', 'Amira'],
+        ['v', 'Jonas'],
+        ['v', 'Lea'],
+      ],
+    }),
+  });
+  await page.goto(`/filter-presentation?${params}`);
+  const summaries = page.getByRole('group', {
+    name: 'Active filters',
+    exact: true,
+  });
+  const edit = summaries.getByRole('button', {
+    name: 'Edit Account owner: Amira, Jonas, Lea',
+    exact: true,
+  });
+  await expect.poll(() => edit.innerText()).toBe('Account owner: 3 selected');
+  await edit.focus();
+  await expect
+    .poll(() => page.getByRole('tooltip').innerText())
+    .toBe('Account owner: Amira, Jonas, Lea');
+  await page.setViewportSize({ width: 360, height: 760 });
+  expect(
+    await summaries.evaluate(
+      element => element.scrollWidth <= element.clientWidth
+    )
+  ).toBe(true);
+  await summaries
+    .getByRole('button', { name: 'Clear Account owner', exact: true })
+    .click();
+  await expect.poll(() => summaries.count()).toBe(0);
+  expect(new URL(page.url()).searchParams.has('owner')).toBe(false);
 });
