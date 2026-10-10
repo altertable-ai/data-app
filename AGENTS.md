@@ -20,8 +20,7 @@ Do not copy package classes onto markup or select private descendants.
 
 Express intent through small typed props and simple data structures. Derive UI
 from the displayed source; configure only meaning the platform cannot infer.
-Components own loading, keyboard behavior, and responsive layout. Follow the
-[UI platform principles](CONTRIBUTING.md#ui-platform-principles).
+Follow the [UI platform principles](CONTRIBUTING.md#ui-platform-principles).
 
 ## Documentation
 
