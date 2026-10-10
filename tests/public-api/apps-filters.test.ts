@@ -863,3 +863,30 @@ test('slash search shortcut accepts the Shift modifier required by AZERTY', asyn
     await display.evaluate(element => element === document.activeElement)
   ).toBe(true);
 });
+
+test('widget heading count follows displayed customer results including zero', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation?spend=all');
+  const heading = page.getByRole('heading', { name: 'Customers', exact: true });
+  await expect.poll(() => heading.textContent()).toContain('8');
+  const search = page.getByRole('searchbox', {
+    name: 'Search customers',
+    exact: true,
+  });
+  await search.fill('Beacon');
+  await expect.poll(() => heading.textContent()).toContain('1');
+  await expect
+    .poll(() => page.getByRole('table').getByRole('row').count())
+    .toBe(2);
+  await search.fill('No matching customer');
+  await expect.poll(() => heading.textContent()).toContain('0');
+  expect(
+    await page
+      .getByRole('table')
+      .getByText('No matching customers', { exact: true })
+      .isVisible()
+  ).toBe(true);
+  await search.press('Escape');
+  await expect.poll(() => heading.textContent()).toContain('8');
+});

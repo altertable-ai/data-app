@@ -19,6 +19,7 @@ import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 type DataWidgetBaseProps = {
   title: ReactNode;
   annotationId?: string;
+  /** Result count beside the heading. Derive from the displayed result; zero is visible. */
   count?: number;
   description?: ReactNode;
   evidence?: WidgetEvidence;

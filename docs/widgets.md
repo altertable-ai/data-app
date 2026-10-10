@@ -106,6 +106,17 @@ actions remain local choices. For custom cells, use `format: row => ...`; CSV
 still uses the raw `value` accessor. Datasets default to “No results”; supply
 `emptyFallback` for specific copy. See [export](stories-and-export.md).
 
+Use `count` to show a result count beside a widget heading. Derive it from the
+displayed result before pagination; omit it while loading and show `0` for no matches.
+
+```tsx
+<TableWidget
+  dataset={customers}
+  source={source}
+  count={source.loading ? undefined : source.data.rows.length}
+/>
+```
+
 ## Narrative text
 
 Use `<TextContent>` for prose within a page or custom layout, and `<TextWidget>`

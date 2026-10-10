@@ -361,7 +361,12 @@ const customers = view.dataset({
   },
 });
 const content = view.content(source => (
-  <TableWidget dataset={customers} source={source} pagination={false} />
+  <TableWidget
+    dataset={customers}
+    source={source}
+    count={source.loading ? undefined : source.data.rows.length}
+    pagination={false}
+  />
 ));
 function App() {
   return (

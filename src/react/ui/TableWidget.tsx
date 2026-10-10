@@ -50,6 +50,7 @@ export type TableDisplayMode =
 type TableWidgetBaseProps<Row> = {
   title: ReactNode;
   annotationId?: string;
+  /** Result count beside the heading, before pagination or preview limits. */
   count?: number;
   description?: ReactNode;
   columns: readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
