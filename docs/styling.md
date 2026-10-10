@@ -31,20 +31,24 @@ The `--atbl-` prefix means Altertable.
 ```
 
 Set tokens on `:root` for the document or on a component for local overrides.
-Inherited tokens are usable in app CSS. Optional overrides fall back where they
-are consumed, so local colors, fonts, and spacing compose. Portals inherit from
-their actual DOM ancestors. Normal unlayered app CSS overrides package rules.
+Inherited tokens are usable in app CSS. Optional overrides resolve at consumption
+sites so local inputs compose; use a `var()` fallback for them in app-owned CSS. Portals inherit from
+their actual DOM ancestors. Local trigger fonts, spacing, and colors do not follow
+select, choice, number, or date menus into their portals. Use `:root` for a theme
+shared by the trigger and menu. Normal unlayered app CSS overrides package rules.
 `DataAppStyle` checks public inline custom-property names.
 
 `--atbl-control-text-size` controls editable text, including compact search fields,
-date segments, and annotation editors. It defaults to the body text size.
+date segments, and annotation editors. Its default resolves from the local
+`--atbl-type-body-size`.
 Package controls and custom controls with `data-atbl-control="text"` enforce a
 16px minimum on narrow or touch viewports to prevent browser focus zoom. Keep
 that minimum when adding app-owned input styles.
 
 When overriding `--atbl-accent` directly, also choose `--atbl-on-accent` with
 sufficient contrast. The default accent is neutral. Prefer appearance configuration
-for brand and chart colors; semantic status colors remain independent.
+for brand and chart colors; semantic status colors remain independent. `--atbl-negative` defaults to the local
+`--atbl-danger`; `--atbl-danger-subtle` derives from local danger and surface colors.
 
 Selected options default to `--atbl-subtle` and `--atbl-text`, so a brand accent
 does not color every filter selection. Override `--atbl-control-selected-surface`

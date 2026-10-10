@@ -1,3 +1,4 @@
+import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
 import type {
   DimensionMember,
   DimensionOption,
@@ -16,6 +17,7 @@ const allKey = 'all';
 /** Adapts the typed dimension contract to the shared ChoicePicker control. */
 export function DimensionPicker<T extends DimensionValue>({
   filter,
+  labelPlacement,
   value,
   onChange,
   options: suppliedOptions,
@@ -24,6 +26,7 @@ export function DimensionPicker<T extends DimensionValue>({
   onRetry,
 }: {
   filter: DimensionVariable<T>;
+  labelPlacement?: ControlLabelPlacement;
   value: DimensionSelection<T>;
   onChange: (value: DimensionSelection<T>) => void;
   options?: readonly DimensionOption<T>[];
@@ -77,6 +80,7 @@ export function DimensionPicker<T extends DimensionValue>({
       <ChoicePicker
         selectionMode="single"
         label={filter.label}
+        labelPlacement={labelPlacement}
         value={members.length ? dimensionMemberKey(members[0]!) : allKey}
         onChange={(id: string) => {
           if (id === allKey) return onChange({ kind: 'all' });
@@ -95,6 +99,7 @@ export function DimensionPicker<T extends DimensionValue>({
       <ChoicePicker
         selectionMode="multiple"
         label={filter.label}
+        labelPlacement={labelPlacement}
         values={members.map(dimensionMemberKey)}
         onChange={(ids: string[]) => {
           if (!ids.length) return onChange({ kind: 'all' });
@@ -119,6 +124,7 @@ export function DimensionPicker<T extends DimensionValue>({
     <FilterBar aria-label={`${filter.label} filter`}>
       <Select
         label={`${filter.label} matching`}
+        labelPlacement="inline"
         value={mode}
         options={[
           { id: 'include', label: 'Include' },

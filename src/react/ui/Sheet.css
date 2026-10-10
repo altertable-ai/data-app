@@ -71,15 +71,17 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  padding: 24px 28px 20px;
+  gap: var(--atbl-space-md);
+  padding: var(--atbl-space-lg)
+    calc((var(--atbl-space-lg) + var(--atbl-space-xl)) / 2)
+    calc((var(--atbl-space-md) + var(--atbl-space-lg)) / 2);
   border-bottom: 1px solid var(--atbl-border);
 }
 .altertable-sheet-header h2 {
   margin: 0;
-  font-size: 18px;
-  font-weight: 650;
-  line-height: 1.25;
+  font-size: var(--atbl-type-section-size);
+  font-weight: var(--atbl-type-heading-weight);
+  line-height: var(--atbl-type-heading-leading);
   letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
@@ -102,10 +104,13 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 24px 28px 40px;
+  padding: var(--atbl-space-lg)
+    calc((var(--atbl-space-lg) + var(--atbl-space-xl)) / 2)
+    calc(var(--atbl-space-xl) + var(--atbl-space-md) / 2);
 }
 .altertable-sheet-footer {
-  padding: 16px 28px;
+  padding: var(--atbl-space-md)
+    calc((var(--atbl-space-lg) + var(--atbl-space-xl)) / 2);
   border-top: 1px solid var(--atbl-border);
 }
 @media (max-width: 960px) {

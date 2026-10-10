@@ -29,7 +29,9 @@ Declare controls in reader priority order. Keep the period and most useful scope
 filters visible; place less frequent restrictions behind More filters. Choose useful
 defaults from the available data rather than exposing every field.
 Declare each label once. Generated secondary controls place it above the input;
-do not add a separate heading or repeat it inside the value.
+do not add a separate heading or repeat it inside the value. Direct pickers use
+`labelPlacement` to place their label above, beside, or inline with the control; selects
+use their own label layout and date pickers can show an external label.
 
 Set `presentation.group` to `display` for controls that change ordering or presentation
 rather than which records are included. Display options live in a popover opened

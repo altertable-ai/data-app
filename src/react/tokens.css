@@ -2,8 +2,6 @@
    Input/palette variables referenced here are private. Optional component overrides
    are documented at their var() consumption sites, so local inputs compose. */
 :root {
-  /* Editable text size; compact controls retain this size. Mobile styles enforce 16px. */
-  --atbl-control-text-size: var(--atbl-type-body-size);
   /* Canvas, widget surfaces, and modal backdrop. */
   --atbl-background: var(--atbl-palette-background);
   --atbl-surface: var(--atbl-palette-surface);
@@ -21,15 +19,9 @@
 
   /* Semantic outcomes are independent of brand and chart colors. */
   --atbl-positive: var(--atbl-palette-positive);
-  --atbl-negative: var(--atbl-danger);
 
-  /* Errors and quiet error surfaces. */
+  /* Error foreground; quiet surfaces derive locally at their consumption sites. */
   --atbl-danger: var(--atbl-palette-danger);
-  --atbl-danger-subtle: color-mix(
-    in srgb,
-    var(--atbl-danger) 9%,
-    var(--atbl-surface)
-  );
 
   /* Code surfaces, text, and monospace font. */
   --atbl-code-surface: #f4f6f9;

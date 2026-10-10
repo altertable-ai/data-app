@@ -97,12 +97,22 @@ export function useViewVariables<Variables extends VariableCollection>(
     )
       hasActiveFilters = true;
     const groupName = definition.presentation?.group ?? 'scope';
+    const prominence = definition.presentation?.prominence ?? 'primary';
+    const labelPlacement =
+      groupName === 'display'
+        ? 'beside'
+        : prominence === 'secondary'
+          ? 'above'
+          : 'inline';
     let control: ReactNode = null;
     if (definition.kind === 'dateRange') {
       const selection = value as DateRangeSelection;
       control = (
         <DateRangePicker
           key={name}
+          labelPlacement={
+            labelPlacement === 'inline' ? undefined : labelPlacement
+          }
           {...dateRangeControl(definition, selection, next =>
             variables.set(
               name,
@@ -117,6 +127,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       control = (
         <DimensionPicker
           key={name}
+          labelPlacement={labelPlacement}
           filter={filter}
           value={value as DimensionSelection}
           options={facet?.data ?? filter.options}
@@ -135,6 +146,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       control = (
         <NumberFilterPicker
           key={name}
+          labelPlacement={labelPlacement}
           filter={definition as NumberFilter}
           value={value as NumberSelection}
           onChange={next =>
@@ -150,6 +162,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       control = (
         <Select
           key={name}
+          labelPlacement={labelPlacement}
           align={groupName === 'display' ? 'end' : 'start'}
           label={definition.label}
           value={selected.kind === 'all' ? 'all' : String(selected.value)}
@@ -175,6 +188,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       control = (
         <ChoicePicker
           key={name}
+          labelPlacement={labelPlacement}
           selectionMode="multiple"
           label={definition.label ?? name}
           options={definition.options}
@@ -193,6 +207,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       control = (
         <Select
           key={name}
+          labelPlacement={labelPlacement}
           align={groupName === 'display' ? 'end' : 'start'}
           label={definition.label ?? name}
           value={value as string}
@@ -223,25 +238,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     }
     if (definition.kind === 'search') continue;
     const controls = groupName === 'display' ? displayOptions : filters;
-    const prominence = definition.presentation?.prominence ?? 'primary';
-    controls[prominence].push(
-      groupName === 'scope' && prominence === 'secondary' ? (
-        <div key={name} className="altertable-secondary-field">
-          {definition.kind !== 'booleanFilter' &&
-            definition.kind !== 'choice' && (
-              <span
-                className="altertable-secondary-field-label"
-                aria-hidden="true"
-              >
-                {definition.label ?? name}
-              </span>
-            )}
-          {control}
-        </div>
-      ) : (
-        control
-      )
-    );
+    controls[prominence].push(control);
     const baseline =
       groupName === 'display'
         ? variable.defaultValue

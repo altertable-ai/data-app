@@ -458,6 +458,109 @@ test('active live updates keep their semantic foreground, dot and border across 
   }
 });
 
+test('local derived defaults compose and explicit tokens retain precedence', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  const local = page.getByRole('region', {
+    name: 'Local appearance',
+    exact: true,
+  });
+  const input = local.getByRole('searchbox', { name: 'Local search' });
+  const outcome = local
+    .getByRole('figure', { name: 'Local revenue comparison' })
+    .getByText('50.0% vs previous period', { exact: true });
+  for (const overridden of [false, true]) {
+    if (overridden)
+      await page
+        .getByRole('button', { name: 'Override local defaults', exact: true })
+        .click();
+    expect(await input.evaluate(el => getComputedStyle(el).fontSize)).toBe(
+      overridden ? '24px' : '20px'
+    );
+    expect(await outcome.evaluate(el => getComputedStyle(el).color)).toBe(
+      overridden ? 'rgb(128, 64, 192)' : 'rgb(0, 0, 255)'
+    );
+  }
+  await local
+    .getByRole('button', { name: 'Name Local ordering', exact: true })
+    .click();
+  const menu = page.getByRole('listbox', { name: 'Local ordering values' });
+  expect(await menu.evaluate(el => getComputedStyle(el).fontSize)).toBe('13px');
+});
+
+test('layout spacing is independent of widget padding', async ({ page }) => {
+  await page.goto('/appearance');
+  const layout = page.getByLabel('Spacing layout', { exact: true });
+  expect(await layout.evaluate(el => getComputedStyle(el).gap)).toBe('40px');
+  const heading = layout.getByRole('heading', {
+    name: 'Padding example',
+    exact: true,
+  });
+  expect(
+    await heading.evaluate(
+      el => getComputedStyle(el.parentElement!.parentElement!).paddingLeft
+    )
+  ).toBe('12px');
+});
+
+test('compact controls and selected-control elevation follow appearance presets', async ({
+  page,
+}) => {
+  await page.goto('/appearance');
+  const compact = page.getByRole('button', {
+    name: 'Compact action',
+    exact: true,
+  });
+  const regular = page.getByRole('button', {
+    name: 'Custom action',
+    exact: true,
+  });
+  const defaultControl = page.getByRole('button', {
+    name: 'Override local defaults',
+    exact: true,
+  });
+  for (const [density, height] of [
+    ['compact', '26px'],
+    ['comfortable', '30px'],
+    ['spacious', '34px'],
+  ]) {
+    await page
+      .getByRole('button', { name: `Apply density ${density}`, exact: true })
+      .click();
+    expect(await compact.evaluate(el => getComputedStyle(el).minHeight)).toBe(
+      height
+    );
+    expect(await regular.evaluate(el => getComputedStyle(el).minHeight)).toBe(
+      '60px'
+    );
+    expect(
+      await defaultControl.evaluate(el => getComputedStyle(el).minHeight)
+    ).toBe(`${parseInt(height!, 10) + 8}px`);
+  }
+  const shadows: string[] = [];
+  for (const elevation of ['flat', 'subtle', 'raised']) {
+    await page
+      .getByRole('button', {
+        name: `Apply elevation ${elevation}`,
+        exact: true,
+      })
+      .click();
+    shadows.push(await compact.evaluate(el => getComputedStyle(el).boxShadow));
+  }
+  expect(shadows[0]).toBe('none');
+  expect(shadows[1]).not.toBe('none');
+  expect(shadows[2]).not.toBe(shadows[1]);
+  await page
+    .getByRole('button', { name: 'Open appearance sheet', exact: true })
+    .click();
+  expect(
+    await page
+      .getByRole('heading', { name: 'Appearance sheet', exact: true })
+      .evaluate(el => getComputedStyle(el).fontSize)
+  ).toBe('20px');
+});
+
 for (const width of [320, 1280]) {
   test(`app content keeps bottom breathing room with and without its footer at ${width}px`, async ({
     page,

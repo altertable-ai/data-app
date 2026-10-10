@@ -1,4 +1,3 @@
-.altertable-select,
 .altertable-number-field,
 .altertable-radio-group,
 .altertable-checkbox-group {
@@ -9,7 +8,6 @@
   font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
     var(--atbl-font);
 }
-.altertable-select > label,
 .altertable-number-field > label,
 .altertable-radio-group > .altertable-control-label,
 .altertable-checkbox-group > label {
@@ -136,14 +134,10 @@
 }
 
 /* Inline filter rows share the regular control height. */
-:is(.altertable-filter-bar, .altertable-variable-bar) .altertable-select,
 :is(.altertable-filter-bar, .altertable-variable-bar) .altertable-number-field {
   flex-direction: row;
   align-items: center;
 }
-:is(.altertable-filter-bar, .altertable-variable-bar)
-  .altertable-select
-  > label,
 :is(.altertable-filter-bar, .altertable-variable-bar)
   .altertable-number-field
   > label {
@@ -165,7 +159,7 @@
 
 .altertable-select-trigger {
   justify-content: space-between;
-  font-size: var(--atbl-control-text-size);
+  font-size: var(--atbl-control-text-size, var(--atbl-type-body-size));
   min-width: 90px;
 }
 .altertable-select-trigger > svg {
@@ -176,14 +170,6 @@
 .altertable-select-popover {
   z-index: 160;
   width: min(260px, calc(100vw - 24px));
-  box-sizing: border-box;
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-surface);
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
-  box-shadow: var(--atbl-shadow-overlay);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-select-options {
   display: flex;
@@ -210,15 +196,7 @@
 .altertable-number-filter-popover {
   z-index: 150;
   width: min(340px, calc(100vw - 24px));
-  box-sizing: border-box;
   padding: var(--atbl-space-md);
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-surface);
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
-  box-shadow: var(--atbl-shadow-overlay);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-number-filter-dialog {
   outline: none;
@@ -255,7 +233,10 @@
 }
 @media (max-width: 560px), (any-pointer: coarse) {
   .altertable-select-trigger {
-    font-size: max(16px, var(--atbl-control-text-size));
+    font-size: max(
+      16px,
+      var(--atbl-control-text-size, var(--atbl-type-body-size))
+    );
   }
 }
 

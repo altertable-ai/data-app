@@ -25,6 +25,10 @@ collapse; a two-column span activates only when two minimum-width tracks fit.
 </Stack>
 ```
 
+Widget padding uses `--atbl-surface-padding`, independently of `--atbl-layout-gap`.
+Both derive responsive defaults from the spacing scale. Set either on an app-owned
+wrapper to customize its region without changing the other.
+
 ## Verify rendered layouts
 
 Check computed section/widget gaps, sibling alignment, outer gutters, and

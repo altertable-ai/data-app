@@ -39,6 +39,7 @@ export const dataAppStyleTokens = [
   '--atbl-space-lg',
   '--atbl-space-xl',
   '--atbl-layout-gap',
+  '--atbl-surface-padding',
   '--atbl-content-width',
   '--atbl-control-height',
   '--atbl-radius-control',

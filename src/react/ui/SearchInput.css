@@ -14,7 +14,7 @@
 .altertable-search-input-wrap[data-size='compact'] {
   width: min(100%, 300px);
   min-height: var(--atbl-control-compact-height);
-  padding: 0 10px;
+  padding: 0 calc(var(--atbl-control-padding-inline) * 5 / 6);
 }
 .altertable-search-input-wrap[data-size='compact'] .altertable-search-input {
   min-block-size: calc(var(--atbl-control-compact-height) - 2px);
@@ -32,7 +32,7 @@
   background: transparent;
   color: var(--atbl-text);
   font: inherit;
-  font-size: var(--atbl-control-text-size);
+  font-size: var(--atbl-control-text-size, var(--atbl-type-body-size));
 }
 .altertable-search-input::-webkit-search-cancel-button {
   display: none;

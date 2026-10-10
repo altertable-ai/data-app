@@ -30,39 +30,6 @@
   border-radius: var(--atbl-radius-surface);
   background: var(--atbl-subtle);
 }
-.altertable-secondary-field {
-  display: grid;
-  gap: var(--atbl-space-xs);
-}
-.altertable-secondary-field-label {
-  color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
-  font-weight: var(--atbl-type-label-weight);
-}
-.altertable-secondary-field > :is(.altertable-select, .altertable-filter-bar) {
-  width: 100%;
-}
-.altertable-secondary-field .altertable-select {
-  flex: 1;
-  flex-direction: column;
-  align-items: stretch;
-}
-.altertable-secondary-field .altertable-select > :is(label, .react-aria-Label) {
-  color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
-  font-weight: var(--atbl-type-label-weight);
-}
-.altertable-secondary-field .altertable-picker-label {
-  display: none;
-}
-.altertable-secondary-field
-  :is(.altertable-select-trigger, .altertable-picker-trigger) {
-  width: 100%;
-  max-width: 100%;
-}
-.altertable-secondary-field .altertable-picker-value {
-  max-width: calc(100% - 24px);
-}
 .altertable-control-count {
   display: inline-flex;
   align-items: center;
@@ -103,15 +70,8 @@
   width: min(360px, calc(100vw - 24px));
   max-height: min(560px, 80dvh);
   overflow: auto;
-  box-sizing: border-box;
   padding: var(--atbl-space-md);
-  border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-overlay);
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
-  box-shadow: var(--atbl-shadow-overlay);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-display-options-dialog {
   display: grid;
@@ -122,19 +82,6 @@
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
-}
-.altertable-display-option .altertable-select {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-  align-items: center;
-  gap: var(--atbl-space-sm);
-}
-.altertable-display-option .altertable-select > :is(label, .react-aria-Label) {
-  font-size: var(--atbl-type-label-size);
-}
-.altertable-display-option .altertable-select-trigger {
-  min-width: 0;
-  font-weight: 400;
 }
 .altertable-display-option .react-aria-SelectValue {
   overflow: hidden;

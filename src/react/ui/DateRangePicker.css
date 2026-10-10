@@ -116,13 +116,6 @@
 .altertable-date-range-popover {
   z-index: 100;
   padding: 12px;
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-surface);
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
-  box-shadow: var(--atbl-shadow-overlay);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-date-range-popover[data-entering] {
   animation: altertable-calendar-in var(--atbl-duration-fast)
@@ -352,13 +345,7 @@
   z-index: 150;
   min-width: var(--trigger-width);
   padding: 4px;
-  border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-control);
-  background: var(--atbl-surface);
-  box-shadow: var(--atbl-shadow-overlay);
-  color: var(--atbl-text);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-calendar-select-popover .react-aria-ListBox {
   max-height: min(260px, 45dvh);

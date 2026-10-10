@@ -2,8 +2,9 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* Optional surface padding is independent of the surrounding layout gap. */
   padding: var(
-    --atbl-layout-gap,
+    --atbl-surface-padding,
     clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
   );
   border: 1px solid var(--atbl-border);
@@ -34,7 +35,7 @@
 .altertable-metric-widget > .altertable-data-widget-footer {
   padding-top: 0;
   padding-bottom: var(
-    --atbl-layout-gap,
+    --atbl-surface-padding,
     clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
   );
 }
@@ -76,7 +77,7 @@
   color: var(--atbl-positive);
 }
 .altertable-metric-change[data-tone='bad'] {
-  color: var(--atbl-negative);
+  color: var(--atbl-negative, var(--atbl-danger));
 }
 .altertable-metric-description {
   color: var(--atbl-muted);

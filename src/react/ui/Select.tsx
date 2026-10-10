@@ -1,11 +1,12 @@
+import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   Select as AriaSelect,
   Label,
   SelectValue,
-  Popover,
   ListBox,
   ListBoxItem,
 } from 'react-aria-components';
+import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
 import { PressButton } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
 import { SelectionMark } from '@/src/react/ui/SelectionMark';
@@ -15,6 +16,7 @@ import { classNames } from '@/src/react/ui/classNames';
 
 export type SelectProps = {
   label: string;
+  labelPlacement?: ControlLabelPlacement;
   options: readonly ChoiceOption[];
   value: string;
   onChange: (value: string) => void;
@@ -36,6 +38,7 @@ export function Select({
   required,
   className,
   align = 'start',
+  labelPlacement = 'above',
   ...props
 }: SelectProps) {
   validateChoiceOptions(options);
@@ -50,14 +53,15 @@ export function Select({
       }}
       isDisabled={disabled}
       isRequired={required}
-      className={classNames('altertable-select', className)}
+      className={classNames('altertable-select', 'altertable-field', className)}
+      data-label-placement={labelPlacement}
     >
       <Label>{label}</Label>
       <PressButton className="altertable-select-trigger">
         <SelectValue>{selected.label}</SelectValue>
         <AppIcon name="disclosure" size={14} />
       </PressButton>
-      <Popover
+      <PopoverSurface
         className="altertable-select-popover"
         placement={`bottom ${align}`}
       >
@@ -87,7 +91,7 @@ export function Select({
             </ListBoxItem>
           )}
         </ListBox>
-      </Popover>
+      </PopoverSurface>
     </AriaSelect>
   );
 }

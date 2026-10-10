@@ -31,16 +31,8 @@
 .altertable-choice-picker-popover {
   z-index: 150;
   width: min(300px, calc(100vw - 24px));
-  box-sizing: border-box;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-surface);
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
-  box-shadow: var(--atbl-shadow-overlay);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-choice-picker-dialog {
   outline: none;

@@ -1,3 +1,4 @@
+import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   Children,
   createContext,
@@ -8,7 +9,7 @@ import {
   type ComponentRef,
   type ReactNode,
 } from 'react';
-import { Dialog, DialogTrigger, Popover } from 'react-aria-components';
+import { Dialog, DialogTrigger } from 'react-aria-components';
 import { Button, PressButton } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
 import { FilterActions } from '@/src/react/ui/FilterActions';
@@ -146,7 +147,7 @@ function DisplayOptionsPopover({
           )}
         </PressButton>
       </Tooltip>
-      <Popover
+      <PopoverSurface
         className="altertable-display-options-popover"
         placement="bottom end"
       >
@@ -158,7 +159,7 @@ function DisplayOptionsPopover({
             <div className="altertable-display-option">{control}</div>
           ))}
         </Dialog>
-      </Popover>
+      </PopoverSurface>
     </DialogTrigger>
   );
 }

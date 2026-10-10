@@ -63,7 +63,8 @@
 
 .altertable-button[data-size='compact'] {
   min-height: var(--atbl-control-compact-height);
-  padding: 0.25rem 0.5rem;
+  padding: calc(var(--atbl-control-padding-block) * 2 / 3)
+    calc(var(--atbl-control-padding-inline) * 2 / 3);
   font-size: var(--atbl-type-meta-size);
 }
 .altertable-button[data-size='icon-compact'] {

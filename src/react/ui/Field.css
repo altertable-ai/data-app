@@ -1,0 +1,44 @@
+.altertable-field {
+  display: grid;
+  gap: var(--atbl-space-xs);
+  min-width: 0;
+  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
+    var(--atbl-font);
+}
+.altertable-field > :is(label, .react-aria-Label, .altertable-field-label) {
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+}
+.altertable-field[data-label-placement='above']
+  > :is(label, .react-aria-Label, .altertable-field-label) {
+  font-weight: var(--atbl-type-label-weight);
+}
+.altertable-field[data-label-placement='inline'] {
+  grid-template-columns: auto auto;
+  align-items: center;
+}
+.altertable-field[data-label-placement='beside'] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  align-items: center;
+  gap: var(--atbl-space-sm);
+}
+.altertable-field[data-label-placement='beside']
+  > :is(label, .react-aria-Label, .altertable-field-label) {
+  font-size: var(--atbl-type-label-size);
+}
+.altertable-field[data-label-placement='beside'] > button {
+  font-weight: 400;
+}
+.altertable-field[data-label-placement='above']
+  > :is(button, .altertable-date-range),
+.altertable-field[data-label-placement='beside']
+  > :is(button, .altertable-date-range) {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+.altertable-field .altertable-picker-value {
+  max-width: calc(
+    100% - var(--atbl-control-icon-size) - var(--atbl-control-gap)
+  );
+}
