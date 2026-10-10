@@ -1110,3 +1110,34 @@ test('filter bar leads with the sheet and keeps secondary filters in the sheet',
       .isVisible()
   ).toBe(true);
 });
+
+test('empty customer results recover only their filters and preserve display options', async ({
+  page,
+}) => {
+  await page.goto(
+    '/filter-presentation?spend=all&active=false&q=Foundry&sort=name&direction=asc'
+  );
+  const customers = page.getByRole('region', {
+    name: 'Customers',
+    exact: true,
+  });
+  await expect
+    .poll(() => customers.getByRole('heading').textContent())
+    .toContain('0');
+  await customers
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  await expect
+    .poll(() => customers.getByRole('heading').textContent())
+    .toContain('8');
+  const params = new URL(page.url()).searchParams;
+  expect(params.get('sort')).toBe('name');
+  expect(params.get('direction')).toBe('asc');
+  expect(params.get('q')).toBeNull();
+  expect(params.get('active')).toBeNull();
+  expect(
+    await customers
+      .getByRole('button', { name: 'Clear filters', exact: true })
+      .count()
+  ).toBe(0);
+});

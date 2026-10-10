@@ -199,7 +199,7 @@ test('a report formats values, searches all loaded rows and paginates the visibl
     .poll(() =>
       page
         .getByRole('main')
-        .getByText('No matching events', { exact: true })
+        .getByText('No matching results', { exact: true })
         .isVisible()
     )
     .toBe(true);
@@ -586,3 +586,172 @@ for (const width of [320, 1280]) {
     }
   });
 }
+
+test('table counts follow search before pagination and empty search recovers focus', async ({
+  page,
+}) => {
+  await page.goto('/static');
+  const table = page.getByRole('region', {
+    name: 'Events by group',
+    exact: true,
+  });
+  const heading = table.getByRole('heading', {
+    name: 'Events by group',
+    exact: true,
+  });
+  await expect.poll(() => heading.textContent()).toContain('12');
+  await table.getByRole('button', { name: 'Next page', exact: true }).click();
+  expect(await heading.textContent()).toContain('12');
+  const search = table.getByRole('searchbox', { name: 'Search groups' });
+  await search.fill('Group 9');
+  await expect.poll(() => heading.textContent()).toContain('1');
+  await search.fill('missing');
+  await expect.poll(() => heading.textContent()).toContain('0');
+  await table
+    .getByRole('button', { name: 'Clear search', exact: true })
+    .click();
+  await expect.poll(() => heading.textContent()).toContain('12');
+  await expect
+    .poll(() => search.evaluate(element => element === document.activeElement))
+    .toBe(true);
+  expect(
+    await table
+      .getByRole('row', { name: 'Café <table> 1234', exact: true })
+      .isVisible()
+  ).toBe(true);
+  expect(
+    await table
+      .getByRole('button', { name: 'Clear filters', exact: true })
+      .count()
+  ).toBe(0);
+});
+
+test('table counts support explicit totals, hiding, previews, and unfiltered empty data', async ({
+  page,
+}) => {
+  const heading = page.getByRole('heading', {
+    name: 'Events by group',
+    exact: true,
+  });
+  await page.goto('/static?server-total');
+  await expect.poll(() => heading.textContent()).toContain('123');
+  await page.getByRole('searchbox', { name: 'Search groups' }).fill('Group 9');
+  expect(await heading.textContent()).toContain('123');
+  await page.goto('/static?server-total&hide-count');
+  await expect.poll(() => heading.textContent()).toBe('Events by group');
+  await page.goto('/static?preview-table');
+  await expect.poll(() => heading.textContent()).toContain('12');
+  expect(
+    await page
+      .getByRole('region', { name: 'Events by group', exact: true })
+      .getByRole('row')
+      .count()
+  ).toBe(3);
+  await page.goto('/static?empty-table');
+  await expect.poll(() => heading.textContent()).toContain('0');
+  const empty = page.getByRole('region', {
+    name: 'Events by group',
+    exact: true,
+  });
+  expect(
+    await empty.getByText('No events yet', { exact: true }).isVisible()
+  ).toBe(true);
+  expect(await empty.getByRole('button', { name: /^Clear/ }).count()).toBe(0);
+});
+
+test('table loading omits counts and search recovery preserves authored actions and reset values', async ({
+  page,
+}) => {
+  await page.goto('/static?loading-table&server-total');
+  const region = page.getByRole('region', {
+    name: 'Events by group',
+    exact: true,
+  });
+  expect(await region.getByRole('heading').textContent()).toBe(
+    'Events by group'
+  );
+  expect(await region.getByRole('button', { name: /^Clear/ }).count()).toBe(0);
+  await page.goto('/static?custom-empty-action&search-default');
+  const search = region.getByRole('searchbox', { name: 'Search groups' });
+  await search.fill('missing');
+  expect(
+    await region
+      .getByRole('button', { name: 'Clear search', exact: true })
+      .count()
+  ).toBe(0);
+  expect(
+    await region.getByText('No groups match', { exact: true }).isVisible()
+  ).toBe(true);
+  expect(
+    await region
+      .getByText('Choose another group name.', { exact: true })
+      .isVisible()
+  ).toBe(true);
+  expect(
+    await region
+      .getByRole('link', { name: 'Read help', exact: true })
+      .isVisible()
+  ).toBe(true);
+  await search.fill('also missing');
+  await region
+    .getByRole('button', { name: 'Clear search', exact: true })
+    .click();
+  await expect.poll(() => search.inputValue()).toBe('missing');
+  expect(
+    await region
+      .getByRole('button', { name: 'Clear search', exact: true })
+      .count()
+  ).toBe(0);
+});
+
+test('table recovery focuses the active mount and falls back when the search input disappears', async ({
+  page,
+}) => {
+  await page.goto('/static?inspectable-table');
+  const region = page.getByRole('region', {
+    name: 'Events by group',
+    exact: true,
+  });
+  const search = region.getByRole('searchbox', { name: 'Search groups' });
+  await search.fill('missing');
+  await region
+    .getByRole('button', { name: 'Explore Events by group', exact: true })
+    .click();
+  const inspection = page.getByRole('dialog', {
+    name: 'Events by group',
+    exact: true,
+  });
+  await inspection
+    .getByRole('button', { name: 'Clear search', exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      inspection
+        .getByRole('searchbox')
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+  await inspection
+    .getByRole('button', { name: 'Close panel', exact: true })
+    .click();
+  await expect.poll(() => inspection.count()).toBe(0);
+  await search.fill('missing');
+  await region
+    .getByRole('button', { name: 'Clear search', exact: true })
+    .click();
+  await expect
+    .poll(() => search.evaluate(element => element === document.activeElement))
+    .toBe(true);
+  await page.goto('/static?few-rows&initial-search=missing');
+  await region
+    .getByRole('button', { name: 'Clear search', exact: true })
+    .click();
+  await expect.poll(() => region.getByRole('searchbox').count()).toBe(0);
+  await expect
+    .poll(() =>
+      region
+        .getByRole('table')
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+});

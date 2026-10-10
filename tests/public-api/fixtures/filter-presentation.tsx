@@ -1,3 +1,4 @@
+import { useAppVariables } from '@altertable/data-app/react/ui';
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -360,14 +361,48 @@ const customers = view.dataset({
     description: 'Try a different search or clear filters.',
   },
 });
-const content = view.content(source => (
-  <TableWidget
-    dataset={customers}
-    source={source}
-    count={source.loading ? undefined : source.data.rows.length}
-    pagination={false}
-  />
-));
+const customerFilters = {
+  search: variables.search,
+  country: variables.country,
+  segment: variables.segment,
+  active: variables.active,
+  billing: variables.billing,
+  owner: variables.owner,
+  spend: variables.spend,
+  orders: variables.orders,
+};
+function CustomerTable({
+  source,
+}: {
+  source:
+    | { loading: true }
+    | { loading: false; data: { rows: typeof records }; input: Input };
+}) {
+  const filters = useAppVariables(customerFilters);
+  const hasActiveFilters =
+    !source.loading &&
+    (source.input.search !== '' ||
+      source.input.country.kind !== 'all' ||
+      source.input.segment.kind !== 'all' ||
+      source.input.active.kind !== 'all' ||
+      source.input.billing.kind !== 'all' ||
+      source.input.owner.kind !== 'all' ||
+      source.input.spend.kind !== 'all' ||
+      source.input.orders.kind !== 'all');
+  return (
+    <TableWidget
+      dataset={customers}
+      source={source}
+      onClearFilters={hasActiveFilters ? filters.clearAll : undefined}
+      noMatchesFallback={{
+        title: 'No matching customers',
+        description: 'Try a different search or clear filters.',
+      }}
+      pagination={false}
+    />
+  );
+}
+const content = view.content(source => <CustomerTable source={source} />);
 function App() {
   return (
     <DataApp

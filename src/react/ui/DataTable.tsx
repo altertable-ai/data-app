@@ -7,7 +7,7 @@ import { SearchField, type SearchFieldProps } from '@/src/react/ui/SearchField';
 
 export type DataTableSearch = Pick<
   SearchFieldProps,
-  'label' | 'placeholder' | 'value' | 'onChange' | 'resetValue'
+  'label' | 'placeholder' | 'value' | 'onChange' | 'resetValue' | 'inputProps'
 > & {
   /** Number of available records before filtering or a display limit. */
   itemCount: number;
@@ -35,6 +35,7 @@ export function DataTable({
             value={searchable.value}
             onChange={searchable.onChange}
             resetValue={searchable.resetValue}
+            inputProps={searchable.inputProps}
             size="compact"
             className="altertable-data-table-search"
           />
@@ -70,11 +71,17 @@ export function DataTableEmptyRow({
   colSpan,
   title,
   description,
+  action,
 }: DataTableEmptyRowProps) {
   return (
     <tr className="altertable-data-table-empty-row">
       <td colSpan={colSpan}>
-        <EmptyState title={title} description={description} variant="table" />
+        <EmptyState
+          title={title}
+          description={description}
+          action={action}
+          variant="table"
+        />
       </td>
     </tr>
   );

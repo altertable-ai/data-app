@@ -2,7 +2,12 @@ import type { ReactNode } from 'react';
 import type { DataReading } from '@/src/core/reading';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
-export type EmptyContent = { title: ReactNode; description?: ReactNode };
+export type EmptyContent = {
+  title: ReactNode;
+  description?: ReactNode;
+  /** A relevant recovery action; omit when there is nothing the user can change. */
+  action?: ReactNode;
+};
 export type SkeletonContent = {
   variant: 'metric' | 'panel' | 'ranking';
   /**

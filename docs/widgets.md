@@ -106,14 +106,23 @@ actions remain local choices. For custom cells, use `format: row => ...`; CSV
 still uses the raw `value` accessor. Datasets default to “No results”; supply
 `emptyFallback` for specific copy. See [export](stories-and-export.md).
 
-Use `count` to show a result count beside a widget heading. Derive it from the
-displayed result before pagination; omit it while loading and show `0` for no matches.
+`<TableWidget>` shows its matching supplied-row count before pagination or preview
+limits, and omits it during loading. Use `showCount={false}` to hide it or `count`
+to supply a server total. Other widgets accept an explicit `count` derived from
+the displayed result.
+
+Local table search offers Clear search when no rows match. For server-filtered
+results, pass `onClearFilters` only while filters affecting this dataset are active;
+the table offers Clear filters when there are no rows. Preserve unrelated filters
+and display settings in that callback. Use `emptyFallback` for no data and
+`noMatchesFallback` to customize no-match copy; either supports an `action` for
+custom recovery.
 
 ```tsx
 <TableWidget
   dataset={customers}
   source={source}
-  count={source.loading ? undefined : source.data.rows.length}
+  onClearFilters={hasActiveCustomerFilters ? clearCustomerFilters : undefined}
 />
 ```
 
