@@ -64,7 +64,7 @@ operation and its view. For nested inputs in `defineTimeView()`, use
 `bindings.period` to extract the selected period; see the
 [time-view example](variables.md#declare-controls-once).
 
-Use `result.scope` inside `view.content()` as a reading for scope text. In stories and exports,
+Use `result.scope` inside `view.content()` to show scope text. In stories and exports,
 `view.scope(snapshot)` returns the same label from the displayed input, using
 `describeInput` or the view's date label.
 
@@ -78,7 +78,7 @@ Declare evidence references on `view.dataset()` for charts and tables. `<MetricW
 its metric definition for the label, format, and evidence; keep view-specific
 descriptions on the widget.
 
-`<MetricWidget>` and `<Comparison>` share a metric reading. Comparisons
+`<MetricWidget>` and `<Comparison>` share a metric result. Comparisons
 follow the displayed result's range.
 
 Use the [format helpers](formatting-and-appearance.md) for metric formats and values in tables,

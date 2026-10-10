@@ -25,13 +25,11 @@ Keep local search out of the operation input when it only filters loaded rows.
 
 ### Organize controls by intent
 
-Declare controls in reader priority order. Keep the period and most useful scope
+Declare controls in priority order for the user's task. Keep the period and most useful scope
 filters visible; place less frequent restrictions behind More filters. Choose useful
 defaults from the available data rather than exposing every field.
 Declare each label once. Generated secondary controls place it above the input;
-do not add a separate heading or repeat it inside the value. Direct pickers use
-`labelPlacement` to place their label above, beside, or inline with the control; selects
-use their own label layout and date pickers can show an external label.
+do not add a separate heading or repeat it inside the value.
 
 Set `presentation.group` to `display` for controls that change ordering or presentation
 rather than which records are included. Display options live in a popover opened
@@ -54,12 +52,6 @@ const sort = choiceVariable({
   presentation: { group: 'display' },
 });
 ```
-
-More filters counts active secondary restrictions, including those applied by default.
-Each control counts once against its unrestricted value when available, otherwise its
-default. The display-options indicator shows changes from defaults. Collapsing either panel
-preserves applied values; presentation metadata does not change query inputs or
-clear/reset behavior.
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,
 maximum range, time zone, and comparison rules. `defineTimeView()` is the compact
@@ -114,7 +106,7 @@ const region = dimensionFilter({
 ```
 
 For query-backed choices use the hooks factory's `defineFacetFilter()`. The
-facet operation returns parsed dimension options. Its input mapper reads current
+facet operation returns parsed dimension options. Its input mapper uses current
 resolved variables, including other filters:
 
 ```ts

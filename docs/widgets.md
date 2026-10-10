@@ -23,7 +23,7 @@ Use [layout](layout.md) for `<Stack>`, `<Grid>`, and responsive `<GridItem>` spa
 
 ## Choose a visualization
 
-Choose the component by the reader's question. Compose dataset visuals inside
+Choose the component by the user's question. Compose dataset visuals inside
 `<VisualizationWidget>`; use `<MetricWidget>` for a headline value. Built-in
 charts come from `/react/ui`; `<Ranking>`, `<Breakdown>`, and `<Comparison>`
 are also available from `/react`.
@@ -41,10 +41,10 @@ are also available from `/react`.
 | Where do users drop out of a sequence?                    | `<FunnelChart>`    | Use ordered counts from the same population reaching each successive step.                                         |
 | Do cohorts return over time?                              | `<RetentionChart>` | Use query-defined rates and retained counts by numeric offset; mark incomplete periods.                            |
 | Which paths do users take?                                | `<JourneyChart>`   | Use full paths with population counts and outcomes; explore branches step by step.                                 |
-| How did one metric change between periods?                | `<Comparison>`     | Use the metric reading and its displayed comparison period.                                                        |
+| How did one metric change between periods?                | `<Comparison>`     | Use the metric result and its displayed comparison period.                                                         |
 | What are the exact values or row details?                 | `<TableWidget>`    | Use a bound table for lookup, search, and precise comparisons.                                                     |
 
-Prefer bars or a ranking when readers need to compare similarly sized categories;
+Prefer bars or a ranking when users need to compare similarly sized categories;
 use a pie for a simple composition question. Prefer a line when the trend is
 enough; use area when the fill adds meaning. Keep exact values available in a
 table when they matter. Follow the [chart input constraints](ui.md#charts). For multiple or mixed series,
@@ -113,7 +113,7 @@ when the explanation belongs in a titled panel alongside other widgets.
 
 Give text a purpose: frame the question, explain how to interpret a comparison,
 qualify a finding, or suggest what to explore next. Choose the content for the
-reader's question.
+user's question.
 
 For data-dependent text, pass `metric` or `dataset` and `source` to `<TextWidget>`.
 It derives its title and evidence. A metric formats its current value by default;

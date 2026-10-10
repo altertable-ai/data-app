@@ -72,11 +72,6 @@ outcomes and connected/live states; `--atbl-negative` defaults to the danger
 color. Chart colors are configured separately through `chartColors`: standalone
 series derive their colors from the first slot, while categorical series use the palette.
 
-Appearance controls the brand palette, typography, density, corner radius, and
-elevation. Those settings apply consistently to the app instead of tuning each
-widget. Density scales regular and compact controls; icon artwork remains a fixed
-size for legibility. Annotation-tool geometry stays fixed while inheriting fonts
-and colors. Elevation covers surfaces, overlays, and selected utility controls.
-Theme preference is reader-owned in standalone apps. A trusted parent's
+Configure appearance once for the app. Theme preference is user-owned in standalone apps. A trusted parent's
 resolved theme takes precedence and hides local theme controls; see
 [parent presentation](embed.md#parent-presentation).

@@ -1,7 +1,7 @@
 # Author a data app
 
 Build an exploration that answers the user's question and a story that presents
-its strongest findings. Include CSV export so readers can take the displayed
+its strongest findings. Include CSV export so users can take the displayed
 results into their own tools. Exploration, export, and story use the same
 queries, definitions, and evidence.
 
@@ -37,7 +37,7 @@ and internal execution settings out of filter controls.
 
 Register inspected tables and fields with `defineDataIdentifiers()` and use
 `<DataIdentifier>` when naming sources. Register terms and query evidence so
-readers can inspect the source of each claim.
+users can inspect the source of each claim.
 
 Connect visualizations with introductions and explanations. Use `<TextWidget>`
 for a narrative panel with the standard widget frame, or `<TextContent>` for
@@ -67,12 +67,12 @@ on the view so tables, exports, and stories share values and evidence.
 Every data app supplies a [story and CSV export](stories-and-export.md)
 from the displayed result. Export all distinct datasets at their displayed grain;
 reuse a dataset when several visuals derive from the same rows. Present the
-findings that answer the reader's question, rather than every row or chart.
+findings that answer the user's question, rather than every row or chart.
 Use the [standard layout](layout.md) and built-in toolbar actions.
 
 ### Organize the exploration
 
-Use sections for a focused question and for findings readers should compare
+Use sections for a focused question and for findings users should compare
 side by side. Add app-level `<Tabs>` from `/react/ui` when the exploration has
 distinct analytical questions, such as Overview, Retention, and Segments, each
 with its own context and group of widgets. Lead with the most useful overview
@@ -80,7 +80,7 @@ and label tabs by the question or subject they explore.
 
 Use `<VisualizationWidget>`'s `views` for alternate representations of the same
 dataset, such as a chart and its rows. Keep these choices within the widget;
-use filter variables when the reader is changing the data scope.
+use filter variables when the user is changing the data scope.
 
 Navigation tabs, widget views, and declared data views have different roles.
 A declared view owns inputs, requests, and displayed results; a tab does not

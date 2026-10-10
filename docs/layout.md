@@ -6,11 +6,8 @@ for sections, `<Grid>` for peer widgets, and `<GridItem>` for spans. Use
 external spacing. Keep widget customization inside the widget so its parent can maintain consistent
 spacing between sections and cards.
 
-By default, section and widget gaps use `--atbl-layout-gap`, with density configured once
-in `app.appearance`. The package owns wrapping and span collapse based
-on the available container width and configured gap. Custom length values for
-`--atbl-layout-gap`, `--atbl-space-sm`, and `--atbl-space-md` also drive span
-collapse; a two-column span activates only when two minimum-width tracks fit.
+Configure density once in `app.appearance`. `<Grid>` wraps to fit its container;
+spans collapse when there is not enough space.
 
 ```tsx
 <Stack>
@@ -24,10 +21,6 @@ collapse; a two-column span activates only when two minimum-width tracks fit.
   </Grid>
 </Stack>
 ```
-
-Widget padding uses `--atbl-surface-padding`, independently of `--atbl-layout-gap`.
-Both derive responsive defaults from the spacing scale. Set either on an app-owned
-wrapper to customize its region without changing the other.
 
 ## Verify rendered layouts
 

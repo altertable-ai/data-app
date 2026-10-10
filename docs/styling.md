@@ -13,15 +13,6 @@ Configure theme, palette, accent, typography, density, radius, and elevation thr
 Add app-owned classes through `className`. Render package components rather than copying their classes onto markup;
 private descendants are not customization hooks. Public names and stable roots
 are listed in the [typed contract](https://github.com/altertable-ai/data-app/blob/main/src/react/style-contract.ts).
-CSS comments document [inherited defaults](https://github.com/altertable-ai/data-app/blob/main/src/react/tokens.css),
-[interaction overrides](https://github.com/altertable-ai/data-app/blob/main/src/react/interaction.css),
-and [focus overrides](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Focus.css).
-Widget-specific overrides live beside their uses in
-[metrics](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/MetricWidget.css),
-[bar charts](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/BarChart.css),
-[code](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/QueryList.css),
-and [layout](https://github.com/altertable-ai/data-app/blob/main/src/react/ui/Grid.css).
-The `--atbl-` prefix means Altertable.
 
 ```css
 .app-action {
@@ -30,37 +21,11 @@ The `--atbl-` prefix means Altertable.
 }
 ```
 
-Set tokens on `:root` for the document or on a component for local overrides.
-Inherited tokens are usable in app CSS. Optional overrides resolve at consumption
-sites so local inputs compose; use a `var()` fallback for them in app-owned CSS. Portals inherit from
-their actual DOM ancestors. Local trigger fonts, spacing, and colors do not follow
-select, choice, number, or date menus into their portals. Use `:root` for a theme
-shared by the trigger and menu. Normal unlayered app CSS overrides package rules.
-`DataAppStyle` checks public inline custom-property names.
-
-`--atbl-control-text-size` controls editable text, including compact search fields,
-date segments, and annotation editors. Its default resolves from the local
-`--atbl-type-body-size`.
-Package controls and custom controls with `data-atbl-control="text"` enforce a
-16px minimum on narrow or touch viewports to prevent browser focus zoom. Keep
-that minimum when adding app-owned input styles.
-
-When overriding `--atbl-accent` directly, also choose `--atbl-on-accent` with
-sufficient contrast. The default accent is neutral. Prefer appearance configuration
-for brand and chart colors; semantic status colors remain independent. `--atbl-negative` defaults to the local
-`--atbl-danger`; `--atbl-danger-subtle` derives from local danger and surface colors.
-
-Selected options default to `--atbl-subtle` and `--atbl-text`, so a brand accent
-does not color every filter selection. Override `--atbl-control-selected-surface`
-and `--atbl-control-selected-text` together to customize selected controls,
-including dropdown options. Selected rows retain their selection with distinct
-hover and press feedback. These overrides inherit from the document or a
-component; place document-wide overrides on `:root` to include portaled menus.
-
-Open popup triggers use `--atbl-surface` and a muted border rather than retaining
-pointer-press paint. Override `--atbl-control-open-surface` and
-`--atbl-control-open-border` to customize this state. Hover, press, open, and
-selection tokens describe interactions; base palette tokens describe surfaces.
+Use `DataAppStyle` for checked inline tokens; optional tokens need a `var()` fallback
+in app CSS. Set document-wide overrides on `:root`
+so portaled menus share the theme; local component overrides stay with the trigger.
+Prefer `app.appearance` for brand and chart colors. When overriding accent tokens,
+choose a contrasting foreground too. Keep text inputs at least 16px on mobile.
 
 ## Native controls
 
@@ -72,8 +37,6 @@ Use package controls when possible. For a custom native control:
 </button>
 ```
 
-These hooks provide cursor and focus styling; keep native semantics, accessible
-names, disabled state, and keyboard behavior. `DataAppStyleHooks` checks hook
-values. Use `default` for tooltip targets that only reveal information on hover
-or tap, and `action` for controls that perform an action. Use `inset` focus inside
-clipped surfaces and `group` when a wrapper owns an input's outline. See [UI quality](ui-quality.md) for rendered verification.
+These hooks provide cursor and focus styling; keep accessible names, disabled
+state, and keyboard behavior. `DataAppStyleHooks` checks hook values. See
+[UI quality](ui-quality.md) for rendered verification.
