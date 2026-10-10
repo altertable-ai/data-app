@@ -5,7 +5,7 @@ export type VariableBarProps = {
   children: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
-/** Reader-controlled inputs below the page header. */
+/** User-controlled inputs below the page header. */
 export function VariableBar({
   children,
   className,

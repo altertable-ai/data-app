@@ -10,7 +10,31 @@
   min-width: 0;
 }
 .altertable-primary-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--atbl-space-sm);
+}
+.altertable-filter-bar-inputs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: calc((var(--atbl-space-xs) + var(--atbl-space-sm)) / 2);
+  min-width: 0;
+}
+.altertable-filter-bar-inputs > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.altertable-filter-bar-inputs
+  > :is(.altertable-picker-trigger, .altertable-field) {
+  max-width: min(100%, 16rem);
+}
+.altertable-filter-sheet-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--atbl-space-sm);
 }
 .altertable-variable-searches > .altertable-search-landmark {
   flex: 1 1 280px;

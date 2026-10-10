@@ -78,41 +78,43 @@ export function ViewControlBar({
         className="altertable-primary-controls"
         aria-label="View controls"
       >
-        {primaryFilters}
-        {hasSecondaryFilters && (
-          <Tooltip
-            content={
-              <>
-                Filters <Kbd shortcut={shortcuts.filters} />
-              </>
-            }
-          >
-            <Button
-              variant="ghost"
-              ref={moreFiltersRef}
-              aria-label={moreFiltersLabel}
-              aria-haspopup="dialog"
-              aria-keyshortcuts={ariaKeyShortcuts(shortcuts.filters)}
-              aria-expanded={filtersOpen}
-              aria-controls={filtersId}
-              data-open={filtersOpen}
-              onClick={() => setFiltersOpen(current => !current)}
+        <div className="altertable-filter-bar-inputs">
+          {primaryFilters}
+          {hasSecondaryFilters && (
+            <Tooltip
+              content={
+                <>
+                  Filters <Kbd shortcut={shortcuts.filters} />
+                </>
+              }
             >
-              More filters
-              {activeSecondaryFilterCount > 0 && (
-                <span className="altertable-control-count" aria-hidden="true">
-                  {activeSecondaryFilterCount}
-                </span>
-              )}
-              <AppIcon
-                name="disclosure"
-                size={14}
-                className="altertable-filter-disclosure"
-              />
-            </Button>
-          </Tooltip>
-        )}
-        {onClear && <FilterActions onClear={clearFilters} />}
+              <Button
+                variant="ghost"
+                ref={moreFiltersRef}
+                aria-label={moreFiltersLabel}
+                aria-haspopup="dialog"
+                aria-keyshortcuts={ariaKeyShortcuts(shortcuts.filters)}
+                aria-expanded={filtersOpen}
+                aria-controls={filtersId}
+                data-open={filtersOpen}
+                onClick={() => setFiltersOpen(current => !current)}
+              >
+                More filters
+                {activeSecondaryFilterCount > 0 && (
+                  <span className="altertable-control-count" aria-hidden="true">
+                    {activeSecondaryFilterCount}
+                  </span>
+                )}
+                <AppIcon
+                  name="disclosure"
+                  size={14}
+                  className="altertable-filter-disclosure"
+                />
+              </Button>
+            </Tooltip>
+          )}
+          {onClear && <FilterActions onClear={clearFilters} />}
+        </div>
         {displayOptions.length > 0 && (
           <DisplayOptionsPopover changedCount={changedDisplayOptionCount}>
             {displayOptions}
@@ -127,8 +129,23 @@ export function ViewControlBar({
           returnFocus={moreFiltersRef}
           title="Filters"
           className="altertable-filter-sheet"
-          description="Choose filters to narrow the results. Results update as you make changes."
-          footer={onClear && <FilterActions onClear={clearFilters} />}
+          description="Choose filters to narrow the results."
+          footer={
+            <div className="altertable-filter-sheet-actions">
+              <Tooltip content="Clear all filters">
+                <Button
+                  variant="ghost"
+                  disabled={!onClear}
+                  onClick={clearFilters}
+                >
+                  Clear
+                </Button>
+              </Tooltip>
+              <Button variant="primary" onClick={() => setFiltersOpen(false)}>
+                Show results
+              </Button>
+            </div>
+          }
         >
           <VariableBar
             aria-label="All filters"

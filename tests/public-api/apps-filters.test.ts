@@ -987,3 +987,66 @@ test('filters shortcut opens the complete sheet and Escape restores focus', asyn
       .isVisible()
   ).toBe(true);
 });
+
+test('filter actions stay balanced with long selections and Show results preserves filters', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation?spend=all');
+  const controls = page.getByRole('group', {
+    name: 'View controls',
+    exact: true,
+  });
+  await controls
+    .getByRole('button', { name: 'Country: All', exact: true })
+    .click();
+  for (const country of ['France', 'Germany', 'United Kingdom']) {
+    await page.getByRole('option', { name: country, exact: true }).click();
+  }
+  await page.keyboard.press('Escape');
+  await controls
+    .getByRole('button', { name: 'Segment: All', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'Enterprise', exact: true }).click();
+  const country = controls.getByRole('button', { name: /Country:/ });
+  const display = controls.getByRole('button', {
+    name: 'Display options',
+    exact: true,
+  });
+  for (const width of [736, 600, 375, 320]) {
+    await page.setViewportSize({ width, height: 812 });
+    const inputBox = await country.boundingBox();
+    const displayBox = await display.boundingBox();
+    expect(Math.abs(inputBox!.y - displayBox!.y)).toBeLessThan(1);
+    if (width === 736) {
+      const clearBox = await controls
+        .getByRole('button', { name: 'Clear', exact: true })
+        .boundingBox();
+      expect(Math.abs(inputBox!.y - clearBox!.y)).toBeLessThan(1);
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth
+      )
+    ).toBe(true);
+  }
+  await controls
+    .getByRole('button', { name: 'More filters', exact: true })
+    .click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  const clear = sheet.getByRole('button', { name: 'Clear', exact: true });
+  const show = sheet.getByRole('button', { name: 'Show results', exact: true });
+  const clearBox = await clear.boundingBox();
+  const showBox = await show.boundingBox();
+  expect(clearBox!.x + clearBox!.width).toBeLessThan(showBox!.x);
+  expect(Math.abs(clearBox!.y - showBox!.y)).toBeLessThan(1);
+  const selectedURL = page.url();
+  await show.click();
+  await expect.poll(() => sheet.count()).toBe(0);
+  expect(page.url()).toBe(selectedURL);
+  await controls.getByRole('button', { name: 'Clear', exact: true }).click();
+  await controls
+    .getByRole('button', { name: 'More filters', exact: true })
+    .click();
+  expect(await clear.isDisabled()).toBe(true);
+  expect(await show.isEnabled()).toBe(true);
+});
