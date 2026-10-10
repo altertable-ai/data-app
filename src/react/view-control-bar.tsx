@@ -141,8 +141,12 @@ export function ViewControlBar({
                   Clear
                 </Button>
               </Tooltip>
-              <Button variant="primary" onClick={() => setFiltersOpen(false)}>
-                Show results
+              <Button
+                variant="primary"
+                aria-keyshortcuts="Escape"
+                onClick={() => setFiltersOpen(false)}
+              >
+                Show results <Kbd aria-hidden="true">Esc</Kbd>
               </Button>
             </div>
           }
