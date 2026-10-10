@@ -11,7 +11,6 @@ import { classNames } from '@/src/react/ui/classNames';
 import { SearchInput } from '@/src/react/ui/SearchInput';
 import { Button } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
-import { Kbd } from '@/src/react/ui/Kbd';
 
 export type SearchFieldProps = {
   label: string;
@@ -204,14 +203,6 @@ export function SearchField({
                 >
                   <AppIcon name="reset" size={16} />
                 </Button>
-              ) : focusShortcut ? (
-                <Kbd
-                  className="altertable-search-shortcut"
-                  aria-hidden="true"
-                  title="Focus search: ⌘K / Ctrl+K or /"
-                >
-                  /
-                </Kbd>
               ) : null
             }
           />

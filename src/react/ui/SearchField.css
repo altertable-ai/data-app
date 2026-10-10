@@ -28,9 +28,3 @@
     width: 100%;
   }
 }
-
-@media (hover: none) {
-  .altertable-search-shortcut {
-    display: none;
-  }
-}
