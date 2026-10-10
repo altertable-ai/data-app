@@ -29,10 +29,6 @@ test('presentation groups disclose secondary restrictions and preserve them acro
     exact: true,
   });
   expect(await more.locator('svg').count()).toBe(1);
-  await more.hover();
-  await expect
-    .poll(() => page.getByRole('tooltip').textContent())
-    .toMatch(/Filters/);
   const table = page.getByRole('table', { includeHidden: true });
   await expect.poll(() => table.getByRole('row').count()).toBe(8);
   expect(
@@ -923,7 +919,7 @@ test('widget heading count follows displayed customer results including zero', a
   await expect.poll(() => heading.textContent()).toContain('8');
 });
 
-test('filters shortcut opens the complete sheet and Escape restores focus', async ({
+test('Filters button opens the complete sheet and Escape restores focus', async ({
   page,
 }) => {
   await page.goto('/filter-presentation?spend=all');
@@ -933,19 +929,13 @@ test('filters shortcut opens the complete sheet and Escape restores focus', asyn
   const apple = await page.evaluate(() =>
     /Macintosh|Mac OS X|iPhone|iPad/.test(navigator.userAgent)
   );
-  await page
-    .getByRole('button', { name: 'Display options', exact: true })
-    .click();
-  await page
-    .getByRole('button', { name: 'Monthly spend Sort by', exact: true })
-    .focus();
+  await trigger.focus();
+  expect(await trigger.getAttribute('aria-keyshortcuts')).toBeNull();
   await page.keyboard.press(apple ? 'Meta+Shift+f' : 'Control+Shift+f');
   expect(
     await page.getByRole('dialog', { name: 'Filters', exact: true }).count()
   ).toBe(0);
-  await page.keyboard.press('Escape');
-  await trigger.focus();
-  await page.keyboard.press(apple ? 'Meta+Shift+f' : 'Control+Shift+f');
+  await trigger.click();
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   await expect.poll(() => sheet.isVisible()).toBe(true);
   expect(

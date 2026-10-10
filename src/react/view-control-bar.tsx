@@ -15,12 +15,6 @@ import { AppIcon } from '@/src/react/ui/icons';
 import { FilterActions } from '@/src/react/ui/FilterActions';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { Sheet } from '@/src/react/ui/Sheet';
-import { Kbd } from '@/src/react/ui/Kbd';
-import {
-  shortcuts,
-  ariaKeyShortcuts,
-  useShortcut,
-} from '@/src/react/ui/shortcuts';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
 /** The page layout owns focus outside the control bar. */
@@ -28,14 +22,14 @@ export const ViewControlFocusContext = createContext<(() => void) | null>(null);
 
 export function ViewControlBar({
   primaryFilters,
-  sheetFilters,
+  allFilters,
   activeFilterCount,
   displayOptions,
   changedDisplayOptionCount,
   onClear,
 }: {
   primaryFilters: ReactNode[];
-  sheetFilters: ReactNode[];
+  allFilters: ReactNode[];
   activeFilterCount: number;
   displayOptions: ReactNode[];
   changedDisplayOptionCount: number;
@@ -49,12 +43,6 @@ export function ViewControlBar({
   const filtersButtonLabel = activeFilterCount
     ? `Filters (${activeFilterCount} active)`
     : 'Filters';
-
-  useShortcut(
-    shortcuts.filters,
-    () => setFiltersOpen(true),
-    sheetFilters.length > 0
-  );
 
   function clearFilters() {
     const controls = primaryControlsRef.current;
@@ -77,33 +65,24 @@ export function ViewControlBar({
         aria-label="View controls"
       >
         <div className="altertable-filter-bar-inputs">
-          {sheetFilters.length > 0 && (
-            <Tooltip
-              content={
-                <>
-                  Filters <Kbd shortcut={shortcuts.filters} />
-                </>
-              }
+          {allFilters.length > 0 && (
+            <Button
+              ref={filtersButtonRef}
+              aria-label={filtersButtonLabel}
+              aria-haspopup="dialog"
+              aria-expanded={filtersOpen}
+              aria-controls={filtersId}
+              data-open={filtersOpen}
+              onClick={() => setFiltersOpen(true)}
             >
-              <Button
-                ref={filtersButtonRef}
-                aria-label={filtersButtonLabel}
-                aria-haspopup="dialog"
-                aria-keyshortcuts={ariaKeyShortcuts(shortcuts.filters)}
-                aria-expanded={filtersOpen}
-                aria-controls={filtersId}
-                data-open={filtersOpen}
-                onClick={() => setFiltersOpen(current => !current)}
-              >
-                <AppIcon name="filters" />
-                Filters
-                {activeFilterCount > 0 && (
-                  <span className="altertable-control-count" aria-hidden="true">
-                    {activeFilterCount}
-                  </span>
-                )}
-              </Button>
-            </Tooltip>
+              <AppIcon name="filters" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="altertable-control-count" aria-hidden="true">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
           )}
           {primaryFilters}
           {onClear && <FilterActions onClear={clearFilters} />}
@@ -114,7 +93,7 @@ export function ViewControlBar({
           </DisplayOptionsPopover>
         )}
       </VariableBar>
-      {sheetFilters.length > 0 && (
+      {allFilters.length > 0 && (
         <Sheet
           id={filtersId}
           open={filtersOpen}
@@ -144,7 +123,7 @@ export function ViewControlBar({
             aria-label="All filters"
             className="altertable-sheet-filters"
           >
-            {sheetFilters}
+            {allFilters}
           </VariableBar>
         </Sheet>
       )}

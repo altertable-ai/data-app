@@ -31,7 +31,7 @@ Keep local search out of the operation input when it only filters loaded rows.
 Declare controls in priority order for the user's task. Keep the period and most useful scope
 filters visible; Filters opens the complete sheet and counts active filters. Choose useful
 defaults from the available data rather than exposing every field.
-Declare each label once. Generated secondary controls place it above the input;
+Declare each label once. Controls in the Filters sheet place it above the input;
 do not add a separate heading or repeat it inside the value.
 
 Set `presentation.group` to `display` for controls that change ordering or presentation
@@ -208,4 +208,4 @@ with paired Apply/Cancel handlers; derive queries and visible controls from appl
 values while a draft is being edited.
 
 The Filters sheet applies changes immediately and returns focus when closed.
-Open it with `⌘⇧F` / `Ctrl+Shift+F`; Escape closes it.
+Escape closes it.

@@ -59,7 +59,7 @@ export type DataAppProps<Data = unknown, Input = unknown> =
   | (DataAppBaseProps &
       DataAppControlProps & {
         request: DataAppRequest<Data, Input>;
-        /** Findings are always derived from the result currently visible to the reader. */
+        /** Findings are always derived from the result currently visible to the user. */
         story: BoundStory<Data, Input>;
         /** Export every distinct dataset in the displayed result. */
         csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;

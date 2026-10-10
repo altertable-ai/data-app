@@ -84,7 +84,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     primary: [],
     secondary: [],
   };
-  const sheetFilters: ReactNode[] = [];
+  const allFilters: ReactNode[] = [];
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
@@ -98,10 +98,10 @@ export function useViewVariables<Variables extends VariableCollection>(
       !variable.same(value, variable.clearValue)
     )
       hasActiveFilters = true;
-    const groupName = definition.presentation?.group ?? 'scope';
+    const group = definition.presentation?.group ?? 'scope';
     const prominence = definition.presentation?.prominence ?? 'primary';
     const labelPlacement =
-      groupName === 'display'
+      group === 'display'
         ? 'beside'
         : prominence === 'secondary'
           ? 'above'
@@ -184,7 +184,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           <Select
             key={name}
             labelPlacement={labelPlacement}
-            align={groupName === 'display' ? 'end' : 'start'}
+            align={group === 'display' ? 'end' : 'start'}
             label={definition.label}
             value={selected.kind === 'all' ? 'all' : String(selected.value)}
             options={[
@@ -229,7 +229,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           <Select
             key={name}
             labelPlacement={labelPlacement}
-            align={groupName === 'display' ? 'end' : 'start'}
+            align={group === 'display' ? 'end' : 'start'}
             label={definition.label ?? name}
             value={value as string}
             options={definition.options}
@@ -245,15 +245,15 @@ export function useViewVariables<Variables extends VariableCollection>(
       return control;
     }
     const baseline =
-      groupName === 'display'
+      group === 'display'
         ? variable.defaultValue
         : (variable.clearValue ?? variable.defaultValue);
     const active = !variable.same(value, baseline);
-    if (groupName === 'display') {
+    if (group === 'display') {
       displayOptions[prominence].push(renderControl(labelPlacement));
       if (active) changedDisplayOptionCount++;
     } else {
-      sheetFilters.push(renderControl('above'));
+      allFilters.push(renderControl('above'));
       if (prominence === 'primary')
         primaryFilters.push(renderControl('inline'));
       if (active) activeFilterCount++;
@@ -263,8 +263,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     ...displayOptions.primary,
     ...displayOptions.secondary,
   ];
-  const hasControls =
-    sheetFilters.length > 0 || orderedDisplayOptions.length > 0;
+  const hasControls = allFilters.length > 0 || orderedDisplayOptions.length > 0;
 
   return {
     ...variables,
@@ -274,7 +273,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       hasControls || hasActiveFilters ? (
         <ViewControlBar
           primaryFilters={primaryFilters}
-          sheetFilters={sheetFilters}
+          allFilters={allFilters}
           activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}
           changedDisplayOptionCount={changedDisplayOptionCount}
