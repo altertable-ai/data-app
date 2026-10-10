@@ -44,7 +44,7 @@
   letter-spacing: -0.02em;
 }
 .altertable-data-widget-count {
-  margin-left: 8px;
+  margin-inline-start: var(--atbl-space-sm);
   color: var(--atbl-muted);
   font-size: var(--atbl-type-meta-size);
   font-weight: var(--atbl-type-meta-weight);
@@ -85,4 +85,8 @@
   border-radius: 0;
   background: transparent;
   padding: 0;
+}
+
+.altertable-widget-heading-trigger .altertable-data-widget-count {
+  margin-inline-start: 0;
 }

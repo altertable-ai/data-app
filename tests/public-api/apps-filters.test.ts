@@ -32,8 +32,8 @@ test('presentation groups disclose secondary restrictions and preserve them acro
   await more.hover();
   await expect
     .poll(() => page.getByRole('tooltip').textContent())
-    .toBe('Show additional filters');
-  const table = page.getByRole('table');
+    .toMatch(/Filters/);
+  const table = page.getByRole('table', { includeHidden: true });
   await expect.poll(() => table.getByRole('row').count()).toBe(8);
   expect(
     await scope.getByRole('button', { name: 'Monthly spend Sort by' }).count()
@@ -61,7 +61,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
       .evaluate(element => getComputedStyle(element).transform)
   ).toBe('none');
   const secondary = page.getByRole('group', {
-    name: 'Secondary filters',
+    name: 'All filters',
     exact: true,
   });
   expect(
@@ -77,10 +77,15 @@ test('presentation groups disclose secondary restrictions and preserve them acro
   await choose(page, secondary, 'Active account', 'Yes');
   await expect.poll(() => table.getByRole('row').count()).toBe(6);
   const appliedURL = page.url();
-  await scope
-    .getByRole('button', { name: 'More filters (2 active)', exact: true })
+  await page
+    .getByRole('dialog', { name: 'Filters', exact: true })
+    .getByRole('button', { name: 'Close panel' })
     .click();
-  expect(await secondary.count()).toBe(0);
+  await expect
+    .poll(() =>
+      page.getByRole('dialog', { name: 'Filters', exact: true }).count()
+    )
+    .toBe(0);
   await page.reload();
   await expect.poll(() => table.getByRole('row').count()).toBe(6);
   expect(
@@ -175,31 +180,38 @@ test('presentation groups disclose secondary restrictions and preserve them acro
   expect(new URL(page.url()).searchParams.get('direction')).toBe('asc');
 });
 
-test('expanded filter groups fit a phone viewport', async ({
+test('filters sheet and display options fit a phone viewport', async ({
   mobilePage: page,
 }) => {
   await page.goto('/filter-presentation');
   await page
     .getByRole('button', { name: 'More filters (1 active)', exact: true })
     .click();
-  await page
-    .getByRole('button', { name: 'Display options', exact: true })
-    .click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   expect(
-    await page.getByRole('button', { name: 'Any Active account' }).isVisible()
-  ).toBe(true);
-  expect(
-    await page.getByRole('button', { name: 'Descending Order' }).isVisible()
+    await sheet.getByRole('button', { name: 'Any Active account' }).isVisible()
   ).toBe(true);
   await page.addStyleTag({ content: ':root { font-size: 20px; }' });
   for (const width of [375, 320]) {
     await page.setViewportSize({ width, height: 812 });
     expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth
-      )
+      await sheet.evaluate(element => element.scrollWidth <= window.innerWidth)
     ).toBe(true);
   }
+  await sheet
+    .getByRole('button', { name: 'Country: All', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'France', exact: true }).click();
+  await page.keyboard.press('Escape');
+  expect(await sheet.isVisible()).toBe(true);
+  await sheet.getByRole('button', { name: 'Close panel' }).click();
+  await expect.poll(() => sheet.count()).toBe(0);
+  await page
+    .getByRole('button', { name: 'Display options', exact: true })
+    .click();
+  expect(
+    await page.getByRole('button', { name: 'Descending Order' }).isVisible()
+  ).toBe(true);
 });
 
 test('secondary filter fields remain ordered and clear closes the panel', async ({
@@ -212,7 +224,7 @@ test('secondary filter fields remain ordered and clear closes the panel', async 
   });
   await toggle.click();
   const secondary = page.getByRole('group', {
-    name: 'Secondary filters',
+    name: 'All filters',
     exact: true,
   });
   const labels = await secondary
@@ -220,7 +232,15 @@ test('secondary filter fields remain ordered and clear closes the panel', async 
     .evaluateAll(elements =>
       elements.map(element => (element as HTMLElement).innerText)
     );
-  expect(labels).toEqual(['Any', 'All', 'All', 'At least 100', 'Any']);
+  expect(labels).toEqual([
+    'All',
+    'All',
+    'Any',
+    'All',
+    'All',
+    'At least 100',
+    'Any',
+  ]);
   await secondary
     .getByRole('button', { name: 'Billing status: All', exact: true })
     .click();
@@ -231,16 +251,28 @@ test('secondary filter fields remain ordered and clear closes the panel', async 
   await page.getByRole('option', { name: 'Amira', exact: true }).click();
   await page.getByRole('option', { name: 'Jonas', exact: true }).click();
   await page.keyboard.press('Escape');
-  await expect.poll(() => page.getByRole('dialog').count()).toBe(0);
+  await expect.poll(() => page.getByRole('listbox').count()).toBe(0);
   await expect
-    .poll(() => page.getByRole('table').getByRole('row').count())
+    .poll(() =>
+      page
+        .getByRole('table', { includeHidden: true })
+        .getByRole('row', { includeHidden: true })
+        .count()
+    )
     .toBe(2);
   expect(
     await page
-      .getByRole('button', { name: 'More filters (3 active)', exact: true })
+      .getByRole('button', {
+        name: 'More filters (3 active)',
+        exact: true,
+        includeHidden: true,
+      })
       .count()
   ).toBe(1);
-  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('dialog', { name: 'Filters', exact: true })
+    .getByRole('button', { name: 'Clear', exact: true })
+    .click();
   await expect.poll(() => secondary.count()).toBe(0);
   const closed = page.getByRole('button', {
     name: 'More filters',
@@ -889,4 +921,69 @@ test('widget heading count follows displayed customer results including zero', a
   ).toBe(true);
   await search.press('Escape');
   await expect.poll(() => heading.textContent()).toContain('8');
+});
+
+test('filters shortcut opens the complete sheet and Escape restores focus', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation?spend=all');
+  const trigger = page.getByRole('button', {
+    name: /^More filters/,
+  });
+  const apple = await page.evaluate(() =>
+    /Macintosh|Mac OS X|iPhone|iPad/.test(navigator.userAgent)
+  );
+  await page
+    .getByRole('button', { name: 'Display options', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Monthly spend Sort by', exact: true })
+    .focus();
+  await page.keyboard.press(apple ? 'Meta+Shift+f' : 'Control+Shift+f');
+  expect(
+    await page.getByRole('dialog', { name: 'Filters', exact: true }).count()
+  ).toBe(0);
+  await page.keyboard.press('Escape');
+  await trigger.focus();
+  await page.keyboard.press(apple ? 'Meta+Shift+f' : 'Control+Shift+f');
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await expect.poll(() => sheet.isVisible()).toBe(true);
+  expect(
+    await sheet
+      .getByRole('button', { name: 'Country: All', exact: true })
+      .isVisible()
+  ).toBe(true);
+  expect(
+    await sheet.getByRole('button', { name: 'Monthly spend Sort by' }).count()
+  ).toBe(0);
+  await sheet
+    .getByRole('button', { name: 'Country: All', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'France', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.getByRole('listbox').count()).toBe(0);
+  expect(await sheet.isVisible()).toBe(true);
+  await sheet
+    .getByRole('button', { name: 'Monthly spend (€): Any', exact: true })
+    .click();
+  const number = page.getByRole('dialog', {
+    name: 'Monthly spend (€) filter',
+    exact: true,
+  });
+  await choose(page, number, 'Condition', 'At least');
+  await number.getByLabel('Value', { exact: true }).fill('1000');
+  await number.getByLabel('Value', { exact: true }).press('Tab');
+  await number.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect.poll(() => number.count()).toBe(0);
+  expect(await sheet.isVisible()).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => sheet.count()).toBe(0);
+  await expect
+    .poll(() => trigger.evaluate(element => element === document.activeElement))
+    .toBe(true);
+  expect(
+    await page
+      .getByRole('button', { name: 'Country: France', exact: true })
+      .isVisible()
+  ).toBe(true);
 });

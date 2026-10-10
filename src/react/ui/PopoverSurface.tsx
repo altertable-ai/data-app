@@ -1,15 +1,21 @@
-import type { ComponentProps } from 'react';
+import { createContext, useContext, type ComponentProps } from 'react';
 import { Popover } from 'react-aria-components';
 import { classNames } from '@/src/react/ui/classNames';
+
+export const PopoverContainerContext = createContext<Element | undefined>(
+  undefined
+);
 
 /** Shared popup paint; each control owns placement, dimensions, and contents. */
 export function PopoverSurface({
   className,
   ...props
 }: ComponentProps<typeof Popover>) {
+  const container = useContext(PopoverContainerContext);
   return (
     <Popover
       {...props}
+      UNSTABLE_portalContainer={props.UNSTABLE_portalContainer ?? container}
       className={values =>
         classNames(
           'altertable-popover-surface',

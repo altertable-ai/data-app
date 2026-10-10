@@ -14,7 +14,13 @@ import { Button, PressButton } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
 import { FilterActions } from '@/src/react/ui/FilterActions';
 import { VariableBar } from '@/src/react/ui/VariableBar';
-import { Stack } from '@/src/react/ui/Stack';
+import { Sheet } from '@/src/react/ui/Sheet';
+import { Kbd } from '@/src/react/ui/Kbd';
+import {
+  shortcuts,
+  ariaKeyShortcuts,
+  useShortcut,
+} from '@/src/react/ui/shortcuts';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
 /** The page layout owns focus outside the control bar. */
@@ -22,28 +28,35 @@ export const ViewControlFocusContext = createContext<(() => void) | null>(null);
 
 export function ViewControlBar({
   primaryFilters,
-  secondaryFilters,
+  sheetFilters,
+  hasSecondaryFilters,
   activeSecondaryFilterCount,
   displayOptions,
   changedDisplayOptionCount,
   onClear,
 }: {
   primaryFilters: ReactNode[];
-  secondaryFilters: ReactNode[];
+  sheetFilters: ReactNode[];
+  hasSecondaryFilters: boolean;
   activeSecondaryFilterCount: number;
   displayOptions: ReactNode[];
   changedDisplayOptionCount: number;
   onClear?: () => void;
 }) {
   const focusFallback = useContext(ViewControlFocusContext);
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const secondaryFiltersId = useId();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersId = useId();
   const moreFiltersRef = useRef<ComponentRef<'button'>>(null);
   const primaryControlsRef = useRef<ComponentRef<typeof VariableBar>>(null);
-  const hasSecondaryFilters = secondaryFilters.length > 0;
   const moreFiltersLabel = activeSecondaryFilterCount
     ? `More filters (${activeSecondaryFilterCount} active)`
     : 'More filters';
+
+  useShortcut(
+    shortcuts.filters,
+    () => setFiltersOpen(true),
+    hasSecondaryFilters
+  );
 
   function clearFilters() {
     const controls = primaryControlsRef.current;
@@ -53,13 +66,13 @@ export function ViewControlBar({
         ':is(button[aria-haspopup], button[aria-expanded], input, select):not(:disabled):not([aria-disabled="true"])'
       );
     onClear?.();
-    setFiltersExpanded(false);
+    setFiltersOpen(false);
     if (focusTarget) focusTarget.focus();
     else focusFallback?.();
   }
 
   return (
-    <Stack gap="sm">
+    <>
       <VariableBar
         ref={primaryControlsRef}
         className="altertable-primary-controls"
@@ -69,19 +82,21 @@ export function ViewControlBar({
         {hasSecondaryFilters && (
           <Tooltip
             content={
-              filtersExpanded
-                ? 'Hide additional filters'
-                : 'Show additional filters'
+              <>
+                Filters <Kbd shortcut={shortcuts.filters} />
+              </>
             }
           >
             <Button
               variant="ghost"
               ref={moreFiltersRef}
               aria-label={moreFiltersLabel}
-              aria-expanded={filtersExpanded}
-              aria-controls={secondaryFiltersId}
-              data-open={filtersExpanded}
-              onClick={() => setFiltersExpanded(current => !current)}
+              aria-haspopup="dialog"
+              aria-keyshortcuts={ariaKeyShortcuts(shortcuts.filters)}
+              aria-expanded={filtersOpen}
+              aria-controls={filtersId}
+              data-open={filtersOpen}
+              onClick={() => setFiltersOpen(current => !current)}
             >
               More filters
               {activeSecondaryFilterCount > 0 && (
@@ -105,18 +120,25 @@ export function ViewControlBar({
         )}
       </VariableBar>
       {hasSecondaryFilters && (
-        <div id={secondaryFiltersId} hidden={!filtersExpanded}>
-          {filtersExpanded && (
-            <VariableBar
-              aria-label="Secondary filters"
-              className="altertable-secondary-controls"
-            >
-              {secondaryFilters}
-            </VariableBar>
-          )}
-        </div>
+        <Sheet
+          id={filtersId}
+          open={filtersOpen}
+          onOpenChange={setFiltersOpen}
+          returnFocus={moreFiltersRef}
+          title="Filters"
+          className="altertable-filter-sheet"
+          description="Choose filters to narrow the results. Results update as you make changes."
+          footer={onClear && <FilterActions onClear={clearFilters} />}
+        >
+          <VariableBar
+            aria-label="All filters"
+            className="altertable-sheet-filters"
+          >
+            {sheetFilters}
+          </VariableBar>
+        </Sheet>
       )}
-    </Stack>
+    </>
   );
 }
 

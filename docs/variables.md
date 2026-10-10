@@ -29,7 +29,7 @@ Keep local search out of the operation input when it only filters loaded rows.
 ### Organize controls by intent
 
 Declare controls in priority order for the user's task. Keep the period and most useful scope
-filters visible; place less frequent restrictions behind More filters. Choose useful
+filters visible; More filters opens the complete Filters sheet. Choose useful
 defaults from the available data rather than exposing every field.
 Declare each label once. Generated secondary controls place it above the input;
 do not add a separate heading or repeat it inside the value.
@@ -37,7 +37,7 @@ do not add a separate heading or repeat it inside the value.
 Set `presentation.group` to `display` for controls that change ordering or presentation
 rather than which records are included. Display options live in a popover opened
 by the sliders icon alongside the filters. Set `presentation.prominence` to `secondary`
-to collapse less frequent scope filters behind More filters, or place display options
+to place less frequent scope filters in the Filters sheet, or place display options
 after primary display options. Defaults are `scope` and `primary`.
 Declaration order is preserved within each priority.
 
@@ -197,7 +197,7 @@ it, including the intended behavior for missing values.
 
 Generated controls show active values within each filter and one collective
 Clear action. Clear removes restrictions from search and predicate filters,
-then closes More filters.
+then closes the Filters sheet.
 `resetAll()` restores all
 configured variable defaults, including fixed choices and periods. Nonempty
 default filters can therefore be active immediately after Reset.
@@ -206,3 +206,6 @@ Direct `useAppVariables()` callers can use `clearAll()` and `resetAll()` for one
 atomic history update. `<FilterActions>` also supports app-owned draft state
 with paired Apply/Cancel handlers; derive queries and visible controls from applied
 values while a draft is being edited.
+
+The Filters sheet applies changes immediately and returns focus when closed.
+Open it with `⌘⇧F` / `Ctrl+Shift+F`; Escape closes it.

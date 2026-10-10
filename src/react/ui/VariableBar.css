@@ -20,15 +20,11 @@
   flex: 1;
   width: auto;
 }
-.altertable-secondary-controls {
+.altertable-sheet-filters {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--atbl-space-md);
-  padding: var(--atbl-space-sm);
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-surface);
-  background: var(--atbl-subtle);
 }
 .altertable-control-count {
   display: inline-flex;
@@ -87,4 +83,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.altertable-filter-sheet {
+  width: min(420px, 100vw);
 }

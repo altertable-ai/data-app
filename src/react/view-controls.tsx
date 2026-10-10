@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
 import { ViewControlBar } from '@/src/react/view-control-bar';
@@ -83,6 +84,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     secondary: [],
   };
   const displayOptions: typeof filters = { primary: [], secondary: [] };
+  const sheetFilters: ReactNode[] = [];
   let activeSecondaryFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
@@ -104,123 +106,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         : prominence === 'secondary'
           ? 'above'
           : 'inline';
-    let control: ReactNode = null;
-    if (definition.kind === 'dateRange') {
-      const selection = value as DateRangeSelection;
-      control = (
-        <DateRangePicker
-          key={name}
-          labelPlacement={
-            labelPlacement === 'inline' ? undefined : labelPlacement
-          }
-          {...dateRangeControl(definition, selection, next =>
-            variables.set(
-              name,
-              next as AppVariableValues<Variables>[typeof name]
-            )
-          )}
-        />
-      );
-    } else if (definition.kind === 'dimension') {
-      const filter = definition as DimensionVariable;
-      const facet = facetState.get(name);
-      control = (
-        <DimensionPicker
-          key={name}
-          labelPlacement={labelPlacement}
-          filter={filter}
-          value={value as DimensionSelection}
-          options={facet?.data ?? filter.options}
-          loading={!!facet?.isPending}
-          error={!!facet?.isError}
-          onRetry={() => void facet?.refetch()}
-          onChange={next =>
-            variables.set(
-              name,
-              next as AppVariableValues<Variables>[typeof name]
-            )
-          }
-        />
-      );
-    } else if (definition.kind === 'numberFilter') {
-      control = (
-        <NumberFilterPicker
-          key={name}
-          labelPlacement={labelPlacement}
-          filter={definition as NumberFilter}
-          value={value as NumberSelection}
-          onChange={next =>
-            variables.set(
-              name,
-              next as AppVariableValues<Variables>[typeof name]
-            )
-          }
-        />
-      );
-    } else if (definition.kind === 'booleanFilter') {
-      const selected = value as BooleanSelection;
-      control = (
-        <Select
-          key={name}
-          labelPlacement={labelPlacement}
-          align={groupName === 'display' ? 'end' : 'start'}
-          label={definition.label}
-          value={selected.kind === 'all' ? 'all' : String(selected.value)}
-          options={[
-            { id: 'all', label: 'Any' },
-            { id: 'true', label: 'Yes' },
-            { id: 'false', label: 'No' },
-          ]}
-          onChange={next =>
-            variables.set(
-              name,
-              (next === 'all'
-                ? { kind: 'all' }
-                : {
-                    kind: 'is',
-                    value: next === 'true',
-                  }) as AppVariableValues<Variables>[typeof name]
-            )
-          }
-        />
-      );
-    } else if (definition.kind === 'multiChoice') {
-      control = (
-        <ChoicePicker
-          key={name}
-          labelPlacement={labelPlacement}
-          selectionMode="multiple"
-          label={definition.label ?? name}
-          options={definition.options}
-          values={value as readonly string[]}
-          maxSelected={definition.maxSelected}
-          emptySelectionLabel="None"
-          onChange={next =>
-            variables.set(
-              name,
-              next as AppVariableValues<Variables>[typeof name]
-            )
-          }
-        />
-      );
-    } else if (definition.kind === 'choice') {
-      control = (
-        <Select
-          key={name}
-          labelPlacement={labelPlacement}
-          align={groupName === 'display' ? 'end' : 'start'}
-          label={definition.label ?? name}
-          value={value as string}
-          options={definition.options}
-          onChange={next =>
-            variables.set(
-              name,
-              next as AppVariableValues<Variables>[typeof name]
-            )
-          }
-        />
-      );
-    } else if (definition.kind === 'search') {
+    if (definition.kind === 'search') {
       searchControls.push(
         <SearchField
           key={name}
@@ -236,10 +122,132 @@ export function useViewVariables<Variables extends VariableCollection>(
           }
         />
       );
+      continue;
     }
-    if (definition.kind === 'search') continue;
+    function renderControl(labelPlacement: ControlLabelPlacement) {
+      let control: ReactNode = null;
+      if (definition.kind === 'dateRange') {
+        const selection = value as DateRangeSelection;
+        control = (
+          <DateRangePicker
+            key={name}
+            labelPlacement={
+              labelPlacement === 'inline' ? undefined : labelPlacement
+            }
+            {...dateRangeControl(definition, selection, next =>
+              variables.set(
+                name,
+                next as AppVariableValues<Variables>[typeof name]
+              )
+            )}
+          />
+        );
+      } else if (definition.kind === 'dimension') {
+        const filter = definition as DimensionVariable;
+        const facet = facetState.get(name);
+        control = (
+          <DimensionPicker
+            key={name}
+            labelPlacement={labelPlacement}
+            filter={filter}
+            value={value as DimensionSelection}
+            options={facet?.data ?? filter.options}
+            loading={!!facet?.isPending}
+            error={!!facet?.isError}
+            onRetry={() => void facet?.refetch()}
+            onChange={next =>
+              variables.set(
+                name,
+                next as AppVariableValues<Variables>[typeof name]
+              )
+            }
+          />
+        );
+      } else if (definition.kind === 'numberFilter') {
+        control = (
+          <NumberFilterPicker
+            key={name}
+            labelPlacement={labelPlacement}
+            filter={definition as NumberFilter}
+            value={value as NumberSelection}
+            onChange={next =>
+              variables.set(
+                name,
+                next as AppVariableValues<Variables>[typeof name]
+              )
+            }
+          />
+        );
+      } else if (definition.kind === 'booleanFilter') {
+        const selected = value as BooleanSelection;
+        control = (
+          <Select
+            key={name}
+            labelPlacement={labelPlacement}
+            align={groupName === 'display' ? 'end' : 'start'}
+            label={definition.label}
+            value={selected.kind === 'all' ? 'all' : String(selected.value)}
+            options={[
+              { id: 'all', label: 'Any' },
+              { id: 'true', label: 'Yes' },
+              { id: 'false', label: 'No' },
+            ]}
+            onChange={next =>
+              variables.set(
+                name,
+                (next === 'all'
+                  ? { kind: 'all' }
+                  : {
+                      kind: 'is',
+                      value: next === 'true',
+                    }) as AppVariableValues<Variables>[typeof name]
+              )
+            }
+          />
+        );
+      } else if (definition.kind === 'multiChoice') {
+        control = (
+          <ChoicePicker
+            key={name}
+            labelPlacement={labelPlacement}
+            selectionMode="multiple"
+            label={definition.label ?? name}
+            options={definition.options}
+            values={value as readonly string[]}
+            maxSelected={definition.maxSelected}
+            emptySelectionLabel="None"
+            onChange={next =>
+              variables.set(
+                name,
+                next as AppVariableValues<Variables>[typeof name]
+              )
+            }
+          />
+        );
+      } else if (definition.kind === 'choice') {
+        control = (
+          <Select
+            key={name}
+            labelPlacement={labelPlacement}
+            align={groupName === 'display' ? 'end' : 'start'}
+            label={definition.label ?? name}
+            value={value as string}
+            options={definition.options}
+            onChange={next =>
+              variables.set(
+                name,
+                next as AppVariableValues<Variables>[typeof name]
+              )
+            }
+          />
+        );
+      }
+      return control;
+    }
+    const control = renderControl(labelPlacement);
     const controls = groupName === 'display' ? displayOptions : filters;
     controls[prominence].push(control);
+    if (groupName === 'scope') sheetFilters.push(renderControl('above'));
     const baseline =
       groupName === 'display'
         ? variable.defaultValue
@@ -266,7 +274,8 @@ export function useViewVariables<Variables extends VariableCollection>(
       hasControls || hasActiveFilters ? (
         <ViewControlBar
           primaryFilters={filters.primary}
-          secondaryFilters={filters.secondary}
+          sheetFilters={sheetFilters}
+          hasSecondaryFilters={filters.secondary.length > 0}
           activeSecondaryFilterCount={activeSecondaryFilterCount}
           displayOptions={orderedDisplayOptions}
           changedDisplayOptionCount={changedDisplayOptionCount}

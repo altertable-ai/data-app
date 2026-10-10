@@ -55,7 +55,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 2px;
+  gap: var(--atbl-space-sm);
   min-height: 0;
   padding: 0;
   border: 0;

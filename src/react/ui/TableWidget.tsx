@@ -19,6 +19,7 @@ import { formatCount, pluralize } from '@/src/core/format';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
+import { classNames } from '@/src/react/ui/classNames';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
 export type TableWidgetColumn<Row> = {
@@ -292,6 +293,7 @@ function TableWidgetContent<Row>({
   return (
     <VisualizationWidget
       {...props}
+      className={classNames('altertable-table-widget', props.className)}
       title={title}
       annotationId={props.annotationId ?? evidence?.id}
       count={loading ? undefined : count}

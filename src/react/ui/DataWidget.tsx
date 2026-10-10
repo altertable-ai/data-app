@@ -127,6 +127,11 @@ function DataWidgetContent({
       visualKind="widget"
     >
       <span className="altertable-widget-heading-label">{title}</span>
+      {count !== undefined && (
+        <span className="altertable-data-widget-count">
+          {formatCount(count)}
+        </span>
+      )}
       <AppIcon name="openDetails" />
     </AboutData>
   );
@@ -149,7 +154,7 @@ function DataWidgetContent({
             aria-label={typeof title === 'string' ? title : undefined}
           >
             {help ?? title}
-            {count !== undefined && (
+            {!help && count !== undefined && (
               <span className="altertable-data-widget-count">
                 {formatCount(count)}
               </span>

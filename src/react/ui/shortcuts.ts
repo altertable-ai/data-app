@@ -12,6 +12,7 @@ export type Shortcut = {
 };
 
 export const shortcuts = {
+  filters: { modifier: 'mod', shift: true, code: 'KeyF', key: 'F' },
   annotate: { modifier: 'mod', shift: true, code: 'Period', key: '.' },
   sendAnnotations: { modifier: 'mod', code: 'Enter', key: 'Enter' },
   refresh: { modifier: 'alt', code: 'KeyR', key: 'R' },
@@ -91,6 +92,11 @@ export function useShortcut(
       if (
         !matchesShortcut(event, shortcut) ||
         document.querySelector('dialog:modal') ||
+        Array.from(
+          document.querySelectorAll(
+            '[role="dialog"], [role="listbox"], [role="menu"]'
+          )
+        ).some(element => element.getClientRects().length > 0) ||
         (!allowWhileEditing && isEditingTarget(event.target))
       )
         return;
