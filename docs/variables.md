@@ -21,6 +21,9 @@ Use `searchVariable()`, `choiceVariable()`, and `dateRangeVariable()` in a view'
 and keeps their values in the URL. Search occupies its own row above the controls.
 Set `showSearch={false}` or `showFilters={false}` on `<DataApp>` to hide the
 corresponding region while preserving its values; `showFilters` includes display options.
+Automatic search supports `⌘K` / `Ctrl+K` and `/` to focus the field. Escape clears
+the query; a second Escape returns focus after using a shortcut.
+
 Keep local search out of the operation input when it only filters loaded rows.
 
 ### Organize controls by intent

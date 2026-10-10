@@ -225,6 +225,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         <SearchField
           key={name}
           label={definition.label ?? name}
+          focusShortcut={searchControls.length === 0}
           value={value as string}
           resetValue={definition.defaultValue}
           onChange={next =>

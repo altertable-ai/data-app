@@ -756,3 +756,70 @@ test('mobile numeric entry and compact selects enforce the shared 16px minimum',
       )
     ).toBeGreaterThanOrEqual(16);
 });
+
+test('automatic search shortcuts select queries, preserve typing and restore focus', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation?spend=all&q=Beacon');
+  const search = page.getByRole('searchbox', {
+    name: 'Search customers',
+    exact: true,
+  });
+  const display = page.getByRole('button', {
+    name: 'Display options',
+    exact: true,
+  });
+  await display.focus();
+  await page.keyboard.press('Control+k');
+  expect(
+    await search.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  expect(
+    await search.evaluate(element => {
+      const input = element as HTMLInputElement;
+      return [input.selectionStart, input.selectionEnd];
+    })
+  ).toEqual([0, 6]);
+  await search.press('Escape');
+  await expect.poll(() => search.inputValue()).toBe('');
+  expect(
+    await search.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await search.press('Escape');
+  expect(
+    await display.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await page.keyboard.press('/');
+  expect(
+    await search.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await search.press('/');
+  await expect.poll(() => search.inputValue()).toBe('/');
+  await page
+    .getByRole('button', { name: 'Clear search customers', exact: true })
+    .click();
+  await expect.poll(() => search.inputValue()).toBe('');
+  expect(
+    await search.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await display.focus();
+  await page.keyboard.press('Meta+k');
+  expect(
+    await search.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await search.press('Escape');
+  await display.click();
+  const sort = page.getByRole('button', {
+    name: 'Monthly spend Sort by',
+    exact: true,
+  });
+  await sort.focus();
+  await page.keyboard.press('Control+k');
+  expect(
+    await sort.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await page.keyboard.press('Escape');
+  await page.goto('/filter-presentation?searchOnly&hideSearch');
+  await page.keyboard.press('/');
+  expect(await page.getByRole('searchbox').count()).toBe(0);
+});

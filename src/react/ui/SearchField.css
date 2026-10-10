@@ -28,3 +28,17 @@
     width: 100%;
   }
 }
+
+.altertable-search-shortcut {
+  padding: 0 var(--atbl-space-xs);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  color: var(--atbl-muted);
+  font: inherit;
+  font-size: var(--atbl-type-meta-size);
+}
+@media (hover: none) {
+  .altertable-search-shortcut {
+    display: none;
+  }
+}

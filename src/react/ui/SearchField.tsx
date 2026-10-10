@@ -1,4 +1,12 @@
-import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
+import {
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+  type ComponentRef,
+  type ComponentPropsWithRef,
+  type ReactNode,
+} from 'react';
 import { classNames } from '@/src/react/ui/classNames';
 import { SearchInput } from '@/src/react/ui/SearchInput';
 import { Button } from '@/src/react/ui/Button';
@@ -11,6 +19,8 @@ export type SearchFieldProps = {
   onSubmit?: (value: string) => void;
   placeholder?: string;
   showLabel?: boolean;
+  /** Enable page search shortcuts on one primary search field per app. */
+  focusShortcut?: boolean;
   size?: 'default' | 'compact';
   description?: ReactNode;
   status?: ReactNode;
@@ -34,6 +44,7 @@ export function SearchField({
   onSubmit,
   placeholder,
   showLabel = false,
+  focusShortcut = false,
   size = 'default',
   description,
   status,
@@ -44,6 +55,65 @@ export function SearchField({
   className,
   ...props
 }: SearchFieldProps) {
+  const inputRef = useRef<ComponentRef<'input'>>(null);
+  useImperativeHandle(inputProps?.ref, () => inputRef.current!);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!focusShortcut) return;
+    const input = inputRef.current;
+    if (!input) return;
+    const document = input.ownerDocument;
+    function focusSearch(event: KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.repeat ||
+        event.altKey
+      )
+        return;
+      const command =
+        (event.metaKey || event.ctrlKey) &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'k';
+      const slash =
+        event.key === '/' &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.shiftKey;
+      if (!command && !slash) return;
+      const target = document.activeElement;
+      if (
+        slash &&
+        target instanceof HTMLElement &&
+        target.closest(
+          'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]'
+        )
+      )
+        return;
+      if (
+        Array.from(
+          document.querySelectorAll(
+            '[role="dialog"], [role="listbox"], [role="menu"]'
+          )
+        ).some(element => element.getClientRects().length > 0)
+      )
+        return;
+      if (
+        !input ||
+        input.disabled ||
+        input.getAttribute('aria-disabled') === 'true' ||
+        !input.getClientRects().length
+      )
+        return;
+      event.preventDefault();
+      if (target !== input && target instanceof HTMLElement)
+        returnFocusRef.current = target;
+      input.focus();
+      input.select();
+    }
+    document.addEventListener('keydown', focusSearch);
+    return () => document.removeEventListener('keydown', focusSearch);
+  }, [focusShortcut]);
   const id = useId();
   const inputId = inputProps?.id ?? id;
   const descriptionId = description ? `${id}-description` : undefined;
@@ -75,6 +145,12 @@ export function SearchField({
         <div className="altertable-search-row">
           <SearchInput
             {...inputProps}
+            ref={inputRef}
+            aria-keyshortcuts={
+              focusShortcut
+                ? 'Meta+k Control+k /'
+                : inputProps?.['aria-keyshortcuts']
+            }
             size={size}
             id={inputId}
             type="search"
@@ -91,6 +167,10 @@ export function SearchField({
               'altertable-search-input',
               inputProps?.className
             )}
+            onBlur={event => {
+              returnFocusRef.current = null;
+              inputProps?.onBlur?.(event);
+            }}
             onChange={event => {
               inputProps?.onChange?.(event);
               if (!event.defaultPrevented) onChange(event.currentTarget.value);
@@ -99,24 +179,43 @@ export function SearchField({
               inputProps?.onKeyDown?.(event);
               if (
                 !event.defaultPrevented &&
-                event.key === 'Escape' &&
-                value !== resetValue
+                !event.nativeEvent.isComposing &&
+                event.key === 'Escape'
               ) {
-                event.preventDefault();
-                onChange(resetValue);
+                if (value !== resetValue) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onChange(resetValue);
+                } else if (returnFocusRef.current?.isConnected) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  returnFocusRef.current.focus();
+                  returnFocusRef.current = null;
+                }
               }
             }}
             endAction={
-              value !== resetValue && (
+              value !== resetValue ? (
                 <Button
                   variant="ghost"
                   size="icon-compact"
                   aria-label={`Clear ${label.toLowerCase()}`}
-                  onClick={() => onChange(resetValue)}
+                  onClick={() => {
+                    onChange(resetValue);
+                    inputRef.current?.focus();
+                  }}
                 >
                   <AppIcon name="reset" size={16} />
                 </Button>
-              )
+              ) : focusShortcut ? (
+                <kbd
+                  className="altertable-search-shortcut"
+                  aria-hidden="true"
+                  title="Focus search: ⌘K / Ctrl+K or /"
+                >
+                  /
+                </kbd>
+              ) : null
             }
           />
           {children}
