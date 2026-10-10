@@ -823,3 +823,43 @@ test('automatic search shortcuts select queries, preserve typing and restore foc
   await page.keyboard.press('/');
   expect(await page.getByRole('searchbox').count()).toBe(0);
 });
+
+test('slash search shortcut accepts the Shift modifier required by AZERTY', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation?spend=all');
+  const display = page.getByRole('button', {
+    name: 'Display options',
+    exact: true,
+  });
+  const search = page.getByRole('searchbox', {
+    name: 'Search customers',
+    exact: true,
+  });
+  await display.focus();
+  await display.dispatchEvent('keydown', {
+    key: '/',
+    code: 'Period',
+    shiftKey: true,
+    bubbles: true,
+    cancelable: true,
+  });
+  expect(
+    await search.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  expect(await search.inputValue()).toBe('');
+  await search.press('Escape');
+  expect(
+    await display.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await display.dispatchEvent('keydown', {
+    key: '?',
+    code: 'Slash',
+    shiftKey: true,
+    bubbles: true,
+    cancelable: true,
+  });
+  expect(
+    await display.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+});
