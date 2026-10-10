@@ -80,7 +80,6 @@ export function useViewVariables<Variables extends VariableCollection>(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
   const primaryFilters: ReactNode[] = [];
-  const activeSecondaryFilters: ReactNode[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
@@ -257,7 +256,6 @@ export function useViewVariables<Variables extends VariableCollection>(
       sheetFilters.push(renderControl('above'));
       if (prominence === 'primary')
         primaryFilters.push(renderControl('inline'));
-      else if (active) activeSecondaryFilters.push(renderControl('inline'));
       if (active) activeFilterCount++;
     }
   }
@@ -276,7 +274,6 @@ export function useViewVariables<Variables extends VariableCollection>(
       hasControls || hasActiveFilters ? (
         <ViewControlBar
           primaryFilters={primaryFilters}
-          activeSecondaryFilters={activeSecondaryFilters}
           sheetFilters={sheetFilters}
           activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}

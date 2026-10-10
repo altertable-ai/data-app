@@ -1047,7 +1047,7 @@ test('filter actions stay balanced with long selections and Show results preserv
   expect(await show.isEnabled()).toBe(true);
 });
 
-test('filter bar leads with the sheet and exposes active secondary controls', async ({
+test('filter bar leads with the sheet and keeps secondary filters in the sheet', async ({
   page,
 }) => {
   await page.goto('/filter-presentation?spend=all');
@@ -1081,27 +1081,34 @@ test('filter bar leads with the sheet and exposes active secondary controls', as
       .getByRole('button', { name: 'Filters (2 active)', exact: true })
       .count()
   ).toBe(1);
-  const active = page.getByRole('group', {
-    name: 'Active filters',
-    exact: true,
-  });
   expect(
-    await active
+    await page.getByRole('group', { name: 'Active filters' }).count()
+  ).toBe(0);
+  expect(
+    await page
       .getByRole('button', { name: 'No Active account', exact: true })
-      .isVisible()
-  ).toBe(true);
-  expect(await active.getByRole('button', { name: /Segment:/ }).count()).toBe(
-    0
-  );
-  await choose(page, active, 'Active account', 'Any');
-  await expect.poll(() => active.count()).toBe(0);
+      .count()
+  ).toBe(0);
+  await controls
+    .getByRole('button', { name: 'Filters (2 active)', exact: true })
+    .click();
   await expect
     .poll(() =>
-      controls
-        .getByRole('button', { name: 'Filters (1 active)', exact: true })
-        .evaluate(element => element === document.activeElement)
+      sheet
+        .getByRole('button', { name: 'No Active account', exact: true })
+        .isVisible()
     )
     .toBe(true);
+  expect(
+    await sheet
+      .getByRole('button', { name: 'Show results', exact: true })
+      .locator('kbd')
+      .count()
+  ).toBe(0);
+  await choose(page, sheet, 'Active account', 'Any');
+  await sheet
+    .getByRole('button', { name: 'Show results', exact: true })
+    .click();
   expect(
     await controls
       .getByRole('button', { name: 'Filters (1 active)', exact: true })

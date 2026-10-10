@@ -63,13 +63,6 @@
   font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
-.altertable-filter-disclosure {
-  color: var(--atbl-muted);
-  transform: rotate(-90deg);
-}
-[data-open='true'] > .altertable-filter-disclosure {
-  transform: none;
-}
 .altertable-display-options-trigger {
   margin-inline-start: auto;
 }
@@ -111,12 +104,4 @@
 
 .altertable-filter-sheet {
   width: min(420px, 100vw);
-}
-
-.altertable-active-filter-controls {
-  gap: calc((var(--atbl-space-xs) + var(--atbl-space-sm)) / 2);
-}
-.altertable-active-filter-controls
-  > :is(.altertable-picker-trigger, .altertable-field) {
-  max-width: min(100%, 16rem);
 }

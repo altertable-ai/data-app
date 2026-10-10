@@ -4,7 +4,6 @@ import {
   createContext,
   useContext,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
   type ComponentRef,
@@ -30,7 +29,6 @@ export const ViewControlFocusContext = createContext<(() => void) | null>(null);
 export function ViewControlBar({
   primaryFilters,
   sheetFilters,
-  activeSecondaryFilters,
   activeFilterCount,
   displayOptions,
   changedDisplayOptionCount,
@@ -38,7 +36,6 @@ export function ViewControlBar({
 }: {
   primaryFilters: ReactNode[];
   sheetFilters: ReactNode[];
-  activeSecondaryFilters: ReactNode[];
   activeFilterCount: number;
   displayOptions: ReactNode[];
   changedDisplayOptionCount: number;
@@ -48,7 +45,6 @@ export function ViewControlBar({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersId = useId();
   const filtersButtonRef = useRef<ComponentRef<'button'>>(null);
-  const activeFilterFocusRef = useRef<HTMLElement | null>(null);
   const primaryControlsRef = useRef<ComponentRef<typeof VariableBar>>(null);
   const filtersButtonLabel = activeFilterCount
     ? `Filters (${activeFilterCount} active)`
@@ -59,17 +55,6 @@ export function ViewControlBar({
     () => setFiltersOpen(true),
     sheetFilters.length > 0
   );
-
-  useLayoutEffect(() => {
-    const previousFocus = activeFilterFocusRef.current;
-    if (!previousFocus || previousFocus.isConnected) return;
-    activeFilterFocusRef.current = null;
-    const document = previousFocus.ownerDocument;
-    requestAnimationFrame(() => {
-      if (document.activeElement === document.body)
-        filtersButtonRef.current?.focus();
-    });
-  });
 
   function clearFilters() {
     const controls = primaryControlsRef.current;
@@ -101,7 +86,6 @@ export function ViewControlBar({
               }
             >
               <Button
-                variant="ghost"
                 ref={filtersButtonRef}
                 aria-label={filtersButtonLabel}
                 aria-haspopup="dialog"
@@ -111,17 +95,13 @@ export function ViewControlBar({
                 data-open={filtersOpen}
                 onClick={() => setFiltersOpen(current => !current)}
               >
+                <AppIcon name="filters" />
                 Filters
                 {activeFilterCount > 0 && (
                   <span className="altertable-control-count" aria-hidden="true">
                     {activeFilterCount}
                   </span>
                 )}
-                <AppIcon
-                  name="disclosure"
-                  size={14}
-                  className="altertable-filter-disclosure"
-                />
               </Button>
             </Tooltip>
           )}
@@ -134,18 +114,6 @@ export function ViewControlBar({
           </DisplayOptionsPopover>
         )}
       </VariableBar>
-      {activeSecondaryFilters.length > 0 && (
-        <VariableBar
-          aria-label="Active filters"
-          className="altertable-active-filter-controls"
-          onFocusCapture={event => {
-            if (event.currentTarget.contains(event.target))
-              activeFilterFocusRef.current = event.target;
-          }}
-        >
-          {activeSecondaryFilters}
-        </VariableBar>
-      )}
       {sheetFilters.length > 0 && (
         <Sheet
           id={filtersId}
@@ -166,12 +134,8 @@ export function ViewControlBar({
                   Clear
                 </Button>
               </Tooltip>
-              <Button
-                variant="primary"
-                aria-keyshortcuts="Escape"
-                onClick={() => setFiltersOpen(false)}
-              >
-                Show results <Kbd aria-hidden="true">Esc</Kbd>
+              <Button variant="primary" onClick={() => setFiltersOpen(false)}>
+                Show results
               </Button>
             </div>
           }
