@@ -88,16 +88,12 @@ export function useViewVariables<Variables extends VariableCollection>(
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
+  const clearedFilters: Partial<AppVariableValues<Variables>> = {};
   const searchControls: ReactNode[] = [];
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const definition = definitions[name]!;
     const value = variables.values[name];
     const variable = definition as AppVariable<any>;
-    if (
-      variable.clearValue !== undefined &&
-      !variable.same(value, variable.clearValue)
-    )
-      hasActiveFilters = true;
     const group = definition.presentation?.group ?? 'scope';
     const prominence = definition.presentation?.prominence ?? 'primary';
     const labelPlacement =
@@ -123,6 +119,10 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
       continue;
+    }
+    if (group === 'scope' && variable.clearValue !== undefined) {
+      clearedFilters[name] = variable.clearValue;
+      if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
     }
     function renderControl(labelPlacement: ControlLabelPlacement) {
       let control: ReactNode = null;
@@ -277,7 +277,11 @@ export function useViewVariables<Variables extends VariableCollection>(
           activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}
           changedDisplayOptionCount={changedDisplayOptionCount}
-          onClear={hasActiveFilters ? variables.clearAll : undefined}
+          onClear={
+            hasActiveFilters
+              ? () => variables.update(clearedFilters)
+              : undefined
+          }
         />
       ) : null,
   };

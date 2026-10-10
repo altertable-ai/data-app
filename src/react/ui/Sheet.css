@@ -113,6 +113,27 @@
     calc((var(--atbl-space-lg) + var(--atbl-space-xl)) / 2);
   border-top: 1px solid var(--atbl-border);
 }
+@media (min-width: 601px) {
+  .altertable-sheet:where([data-placement='side'][data-side='left']) {
+    inset: 0 auto 0 0;
+    border-left: 0;
+    border-right: 1px solid var(--atbl-border);
+    translate: -100% 0;
+  }
+  .altertable-sheet:where([data-placement='side'][data-side='left'])[open] {
+    translate: 0 0;
+  }
+  .altertable-sheet:where(
+      [data-placement='side'][data-side='left']
+    )[open][data-closing] {
+    translate: -100% 0;
+  }
+  @starting-style {
+    .altertable-sheet:where([data-placement='side'][data-side='left'])[open] {
+      translate: -100% 0;
+    }
+  }
+}
 @media (max-width: 960px) {
   .altertable-sheet[data-wide] {
     inset: auto 0 0;

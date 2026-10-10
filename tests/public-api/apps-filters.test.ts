@@ -343,73 +343,31 @@ test('display settings retain nested calendar changes and dismiss one overlay at
     .toBe(true);
 });
 
-test('search with display-only controls keeps one view controls bar', async ({
+test('search-only and display-only views never offer a filter Clear action', async ({
   page,
 }) => {
-  await page.goto('/filter-presentation?displayOnly');
-  await page
-    .getByRole('searchbox', { name: 'Search customers' })
-    .fill('Beacon');
-  await expect
-    .poll(() => page.getByRole('table').getByRole('row').count())
-    .toBe(2);
-  const options = page.getByRole('group', {
-    name: 'View controls',
-    exact: true,
-  });
-  expect(await options.count()).toBe(1);
-  await options.getByRole('button', { name: 'Clear', exact: true }).click();
-  await expect
-    .poll(() =>
-      options
-        .getByRole('button', { name: 'Display options', exact: true })
-        .evaluate(element => element === document.activeElement)
-    )
-    .toBe(true);
-  await expect
-    .poll(() => page.getByRole('table').getByRole('row').count())
-    .toBe(9);
-});
-
-for (const hiddenSearch of [false, true]) {
-  test(`Clear restores focus when the last controls disappear and search is ${hiddenSearch ? 'hidden' : 'visible'}`, async ({
-    page,
-  }) => {
-    await page.goto(
-      `/filter-presentation?searchOnly&q=Beacon${hiddenSearch ? '&hideSearch' : ''}`
-    );
+  for (const mode of ['searchOnly', 'displayOnly']) {
+    await page.goto(`/filter-presentation?${mode}&q=Beacon`);
     await expect
       .poll(() => page.getByRole('table').getByRole('row').count())
       .toBe(2);
-    await page.getByRole('button', { name: 'Clear', exact: true }).click();
-    await expect
-      .poll(() => page.getByRole('table').getByRole('row').count())
-      .toBe(9);
     expect(
-      await page
-        .getByRole('group', { name: 'View controls', exact: true })
-        .count()
+      await page.getByRole('button', { name: 'Clear', exact: true }).count()
     ).toBe(0);
-    if (hiddenSearch) {
-      await page.keyboard.press('Tab');
-      await expect
-        .poll(() =>
-          page
-            .getByRole('button', { name: 'Explore Customers', exact: true })
-            .evaluate(element => element === document.activeElement)
-        )
-        .toBe(true);
-    } else {
-      await expect
-        .poll(() =>
-          page
-            .getByRole('searchbox', { name: 'Search customers', exact: true })
-            .evaluate(element => element === document.activeElement)
-        )
-        .toBe(true);
-    }
-  });
-}
+    if (mode === 'searchOnly')
+      expect(
+        await page
+          .getByRole('group', { name: 'View controls', exact: true })
+          .count()
+      ).toBe(0);
+    else
+      expect(
+        await page
+          .getByRole('button', { name: 'Display options', exact: true })
+          .count()
+      ).toBe(1);
+  }
+});
 
 test('hidden control regions leave no empty row between the header and content', async ({
   page,
@@ -464,8 +422,8 @@ test('automatic filters retain separate search controls and URL state', async ({
   await filters.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect
     .poll(async () => decode(await displayed.textContent()).search)
-    .toBe('');
-  expect(await search.getByRole('searchbox').inputValue()).toBe('');
+    .toBe('France');
+  expect(await search.getByRole('searchbox').inputValue()).toBe('France');
   await expect
     .poll(() =>
       filters
@@ -514,7 +472,7 @@ test('hiding search preserves its URL value and leaves filters available', async
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect
     .poll(async () => decode(await displayed.textContent()).search)
-    .toBe('');
+    .toBe('France');
 });
 
 test('generated search has its own row above filters with consistent hover borders', async ({
@@ -1129,15 +1087,54 @@ test('empty customer results recover only their filters and preserve display opt
     .click();
   await expect
     .poll(() => customers.getByRole('heading').textContent())
-    .toContain('8');
+    .toContain('1');
   const params = new URL(page.url()).searchParams;
   expect(params.get('sort')).toBe('name');
   expect(params.get('direction')).toBe('asc');
-  expect(params.get('q')).toBeNull();
+  expect(params.get('q')).toBe('Foundry');
   expect(params.get('active')).toBeNull();
   expect(
     await customers
       .getByRole('button', { name: 'Clear filters', exact: true })
       .count()
+  ).toBe(0);
+});
+
+test('left filter sheet clears predicates while preserving search and display settings', async ({
+  page,
+}) => {
+  await page.goto(
+    '/filter-presentation?spend=all&active=false&q=Foundry&sort=name'
+  );
+  const controls = page.getByRole('group', {
+    name: 'View controls',
+    exact: true,
+  });
+  await controls
+    .getByRole('button', { name: 'Filters (1 active)', exact: true })
+    .click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await expect.poll(() => sheet.boundingBox().then(box => box?.x)).toBe(0);
+  // Clicking the backdrop to the right closes a left-side sheet.
+  await page.mouse.click(700, 400);
+  await expect.poll(() => sheet.count()).toBe(0);
+  await controls
+    .getByRole('button', { name: 'Filters (1 active)', exact: true })
+    .click();
+  await sheet.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect.poll(() => sheet.count()).toBe(0);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('heading', { name: 'Customers', exact: true })
+        .textContent()
+    )
+    .toContain('1');
+  const params = new URL(page.url()).searchParams;
+  expect(params.get('q')).toBe('Foundry');
+  expect(params.get('sort')).toBe('name');
+  expect(params.get('active')).toBeNull();
+  expect(
+    await controls.getByRole('button', { name: 'Clear', exact: true }).count()
   ).toBe(0);
 });

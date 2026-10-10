@@ -29,6 +29,8 @@ export type SheetProps = {
   footer?: ReactNode;
   wide?: boolean;
   placement?: 'side' | 'center';
+  /** Edge for side placement. Defaults to right; small screens use a bottom sheet. */
+  side?: 'left' | 'right';
   returnFocus?: RefObject<HTMLElement | null>;
 } & SheetDialogProps;
 
@@ -46,6 +48,7 @@ export function Sheet({
   footer,
   wide,
   placement = 'side',
+  side = 'right',
   returnFocus,
   className,
   onCancel,
@@ -95,6 +98,7 @@ export function Sheet({
       className={classNames('altertable-sheet', className)}
       data-wide={wide || undefined}
       data-placement={placement}
+      data-side={side}
       aria-labelledby={titleId}
       aria-describedby={
         props['aria-describedby'] ?? (description ? descriptionId : undefined)
@@ -128,7 +132,13 @@ export function Sheet({
         onClick?.(event);
         if (event.defaultPrevented || event.target !== event.currentTarget)
           return;
-        if (event.clientX < event.currentTarget.getBoundingClientRect().left)
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (
+          event.clientX < bounds.left ||
+          event.clientX > bounds.right ||
+          event.clientY < bounds.top ||
+          event.clientY > bounds.bottom
+        )
           onOpenChange(false);
       }}
     >

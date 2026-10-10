@@ -1,8 +1,6 @@
 import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   Children,
-  createContext,
-  useContext,
   useId,
   useRef,
   useState,
@@ -16,9 +14,6 @@ import { FilterActions } from '@/src/react/ui/FilterActions';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-
-/** The page layout owns focus outside the control bar. */
-export const ViewControlFocusContext = createContext<(() => void) | null>(null);
 
 export function ViewControlBar({
   primaryFilters,
@@ -35,32 +30,22 @@ export function ViewControlBar({
   changedDisplayOptionCount: number;
   onClear?: () => void;
 }) {
-  const focusFallback = useContext(ViewControlFocusContext);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersId = useId();
   const filtersButtonRef = useRef<ComponentRef<'button'>>(null);
-  const primaryControlsRef = useRef<ComponentRef<typeof VariableBar>>(null);
   const filtersButtonLabel = activeFilterCount
     ? `Filters (${activeFilterCount} active)`
     : 'Filters';
 
   function clearFilters() {
-    const controls = primaryControlsRef.current;
-    const focusTarget =
-      filtersButtonRef.current ??
-      controls?.querySelector<HTMLElement>(
-        ':is(button[aria-haspopup], button[aria-expanded], input, select):not(:disabled):not([aria-disabled="true"])'
-      );
     onClear?.();
     setFiltersOpen(false);
-    if (focusTarget) focusTarget.focus();
-    else focusFallback?.();
+    filtersButtonRef.current?.focus();
   }
 
   return (
     <>
       <VariableBar
-        ref={primaryControlsRef}
         className="altertable-primary-controls"
         aria-label="View controls"
       >
@@ -100,6 +85,7 @@ export function ViewControlBar({
           onOpenChange={setFiltersOpen}
           returnFocus={filtersButtonRef}
           title="Filters"
+          side="left"
           className="altertable-filter-sheet"
           description="Choose filters to narrow the results."
           footer={

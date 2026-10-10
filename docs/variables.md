@@ -196,8 +196,8 @@ alongside selected members. Enable exclusion only when the registered query supp
 it, including the intended behavior for missing values.
 
 Generated controls show active values within each filter and one collective
-Clear action. Clear removes restrictions from search and predicate filters,
-then closes the Filters sheet.
+Clear action. Clear removes predicate filters and closes the Filters sheet, preserving search
+and display settings. Clear search separately in its field.
 `resetAll()` restores all
 configured variable defaults, including fixed choices and periods. Nonempty
 default filters can therefore be active immediately after Reset.

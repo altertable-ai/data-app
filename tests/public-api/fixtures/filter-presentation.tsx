@@ -362,7 +362,6 @@ const customers = view.dataset({
   },
 });
 const customerFilters = {
-  search: variables.search,
   country: variables.country,
   segment: variables.segment,
   active: variables.active,
@@ -381,8 +380,7 @@ function CustomerTable({
   const filters = useAppVariables(customerFilters);
   const hasActiveFilters =
     !source.loading &&
-    (source.input.search !== '' ||
-      source.input.country.kind !== 'all' ||
+    (source.input.country.kind !== 'all' ||
       source.input.segment.kind !== 'all' ||
       source.input.active.kind !== 'all' ||
       source.input.billing.kind !== 'all' ||
