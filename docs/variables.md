@@ -29,7 +29,7 @@ Keep local search out of the operation input when it only filters loaded rows.
 ### Organize controls by intent
 
 Declare controls in priority order for the user's task. Keep the period and most useful scope
-filters visible; More filters opens the complete Filters sheet. Choose useful
+filters visible; Filters opens the complete sheet; active secondary filters remain visible below the primary controls. Choose useful
 defaults from the available data rather than exposing every field.
 Declare each label once. Generated secondary controls place it above the input;
 do not add a separate heading or repeat it inside the value.

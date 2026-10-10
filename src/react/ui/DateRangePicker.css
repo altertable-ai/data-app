@@ -54,7 +54,7 @@
   color: var(--atbl-muted);
 }
 .altertable-date-range-comparison {
-  flex: none;
+  justify-self: start;
   padding: 2px 5px;
   border-radius: 4px;
   background: var(--atbl-subtle);

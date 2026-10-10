@@ -178,9 +178,6 @@ export function DateRangePicker({
               />
             )}
           </DateInput>
-          {comparison?.enabled && (
-            <span className="altertable-date-range-comparison">vs prior</span>
-          )}
           {(onReset || resetValue) &&
             value &&
             !(
@@ -211,6 +208,11 @@ export function DateRangePicker({
             <AppIcon name="calendar" size={16} />
           </Button>
         </Group>
+        {comparison?.enabled && (
+          <span className="altertable-date-range-comparison" aria-hidden="true">
+            vs prior
+          </span>
+        )}
         {error && (
           <span className="altertable-date-range-error" role="alert">
             {error}

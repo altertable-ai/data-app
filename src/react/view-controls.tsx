@@ -79,13 +79,14 @@ export function useViewVariables<Variables extends VariableCollection>(
   const facetState = new Map(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
-  const filters: { primary: ReactNode[]; secondary: ReactNode[] } = {
+  const primaryFilters: ReactNode[] = [];
+  const activeSecondaryFilters: ReactNode[] = [];
+  const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
   };
-  const displayOptions: typeof filters = { primary: [], secondary: [] };
   const sheetFilters: ReactNode[] = [];
-  let activeSecondaryFilterCount = 0;
+  let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
   const searchControls: ReactNode[] = [];
@@ -244,17 +245,20 @@ export function useViewVariables<Variables extends VariableCollection>(
       }
       return control;
     }
-    const control = renderControl(labelPlacement);
-    const controls = groupName === 'display' ? displayOptions : filters;
-    controls[prominence].push(control);
-    if (groupName === 'scope') sheetFilters.push(renderControl('above'));
     const baseline =
       groupName === 'display'
         ? variable.defaultValue
         : (variable.clearValue ?? variable.defaultValue);
-    if (!variable.same(value, baseline)) {
-      if (groupName === 'display') changedDisplayOptionCount++;
-      else if (prominence === 'secondary') activeSecondaryFilterCount++;
+    const active = !variable.same(value, baseline);
+    if (groupName === 'display') {
+      displayOptions[prominence].push(renderControl(labelPlacement));
+      if (active) changedDisplayOptionCount++;
+    } else {
+      sheetFilters.push(renderControl('above'));
+      if (prominence === 'primary')
+        primaryFilters.push(renderControl('inline'));
+      else if (active) activeSecondaryFilters.push(renderControl('inline'));
+      if (active) activeFilterCount++;
     }
   }
   const orderedDisplayOptions = [
@@ -262,9 +266,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     ...displayOptions.secondary,
   ];
   const hasControls =
-    filters.primary.length > 0 ||
-    filters.secondary.length > 0 ||
-    orderedDisplayOptions.length > 0;
+    sheetFilters.length > 0 || orderedDisplayOptions.length > 0;
 
   return {
     ...variables,
@@ -273,10 +275,10 @@ export function useViewVariables<Variables extends VariableCollection>(
     filterControls:
       hasControls || hasActiveFilters ? (
         <ViewControlBar
-          primaryFilters={filters.primary}
+          primaryFilters={primaryFilters}
+          activeSecondaryFilters={activeSecondaryFilters}
           sheetFilters={sheetFilters}
-          hasSecondaryFilters={filters.secondary.length > 0}
-          activeSecondaryFilterCount={activeSecondaryFilterCount}
+          activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}
           changedDisplayOptionCount={changedDisplayOptionCount}
           onClear={hasActiveFilters ? variables.clearAll : undefined}
