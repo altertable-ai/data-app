@@ -46,8 +46,8 @@
 .altertable-data-widget-count {
   display: inline-flex;
   align-items: center;
-  align-self: center;
-  vertical-align: middle;
+  align-self: baseline;
+  vertical-align: baseline;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   margin-inline-start: var(--atbl-space-sm);

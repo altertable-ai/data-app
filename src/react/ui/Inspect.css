@@ -53,7 +53,7 @@
   --atbl-control-hover-surface: transparent;
   --atbl-control-pressed-surface: transparent;
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: flex-start;
   gap: var(--atbl-space-sm);
   min-height: 0;
