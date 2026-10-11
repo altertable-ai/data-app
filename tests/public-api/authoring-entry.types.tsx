@@ -315,5 +315,10 @@ void dataApp.config;
 
 // @ts-expect-error A suggestion title selector must use the dataset row type.
 dataset.suggestions({ title: (row: string) => row, onSelect: () => undefined });
-// @ts-expect-error Selecting a suggestion requires an explicit action.
+// Suggestion selection completes the search by default; callbacks are optional.
 dataset.suggestions({ title: row => String(row) });
+const multipleSuggestions: DataAppProps<
+  number,
+  Record<string, never>
+>['searchSuggestions'] = [dataset.suggestions({ title: row => String(row) })];
+void multipleSuggestions;

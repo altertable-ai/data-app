@@ -28,8 +28,11 @@ export type DataAppProps<Data, Input = unknown> = Omit<
     view: DeclaredView<Data, Input> & {
       scope(snapshot: DisplayedSnapshot<Data, Input>): string;
     };
-    /** Suggestions for the first generated search field, derived from this view's displayed dataset. */
-    searchSuggestions?: SearchSuggestions<Data, Input>;
+    /** Suggestions for the first generated search, from explicitly chosen datasets of this view.
+     * Supply a list to combine datasets in priority order, with five suggestions overall. */
+    searchSuggestions?:
+      | SearchSuggestions<Data, Input>
+      | readonly SearchSuggestions<Data, Input>[];
     story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
       StoryFinding,
       'evidence'
@@ -47,15 +50,29 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   const { view, datasets, story, searchSuggestions, ...frame } = props;
   const app = useDataApp();
   const result = useDeclaredResult(view);
-  const suggestions = searchSuggestions?.read(
-    ownedSource(view, result.snapshot ?? { loading: true as const })
+  const bindings = searchSuggestions
+    ? 'read' in searchSuggestions
+      ? [searchSuggestions]
+      : searchSuggestions
+    : [];
+  const source = ownedSource(
+    view,
+    result.snapshot ?? { loading: true as const }
   );
+  const suggestions = bindings
+    .flatMap((binding, index) => {
+      const reading = binding.read(source);
+      return reading.loading
+        ? []
+        : reading.value.map(item => ({ ...item, id: `${index}:${item.id}` }));
+    })
+    .slice(0, 5);
   return (
     <SearchSuggestionsContext
       value={
-        suggestions
+        bindings.length
           ? {
-              items: suggestions.loading ? [] : suggestions.value,
+              items: suggestions,
               busy: result.refreshing,
             }
           : null

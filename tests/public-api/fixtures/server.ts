@@ -19,6 +19,7 @@ import declaredApp from '@/tests/public-api/fixtures/declared-app.html';
 import filters from '@/tests/public-api/fixtures/filters.html';
 import controls from '@/tests/public-api/fixtures/controls.html';
 import filterPresentation from '@/tests/public-api/fixtures/filter-presentation.html';
+import searchCatalog from '@/tests/public-api/fixtures/search-catalog.html';
 
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
 async function bundle(entry: string) {
@@ -75,6 +76,7 @@ const server = Bun.serve({
     '/controls': controls,
     '/filters': filters,
     '/filter-presentation': filterPresentation,
+    '/search-catalog': searchCatalog,
     '/static': staticApp,
     '/layout': layout,
     '/ownership': ownership,

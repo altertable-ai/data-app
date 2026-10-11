@@ -23,14 +23,15 @@ export type SearchSuggestion = {
   id: string;
   title: string;
   description?: string;
-  onSelect: () => void;
+  /** Override completing the query with this title, for example to open record details. */
+  onSelect?: () => void;
 };
 export type SearchTypeaheadProps = SearchFieldProps & {
   /** Suggestions from the displayed result, in its order. No additional filtering or request. */
   items: readonly SearchSuggestion[];
 };
 
-/** An editable combobox with manual selection: typing searches, selecting invokes an action.
+/** An editable combobox with manual selection: typing searches, selecting completes the query unless overridden.
  * Input retains focus during navigation; Escape dismisses suggestions before clearing search. */
 export function SearchTypeahead({
   items,
@@ -42,7 +43,7 @@ export function SearchTypeahead({
   const [activeId, setActiveId] = useState<string | null>(null);
   const listId = useId();
   const portal = useContext(PopoverContainerContext);
-  const open = expanded && !!props.value.trim() && (items.length > 0 || !!busy);
+  const open = expanded && !!props.value.trim() && items.length > 0;
   const activeIndex = items.findIndex(item => item.id === activeId);
   const active = open && activeIndex >= 0 ? items[activeIndex] : undefined;
   const {
@@ -50,6 +51,7 @@ export function SearchTypeahead({
     // oxlint-disable-next-line typescript/unbound-method
     refs: { setReference, setFloating },
     floatingStyles,
+    isPositioned,
   } = useFloating({
     open,
     placement: 'bottom-start',
@@ -86,7 +88,8 @@ export function SearchTypeahead({
   function select(item: SearchSuggestion) {
     setExpanded(false);
     setActiveId(null);
-    item.onSelect();
+    if (item.onSelect) item.onSelect();
+    else props.onChange(item.title);
   }
   return (
     <>
@@ -135,13 +138,16 @@ export function SearchTypeahead({
             ) {
               event.preventDefault();
               setExpanded(true);
+              const step = event.key === 'ArrowDown' ? 1 : -1;
+              const nextIndex = activeIndex + step;
+              // Include the unselected search position (-1) in the cycle.
               const next =
-                event.key === 'ArrowDown'
-                  ? Math.min(items.length - 1, activeIndex + 1)
-                  : activeIndex < 0
+                nextIndex >= items.length
+                  ? -1
+                  : nextIndex < -1
                     ? items.length - 1
-                    : Math.max(0, activeIndex - 1);
-              setActiveId(items[next]!.id);
+                    : nextIndex;
+              setActiveId(next < 0 ? null : items[next]!.id);
             } else if (event.key === 'Enter') {
               if (active) {
                 event.preventDefault();
@@ -155,18 +161,16 @@ export function SearchTypeahead({
         <FloatingPortal root={portal}>
           <div
             ref={panel}
-            style={floatingStyles}
+            style={{
+              ...floatingStyles,
+              visibility: isPositioned ? 'visible' : 'hidden',
+            }}
+            data-size={props.size ?? 'default'}
             className="altertable-popover-surface altertable-search-suggestions"
           >
-            {busy ? (
-              <output className="altertable-search-suggestions-status">
-                Updating results…
-              </output>
-            ) : (
-              <output className="altertable-sr-only">
-                {items.length} suggestions
-              </output>
-            )}
+            <output className="altertable-sr-only">
+              {busy ? 'Updating results…' : `${items.length} suggestions`}
+            </output>
             {/* A native select cannot keep the editable input focused or expose rich record labels. */}
             {/* oxlint-disable jsx-a11y/prefer-tag-over-role, jsx-a11y/no-noninteractive-element-to-interactive-role, jsx-a11y/click-events-have-key-events */}
             <ul

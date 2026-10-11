@@ -58,8 +58,8 @@ export type SearchSuggestions<Data, Input> = {
 export type DatasetSuggestionOptions<Row> = {
   title: (row: Row) => string;
   description?: (row: Row) => string;
-  /** Explicit app-owned action, such as opening details or navigating to the record. */
-  onSelect: (row: Row) => void;
+  /** Override completing the query with the title, such as opening details or navigating. */
+  onSelect?: (row: Row) => void;
 };
 
 /** Authoring references are registered by the owning view. */
@@ -205,6 +205,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
   suggestions(
     options: DatasetSuggestionOptions<Row>
   ): SearchSuggestions<Data, Input> {
+    const { onSelect } = options;
     return {
       read: source => {
         const reading = this.read(source);
@@ -226,7 +227,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
             id: `${typeof key}:${key}`,
             title,
             description: options.description?.(row),
-            onSelect: () => options.onSelect(row),
+            onSelect: onSelect ? () => onSelect(row) : undefined,
           };
         });
         invariant(

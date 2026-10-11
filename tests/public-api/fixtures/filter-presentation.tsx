@@ -415,7 +415,9 @@ function App() {
   const searchSuggestions = customers.suggestions({
     title: row => row.name,
     description: row => `${row.country} · ${row.segment}`,
-    onSelect: setSelectedCustomer,
+    onSelect: new URLSearchParams(location.search).has('openDetails')
+      ? setSelectedCustomer
+      : undefined,
   });
   return (
     <>
