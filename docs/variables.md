@@ -26,6 +26,26 @@ the query; a second Escape returns focus after using a shortcut.
 
 Keep local search out of the operation input when it only filters loaded rows.
 
+### Search suggestions
+
+Bind a dataset to the primary search when selecting a record has a useful action:
+
+```tsx
+const suggestions = customers.suggestions({
+  title: row => row.name,
+  description: row => `${row.country} · ${row.segment}`,
+  onSelect: row => openCustomer(row.id),
+});
+<DataApp view={view} searchSuggestions={suggestions} /* other app props */ />;
+```
+
+Typing updates the page and suggestions from the same displayed source. The panel
+shows up to five supplied rows in dataset order; it makes no additional request.
+Capped or paginated sources offer suggestions only for the supplied rows. Choose a
+dataset from the same view with stable, unique row keys. Selection invokes your
+explicit action and preserves the query. Arrow keys navigate; Enter selects;
+Escape dismisses suggestions before clearing search.
+
 ### Organize controls by intent
 
 Declare controls in priority order for the user's task. Keep the period and most useful scope

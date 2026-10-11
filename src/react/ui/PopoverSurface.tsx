@@ -2,7 +2,7 @@ import { createContext, useContext, type ComponentProps } from 'react';
 import { Popover } from 'react-aria-components';
 import { classNames } from '@/src/react/ui/classNames';
 
-export const PopoverContainerContext = createContext<Element | undefined>(
+export const PopoverContainerContext = createContext<HTMLElement | undefined>(
   undefined
 );
 

@@ -105,6 +105,14 @@ function App() {
     <AuthoringBoundary>
       <DataApp
         view={own.view}
+        searchSuggestions={
+          binding === 'search-suggestions'
+            ? other.dataset.suggestions({
+                title: row => String(row.count),
+                onSelect: () => undefined,
+              })
+            : undefined
+        }
         datasets={[binding === 'export' ? other.dataset : own.dataset]}
         story={snapshot => [
           {

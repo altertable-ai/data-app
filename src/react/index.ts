@@ -1,6 +1,8 @@
 /** Declared views, bound widgets, and layouts for data-app authoring. */
 export type {
   DatasetColumn,
+  DatasetSuggestionOptions,
+  SearchSuggestions,
   DatasetDeclaration as DatasetDefinition,
 } from '@/src/react/bindings';
 export { injectDataAppStyles } from '@/src/react/styles';

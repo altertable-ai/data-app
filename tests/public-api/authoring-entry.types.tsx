@@ -66,6 +66,10 @@ const app: DataAppProps<number, Record<string, never>> = {
   view,
   story: () => [],
   datasets: [dataset],
+  searchSuggestions: dataset.suggestions({
+    title: row => row.toFixed(0),
+    onSelect: row => row.toFixed(0),
+  }),
 };
 const content = view.content(result => (
   <p>{result.loading ? 'Loading' : result.data}</p>
@@ -308,3 +312,8 @@ DataAppProvider({
 
 // @ts-expect-error App fields are direct; there is no separate configuration wrapper.
 void dataApp.config;
+
+// @ts-expect-error A suggestion title selector must use the dataset row type.
+dataset.suggestions({ title: (row: string) => row, onSelect: () => undefined });
+// @ts-expect-error Selecting a suggestion requires an explicit action.
+dataset.suggestions({ title: row => String(row) });

@@ -1,5 +1,6 @@
 import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
+import type { SearchSuggestion } from '@/src/react/ui/SearchTypeahead';
 import type { ReactNode } from 'react';
 import type { DateRangeRequest } from '@/src/core/contract';
 import type { DataView, DisplayedSnapshot } from '@/src/core/data-view';
@@ -46,6 +47,19 @@ export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
   rowKey: (row: NoInfer<Row>) => string | number;
   evidence: Evidence;
   emptyFallback?: EmptyContent;
+};
+
+/** Record suggestions use only supplied rows; capped or paginated data is not complete search coverage. */
+export type SearchSuggestions<Data, Input> = {
+  read: (
+    source: ViewSource<Data, Input>
+  ) => DataReading<readonly SearchSuggestion[]>;
+};
+export type DatasetSuggestionOptions<Row> = {
+  title: (row: Row) => string;
+  description?: (row: Row) => string;
+  /** Explicit app-owned action, such as opening details or navigating to the record. */
+  onSelect: (row: Row) => void;
 };
 
 /** Authoring references are registered by the owning view. */
@@ -187,6 +201,42 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       this.#select
     );
   };
+  /** Bind up to five records from the displayed result to the primary app search. */
+  suggestions(
+    options: DatasetSuggestionOptions<Row>
+  ): SearchSuggestions<Data, Input> {
+    return {
+      read: source => {
+        const reading = this.read(source);
+        if (reading.loading) return reading;
+        const items = reading.value.slice(0, 5).map(row => {
+          const key = this.#table.rowKey(row);
+          invariant(
+            typeof key === 'string'
+              ? !!key
+              : typeof key === 'number' && Number.isFinite(key),
+            'Suggestion row keys must be nonempty strings or finite numbers.'
+          );
+          const title = options.title(row);
+          invariant(
+            !!title.trim(),
+            'Search suggestions need a nonempty title.'
+          );
+          return {
+            id: `${typeof key}:${key}`,
+            title,
+            description: options.description?.(row),
+            onSelect: () => options.onSelect(row),
+          };
+        });
+        invariant(
+          new Set(items.map(item => item.id)).size === items.length,
+          'Search suggestion row keys must be unique.'
+        );
+        return { loading: false, value: items };
+      },
+    };
+  }
   static table<Data, Input, Row>(
     dataset: Dataset<Data, Input, Row>,
     source: ViewSource<Data, Input>

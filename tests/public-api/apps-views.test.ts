@@ -305,6 +305,7 @@ for (const binding of [
   'export',
   'story-dataset',
   'story-metric',
+  'search-suggestions',
 ]) {
   test(`a report rejects another same-shaped view's ${binding} binding`, async ({
     page,

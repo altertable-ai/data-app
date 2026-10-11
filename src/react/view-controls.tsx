@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+import { useContext, type ReactNode } from 'react';
+import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
+import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
 import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
@@ -13,7 +15,7 @@ import type {
   BooleanSelection,
 } from '@/src/core/filters';
 import type { AppVariable } from '@/src/core/variables';
-import { SearchField } from '@/src/react/ui/SearchField';
+import { SearchField, type SearchFieldProps } from '@/src/react/ui/SearchField';
 import { ChoicePicker } from '@/src/react/ui/ChoicePicker';
 import { DateRangePicker } from '@/src/react/ui/DateRangePicker';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
@@ -108,7 +110,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           : 'inline';
     if (definition.kind === 'search') {
       searchControls.push(
-        <SearchField
+        <ViewSearchField
           key={name}
           label={definition.label ?? name}
           focusShortcut={searchControls.length === 0}
@@ -298,4 +300,17 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       ) : null,
   };
+}
+
+function ViewSearchField(props: SearchFieldProps) {
+  const suggestions = useContext(SearchSuggestionsContext);
+  return suggestions && props.focusShortcut ? (
+    <SearchTypeahead
+      {...props}
+      items={suggestions.items}
+      busy={suggestions.busy}
+    />
+  ) : (
+    <SearchField {...props} />
+  );
 }

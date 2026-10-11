@@ -1,4 +1,5 @@
-import { useAppVariables } from '@altertable/data-app/react/ui';
+import { useState } from 'react';
+import { Sheet, useAppVariables } from '@altertable/data-app/react/ui';
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -261,6 +262,12 @@ const operation = dataApp.defineOperation({
   ],
   policy: { maxQueryRows: 20, maxDurationMs: 1000 },
   async run(_context, input) {
+    if (
+      new URLSearchParams(location.search).has('slowSearch') &&
+      input.search
+    ) {
+      await new Promise(resolve => setTimeout(resolve, 700));
+    }
     const rows = records
       .filter(
         row =>
@@ -402,28 +409,62 @@ function CustomerTable({
 }
 const content = view.content(source => <CustomerTable source={source} />);
 function App() {
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    (typeof records)[number] | null
+  >(null);
+  const searchSuggestions = customers.suggestions({
+    title: row => row.name,
+    description: row => `${row.country} · ${row.segment}`,
+    onSelect: setSelectedCustomer,
+  });
   return (
-    <DataApp
-      view={view}
-      showSearch={!new URLSearchParams(location.search).has('hideSearch')}
-      datasets={[customers]}
-      story={snapshot => [
-        {
-          id: 'matching-customers',
-          headline: `${snapshot.data.rows.length} customer accounts match this selection`,
-          context:
-            'Sample records, using the currently displayed search and filters.',
-          visual: (
-            <TextContent>
-              <p>{snapshot.data.rows.length} matching accounts</p>
-            </TextContent>
-          ),
-          evidence: customers,
-        },
-      ]}
-    >
-      <DataSection content={content} />
-    </DataApp>
+    <>
+      <DataApp
+        view={view}
+        searchSuggestions={
+          new URLSearchParams(location.search).has('typeahead')
+            ? searchSuggestions
+            : undefined
+        }
+        showSearch={!new URLSearchParams(location.search).has('hideSearch')}
+        datasets={[customers]}
+        story={snapshot => [
+          {
+            id: 'matching-customers',
+            headline: `${snapshot.data.rows.length} customer accounts match this selection`,
+            context:
+              'Sample records, using the currently displayed search and filters.',
+            visual: (
+              <TextContent>
+                <p>{snapshot.data.rows.length} matching accounts</p>
+              </TextContent>
+            ),
+            evidence: customers,
+          },
+        ]}
+      >
+        <DataSection content={content} />
+      </DataApp>
+      <Sheet
+        open={!!selectedCustomer}
+        onOpenChange={open => {
+          if (!open) setSelectedCustomer(null);
+        }}
+        title={selectedCustomer?.name ?? 'Customer details'}
+        description="Customer account"
+      >
+        {selectedCustomer && (
+          <dl>
+            <dt>Country</dt>
+            <dd>{selectedCustomer.country}</dd>
+            <dt>Segment</dt>
+            <dd>{selectedCustomer.segment}</dd>
+            <dt>Account</dt>
+            <dd>{selectedCustomer.active ? 'Active' : 'Inactive'}</dd>
+          </dl>
+        )}
+      </Sheet>
+    </>
   );
 }
 injectDataAppStyles();

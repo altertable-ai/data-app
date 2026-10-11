@@ -199,3 +199,9 @@ export type {
 } from '@/src/react/ui/JourneyChart';
 
 export { useSvgId } from '@/src/react/ui/useSvgId';
+
+export { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
+export type {
+  SearchTypeaheadProps,
+  SearchSuggestion,
+} from '@/src/react/ui/SearchTypeahead';

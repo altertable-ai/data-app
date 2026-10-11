@@ -1,3 +1,5 @@
+import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
+import type { SearchSuggestions } from '@/src/react/bindings';
 import { useDataApp } from '@/src/react/app-context';
 import { ownedSource } from '@/src/react/source-owner';
 import {
@@ -26,6 +28,8 @@ export type DataAppProps<Data, Input = unknown> = Omit<
     view: DeclaredView<Data, Input> & {
       scope(snapshot: DisplayedSnapshot<Data, Input>): string;
     };
+    /** Suggestions for the first generated search field, derived from this view's displayed dataset. */
+    searchSuggestions?: SearchSuggestions<Data, Input>;
     story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
       StoryFinding,
       'evidence'
@@ -40,30 +44,44 @@ export type DataAppProps<Data, Input = unknown> = Omit<
 
 /** Executes the primary view and owns its controls, inspection, exports, and stories. */
 export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
-  const { view, datasets, story, ...frame } = props;
+  const { view, datasets, story, searchSuggestions, ...frame } = props;
   const app = useDataApp();
   const result = useDeclaredResult(view);
+  const suggestions = searchSuggestions?.read(
+    ownedSource(view, result.snapshot ?? { loading: true as const })
+  );
   return (
-    <PrimaryViewContext value={{ declaration: view, result }}>
-      <DataAppFrame
-        {...frame}
-        request={result}
-        dataContext={result.dataContext}
-        story={snapshot =>
-          story(ownedSource(view, snapshot)).map(finding => ({
-            ...finding,
-            evidence: registeredEvidence(finding.evidence, view),
-          }))
-        }
-        csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
-          exportDatasets(
-            datasets,
-            ownedSource(view, snapshot),
-            view.scope(snapshot),
-            app.title
-          )
-        }
-      />
-    </PrimaryViewContext>
+    <SearchSuggestionsContext
+      value={
+        suggestions
+          ? {
+              items: suggestions.loading ? [] : suggestions.value,
+              busy: result.refreshing,
+            }
+          : null
+      }
+    >
+      <PrimaryViewContext value={{ declaration: view, result }}>
+        <DataAppFrame
+          {...frame}
+          request={result}
+          dataContext={result.dataContext}
+          story={snapshot =>
+            story(ownedSource(view, snapshot)).map(finding => ({
+              ...finding,
+              evidence: registeredEvidence(finding.evidence, view),
+            }))
+          }
+          csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
+            exportDatasets(
+              datasets,
+              ownedSource(view, snapshot),
+              view.scope(snapshot),
+              app.title
+            )
+          }
+        />
+      </PrimaryViewContext>
+    </SearchSuggestionsContext>
   );
 }

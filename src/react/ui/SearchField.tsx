@@ -148,6 +148,7 @@ export function SearchField({
                 : inputProps?.['aria-keyshortcuts']
             }
             size={size}
+            loading={busy}
             id={inputId}
             type="search"
             value={value}

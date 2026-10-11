@@ -28,3 +28,30 @@
     width: 100%;
   }
 }
+
+.altertable-search-suggestions {
+  z-index: 150;
+  padding: var(--atbl-space-xs);
+  overflow: auto;
+}
+.altertable-search-suggestions ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.altertable-search-suggestions li {
+  display: grid;
+  gap: var(--atbl-space-xs);
+  padding: var(--atbl-space-sm);
+  border-radius: var(--atbl-radius-control);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.altertable-search-suggestions small,
+.altertable-search-suggestions-status {
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+}
+.altertable-search-suggestions-status {
+  padding: var(--atbl-space-sm);
+}
