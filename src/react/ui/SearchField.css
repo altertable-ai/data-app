@@ -63,10 +63,14 @@
   text-overflow: ellipsis;
 }
 .altertable-search-suggestions li > span {
-  flex: 1;
+  flex: 0 1 auto;
+}
+.altertable-search-suggestions li:has(small) > span {
+  flex-shrink: 0;
+  max-width: 65%;
 }
 .altertable-search-suggestions small {
-  max-width: 45%;
+  flex: 0 1 auto;
   color: var(--atbl-muted);
   font-size: var(--atbl-type-meta-size);
 }

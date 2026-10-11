@@ -66,7 +66,8 @@ export function SearchTypeahead({
       size({
         apply({ rects, availableHeight, elements }) {
           Object.assign(elements.floating.style, {
-            width: `${rects.reference.width}px`,
+            width: 'max-content',
+            maxWidth: `${rects.reference.width}px`,
             maxHeight: `${Math.max(0, availableHeight)}px`,
           });
         },

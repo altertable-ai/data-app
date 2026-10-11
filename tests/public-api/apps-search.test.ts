@@ -141,6 +141,9 @@ test('suggestions stay on one line aligned with the input and do not flash an em
   const detailBox = await options.first().locator('small').boundingBox();
   expect(Math.abs(inputBox!.x - titleBox!.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(titleBox!.y - detailBox!.y)).toBeLessThan(5);
+  expect(detailBox!.x - (titleBox!.x + titleBox!.width)).toBeLessThanOrEqual(
+    10
+  );
   const panel = page.getByRole('listbox');
   const panelBox = await panel.locator('..').boundingBox();
   const clearBox = await page

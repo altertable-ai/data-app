@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 
-test('widget headings preserve hierarchy and metric labels give values precedence', async ({
+test('widget headings share muted typography and preserve section hierarchy', async ({
   page,
 }) => {
   await page.goto('/date-presentation');
@@ -34,12 +34,18 @@ test('widget headings preserve hierarchy and metric labels give values precedenc
     );
   }
   expect(
-    styles
-      .slice(1)
-      .every(style => JSON.stringify(style) === JSON.stringify(styles[1]))
+    styles.every(style => JSON.stringify(style) === JSON.stringify(styles[0]))
   ).toBe(true);
-  expect(parseFloat(styles[0]![0]!)).toBeLessThan(parseFloat(styles[1]![0]!));
-  expect(Number(styles[0]![1])).toBeLessThan(Number(styles[1]![1]));
+  expect(
+    await page
+      .getByRole('heading', { name: 'Events', level: 3, exact: true })
+      .evaluate(element => getComputedStyle(element).color)
+  ).toBe(
+    await page
+      .locator('.altertable-data-table thead th')
+      .first()
+      .evaluate(element => getComputedStyle(element).color)
+  );
 });
 
 test('dates share locale and reporting zone with explicit overrides and raw CSV', async ({

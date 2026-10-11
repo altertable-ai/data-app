@@ -19,7 +19,7 @@
   flex-wrap: wrap;
   min-inline-size: 0;
   min-height: var(--atbl-control-height);
-  padding: 0 0.125rem 0 var(--atbl-control-padding-inline);
+  padding: 0 var(--atbl-control-padding-inline) 0 0.125rem;
   border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-control);
   background: var(--atbl-surface);
@@ -64,7 +64,7 @@
   place-items: center;
   width: var(--atbl-control-compact-height);
   min-height: var(--atbl-control-compact-height);
-  margin-left: auto;
+  flex: none;
   border: 0;
   border-radius: var(--atbl-radius-control);
   background: transparent;
@@ -94,9 +94,6 @@
 .altertable-date-range .altertable-date-range-reset:hover {
   background: var(--atbl-subtle);
   color: var(--atbl-text);
-}
-.altertable-date-range .altertable-date-range-reset + .react-aria-Button {
-  margin-left: 0;
 }
 .altertable-date-range-error {
   position: absolute;

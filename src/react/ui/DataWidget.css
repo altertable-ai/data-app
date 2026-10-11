@@ -33,15 +33,15 @@
 }
 .altertable-widget-heading {
   margin: 0;
-  color: var(--atbl-text);
+  color: var(--atbl-muted);
   font-family: var(
     --atbl-font-heading,
     var(--atbl-input-font-heading, var(--atbl-font))
   );
   font-size: var(--atbl-type-widget-size);
-  font-weight: var(--atbl-type-heading-weight);
+  font-weight: var(--atbl-type-label-weight);
   line-height: var(--atbl-type-heading-leading);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 .altertable-data-widget-count {
   display: inline-flex;

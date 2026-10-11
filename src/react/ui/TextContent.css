@@ -44,6 +44,7 @@
     var(--atbl-input-font-heading, var(--atbl-font))
   );
   font-size: var(--atbl-type-widget-size);
-  font-weight: var(--atbl-type-heading-weight);
+  color: var(--atbl-muted);
+  font-weight: var(--atbl-type-label-weight);
   line-height: var(--atbl-type-heading-leading);
 }

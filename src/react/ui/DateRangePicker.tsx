@@ -159,6 +159,14 @@ export function DateRangePicker({
           data-atbl-internal-surface="field"
           data-atbl-focus="group"
         >
+          <Button
+            data-atbl-internal-surface="control"
+            data-atbl-focus="ring"
+            data-atbl-control="action"
+            aria-label="Choose dates"
+          >
+            <AppIcon name="calendar" size={16} />
+          </Button>
           <DateInput slot="start">
             {segment => (
               <DateSegment
@@ -201,14 +209,6 @@ export function DateRangePicker({
                 <AppIcon name="reset" size={14} />
               </button>
             )}
-          <Button
-            data-atbl-internal-surface="control"
-            data-atbl-focus="ring"
-            data-atbl-control="action"
-            aria-label="Choose dates"
-          >
-            <AppIcon name="calendar" size={16} />
-          </Button>
         </Group>
         {comparison?.enabled && (
           <span className="altertable-date-range-comparison" aria-hidden="true">
