@@ -333,3 +333,45 @@ test('only the first declared search receives suggestions and the page shortcut'
   await expect.poll(() => page.getByRole('option').count()).toBe(4);
   expect(await secondary.inputValue()).toBe('a');
 });
+
+for (const mode of ['hideSearch', 'noSearch']) {
+  test(`${mode} skips suggestion callbacks and validation`, async ({
+    page,
+  }) => {
+    await page.goto(`/search-catalog?${mode}&invalidSuggestions`);
+    await expect.poll(() => page.getByRole('table').count()).toBe(2);
+    expect(await page.getByRole('combobox').count()).toBe(0);
+    expect(await page.getByRole('searchbox').count()).toBe(0);
+    expect(
+      await page.locator('body').getAttribute('data-suggestion-reads')
+    ).toBeNull();
+    expect(await page.getByRole('alert').count()).toBe(0);
+  });
+}
+
+test('page search shortcuts remain unconsumed inside a native modal sheet', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation?spend=all');
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await expect.poll(() => sheet.count()).toBe(1);
+  for (const modifier of ['ctrlKey', 'metaKey']) {
+    const state = await sheet.evaluate((element, modifier) => {
+      const target = element.querySelector('button');
+      target?.focus();
+      const event = new KeyboardEvent('keydown', {
+        key: 'k',
+        [modifier]: true,
+        bubbles: true,
+        cancelable: true,
+      });
+      target?.dispatchEvent(event);
+      return {
+        prevented: event.defaultPrevented,
+        focusRetained: document.activeElement === target,
+      };
+    }, modifier);
+    expect(state).toEqual({ prevented: false, focusRetained: true });
+  }
+});

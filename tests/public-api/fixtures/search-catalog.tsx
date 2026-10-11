@@ -81,10 +81,13 @@ if (new URLSearchParams(location.search).has('secondSearch')) {
     label: 'Search notes',
   });
 }
+if (new URLSearchParams(location.search).has('noSearch')) {
+  delete searchVariables.q;
+}
 const view = createDataHooks(client).defineDataView({
   operation: 'catalog',
   variables: searchVariables,
-  input: values => ({ q: values.q }),
+  input: values => ({ q: values.q ?? '' }),
   dataContext: createDataContext({ catalog: 'catalog' })({
     description: 'Illustrative people and projects.',
     glossary: {
@@ -114,7 +117,15 @@ const people = view.dataset({
   name: 'People',
   select: data => data.people,
   suggestions: {
-    title: row => row.name,
+    title: row => {
+      if (new URLSearchParams(location.search).has('invalidSuggestions')) {
+        document.body.dataset.suggestionReads = String(
+          Number(document.body.dataset.suggestionReads ?? 0) + 1
+        );
+        return '';
+      }
+      return row.name;
+    },
     description: row => `Person · ${row.team}`,
   },
   rowKey: row => row.id,
@@ -231,6 +242,7 @@ function App() {
   return (
     <DataApp
       view={view}
+      showSearch={!new URLSearchParams(location.search).has('hideSearch')}
       datasets={[people, projects]}
       story={snapshot => [
         {

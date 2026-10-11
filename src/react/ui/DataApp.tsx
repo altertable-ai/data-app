@@ -60,20 +60,21 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     view,
     result.snapshot ?? { loading: true as const }
   );
-  const suggestionGroups = showSearchSuggestions
-    ? datasets.flatMap((dataset, index) => {
-        const reading = dataset.readSearchSuggestions(source);
-        if (!reading) return [];
-        return [
-          reading.loading
-            ? []
-            : reading.value.map(item => ({
-                ...item,
-                id: `${index}:${item.id}`,
-              })),
-        ];
-      })
-    : [];
+  const suggestionGroups =
+    showSearchSuggestions && frame.showSearch !== false && result.searchControls
+      ? datasets.flatMap((dataset, index) => {
+          const reading = dataset.readSearchSuggestions(source);
+          if (!reading) return [];
+          return [
+            reading.loading
+              ? []
+              : reading.value.map(item => ({
+                  ...item,
+                  id: `${index}:${item.id}`,
+                })),
+          ];
+        })
+      : [];
   const suggestions = balanceSearchSuggestions(suggestionGroups);
   return (
     <SearchSuggestionsContext

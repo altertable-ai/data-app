@@ -87,6 +87,7 @@ export function SearchField({
       )
         return;
       if (
+        document.querySelector('dialog:modal') ||
         Array.from(
           document.querySelectorAll(
             '[role="dialog"], [role="listbox"], [role="menu"]'

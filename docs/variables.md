@@ -26,8 +26,9 @@ Keep local search out of the operation input when it only filters loaded rows.
 
 ### Search suggestions
 
-Declare suggestions for records whose titles are useful search completions. Omit
-suggestions for aggregate rows.
+Declaring dataset `suggestions` enables autocomplete automatically. Use it when
+record titles are useful query completions; omit it for aggregate datasets or when
+completion would not help. No additional enabling prop is needed.
 
 The app-owned `customers` operation accepts `{ q: string }` and returns `{ rows }`.
 With your typed `client` and registered `dataContext`, connect the query to its
@@ -70,7 +71,8 @@ autocomplete and combines supplied datasets that declare suggestions. Typing
 updates the page and suggestions from the same displayed result. Capped or
 paginated sources offer suggestions only for supplied rows. Selection completes the query with
 the title; `suggestions.onSelect: row => openCustomer(row.id)` overrides completion
-with an app action. Set `showSearchSuggestions={false}` to keep plain search.
+with an app action. `showSearchSuggestions` defaults to true; set it to false to
+suppress autocomplete for a particular app.
 
 ### Organize controls by intent
 

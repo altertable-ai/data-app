@@ -4,6 +4,7 @@ import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
 import {
   createDataHooks,
+  searchVariable,
   createDataContext,
   DataApp,
   DataSection,
@@ -46,6 +47,8 @@ function declareView() {
   const view = hooks.defineDataView({
     dataContext: context,
     operation: 'rows',
+    variables: { search: searchVariable({ key: 'q', label: 'Search rows' }) },
+    input: () => ({}),
     describeInput: () => 'all rows',
     isEmpty: () => false,
     emptyFallback: { title: 'No rows' },
