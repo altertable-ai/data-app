@@ -25,9 +25,6 @@
   background: var(--atbl-surface);
   transition: border-color var(--atbl-duration-fast) var(--atbl-ease-standard);
 }
-.altertable-variable-bar .altertable-date-range .react-aria-Group {
-  box-shadow: var(--atbl-shadow-surface);
-}
 .altertable-date-range[data-invalid] .react-aria-Group,
 .altertable-date-range:has(.altertable-date-range-error) .react-aria-Group {
   border-color: var(--atbl-danger);
@@ -38,8 +35,7 @@
   max-inline-size: 100%;
   min-width: 0;
   white-space: nowrap;
-  font-weight: 560;
-  letter-spacing: -0.01em;
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-date-range .react-aria-DateSegment {
   padding: 3px 1px;
@@ -115,6 +111,10 @@
 
 .altertable-date-range-popover {
   z-index: 100;
+  width: min(480px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px;
 }
 .altertable-date-range-popover[data-entering] {

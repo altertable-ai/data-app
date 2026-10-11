@@ -40,6 +40,9 @@
 .altertable-data-table :is(th, td)[data-type='datetime'] {
   font-variant-numeric: tabular-nums;
 }
+.altertable-data-table :is(th, td)[data-type='datetime']:not(:first-child) {
+  text-align: end;
+}
 .altertable-data-table-timestamp {
   padding: 0;
   border: 0;

@@ -15,6 +15,7 @@ import {
   size,
   useFloating,
   useMergeRefs,
+  type VirtualElement,
 } from '@floating-ui/react';
 import { SearchField, type SearchFieldProps } from '@/src/react/ui/SearchField';
 import { PopoverContainerContext } from '@/src/react/ui/PopoverSurface';
@@ -72,11 +73,37 @@ export function SearchTypeahead({
       }),
     ],
   });
+  const [anchors] = useState(
+    () => new WeakMap<HTMLInputElement, VirtualElement>()
+  );
   const anchor = useCallback(
     (element: ComponentRef<'input'> | null) => {
-      setReference(element?.parentElement ?? null);
+      if (!element) {
+        setReference(null);
+        return;
+      }
+      let reference = anchors.get(element);
+      if (!reference) {
+        reference = {
+          contextElement: element,
+          getBoundingClientRect() {
+            const rect = element.getBoundingClientRect();
+            const field = getComputedStyle(element.parentElement!);
+            const padding = parseFloat(field.paddingInlineStart);
+            const gap = parseFloat(field.columnGap);
+            return new DOMRect(
+              rect.x - padding,
+              rect.y,
+              rect.width + padding + gap,
+              rect.height
+            );
+          },
+        };
+        anchors.set(element, reference);
+      }
+      setReference(reference);
     },
-    [setReference]
+    [anchors, setReference]
   );
   const input = useMergeRefs([anchor, inputProps?.ref]);
   useEffect(() => {

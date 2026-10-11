@@ -44,15 +44,15 @@
   align-items: baseline;
   gap: var(--atbl-space-sm);
   padding: var(--atbl-space-sm);
-  /* Match the field's padding, 17px search glyph, and 9px gap. */
+  /* The popup starts one field padding before the input text. */
   padding-inline-start: calc(
-    var(--atbl-control-padding-inline) + 26px - var(--atbl-space-xs)
+    var(--atbl-control-padding-inline) - var(--atbl-space-xs) - 1px
   );
   border-radius: var(--atbl-radius-control);
 }
 .altertable-search-suggestions[data-size='compact'] li {
   padding-inline-start: calc(
-    var(--atbl-control-padding-inline) * 5 / 6 + 26px - var(--atbl-space-xs)
+    var(--atbl-control-padding-inline) * 5 / 6 - var(--atbl-space-xs) - 1px
   );
 }
 .altertable-search-suggestions li > span,

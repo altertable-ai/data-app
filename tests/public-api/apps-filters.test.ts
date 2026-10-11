@@ -1243,3 +1243,25 @@ test('compact secondary pickers retain full labels and edit multiple selections'
   await expect.poll(() => summaries.count()).toBe(0);
   expect(new URL(page.url()).searchParams.has('owner')).toBe(false);
 });
+
+test('a calendar in a filter sheet can float beyond the sheet without clipping', async ({
+  page,
+}) => {
+  await page.goto('/time-app');
+  await page.getByRole('button', { name: 'Filters', exact: true }).click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await sheet.getByRole('button', { name: /Choose dates/ }).click();
+  const calendar = page.locator('.altertable-date-range-popover');
+  const bounds = await calendar.boundingBox();
+  expect(bounds!.width).toBeGreaterThan(450);
+  const lastDay = await calendar.getByRole('gridcell').last().boundingBox();
+  expect(lastDay!.x + lastDay!.width).toBeLessThanOrEqual(
+    bounds!.x + bounds!.width
+  );
+  expect(
+    await sheet.evaluate(element => getComputedStyle(element).overflow)
+  ).toBe('visible');
+  await page.keyboard.press('Escape');
+  await expect.poll(() => calendar.count()).toBe(0);
+  expect(await sheet.isVisible()).toBe(true);
+});

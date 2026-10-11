@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 
-test('widget headings share typography while preserving section hierarchy', async ({
+test('widget headings preserve hierarchy and metric labels give values precedence', async ({
   page,
 }) => {
   await page.goto('/date-presentation');
@@ -34,8 +34,12 @@ test('widget headings share typography while preserving section hierarchy', asyn
     );
   }
   expect(
-    styles.every(style => JSON.stringify(style) === JSON.stringify(styles[0]))
+    styles
+      .slice(1)
+      .every(style => JSON.stringify(style) === JSON.stringify(styles[1]))
   ).toBe(true);
+  expect(parseFloat(styles[0]![0]!)).toBeLessThan(parseFloat(styles[1]![0]!));
+  expect(Number(styles[0]![1])).toBeLessThan(Number(styles[1]![1]));
 });
 
 test('dates share locale and reporting zone with explicit overrides and raw CSV', async ({
@@ -48,6 +52,14 @@ test('dates share locale and reporting zone with explicit overrides and raw CSV'
   expect(await cells.nth(0).innerText()).toBe('24 Sept 2026, 11:00:05');
   expect(await cells.nth(1).innerText()).toBe('24 Sept 2026, 15:00:05');
   expect(await cells.nth(2).innerText()).toBe('—');
+  expect(
+    await cells.nth(0).evaluate(element => getComputedStyle(element).textAlign)
+  ).toBe('end');
+  expect(
+    await row
+      .getByRole('rowheader')
+      .evaluate(element => getComputedStyle(element).textAlign)
+  ).toBe('start');
   expect(
     await page
       .getByRole('button', { name: '11:00: 1 events', exact: true })
