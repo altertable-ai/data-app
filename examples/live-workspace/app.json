@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "title": "Live workspace explorer",
+  "scope": {
+    "organization": "Altertable",
+    "environment": "production"
+  },
+  "appearance": {
+    "mode": "system",
+    "baseColor": "neutral"
+  }
+}
