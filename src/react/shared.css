@@ -4,6 +4,7 @@
 @import './ui/Skeleton.css' layer(atbl.components);
 @import './ui/Grid.css' layer(atbl.components);
 @import './ui/DataWidget.css' layer(atbl.components);
+@import './ui/SectionHeading.css' layer(atbl.components);
 @import './ui/MetricWidget.css' layer(atbl.components);
 @import './ui/VisualizationWidget.css' layer(atbl.components);
 @import './ui/ContentSkeleton.css' layer(atbl.components);

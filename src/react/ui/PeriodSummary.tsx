@@ -1,7 +1,13 @@
 import { classNames } from '@/src/react/ui/classNames';
 import { AppIcon } from '@/src/react/ui/icons';
 import type { ReportingPeriod } from '@/src/core/contract';
-import { formatDateRange } from '@/src/core/format';
+import { useDateFormatting } from '@/src/react/date-formatting';
+import {
+  formatDateRange,
+  formatDateTime,
+  parseDateTime,
+  type DateTimeFormatOptions,
+} from '@/src/core/format';
 
 export type { ReportingPeriod } from '@/src/core/contract';
 
@@ -21,20 +27,25 @@ function duration(
   return `${period.amount} ${period.unit}${period.amount === 1 ? '' : 's'}`;
 }
 
-function label(period: ReportingPeriod): string {
+function label(
+  period: ReportingPeriod,
+  options: DateTimeFormatOptions = {}
+): string {
   if (period.kind === 'rolling') return `Last ${duration(period)}`;
 
-  return formatDateRange(period);
+  return formatDateRange(period, options);
 }
 
 function comparisonLabel(
   period: ReportingPeriod,
-  comparison: PeriodComparison
+  comparison: PeriodComparison,
+  options: DateTimeFormatOptions
 ): string {
   if (comparison.kind === 'period') {
-    if (comparison.period.kind === 'calendar') return label(comparison.period);
+    if (comparison.period.kind === 'calendar')
+      return label(comparison.period, options);
 
-    return `${duration(comparison.period)} ending ${new Date(comparison.period.end).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}`;
+    return `${duration(comparison.period)} ending ${formatDateTime(comparison.period.end, options)}`;
   }
 
   return period.kind === 'rolling'
@@ -42,17 +53,20 @@ function comparisonLabel(
     : 'Previous period';
 }
 
-export function reportingPeriodText(period: ReportingPeriod): string {
+export function reportingPeriodText(
+  period: ReportingPeriod,
+  options: DateTimeFormatOptions = {}
+): string {
   if (period.kind === 'calendar')
-    return `${label(period)} in ${period.timeZone}`;
-  const end = new Date(period.end);
-  if (Number.isNaN(end.getTime())) return label(period);
+    return `${label(period, options)} in ${period.timeZone}`;
+  const end = parseDateTime(period.end);
+  if (!end) return label(period, options);
   const start = new Date(
     end.getTime() -
       period.amount * (period.unit === 'hour' ? 3_600_000 : 86_400_000)
   );
 
-  return `${label(period)}, ${start.toISOString()} to ${end.toISOString()}`;
+  return `${label(period, options)}, ${formatDateTime(start, options)} to ${formatDateTime(end, options)} in ${options.timeZone ?? 'UTC'}`;
 }
 
 /** Read-only period context for the variable bar, including exact bounds for assistive technology. */
@@ -61,18 +75,19 @@ export function PeriodSummary({
   comparison,
   className,
 }: PeriodSummaryProps) {
+  const options = useDateFormatting();
   const comparisonText = comparison
-    ? comparisonLabel(period, comparison)
+    ? comparisonLabel(period, comparison, options)
     : null;
   const comparisonDetail =
     comparison?.kind === 'period'
-      ? reportingPeriodText(comparison.period)
+      ? reportingPeriodText(comparison.period, options)
       : comparisonText;
 
   return (
     <p className={classNames('altertable-period-summary', className)}>
       <span className="altertable-sr-only">
-        {`Reporting period: ${reportingPeriodText(period)}${comparisonDetail ? `, compared with ${comparisonDetail}` : ''}`}
+        {`Reporting period: ${reportingPeriodText(period, options)}${comparisonDetail ? `, compared with ${comparisonDetail}` : ''}`}
       </span>
       <span aria-hidden="true" className="altertable-period-summary-visible">
         <AppIcon
@@ -80,7 +95,7 @@ export function PeriodSummary({
           size={16}
         />
         <span className="altertable-period-summary-current">
-          {label(period)}
+          {label(period, options)}
         </span>
         {comparisonText && (
           <>

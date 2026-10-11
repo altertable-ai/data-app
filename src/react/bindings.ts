@@ -1,7 +1,9 @@
 import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
 import type { SearchSuggestion } from '@/src/react/ui/SearchTypeahead';
-import type { ReactNode } from 'react';
+import { createElement, type ReactNode } from 'react';
+import { DateDisplay } from '@/src/react/ui/DateDisplay';
+import type { DateFormat } from '@/src/core/format';
 import type { DateRangeRequest } from '@/src/core/contract';
 import type { DataView, DisplayedSnapshot } from '@/src/core/data-view';
 import { formatMetric } from '@/src/core/format';
@@ -38,6 +40,14 @@ function readSource<Data, Input, Value, Source extends ViewSource<Data, Input>>(
 export type DatasetColumn<Row> = { label?: string } & (
   | { value: (row: Row) => CsvCell; format?: (row: Row) => ReactNode }
   | { value: (row: Row) => number | null | undefined; format: MetricFormat }
+  | {
+      value: (row: Row) => string | number | null | undefined;
+      format: Extract<DateFormat, { kind: 'dateTime' }>;
+    }
+  | {
+      value: (row: Row) => string | null | undefined;
+      format: Extract<DateFormat, { kind: 'date' }>;
+    }
 );
 
 export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
@@ -137,7 +147,11 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     evidence: WidgetEvidence;
     emptyFallback: EmptyContent;
   };
-  constructor(definition: DatasetDefinition<Data, Input, Row>, owner?: object) {
+  constructor(
+    definition: DatasetDefinition<Data, Input, Row>,
+    owner?: object,
+    timeZone?: string
+  ) {
     invariant(!!definition.name.trim(), 'A dataset needs a name.');
     const ids = Object.keys(definition.columns);
     invariant(
@@ -163,11 +177,30 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       header: column.label,
       type:
         column.format && typeof column.format !== 'function'
-          ? ('number' as const)
+          ? column.format.kind === 'date' || column.format.kind === 'dateTime'
+            ? ('datetime' as const)
+            : ('number' as const)
           : undefined,
       cell(row: Row): ReactNode {
         if (typeof column.format === 'function') return column.format(row);
         const value = column.value(row);
+        if (
+          column.format &&
+          typeof column.format !== 'function' &&
+          (column.format.kind === 'date' || column.format.kind === 'dateTime')
+        ) {
+          const format =
+            column.format.kind === 'dateTime'
+              ? {
+                  ...column.format,
+                  timeZone: column.format.timeZone ?? timeZone,
+                }
+              : column.format;
+          return createElement(DateDisplay, {
+            value: value as string | number | null | undefined,
+            format,
+          });
+        }
         if (value === null || value === undefined) return '—';
         return column.format
           ? formatMetric(value as number, column.format)
@@ -246,9 +279,10 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
 
 export function bindDataset<Data, Input, Row>(
   definition: DatasetDefinition<Data, Input, Row>,
-  owner?: object
+  owner?: object,
+  timeZone?: string
 ) {
-  return new Dataset(definition, owner);
+  return new Dataset(definition, owner, timeZone);
 }
 
 export function datasetTable<Data, Input, Row>(

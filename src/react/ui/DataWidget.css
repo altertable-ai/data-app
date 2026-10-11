@@ -31,7 +31,7 @@
   flex: none;
   align-items: flex-start;
 }
-.altertable-data-widget-header h2 {
+.altertable-widget-heading {
   margin: 0;
   color: var(--atbl-text);
   font-family: var(

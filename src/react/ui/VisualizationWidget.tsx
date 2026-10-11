@@ -8,6 +8,7 @@ import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
 type VisualizationWidgetBaseProps = Pick<
   DataWidgetProps,
   | 'title'
+  | 'headingLevel'
   | 'annotationId'
   | 'description'
   | 'count'

@@ -1,3 +1,5 @@
+import { parseDateTime } from '@/src/core/format';
+import { useDateFormatting } from '@/src/react/date-formatting';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
   DateTimeTooltip,
@@ -19,6 +21,7 @@ export function UpdatedAt({
   triggerProps,
   ...props
 }: UpdatedAtProps) {
+  const defaults = useDateFormatting({ locale, timeZone: props.timeZone });
   const [now, setNow] = useState(Date.now);
 
   useEffect(() => {
@@ -28,7 +31,9 @@ export function UpdatedAt({
   }, []);
 
   const elapsedMinutes = Math.floor(Math.max(0, now - timestamp) / 60_000);
-  const relative = new Intl.RelativeTimeFormat(locale, { numeric: 'auto' });
+  const relative = new Intl.RelativeTimeFormat(defaults.locale, {
+    numeric: 'auto',
+  });
   let age = 'just now';
   if (elapsedMinutes >= 1_440)
     age = relative.format(-Math.floor(elapsedMinutes / 1_440), 'day');
@@ -37,11 +42,13 @@ export function UpdatedAt({
   else if (elapsedMinutes >= 1)
     age = relative.format(-elapsedMinutes, 'minute');
 
-  const date = new Date(timestamp);
+  const date = parseDateTime(timestamp);
+  if (!date) return <span>{children ?? `${label} —`}</span>;
 
   return (
     <DateTimeTooltip
       {...props}
+      {...defaults}
       date={date}
       triggerProps={{
         ...triggerProps,

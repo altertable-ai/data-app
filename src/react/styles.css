@@ -42,6 +42,7 @@
 @import './ui/WidgetViewTabs.css' layer(atbl.components);
 @import './ui/HelpPopover.css' layer(atbl.components);
 @import './ui/DateTimeTooltip.css' layer(atbl.components);
+@import './ui/DateDisplay.css' layer(atbl.components);
 @import './ui/DataTable.css' layer(atbl.components);
 @import './ui/TableWidget.css' layer(atbl.components);
 @import './ui/TextContent.css' layer(atbl.components);

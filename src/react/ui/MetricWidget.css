@@ -19,13 +19,6 @@
 .altertable-metric-widget > .altertable-data-widget-header {
   min-height: 0;
 }
-.altertable-metric-widget > .altertable-data-widget-header h2 {
-  color: var(--atbl-muted);
-  font-family: inherit;
-  font-size: var(--atbl-type-label-size);
-  font-weight: var(--atbl-type-label-weight);
-  letter-spacing: normal;
-}
 .altertable-metric-widget > .altertable-data-widget-body {
   padding-top: 0;
 }

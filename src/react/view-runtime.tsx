@@ -7,6 +7,7 @@ import type { EmptyContent } from '@/src/react/ui/presentation';
 
 export type ViewResult<Data, Input> = {
   dataContext: DataContext;
+  timeZone?: string;
   view: DataView<Data, Input>;
   snapshot?: DisplayedSnapshot<Data, Input>;
   refetch: () => unknown;

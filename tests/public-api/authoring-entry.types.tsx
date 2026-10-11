@@ -336,3 +336,31 @@ const callbackDataset = view.dataset({
   evidence: { id: 'callback-values', queryNames: ['count'] },
 });
 void callbackDataset;
+
+const datedRows = view.dataset({
+  name: 'Dated values',
+  select: data => [
+    { id: data, day: '2026-09-24', observed: '2026-09-24T15:00:00Z' },
+  ],
+  rowKey: row => row.id,
+  columns: {
+    day: { value: row => row.day, format: { kind: 'date' } },
+    observed: {
+      value: row => row.observed,
+      format: { kind: 'dateTime', precision: 'second' },
+    },
+  },
+  evidence: { id: 'dated-values', queryNames: ['count'] },
+});
+<TableWidget dataset={datedRows} source={{ loading: true }} headingLevel={3} />;
+<authoring.SectionHeading level={2}>Activity</authoring.SectionHeading>;
+<authoring.DateDisplay value="2026-09-24" format={{ kind: 'date' }} />;
+// @ts-expect-error Semantic heading levels must be valid HTML heading levels below the page title.
+<authoring.SectionHeading level={7}>Activity</authoring.SectionHeading>;
+const invalidCalendarFormat: import('@altertable/data-app/format').DateFormat =
+  {
+    kind: 'date',
+    // @ts-expect-error Calendar formats cannot specify a time zone.
+    timeZone: 'UTC',
+  };
+void invalidCalendarFormat;

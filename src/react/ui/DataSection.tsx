@@ -1,3 +1,4 @@
+import { DateFormattingContext } from '@/src/react/date-formatting';
 import { sectionContent, type ViewContent } from '@/src/react/content';
 import { useContext, type ComponentPropsWithRef, type ReactNode } from 'react';
 import { DataSectionBoundary } from '@/src/react/ui/DataSectionBoundary';
@@ -51,14 +52,16 @@ function IndependentSection<Data, Input>({
     <DataSectionBoundary {...props} result={result} notice="inline" />
   );
   return (
-    <InspectionContext
-      value={{
-        ...defaults,
-        dataContext: result.dataContext,
-        queries: result.queries,
-      }}
-    >
-      {section}
-    </InspectionContext>
+    <DateFormattingContext value={{ timeZone: result.timeZone }}>
+      <InspectionContext
+        value={{
+          ...defaults,
+          dataContext: result.dataContext,
+          queries: result.queries,
+        }}
+      >
+        {section}
+      </InspectionContext>
+    </DateFormattingContext>
   );
 }

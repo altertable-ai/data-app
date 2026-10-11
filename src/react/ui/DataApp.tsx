@@ -1,3 +1,4 @@
+import { DateFormattingContext } from '@/src/react/date-formatting';
 import {
   SearchSuggestionsContext,
   balanceSearchSuggestions,
@@ -77,37 +78,39 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
       : [];
   const suggestions = balanceSearchSuggestions(suggestionGroups);
   return (
-    <SearchSuggestionsContext
-      value={
-        suggestionGroups.length
-          ? {
-              items: suggestions,
-              busy: result.refreshing,
+    <DateFormattingContext value={{ timeZone: result.timeZone }}>
+      <SearchSuggestionsContext
+        value={
+          suggestionGroups.length
+            ? {
+                items: suggestions,
+                busy: result.refreshing,
+              }
+            : null
+        }
+      >
+        <PrimaryViewContext value={{ declaration: view, result }}>
+          <DataAppFrame
+            {...frame}
+            request={result}
+            dataContext={result.dataContext}
+            story={snapshot =>
+              story(ownedSource(view, snapshot)).map(finding => ({
+                ...finding,
+                evidence: registeredEvidence(finding.evidence, view),
+              }))
             }
-          : null
-      }
-    >
-      <PrimaryViewContext value={{ declaration: view, result }}>
-        <DataAppFrame
-          {...frame}
-          request={result}
-          dataContext={result.dataContext}
-          story={snapshot =>
-            story(ownedSource(view, snapshot)).map(finding => ({
-              ...finding,
-              evidence: registeredEvidence(finding.evidence, view),
-            }))
-          }
-          csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
-            exportDatasets(
-              datasets,
-              ownedSource(view, snapshot),
-              view.scope(snapshot),
-              app.title
-            )
-          }
-        />
-      </PrimaryViewContext>
-    </SearchSuggestionsContext>
+            csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
+              exportDatasets(
+                datasets,
+                ownedSource(view, snapshot),
+                view.scope(snapshot),
+                app.title
+              )
+            }
+          />
+        </PrimaryViewContext>
+      </SearchSuggestionsContext>
+    </DateFormattingContext>
   );
 }

@@ -1,3 +1,4 @@
+import { DateFormattingContext } from '@/src/react/date-formatting';
 import {
   useEffect,
   useEffectEvent,
@@ -286,6 +287,7 @@ function InspectionTrigger({
 }: AboutDataProps) {
   const owner = useContext(InspectionOwner)!;
   const defaults = useInspectionDefaults();
+  const dateFormatting = useContext(DateFormattingContext);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const mergedTrigger = useMergeRefs([triggerRef, ref]);
   const key = useId();
@@ -304,6 +306,13 @@ function InspectionTrigger({
     trigger: triggerRef,
     props: {
       ...props,
+      visual: props.visual ? (
+        <DateFormattingContext value={dateFormatting}>
+          {props.visual}
+        </DateFormattingContext>
+      ) : (
+        props.visual
+      ),
       dataContext: props.dataContext ?? defaults?.dataContext,
       queries: props.queries ?? defaults?.queries,
       empty: props.empty ?? defaults?.empty,

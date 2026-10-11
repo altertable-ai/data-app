@@ -13,6 +13,7 @@ import {
   GridItem,
   Stack,
   TextContent,
+  SectionHeading,
   MetricWidget,
   injectDataAppStyles,
   mountDataApp,
@@ -64,10 +65,10 @@ const dataset = view.dataset({
 const content = view.content(result => (
   <Grid columns={2} minItemWidth="compact" aria-label="Activity cards">
     <GridItem span={2}>
-      <MetricWidget metric={metric} source={result} />
+      <MetricWidget metric={metric} source={result} headingLevel={3} />
     </GridItem>
     <GridItem>
-      <MetricWidget metric={metric} source={result} />
+      <MetricWidget metric={metric} source={result} headingLevel={3} />
     </GridItem>
   </Grid>
 ));
@@ -75,8 +76,8 @@ function App() {
   return (
     <DataApp view={view} datasets={[dataset]} story={() => []}>
       <Stack aria-label="Report sections">
+        <SectionHeading>Activity overview</SectionHeading>
         <TextContent>
-          <h2>Activity overview</h2>
           <p>Activity at every screen size.</p>
         </TextContent>
         <DataSection content={content} />

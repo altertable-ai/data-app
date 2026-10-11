@@ -21,6 +21,7 @@ import {
 } from '@/src/core/variables';
 import {
   dateRangeVariable,
+  type DateRangeVariable,
   type DateRangeVariableOptions,
 } from '@/src/react/ui/variables';
 import {
@@ -218,7 +219,16 @@ export function createDataHooks<Operations extends DataOperations>(
               ...dataset,
               evidence: definition.dataContext.evidence(dataset.evidence),
             },
-            view
+            view,
+            normalized.date &&
+              normalized.variables[normalized.date.variable]?.kind ===
+                'dateRange'
+              ? (
+                  normalized.variables[
+                    normalized.date.variable
+                  ] as DateRangeVariable
+                ).bounds().timeZone
+              : undefined
           );
         },
         metric(
@@ -373,6 +383,15 @@ export function createDataHooks<Operations extends DataOperations>(
       refreshing: request.refreshing,
       queries: request.queries,
       emptyFallback: definition.emptyFallback,
+      timeZone:
+        definition.date &&
+        definition.variables[definition.date.variable]?.kind === 'dateRange'
+          ? (
+              definition.variables[
+                definition.date.variable
+              ] as DateRangeVariable
+            ).bounds().timeZone
+          : undefined,
       searchControls: variables.searchControls,
       filterControls: variables.filterControls,
       variables,

@@ -57,6 +57,7 @@ export type TableDisplayMode =
 
 type TableWidgetBaseProps<Row> = {
   title: ReactNode;
+  headingLevel?: 2 | 3 | 4 | 5 | 6;
   annotationId?: string;
   /** Show the matching supplied-row count before pagination or limits. Defaults to true. */
   showCount?: boolean;

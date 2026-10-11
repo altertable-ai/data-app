@@ -9,6 +9,7 @@ import inspectionApp from '@/tests/public-api/fixtures/inspection-app.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
 import clients from '@/tests/public-api/fixtures/clients.html';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
+import datePresentation from '@/tests/public-api/fixtures/date-presentation.html';
 import appearance from '@/tests/public-api/fixtures/appearance.html';
 import ownership from '@/tests/public-api/fixtures/ownership.html';
 import layout from '@/tests/public-api/fixtures/layout.html';
@@ -82,6 +83,7 @@ const server = Bun.serve({
     '/ownership': ownership,
     '/annotations-host': annotationsHost,
     '/appearance': appearance,
+    '/date-presentation': datePresentation,
     '/styles': styles,
     '/chart-legends': chartLegends,
     '/time-app': timeApp,

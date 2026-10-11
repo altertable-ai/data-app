@@ -3,6 +3,7 @@ import {
   formatDateRange,
   formatMetric,
   type MetricFormat,
+  type DateFormatOptions,
 } from '@/src/core/format';
 
 export type MetricComparison = {
@@ -24,7 +25,8 @@ export function calendarMetricComparison(
     previous: number | null;
     format: MetricFormat;
     favorableDirection?: MetricComparison['favorableDirection'];
-  }
+  },
+  options: DateFormatOptions = {}
 ): MetricComparison | undefined {
   if (!displayedInput.comparison) return undefined;
 
@@ -32,7 +34,7 @@ export function calendarMetricComparison(
     current: {
       value: values.current,
       formattedValue: formatMetric(values.current, values.format),
-      periodLabel: formatDateRange(displayedInput.range),
+      periodLabel: formatDateRange(displayedInput.range, options),
     },
     previous: {
       value: values.previous,
@@ -40,7 +42,7 @@ export function calendarMetricComparison(
         values.previous === null
           ? 'Not available'
           : formatMetric(values.previous, values.format),
-      periodLabel: formatDateRange(displayedInput.comparison),
+      periodLabel: formatDateRange(displayedInput.comparison, options),
     },
     favorableDirection: values.favorableDirection,
   };

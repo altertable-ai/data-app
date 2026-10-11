@@ -2,7 +2,7 @@
 
 The shell owns page width, outer gutters, and header/body spacing. Use `<Stack>`
 for sections, `<Grid>` for peer widgets, and `<GridItem>` for spans. Use
-`<TextContent>` for prose. Widgets own their internal padding; their parents own
+`<SectionHeading>` to name widget groups and `<TextContent>` for prose. Widgets own their internal padding; their parents own
 external spacing. Keep widget customization inside the widget so its parent can maintain consistent
 spacing between sections and cards.
 
@@ -11,8 +11,8 @@ spans collapse when there is not enough space.
 
 ```tsx
 <Stack>
+  <SectionHeading>Activity</SectionHeading>
   <TextContent>
-    <h2>Activity</h2>
     <p>Explore the sources behind this finding.</p>
   </TextContent>
   <Grid columns={3}>
@@ -21,6 +21,9 @@ spans collapse when there is not enough space.
   </Grid>
 </Stack>
 ```
+
+Set widget `headingLevel={3}` beneath a section heading; visual styling stays
+consistent across widget types.
 
 ## Verify rendered layouts
 

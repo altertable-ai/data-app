@@ -1,0 +1,11 @@
+.altertable-date-display {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.altertable-date-display-trigger {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}

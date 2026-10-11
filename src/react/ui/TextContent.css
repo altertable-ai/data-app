@@ -38,3 +38,12 @@
   font-weight: var(--atbl-type-heading-weight);
   line-height: var(--atbl-type-heading-leading);
 }
+.altertable-text-content :where(h3, h4, h5, h6) {
+  font-family: var(
+    --atbl-font-heading,
+    var(--atbl-input-font-heading, var(--atbl-font))
+  );
+  font-size: var(--atbl-type-widget-size);
+  font-weight: var(--atbl-type-heading-weight);
+  line-height: var(--atbl-type-heading-leading);
+}

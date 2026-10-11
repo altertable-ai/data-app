@@ -13,6 +13,9 @@ Import formatting helpers from `@altertable/data-app/format`.
 | `formatCount()`     | Nonnegative integer counts, optionally compact         |
 | `formatPercent()`   | Ratios represented as a fraction, such as 0.12 for 12% |
 | `formatMetric()`    | A metric definition's count, ratio, or currency format |
+| `formatDate()`      | Calendar dates without time-zone shifts                |
+| `formatDateTime()`  | Event timestamps in the reporting time zone            |
+| `formatTime()`      | Intraday chart labels                                  |
 | `formatDateRange()` | Inclusive calendar ranges                              |
 | `pluralize()`       | Count-dependent labels                                 |
 
@@ -36,6 +39,32 @@ Import `chartColor()` from `/react` to select colors from the configured palette
 `<PeriodSummary>` describes reporting periods; `<UpdatedAt>` and
 `<DateTimeTooltip>` expose readable timestamps with exact-date details.
 `<DataTableTimestamp>` and `<DataTableShare>` format custom table cells.
+
+## Display dates consistently
+
+Declare date meaning on dataset columns so tables use readable values and CSV
+keeps the originals:
+
+```ts
+columns: {
+  day: { value: row => row.day, format: { kind: 'date' } },
+  observed: {
+    value: row => row.observed,
+    format: { kind: 'dateTime', precision: 'second' },
+  },
+}
+```
+
+Calendar dates use `YYYY-MM-DD`. Instants accept epoch milliseconds or timestamp
+strings; `<DateDisplay>` also accepts `Date`. Timestamp strings require `Z` or an explicit
+offset; convert database-local timestamps in the operation using their known
+source zone. Ambiguous or invalid values display as missing.
+
+Use `<DateDisplay>` for prose and `useDateFormatting()` with format helpers for
+custom chart labels. Defaults are `en-US` and UTC; configure app-wide
+`dateFormatting: { locale, timeZone }` when appropriate. A time view supplies its
+reporting zone, and an explicit field zone overrides it. Keep seconds when event
+ordering matters; exact-time details remain available on timestamps.
 
 ## Configure identity and appearance
 

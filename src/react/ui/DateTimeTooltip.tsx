@@ -1,22 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { formatDateTime, parseDateTime } from '@/src/core/format';
+import { useDateFormatting } from '@/src/react/date-formatting';
 import { HelpPopover, type HelpPopoverProps } from '@/src/react/ui/HelpPopover';
 
 export type DateTimeTooltipProps = {
   date: Date;
 
   timeZone?: string;
+  locale?: string;
   children?: ReactNode;
 } & Omit<HelpPopoverProps, 'trigger' | 'triggerLabel' | 'label' | 'children'>;
 
-function formattedDate(date: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone,
-    dateStyle: 'medium',
-    timeStyle: 'medium',
-  }).format(date);
-}
-
-function relativeDate(date: Date, now: number): string {
+function relativeDate(date: Date, now: number, locale: string): string {
   const seconds = Math.round((date.getTime() - now) / 1000);
   const absolute = Math.abs(seconds);
   const [value, unit]: [number, Intl.RelativeTimeFormatUnit] =
@@ -28,16 +23,17 @@ function relativeDate(date: Date, now: number): string {
           ? [Math.round(seconds / 3600), 'hour']
           : [Math.round(seconds / 86_400), 'day'];
 
-  return new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' }).format(
+  return new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
     value,
     unit
   );
 }
 
-/** Pass the viewer's account time zone when known; the popover also exposes UTC and Unix time. */
+/** Exact-time disclosure uses the same reporting zone and locale as other date displays. */
 export function DateTimeTooltip({
   date,
   timeZone,
+  locale,
   children,
   panelProps,
   ...props
@@ -50,20 +46,11 @@ export function DateTimeTooltip({
     return () => window.clearInterval(interval);
   }, []);
 
-  const browserTimeZone =
-    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  const primaryTimeZone = timeZone ?? browserTimeZone;
+  const defaults = useDateFormatting({ locale, timeZone });
+  if (!parseDateTime(date)) return <span>{children ?? '—'}</span>;
   const rows = [
-    {
-      label: timeZone
-        ? `Account · ${timeZone}`
-        : `Browser · ${browserTimeZone}`,
-      zone: primaryTimeZone,
-    },
-    ...(primaryTimeZone === 'UTC' ? [] : [{ label: 'UTC', zone: 'UTC' }]),
-    ...(timeZone && timeZone !== browserTimeZone
-      ? [{ label: `Browser · ${browserTimeZone}`, zone: browserTimeZone }]
-      : []),
+    { label: `Time zone · ${defaults.timeZone}`, zone: defaults.timeZone },
+    ...(defaults.timeZone === 'UTC' ? [] : [{ label: 'UTC', zone: 'UTC' }]),
   ];
   const timestamp = date.toISOString();
 
@@ -82,7 +69,7 @@ export function DateTimeTooltip({
       trigger={
         children ?? (
           <time dateTime={timestamp}>
-            {formattedDate(date, timeZone ?? browserTimeZone)}
+            {formatDateTime(date, { ...defaults, precision: 'second' })}
           </time>
         )
       }
@@ -91,12 +78,20 @@ export function DateTimeTooltip({
         {rows.map(({ label, zone }) => (
           <span className="altertable-date-time-row" key={label}>
             <span className="altertable-date-time-label">{label}</span>
-            <time dateTime={timestamp}>{formattedDate(date, zone)}</time>
+            <time dateTime={timestamp}>
+              {formatDateTime(date, {
+                locale: defaults.locale,
+                timeZone: zone,
+                precision: 'second',
+              })}
+            </time>
           </span>
         ))}
         <span className="altertable-date-time-row">
           <span className="altertable-date-time-label">Relative</span>
-          <time dateTime={timestamp}>{relativeDate(date, now)}</time>
+          <time dateTime={timestamp}>
+            {relativeDate(date, now, defaults.locale)}
+          </time>
         </span>
         <span className="altertable-date-time-row">
           <span className="altertable-date-time-label">Timestamp</span>

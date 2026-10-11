@@ -1,3 +1,4 @@
+import { useDateFormatting } from '@/src/react/date-formatting';
 import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   PickerField,
@@ -95,6 +96,7 @@ export function DateRangePicker({
   className,
   ...props
 }: DateRangePickerProps) {
+  const dateFormatting = useDateFormatting();
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
   const selected: RangeValue<CalendarDate> | null = value
@@ -387,7 +389,7 @@ export function DateRangePicker({
                     </span>
                     <strong>
                       {value
-                        ? formatDateRange(value)
+                        ? formatDateRange(value, dateFormatting)
                         : 'Select a start and end date'}
                     </strong>
                   </div>
@@ -406,7 +408,8 @@ export function DateRangePicker({
                     disabled={!comparison.range}
                     onChange={comparison.onChange}
                     description={
-                      comparison.range && formatDateRange(comparison.range)
+                      comparison.range &&
+                      formatDateRange(comparison.range, dateFormatting)
                     }
                   />
                 )}
