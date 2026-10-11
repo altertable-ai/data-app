@@ -21,9 +21,8 @@ are listed in the [typed contract](https://github.com/altertable-ai/data-app/blo
 }
 ```
 
-Use `DataAppStyle` for checked inline tokens; optional tokens need a `var()` fallback
-in app CSS. Set document-wide overrides on `:root`
-so portaled menus share the theme; local component overrides stay with the trigger.
+Type inline token overrides with `DataAppStyle`. Give optional tokens a `var()`
+fallback in app CSS. Use `:root` for shared theme overrides, including menus and overlays.
 Prefer `app.appearance` for brand and chart colors. When overriding accent tokens,
 choose a contrasting foreground too. Keep text inputs at least 16px on mobile.
 
@@ -38,5 +37,5 @@ Use package controls when possible. For a custom native control:
 ```
 
 These hooks provide cursor and focus styling; keep accessible names, disabled
-state, and keyboard behavior. `DataAppStyleHooks` checks hook values. See
+state, and keyboard behavior. See
 [UI quality](ui-quality.md) for rendered verification.

@@ -24,7 +24,7 @@ spans collapse when there is not enough space.
 
 ## Verify rendered layouts
 
-Check computed section/widget gaps, sibling alignment, outer gutters, and
+Check spacing, alignment, outer gutters, and
 horizontal overflow at phone and desktop iframe widths. Check loading, empty,
 error, ready, and stale states. Loading placeholders should use the same grid as
 the ready content.

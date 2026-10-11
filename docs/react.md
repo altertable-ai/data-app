@@ -7,7 +7,7 @@ React 19.2 or newer and React DOM 19.2 or newer are peer dependencies.
 
 Use `mountDataApp({ app, component })` to mount into `#root`. When mounting
 through another framework, wrap the root in `<DataAppProvider app={app}>` from `/react/ui`.
-`<DataApp>` inherits identity and appearance from that root. Mounting sets the document title before React renders.
+`<DataApp>` inherits identity and appearance from that root.
 
 ```tsx
 import { injectDataAppStyles, mountDataApp } from '@altertable/data-app/react';

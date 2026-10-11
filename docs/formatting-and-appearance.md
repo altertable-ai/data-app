@@ -56,21 +56,14 @@ const dataApp = defineDataApp({
 ```
 
 Scope labels describe the configured connection; they do not grant access.
-`dataAppTitle()` produces the scoped document title used by `mountDataApp()`.
 
 Title and description explain the app and can be revised when regenerating it.
 Omit appearance to use the standard defaults.
 
-`baseColor` chooses the palette for surfaces, text, and borders: neutral, slate,
-or warm. The default UI is neutral in both light and dark themes; no color
-settings are required. `accentColor` and optional `darkAccentColor` add brand
-emphasis to checked controls, selected dates, links, and navigation. Primary
-buttons and dropdown rows use the base palette.
-
-Status colors are independent of branding: `--atbl-positive` identifies favorable
-outcomes and connected/live states; `--atbl-negative` defaults to the danger
-color. Chart colors are configured separately through `chartColors`: standalone
-series derive their colors from the first slot, while categorical series use the palette.
+The default UI is neutral in light and dark themes. Use `baseColor` for the base
+palette and `accentColor` with optional `darkAccentColor` for brand emphasis.
+Configure chart colors separately with `chartColors`; preserve semantic status
+colors for favorable and unfavorable outcomes.
 
 Configure appearance once for the app. Theme preference is user-owned in standalone apps. A trusted parent's
 resolved theme takes precedence and hides local theme controls; see

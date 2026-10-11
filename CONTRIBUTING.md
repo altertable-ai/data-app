@@ -115,7 +115,9 @@ For public changes, update the relevant guide, migrate callers and starters,
 and verify published usage. Flag breaking changes in commits and PRs.
 
 Docs help agents generate data apps: show current usage and focused examples.
-Keep package architecture and contributor rules here.
+Keep package architecture and contributor rules here. Document author decisions
+and minimal composition examples; leave automatic interaction mechanics and prop
+inventories to code, TypeScript, and JSDoc.
 
 ## UI platform principles
 

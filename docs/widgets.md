@@ -99,24 +99,18 @@ row-key callbacks explicitly; row keys must be stable and unique.
 Metric comparisons require a
 view date binding. `read()` returns a loading-aware value for custom prose.
 Pass the binding and `source={snapshot}` to reuse a widget in a story. Use the
-source supplied by that binding's own view; reconstructed or foreign sources
-are rejected before selection.
-Selectors do not run during loading. Table search, pagination, descriptions, and
+source supplied by that binding's own view. Table search, pagination, descriptions, and
 actions remain local choices. For custom cells, use `format: row => ...`; CSV
 still uses the raw `value` accessor. Datasets default to “No results”; supply
 `emptyFallback` for specific copy. See [export](stories-and-export.md).
 
-`<TableWidget>` shows its matching supplied-row count before pagination or preview
-limits, and omits it during loading. Use `showCount={false}` to hide it or `count`
-to supply a server total. Other widgets accept an explicit `count` derived from
-the displayed result.
+`<TableWidget>` automatically shows the count of matching supplied rows. Use
+`count` for a server total; other widgets can receive a count from the displayed result.
 
-Local table search offers Clear search when no rows match. For server-filtered
-results, pass `onClearFilters` only while filters affecting this dataset are active;
-the table offers Clear filters when there are no rows. Preserve unrelated filters
-and display settings in that callback. Use `emptyFallback` for no data and
-`noMatchesFallback` to customize no-match copy; either supports an `action` for
-custom recovery.
+Provide useful `emptyFallback` and `noMatchesFallback` copy. Local search offers
+Clear search automatically. For server-filtered tables, supply `onClearFilters`
+only while filters affecting that dataset are active, preserving unrelated filters,
+search, and display settings.
 
 ```tsx
 <TableWidget
@@ -143,7 +137,6 @@ including an empty selection, so they can explain zero activity.
 Use `<DataValue metric={total} source={result} />` for a formatted value inside
 static prose, or pass a dataset and row renderer. Its default loading fallback is
 an inline skeleton. Use `<DataValue scope={result.scope} />` for a scope label.
-All selectors use the displayed source; loading selectors do not run.
 Use `<TextContent>` for static instructions; local filters should feed the same
 filtered data to the text and its related visualization.
 

@@ -18,11 +18,9 @@ available when they have zero matches.
 
 Use `searchVariable()`, `choiceVariable()`, and `dateRangeVariable()` in a view's
 `variables`. `<DataApp view={view}>` generates search, filters, and display options
-and keeps their values in the URL. Search occupies its own row above the controls.
+and keeps their values in the URL.
 Set `showSearch={false}` or `showFilters={false}` on `<DataApp>` to hide the
 corresponding region while preserving its values; `showFilters` includes display options.
-Automatic search supports `⌘K` / `Ctrl+K` and `/` to focus the field. Escape clears
-the query; a second Escape returns focus after using a shortcut.
 
 Keep local search out of the operation input when it only filters loaded rows.
 
@@ -62,53 +60,27 @@ const content = view.content(source => (
   <TableWidget dataset={customers} source={source} />
 ));
 
-<DataApp
-  view={view}
-  datasets={[customers]}
-  story={source => [
-    {
-      id: 'matching-customers',
-      headline: `${source.data.rows.length} matching customers`,
-      context: 'Accounts matching the displayed search.',
-      visual: <TextContent>{source.data.rows.length} accounts</TextContent>,
-      evidence: customers,
-    },
-  ]}
->
+<DataApp view={view} datasets={[customers]} story={story}>
   <DataSection content={content} />
 </DataApp>;
 ```
 
 The first `searchVariable()` in declaration order is the primary search: it owns
-the page shortcut and automatically combines supplied datasets that declare suggestions.
-Typing updates the page and suggestions from the same displayed source. The panel
-shares five slots evenly across nonempty datasets, redistributing unused slots.
-Dataset order breaks ties; rows retain their order and stay grouped by dataset.
-Suggestions make no additional request.
-Capped or paginated sources offer suggestions only for supplied rows. Use datasets
-from the same view with stable, unique row keys. Selection completes the query with
+autocomplete and combines supplied datasets that declare suggestions. Typing
+updates the page and suggestions from the same displayed result. Capped or
+paginated sources offer suggestions only for supplied rows. Selection completes the query with
 the title; `suggestions.onSelect: row => openCustomer(row.id)` overrides completion
 with an app action. Set `showSearchSuggestions={false}` to keep plain search.
-Arrow keys cycle through suggestions and an unselected state; Enter selects or
-keeps the typed query when nothing is selected. Escape dismisses suggestions
-before clearing search.
 
 ### Organize controls by intent
 
-Declare controls in priority order for the user's task. Keep the period and most useful scope
-filters visible; Filters opens the complete sheet and counts active filters. Choose useful
-defaults from the available data rather than exposing every field.
-Declare each label once. Controls in the Filters sheet place it above the input;
-do not add a separate heading or repeat it inside the value.
+Declare controls in priority order for the user's task. Keep useful scope filters
+visible and set `presentation.prominence: 'secondary'` for less frequent ones in
+the Filters sheet. Active secondary filters remain available for direct editing.
+Choose useful defaults rather than exposing every field; declare each label once.
 
-Set `presentation.group` to `display` for controls that change ordering or presentation
-rather than which records are included. Display options live in a popover opened
-by the sliders icon alongside the filters. Set `presentation.prominence` to `secondary`
-to place less frequent scope filters in the Filters sheet, or place display options
-after primary display options. Defaults are `scope` and `primary`.
-Active secondary filters appear as compact pickers below the primary controls.
-Edit them directly or use their clear button to remove only that restriction. Labels and values derive from the variable declaration. Search and
-display options remain separate. Declaration order is preserved within each priority.
+Set `presentation.group: 'display'` for ordering or presentation choices. These
+appear separately from scope filters. Search remains separate from both.
 
 ```ts
 const active = booleanFilter({
@@ -203,10 +175,8 @@ A dimension without an explicit selection represents all members.
 Map parsed selections to the query's declared parameters; do not construct SQL
 from filter values. Choose selection modes supported by the registered query.
 
-Choose `selectionMode: 'single'` when one value replaces another. Its picker closes
-after choosing a value and shows a checkmark for the current choice. Use
-`selectionMode: 'multiple'` for independent values; checkbox indicators and an open
-popup allow repeated selections. `All` is an explicit choice for a single-value
+Choose `selectionMode: 'single'` when one value replaces another and
+`selectionMode: 'multiple'` for independent values. `All` is an explicit choice for a single-value
 filter and the meaning of an empty selection for a multiple-value filter.
 
 ## Fixed choices
@@ -230,11 +200,6 @@ const variables = {
   }),
 };
 ```
-
-Fixed single choices generate `<Select>`; multiple choices generate
-`<ChoicePicker selectionMode="multiple">`. Direct controls can present the same
-values as radio groups, checkbox groups, or segmented choices without changing
-URL state.
 
 ## Numeric and boolean predicates
 
@@ -264,17 +229,14 @@ Set `allowExclusion: true` on `dimensionFilter()` to support
 alongside selected members. Enable exclusion only when the registered query supports
 it, including the intended behavior for missing values.
 
-Generated controls show active values within each filter and one collective
-Clear action. Clear removes predicate filters and closes the Filters sheet, preserving search
-and display settings. Clear search separately in its field.
+Clear removes predicate filters while preserving search and display settings.
+Clear search separately in its field.
 `resetAll()` restores all
 configured variable defaults, including fixed choices and periods. Nonempty
 default filters can therefore be active immediately after Reset.
 
-Direct `useAppVariables()` callers can use `clearAll()` and `resetAll()` for one
-atomic history update. `<FilterActions>` also supports app-owned draft state
+Direct `useAppVariables()` callers can use `clearAll()` and `resetAll()`. `<FilterActions>` also supports app-owned draft state
 with paired Apply/Cancel handlers; derive queries and visible controls from applied
 values while a draft is being edited.
 
-The Filters sheet applies changes immediately and returns focus when closed.
-Escape closes it.
+Filters apply immediately; use app-owned drafts only when the task needs Apply/Cancel.
