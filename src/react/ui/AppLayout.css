@@ -40,6 +40,10 @@
 
 .altertable-app-content-footer {
   padding-top: var(--atbl-space-sm);
+  padding-inline: var(
+    --atbl-surface-padding,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
   min-width: 0;
 }
 .altertable-app-content-footer .altertable-text-content {
