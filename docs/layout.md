@@ -26,8 +26,8 @@ Set widget `headingLevel={3}` beneath a section heading; visual styling stays
 consistent across widget types.
 
 Use `<DataApp footer={...}>` for an optional source, coverage, or methodology
-note below the app content. The footer provides muted prose typography, a readable
-line length, and top spacing. Keep static notes outside loading sections.
+note below the app content. The footer provides muted body text across the content
+width and top spacing. Keep static notes outside loading sections.
 
 ```tsx
 <DataApp {...appProps} footer={<p>Records include the last 90 days.</p>}>

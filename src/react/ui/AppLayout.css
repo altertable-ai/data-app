@@ -44,5 +44,6 @@
 }
 .altertable-app-content-footer .altertable-text-content {
   color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
+  font-size: var(--atbl-type-body-size);
+  max-width: none;
 }
