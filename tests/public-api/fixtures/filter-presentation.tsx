@@ -372,7 +372,7 @@ function createCustomers(onSelect?: (row: (typeof records)[number]) => void) {
     suggestions: {
       title: row => row.name,
       description: row => `${row.country} · ${row.segment}`,
-      onSelect: onSelect ? row => onSelect(row) : undefined,
+      onSelect,
     },
   });
 }

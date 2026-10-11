@@ -31,20 +31,60 @@ Keep local search out of the operation input when it only filters loaded rows.
 Declare suggestions for records whose titles are useful search completions. Omit
 suggestions for aggregate rows.
 
+The app-owned `customers` operation accepts `{ q: string }` and returns `{ rows }`.
+With your typed `client` and registered `dataContext`, connect the query to its
+records and widgets:
+
 ```tsx
+const view = createDataHooks(client).defineDataView({
+  dataContext,
+  operation: 'customers',
+  variables: {
+    search: searchVariable({ key: 'q', label: 'Search customers' }),
+  },
+  input: ({ search }) => ({ q: search }),
+  describeInput: ({ q }) => (q ? `Customers matching ${q}` : 'All customers'),
+  isEmpty: () => false,
+  emptyFallback: { title: 'No customers' },
+});
 const customers = view.dataset({
-  // select, columns, rowKey, evidence…
+  name: 'Customers',
+  select: data => data.rows,
+  rowKey: row => row.id,
+  columns: { name: { value: row => row.name } },
+  evidence: { id: 'customers', queryNames: ['customers'] },
   suggestions: {
     title: row => row.name,
-    description: row => `${row.country} · ${row.segment}`,
+    description: row => row.country,
   },
 });
-<DataApp view={view} datasets={[customers]} /* other app props */ />;
+const content = view.content(source => (
+  <TableWidget dataset={customers} source={source} />
+));
+
+<DataApp
+  view={view}
+  datasets={[customers]}
+  story={source => [
+    {
+      id: 'matching-customers',
+      headline: `${source.data.rows.length} matching customers`,
+      context: 'Accounts matching the displayed search.',
+      visual: <TextContent>{source.data.rows.length} accounts</TextContent>,
+      evidence: customers,
+    },
+  ]}
+>
+  <DataSection content={content} />
+</DataApp>;
 ```
 
-The primary search automatically combines supplied datasets that declare suggestions.
+The first `searchVariable()` in declaration order is the primary search: it owns
+the page shortcut and automatically combines supplied datasets that declare suggestions.
 Typing updates the page and suggestions from the same displayed source. The panel
-shows up to five supplied rows in dataset order and makes no additional request.
+shares five slots evenly across nonempty datasets, redistributing unused slots.
+Dataset order breaks ties; rows retain their order and stay grouped by dataset.
+Suggestions make no additional request.
 Capped or paginated sources offer suggestions only for supplied rows. Use datasets
 from the same view with stable, unique row keys. Selection completes the query with
 the title; `suggestions.onSelect: row => openCustomer(row.id)` overrides completion

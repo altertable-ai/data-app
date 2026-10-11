@@ -1,4 +1,7 @@
-import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
+import {
+  SearchSuggestionsContext,
+  balanceSearchSuggestions,
+} from '@/src/react/search-suggestions';
 import { useDataApp } from '@/src/react/app-context';
 import { ownedSource } from '@/src/react/source-owner';
 import {
@@ -27,7 +30,7 @@ export type DataAppProps<Data, Input = unknown> = Omit<
     view: DeclaredView<Data, Input> & {
       scope(snapshot: DisplayedSnapshot<Data, Input>): string;
     };
-    /** Show record suggestions declared by supplied datasets. Defaults to true. */
+    /** Show supplied datasets’ record suggestions on the first declared search. Defaults to true. */
     showSearchSuggestions?: boolean;
     story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
       StoryFinding,
@@ -59,14 +62,14 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     view,
     result.snapshot ?? { loading: true as const }
   );
-  const suggestions = suggestionDatasets
-    .flatMap((dataset, index) => {
+  const suggestions = balanceSearchSuggestions(
+    suggestionDatasets.map((dataset, index) => {
       const reading = dataset.readSearchSuggestions!(source);
       return reading.loading
         ? []
         : reading.value.map(item => ({ ...item, id: `${index}:${item.id}` }));
     })
-    .slice(0, 5);
+  );
   return (
     <SearchSuggestionsContext
       value={

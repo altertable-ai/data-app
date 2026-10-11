@@ -48,7 +48,7 @@ export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
   evidence: Evidence;
   emptyFallback?: EmptyContent;
   /** Declare for records whose titles are useful query completions; omit for aggregate rows. */
-  suggestions?: DatasetSuggestionOptions<NoInfer<Row>>;
+  suggestions?: DatasetSuggestionOptions<Row>;
 };
 
 export type DatasetSuggestionOptions<Row> = {

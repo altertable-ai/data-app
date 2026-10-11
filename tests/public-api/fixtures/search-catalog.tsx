@@ -13,6 +13,7 @@ import {
   Stack,
   TableWidget,
   searchVariable,
+  type SearchVariable,
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app/react';
@@ -29,6 +30,15 @@ const catalog = {
     { id: 3, name: 'Budget', status: 'Complete' },
   ],
 };
+if (new URLSearchParams(location.search).has('manyPeople')) {
+  catalog.people.push(
+    ...['Ada', 'Alan', 'Amina', 'Anya', 'Asa'].map((name, index) => ({
+      id: index + 4,
+      name,
+      team: 'Design',
+    }))
+  );
+}
 const client = createDataClient<{
   catalog: DataOperation<{ q: string }, typeof catalog>;
 }>({
@@ -45,7 +55,14 @@ const client = createDataClient<{
       body: {
         data: {
           people: catalog.people.filter(matches),
-          projects: catalog.projects.filter(matches),
+          projects: new URLSearchParams(location.search).has('noProjects')
+            ? []
+            : catalog.projects.filter(
+                row =>
+                  matches(row) &&
+                  (!new URLSearchParams(location.search).has('singleProject') ||
+                    row.name === 'Alpha')
+              ),
         },
         requestId: 'catalog',
         queriedAt: '2026-10-11T00:00:00Z',
@@ -55,9 +72,19 @@ const client = createDataClient<{
     };
   },
 });
+const searchVariables: Record<string, SearchVariable> = {
+  q: searchVariable({ key: 'q', label: 'Search workspace' }),
+};
+if (new URLSearchParams(location.search).has('secondSearch')) {
+  searchVariables.notes = searchVariable({
+    key: 'notes',
+    label: 'Search notes',
+  });
+}
 const view = createDataHooks(client).defineDataView({
   operation: 'catalog',
-  variables: { q: searchVariable({ key: 'q', label: 'Search workspace' }) },
+  variables: searchVariables,
+  input: values => ({ q: values.q }),
   dataContext: createDataContext({ catalog: 'catalog' })({
     description: 'Illustrative people and projects.',
     glossary: {

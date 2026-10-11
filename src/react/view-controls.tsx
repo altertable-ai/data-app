@@ -113,7 +113,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         <ViewSearchField
           key={name}
           label={definition.label ?? name}
-          focusShortcut={searchControls.length === 0}
+          primary={searchControls.length === 0}
           value={value as string}
           resetValue={definition.defaultValue}
           onChange={next =>
@@ -302,15 +302,19 @@ export function useViewVariables<Variables extends VariableCollection>(
   };
 }
 
-function ViewSearchField(props: SearchFieldProps) {
+function ViewSearchField({
+  primary,
+  ...props
+}: SearchFieldProps & { primary: boolean }) {
   const suggestions = useContext(SearchSuggestionsContext);
-  return suggestions && props.focusShortcut ? (
+  return suggestions && primary ? (
     <SearchTypeahead
       {...props}
+      focusShortcut={primary}
       items={suggestions.items}
       busy={suggestions.busy}
     />
   ) : (
-    <SearchField {...props} />
+    <SearchField {...props} focusShortcut={primary} />
   );
 }

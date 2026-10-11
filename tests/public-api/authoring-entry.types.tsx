@@ -323,3 +323,16 @@ view.dataset<number>({
   // @ts-expect-error Suggestion selectors must use the inferred dataset row type.
   suggestions: { title: (row: string) => row },
 });
+
+function selectValue(row: number) {
+  return row.toFixed(0);
+}
+const callbackDataset = view.dataset({
+  name: 'Callback values',
+  select: data => [data],
+  rowKey: row => row,
+  columns: { value: { value: row => row.toFixed(0) } },
+  suggestions: { title: row => row.toFixed(0), onSelect: selectValue },
+  evidence: { id: 'callback-values', queryNames: ['count'] },
+});
+void callbackDataset;

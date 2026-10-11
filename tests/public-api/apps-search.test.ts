@@ -256,3 +256,80 @@ test('suggestion metadata can be disabled while keeping live search', async ({
   expect(await page.getByRole('combobox').count()).toBe(0);
   expect(await page.getByRole('listbox').count()).toBe(0);
 });
+
+test('suggestions balance datasets and redistribute slots from sparse or empty datasets', async ({
+  page,
+}) => {
+  await page.goto('/search-catalog?manyPeople');
+  const input = page.getByRole('combobox', { name: 'Search workspace' });
+  await input.fill('a');
+  const options = page.getByRole('option');
+  await expect.poll(() => options.count()).toBe(5);
+  expect(await options.allTextContents()).toEqual([
+    'AlicePerson · Design',
+    'AmiraPerson · Engineering',
+    'AdaPerson · Design',
+    'AlphaProject · Active',
+    'AlpineProject · Planning',
+  ]);
+  await input.fill('al');
+  await expect.poll(() => options.count()).toBe(4);
+  expect(await options.allTextContents()).toEqual([
+    'AlicePerson · Design',
+    'AlanPerson · Design',
+    'AlphaProject · Active',
+    'AlpineProject · Planning',
+  ]);
+  await input.fill('A');
+  await expect.poll(() => options.count()).toBe(5);
+  await input.fill('Ami');
+  await expect.poll(() => options.count()).toBe(2);
+  expect(await options.allTextContents()).toEqual([
+    'AmiraPerson · Engineering',
+    'AminaPerson · Design',
+  ]);
+});
+
+test('sparse datasets yield unused suggestion slots to other datasets', async ({
+  page,
+}) => {
+  await page.goto('/search-catalog?manyPeople&singleProject');
+  const input = page.getByRole('combobox', { name: 'Search workspace' });
+  await input.fill('a');
+  const options = page.getByRole('option');
+  await expect.poll(() => options.count()).toBe(5);
+  expect(await options.allTextContents()).toEqual([
+    'AlicePerson · Design',
+    'AmiraPerson · Engineering',
+    'AdaPerson · Design',
+    'AlanPerson · Design',
+    'AlphaProject · Active',
+  ]);
+  await page.goto('/search-catalog?manyPeople&noProjects');
+  await input.fill('a');
+  await expect.poll(() => options.count()).toBe(5);
+  expect(await options.allTextContents()).toEqual([
+    'AlicePerson · Design',
+    'AmiraPerson · Engineering',
+    'AdaPerson · Design',
+    'AlanPerson · Design',
+    'AminaPerson · Design',
+  ]);
+});
+
+test('only the first declared search receives suggestions and the page shortcut', async ({
+  page,
+}) => {
+  await page.goto('/search-catalog?secondSearch');
+  const primary = page.getByRole('combobox', { name: 'Search workspace' });
+  const secondary = page.getByRole('searchbox', { name: 'Search notes' });
+  await secondary.fill('a');
+  expect(await page.getByRole('listbox').count()).toBe(0);
+  await page.keyboard.press('Control+k');
+  expect(
+    await primary.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await primary.fill('a');
+  await expect.poll(() => page.getByRole('option').count()).toBe(4);
+  expect(await secondary.inputValue()).toBe('a');
+});
