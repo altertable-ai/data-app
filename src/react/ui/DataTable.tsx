@@ -115,7 +115,6 @@ export function DataTableTimestamp({
       {...defaults}
       triggerProps={{
         className: 'altertable-data-table-timestamp',
-        'data-atbl-control': 'help',
       }}
     >
       <time dateTime={timestamp}>

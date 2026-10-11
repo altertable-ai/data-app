@@ -66,7 +66,6 @@ export function DateDisplay({
       {...defaults}
       triggerProps={{
         className: 'altertable-date-display-trigger',
-        'data-atbl-control': 'help',
         'aria-label': `Show exact date and time: ${label}`,
       }}
     >
