@@ -10,7 +10,6 @@ import {
   MetricWidget,
   VisualizationWidget,
   SectionHeading,
-  TextContent,
   Stack,
   Grid,
   Ranking,
@@ -199,19 +198,19 @@ const content = view.content((source) => (
     </Grid>
     <SectionHeading>Browse records</SectionHeading>
     <WorkspaceTables source={source} />
-    <TextContent>
-      <p>
-        Live metadata from <DataIdentifier id="tables.organizations" /> and{" "}
-        <DataIdentifier id="tables.dataApps" />. Each list is limited to 200 records. Workspace
-        totals reflect current inventory; the period filters records by their update time. Monthly
-        counts describe each record’s latest update, not an activity log.
-      </p>
-    </TextContent>
   </Stack>
 ));
 export function App() {
   return (
     <DataApp
+      footer={
+        <p>
+          Live metadata from <DataIdentifier id="tables.organizations" /> and{" "}
+          <DataIdentifier id="tables.dataApps" />. Each list is limited to 200 records. Workspace
+          totals reflect current inventory; the period filters records by their update time. Monthly
+          counts describe each record’s latest update, not an activity log.
+        </p>
+      }
       view={view}
       datasets={[workspaces, apps, appsByWorkspace, updates]}
       story={(snapshot) => [

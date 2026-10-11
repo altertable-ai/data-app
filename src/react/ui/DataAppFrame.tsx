@@ -18,6 +18,7 @@ import type { DataContext } from '@/src/react/ui/data-context';
 import type { BoundStory } from '@/src/react/ui/story';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { VariableBar } from '@/src/react/ui/VariableBar';
+import { TextContent } from '@/src/react/ui/TextContent';
 import { Stack } from '@/src/react/ui/Stack';
 import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
@@ -31,6 +32,8 @@ export type DataAppBaseProps = {
   description?: ReactNode;
   toolbarActions?: ReactNode;
   footerActions?: ReactNode;
+  /** Optional source, coverage, or methodology note below the app content. Owns prose typography and spacing. */
+  footer?: ReactNode;
 };
 
 export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
@@ -215,6 +218,11 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
           <div ref={bodyRef} tabIndex={-1} className="altertable-app-body">
             {props.children}
           </div>
+          {props.footer != null && (
+            <footer className="altertable-app-content-footer">
+              <TextContent>{props.footer}</TextContent>
+            </footer>
+          )}
           {request && (
             <DataViewToast
               view={request.view}

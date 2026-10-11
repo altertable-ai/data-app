@@ -25,6 +25,16 @@ spans collapse when there is not enough space.
 Set widget `headingLevel={3}` beneath a section heading; visual styling stays
 consistent across widget types.
 
+Use `<DataApp footer={...}>` for an optional source, coverage, or methodology
+note below the app content. The footer provides muted prose typography, a readable
+line length, and top spacing. Keep static notes outside loading sections.
+
+```tsx
+<DataApp {...appProps} footer={<p>Records include the last 90 days.</p>}>
+  <DataSection content={content} />
+</DataApp>
+```
+
 ## Verify rendered layouts
 
 Check spacing, alignment, outer gutters, and
