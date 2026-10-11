@@ -32,7 +32,9 @@ export type DataAppBaseProps = {
   description?: ReactNode;
   toolbarActions?: ReactNode;
   footerActions?: ReactNode;
-  /** Optional source, coverage, or methodology note below the app content. Owns prose typography and spacing. */
+  /** Optional source, coverage, or methodology note below the app content.
+   * Compose prose and inline components; typography and spacing are provided.
+   * Put data widgets in children and app controls in footerActions. */
   footer?: ReactNode;
 };
 

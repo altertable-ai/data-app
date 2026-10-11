@@ -27,10 +27,23 @@ consistent across widget types.
 
 Use `<DataApp footer={...}>` for an optional source, coverage, or methodology
 note below the app content. The footer provides muted body text across the content
-width and top spacing. Keep static notes outside loading sections.
+width and top spacing. Compose paragraphs, links, lists, and inline components such
+as `<DataIdentifier>` or `<DateDisplay>` directly; no `<TextContent>` wrapper is
+needed. Keep headings and data widgets in the body, and app controls in
+`footerActions`. Keep static notes outside loading sections.
 
 ```tsx
-<DataApp {...appProps} footer={<p>Records include the last 90 days.</p>}>
+<DataApp
+  {...appProps}
+  footer={
+    <>
+      <p>
+        <strong>Coverage.</strong> Records include the last 90 days.
+      </p>
+      <p>Counts reflect current inventory, not an activity log.</p>
+    </>
+  }
+>
   <DataSection content={content} />
 </DataApp>
 ```
