@@ -52,7 +52,7 @@
   font-variant-numeric: tabular-nums;
   margin-inline-start: var(--atbl-space-sm);
   color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
+  font-size: 0.85em;
   font-weight: var(--atbl-type-meta-weight);
   letter-spacing: 0;
   white-space: nowrap;

@@ -141,7 +141,7 @@ function DataWidgetContent({
           {formatCount(count)}
         </span>
       )}
-      <AppIcon name="openDetails" />
+      <AppIcon name="openDetails" size="1em" />
     </AboutData>
   );
 

@@ -64,10 +64,10 @@ export function SearchTypeahead({
       flip(),
       shift({ padding: 12 }),
       size({
-        apply({ rects, availableHeight, elements }) {
+        apply({ availableWidth, availableHeight, elements }) {
           Object.assign(elements.floating.style, {
             width: 'max-content',
-            maxWidth: `${rects.reference.width}px`,
+            maxWidth: `${Math.min(640, availableWidth)}px`,
             maxHeight: `${Math.max(0, availableHeight)}px`,
           });
         },

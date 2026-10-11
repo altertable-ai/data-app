@@ -77,7 +77,7 @@ const brandedIcons = {
 export type AppIconName = keyof typeof brandedIcons;
 export type AppIconProps = Omit<LucideProps, 'size'> & {
   name: AppIconName;
-  size?: number;
+  size?: number | string;
 };
 
 export function AppIcon({

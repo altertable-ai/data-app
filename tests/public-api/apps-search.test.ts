@@ -146,11 +146,9 @@ test('suggestions stay on one line aligned with the input and do not flash an em
   );
   const panel = page.getByRole('listbox');
   const panelBox = await panel.locator('..').boundingBox();
-  const clearBox = await page
-    .getByRole('button', { name: /^Clear / })
-    .boundingBox();
   expect(panelBox!.x).toBeLessThan(inputBox!.x);
-  expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(clearBox!.x + 1);
+  expect(panelBox!.width).toBeLessThanOrEqual(640);
+  expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(1280 - 12);
   const before = await panel.boundingBox();
   await input.fill('Beacon');
   await expect.poll(() => input.getAttribute('aria-busy')).toBe('true');

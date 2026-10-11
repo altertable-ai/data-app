@@ -12,6 +12,19 @@ test('widget headings share muted typography and preserve section hierarchy', as
       .getByRole('heading', { name: 'Event overview', level: 2 })
       .count()
   ).toBe(1);
+  const headingSizes = await page
+    .getByRole('heading', { name: 'Witness reports', level: 3 })
+    .evaluate(element => {
+      const chevron = element.querySelector('svg')!;
+      const count = element.querySelector('.altertable-data-widget-count')!;
+      return {
+        heading: parseFloat(getComputedStyle(element).fontSize),
+        chevron: parseFloat(getComputedStyle(chevron).width),
+        count: parseFloat(getComputedStyle(count).fontSize),
+      };
+    });
+  expect(headingSizes.chevron).toBe(headingSizes.heading);
+  expect(headingSizes.count).toBeCloseTo(headingSizes.heading * 0.85, 1);
   const styles: string[][] = [];
   for (const name of [
     'Events',
