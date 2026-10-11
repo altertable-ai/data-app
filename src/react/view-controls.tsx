@@ -1,6 +1,9 @@
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
-import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
+import {
+  SearchSuggestionsContext,
+  balanceSearchSuggestions,
+} from '@/src/react/search-suggestions';
 import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
@@ -311,7 +314,7 @@ function ViewSearchField({
     <SearchTypeahead
       {...props}
       focusShortcut={primary}
-      items={suggestions.items}
+      items={balanceSearchSuggestions(suggestions.groups, props.value)}
       busy={suggestions.busy}
     />
   ) : (

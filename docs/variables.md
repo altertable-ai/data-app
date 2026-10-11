@@ -69,7 +69,8 @@ const content = view.content(source => (
 The first `searchVariable()` in declaration order is the primary search: it owns
 autocomplete and combines supplied datasets that declare suggestions. Typing
 updates the page and suggestions from the same displayed result. Capped or
-paginated sources offer suggestions only for supplied rows. Selection completes the query with
+paginated sources offer suggestions only for supplied rows. Title matches rank
+ahead of description matches; the five suggestion slots are shared across datasets. Selection completes the query with
 the title; `suggestions.onSelect: row => openCustomer(row.id)` overrides completion
 with an app action. `showSearchSuggestions` defaults to true; set it to false to
 suppress autocomplete for a particular app.

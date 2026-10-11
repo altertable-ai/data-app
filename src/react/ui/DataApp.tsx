@@ -1,8 +1,5 @@
 import { DateFormattingContext } from '@/src/react/date-formatting';
-import {
-  SearchSuggestionsContext,
-  balanceSearchSuggestions,
-} from '@/src/react/search-suggestions';
+import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
 import { useDataApp } from '@/src/react/app-context';
 import { ownedSource } from '@/src/react/source-owner';
 import {
@@ -76,14 +73,13 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
           ];
         })
       : [];
-  const suggestions = balanceSearchSuggestions(suggestionGroups);
   return (
     <DateFormattingContext value={{ timeZone: result.timeZone }}>
       <SearchSuggestionsContext
         value={
           suggestionGroups.length
             ? {
-                items: suggestions,
+                groups: suggestionGroups,
                 busy: result.refreshing,
               }
             : null

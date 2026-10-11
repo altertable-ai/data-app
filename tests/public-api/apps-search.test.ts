@@ -70,7 +70,7 @@ test('refresh retains suggestions with the displayed result and replaces both to
   await input.fill('Beacon');
   await expect.poll(() => input.getAttribute('aria-busy')).toBe('true');
   expect(await page.getByRole('option').first().innerText()).toContain(
-    'Foundry Team'
+    'Beacon Labs'
   );
   expect(await page.getByRole('table').getByRole('row').count()).toBe(8);
   expect(await input.getAttribute('aria-activedescendant')).toBeNull();
@@ -242,7 +242,9 @@ test('suggestions use the shared highlighting stack without filtering the displa
   await input.fill('Beacon');
   await expect.poll(() => input.getAttribute('aria-busy')).toBe('true');
   expect(await options.count()).toBe(5);
-  expect(await options.first().locator('mark').count()).toBe(0);
+  expect(
+    await options.first().locator(':scope > span mark').textContent()
+  ).toBe('Beacon');
   await expect.poll(() => options.count()).toBe(1);
   expect(
     await options.first().locator(':scope > span mark').textContent()
@@ -381,4 +383,20 @@ test('page search shortcuts remain unconsumed inside a native modal sheet', asyn
     }, modifier);
     expect(state).toEqual({ prevented: false, focusRetained: true });
   }
+});
+
+test('title matches precede related descriptions and reach suggestions beyond the first five rows', async ({
+  page,
+}) => {
+  await page.goto('/search-catalog?manyPeople&relatedSearch');
+  await page.getByRole('combobox').fill('Alpha');
+  const options = page.getByRole('option');
+  await expect.poll(() => options.count()).toBe(5);
+  expect((await options.allTextContents()).slice(0, 2)).toEqual([
+    'Alpha personAlpha · Design',
+    'AlphaProject · Active',
+  ]);
+  expect(
+    await page.getByRole('table').first().getByRole('row').count()
+  ).toBeGreaterThan(5);
 });

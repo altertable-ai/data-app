@@ -239,7 +239,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     const { onSelect } = suggestions;
     const reading = this.read(source);
     if (reading.loading) return reading;
-    const items = reading.value.slice(0, 5).map(row => {
+    const items = reading.value.map(row => {
       const key = this.#table.rowKey(row);
       invariant(
         typeof key === 'string'

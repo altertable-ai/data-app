@@ -39,6 +39,9 @@ if (new URLSearchParams(location.search).has('manyPeople')) {
     }))
   );
 }
+const relatedSearch = new URLSearchParams(location.search).has('relatedSearch');
+if (relatedSearch)
+  catalog.people.push({ id: 99, name: 'Alpha person', team: 'Design' });
 const client = createDataClient<{
   catalog: DataOperation<{ q: string }, typeof catalog>;
 }>({
@@ -48,7 +51,7 @@ const client = createDataClient<{
     );
     const { q } = value as { q: string };
     function matches(row: { name: string }) {
-      return row.name.toLowerCase().includes(q.toLowerCase());
+      return relatedSearch || row.name.toLowerCase().includes(q.toLowerCase());
     }
     return {
       status: 200,
@@ -126,7 +129,7 @@ const people = view.dataset({
       }
       return row.name;
     },
-    description: row => `Person · ${row.team}`,
+    description: row => `${relatedSearch ? 'Alpha' : 'Person'} · ${row.team}`,
   },
   rowKey: row => row.id,
   columns: {
