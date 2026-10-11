@@ -118,7 +118,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
   expect(
     await page
       .getByRole('button', {
-        name: 'Display options (1 changed)',
+        name: 'Display options, 1 changed',
         exact: true,
       })
       .count()
@@ -126,7 +126,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
   await choose(page, display, 'Sort by', 'Customer name');
   expect(
     await page
-      .getByRole('button', { name: 'Display options (2 changed)', exact: true })
+      .getByRole('button', { name: 'Display options, 2 changed', exact: true })
       .count()
   ).toBe(1);
   await display.getByRole('button', { name: 'Customer name Sort by' }).click();
@@ -155,14 +155,14 @@ test('presentation groups disclose secondary restrictions and preserve them acro
     .poll(() =>
       page
         .getByRole('button', {
-          name: 'Display options (2 changed)',
+          name: 'Display options, 2 changed',
           exact: true,
         })
         .evaluate(element => element === document.activeElement)
     )
     .toBe(true);
   await page
-    .getByRole('button', { name: 'Display options (2 changed)', exact: true })
+    .getByRole('button', { name: 'Display options, 2 changed', exact: true })
     .click();
   expect(
     await display.getByRole('button', { name: 'Customer name Sort by' }).count()
@@ -335,7 +335,7 @@ test('display settings retain nested calendar changes and dismiss one overlay at
     .poll(() =>
       page
         .getByRole('button', {
-          name: 'Display options (1 changed)',
+          name: 'Display options, 1 changed',
           exact: true,
         })
         .evaluate(element => element === document.activeElement)

@@ -245,3 +245,14 @@
   min-height: 1.4em;
   color: var(--atbl-danger);
 }
+
+.altertable-display-options-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--atbl-space-sm);
+}
+.altertable-display-options-label small {
+  color: var(--atbl-muted);
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}

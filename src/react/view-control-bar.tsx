@@ -183,11 +183,19 @@ function DisplayOptionsPopover({
 }) {
   const [open, setOpen] = useState(false);
   const label = changedCount
-    ? `Display options (${changedCount} changed)`
+    ? `Display options, ${changedCount} changed`
     : 'Display options';
   return (
     <DialogTrigger isOpen={open} onOpenChange={setOpen}>
-      <Tooltip content={label} className="altertable-display-options-trigger">
+      <Tooltip
+        content={
+          <span className="altertable-display-options-label">
+            Display options
+            {changedCount > 0 && <small>{changedCount} changed</small>}
+          </span>
+        }
+        className="altertable-display-options-trigger"
+      >
         <PressButton
           variant="ghost"
           size="icon"
