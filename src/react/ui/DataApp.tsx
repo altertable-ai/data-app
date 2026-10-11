@@ -1,5 +1,4 @@
 import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
-import type { SearchSuggestions } from '@/src/react/bindings';
 import { useDataApp } from '@/src/react/app-context';
 import { ownedSource } from '@/src/react/source-owner';
 import {
@@ -28,11 +27,8 @@ export type DataAppProps<Data, Input = unknown> = Omit<
     view: DeclaredView<Data, Input> & {
       scope(snapshot: DisplayedSnapshot<Data, Input>): string;
     };
-    /** Suggestions for the first generated search, from explicitly chosen datasets of this view.
-     * Supply a list to combine datasets in priority order, with five suggestions overall. */
-    searchSuggestions?:
-      | SearchSuggestions<Data, Input>
-      | readonly SearchSuggestions<Data, Input>[];
+    /** Show record suggestions declared by supplied datasets. Defaults to true. */
+    showSearchSuggestions?: boolean;
     story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
       StoryFinding,
       'evidence'
@@ -47,21 +43,25 @@ export type DataAppProps<Data, Input = unknown> = Omit<
 
 /** Executes the primary view and owns its controls, inspection, exports, and stories. */
 export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
-  const { view, datasets, story, searchSuggestions, ...frame } = props;
+  const {
+    view,
+    datasets,
+    story,
+    showSearchSuggestions = true,
+    ...frame
+  } = props;
   const app = useDataApp();
   const result = useDeclaredResult(view);
-  const bindings = searchSuggestions
-    ? 'read' in searchSuggestions
-      ? [searchSuggestions]
-      : searchSuggestions
+  const suggestionDatasets = showSearchSuggestions
+    ? datasets.filter(dataset => dataset.readSearchSuggestions)
     : [];
   const source = ownedSource(
     view,
     result.snapshot ?? { loading: true as const }
   );
-  const suggestions = bindings
-    .flatMap((binding, index) => {
-      const reading = binding.read(source);
+  const suggestions = suggestionDatasets
+    .flatMap((dataset, index) => {
+      const reading = dataset.readSearchSuggestions!(source);
       return reading.loading
         ? []
         : reading.value.map(item => ({ ...item, id: `${index}:${item.id}` }));
@@ -70,7 +70,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   return (
     <SearchSuggestionsContext
       value={
-        bindings.length
+        suggestionDatasets.length
           ? {
               items: suggestions,
               busy: result.refreshing,

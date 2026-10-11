@@ -339,35 +339,43 @@ const view = defineDataView({
     description: 'Try a different search or clear filters.',
   },
 });
-const customers = view.dataset({
-  name: 'Customers',
-  select: data => data.rows,
-  rowKey: row => row.name,
-  columns: {
-    name: { label: 'Customer', value: row => row.name },
-    country: {
-      label: 'Country',
-      value: row =>
-        ({ FR: 'France', UK: 'United Kingdom', DE: 'Germany' })[row.country] ??
-        row.country,
+function createCustomers(onSelect?: (row: (typeof records)[number]) => void) {
+  return view.dataset({
+    name: 'Customers',
+    select: data => data.rows,
+    rowKey: row => row.name,
+    columns: {
+      name: { label: 'Customer', value: row => row.name },
+      country: {
+        label: 'Country',
+        value: row =>
+          ({ FR: 'France', UK: 'United Kingdom', DE: 'Germany' })[
+            row.country
+          ] ?? row.country,
+      },
+      segment: { label: 'Segment', value: row => row.segment },
+      active: {
+        label: 'Account',
+        value: row => (row.active ? 'Active' : 'Inactive'),
+      },
+      spend: {
+        label: 'Monthly spend',
+        value: row => row.spend,
+        format: { kind: 'currency', currency: 'EUR' },
+      },
     },
-    segment: { label: 'Segment', value: row => row.segment },
-    active: {
-      label: 'Account',
-      value: row => (row.active ? 'Active' : 'Inactive'),
+    evidence: { id: 'customers', queryNames: ['customers'] },
+    emptyFallback: {
+      title: 'No matching customers',
+      description: 'Try a different search or clear filters.',
     },
-    spend: {
-      label: 'Monthly spend',
-      value: row => row.spend,
-      format: { kind: 'currency', currency: 'EUR' },
+    suggestions: {
+      title: row => row.name,
+      description: row => `${row.country} · ${row.segment}`,
+      onSelect: onSelect ? row => onSelect(row) : undefined,
     },
-  },
-  evidence: { id: 'customers', queryNames: ['customers'] },
-  emptyFallback: {
-    title: 'No matching customers',
-    description: 'Try a different search or clear filters.',
-  },
-});
+  });
+}
 const customerFilters = {
   country: variables.country,
   segment: variables.segment,
@@ -379,7 +387,9 @@ const customerFilters = {
 };
 function CustomerTable({
   source,
+  customers,
 }: {
+  customers: ReturnType<typeof createCustomers>;
   source:
     | { loading: true }
     | { loading: false; data: { rows: typeof records }; input: Input };
@@ -407,27 +417,27 @@ function CustomerTable({
     />
   );
 }
-const content = view.content(source => <CustomerTable source={source} />);
 function App() {
   const [selectedCustomer, setSelectedCustomer] = useState<
     (typeof records)[number] | null
   >(null);
-  const searchSuggestions = customers.suggestions({
-    title: row => row.name,
-    description: row => `${row.country} · ${row.segment}`,
-    onSelect: new URLSearchParams(location.search).has('openDetails')
-      ? setSelectedCustomer
-      : undefined,
-  });
+  const [customers] = useState(() =>
+    createCustomers(
+      new URLSearchParams(location.search).has('openDetails')
+        ? setSelectedCustomer
+        : undefined
+    )
+  );
+  const content = view.content(source => (
+    <CustomerTable source={source} customers={customers} />
+  ));
   return (
     <>
       <DataApp
         view={view}
-        searchSuggestions={
-          new URLSearchParams(location.search).has('typeahead')
-            ? searchSuggestions
-            : undefined
-        }
+        showSearchSuggestions={new URLSearchParams(location.search).has(
+          'typeahead'
+        )}
         showSearch={!new URLSearchParams(location.search).has('hideSearch')}
         datasets={[customers]}
         story={snapshot => [

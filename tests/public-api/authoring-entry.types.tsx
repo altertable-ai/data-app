@@ -57,6 +57,10 @@ const base = {
 const dataset = view.dataset({
   name: 'Values',
   select: data => [data],
+  suggestions: {
+    title: row => row.toFixed(0),
+    onSelect: row => row.toFixed(0),
+  },
   rowKey: row => row,
   columns: { value: { value: row => row } },
   evidence: { id: 'values', queryNames: ['count'] },
@@ -66,10 +70,7 @@ const app: DataAppProps<number, Record<string, never>> = {
   view,
   story: () => [],
   datasets: [dataset],
-  searchSuggestions: dataset.suggestions({
-    title: row => row.toFixed(0),
-    onSelect: row => row.toFixed(0),
-  }),
+  showSearchSuggestions: false,
 };
 const content = view.content(result => (
   <p>{result.loading ? 'Loading' : result.data}</p>
@@ -313,12 +314,12 @@ DataAppProvider({
 // @ts-expect-error App fields are direct; there is no separate configuration wrapper.
 void dataApp.config;
 
-// @ts-expect-error A suggestion title selector must use the dataset row type.
-dataset.suggestions({ title: (row: string) => row, onSelect: () => undefined });
-// Suggestion selection completes the search by default; callbacks are optional.
-dataset.suggestions({ title: row => String(row) });
-const multipleSuggestions: DataAppProps<
-  number,
-  Record<string, never>
->['searchSuggestions'] = [dataset.suggestions({ title: row => String(row) })];
-void multipleSuggestions;
+view.dataset<number>({
+  name: 'Invalid suggestions',
+  select: data => [data],
+  rowKey: row => row,
+  columns: { value: { value: row => row } },
+  evidence: { id: 'invalid', queryNames: ['count'] },
+  // @ts-expect-error Suggestion selectors must use the inferred dataset row type.
+  suggestions: { title: (row: string) => row },
+});

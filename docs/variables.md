@@ -28,22 +28,27 @@ Keep local search out of the operation input when it only filters loaded rows.
 
 ### Search suggestions
 
-Bind one dataset or an explicit list of datasets to the primary search:
+Declare suggestions for records whose titles are useful search completions. Omit
+suggestions for aggregate rows.
 
 ```tsx
-const suggestions = customers.suggestions({
-  title: row => row.name,
-  description: row => `${row.country} · ${row.segment}`,
+const customers = view.dataset({
+  // select, columns, rowKey, evidence…
+  suggestions: {
+    title: row => row.name,
+    description: row => `${row.country} · ${row.segment}`,
+  },
 });
-<DataApp view={view} searchSuggestions={suggestions} /* other app props */ />;
+<DataApp view={view} datasets={[customers]} /* other app props */ />;
 ```
 
+The primary search automatically combines supplied datasets that declare suggestions.
 Typing updates the page and suggestions from the same displayed source. The panel
-shows up to five supplied rows in dataset and binding order; it makes no additional request.
-Capped or paginated sources offer suggestions only for the supplied rows. Choose a
-dataset from the same view with stable, unique row keys. Selection completes the query with the title. Supply `onSelect: row => openCustomer(row.id)`
-to override completion with an app action. Combine datasets with
-`searchSuggestions={[customers.suggestions(...), orders.suggestions(...)]}`.
+shows up to five supplied rows in dataset order and makes no additional request.
+Capped or paginated sources offer suggestions only for supplied rows. Use datasets
+from the same view with stable, unique row keys. Selection completes the query with
+the title; `suggestions.onSelect: row => openCustomer(row.id)` overrides completion
+with an app action. Set `showSearchSuggestions={false}` to keep plain search.
 Arrow keys cycle through suggestions and an unselected state; Enter selects or
 keeps the typed query when nothing is selected. Escape dismisses suggestions
 before clearing search.

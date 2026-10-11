@@ -86,6 +86,10 @@ const view = createDataHooks(client).defineDataView({
 const people = view.dataset({
   name: 'People',
   select: data => data.people,
+  suggestions: {
+    title: row => row.name,
+    description: row => `Person · ${row.team}`,
+  },
   rowKey: row => row.id,
   columns: {
     name: { value: row => row.name },
@@ -96,6 +100,10 @@ const people = view.dataset({
 const projects = view.dataset({
   name: 'Projects',
   select: data => data.projects,
+  suggestions: {
+    title: row => row.name,
+    description: row => `Project · ${row.status}`,
+  },
   rowKey: row => row.id,
   columns: {
     name: { value: row => row.name },
@@ -156,16 +164,6 @@ const statuses = view.dataset({
   evidence: { id: 'statuses', glossaryIds: ['projects'] },
   emptyFallback: { title: 'No matching projects' },
 });
-const suggestions = [
-  people.suggestions({
-    title: row => row.name,
-    description: row => `Person · ${row.team}`,
-  }),
-  projects.suggestions({
-    title: row => row.name,
-    description: row => `Project · ${row.status}`,
-  }),
-];
 const content = view.content(source => (
   <Stack gap="lg">
     <Grid columns={3} minItemWidth="compact">
@@ -207,7 +205,6 @@ function App() {
     <DataApp
       view={view}
       datasets={[people, projects]}
-      searchSuggestions={suggestions}
       story={snapshot => [
         {
           id: 'workspace-summary',

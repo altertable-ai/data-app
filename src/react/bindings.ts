@@ -47,18 +47,14 @@ export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
   rowKey: (row: NoInfer<Row>) => string | number;
   evidence: Evidence;
   emptyFallback?: EmptyContent;
+  /** Declare for records whose titles are useful query completions; omit for aggregate rows. */
+  suggestions?: DatasetSuggestionOptions<NoInfer<Row>>;
 };
 
-/** Record suggestions use only supplied rows; capped or paginated data is not complete search coverage. */
-export type SearchSuggestions<Data, Input> = {
-  read: (
-    source: ViewSource<Data, Input>
-  ) => DataReading<readonly SearchSuggestion[]>;
-};
 export type DatasetSuggestionOptions<Row> = {
   title: (row: Row) => string;
   description?: (row: Row) => string;
-  /** Override completing the query with the title, such as opening details or navigating. */
+  /** Override query completion with an app action. */
   onSelect?: (row: Row) => void;
 };
 
@@ -105,6 +101,10 @@ export function registeredEvidence(
 }
 
 export class ExportDataset<Data, Input> extends RegisteredBinding {
+  /** @internal Derived record suggestions for the generated app search. */
+  readonly readSearchSuggestions?: (
+    source: ViewSource<Data, Input>
+  ) => DataReading<readonly SearchSuggestion[]>;
   #csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable;
   constructor(
     readonly name: string,
@@ -126,6 +126,10 @@ export class ExportDataset<Data, Input> extends RegisteredBinding {
 
 export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
   readonly evidence: WidgetEvidence;
+  override readonly readSearchSuggestions: ExportDataset<
+    Data,
+    Input
+  >['readSearchSuggestions'] = undefined;
   #select: (data: Data, input: Input) => readonly Row[];
   #table: {
     title: string;
@@ -193,21 +197,10 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       evidence: definition.evidence,
       emptyFallback: definition.emptyFallback ?? { title: 'No results' },
     };
-  }
-  read = <Source extends ViewSource<Data, Input>>(source: Source) => {
-    this.assertSource(source);
-    return readSource<Data, Input, readonly Row[], Source>(
-      source,
-      this.#select
-    );
-  };
-  /** Bind up to five records from the displayed result to the primary app search. */
-  suggestions(
-    options: DatasetSuggestionOptions<Row>
-  ): SearchSuggestions<Data, Input> {
-    const { onSelect } = options;
-    return {
-      read: source => {
+    const { suggestions } = definition;
+    if (suggestions) {
+      const { onSelect } = suggestions;
+      this.readSearchSuggestions = source => {
         const reading = this.read(source);
         if (reading.loading) return reading;
         const items = reading.value.slice(0, 5).map(row => {
@@ -218,7 +211,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
               : typeof key === 'number' && Number.isFinite(key),
             'Suggestion row keys must be nonempty strings or finite numbers.'
           );
-          const title = options.title(row);
+          const title = suggestions.title(row);
           invariant(
             !!title.trim(),
             'Search suggestions need a nonempty title.'
@@ -226,7 +219,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
           return {
             id: `${typeof key}:${key}`,
             title,
-            description: options.description?.(row),
+            description: suggestions.description?.(row),
             onSelect: onSelect ? () => onSelect(row) : undefined,
           };
         });
@@ -235,9 +228,16 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
           'Search suggestion row keys must be unique.'
         );
         return { loading: false, value: items };
-      },
-    };
+      };
+    }
   }
+  read = <Source extends ViewSource<Data, Input>>(source: Source) => {
+    this.assertSource(source);
+    return readSource<Data, Input, readonly Row[], Source>(
+      source,
+      this.#select
+    );
+  };
   static table<Data, Input, Row>(
     dataset: Dataset<Data, Input, Row>,
     source: ViewSource<Data, Input>

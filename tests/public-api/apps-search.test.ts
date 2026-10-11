@@ -243,3 +243,16 @@ test('suggestions use the shared highlighting stack without filtering the displa
   await options.first().click();
   await expect.poll(() => input.inputValue()).toBe('Beacon Labs');
 });
+
+test('suggestion metadata can be disabled while keeping live search', async ({
+  page,
+}) => {
+  await page.goto('/filter-presentation?spend=all');
+  const input = page.getByRole('searchbox', { name: 'Search customers' });
+  await input.fill('Beacon');
+  await expect
+    .poll(() => page.getByRole('table').getByRole('row').count())
+    .toBe(2);
+  expect(await page.getByRole('combobox').count()).toBe(0);
+  expect(await page.getByRole('listbox').count()).toBe(0);
+});
