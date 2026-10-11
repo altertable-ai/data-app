@@ -86,10 +86,7 @@ describe('export', () => {
       .fill('Beta');
     await expect
       .poll(() =>
-        app
-          .getByRole('status')
-          .filter({ hasText: 'Showing all groups while loading group Beta…' })
-          .isVisible()
+        app.getByRole('status').filter({ hasText: 'Updating…' }).isVisible()
       )
       .toBe(true);
     await expectExport(

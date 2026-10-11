@@ -49,7 +49,11 @@ export function DataViewToast<Data, Input>({
 
   return (
     <Toast state={state} onRetry={onRetry}>
-      {failed || showingUpdate ? (message ?? detail) : notice}
+      {failed
+        ? (message ?? detail)
+        : showingUpdate
+          ? (message ?? 'Updating…')
+          : notice}
     </Toast>
   );
 }

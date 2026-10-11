@@ -161,10 +161,7 @@ describe('authoring', () => {
       .toBe(true);
     await expect
       .poll(() =>
-        app
-          .getByRole('status')
-          .filter({ hasText: 'Showing all groups while loading group Beta…' })
-          .isVisible()
+        app.getByRole('status').filter({ hasText: 'Updating…' }).isVisible()
       )
       .toBe(true);
     release!();
