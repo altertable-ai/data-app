@@ -18,6 +18,8 @@ import {
 } from '@floating-ui/react';
 import { SearchField, type SearchFieldProps } from '@/src/react/ui/SearchField';
 import { PopoverContainerContext } from '@/src/react/ui/PopoverSurface';
+import { SearchMatch } from '@/src/react/ui/SearchMatch';
+import { matchSearchText } from '@/src/react/ui/searchItems';
 
 export type SearchSuggestion = {
   id: string;
@@ -191,8 +193,16 @@ export function SearchTypeahead({
                   onPointerDown={event => event.preventDefault()}
                   onClick={() => select(item)}
                 >
-                  <span>{item.title}</span>
-                  {item.description && <small>{item.description}</small>}
+                  <SearchMatch
+                    match={matchSearchText(item.title, props.value)}
+                  />
+                  {item.description && (
+                    <small>
+                      <SearchMatch
+                        match={matchSearchText(item.description, props.value)}
+                      />
+                    </small>
+                  )}
                 </li>
               ))}
             </ul>

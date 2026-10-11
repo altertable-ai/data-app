@@ -1,11 +1,15 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
+import { BarChart } from '@altertable/data-app/react/ui';
 import {
   createDataHooks,
   createDataContext,
   DataApp,
   DataSection,
+  Grid,
+  MetricWidget,
+  VisualizationWidget,
   Stack,
   TableWidget,
   searchVariable,
@@ -56,7 +60,23 @@ const view = createDataHooks(client).defineDataView({
   variables: { q: searchVariable({ key: 'q', label: 'Search workspace' }) },
   dataContext: createDataContext({ catalog: 'catalog' })({
     description: 'Illustrative people and projects.',
-    glossary: {},
+    glossary: {
+      people: {
+        term: 'People',
+        definition: 'People matching the current search.',
+        queryNames: ['catalog'],
+      },
+      projects: {
+        term: 'Projects',
+        definition: 'Projects matching the current search.',
+        queryNames: ['catalog'],
+      },
+      activeProjects: {
+        term: 'Active projects',
+        definition: 'Matching projects whose status is Active.',
+        queryNames: ['catalog'],
+      },
+    },
   }),
   describeInput: input =>
     input.q ? `Workspace matching ${input.q}` : 'Workspace',
@@ -83,6 +103,59 @@ const projects = view.dataset({
   },
   evidence: { id: 'projects', queryNames: ['catalog'] },
 });
+const peopleCount = view.metric(
+  { id: 'people-count', glossaryId: 'people', format: { kind: 'count' } },
+  data => ({ current: data.people.length })
+);
+const projectCount = view.metric(
+  { id: 'project-count', glossaryId: 'projects', format: { kind: 'count' } },
+  data => ({ current: data.projects.length })
+);
+const activeProjectCount = view.metric(
+  {
+    id: 'active-project-count',
+    glossaryId: 'activeProjects',
+    format: { kind: 'count' },
+  },
+  data => ({
+    current: data.projects.filter(project => project.status === 'Active')
+      .length,
+  })
+);
+
+function distribution<Row>(
+  rows: readonly Row[],
+  category: (row: Row) => string
+) {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const label = category(row);
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  return [...counts].map(([label, value]) => ({ id: label, label, value }));
+}
+const teams = view.dataset({
+  name: 'People by team',
+  select: data => distribution(data.people, row => row.team),
+  rowKey: row => row.id,
+  columns: {
+    team: { value: row => row.label },
+    people: { value: row => row.value, format: { kind: 'count' } },
+  },
+  evidence: { id: 'teams', glossaryIds: ['people'] },
+  emptyFallback: { title: 'No matching people' },
+});
+const statuses = view.dataset({
+  name: 'Projects by status',
+  select: data => distribution(data.projects, row => row.status),
+  rowKey: row => row.id,
+  columns: {
+    status: { value: row => row.label },
+    projects: { value: row => row.value, format: { kind: 'count' } },
+  },
+  evidence: { id: 'statuses', glossaryIds: ['projects'] },
+  emptyFallback: { title: 'No matching projects' },
+});
 const suggestions = [
   people.suggestions({
     title: row => row.name,
@@ -94,14 +167,38 @@ const suggestions = [
   }),
 ];
 const content = view.content(source => (
-  <Stack gap="md">
-    <TableWidget dataset={people} source={source} pagination={false} />
-    <TableWidget dataset={projects} source={source} pagination={false} />
+  <Stack gap="lg">
+    <Grid columns={3} minItemWidth="compact">
+      <MetricWidget metric={peopleCount} source={source} />
+      <MetricWidget metric={projectCount} source={source} />
+      <MetricWidget metric={activeProjectCount} source={source} />
+    </Grid>
+    <Grid columns={2}>
+      <VisualizationWidget dataset={teams} source={source}>
+        {rows => (
+          <BarChart items={rows} ariaLabel="People by team" unit="people" />
+        )}
+      </VisualizationWidget>
+      <VisualizationWidget dataset={statuses} source={source}>
+        {rows => (
+          <BarChart
+            items={rows}
+            ariaLabel="Projects by status"
+            unit="projects"
+          />
+        )}
+      </VisualizationWidget>
+    </Grid>
+    <Grid columns={2}>
+      <TableWidget dataset={people} source={source} pagination={false} />
+      <TableWidget dataset={projects} source={source} pagination={false} />
+    </Grid>
   </Stack>
 ));
 const app = defineDataApp({
   title: 'Workspace explorer',
-  description: 'Search people and projects together. Sample data.',
+  description:
+    'Find people and projects, compare teams and project status, and explore matching records. Sample data.',
   scope: { organization: 'Demo', environment: 'Preview' },
   queries: {},
 });
@@ -111,7 +208,26 @@ function App() {
       view={view}
       datasets={[people, projects]}
       searchSuggestions={suggestions}
-      story={() => []}
+      story={snapshot => [
+        {
+          id: 'workspace-summary',
+          headline: `${snapshot.data.people.length} people and ${snapshot.data.projects.length} projects match this search`,
+          context:
+            'Team and status distributions use the same matching records.',
+          visual: (
+            <VisualizationWidget dataset={statuses} source={snapshot}>
+              {rows => (
+                <BarChart
+                  items={rows}
+                  ariaLabel="Projects by status"
+                  unit="projects"
+                />
+              )}
+            </VisualizationWidget>
+          ),
+          evidence: statuses,
+        },
+      ]}
     >
       <DataSection content={content} />
     </DataApp>

@@ -137,7 +137,7 @@ test('suggestions stay on one line aligned with the input and do not flash an em
   await expect.poll(() => options.count()).toBe(5);
   await expect.poll(() => input.getAttribute('aria-busy')).toBeNull();
   const inputBox = await input.boundingBox();
-  const titleBox = await options.first().locator('span').boundingBox();
+  const titleBox = await options.first().locator(':scope > span').boundingBox();
   const detailBox = await options.first().locator('small').boundingBox();
   expect(Math.abs(inputBox!.x - titleBox!.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(titleBox!.y - detailBox!.y)).toBeLessThan(5);
@@ -165,6 +165,16 @@ test('multiple datasets combine suggestions without extra requests or colliding 
   await page.goto('/search-catalog');
   const input = page.getByRole('combobox', { name: 'Search workspace' });
   await expect.poll(() => page.getByRole('table').count()).toBe(2);
+  expect(
+    await page
+      .getByRole('button', { name: 'Design: 1 people', exact: true })
+      .count()
+  ).toBe(1);
+  expect(
+    await page
+      .getByRole('button', { name: 'Complete: 1 projects', exact: true })
+      .count()
+  ).toBe(1);
   const requests = await page.locator('body').getAttribute('data-requests');
   await input.fill('a');
   const options = page.getByRole('option');
@@ -188,5 +198,48 @@ test('multiple datasets combine suggestions without extra requests or colliding 
   await expect
     .poll(() => page.getByRole('table').nth(1).getByRole('row').count())
     .toBe(2);
+  expect(
+    await page
+      .getByRole('button', { name: 'Planning: 1 projects', exact: true })
+      .count()
+  ).toBe(1);
+  expect(
+    await page
+      .getByRole('button', { name: 'Active: 1 projects', exact: true })
+      .count()
+  ).toBe(0);
+  expect(
+    await page.getByText('No matching people', { exact: true }).count()
+  ).toBe(1);
   expect(await page.getByRole('dialog').count()).toBe(0);
+});
+
+test('suggestions use the shared highlighting stack without filtering the displayed result again', async ({
+  page,
+}) => {
+  await page.goto(`${url}&slowSearch`);
+  const input = page.getByRole('combobox');
+  await input.fill('a');
+  const options = page.getByRole('option');
+  await expect.poll(() => options.count()).toBe(5);
+  await expect.poll(() => input.getAttribute('aria-busy')).toBeNull();
+  expect(
+    await options.first().locator(':scope > span mark').allTextContents()
+  ).toEqual(['a']);
+  expect(await options.first().locator('small mark').count()).toBe(0);
+  await input.fill('e');
+  await expect.poll(() => input.getAttribute('aria-busy')).toBeNull();
+  expect(await options.first().locator('small mark').count()).toBeGreaterThan(
+    0
+  );
+  await input.fill('Beacon');
+  await expect.poll(() => input.getAttribute('aria-busy')).toBe('true');
+  expect(await options.count()).toBe(5);
+  expect(await options.first().locator('mark').count()).toBe(0);
+  await expect.poll(() => options.count()).toBe(1);
+  expect(
+    await options.first().locator(':scope > span mark').textContent()
+  ).toBe('Beacon');
+  await options.first().click();
+  await expect.poll(() => input.inputValue()).toBe('Beacon Labs');
 });

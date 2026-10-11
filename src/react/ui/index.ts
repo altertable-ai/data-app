@@ -43,7 +43,7 @@ export type {
 export { useAppVariables } from '@/src/react/ui/variables';
 export { SearchField } from '@/src/react/ui/SearchField';
 export type { SearchFieldProps } from '@/src/react/ui/SearchField';
-export { searchItems } from '@/src/react/ui/searchItems';
+export { searchItems, matchSearchText } from '@/src/react/ui/searchItems';
 export type {
   SearchAttribute,
   SearchHit,
