@@ -79,7 +79,6 @@ export function SearchTypeahead({
     [setReference]
   );
   const input = useMergeRefs([anchor, inputProps?.ref]);
-  const panel = useMergeRefs([setFloating]);
   useEffect(() => {
     if (active) {
       document
@@ -162,7 +161,7 @@ export function SearchTypeahead({
       {open && (
         <FloatingPortal root={portal}>
           <div
-            ref={panel}
+            ref={setFloating}
             style={{
               ...floatingStyles,
               visibility: isPositioned ? 'visible' : 'hidden',

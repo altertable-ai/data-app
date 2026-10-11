@@ -6,10 +6,11 @@ import { useDataApp } from '@/src/react/app-context';
 import { ownedSource } from '@/src/react/source-owner';
 import {
   registeredEvidence,
+  exportDatasets,
+  type ExportDataset,
   type RegisteredBinding,
 } from '@/src/react/bindings';
 import type { DisplayedSnapshot } from '@/src/core/data-view';
-import { exportDatasets, type ExportDataset } from '@/src/react/bindings';
 import type { StoryFinding } from '@/src/react/ui/story';
 import {
   DataAppFrame,
@@ -55,25 +56,29 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   } = props;
   const app = useDataApp();
   const result = useDeclaredResult(view);
-  const suggestionDatasets = showSearchSuggestions
-    ? datasets.filter(dataset => dataset.readSearchSuggestions)
-    : [];
   const source = ownedSource(
     view,
     result.snapshot ?? { loading: true as const }
   );
-  const suggestions = balanceSearchSuggestions(
-    suggestionDatasets.map((dataset, index) => {
-      const reading = dataset.readSearchSuggestions!(source);
-      return reading.loading
-        ? []
-        : reading.value.map(item => ({ ...item, id: `${index}:${item.id}` }));
-    })
-  );
+  const suggestionGroups = showSearchSuggestions
+    ? datasets.flatMap((dataset, index) => {
+        const reading = dataset.readSearchSuggestions(source);
+        if (!reading) return [];
+        return [
+          reading.loading
+            ? []
+            : reading.value.map(item => ({
+                ...item,
+                id: `${index}:${item.id}`,
+              })),
+        ];
+      })
+    : [];
+  const suggestions = balanceSearchSuggestions(suggestionGroups);
   return (
     <SearchSuggestionsContext
       value={
-        suggestionDatasets.length
+        suggestionGroups.length
           ? {
               items: suggestions,
               busy: result.refreshing,

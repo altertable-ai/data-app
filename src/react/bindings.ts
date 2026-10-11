@@ -101,10 +101,12 @@ export function registeredEvidence(
 }
 
 export class ExportDataset<Data, Input> extends RegisteredBinding {
-  /** @internal Derived record suggestions for the generated app search. */
-  readonly readSearchSuggestions?: (
-    source: ViewSource<Data, Input>
-  ) => DataReading<readonly SearchSuggestion[]>;
+  /** @internal Undefined means this dataset declares no record suggestions. */
+  readSearchSuggestions(
+    _source: ViewSource<Data, Input>
+  ): DataReading<readonly SearchSuggestion[]> | undefined {
+    return undefined;
+  }
   #csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable;
   constructor(
     readonly name: string,
@@ -126,10 +128,7 @@ export class ExportDataset<Data, Input> extends RegisteredBinding {
 
 export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
   readonly evidence: WidgetEvidence;
-  override readonly readSearchSuggestions: ExportDataset<
-    Data,
-    Input
-  >['readSearchSuggestions'] = undefined;
+  #suggestions?: DatasetSuggestionOptions<Row>;
   #select: (data: Data, input: Input) => readonly Row[];
   #table: {
     title: string;
@@ -197,39 +196,38 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       evidence: definition.evidence,
       emptyFallback: definition.emptyFallback ?? { title: 'No results' },
     };
-    const { suggestions } = definition;
-    if (suggestions) {
-      const { onSelect } = suggestions;
-      this.readSearchSuggestions = source => {
-        const reading = this.read(source);
-        if (reading.loading) return reading;
-        const items = reading.value.slice(0, 5).map(row => {
-          const key = this.#table.rowKey(row);
-          invariant(
-            typeof key === 'string'
-              ? !!key
-              : typeof key === 'number' && Number.isFinite(key),
-            'Suggestion row keys must be nonempty strings or finite numbers.'
-          );
-          const title = suggestions.title(row);
-          invariant(
-            !!title.trim(),
-            'Search suggestions need a nonempty title.'
-          );
-          return {
-            id: `${typeof key}:${key}`,
-            title,
-            description: suggestions.description?.(row),
-            onSelect: onSelect ? () => onSelect(row) : undefined,
-          };
-        });
-        invariant(
-          new Set(items.map(item => item.id)).size === items.length,
-          'Search suggestion row keys must be unique.'
-        );
-        return { loading: false, value: items };
+    this.#suggestions = definition.suggestions;
+  }
+  override readSearchSuggestions(
+    source: ViewSource<Data, Input>
+  ): DataReading<readonly SearchSuggestion[]> | undefined {
+    const suggestions = this.#suggestions;
+    if (!suggestions) return undefined;
+    const { onSelect } = suggestions;
+    const reading = this.read(source);
+    if (reading.loading) return reading;
+    const items = reading.value.slice(0, 5).map(row => {
+      const key = this.#table.rowKey(row);
+      invariant(
+        typeof key === 'string'
+          ? !!key
+          : typeof key === 'number' && Number.isFinite(key),
+        'Suggestion row keys must be nonempty strings or finite numbers.'
+      );
+      const title = suggestions.title(row);
+      invariant(!!title.trim(), 'Search suggestions need a nonempty title.');
+      return {
+        id: `${typeof key}:${key}`,
+        title,
+        description: suggestions.description?.(row),
+        onSelect: onSelect ? () => onSelect(row) : undefined,
       };
-    }
+    });
+    invariant(
+      new Set(items.map(item => item.id)).size === items.length,
+      'Search suggestion row keys must be unique.'
+    );
+    return { loading: false, value: items };
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);
