@@ -23,8 +23,7 @@
     "url": "git+https://github.com/altertable-ai/data-app.git"
   },
   "workspaces": [
-    "examples/starter-local-data-app",
-    "examples/live-workspace"
+    "examples/starter-local-data-app"
   ],
   "files": [
     "dist",
