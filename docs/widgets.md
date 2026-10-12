@@ -43,6 +43,13 @@ are also available from `/react`.
 | How did one metric change between periods?                | `<Comparison>`     | Use the metric result and its displayed comparison period.                                                         |
 | What are the exact values or row details?                 | `<TableWidget>`    | Use a bound table for lookup, search, and precise comparisons.                                                     |
 
+Choose by analytical meaning, not only by a metric name or visual style:
+step-by-step conversion uses `<FunnelChart>`; conversion rate by calendar date
+uses a line chart. Return behavior by elapsed time uses `<RetentionChart>`;
+branching event sequences use `<JourneyChart>`. Multiple populations alone do
+not require `<ComposedChart>`: the funnel and retention charts support series.
+See [product analytics inputs and examples](ui.md#product-analytics-charts).
+
 Prefer bars or a ranking when users need to compare similarly sized categories;
 use a pie for a simple composition question. Prefer a line when the trend is
 enough; use area when the fill adds meaning. Keep exact values available in a

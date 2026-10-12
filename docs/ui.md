@@ -106,15 +106,24 @@ Use `useSvgId()` for stable IDs when composing custom SVG definitions.
 
 Use `<FunnelChart>`, `<RetentionChart>`, and `<JourneyChart>` from `/react/ui`
 inside `<VisualizationWidget>`. Derive inputs from the displayed rows; the
-binding owns loading, evidence, CSV, and story content. Types and JSDoc describe
-input constraints; the gallery includes complete examples.
+binding owns loading, evidence, CSV, and story content. The query owns counting,
+conversion windows, and cohort definitions; these components visualize results.
 
-- `<FunnelChart>` compares ordered step counts across populations. Each series
-  uses its first step as the baseline; hatching shows previous-step drop-off.
-- `<RetentionChart>` plots query-defined rates and retained counts by interval
-  offset. Use `null` for unobserved periods; `incomplete` produces a dotted tail.
-- `<JourneyChart>` derives expandable branches and outcomes from full paths.
-  Truncated paths stop at the last loaded event.
+- `<FunnelChart>`: align each population's nonincreasing **counts**, not percentages,
+  with the ordered steps. Keep the counting entity and entry population consistent
+  across steps; the chart derives conversion and previous-step drop-off.
+- `<RetentionChart>`: supply numeric elapsed offsets, query-defined **fractional
+  rates** (`0.25`, not `25`), retained counts, and the starting cohort size. Preserve
+  the query's return rule and eligibility denominator. Use `null` rates and counts
+  for unobserved periods, zero for observed no returns, and `incomplete` for
+  observed periods still accumulating.
+- `<JourneyChart>`: supply full ordered paths and their population counts, not
+  independent event totals or pairwise edges. Preserve repeated events and
+  outcome classification; mark cut-off paths as `truncated` rather than drop-off.
+
+See the [complete component examples](https://github.com/altertable-ai/data-app/blob/main/dev/fixtures/gallery-basics.tsx)
+for input shapes and composition. Read the exported types and JSDoc for exact
+constraints before adapting displayed rows.
 
 ### Composed charts
 
