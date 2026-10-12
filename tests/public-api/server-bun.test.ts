@@ -20,8 +20,9 @@ test('local lakehouse delivers CLI proxy queries with authentication and query e
         if (typeof options?.body !== 'string')
           throw new Error('Expected a JSON request body.');
         expect(JSON.parse(options.body)).toEqual({
-          statement: 'SELECT 1',
+          statement: 'SELECT $value',
           limit: 1,
+          params: { value: 1 },
         });
         return new Response('{"query_id":"q1"}\n["value"]\n[1]\n');
       },
@@ -35,73 +36,6 @@ test('local lakehouse delivers CLI proxy queries with authentication and query e
       signal: new AbortController().signal,
     })
   ).toMatchObject({ rows: [[1]], queryId: 'q1' });
-});
-
-test('local lakehouse resolves scalar HTTP parameters without changing SQL literals, identifiers or comments', async () => {
-  const statement = `SELECT $label, 1-$count, $enabled, $missing, $label_long, $label,
-    '$label', 'it''s $label', E'escaped\\' $label', "$label",
-    $$literal $label$$, $tag$literal $label$tag$, '$100'
-    , E'abc'\n'foo\\' $label', E'abc' -- continuation\r'foo\\' $label'
-    -- $label
-    /* $label /* $count */ $enabled */
-    -- $label\r, $enabled AS café$label, $tagé$literal $label$tagé$, $étiquette`;
-  const expected = `SELECT 'O''Brien; $count', 1-(-2.5), TRUE, NULL, 'Long', 'O''Brien; $count',
-    '$label', 'it''s $label', E'escaped\\' $label', "$label",
-    $$literal $label$$, $tag$literal $label$tag$, '$100'
-    , E'abc'\n'foo\\' $label', E'abc' -- continuation\r'foo\\' $label'
-    -- $label
-    /* $label /* $count */ $enabled */
-    -- $label\r, TRUE AS café$label, $tagé$literal $label$tagé$, 'Unicode'`;
-  const source = localLakehouse(
-    {
-      ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
-      ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
-    },
-    Object.assign(
-      async (_url: RequestInfo | URL, options?: RequestInit) => {
-        expect(JSON.parse(options!.body as string)).toEqual({
-          statement: expected,
-          limit: 1,
-        });
-        return new Response('{}\n["value"]\n[1]\n');
-      },
-      { preconnect() {} }
-    )
-  );
-  await source.queryAll(statement, {
-    params: {
-      label: "O'Brien; $count",
-      count: -2.5,
-      enabled: true,
-      missing: null,
-      label_long: 'Long',
-      étiquette: 'Unicode',
-    },
-    limit: 1,
-    signal: new AbortController().signal,
-  });
-});
-
-test('local lakehouse rejects unresolved HTTP parameters before sending SQL', async () => {
-  const source = localLakehouse(
-    {
-      ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
-      ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
-    },
-    Object.assign(
-      async () => {
-        throw new Error('Must not send unresolved SQL');
-      },
-      { preconnect() {} }
-    )
-  );
-  await expect(
-    source.queryAll('SELECT $missing', {
-      params: {},
-      limit: 1,
-      signal: new AbortController().signal,
-    })
-  ).rejects.toThrow('Missing query parameter missing.');
 });
 
 test('local lakehouse recognizes query errors in successful NDJSON responses', async () => {

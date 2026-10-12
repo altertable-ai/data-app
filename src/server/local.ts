@@ -10,7 +10,6 @@ import {
 } from '@/src/core/contract';
 import type { DataOperations } from '@/src/core/contract';
 import { createDataHandler } from '@/src/server/handler';
-import { resolveHttpQuery } from '@/src/server/query-parameters';
 
 /** Serve one app on localhost through the CLI's lakehouse proxy during development.
  * Hosted servers must authorize every viewer and must use `createDataHandler` directly. */
@@ -58,7 +57,6 @@ export function localLakehouse(
         proxyUrl ??
         environment.ALTERTABLE_API_BASE ??
         'https://api.altertable.ai';
-      const resolvedStatement = resolveHttpQuery(statement, params);
       let response: Response;
       try {
         response = await request(
@@ -72,8 +70,9 @@ export function localLakehouse(
               'content-type': 'application/json',
             },
             body: JSON.stringify({
-              statement: resolvedStatement,
+              statement,
               limit,
+              ...(params === undefined ? {} : { params }),
             }),
             signal,
           }
