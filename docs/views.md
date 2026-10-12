@@ -35,6 +35,10 @@ function App() {
 
 Omit `variables` when there are no controls. Omit `input` when the resolved
 variables match the operation input; nested or different inputs need a mapper.
+Keep dimension, numeric, and boolean selections in required operation input fields
+with the same names to derive their bindings. Other input shapes require typed
+`bindings` that read each selection back unchanged. Derive scalar SQL parameters
+inside the operation rather than replacing the selections in the view input.
 The operation and `ActivityWidgets` are app-owned. The bound widgets derive
 loading content from their source; see [widgets](widgets.md) and the
 [complete starter](../examples/starter-data-app/index.tsx). Define

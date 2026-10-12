@@ -303,19 +303,22 @@ const client = createDataClient({
 const { defineDataView } = createDataHooks(client);
 const displayOnly = new URLSearchParams(location.search).has('displayOnly');
 const searchOnly = new URLSearchParams(location.search).has('searchOnly');
+const viewVariables:
+  | typeof variables
+  | Pick<typeof variables, 'search'>
+  | Pick<typeof variables, 'search' | 'sort' | 'direction'> = searchOnly
+  ? { search: variables.search }
+  : displayOnly
+    ? {
+        search: variables.search,
+        sort: variables.sort,
+        direction: variables.direction,
+      }
+    : variables;
 const view = defineDataView({
   operation: 'customers',
-  variables: searchOnly
-    ? { search: variables.search }
-    : displayOnly
-      ? {
-          search: variables.search,
-          sort: variables.sort,
-          direction: variables.direction,
-        }
-      : variables,
+  variables: viewVariables,
   input: values => ({
-    search: variables.search.defaultValue,
     sort: variables.sort.defaultValue,
     direction: variables.direction.defaultValue,
     country: { kind: 'all' as const },
