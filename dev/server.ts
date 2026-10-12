@@ -8,7 +8,6 @@ import {
   parseDataAppAnnotationDraft,
   type QueryParameters,
 } from '@altertable/data-app/contract';
-import skeleton from '@/dev/fixtures/skeleton.html';
 import hooksApp from '@/dev/fixtures/hooks-app.html';
 import inspectionApp from '@/dev/fixtures/inspection-app.html';
 import gallery from '@/dev/fixtures/gallery.html';
@@ -148,7 +147,6 @@ Bun.serve({
   port,
   development: isDevelopment && { hmr: true },
   routes: {
-    '/skeleton': skeleton,
     '/inspection-app': inspectionApp,
     '/gallery': gallery,
     '/chart-legends': chartLegends,

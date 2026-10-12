@@ -247,11 +247,10 @@ function TableWidgetContent<Row>({
       {...props}
       className={classNames('altertable-table-widget', props.className)}
       title={title}
-      annotationId={props.annotationId ?? evidence?.id}
       count={loading || !showCount ? undefined : (count ?? hits.length)}
       description={description}
       action={action}
-      evidence={loading ? undefined : evidence}
+      evidence={evidence}
       aria-busy={loading || props['aria-busy']}
       footer={pager}
       visual={

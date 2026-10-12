@@ -1,5 +1,6 @@
 import { randomUuid } from '@/src/core/uuid';
 import { createBridgeEndpoint } from '@/src/core/bridge-endpoint';
+import type { DataAppAnnotationPresentation } from '@/src/core/annotations';
 import type { DataAppPresentation } from '@/src/core/presentation';
 import type { DataAppLogger } from '@/src/core/logger';
 import {
@@ -74,16 +75,27 @@ export function attachDataAppConnection({
   const targetOrigin = connection.type === 'opaque' ? '*' : frameOrigin;
   let currentPresentation: DataAppPresentation | undefined;
   let presentationIdentity: string | undefined;
+  let annotationDismissal: DataAppAnnotationPresentation['dismissal'];
   let disposed = false;
   let documentId: string | undefined;
   let sessionId: string | undefined;
   const pending = new Map<string, AbortController>();
 
   function hostState() {
+    const presentation =
+      currentPresentation?.annotations && annotationDismissal
+        ? {
+            ...currentPresentation,
+            annotations: {
+              ...currentPresentation.annotations,
+              dismissal: annotationDismissal,
+            },
+          }
+        : currentPresentation;
     return {
       search: host.location.search,
       hash: host.location.hash,
-      ...(currentPresentation ? { presentation: currentPresentation } : {}),
+      ...(presentation ? { presentation } : {}),
       logging: logger !== undefined,
     };
   }
@@ -239,6 +251,19 @@ export function attachDataAppConnection({
     send('stateUpdate', { state: hostState() });
   }
 
+  function publishAnnotationDismissal(event: MouseEvent) {
+    if (
+      !currentPresentation?.annotations?.enabled ||
+      event.composedPath().includes(iframe)
+    )
+      return;
+    annotationDismissal = {
+      id: randomUuid(),
+      occurredAt: host.performance.timeOrigin + host.performance.now(),
+    };
+    publishState();
+  }
+
   function load() {
     if (connection.type === 'opaque') token = randomUuid();
     cancelAll();
@@ -256,6 +281,7 @@ export function attachDataAppConnection({
     host.removeEventListener('message', receive);
     host.removeEventListener('popstate', publishState);
     host.removeEventListener('pagehide', cancelAll);
+    host.removeEventListener('click', publishAnnotationDismissal, true);
   }
 
   setPresentation(presentation);
@@ -263,6 +289,7 @@ export function attachDataAppConnection({
   host.addEventListener('message', receive);
   host.addEventListener('popstate', publishState);
   host.addEventListener('pagehide', cancelAll);
+  host.addEventListener('click', publishAnnotationDismissal, true);
   // Reconnect an already-loaded iframe when its host bridge mounts again.
   onStatusChange?.('connecting');
   send('connect', {});

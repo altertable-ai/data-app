@@ -2,43 +2,40 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-TypeScript contracts, a data client, server handlers, and React UI for building
-interactive apps with Altertable data.
+**Build data apps powered by Altertable.**
 
-## Installation
+A TypeScript and React toolkit with APIs, components, and authoring guides for
+developers and AI agents to build data apps powered by Altertable.
+
+A data app combines interactive exploration with explanations and findings,
+helping users answer questions with data. Compose filters, charts, tables, and
+narrative, then let users present findings and export results.
+
+## Install
 
 ```fish
-# npm
 npm install @altertable/data-app
-
-# pnpm
+# or
 pnpm add @altertable/data-app
-
-# Bun
+# or
 bun add @altertable/data-app
 ```
 
 ## Build an app
 
-Apps render in an iframe in Altertable, a chat app, or locally in a browser.
-Follow [app authoring](docs/app-authoring.md) to explore data, export displayed results as CSV, and present findings.
+Apps can be embedded in Altertable, ChatGPT, Claude, and other hosts that support
+MCP Apps through a host integration, or run locally in a browser.
 
-| App                                | Start here                               |
-| ---------------------------------- | ---------------------------------------- |
-| Data app (hosted / remote / cloud) | [Single-file guide](docs/hosted-apps.md) |
-| Local data app                     | [Local guide](docs/local-data-apps.md)   |
+| App             | Guide                                  | Starter                                                    |
+| --------------- | -------------------------------------- | ---------------------------------------------------------- |
+| Remote data app | [Remote guide](docs/hosted-apps.md)    | [Single file](examples/starter-data-app/index.tsx)         |
+| Local data app  | [Local guide](docs/local-data-apps.md) | [Local project](examples/starter-local-data-app/README.md) |
 
 For agent-assisted work, direct your agent to [AGENTS.md](AGENTS.md).
-The package ships its guides and single-file starter alongside the built exports.
-
-## Host apps
-
-For integrating apps into a host, see [embedding](docs/embed.md).
 
 ## Development
 
-See [Contributing](CONTRIBUTING.md) for repository structure and focused checks.
-Releases use [Release Please and npm trusted publishing](https://github.com/altertable-ai/data-app/blob/main/.github/RELEASING.md).
+See [Contributing](CONTRIBUTING.md) to develop and test the package.
 
 ## License
 

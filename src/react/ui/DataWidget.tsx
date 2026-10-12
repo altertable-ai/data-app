@@ -25,6 +25,7 @@ type DataWidgetBaseProps = {
   title: ReactNode;
   /** Document outline level. The widget title keeps the shared widget-heading appearance. */
   headingLevel?: 2 | 3 | 4 | 5 | 6;
+  /** Unique stable target for persisted feedback; overrides automatic evidence identity. */
   annotationId?: string;
   /** Result count beside the heading. Derive from the displayed result; zero is visible. */
   count?: number;
@@ -60,12 +61,7 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
       props;
     if (reading.loading)
       return (
-        <DataWidgetContent
-          {...shell}
-          annotationId={shell.annotationId ?? shell.evidence?.id}
-          evidence={undefined}
-          aria-busy
-        >
+        <DataWidgetContent {...shell} aria-busy>
           <ContentSkeletonBody variant="panel" {...skeleton} />
         </DataWidgetContent>
       );
@@ -115,41 +111,48 @@ function DataWidgetContent({
       {content}
     </WidgetContent>
   );
-  const help = evidence && (
-    <AboutData
-      id={evidence.id}
-      references={{
-        kind: 'ids',
-        glossaryIds: evidence.glossaryIds,
-        queryNames: evidence.queryNames,
-      }}
-      aria-label={
-        typeof title === 'string' ? `Explore ${title}` : 'Explore this widget'
-      }
-      variant="ghost"
-      className="altertable-widget-heading-trigger"
-      shortcut={false}
-      title={title}
-      headerActions={<WidgetStatusControl status={status} />}
-      description={description}
-      visual={visual}
-      visualKind="widget"
-    >
-      <span className="altertable-widget-heading-label">{title}</span>
-      {count !== undefined && (
-        <span className="altertable-data-widget-count">
-          {formatCount(count)}
-        </span>
-      )}
-      <AppIcon name="openDetails" size="1em" />
-    </AboutData>
-  );
+  const explicitAnnotationId = annotationId ?? props.id;
+  const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
+  const help =
+    evidence && !busy ? (
+      <AboutData
+        id={evidence.id}
+        references={{
+          kind: 'ids',
+          glossaryIds: evidence.glossaryIds,
+          queryNames: evidence.queryNames,
+        }}
+        aria-label={
+          typeof title === 'string' ? `Explore ${title}` : 'Explore this widget'
+        }
+        variant="ghost"
+        className="altertable-widget-heading-trigger"
+        shortcut={false}
+        title={title}
+        headerActions={<WidgetStatusControl status={status} />}
+        description={description}
+        visual={visual}
+        visualKind="widget"
+      >
+        <span className="altertable-widget-heading-label">{title}</span>
+        {count !== undefined && (
+          <span className="altertable-data-widget-count">
+            {formatCount(count)}
+          </span>
+        )}
+        <AppIcon name="openDetails" size="1em" />
+      </AboutData>
+    ) : undefined;
 
   return (
     <section
       {...props}
       {...getAnnotationProps({
-        id: annotationId ?? props.id ?? evidence?.id ?? titleId,
+        id: explicitAnnotationId ?? evidence?.id ?? titleId,
+        fallbackId:
+          explicitAnnotationId === undefined && evidence?.id
+            ? titleId
+            : undefined,
         label: typeof title === 'string' ? title : undefined,
         evidence,
       })}

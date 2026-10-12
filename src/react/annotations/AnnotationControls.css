@@ -181,7 +181,7 @@
   --atbl-cursor-action: crosshair;
   /* Keyboard target outlines are rendered on the selected item, not the full-page layer. */
   --atbl-focus-outline: none;
-  touch-action: none;
+  touch-action: pan-x pan-y pinch-zoom;
 }
 .altertable-annotation-selection-layer:focus-visible {
   outline: none;

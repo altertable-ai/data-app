@@ -3,7 +3,7 @@ import type { DataAppAnnotationPresentation } from '@/src/core/annotations';
 import {
   annotationGeometry,
   discoverAnnotationTargets,
-  findAnnotationTarget,
+  indexAnnotationTargets,
   projectAnnotationRect,
   type AnnotationRect,
   type AnnotationTargetElement,
@@ -60,14 +60,14 @@ type AnnotationGeometryOptions = {
   rootRef: AnnotationRootRef;
   target?: AnnotationTargetElement;
   region?: AnnotationRect;
-  targets: DataAppAnnotationPresentation['targets'];
+  annotations: DataAppAnnotationPresentation['targets'];
 };
 
 export function useAnnotationGeometry({
   rootRef,
   target,
   region,
-  targets,
+  annotations,
 }: AnnotationGeometryOptions) {
   const [geometry, setGeometry] = useState<{
     pins: AnnotationPin[];
@@ -75,14 +75,17 @@ export function useAnnotationGeometry({
   }>({ pins: [] });
   useEffect(() => {
     function measure() {
-      const pins = (targets ?? []).flatMap(pin => {
-        const target = findAnnotationTarget(rootRef.current, pin.targetId);
-        return target
+      const targetsById = annotations?.length
+        ? indexAnnotationTargets(rootRef.current)
+        : undefined;
+      const pins = (annotations ?? []).flatMap(pin => {
+        const pinTarget = targetsById?.get(pin.targetId);
+        return pinTarget
           ? [
               {
                 id: pin.id,
                 number: pin.number,
-                rect: annotationGeometry(target.element),
+                rect: annotationGeometry(pinTarget.element),
                 anchor: pin.anchor ?? { x: 1, y: 0 },
               },
             ]
@@ -96,16 +99,25 @@ export function useAnnotationGeometry({
         outline: rect && region ? projectAnnotationRect(region, rect) : rect,
       });
     }
+    let animationFrame: number | undefined;
+    function scheduleMeasure() {
+      if (animationFrame !== undefined) return;
+      animationFrame = requestAnimationFrame(() => {
+        animationFrame = undefined;
+        measure();
+      });
+    }
     measure();
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(scheduleMeasure);
     if (rootRef.current) observer.observe(rootRef.current);
-    window.addEventListener('resize', measure);
-    document.addEventListener('scroll', measure, true);
+    window.addEventListener('resize', scheduleMeasure);
+    document.addEventListener('scroll', scheduleMeasure, true);
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', measure);
-      document.removeEventListener('scroll', measure, true);
+      if (animationFrame !== undefined) cancelAnimationFrame(animationFrame);
+      window.removeEventListener('resize', scheduleMeasure);
+      document.removeEventListener('scroll', scheduleMeasure, true);
     };
-  }, [rootRef, target, region, targets]);
+  }, [rootRef, target, region, annotations]);
   return geometry;
 }

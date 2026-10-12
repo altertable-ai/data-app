@@ -1,4 +1,0 @@
-@layer atbl.tokens, atbl.base, atbl.components, atbl.interaction;
-
-@import './shared.css';
-@import './ui/DataAppSkeleton.css' layer(atbl.components);

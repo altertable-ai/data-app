@@ -1,5 +1,4 @@
 /** Direct UI composition and static screens. Requests use declared views from /react. */
-export { injectDataAppShellStyles } from '@/src/react/shellStyles';
 export { DataAppProvider } from '@/src/react/mount';
 export { isPlainKeyEvent } from '@/src/react/ui/keyboard';
 export { GettingStarted } from '@/src/react/ui/GettingStarted';
@@ -27,8 +26,6 @@ export type {
 export { MetricWidget } from '@/src/react/ui/MetricWidget';
 export type { MetricWidgetProps } from '@/src/react/ui/MetricWidget';
 export { DimensionPicker } from '@/src/react/ui/DimensionPicker';
-export { DataAppSkeleton } from '@/src/react/ui/DataAppSkeleton';
-export type { DataAppSkeletonProps } from '@/src/react/ui/DataAppSkeleton';
 export { LiveControl } from '@/src/react/ui/LiveControl';
 export type {
   LiveControlProps,

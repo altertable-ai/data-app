@@ -26,9 +26,8 @@ async function compileStyles(entrypoint: string): Promise<string> {
   if (!stylesheet) throw new Error(`${entrypoint} stylesheet is missing.`);
   return stylesheet.text();
 }
-const [dataAppStyles, shellStyles, annotationStyles] = await Promise.all([
+const [dataAppStyles, annotationStyles] = await Promise.all([
   compileStyles('src/react/styles.css'),
-  compileStyles('src/react/shellStyles.css'),
   compileStyles('src/react/annotations/styles.css'),
 ]);
 
@@ -66,7 +65,6 @@ const browser = await Bun.build({
   define: {
     DATA_APP_BOOTSTRAP: JSON.stringify(bootstrapScript),
     DATA_APP_STYLES: JSON.stringify(dataAppStyles),
-    SHELL_STYLES: JSON.stringify(shellStyles),
     ANNOTATION_STYLES: JSON.stringify(annotationStyles),
   },
   external,
