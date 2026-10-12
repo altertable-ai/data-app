@@ -1,6 +1,7 @@
 import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   PickerField,
+  PickerTriggerContent,
   type ControlLabelPlacement,
 } from '@/src/react/ui/PickerField';
 import { useEffect, useId, useRef, useState } from 'react';
@@ -16,7 +17,6 @@ import { PressButton as Button } from '@/src/react/ui/Button';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 import { RequestHint } from '@/src/react/ui/RequestHint';
 import { SearchInput } from '@/src/react/ui/SearchInput';
-import { AppIcon } from '@/src/react/ui/icons';
 import { GradientScroll } from '@/src/react/ui/GradientScroll';
 import { SelectionMark } from '@/src/react/ui/SelectionMark';
 import { SearchMatch } from '@/src/react/ui/SearchMatch';
@@ -177,15 +177,11 @@ export function ChoicePicker(props: ChoicePickerProps) {
           isDisabled={disabled}
           aria-label={`${label}: ${display}`}
         >
-          {labelPlacement === 'inline' && (
-            <span className="altertable-picker-label" aria-hidden="true">
-              {label}
-            </span>
-          )}
-          <strong className="altertable-picker-value" aria-hidden="true">
-            {display}
-          </strong>
-          <AppIcon name="disclosure" size={14} />
+          <PickerTriggerContent
+            label={label}
+            labelPlacement={labelPlacement}
+            value={display}
+          />
         </Button>
         <PopoverSurface
           className="altertable-choice-picker-popover"

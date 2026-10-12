@@ -6,9 +6,11 @@ import {
   ListBox,
   ListBoxItem,
 } from 'react-aria-components';
-import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
+import {
+  PickerTriggerContent,
+  type ControlLabelPlacement,
+} from '@/src/react/ui/PickerField';
 import { PressButton } from '@/src/react/ui/Button';
-import { AppIcon } from '@/src/react/ui/icons';
 import { SelectionMark } from '@/src/react/ui/SelectionMark';
 import { validateChoiceOptions, type ChoiceOption } from '@/src/core/variables';
 import { invariant } from '@/src/core/invariant';
@@ -66,15 +68,11 @@ export function Select({
           inline && 'altertable-picker-trigger'
         )}
       >
-        {inline && (
-          <span className="altertable-picker-label" aria-hidden="true">
-            {label}
-          </span>
-        )}
-        <SelectValue className={inline ? 'altertable-picker-value' : undefined}>
-          {selected.label}
-        </SelectValue>
-        <AppIcon name="disclosure" size={14} />
+        <PickerTriggerContent
+          label={label}
+          labelPlacement={labelPlacement}
+          value={<SelectValue>{selected.label}</SelectValue>}
+        />
       </PressButton>
       <PopoverSurface
         className="altertable-select-popover"

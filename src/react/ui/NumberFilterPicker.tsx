@@ -1,12 +1,12 @@
 import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   PickerField,
+  PickerTriggerContent,
   type ControlLabelPlacement,
 } from '@/src/react/ui/PickerField';
 import { useState } from 'react';
 import { DialogTrigger, Dialog } from 'react-aria-components';
 import { PressButton } from '@/src/react/ui/Button';
-import { AppIcon } from '@/src/react/ui/icons';
 import { Select } from '@/src/react/ui/Select';
 import {
   NumberField,
@@ -53,11 +53,11 @@ export function NumberFilterPicker({
           aria-label={`${filter.label}: ${summary}`}
           isDisabled={disabled}
         >
-          {labelPlacement === 'inline' && (
-            <span className="altertable-picker-label">{filter.label}</span>
-          )}
-          <strong className="altertable-picker-value">{summary}</strong>
-          <AppIcon name="disclosure" size={14} />
+          <PickerTriggerContent
+            label={filter.label}
+            labelPlacement={labelPlacement}
+            value={summary}
+          />
         </PressButton>
         <PopoverSurface
           className="altertable-number-filter-popover"
