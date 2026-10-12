@@ -43,7 +43,9 @@ type RequiredFilterBindingKeys<Variables extends VariableCollection, Input> = {
   > extends never
     ? never
     : [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
-      ? never
+      ? [ResolvedVariables<Variables>[Key]] extends [Input[Key]]
+        ? never
+        : Key
       : Key;
 }[keyof Variables];
 

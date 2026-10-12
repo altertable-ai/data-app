@@ -56,6 +56,7 @@ const hooks = createDataHooks<{
     number
   >;
   wrongType: DataOperation<{ organization: string; window: string }, number>;
+  narrow: DataOperation<{ organization: { kind: 'all' } }, number>;
   mixedVariable: DataOperation<{ org: string }, number>;
   union: DataOperation<
     { organization: DimensionSelection<string> } | { org: string },
@@ -135,6 +136,13 @@ hooks.defineDataView({
   operation: 'union',
   variables: { organization },
   input: values => values,
+});
+// @ts-expect-error An all-only field cannot carry every organization selection.
+hooks.defineDataView({
+  ...feedback,
+  operation: 'narrow',
+  variables: { organization },
+  input: () => ({ organization: { kind: 'all' } }),
 });
 // @ts-expect-error Nested filter fields require explicit bindings.
 hooks.defineDataView({
