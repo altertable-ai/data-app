@@ -2,11 +2,11 @@
   min-width: 0;
   padding: var(--atbl-space-md)
     var(
-      --atbl-layout-gap,
+      --atbl-surface-padding,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     )
     var(
-      --atbl-layout-gap,
+      --atbl-surface-padding,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     );
 }

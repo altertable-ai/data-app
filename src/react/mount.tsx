@@ -1,3 +1,4 @@
+import { I18nProvider } from 'react-aria-components';
 import { useState, type ComponentType, type ReactNode } from 'react';
 import { DataAppContext } from '@/src/react/app-context';
 import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
@@ -61,9 +62,11 @@ export function DataAppProvider<const Queries extends QueryDefinitions>({
 
   return (
     <DataAppContext value={app}>
-      <QueryClientProvider client={client}>
-        <InspectionProvider>{children}</InspectionProvider>
-      </QueryClientProvider>
+      <I18nProvider locale={app.dateFormatting?.locale ?? 'en-US'}>
+        <QueryClientProvider client={client}>
+          <InspectionProvider>{children}</InspectionProvider>
+        </QueryClientProvider>
+      </I18nProvider>
     </DataAppContext>
   );
 }

@@ -1,4 +1,11 @@
-import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
+import {
+  useRef,
+  useState,
+  type ComponentRef,
+  type ComponentPropsWithRef,
+  type ReactNode,
+} from 'react';
+import { useMergeRefs } from '@floating-ui/react';
 import { invariant } from '@/src/core/invariant';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
@@ -19,6 +26,7 @@ import { formatCount, pluralize } from '@/src/core/format';
 import { Skeleton } from '@/src/react/ui/Skeleton';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
+import { classNames } from '@/src/react/ui/classNames';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
 export type TableWidgetColumn<Row> = {
@@ -49,8 +57,14 @@ export type TableDisplayMode =
 
 type TableWidgetBaseProps<Row> = {
   title: ReactNode;
+  headingLevel?: 2 | 3 | 4 | 5 | 6;
   annotationId?: string;
+  /** Show the matching supplied-row count before pagination or limits. Defaults to true. */
+  showCount?: boolean;
+  /** Override the derived count, for example with a server total. Hidden when showCount is false or loading. */
   count?: number;
+  /** Clear only filters affecting this dataset. Supply only while those filters are active; enables empty-result recovery. */
+  onClearFilters?: () => void;
   description?: ReactNode;
   columns: readonly [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
   /** Unique, nonempty row identity. Numeric keys must be finite; 1 and "1" collide. */
@@ -61,6 +75,8 @@ type TableWidgetBaseProps<Row> = {
   search?: TableWidgetSearch<Row>;
   /** Valid result with no rows; the header remains visible. */
   emptyFallback: EmptyContent;
+  /** No local search matches or explicitly filtered results. Defaults to “No matching results” with recovery guidance. */
+  noMatchesFallback?: EmptyContent;
 } & TableDisplayMode &
   Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
@@ -115,6 +131,8 @@ export function TableWidget<Row>(props: TableWidgetProps<Row>) {
 function TableWidgetContent<Row>({
   title,
   count,
+  showCount = true,
+  onClearFilters,
   description,
   columns,
   rows,
@@ -125,6 +143,7 @@ function TableWidgetContent<Row>({
   limit,
   pagination,
   emptyFallback,
+  noMatchesFallback,
   loading = false,
   skeletonRows = 5,
   ...props
@@ -174,71 +193,6 @@ function TableWidgetContent<Row>({
   const visible = hits.slice(
     start,
     pageSize ? start + pageSize : Math.max(0, limit ?? hits.length)
-  );
-  const searchable = search && {
-    label: search.label,
-    placeholder: search.placeholder,
-    value: search.value,
-    onChange: search.onChange,
-    resetValue: search.resetValue,
-    itemCount: rows.length,
-  };
-  const table = (
-    <>
-      <DataTable
-        searchable={loading ? undefined : searchable}
-        aria-busy={loading || undefined}
-      >
-        <thead>
-          <tr>
-            {columns.map(column => (
-              <th key={column.id} scope="col" data-type={column.type}>
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody aria-hidden={loading || undefined}>
-          {loading ? (
-            Array.from(
-              {
-                length: Math.min(
-                  100,
-                  Math.max(0, Math.trunc(skeletonRows) || 0)
-                ),
-              },
-              (_, row) => (
-                <tr key={row}>
-                  {columns.map(column => (
-                    <td key={column.id} data-type={column.type}>
-                      <Skeleton style={{ width: '70%', height: '1em' }} />
-                    </td>
-                  ))}
-                </tr>
-              )
-            )
-          ) : visible.length === 0 ? (
-            <DataTableEmptyRow colSpan={columns.length} {...emptyFallback} />
-          ) : (
-            visible.map(hit => (
-              <tr key={rowKey(hit.item)}>
-                {columns.map((column, index) =>
-                  index === 0 ? (
-                    <th key={column.id} scope="row" data-type={column.type}>
-                      {column.cell(hit.item, hit)}
-                    </th>
-                  ) : (
-                    <td key={column.id} data-type={column.type}>
-                      {column.cell(hit.item, hit)}
-                    </td>
-                  )
-                )}
-              </tr>
-            ))
-          )}
-        </tbody>
-      </DataTable>
-    </>
   );
   const pager = pageSize && pageCount > 1 && (
     <nav className="altertable-table-pagination" aria-label="Table pages">
@@ -291,14 +245,166 @@ function TableWidgetContent<Row>({
   return (
     <VisualizationWidget
       {...props}
+      className={classNames('altertable-table-widget', props.className)}
       title={title}
-      count={loading ? undefined : count}
+      count={loading || !showCount ? undefined : (count ?? hits.length)}
       description={description}
       action={action}
       evidence={evidence}
       aria-busy={loading || props['aria-busy']}
       footer={pager}
-      visual={<div className="altertable-table-widget-content">{table}</div>}
+      visual={
+        <div className="altertable-table-widget-content">
+          <TableWidgetTable
+            columns={columns}
+            visible={visible}
+            rowKey={rowKey}
+            rowCount={rows.length}
+            matchCount={hits.length}
+            search={search}
+            emptyFallback={emptyFallback}
+            noMatchesFallback={noMatchesFallback}
+            onClearFilters={onClearFilters}
+            loading={loading}
+            skeletonRows={skeletonRows}
+          />
+        </div>
+      }
     />
+  );
+}
+
+/** Each page or inspection mount owns its input and recovery focus. */
+function TableWidgetTable<Row>({
+  columns,
+  visible,
+  rowKey,
+  rowCount,
+  matchCount,
+  search,
+  emptyFallback,
+  noMatchesFallback,
+  onClearFilters,
+  loading,
+  skeletonRows,
+}: Pick<
+  TableWidgetBaseProps<Row>,
+  | 'columns'
+  | 'rowKey'
+  | 'search'
+  | 'emptyFallback'
+  | 'noMatchesFallback'
+  | 'onClearFilters'
+> & {
+  visible: readonly SearchHit<Row>[];
+  rowCount: number;
+  matchCount: number;
+  loading: boolean;
+  skeletonRows: number;
+}) {
+  const tableRef = useRef<ComponentRef<'table'>>(null);
+  const searchInputRef = useRef<ComponentRef<'input'>>(null);
+  const searchRef = useMergeRefs([searchInputRef, search?.inputProps?.ref]);
+  const searchable = search && {
+    label: search.label,
+    placeholder: search.placeholder,
+    value: search.value,
+    onChange: search.onChange,
+    resetValue: search.resetValue,
+    inputProps: { ...search.inputProps, ref: searchRef },
+    itemCount: rowCount,
+  };
+  const searchHasNoMatches = rowCount > 0 && matchCount === 0 && !!search;
+  const canClearSearch =
+    searchHasNoMatches && search && search.value !== (search.resetValue ?? '');
+  function clearSearch() {
+    search?.onChange(search.resetValue ?? '');
+    requestAnimationFrame(() =>
+      (searchInputRef.current ?? tableRef.current)?.focus()
+    );
+  }
+  function clearFilters() {
+    onClearFilters?.();
+    tableRef.current?.focus();
+  }
+  const noMatches = searchHasNoMatches || (rowCount === 0 && !!onClearFilters);
+  const emptyContent = noMatches
+    ? (noMatchesFallback ?? {
+        title: 'No matching results',
+        description: searchHasNoMatches
+          ? 'Try a different search.'
+          : 'Try different filters.',
+      })
+    : emptyFallback;
+  const recovery = canClearSearch ? (
+    <Button onClick={clearSearch}>Clear search</Button>
+  ) : rowCount === 0 && onClearFilters ? (
+    <Button onClick={clearFilters}>Clear filters</Button>
+  ) : undefined;
+  const emptyAction = recovery ? (
+    <>
+      {emptyContent.action}
+      {recovery}
+    </>
+  ) : (
+    emptyContent.action
+  );
+  return (
+    <DataTable
+      ref={tableRef}
+      tabIndex={-1}
+      searchable={loading ? undefined : searchable}
+      aria-busy={loading || undefined}
+    >
+      <thead>
+        <tr>
+          {columns.map(column => (
+            <th key={column.id} scope="col" data-type={column.type}>
+              {column.header}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody aria-hidden={loading || undefined}>
+        {loading ? (
+          Array.from(
+            {
+              length: Math.min(100, Math.max(0, Math.trunc(skeletonRows) || 0)),
+            },
+            (_, row) => (
+              <tr key={row}>
+                {columns.map(column => (
+                  <td key={column.id} data-type={column.type}>
+                    <Skeleton style={{ width: '70%', height: '1em' }} />
+                  </td>
+                ))}
+              </tr>
+            )
+          )
+        ) : visible.length === 0 ? (
+          <DataTableEmptyRow
+            colSpan={columns.length}
+            {...emptyContent}
+            action={emptyAction}
+          />
+        ) : (
+          visible.map(hit => (
+            <tr key={rowKey(hit.item)}>
+              {columns.map((column, index) =>
+                index === 0 ? (
+                  <th key={column.id} scope="row" data-type={column.type}>
+                    {column.cell(hit.item, hit)}
+                  </th>
+                ) : (
+                  <td key={column.id} data-type={column.type}>
+                    {column.cell(hit.item, hit)}
+                  </td>
+                )
+              )}
+            </tr>
+          ))
+        )}
+      </tbody>
+    </DataTable>
   );
 }

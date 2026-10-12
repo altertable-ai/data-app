@@ -16,6 +16,8 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
     description: string;
     /** Omit to use the standard appearance. */
     appearance?: AppearanceOptions;
+    /** Shared date display defaults. Reporting views and individual fields may override the time zone. */
+    dateFormatting?: { locale?: string; timeZone?: string };
     /** Named SQL statements and parameter defaults used by app operations. */
     queries: Queries;
   };

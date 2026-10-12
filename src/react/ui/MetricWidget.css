@@ -2,8 +2,9 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* Optional surface padding is independent of the surrounding layout gap. */
   padding: var(
-    --atbl-layout-gap,
+    --atbl-surface-padding,
     clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
   );
   border: 1px solid var(--atbl-border);
@@ -18,13 +19,6 @@
 .altertable-metric-widget > .altertable-data-widget-header {
   min-height: 0;
 }
-.altertable-metric-widget > .altertable-data-widget-header h2 {
-  color: var(--atbl-muted);
-  font-family: inherit;
-  font-size: var(--atbl-type-label-size);
-  font-weight: var(--atbl-type-label-weight);
-  letter-spacing: normal;
-}
 .altertable-metric-widget > .altertable-data-widget-body {
   padding-top: 0;
 }
@@ -34,7 +28,7 @@
 .altertable-metric-widget > .altertable-data-widget-footer {
   padding-top: 0;
   padding-bottom: var(
-    --atbl-layout-gap,
+    --atbl-surface-padding,
     clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
   );
 }
@@ -71,9 +65,9 @@
   color: var(--atbl-muted);
   font-variant-numeric: tabular-nums;
 }
-/* Optional metric tones: favorable defaults to local accent, unfavorable to danger. */
+/* Semantic outcomes remain independent of the brand accent. */
 .altertable-metric-change[data-tone='good'] {
-  color: var(--atbl-positive, var(--atbl-accent));
+  color: var(--atbl-positive);
 }
 .altertable-metric-change[data-tone='bad'] {
   color: var(--atbl-negative, var(--atbl-danger));

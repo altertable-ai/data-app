@@ -2,20 +2,17 @@
 
 The shell owns page width, outer gutters, and header/body spacing. Use `<Stack>`
 for sections, `<Grid>` for peer widgets, and `<GridItem>` for spans. Use
-`<TextContent>` for prose. Widgets own their internal padding; their parents own
+`<SectionHeading>` to name widget groups and `<TextContent>` for prose. Widgets own their internal padding; their parents own
 external spacing. Keep widget customization inside the widget so its parent can maintain consistent
 spacing between sections and cards.
 
-By default, section and widget gaps use `--atbl-layout-gap`, with density configured once
-in `app.appearance`. The package owns wrapping and span collapse based
-on the available container width and configured gap. Custom length values for
-`--atbl-layout-gap`, `--atbl-space-sm`, and `--atbl-space-md` also drive span
-collapse; a two-column span activates only when two minimum-width tracks fit.
+Configure density once in `app.appearance`. `<Grid>` wraps to fit its container;
+spans collapse when there is not enough space.
 
 ```tsx
 <Stack>
+  <SectionHeading>Activity</SectionHeading>
   <TextContent>
-    <h2>Activity</h2>
     <p>Explore the sources behind this finding.</p>
   </TextContent>
   <Grid columns={3}>
@@ -25,9 +22,35 @@ collapse; a two-column span activates only when two minimum-width tracks fit.
 </Stack>
 ```
 
+Set widget `headingLevel={3}` beneath a section heading; visual styling stays
+consistent across widget types.
+
+Use `<DataApp footer={...}>` for an optional source, coverage, or methodology
+note below the app content. The footer provides muted body text across the content
+width and top spacing. Compose paragraphs, links, lists, and inline components such
+as `<DataIdentifier>` or `<DateDisplay>` directly; no `<TextContent>` wrapper is
+needed. Keep headings and data widgets in the body, and app controls in
+`footerActions`. Keep static notes outside loading sections.
+
+```tsx
+<DataApp
+  {...appProps}
+  footer={
+    <>
+      <p>
+        <strong>Coverage.</strong> Records include the last 90 days.
+      </p>
+      <p>Counts reflect current inventory, not an activity log.</p>
+    </>
+  }
+>
+  <DataSection content={content} />
+</DataApp>
+```
+
 ## Verify rendered layouts
 
-Check computed section/widget gaps, sibling alignment, outer gutters, and
+Check spacing, alignment, outer gutters, and
 horizontal overflow at phone and desktop iframe widths. Check loading, empty,
 error, ready, and stale states. Loading placeholders should use the same grid as
 the ready content.

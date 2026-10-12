@@ -78,6 +78,12 @@ function literalRanges(
   });
 }
 
+/** Highlight literal query terms in supplied text without filtering or reordering results. */
+export function matchSearchText(text: string, query: string): SearchMatchValue {
+  const terms = fold(query.trim()).value.split(/\s+/).filter(Boolean);
+  return { text, ranges: mergeRanges(literalRanges(text, terms).flat()) };
+}
+
 /**
  * Search only a complete local collection. Empty queries retain every item.
  * When a searched field is displayed, render its match with SearchMatch:

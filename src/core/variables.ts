@@ -14,10 +14,18 @@ import { invariant } from '@/src/core/invariant';
 import type { HistoryMode } from '@/src/core/navigation';
 export type { HistoryMode } from '@/src/core/navigation';
 
+export type VariablePresentation = {
+  /** Scope changes the included data; display changes its presentation. Defaults to scope. */
+  group?: 'scope' | 'display';
+  /** Secondary scope controls live in the Filters sheet with compact pickers when active; secondary display options follow primary options. Defaults to primary. */
+  prominence?: 'primary' | 'secondary';
+};
+
 /** An app-owned value with one URL representation. Controls never parse or write routes. */
 export type AppVariable<Value, Kind extends string = string> = {
   kind: Kind;
   label?: string;
+  presentation?: VariablePresentation;
   urlKeys: readonly string[];
   defaultValue: Value;
   /** Unrestricted value, when this variable represents a filter. */
@@ -56,6 +64,20 @@ export function defineAppVariables<const Variables extends VariableCollection>(
 ): Variables {
   const owners = new Map<string, string>();
   for (const [name, variable] of Object.entries(variables)) {
+    const presentation = variable.presentation;
+    invariant(
+      presentation === undefined ||
+        (presentation !== null &&
+          typeof presentation === 'object' &&
+          !Array.isArray(presentation) &&
+          (presentation.group === undefined ||
+            presentation.group === 'scope' ||
+            presentation.group === 'display') &&
+          (presentation.prominence === undefined ||
+            presentation.prominence === 'primary' ||
+            presentation.prominence === 'secondary')),
+      `Variable ${name} has invalid presentation.`
+    );
     for (const key of variable.urlKeys) {
       invariant(
         !['view', 'about', 'tab', 'present', 'step'].includes(key),
@@ -77,6 +99,7 @@ type ScalarVariableOptions = {
   key: string;
   defaultValue?: string;
   history?: HistoryMode;
+  presentation?: VariablePresentation;
 };
 
 export type SearchVariable = AppVariable<string, 'search'>;
@@ -95,7 +118,7 @@ export function searchVariable({
   label,
   defaultValue = '',
   history = 'replace',
-}: ScalarVariableOptions): SearchVariable {
+}: Omit<ScalarVariableOptions, 'presentation'>): SearchVariable {
   return {
     kind: 'search',
     label: label ?? key,
@@ -135,6 +158,7 @@ export function choiceVariable({
   defaultValue,
   options,
   history = 'push',
+  presentation,
 }: ScalarVariableOptions & {
   defaultValue: string;
   options: readonly ChoiceOption[];
@@ -151,6 +175,7 @@ export function choiceVariable({
   );
   return {
     kind: 'choice',
+    presentation,
     label: label ?? key,
     options,
     urlKeys: [key],
@@ -176,6 +201,7 @@ export function multiChoiceVariable({
   options,
   maxSelected = options.length,
   history = 'push',
+  presentation,
 }: Omit<ScalarVariableOptions, 'defaultValue'> & {
   defaultValue?: readonly string[];
   options: readonly ChoiceOption[];
@@ -202,6 +228,7 @@ export function multiChoiceVariable({
   invariant(valid(defaultValue), `Invalid default choices for ${key}.`);
   return {
     kind: 'multiChoice',
+    presentation,
     label: label ?? key,
     options,
     maxSelected,
@@ -251,6 +278,7 @@ export type DateRangeVariableOptions = {
   history?: HistoryMode;
   /** Opt into a URL-backed comparison with the preceding equal-length range. */
   comparison?: boolean;
+  presentation?: VariablePresentation;
 };
 
 export type DateRangeVariable = AppVariable<DateRangeSelection, 'dateRange'> & {
@@ -290,6 +318,7 @@ export function dateRangeVariable({
   contract,
   history = 'push',
   comparison = false,
+  presentation,
 }: DateRangeVariableOptions): DateRangeVariable {
   const startKey = key === 'period' ? 'start' : `${key}-start`;
   const endKey = key === 'period' ? 'end' : `${key}-end`;
@@ -330,6 +359,7 @@ export function dateRangeVariable({
   }
   const variable: DateRangeVariable = {
     kind: 'dateRange',
+    presentation,
     label,
     describe: selection =>
       contract.describeInput(variable.input(selection).range),

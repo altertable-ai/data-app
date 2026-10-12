@@ -142,8 +142,17 @@ const content = view.content(source => (
 ));
 
 function App() {
+  const hideSearch = new URLSearchParams(location.search).has('hideSearch');
+  const hideControls = new URLSearchParams(location.search).has('hideControls');
+  const hideFilters = new URLSearchParams(location.search).has('hideFilters');
   return (
-    <DataApp view={view} datasets={[dataset]} story={() => []}>
+    <DataApp
+      view={view}
+      datasets={[dataset]}
+      story={() => []}
+      showSearch={hideControls || hideSearch ? false : undefined}
+      showFilters={hideControls || hideFilters ? false : undefined}
+    >
       <DataSection content={content} />
     </DataApp>
   );

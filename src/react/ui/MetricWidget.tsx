@@ -1,3 +1,4 @@
+import { useDateFormatting } from '@/src/react/date-formatting';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
 import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
@@ -15,6 +16,8 @@ import { metricComparison, type MetricDefinition } from '@/src/react/ui/metric';
 
 type MetricWidgetBaseProps = {
   label: string;
+  /** Document outline level. The label keeps the shared widget-heading appearance. */
+  headingLevel?: 2 | 3 | 4 | 5 | 6;
   annotationId?: string;
   description?: ReactNode;
   comparison?: MetricComparison;
@@ -49,6 +52,7 @@ export type MetricWidgetProps =
     });
 
 export function MetricWidget(props: MetricWidgetProps) {
+  const dateFormatting = useDateFormatting();
   if ('metric' in props) {
     const { metric, reading, ...rest } = props;
     if (reading.loading)
@@ -68,7 +72,7 @@ export function MetricWidget(props: MetricWidgetProps) {
         value={reading.value.current}
         format={metric.format}
         evidence={metric.evidence}
-        comparison={metricComparison(metric, reading)}
+        comparison={metricComparison(metric, reading, dateFormatting)}
       />
     );
   }

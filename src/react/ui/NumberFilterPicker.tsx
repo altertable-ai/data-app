@@ -1,7 +1,12 @@
+import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
+import {
+  PickerField,
+  PickerTriggerContent,
+  type ControlLabelPlacement,
+} from '@/src/react/ui/PickerField';
 import { useState } from 'react';
-import { DialogTrigger, Dialog, Popover } from 'react-aria-components';
+import { DialogTrigger, Dialog } from 'react-aria-components';
 import { PressButton } from '@/src/react/ui/Button';
-import { AppIcon } from '@/src/react/ui/icons';
 import { Select } from '@/src/react/ui/Select';
 import {
   NumberField,
@@ -17,6 +22,7 @@ import {
 
 export type NumberFilterPickerProps = {
   filter: NumberFilter;
+  labelPlacement?: ControlLabelPlacement;
   value: NumberSelection;
   onChange: (value: NumberSelection) => void;
   disabled?: boolean;
@@ -35,41 +41,46 @@ export function NumberFilterPicker({
   value,
   onChange,
   disabled,
+  labelPlacement = 'inline',
 }: NumberFilterPickerProps) {
   const [open, setOpen] = useState(false);
   const summary = filter.describe?.(value);
   return (
-    <DialogTrigger isOpen={open} onOpenChange={setOpen}>
-      <PressButton
-        className="altertable-picker-trigger"
-        aria-label={`${filter.label}: ${summary}`}
-        isDisabled={disabled}
-      >
-        <span className="altertable-picker-label">{filter.label}</span>
-        <strong className="altertable-picker-value">{summary}</strong>
-        <AppIcon name="disclosure" size={14} />
-      </PressButton>
-      <Popover
-        className="altertable-number-filter-popover"
-        placement="bottom start"
-      >
-        <Dialog
-          aria-label={`${filter.label} filter`}
-          className="altertable-number-filter-dialog"
+    <PickerField label={filter.label} labelPlacement={labelPlacement}>
+      <DialogTrigger isOpen={open} onOpenChange={setOpen}>
+        <PressButton
+          className="altertable-picker-trigger"
+          aria-label={`${filter.label}: ${summary}`}
+          isDisabled={disabled}
         >
-          <NumberFilterEditor
-            key={JSON.stringify(value)}
-            filter={filter}
-            value={value}
-            onApply={next => {
-              onChange(next);
-              setOpen(false);
-            }}
-            onCancel={() => setOpen(false)}
+          <PickerTriggerContent
+            label={filter.label}
+            labelPlacement={labelPlacement}
+            value={summary}
           />
-        </Dialog>
-      </Popover>
-    </DialogTrigger>
+        </PressButton>
+        <PopoverSurface
+          className="altertable-number-filter-popover"
+          placement="bottom start"
+        >
+          <Dialog
+            aria-label={`${filter.label} filter`}
+            className="altertable-number-filter-dialog"
+          >
+            <NumberFilterEditor
+              key={JSON.stringify(value)}
+              filter={filter}
+              value={value}
+              onApply={next => {
+                onChange(next);
+                setOpen(false);
+              }}
+              onCancel={() => setOpen(false)}
+            />
+          </Dialog>
+        </PopoverSurface>
+      </DialogTrigger>
+    </PickerField>
   );
 }
 function NumberFilterEditor({

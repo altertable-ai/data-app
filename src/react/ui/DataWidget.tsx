@@ -1,5 +1,10 @@
 import { getAnnotationProps } from '@/src/react/annotations/getAnnotationProps';
-import { useId, type ComponentPropsWithRef, type ReactNode } from 'react';
+import {
+  useId,
+  type ComponentPropsWithRef,
+  type ElementType,
+  type ReactNode,
+} from 'react';
 import { formatCount } from '@/src/core/format';
 import { AboutData } from '@/src/react/ui/AboutData';
 import { AppIcon } from '@/src/react/ui/icons';
@@ -18,8 +23,11 @@ import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
 type DataWidgetBaseProps = {
   title: ReactNode;
+  /** Document outline level. The widget title keeps the shared widget-heading appearance. */
+  headingLevel?: 2 | 3 | 4 | 5 | 6;
   /** Unique stable target for persisted feedback; overrides automatic evidence identity. */
   annotationId?: string;
+  /** Result count beside the heading. Derive from the displayed result; zero is visible. */
   count?: number;
   description?: ReactNode;
   evidence?: WidgetEvidence;
@@ -74,6 +82,7 @@ export function DataWidget<Data>(props: DataWidgetProps<Data>) {
 
 function DataWidgetContent({
   title,
+  headingLevel = 2,
   annotationId,
   count,
   description,
@@ -91,6 +100,7 @@ function DataWidgetContent({
   children: ReactNode;
 }) {
   const titleId = useId();
+  const Heading = `h${headingLevel}` as ElementType;
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
   const visual = (
     <WidgetContent
@@ -125,7 +135,12 @@ function DataWidgetContent({
         visualKind="widget"
       >
         <span className="altertable-widget-heading-label">{title}</span>
-        <AppIcon name="openDetails" />
+        {count !== undefined && (
+          <span className="altertable-data-widget-count">
+            {formatCount(count)}
+          </span>
+        )}
+        <AppIcon name="openDetails" size="1em" />
       </AboutData>
     ) : undefined;
 
@@ -146,17 +161,18 @@ function DataWidgetContent({
     >
       <header className="altertable-data-widget-header">
         <div>
-          <h2
+          <Heading
             id={titleId}
+            className="altertable-widget-heading"
             aria-label={typeof title === 'string' ? title : undefined}
           >
             {help ?? title}
-            {count !== undefined && (
+            {!help && count !== undefined && (
               <span className="altertable-data-widget-count">
                 {formatCount(count)}
               </span>
             )}
-          </h2>
+          </Heading>
           {description && <p>{description}</p>}
         </div>
         <div className="altertable-data-widget-help">

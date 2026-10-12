@@ -91,6 +91,11 @@ export function useShortcut(
       if (
         !matchesShortcut(event, shortcut) ||
         document.querySelector('dialog:modal') ||
+        Array.from(
+          document.querySelectorAll(
+            '[role="dialog"], [role="listbox"], [role="menu"]'
+          )
+        ).some(element => element.getClientRects().length > 0) ||
         (!allowWhileEditing && isEditingTarget(event.target))
       )
         return;

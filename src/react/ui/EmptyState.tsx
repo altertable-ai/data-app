@@ -9,6 +9,7 @@ export type EmptyStateProps = EmptyContent & {
 export function EmptyState({
   title,
   description,
+  action,
   variant = 'visual',
   className,
 }: EmptyStateProps) {
@@ -27,6 +28,7 @@ export function EmptyState({
       ) : (
         <p>{title}</p>
       )}
+      {action && <div className="altertable-empty-state-action">{action}</div>}
     </div>
   );
 }

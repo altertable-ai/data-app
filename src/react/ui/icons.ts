@@ -14,7 +14,9 @@ import {
   Clock3,
   Copy,
   FileCode2,
+  ListFilter,
   FilterX,
+  SlidersHorizontal,
   Download,
   Info,
   LoaderCircle,
@@ -51,7 +53,9 @@ const brandedIcons = {
   export: Download,
   error: CircleAlert,
   close: X,
+  filters: ListFilter,
   clearFilters: FilterX,
+  displayOptions: SlidersHorizontal,
   previous: ArrowLeft,
   next: ArrowRight,
   lightTheme: Sun,
@@ -73,7 +77,7 @@ const brandedIcons = {
 export type AppIconName = keyof typeof brandedIcons;
 export type AppIconProps = Omit<LucideProps, 'size'> & {
   name: AppIconName;
-  size?: number;
+  size?: number | string;
 };
 
 export function AppIcon({

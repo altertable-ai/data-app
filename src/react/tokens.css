@@ -2,8 +2,6 @@
    Input/palette variables referenced here are private. Optional component overrides
    are documented at their var() consumption sites, so local inputs compose. */
 :root {
-  /* Editable text size; compact controls retain this size. Mobile styles enforce 16px. */
-  --atbl-control-text-size: var(--atbl-type-body-size);
   /* Canvas, widget surfaces, and modal backdrop. */
   --atbl-background: var(--atbl-palette-background);
   --atbl-surface: var(--atbl-palette-surface);
@@ -16,16 +14,14 @@
   --atbl-border: var(--atbl-palette-border);
 
   /* Accent and its foreground. Override both together to preserve contrast. */
-  --atbl-accent: var(--atbl-input-accent, #405d47);
-  --atbl-on-accent: var(--atbl-input-on-accent, #fff);
+  --atbl-accent: var(--atbl-palette-accent);
+  --atbl-on-accent: var(--atbl-palette-on-accent);
 
-  /* Errors and quiet error surfaces. */
-  --atbl-danger: #b42318;
-  --atbl-danger-subtle: color-mix(
-    in srgb,
-    var(--atbl-danger) 9%,
-    var(--atbl-surface)
-  );
+  /* Semantic outcomes are independent of brand and chart colors. */
+  --atbl-positive: var(--atbl-palette-positive);
+
+  /* Error foreground; quiet surfaces derive locally at their consumption sites. */
+  --atbl-danger: var(--atbl-palette-danger);
 
   /* Code surfaces, text, and monospace font. */
   --atbl-code-surface: #f4f6f9;
@@ -134,7 +130,7 @@
   --atbl-type-meta-weight: 500;
   --atbl-type-page-size: clamp(1.375rem, 2.4vw, 1.75rem);
   --atbl-type-section-size: 1.25rem;
-  --atbl-type-widget-size: 1.0625rem;
+  --atbl-type-widget-size: var(--atbl-type-label-size);
   --atbl-type-body-size: 0.875rem;
   --atbl-type-label-size: 0.8125rem;
   --atbl-type-meta-size: 0.75rem;

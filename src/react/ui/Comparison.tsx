@@ -1,3 +1,4 @@
+import { useDateFormatting } from '@/src/react/date-formatting';
 import { AppIcon } from '@/src/react/ui/icons';
 import {
   comparisonChange,
@@ -22,9 +23,14 @@ export type ComparisonProps =
     };
 
 export function Comparison(props: ComparisonProps) {
+  const dateFormatting = useDateFormatting();
   if ('metric' in props) {
     if (props.reading.loading) return <ContentSkeleton variant="panel" />;
-    const comparison = metricComparison(props.metric, props.reading);
+    const comparison = metricComparison(
+      props.metric,
+      props.reading,
+      dateFormatting
+    );
     if (!comparison) return null;
 
     return (

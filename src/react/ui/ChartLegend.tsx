@@ -103,7 +103,7 @@ export type ChartLegendMarkerProps = Omit<
  * Defaults match the shared bar or accent-colored series primitives. */
 function ChartLegendMarker({
   kind,
-  color = kind === 'bar' ? chartBarFill : 'var(--atbl-accent)',
+  color = kind === 'bar' ? chartBarFill : 'var(--atbl-chart-1)',
   className,
   style,
   ...props

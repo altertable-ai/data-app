@@ -13,3 +13,9 @@
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+.altertable-button[data-variant='primary'] .altertable-kbd {
+  background: transparent;
+  color: inherit;
+  border-color: color-mix(in srgb, currentColor 30%, transparent);
+}

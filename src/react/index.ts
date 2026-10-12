@@ -1,6 +1,7 @@
 /** Declared views, bound widgets, and layouts for data-app authoring. */
 export type {
   DatasetColumn,
+  DatasetSuggestionOptions,
   DatasetDeclaration as DatasetDefinition,
 } from '@/src/react/bindings';
 export { injectDataAppStyles } from '@/src/react/styles';
@@ -61,6 +62,7 @@ export {
 } from '@/src/react/ui/variables';
 export type {
   AppVariable,
+  VariablePresentation,
   AppVariableValues,
   ChoiceOption,
   ChoiceVariable,
@@ -108,3 +110,9 @@ export type {
 } from '@/src/react/annotations/AnnotationBar';
 
 export { injectDataAppAnnotationStyles } from '@/src/react/annotations/styles';
+
+export { SectionHeading } from '@/src/react/ui/SectionHeading';
+export type { SectionHeadingProps } from '@/src/react/ui/SectionHeading';
+export { DateDisplay } from '@/src/react/ui/DateDisplay';
+export type { DateDisplayProps } from '@/src/react/ui/DateDisplay';
+export { useDateFormatting } from '@/src/react/date-formatting';

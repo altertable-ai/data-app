@@ -67,7 +67,8 @@ const formatting = [
   ['Plural label', `0 ${pluralize(0, 'event')}`],
 ].map(([sample, display]) => ({ sample: sample!, display: display! }));
 function App() {
-  const [search, setSearch] = useState('');
+  const params = new URLSearchParams(location.search);
+  const [search, setSearch] = useState(params.get('initial-search') ?? '');
   return (
     <DataApp
       description={
@@ -77,7 +78,12 @@ function App() {
             ? null
             : undefined
       }
-      dataContext={{ description: 'Activity data', glossary: {} }}
+      dataContext={{
+        description: 'Activity data',
+        glossary: {
+          groups: { term: 'Groups', definition: 'Sample group events.' },
+        },
+      }}
       csvExport={{
         filename: 'gallery',
         tables: new URLSearchParams(location.search).has('multiple-exports')
@@ -102,16 +108,43 @@ function App() {
       <MetricWidget label="Unavailable" content={formatPercent(null)} />
       <TableWidget
         title="Events by group"
-        rows={rows}
+        {...(params.has('loading-table')
+          ? {
+              reading: { loading: true as const },
+              evidence: { id: 'groups', glossaryIds: ['groups'] as [string] },
+            }
+          : {
+              rows: params.has('empty-table')
+                ? []
+                : params.has('few-rows')
+                  ? rows.slice(0, 2)
+                  : rows,
+              evidence: params.has('inspectable-table')
+                ? { id: 'groups', glossaryIds: ['groups'] as [string] }
+                : undefined,
+            })}
+        count={params.has('server-total') ? 123 : undefined}
+        showCount={!params.has('hide-count')}
+        limit={params.has('preview-table') ? 2 : undefined}
         rowKey={row => row.id}
         columns={[
           { id: 'name', header: 'Name', cell: row => row.name },
           { id: 'count', header: 'Count', cell: row => row.count },
         ]}
-        emptyFallback={{ title: 'No matching events' }}
+        emptyFallback={{ title: 'No events yet' }}
+        noMatchesFallback={
+          params.has('custom-empty-action')
+            ? {
+                title: 'No groups match',
+                description: 'Choose another group name.',
+                action: <a href="https://example.com/help">Read help</a>,
+              }
+            : undefined
+        }
         search={{
           label: 'Search groups',
           value: search,
+          resetValue: params.has('search-default') ? 'missing' : undefined,
           onChange: setSearch,
           attributes: [{ name: 'name', getter: row => row.name }],
         }}

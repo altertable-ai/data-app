@@ -17,8 +17,88 @@ available when they have zero matches.
 ## Declare controls once
 
 Use `searchVariable()`, `choiceVariable()`, and `dateRangeVariable()` in a view's
-`variables`. `<DataApp view={view}>` generates their controls and keeps values in the URL.
+`variables`. `<DataApp view={view}>` generates search, filters, and display options
+and keeps their values in the URL.
+Set `showSearch={false}` or `showFilters={false}` on `<DataApp>` to hide the
+corresponding region while preserving its values; `showFilters` includes display options.
+
 Keep local search out of the operation input when it only filters loaded rows.
+
+### Search suggestions
+
+Declaring dataset `suggestions` enables autocomplete automatically. Use it when
+record titles are useful query completions; omit it for aggregate datasets or when
+completion would not help. No additional enabling prop is needed.
+
+The app-owned `customers` operation accepts `{ q: string }` and returns `{ rows }`.
+With your typed `client` and registered `dataContext`, connect the query to its
+records and widgets:
+
+```tsx
+const view = createDataHooks(client).defineDataView({
+  dataContext,
+  operation: 'customers',
+  variables: {
+    search: searchVariable({ key: 'q', label: 'Search customers' }),
+  },
+  input: ({ search }) => ({ q: search }),
+  describeInput: ({ q }) => (q ? `Customers matching ${q}` : 'All customers'),
+  isEmpty: () => false,
+  emptyFallback: { title: 'No customers' },
+});
+const customers = view.dataset({
+  name: 'Customers',
+  select: data => data.rows,
+  rowKey: row => row.id,
+  columns: { name: { value: row => row.name } },
+  evidence: { id: 'customers', queryNames: ['customers'] },
+  suggestions: {
+    title: row => row.name,
+    description: row => row.country,
+  },
+});
+const content = view.content(source => (
+  <TableWidget dataset={customers} source={source} />
+));
+
+<DataApp view={view} datasets={[customers]} story={story}>
+  <DataSection content={content} />
+</DataApp>;
+```
+
+The first `searchVariable()` in declaration order is the primary search: it owns
+autocomplete and combines supplied datasets that declare suggestions. Typing
+updates the page and suggestions from the same displayed result. Capped or
+paginated sources offer suggestions only for supplied rows. Title matches rank
+ahead of description matches; the five suggestion slots are shared across datasets. Selection completes the query with
+the title; `suggestions.onSelect: row => openCustomer(row.id)` overrides completion
+with an app action. `showSearchSuggestions` defaults to true; set it to false to
+suppress autocomplete for a particular app.
+
+### Organize controls by intent
+
+Declare controls in priority order for the user's task. Keep useful scope filters
+visible and set `presentation.prominence: 'secondary'` for less frequent ones in
+the Filters sheet. Active secondary filters remain available for direct editing.
+Choose useful defaults rather than exposing every field; declare each label once.
+
+Set `presentation.group: 'display'` for ordering or presentation choices. These
+appear separately from scope filters. Search remains separate from both.
+
+```ts
+const active = booleanFilter({
+  key: 'active',
+  label: 'Active account',
+  presentation: { prominence: 'secondary' },
+});
+const sort = choiceVariable({
+  key: 'sort',
+  label: 'Sort by',
+  options: [{ id: 'name', label: 'Customer name' }],
+  defaultValue: 'name',
+  presentation: { group: 'display' },
+});
+```
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,
 maximum range, time zone, and comparison rules. `defineTimeView()` is the compact
@@ -73,7 +153,7 @@ const region = dimensionFilter({
 ```
 
 For query-backed choices use the hooks factory's `defineFacetFilter()`. The
-facet operation returns parsed dimension options. Its input mapper reads current
+facet operation returns parsed dimension options. Its input mapper uses current
 resolved variables, including other filters:
 
 ```ts
@@ -98,10 +178,8 @@ A dimension without an explicit selection represents all members.
 Map parsed selections to the query's declared parameters; do not construct SQL
 from filter values. Choose selection modes supported by the registered query.
 
-Choose `selectionMode: 'single'` when one value replaces another. Its picker closes
-after choosing a value and shows a checkmark for the current choice. Use
-`selectionMode: 'multiple'` for independent values; checkbox indicators and an open
-popup allow repeated selections. `All` is an explicit choice for a single-value
+Choose `selectionMode: 'single'` when one value replaces another and
+`selectionMode: 'multiple'` for independent values. `All` is an explicit choice for a single-value
 filter and the meaning of an empty selection for a multiple-value filter.
 
 ## Fixed choices
@@ -125,11 +203,6 @@ const variables = {
   }),
 };
 ```
-
-Fixed single choices generate `<Select>`; multiple choices generate
-`<ChoicePicker selectionMode="multiple">`. Direct controls can present the same
-values as radio groups, checkbox groups, or segmented choices without changing
-URL state.
 
 ## Numeric and boolean predicates
 
@@ -159,13 +232,14 @@ Set `allowExclusion: true` on `dimensionFilter()` to support
 alongside selected members. Enable exclusion only when the registered query supports
 it, including the intended behavior for missing values.
 
-Generated controls show active values within each filter and one collective
-Clear icon with a tooltip. Clear removes restrictions from search and predicate filters.
+Clear removes predicate filters while preserving search and display settings.
+Clear search separately in its field.
 `resetAll()` restores all
 configured variable defaults, including fixed choices and periods. Nonempty
 default filters can therefore be active immediately after Reset.
 
-Direct `useAppVariables()` callers can use `clearAll()` and `resetAll()` for one
-atomic history update. `<FilterActions>` also supports app-owned draft state
+Direct `useAppVariables()` callers can use `clearAll()` and `resetAll()`. `<FilterActions>` also supports app-owned draft state
 with paired Apply/Cancel handlers; derive queries and visible controls from applied
 values while a draft is being edited.
+
+Filters apply immediately; use app-owned drafts only when the task needs Apply/Cancel.

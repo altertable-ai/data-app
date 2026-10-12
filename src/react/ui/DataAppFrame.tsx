@@ -1,6 +1,6 @@
 import { AnnotationControls } from '@/src/react/annotations/AnnotationControls';
 import { useDataAppPresentation } from '@/src/react/ui/useDataAppPresentation';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
 import { useAppAppearance } from '@/src/react/ui/useAppAppearance';
 import type { DisclosedQuery } from '@/src/core/contract';
 import { useDataApp } from '@/src/react/app-context';
@@ -18,6 +18,8 @@ import type { DataContext } from '@/src/react/ui/data-context';
 import type { BoundStory } from '@/src/react/ui/story';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { VariableBar } from '@/src/react/ui/VariableBar';
+import { TextContent } from '@/src/react/ui/TextContent';
+import { Stack } from '@/src/react/ui/Stack';
 import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
@@ -30,6 +32,10 @@ export type DataAppBaseProps = {
   description?: ReactNode;
   toolbarActions?: ReactNode;
   footerActions?: ReactNode;
+  /** Optional source, coverage, or methodology note below the app content.
+   * Compose prose and inline components; typography and spacing are provided.
+   * Put data widgets in children and app controls in footerActions. */
+  footer?: ReactNode;
 };
 
 export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
@@ -37,7 +43,15 @@ export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   /** Actual request activity, including retries with retained data. */
   refreshing?: boolean;
   cancel?: () => unknown;
-  controls?: ReactNode;
+  searchControls?: ReactNode;
+  filterControls?: ReactNode;
+};
+
+export type DataAppControlProps = {
+  /** Show declared search controls. Defaults to true; hiding preserves their values. */
+  showSearch?: boolean;
+  /** Show declared filter controls, including display options. Defaults to true; hiding preserves their values. */
+  showFilters?: boolean;
 };
 
 export type StaticDataAppProps = DataAppBaseProps & {
@@ -46,14 +60,15 @@ export type StaticDataAppProps = DataAppBaseProps & {
 };
 
 export type DataAppProps<Data = unknown, Input = unknown> =
-  | (DataAppBaseProps & {
-      request: DataAppRequest<Data, Input>;
-      /** Findings are always derived from the result currently visible to the reader. */
-      story: BoundStory<Data, Input>;
-      /** Export every distinct dataset in the displayed result. */
-      csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
-      queries?: never;
-    })
+  | (DataAppBaseProps &
+      DataAppControlProps & {
+        request: DataAppRequest<Data, Input>;
+        /** Findings are always derived from the result currently visible to the user. */
+        story: BoundStory<Data, Input>;
+        /** Export every distinct dataset in the displayed result. */
+        csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
+        queries?: never;
+      })
   | (StaticDataAppProps & {
       request?: never;
       story?: never;
@@ -75,8 +90,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   const presentation = useDataAppPresentation();
   const isEmbedded = presentation?.surface === 'embedded';
   const themeController = useAppAppearance(app.appearance, presentation?.theme);
-  const bodyRef = useRef<HTMLDivElement>(null);
-
+  const bodyRef = useRef<ComponentRef<'div'>>(null);
   useEffect(() => {
     if (import.meta.env?.DEV && bodyRef.current?.querySelector('h1'))
       console.warn(
@@ -153,6 +167,20 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
     </AppToolbar>
   );
 
+  const searchRegion =
+    request?.searchControls && props.showSearch !== false ? (
+      <VariableBar
+        className="altertable-variable-searches"
+        aria-label="Search variables"
+      >
+        {request.searchControls}
+      </VariableBar>
+    ) : null;
+  const filterRegion =
+    request?.filterControls && props.showFilters !== false
+      ? request.filterControls
+      : null;
+
   return (
     <InspectionProvider>
       <InspectionContext
@@ -183,10 +211,20 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
               toolbar={toolbar}
             />
           )}
-          {request?.controls && <VariableBar>{request?.controls}</VariableBar>}
-          <div ref={bodyRef} className="altertable-app-body">
+          {(searchRegion != null || filterRegion != null) && (
+            <Stack gap="sm">
+              {searchRegion}
+              {filterRegion}
+            </Stack>
+          )}
+          <div ref={bodyRef} tabIndex={-1} className="altertable-app-body">
             {props.children}
           </div>
+          {props.footer != null && (
+            <footer className="altertable-app-content-footer">
+              <TextContent>{props.footer}</TextContent>
+            </footer>
+          )}
           {request && (
             <DataViewToast
               view={request.view}

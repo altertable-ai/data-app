@@ -48,7 +48,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--atbl-accent);
+  background: var(--atbl-chart-1);
 }
 .altertable-ranking-detail {
   color: var(--atbl-muted);

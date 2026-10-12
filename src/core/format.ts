@@ -1,3 +1,15 @@
+import { parseDateTime, type DateFormatOptions } from '@/src/core/date-format';
+export {
+  formatDate,
+  formatDateTime,
+  formatTime,
+  parseDateTime,
+} from '@/src/core/date-format';
+export type {
+  DateFormat,
+  DateFormatOptions,
+  DateTimeFormatOptions,
+} from '@/src/core/date-format';
 /**
  * Date and number formatting with explicit units and missing-value behavior.
  * @module @altertable/data-app/format
@@ -5,15 +17,23 @@
 type CommonOptions = { locale?: string; missing?: string };
 
 /** Compact, unambiguous calendar dates for labels and request status. */
-export function formatDateRange({
-  start,
-  end,
-}: {
-  start: string;
-  end: string;
-}): string {
-  const first = new Date(`${start}T00:00:00Z`);
-  const last = new Date(`${end}T00:00:00Z`);
+export function formatDateRange(
+  { start, end }: { start: string; end: string },
+  options: DateFormatOptions = {}
+): string {
+  const first = parseDateTime(`${start}T00:00:00Z`);
+  const last = parseDateTime(`${end}T00:00:00Z`);
+  if (!first || !last || start > end) return options.missing ?? '—';
+  if (options.locale && options.locale !== 'en-US') {
+    try {
+      return new Intl.DateTimeFormat(options.locale, {
+        dateStyle: 'medium',
+        timeZone: 'UTC',
+      }).formatRange(first, last);
+    } catch {
+      return options.missing ?? '—';
+    }
+  }
 
   function format(date: Date, options: Intl.DateTimeFormatOptions) {
     return new Intl.DateTimeFormat('en-US', {

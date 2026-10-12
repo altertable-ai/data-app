@@ -7,7 +7,9 @@ export type ThemePreference = Theme | 'system';
 
 export type AppearanceSettings = {
   theme: ThemePreference;
+  /** Palette for surfaces, text, and borders; independent of the accent. */
   baseColor: 'neutral' | 'slate' | 'warm';
+  /** Emphasis color for checked controls and selected dates; options use the base palette. */
   accentColor: string;
   darkAccentColor?: string;
   chartColors: string[];
@@ -31,8 +33,8 @@ export type ThemeController = {
 const defaults: AppearanceSettings = {
   theme: 'light',
   baseColor: 'neutral',
-  accentColor: '#405d47',
-  darkAccentColor: '#a6c4ad',
+  accentColor: '#202124',
+  darkAccentColor: '#f2f3f4',
   chartColors: [
     '#285fc0',
     '#a95319',
@@ -193,7 +195,9 @@ export function applyAppearance(value?: AppearanceOptions): () => void {
     '--atbl-input-font': fontStack(settings.typography.body),
     '--atbl-input-font-heading': fontStack(settings.typography.heading),
     '--atbl-input-accent': settings.accentColor,
-    '--atbl-input-dark-accent': settings.darkAccentColor ?? '',
+    '--atbl-input-dark-accent':
+      settings.darkAccentColor ??
+      `color-mix(in srgb, ${settings.accentColor} 50%, white)`,
     '--atbl-input-on-accent': '',
   };
   const chartColors = settings.chartColors.length

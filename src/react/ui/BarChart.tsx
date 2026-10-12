@@ -71,7 +71,9 @@ export function BarChart({
                   <Cell
                     key={item.id}
                     fill={
-                      activeId === item.id ? 'var(--atbl-accent)' : chartBarFill
+                      activeId === item.id
+                        ? 'var(--atbl-chart-1)'
+                        : chartBarFill
                     }
                   />
                 ))}

@@ -31,16 +31,8 @@
 .altertable-choice-picker-popover {
   z-index: 150;
   width: min(300px, calc(100vw - 24px));
-  box-sizing: border-box;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-surface);
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
-  box-shadow: var(--atbl-shadow-overlay);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-choice-picker-dialog {
   outline: none;
@@ -49,7 +41,8 @@
 .altertable-choice-picker-dialog .altertable-search-input-wrap {
   width: 100%;
   margin: 0;
-  padding: 6px 17px;
+  padding: 6px 18px;
+  gap: calc(10px + var(--atbl-control-icon-size) - 17px);
   box-sizing: border-box;
   border: 0;
   border-bottom: 1px solid var(--atbl-border);
@@ -88,7 +81,7 @@
 .altertable-choice-picker-popover .react-aria-ListBoxItem {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
   padding: 8px 10px;
   border-radius: var(--atbl-radius-control);
   outline: none;

@@ -17,11 +17,15 @@
   gap: 8px 16px;
   padding: 12px 10px 4px;
   color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
+  font-size: var(--atbl-type-label-size);
   font-variant-numeric: tabular-nums;
 }
 .altertable-table-pagination-controls {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.altertable-table-widget .altertable-data-widget-body {
+  padding-block-start: var(--atbl-space-sm);
 }

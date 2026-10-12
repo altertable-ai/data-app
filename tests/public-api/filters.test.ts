@@ -1,8 +1,13 @@
 import { expect, test } from 'vitest';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { useAppVariables } from '@altertable/data-app/react/ui';
 import {
   searchVariable,
   choiceVariable,
   multiChoiceVariable,
+  dateRangeVariable,
+  type VariablePresentation,
 } from '@altertable/data-app/react';
 import {
   numberFilter,
@@ -11,12 +16,71 @@ import {
   parseBooleanSelection,
   dimensionFilter,
   dimensionPredicate,
+  defineDateRangeContract,
 } from '@altertable/data-app/contract';
 
 const options = [
   { id: 'a', label: 'Alpha' },
   { id: 'b', label: 'Beta' },
 ];
+
+test('variable collections reject malformed presentation metadata from JavaScript callers', () => {
+  for (const presentation of [
+    null,
+    [],
+    { group: 'toolbar' },
+    { prominence: 'hidden' },
+  ]) {
+    function App() {
+      useAppVariables({
+        choice: choiceVariable({
+          key: 'choice',
+          options,
+          defaultValue: 'a',
+          presentation: presentation as VariablePresentation,
+        }),
+      });
+      return null;
+    }
+    expect(() => renderToStaticMarkup(createElement(App))).toThrow(
+      'Variable choice has invalid presentation.'
+    );
+  }
+});
+
+test('presentation intent is retained by each variable constructor without changing URL values', () => {
+  const presentation = { group: 'display', prominence: 'secondary' } as const;
+  const variables = [
+    choiceVariable({ key: 'choice', options, defaultValue: 'a', presentation }),
+    multiChoiceVariable({ key: 'tags', options, presentation }),
+    numberFilter({ key: 'amount', label: 'Amount', presentation }),
+    booleanFilter({ key: 'active', label: 'Active', presentation }),
+    dimensionFilter<string>({
+      key: 'country',
+      label: 'Country',
+      valueType: 'string',
+      selectionMode: 'single',
+      options: [{ value: 'FR', label: 'France' }],
+      presentation,
+    }),
+    dateRangeVariable({
+      key: 'period',
+      contract: defineDateRangeContract({
+        minDate: '2026-01-01',
+        maxDate: '2026-01-31',
+        maxRangeDays: 31,
+        timeZone: 'UTC',
+      }),
+      defaultValue: { kind: 'dates', start: '2026-01-01', end: '2026-01-31' },
+      presentation,
+    }),
+  ];
+  for (const variable of variables) {
+    expect(variable.presentation).toEqual(presentation);
+    const value = variable.read(new URLSearchParams());
+    expect(value).toEqual(variable.defaultValue);
+  }
+});
 test('labeled choices validate defaults and selections and canonicalize URL state', () => {
   expect(() => numberFilter({ key: '', label: 'Amount' })).toThrow();
   expect(() => booleanFilter({ key: '', label: 'Active' })).toThrow();

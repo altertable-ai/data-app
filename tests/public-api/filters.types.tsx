@@ -15,9 +15,19 @@ import {
   choiceVariable,
   multiChoiceVariable,
   searchVariable,
+  type VariablePresentation,
 } from '@altertable/data-app/react';
 import { numberFilter, booleanFilter } from '@altertable/data-app/contract';
 const options = [{ id: 'a', label: 'Alpha' }];
+const presentation: VariablePresentation = {
+  group: 'display',
+  prominence: 'secondary',
+};
+// @ts-expect-error Presentation groups express scope or display intent.
+const invalidGroup: VariablePresentation = { group: 'toolbar' };
+// @ts-expect-error Prominence is primary or secondary.
+const invalidProminence: VariablePresentation = { prominence: 'hidden' };
+void [presentation, invalidGroup, invalidProminence];
 const controls = (
   <>
     <ChoicePicker

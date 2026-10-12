@@ -40,7 +40,7 @@ export type {
 export { useAppVariables } from '@/src/react/ui/variables';
 export { SearchField } from '@/src/react/ui/SearchField';
 export type { SearchFieldProps } from '@/src/react/ui/SearchField';
-export { searchItems } from '@/src/react/ui/searchItems';
+export { searchItems, matchSearchText } from '@/src/react/ui/searchItems';
 export type {
   SearchAttribute,
   SearchHit,
@@ -196,3 +196,15 @@ export type {
 } from '@/src/react/ui/JourneyChart';
 
 export { useSvgId } from '@/src/react/ui/useSvgId';
+
+export { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
+export type {
+  SearchTypeaheadProps,
+  SearchSuggestion,
+} from '@/src/react/ui/SearchTypeahead';
+
+export { SectionHeading } from '@/src/react/ui/SectionHeading';
+export type { SectionHeadingProps } from '@/src/react/ui/SectionHeading';
+export { DateDisplay } from '@/src/react/ui/DateDisplay';
+export type { DateDisplayProps } from '@/src/react/ui/DateDisplay';
+export { useDateFormatting } from '@/src/react/date-formatting';

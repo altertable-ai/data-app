@@ -13,11 +13,11 @@
   justify-content: space-between;
   gap: var(--atbl-space-md);
   padding: var(
-      --atbl-layout-gap,
+      --atbl-surface-padding,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     )
     var(
-      --atbl-layout-gap,
+      --atbl-surface-padding,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     )
     0;
@@ -31,22 +31,28 @@
   flex: none;
   align-items: flex-start;
 }
-.altertable-data-widget-header h2 {
+.altertable-widget-heading {
   margin: 0;
-  color: var(--atbl-text);
+  color: var(--atbl-muted);
   font-family: var(
     --atbl-font-heading,
     var(--atbl-input-font-heading, var(--atbl-font))
   );
   font-size: var(--atbl-type-widget-size);
-  font-weight: var(--atbl-type-heading-weight);
+  font-weight: var(--atbl-type-label-weight);
   line-height: var(--atbl-type-heading-leading);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 .altertable-data-widget-count {
-  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  align-self: baseline;
+  vertical-align: baseline;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-inline-start: var(--atbl-space-sm);
   color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
+  font-size: 0.85em;
   font-weight: var(--atbl-type-meta-weight);
   letter-spacing: 0;
   white-space: nowrap;
@@ -61,11 +67,11 @@
   min-width: 0;
   padding: var(--atbl-space-md)
     var(
-      --atbl-layout-gap,
+      --atbl-surface-padding,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     )
     var(
-      --atbl-layout-gap,
+      --atbl-surface-padding,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     );
 }
@@ -75,7 +81,7 @@
 .altertable-data-widget-footer {
   padding: var(--atbl-space-md)
     var(
-      --atbl-layout-gap,
+      --atbl-surface-padding,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     );
 }
@@ -85,4 +91,8 @@
   border-radius: 0;
   background: transparent;
   padding: 0;
+}
+
+.altertable-widget-heading-trigger .altertable-data-widget-count {
+  margin-inline-start: 0;
 }

@@ -13,11 +13,8 @@
   min-width: 0;
   width: min(100% - 48px, var(--atbl-content-width));
   margin-inline: auto;
-  padding: var(
-      --atbl-layout-gap,
-      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
-    )
-    0 calc(2 * var(--atbl-space-xl));
+  padding: clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg)) 0
+    calc(2 * var(--atbl-space-xl));
 }
 .altertable-app-body {
   display: grid;
@@ -39,4 +36,18 @@
   .altertable-app-main {
     width: min(100% - 32px, var(--atbl-content-width));
   }
+}
+
+.altertable-app-content-footer {
+  padding-top: var(--atbl-space-sm);
+  padding-inline: var(
+    --atbl-surface-padding,
+    clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+  );
+  min-width: 0;
+}
+.altertable-app-content-footer .altertable-text-content {
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-body-size);
+  max-width: none;
 }

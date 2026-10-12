@@ -120,10 +120,7 @@ test('feedback retains the displayed input while a newer filter is still loading
   const app = page.frameLocator('iframe');
   await expect
     .poll(() =>
-      app
-        .getByRole('status')
-        .filter({ hasText: /Showing last-30/ })
-        .isVisible()
+      app.getByRole('status').filter({ hasText: 'Updating…' }).isVisible()
     )
     .toBe(true);
   await app.getByRole('button', { name: 'Annotate', exact: true }).click();

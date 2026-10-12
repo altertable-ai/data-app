@@ -1,4 +1,4 @@
-import type { MetricFormat } from '@/src/core/format';
+import type { MetricFormat, DateFormatOptions } from '@/src/core/format';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import type { MetricReading } from '@/src/core/reading';
 import { calendarMetricComparison } from '@/src/react/ui/metric-comparison';
@@ -13,14 +13,19 @@ export type MetricDefinition = {
 
 export function metricComparison(
   metric: MetricDefinition,
-  reading: MetricReading
+  reading: MetricReading,
+  options: DateFormatOptions = {}
 ) {
   if (reading.loading || !reading.value.period) return undefined;
 
-  return calendarMetricComparison(reading.value.period, {
-    current: reading.value.current,
-    previous: reading.value.previous ?? null,
-    format: metric.format,
-    favorableDirection: metric.favorableDirection,
-  });
+  return calendarMetricComparison(
+    reading.value.period,
+    {
+      current: reading.value.current,
+      previous: reading.value.previous ?? null,
+      format: metric.format,
+      favorableDirection: metric.favorableDirection,
+    },
+    options
+  );
 }

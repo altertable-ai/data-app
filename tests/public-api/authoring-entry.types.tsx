@@ -57,6 +57,10 @@ const base = {
 const dataset = view.dataset({
   name: 'Values',
   select: data => [data],
+  suggestions: {
+    title: row => row.toFixed(0),
+    onSelect: row => row.toFixed(0),
+  },
   rowKey: row => row,
   columns: { value: { value: row => row } },
   evidence: { id: 'values', queryNames: ['count'] },
@@ -66,6 +70,7 @@ const app: DataAppProps<number, Record<string, never>> = {
   view,
   story: () => [],
   datasets: [dataset],
+  showSearchSuggestions: false,
 };
 const content = view.content(result => (
   <p>{result.loading ? 'Loading' : result.data}</p>
@@ -308,3 +313,54 @@ DataAppProvider({
 
 // @ts-expect-error App fields are direct; there is no separate configuration wrapper.
 void dataApp.config;
+
+view.dataset<number>({
+  name: 'Invalid suggestions',
+  select: data => [data],
+  rowKey: row => row,
+  columns: { value: { value: row => row } },
+  evidence: { id: 'invalid', queryNames: ['count'] },
+  // @ts-expect-error Suggestion selectors must use the inferred dataset row type.
+  suggestions: { title: (row: string) => row },
+});
+
+function selectValue(row: number) {
+  return row.toFixed(0);
+}
+const callbackDataset = view.dataset({
+  name: 'Callback values',
+  select: data => [data],
+  rowKey: row => row,
+  columns: { value: { value: row => row.toFixed(0) } },
+  suggestions: { title: row => row.toFixed(0), onSelect: selectValue },
+  evidence: { id: 'callback-values', queryNames: ['count'] },
+});
+void callbackDataset;
+
+const datedRows = view.dataset({
+  name: 'Dated values',
+  select: data => [
+    { id: data, day: '2026-09-24', observed: '2026-09-24T15:00:00Z' },
+  ],
+  rowKey: row => row.id,
+  columns: {
+    day: { value: row => row.day, format: { kind: 'date' } },
+    observed: {
+      value: row => row.observed,
+      format: { kind: 'dateTime', precision: 'second' },
+    },
+  },
+  evidence: { id: 'dated-values', queryNames: ['count'] },
+});
+<TableWidget dataset={datedRows} source={{ loading: true }} headingLevel={3} />;
+<authoring.SectionHeading level={2}>Activity</authoring.SectionHeading>;
+<authoring.DateDisplay value="2026-09-24" format={{ kind: 'date' }} />;
+// @ts-expect-error Semantic heading levels must be valid HTML heading levels below the page title.
+<authoring.SectionHeading level={7}>Activity</authoring.SectionHeading>;
+const invalidCalendarFormat: import('@altertable/data-app/format').DateFormat =
+  {
+    kind: 'date',
+    // @ts-expect-error Calendar formats cannot specify a time zone.
+    timeZone: 'UTC',
+  };
+void invalidCalendarFormat;

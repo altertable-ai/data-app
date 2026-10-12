@@ -13,6 +13,9 @@ Import formatting helpers from `@altertable/data-app/format`.
 | `formatCount()`     | Nonnegative integer counts, optionally compact         |
 | `formatPercent()`   | Ratios represented as a fraction, such as 0.12 for 12% |
 | `formatMetric()`    | A metric definition's count, ratio, or currency format |
+| `formatDate()`      | Calendar dates without time-zone shifts                |
+| `formatDateTime()`  | Event timestamps in the reporting time zone            |
+| `formatTime()`      | Intraday chart labels                                  |
 | `formatDateRange()` | Inclusive calendar ranges                              |
 | `pluralize()`       | Count-dependent labels                                 |
 
@@ -37,6 +40,32 @@ Import `chartColor()` from `/react` to select colors from the configured palette
 `<DateTimeTooltip>` expose readable timestamps with exact-date details.
 `<DataTableTimestamp>` and `<DataTableShare>` format custom table cells.
 
+## Display dates consistently
+
+Declare date meaning on dataset columns so tables use readable values and CSV
+keeps the originals:
+
+```ts
+columns: {
+  day: { value: row => row.day, format: { kind: 'date' } },
+  observed: {
+    value: row => row.observed,
+    format: { kind: 'dateTime', precision: 'second' },
+  },
+}
+```
+
+Calendar dates use `YYYY-MM-DD`. Instants accept epoch milliseconds or timestamp
+strings; `<DateDisplay>` also accepts `Date`. Timestamp strings require `Z` or an explicit
+offset; convert database-local timestamps in the operation using their known
+source zone. Ambiguous or invalid values display as missing.
+
+Use `<DateDisplay>` for prose and `useDateFormatting()` with format helpers for
+custom chart labels. Defaults are `en-US` and UTC; configure app-wide
+`dateFormatting: { locale, timeZone }` when appropriate. A time view supplies its
+reporting zone, and an explicit field zone overrides it. Keep seconds when event
+ordering matters; exact-time details remain available on timestamps.
+
 ## Configure identity and appearance
 
 ```ts
@@ -48,7 +77,7 @@ const dataApp = defineDataApp({
   scope: { organization: 'Acme', environment: 'Production' },
   appearance: {
     theme: 'system',
-    accentColor: '#405d47',
+    baseColor: 'neutral',
     density: 'comfortable',
   },
   queries: {},
@@ -56,13 +85,15 @@ const dataApp = defineDataApp({
 ```
 
 Scope labels describe the configured connection; they do not grant access.
-`dataAppTitle()` produces the scoped document title used by `mountDataApp()`.
 
 Title and description explain the app and can be revised when regenerating it.
 Omit appearance to use the standard defaults.
 
-Appearance controls the brand palette, typography, density, corner radius, and
-elevation. Those settings apply consistently to the app instead of tuning each
-widget. Theme preference is reader-owned in standalone apps. A trusted parent's
+The default UI is neutral in light and dark themes. Use `baseColor` for the base
+palette and `accentColor` with optional `darkAccentColor` for brand emphasis.
+Configure chart colors separately with `chartColors`; preserve semantic status
+colors for favorable and unfavorable outcomes.
+
+Configure appearance once for the app. Theme preference is user-owned in standalone apps. A trusted parent's
 resolved theme takes precedence and hides local theme controls; see
 [parent presentation](embed.md#parent-presentation).

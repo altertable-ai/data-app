@@ -4,6 +4,7 @@ import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
 import {
   createDataHooks,
+  searchVariable,
   createDataContext,
   DataApp,
   DataSection,
@@ -46,6 +47,8 @@ function declareView() {
   const view = hooks.defineDataView({
     dataContext: context,
     operation: 'rows',
+    variables: { search: searchVariable({ key: 'q', label: 'Search rows' }) },
+    input: () => ({}),
     describeInput: () => 'all rows',
     isEmpty: () => false,
     emptyFallback: { title: 'No rows' },
@@ -53,6 +56,7 @@ function declareView() {
   const dataset = view.dataset({
     name: 'Rows',
     select: count => [{ count }],
+    suggestions: { title: row => String(row.count) },
     rowKey: () => 'count',
     columns: { count: { value: row => row.count } },
     evidence: { id: 'rows', glossaryIds: ['count'] },
@@ -105,7 +109,11 @@ function App() {
     <AuthoringBoundary>
       <DataApp
         view={own.view}
-        datasets={[binding === 'export' ? other.dataset : own.dataset]}
+        datasets={[
+          ['export', 'search-suggestions'].includes(binding ?? '')
+            ? other.dataset
+            : own.dataset,
+        ]}
         story={snapshot => [
           {
             id: 'count',

@@ -2,10 +2,12 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ComponentPropsWithRef,
   type ReactNode,
   type RefObject,
 } from 'react';
+import { PopoverContainerContext } from '@/src/react/ui/PopoverSurface';
 import { useMergeRefs } from '@floating-ui/react';
 import { classNames } from '@/src/react/ui/classNames';
 import { Button } from '@/src/react/ui/Button';
@@ -27,6 +29,8 @@ export type SheetProps = {
   footer?: ReactNode;
   wide?: boolean;
   placement?: 'side' | 'center';
+  /** Edge for side placement. Defaults to right; small screens use a bottom sheet. */
+  side?: 'left' | 'right';
   returnFocus?: RefObject<HTMLElement | null>;
 } & SheetDialogProps;
 
@@ -44,6 +48,7 @@ export function Sheet({
   footer,
   wide,
   placement = 'side',
+  side = 'right',
   returnFocus,
   className,
   onCancel,
@@ -57,7 +62,9 @@ export function Sheet({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleId = useId();
   const descriptionId = useId();
-  const dialogRef = useMergeRefs([dialog, ref]);
+  const [portalContainer, setPortalContainer] =
+    useState<HTMLDialogElement | null>(null);
+  const dialogRef = useMergeRefs([dialog, ref, setPortalContainer]);
 
   useEffect(() => {
     const element = dialog.current;
@@ -91,6 +98,7 @@ export function Sheet({
       className={classNames('altertable-sheet', className)}
       data-wide={wide || undefined}
       data-placement={placement}
+      data-side={side}
       aria-labelledby={titleId}
       aria-describedby={
         props['aria-describedby'] ?? (description ? descriptionId : undefined)
@@ -124,36 +132,44 @@ export function Sheet({
         onClick?.(event);
         if (event.defaultPrevented || event.target !== event.currentTarget)
           return;
-        if (event.clientX < event.currentTarget.getBoundingClientRect().left)
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (
+          event.clientX < bounds.left ||
+          event.clientX > bounds.right ||
+          event.clientY < bounds.top ||
+          event.clientY > bounds.bottom
+        )
           onOpenChange(false);
       }}
     >
-      <div className="altertable-sheet-shell">
-        <header className="altertable-sheet-header">
-          <div>
-            <h2 id={titleId}>{title}</h2>
-            {description && <p id={descriptionId}>{description}</p>}
-          </div>
-          <div className="altertable-sheet-actions">
-            {headerActions}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="altertable-sheet-close"
-              aria-label="Close panel"
-              onClick={() => onOpenChange(false)}
-            >
-              <AppIcon name="close" />
-            </Button>
-          </div>
-        </header>
-        <GradientScroll className="altertable-sheet-body" fadeStart={false}>
-          {children}
-        </GradientScroll>
-        {footer && (
-          <footer className="altertable-sheet-footer">{footer}</footer>
-        )}
-      </div>
+      <PopoverContainerContext.Provider value={portalContainer ?? undefined}>
+        <div className="altertable-sheet-shell">
+          <header className="altertable-sheet-header">
+            <div>
+              <h2 id={titleId}>{title}</h2>
+              {description && <p id={descriptionId}>{description}</p>}
+            </div>
+            <div className="altertable-sheet-actions">
+              {headerActions}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="altertable-sheet-close"
+                aria-label="Close panel"
+                onClick={() => onOpenChange(false)}
+              >
+                <AppIcon name="close" />
+              </Button>
+            </div>
+          </header>
+          <GradientScroll className="altertable-sheet-body" fadeStart={false}>
+            {children}
+          </GradientScroll>
+          {footer && (
+            <footer className="altertable-sheet-footer">{footer}</footer>
+          )}
+        </div>
+      </PopoverContainerContext.Provider>
     </dialog>
   );
   /* oxlint-enable jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions */

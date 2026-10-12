@@ -1,6 +1,9 @@
 import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
-import type { ReactNode } from 'react';
+import type { SearchSuggestion } from '@/src/react/ui/SearchTypeahead';
+import { createElement, type ReactNode } from 'react';
+import { DateDisplay } from '@/src/react/ui/DateDisplay';
+import type { DateFormat } from '@/src/core/format';
 import type { DateRangeRequest } from '@/src/core/contract';
 import type { DataView, DisplayedSnapshot } from '@/src/core/data-view';
 import { formatMetric } from '@/src/core/format';
@@ -37,6 +40,14 @@ function readSource<Data, Input, Value, Source extends ViewSource<Data, Input>>(
 export type DatasetColumn<Row> = { label?: string } & (
   | { value: (row: Row) => CsvCell; format?: (row: Row) => ReactNode }
   | { value: (row: Row) => number | null | undefined; format: MetricFormat }
+  | {
+      value: (row: Row) => string | number | null | undefined;
+      format: Extract<DateFormat, { kind: 'dateTime' }>;
+    }
+  | {
+      value: (row: Row) => string | null | undefined;
+      format: Extract<DateFormat, { kind: 'date' }>;
+    }
 );
 
 export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
@@ -46,6 +57,15 @@ export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
   rowKey: (row: NoInfer<Row>) => string | number;
   evidence: Evidence;
   emptyFallback?: EmptyContent;
+  /** Declare for records whose titles are useful query completions; omit for aggregate rows. */
+  suggestions?: DatasetSuggestionOptions<Row>;
+};
+
+export type DatasetSuggestionOptions<Row> = {
+  title: (row: Row) => string;
+  description?: (row: Row) => string;
+  /** Override query completion with an app action. */
+  onSelect?: (row: Row) => void;
 };
 
 /** Authoring references are registered by the owning view. */
@@ -91,6 +111,12 @@ export function registeredEvidence(
 }
 
 export class ExportDataset<Data, Input> extends RegisteredBinding {
+  /** @internal Undefined means this dataset declares no record suggestions. */
+  readSearchSuggestions(
+    _source: ViewSource<Data, Input>
+  ): DataReading<readonly SearchSuggestion[]> | undefined {
+    return undefined;
+  }
   #csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable;
   constructor(
     readonly name: string,
@@ -112,6 +138,7 @@ export class ExportDataset<Data, Input> extends RegisteredBinding {
 
 export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
   readonly evidence: WidgetEvidence;
+  #suggestions?: DatasetSuggestionOptions<Row>;
   #select: (data: Data, input: Input) => readonly Row[];
   #table: {
     title: string;
@@ -120,7 +147,11 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     evidence: WidgetEvidence;
     emptyFallback: EmptyContent;
   };
-  constructor(definition: DatasetDefinition<Data, Input, Row>, owner?: object) {
+  constructor(
+    definition: DatasetDefinition<Data, Input, Row>,
+    owner?: object,
+    timeZone?: string
+  ) {
     invariant(!!definition.name.trim(), 'A dataset needs a name.');
     const ids = Object.keys(definition.columns);
     invariant(
@@ -146,11 +177,30 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       header: column.label,
       type:
         column.format && typeof column.format !== 'function'
-          ? ('number' as const)
+          ? column.format.kind === 'date' || column.format.kind === 'dateTime'
+            ? ('datetime' as const)
+            : ('number' as const)
           : undefined,
       cell(row: Row): ReactNode {
         if (typeof column.format === 'function') return column.format(row);
         const value = column.value(row);
+        if (
+          column.format &&
+          typeof column.format !== 'function' &&
+          (column.format.kind === 'date' || column.format.kind === 'dateTime')
+        ) {
+          const format =
+            column.format.kind === 'dateTime'
+              ? {
+                  ...column.format,
+                  timeZone: column.format.timeZone ?? timeZone,
+                }
+              : column.format;
+          return createElement(DateDisplay, {
+            value: value as string | number | null | undefined,
+            format,
+          });
+        }
         if (value === null || value === undefined) return '—';
         return column.format
           ? formatMetric(value as number, column.format)
@@ -179,6 +229,38 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       evidence: definition.evidence,
       emptyFallback: definition.emptyFallback ?? { title: 'No results' },
     };
+    this.#suggestions = definition.suggestions;
+  }
+  override readSearchSuggestions(
+    source: ViewSource<Data, Input>
+  ): DataReading<readonly SearchSuggestion[]> | undefined {
+    const suggestions = this.#suggestions;
+    if (!suggestions) return undefined;
+    const { onSelect } = suggestions;
+    const reading = this.read(source);
+    if (reading.loading) return reading;
+    const items = reading.value.map(row => {
+      const key = this.#table.rowKey(row);
+      invariant(
+        typeof key === 'string'
+          ? !!key
+          : typeof key === 'number' && Number.isFinite(key),
+        'Suggestion row keys must be nonempty strings or finite numbers.'
+      );
+      const title = suggestions.title(row);
+      invariant(!!title.trim(), 'Search suggestions need a nonempty title.');
+      return {
+        id: `${typeof key}:${key}`,
+        title,
+        description: suggestions.description?.(row),
+        onSelect: onSelect ? () => onSelect(row) : undefined,
+      };
+    });
+    invariant(
+      new Set(items.map(item => item.id)).size === items.length,
+      'Search suggestion row keys must be unique.'
+    );
+    return { loading: false, value: items };
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);
@@ -197,9 +279,10 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
 
 export function bindDataset<Data, Input, Row>(
   definition: DatasetDefinition<Data, Input, Row>,
-  owner?: object
+  owner?: object,
+  timeZone?: string
 ) {
-  return new Dataset(definition, owner);
+  return new Dataset(definition, owner, timeZone);
 }
 
 export function datasetTable<Data, Input, Row>(

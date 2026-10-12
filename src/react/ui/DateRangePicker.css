@@ -19,14 +19,11 @@
   flex-wrap: wrap;
   min-inline-size: 0;
   min-height: var(--atbl-control-height);
-  padding: 0 0.125rem 0 var(--atbl-control-padding-inline);
+  padding: 0 var(--atbl-control-padding-inline) 0 0.125rem;
   border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-control);
   background: var(--atbl-surface);
   transition: border-color var(--atbl-duration-fast) var(--atbl-ease-standard);
-}
-.altertable-variable-bar .altertable-date-range .react-aria-Group {
-  box-shadow: var(--atbl-shadow-surface);
 }
 .altertable-date-range[data-invalid] .react-aria-Group,
 .altertable-date-range:has(.altertable-date-range-error) .react-aria-Group {
@@ -38,8 +35,7 @@
   max-inline-size: 100%;
   min-width: 0;
   white-space: nowrap;
-  font-weight: 560;
-  letter-spacing: -0.01em;
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-date-range .react-aria-DateSegment {
   padding: 3px 1px;
@@ -54,7 +50,7 @@
   color: var(--atbl-muted);
 }
 .altertable-date-range-comparison {
-  flex: none;
+  justify-self: start;
   padding: 2px 5px;
   border-radius: 4px;
   background: var(--atbl-subtle);
@@ -68,9 +64,9 @@
   place-items: center;
   width: var(--atbl-control-compact-height);
   min-height: var(--atbl-control-compact-height);
-  margin-left: auto;
+  flex: none;
   border: 0;
-  border-radius: var(--atbl-radius-control);
+  border-radius: max(0px, calc(var(--atbl-radius-control) - 3px));
   background: transparent;
   color: var(--atbl-muted);
   outline: none;
@@ -99,9 +95,6 @@
   background: var(--atbl-subtle);
   color: var(--atbl-text);
 }
-.altertable-date-range .altertable-date-range-reset + .react-aria-Button {
-  margin-left: 0;
-}
 .altertable-date-range-error {
   position: absolute;
   top: calc(100% + 6px);
@@ -115,14 +108,11 @@
 
 .altertable-date-range-popover {
   z-index: 100;
+  width: min(480px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px;
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-surface);
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
-  box-shadow: var(--atbl-shadow-overlay);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-date-range-popover[data-entering] {
   animation: altertable-calendar-in var(--atbl-duration-fast)
@@ -352,13 +342,7 @@
   z-index: 150;
   min-width: var(--trigger-width);
   padding: 4px;
-  border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-control);
-  background: var(--atbl-surface);
-  box-shadow: var(--atbl-shadow-overlay);
-  color: var(--atbl-text);
-  font: var(--atbl-type-label-size)/var(--atbl-type-label-leading)
-    var(--atbl-font);
 }
 .altertable-calendar-select-popover .react-aria-ListBox {
   max-height: min(260px, 45dvh);

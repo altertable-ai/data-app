@@ -16,6 +16,12 @@ and public tokens. Follow [Styling](docs/styling.md)
 and [UI quality](docs/ui-quality.md).
 Do not copy package classes onto markup or select private descendants.
 
+## UI platform changes
+
+Express intent through small typed props and simple data structures. Derive UI
+from the displayed source; configure only meaning the platform cannot infer.
+Follow the [UI platform principles](CONTRIBUTING.md#ui-platform-principles).
+
 ## Documentation
 
 Use `<Component>` notation for React components. Keep guidance concise; leave

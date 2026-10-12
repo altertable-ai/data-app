@@ -25,3 +25,11 @@
   min-height: 112px;
   padding: 18px;
 }
+
+.altertable-empty-state-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--atbl-space-sm);
+  margin-block-start: var(--atbl-space-sm);
+}

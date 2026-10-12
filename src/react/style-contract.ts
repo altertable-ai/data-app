@@ -39,6 +39,7 @@ export const dataAppStyleTokens = [
   '--atbl-space-lg',
   '--atbl-space-xl',
   '--atbl-layout-gap',
+  '--atbl-surface-padding',
   '--atbl-content-width',
   '--atbl-control-height',
   '--atbl-radius-control',
@@ -88,6 +89,8 @@ export const dataAppStyleTokens = [
   '--atbl-cursor-busy',
   '--atbl-control-hover-surface',
   '--atbl-control-pressed-surface',
+  '--atbl-control-open-surface',
+  '--atbl-control-open-border',
   '--atbl-control-selected-surface',
   '--atbl-control-selected-text',
 ] as const;

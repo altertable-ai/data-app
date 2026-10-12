@@ -200,15 +200,12 @@ and emit only valid intervals. Numeric input and compact selects respect the
 shared mobile text-size minimum.
 
 Use `<FilterBar>` to arrange predicates and `<VariableBar>` for mixed app
-parameters. Each filter shows its current value; categorical single selection includes All.
-`<FilterActions>` provides one Clear icon with a tooltip, plus optional paired
-Apply/Cancel actions for app-owned drafts. The caller owns those actions; the
-components do not infer query state.
+parameters. Use `<FilterActions>` for Clear or paired Apply/Cancel actions on
+app-owned drafts; provide the handlers for your applied state.
 
 `<NumberFilterPicker>` composes numeric fields inside a dedicated popover. Edits
 remain local until Apply; Cancel and dismissal discard them. Use `<NumberField>`
 and `<NumberRangeField>` as inline input primitives when composing forms.
 
 Use `<Button variant="primary">` for the main committing action, such as Apply.
-Primary buttons use the theme foreground as their fill and the theme background
-for contrasting text. Use outline and ghost buttons for secondary actions.
+Use outline and ghost buttons for secondary actions.

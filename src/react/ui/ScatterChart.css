@@ -72,7 +72,7 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--atbl-accent);
+  background: var(--atbl-chart-1);
   opacity: 0.65;
   border: 1px solid var(--atbl-surface);
 }
