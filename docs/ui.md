@@ -124,10 +124,6 @@ Use `<ComposedChart>` from `/react/ui` for multiple series or mixed marks inside
 standalone charts' themed series primitives; axes, scatter, tooltip, and reference
 primitives are also available.
 
-Bars sharing a `stackId` default to square corners so adjacent segments meet
-without rounded gaps. Unstacked bars keep rounded top corners. Set `radius`
-explicitly to override either default.
-
 ```tsx
 <VisualizationWidget dataset={revenue} source={result}>
   {rows => (
