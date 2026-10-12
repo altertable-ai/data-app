@@ -256,3 +256,11 @@
   font-size: 0.85em;
   font-variant-numeric: tabular-nums;
 }
+
+.altertable-select[data-label-placement='inline'] {
+  display: inline-flex;
+  gap: 0;
+}
+.altertable-select-trigger.altertable-picker-trigger > svg {
+  margin-inline-start: auto;
+}

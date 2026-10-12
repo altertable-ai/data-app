@@ -41,6 +41,7 @@ export function Select({
   labelPlacement = 'above',
   ...props
 }: SelectProps) {
+  const inline = labelPlacement === 'inline';
   validateChoiceOptions(options);
   const selected = options.find(option => option.id === value);
   invariant(selected, 'Select value must refer to an available option.');
@@ -56,9 +57,23 @@ export function Select({
       className={classNames('altertable-select', 'altertable-field', className)}
       data-label-placement={labelPlacement}
     >
-      <Label>{label}</Label>
-      <PressButton className="altertable-select-trigger">
-        <SelectValue>{selected.label}</SelectValue>
+      <Label className={inline ? 'altertable-sr-only' : undefined}>
+        {label}
+      </Label>
+      <PressButton
+        className={classNames(
+          'altertable-select-trigger',
+          inline && 'altertable-picker-trigger'
+        )}
+      >
+        {inline && (
+          <span className="altertable-picker-label" aria-hidden="true">
+            {label}
+          </span>
+        )}
+        <SelectValue className={inline ? 'altertable-picker-value' : undefined}>
+          {selected.label}
+        </SelectValue>
         <AppIcon name="disclosure" size={14} />
       </PressButton>
       <PopoverSurface

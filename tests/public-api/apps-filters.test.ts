@@ -1154,6 +1154,16 @@ test('compact secondary filters edit directly and clear only their restriction',
     exact: true,
   });
   await expect.poll(() => edit.isVisible()).toBe(true);
+  const triggerBox = await edit.boundingBox();
+  const labelBox = await edit
+    .getByText('Active account', { exact: true })
+    .boundingBox();
+  expect(triggerBox).not.toBeNull();
+  expect(labelBox).not.toBeNull();
+  expect(labelBox!.x).toBeGreaterThan(triggerBox!.x + 4);
+  expect(labelBox!.x + labelBox!.width).toBeLessThan(
+    triggerBox!.x + triggerBox!.width
+  );
   await edit.click();
   expect(
     await page.getByRole('dialog', { name: 'Filters', exact: true }).count()
