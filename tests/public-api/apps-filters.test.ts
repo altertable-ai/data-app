@@ -981,10 +981,22 @@ test('filter actions stay balanced with long selections and Show results preserv
   const sheet = page.getByRole('dialog', { name: /^Filters(?: \(|$)/ });
   const clear = sheet.getByRole('button', { name: 'Clear', exact: true });
   const show = sheet.getByRole('button', { name: 'Show results', exact: true });
-  const clearBox = await clear.boundingBox();
-  const showBox = await show.boundingBox();
-  expect(clearBox!.x + clearBox!.width).toBeLessThan(showBox!.x);
-  expect(Math.abs(clearBox!.y - showBox!.y)).toBeLessThan(1);
+  const actionLayout = await sheet.getByRole('button').evaluateAll(buttons => {
+    const clear = buttons.find(
+      button => button.textContent?.trim() === 'Clear'
+    )!;
+    const show = buttons.find(
+      button => button.textContent?.trim() === 'Show results'
+    )!;
+    const clearBox = clear.getBoundingClientRect();
+    const showBox = show.getBoundingClientRect();
+    return {
+      gap: showBox.x - clearBox.right,
+      verticalOffset: Math.abs(clearBox.y - showBox.y),
+    };
+  });
+  expect(actionLayout.gap).toBeGreaterThan(0);
+  expect(actionLayout.verticalOffset).toBeLessThan(1);
   const selectedURL = page.url();
   await show.click();
   await expect.poll(() => sheet.count()).toBe(0);
