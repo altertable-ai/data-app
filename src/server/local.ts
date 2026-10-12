@@ -10,6 +10,7 @@ import {
 } from '@/src/core/contract';
 import type { DataOperations } from '@/src/core/contract';
 import { createDataHandler } from '@/src/server/handler';
+import { resolveHttpQuery } from '@/src/server/query-parameters';
 
 /** Serve one app on localhost through the CLI's lakehouse proxy during development.
  * Hosted servers must authorize every viewer and must use `createDataHandler` directly. */
@@ -57,6 +58,7 @@ export function localLakehouse(
         proxyUrl ??
         environment.ALTERTABLE_API_BASE ??
         'https://api.altertable.ai';
+      const resolvedStatement = resolveHttpQuery(statement, params);
       let response: Response;
       try {
         response = await request(
@@ -70,9 +72,8 @@ export function localLakehouse(
               'content-type': 'application/json',
             },
             body: JSON.stringify({
-              statement,
+              statement: resolvedStatement,
               limit,
-              ...(params === undefined ? {} : { params }),
             }),
             signal,
           }
@@ -129,6 +130,7 @@ function parseQueryResult(body: string, limit: number): QueryResult {
     .filter(line => line.trim());
   if (!lines.length) throw new Error('Query response is empty.');
   const metadata: unknown = JSON.parse(lines[0]!);
+  rejectQueryError(metadata);
   if (
     !metadata ||
     typeof metadata !== 'object' ||
@@ -146,6 +148,7 @@ function parseQueryResult(body: string, limit: number): QueryResult {
   let columns: QueryResult['columns'] = [];
   if (lines[firstRowIndex]) {
     const columnDefinitions = JSON.parse(lines[firstRowIndex]!) as unknown;
+    rejectQueryError(columnDefinitions);
     if (
       Array.isArray(columnDefinitions) &&
       columnDefinitions.every(
@@ -162,6 +165,7 @@ function parseQueryResult(body: string, limit: number): QueryResult {
   }
   const rows = lines.slice(firstRowIndex).map(line => {
     const row: unknown = JSON.parse(line);
+    rejectQueryError(row);
     if (
       !Array.isArray(row) ||
       (firstRowIndex === 2 && row.length !== columns.length)
@@ -174,6 +178,16 @@ function parseQueryResult(body: string, limit: number): QueryResult {
     throw new Error('Lakehouse returned more rows than requested.');
 
   return { columns, rows, queryId };
+}
+
+function rejectQueryError(value: unknown) {
+  if (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    'error' in value
+  )
+    throw new DataSourceError('query_rejected');
 }
 
 function parseColumn(value: unknown): QueryResult['columns'][number] {
