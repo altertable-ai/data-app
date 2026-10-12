@@ -38,7 +38,7 @@ export function ChartBar<Row = unknown, Value = number | null>(
   return (
     <Bar<Row, Value>
       fill={chartBarFill}
-      radius={[5, 5, 0, 0]}
+      radius={props.stackId == null ? [5, 5, 0, 0] : 0}
       maxBarSize={30}
       activeBar={{ fill: seriesColor }}
       isAnimationActive={false}
