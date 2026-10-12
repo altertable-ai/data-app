@@ -17,6 +17,15 @@ Derive displays, exports, and findings from their results. See
 Inspect the relevant catalogs, tables, and fields, their time coverage, and
 existing definitions. Choose a question the available data can answer.
 
+## Choose the visualizations
+
+Before implementing queries and rendering, identify the question each visual
+answers, [choose its component](widgets.md#choose-a-visualization), and establish
+the required result shape: population, grain, units, ordering, and observation
+status. Prefer a specialized chart when its semantics fit. Check the component's
+input contract before reducing results to generic labels and values; preserve
+supplied query definitions when adapting their results.
+
 ## Build the exploration
 
 Choose the execution path:
@@ -90,15 +99,14 @@ needs separate requests. Keep filter placement consistent across tabs and make
 each filter's scope clear. Derive findings, story, and export from the displayed
 results and their inputs.
 
-Choose each visual for the question it answers; see
-[visualization selection](widgets.md#choose-a-visualization).
-
 ## Verify the app
 
 Follow the [UI quality contract](ui-quality.md) for hierarchy, responsive
 composition, typography, and control states.
 
-Verify findings against the source and the user's question. Distinguish measured
+Verify that each visual answers its intended question and preserves the source
+population, units, ordering, and missing or incomplete observations. Check
+findings against the source and the user's question. Distinguish measured
 zero, unavailable values, and empty results. Check filters, refresh, loading,
 empty, error, and stale states, then present the story. Download CSV from the
 standalone and embedded toolbar and verify its filename, columns, raw values,

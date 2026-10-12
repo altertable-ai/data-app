@@ -106,15 +106,19 @@ Use `useSvgId()` for stable IDs when composing custom SVG definitions.
 
 Use `<FunnelChart>`, `<RetentionChart>`, and `<JourneyChart>` from `/react/ui`
 inside `<VisualizationWidget>`. Derive inputs from the displayed rows; the
-binding owns loading, evidence, CSV, and story content. Types and JSDoc describe
-input constraints; the gallery includes complete examples.
+binding owns loading, evidence, CSV, and story content. The query owns counting,
+conversion windows, and cohort definitions; these components visualize results.
 
-- `<FunnelChart>` compares ordered step counts across populations. Each series
-  uses its first step as the baseline; hatching shows previous-step drop-off.
-- `<RetentionChart>` plots query-defined rates and retained counts by interval
-  offset. Use `null` for unobserved periods; `incomplete` produces a dotted tail.
-- `<JourneyChart>` derives expandable branches and outcomes from full paths.
-  Truncated paths stop at the last loaded event.
+- `<FunnelChart>`: ordered steps and aligned, nonincreasing counts per population.
+- `<RetentionChart>`: numeric offsets, fractional rates (`0.25`, not `25`), retained
+  counts, and cohort size. Distinguish unobserved (`null`), observed zero, and
+  observed but still accumulating (`incomplete`) periods.
+- `<JourneyChart>`: full ordered paths with counts and outcomes; preserve repeated
+  events and mark cut-off paths as `truncated`.
+
+See the [complete component examples](https://github.com/altertable-ai/data-app/blob/main/dev/fixtures/gallery-basics.tsx)
+for input shapes and composition. Read the exported types and JSDoc for exact
+constraints before adapting displayed rows.
 
 ### Composed charts
 
