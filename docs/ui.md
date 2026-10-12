@@ -10,6 +10,9 @@ frame for deliberately custom content. Use `<GettingStarted>` for
 connection setup. Fetched data belongs to a declared view; avoid inventing
 request states to populate a shell.
 
+Widget titles use the available header width and wrap when needed. Supplying
+`status` reserves space for refresh and retry feedback, including while idle.
+
 Direct `<DateRangePicker>`, `<DimensionPicker>`, and `useAppVariables()` support
 custom control ownership. The caller supplies values and change handlers.
 Custom tables use `<DataTable>` and its cell helpers; controls and overlays

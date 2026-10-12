@@ -470,6 +470,47 @@ test('query inspection displays and copies resolved parameters without interpola
   await expect.poll(copied).toBe(`-- counts.sql\n${query};`);
 });
 
+test('a widget title uses available header space before wrapping', async ({
+  page,
+}) => {
+  await page.goto('/inspection-app?long-heading');
+  const title = 'Show HN vs Ask HN vs Launch HN';
+  const heading = page.getByRole('heading', { name: title, exact: true });
+  await expect.poll(() => heading.isVisible()).toBe(true);
+  function lines() {
+    return heading.evaluate(element => {
+      const text = element.querySelector('button')!.firstElementChild!;
+      const range = document.createRange();
+      range.selectNodeContents(text);
+      return new Set([...range.getClientRects()].map(rect => rect.top)).size;
+    });
+  }
+  expect(await lines()).toBe(1);
+  await page.setViewportSize({ width: 320, height: 760 });
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '20px';
+  });
+  expect(await lines()).toBeGreaterThan(1);
+  expect(
+    await heading.evaluate(element => {
+      const bounds = element.getBoundingClientRect();
+      return (
+        bounds.left >= 0 &&
+        bounds.right <= window.innerWidth &&
+        element.scrollWidth <= element.clientWidth
+      );
+    })
+  ).toBe(true);
+  await page
+    .getByRole('button', { name: `Explore ${title}`, exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      page.getByRole('dialog', { name: title, exact: true }).isVisible()
+    )
+    .toBe(true);
+});
+
 test('query parameters remain readable within a phone-width inspection sheet', async ({
   mobilePage,
 }) => {

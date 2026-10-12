@@ -56,9 +56,10 @@ export function RequestHint({
   );
 }
 
-/** Fixed toolbar footprint preserves the title and action positions across request states. */
+/** Supplied status reserves a fixed footprint across request states; omission leaves space for the title. */
 export function WidgetStatusControl({ status }: { status?: WidgetStatus }) {
-  const kind = status?.kind ?? 'idle';
+  if (!status) return null;
+  const kind = status.kind;
   const message =
     status?.kind === 'error'
       ? (status.message ?? 'Couldn’t refresh')

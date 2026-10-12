@@ -49,6 +49,7 @@ function ControlledInspection() {
 }
 function App() {
   const [count, setCount] = useState(1);
+  const longHeading = new URLSearchParams(location.search).has('long-heading');
   return (
     <DataApp
       dataContext={{ description: 'Counts', glossary: {} }}
@@ -73,7 +74,14 @@ function App() {
       <Button onClick={() => setCount(value => value + 1)}>
         Update result
       </Button>
-      <DataWidget title="Summary" evidence={evidence}>
+      <DataWidget
+        title={longHeading ? 'Show HN vs Ask HN vs Launch HN' : 'Summary'}
+        description={
+          longHeading ? 'Posts per year by format (log scale).' : undefined
+        }
+        style={longHeading ? { width: 350, maxWidth: '100%' } : undefined}
+        evidence={evidence}
+      >
         <MetricWidget
           label="Nested count"
           value={count}

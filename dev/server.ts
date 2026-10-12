@@ -248,7 +248,7 @@ Bun.serve({
       )
         return new Response('Rejected fixture query', { status: 403 });
       return new Response(
-        '{"query_id":"starter-query"}\n["connection_check"]\n[1]\n'
+        '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
       );
     }
     if (path === '/api/sql') {
