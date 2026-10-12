@@ -27,33 +27,26 @@ Choose the component by the user's question. Compose dataset visuals inside
 charts come from `/react/ui`; `<Ranking>`, `<Breakdown>`, and `<Comparison>`
 are also available from `/react`.
 
-| Question or need                                          | Component          | Guidance                                                                                                           |
-| --------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------ |
-| How do categories compare?                                | `<BarChart>`       | Compare nonnegative category values; order by value for rank or by a meaningful category order.                    |
-| Which items lead?                                         | `<Ranking>`        | Use a compact ordered list with values and optional detail. Tracks scale to the largest visible item, not a total. |
-| How does a measure change over time?                      | `<LineChart>`      | Use ordered, equally spaced samples to emphasize the trend.                                                        |
-| How large is the measure over time?                       | `<AreaChart>`      | Use the same samples as a line chart when filled magnitude relative to zero helps answer the question.             |
-| What makes up the whole?                                  | `<PieChart>`       | Use a few mutually exclusive parts of one total; include the remainder as Other.                                   |
-| What share of an observed total does each part represent? | `<Breakdown>`      | Use a compact display of values and shares with an explicit total, including when only some parts are shown.       |
-| How do several measures relate on one plot?               | `<ComposedChart>`  | Compose bars, lines, areas, or scatter series; label units clearly and use separate axes for different units.      |
-| How are two numeric measures related?                     | `<ScatterChart>`   | Use independent X/Y observations to explore relationships, clusters, and outliers.                                 |
-| Where do users drop out of a sequence?                    | `<FunnelChart>`    | Use ordered counts from the same population reaching each successive step.                                         |
-| Do cohorts return over time?                              | `<RetentionChart>` | Use query-defined rates and retained counts by numeric offset; mark incomplete periods.                            |
-| Which paths do users take?                                | `<JourneyChart>`   | Use full paths with population counts and outcomes; explore branches step by step.                                 |
-| How did one metric change between periods?                | `<Comparison>`     | Use the metric result and its displayed comparison period.                                                         |
-| What are the exact values or row details?                 | `<TableWidget>`    | Use a bound table for lookup, search, and precise comparisons.                                                     |
-
-Choose by analytical meaning, not only by a metric name or visual style:
-step-by-step conversion uses `<FunnelChart>`; conversion rate by calendar date
-uses a line chart. Return behavior by elapsed time uses `<RetentionChart>`;
-branching event sequences use `<JourneyChart>`. Multiple populations alone do
-not require `<ComposedChart>`: the funnel and retention charts support series.
-See [product analytics inputs and examples](ui.md#product-analytics-charts).
+| Question or need                                                          | Component          | Guidance                                                                                                               |
+| ------------------------------------------------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| How do categories compare?                                                | `<BarChart>`       | Compare nonnegative category values; order by value for rank or by a meaningful category order.                        |
+| Which items lead?                                                         | `<Ranking>`        | Use a compact ordered list with values and optional detail. Tracks scale to the largest visible item, not a total.     |
+| How does a measure, including conversion rate, change over calendar time? | `<LineChart>`      | Use ordered, equally spaced samples to emphasize the trend.                                                            |
+| How large is the measure over time?                                       | `<AreaChart>`      | Use the same samples as a line chart when filled magnitude relative to zero helps answer the question.                 |
+| What makes up the whole?                                                  | `<PieChart>`       | Use a few mutually exclusive parts of one total; include the remainder as Other.                                       |
+| What share of an observed total does each part represent?                 | `<Breakdown>`      | Use a compact display of values and shares with an explicit total, including when only some parts are shown.           |
+| How do several measures relate on one plot?                               | `<ComposedChart>`  | Compose bars, lines, areas, or scatter series; label units clearly and use separate axes for different units.          |
+| How are two numeric measures related?                                     | `<ScatterChart>`   | Use independent X/Y observations to explore relationships, clusters, and outliers.                                     |
+| Where does a population drop off across ordered steps?                    | `<FunnelChart>`    | Compare populations with one count series per population. See [inputs and examples](ui.md#product-analytics-charts).   |
+| Do cohorts return at elapsed intervals after a starting event?            | `<RetentionChart>` | Compare cohorts or segments with one series per population. See [inputs and examples](ui.md#product-analytics-charts). |
+| Which event paths do populations follow, and where do they branch?        | `<JourneyChart>`   | Explore full paths with population counts and outcomes. See [inputs and examples](ui.md#product-analytics-charts).     |
+| How did one metric change between periods?                                | `<Comparison>`     | Use the metric result and its displayed comparison period.                                                             |
+| What are the exact values or row details?                                 | `<TableWidget>`    | Use a bound table for lookup, search, and precise comparisons.                                                         |
 
 Prefer bars or a ranking when users need to compare similarly sized categories;
 use a pie for a simple composition question. Prefer a line when the trend is
 enough; use area when the fill adds meaning. Keep exact values available in a
-table when they matter. Follow the [chart input constraints](ui.md#charts). For multiple or mixed series,
+table when they matter. Follow the [chart input constraints](ui.md#charts). For custom combinations of series,
 use the [composed chart primitives](ui.md#composed-charts) within the same bound
 visualization workflow.
 
