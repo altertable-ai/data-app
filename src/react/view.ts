@@ -36,6 +36,36 @@ export type ViewBindings<
   [Key in keyof Variables]: (input: Input) => ResolvedVariables<Variables>[Key];
 }>;
 
+type RequiredFilterBindingKeys<Variables extends VariableCollection, Input> = {
+  [Key in keyof Variables]: Extract<
+    Variables[Key]['kind'],
+    'dimension' | 'numberFilter' | 'booleanFilter'
+  > extends never
+    ? never
+    : [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
+      ? never
+      : Key;
+}[keyof Variables];
+
+/** Derive compatible top-level filter bindings; require readers for other input shapes. */
+export type ViewBindingOptions<
+  Variables extends VariableCollection,
+  Input,
+  AdditionalRequired extends keyof Variables = never,
+> = [RequiredFilterBindingKeys<Variables, Input> | AdditionalRequired] extends [
+  never,
+]
+  ? { bindings?: ViewBindings<Variables, Input> }
+  : {
+      bindings: ViewBindings<Variables, Input> & {
+        [
+          Key in
+            | RequiredFilterBindingKeys<Variables, Input>
+            | AdditionalRequired
+        ]-?: (input: Input) => ResolvedVariables<Variables>[Key];
+      };
+    };
+
 type SameViewInput<Variables extends VariableCollection, Input> = [
   ResolvedVariables<Variables>,
 ] extends [Input]
@@ -60,7 +90,6 @@ export type DataViewDefinition<
 > = {
   operation: Name;
   dataContext: DataContext;
-  bindings?: ViewBindings<Variables, Input>;
   /** App-owned semantics: measured zero need not mean an empty result. */
   isEmpty: (data: Data) => boolean;
   /** Inherited by DataSection unless it supplies its own copy. */
@@ -69,6 +98,7 @@ export type DataViewDefinition<
   ? { variables?: Variables }
   : { variables: Variables }) &
   ViewInputMapping<NoInfer<Variables>, Input> &
+  ViewBindingOptions<NoInfer<Variables>, Input> &
   (
     | {
         date: ViewDate<Variables, Input>;

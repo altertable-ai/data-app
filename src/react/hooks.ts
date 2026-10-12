@@ -38,7 +38,7 @@ import {
   type DataViewDefinition,
   type ResolvedDataViewDefinition,
   type ResolvedVariables,
-  type ViewBindings,
+  type ViewBindingOptions,
 } from '@/src/react/view';
 import { useViewVariables } from '@/src/react/view-controls';
 
@@ -69,6 +69,17 @@ type TimeInputMapping<Additional extends VariableCollection, Input> =
     : {
         input: (values: ResolvedVariables<TimeVariables<Additional>>) => Input;
       };
+
+/** Match the period reader's precedence for each possible operation input. */
+type RequiredPeriodBinding<Input> = Input extends unknown
+  ? 'period' extends keyof Input
+    ? Input extends { period: DateRangeRequest }
+      ? never
+      : 'period'
+    : Input extends DateRangeRequest
+      ? never
+      : 'period'
+  : never;
 
 /** Bind declared operations to URL variables, displayed readings, and request feedback. */
 export function createDataHooks<Operations extends DataOperations>(
@@ -276,13 +287,14 @@ export function createDataHooks<Operations extends DataOperations>(
       dataContext: Context;
       time: Omit<DateRangeVariableOptions, 'key'>;
       variables?: Additional & { period?: never };
-      bindings?: ViewBindings<
-        { period: ReturnType<typeof dateRangeVariable> } & NoInfer<Additional>,
-        InputOf<Operations[Name]>
-      >;
       isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
       emptyFallback: EmptyContent;
-    } & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>>
+    } & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>> &
+      ViewBindingOptions<
+        TimeVariables<NoInfer<Additional>>,
+        InputOf<Operations[Name]>,
+        RequiredPeriodBinding<InputOf<Operations[Name]>>
+      >
   ) {
     const period = dateRangeVariable({ ...definition.time, key: 'period' });
 

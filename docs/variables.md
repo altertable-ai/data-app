@@ -9,6 +9,9 @@ description for an empty result). With no additional variables, its default
 input is the calendar request. With additional variables, it is `{ period, ...variables }`.
 Supply an `input` mapper for a different operation shape and `bindings` to extract
 nested period or field-filter inputs. Mappings must preserve the selected values.
+Bindings are required when the operation input cannot supply a compatible
+top-level filter field or the calendar request. Keep parsed selections in the
+operation input and derive SQL parameters inside the operation.
 
 `dimensionFilter()` from `/contract` requires exactly one option source: fixed `options` or a `facet`.
 Use `defineFacetFilter()` to bind a facet operation and its typed input. `<DimensionPicker>` offers missing values separately and keeps selected values
