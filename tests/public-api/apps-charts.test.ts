@@ -457,3 +457,23 @@ test('chart frames suppress pointer focus outlines and restore keyboard focus', 
       .toBe('solid');
   }
 });
+
+test('stacked bars have square joins while unstacked bars and explicit radii stay rounded', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const name of ['Default stack', 'Rounded override', 'Unstacked bars']) {
+    const chart = page.getByRole('region', { name, exact: true });
+    const bars = chart.locator('path.recharts-rectangle');
+    // Inspect the rendered outlines: rounded corners use SVG arc commands.
+    // All five non-null values must render, including negative and sparse stacks.
+    await expect.poll(() => bars.count()).toBe(5);
+    const outlines = await bars.evaluateAll(elements =>
+      elements.map(element => element.getAttribute('d') ?? '')
+    );
+    expect(outlines.every(outline => outline.length > 0)).toBe(true);
+    expect(outlines.map(outline => /[Aa]/.test(outline))).toEqual(
+      Array(5).fill(name !== 'Default stack')
+    );
+  }
+});

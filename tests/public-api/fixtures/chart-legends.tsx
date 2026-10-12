@@ -109,6 +109,30 @@ createRoot(document.getElementById('root')!).render(
       Switch to dark theme
     </Button>
     <Grid columns={2} minItemWidth="wide">
+      {['Default stack', 'Rounded override', 'Unstacked bars'].map(name => (
+        <Example key={name} name={name} description="Bar corner geometry">
+          <ComposedChart
+            ariaLabel={name}
+            data={[
+              { day: 'Mon', first: 8, second: 5 },
+              { day: 'Tue', first: 6, second: null },
+              { day: 'Wed', first: -4, second: -3 },
+            ]}
+          >
+            <ComposedChart.XAxis dataKey="day" />
+            <ComposedChart.YAxis />
+            {['first', 'second'].map((key, index) => (
+              <ComposedChart.Bar
+                key={key}
+                dataKey={key}
+                fill={`var(--atbl-chart-${index + 1})`}
+                stackId={name === 'Unstacked bars' ? undefined : 0}
+                {...(name === 'Rounded override' ? { radius: 6 } : {})}
+              />
+            ))}
+          </ComposedChart>
+        </Example>
+      ))}
       <Example
         name="ComposedChart"
         description="Revenue and forecast in €k on the left; conversion in % on the right."
