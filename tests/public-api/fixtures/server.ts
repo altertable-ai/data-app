@@ -123,7 +123,7 @@ const server = Bun.serve({
       if (request.headers.get('authorization') !== 'Bearer fixture-token')
         return new Response('Denied', { status: 403 });
       return new Response(
-        '{"query_id":"starter-query"}\n["connection_check"]\n[1]\n'
+        '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
       );
     }
     if (url.pathname === '/api/sql') {

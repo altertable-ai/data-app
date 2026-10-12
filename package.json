@@ -112,6 +112,7 @@
     "check:styles": "bun run scripts/check-app-styles.ts"
   },
   "dependencies": {
+    "@altertable/lakehouse": "0.4.1",
     "@floating-ui/react": "0.27.20",
     "@internationalized/date": "3.12.4",
     "@tanstack/react-query": "5.104.0",
