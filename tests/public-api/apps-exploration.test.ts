@@ -250,7 +250,7 @@ test('pending hierarchy transitions retain displayed context and prevent stale d
     .toBe(1);
 });
 
-test('scoped detail exports inherit displayed hierarchy selection', async ({
+test('scoped detail content inherits displayed hierarchy selection without an app toolbar', async ({
   page,
 }) => {
   await page.goto('/exploration-app');
@@ -262,12 +262,13 @@ test('scoped detail exports inherit displayed hierarchy selection', async ({
     exact: true,
   });
   await expect.poll(() => detail.getByRole('row').count()).toBe(3);
-  const downloaded = page.waitForEvent('download');
-  await detail.getByRole('button', { name: 'Export CSV', exact: true }).click();
-  const csv = await readFile((await (await downloaded).path())!, 'utf8');
-  expect(csv).toContain('SO-1001');
-  expect(csv).toContain('SO-1003');
-  expect(csv).not.toContain('SO-1002');
+  expect(
+    await detail
+      .getByRole('group', { name: 'Detail actions', exact: true })
+      .count()
+  ).toBe(0);
+  expect(await detail.textContent()).toContain('SO-1001');
+  expect(await detail.textContent()).not.toContain('SO-1002');
   await page.keyboard.press('Escape');
   await heading(page, 'countries');
 });

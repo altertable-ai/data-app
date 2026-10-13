@@ -10,10 +10,7 @@ import type {
   ExplorationStateOf,
   ExplorationValuesOf,
 } from '@/src/core/exploration';
-import {
-  createDetailContent,
-  type DetailContentOptions,
-} from '@/src/react/details';
+import { createDetailContent } from '@/src/react/details';
 import { randomUuid } from '@/src/core/uuid';
 import { DeclaredView } from '@/src/react/view-runtime';
 import {
@@ -395,16 +392,8 @@ export function createDataHooks<Operations extends DataOperations>(
     });
     const detail = view as Omit<typeof view, 'content'>;
     return Object.assign(detail, {
-      content(
-        render: (source: DataContentState<Data, Input>) => ReactNode,
-        options: DetailContentOptions<Data, Input>
-      ) {
-        return createDetailContent(
-          view,
-          render,
-          definition.describeInput,
-          options
-        );
+      content(render: (source: DataContentState<Data, Input>) => ReactNode) {
+        return createDetailContent(view, render, definition.describeInput);
       },
     });
   }

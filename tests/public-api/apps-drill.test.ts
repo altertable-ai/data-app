@@ -1,9 +1,8 @@
 import { expect } from 'vitest';
-import { readFile } from 'node:fs/promises';
 import { test } from '@/tests/public-api/browser';
 
 const europeAction = 'View orders: Europe';
-test('drill records reconcile with revenue, export their scope, and preserve dashboard search and pagination', async ({
+test('drill records show scoped content without a toolbar and preserve dashboard search and pagination', async ({
   page,
 }) => {
   await page.goto('/drill-app');
@@ -14,26 +13,23 @@ test('drill records reconcile with revenue, export their scope, and preserve das
   expect(await detail.textContent()).toContain(
     'Europe · 2026-09-01–2026-09-30 · Enterprise'
   );
-  const downloaded = page.waitForEvent('download');
-  await detail.getByRole('button', { name: 'Export CSV', exact: true }).click();
-  const download = await downloaded;
-  const csv = await readFile((await download.path())!, 'utf8');
-  expect(csv).toContain(
-    'SO-1001,Atelier Nord,France,2026-09-12,paid,1200,200,0,1000'
-  );
-  expect(csv).toContain(
-    'SO-1002,Werkhaus,Germany,2026-09-18,paid,600,100,100,400'
-  );
-  expect(csv).toContain(
-    'SO-1003,Atelier Nord,France,2026-09-20,refunded,300,0,300,0'
-  );
-  expect(csv).not.toContain('SO-1004');
-  expect(csv).not.toContain('SO-1005');
-  expect(csv).not.toContain('SO-1006');
-  expect(csv).not.toContain('SO-2001');
-  expect(download.suggestedFilename()).toContain(
-    'europe-2026-09-01-2026-09-30-enterprise'
-  );
+  expect(
+    await detail
+      .getByRole('button', { name: 'Refresh details', exact: true })
+      .count()
+  ).toBe(0);
+  expect(
+    await detail
+      .getByRole('button', { name: 'Export CSV', exact: true })
+      .count()
+  ).toBe(0);
+  expect(
+    await detail
+      .getByRole('button', { name: 'Present story', exact: true })
+      .count()
+  ).toBe(0);
+  expect(await detail.textContent()).toContain('SO-1001');
+  expect(await detail.textContent()).not.toContain('SO-1004');
   const detailURL = page.url();
   await page.goBack();
   await expect.poll(() => detail.isVisible()).toBe(false);
@@ -97,7 +93,6 @@ test('drilling during an overview refresh uses the displayed input and freezes t
   await expect.poll(() => detail.getByRole('row').count()).toBe(4);
   expect(await detail.textContent()).toContain('2026-09-01–2026-09-30');
   release();
-  await detail.getByRole('button', { name: 'Refresh details' }).click();
   await expect.poll(() => detail.getByRole('row').count()).toBe(4);
   await page.keyboard.press('Escape');
   await expect.poll(() => detail.isVisible()).toBe(false);
@@ -109,7 +104,7 @@ test('drilling during an overview refresh uses the displayed input and freezes t
   expect(await detail.textContent()).toContain('SO-2001');
 });
 
-test('detail loading, retry, stale errors, and empty results remain scoped', async ({
+test('detail loading, retry, and empty results remain scoped', async ({
   page,
 }) => {
   let release!: () => void;
@@ -136,13 +131,6 @@ test('detail loading, retry, stale errors, and empty results remain scoped', asy
     .getByRole('button', { name: 'View contributing orders', exact: true })
     .click();
   const detail = page.getByRole('dialog', { name: 'Contributing orders' });
-  await expect
-    .poll(() =>
-      detail
-        .getByRole('button', { name: 'Export CSV', exact: true })
-        .isDisabled()
-    )
-    .toBe(true);
   release();
   await expect
     .poll(() =>
@@ -155,20 +143,7 @@ test('detail loading, retry, stale errors, and empty results remain scoped', asy
   expect(await detail.textContent()).toContain(
     'All regions · 2026-09-01–2026-09-30 · Enterprise'
   );
-  fail = true;
-  await detail.getByRole('button', { name: 'Refresh details' }).click();
-  await expect
-    .poll(() =>
-      detail.getByRole('button', { name: 'Retry', exact: true }).isVisible()
-    )
-    .toBe(true);
-  expect(await detail.getByRole('row').count()).toBe(5);
-  expect(
-    await detail
-      .getByRole('button', { name: 'Export CSV', exact: true })
-      .isEnabled()
-  ).toBe(true);
-  expect(attempts).toBeGreaterThanOrEqual(3);
+  expect(attempts).toBeGreaterThanOrEqual(2);
   fail = false;
   await page.keyboard.press('Escape');
   await expect.poll(() => detail.isVisible()).toBe(false);
@@ -251,35 +226,21 @@ test('closing a loading detail aborts its request and unmounts its query', async
   expect(requests).toBe(1);
 });
 
-test('mobile chart drilling presents only destination findings and retains the scope', async ({
+test('mobile chart drilling displays scoped detail content without page actions', async ({
   mobilePage: page,
 }) => {
   await page.goto('/drill-app');
   await page.getByRole('button', { name: /^View orders: Europe:/ }).click();
   const detail = page.getByRole('dialog', { name: 'Contributing orders' });
   await expect.poll(() => detail.getByRole('row').count()).toBe(4);
-  await detail
-    .getByRole('button', { name: 'Present story', exact: true })
-    .click();
-  const story = page.getByRole('dialog', {
-    name: '$1400 net revenue',
-    exact: true,
-  });
-  await expect.poll(() => story.isVisible()).toBe(true);
-  expect(await page.getByRole('dialog').filter({ visible: true }).count()).toBe(
-    2
-  );
-  expect(await story.textContent()).toContain(
-    'Europe · 2026-09-01–2026-09-30 · Enterprise'
-  );
   expect(
-    await page
-      .getByRole('dialog', { name: 'Revenue by region', exact: true })
+    await detail
+      .getByRole('group', { name: 'Detail actions', exact: true })
       .count()
   ).toBe(0);
-  await story
-    .getByRole('button', { name: 'Exit presentation', exact: true })
-    .click();
+  expect(await detail.textContent()).toContain(
+    'Europe · 2026-09-01–2026-09-30 · Enterprise'
+  );
   await detail.getByRole('button', { name: 'Close panel' }).click();
   await expect.poll(() => detail.isVisible()).toBe(false);
 });

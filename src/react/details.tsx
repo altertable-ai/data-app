@@ -10,30 +10,18 @@ import {
   type RefObject,
 } from 'react';
 import { invariant } from '@/src/core/invariant';
-import type { DisplayedSnapshot } from '@/src/core/data-view';
-import { ownedSource } from '@/src/react/source-owner';
 import {
   ViewContent,
   sectionContent,
   type DataContentState,
 } from '@/src/react/content';
 import { useDeclaredResult, type DeclaredView } from '@/src/react/view-runtime';
-import {
-  exportDatasets,
-  registeredEvidence,
-  type ExportDataset,
-  type RegisteredBinding,
-} from '@/src/react/bindings';
 import { DateFormattingContext } from '@/src/react/date-formatting';
 import { DataSectionBoundary } from '@/src/react/ui/DataSectionBoundary';
 import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
-import { AppToolbar } from '@/src/react/ui/AppToolbar';
-import type { StoryFinding } from '@/src/react/ui/story';
 import { Sheet } from '@/src/react/ui/Sheet';
-import { Button } from '@/src/react/ui/Button';
 import { EmptyState } from '@/src/react/ui/EmptyState';
-import { Stack } from '@/src/react/ui/Stack';
 import {
   searchParams,
   subscribeSearch,
@@ -41,18 +29,6 @@ import {
 } from '@/src/react/ui/search';
 
 import type { DetailRequest, DetailTarget } from '@/src/react/actions';
-export type DetailContentOptions<Data, Input> = {
-  datasets: readonly [
-    ExportDataset<Data, Input>,
-    ...ExportDataset<Data, Input>[],
-  ];
-  story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
-    StoryFinding,
-    'evidence'
-  > & {
-    evidence: RegisteredBinding;
-  })[];
-};
 type DetailPanelProps = {
   input: unknown;
   open: boolean;
@@ -72,8 +48,7 @@ export type DetailContent = {
 export function createDetailContent<Data, Input>(
   view: DeclaredView<Data, Input> & DetailTarget<Input>,
   render: (source: DataContentState<Data, Input>) => ReactNode,
-  describeInput: (input: Input) => string,
-  options: DetailContentOptions<Data, Input>
+  describeInput: (input: Input) => string
 ): DetailContent {
   invariant(
     !!view.id.trim() && !!view.title.trim(),
@@ -95,7 +70,7 @@ export function createDetailContent<Data, Input>(
     useEffect(() => {
       if (!open) cancel();
     }, [open]);
-    const snapshot = result.snapshot && ownedSource(view, result.snapshot);
+    const snapshot = result.snapshot;
     const scope = describeInput(snapshot ? snapshot.input : (input as Input));
     return (
       <InspectionProvider>
@@ -114,51 +89,13 @@ export function createDetailContent<Data, Input>(
               onClose={onClosed}
               wide
             >
-              <Stack>
-                <AppToolbar
-                  aria-label="Detail actions"
-                  csvExport={
-                    snapshot
-                      ? exportDatasets(
-                          options.datasets,
-                          snapshot,
-                          scope,
-                          view.title
-                        )
-                      : null
-                  }
-                  story={
-                    snapshot
-                      ? {
-                          title: view.title,
-                          scope,
-                          dataContext: result.dataContext,
-                          findings: options.story(snapshot).map(finding => ({
-                            ...finding,
-                            evidence: registeredEvidence(
-                              finding.evidence,
-                              view
-                            ),
-                          })),
-                        }
-                      : null
-                  }
-                >
-                  <Button
-                    onClick={() => void result.refetch()}
-                    disabled={result.refreshing}
-                  >
-                    Refresh details
-                  </Button>
-                </AppToolbar>
-                <DataSectionBoundary
-                  loadingFallback={loadingFallback}
-                  result={result}
-                  notice="inline"
-                >
-                  {children}
-                </DataSectionBoundary>
-              </Stack>
+              <DataSectionBoundary
+                loadingFallback={loadingFallback}
+                result={result}
+                notice="inline"
+              >
+                {children}
+              </DataSectionBoundary>
             </Sheet>
           </InspectionContext>
         </DateFormattingContext>

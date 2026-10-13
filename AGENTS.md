@@ -50,7 +50,7 @@ For relevant widgets, declare typed exploration actions to open details, filter 
 view, or descend a supported hierarchy. Declare one exploration variable for hierarchy selection and grouping; do not
 duplicate its levels as ordinary filters. Details inherit displayed input; filter
 actions preserve current unrelated variables. Register detail content with its
-own evidence, export datasets, and story. Follow
+own evidence. Keep export datasets and story in the main app. Follow
 [exploration guidance](docs/widgets.md#explore-from-widgets).
 
 Keep static context outside loading boundaries. Derive labels, findings, and

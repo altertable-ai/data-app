@@ -138,21 +138,9 @@ const orders = detail.dataset({
   },
   evidence: { id: 'orders', glossaryIds: ['revenue'] },
 });
-const detailContent = detail.content(
-  source => <TableWidget dataset={orders} source={source} pagination={false} />,
-  {
-    datasets: [orders],
-    story: snapshot => [
-      {
-        id: 'orders',
-        headline: `${snapshot.data.reduce((sum, row) => sum + row.revenue, 0)} net revenue`,
-        context: detail.scope(snapshot),
-        visual: <TableWidget dataset={orders} source={snapshot} />,
-        evidence: orders,
-      },
-    ],
-  }
-);
+const detailContent = detail.content(source => (
+  <TableWidget dataset={orders} source={source} pagination={false} />
+));
 const actions = groups.actions(
   action => ({
     orders: action.detail({

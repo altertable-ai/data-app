@@ -202,6 +202,7 @@ remain available in the menu. A metric's row argument is `undefined`.
 Use `when: row => ...` on a filter action when it applies only to some rows.
 
 Detail mappings receive the **displayed input**, including during refreshes.
+Detail sheets show contextual content without a separate app toolbar.
 Register the target's [detail content](views.md#detail-destinations) on
 `<DataApp>`. Match the source metric's inclusion rules and explain ratios,
 distinct counts, or preview limits rather than implying every table sum

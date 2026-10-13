@@ -124,26 +124,15 @@ const orders = ordersView.dataset({
   columns: { id: { value: row => row.id } },
   evidence: { id: 'orders', queryNames: ['orders'] },
 });
-const ordersDetail = ordersView.content(
-  source => <TableWidget dataset={orders} source={source} />,
-  {
-    datasets: [orders],
-    story: snapshot => [
-      {
-        id: 'orders',
-        headline: `${snapshot.data.rows.length} contributing orders`,
-        context: ordersView.scope(snapshot),
-        visual: <TableWidget dataset={orders} source={snapshot} />,
-        evidence: orders,
-      },
-    ],
-  }
-);
+const ordersDetail = ordersView.content(source => (
+  <TableWidget dataset={orders} source={source} />
+));
 ```
 
 Register content with `<DataApp details={[ordersDetail]} …>` and declare a
 [detail action](widgets.md#explore-from-widgets) on the source binding. Detail
-content, evidence, CSV export, and story use the destination's displayed result.
+content and evidence use the destination's displayed result. Detail sheets omit
+the app toolbar; refresh, export, and story actions belong to the main app.
 The sheet keeps the dashboard mounted and restores focus when closed.
 
 Destination inputs must be JSON-serializable, contain only the scope needed by

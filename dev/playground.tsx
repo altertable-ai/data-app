@@ -368,42 +368,21 @@ const orderProducts = orderDetailView.dataset<OrderItem>({
     glossaryIds: ['orderValue'],
   },
 });
-const orderDetailContent = orderDetailView.content(
-  source => (
-    <Stack>
-      <TextContent>
-        {!source.loading && source.data.order && (
-          <p>
-            {source.data.order.customer} · {source.data.order.country} ·{' '}
-            {source.data.order.day} · {source.data.order.status} ·{' '}
-            {source.data.order.campaign} ·{' '}
-            {formatMetric(source.data.order.amount, currency)} total order
-            value.
-          </p>
-        )}
-      </TextContent>
-      <TableWidget dataset={orderProducts} source={source} pagination={false} />
-    </Stack>
-  ),
-  {
-    datasets: [orderProducts],
-    story: snapshot => [
-      {
-        id: 'order-products',
-        headline: `${snapshot.data.order?.customer ?? 'Order'}: ${formatMetric(snapshot.data.order?.amount ?? 0, currency)} order value`,
-        context: orderDetailView.scope(snapshot),
-        visual: (
-          <TableWidget
-            dataset={orderProducts}
-            source={snapshot}
-            pagination={false}
-          />
-        ),
-        evidence: orderProducts,
-      },
-    ],
-  }
-);
+const orderDetailContent = orderDetailView.content(source => (
+  <Stack>
+    <TextContent>
+      {!source.loading && source.data.order && (
+        <p>
+          {source.data.order.customer} · {source.data.order.country} ·{' '}
+          {source.data.order.day} · {source.data.order.status} ·{' '}
+          {source.data.order.campaign} ·{' '}
+          {formatMetric(source.data.order.amount, currency)} total order value.
+        </p>
+      )}
+    </TextContent>
+    <TableWidget dataset={orderProducts} source={source} pagination={false} />
+  </Stack>
+));
 const viewOrder = ordersDataset.actions(action => ({
   orders: action.detail({
     label: 'View order',
@@ -426,27 +405,13 @@ const scopedOrders = scopeOrdersView.dataset({
   ...orderDefinition,
   name: 'Orders in this scope',
 });
-const scopeOrdersContent = scopeOrdersView.content(
-  source => (
-    <TableWidget
-      dataset={scopedOrders}
-      source={source}
-      description="Latest 100 orders across all statuses. Paid orders contribute to paid revenue; pending and refunded orders are identified separately."
-    />
-  ),
-  {
-    datasets: [scopedOrders],
-    story: snapshot => [
-      {
-        id: 'scope-orders',
-        headline: `${formatMetric(summarizeOrders(snapshot.data).revenue, currency)} paid revenue`,
-        context: describeScope(snapshot.input),
-        visual: <TableWidget dataset={scopedOrders} source={snapshot} />,
-        evidence: scopedOrders,
-      },
-    ],
-  }
-);
+const scopeOrdersContent = scopeOrdersView.content(source => (
+  <TableWidget
+    dataset={scopedOrders}
+    source={source}
+    description="Latest 100 orders across all statuses. Paid orders contribute to paid revenue; pending and refunded orders are identified separately."
+  />
+));
 const geographicActions = geographicDataset.actions(action => ({
   orders: action.detail({
     label: 'View orders',

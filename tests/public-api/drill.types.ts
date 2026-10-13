@@ -41,19 +41,8 @@ const orders = hooks.defineDetailView({
   isEmpty: data => data.length === 0,
   emptyFallback: { title: 'No orders' },
 });
-const records = orders.dataset({
-  name: 'Orders',
-  select: data => data,
-  rowKey: row => row.orderId,
-  columns: { id: { value: row => row.orderId } },
-  evidence: { id: 'orders', queryNames: ['orders'] },
-});
-const content: DetailContent = orders.content(
-  source => (source.loading ? 'Loading' : source.data[0]?.orderId),
-  {
-    datasets: [records],
-    story: () => [],
-  }
+const content: DetailContent = orders.content(source =>
+  source.loading ? 'Loading' : source.data[0]?.orderId
 );
 regions.actions(action => ({
   orders: action.detail({
@@ -78,11 +67,6 @@ regions.actions(action => ({
     input: () => ({}),
   }),
 }));
-orders.content(() => null, {
-  // @ts-expect-error Detail exports must use datasets owned by the destination result shape.
-  datasets: [regions],
-  story: () => [],
-});
 void content;
 
 // Filtering and hierarchy preserve the source's typed variable contract.

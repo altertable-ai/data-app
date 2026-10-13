@@ -143,23 +143,9 @@ const orders = detail.dataset({
     queryNames: ['contributingOrders'],
   },
 });
-const detailContent = detail.content(
-  source => <TableWidget dataset={orders} source={source} pagination={false} />,
-  {
-    datasets: [orders],
-    story: snapshot => [
-      {
-        id: 'scope-revenue',
-        headline: `$${snapshot.data.reduce((sum, row) => sum + row.revenue, 0)} net revenue`,
-        context: detail.scope(snapshot),
-        visual: (
-          <TableWidget dataset={orders} source={snapshot} pagination={false} />
-        ),
-        evidence: orders,
-      },
-    ],
-  }
-);
+const detailContent = detail.content(source => (
+  <TableWidget dataset={orders} source={source} pagination={false} />
+));
 const viewOrders = regions.actions(action => ({
   orders: action.detail({
     label: 'View orders',
