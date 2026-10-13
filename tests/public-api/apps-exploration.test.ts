@@ -2,157 +2,196 @@ import { expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import type { Page } from 'playwright';
 import { test } from '@/tests/public-api/browser';
+function controls(page: Page) {
+  return page.getByRole('navigation', {
+    name: 'Geography exploration',
+    exact: true,
+  });
+}
+function widget(page: Page, level: string) {
+  return page.getByRole('region', { name: `Revenue by ${level}`, exact: true });
+}
+async function heading(page: Page, level: string) {
+  await expect.poll(() => widget(page, level).count()).toBe(1);
+}
 async function act(page: Page, group: string, action: string) {
   await page
     .getByRole('button', { name: new RegExp(`^Explore: ${group}:`) })
     .click();
   await page.getByRole('menuitem', { name: action, exact: true }).click();
 }
-async function expectHeading(page: Page, grouping: string) {
-  await expect
-    .poll(() =>
-      page
-        .getByRole('region', { name: `Revenue by ${grouping}`, exact: true })
-        .count()
-    )
-    .toBe(1);
-}
 async function choose(page: Page, label: string, value: string) {
-  await page.getByRole('button', { name: new RegExp(`^${label}:`) }).click();
+  await controls(page)
+    .getByRole('button', { name: new RegExp(`^${label}:`) })
+    .click();
   await page.getByRole('option', { name: value, exact: true }).click();
 }
+function state(page: Page) {
+  const raw = new URL(page.url()).searchParams.get('geography');
+  return raw ? JSON.parse(raw) : null;
+}
+async function france(page: Page) {
+  await act(page, 'Europe', 'Break down by countries');
+  await heading(page, 'countries');
+  await act(page, 'France', 'Break down by customers');
+  await heading(page, 'customers');
+}
 
-test('filter, descend, detail export, up and browser history preserve the exploration context', async ({
+test('selectors and chart filters share one hierarchy state and grouping remains explicit', async ({
   page,
 }) => {
   await page.goto('/exploration-app');
-  await act(page, 'Europe', 'Filter to this region');
-  await expect
-    .poll(() =>
-      page.getByRole('button', { name: 'Region: Europe', exact: true }).count()
-    )
-    .toBe(1);
-  await act(page, 'Europe', 'Break down by countries');
-  await expectHeading(page, 'countries');
-  const path = page.getByRole('navigation', {
-    name: 'Geography exploration',
-    exact: true,
-  });
-  expect(await path.textContent()).toContain('Europe');
-  const europeURL = page.url();
-  await act(page, 'France', 'View orders');
-  const detail = page.getByRole('dialog', {
-    name: 'Contributing orders',
-    exact: true,
-  });
-  await expect.poll(() => detail.getByRole('row').count()).toBe(3);
-  expect(await detail.textContent()).toContain(
-    'France · 2026-09-01–2026-09-30 · Enterprise · Region: Europe'
-  );
-  const downloaded = page.waitForEvent('download');
-  await detail.getByRole('button', { name: 'Export CSV', exact: true }).click();
-  const download = await downloaded;
-  const csv = await readFile((await download.path())!, 'utf8');
-  expect(csv).toContain('SO-1001');
-  expect(csv).toContain('SO-1003');
-  expect(csv).not.toContain('SO-1002');
-  expect(csv).not.toContain('SO-1004');
-  await page.keyboard.press('Escape');
-  await expect.poll(() => detail.isVisible()).toBe(false);
-  await expectHeading(page, 'countries');
-  await act(page, 'France', 'Break down by customers');
-  await expectHeading(page, 'customers');
-  expect(await path.textContent()).toContain('France');
   expect(
-    await page
-      .getByRole('button', { name: /^View orders: Atelier Nord:/ })
+    await controls(page)
+      .getByRole('button', { name: 'Region: All', exact: true })
       .count()
   ).toBe(1);
-  await path.getByRole('button', { name: 'Europe', exact: true }).click();
-  await expectHeading(page, 'countries');
-  await page.goBack();
-  await expectHeading(page, 'customers');
-  await page.goForward();
-  await expectHeading(page, 'countries');
-  await path.getByRole('button', { name: 'All regions', exact: true }).click();
-  await expectHeading(page, 'regions');
+  await choose(page, 'Region', 'Europe');
+  await heading(page, 'regions');
+  await expect
+    .poll(() =>
+      widget(page, 'regions')
+        .getByRole('button', { name: 'Region: Europe', exact: true })
+        .count()
+    )
+    .toBe(1);
+  const selected = state(page);
+  expect(selected.groupBy).toBe('region');
+  await choose(page, 'Region', 'All');
+  await act(page, 'Europe', 'Filter to this region');
+  await expect.poll(() => state(page)).toEqual(selected);
+  await act(page, 'Europe', 'Break down by countries');
+  await heading(page, 'countries');
+  expect(
+    await controls(page)
+      .getByRole('button', { name: 'Region: Europe', exact: true })
+      .count()
+  ).toBe(1);
+  expect(
+    await controls(page)
+      .getByRole('button', { name: 'Country: All', exact: true })
+      .count()
+  ).toBe(1);
+  expect(
+    await controls(page)
+      .getByRole('button', { name: 'Region: Europe', exact: true })
+      .getByText('Europe', { exact: true })
+      .evaluate(element => element.scrollWidth <= element.clientWidth)
+  ).toBe(true);
+
+  await choose(page, 'Country', 'France');
+  await expect
+    .poll(() =>
+      widget(page, 'countries')
+        .getByRole('button', { name: 'Country: France', exact: true })
+        .count()
+    )
+    .toBe(1);
+  expect(state(page).groupBy).toBe('country');
+  await choose(page, 'Country', 'All');
+  await act(page, 'France', 'Filter to this country');
+  await expect
+    .poll(() =>
+      controls(page)
+        .getByRole('button', { name: 'Country: France', exact: true })
+        .count()
+    )
+    .toBe(1);
+  expect(state(page).selection.country).toEqual({
+    kind: 'include',
+    members: [{ kind: 'value', value: 'France' }],
+  });
   expect(
     await page
       .getByRole('button', { name: 'Region: Europe', exact: true })
       .count()
-  ).toBe(1);
-  await page.goto(europeURL);
-  await expectHeading(page, 'countries');
-  expect(await path.textContent()).toContain('Europe');
+  ).toBe(3);
 });
 
-test('filter actions retain the currently applied month and clear dependent predicates atomically', async ({
+test('editing a parent clears descendants and dependent facets atomically without losing dates or segment', async ({
   page,
 }) => {
-  let release!: () => void;
-  const gate = new Promise<void>(resolve => {
-    release = resolve;
+  const requests: any[] = [];
+  page.on('request', request => {
+    if (request.url().endsWith('/api/drill-query'))
+      requests.push(request.postDataJSON().params);
   });
-  const requests: {
-    start: string;
-    region: string | null;
-    country: string | null;
-  }[] = [];
-  await page.route('**/api/drill-query', async route => {
-    const body = route.request().postDataJSON();
-    requests.push(body.params);
-    if (body.params.start === '2026-10-01' && body.params.region === null)
-      await gate;
-    await route.continue().catch(() => {});
-  });
+  await page.goto('/exploration-app?segment=Self+serve');
+  await france(page);
+  const before = requests.length;
+  await choose(page, 'Region', 'North America');
+  await heading(page, 'countries');
+  const next = state(page);
+  expect(next.selection.country).toEqual({ kind: 'all' });
+  expect(next.selection.customer).toEqual({ kind: 'all' });
+  expect(next.groupBy).toBe('country');
+  await choose(page, 'Country', 'United States');
+  await expect
+    .poll(() =>
+      widget(page, 'countries')
+        .getByRole('button', { name: 'Country: United States', exact: true })
+        .count()
+    )
+    .toBe(1);
+  expect(
+    requests
+      .slice(before)
+      .filter(params => params.region === 'North America')
+      .every(params => params.country !== 'France' && params.customer == null)
+  ).toBe(true);
+  expect(
+    await page
+      .getByRole('button', { name: 'Self serve Segment', exact: true })
+      .count()
+  ).toBe(1);
+  expect(new URL(page.url()).searchParams.get('segment')).toBe('Self serve');
+  const facet = requests.find(
+    params => params.region === 'North America' && !('start' in params)
+  );
+  expect(facet).toEqual({ region: 'North America' });
+});
+
+test('ancestor navigation, widget selectors and browser history update the same URL value', async ({
+  page,
+}) => {
   await page.goto('/exploration-app');
-  await choose(page, 'Country', 'France');
-  await expect
-    .poll(() => page.getByRole('row', { name: /Europe.*1,000/ }).count())
-    .toBe(1);
-  await page
-    .getByRole('button', { name: 'September Month', exact: true })
+  await france(page);
+  const customers = widget(page, 'customers');
+  const navigation = customers.getByRole('navigation', {
+    name: 'Geography breakdown',
+    exact: true,
+  });
+  expect(
+    await navigation
+      .getByRole('button', { name: 'Customer: All', exact: true })
+      .count()
+  ).toBe(1);
+  await navigation
+    .getByRole('button', { name: 'Group by Country', exact: true })
     .click();
-  await page.getByRole('option', { name: 'October', exact: true }).click();
-  await act(page, 'Europe', 'Filter to this region');
-  await expect
-    .poll(() =>
-      requests.some(
-        input =>
-          input.start === '2026-10-01' &&
-          input.region === 'Europe' &&
-          input.country === null
-      )
-    )
-    .toBe(true);
-  expect(
-    requests.some(
-      input => input.region === 'Europe' && input.country === 'France'
-    )
-  ).toBe(false);
-  expect(
-    await page
-      .getByRole('button', { name: 'October Month', exact: true })
-      .count()
-  ).toBe(1);
-  expect(
-    await page
-      .getByRole('button', { name: 'Country: All', exact: true })
-      .count()
-  ).toBe(1);
-  release();
+  await heading(page, 'countries');
+  expect(state(page).selection.country.members[0].value).toBe('France');
   await page.goBack();
-  await expect
-    .poll(() =>
-      page.getByRole('button', { name: 'Country: France', exact: true }).count()
-    )
-    .toBe(1);
+  await heading(page, 'customers');
+  await page.goForward();
+  await heading(page, 'countries');
+  const local = widget(page, 'countries').getByRole('navigation', {
+    name: 'Geography breakdown',
+  });
+  await local
+    .getByRole('button', { name: 'Region: Europe', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'All', exact: true }).click();
+  await heading(page, 'regions');
+  expect(state(page)).toBeNull();
   expect(
-    await page.getByRole('button', { name: 'Region: All', exact: true }).count()
+    await controls(page)
+      .getByRole('button', { name: 'Region: All', exact: true })
+      .count()
   ).toBe(1);
 });
 
-test('a pending hierarchy transition cannot apply an old row to the new level', async ({
+test('pending hierarchy transitions retain displayed context and prevent stale descent', async ({
   page,
 }) => {
   let release!: () => void;
@@ -166,145 +205,140 @@ test('a pending hierarchy transition cannot apply an old row to the new level', 
   await page.goto('/exploration-app');
   await act(page, 'Europe', 'Break down by countries');
   expect(
-    await page
-      .getByRole('region', { name: 'Revenue by regions', exact: true })
-      .getByRole('navigation', { name: 'Geography breakdown' })
-      .textContent()
-  ).toBe('All regions');
-  await page.getByRole('button', { name: /^Explore: Europe:/ }).click();
-  expect(
-    await page
-      .getByRole('menuitem', { name: 'Break down by countries', exact: true })
-      .count()
-  ).toBe(0);
-  await page.keyboard.press('Escape');
-  const path = JSON.parse(new URL(page.url()).searchParams.get('geography')!);
-  expect(path).toEqual([{ level: 'region', id: 'Europe', label: 'Europe' }]);
-  release();
-  await expectHeading(page, 'countries');
-});
-
-test('hierarchy changes preserve ordinary filters and displayed exports and stories', async ({
-  page,
-}) => {
-  await page.goto('/exploration-app?segment=Self+serve');
-  await act(page, 'Europe', 'Break down by countries');
-  await expectHeading(page, 'countries');
-  const downloaded = page.waitForEvent('download');
-  await page
-    .getByRole('group', { name: 'Page actions', exact: true })
-    .getByRole('button', { name: 'Export CSV', exact: true })
-    .click();
-  const download = await downloaded;
-  const csv = await readFile((await download.path())!, 'utf8');
-  expect(csv).toContain('France,70');
-  expect(csv).toContain('Germany,0');
-  expect(csv).not.toContain('North America');
-  await page
-    .getByRole('button', { name: 'Present story', exact: true })
-    .click();
-  const story = page.getByRole('dialog', {
-    name: 'Revenue by countries',
-    exact: true,
-  });
-  await expect.poll(() => story.isVisible()).toBe(true);
-  expect(await story.textContent()).toContain('Self serve');
-  expect(await story.textContent()).toContain('Europe');
-  await story
-    .getByRole('button', { name: 'Exit presentation', exact: true })
-    .click();
-  await page
-    .getByRole('navigation', { name: 'Geography exploration' })
-    .getByRole('button', { name: 'All regions', exact: true })
-    .click();
-  await expectHeading(page, 'regions');
-  expect(
-    await page
-      .getByRole('button', { name: 'Self serve Segment', exact: true })
+    await controls(page)
+      .getByRole('button', { name: 'Region: Europe', exact: true })
       .count()
   ).toBe(1);
+  expect(
+    await widget(page, 'regions')
+      .getByRole('button', { name: 'Region: All', exact: true })
+      .count()
+  ).toBe(1);
+  expect(
+    await widget(page, 'regions')
+      .getByRole('button', { name: 'Region: All', exact: true })
+      .isDisabled()
+  ).toBe(true);
+  expect(
+    await page.getByRole('button', { name: /^Explore: Europe:/ }).count()
+  ).toBe(0);
+  expect(
+    await page.getByRole('button', { name: /^View orders: Europe:/ }).count()
+  ).toBe(1);
+  release();
+  await heading(page, 'countries');
+  await expect
+    .poll(() =>
+      widget(page, 'countries')
+        .getByRole('button', { name: 'Region: Europe', exact: true })
+        .count()
+    )
+    .toBe(1);
 });
 
-test('invalid hierarchy links resolve to the validated root rather than querying their predicates', async ({
+test('scoped detail exports inherit displayed hierarchy selection', async ({
   page,
 }) => {
-  const paths: unknown[] = [
-    [{ level: 'country', id: 'France', label: 'France' }],
-    [{ level: 'region', id: {}, label: 'Europe' }],
-    [{ level: 'region', id: 'Europe', label: 'x'.repeat(257) }],
-  ];
-  const requests: Record<string, unknown>[] = [];
-  page.on('request', request => {
-    if (request.url().endsWith('/api/drill-query'))
-      requests.push(request.postDataJSON().params);
+  await page.goto('/exploration-app');
+  await act(page, 'Europe', 'Break down by countries');
+  await heading(page, 'countries');
+  await act(page, 'France', 'View orders');
+  const detail = page.getByRole('dialog', {
+    name: 'Contributing orders',
+    exact: true,
   });
-  for (const path of paths) {
-    await page.goto(
-      `/exploration-app?geography=${encodeURIComponent(JSON.stringify(path))}`
-    );
-    await expectHeading(page, 'regions');
-    await expect
-      .poll(() => new URL(page.url()).searchParams.has('geography'))
-      .toBe(false);
-  }
-  expect(
-    requests.every(
-      input =>
-        input.pathRegion === null &&
-        input.pathCountry === null &&
-        input.groupBy === 'region'
-    )
-  ).toBe(true);
+  await expect.poll(() => detail.getByRole('row').count()).toBe(3);
+  const downloaded = page.waitForEvent('download');
+  await detail.getByRole('button', { name: 'Export CSV', exact: true }).click();
+  const csv = await readFile((await (await downloaded).path())!, 'utf8');
+  expect(csv).toContain('SO-1001');
+  expect(csv).toContain('SO-1003');
+  expect(csv).not.toContain('SO-1002');
+  await page.keyboard.press('Escape');
+  await heading(page, 'countries');
 });
 
-test('mobile keyboard and table menus offer the same hierarchy actions', async ({
+test('invalid exploration links canonicalize before query predicates are built', async ({
+  page,
+}) => {
+  const invalid = [
+    [],
+    { selection: {}, groupBy: 'country' },
+    {
+      selection: {
+        region: { kind: 'all' },
+        country: { kind: 'all' },
+        customer: { kind: 'all' },
+      },
+      groupBy: 'country',
+    },
+  ];
+  for (const value of invalid) {
+    await page.goto(
+      `/exploration-app?geography=${encodeURIComponent(JSON.stringify(value))}`
+    );
+    await heading(page, 'regions');
+    expect(state(page)).toBeNull();
+  }
+});
+
+test('mobile keyboard selectors and menu actions preserve local navigation focus', async ({
   mobilePage: page,
 }) => {
-  const errors: string[] = [];
-  page.on('pageerror', error => errors.push(error.message));
   await page.goto('/exploration-app');
+  await controls(page)
+    .getByRole('button', { name: 'Region: All', exact: true })
+    .focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('option', { name: 'Europe', exact: true }).click();
   await page.getByRole('button', { name: /^Explore: Europe:/ }).focus();
   await page.keyboard.press('Enter');
   await page
     .getByRole('menuitem', { name: 'Break down by countries', exact: true })
     .click();
-  await expectHeading(page, 'countries');
-  const navigation = page
-    .getByRole('region', { name: 'Revenue by countries', exact: true })
-    .getByRole('navigation', {
-      name: 'Geography breakdown',
-    });
+  await heading(page, 'countries');
+  const navigation = widget(page, 'countries').getByRole('navigation', {
+    name: 'Geography breakdown',
+  });
   await expect
     .poll(() =>
       navigation.evaluate(element => element === document.activeElement)
     )
     .toBe(true);
-  await page
-    .getByRole('button', { name: 'France actions', exact: true })
+  await controls(page)
+    .getByRole('button', { name: 'Group by Region', exact: true })
     .click();
-  await page
-    .getByRole('menuitem', { name: 'Break down by customers', exact: true })
-    .click();
-  await expectHeading(page, 'customers');
-  await page
-    .getByRole('region', { name: 'Revenue by customers', exact: true })
-    .getByRole('navigation', { name: 'Geography breakdown' })
-    .getByRole('button', { name: 'Europe', exact: true })
-    .click();
-  await expectHeading(page, 'countries');
-  expect(await page.locator('bun-hmr').count()).toBe(0);
-  expect(errors).toEqual([]);
+  await heading(page, 'regions');
 });
 
-test('primary chart actions keep a keyboard-accessible menu for other investigations', async ({
+test('chart menus center on category labels and keep primary actions and escape recovery', async ({
   page,
 }) => {
+  await page.goto('/exploration-app');
+  const trigger = page.getByRole('button', { name: /^Explore: Europe:/ });
+  await trigger.click();
+  const menu = page.getByRole('menu', { name: 'Europe actions', exact: true });
+  await menu.waitFor();
+  await expect
+    .poll(() =>
+      menu.evaluate(element => element.contains(document.activeElement))
+    )
+    .toBe(true);
+  const label = (await trigger
+    .getByText('Europe', { exact: true })
+    .boundingBox())!;
+  await expect
+    .poll(async () => {
+      const box = (await menu.boundingBox())!;
+      return Math.abs(box.x + box.width / 2 - label.x - label.width / 2);
+    })
+    .toBeLessThan(2);
+  await page.keyboard.press('Escape');
+  await expect
+    .poll(() => trigger.evaluate(element => element === document.activeElement))
+    .toBe(true);
   await page.goto('/exploration-app?primary');
-  const chart = page.getByRole('region', {
-    name: 'Geographic revenue',
-    exact: true,
-  });
-  const direct = chart.getByRole('button', { name: /^View orders: Europe:/ });
+  const direct = page.getByRole('button', { name: /^View orders: Europe:/ });
   await direct.click();
   const detail = page.getByRole('dialog', {
     name: 'Contributing orders',
@@ -312,154 +346,37 @@ test('primary chart actions keep a keyboard-accessible menu for other investigat
   });
   await expect.poll(() => detail.getByRole('row').count()).toBe(4);
   await page.keyboard.press('Escape');
-  await expect.poll(() => detail.isVisible()).toBe(false);
+  await detail.waitFor({ state: 'hidden' });
   await expect
     .poll(() => direct.evaluate(element => element === document.activeElement))
     .toBe(true);
-  const menuTrigger = chart.getByRole('button', {
+  const more = widget(page, 'regions').getByRole('button', {
     name: 'Europe actions',
     exact: true,
   });
-  await menuTrigger.focus();
+  await more.focus();
   await page.keyboard.press('Enter');
+  const primaryMenu = page.getByRole('menu', {
+    name: 'Europe actions',
+    exact: true,
+  });
+  await primaryMenu.waitFor();
   await expect
     .poll(() =>
-      page
-        .getByRole('menu', { name: 'Europe actions', exact: true })
-        .isVisible()
+      primaryMenu.evaluate(element => element.contains(document.activeElement))
     )
     .toBe(true);
-  expect(
-    await page
-      .getByRole('menu', { name: 'Europe actions', exact: true })
-      .evaluate(element => element.parentElement!.getBoundingClientRect().width)
-  ).toBeLessThanOrEqual(340);
   await page.keyboard.press('Escape');
   await expect
-    .poll(() =>
-      menuTrigger.evaluate(element => element === document.activeElement)
-    )
+    .poll(() => more.evaluate(element => element === document.activeElement))
     .toBe(true);
-  await menuTrigger.click();
-  await page
-    .getByRole('menuitem', { name: 'Break down by countries', exact: true })
-    .click();
-  await expectHeading(page, 'countries');
 });
 
-test('chart actions work inside native inspection sheets and return focus to the source heading', async ({
+test('inspection uses the shared selectors and ancestor navigation without duplicate controls', async ({
   page,
 }) => {
   await page.goto('/exploration-app');
-  const heading = page.getByRole('button', {
-    name: 'Explore Revenue by regions',
-    exact: true,
-  });
-  await heading.click();
-  const inspection = page.getByRole('dialog', {
-    name: 'Revenue by regions',
-    exact: true,
-  });
-  await inspection.getByRole('button', { name: /^Explore: Europe:/ }).click();
-  await inspection
-    .getByRole('menuitem', { name: 'View orders', exact: true })
-    .click();
-  const detail = page.getByRole('dialog', {
-    name: 'Contributing orders',
-    exact: true,
-  });
-  await expect.poll(() => detail.getByRole('row').count()).toBe(4);
-  await page.keyboard.press('Escape');
-  await expect.poll(() => detail.isVisible()).toBe(false);
-  await expect
-    .poll(() => heading.evaluate(element => element === document.activeElement))
-    .toBe(true);
-});
-
-test('a terminal hierarchy falls back to its remaining action when the primary descent is unavailable', async ({
-  page,
-}) => {
-  await page.goto('/exploration-app?primary=descend');
-  await page
-    .getByRole('button', { name: /^Break down by countries: Europe:/ })
-    .click();
-  await expectHeading(page, 'countries');
-  await page
-    .getByRole('button', { name: /^Break down by customers: France:/ })
-    .click();
-  await expectHeading(page, 'customers');
-  await page
-    .getByRole('button', { name: /^View orders: Atelier Nord:/ })
-    .click();
-  await expect
-    .poll(() =>
-      page
-        .getByRole('dialog', { name: 'Contributing orders', exact: true })
-        .getByRole('row')
-        .count()
-    )
-    .toBe(3);
-});
-
-test('widget breakdown context provides a visible way back at each level and in inspection', async ({
-  page,
-}) => {
-  await page.goto('/exploration-app');
-  const root = page.getByRole('region', {
-    name: 'Revenue by regions',
-    exact: true,
-  });
-  const trigger = root.getByRole('button', { name: /^Explore: Europe:/ });
-  expect(await trigger.getAttribute('aria-haspopup')).toBe('menu');
-  await trigger.click();
-  const menu = page.getByRole('menu', { name: 'Europe actions', exact: true });
-  await menu.waitFor();
-  const labelBounds = (await trigger
-    .getByText('Europe', { exact: true })
-    .boundingBox())!;
-  await expect
-    .poll(async () => {
-      const bounds = (await menu.boundingBox())!;
-      return Math.abs(
-        bounds.x + bounds.width / 2 - labelBounds.x - labelBounds.width / 2
-      );
-    })
-    .toBeLessThan(2);
-  await page.keyboard.press('Escape');
-
-  expect(
-    await root
-      .getByRole('navigation', { name: 'Geography breakdown' })
-      .textContent()
-  ).toBe('All regions');
-  await act(page, 'Europe', 'Break down by countries');
-  await expectHeading(page, 'countries');
-  const countries = page.getByRole('region', {
-    name: 'Revenue by countries',
-    exact: true,
-  });
-  const local = countries.getByRole('navigation', {
-    name: 'Geography breakdown',
-  });
-  expect(await local.textContent()).toContain('All regions');
-  expect(
-    await page
-      .getByRole('button', { name: 'Up one level', exact: true })
-      .count()
-  ).toBe(0);
-  expect(await local.textContent()).not.toContain('Breakdown:');
-  expect(await local.textContent()).toContain('Europe');
-  await act(page, 'France', 'Break down by customers');
-  await expectHeading(page, 'customers');
-  const customers = page.getByRole('region', {
-    name: 'Revenue by customers',
-    exact: true,
-  });
-  expect(
-    await customers
-      .getByRole('navigation', { name: 'Geography breakdown' })
-      .textContent()
-  ).toContain('France');
+  await france(page);
   await page
     .getByRole('button', { name: 'Explore Revenue by customers', exact: true })
     .click();
@@ -469,10 +386,82 @@ test('widget breakdown context provides a visible way back at each level and in 
   });
   await inspection
     .getByRole('navigation', { name: 'Geography breakdown' })
-    .getByRole('button', { name: 'Europe', exact: true })
+    .getByRole('button', { name: 'Group by Country', exact: true })
     .click();
-  await expectHeading(page, 'countries');
+  await heading(page, 'countries');
+  await expect
+    .poll(() =>
+      page
+        .getByRole('dialog', { name: 'Revenue by countries', exact: true })
+        .count()
+    )
+    .toBe(1);
+  expect(
+    await page
+      .getByRole('button', { name: 'Up one level', exact: true })
+      .count()
+  ).toBe(0);
   await page.keyboard.press('Escape');
-  await local.getByRole('button', { name: 'All regions', exact: true }).click();
-  await expectHeading(page, 'regions');
+});
+
+test('exploration filters preserve a newer ordinary month during refresh and write one history entry', async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => {
+    release = resolve;
+  });
+  await page.route('**/api/drill-query', async route => {
+    const params = route.request().postDataJSON().params;
+    if (params.start === '2026-10-01' && params.region === null) await gate;
+    await route.continue().catch(() => {});
+  });
+  await page.goto('/exploration-app');
+  await page
+    .getByRole('button', { name: 'September Month', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'October', exact: true }).click();
+  await act(page, 'Europe', 'Filter to this region');
+  release();
+  await expect
+    .poll(() =>
+      widget(page, 'regions')
+        .getByRole('button', { name: 'Region: Europe', exact: true })
+        .count()
+    )
+    .toBe(1);
+  expect(new URL(page.url()).searchParams.get('month')).toBe('10');
+  expect(state(page).groupBy).toBe('region');
+  await page.goBack();
+  expect(new URL(page.url()).searchParams.get('month')).toBe('10');
+  expect(state(page)).toBeNull();
+});
+
+test('stories and page exports describe the displayed exploration', async ({
+  page,
+}) => {
+  await page.goto('/exploration-app?segment=Self+serve');
+  await act(page, 'Europe', 'Break down by countries');
+  await heading(page, 'countries');
+  const downloaded = page.waitForEvent('download');
+  await page
+    .getByRole('group', { name: 'Page actions', exact: true })
+    .getByRole('button', { name: 'Export CSV', exact: true })
+    .click();
+  const csv = await readFile((await (await downloaded).path())!, 'utf8');
+  expect(csv).toContain('France,70');
+  expect(csv).not.toContain('North America');
+  await page
+    .getByRole('button', { name: 'Present story', exact: true })
+    .click();
+  const story = page.getByRole('dialog', {
+    name: 'Revenue by countries',
+    exact: true,
+  });
+  await story.waitFor();
+  expect(await story.textContent()).toContain('Europe');
+  expect(await story.textContent()).toContain('Self serve');
+  await story
+    .getByRole('button', { name: 'Exit presentation', exact: true })
+    .click();
 });

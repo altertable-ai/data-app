@@ -47,8 +47,8 @@ Use `/react` with declared views and bound widgets. `/react/ui` is for setup,
 static displays, and deliberately custom UI; see [direct composition](docs/ui.md).
 Prefer derivation over repeated configuration.
 For relevant widgets, declare typed exploration actions to open details, filter a
-view, or descend a supported hierarchy. Keep ordinary scope and hierarchy paths
-separate; derive grouping from the path. Details inherit displayed input; filter
+view, or descend a supported hierarchy. Declare one exploration variable for hierarchy selection and grouping; do not
+duplicate its levels as ordinary filters. Details inherit displayed input; filter
 actions preserve current unrelated variables. Register detail content with its
 own evidence, export datasets, and story. Follow
 [exploration guidance](docs/widgets.md#explore-from-widgets).

@@ -1,12 +1,16 @@
 export { ExplorationActionControl } from '@/src/react/action-controls';
 export type { BoundExplorationActions } from '@/src/react/action-controls';
 export type { ExplorationActions, ActionFactory } from '@/src/react/actions';
-export { breakdownVariable } from '@/src/core/breakdown';
+export { explorationVariable } from '@/src/core/exploration';
 export type {
-  BreakdownPath,
-  BreakdownMember,
-  BreakdownLevel,
-} from '@/src/core/breakdown';
+  ExplorationLevel,
+  ExplorationSelection,
+  ExplorationState,
+  ExplorationVariable,
+  ExplorationStateOf,
+  ExplorationValuesOf,
+} from '@/src/core/exploration';
+
 export type { DetailContent } from '@/src/react/details';
 /** Declared views, bound widgets, and layouts for data-app authoring. */
 export type {

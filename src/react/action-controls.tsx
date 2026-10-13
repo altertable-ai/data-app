@@ -4,9 +4,9 @@ import { invariant } from '@/src/core/invariant';
 import type { ExplorationActions } from '@/src/react/actions';
 import { useDetailOpener } from '@/src/react/details';
 import { searchParams, subscribeSearch } from '@/src/react/ui/search';
-import { BreakdownBreadcrumbs } from '@/src/react/ui/BreakdownBreadcrumbs';
-import type { BreakdownPath, BreakdownVariable } from '@/src/core/breakdown';
-import { writeVariableValues } from '@/src/react/ui/variables';
+import { ExplorationBreadcrumbs } from '@/src/react/ui/ExplorationBreadcrumbs';
+import type { ExplorationState } from '@/src/core/exploration';
+import type { ExplorationTarget } from '@/src/react/actions';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import {
@@ -18,10 +18,9 @@ import {
 } from '@/src/react/ui/Menu';
 
 export type BoundExplorationActions<Row> = {
-  breakdown?: {
-    variable: BreakdownVariable;
-    path: BreakdownPath;
-    navigate: (path: BreakdownPath) => void;
+  exploration?: {
+    target: ExplorationTarget<any>;
+    state: ExplorationState<any>;
   };
   items: (row: Row) => readonly { id: string; label: string }[];
   primary: (row: Row) => { id: string; label: string } | undefined;
@@ -45,8 +44,8 @@ export function useExplorationActions<Row, Input>(
   );
   if (!actions || source.loading) return undefined;
   const input = source.input;
-  const target = actions.entries.find(entry => entry.effect.breakdown)?.effect
-    .breakdown;
+  const target = actions.entries.find(entry => entry.effect.exploration)?.effect
+    .exploration;
   function items(row: Row) {
     return actions!.entries
       .filter(entry => entry.effect.available(row, input))
@@ -60,16 +59,9 @@ export function useExplorationActions<Row, Input>(
       });
   }
   return {
-    breakdown: target && {
-      variable: target.variable,
-      path: target.variable.parse(target.read(input)),
-      navigate(path) {
-        writeVariableValues(
-          { path: target.variable },
-          { path: target.variable.parse(path) },
-          'push'
-        );
-      },
+    exploration: target && {
+      target,
+      state: target.variable.parse(target.read(input)),
     },
     items,
     primary(row) {
@@ -101,7 +93,7 @@ export function useExplorationActions<Row, Input>(
           requestAnimationFrame(() => {
             const navigation =
               owner?.querySelector<HTMLElement>(
-                '[data-breakdown-navigation]'
+                '[data-exploration-navigation]'
               ) ?? document.getElementById(request.navigation!);
             navigation?.focus({ preventScroll: true });
           });
@@ -170,13 +162,12 @@ export function ExplorationNavigation<Row>({
 }: {
   actions?: BoundExplorationActions<Row>;
 }) {
-  const breakdown = actions?.breakdown;
-  if (!breakdown) return null;
+  const exploration = actions?.exploration;
+  if (!exploration) return null;
   return (
-    <BreakdownBreadcrumbs
-      variable={breakdown.variable}
-      value={breakdown.path}
-      onChange={breakdown.navigate}
+    <ExplorationBreadcrumbs
+      target={exploration.target}
+      value={exploration.state}
       local
     />
   );

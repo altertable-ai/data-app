@@ -167,9 +167,9 @@ effects: open details, filter a declared view, or descend through a hierarchy.
 Evidence references explain definitions and queries; exploration actions change
 what the reader investigates.
 
-A declared descent action automatically gives `<VisualizationWidget>` and
+A declared exploration action automatically gives `<VisualizationWidget>` and
 `<TableWidget>` the same breadcrumb navigation used at page level.
-Ancestor breadcrumbs provide return navigation. They remain visible at terminal levels, in empty results, and in inspection.
+Ancestor labels navigate; dropdowns edit selections. They remain visible at terminal levels, in empty results, and in inspection.
 Chart menu triggers show a dropdown indicator beside the category label.
 
 ```tsx
@@ -181,18 +181,13 @@ const placeActions = places.actions(action => ({
   }),
   filter: action.filter({
     label: 'Filter to this region',
-    target: salesView,
-    values: row => ({
-      region: {
-        kind: 'include' as const,
-        members: [{ kind: 'value' as const, value: row.id }],
-      },
-      country: { kind: 'all' as const },
-    }),
+    when: row => row.level === 'region',
+    target: salesView.exploration('geography'),
+    values: row => ({ region: row.id }),
   }),
   descend: action.descend({
-    target: salesView.breakdown('geography'),
-    member: row => ({ id: row.id, label: row.label }),
+    target: salesView.exploration('geography'),
+    member: row => ({ id: row.id }),
   }),
 }));
 
@@ -212,11 +207,14 @@ Register the target's [detail content](views.md#detail-destinations) on
 distinct counts, or preview limits rather than implying every table sum
 reconciles with its headline.
 
-Filter mappings return only the target view's named scope variables. The platform
+Filter mappings target a view's named scope variables or a bound exploration's
+typed level IDs. Exploration transitions clear descendants centrally and preserve
+grouping. Ordinary view filters cannot write exploration state. The platform
 validates the entire update before one history entry; omitted variables retain
-their **currently applied** values. Clear dependent selections explicitly in the
-same mapping, such as country when changing region. Display variables and
-hierarchy paths cannot be changed through filter actions. Shared variables are
+their **currently applied** values. For ordinary scope variables, clear any
+app-specific dependencies in the same mapping. Exploration owns its descendant
+clearing. Display variables and
+exploration state cannot be changed through ordinary view filters. Shared variables are
 the explicit way to coordinate independently queried views; do not target
 individual widget IDs.
 
@@ -241,9 +239,8 @@ action's More actions affordance. Alternate visualization renderers receive the
 same bound actions. For custom controls use `<ExplorationActionControl
  actions={actions} row={row} label={row.label} />`; imperative custom controls
 can call `actions.run(id, row, trigger)` using IDs from `actions.items(row)`.
-Initial loading offers no actions. A stale hierarchy cannot descend into a new
-level until its displayed path matches the current path.
+Initial loading offers no actions. Hierarchy row actions wait until displayed and applied exploration agree.
 
-See [hierarchical breakdowns](variables.md#hierarchical-breakdowns) and the
+See [hierarchical exploration](variables.md#hierarchical-exploration) and the
 [commerce playground](https://github.com/altertable-ai/data-app/blob/main/dev/playground.tsx)
 for the complete filter, breakdown, and detail workflow.

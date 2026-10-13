@@ -106,7 +106,7 @@ export function TableWidget<Row, Data, Input>({
       {...data}
       title={title ?? data.title}
       navigation={
-        action?.breakdown && <ExplorationNavigation actions={action} />
+        action?.exploration && <ExplorationNavigation actions={action} />
       }
       columns={
         action
@@ -197,7 +197,7 @@ export function VisualizationWidget<Row, Data, Input>({
       title={title ?? data.title}
       reading={data.reading}
       navigation={
-        action?.breakdown && <ExplorationNavigation actions={action} />
+        action?.exploration && <ExplorationNavigation actions={action} />
       }
       evidence={data.evidence}
       emptyFallback={data.emptyFallback}

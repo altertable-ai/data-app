@@ -1,9 +1,10 @@
 import { invariant } from '@/src/core/invariant';
 import type {
-  BreakdownMember,
-  BreakdownPath,
-  BreakdownVariable,
-} from '@/src/core/breakdown';
+  ExplorationLevel,
+  ExplorationState,
+  ExplorationVariable,
+} from '@/src/core/exploration';
+
 import { searchParams } from '@/src/react/ui/search';
 import { writeVariableValues } from '@/src/react/ui/variables';
 
@@ -13,18 +14,27 @@ export type DetailTarget<Input> = {
   parseInput: (value: unknown) => Input;
 };
 export type DetailRequest = { target: object; id: string; input: unknown };
-export type BreakdownTarget<Input> = {
-  variable: BreakdownVariable;
+export type ExplorationTarget<Input> = {
+  kind: 'exploration';
+  variable: Omit<ExplorationVariable<any>, 'levels'> & {
+    levels: readonly (ExplorationLevel & { groupLabel: string })[];
+  };
   navigationId: string;
-  /** Extract the source view's preserved path, including from nested input shapes. */
-  read: (input: Input) => BreakdownPath;
+  clientScope: string;
+  loadFacet: (
+    operation: string,
+    input: unknown,
+    signal: AbortSignal
+  ) => Promise<unknown>;
+  /** Extract the source view's preserved exploration state, including from nested input shapes. */
+  read: (input: Input) => ExplorationState<any>;
 };
 type ActionRequest =
   | { kind: 'detail'; detail: DetailRequest }
   | { kind: 'update'; apply: () => void; navigation?: string };
 export type ExplorationAction<Row, Input> = {
   /** Hierarchy context is rendered by the bound widget, including at terminal levels. */
-  breakdown?: BreakdownTarget<Input>;
+  exploration?: ExplorationTarget<Input>;
   label: (row: Row, displayedInput: Input) => string;
   available: (row: Row, displayedInput: Input) => boolean;
   resolve: (row: Row, displayedInput: Input) => ActionRequest;
@@ -43,12 +53,15 @@ export type ActionFactory<Row, Input> = {
   filter<Values extends object>(definition: {
     label: string | ((row: Row) => string);
     when?: (row: Row) => boolean;
-    target: { filter: (values: Partial<Values>) => void };
+    target: { filter: (values: Partial<Values>) => void } & (
+      | { kind?: never }
+      | ExplorationTarget<Input>
+    );
     values: (row: Row) => Partial<NoInfer<Values>>;
   }): ExplorationAction<Row, Input>;
   descend(definition: {
-    target: BreakdownTarget<Input>;
-    member: (row: Row) => Pick<BreakdownMember, 'id' | 'label'>;
+    target: ExplorationTarget<Input>;
+    member: (row: Row) => { id: string | number };
   }): ExplorationAction<Row, Input>;
 };
 
@@ -71,9 +84,17 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
       };
     },
     filter({ label, target, values, when }) {
+      const exploration = target.kind === 'exploration' ? target : undefined;
       return {
+        exploration,
         label: row => (typeof label === 'function' ? label(row) : label),
-        available: row => when?.(row) ?? true,
+        available: (row, input) =>
+          (when?.(row) ?? true) &&
+          (!exploration ||
+            exploration.variable.same(
+              exploration.read(input),
+              exploration.variable.read(searchParams())
+            )),
         resolve(row) {
           return {
             kind: 'update',
@@ -87,14 +108,14 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
     descend({ target, member }) {
       const { variable } = target;
       return {
-        breakdown: target,
+        exploration: target,
         label(_row, input) {
-          return `Break down by ${variable.levels[target.read(input).length + 1]?.label.toLowerCase() ?? 'a finer level'}`;
+          return `Break down by ${variable.levels[variable.levels.findIndex(level => level.id === target.read(input).groupBy) + 1]?.groupLabel.toLowerCase() ?? 'a finer level'}`;
         },
         available(_row, input) {
           const displayed = variable.parse(target.read(input));
           return (
-            displayed.length < variable.levels.length - 1 &&
+            displayed.groupBy !== variable.levels.at(-1)!.id &&
             variable.same(displayed, variable.read(searchParams()))
           );
         },
@@ -106,13 +127,14 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
               const displayed = variable.parse(target.read(input));
               invariant(
                 variable.same(displayed, variable.read(searchParams())),
-                'Wait for the displayed breakdown before descending.'
+                'Wait for the displayed exploration before descending.'
               );
-              const path = variable.parse([
-                ...displayed,
-                { ...member(row), level: variable.level(displayed).id },
-              ]);
-              writeVariableValues({ path: variable }, { path }, 'push');
+              const state = variable.descend(displayed, member(row).id);
+              writeVariableValues(
+                { exploration: variable },
+                { exploration: state },
+                'push'
+              );
             },
           };
         },
@@ -142,14 +164,14 @@ export function defineActions<
     !options.primary || entries.some(entry => entry.id === options.primary),
     'The primary action must be declared.'
   );
-  const breakdowns = entries.flatMap(entry =>
-    entry.effect.breakdown ? [entry.effect.breakdown] : []
+  const explorations = entries.flatMap(entry =>
+    entry.effect.exploration ? [entry.effect.exploration] : []
   );
   invariant(
-    breakdowns.every(
+    explorations.every(
       target =>
-        target.variable === breakdowns[0]?.variable &&
-        target.navigationId === breakdowns[0]?.navigationId
+        target.variable === explorations[0]?.variable &&
+        target.navigationId === explorations[0]?.navigationId
     ),
     'A widget action set must explore one hierarchy.'
   );

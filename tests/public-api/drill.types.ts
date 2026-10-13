@@ -87,17 +87,29 @@ void content;
 
 // Filtering and hierarchy preserve the source's typed variable contract.
 import {
-  breakdownVariable,
+  explorationVariable,
   dimensionFilter,
-  type BreakdownPath,
+  type ExplorationStateOf,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
-const geography = breakdownVariable({
+const geography = explorationVariable({
   key: 'geography',
   label: 'Geography',
   levels: [
-    { id: 'region', label: 'Regions' },
-    { id: 'country', label: 'Countries' },
+    {
+      id: 'region',
+      label: 'Region',
+      groupLabel: 'Regions',
+      valueType: 'string',
+      options: [{ value: 'Europe', label: 'Europe' }],
+    },
+    {
+      id: 'country',
+      label: 'Country',
+      groupLabel: 'Countries',
+      valueType: 'string',
+      options: [{ value: 'France', label: 'France', parent: 'Europe' }],
+    },
   ],
 });
 const region = dimensionFilter<string>({
@@ -110,7 +122,10 @@ const region = dimensionFilter<string>({
 const scoped = createDataHooks(
   createDataClient<{
     scoped: DataOperation<
-      { region: DimensionSelection<string>; geography: BreakdownPath },
+      {
+        region: DimensionSelection<string>;
+        geography: ExplorationStateOf<typeof geography>;
+      },
       { id: string; label: string }[]
     >;
   }>()
@@ -142,8 +157,8 @@ scopedGroups.actions(
       }),
     }),
     descend: action.descend({
-      target: scoped.breakdown('geography'),
-      member: row => ({ id: row.id, label: row.label }),
+      target: scoped.exploration('geography'),
+      member: row => ({ id: row.id }),
     }),
   }),
   { primary: 'descend' }
@@ -165,7 +180,7 @@ scopedGroups.actions(action => ({
   }),
 }));
 // @ts-expect-error Only declared hierarchy variables provide breakdown targets.
-scoped.breakdown('region');
+scoped.exploration('region');
 scopedGroups.actions(
   action => ({
     filter: action.filter({
@@ -180,8 +195,8 @@ scopedGroups.actions(
 regions.actions(action => ({
   descend: action.descend({
     // @ts-expect-error A hierarchy must read the binding's displayed input shape.
-    target: scoped.breakdown('geography'),
-    member: row => ({ id: row.regionId, label: 'Region' }),
+    target: scoped.exploration('geography'),
+    member: row => ({ id: row.regionId }),
   }),
 }));
 
@@ -195,7 +210,10 @@ const displayVariable = choiceVariable({
 });
 const displayView = createDataHooks(
   createDataClient<{
-    display: DataOperation<{ sort: string; geography: BreakdownPath }, number>;
+    display: DataOperation<
+      { sort: string; geography: ExplorationStateOf<typeof geography> },
+      number
+    >;
   }>()
 ).defineDataView({
   operation: 'display',
@@ -217,3 +235,68 @@ scopedGroups.actions(action => ({
     values: () => ({ sort: 'revenue' }),
   }),
 }));
+
+const target = scoped.exploration('geography');
+target.filter({ region: 'Europe' });
+// @ts-expect-error Region IDs are strings.
+target.filter({ region: 42 });
+// @ts-expect-error Only declared levels may be selected.
+target.filter({ unknown: 'France' });
+scopedGroups.actions(action => ({
+  filter: action.filter({
+    label: 'Filter',
+    target,
+    values: row => ({ region: row.id }),
+  }),
+}));
+scopedGroups.actions(action => ({
+  filter: action.filter({
+    label: 'Filter',
+    target,
+    // @ts-expect-error Exploration mappings preserve the level value type.
+    values: () => ({ region: 42 }),
+  }),
+}));
+
+geography.parse(geography.defaultValue);
+const typedState: ExplorationStateOf<typeof geography> = geography.defaultValue;
+// @ts-expect-error Grouping can only name a declared level.
+typedState.groupBy = 'unknown';
+explorationVariable({
+  key: 'bad',
+  label: 'Bad',
+  levels: [
+    // @ts-expect-error Option values must agree with the level's declared value type.
+    {
+      id: 'region',
+      label: 'Region',
+      valueType: 'string',
+      options: [{ value: 42, label: 'Forty-two' }],
+    },
+  ],
+});
+
+scopedGroups.actions(action => ({
+  filter: action.filter({
+    label: 'Filter',
+    // @ts-expect-error Exploration targets must include the full bound contract.
+    target: {
+      kind: 'exploration',
+      variable: geography,
+      read: () => geography.defaultValue,
+      filter: (_values: { region?: string }) => {},
+    },
+    values: () => ({ region: 'Europe' }),
+  }),
+}));
+
+typedState.selection.region = {
+  // @ts-expect-error Hierarchy scope cannot exclude members or select several at once.
+  kind: 'exclude',
+  members: [{ kind: 'value', value: 'Europe' }],
+};
+typedState.selection.region = {
+  kind: 'include',
+  // @ts-expect-error Region selection retains its string ID type.
+  members: [{ kind: 'value', value: 42 }],
+};

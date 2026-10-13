@@ -17,8 +17,6 @@ import { BarChart } from '@altertable/data-app/react/ui';
 import {
   app,
   operations,
-  region,
-  country,
   geography,
   type Input,
 } from '@/tests/public-api/fixtures/exploration-data';
@@ -49,7 +47,7 @@ const context = createDataContext(operations.overview.queryNames)({
   },
 });
 function describe(input: Input) {
-  return `${input.start}–${input.end} · ${input.segment} · Region: ${region.describe?.(input.region)} · Country: ${country.describe?.(input.country)} · ${geography.describe?.(input.geography)} · ${geography.level(input.geography).label}`;
+  return `${input.start}–${input.end} · ${input.segment} · ${geography.describe?.(input.geography)} · ${geography.level(input.geography).groupLabel}`;
 }
 const view = defineDataView({
   operation: 'overview',
@@ -73,16 +71,12 @@ const view = defineDataView({
       ],
       defaultValue: 'Enterprise',
     }),
-    region,
-    country,
     geography,
   },
   input: values => ({
     start: `2026-${values.month}-01`,
     end: `2026-${values.month}-${values.month === '09' ? '30' : '31'}`,
     segment: values.segment as Input['segment'],
-    region: values.region,
-    country: values.country,
     geography: values.geography,
   }),
   describeInput: describe,
@@ -169,26 +163,13 @@ const actions = groups.actions(
     filter: action.filter({
       label: row => `Filter to this ${row.level}`,
       when: row => row.level !== 'customer',
-      target: view,
+      target: view.exploration('geography'),
       values: row =>
-        row.level === 'region'
-          ? ({
-              region: {
-                kind: 'include',
-                members: [{ kind: 'value', value: row.id }],
-              },
-              country: { kind: 'all' },
-            } as const)
-          : ({
-              country: {
-                kind: 'include',
-                members: [{ kind: 'value', value: row.id }],
-              },
-            } as const),
+        row.level === 'region' ? { region: row.id } : { country: row.id },
     }),
     descend: action.descend({
-      target: view.breakdown('geography'),
-      member: row => ({ id: row.id, label: row.label }),
+      target: view.exploration('geography'),
+      member: row => ({ id: row.id }),
     }),
   }),
   {
@@ -210,7 +191,7 @@ const content = view.content(source => (
       title={
         source.loading
           ? 'Revenue'
-          : `Revenue by ${geography.level(source.input.geography).label.toLowerCase()}`
+          : `Revenue by ${geography.level(source.input.geography).groupLabel.toLowerCase()}`
       }
       dataset={groups}
       source={source}
@@ -242,7 +223,7 @@ function App() {
       story={snapshot => [
         {
           id: 'scope',
-          headline: `Revenue by ${geography.level(snapshot.input.geography).label.toLowerCase()}`,
+          headline: `Revenue by ${geography.level(snapshot.input.geography).groupLabel.toLowerCase()}`,
           context: describe(snapshot.input),
           visual: <TableWidget dataset={groups} source={snapshot} />,
           evidence: groups,

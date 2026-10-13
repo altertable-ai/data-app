@@ -1,26 +1,45 @@
-import {
-  breakdownVariable,
-  dimensionFilter,
-} from '@altertable/data-app/contract';
-export const geography = breakdownVariable({
-  key: 'geography',
-  label: 'Geography',
-  levels: [
-    { id: 'region', label: 'Regions' },
-    { id: 'country', label: 'Countries' },
-    { id: 'customer', label: 'Customers' },
-  ],
-});
-export const regionFilter = dimensionFilter<string>({
-  key: 'region',
-  label: 'Region',
-  valueType: 'string',
-  selectionMode: 'single',
-  options: [
-    { value: 'Europe', label: 'Europe' },
-    { value: 'North America', label: 'North America' },
-  ],
-});
+import { explorationVariable } from '@altertable/data-app/contract';
+import { countries } from '@/dev/commerce';
 export function regionForCountry(country: string) {
   return country === 'US' ? 'North America' : 'Europe';
 }
+export const geography = explorationVariable({
+  key: 'geography',
+  label: 'Geography',
+  levels: [
+    {
+      id: 'region',
+      label: 'Region',
+      groupLabel: 'Regions',
+      valueType: 'string',
+      options: [
+        { value: 'Europe', label: 'Europe' },
+        { value: 'North America', label: 'North America' },
+      ],
+    },
+    {
+      id: 'country',
+      label: 'Country',
+      groupLabel: 'Countries',
+      valueType: 'string',
+      options: countries.map(country => ({
+        ...country,
+        parent: regionForCountry(country.value),
+      })),
+    },
+    {
+      id: 'customer',
+      label: 'Customer',
+      groupLabel: 'Customers',
+      valueType: 'number',
+      options: [
+        ...Array.from({ length: 120 }, (_, index) => ({
+          value: index + 1,
+          label: `Customer ${String(index + 1).padStart(3, '0')}`,
+          parent: ['US', 'US', 'FR', 'GB', 'AT'][index % 5]!,
+        })),
+        { value: 121, label: 'Linus', parent: 'FI' },
+      ],
+    },
+  ],
+});

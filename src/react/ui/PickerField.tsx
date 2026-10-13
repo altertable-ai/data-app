@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Button } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
 
 /** Inline labels sit with the value; above and beside labels have a separate layout slot. */
@@ -8,18 +9,38 @@ export type ControlLabelPlacement = 'inline' | 'above' | 'beside';
 export function PickerField({
   label,
   labelPlacement,
+  labelAction,
+  disabled,
   children,
 }: {
   label: string;
   labelPlacement?: ControlLabelPlacement;
+  labelAction?: () => void;
+  disabled?: boolean;
   children: ReactNode;
 }) {
   if (!labelPlacement || labelPlacement === 'inline') return children;
   return (
-    <div className="altertable-field" data-label-placement={labelPlacement}>
-      <span className="altertable-field-label" aria-hidden="true">
-        {label}
-      </span>
+    <div
+      className="altertable-field"
+      data-label-placement={labelPlacement}
+      data-label-action={labelAction ? true : undefined}
+    >
+      {labelAction ? (
+        <Button
+          variant="ghost"
+          size="compact"
+          onClick={labelAction}
+          disabled={disabled}
+          aria-label={`Group by ${label}`}
+        >
+          {label}
+        </Button>
+      ) : (
+        <span className="altertable-field-label" aria-hidden="true">
+          {label}
+        </span>
+      )}
       {children}
     </div>
   );

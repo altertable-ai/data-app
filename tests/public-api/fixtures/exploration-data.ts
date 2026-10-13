@@ -1,51 +1,63 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
-  breakdownVariable,
-  dimensionFilter,
-  parseDimensionSelection,
-  type BreakdownPath,
+  explorationVariable,
+  type ExplorationStateOf,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 import {
   operations as salesOperations,
   type SalesInput,
 } from '@/tests/public-api/fixtures/drill-data';
-export const geography = breakdownVariable({
+export const geography = explorationVariable({
   key: 'geography',
   label: 'Geography',
   levels: [
-    { id: 'region', label: 'Regions' },
-    { id: 'country', label: 'Countries' },
-    { id: 'customer', label: 'Customers' },
-  ],
-});
-export const region = dimensionFilter<string>({
-  key: 'region',
-  label: 'Region',
-  valueType: 'string',
-  selectionMode: 'single',
-  options: [
-    { value: 'Europe', label: 'Europe' },
-    { value: 'North America', label: 'North America' },
-    { value: 'Asia', label: 'Asia' },
-  ],
-});
-export const country = dimensionFilter<string>({
-  key: 'country',
-  label: 'Country',
-  valueType: 'string',
-  selectionMode: 'single',
-  options: [
-    { value: 'France', label: 'France' },
-    { value: 'Germany', label: 'Germany' },
-    { value: 'United States', label: 'United States' },
-    { value: 'Singapore', label: 'Singapore' },
+    {
+      id: 'region',
+      label: 'Region',
+      groupLabel: 'Regions',
+      valueType: 'string',
+      options: [
+        { value: 'Europe', label: 'Europe' },
+        { value: 'North America', label: 'North America' },
+        { value: 'Asia', label: 'Asia' },
+      ],
+    },
+    {
+      id: 'country',
+      label: 'Country',
+      groupLabel: 'Countries',
+      valueType: 'string',
+      facet: {
+        operation: 'countries',
+        input: selection => ({ region: member(selection.region!) }),
+      },
+    },
+    {
+      id: 'customer',
+      label: 'Customer',
+      groupLabel: 'Customers',
+      valueType: 'string',
+      options: [
+        { value: 'account-atelier', label: 'Atelier Nord', parent: 'France' },
+        { value: 'account-werkhaus', label: 'Werkhaus', parent: 'Germany' },
+        {
+          value: 'account-pacific',
+          label: 'Pacific Works',
+          parent: 'United States',
+        },
+        { value: 'account-petit', label: 'Petit Studio', parent: 'France' },
+        {
+          value: 'account-future',
+          label: 'Future account',
+          parent: 'Singapore',
+        },
+      ],
+    },
   ],
 });
 export type Input = SalesInput & {
-  region: DimensionSelection<string>;
-  country: DimensionSelection<string>;
-  geography: BreakdownPath;
+  geography: ExplorationStateOf<typeof geography>;
 };
 export type GroupRow = {
   id: string;
@@ -54,13 +66,18 @@ export type GroupRow = {
   revenue: number;
 };
 const predicates = `($region IS NULL OR c.region = $region) AND ($country IS NULL OR c.country = $country)
-AND ($pathRegion IS NULL OR c.region = $pathRegion) AND ($pathCountry IS NULL OR c.country = $pathCountry)`;
+AND ($customer IS NULL OR c.customer_id = $customer)`;
 export const app = defineDataApp({
   title: 'Revenue exploration',
   description:
     'Follow net revenue from regions to countries and customers. Dates and customer segments remain in scope.',
   scope: { organization: 'demo', environment: 'sample' },
   queries: {
+    countries: {
+      statement:
+        'SELECT DISTINCT country AS value, country AS label FROM sales_orders WHERE ($region IS NULL OR region = $region) ORDER BY country',
+      params: { region: { defaultValue: null } },
+    },
     geographicRevenue: {
       statement: `WITH customers AS (SELECT DISTINCT customer_id, customer, country, region FROM sales_orders UNION SELECT 'account-future', 'Future account', 'Singapore', 'Asia')
 SELECT CASE $groupBy WHEN 'region' THEN c.region WHEN 'country' THEN c.country ELSE c.customer_id END AS id,
@@ -74,8 +91,7 @@ WHERE ${predicates} GROUP BY 1, 2 ORDER BY revenue DESC, id`,
         segment: {},
         region: { defaultValue: null },
         country: { defaultValue: null },
-        pathRegion: { defaultValue: null },
-        pathCountry: { defaultValue: null },
+        customer: { defaultValue: null },
         groupBy: {},
       },
     },
@@ -89,8 +105,7 @@ AND ${predicates} AND CASE $selectedLevel WHEN 'region' THEN c.region WHEN 'coun
         segment: {},
         region: { defaultValue: null },
         country: { defaultValue: null },
-        pathRegion: { defaultValue: null },
-        pathCountry: { defaultValue: null },
+        customer: { defaultValue: null },
         selectedLevel: {},
         selectedId: {},
       },
@@ -102,12 +117,10 @@ function parseInput(value: unknown): Input {
   const input = value as Record<string, unknown>;
   return {
     ...base,
-    region: parseDimensionSelection(input.region, region),
-    country: parseDimensionSelection(input.country, country),
     geography: geography.parse(input.geography),
   };
 }
-function member(selection: DimensionSelection<string>) {
+function member(selection: DimensionSelection) {
   const value = selection.kind === 'all' ? undefined : selection.members[0];
   return value?.kind === 'value' ? value.value : null;
 }
@@ -116,21 +129,36 @@ function params(input: Input) {
     start: input.start,
     end: input.end,
     segment: input.segment,
-    region: member(input.region),
-    country: member(input.country),
-    pathRegion: input.geography[0]?.id ?? null,
-    pathCountry: input.geography[1]?.id ?? null,
+    region: member(input.geography.selection.region),
+    country: member(input.geography.selection.country),
+    customer: member(input.geography.selection.customer),
   };
 }
 const scope: Input = {
   start: '2026-09-01',
   end: '2026-09-30',
   segment: 'Enterprise',
-  region: { kind: 'all' },
-  country: { kind: 'all' },
-  geography: [],
+  geography: geography.defaultValue,
 };
 export const operations = {
+  countries: app.defineOperation({
+    input(value: unknown) {
+      const region = (value as { region: unknown }).region;
+      if (region !== null && typeof region !== 'string')
+        throw new Error('Expected region.');
+      return { region };
+    },
+    output: (value: unknown) => value as { value: string; label: string }[],
+    checks: [{ region: null }],
+    policy: { maxQueryRows: 100, maxDurationMs: 10000 },
+    async run({ query }, input) {
+      const result = await query('countries', input);
+      return result.rows.map(([value, label]) => ({
+        value: String(value),
+        label: String(label),
+      }));
+    },
+  }),
   overview: app.defineOperation({
     input: parseInput,
     output: (value: unknown) => value as GroupRow[],

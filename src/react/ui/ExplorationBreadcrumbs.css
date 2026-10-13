@@ -1,0 +1,19 @@
+.altertable-exploration-breadcrumbs ol,
+.altertable-exploration-breadcrumbs li {
+  display: flex;
+  align-items: center;
+  gap: var(--atbl-space-xs);
+}
+.altertable-exploration-breadcrumbs ol {
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.altertable-exploration-breadcrumbs li {
+  min-width: 0;
+}
+.altertable-exploration-breadcrumbs li > svg {
+  flex: none;
+  color: var(--atbl-muted);
+}

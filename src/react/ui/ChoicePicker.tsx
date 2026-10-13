@@ -28,6 +28,8 @@ export type { ChoiceOption } from '@/src/core/variables';
 type SharedProps = {
   label: string;
   labelPlacement?: ControlLabelPlacement;
+  /** An ancestor label can navigate independently of opening its selector. */
+  labelAction?: () => void;
   options: readonly ChoiceOption[];
   /** Separate source state, rendered last with a divider and the shared option component. */
   missingOption?: ChoiceOption;
@@ -162,7 +164,12 @@ export function ChoicePicker(props: ChoicePickerProps) {
   }
 
   return (
-    <PickerField label={label} labelPlacement={labelPlacement}>
+    <PickerField
+      label={label}
+      labelPlacement={labelPlacement}
+      labelAction={props.labelAction}
+      disabled={disabled}
+    >
       <DialogTrigger
         isOpen={open}
         onOpenChange={next => {

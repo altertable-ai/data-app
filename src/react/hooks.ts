@@ -1,10 +1,15 @@
+import { searchParams } from '@/src/react/ui/search';
 import { writeVariableValues } from '@/src/react/ui/variables';
 import { invariant } from '@/src/core/invariant';
 import type {
   ScopeVariableValues,
   AppVariableValues,
 } from '@/src/core/variables';
-import type { BreakdownVariable } from '@/src/core/breakdown';
+import type {
+  ExplorationVariable,
+  ExplorationStateOf,
+  ExplorationValuesOf,
+} from '@/src/core/exploration';
 import {
   createDetailContent,
   type DetailContentOptions,
@@ -247,7 +252,7 @@ export function createDataHooks<Operations extends DataOperations>(
             invariant(
               variable &&
                 variable.presentation?.group !== 'display' &&
-                variable.kind !== 'breakdown',
+                variable.kind !== 'exploration',
               `Filter actions must target scope variables: ${key}.`
             );
           }
@@ -257,24 +262,52 @@ export function createDataHooks<Operations extends DataOperations>(
             'push'
           );
         },
-        breakdown<
+        exploration<
           Key extends {
-            [K in keyof Variables]: Variables[K] extends BreakdownVariable
-              ? K
-              : never;
+            [
+              K in keyof Variables
+            ]: Variables[K] extends ExplorationVariable<any> ? K : never;
           }[keyof Variables] &
             string,
         >(key: Key) {
-          const variable = normalized.variables[key] as BreakdownVariable;
+          const variable = normalized.variables[
+            key
+          ] as ExplorationVariable<any>;
           invariant(
-            variable?.kind === 'breakdown',
-            `Expected a declared breakdown variable: ${key}.`
+            variable?.kind === 'exploration',
+            `Expected a declared exploration variable: ${key}.`
           );
           return {
-            variable,
+            kind: 'exploration' as const,
+            variable: variable as Extract<
+              Variables[Key],
+              ExplorationVariable<any>
+            >,
+            clientScope,
+            loadFacet: (
+              operation: string,
+              input: unknown,
+              signal: AbortSignal
+            ) =>
+              client
+                .query(operation as keyof Operations & string, input as never, {
+                  signal,
+                })
+                .then(response => response.data),
+            filter(values: Partial<ExplorationValuesOf<Variables[Key]>>) {
+              const current = variable.read(searchParams());
+              const next = variable.filter(current, values);
+              writeVariableValues(
+                { exploration: variable },
+                { exploration: next },
+                'push'
+              );
+            },
             navigationId: `${navigationId}:${key}`,
             read: (input: Input) =>
-              variable.parse(readViewBinding(normalized, key, input)),
+              variable.parse(
+                readViewBinding(normalized, key, input)
+              ) as ExplorationStateOf<Variables[Key]>,
           };
         },
         dataset<Row>(

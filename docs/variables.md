@@ -247,58 +247,86 @@ values while a draft is being edited.
 
 Filters apply immediately; use app-owned drafts only when the task needs Apply/Cancel.
 
-## Hierarchical breakdowns
+## Hierarchical exploration
 
-Keep ordinary filters and the exploration path separate. Scope determines which
-records participate; grouping determines how they are summarized. Declare one
-`breakdownVariable()` in the view, then preserve its path in the operation input.
-The next unselected level supplies the grouping; do not store a second grouping
-variable for the same hierarchy.
+Declare one `explorationVariable()` for dimensions that share a hierarchy. Its
+single URL value owns typed `selection` and `groupBy`. Do not also declare those
+levels as ordinary filters. Dates, segments, and other scope remain independent.
 
 ```tsx
-const geography = breakdownVariable({
+const geography = explorationVariable({
   key: 'geography',
   label: 'Geography',
   levels: [
-    { id: 'region', label: 'Regions' },
-    { id: 'country', label: 'Countries' },
-    { id: 'customer', label: 'Customers' },
+    {
+      id: 'region',
+      label: 'Region',
+      groupLabel: 'Regions',
+      valueType: 'string',
+      options: regionOptions,
+    },
+    {
+      id: 'country',
+      label: 'Country',
+      groupLabel: 'Countries',
+      valueType: 'string',
+      facet: {
+        operation: 'countries',
+        input: selection => ({ region: selection.region }),
+      },
+    },
+    {
+      id: 'customer',
+      label: 'Customer',
+      groupLabel: 'Customers',
+      valueType: 'number',
+      facet: {
+        operation: 'customers',
+        input: selection => ({ country: selection.country }),
+      },
+    },
   ],
 });
 
 const salesView = defineDataView({
   operation: 'sales',
   dataContext,
-  variables: { region, geography },
+  variables: { period, geography },
   describeInput: describeSalesScope,
   isEmpty: data => data.rows.length === 0,
   emptyFallback: { title: 'No matching places' },
 });
+const exploration = salesView.exploration('geography');
 ```
 
-The operation accepts `{ region, geography }`. Reuse `parseBreakdownPath()` from
-`/contract` with the same declaration, and validate member IDs and parent
-relationships against the source. Derive `groupBy` with
-`geography.level(input.geography).id`; bind member IDs to declared query
-parameters. Labels are display metadata, never predicates or SQL fragments.
-Use typed `bindings` for nested or renamed path fields, as with other filters.
+The operation preserves `{ period, geography }`. Validate geography with
+`geography.parse()` and derive query predicates from its selection and grouping
+from `input.geography.groupBy`. Labels come from options or facet results;
+IDs alone supply predicates. For nested or renamed input fields, provide typed
+`bindings` as with other scope variables.
 
-A path is an ordered array of `{ level, id, label }` members. The empty path is
-the root. Selecting Europe adds a region member and groups its population by
-country; selecting France adds a country member and groups by customer. IDs
-must be stable strings or finite numbers. Paths must follow declared levels,
-leave a grouping level, and fit in the shared URL. Malformed URL paths fall back
-to the root, matching the validated-default behavior of other variables.
+Each level selects All or one member using the existing dimension selection
+shape. Static options can declare their immediate `parent` ID. Facets receive
+selected ancestors; their own level and descendants are All. Validate parent
+relationships against the source in the operation, particularly for facet-backed
+IDs. Bound SQL parameters and joins enforce the selected population.
 
-`<DataApp>` derives breadcrumbs from the path variable. Clicking a
-breadcrumb truncates the path; clicking the root resets exploration. Each change
-creates one history entry and preserves dates, segments, and ordinary filters.
-Clear filters preserves exploration; reset exploration separately through the
-root breadcrumb. Browser Back/Forward restores both path and ordinary controls.
+| Interaction               | Result                                                   |
+| ------------------------- | -------------------------------------------------------- |
+| Select a different parent | Clear descendants and retain the deepest valid grouping. |
+| Filter a chart member     | Select that member; preserve grouping.                   |
+| Descend a chart member    | Select that member and advance one level.                |
+| Click an ancestor label   | Group by that level and clear deeper selections.         |
+| Select All at the root    | Reset exploration.                                       |
 
-Declare a [descend action](widgets.md#explore-from-widgets) with
-`salesView.breakdown('geography')`. Descent is available only before the last
-level and when the displayed path matches the current one. At the last level,
-offer a supported detail action instead. Queries, widget titles, scope labels,
-CSV, and stories must derive from the same displayed input, including while
-breadcrumbs show a newly applied path during refresh.
+`<DataApp>` renders exploration separately from ordinary filters. Relevant
+widgets and inspection reuse the same selectors. Ancestor labels navigate;
+dropdowns edit selections. Each transition creates one history entry and
+preserves unrelated variables. Clear filters affects ordinary scope; reset
+exploration with its root selector.
+
+Use `action.filter()` and `action.descend()` with the bound exploration target;
+see [widget actions](widgets.md#explore-from-widgets). Hierarchy row actions wait
+until displayed and applied exploration agree. Page controls show applied state;
+widgets keep displayed context during refreshes. Derive queries, titles, scope,
+CSV, and stories from the same displayed input.

@@ -12,7 +12,7 @@
 @import './ui/SelectionMark.css' layer(atbl.components);
 @import './ui/SearchMatch.css' layer(atbl.components);
 @import './ui/ChoicePicker.css' layer(atbl.components);
-@import './ui/BreakdownBreadcrumbs.css' layer(atbl.components);
+@import './ui/ExplorationBreadcrumbs.css' layer(atbl.components);
 @import './ui/Menu.css' layer(atbl.components);
 @import './ui/FilterControls.css' layer(atbl.components);
 @import './ui/Field.css' layer(atbl.components);

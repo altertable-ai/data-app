@@ -1,29 +1,17 @@
-import { geography, regionFilter, regionForCountry } from '@/dev/geography';
+import { geography } from '@/dev/geography';
 import { dataApp } from '@/dev/app';
 import {
-  dimensionFilter,
-  parseDimensionSelection,
   parseCount,
   type DateRangeRequest,
   type DimensionSelection,
-  type BreakdownPath,
+  type ExplorationStateOf,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
 import { calendar, countries } from '@/dev/commerce';
 
-export const countryFilter = dimensionFilter({
-  key: 'country',
-  label: 'Country',
-  valueType: 'string',
-  selectionMode: 'single',
-  options: countries,
-});
 export type OrderInput = {
   period: DateRangeRequest;
-  country: DimensionSelection<string>;
-  region: DimensionSelection<string>;
-  geography: BreakdownPath;
-  customerId: number | null;
+  geography: ExplorationStateOf<typeof geography>;
 };
 export type CountryRevenue = {
   country: string;
@@ -69,23 +57,9 @@ function parseInput(value: unknown): OrderInput {
   if (!value || typeof value !== 'object')
     throw new Error('Expected order filters.');
   const input = value as Record<string, unknown>;
-  const path = geography.parse(input.geography);
-  if (path[0] && !['Europe', 'North America'].includes(String(path[0].id)))
-    throw new Error('Unknown region.');
-  if (
-    path[1] &&
-    (!countries.some(country => country.value === path[1]!.id) ||
-      regionForCountry(String(path[1].id)) !== path[0]!.id)
-  )
-    throw new Error('Country does not belong to this region.');
-  const customerId =
-    input.customerId === null ? null : parseCount(input.customerId);
   return {
-    region: parseDimensionSelection(input.region, regionFilter),
-    geography: path,
-    customerId,
     period: calendar.parseRequest(input.period),
-    country: parseDimensionSelection(input.country, countryFilter),
+    geography: geography.parse(input.geography),
   };
 }
 function parseRows<Row>(
@@ -171,13 +145,15 @@ function parseOrderOverview(value: unknown): OrderOverview {
   };
 }
 function scopeParams(input: OrderInput) {
-  const region =
-    input.region.kind === 'all' ? undefined : input.region.members[0];
+  function member(selection: DimensionSelection<string | number>) {
+    const selected =
+      selection.kind === 'all' ? undefined : selection.members[0];
+    return selected?.kind === 'value' ? selected.value : null;
+  }
   return {
-    region: region?.kind === 'value' ? region.value : null,
-    pathRegion: input.geography[0]?.id ?? null,
-    pathCountry: input.geography[1]?.id ?? null,
-    customerId: input.customerId,
+    region: member(input.geography.selection.region),
+    country: member(input.geography.selection.country),
+    customerId: member(input.geography.selection.customer),
   };
 }
 const checkRange = calendar.request(
@@ -207,24 +183,18 @@ export const operations = {
     checks: [
       {
         period: checkRange,
-        country: { kind: 'all' as const },
-        region: { kind: 'all' as const },
-        geography: [],
-        customerId: null,
+        geography: geography.defaultValue,
         orderId: 1,
       },
     ],
     policy: { maxQueryRows: 100, maxDurationMs: 15000 },
     async run({ query }, input) {
-      const { period, country, orderId } = input;
-      const member = country.kind === 'all' ? undefined : country.members[0];
+      const { period, orderId } = input;
       const result = await query('orderDetail', {
         ...scopeParams(input),
         orderId,
         start: period.range.start,
         end: period.range.end,
-        countryMode: country.kind,
-        country: member?.kind === 'value' ? member.value : null,
       });
       const first = result.rows[0];
       return {
@@ -255,29 +225,23 @@ export const operations = {
     checks: [
       {
         period: checkRange,
-        country: { kind: 'all' },
-        region: { kind: 'all' },
-        geography: [],
-        customerId: null,
+        geography: geography.defaultValue,
       },
       {
         period: checkRange,
-        country: { kind: 'include', members: [{ kind: 'value', value: 'FI' }] },
-        region: { kind: 'all' },
-        geography: [],
-        customerId: null,
+        geography: geography.filter(
+          geography.descend(geography.defaultValue, 'Europe'),
+          { country: 'FI' }
+        ),
       },
     ] satisfies OrderInput[],
     policy: { maxQueryRows: 300, maxDurationMs: 15000 },
     async run({ query }, input) {
-      const { country, period } = input;
-      const member = country.kind === 'all' ? undefined : country.members[0];
+      const { period } = input;
       const params = {
         ...scopeParams(input),
         start: period.range.start,
         end: period.range.end,
-        countryMode: country.kind,
-        country: member?.kind === 'value' ? member.value : null,
       };
       const [
         countryResult,

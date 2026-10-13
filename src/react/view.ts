@@ -39,7 +39,7 @@ export type ViewBindings<
 type RequiredFilterBindingKeys<Variables extends VariableCollection, Input> = {
   [Key in keyof Variables]: Extract<
     Variables[Key]['kind'],
-    'dimension' | 'numberFilter' | 'booleanFilter' | 'breakdown'
+    'dimension' | 'numberFilter' | 'booleanFilter' | 'exploration'
   > extends never
     ? never
     : [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
@@ -144,7 +144,7 @@ export function describeViewInput<Input>(definition: {
     );
     const filters = Object.entries(definition.variables)
       .filter(([, variable]) =>
-        ['dimension', 'numberFilter', 'booleanFilter', 'breakdown'].includes(
+        ['dimension', 'numberFilter', 'booleanFilter', 'exploration'].includes(
           variable.kind
         )
       )
@@ -196,7 +196,7 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
   }
   for (const [key, variable] of Object.entries(definition.variables)) {
     if (
-      !['dimension', 'numberFilter', 'booleanFilter', 'breakdown'].includes(
+      !['dimension', 'numberFilter', 'booleanFilter', 'exploration'].includes(
         variable.kind
       )
     )

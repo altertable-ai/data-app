@@ -1,4 +1,4 @@
-import { geography, regionFilter } from '@/dev/geography';
+import { geography } from '@/dev/geography';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import { dataApp } from '@/dev/app';
@@ -33,7 +33,6 @@ import {
   queryNames,
   summarizeOrders,
   describeWeeklyOrderTrend,
-  countryFilter,
   type OrderOverview,
   type OrderInput,
   type Order,
@@ -147,8 +146,8 @@ const orderView = defineTimeView({
     defaultValue: { kind: 'preset', id: 'last-30' },
     comparison: true,
   },
-  variables: { country: countryFilter, region: regionFilter, geography },
-  input: values => ({ ...values, customerId: null }),
+  variables: { geography },
+  input: values => values,
   isEmpty: ({ countries }) => countries.length === 0,
   emptyFallback: { title: 'No matching countries' },
 });
@@ -232,9 +231,9 @@ const geographicDataset = orderView.dataset({
     revenue: { value: row => row.revenue, format: currency },
   },
 });
-const geographicBreakdown = orderView.breakdown('geography');
+const geographicExploration = orderView.exploration('geography');
 function describeScope(input: OrderInput) {
-  return `${calendar.describeInput(input.period.range)} · Region: ${regionFilter.describe?.(input.region)} · Country: ${countryFilter.describe?.(input.country)} · ${geography.describe?.(input.geography)}${input.customerId === null ? '' : ` · Customer #${input.customerId}`}`;
+  return `${calendar.describeInput(input.period.range)} · ${geography.describe?.(input.geography)}`;
 }
 const dayDataset = orderView.dataset({
   name: 'Orders per day',
@@ -454,39 +453,26 @@ const geographicActions = geographicDataset.actions(action => ({
     target: scopeOrdersView,
     input: (row, input) => ({
       ...input,
-      geography:
-        row.level === 'customer'
-          ? input.geography
-          : [
-              ...input.geography,
-              { level: row.level, id: row.id, label: row.label },
-            ],
-      customerId: row.level === 'customer' ? Number(row.id) : null,
+      geography: geography.filter(
+        input.geography,
+        row.level === 'region'
+          ? { region: row.id }
+          : row.level === 'country'
+            ? { country: row.id }
+            : { customer: Number(row.id) }
+      ),
     }),
   }),
   filter: action.filter({
     label: row => `Filter to this ${row.level}`,
     when: row => row.level !== 'customer',
-    target: orderView,
+    target: geographicExploration,
     values: row =>
-      row.level === 'region'
-        ? ({
-            region: {
-              kind: 'include',
-              members: [{ kind: 'value', value: row.id }],
-            },
-            country: { kind: 'all' },
-          } as const)
-        : ({
-            country: {
-              kind: 'include',
-              members: [{ kind: 'value', value: row.id }],
-            },
-          } as const),
+      row.level === 'region' ? { region: row.id } : { country: row.id },
   }),
   descend: action.descend({
-    target: geographicBreakdown,
-    member: row => ({ id: row.id, label: row.label }),
+    target: geographicExploration,
+    member: row => ({ id: row.id }),
   }),
 }));
 type OrderSource = Parameters<Parameters<typeof orderView.content>[0]>[0];
@@ -566,7 +552,7 @@ function OrderResults({ result }: { result: OrderSource }) {
         title={
           result.loading
             ? 'Geographic revenue'
-            : `Paid revenue by ${geography.level(result.input.geography).label.toLowerCase()}`
+            : `Paid revenue by ${geography.level(result.input.geography).groupLabel.toLowerCase()}`
         }
         dataset={geographicDataset}
         source={result}

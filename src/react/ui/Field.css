@@ -42,3 +42,25 @@
     100% - var(--atbl-control-icon-size) - var(--atbl-control-gap)
   );
 }
+
+.altertable-field[data-label-action='true'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+}
+.altertable-field[data-label-action='true'] > button {
+  width: auto;
+  min-height: calc(var(--atbl-control-height) - 2px);
+  border: 0;
+  background: transparent;
+}
+.altertable-field[data-label-action='true'] > button:first-child {
+  padding-inline-end: var(--atbl-space-xs);
+  color: var(--atbl-muted);
+}
+.altertable-field[data-label-action='true'] .altertable-picker-value {
+  max-width: none;
+}

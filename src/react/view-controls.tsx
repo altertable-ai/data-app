@@ -1,5 +1,5 @@
-import { BreakdownBreadcrumbs } from '@/src/react/ui/BreakdownBreadcrumbs';
-import type { BreakdownPath } from '@/src/core/breakdown';
+import { ExplorationBreadcrumbs } from '@/src/react/ui/ExplorationBreadcrumbs';
+import type { ExplorationState } from '@/src/core/exploration';
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
@@ -91,7 +91,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
   const primaryFilters: ReactNode[] = [];
-  const breakdownControls: ReactNode[] = [];
+  const explorationControls: ReactNode[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
@@ -115,19 +115,13 @@ export function useViewVariables<Variables extends VariableCollection>(
         : prominence === 'secondary'
           ? 'above'
           : 'inline';
-    if (definition.kind === 'breakdown') {
-      breakdownControls.push(
-        <BreakdownBreadcrumbs
+    if (definition.kind === 'exploration') {
+      explorationControls.push(
+        <ExplorationBreadcrumbs
           key={name}
           id={navigationId ? `${navigationId}:${name}` : undefined}
-          variable={definition}
-          value={value as BreakdownPath}
-          onChange={path =>
-            variables.set(
-              name,
-              path as AppVariableValues<Variables>[typeof name]
-            )
-          }
+          target={{ variable: definition, clientScope, loadFacet }}
+          value={value as ExplorationState<any>}
         />
       );
       continue;
@@ -308,7 +302,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     resolved,
     searchControls: searchControls.length ? searchControls : null,
     filterControls:
-      hasControls || hasActiveFilters || breakdownControls.length ? (
+      hasControls || hasActiveFilters || explorationControls.length ? (
         <>
           {hasControls || hasActiveFilters ? (
             <ViewControlBar
@@ -325,7 +319,7 @@ export function useViewVariables<Variables extends VariableCollection>(
               }
             />
           ) : null}
-          {breakdownControls}
+          {explorationControls}
         </>
       ) : null,
   };

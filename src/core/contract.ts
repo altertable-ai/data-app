@@ -1,10 +1,13 @@
-export { breakdownVariable, parseBreakdownPath } from '@/src/core/breakdown';
+export { explorationVariable } from '@/src/core/exploration';
 export type {
-  BreakdownLevel,
-  BreakdownMember,
-  BreakdownPath,
-  BreakdownVariable,
-} from '@/src/core/breakdown';
+  ExplorationLevel,
+  ExplorationSelection,
+  ExplorationState,
+  ExplorationVariable,
+  ExplorationStateOf,
+  ExplorationValuesOf,
+} from '@/src/core/exploration';
+
 /**
  * Shared operation contracts and input/output validation for browser and server.
  * @module @altertable/data-app/contract

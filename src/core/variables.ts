@@ -1,4 +1,4 @@
-import type { BreakdownVariable } from '@/src/core/breakdown';
+import type { ExplorationVariable } from '@/src/core/exploration';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -41,7 +41,7 @@ export type AppVariable<Value, Kind extends string = string> = {
 
 export type VariableCollection = Record<
   string,
-  | BreakdownVariable
+  | ExplorationVariable<any>
   | SearchVariable
   | ChoiceVariable
   | MultiChoiceVariable
@@ -63,7 +63,7 @@ export type AppVariableValues<Variables> = {
 /** Only known scope fields can be changed by filtering; hierarchy has its own transitions. */
 type ScopeVariables<Variables extends VariableCollection> = {
   [
-    Key in keyof Variables as Variables[Key]['kind'] extends 'breakdown'
+    Key in keyof Variables as Variables[Key]['kind'] extends 'exploration'
       ? never
       : NonNullable<Variables[Key]['presentation']> extends { group: 'display' }
         ? never
