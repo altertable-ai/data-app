@@ -1146,6 +1146,34 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             </DataWidget>
           </Stack>
         </Case>
+        {(['start', 'stretch'] as const).map(align => (
+          <Case
+            key={align}
+            title={
+              align === 'stretch'
+                ? 'Equal-height widgets'
+                : 'Natural widget heights'
+            }
+            note={`Grid align="${align}". Resize the window to see the widgets stack.`}
+          >
+            <Grid columns={3} align={align}>
+              <GridItem span={2}>
+                <DataWidget title="Weekly activity">
+                  <p>Activity increased across all three channels this week.</p>
+                  <p>Most visits came from returning users.</p>
+                  <p>The busiest day was Thursday.</p>
+                </DataWidget>
+              </GridItem>
+              <GridItem>
+                <MetricWidget
+                  label="Weekly visits"
+                  value={12480}
+                  format={{ kind: 'count' }}
+                />
+              </GridItem>
+            </Grid>
+          </Case>
+        ))}
         <Case title="Grid spans and stacks">
           <Grid columns={3}>
             <GridItem span={2}>
