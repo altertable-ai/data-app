@@ -80,7 +80,15 @@ export function defineAppVariables<const Variables extends VariableCollection>(
     );
     for (const key of variable.urlKeys) {
       invariant(
-        !['view', 'about', 'tab', 'present', 'step'].includes(key),
+        ![
+          'view',
+          'about',
+          'tab',
+          'present',
+          'step',
+          'detail',
+          'detailInput',
+        ].includes(key),
         `Variable ${name} uses reserved URL key: ${key}.`
       );
       invariant(

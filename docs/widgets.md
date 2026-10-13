@@ -158,3 +158,68 @@ For embedded theme and chrome, see [parent presentation](embed.md#parent-present
 
 `<TooltipProvider>` shares hover timing outside `<DataApp>`; the app already
 provides it.
+
+## Drill into details
+
+For a relevant metric, chart, or table, offer the next useful investigation:
+contributing records, a narrower breakdown, or entity details. Declare a drill
+only when a destination can answer that question. Evidence references explain
+definitions and queries; drill actions open a different data view.
+
+Declare the relationship on the dataset or metric. Map from the displayed input
+so clicking during a refresh retains the scope behind the visible result.
+Preserve relevant dates, filters, and metric semantics explicitly.
+
+```tsx
+const viewOrders = regions.drill({
+  id: 'view-orders',
+  label: 'View orders',
+  target: ordersView,
+  input: (row, displayedInput) => ({
+    period: displayedInput.period,
+    segment: displayedInput.segment,
+    regionId: row.regionId,
+  }),
+});
+
+<TableWidget dataset={regions} source={source} drill={viewOrders} />;
+```
+
+Register the target's [detail content](views.md#detail-destinations) on
+`<DataApp>`. `<TableWidget>` adds a named action per row; `<MetricWidget>` adds a
+widget action. A metric's input mapper receives only the displayed input.
+Actions belong to their source binding and do not change its filters.
+
+A custom visualization receives the bound action as its second renderer
+argument. Preserve the domain row when adapting chart inputs:
+
+```tsx
+<VisualizationWidget dataset={regions} source={source} drill={viewOrders}>
+  {(rows, drill) => (
+    <BarChart
+      ariaLabel="Revenue by region"
+      unit="USD"
+      items={rows.map(row => ({
+        id: row.regionId,
+        label: row.region,
+        value: row.revenue,
+        row,
+      }))}
+      actionLabel="View orders"
+      onItemAction={
+        drill ? (item, trigger) => drill.open(item.row, trigger) : undefined
+      }
+    />
+  )}
+</VisualizationWidget>
+```
+
+Built-in `<BarChart>` actions support pointer and keyboard activation. For custom
+controls, call `drill.open(row, trigger)` from an accessible button. Alternate
+visualization view renderers receive the same bound action as their second argument; do not infer records from
+formatted labels or array positions.
+
+Contributing records must follow the source metric's inclusion rules. Explain
+ratios, distinct counts, and preview limits rather than implying every table
+sum reconciles with the headline. See the query-backed order destination in the
+[commerce playground](https://github.com/altertable-ai/data-app/blob/main/dev/playground.tsx).

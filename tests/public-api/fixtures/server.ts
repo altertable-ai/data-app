@@ -1,3 +1,4 @@
+import drillApp from '@/tests/public-api/fixtures/drill-app.html';
 import { Database } from 'bun:sqlite';
 import { serveLocalApp } from '@altertable/data-app/server/bun';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
@@ -45,6 +46,15 @@ const { default: worker } = await import(
   import.meta.resolve('@altertable/data-app/worker')
 );
 const database = new Database(':memory:');
+database.exec(`CREATE TABLE sales_orders (id TEXT, customer TEXT, country TEXT, region TEXT, segment TEXT, day TEXT, status TEXT, amount REAL, discount REAL, refund REAL);
+INSERT INTO sales_orders VALUES
+('SO-1001', 'Atelier Nord', 'France', 'Europe', 'Enterprise', '2026-09-12', 'paid', 1200, 200, 0),
+('SO-1002', 'Werkhaus', 'Germany', 'Europe', 'Enterprise', '2026-09-18', 'paid', 600, 100, 100),
+('SO-1003', 'Atelier Nord', 'France', 'Europe', 'Enterprise', '2026-09-20', 'refunded', 300, 0, 300),
+('SO-1004', 'Werkhaus', 'Germany', 'Europe', 'Enterprise', '2026-09-22', 'cancelled', 9000, 0, 0),
+('SO-1005', 'Pacific Works', 'United States', 'North America', 'Enterprise', '2026-09-15', 'paid', 2000, 0, 0),
+('SO-1006', 'Studio Petit', 'France', 'Europe', 'Self serve', '2026-09-16', 'paid', 75, 5, 0),
+('SO-2001', 'Atelier Nord', 'France', 'Europe', 'Enterprise', '2026-10-04', 'paid', 500, 0, 0);`);
 
 process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'fixture-token';
 process.env.NODE_ENV = 'production';
@@ -74,6 +84,7 @@ const server = Bun.serve({
     '/bridge-frame': bridgeFrame,
     '/inspection-app': inspectionApp,
     '/declared-app': declaredApp,
+    '/drill-app': drillApp,
     '/controls': controls,
     '/filters': filters,
     '/filter-presentation': filterPresentation,
@@ -91,6 +102,21 @@ const server = Bun.serve({
   },
   async fetch(request): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === '/api/drill-query') {
+      const { statement, params } = (await request.json()) as {
+        statement: string;
+        params: Record<string, string>;
+      };
+      const query = database.query(statement);
+      return Response.json({
+        columns: query.columnNames.map(name => ({ name })),
+        rows: query.values(
+          Object.fromEntries(
+            Object.entries(params).map(([key, value]) => [`$${key}`, value])
+          )
+        ),
+      });
+    }
     if (url.pathname === '/') return new Response('Ready');
     if (url.pathname === '/__test/config')
       return Response.json({

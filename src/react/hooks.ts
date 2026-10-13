@@ -1,3 +1,7 @@
+import {
+  createDetailContent,
+  type DetailContentOptions,
+} from '@/src/react/details';
 import { randomUuid } from '@/src/core/uuid';
 import { DeclaredView } from '@/src/react/view-runtime';
 import {
@@ -109,7 +113,15 @@ export function createDataHooks<Operations extends DataOperations>(
     return {
       ...query,
       /** Abort the current request and restore its prior query state. */
-      cancel(this: void) {
+      cancel(this: void, onlyObserver = false) {
+        if (
+          onlyObserver &&
+          (queryClient
+            .getQueryCache()
+            .find({ queryKey, exact: true })
+            ?.getObserversCount() ?? 0) > 1
+        )
+          return Promise.resolve();
         return queryClient.cancelQueries({ queryKey, exact: true });
       },
     };
@@ -215,7 +227,10 @@ export function createDataHooks<Operations extends DataOperations>(
     > = definition;
     const normalized = { ...metadata, variables, input, describeInput };
     const view = Object.assign(
-      new DeclaredView(() => useView(normalized), normalized),
+      new DeclaredView(
+        (input?: Input) => useView(normalized, input),
+        normalized
+      ),
       {
         dataset<Row>(
           dataset: DatasetDefinition<
@@ -269,6 +284,51 @@ export function createDataHooks<Operations extends DataOperations>(
       }
     );
     return view;
+  }
+
+  /** A detail destination receives validated input from a drill action or shared URL.
+   * Reuse the operation's input parser; the destination does not own dashboard variables. */
+  function defineDetailView<
+    Name extends keyof Operations & string,
+    const Context extends AuthoringDataContext = AuthoringDataContext,
+  >(definition: {
+    id: string;
+    title: string;
+    operation: Name;
+    dataContext: Context;
+    parseInput: (value: unknown) => InputOf<Operations[Name]>;
+    describeInput: (input: InputOf<Operations[Name]>) => string;
+    isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
+    emptyFallback: EmptyContent;
+  }) {
+    type Data = OutputOf<Operations[Name]>;
+    type Input = InputOf<Operations[Name]>;
+    const base = defineDataView<Name, {}, Context>({
+      ...definition,
+      input: () => {
+        throw new Error('Detail views require a drill input.');
+      },
+    });
+    // Keep the declared view identity: dataset ownership and request execution use it.
+    const view = Object.assign(base, {
+      id: definition.id,
+      title: definition.title,
+      parseInput: definition.parseInput,
+    });
+    const detail = view as Omit<typeof view, 'content'>;
+    return Object.assign(detail, {
+      content(
+        render: (source: DataContentState<Data, Input>) => ReactNode,
+        options: DetailContentOptions<Data, Input>
+      ) {
+        return createDetailContent(
+          view,
+          render,
+          definition.describeInput,
+          options
+        );
+      },
+    });
   }
 
   /** One time declaration owns the URL picker, operation input, and displayed-period label.
@@ -360,7 +420,8 @@ export function createDataHooks<Operations extends DataOperations>(
       Variables,
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
-    >
+    >,
+    explicitInput?: InputOf<Operations[Name]>
   ) {
     const variables = useViewVariables(
       definition.variables,
@@ -376,7 +437,9 @@ export function createDataHooks<Operations extends DataOperations>(
       describeViewInput<InputOf<Operations[Name]>>(definition);
     const request = useDataView(
       definition.operation,
-      resolveViewInput(definition, variables.resolved),
+      explicitInput !== undefined
+        ? explicitInput
+        : resolveViewInput(definition, variables.resolved),
       {
         ...definition,
         describeInput,
@@ -413,6 +476,7 @@ export function createDataHooks<Operations extends DataOperations>(
   return {
     defineDataView,
     defineTimeView,
+    defineDetailView,
     defineFacetFilter,
   };
 }

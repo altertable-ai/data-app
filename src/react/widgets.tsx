@@ -1,3 +1,6 @@
+import { useDrill } from '@/src/react/details';
+import type { DrillAction } from '@/src/react/drill';
+import { Button } from '@/src/react/ui/Button';
 import {
   datasetTable,
   type Dataset,
@@ -36,17 +39,36 @@ import type { DataReading } from '@/src/core/reading';
 export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
   Extract<DisplayMetricProps, { metric: MetricDefinition }>,
   'metric' | 'reading'
-> & { metric: Metric<Data, Input>; source: ViewSource<Data, Input> };
+> & {
+  metric: Metric<Data, Input>;
+  source: ViewSource<Data, Input>;
+  drill?: DrillAction<void, Input>;
+};
 export function MetricWidget<Data, Input>({
   metric,
   source,
+  drill,
+  action: authoredAction,
   ...presentation
 }: MetricWidgetProps<Data, Input>) {
+  const action = useDrill(drill, source, metric);
   return (
     <DisplayMetric
       {...presentation}
       metric={metric.definition}
       reading={metric.read(source)}
+      action={
+        <>
+          {authoredAction}
+          {action && (
+            <Button
+              onClick={event => action.open(undefined, event.currentTarget)}
+            >
+              {action.label}
+            </Button>
+          )}
+        </>
+      }
     />
   );
 }
@@ -67,28 +89,67 @@ export type TableWidgetProps<Row, Data = unknown, Input = unknown> = Omit<
     dataset: Dataset<Data, Input, Row>;
     source: ViewSource<Data, Input>;
     title?: ReactNode;
+    drill?: DrillAction<Row, Input>;
   };
 export function TableWidget<Row, Data, Input>({
   dataset,
   source,
   title,
+  drill,
   ...presentation
 }: TableWidgetProps<Row, Data, Input>) {
   const data = datasetTable(dataset, source);
+  const action = useDrill(drill, source, dataset);
   return (
-    <DisplayTable {...presentation} {...data} title={title ?? data.title} />
+    <DisplayTable
+      {...presentation}
+      {...data}
+      title={title ?? data.title}
+      columns={
+        action
+          ? [
+              ...data.columns,
+              {
+                id: `drill:${action.id}`,
+                header: action.label,
+                cell: row => (
+                  <Button
+                    onClick={event => action.open(row, event.currentTarget)}
+                    aria-label={`${action.label}: ${String(data.rowKey(row))}`}
+                  >
+                    {action.label}
+                  </Button>
+                ),
+              },
+            ]
+          : data.columns
+      }
+    />
   );
 }
 type BoundVisual<Row> = Extract<
   DisplayVisualProps<readonly Row[]>,
   { reading: DataReading<readonly Row[]> }
 >;
-export type VisualizationWidgetView<Row> = DisplayVisualizationView<
-  readonly Row[]
->;
+type VisualizationDrill<Row> = {
+  label: string;
+  open: (row: Row, trigger?: HTMLElement) => void;
+};
+export type VisualizationWidgetView<Row> = Omit<
+  DisplayVisualizationView<readonly Row[]>,
+  'render'
+> & {
+  render: (
+    rows: readonly Row[],
+    drill: VisualizationDrill<Row> | undefined
+  ) => ReactNode;
+};
 type VisualContent<Row> =
   | {
-      children: (rows: readonly Row[]) => ReactNode;
+      children: (
+        rows: readonly Row[],
+        drill: VisualizationDrill<Row> | undefined
+      ) => ReactNode;
       views?: never;
       viewLabel?: never;
       initialView?: never;
@@ -119,22 +180,36 @@ export type VisualizationWidgetProps<
     dataset: Dataset<Data, Input, Row>;
     source: ViewSource<Data, Input>;
     title?: ReactNode;
+    drill?: DrillAction<Row, Input>;
   };
 export function VisualizationWidget<Row, Data, Input>({
   dataset,
   source,
   title,
+  drill,
   ...presentation
 }: VisualizationWidgetProps<Row, Data, Input>) {
+  const action = useDrill(drill, source, dataset);
   const data = datasetTable(dataset, source);
+  const { children, views, viewLabel, initialView, ...shell } = presentation;
   return (
-    <DisplayVisual
-      {...presentation}
+    <DisplayVisual<readonly Row[]>
+      {...shell}
       title={title ?? data.title}
       reading={data.reading}
       evidence={data.evidence}
       emptyFallback={data.emptyFallback}
       isEmpty={rows => rows.length === 0}
+      {...(views
+        ? {
+            views: views.map(view => ({
+              ...view,
+              render: rows => view.render(rows, action),
+            })),
+            viewLabel,
+            initialView,
+          }
+        : { children: rows => children(rows, action) })}
     />
   );
 }

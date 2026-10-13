@@ -1,3 +1,4 @@
+import { DetailProvider, type DetailContent } from '@/src/react/details';
 import { DateFormattingContext } from '@/src/react/date-formatting';
 import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
 import { useDataApp } from '@/src/react/app-context';
@@ -31,6 +32,8 @@ export type DataAppProps<Data, Input = unknown> = Omit<
     };
     /** Show supplied datasets’ record suggestions on the first declared search. Defaults to true. */
     showSearchSuggestions?: boolean;
+    /** Detail destinations available to bound widget drill actions and shared URLs. */
+    details?: readonly DetailContent[];
     story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
       StoryFinding,
       'evidence'
@@ -50,6 +53,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     datasets,
     story,
     showSearchSuggestions = true,
+    details = [],
     ...frame
   } = props;
   const app = useDataApp();
@@ -74,39 +78,41 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
         })
       : [];
   return (
-    <DateFormattingContext value={{ timeZone: result.timeZone }}>
-      <SearchSuggestionsContext
-        value={
-          suggestionGroups.length
-            ? {
-                groups: suggestionGroups,
-                busy: result.refreshing,
+    <DetailProvider details={details}>
+      <DateFormattingContext value={{ timeZone: result.timeZone }}>
+        <SearchSuggestionsContext
+          value={
+            suggestionGroups.length
+              ? {
+                  groups: suggestionGroups,
+                  busy: result.refreshing,
+                }
+              : null
+          }
+        >
+          <PrimaryViewContext value={{ declaration: view, result }}>
+            <DataAppFrame
+              {...frame}
+              request={result}
+              dataContext={result.dataContext}
+              story={snapshot =>
+                story(ownedSource(view, snapshot)).map(finding => ({
+                  ...finding,
+                  evidence: registeredEvidence(finding.evidence, view),
+                }))
               }
-            : null
-        }
-      >
-        <PrimaryViewContext value={{ declaration: view, result }}>
-          <DataAppFrame
-            {...frame}
-            request={result}
-            dataContext={result.dataContext}
-            story={snapshot =>
-              story(ownedSource(view, snapshot)).map(finding => ({
-                ...finding,
-                evidence: registeredEvidence(finding.evidence, view),
-              }))
-            }
-            csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
-              exportDatasets(
-                datasets,
-                ownedSource(view, snapshot),
-                view.scope(snapshot),
-                app.title
-              )
-            }
-          />
-        </PrimaryViewContext>
-      </SearchSuggestionsContext>
-    </DateFormattingContext>
+              csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
+                exportDatasets(
+                  datasets,
+                  ownedSource(view, snapshot),
+                  view.scope(snapshot),
+                  app.title
+                )
+              }
+            />
+          </PrimaryViewContext>
+        </SearchSuggestionsContext>
+      </DateFormattingContext>
+    </DetailProvider>
   );
 }

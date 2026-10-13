@@ -1,3 +1,4 @@
+import { useDetailActive } from '@/src/react/details';
 import { AnnotationControls } from '@/src/react/annotations/AnnotationControls';
 import { useDataAppPresentation } from '@/src/react/ui/useDataAppPresentation';
 import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
@@ -87,6 +88,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
     toolbarActions,
   } = props;
   const app = useDataApp();
+  const detailActive = useDetailActive();
   const presentation = useDataAppPresentation();
   const isEmbedded = presentation?.surface === 'embedded';
   const themeController = useAppAppearance(app.appearance, presentation?.theme);
@@ -100,7 +102,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
 
   const snapshot = request && displayedSnapshot(request.view);
   const findings = request && snapshot ? props.story(snapshot) : undefined;
-  const story = findings?.length ? { findings } : undefined;
+  const story = !detailActive && findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
       organization={app.scope.organization}

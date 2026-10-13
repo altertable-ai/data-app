@@ -26,6 +26,11 @@ status. Prefer a specialized chart when its semantics fit. Check the component's
 input contract before reducing results to generic labels and values; preserve
 supplied query definitions when adapting their results.
 
+For each relevant widget, identify the next question a user might investigate.
+Provide [drill actions](widgets.md#drill-into-details) when contributing records
+or entity details can answer it. Preserve the displayed scope and declare the
+destination's data, evidence, export, and story together.
+
 ## Build the exploration
 
 Choose the execution path:

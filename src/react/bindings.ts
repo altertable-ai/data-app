@@ -1,3 +1,4 @@
+import { defineDrill, type DetailTarget } from '@/src/react/drill';
 import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
 import type { SearchSuggestion } from '@/src/react/ui/SearchTypeahead';
@@ -262,6 +263,14 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     );
     return { loading: false, value: items };
   }
+  drill<DetailInput>(definition: {
+    id: string;
+    label: string;
+    target: DetailTarget<DetailInput>;
+    input: (row: Row, displayedInput: Input) => NoInfer<DetailInput>;
+  }) {
+    return defineDrill(definition, this);
+  }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);
     return readSource<Data, Input, readonly Row[], Source>(
@@ -310,6 +319,17 @@ export class Metric<Data, Input> extends RegisteredBinding {
     super(owner, definition.evidence);
     this.#select = select;
     this.#date = date;
+  }
+  drill<DetailInput>(definition: {
+    id: string;
+    label: string;
+    target: DetailTarget<DetailInput>;
+    input: (displayedInput: Input) => NoInfer<DetailInput>;
+  }) {
+    return defineDrill<void, Input, DetailInput>(
+      { ...definition, input: (_, input) => definition.input(input) },
+      this
+    );
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);

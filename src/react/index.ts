@@ -1,3 +1,5 @@
+export type { DrillAction } from '@/src/react/drill';
+export type { DetailContent } from '@/src/react/details';
 /** Declared views, bound widgets, and layouts for data-app authoring. */
 export type {
   DatasetColumn,

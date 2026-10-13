@@ -17,16 +17,27 @@ import {
 
 export type BarChartItem = ChartItem;
 
-export type BarChartProps = ValueChartProps;
+export type BarChartProps<Item extends BarChartItem = BarChartItem> = Omit<
+  ValueChartProps,
+  'items'
+> & { items: readonly Item[] } & (
+    | { onItemAction?: never; actionLabel?: never }
+    | {
+        onItemAction?: (item: Item, trigger: HTMLElement) => void;
+        actionLabel: string;
+      }
+  );
 
 /** Nonnegative category values. Compose inside VisualizationWidget for a titled panel.
- * Owns hover/touch tooltips; no selection state or keyboard navigation. */
-export function BarChart({
+ * Owns hover/touch tooltips; optional item actions use native button keyboard activation. */
+export function BarChart<Item extends BarChartItem>({
   items,
   unit,
   ariaLabel,
   formatValue = value => new Intl.NumberFormat().format(value),
-}: BarChartProps) {
+  onItemAction,
+  actionLabel,
+}: BarChartProps<Item>) {
   validateChartItems('bar', items);
   const [activeId, setActiveId] = useState<string>();
   const scrollport = useRef<HTMLDivElement>(null);
@@ -104,9 +115,10 @@ export function BarChart({
                   data-atbl-focus="ring"
                   data-atbl-control="default"
                   type="button"
-                  tabIndex={-1}
+                  tabIndex={onItemAction ? 0 : -1}
+                  onClick={event => onItemAction?.(item, event.currentTarget)}
                   className="altertable-selectable-bars-item"
-                  aria-label={`${item.label}: ${formatValue(item.value)} ${unit}`}
+                  aria-label={`${onItemAction ? `${actionLabel}: ` : ''}${item.label}: ${formatValue(item.value)} ${unit}`}
                 >
                   <span className="altertable-selectable-bars-area" />
                   <span className="altertable-selectable-bars-label">

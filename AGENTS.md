@@ -45,7 +45,12 @@ Read the matching guide before generating an app. Package contributors follow
 
 Use `/react` with declared views and bound widgets. `/react/ui` is for setup,
 static displays, and deliberately custom UI; see [direct composition](docs/ui.md).
-Prefer derivation over repeated configuration. Keep static context outside loading boundaries. Derive labels, findings, and
+Prefer derivation over repeated configuration.
+For relevant widgets, declare typed drill actions to contributing records or entity
+details. Preserve the displayed input and register detail content with its evidence,
+export datasets, and story; follow [drill guidance](docs/widgets.md#drill-into-details).
+
+Keep static context outside loading boundaries. Derive labels, findings, and
 exports from the displayed result and its input. Edit app-owned files; installed
 package files are dependencies.
 

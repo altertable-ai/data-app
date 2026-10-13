@@ -15,35 +15,8 @@
   background: var(--atbl-subtle);
   color: var(--atbl-text);
 }
-@media (hover: hover) and (pointer: fine) {
-  :is(
-    .altertable-metric-widget .altertable-metric-help,
-    .altertable-data-widget .altertable-data-widget-help
-  ) {
-    opacity: 0;
-    transition: opacity var(--atbl-duration-fast) var(--atbl-ease-standard);
-  }
-  :is(
-    .altertable-metric-widget:hover .altertable-metric-help,
-    .altertable-metric-widget:focus-within .altertable-metric-help,
-    .altertable-data-widget:hover .altertable-data-widget-help,
-    .altertable-data-widget:focus-within .altertable-data-widget-help,
-    .altertable-metric-help:has(
-      > .altertable-widget-status:not([data-state='idle'])
-    ),
-    .altertable-data-widget-help:has(
-      > .altertable-widget-status:not([data-state='idle'])
-    ),
-    .altertable-metric-help:has([data-open='true']),
-    .altertable-data-widget-help:has([data-open='true'])
-  ) {
-    opacity: 1;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .altertable-inspect-trigger,
-  .altertable-metric-help,
-  .altertable-data-widget-help {
+  .altertable-inspect-trigger {
     transition: none;
   }
 }

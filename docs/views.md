@@ -98,3 +98,62 @@ errors, and refreshes instead of duplicating request state in app code.
 
 A measured zero is valid data. Define `isEmpty` for the analysis and provide
 useful `emptyFallback` copy.
+
+## Detail destinations
+
+Use `defineDetailView()` for a query-backed destination opened from a metric,
+chart item, or table row. It receives an explicit input; dashboard variables
+remain owned by the source view. Reuse the operation's input parser to validate
+both drill actions and shared links.
+
+```tsx
+const ordersView = defineDetailView({
+  id: 'orders',
+  title: 'Contributing orders',
+  operation: 'orders',
+  dataContext,
+  parseInput: operations.orders.input,
+  describeInput: input => describeOrderScope(input),
+  isEmpty: data => data.rows.length === 0,
+  emptyFallback: { title: 'No contributing orders' },
+});
+const orders = ordersView.dataset({
+  name: 'Orders',
+  select: data => data.rows,
+  rowKey: row => row.id,
+  columns: { id: { value: row => row.id } },
+  evidence: { id: 'orders', queryNames: ['orders'] },
+});
+const ordersDetail = ordersView.content(
+  source => <TableWidget dataset={orders} source={source} />,
+  {
+    datasets: [orders],
+    story: snapshot => [
+      {
+        id: 'orders',
+        headline: `${snapshot.data.rows.length} contributing orders`,
+        context: ordersView.scope(snapshot),
+        visual: <TableWidget dataset={orders} source={snapshot} />,
+        evidence: orders,
+      },
+    ],
+  }
+);
+```
+
+Register content with `<DataApp details={[ordersDetail]} …>` and declare a
+[drill action](widgets.md#drill-into-details) on the source binding. Detail
+content, evidence, CSV export, and story use the destination's displayed result.
+The sheet keeps the dashboard mounted and restores focus when closed.
+
+Destination inputs must be JSON-serializable, contain only the scope needed by
+the operation, and fit in the shared URL. Use IDs rather than entire records;
+keep credentials and protected execution parameters out of inputs. Resolve
+relative periods to explicit dates when the investigation must retain its
+original dates. `describeInput()` should name the entity or population, period,
+and relevant filters. Reopened links validate input before executing a request.
+
+Browser Back/Forward follows detail URL state. Close and Escape remove the detail
+state from the current URL, preserving dashboard variables. Initial failures
+show Retry; refresh failures retain the displayed result and its scope. A
+missing entity should return an empty result with useful recovery copy.

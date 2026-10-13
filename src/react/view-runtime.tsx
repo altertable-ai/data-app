@@ -11,7 +11,7 @@ export type ViewResult<Data, Input> = {
   view: DataView<Data, Input>;
   snapshot?: DisplayedSnapshot<Data, Input>;
   refetch: () => unknown;
-  cancel: () => unknown;
+  cancel: (onlyObserver?: boolean) => unknown;
   refreshing: boolean;
   queries?: DisclosedQuery[];
   searchControls?: ReactNode;
@@ -22,9 +22,9 @@ export type ViewResult<Data, Input> = {
 /** The executor is private; declarations expose data composition, not subscription hooks. */
 export class DeclaredView<Data, Input, Definition = unknown> {
   #definition: Definition | undefined;
-  #useResult: () => ViewResult<Data, Input>;
+  #useResult: (input?: Input) => ViewResult<Data, Input>;
   constructor(
-    useResult: () => ViewResult<Data, Input>,
+    useResult: (input?: Input) => ViewResult<Data, Input>,
     definition?: Definition
   ) {
     this.#definition = definition;
@@ -38,16 +38,18 @@ export class DeclaredView<Data, Input, Definition = unknown> {
     return view.#definition;
   }
   static useResult<Data, Input>(
-    view: DeclaredView<Data, Input>
+    view: DeclaredView<Data, Input>,
+    input?: Input
   ): ViewResult<Data, Input> {
-    return view.#useResult();
+    return view.#useResult(input);
   }
 }
 
 export function useDeclaredResult<Data, Input>(
-  view: DeclaredView<Data, Input>
+  view: DeclaredView<Data, Input>,
+  input?: Input
 ): ViewResult<Data, Input> {
-  return DeclaredView.useResult(view);
+  return DeclaredView.useResult(view, input);
 }
 
 export const PrimaryViewContext = createContext<{
