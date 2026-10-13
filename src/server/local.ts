@@ -63,7 +63,7 @@ export function localLakehouse(
       signal.throwIfAborted();
       const cancellation = new AbortController();
       const client = new AltertableLakehouseClient({
-        baseUrl: proxyUrl ?? environment.ALTERTABLE_API_BASE,
+        baseUrl: proxyUrl || environment.ALTERTABLE_API_BASE || undefined,
         username,
         password,
         basicAuthToken: proxyUrl ? proxyToken : undefined,

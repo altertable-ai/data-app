@@ -96,6 +96,8 @@
   "scripts": {
     "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
     "dev": "bun run scripts/dev.ts",
+    "dev:file": "bun run scripts/dev-file.ts",
+    "dev:dir": "bun run scripts/dev-dir.ts",
     "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
     "lint": "oxlint --type-aware src tests scripts dev examples/starter-data-app vitest.config.ts",
     "format": "oxfmt .",
