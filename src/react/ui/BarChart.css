@@ -31,7 +31,11 @@
   border-bottom: 1px solid var(--atbl-border);
 }
 .altertable-selectable-bars-label {
-  padding-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--atbl-space-xs);
+  margin-top: 8px;
+  padding: 4px 8px;
   font-size: var(--atbl-type-meta-size);
   white-space: nowrap;
 }
@@ -63,4 +67,18 @@
 }
 .altertable-selectable-bars-scroll:has(.altertable-chart-more-actions) {
   height: 300px;
+}
+
+.altertable-selectable-bars-item[aria-haspopup='menu']
+  .altertable-selectable-bars-label {
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+}
+.altertable-selectable-bars-item[aria-haspopup='menu']:hover
+  .altertable-selectable-bars-label,
+.altertable-selectable-bars-item[aria-expanded='true']
+  .altertable-selectable-bars-label {
+  background: var(--atbl-subtle);
 }

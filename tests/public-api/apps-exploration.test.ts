@@ -165,6 +165,12 @@ test('a pending hierarchy transition cannot apply an old row to the new level', 
   });
   await page.goto('/exploration-app');
   await act(page, 'Europe', 'Break down by countries');
+  expect(
+    await page
+      .getByRole('region', { name: 'Revenue by regions', exact: true })
+      .getByRole('navigation', { name: 'Geography breakdown' })
+      .textContent()
+  ).toContain('Breakdown: Regions');
   await page.getByRole('button', { name: /^Explore: Europe:/ }).click();
   expect(
     await page
@@ -263,9 +269,11 @@ test('mobile keyboard and table menus offer the same hierarchy actions', async (
     .getByRole('menuitem', { name: 'Break down by countries', exact: true })
     .click();
   await expectHeading(page, 'countries');
-  const navigation = page.getByRole('navigation', {
-    name: 'Geography exploration',
-  });
+  const navigation = page
+    .getByRole('region', { name: 'Revenue by countries', exact: true })
+    .getByRole('navigation', {
+      name: 'Geography breakdown',
+    });
   await expect
     .poll(() =>
       navigation.evaluate(element => element === document.activeElement)
@@ -278,7 +286,11 @@ test('mobile keyboard and table menus offer the same hierarchy actions', async (
     .getByRole('menuitem', { name: 'Break down by customers', exact: true })
     .click();
   await expectHeading(page, 'customers');
-  await navigation.getByRole('button', { name: 'Europe', exact: true }).click();
+  await page
+    .getByRole('region', { name: 'Revenue by customers', exact: true })
+    .getByRole('navigation', { name: 'Geography breakdown' })
+    .getByRole('button', { name: 'Europe', exact: true })
+    .click();
   await expectHeading(page, 'countries');
   expect(await page.locator('bun-hmr').count()).toBe(0);
   expect(errors).toEqual([]);
@@ -387,4 +399,58 @@ test('a terminal hierarchy falls back to its remaining action when the primary d
         .count()
     )
     .toBe(3);
+});
+
+test('widget breakdown context provides a visible way back at each level and in inspection', async ({
+  page,
+}) => {
+  await page.goto('/exploration-app');
+  const root = page.getByRole('region', {
+    name: 'Revenue by regions',
+    exact: true,
+  });
+  const trigger = root.getByRole('button', { name: /^Explore: Europe:/ });
+  expect(await trigger.getAttribute('aria-haspopup')).toBe('menu');
+  expect(
+    await root
+      .getByRole('navigation', { name: 'Geography breakdown' })
+      .textContent()
+  ).toContain('Breakdown: Regions');
+  await act(page, 'Europe', 'Break down by countries');
+  await expectHeading(page, 'countries');
+  const countries = page.getByRole('region', {
+    name: 'Revenue by countries',
+    exact: true,
+  });
+  const local = countries.getByRole('navigation', {
+    name: 'Geography breakdown',
+  });
+  expect(await local.textContent()).toContain('Breakdown: Countries');
+  expect(await local.textContent()).toContain('Europe');
+  await act(page, 'France', 'Break down by customers');
+  await expectHeading(page, 'customers');
+  const customers = page.getByRole('region', {
+    name: 'Revenue by customers',
+    exact: true,
+  });
+  expect(
+    await customers
+      .getByRole('navigation', { name: 'Geography breakdown' })
+      .textContent()
+  ).toContain('France');
+  await page
+    .getByRole('button', { name: 'Explore Revenue by customers', exact: true })
+    .click();
+  const inspection = page.getByRole('dialog', {
+    name: 'Revenue by customers',
+    exact: true,
+  });
+  await inspection
+    .getByRole('navigation', { name: 'Geography breakdown' })
+    .getByRole('button', { name: 'Up one level', exact: true })
+    .click();
+  await expectHeading(page, 'countries');
+  await page.keyboard.press('Escape');
+  await local.getByRole('button', { name: 'All regions', exact: true }).click();
+  await expectHeading(page, 'regions');
 });

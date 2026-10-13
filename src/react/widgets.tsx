@@ -1,6 +1,7 @@
 import {
   useExplorationActions,
   ExplorationActionControl,
+  ExplorationNavigation,
   type BoundExplorationActions,
 } from '@/src/react/action-controls';
 import type { ExplorationActions } from '@/src/react/actions';
@@ -82,7 +83,7 @@ type TablePresentation<Row> = Pick<
 >;
 export type TableWidgetProps<Row, Data = unknown, Input = unknown> = Omit<
   BoundTableProps<Row>,
-  keyof TablePresentation<Row> | 'limit' | 'pagination'
+  keyof TablePresentation<Row> | 'limit' | 'pagination' | 'navigation'
 > &
   TableDisplayMode & {
     dataset: Dataset<Data, Input, Row>;
@@ -104,6 +105,9 @@ export function TableWidget<Row, Data, Input>({
       {...presentation}
       {...data}
       title={title ?? data.title}
+      navigation={
+        action?.breakdown && <ExplorationNavigation actions={action} />
+      }
       columns={
         action
           ? [
@@ -169,6 +173,7 @@ export type VisualizationWidgetProps<
   | 'views'
   | 'viewLabel'
   | 'initialView'
+  | 'navigation'
 > &
   VisualContent<Row> & {
     dataset: Dataset<Data, Input, Row>;
@@ -191,6 +196,9 @@ export function VisualizationWidget<Row, Data, Input>({
       {...shell}
       title={title ?? data.title}
       reading={data.reading}
+      navigation={
+        action?.breakdown && <ExplorationNavigation actions={action} />
+      }
       evidence={data.evidence}
       emptyFallback={data.emptyFallback}
       isEmpty={rows => rows.length === 0}

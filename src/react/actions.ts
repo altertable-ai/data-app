@@ -23,6 +23,8 @@ type ActionRequest =
   | { kind: 'detail'; detail: DetailRequest }
   | { kind: 'update'; apply: () => void; navigation?: string };
 export type ExplorationAction<Row, Input> = {
+  /** Hierarchy context is rendered by the bound widget, including at terminal levels. */
+  breakdown?: BreakdownTarget<Input>;
   label: (row: Row, displayedInput: Input) => string;
   available: (row: Row, displayedInput: Input) => boolean;
   resolve: (row: Row, displayedInput: Input) => ActionRequest;
@@ -85,6 +87,7 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
     descend({ target, member }) {
       const { variable } = target;
       return {
+        breakdown: target,
         label(_row, input) {
           return `Break down by ${variable.levels[target.read(input).length + 1]?.label.toLowerCase() ?? 'a finer level'}`;
         },
@@ -138,6 +141,17 @@ export function defineActions<
   invariant(
     !options.primary || entries.some(entry => entry.id === options.primary),
     'The primary action must be declared.'
+  );
+  const breakdowns = entries.flatMap(entry =>
+    entry.effect.breakdown ? [entry.effect.breakdown] : []
+  );
+  invariant(
+    breakdowns.every(
+      target =>
+        target.variable === breakdowns[0]?.variable &&
+        target.navigationId === breakdowns[0]?.navigationId
+    ),
+    'A widget action set must explore one hierarchy.'
   );
   return { binding, entries, primary: options.primary };
 }

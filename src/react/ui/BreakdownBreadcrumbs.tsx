@@ -8,9 +8,12 @@ export function BreakdownBreadcrumbs({
   id,
   value,
   onChange,
+  local = false,
 }: {
   variable: BreakdownVariable;
   id?: string;
+  /** Widget context names the displayed grouping and keeps recovery beside the data. */
+  local?: boolean;
   value: BreakdownPath;
   onChange: (path: BreakdownPath) => void;
 }) {
@@ -26,8 +29,10 @@ export function BreakdownBreadcrumbs({
       id={id}
       tabIndex={-1}
       className="altertable-breakdown-breadcrumbs"
-      aria-label={`${variable.label} exploration`}
+      aria-label={`${variable.label} ${local ? 'breakdown' : 'exploration'}`}
+      data-breakdown-navigation={local || undefined}
     >
+      {local && <span>Breakdown: {variable.level(path).label}</span>}
       <ol>
         <li>
           {path.length ? (

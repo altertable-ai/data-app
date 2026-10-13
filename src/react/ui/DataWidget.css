@@ -99,3 +99,15 @@
 .altertable-widget-heading-trigger .altertable-data-widget-count {
   margin-inline-start: 0;
 }
+
+.altertable-data-widget-navigation {
+  margin: var(--atbl-space-md)
+    var(
+      --atbl-surface-padding,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    )
+    0;
+  padding: var(--atbl-space-sm);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+}

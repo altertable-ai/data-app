@@ -1,3 +1,4 @@
+import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import type { BoundExplorationActions } from '@/src/react/action-controls';
 import { MenuPopover, Menu, MenuItem } from '@/src/react/ui/Menu';
@@ -94,7 +95,7 @@ export function BarChart<Item extends BarChartItem>({
       <div className="altertable-selectable-bars-scroll" ref={scrollport}>
         <div
           className="altertable-selectable-bars-plot"
-          style={{ minWidth: items.length * 45 }}
+          style={{ minWidth: items.length * (itemActions ? 120 : 45) }}
         >
           <div className="altertable-chart-canvas" aria-hidden="true">
             <RechartsBarChart
@@ -178,6 +179,11 @@ export function BarChart<Item extends BarChartItem>({
                     <span className="altertable-selectable-bars-area" />
                     <span className="altertable-selectable-bars-label">
                       {item.label}
+                      {itemActions &&
+                        !itemActions.primary(item) &&
+                        itemActions.items(item).length > 1 && (
+                          <AppIcon name="disclosure" size={14} />
+                        )}
                     </span>
                   </button>
                 </Tooltip>
@@ -199,6 +205,7 @@ export function BarChart<Item extends BarChartItem>({
                       }}
                     >
                       More actions
+                      <AppIcon name="disclosure" size={14} />
                     </Button>
                   )}
               </div>

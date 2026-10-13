@@ -167,6 +167,11 @@ effects: open details, filter a declared view, or descend through a hierarchy.
 Evidence references explain definitions and queries; exploration actions change
 what the reader investigates.
 
+A declared descent action automatically gives `<VisualizationWidget>` and
+`<TableWidget>` a local breakdown path, grouping label, and return controls.
+They remain visible at terminal levels, in empty results, and in inspection.
+Chart menu triggers show a dropdown indicator beside the category label.
+
 ```tsx
 const placeActions = places.actions(action => ({
   orders: action.detail({

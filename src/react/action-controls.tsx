@@ -4,6 +4,10 @@ import { invariant } from '@/src/core/invariant';
 import type { ExplorationActions } from '@/src/react/actions';
 import { useDetailOpener } from '@/src/react/details';
 import { searchParams, subscribeSearch } from '@/src/react/ui/search';
+import { BreakdownBreadcrumbs } from '@/src/react/ui/BreakdownBreadcrumbs';
+import type { BreakdownPath, BreakdownVariable } from '@/src/core/breakdown';
+import { writeVariableValues } from '@/src/react/ui/variables';
+import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import {
   MenuTrigger,
@@ -14,6 +18,11 @@ import {
 } from '@/src/react/ui/Menu';
 
 export type BoundExplorationActions<Row> = {
+  breakdown?: {
+    variable: BreakdownVariable;
+    path: BreakdownPath;
+    navigate: (path: BreakdownPath) => void;
+  };
   items: (row: Row) => readonly { id: string; label: string }[];
   primary: (row: Row) => { id: string; label: string } | undefined;
   run: (id: string, row: Row, trigger?: HTMLElement) => void;
@@ -36,6 +45,8 @@ export function useExplorationActions<Row, Input>(
   );
   if (!actions || source.loading) return undefined;
   const input = source.input;
+  const target = actions.entries.find(entry => entry.effect.breakdown)?.effect
+    .breakdown;
   function items(row: Row) {
     return actions!.entries
       .filter(entry => entry.effect.available(row, input))
@@ -49,6 +60,17 @@ export function useExplorationActions<Row, Input>(
       });
   }
   return {
+    breakdown: target && {
+      variable: target.variable,
+      path: target.variable.parse(target.read(input)),
+      navigate(path) {
+        writeVariableValues(
+          { path: target.variable },
+          { path: target.variable.parse(path) },
+          'push'
+        );
+      },
+    },
     items,
     primary(row) {
       const available = items(row);
@@ -71,10 +93,16 @@ export function useExplorationActions<Row, Input>(
             : trigger;
         openDetail(request.detail, returnTrigger);
       } else {
+        const owner =
+          trigger?.closest('dialog') ??
+          trigger?.closest('.altertable-data-widget');
         request.apply();
         if (request.navigation)
           requestAnimationFrame(() => {
-            const navigation = document.getElementById(request.navigation!);
+            const navigation =
+              owner?.querySelector<HTMLElement>(
+                '[data-breakdown-navigation]'
+              ) ?? document.getElementById(request.navigation!);
             navigation?.focus({ preventScroll: true });
           });
       }
@@ -102,6 +130,7 @@ export function ExplorationActionControl<Row>({
     <MenuTrigger isOpen={open} onOpenChange={setOpen}>
       <MenuButton ref={trigger} aria-label={menuLabel}>
         Explore
+        <AppIcon name="disclosure" size={14} />
       </MenuButton>
       <MenuPopover>
         <Menu
@@ -132,5 +161,23 @@ export function ExplorationActionControl<Row>({
       )}
       {menu}
     </>
+  );
+}
+
+/** Displayed hierarchy and recovery travel with the widget and its inspection. */
+export function ExplorationNavigation<Row>({
+  actions,
+}: {
+  actions?: BoundExplorationActions<Row>;
+}) {
+  const breakdown = actions?.breakdown;
+  if (!breakdown) return null;
+  return (
+    <BreakdownBreadcrumbs
+      variable={breakdown.variable}
+      value={breakdown.path}
+      onChange={breakdown.navigate}
+      local
+    />
   );
 }
