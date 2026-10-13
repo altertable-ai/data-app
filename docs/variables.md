@@ -311,6 +311,14 @@ selected ancestors; their own level and descendants are All. Validate parent
 relationships against the source in the operation, particularly for facet-backed
 IDs. Bound SQL parameters and joins enforce the selected population.
 
+Selector visibility follows selection, independently of grouping: Region All
+shows only Region; selecting Europe reveals Country All; selecting a country
+reveals Customer All. Selecting All clears and hides descendants. A child value
+requires selected ancestors, but may narrow scope while the chart still groups
+by an earlier level. `geography.visibleLevels(state)` derives these controls;
+`geography.level(state)` derives the current grouping. No separate visibility
+configuration is needed.
+
 | Interaction               | Result                                                   |
 | ------------------------- | -------------------------------------------------------- |
 | Select a different parent | Clear descendants and retain the deepest valid grouping. |

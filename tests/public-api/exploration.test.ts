@@ -81,3 +81,40 @@ test('exploration validates value types, ancestry, grouping and URL state', () =
     geography.defaultValue
   );
 });
+
+test('selected parents reveal children without advancing grouping or losing deeper scope descriptions', () => {
+  const root = geography.defaultValue;
+  expect(geography.visibleLevels(root).map(level => level.id)).toEqual([
+    'region',
+  ]);
+  const europe = geography.filter(root, { region: 'Europe' });
+  expect(europe.groupBy).toBe('region');
+  expect(geography.visibleLevels(europe).map(level => level.id)).toEqual([
+    'region',
+    'country',
+  ]);
+  const france = geography.filter(europe, { country: 'FR' });
+  expect(france.groupBy).toBe('region');
+  expect(geography.visibleLevels(france).map(level => level.id)).toEqual([
+    'region',
+    'country',
+    'customer',
+  ]);
+  const atelier = geography.filter(france, { customer: 42 });
+  expect(atelier.groupBy).toBe('region');
+  expect(geography.describe?.(atelier)).toContain('Country: France');
+  expect(geography.describe?.(atelier)).toContain('Customer: Atelier');
+  const cleared = geography.filter(atelier, { country: null });
+  expect(cleared).toEqual(europe);
+  expect(geography.visibleLevels(cleared).map(level => level.id)).toEqual([
+    'region',
+    'country',
+  ]);
+  expect(geography.filter(atelier, { region: null })).toEqual(root);
+  expect(() =>
+    geography.parse({
+      ...root,
+      selection: { ...root.selection, country: france.selection.country },
+    })
+  ).toThrow('ancestors');
+});

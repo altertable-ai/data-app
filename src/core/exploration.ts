@@ -68,6 +68,10 @@ export type ExplorationVariable<
   level: (
     value: ExplorationState<Levels>
   ) => Levels[number] & { groupLabel: string };
+  /** Root plus successive children whose ancestors have selected values; independent of grouping. */
+  visibleLevels: (
+    state: ExplorationState<Levels>
+  ) => readonly (Levels[number] & { groupLabel: string })[];
   filter: (
     state: ExplorationState<Levels>,
     values: Partial<ExplorationValues<Levels>>
@@ -190,10 +194,10 @@ export function explorationVariable<
           entry.kind !== 'all',
           'Grouping requires selected ancestors.'
         );
-      if (position > group)
+      if (position > 0 && entry.kind !== 'all')
         invariant(
-          entry.kind === 'all',
-          'Selections cannot extend beyond grouping.'
+          selected(state, levels[position - 1]!.id) !== null,
+          'Selected members require selected ancestors.'
         );
       if (entry.kind !== 'all') {
         invariant(
@@ -264,6 +268,16 @@ export function explorationVariable<
     }
     return next;
   }
+  function visibleLevels(state: ExplorationState<Levels>) {
+    const next = parse(state);
+    const firstAll = levels.findIndex(
+      level => selected(next, level.id) === null
+    );
+    return normalizedLevels.slice(
+      0,
+      firstAll === -1 ? levels.length : firstAll + 1
+    );
+  }
   function same(
     left: ExplorationState<Levels>,
     right: ExplorationState<Levels>
@@ -279,6 +293,7 @@ export function explorationVariable<
     defaultValue,
     history: 'push',
     parse,
+    visibleLevels,
     filter,
     same,
     level: state => normalizedLevels[index(parse(state).groupBy)]!,
@@ -311,8 +326,7 @@ export function explorationVariable<
     },
     describe(state) {
       const next = parse(state);
-      return levels
-        .slice(0, index(next.groupBy) + 1)
+      return visibleLevels(next)
         .map(
           (level, position) =>
             `${level.label}: ${dimensions[position]!.describe((next.selection as Record<string, DimensionSelection>)[level.id]!)}`

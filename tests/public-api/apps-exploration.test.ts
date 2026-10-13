@@ -500,3 +500,89 @@ test('breadcrumb selectors retain longer labels on mobile and use ghost controls
     ).toBe(true);
   }
 });
+
+test('parent selection progressively reveals child selectors while queries retain their grouping', async ({
+  page,
+}) => {
+  const requests: {
+    groupBy?: string;
+    region?: string;
+    country?: string;
+    customer?: string;
+  }[] = [];
+  page.on('request', request => {
+    if (request.url().endsWith('/api/drill-query'))
+      requests.push(request.postDataJSON().params);
+  });
+  await page.goto('/exploration-app');
+  expect(
+    await controls(page)
+      .getByRole('button', { name: /^Country:/ })
+      .count()
+  ).toBe(0);
+  expect(
+    await controls(page)
+      .getByRole('button', { name: /^Customer:/ })
+      .count()
+  ).toBe(0);
+  await choose(page, 'Region', 'Europe');
+  await controls(page)
+    .getByRole('button', { name: 'Country: All', exact: true })
+    .waitFor();
+  expect(
+    await controls(page)
+      .getByRole('button', { name: /^Customer:/ })
+      .count()
+  ).toBe(0);
+  await choose(page, 'Country', 'France');
+  await controls(page)
+    .getByRole('button', { name: 'Customer: All', exact: true })
+    .waitFor();
+  await choose(page, 'Customer', 'Atelier Nord');
+  const local = widget(page, 'regions').getByRole('navigation', {
+    name: 'Geography breakdown',
+    exact: true,
+  });
+  await local
+    .getByRole('button', { name: 'Customer: Atelier Nord', exact: true })
+    .waitFor();
+  expect(state(page).groupBy).toBe('region');
+  expect(
+    await page
+      .getByRole('button', { name: 'Explore Revenue by regions', exact: true })
+      .count()
+  ).toBe(1);
+  expect(
+    requests
+      .filter(params => params.groupBy)
+      .every(params => params.groupBy === 'region')
+  ).toBe(true);
+  expect(
+    requests.some(
+      params =>
+        params.groupBy === 'region' &&
+        params.country === 'France' &&
+        params.customer === 'account-atelier'
+    )
+  ).toBe(true);
+  await choose(page, 'Country', 'All');
+  await local
+    .getByRole('button', { name: 'Country: All', exact: true })
+    .waitFor();
+  expect(
+    await controls(page)
+      .getByRole('button', { name: /^Customer:/ })
+      .count()
+  ).toBe(0);
+  expect(state(page).selection.customer).toEqual({ kind: 'all' });
+  await choose(page, 'Region', 'All');
+  await local
+    .getByRole('button', { name: 'Region: All', exact: true })
+    .waitFor();
+  expect(
+    await controls(page)
+      .getByRole('button', { name: /^Country:/ })
+      .count()
+  ).toBe(0);
+  expect(state(page)).toBeNull();
+});

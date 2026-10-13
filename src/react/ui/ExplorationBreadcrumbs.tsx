@@ -30,7 +30,7 @@ export function ExplorationBreadcrumbs({
   const state = variable.parse(value);
   const stale = local && !variable.same(state, variable.read(searchParams()));
   const group = variable.levels.findIndex(level => level.id === state.groupBy);
-  const shown = variable.levels.slice(0, group + 1);
+  const shown: typeof variable.levels = variable.visibleLevels(state);
   const facets = useQueries({
     queries: shown.map((level, position) => {
       const parents = Object.fromEntries(
