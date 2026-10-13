@@ -97,6 +97,28 @@ function serverSearch() {
   return '';
 }
 
+/** Validate all values before one URL write; omitted variables retain their current values. */
+export function writeVariableValues<Variables extends VariableCollection>(
+  definitions: Variables,
+  next: Partial<AppVariableValues<Variables>>,
+  history?: HistoryMode
+) {
+  const changes: Record<string, string | null> = {};
+  let mode: HistoryMode = history ?? 'replace';
+  for (const name of Object.keys(next) as (keyof Variables & string)[]) {
+    const variable = definitions[name] as unknown as AppVariable<
+      AppVariableValues<Variables>[typeof name]
+    >;
+    invariant(
+      variable && variable.valid(next[name]!),
+      `Invalid value for variable ${name}.`
+    );
+    Object.assign(changes, variable.write(next[name]!));
+    if (!history && variable.history === 'push') mode = 'push';
+  }
+  writeSearch(changes, mode);
+}
+
 /** URL is the source of truth for app variables; one update can change dependent values atomically. */
 export function useAppVariables<const Variables extends VariableCollection>(
   definitions: Variables
@@ -153,18 +175,7 @@ export function useAppVariables<const Variables extends VariableCollection>(
     next: Partial<AppVariableValues<Variables>>,
     history?: HistoryMode
   ) {
-    const changes: Record<string, string | null> = {};
-    let mode: HistoryMode = history ?? 'replace';
-    for (const name of Object.keys(next) as (keyof Variables & string)[]) {
-      const variable = definitions[name] as unknown as AppVariable<
-        AppVariableValues<Variables>[typeof name]
-      >;
-      const value = next[name]!;
-      invariant(variable.valid(value), `Invalid value for variable ${name}.`);
-      Object.assign(changes, variable.write(value));
-      if (!history && variable.history === 'push') mode = 'push';
-    }
-    writeSearch(changes, mode);
+    writeVariableValues(definitions, next, history);
   }
 
   function set<Key extends keyof Variables & string>(

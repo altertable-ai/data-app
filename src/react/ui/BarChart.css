@@ -54,3 +54,13 @@
   position: relative;
   display: flex;
 }
+
+.altertable-selectable-bars-column {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 36px;
+}
+.altertable-selectable-bars-scroll:has(.altertable-chart-more-actions) {
+  height: 300px;
+}

@@ -1,4 +1,5 @@
-import type { ComponentPropsWithRef } from 'react';
+import { useContext, type ComponentPropsWithRef } from 'react';
+import { PopoverContainerContext } from '@/src/react/ui/PopoverSurface';
 import {
   MenuTrigger,
   Menu as AriaMenu,
@@ -25,10 +26,12 @@ export function MenuPopover({
   placement = 'bottom start',
   ...props
 }: MenuPopoverProps) {
+  const container = useContext(PopoverContainerContext);
   return (
     <Popover
       {...props}
       placement={placement}
+      UNSTABLE_portalContainer={props.UNSTABLE_portalContainer ?? container}
       className={state =>
         classNames(
           'altertable-menu-popover',

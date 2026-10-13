@@ -246,3 +246,59 @@ with paired Apply/Cancel handlers; derive queries and visible controls from appl
 values while a draft is being edited.
 
 Filters apply immediately; use app-owned drafts only when the task needs Apply/Cancel.
+
+## Hierarchical breakdowns
+
+Keep ordinary filters and the exploration path separate. Scope determines which
+records participate; grouping determines how they are summarized. Declare one
+`breakdownVariable()` in the view, then preserve its path in the operation input.
+The next unselected level supplies the grouping; do not store a second grouping
+variable for the same hierarchy.
+
+```tsx
+const geography = breakdownVariable({
+  key: 'geography',
+  label: 'Geography',
+  levels: [
+    { id: 'region', label: 'Regions' },
+    { id: 'country', label: 'Countries' },
+    { id: 'customer', label: 'Customers' },
+  ],
+});
+
+const salesView = defineDataView({
+  operation: 'sales',
+  dataContext,
+  variables: { region, geography },
+  describeInput: describeSalesScope,
+  isEmpty: data => data.rows.length === 0,
+  emptyFallback: { title: 'No matching places' },
+});
+```
+
+The operation accepts `{ region, geography }`. Reuse `parseBreakdownPath()` from
+`/contract` with the same declaration, and validate member IDs and parent
+relationships against the source. Derive `groupBy` with
+`geography.level(input.geography).id`; bind member IDs to declared query
+parameters. Labels are display metadata, never predicates or SQL fragments.
+Use typed `bindings` for nested or renamed path fields, as with other filters.
+
+A path is an ordered array of `{ level, id, label }` members. The empty path is
+the root. Selecting Europe adds a region member and groups its population by
+country; selecting France adds a country member and groups by customer. IDs
+must be stable strings or finite numbers. Paths must follow declared levels,
+leave a grouping level, and fit in the shared URL. Malformed URL paths fall back
+to the root, matching the validated-default behavior of other variables.
+
+`<DataApp>` derives breadcrumbs and Up from the path variable. Clicking a
+breadcrumb truncates the path; clicking the root resets exploration. Each change
+creates one history entry and preserves dates, segments, and ordinary filters.
+Clear filters preserves exploration; reset exploration separately through the
+root breadcrumb. Browser Back/Forward restores both path and ordinary controls.
+
+Declare a [descend action](widgets.md#explore-from-widgets) with
+`salesView.breakdown('geography')`. Descent is available only before the last
+level and when the displayed path matches the current one. At the last level,
+offer a supported detail action instead. Queries, widget titles, scope labels,
+CSV, and stories must derive from the same displayed input, including while
+breadcrumbs show a newly applied path during refresh.

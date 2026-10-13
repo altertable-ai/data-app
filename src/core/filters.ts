@@ -38,7 +38,9 @@ export const numberOperatorLabels: Record<NumberOperator, string> = {
 };
 
 /** Exact numeric predicates; range bounds are inclusive and may be open-ended. */
-export function numberFilter({
+export function numberFilter<
+  const Presentation extends VariablePresentation = VariablePresentation,
+>({
   key,
   label,
   min,
@@ -46,10 +48,12 @@ export function numberFilter({
   defaultValue = all,
   history = 'push',
   presentation,
-}: FilterOptions<NumberSelection> & {
+}: Omit<FilterOptions<NumberSelection>, 'presentation'> & {
+  presentation?: Presentation;
+} & {
   min?: number;
   max?: number;
-}): NumberFilter {
+}): NumberFilter & { presentation?: Presentation } {
   invariant(!!key.trim(), 'Numeric filter requires a URL key.');
   invariant(
     (min === undefined || Number.isFinite(min)) &&
@@ -144,13 +148,17 @@ export function numberFilter({
 }
 
 /** Boolean predicate with a distinct unrestricted state. */
-export function booleanFilter({
+export function booleanFilter<
+  const Presentation extends VariablePresentation = VariablePresentation,
+>({
   key,
   label,
   defaultValue = all,
   history = 'push',
   presentation,
-}: FilterOptions<BooleanSelection>): BooleanFilter {
+}: Omit<FilterOptions<BooleanSelection>, 'presentation'> & {
+  presentation?: Presentation;
+}): BooleanFilter & { presentation?: Presentation } {
   invariant(!!key.trim(), 'Boolean filter requires a URL key.');
   function valid(value: BooleanSelection) {
     return (

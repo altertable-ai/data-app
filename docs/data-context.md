@@ -89,3 +89,7 @@ Use `view.metric(definition, select)` to register and bind a metric in one call.
 Declare dataset evidence references inside `view.dataset()`; the view registers
 and validates them too.
 Widgets and stories share its values and evidence; see [datasets and metrics](widgets.md#declare-datasets-and-metrics).
+
+Share terminology across views, but keep query evidence specific to the queries
+each view executes. A detail view can reuse definition text with its own query
+references; overview glossaries should not reference detail-only queries.

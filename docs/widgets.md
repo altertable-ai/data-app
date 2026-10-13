@@ -159,67 +159,86 @@ For embedded theme and chrome, see [parent presentation](embed.md#parent-present
 `<TooltipProvider>` shares hover timing outside `<DataApp>`; the app already
 provides it.
 
-## Drill into details
+## Explore from widgets
 
-For a relevant metric, chart, or table, offer the next useful investigation:
-contributing records, a narrower breakdown, or entity details. Declare a drill
-only when a destination can answer that question. Evidence references explain
-definitions and queries; drill actions open a different data view.
-
-Declare the relationship on the dataset or metric. Map from the displayed input
-so clicking during a refresh retains the scope behind the visible result.
-Preserve relevant dates, filters, and metric semantics explicitly.
+Offer the next useful question when the data supports it. Declare named actions
+on a dataset or metric, then pass them to the bound widget. Actions have explicit
+effects: open details, filter a declared view, or descend through a hierarchy.
+Evidence references explain definitions and queries; exploration actions change
+what the reader investigates.
 
 ```tsx
-const viewOrders = regions.drill({
-  id: 'view-orders',
-  label: 'View orders',
-  target: ordersView,
-  input: (row, displayedInput) => ({
-    period: displayedInput.period,
-    segment: displayedInput.segment,
-    regionId: row.regionId,
+const placeActions = places.actions(action => ({
+  orders: action.detail({
+    label: 'View orders',
+    target: ordersView,
+    input: (row, displayedInput) => ({ ...displayedInput, placeId: row.id }),
   }),
-});
+  filter: action.filter({
+    label: 'Filter to this region',
+    target: salesView,
+    values: row => ({
+      region: {
+        kind: 'include' as const,
+        members: [{ kind: 'value' as const, value: row.id }],
+      },
+      country: { kind: 'all' as const },
+    }),
+  }),
+  descend: action.descend({
+    target: salesView.breakdown('geography'),
+    member: row => ({ id: row.id, label: row.label }),
+  }),
+}));
 
-<TableWidget dataset={regions} source={source} drill={viewOrders} />;
+<TableWidget dataset={places} source={source} actions={placeActions} />;
 ```
 
-Register the target's [detail content](views.md#detail-destinations) on
-`<DataApp>`. `<TableWidget>` adds a named action per row; `<MetricWidget>` adds a
-widget action. A metric's input mapper receives only the displayed input.
-Actions belong to their source binding and do not change its filters.
+Use the action factory for contextual row and destination types. Stable object
+keys supply action IDs; declaration order supplies menu order. One available
+action is direct; several appear in Explore. Set the optional second argument
+`{ primary: 'orders' }` only when a direct primary action is useful. Other actions
+remain available in the menu. A metric's row argument is `undefined`.
+Use `when: row => ...` on a filter action when it applies only to some rows.
 
-A custom visualization receives the bound action as its second renderer
-argument. Preserve the domain row when adapting chart inputs:
+Detail mappings receive the **displayed input**, including during refreshes.
+Register the target's [detail content](views.md#detail-destinations) on
+`<DataApp>`. Match the source metric's inclusion rules and explain ratios,
+distinct counts, or preview limits rather than implying every table sum
+reconciles with its headline.
+
+Filter mappings return only the target view's named scope variables. The platform
+validates the entire update before one history entry; omitted variables retain
+their **currently applied** values. Clear dependent selections explicitly in the
+same mapping, such as country when changing region. Display variables and
+hierarchy paths cannot be changed through filter actions. Shared variables are
+the explicit way to coordinate independently queried views; do not target
+individual widget IDs.
+
+For custom visuals, the second renderer argument supplies bound actions. Keep
+domain rows when adapting chart inputs:
 
 ```tsx
-<VisualizationWidget dataset={regions} source={source} drill={viewOrders}>
-  {(rows, drill) => (
+<VisualizationWidget dataset={places} source={source} actions={placeActions}>
+  {(rows, actions) => (
     <BarChart
-      ariaLabel="Revenue by region"
+      ariaLabel="Revenue by place"
       unit="USD"
-      items={rows.map(row => ({
-        id: row.regionId,
-        label: row.region,
-        value: row.revenue,
-        row,
-      }))}
-      actionLabel="View orders"
-      onItemAction={
-        drill ? (item, trigger) => drill.open(item.row, trigger) : undefined
-      }
+      items={rows.map(row => ({ ...row, value: row.revenue }))}
+      itemActions={actions}
     />
   )}
 </VisualizationWidget>
 ```
 
-Built-in `<BarChart>` actions support pointer and keyboard activation. For custom
-controls, call `drill.open(row, trigger)` from an accessible button. Alternate
-visualization view renderers receive the same bound action as their second argument; do not infer records from
-formatted labels or array positions.
+`<BarChart>` owns pointer and keyboard activation, menus, and a declared primary
+action's More actions affordance. Alternate visualization renderers receive the
+same bound actions. For custom controls use `<ExplorationActionControl
+ actions={actions} row={row} label={row.label} />`; imperative custom controls
+can call `actions.run(id, row, trigger)` using IDs from `actions.items(row)`.
+Initial loading offers no actions. A stale hierarchy cannot descend into a new
+level until its displayed path matches the current path.
 
-Contributing records must follow the source metric's inclusion rules. Explain
-ratios, distinct counts, and preview limits rather than implying every table
-sum reconciles with the headline. See the query-backed order destination in the
-[commerce playground](https://github.com/altertable-ai/data-app/blob/main/dev/playground.tsx).
+See [hierarchical breakdowns](variables.md#hierarchical-breakdowns) and the
+[commerce playground](https://github.com/altertable-ai/data-app/blob/main/dev/playground.tsx)
+for the complete filter, breakdown, and detail workflow.

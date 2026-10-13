@@ -1,3 +1,5 @@
+import { BreakdownBreadcrumbs } from '@/src/react/ui/BreakdownBreadcrumbs';
+import type { BreakdownPath } from '@/src/core/breakdown';
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
@@ -44,7 +46,8 @@ export function useViewVariables<Variables extends VariableCollection>(
     operation: string,
     input: unknown,
     signal: AbortSignal
-  ) => Promise<unknown>
+  ) => Promise<unknown>,
+  navigationId?: string
 ) {
   const variables = useAppVariables(definitions);
   const resolved = {} as ResolvedVariables<Variables>;
@@ -88,6 +91,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
   const primaryFilters: ReactNode[] = [];
+  const breakdownControls: ReactNode[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
@@ -111,6 +115,23 @@ export function useViewVariables<Variables extends VariableCollection>(
         : prominence === 'secondary'
           ? 'above'
           : 'inline';
+    if (definition.kind === 'breakdown') {
+      breakdownControls.push(
+        <BreakdownBreadcrumbs
+          key={name}
+          id={navigationId ? `${navigationId}:${name}` : undefined}
+          variable={definition}
+          value={value as BreakdownPath}
+          onChange={path =>
+            variables.set(
+              name,
+              path as AppVariableValues<Variables>[typeof name]
+            )
+          }
+        />
+      );
+      continue;
+    }
     if (definition.kind === 'search') {
       searchControls.push(
         <ViewSearchField
@@ -287,20 +308,25 @@ export function useViewVariables<Variables extends VariableCollection>(
     resolved,
     searchControls: searchControls.length ? searchControls : null,
     filterControls:
-      hasControls || hasActiveFilters ? (
-        <ViewControlBar
-          primaryFilters={primaryFilters}
-          activeSecondaryFilters={activeSecondaryFilters}
-          allFilters={allFilters}
-          activeFilterCount={activeFilterCount}
-          displayOptions={orderedDisplayOptions}
-          changedDisplayOptionCount={changedDisplayOptionCount}
-          onClear={
-            hasActiveFilters
-              ? () => variables.update(clearedFilters)
-              : undefined
-          }
-        />
+      hasControls || hasActiveFilters || breakdownControls.length ? (
+        <>
+          {hasControls || hasActiveFilters ? (
+            <ViewControlBar
+              primaryFilters={primaryFilters}
+              activeSecondaryFilters={activeSecondaryFilters}
+              allFilters={allFilters}
+              activeFilterCount={activeFilterCount}
+              displayOptions={orderedDisplayOptions}
+              changedDisplayOptionCount={changedDisplayOptionCount}
+              onClear={
+                hasActiveFilters
+                  ? () => variables.update(clearedFilters)
+                  : undefined
+              }
+            />
+          ) : null}
+          {breakdownControls}
+        </>
       ) : null,
   };
 }

@@ -122,7 +122,8 @@ export function Sheet({
         event.currentTarget.close();
       }}
       onClose={event => {
-        if (event.target !== event.currentTarget) return;
+        if (event.target !== event.currentTarget || event.currentTarget.open)
+          return;
         delete event.currentTarget.dataset.closing;
         if (open) onOpenChange(false);
         returnFocus?.current?.focus({ preventScroll: true });

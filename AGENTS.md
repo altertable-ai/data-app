@@ -46,9 +46,12 @@ Read the matching guide before generating an app. Package contributors follow
 Use `/react` with declared views and bound widgets. `/react/ui` is for setup,
 static displays, and deliberately custom UI; see [direct composition](docs/ui.md).
 Prefer derivation over repeated configuration.
-For relevant widgets, declare typed drill actions to contributing records or entity
-details. Preserve the displayed input and register detail content with its evidence,
-export datasets, and story; follow [drill guidance](docs/widgets.md#drill-into-details).
+For relevant widgets, declare typed exploration actions to open details, filter a
+view, or descend a supported hierarchy. Keep ordinary scope and hierarchy paths
+separate; derive grouping from the path. Details inherit displayed input; filter
+actions preserve current unrelated variables. Register detail content with its
+own evidence, export datasets, and story. Follow
+[exploration guidance](docs/widgets.md#explore-from-widgets).
 
 Keep static context outside loading boundaries. Derive labels, findings, and
 exports from the displayed result and its input. Edit app-owned files; installed

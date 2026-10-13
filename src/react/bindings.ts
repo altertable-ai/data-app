@@ -1,4 +1,8 @@
-import { defineDrill, type DetailTarget } from '@/src/react/drill';
+import {
+  defineActions,
+  type ActionFactory,
+  type ExplorationAction,
+} from '@/src/react/actions';
 import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
 import type { SearchSuggestion } from '@/src/react/ui/SearchTypeahead';
@@ -145,6 +149,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     title: string;
     columns: [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
     rowKey: (row: Row) => string | number;
+    rowLabel: (row: Row) => string;
     evidence: WidgetEvidence;
     emptyFallback: EmptyContent;
   };
@@ -227,6 +232,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       title: definition.name,
       columns,
       rowKey,
+      rowLabel: row => String(fields[0]!.value(row) ?? rowKey(row)),
       evidence: definition.evidence,
       emptyFallback: definition.emptyFallback ?? { title: 'No results' },
     };
@@ -263,13 +269,11 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     );
     return { loading: false, value: items };
   }
-  drill<DetailInput>(definition: {
-    id: string;
-    label: string;
-    target: DetailTarget<DetailInput>;
-    input: (row: Row, displayedInput: Input) => NoInfer<DetailInput>;
-  }) {
-    return defineDrill(definition, this);
+  actions<const Entries extends Record<string, ExplorationAction<Row, Input>>>(
+    build: (action: ActionFactory<Row, Input>) => Entries,
+    options?: { primary?: keyof NoInfer<Entries> & string }
+  ) {
+    return defineActions(this, build, options);
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);
@@ -320,16 +324,11 @@ export class Metric<Data, Input> extends RegisteredBinding {
     this.#select = select;
     this.#date = date;
   }
-  drill<DetailInput>(definition: {
-    id: string;
-    label: string;
-    target: DetailTarget<DetailInput>;
-    input: (displayedInput: Input) => NoInfer<DetailInput>;
-  }) {
-    return defineDrill<void, Input, DetailInput>(
-      { ...definition, input: (_, input) => definition.input(input) },
-      this
-    );
+  actions<const Entries extends Record<string, ExplorationAction<void, Input>>>(
+    build: (action: ActionFactory<void, Input>) => Entries,
+    options?: { primary?: keyof NoInfer<Entries> & string }
+  ) {
+    return defineActions(this, build, options);
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);

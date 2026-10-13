@@ -1,6 +1,6 @@
 .altertable-menu-popover {
   z-index: 150;
-  min-width: max(var(--trigger-width), 180px);
+  min-width: min(max(var(--trigger-width), 180px), 340px, calc(100vw - 24px));
   max-width: min(340px, calc(100vw - 24px));
   padding: 8px;
   border: 1px solid var(--atbl-border);

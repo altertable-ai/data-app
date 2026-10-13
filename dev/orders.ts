@@ -1,3 +1,4 @@
+import { geography, regionFilter, regionForCountry } from '@/dev/geography';
 import { dataApp } from '@/dev/app';
 import {
   dimensionFilter,
@@ -5,6 +6,7 @@ import {
   parseCount,
   type DateRangeRequest,
   type DimensionSelection,
+  type BreakdownPath,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
 import { calendar, countries } from '@/dev/commerce';
@@ -19,6 +21,9 @@ export const countryFilter = dimensionFilter({
 export type OrderInput = {
   period: DateRangeRequest;
   country: DimensionSelection<string>;
+  region: DimensionSelection<string>;
+  geography: BreakdownPath;
+  customerId: number | null;
 };
 export type CountryRevenue = {
   country: string;
@@ -53,6 +58,7 @@ export type OrderItem = {
 };
 export type OrderOverview = {
   countries: CountryRevenue[];
+  groups: { id: string; label: string; revenue: number; level: string }[];
   days: OrderDay[];
   bands: OrderBand[];
   orders: Order[];
@@ -63,7 +69,21 @@ function parseInput(value: unknown): OrderInput {
   if (!value || typeof value !== 'object')
     throw new Error('Expected order filters.');
   const input = value as Record<string, unknown>;
+  const path = geography.parse(input.geography);
+  if (path[0] && !['Europe', 'North America'].includes(String(path[0].id)))
+    throw new Error('Unknown region.');
+  if (
+    path[1] &&
+    (!countries.some(country => country.value === path[1]!.id) ||
+      regionForCountry(String(path[1].id)) !== path[0]!.id)
+  )
+    throw new Error('Country does not belong to this region.');
+  const customerId =
+    input.customerId === null ? null : parseCount(input.customerId);
   return {
+    region: parseDimensionSelection(input.region, regionFilter),
+    geography: path,
+    customerId,
     period: calendar.parseRequest(input.period),
     country: parseDimensionSelection(input.country, countryFilter),
   };
@@ -124,6 +144,12 @@ function parseOrderOverview(value: unknown): OrderOverview {
     throw new Error('Expected an order overview.');
   const data = value as Record<string, unknown>;
   return {
+    groups: parseRows(data.groups, row => ({
+      id: text(row.id),
+      label: text(row.label),
+      revenue: amount(row.revenue),
+      level: text(row.level),
+    })),
     countries: parseRows(data.countries, row => ({
       country: text(row.country),
       ...totals(row),
@@ -142,6 +168,16 @@ function parseOrderOverview(value: unknown): OrderOverview {
       data.previous === null
         ? null
         : totals(data.previous as Record<string, unknown>),
+  };
+}
+function scopeParams(input: OrderInput) {
+  const region =
+    input.region.kind === 'all' ? undefined : input.region.members[0];
+  return {
+    region: region?.kind === 'value' ? region.value : null,
+    pathRegion: input.geography[0]?.id ?? null,
+    pathCountry: input.geography[1]?.id ?? null,
+    customerId: input.customerId,
   };
 }
 const checkRange = calendar.request(
@@ -169,12 +205,21 @@ export const operations = {
       };
     },
     checks: [
-      { period: checkRange, country: { kind: 'all' as const }, orderId: 1 },
+      {
+        period: checkRange,
+        country: { kind: 'all' as const },
+        region: { kind: 'all' as const },
+        geography: [],
+        customerId: null,
+        orderId: 1,
+      },
     ],
     policy: { maxQueryRows: 100, maxDurationMs: 15000 },
-    async run({ query }, { period, country, orderId }) {
+    async run({ query }, input) {
+      const { period, country, orderId } = input;
       const member = country.kind === 'all' ? undefined : country.members[0];
       const result = await query('orderDetail', {
+        ...scopeParams(input),
         orderId,
         start: period.range.start,
         end: period.range.end,
@@ -208,16 +253,27 @@ export const operations = {
     input: parseInput,
     output: parseOrderOverview,
     checks: [
-      { period: checkRange, country: { kind: 'all' } },
+      {
+        period: checkRange,
+        country: { kind: 'all' },
+        region: { kind: 'all' },
+        geography: [],
+        customerId: null,
+      },
       {
         period: checkRange,
         country: { kind: 'include', members: [{ kind: 'value', value: 'FI' }] },
+        region: { kind: 'all' },
+        geography: [],
+        customerId: null,
       },
     ] satisfies OrderInput[],
     policy: { maxQueryRows: 300, maxDurationMs: 15000 },
-    async run({ query }, { country, period }) {
+    async run({ query }, input) {
+      const { country, period } = input;
       const member = country.kind === 'all' ? undefined : country.members[0];
       const params = {
+        ...scopeParams(input),
         start: period.range.start,
         end: period.range.end,
         countryMode: country.kind,
@@ -230,6 +286,7 @@ export const operations = {
         previousResult,
         orderResult,
         itemResult,
+        geographicResult,
       ] = await Promise.all([
         query('ordersByCountry', params),
         query('ordersByDay', params),
@@ -242,8 +299,22 @@ export const operations = {
         }),
         query('orders', params),
         query('items', params),
+        query('geographicRevenue', {
+          ...params,
+          groupBy: geography.level(input.geography).id,
+        }),
       ]);
       return parseOrderOverview({
+        groups: geographicResult.rows.map(([id, label, revenue]) => ({
+          id,
+          label:
+            geography.level(input.geography).id === 'country'
+              ? (countries.find(country => country.value === id)?.label ??
+                label)
+              : label,
+          revenue,
+          level: geography.level(input.geography).id,
+        })),
         countries: countryResult.rows.map(
           ([country, orderCount, revenue, orderValue, refunds]) => ({
             country,

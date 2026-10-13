@@ -1,3 +1,4 @@
+import explorationApp from '@/tests/public-api/fixtures/exploration-app.html';
 import drillApp from '@/tests/public-api/fixtures/drill-app.html';
 import { Database } from 'bun:sqlite';
 import { serveLocalApp } from '@altertable/data-app/server/bun';
@@ -56,6 +57,9 @@ INSERT INTO sales_orders VALUES
 ('SO-1006', 'Studio Petit', 'France', 'Europe', 'Self serve', '2026-09-16', 'paid', 75, 5, 0),
 ('SO-2001', 'Atelier Nord', 'France', 'Europe', 'Enterprise', '2026-10-04', 'paid', 500, 0, 0);`);
 
+database.exec(`ALTER TABLE sales_orders ADD COLUMN customer_id TEXT;
+UPDATE sales_orders SET customer_id = CASE customer WHEN 'Atelier Nord' THEN 'account-atelier' WHEN 'Werkhaus' THEN 'account-werkhaus' WHEN 'Pacific Works' THEN 'account-pacific' ELSE 'account-petit' END;`);
+
 process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'fixture-token';
 process.env.NODE_ENV = 'production';
 const local = serveLocalApp({
@@ -65,6 +69,7 @@ const local = serveLocalApp({
   port: 0,
 });
 const frameServer = Bun.serve({
+  development: false,
   hostname: '127.0.0.1',
   port: 0,
   fetch(): Response {
@@ -75,6 +80,7 @@ const frameServer = Bun.serve({
   },
 });
 const server = Bun.serve({
+  development: false,
   hostname: '127.0.0.1',
   port,
   routes: {
@@ -85,6 +91,7 @@ const server = Bun.serve({
     '/inspection-app': inspectionApp,
     '/declared-app': declaredApp,
     '/drill-app': drillApp,
+    '/exploration-app': explorationApp,
     '/controls': controls,
     '/filters': filters,
     '/filter-presentation': filterPresentation,

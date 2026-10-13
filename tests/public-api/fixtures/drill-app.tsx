@@ -39,7 +39,7 @@ const context = createDataContext(operations.salesOverview.queryNames)({
       term: 'Net revenue',
       definition:
         'Order amount minus discounts and refunds, excluding cancelled orders.',
-      queryNames: ['revenue', 'contributingOrders'],
+      queryNames: ['revenue'],
     },
   },
 });
@@ -97,11 +97,22 @@ const total = view.metric(
   },
   data => ({ current: data.reduce((sum, row) => sum + row.revenue, 0) })
 );
+const detailContext = createDataContext(operations.salesOverview.queryNames)({
+  description: 'Contributing orders',
+  glossary: {
+    revenue: {
+      term: 'Net revenue',
+      definition:
+        'Order amount minus discounts and refunds, excluding cancelled orders.',
+      queryNames: ['contributingOrders'],
+    },
+  },
+});
 const detail = defineDetailView({
   id: 'orders',
   title: 'Contributing orders',
   operation: 'salesOrders',
-  dataContext: context,
+  dataContext: detailContext,
   parseInput: operations.salesOrders.input,
   describeInput: input =>
     `${input.region} · ${input.start}–${input.end} · ${input.segment}`,
@@ -149,25 +160,27 @@ const detailContent = detail.content(
     ],
   }
 );
-const viewOrders = regions.drill({
-  id: 'view-orders',
-  label: 'View orders',
-  target: detail,
-  input: (row, input) => ({ ...input, region: row.region }),
-});
-const allOrders = total.drill({
-  id: 'all-orders',
-  label: 'View contributing orders',
-  target: detail,
-  input: input => ({ ...input, region: 'All regions' }),
-});
+const viewOrders = regions.actions(action => ({
+  orders: action.detail({
+    label: 'View orders',
+    target: detail,
+    input: (row, input) => ({ ...input, region: row.region }),
+  }),
+}));
+const allOrders = total.actions(action => ({
+  orders: action.detail({
+    label: 'View contributing orders',
+    target: detail,
+    input: (_, input) => ({ ...input, region: 'All regions' }),
+  }),
+}));
 const content = view.content(source => <Results source={source} />);
 type Source = Parameters<Parameters<typeof view.content>[0]>[0];
 function Results({ source }: { source: Source }) {
   const [search, setSearch] = useState('');
   return (
     <Stack>
-      <MetricWidget metric={total} source={source} drill={allOrders} />
+      <MetricWidget metric={total} source={source} actions={allOrders} />
       <TextWidget dataset={regions} source={source} title="Displayed scope">
         {() =>
           source.loading ? null : (
@@ -177,8 +190,12 @@ function Results({ source }: { source: Source }) {
           )
         }
       </TextWidget>
-      <VisualizationWidget dataset={regions} source={source} drill={viewOrders}>
-        {(rows, drill) => (
+      <VisualizationWidget
+        dataset={regions}
+        source={source}
+        actions={viewOrders}
+      >
+        {(rows, actions) => (
           <BarChart
             items={rows.map(row => ({
               id: row.region,
@@ -190,8 +207,8 @@ function Results({ source }: { source: Source }) {
             unit="USD"
             actionLabel="View orders"
             onItemAction={
-              drill
-                ? (item, trigger) => drill.open(item.row, trigger)
+              actions
+                ? (item, trigger) => actions.run('orders', item.row, trigger)
                 : undefined
             }
           />
@@ -202,7 +219,7 @@ function Results({ source }: { source: Source }) {
           title="Regional investigation"
           dataset={regions}
           source={source}
-          drill={viewOrders}
+          actions={viewOrders}
           viewLabel="Investigation view"
           views={[
             {
@@ -213,7 +230,7 @@ function Results({ source }: { source: Source }) {
             {
               id: 'records',
               label: 'Records',
-              render: (rows, drill) => (
+              render: (rows, actions) => (
                 <DataTable>
                   <thead>
                     <tr>
@@ -228,14 +245,14 @@ function Results({ source }: { source: Source }) {
                         <th scope="row">{row.region}</th>
                         <td>{row.revenue}</td>
                         <td>
-                          {drill && (
+                          {actions && (
                             <Button
                               onClick={event =>
-                                drill.open(row, event.currentTarget)
+                                actions.run('orders', row, event.currentTarget)
                               }
                               aria-label={`Investigate ${row.region}`}
                             >
-                              {drill.label}
+                              {actions.items(row)[0]?.label}
                             </Button>
                           )}
                         </td>
@@ -251,7 +268,7 @@ function Results({ source }: { source: Source }) {
       <TableWidget
         dataset={regions}
         source={source}
-        drill={viewOrders}
+        actions={viewOrders}
         pagination={{ pageSize: 1 }}
         search={{
           label: 'Search regions',

@@ -64,9 +64,12 @@ export type DimensionFilterOptions<T extends DimensionValue> = {
 );
 
 /** A bounded categorical filter. URL tags distinguish missing from literal "null". */
-export function dimensionFilter<const T extends DimensionValue>(
-  config: DimensionFilterOptions<T>
-): DimensionVariable<T> {
+export function dimensionFilter<
+  const T extends DimensionValue,
+  const Presentation extends VariablePresentation = VariablePresentation,
+>(
+  config: DimensionFilterOptions<T> & { presentation?: Presentation }
+): DimensionVariable<T> & { presentation?: Presentation } {
   const { key, label, selectionMode, valueType } = config;
   const options = config.options ?? [];
   const optionKeys = options.map(option =>

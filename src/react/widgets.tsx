@@ -1,6 +1,9 @@
-import { useDrill } from '@/src/react/details';
-import type { DrillAction } from '@/src/react/drill';
-import { Button } from '@/src/react/ui/Button';
+import {
+  useExplorationActions,
+  ExplorationActionControl,
+  type BoundExplorationActions,
+} from '@/src/react/action-controls';
+import type { ExplorationActions } from '@/src/react/actions';
 import {
   datasetTable,
   type Dataset,
@@ -42,16 +45,16 @@ export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
 > & {
   metric: Metric<Data, Input>;
   source: ViewSource<Data, Input>;
-  drill?: DrillAction<void, Input>;
+  actions?: ExplorationActions<void, Input>;
 };
 export function MetricWidget<Data, Input>({
   metric,
   source,
-  drill,
+  actions,
   action: authoredAction,
   ...presentation
 }: MetricWidgetProps<Data, Input>) {
-  const action = useDrill(drill, source, metric);
+  const action = useExplorationActions(actions, source, metric);
   return (
     <DisplayMetric
       {...presentation}
@@ -61,11 +64,7 @@ export function MetricWidget<Data, Input>({
         <>
           {authoredAction}
           {action && (
-            <Button
-              onClick={event => action.open(undefined, event.currentTarget)}
-            >
-              {action.label}
-            </Button>
+            <ExplorationActionControl actions={action} row={undefined} />
           )}
         </>
       }
@@ -89,17 +88,17 @@ export type TableWidgetProps<Row, Data = unknown, Input = unknown> = Omit<
     dataset: Dataset<Data, Input, Row>;
     source: ViewSource<Data, Input>;
     title?: ReactNode;
-    drill?: DrillAction<Row, Input>;
+    actions?: ExplorationActions<Row, Input>;
   };
 export function TableWidget<Row, Data, Input>({
   dataset,
   source,
   title,
-  drill,
+  actions,
   ...presentation
 }: TableWidgetProps<Row, Data, Input>) {
-  const data = datasetTable(dataset, source);
-  const action = useDrill(drill, source, dataset);
+  const { rowLabel, ...data } = datasetTable(dataset, source);
+  const action = useExplorationActions(actions, source, dataset);
   return (
     <DisplayTable
       {...presentation}
@@ -110,15 +109,14 @@ export function TableWidget<Row, Data, Input>({
           ? [
               ...data.columns,
               {
-                id: `drill:${action.id}`,
-                header: action.label,
+                id: 'exploration-actions',
+                header: 'Explore',
                 cell: row => (
-                  <Button
-                    onClick={event => action.open(row, event.currentTarget)}
-                    aria-label={`${action.label}: ${String(data.rowKey(row))}`}
-                  >
-                    {action.label}
-                  </Button>
+                  <ExplorationActionControl
+                    actions={action}
+                    row={row}
+                    label={rowLabel(row)}
+                  />
                 ),
               },
             ]
@@ -131,24 +129,20 @@ type BoundVisual<Row> = Extract<
   DisplayVisualProps<readonly Row[]>,
   { reading: DataReading<readonly Row[]> }
 >;
-type VisualizationDrill<Row> = {
-  label: string;
-  open: (row: Row, trigger?: HTMLElement) => void;
-};
 export type VisualizationWidgetView<Row> = Omit<
   DisplayVisualizationView<readonly Row[]>,
   'render'
 > & {
   render: (
     rows: readonly Row[],
-    drill: VisualizationDrill<Row> | undefined
+    actions: BoundExplorationActions<Row> | undefined
   ) => ReactNode;
 };
 type VisualContent<Row> =
   | {
       children: (
         rows: readonly Row[],
-        drill: VisualizationDrill<Row> | undefined
+        actions: BoundExplorationActions<Row> | undefined
       ) => ReactNode;
       views?: never;
       viewLabel?: never;
@@ -180,16 +174,16 @@ export type VisualizationWidgetProps<
     dataset: Dataset<Data, Input, Row>;
     source: ViewSource<Data, Input>;
     title?: ReactNode;
-    drill?: DrillAction<Row, Input>;
+    actions?: ExplorationActions<Row, Input>;
   };
 export function VisualizationWidget<Row, Data, Input>({
   dataset,
   source,
   title,
-  drill,
+  actions,
   ...presentation
 }: VisualizationWidgetProps<Row, Data, Input>) {
-  const action = useDrill(drill, source, dataset);
+  const action = useExplorationActions(actions, source, dataset);
   const data = datasetTable(dataset, source);
   const { children, views, viewLabel, initialView, ...shell } = presentation;
   return (

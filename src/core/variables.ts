@@ -1,3 +1,4 @@
+import type { BreakdownVariable } from '@/src/core/breakdown';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -40,6 +41,7 @@ export type AppVariable<Value, Kind extends string = string> = {
 
 export type VariableCollection = Record<
   string,
+  | BreakdownVariable
   | SearchVariable
   | ChoiceVariable
   | MultiChoiceVariable
@@ -57,6 +59,22 @@ export type AppVariableValues<Variables> = {
       ? Value
       : never;
 };
+
+/** Only known scope fields can be changed by filtering; hierarchy has its own transitions. */
+type ScopeVariables<Variables extends VariableCollection> = {
+  [
+    Key in keyof Variables as Variables[Key]['kind'] extends 'breakdown'
+      ? never
+      : NonNullable<Variables[Key]['presentation']> extends { group: 'display' }
+        ? never
+        : Key
+  ]: AppVariableValues<Variables>[Key];
+};
+
+export type ScopeVariableValues<Variables extends VariableCollection> =
+  keyof ScopeVariables<Variables> extends never
+    ? Record<string, never>
+    : ScopeVariables<Variables>;
 
 /** Name variables once in the app. URL keys must be unique across its controls. */
 export function defineAppVariables<const Variables extends VariableCollection>(
@@ -160,17 +178,21 @@ export function validateChoiceOptions(options: readonly ChoiceOption[]) {
   );
 }
 
-export function choiceVariable({
+export function choiceVariable<
+  const Presentation extends VariablePresentation = VariablePresentation,
+>({
   key,
   label,
   defaultValue,
   options,
   history = 'push',
   presentation,
-}: ScalarVariableOptions & {
+}: Omit<ScalarVariableOptions, 'presentation'> & {
+  presentation?: Presentation;
+} & {
   defaultValue: string;
   options: readonly ChoiceOption[];
-}): ChoiceVariable {
+}): ChoiceVariable & { presentation?: Presentation } {
   validateChoiceOptions(options);
   function valid(value: string) {
     return (
@@ -202,7 +224,9 @@ export function choiceVariable({
   };
 }
 
-export function multiChoiceVariable({
+export function multiChoiceVariable<
+  const Presentation extends VariablePresentation = VariablePresentation,
+>({
   key,
   label,
   defaultValue = [],
@@ -210,11 +234,13 @@ export function multiChoiceVariable({
   maxSelected = options.length,
   history = 'push',
   presentation,
-}: Omit<ScalarVariableOptions, 'defaultValue'> & {
+}: Omit<ScalarVariableOptions, 'defaultValue' | 'presentation'> & {
+  presentation?: Presentation;
+} & {
   defaultValue?: readonly string[];
   options: readonly ChoiceOption[];
   maxSelected?: number;
-}): MultiChoiceVariable {
+}): MultiChoiceVariable & { presentation?: Presentation } {
   validateChoiceOptions(options);
   invariant(
     Number.isSafeInteger(maxSelected) &&
@@ -319,7 +345,9 @@ const PRESET_IDS = new Set<DatePresetId>([
 ]);
 
 /** A date variable keeps relative presets relative and validates exact dates against source coverage. */
-export function dateRangeVariable({
+export function dateRangeVariable<
+  const Presentation extends VariablePresentation = VariablePresentation,
+>({
   key,
   label = 'Date range',
   defaultValue,
@@ -327,7 +355,9 @@ export function dateRangeVariable({
   history = 'push',
   comparison = false,
   presentation,
-}: DateRangeVariableOptions): DateRangeVariable {
+}: Omit<DateRangeVariableOptions, 'presentation'> & {
+  presentation?: Presentation;
+}): DateRangeVariable & { presentation?: Presentation } {
   const startKey = key === 'period' ? 'start' : `${key}-start`;
   const endKey = key === 'period' ? 'end' : `${key}-end`;
   const comparisonKey = key === 'period' ? 'compare' : `${key}-compare`;
@@ -365,7 +395,7 @@ export function dateRangeVariable({
           left.end === right.end)
     );
   }
-  const variable: DateRangeVariable = {
+  const variable: DateRangeVariable & { presentation?: Presentation } = {
     kind: 'dateRange',
     presentation,
     label,

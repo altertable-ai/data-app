@@ -104,7 +104,7 @@ useful `emptyFallback` copy.
 Use `defineDetailView()` for a query-backed destination opened from a metric,
 chart item, or table row. It receives an explicit input; dashboard variables
 remain owned by the source view. Reuse the operation's input parser to validate
-both drill actions and shared links.
+both detail actions and shared links.
 
 ```tsx
 const ordersView = defineDetailView({
@@ -142,7 +142,7 @@ const ordersDetail = ordersView.content(
 ```
 
 Register content with `<DataApp details={[ordersDetail]} …>` and declare a
-[drill action](widgets.md#drill-into-details) on the source binding. Detail
+[detail action](widgets.md#explore-from-widgets) on the source binding. Detail
 content, evidence, CSV export, and story use the destination's displayed result.
 The sheet keeps the dashboard mounted and restores focus when closed.
 

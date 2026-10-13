@@ -1,3 +1,4 @@
+import { geography, regionFilter } from '@/dev/geography';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import { dataApp } from '@/dev/app';
@@ -22,9 +23,11 @@ import {
   MetricWidget,
   TableWidget,
   VisualizationWidget,
+  ExplorationActionControl,
   type DatasetDefinition,
 } from '@altertable/data-app/react';
 import { calendar } from '@/dev/commerce';
+import { BarChart, DataTable } from '@altertable/data-app/react/ui';
 import {
   operations,
   queryNames,
@@ -98,7 +101,11 @@ const orderDataContext = createDataContext(queryNames)({
           refunded orders are excluded; refunds are reported separately.
         </>
       ),
-      queryNames: [queryNames.ordersByCountry, queryNames.previousPeriod],
+      queryNames: [
+        queryNames.ordersByCountry,
+        queryNames.previousPeriod,
+        queryNames.geographicRevenue,
+      ],
     },
     refunds: {
       term: 'Refunds',
@@ -140,7 +147,8 @@ const orderView = defineTimeView({
     defaultValue: { kind: 'preset', id: 'last-30' },
     comparison: true,
   },
-  variables: { country: countryFilter },
+  variables: { country: countryFilter, region: regionFilter, geography },
+  input: values => ({ ...values, customerId: null }),
   isEmpty: ({ countries }) => countries.length === 0,
   emptyFallback: { title: 'No matching countries' },
 });
@@ -210,6 +218,24 @@ const countryDataset = orderView.dataset({
     refunds: { value: row => row.refunds, format: currency },
   },
 });
+const geographicDataset = orderView.dataset({
+  name: 'Geographic revenue',
+  select: data => data.groups,
+  rowKey: row => row.id,
+  evidence: {
+    id: 'geographic-revenue',
+    glossaryIds: ['revenue'],
+    queryNames: [queryNames.geographicRevenue],
+  },
+  columns: {
+    place: { value: row => row.label },
+    revenue: { value: row => row.revenue, format: currency },
+  },
+});
+const geographicBreakdown = orderView.breakdown('geography');
+function describeScope(input: OrderInput) {
+  return `${calendar.describeInput(input.period.range)} · Region: ${regionFilter.describe?.(input.region)} · Country: ${countryFilter.describe?.(input.country)} · ${geography.describe?.(input.geography)}${input.customerId === null ? '' : ` · Customer #${input.customerId}`}`;
+}
 const dayDataset = orderView.dataset({
   name: 'Orders per day',
   select: data => data.days,
@@ -307,14 +333,25 @@ const periodDataset = orderView.dataset({
   },
 });
 
+const productDataContext = createDataContext(queryNames)({
+  identifiers: identifiers.definitions,
+  description: 'Products and quantities for the selected order.',
+  glossary: {
+    orderValue: {
+      term: 'Order value',
+      definition:
+        'Sum of product quantity multiplied by unit price in USD, across all order statuses.',
+      queryNames: [queryNames.orderDetail],
+    },
+  },
+});
 const orderDetailView = defineDetailView({
   id: 'order',
   title: 'Order details',
   operation: 'orderDetail',
-  dataContext: orderDataContext,
+  dataContext: productDataContext,
   parseInput: operations.orderDetail.input,
-  describeInput: input =>
-    `Order #${input.orderId} · ${calendar.describeInput(input.period.range)} · ${input.country.kind === 'all' ? 'All countries' : input.country.members.map(member => (member.kind === 'value' ? member.value : 'Missing country')).join(', ')}`,
+  describeInput: input => `Order #${input.orderId} · ${describeScope(input)}`,
   isEmpty: data => !data.order,
   emptyFallback: {
     title: 'Order unavailable in this scope',
@@ -368,13 +405,90 @@ const orderDetailContent = orderDetailView.content(
     ],
   }
 );
-const viewOrder = ordersDataset.drill({
-  id: 'view-order',
-  label: 'View order',
-  target: orderDetailView,
-  input: (order, input) => ({ ...input, orderId: order.id }),
-});
+const viewOrder = ordersDataset.actions(action => ({
+  orders: action.detail({
+    label: 'View order',
+    target: orderDetailView,
+    input: (order, input) => ({ ...input, orderId: order.id }),
+  }),
+}));
 
+const scopeOrdersView = defineDetailView({
+  id: 'scope-orders',
+  title: 'Orders in this scope',
+  operation: 'orderOverview',
+  dataContext: orderDataContext,
+  parseInput: operations.orderOverview.input,
+  describeInput: describeScope,
+  isEmpty: data => summarizeOrders(data).orderCount === 0,
+  emptyFallback: { title: 'No orders in this scope' },
+});
+const scopedOrders = scopeOrdersView.dataset({
+  ...orderDefinition,
+  name: 'Orders in this scope',
+});
+const scopeOrdersContent = scopeOrdersView.content(
+  source => (
+    <TableWidget
+      dataset={scopedOrders}
+      source={source}
+      description="Latest 100 orders across all statuses. Paid orders contribute to paid revenue; pending and refunded orders are identified separately."
+    />
+  ),
+  {
+    datasets: [scopedOrders],
+    story: snapshot => [
+      {
+        id: 'scope-orders',
+        headline: `${formatMetric(summarizeOrders(snapshot.data).revenue, currency)} paid revenue`,
+        context: describeScope(snapshot.input),
+        visual: <TableWidget dataset={scopedOrders} source={snapshot} />,
+        evidence: scopedOrders,
+      },
+    ],
+  }
+);
+const geographicActions = geographicDataset.actions(action => ({
+  orders: action.detail({
+    label: 'View orders',
+    target: scopeOrdersView,
+    input: (row, input) => ({
+      ...input,
+      geography:
+        row.level === 'customer'
+          ? input.geography
+          : [
+              ...input.geography,
+              { level: row.level, id: row.id, label: row.label },
+            ],
+      customerId: row.level === 'customer' ? Number(row.id) : null,
+    }),
+  }),
+  filter: action.filter({
+    label: row => `Filter to this ${row.level}`,
+    when: row => row.level !== 'customer',
+    target: orderView,
+    values: row =>
+      row.level === 'region'
+        ? ({
+            region: {
+              kind: 'include',
+              members: [{ kind: 'value', value: row.id }],
+            },
+            country: { kind: 'all' },
+          } as const)
+        : ({
+            country: {
+              kind: 'include',
+              members: [{ kind: 'value', value: row.id }],
+            },
+          } as const),
+  }),
+  descend: action.descend({
+    target: geographicBreakdown,
+    member: row => ({ id: row.id, label: row.label }),
+  }),
+}));
 type OrderSource = Parameters<Parameters<typeof orderView.content>[0]>[0];
 
 function OrderResults({ result }: { result: OrderSource }) {
@@ -448,9 +562,61 @@ function OrderResults({ result }: { result: OrderSource }) {
       >
         {countries => <CountryRanking countries={countries} />}
       </VisualizationWidget>
+      <VisualizationWidget
+        title={
+          result.loading
+            ? 'Geographic revenue'
+            : `Paid revenue by ${geography.level(result.input.geography).label.toLowerCase()}`
+        }
+        dataset={geographicDataset}
+        source={result}
+        actions={geographicActions}
+        description="Explore a place to view orders, filter the dashboard, or break down further."
+      >
+        {(rows, actions) =>
+          rows[0]?.level === 'customer' ? (
+            <DataTable>
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th data-type="number">Paid revenue</th>
+                  <th>Explore</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(row => (
+                  <tr key={row.id}>
+                    <th scope="row">{row.label}</th>
+                    <td data-type="number">
+                      {formatMetric(row.revenue, currency)}
+                    </td>
+                    <td>
+                      {actions && (
+                        <ExplorationActionControl
+                          actions={actions}
+                          row={row}
+                          label={row.label}
+                        />
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </DataTable>
+          ) : (
+            <BarChart
+              ariaLabel="Geographic paid revenue"
+              unit="USD"
+              items={rows.map(row => ({ ...row, value: row.revenue }))}
+              formatValue={value => formatMetric(value, currency)}
+              itemActions={actions}
+            />
+          )
+        }
+      </VisualizationWidget>
       <TableWidget
         dataset={ordersDataset}
-        drill={viewOrder}
+        actions={viewOrder}
         source={result}
         description="Latest 100 orders in the selected range. View an order to fetch its products and export that order’s items."
         pagination={{ pageSize: 10 }}
@@ -532,7 +698,7 @@ function App() {
   return (
     <DataApp
       view={orderView}
-      details={[orderDetailContent]}
+      details={[orderDetailContent, scopeOrdersContent]}
       datasets={[
         countryDataset,
         dayDataset,
@@ -540,6 +706,7 @@ function App() {
         ordersDataset,
         itemsDataset,
         periodDataset,
+        geographicDataset,
       ]}
       story={presentOrders}
     >

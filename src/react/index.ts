@@ -1,4 +1,12 @@
-export type { DrillAction } from '@/src/react/drill';
+export { ExplorationActionControl } from '@/src/react/action-controls';
+export type { BoundExplorationActions } from '@/src/react/action-controls';
+export type { ExplorationActions, ActionFactory } from '@/src/react/actions';
+export { breakdownVariable } from '@/src/core/breakdown';
+export type {
+  BreakdownPath,
+  BreakdownMember,
+  BreakdownLevel,
+} from '@/src/core/breakdown';
 export type { DetailContent } from '@/src/react/details';
 /** Declared views, bound widgets, and layouts for data-app authoring. */
 export type {

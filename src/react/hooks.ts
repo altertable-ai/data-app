@@ -1,3 +1,10 @@
+import { writeVariableValues } from '@/src/react/ui/variables';
+import { invariant } from '@/src/core/invariant';
+import type {
+  ScopeVariableValues,
+  AppVariableValues,
+} from '@/src/core/variables';
+import type { BreakdownVariable } from '@/src/core/breakdown';
 import {
   createDetailContent,
   type DetailContentOptions,
@@ -38,6 +45,7 @@ import type { EmptyContent } from '@/src/react/ui/presentation';
 import { ViewContent, type DataContentState } from '@/src/react/content';
 import {
   describeViewInput,
+  readViewBinding,
   resolveViewInput,
   type DataViewDefinition,
   type ResolvedDataViewDefinition,
@@ -207,6 +215,7 @@ export function createDataHooks<Operations extends DataOperations>(
       OutputOf<Operations[Name]>
     > & { dataContext: Context }
   ) {
+    const navigationId = randomUuid();
     const variables = defineAppVariables(
       definition.variables ?? {}
     ) as Variables;
@@ -228,10 +237,46 @@ export function createDataHooks<Operations extends DataOperations>(
     const normalized = { ...metadata, variables, input, describeInput };
     const view = Object.assign(
       new DeclaredView(
-        (input?: Input) => useView(normalized, input),
+        (input?: Input) => useView(normalized, input, navigationId),
         normalized
       ),
       {
+        filter(next: Partial<ScopeVariableValues<Variables>>) {
+          for (const key of Object.keys(next)) {
+            const variable = normalized.variables[key];
+            invariant(
+              variable &&
+                variable.presentation?.group !== 'display' &&
+                variable.kind !== 'breakdown',
+              `Filter actions must target scope variables: ${key}.`
+            );
+          }
+          writeVariableValues(
+            normalized.variables,
+            next as Partial<AppVariableValues<Variables>>,
+            'push'
+          );
+        },
+        breakdown<
+          Key extends {
+            [K in keyof Variables]: Variables[K] extends BreakdownVariable
+              ? K
+              : never;
+          }[keyof Variables] &
+            string,
+        >(key: Key) {
+          const variable = normalized.variables[key] as BreakdownVariable;
+          invariant(
+            variable?.kind === 'breakdown',
+            `Expected a declared breakdown variable: ${key}.`
+          );
+          return {
+            variable,
+            navigationId: `${navigationId}:${key}`,
+            read: (input: Input) =>
+              variable.parse(readViewBinding(normalized, key, input)),
+          };
+        },
         dataset<Row>(
           dataset: DatasetDefinition<
             Data,
@@ -421,7 +466,8 @@ export function createDataHooks<Operations extends DataOperations>(
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
     >,
-    explicitInput?: InputOf<Operations[Name]>
+    explicitInput?: InputOf<Operations[Name]>,
+    navigationId?: string
   ) {
     const variables = useViewVariables(
       definition.variables,
@@ -431,7 +477,8 @@ export function createDataHooks<Operations extends DataOperations>(
           .query(operation as keyof Operations & string, input as never, {
             signal,
           })
-          .then(response => response.data)
+          .then(response => response.data),
+      navigationId
     );
     const describeInput =
       describeViewInput<InputOf<Operations[Name]>>(definition);

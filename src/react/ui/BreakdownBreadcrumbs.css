@@ -1,0 +1,21 @@
+.altertable-breakdown-breadcrumbs,
+.altertable-breakdown-breadcrumbs ol,
+.altertable-breakdown-breadcrumbs li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--atbl-space-xs);
+}
+.altertable-breakdown-breadcrumbs {
+  justify-content: space-between;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+}
+.altertable-breakdown-breadcrumbs ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.altertable-breakdown-breadcrumbs [aria-current='page'] {
+  color: var(--atbl-text);
+}

@@ -40,7 +40,7 @@ import {
   writeSearch,
 } from '@/src/react/ui/search';
 
-import type { DrillAction, DetailTarget } from '@/src/react/drill';
+import type { DetailRequest, DetailTarget } from '@/src/react/actions';
 export type DetailContentOptions<Data, Input> = {
   datasets: readonly [
     ExportDataset<Data, Input>,
@@ -173,9 +173,8 @@ export function createDetailContent<Data, Input>(
   };
 }
 
-type DrillRequest = ReturnType<DrillAction<unknown, unknown>['resolve']>;
 const DetailContext = createContext<{
-  open: (request: DrillRequest, trigger?: HTMLElement) => void;
+  open: (request: DetailRequest, trigger?: HTMLElement) => void;
   active: boolean;
 } | null>(null);
 export function useDetailActive() {
@@ -239,7 +238,7 @@ export function DetailProvider({
       step: null,
     });
   }
-  function open(request: DrillRequest, trigger?: HTMLElement) {
+  function open(request: DetailRequest, trigger?: HTMLElement) {
     const content = details.find(detail => detail.id === request.id);
     invariant(
       content?.target === request.target,
@@ -299,24 +298,6 @@ export function DetailProvider({
   );
 }
 
-export function useDrill<Row, Input>(
-  action: DrillAction<Row, Input> | undefined,
-  source: { loading: true } | { loading?: false; input: Input },
-  binding: object
-) {
-  const owner = useContext(DetailContext);
-  invariant(
-    !action || action.binding === binding,
-    'A drill action must belong to the widget metric or dataset.'
-  );
-  return action && !source.loading
-    ? {
-        id: action.id,
-        label: action.label,
-        open(row: Row, trigger?: HTMLElement) {
-          invariant(owner, 'Drill actions require DataApp.');
-          owner.open(action.resolve(row, source.input), trigger);
-        },
-      }
-    : undefined;
+export function useDetailOpener() {
+  return useContext(DetailContext)?.open;
 }
