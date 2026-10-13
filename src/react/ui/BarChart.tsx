@@ -55,6 +55,7 @@ export function BarChart<Item extends BarChartItem>({
     item: Item;
     actions: BoundExplorationActions<Item>;
     triggerRef: { current: HTMLElement };
+    anchorRef: { current: HTMLElement };
   } | null>(null);
   function closeMenu() {
     if (!selection) return;
@@ -77,6 +78,12 @@ export function BarChart<Item extends BarChartItem>({
         item,
         actions: itemActions,
         triggerRef: { current: trigger },
+        anchorRef: {
+          current:
+            trigger.querySelector<HTMLElement>(
+              '.altertable-selectable-bars-label'
+            ) ?? trigger,
+        },
       });
     }
   }
@@ -201,6 +208,7 @@ export function BarChart<Item extends BarChartItem>({
                           item,
                           actions: itemActions,
                           triggerRef: { current: event.currentTarget },
+                          anchorRef: { current: event.currentTarget },
                         });
                       }}
                     >
@@ -216,7 +224,8 @@ export function BarChart<Item extends BarChartItem>({
       {selection && (
         <MenuPopover
           trigger="MenuTrigger"
-          triggerRef={selection.triggerRef}
+          triggerRef={selection.anchorRef}
+          placement="bottom"
           isOpen
           onOpenChange={open => {
             if (!open) closeMenu();

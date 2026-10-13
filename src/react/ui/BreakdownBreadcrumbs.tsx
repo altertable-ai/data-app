@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import type { BreakdownPath, BreakdownVariable } from '@/src/core/breakdown';
+import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 
 /** Path navigation changes only exploration; ordinary date and scope filters survive. */
@@ -12,7 +13,7 @@ export function BreakdownBreadcrumbs({
 }: {
   variable: BreakdownVariable;
   id?: string;
-  /** Widget context names the displayed grouping and keeps recovery beside the data. */
+  /** Widget context keeps the same path navigation beside the data. */
   local?: boolean;
   value: BreakdownPath;
   onChange: (path: BreakdownPath) => void;
@@ -32,11 +33,10 @@ export function BreakdownBreadcrumbs({
       aria-label={`${variable.label} ${local ? 'breakdown' : 'exploration'}`}
       data-breakdown-navigation={local || undefined}
     >
-      {local && <span>Breakdown: {variable.level(path).label}</span>}
       <ol>
         <li>
           {path.length ? (
-            <Button variant="ghost" onClick={() => change([])}>
+            <Button variant="ghost" size="compact" onClick={() => change([])}>
               {variable.rootLabel}
             </Button>
           ) : (
@@ -45,12 +45,13 @@ export function BreakdownBreadcrumbs({
         </li>
         {path.map((member, index) => (
           <li key={`${member.level}:${member.id}`}>
-            <span aria-hidden="true">›</span>
+            <AppIcon name="openDetails" size={12} />
             {index === path.length - 1 ? (
               <span aria-current="page">{member.label}</span>
             ) : (
               <Button
                 variant="ghost"
+                size="compact"
                 onClick={() => change(path.slice(0, index + 1))}
               >
                 {member.label}
@@ -59,11 +60,6 @@ export function BreakdownBreadcrumbs({
           </li>
         ))}
       </ol>
-      {path.length > 0 && (
-        <Button variant="ghost" onClick={() => change(path.slice(0, -1))}>
-          Up one level
-        </Button>
-      )}
     </nav>
   );
 }

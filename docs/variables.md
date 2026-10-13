@@ -290,7 +290,7 @@ must be stable strings or finite numbers. Paths must follow declared levels,
 leave a grouping level, and fit in the shared URL. Malformed URL paths fall back
 to the root, matching the validated-default behavior of other variables.
 
-`<DataApp>` derives breadcrumbs and Up from the path variable. Clicking a
+`<DataApp>` derives breadcrumbs from the path variable. Clicking a
 breadcrumb truncates the path; clicking the root resets exploration. Each change
 creates one history entry and preserves dates, segments, and ordinary filters.
 Clear filters preserves exploration; reset exploration separately through the

@@ -68,7 +68,7 @@ test('filter, descend, detail export, up and browser history preserve the explor
       .getByRole('button', { name: /^View orders: Atelier Nord:/ })
       .count()
   ).toBe(1);
-  await path.getByRole('button', { name: 'Up one level', exact: true }).click();
+  await path.getByRole('button', { name: 'Europe', exact: true }).click();
   await expectHeading(page, 'countries');
   await page.goBack();
   await expectHeading(page, 'customers');
@@ -170,7 +170,7 @@ test('a pending hierarchy transition cannot apply an old row to the new level', 
       .getByRole('region', { name: 'Revenue by regions', exact: true })
       .getByRole('navigation', { name: 'Geography breakdown' })
       .textContent()
-  ).toContain('Breakdown: Regions');
+  ).toBe('All regions');
   await page.getByRole('button', { name: /^Explore: Europe:/ }).click();
   expect(
     await page
@@ -411,11 +411,27 @@ test('widget breakdown context provides a visible way back at each level and in 
   });
   const trigger = root.getByRole('button', { name: /^Explore: Europe:/ });
   expect(await trigger.getAttribute('aria-haspopup')).toBe('menu');
+  await trigger.click();
+  const menu = page.getByRole('menu', { name: 'Europe actions', exact: true });
+  await menu.waitFor();
+  const labelBounds = (await trigger
+    .getByText('Europe', { exact: true })
+    .boundingBox())!;
+  await expect
+    .poll(async () => {
+      const bounds = (await menu.boundingBox())!;
+      return Math.abs(
+        bounds.x + bounds.width / 2 - labelBounds.x - labelBounds.width / 2
+      );
+    })
+    .toBeLessThan(2);
+  await page.keyboard.press('Escape');
+
   expect(
     await root
       .getByRole('navigation', { name: 'Geography breakdown' })
       .textContent()
-  ).toContain('Breakdown: Regions');
+  ).toBe('All regions');
   await act(page, 'Europe', 'Break down by countries');
   await expectHeading(page, 'countries');
   const countries = page.getByRole('region', {
@@ -425,7 +441,13 @@ test('widget breakdown context provides a visible way back at each level and in 
   const local = countries.getByRole('navigation', {
     name: 'Geography breakdown',
   });
-  expect(await local.textContent()).toContain('Breakdown: Countries');
+  expect(await local.textContent()).toContain('All regions');
+  expect(
+    await page
+      .getByRole('button', { name: 'Up one level', exact: true })
+      .count()
+  ).toBe(0);
+  expect(await local.textContent()).not.toContain('Breakdown:');
   expect(await local.textContent()).toContain('Europe');
   await act(page, 'France', 'Break down by customers');
   await expectHeading(page, 'customers');
@@ -447,7 +469,7 @@ test('widget breakdown context provides a visible way back at each level and in 
   });
   await inspection
     .getByRole('navigation', { name: 'Geography breakdown' })
-    .getByRole('button', { name: 'Up one level', exact: true })
+    .getByRole('button', { name: 'Europe', exact: true })
     .click();
   await expectHeading(page, 'countries');
   await page.keyboard.press('Escape');

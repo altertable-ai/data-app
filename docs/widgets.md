@@ -168,8 +168,8 @@ Evidence references explain definitions and queries; exploration actions change
 what the reader investigates.
 
 A declared descent action automatically gives `<VisualizationWidget>` and
-`<TableWidget>` a local breakdown path, grouping label, and return controls.
-They remain visible at terminal levels, in empty results, and in inspection.
+`<TableWidget>` the same breadcrumb navigation used at page level.
+Ancestor breadcrumbs provide return navigation. They remain visible at terminal levels, in empty results, and in inspection.
 Chart menu triggers show a dropdown indicator beside the category label.
 
 ```tsx

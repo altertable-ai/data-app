@@ -107,7 +107,4 @@
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     )
     0;
-  padding: var(--atbl-space-sm);
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-control);
 }
