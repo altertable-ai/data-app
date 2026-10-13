@@ -16,7 +16,7 @@
 }
 .altertable-exploration-separator {
   flex: none;
-  color: var(--atbl-muted);
+  color: color-mix(in srgb, var(--atbl-muted) 60%, transparent);
 }
 
 .altertable-exploration-breadcrumbs .altertable-field {
@@ -34,15 +34,4 @@
   overflow: visible;
   white-space: normal;
   overflow-wrap: anywhere;
-}
-.altertable-exploration-breadcrumbs
-  .altertable-field[data-label-action='true']
-  > button:last-child {
-  flex: 0 1 auto;
-}
-
-.altertable-exploration-breadcrumbs
-  .altertable-field[data-label-action='true']
-  > button:first-child {
-  flex: none;
 }

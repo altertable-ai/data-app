@@ -29,8 +29,8 @@ type SharedProps = {
   label: string;
   labelPlacement?: ControlLabelPlacement;
   variant?: 'outline' | 'ghost';
-  /** An ancestor label can navigate independently of opening its selector. */
-  labelAction?: () => void;
+  /** An additional operation in the dropdown; activating it closes the picker without selecting a value. */
+  action?: { label: string; onAction: () => void };
   options: readonly ChoiceOption[];
   /** Separate source state, rendered last with a divider and the shared option component. */
   missingOption?: ChoiceOption;
@@ -69,8 +69,16 @@ export type ChoicePickerProps =
 export function ChoicePicker(props: ChoicePickerProps) {
   const labelPlacement = props.labelPlacement ?? 'inline';
   const multiple = props.selectionMode === 'multiple';
-  const { label, options, missingOption, disabled, loading, error, onRetry } =
-    props;
+  const {
+    label,
+    options,
+    missingOption,
+    disabled,
+    loading,
+    error,
+    onRetry,
+    action,
+  } = props;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
@@ -165,13 +173,7 @@ export function ChoicePicker(props: ChoicePickerProps) {
   }
 
   return (
-    <PickerField
-      label={label}
-      labelPlacement={labelPlacement}
-      labelAction={props.labelAction}
-      disabled={disabled}
-      variant={props.variant}
-    >
+    <PickerField label={label} labelPlacement={labelPlacement}>
       <DialogTrigger
         isOpen={open}
         onOpenChange={next => {
@@ -297,11 +299,26 @@ export function ChoicePicker(props: ChoicePickerProps) {
                 retryLabel="Try again"
               />
             )}
-            {canClear && (
+            {(canClear || action) && (
               <div className="altertable-choice-picker-actions">
-                <Button variant="ghost" size="compact" onPress={clear}>
-                  Clear selection
-                </Button>
+                {action && (
+                  <Button
+                    variant="ghost"
+                    size="compact"
+                    onPress={() => {
+                      setOpen(false);
+                      setSearch('');
+                      action.onAction();
+                    }}
+                  >
+                    {action.label}
+                  </Button>
+                )}
+                {canClear && (
+                  <Button variant="ghost" size="compact" onPress={clear}>
+                    Clear selection
+                  </Button>
+                )}
               </div>
             )}
           </Dialog>

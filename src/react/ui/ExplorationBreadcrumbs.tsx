@@ -68,7 +68,10 @@ export function ExplorationBreadcrumbs({
       { exploration: next },
       'push'
     );
-    if (focus) navigation.current?.focus({ preventScroll: true });
+    if (focus)
+      requestAnimationFrame(() =>
+        navigation.current?.focus({ preventScroll: true })
+      );
   }
   return (
     <nav
@@ -118,9 +121,13 @@ export function ExplorationBreadcrumbs({
                 loading={!!level.facet && facet.isPending}
                 error={!!level.facet && facet.isError}
                 onRetry={() => void facet.refetch()}
-                labelAction={
+                action={
                   position < group
-                    ? () => commit(variable.navigate(state, level.id), true)
+                    ? {
+                        label: `Group by ${level.label}`,
+                        onAction: () =>
+                          commit(variable.navigate(state, level.id), true),
+                      }
                     : undefined
                 }
                 onChange={next => {

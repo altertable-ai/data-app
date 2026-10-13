@@ -177,6 +177,10 @@ test('ancestor navigation, widget selectors and browser history update the same 
       .count()
   ).toBe(1);
   await navigation
+    .getByRole('button', { name: 'Country: France', exact: true })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'Country options', exact: true })
     .getByRole('button', { name: 'Group by Country', exact: true })
     .click();
   await heading(page, 'countries');
@@ -316,6 +320,10 @@ test('mobile keyboard selectors and menu actions preserve local navigation focus
     )
     .toBe(true);
   await controls(page)
+    .getByRole('button', { name: 'Region: Europe', exact: true })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'Region options', exact: true })
     .getByRole('button', { name: 'Group by Region', exact: true })
     .click();
   await heading(page, 'regions');
@@ -396,6 +404,10 @@ test('inspection uses the shared selectors and ancestor navigation without dupli
   });
   await inspection
     .getByRole('navigation', { name: 'Geography breakdown' })
+    .getByRole('button', { name: 'Country: France', exact: true })
+    .click();
+  await page
+    .getByRole('dialog', { name: 'Country options', exact: true })
     .getByRole('button', { name: 'Group by Country', exact: true })
     .click();
   await heading(page, 'countries');

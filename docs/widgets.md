@@ -169,7 +169,7 @@ what the reader investigates.
 
 A declared exploration action automatically gives `<VisualizationWidget>` and
 `<TableWidget>` the same breadcrumb navigation used at page level.
-Ancestor labels navigate; dropdowns edit selections. They remain visible at terminal levels, in empty results, and in inspection.
+Each segment is one selector; ancestor dropdowns also offer Group by. They remain visible at terminal levels, in empty results, and in inspection.
 Chart menu triggers show a dropdown indicator beside the category label.
 
 ```tsx

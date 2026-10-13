@@ -319,17 +319,25 @@ by an earlier level. `geography.visibleLevels(state)` derives these controls;
 `geography.level(state)` derives the current grouping. No separate visibility
 configuration is needed.
 
-| Interaction               | Result                                                   |
-| ------------------------- | -------------------------------------------------------- |
-| Select a different parent | Clear descendants and retain the deepest valid grouping. |
-| Filter a chart member     | Select that member; preserve grouping.                   |
-| Descend a chart member    | Select that member and advance one level.                |
-| Click an ancestor label   | Group by that level and clear deeper selections.         |
-| Select All at the root    | Reset exploration.                                       |
+`exploration.filter({ country: null })` clears that level to All. The stored
+state uses `{ kind: 'all' }`, not a member with a null ID. When mapping All to a
+SQL parameter, `($country IS NULL OR country = $country)` treats a null parameter
+as unrestricted scope. This does not select missing database values. Missing
+members require a distinct selection kind; exploration currently supports
+single string or numeric members.
+
+| Interaction                             | Result                                                   |
+| --------------------------------------- | -------------------------------------------------------- |
+| Select a different parent               | Clear descendants and retain the deepest valid grouping. |
+| Filter a chart member                   | Select that member; preserve grouping.                   |
+| Descend a chart member                  | Select that member and advance one level.                |
+| Choose Group by in an ancestor dropdown | Group by that level and clear deeper selections.         |
+| Select All at the root                  | Reset exploration.                                       |
 
 `<DataApp>` renders exploration separately from ordinary filters. Relevant
-widgets and inspection reuse the same selectors. Ancestor labels navigate;
-dropdowns edit selections. Each transition creates one history entry and
+widgets and inspection reuse the same selectors. Each segment opens one
+dropdown for its label and value. An ancestor dropdown also offers Group by
+to return to that grouping. Each transition creates one history entry and
 preserves unrelated variables. Clear filters affects ordinary scope; reset
 exploration with its root selector.
 
