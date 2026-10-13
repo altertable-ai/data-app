@@ -116,9 +116,11 @@ export function localLakehouse(
       } catch (error) {
         signal.throwIfAborted();
         if (error instanceof QueryError)
-          throw new DataSourceError('query_rejected');
+          throw new DataSourceError('query_rejected', undefined, {
+            cause: error,
+          });
         if (error instanceof NetworkError || error instanceof TimeoutError)
-          throw new DataSourceError('unavailable');
+          throw new DataSourceError('unavailable', undefined, { cause: error });
         if (
           error instanceof AltertableLakehouseError &&
           error.statusCode !== undefined
@@ -134,7 +136,7 @@ export function localLakehouse(
                   : status === 400 || status === 422
                     ? 'query_rejected'
                     : 'unavailable';
-          throw new DataSourceError(reason, status);
+          throw new DataSourceError(reason, status, { cause: error });
         }
         throw error;
       } finally {

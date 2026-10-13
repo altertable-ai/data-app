@@ -124,8 +124,9 @@ export function createDataHandler(
       });
     } catch (error) {
       const source = error instanceof DataSourceError ? error : null;
+      const cause = source?.cause instanceof Error ? source.cause.message : '';
       console.error(
-        `Data operation ${name} failed (${requestId}): ${source ? `${source.reason}${source.status ? ` (${source.status})` : ''}${source.queryName ? ` in ${source.queryName}` : ''}` : error instanceof Error ? error.name : 'unknown'}`
+        `Data operation ${name} failed (${requestId}): ${source ? `${source.reason}${source.status ? ` (${source.status})` : ''}${source.queryName ? ` in ${source.queryName}` : ''}${cause ? `: ${cause}` : ''}` : error instanceof Error ? error.name : 'unknown'}`
       );
       const failure = toDataOperationFailure(error, signal.aborted);
 

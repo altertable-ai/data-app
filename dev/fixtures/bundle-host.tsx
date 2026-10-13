@@ -41,6 +41,7 @@ import {
 } from '@altertable/data-app/contract';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
+  type DataAppLogger,
   type DataAppStatus,
   createNavigationHandler,
   createSqlQueryHandler,
@@ -50,6 +51,12 @@ import '@/dev/fixtures/dev-reload';
 import '@/dev/playground-host.css';
 injectDataAppAnnotationStyles();
 const hostOptions = new URLSearchParams(location.search);
+const iframeLogger: DataAppLogger = {
+  log: (...args) => console.debug('[DataApps:Iframe]', ...args),
+  info: (...args) => console.info('[DataApps:Iframe]', ...args),
+  warn: (...args) => console.warn('[DataApps:Iframe]', ...args),
+  error: (...args) => console.error('[DataApps:Iframe]', ...args),
+};
 const isPlayground = location.pathname === '/playground';
 if (isPlayground) document.title = 'Playground · Altertable';
 const appPreview = ['/starter-data-app', '/playground'].includes(
@@ -260,8 +267,13 @@ function Host() {
             body: JSON.stringify({ statement, limit, params }),
             signal,
           });
-          if (!response.ok) throw new DataSourceError('unavailable');
-          return response.json();
+          if (response.ok) return response.json();
+          const { error } = (await response.json()) as {
+            error: { reason?: DataSourceError['reason']; message: string };
+          };
+          throw new DataSourceError(error.reason ?? 'unavailable', undefined, {
+            cause: new Error(error.message),
+          });
         },
       })),
       'test:echo'({ period }) {
@@ -500,9 +512,20 @@ function Host() {
                 }
           }
           startupTimeoutMs={timeout ? 200 : 10_000}
-          onMessage={router.dispatch}
+          logger={iframeLogger}
+          onMessage={async (message, context) => {
+            try {
+              return await router.dispatch(message, context);
+            } catch (error) {
+              if (!context.signal.aborted)
+                console.error('[DataApps:Host] Request failed', message, error);
+              throw error;
+            }
+          }}
           onDiagnostic={event => {
             document.body.dataset.diagnostic = JSON.stringify(event);
+            if (event.type !== 'runtime:log')
+              console.debug('[DataApps:Host]', event);
           }}
         />
       </main>

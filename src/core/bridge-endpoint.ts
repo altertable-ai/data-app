@@ -1,10 +1,13 @@
 import {
   bridgeProtocol,
   bridgeEventName,
+  bridgeMessageMetadata,
   parseBridgeEnvelope,
   parseBridgeMessage,
   parseBridgePayload,
   validId,
+  type BridgeDiagnostic,
+  type BridgeDropReason,
   type BridgeMessage,
   type BridgeRole,
   type BridgeEventsFrom,
@@ -36,13 +39,18 @@ export function createBridgeEndpoint<const Role extends BridgeRole>({
   opaque: boolean;
   context: () => ConnectionContext;
   post: (message: BridgeMessage) => void;
-  diagnostic?: (
-    direction: 'send' | 'receive',
-    type: BridgeMessage['type']
-  ) => void;
+  diagnostic?: (event: BridgeDiagnostic) => void;
   invalidRequest?: (id: string) => void;
 }) {
   let disposed = false;
+
+  function drop(reason: BridgeDropReason, type: unknown) {
+    diagnostic?.({
+      direction: 'drop',
+      reason,
+      ...(typeof type === 'string' ? { type: type.slice(0, 64) } : {}),
+    });
+  }
 
   function send<
     Name extends BridgeEventsFrom<Role>,
@@ -66,7 +74,7 @@ export function createBridgeEndpoint<const Role extends BridgeRole>({
     });
     if (!message || (opaque && !validId(current.token)))
       throw new Error('The bridge is not ready to send this event.');
-    diagnostic?.('send', definition.wire);
+    diagnostic?.({ direction: 'send', ...bridgeMessageMetadata(message) });
     if (disposed) return;
     post(message);
   }
@@ -76,7 +84,17 @@ export function createBridgeEndpoint<const Role extends BridgeRole>({
     if (disposed || !peer || event.origin !== origin || event.source !== peer)
       return;
     const envelope = parseBridgeEnvelope(event.data);
-    if (!envelope) return;
+    if (!envelope) {
+      const data: unknown = event.data;
+      if (
+        data &&
+        typeof data === 'object' &&
+        'channel' in data &&
+        data.channel === bridgeProtocol.channel
+      )
+        drop('invalid_envelope', 'type' in data ? data.type : undefined);
+      return;
+    }
     const current = context();
     // The app learns its opaque token from a trusted host connect message.
     const connecting =
@@ -87,32 +105,33 @@ export function createBridgeEndpoint<const Role extends BridgeRole>({
         ? !validId(envelope.token)
         : !current.token || envelope.token !== current.token)
     )
-      return;
+      return drop('token_mismatch', envelope.type);
     const name = bridgeEventName(envelope.type);
-    if (!name) return;
+    if (!name) return drop('unexpected_type', envelope.type);
     const definition = bridgeProtocol.events[name];
-    if (definition.from === role) return;
+    if (definition.from === role) return drop('unexpected_type', envelope.type);
     if (definition.session === 'establish') {
       if (
         envelope.documentId !== current.documentId ||
         envelope.sessionId === undefined
       )
-        return;
+        return drop('session_mismatch', envelope.type);
     } else if (definition.session === 'current') {
       if (
         !current.sessionId ||
         envelope.sessionId !== current.sessionId ||
         envelope.documentId !== current.documentId
       )
-        return;
+        return drop('session_mismatch', envelope.type);
     }
     const message = parseBridgePayload(envelope, definition);
     if (!message) {
+      drop('invalid_payload', envelope.type);
       if (role === 'host' && name === 'request' && validId(envelope.id))
         invalidRequest?.(envelope.id);
       return;
     }
-    diagnostic?.('receive', definition.wire);
+    diagnostic?.({ direction: 'receive', ...bridgeMessageMetadata(message) });
     if (disposed) return;
     // The catalog lookup correlates the key and parsed discriminated message.
     const handler = (handlers as Record<string, (message: unknown) => void>)[

@@ -102,6 +102,7 @@ test('local lakehouse recognizes query errors in successful NDJSON responses', a
       .catch(error => error);
     expect(error).toBeInstanceOf(DataSourceError);
     expect(error.reason).toBe('query_rejected');
+    expect(error.cause.message).toMatch(/Wrong number|Execution failed/);
   }
 });
 

@@ -196,6 +196,55 @@ export type BridgeHandlers<Role extends BridgeRole> = {
   ) => void;
 };
 
+/** Delivery metadata safe to log on either side; never payloads or session credentials. */
+export type BridgeMessageMetadata = {
+  type: BridgeMessage['type'];
+  id?: string;
+  route?: string;
+  operation?: string;
+  error?: { code: string; message: string; requestId?: string };
+};
+
+export function bridgeMessageMetadata(
+  message: BridgeMessage
+): BridgeMessageMetadata {
+  const metadata: BridgeMessageMetadata = { type: message.type };
+  if ('id' in message) metadata.id = message.id;
+  if (message.type === 'bridge:request') {
+    metadata.route = message.route;
+    const payload = message.payload;
+    if (
+      message.route === 'data:query' &&
+      payload &&
+      typeof payload === 'object' &&
+      'operation' in payload &&
+      typeof payload.operation === 'string'
+    )
+      metadata.operation = payload.operation.slice(0, 256);
+  }
+  if (message.type === 'bridge:error')
+    metadata.error = {
+      code: message.code,
+      message: message.message,
+      ...(message.requestId === undefined
+        ? {}
+        : { requestId: message.requestId }),
+    };
+  return metadata;
+}
+
+/** Why a message from the connected peer was ignored. Messages from other windows are not reported. */
+export type BridgeDropReason =
+  | 'invalid_envelope'
+  | 'token_mismatch'
+  | 'unexpected_type'
+  | 'session_mismatch'
+  | 'invalid_payload';
+
+export type BridgeDiagnostic =
+  | ({ direction: 'send' | 'receive' } & BridgeMessageMetadata)
+  | { direction: 'drop'; type?: string; reason: BridgeDropReason };
+
 const byWire = new Map<string, BridgeEventName>();
 for (const name of Object.keys(bridgeProtocol.events) as BridgeEventName[]) {
   const wire = bridgeProtocol.events[name].wire;

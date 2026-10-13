@@ -15,7 +15,11 @@ import {
 import type { Lakehouse } from '@/src/core/contract';
 import { createMessageClient } from '@/src/client/messages';
 import { DataAppError } from '@/src/client/transport';
-import { createBridgeLogger, logBridgeMessage } from '@/src/client/logger';
+import {
+  createBridgeLogger,
+  describeError,
+  logBridgeDiagnostic,
+} from '@/src/client/logger';
 
 type Pending = {
   start: () => void;
@@ -72,8 +76,8 @@ export function createIframeTransport({
     context: () => ({ documentId, sessionId, token }),
     post(message) {
       frame.parent.postMessage(message, parentOrigin);
-      logBridgeMessage(logger, message);
     },
+    diagnostic: event => logBridgeDiagnostic(logger, event),
     handlers: {
       connect(message) {
         if (mode === 'bundle') token = message.token;
@@ -81,6 +85,10 @@ export function createIframeTransport({
       },
       initialize(message) {
         if (sessionId && sessionId !== message.sessionId) {
+          if (pending.size)
+            logger.warn('Preview reconnected; rejecting pending requests', {
+              count: pending.size,
+            });
           for (const entry of pending.values())
             entry.reject(
               new DataAppError(
@@ -158,6 +166,12 @@ export function createIframeTransport({
       }
 
       const timer = setTimeout(() => {
+        logger.warn('Message request timed out', {
+          id,
+          route: message.route,
+          timeoutMs,
+          sent,
+        });
         if (sent) send('cancel', { id });
         cleanup();
         reject(
@@ -278,8 +292,12 @@ export function createIframeTransport({
     ready() {
       if (!disposed && sessionId) send('runtimeReady', {});
     },
-    fail() {
-      if (!disposed && sessionId) send('runtimeError', {});
+    /** Reports a fatal app failure; the cause reaches the host logger only. */
+    fail(cause?: unknown) {
+      if (disposed || !sessionId) return;
+      if (cause !== undefined)
+        logger.error(() => ['Data app failed', describeError(cause)]);
+      send('runtimeError', {});
     },
   };
 }

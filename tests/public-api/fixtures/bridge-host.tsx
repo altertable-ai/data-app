@@ -10,6 +10,7 @@ import { createMessageRouter } from '@altertable/data-app/contract';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
   createNavigationHandler,
+  type DataAppDiagnostic,
   type DataAppLogger,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
@@ -27,6 +28,7 @@ function Host() {
   const [logging, setLogging] = useState(true);
   const [loggerCalls, setLoggerCalls] = useState(0);
   const [logs, setLogs] = useState<unknown[][]>([]);
+  const [diagnostics, setDiagnostics] = useState<DataAppDiagnostic[]>([]);
   function record(level: string, args: unknown[]) {
     setLoggerCalls(previous => previous + 1);
     if (brokenLogger.current) throw new Error('Consumer logger failed');
@@ -85,11 +87,18 @@ function Host() {
       <output aria-label="Host logs" id="logs">
         {JSON.stringify(logs)}
       </output>
+      <output aria-label="Host diagnostics">
+        {JSON.stringify(diagnostics)}
+      </output>
       <DataAppBridge
         iframe={iframe}
         connection={{ type: 'origin', origin: window.location.origin }}
         onMessage={router.dispatch}
         logger={logging ? logger : undefined}
+        onDiagnostic={event => {
+          if (event.type !== 'runtime:log')
+            setDiagnostics(previous => [...previous, event]);
+        }}
       />
       <iframe
         key={generation}

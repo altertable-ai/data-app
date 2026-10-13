@@ -315,6 +315,24 @@ test('SQL host authentication failures give browser viewers actionable messages'
   }
 });
 
+test('SQL host failures keep lakehouse details for host logs, not viewers', async () => {
+  const detail = 'Parser Error: syntax error at or near "CAST"';
+  const handler = createSqlQueryHandler(async () => ({
+    async queryAll() {
+      throw new DataSourceError('query_rejected', undefined, {
+        cause: new Error(detail),
+      });
+    },
+  }));
+  const error = await handler(
+    { statement: 'SELECT 22 CAST(1 AS INT)', limit: 1 },
+    context()
+  ).catch(error => error);
+  expect(error).toMatchObject({ code: 'source_query_rejected' });
+  expect(error.message).not.toContain(detail);
+  expect(error.cause.cause.message).toBe(detail);
+});
+
 test('SQL delivery forwards statements and parameters unchanged through host authorization', async () => {
   const input = {
     statement: 'SELECT $value',

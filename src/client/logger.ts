@@ -1,4 +1,4 @@
-import type { BridgeMessage } from '@/src/core/bridge';
+import type { BridgeDiagnostic } from '@/src/core/bridge';
 import { type DataAppLogger, type LogEntry } from '@/src/core/logger';
 
 /** Lazy arguments run in the iframe; only resolved values cross the bridge. */
@@ -31,32 +31,28 @@ export function createBridgeLogger(
   };
 }
 
+const diagnosticLabels = {
+  send: 'Sending message to parent',
+  receive: 'Received message from parent',
+  drop: 'Ignored message from parent',
+} as const;
+
 /** Log only delivery metadata; payloads and session credentials stay private. */
-export function logBridgeMessage(
+export function logBridgeDiagnostic(
   logger: DataAppLogger,
-  message: BridgeMessage
+  { direction, ...metadata }: BridgeDiagnostic
 ) {
-  if (message.type === 'runtime:log') return;
-  logger.log(() => {
-    const metadata: {
-      type: BridgeMessage['type'];
-      id?: string;
-      route?: string;
-      operation?: string;
-    } = { type: message.type };
-    if ('id' in message) metadata.id = message.id;
-    if (message.type === 'bridge:request') {
-      metadata.route = message.route;
-      const payload = message.payload;
-      if (
-        message.route === 'data:query' &&
-        payload &&
-        typeof payload === 'object' &&
-        'operation' in payload &&
-        typeof payload.operation === 'string'
-      )
-        metadata.operation = payload.operation;
-    }
-    return ['Sending message to parent', metadata];
-  });
+  if (metadata.type === 'runtime:log') return;
+  logger.log(diagnosticLabels[direction], metadata);
+}
+
+/** Error instances do not survive every logger, so only their text crosses the bridge. */
+export function describeError(error: unknown) {
+  if (error instanceof Error)
+    return {
+      name: error.name,
+      message: error.message,
+      ...(error.stack ? { stack: error.stack } : {}),
+    };
+  return { message: String(error) };
 }
