@@ -6,3 +6,8 @@ export type {
   QueryDefinitions,
   QueryParameterValue,
 } from '@/src/core/config';
+
+export type {
+  SourcedExploration,
+  SourcedExplorationLevel,
+} from '@/src/core/exploration-source';

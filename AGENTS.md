@@ -48,7 +48,9 @@ static displays, and deliberately custom UI; see [direct composition](docs/ui.md
 Prefer derivation over repeated configuration.
 For relevant widgets, declare typed exploration actions to open details, filter a
 view, or descend a supported hierarchy. Declare one exploration variable for hierarchy selection and grouping; do not
-duplicate its levels as ordinary filters. Details inherit displayed input; filter
+duplicate its levels as ordinary filters. For query-backed levels, use
+`app.defineExploration()` with registered sources and build operation inputs with `hierarchy.input(baseParser)` so
+source membership is validated before business queries. Details inherit displayed input; filter
 actions preserve current unrelated variables. Register detail content with its
 own evidence. Keep export datasets and story in the main app. Follow
 [exploration guidance](docs/widgets.md#explore-from-widgets).

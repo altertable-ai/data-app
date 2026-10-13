@@ -3,7 +3,7 @@ import type { QueryParameters } from '@/src/core/queries';
 export type OperationContracts = Record<
   string,
   {
-    input: (value: unknown) => unknown;
+    input: OperationInputParser<unknown>;
     output: (value: unknown) => unknown;
   }
 >;
@@ -48,12 +48,44 @@ export type OperationContext = {
   queryParams?: QueryParameters;
 };
 
+const inputValidationErrorBrand = Symbol.for(
+  '@altertable/data-app.input-validation-error'
+);
+export class InputValidationError extends Error {
+  readonly name = 'InputValidationError';
+  readonly [inputValidationErrorBrand] = true;
+  static [Symbol.hasInstance](value: unknown): boolean {
+    return (
+      value instanceof Error &&
+      (value as { [inputValidationErrorBrand]?: unknown })[
+        inputValidationErrorBrand
+      ] === true
+    );
+  }
+}
+
+/** Source-backed validation runs after parsing and before business queries, in the operation executor. */
+export type OperationInputParser<Input> = ((value: unknown) => Input) & {
+  validation?: {
+    queries: import('@/src/core/queries').QueryDefinitions;
+    operations?: DataOperations;
+    run(
+      query: (
+        name: string,
+        params: QueryParameters,
+        options: { limit: number }
+      ) => Promise<QueryResult>,
+      input: Input
+    ): Promise<void>;
+  };
+};
+
 /**
  * Parsers run in the operation executor's runtime: server for HTTP apps, browser for bundle apps.
  * Browser validation does not replace backend authorization or query limits.
  */
 export type DataOperation<Input, Output> = {
-  input: (value: unknown) => Input;
+  input: OperationInputParser<Input>;
   output: (value: unknown) => Output;
   run: (context: OperationContext, input: Input) => Promise<Output>;
   checks: readonly Input[];

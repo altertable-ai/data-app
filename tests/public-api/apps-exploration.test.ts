@@ -158,7 +158,7 @@ test('editing a parent clears descendants and dependent facets atomically withou
   const facet = requests.find(
     params => params.region === 'North America' && !('start' in params)
   );
-  expect(facet).toEqual({ region: 'North America' });
+  expect(facet).toEqual({ region: 'North America', member: null });
 });
 
 test('ancestor navigation, widget selectors and browser history update the same URL value', async ({
@@ -598,4 +598,39 @@ test('parent selection progressively reveals child selectors while queries retai
       .count()
   ).toBe(0);
   expect(state(page)).toBeNull();
+});
+
+test('edited facet parent combinations are rejected before business queries and recover through selectors', async ({
+  page,
+}) => {
+  let business = 0;
+  page.on('request', request => {
+    if (
+      request.url().endsWith('/api/drill-query') &&
+      request.postDataJSON().statement.startsWith('WITH customers')
+    )
+      business++;
+  });
+  const bad = {
+    selection: {
+      region: {
+        kind: 'include',
+        members: [{ kind: 'value', value: 'Europe' }],
+      },
+      country: {
+        kind: 'include',
+        members: [{ kind: 'value', value: 'United States' }],
+      },
+      customer: { kind: 'all' },
+    },
+    groupBy: 'country',
+  };
+  await page.goto(
+    '/exploration-app?geography=' + encodeURIComponent(JSON.stringify(bad))
+  );
+  await page.getByText('Update the selection', { exact: true }).waitFor();
+  expect(business).toBe(0);
+  await choose(page, 'Country', 'France');
+  await heading(page, 'countries');
+  expect(business).toBe(1);
 });

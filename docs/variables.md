@@ -249,8 +249,9 @@ Filters apply immediately; use app-owned drafts only when the task needs Apply/C
 
 ## Hierarchical exploration
 
-Declare one `explorationVariable()` for dimensions that share a hierarchy. Its
-single URL value owns typed `selection` and `groupBy`. Do not also declare those
+Declare one hierarchy variable for dimensions that share a hierarchy. Use
+`explorationVariable()` for static options and `app.defineExploration()` for
+query-backed levels. Its single URL value owns typed `selection` and `groupBy`. Do not also declare those
 levels as ordinary filters. Dates, segments, and other scope remain independent.
 
 ```tsx
@@ -270,20 +271,14 @@ const geography = explorationVariable({
       label: 'Country',
       groupLabel: 'Countries',
       valueType: 'string',
-      facet: {
-        operation: 'countries',
-        input: selection => ({ region: selection.region }),
-      },
+      options: countryOptions,
     },
     {
       id: 'customer',
       label: 'Customer',
       groupLabel: 'Customers',
       valueType: 'number',
-      facet: {
-        operation: 'customers',
-        input: selection => ({ country: selection.country }),
-      },
+      options: customerOptions,
     },
   ],
 });
@@ -306,25 +301,88 @@ IDs alone supply predicates. For nested or renamed input fields, provide typed
 `bindings` as with other scope variables.
 
 Each level selects All or one member using the existing dimension selection
-shape. Static options can declare their immediate `parent` ID. Facets receive
-selected ancestors; their own level and descendants are All. Validate parent
-relationships against the source in the operation, particularly for facet-backed
-IDs. Bound SQL parameters and joins enforce the selected population.
+shape. Static options can declare their immediate `parent` ID. Selector
+visibility follows selected parents independently of grouping: Region All shows
+only Region; Europe reveals Country All; selecting a country reveals Customer
+All. Selecting All clears and hides descendants. `geography.visibleLevels(state)`
+derives controls; `geography.level(state)` derives grouping.
 
-Selector visibility follows selection, independently of grouping: Region All
-shows only Region; selecting Europe reveals Country All; selecting a country
-reveals Customer All. Selecting All clears and hides descendants. A child value
-requires selected ancestors, but may narrow scope while the chart still groups
-by an earlier level. `geography.visibleLevels(state)` derives these controls;
-`geography.level(state)` derives the current grouping. No separate visibility
-configuration is needed.
-
-`exploration.filter({ country: null })` clears that level to All. The stored
-state uses `{ kind: 'all' }`, not a member with a null ID. When mapping All to a
-SQL parameter, `($country IS NULL OR country = $country)` treats a null parameter
-as unrestricted scope. This does not select missing database values. Missing
-members require a distinct selection kind; exploration currently supports
+`exploration.filter({ country: null })` clears that level to All. Stored state
+uses `{ kind: 'all' }`, not a null member ID. A null SQL parameter can represent
+unrestricted scope through `($country IS NULL OR country = $country)`. Selecting
+missing database values is a separate operation; hierarchies currently support
 single string or numeric members.
+
+### Source-backed hierarchies
+
+Use `app.defineExploration()` for query-backed levels. Declare each relationship
+once in a registered query; the platform reuses it for dropdown options and
+selected-member validation. Each source query declares `member` and returns
+`value`, `label`, and optionally `count`:
+
+```sql
+SELECT id AS value, name AS label
+FROM countries
+WHERE region = $region AND ($member IS NULL OR id = $member)
+ORDER BY name
+```
+
+```tsx
+const geography = app.defineExploration({
+  key: 'geography',
+  label: 'Geography',
+  levels: [
+    {
+      id: 'region',
+      label: 'Region',
+      valueType: 'string',
+      options: regionOptions,
+    },
+    {
+      id: 'country',
+      label: 'Country',
+      valueType: 'string',
+      source: {
+        query: 'countries',
+      },
+    },
+  ],
+});
+
+const operations = {
+  overview: app.defineOperation({
+    input: geography.input(parsePeriodInput),
+    // Existing output, checks, policy, and run definitions.
+  }),
+};
+```
+
+Ancestor IDs bind automatically to matching query parameter names. When names
+differ, declare a typed map such as `parents: { regionId: 'region' }` in the
+source. Bindings can reference only earlier levels and declared query parameters.
+The platform owns `member`: null requests bounded dropdown options; a selected
+ID requests an exact lookup. Apply both ancestor predicates and the member
+predicate in source SQL. Do not paginate the exact-member lookup or validate
+against the dropdown page: valid IDs may lie outside its first 200 options.
+
+Use `geography.input(baseParser)` for every operation consuming that hierarchy,
+including details. It parses the named field and attaches source validation.
+Clients and HTTP handlers automatically register the required selector operations
+from these input contracts and reject conflicting operation names. No selector
+registration spread or manual parent check is needed. Input wrappers compose for
+several hierarchies. `geography.parse()` alone is structural UI validation.
+
+The shared executor validates selected source members in parent order before
+business queries, using the current operation's authorization, cancellation,
+and limits. Invalid or stale membership returns an invalid-input error; source
+failures prevent the business operation from running. Lookup queries appear in
+query evidence. Both browser/bundle and HTTP execution use this contract. Generated selector endpoints are named
+`key.level` and pass through the same authorization callback as ordinary
+operations. These names are reserved. `hierarchy.operations` is available when
+an authorizer needs to inspect its selector names.
+
+See the [support workload example](https://github.com/altertable-ai/data-app/blob/main/dev/support.ts)
+for the complete source, parser, and operation declarations.
 
 | Interaction                             | Result                                                   |
 | --------------------------------------- | -------------------------------------------------------- |

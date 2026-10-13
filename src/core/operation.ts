@@ -1,3 +1,5 @@
+import { InputValidationError } from '@/src/core/operation-types';
+import { resolveQueryParameters } from '@/src/core/queries';
 import { DataSourceError } from '@/src/core/contract';
 import type {
   DataOperations,
@@ -144,9 +146,25 @@ async function runOperation(
 
     return await Promise.race([
       cancelled,
-      Promise.resolve().then(() => {
+      Promise.resolve().then(async () => {
         signal.throwIfAborted();
-
+        const validation = operation.input.validation;
+        if (validation)
+          await validation.run(async (name, params, options) => {
+            const definition = validation.queries[name];
+            if (!definition) throw new Error('Unknown input validation query.');
+            return lakehouse.queryAll(definition.statement, {
+              name,
+              params: resolveQueryParameters(
+                definition.params,
+                params,
+                queryParams ?? {}
+              ),
+              limit: options.limit,
+              signal,
+            });
+          }, input as never);
+        signal.throwIfAborted();
         return operation.run(
           { lakehouse, signal, queryParams },
           input as never
@@ -174,6 +192,8 @@ const sourceErrorMessages = {
 };
 
 export function toDataOperationFailure(error: unknown, aborted = false) {
+  if (error instanceof InputValidationError)
+    return { status: 400, code: 'invalid_input', message: error.message };
   if (error instanceof OperationInputError)
     return {
       status: 400,

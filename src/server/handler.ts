@@ -1,3 +1,4 @@
+import { resolveOperations } from '@/src/core/operation-registry';
 import {
   executeDataOperation,
   toDataOperationFailure,
@@ -22,9 +23,10 @@ export type RequestAccess = {
  * authenticate another local process. Query evidence accompanies every result.
  */
 export function createDataHandler(
-  operations: DataOperations,
+  authored: DataOperations,
   authorize: (request: Request, operation: string) => Promise<RequestAccess>
 ) {
+  const operations = resolveOperations(authored);
   async function handleDataRequest(request: Request): Promise<Response> {
     const requestId = crypto.randomUUID();
     const url = new URL(request.url);

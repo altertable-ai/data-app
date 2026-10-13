@@ -1,3 +1,4 @@
+import { resolveOperations } from '@/src/core/operation-registry';
 import { randomUuid } from '@/src/core/uuid';
 import { createHttpTransport, DataAppError } from '@/src/client/transport';
 import { getDataAppTransport, localFrameBridge } from '@/src/client/iframe';
@@ -94,11 +95,12 @@ function createOperationClient<Operations extends DataOperations>(options: {
   operations: Operations;
   lakehouse?: Lakehouse;
 }): DataClient<Operations> {
+  const operations = resolveOperations(options.operations);
   return {
     async query(name, input, { signal } = {}) {
       signal?.throwIfAborted();
       const requestId = randomUuid();
-      if (!Object.hasOwn(options.operations, name))
+      if (!Object.hasOwn(operations, name))
         throw new DataAppError(
           'Unknown data operation.',
           'not_found',
@@ -117,16 +119,12 @@ function createOperationClient<Operations extends DataOperations>(options: {
         );
 
       try {
-        const { body } = await executeDataOperation(
-          options.operations[name]!,
-          input,
-          {
-            lakehouse,
-            signal: signal ?? new AbortController().signal,
-            requestId,
-            operationName: name,
-          }
-        );
+        const { body } = await executeDataOperation(operations[name]!, input, {
+          lakehouse,
+          signal: signal ?? new AbortController().signal,
+          requestId,
+          operationName: name,
+        });
 
         return { ...body, input } as DataResponse<
           OutputOf<Operations[typeof name]>,

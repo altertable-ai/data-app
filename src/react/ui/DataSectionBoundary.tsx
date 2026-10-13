@@ -12,6 +12,12 @@ import { StatusPanel } from '@/src/react/ui/StatusPanel';
 function errorPresentation(cause: Error) {
   const code = cause instanceof DataAppError ? cause.code : 'request_failed';
   switch (code) {
+    case 'invalid_input':
+      return {
+        title: 'Update the selection',
+        description: cause.message,
+        retryable: false,
+      };
     case 'source_unauthorized':
       return {
         title: 'Connection needs attention',

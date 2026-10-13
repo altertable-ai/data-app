@@ -1,6 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
-  explorationVariable,
   type ExplorationStateOf,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
@@ -8,54 +7,6 @@ import {
   operations as salesOperations,
   type SalesInput,
 } from '@/tests/public-api/fixtures/drill-data';
-export const geography = explorationVariable({
-  key: 'geography',
-  label: 'Geography',
-  levels: [
-    {
-      id: 'region',
-      label: 'Region',
-      groupLabel: 'Regions',
-      valueType: 'string',
-      options: [
-        { value: 'Europe', label: 'Europe' },
-        { value: 'North America', label: 'North America' },
-        { value: 'Asia', label: 'Asia' },
-      ],
-    },
-    {
-      id: 'country',
-      label: 'Country',
-      groupLabel: 'Countries',
-      valueType: 'string',
-      facet: {
-        operation: 'countries',
-        input: selection => ({ region: member(selection.region!) }),
-      },
-    },
-    {
-      id: 'customer',
-      label: 'Customer',
-      groupLabel: 'Customers',
-      valueType: 'string',
-      options: [
-        { value: 'account-atelier', label: 'Atelier Nord', parent: 'France' },
-        { value: 'account-werkhaus', label: 'Werkhaus', parent: 'Germany' },
-        {
-          value: 'account-pacific',
-          label: 'Pacific Works',
-          parent: 'United States',
-        },
-        { value: 'account-petit', label: 'Petit Studio', parent: 'France' },
-        {
-          value: 'account-future',
-          label: 'Future account',
-          parent: 'Singapore',
-        },
-      ],
-    },
-  ],
-});
 export type Input = SalesInput & {
   geography: ExplorationStateOf<typeof geography>;
 };
@@ -75,8 +26,11 @@ export const app = defineDataApp({
   queries: {
     countries: {
       statement:
-        'SELECT DISTINCT country AS value, country AS label FROM sales_orders WHERE ($region IS NULL OR region = $region) ORDER BY country',
-      params: { region: { defaultValue: null } },
+        'SELECT DISTINCT country AS value, country AS label FROM sales_orders WHERE ($region IS NULL OR region = $region) AND ($member IS NULL OR country=$member) ORDER BY country',
+      params: {
+        region: { defaultValue: null },
+        member: { defaultValue: null },
+      },
     },
     geographicRevenue: {
       statement: `WITH customers AS (SELECT DISTINCT customer_id, customer, country, region FROM sales_orders UNION SELECT 'account-future', 'Future account', 'Singapore', 'Asia')
@@ -112,14 +66,52 @@ AND ${predicates} AND CASE $selectedLevel WHEN 'region' THEN c.region WHEN 'coun
     },
   },
 });
-function parseInput(value: unknown): Input {
-  const base = salesOperations.salesOverview.input(value);
-  const input = value as Record<string, unknown>;
-  return {
-    ...base,
-    geography: geography.parse(input.geography),
-  };
-}
+export const geography = app.defineExploration({
+  key: 'geography',
+  label: 'Geography',
+  levels: [
+    {
+      id: 'region',
+      label: 'Region',
+      groupLabel: 'Regions',
+      valueType: 'string',
+      options: [
+        { value: 'Europe', label: 'Europe' },
+        { value: 'North America', label: 'North America' },
+        { value: 'Asia', label: 'Asia' },
+      ],
+    },
+    {
+      id: 'country',
+      label: 'Country',
+      groupLabel: 'Countries',
+      valueType: 'string',
+      source: { query: 'countries' },
+    },
+    {
+      id: 'customer',
+      label: 'Customer',
+      groupLabel: 'Customers',
+      valueType: 'string',
+      options: [
+        { value: 'account-atelier', label: 'Atelier Nord', parent: 'France' },
+        { value: 'account-werkhaus', label: 'Werkhaus', parent: 'Germany' },
+        {
+          value: 'account-pacific',
+          label: 'Pacific Works',
+          parent: 'United States',
+        },
+        { value: 'account-petit', label: 'Petit Studio', parent: 'France' },
+        {
+          value: 'account-future',
+          label: 'Future account',
+          parent: 'Singapore',
+        },
+      ],
+    },
+  ],
+});
+const parseInput = geography.input(salesOperations.salesOverview.input);
 function member(selection: DimensionSelection) {
   const value = selection.kind === 'all' ? undefined : selection.members[0];
   return value?.kind === 'value' ? value.value : null;
@@ -141,24 +133,6 @@ const scope: Input = {
   geography: geography.defaultValue,
 };
 export const operations = {
-  countries: app.defineOperation({
-    input(value: unknown) {
-      const region = (value as { region: unknown }).region;
-      if (region !== null && typeof region !== 'string')
-        throw new Error('Expected region.');
-      return { region };
-    },
-    output: (value: unknown) => value as { value: string; label: string }[],
-    checks: [{ region: null }],
-    policy: { maxQueryRows: 100, maxDurationMs: 10000 },
-    async run({ query }, input) {
-      const result = await query('countries', input);
-      return result.rows.map(([value, label]) => ({
-        value: String(value),
-        label: String(label),
-      }));
-    },
-  }),
   overview: app.defineOperation({
     input: parseInput,
     output: (value: unknown) => value as GroupRow[],
@@ -179,8 +153,8 @@ export const operations = {
     },
   }),
   orders: app.defineOperation({
-    input(value: unknown) {
-      const scope = parseInput(value);
+    input: geography.input((value: unknown) => {
+      const scope = salesOperations.salesOverview.input(value);
       const selected = (value as { selected?: GroupRow }).selected;
       if (
         !selected ||
@@ -198,7 +172,7 @@ export const operations = {
           label: selected.label,
         },
       };
-    },
+    }),
     output: (value: unknown) =>
       value as {
         id: string;

@@ -2,6 +2,12 @@
  * App configuration shared by browser and server.
  * @module @altertable/data-app
  */
+import {
+  defineSourcedExploration,
+  type SourcedExplorationLevel,
+  type CheckedSourceLevels,
+  type SourcedExploration,
+} from '@/src/core/exploration-source';
 import { defineOperation } from '@/src/core/contract';
 import type { AppearanceOptions } from '@/src/core/appearance';
 import { snapshotQueries, type QueryDefinitions } from '@/src/core/queries';
@@ -38,6 +44,14 @@ export type DataAppDefinition<
   Queries extends QueryDefinitions = QueryDefinitions,
 > = Readonly<Omit<DataAppConfig<Queries>, 'queries'>> & {
   readonly queries: ImmutableQueries<Queries>;
+  defineExploration<
+    const Key extends string,
+    const Levels extends readonly SourcedExplorationLevel<Queries>[],
+  >(definition: {
+    key: Key;
+    label: string;
+    levels: Levels & CheckedSourceLevels<Queries, Levels>;
+  }): SourcedExploration<Key, Levels>;
   defineOperation<Input, Output>(
     operation: Omit<
       Parameters<typeof defineOperation<Input, Output, Queries>>[0],
@@ -76,6 +90,19 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
   return Object.freeze({
     ...config,
     queries,
+    defineExploration<
+      const Key extends string,
+      const Levels extends readonly SourcedExplorationLevel<Queries>[],
+    >(definition: {
+      key: Key;
+      label: string;
+      levels: Levels & CheckedSourceLevels<Queries, Levels>;
+    }): SourcedExploration<Key, Levels> {
+      return defineSourcedExploration<Queries, Key, Levels>(
+        queries,
+        definition
+      );
+    },
     defineOperation<Input, Output>(
       operation: Omit<
         Parameters<typeof defineOperation<Input, Output, Queries>>[0],
@@ -87,7 +114,7 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
         queries,
       });
     },
-  });
+  }) as DataAppDefinition<Queries>;
 }
 
 export function dataAppTitle(

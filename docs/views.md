@@ -146,3 +146,7 @@ Browser Back/Forward follows detail URL state. Close and Escape remove the detai
 state from the current URL, preserving dashboard variables. Initial failures
 show Retry; refresh failures retain the displayed result and its scope. A
 missing entity should return an empty result with useful recovery copy.
+
+For operations with query-backed hierarchy inputs, build the parser with
+`hierarchy.input(baseParser)`; see [source-backed hierarchies](variables.md#source-backed-hierarchies).
+The executor checks membership before the view's operation runs.

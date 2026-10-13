@@ -378,6 +378,17 @@ export function defineOperation<
     'Each data operation needs check inputs and positive row and duration limits.'
   );
   const queries = snapshotQueries(operation.queries);
+  for (const [name, required] of Object.entries(
+    operation.input.validation?.queries ?? {}
+  )) {
+    invariant(
+      queries[name] &&
+        queries[name].statement === required.statement &&
+        JSON.stringify(queries[name].params) ===
+          JSON.stringify(required.params),
+      `Input validation query must use its declared source: ${name}.`
+    );
+  }
   const queryNames = Object.fromEntries(
     Object.keys(queries).map(name => [name, name])
   ) as { readonly [Name in keyof Queries & string]: Name };
