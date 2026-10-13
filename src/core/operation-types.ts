@@ -2,18 +2,18 @@
 import type { QueryParameters } from '@/src/core/queries';
 export type OperationContracts = Record<
   string,
-  {
-    input: (value: unknown) => unknown;
-    output: (value: unknown) => unknown;
-  }
+  { input: (value: unknown) => unknown }
 >;
 
 export type InputOf<T> = T extends { input: (value: unknown) => infer Input }
   ? Input
   : never;
-export type OutputOf<T> = T extends { output: (value: unknown) => infer Output }
+/** An operation's data is what its `run` resolves to. */
+export type OutputOf<T> = T extends {
+  run: (...args: never[]) => Promise<infer Output>;
+}
   ? Output
-  : never;
+  : unknown;
 
 export type QueryResult = {
   columns: { name: string; type?: string }[];
@@ -49,12 +49,12 @@ export type OperationContext = {
 };
 
 /**
- * Parsers run in the operation executor's runtime: server for HTTP apps, browser for bundle apps.
- * Browser validation does not replace backend authorization or query limits.
+ * The input parser runs in the operation executor's runtime: server for HTTP apps, browser for
+ * bundle apps. Browser validation does not replace backend authorization or query limits.
+ * `run` parses query rows once; its result is the operation's data.
  */
 export type DataOperation<Input, Output> = {
   input: (value: unknown) => Input;
-  output: (value: unknown) => Output;
   run: (context: OperationContext, input: Input) => Promise<Output>;
   checks: readonly Input[];
   queryNames?: Readonly<Record<string, string>>;
@@ -69,7 +69,7 @@ export type DataOperation<Input, Output> = {
 export type DataOperations = Record<
   string,
   OperationContracts[string] &
-    Omit<DataOperation<never, unknown>, 'input' | 'output' | 'checks'> & {
+    Omit<DataOperation<never, unknown>, 'input' | 'checks'> & {
       checks: readonly unknown[];
     }
 >;

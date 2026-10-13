@@ -5,7 +5,6 @@ import {
   defineOperation,
   dimensionFilter,
   parseDimensionSelection,
-  parseCount,
   type DateRangeRequest,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
@@ -47,7 +46,6 @@ const operation = defineOperation({
       region: parseDimensionSelection(input.region, region),
     };
   },
-  output: parseCount,
   checks: [
     {
       period: calendar.request({ start: '2026-03-04', end: '2026-03-06' }),

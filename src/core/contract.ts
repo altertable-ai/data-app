@@ -1,5 +1,5 @@
 /**
- * Shared operation contracts and input/output validation for browser and server.
+ * Shared operation contracts and input validation for browser and server.
  * @module @altertable/data-app/contract
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/contract.md
  */
@@ -412,7 +412,6 @@ export function connectionCheck<
   return defineOperation({
     queries,
     input: parseEmptyInput,
-    output: parseTrue,
     checks: [{}],
     policy: { maxQueryRows: 1, maxDurationMs: 15_000 },
     async run({ query }): Promise<true> {

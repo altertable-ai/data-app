@@ -26,7 +26,6 @@ const dataApp = defineDataApp({
 function products(values: Record<string, unknown> = {}) {
   return dataApp.defineOperation({
     input: parseEmptyInput,
-    output: (value: unknown) => value,
     checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {
@@ -167,7 +166,6 @@ test('registry validation checks declarations and defaults without interpreting 
       defineOperation({
         queries: { query },
         input: parseEmptyInput,
-        output: (value: unknown) => value,
         checks: [{}],
         policy: { maxQueryRows: 20, maxDurationMs: 1000 },
         async run() {
@@ -197,7 +195,6 @@ test('query delivery preserves SQL and parameter values for backend interpretati
       },
     },
     input: parseEmptyInput,
-    output: (value: unknown) => value,
     checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {
@@ -228,7 +225,6 @@ test('registered operation context exposes only named execution and rejects raw 
   for (const raw of [true, false]) {
     const operation = dataApp.defineOperation({
       input: parseEmptyInput,
-      output: (value: unknown) => value,
       checks: [{}],
       policy: { maxQueryRows: 20, maxDurationMs: 1000 },
       async run(context) {
@@ -263,7 +259,6 @@ test('SQL placeholders and syntax are passed to the backend without inspection',
   const operation = defineOperation({
     queries: definitions,
     input: parseEmptyInput,
-    output: (value: unknown) => value,
     checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {
@@ -311,7 +306,6 @@ test('app definitions keep their query registries independent', async () => {
   for (const app of [firstApp, secondApp]) {
     const count = app.defineOperation({
       input: parseEmptyInput,
-      output: (value: unknown) => value,
       checks: [{}],
       policy: { maxQueryRows: 20, maxDurationMs: 1000 },
       async run({ query }) {
@@ -368,7 +362,6 @@ test('the app owns one immutable registry independent of later caller mutations'
   ).toBe(false);
   const operation = app.defineOperation({
     input: parseEmptyInput,
-    output: (value: unknown) => value,
     checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {

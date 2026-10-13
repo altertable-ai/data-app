@@ -4,6 +4,7 @@ import {
   parseEmptyInput,
   connectionCheck,
 } from '@altertable/data-app/contract';
+import type { OutputOf } from '@altertable/data-app/client';
 
 const dataApp = defineDataApp({
   title: 'Typed queries',
@@ -25,7 +26,6 @@ const dataApp = defineDataApp({
 
 const operation = dataApp.defineOperation({
   input: parseEmptyInput,
-  output: (value: unknown) => value,
   checks: [{}],
   policy: { maxQueryRows: 10, maxDurationMs: 1000 },
   async run(context) {
@@ -139,7 +139,6 @@ defineDataApp({
 
 const typedOperation = dataApp.defineOperation({
   input: (value: unknown) => Number(value),
-  output: (value: unknown) => String(value),
   checks: [2],
   policy: { maxQueryRows: 10, maxDurationMs: 1000 },
   async run({ query }, input) {
@@ -148,9 +147,14 @@ const typedOperation = dataApp.defineOperation({
   },
 });
 const typedInput: number = typedOperation.input(2);
-const typedOutput: string = typedOperation.output('2');
+const typedOutput: OutputOf<typeof typedOperation> = 'two';
+// @ts-expect-error Operation data is what run returns.
+const untypedOutput: OutputOf<typeof typedOperation> = 2;
+// @ts-expect-error Operations parse query rows once, in run; there is no output parser.
+void typedOperation.output;
 void typedInput;
 void typedOutput;
+void untypedOutput;
 
 dataApp.defineOperation({
   // @ts-expect-error Bound operations cannot replace the app's query registry.

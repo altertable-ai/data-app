@@ -11,7 +11,6 @@ import { createDataHandler } from '@altertable/data-app/server';
 function operation() {
   return defineOperation({
     input: parseCount,
-    output: parseCount,
     checks: [3],
     queries: { count: { statement: 'SELECT $count', params: { count: {} } } },
     policy: { maxQueryRows: 2, maxDurationMs: 100 },
@@ -127,15 +126,15 @@ test('browser and HTTP execution preserve public source failures across package 
   });
 });
 
-test('browser execution enforces output, row, and response byte bounds', async () => {
+test('browser execution keeps run failures private and enforces row and response byte bounds', async () => {
   const base = operation();
   const source = lakehouse();
   const cases = [
     {
       operation: {
         ...base,
-        output() {
-          throw new Error('private output');
+        async run() {
+          throw new Error('private row parsing failure');
         },
       },
       lakehouse: source,
@@ -205,7 +204,6 @@ test('an authorized client queries an operation with validated input and query e
   const operations = {
     count: defineOperation({
       input: parseCount,
-      output: parseCount,
       checks: [3],
       queries: { count: { statement: 'SELECT $count', params: { count: {} } } },
       policy: { maxQueryRows: 2, maxDurationMs: 1000 },

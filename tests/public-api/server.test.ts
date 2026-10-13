@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { defineOperation, parseCount } from '@altertable/data-app/contract';
+import { defineOperation } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { localLakehouse } from '@altertable/data-app/server/bun';
 const totalsOperation = defineOperation({
@@ -9,9 +9,6 @@ const totalsOperation = defineOperation({
     if (value !== 1) throw new Error('Bad input');
 
     return 1;
-  },
-  output(value: unknown) {
-    return value as number;
   },
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }) {
@@ -181,9 +178,6 @@ function cancellationOperation(run: (signal: AbortSignal) => Promise<number>) {
     queries: {},
     input(value: unknown) {
       return value;
-    },
-    output(value: unknown) {
-      return parseCount(value);
     },
     checks: [{}],
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },

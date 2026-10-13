@@ -27,9 +27,6 @@ const operations = {
     input(value: unknown) {
       return value as { version: number };
     },
-    output(value: unknown) {
-      return value as { kind: 'alpha'; count: number };
-    },
     checks: [{ version: 1 }],
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run() {
@@ -40,9 +37,6 @@ const operations = {
     queries: {},
     input(value: unknown) {
       return value as { version: number };
-    },
-    output(value: unknown) {
-      return value as { kind: 'beta'; label: string };
     },
     checks: [{ version: 1 }],
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },

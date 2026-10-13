@@ -27,7 +27,7 @@ returned lakehouse to the viewer's permitted data. Supply trusted registry
 parameters through `queryParams`; query callers cannot override these values. Origin and Fetch Metadata
 checks reject cross-site browser requests; they do not authenticate viewers.
 
-The handler validates operation input and output, enforces query row and duration
+The handler validates operation input, enforces query row and duration
 bounds, propagates cancellation, and returns query evidence and request IDs.
 Keep credentials and operation implementations on the server.
 

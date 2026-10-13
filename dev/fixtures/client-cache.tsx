@@ -4,9 +4,7 @@ import { useState } from 'react';
 import { createDataClient } from '@/src/client/index';
 import {
   defineOperation,
-  parseCount,
   parseEmptyInput,
-  type DimensionOption,
   type DimensionSelection,
 } from '@/src/core/contract';
 import { createDataHooks } from '@/src/react/hooks';
@@ -24,7 +22,6 @@ const operations = {
     input(value: unknown) {
       return value as { category: DimensionSelection<string> };
     },
-    output: parseCount,
     checks: [{ category: { kind: 'all' } }],
     policy,
     async run() {
@@ -34,9 +31,6 @@ const operations = {
   facet: defineOperation({
     queries: {},
     input: parseEmptyInput,
-    output(value: unknown) {
-      return value as DimensionOption<string>[];
-    },
     checks: [{}],
     policy,
     async run() {

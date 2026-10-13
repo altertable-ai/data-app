@@ -145,7 +145,6 @@ const checkRange = calendar.request(
 export const operations = {
   orderOverview: dataApp.defineOperation({
     input: parseInput,
-    output: parseOrderOverview,
     checks: [
       { period: checkRange, country: { kind: 'all' } },
       {

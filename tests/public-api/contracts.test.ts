@@ -60,7 +60,6 @@ test('a calendar and dimension declaration validates and escapes the input used 
           region: parseDimensionSelection(request.region, region),
         };
       },
-      output: parseCount,
       checks: [input],
       queries: {
         activity: {
@@ -145,7 +144,6 @@ test('authoring a view rejects invalid datasets and unregistered evidence', () =
         rows: defineOperation({
           queries: {},
           input: value => value as { group: string },
-          output: parseCount,
           checks: [{ group: '' }],
           policy: { maxQueryRows: 1, maxDurationMs: 1000 },
           async run() {
