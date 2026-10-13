@@ -33,6 +33,10 @@
 .altertable-grid[data-align='stretch'] {
   align-items: stretch;
 }
+.altertable-grid[data-align='stretch'] > .altertable-grid-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
 .altertable-grid[data-gap='sm'] {
   --atbl-grid-gap: var(--atbl-space-sm);
 }

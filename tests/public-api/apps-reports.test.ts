@@ -1,6 +1,45 @@
 import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 
+test('grid items stretch widgets within a row and keep natural heights when stacked', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/styles');
+  await page.getByRole('button', { name: 'Style report', exact: true }).click();
+  function short(align: string) {
+    return page.getByRole('region', { name: `${align} short`, exact: true });
+  }
+  function tall(align: string) {
+    return page.getByRole('region', { name: `${align} tall`, exact: true });
+  }
+  async function box(card: ReturnType<typeof short>) {
+    return (await card.boundingBox())!;
+  }
+  await expect
+    .poll(
+      async () =>
+        (await box(short('stretch'))).height -
+        (await box(tall('stretch'))).height
+    )
+    .toBe(0);
+  expect((await box(short('stretch'))).y).toBe((await box(tall('stretch'))).y);
+  expect((await box(short('start'))).height).toBeLessThan(
+    (await box(tall('start'))).height
+  );
+  await page.setViewportSize({ width: 375, height: 900 });
+  await expect
+    .poll(
+      async () =>
+        (await box(short('stretch'))).height <
+        (await box(tall('stretch'))).height
+    )
+    .toBe(true);
+  expect((await box(tall('stretch'))).y).toBeGreaterThan(
+    (await box(short('stretch'))).y + (await box(short('stretch'))).height
+  );
+});
+
 for (const width of [375, 1280]) {
   test(`a report remains readable at ${width}px while loading, empty, failed, ready and stale`, async ({
     page,

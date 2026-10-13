@@ -7,7 +7,7 @@ export type GridProps = {
   columns?: 1 | 2 | 3 | 4;
   minItemWidth?: 'compact' | 'regular' | 'wide';
   gap?: 'sm' | 'md' | 'lg';
-  /** Stretch peer cards to the tallest item in their row only when needed. */
+  /** `stretch` gives widgets in each row the same height. */
   align?: 'stretch' | 'start';
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
