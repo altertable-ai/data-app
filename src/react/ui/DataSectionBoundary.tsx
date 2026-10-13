@@ -27,8 +27,9 @@ function errorPresentation(cause: Error) {
       };
     case 'source_query_rejected':
       return {
-        title: 'This view cannot run its query',
-        description: 'Ask the app owner to check the data operation.',
+        title: 'Couldn’t load results',
+        description:
+          'This data app’s query was rejected. Ask the app owner to fix it.',
         retryable: false,
       };
     case 'source_rate_limited':
