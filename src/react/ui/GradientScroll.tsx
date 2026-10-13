@@ -37,18 +37,10 @@ export function scrollFadeEdges(
   return { start: position > 0, end: position + viewport < content - 1 };
 }
 
-/** Fades only scrollable edges; content, size, and scroll changes update the mask. */
-export function GradientScroll({
-  axis = 'vertical',
-  fadeStart = true,
-  className,
-  children,
-  ref,
-  ...props
-}: GradientScrollProps) {
+/** Track overflow on the element that owns scrolling. */
+export function useScrollFade(axis: 'vertical' | 'horizontal') {
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   const [edges, setEdges] = useState({ start: false, end: false });
-  const mergedRef = useMergeRefs([setElement, ref]);
 
   const measure = useCallback(() => {
     if (!element) return;
@@ -88,14 +80,29 @@ export function GradientScroll({
     };
   }, [element, measure]);
 
+  return { ref: setElement, edges };
+}
+
+/** Fades only scrollable edges; content, size, and scroll changes update the mask. */
+export function GradientScroll({
+  axis = 'vertical',
+  fadeStart = true,
+  className,
+  children,
+  ref,
+  ...props
+}: GradientScrollProps) {
+  const scroll = useScrollFade(axis);
+  const mergedRef = useMergeRefs([scroll.ref, ref]);
+
   return (
     <div
       {...props}
       ref={mergedRef}
       className={classNames('altertable-gradient-scroll', className)}
       data-axis={axis}
-      data-fade-start={fadeStart && edges.start ? '' : undefined}
-      data-fade-end={edges.end ? '' : undefined}
+      data-fade-start={fadeStart && scroll.edges.start ? '' : undefined}
+      data-fade-end={scroll.edges.end ? '' : undefined}
     >
       {children}
     </div>

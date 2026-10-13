@@ -17,6 +17,7 @@ Direct `<DateRangePicker>`, `<DimensionPicker>`, and `useAppVariables()` support
 custom control ownership. The caller supplies values and change handlers.
 Custom tables use `<DataTable>` and its cell helpers; controls and overlays
 include `<SearchField>`, `<ChoicePicker>`, `<Tabs>`, `<Sheet>`, and `<HelpPopover>`.
+Horizontal `<TabList>` content scrolls with gradient cues at overflowing edges.
 
 Standalone `<AboutData>`, glossary components, and `<PresentStory>` support
 custom inspection and presentation. Supply registered context and evidence, and

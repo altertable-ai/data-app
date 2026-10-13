@@ -3,11 +3,15 @@ import {
   useEffect,
   useState,
   type ComponentPropsWithRef,
+  type RefAttributes,
 } from 'react';
+import { useMergeRefs } from '@floating-ui/react';
 import { classNames } from '@/src/react/ui/classNames';
+import { useScrollFade } from '@/src/react/ui/GradientScroll';
 import {
   Tabs as AriaTabs,
-  TabList,
+  TabList as AriaTabList,
+  type TabListProps,
   Tab as AriaTab,
   TabPanels,
   TabPanel as AriaTabPanel,
@@ -19,7 +23,34 @@ import {
 } from '@/src/react/ui/search';
 
 /** React Aria tabs with keyboard and ARIA behavior; pair each Tab and TabPanel by stable id. */
-export { TabList, TabPanels };
+export { TabPanels };
+
+export function TabList<T>({
+  className,
+  ref,
+  ...props
+}: TabListProps<T> & RefAttributes<HTMLDivElement>) {
+  const scroll = useScrollFade('horizontal');
+  const mergedRef = useMergeRefs([scroll.ref, ref]);
+
+  return (
+    <AriaTabList
+      {...props}
+      ref={mergedRef}
+      data-axis="horizontal"
+      data-fade-start={scroll.edges.start ? '' : undefined}
+      data-fade-end={scroll.edges.end ? '' : undefined}
+      className={state =>
+        classNames(
+          state.orientation === 'horizontal' && 'altertable-gradient-scroll',
+          typeof className === 'function'
+            ? className(state)
+            : (className ?? 'react-aria-TabList')
+        )
+      }
+    />
+  );
+}
 
 export function Tab(props: ComponentPropsWithRef<typeof AriaTab>) {
   return (
