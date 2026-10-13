@@ -6,7 +6,6 @@ import {
   type DimensionSelection,
 } from '@/src/core/dimension';
 import type { ExplorationTarget } from '@/src/react/actions';
-import { AppIcon } from '@/src/react/ui/icons';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
 import { searchParams } from '@/src/react/ui/search';
 import { writeVariableValues } from '@/src/react/ui/variables';
@@ -102,7 +101,14 @@ export function ExplorationBreadcrumbs({
               key={level.id}
               aria-current={position === group ? 'page' : undefined}
             >
-              {position > 0 && <AppIcon name="openDetails" size={12} />}
+              {position > 0 && (
+                <span
+                  className="altertable-exploration-separator"
+                  aria-hidden="true"
+                >
+                  /
+                </span>
+              )}
               <DimensionPicker
                 filter={dimension}
                 variant="ghost"

@@ -14,7 +14,7 @@
   min-width: 0;
   max-width: 100%;
 }
-.altertable-exploration-breadcrumbs li > svg {
+.altertable-exploration-separator {
   flex: none;
   color: var(--atbl-muted);
 }
