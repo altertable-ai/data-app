@@ -39,6 +39,8 @@ async function bundle(): Promise<Bundle> {
       target: 'browser',
       format: 'iife',
       define: { 'import.meta.env': '{}' },
+      // The data document has an opaque origin, so the map cannot be fetched separately.
+      sourcemap: 'inline',
       plugins: [checkout],
       metafile: true,
     });
@@ -60,8 +62,9 @@ async function bundle(): Promise<Bundle> {
     );
     if (!stylesheet) return { javascript };
     const css = await stylesheet.text();
+    // Append rather than prepend so source map line offsets stay aligned.
     return {
-      javascript: `const style = document.createElement('style'); style.textContent = ${JSON.stringify(css)}; document.head.append(style);\n${javascript}`,
+      javascript: `${javascript}\n{ const style = document.createElement('style'); style.textContent = ${JSON.stringify(css)}; document.head.append(style); }`,
     };
   } catch (error) {
     const errors: unknown[] =
