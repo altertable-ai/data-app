@@ -9,7 +9,7 @@
     --atbl-layout-gap,
     clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
   );
-  --atbl-grid-min-item-width: 240px;
+  --atbl-grid-min-item-width: 280px;
   --atbl-grid-column-width: 100%;
   --atbl-grid-max-columns: 1;
   gap: var(--atbl-grid-gap);
@@ -46,10 +46,10 @@
   );
 }
 .altertable-grid[data-min-item-width='compact'] {
-  --atbl-grid-min-item-width: 192px;
+  --atbl-grid-min-item-width: 224px;
 }
 .altertable-grid[data-min-item-width='wide'] {
-  --atbl-grid-min-item-width: 320px;
+  --atbl-grid-min-item-width: 360px;
 }
 .altertable-grid[data-columns='2'] {
   --atbl-grid-max-columns: 2;
