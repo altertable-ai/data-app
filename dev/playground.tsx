@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import { dataApp } from '@/dev/app';
 import {
@@ -21,11 +21,9 @@ import {
   mountDataApp,
   MetricWidget,
   TableWidget,
-  Button,
   VisualizationWidget,
   type DatasetDefinition,
 } from '@altertable/data-app/react';
-import { Sheet } from '@altertable/data-app/react/ui';
 import { calendar } from '@/dev/commerce';
 import {
   operations,
@@ -131,7 +129,9 @@ const orderDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineTimeView } = createDataHooks(createDataClient({ operations }));
+const { defineTimeView, defineDetailView } = createDataHooks(
+  createDataClient({ operations })
+);
 const orderView = defineTimeView({
   dataContext: orderDataContext,
   operation: 'orderOverview',
@@ -307,42 +307,78 @@ const periodDataset = orderView.dataset({
   },
 });
 
+const orderDetailView = defineDetailView({
+  id: 'order',
+  title: 'Order details',
+  operation: 'orderDetail',
+  dataContext: orderDataContext,
+  parseInput: operations.orderDetail.input,
+  describeInput: input =>
+    `Order #${input.orderId} · ${calendar.describeInput(input.period.range)} · ${input.country.kind === 'all' ? 'All countries' : input.country.members.map(member => (member.kind === 'value' ? member.value : 'Missing country')).join(', ')}`,
+  isEmpty: data => !data.order,
+  emptyFallback: {
+    title: 'Order unavailable in this scope',
+    description:
+      'The order may have changed or no longer match these dates and country.',
+  },
+});
+const orderProducts = orderDetailView.dataset<OrderItem>({
+  ...itemDefinition,
+  name: 'Order products',
+  select: data => data.items,
+  evidence: {
+    id: 'order-products',
+    queryNames: [queryNames.orderDetail],
+    glossaryIds: ['orderValue'],
+  },
+});
+const orderDetailContent = orderDetailView.content(
+  source => (
+    <Stack>
+      <TextContent>
+        {!source.loading && source.data.order && (
+          <p>
+            {source.data.order.customer} · {source.data.order.country} ·{' '}
+            {source.data.order.day} · {source.data.order.status} ·{' '}
+            {source.data.order.campaign} ·{' '}
+            {formatMetric(source.data.order.amount, currency)} total order
+            value.
+          </p>
+        )}
+      </TextContent>
+      <TableWidget dataset={orderProducts} source={source} pagination={false} />
+    </Stack>
+  ),
+  {
+    datasets: [orderProducts],
+    story: snapshot => [
+      {
+        id: 'order-products',
+        headline: `${snapshot.data.order?.customer ?? 'Order'}: ${formatMetric(snapshot.data.order?.amount ?? 0, currency)} order value`,
+        context: orderDetailView.scope(snapshot),
+        visual: (
+          <TableWidget
+            dataset={orderProducts}
+            source={snapshot}
+            pagination={false}
+          />
+        ),
+        evidence: orderProducts,
+      },
+    ],
+  }
+);
+const viewOrder = ordersDataset.drill({
+  id: 'view-order',
+  label: 'View order',
+  target: orderDetailView,
+  input: (order, input) => ({ ...input, orderId: order.id }),
+});
+
 type OrderSource = Parameters<Parameters<typeof orderView.content>[0]>[0];
 
 function OrderResults({ result }: { result: OrderSource }) {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const selectedOrder = result.loading
-    ? undefined
-    : result.data.orders.find(order => order.id === selectedId);
-  const tableDataset = useMemo(
-    () =>
-      orderView.dataset({
-        ...orderDefinition,
-        columns: {
-          ...orderDefinition.columns,
-          id: {
-            label: 'Order',
-            value: row => row.id,
-            format: row => (
-              <Button variant="ghost" onClick={() => setSelectedId(row.id)}>
-                #{row.id}
-              </Button>
-            ),
-          },
-        },
-      }),
-    []
-  );
-  const detailDataset = useMemo(
-    () =>
-      orderView.dataset<OrderItem>({
-        ...itemDefinition,
-        name: 'Products',
-        select: data => data.items.filter(item => item.orderId === selectedId),
-      }),
-    [selectedId]
-  );
   return (
     <Stack aria-label="Order results">
       <TextWidget
@@ -413,9 +449,10 @@ function OrderResults({ result }: { result: OrderSource }) {
         {countries => <CountryRanking countries={countries} />}
       </VisualizationWidget>
       <TableWidget
-        dataset={tableDataset}
+        dataset={ordersDataset}
+        drill={viewOrder}
         source={result}
-        description="Latest 100 orders in the selected range. Select an order to inspect its products."
+        description="Latest 100 orders in the selected range. View an order to fetch its products and export that order’s items."
         pagination={{ pageSize: 10 }}
         search={{
           label: 'Search recent orders',
@@ -430,36 +467,6 @@ function OrderResults({ result }: { result: OrderSource }) {
           ],
         }}
       />
-      <Sheet
-        open={!!selectedOrder}
-        onOpenChange={open => {
-          if (!open) setSelectedId(null);
-        }}
-        title={`Order #${selectedOrder?.id ?? ''}`}
-        description={
-          selectedOrder
-            ? `${selectedOrder.customer} · ${selectedOrder.country} · ${selectedOrder.day} · ${selectedOrder.status}`
-            : undefined
-        }
-      >
-        {selectedOrder && (
-          <Stack>
-            <TextContent>
-              <p>
-                {selectedOrder.campaign} ·{' '}
-                {formatMetric(selectedOrder.amount, currency)} total order
-                value.
-              </p>
-            </TextContent>
-            <TableWidget
-              dataset={detailDataset}
-              description="Items in this order. CSV export includes all items for the latest 100 orders in scope."
-              source={result}
-              pagination={false}
-            />
-          </Stack>
-        )}
-      </Sheet>
     </Stack>
   );
 }
@@ -525,6 +532,7 @@ function App() {
   return (
     <DataApp
       view={orderView}
+      details={[orderDetailContent]}
       datasets={[
         countryDataset,
         dayDataset,

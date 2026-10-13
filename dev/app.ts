@@ -99,5 +99,23 @@ ORDER BY i.order_id DESC, p.id`,
         country: { defaultValue: null },
       },
     },
+    orderDetail: {
+      statement: `
+SELECT o.id, c.name, c.country, CAST(o.ordered_at AS DATE), o.status, o.campaign,
+  CAST(o.amount AS DOUBLE), p.name, p.category, i.quantity, CAST(i.unit_price AS DOUBLE)
+FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
+JOIN demo.order_items i ON i.order_id = o.id JOIN demo.products p ON p.id = i.product_id
+WHERE o.id = $orderId AND o.ordered_at >= CAST($start AS DATE)
+  AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY
+  AND ($countryMode = 'all' OR CASE WHEN $countryMode = 'include' THEN c.country IS NOT DISTINCT FROM $country ELSE c.country IS DISTINCT FROM $country END)
+ORDER BY p.id`,
+      params: {
+        orderId: {},
+        start: {},
+        end: {},
+        countryMode: {},
+        country: { defaultValue: null },
+      },
+    },
   },
 });

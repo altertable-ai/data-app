@@ -99,6 +99,26 @@ function totals(row: Record<string, unknown>): OrderTotals {
     refunds: amount(row.refunds),
   };
 }
+function parseOrder(row: Record<string, unknown>): Order {
+  return {
+    id: parseCount(row.id),
+    customer: text(row.customer),
+    country: text(row.country),
+    day: text(row.day),
+    status: text(row.status),
+    campaign: text(row.campaign),
+    amount: amount(row.amount),
+  };
+}
+function parseOrderItem(row: Record<string, unknown>): OrderItem {
+  return {
+    orderId: parseCount(row.orderId),
+    product: text(row.product),
+    category: text(row.category),
+    quantity: parseCount(row.quantity),
+    unitPrice: amount(row.unitPrice),
+  };
+}
 function parseOrderOverview(value: unknown): OrderOverview {
   if (!value || typeof value !== 'object')
     throw new Error('Expected an order overview.');
@@ -116,22 +136,8 @@ function parseOrderOverview(value: unknown): OrderOverview {
       band: text(row.band),
       orderCount: parseCount(row.orderCount),
     })),
-    orders: parseRows(data.orders, row => ({
-      id: parseCount(row.id),
-      customer: text(row.customer),
-      country: text(row.country),
-      day: text(row.day),
-      status: text(row.status),
-      campaign: text(row.campaign),
-      amount: amount(row.amount),
-    })),
-    items: parseRows(data.items, row => ({
-      orderId: parseCount(row.orderId),
-      product: text(row.product),
-      category: text(row.category),
-      quantity: parseCount(row.quantity),
-      unitPrice: amount(row.unitPrice),
-    })),
+    orders: parseRows(data.orders, parseOrder),
+    items: parseRows(data.items, parseOrderItem),
     previous:
       data.previous === null
         ? null
@@ -143,6 +149,61 @@ const checkRange = calendar.request(
   true
 );
 export const operations = {
+  orderDetail: dataApp.defineOperation({
+    input(value: unknown) {
+      const scope = parseInput(value);
+      const orderId = parseCount((value as Record<string, unknown>).orderId);
+      if (orderId < 1) throw new Error('Expected an order ID.');
+      return { ...scope, orderId };
+    },
+    output(value: unknown) {
+      if (!value || typeof value !== 'object')
+        throw new Error('Expected order details.');
+      const detail = value as Record<string, unknown>;
+      return {
+        order:
+          detail.order === null
+            ? null
+            : parseRows([detail.order], parseOrder)[0]!,
+        items: parseRows(detail.items, parseOrderItem),
+      };
+    },
+    checks: [
+      { period: checkRange, country: { kind: 'all' as const }, orderId: 1 },
+    ],
+    policy: { maxQueryRows: 100, maxDurationMs: 15000 },
+    async run({ query }, { period, country, orderId }) {
+      const member = country.kind === 'all' ? undefined : country.members[0];
+      const result = await query('orderDetail', {
+        orderId,
+        start: period.range.start,
+        end: period.range.end,
+        countryMode: country.kind,
+        country: member?.kind === 'value' ? member.value : null,
+      });
+      const first = result.rows[0];
+      return {
+        order: first
+          ? {
+              id: parseCount(first[0]),
+              customer: text(first[1]),
+              country: text(first[2]),
+              day: text(first[3]),
+              status: text(first[4]),
+              campaign: text(first[5]),
+              amount: amount(first[6]),
+            }
+          : null,
+        items: result.rows.map(row => ({
+          orderId,
+          product: text(row[7]),
+          category: text(row[8]),
+          quantity: parseCount(row[9]),
+          unitPrice: amount(row[10]),
+        })),
+      };
+    },
+  }),
   orderOverview: dataApp.defineOperation({
     input: parseInput,
     output: parseOrderOverview,
