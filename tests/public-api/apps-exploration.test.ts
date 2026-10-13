@@ -79,6 +79,16 @@ test('selectors and chart filters share one hierarchy state and grouping remains
       .evaluate(element => element.scrollWidth <= element.clientWidth)
   ).toBe(true);
 
+  expect(
+    await controls(page)
+      .getByRole('button', { name: 'Region: Europe', exact: true })
+      .getByText('Europe', { exact: true })
+      .evaluate(
+        element =>
+          element.getBoundingClientRect().height <=
+          parseFloat(getComputedStyle(element).lineHeight) + 1
+      )
+  ).toBe(true);
   await choose(page, 'Country', 'France');
   await expect
     .poll(() =>
@@ -464,4 +474,29 @@ test('stories and page exports describe the displayed exploration', async ({
   await story
     .getByRole('button', { name: 'Exit presentation', exact: true })
     .click();
+});
+
+test('breadcrumb selectors retain longer labels on mobile and use ghost controls', async ({
+  mobilePage: page,
+}) => {
+  await page.goto('/exploration-app');
+  await choose(page, 'Region', 'North America');
+  await act(page, 'North America', 'Break down by countries');
+  await heading(page, 'countries');
+  await choose(page, 'Country', 'United States');
+  for (const [label, value] of [
+    ['Region', 'North America'],
+    ['Country', 'United States'],
+  ]) {
+    const trigger = controls(page).getByRole('button', {
+      name: `${label}: ${value}`,
+      exact: true,
+    });
+    expect(await trigger.getAttribute('data-variant')).toBe('ghost');
+    expect(
+      await trigger
+        .getByText(value, { exact: true })
+        .evaluate(element => element.scrollWidth <= element.clientWidth)
+    ).toBe(true);
+  }
 });

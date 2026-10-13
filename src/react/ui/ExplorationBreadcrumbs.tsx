@@ -105,6 +105,7 @@ export function ExplorationBreadcrumbs({
               {position > 0 && <AppIcon name="openDetails" size={12} />}
               <DimensionPicker
                 filter={dimension}
+                variant="ghost"
                 disabled={stale}
                 value={state.selection[level.id] as DimensionSelection}
                 options={facet.data ?? options ?? dimension.options}

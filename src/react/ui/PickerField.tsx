@@ -11,12 +11,14 @@ export function PickerField({
   labelPlacement,
   labelAction,
   disabled,
+  variant,
   children,
 }: {
   label: string;
   labelPlacement?: ControlLabelPlacement;
   labelAction?: () => void;
   disabled?: boolean;
+  variant?: 'outline' | 'ghost';
   children: ReactNode;
 }) {
   if (!labelPlacement || labelPlacement === 'inline') return children;
@@ -25,6 +27,7 @@ export function PickerField({
       className="altertable-field"
       data-label-placement={labelPlacement}
       data-label-action={labelAction ? true : undefined}
+      data-variant={variant}
     >
       {labelAction ? (
         <Button

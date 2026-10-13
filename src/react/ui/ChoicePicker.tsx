@@ -28,6 +28,7 @@ export type { ChoiceOption } from '@/src/core/variables';
 type SharedProps = {
   label: string;
   labelPlacement?: ControlLabelPlacement;
+  variant?: 'outline' | 'ghost';
   /** An ancestor label can navigate independently of opening its selector. */
   labelAction?: () => void;
   options: readonly ChoiceOption[];
@@ -169,6 +170,7 @@ export function ChoicePicker(props: ChoicePickerProps) {
       labelPlacement={labelPlacement}
       labelAction={props.labelAction}
       disabled={disabled}
+      variant={props.variant}
     >
       <DialogTrigger
         isOpen={open}
@@ -182,6 +184,7 @@ export function ChoicePicker(props: ChoicePickerProps) {
           aria-controls={open ? popupId : undefined}
           className="altertable-picker-trigger"
           isDisabled={disabled}
+          variant={props.variant}
           aria-label={`${label}: ${display}`}
         >
           <PickerTriggerContent

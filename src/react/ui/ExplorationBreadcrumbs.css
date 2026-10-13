@@ -12,8 +12,37 @@
 }
 .altertable-exploration-breadcrumbs li {
   min-width: 0;
+  max-width: 100%;
 }
 .altertable-exploration-breadcrumbs li > svg {
   flex: none;
   color: var(--atbl-muted);
+}
+
+.altertable-exploration-breadcrumbs .altertable-field {
+  width: max-content;
+  max-width: 100%;
+}
+.altertable-exploration-breadcrumbs .altertable-picker-trigger {
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
+}
+.altertable-exploration-breadcrumbs .altertable-picker-value {
+  flex: 0 1 auto;
+  max-width: none;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.altertable-exploration-breadcrumbs
+  .altertable-field[data-label-action='true']
+  > button:last-child {
+  flex: 0 1 auto;
+}
+
+.altertable-exploration-breadcrumbs
+  .altertable-field[data-label-action='true']
+  > button:first-child {
+  flex: none;
 }
