@@ -101,7 +101,7 @@
 }
 
 .altertable-data-widget-navigation {
-  margin: var(--atbl-space-md)
+  margin: var(--atbl-space-xs)
     var(
       --atbl-surface-padding,
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))

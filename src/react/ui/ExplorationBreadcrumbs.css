@@ -6,7 +6,7 @@
 }
 .altertable-exploration-breadcrumbs ol {
   flex-wrap: wrap;
-  margin: 0;
+  margin: 0 calc(-1 * var(--atbl-control-padding-inline));
   padding: 0;
   list-style: none;
 }
