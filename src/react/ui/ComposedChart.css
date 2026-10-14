@@ -28,3 +28,8 @@
 .altertable-composed-chart [data-atbl-focus='inset']:focus:not(:focus-visible) {
   outline: none;
 }
+
+/* Recharts' internal SVG layers can receive pointer focus but are not keyboard stops. */
+.altertable-composed-chart svg [tabindex='-1']:focus {
+  outline: none;
+}

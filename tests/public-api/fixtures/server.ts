@@ -14,6 +14,7 @@ import appearance from '@/tests/public-api/fixtures/appearance.html';
 import ownership from '@/tests/public-api/fixtures/ownership.html';
 import layout from '@/tests/public-api/fixtures/layout.html';
 import styles from '@/tests/public-api/fixtures/styles.html';
+import dateAxes from '@/tests/public-api/fixtures/date-axes.html';
 import chartLegends from '@/tests/public-api/fixtures/chart-legends.html';
 import staticApp from '@/tests/public-api/fixtures/static.html';
 import declaredApp from '@/tests/public-api/fixtures/declared-app.html';
@@ -68,6 +69,7 @@ const server = Bun.serve({
   hostname: '127.0.0.1',
   port,
   routes: {
+    '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
     '/starter-data-app': bundleHost,
     '/bridge-host': bridgeHost,

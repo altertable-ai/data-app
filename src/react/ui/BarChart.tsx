@@ -1,3 +1,4 @@
+import { formatNumber } from '@/src/core/format';
 import { chartBarFill } from '@/src/react/ui/chartColor';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useLayoutEffect, useRef, useState } from 'react';
@@ -25,7 +26,7 @@ export function BarChart({
   items,
   unit,
   ariaLabel,
-  formatValue = value => new Intl.NumberFormat().format(value),
+  formatValue = formatNumber,
 }: BarChartProps) {
   validateChartItems('bar', items);
   const [activeId, setActiveId] = useState<string>();
@@ -52,7 +53,6 @@ export function BarChart({
                 ...item,
                 plotValue: item.value / maximum,
               }))}
-              title={ariaLabel}
               responsive
               width="100%"
               height={220}
@@ -70,11 +70,8 @@ export function BarChart({
                 {items.map(item => (
                   <Cell
                     key={item.id}
-                    fill={
-                      activeId === item.id
-                        ? 'var(--atbl-chart-1)'
-                        : chartBarFill
-                    }
+                    fill={chartBarFill}
+                    opacity={activeId === item.id ? 0.75 : 1}
                   />
                 ))}
               </ChartBar>

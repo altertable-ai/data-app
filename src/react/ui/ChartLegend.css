@@ -76,21 +76,40 @@
 }
 
 .altertable-chart-legend-overflow {
+  grid-column: -2 / -1;
   min-width: 0;
   color: var(--atbl-muted);
 }
 @container atbl-chart-legend (min-width: 240px) {
-  .altertable-chart-legend[data-layout='horizontal'] {
+  .altertable-chart-legend:is(
+    [data-layout='horizontal'],
+    [data-layout='single-row']
+  ) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @container atbl-chart-legend (min-width: 480px) {
-  .altertable-chart-legend[data-layout='horizontal'] {
+  .altertable-chart-legend:is(
+    [data-layout='horizontal'],
+    [data-layout='single-row']
+  ) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @container atbl-chart-legend (min-width: 720px) {
-  .altertable-chart-legend[data-layout='horizontal'] {
+  .altertable-chart-legend:is(
+    [data-layout='horizontal'],
+    [data-layout='single-row']
+  ) {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.altertable-chart-legend[data-layout='single-row'] {
+  align-items: start;
+}
+@container atbl-chart-legend (width < 240px) {
+  .altertable-chart-legend[data-layout='single-row'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

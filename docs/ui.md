@@ -166,10 +166,8 @@ shared with chart tooltips and funnel summaries. Pass `kind="square"` explicitly
 when composing a marker.
 `<PieChart>` includes a legend by default; `showLegend={false}` omits it.
 
-Legends align cells in a container-responsive grid, truncate labels, and reserve
-an overflow cell for “+X more.” Use `maxVisibleItems` to choose the limit or
-`layout="vertical"` for a list. Legends describe series; authored toggles or a
-composed legend's `onClick` leave series visibility to the app.
+Legends describe series; authored toggles or a composed legend's `onClick`
+leave series visibility to the app.
 
 ## Filter controls
 

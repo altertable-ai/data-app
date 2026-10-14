@@ -1,4 +1,12 @@
-import type { ComponentProps } from 'react';
+import { useDateAxisLabel } from '@/src/react/ui/chart-date-axis';
+export { ChartXAxis } from '@/src/react/ui/chart-date-axis';
+import { useContext, useLayoutEffect, type ComponentProps } from 'react';
+import { formatNumber } from '@/src/core/format';
+import {
+  ChartInteraction,
+  ChartSeries,
+  useChartSeries,
+} from '@/src/react/ui/chart-interaction';
 import {
   Area,
   Dot,
@@ -6,7 +14,6 @@ import {
   Bar,
   Line,
   Scatter,
-  XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
@@ -31,109 +38,152 @@ export function ChartDot({
   return <Dot stroke={stroke} fill={fill} r={r} strokeWidth={2} {...props} />;
 }
 
+function NearestChartDot({
+  seriesId,
+  cx,
+  cy,
+  stroke,
+}: DotProps & { seriesId: string }) {
+  const interaction = useContext(ChartInteraction);
+  const registerPoint = interaction?.registerPoint;
+  useLayoutEffect(() => {
+    if (cx == null || cy == null) return;
+    return registerPoint?.(seriesId, cx, cy);
+  }, [registerPoint, seriesId, cx, cy]);
+  const active =
+    !interaction?.pointer ||
+    interaction.seriesCount === 1 ||
+    interaction.hovered === seriesId;
+  return active ? (
+    <ChartDot
+      cx={cx}
+      cy={cy}
+      stroke={stroke}
+      active
+      style={{ pointerEvents: 'none' }}
+    />
+  ) : null;
+}
+
 /** Shared series defaults; native props override every authored choice. */
 export function ChartBar<Row = unknown, Value = number | null>(
   props: BarProps<Row, Value>
 ) {
+  const series = useChartSeries(props.id);
   return (
-    <Bar<Row, Value>
-      fill={chartBarFill}
-      radius={props.stackId == null ? [5, 5, 0, 0] : 0}
-      maxBarSize={30}
-      activeBar={{ fill: seriesColor }}
-      isAnimationActive={false}
-      {...props}
-    />
+    <ChartSeries id={series.id}>
+      <Bar<Row, Value>
+        fill={chartBarFill}
+        radius={props.stackId == null ? [5, 5, 0, 0] : 0}
+        maxBarSize={30}
+        activeBar={series.active ? { opacity: 0.75 } : false}
+        isAnimationActive={false}
+        {...props}
+        id={series.id}
+      />
+    </ChartSeries>
   );
 }
 
-/** Themed hollow sample dots are enabled by default; dot=false hides them.
+/** Sample dots are opt-in with dot=true.
  * activeDot independently controls the hovered point. Native dot props and renderers remain available. */
 export function ChartLine<Row = unknown, Value = number | null>({
   stroke = seriesColor,
-  dot,
+  dot = false,
   activeDot,
   ...props
 }: LineProps<Row, Value>) {
+  const series = useChartSeries(props.id);
   return (
-    <Line<Row, Value>
-      type="linear"
-      stroke={stroke}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      dot={
-        dot === undefined || dot === true
-          ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
-          : dot
-      }
-      activeDot={
-        activeDot === undefined || activeDot === true
-          ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} active />
-          : activeDot
-      }
-      isAnimationActive={false}
-      {...props}
-    />
+    <ChartSeries id={series.id}>
+      <Line<Row, Value>
+        type="linear"
+        stroke={stroke}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        dot={
+          dot === true
+            ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
+            : dot
+        }
+        activeDot={
+          activeDot === undefined || activeDot === true
+            ? ({ cx, cy }) => (
+                <NearestChartDot
+                  seriesId={series.id}
+                  cx={cx}
+                  cy={cy}
+                  stroke={stroke}
+                />
+              )
+            : activeDot
+        }
+        isAnimationActive={false}
+        {...props}
+        id={series.id}
+      />
+    </ChartSeries>
   );
 }
 
 /** Filled series with the same sample-dot and activeDot options as ChartLine. */
 export function ChartArea<Row = unknown, Value = number | null>({
   stroke = seriesColor,
-  dot,
+  dot = false,
   activeDot,
   ...props
 }: AreaProps<Row, Value>) {
+  const series = useChartSeries(props.id);
   return (
-    <Area<Row, Value>
-      legendType="square"
-      type="linear"
-      stroke={stroke}
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill={stroke}
-      fillOpacity={0.14}
-      dot={
-        dot === undefined || dot === true
-          ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
-          : dot
-      }
-      activeDot={
-        activeDot === undefined || activeDot === true
-          ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} active />
-          : activeDot
-      }
-      isAnimationActive={false}
-      {...props}
-    />
+    <ChartSeries id={series.id}>
+      <Area<Row, Value>
+        legendType="square"
+        type="linear"
+        stroke={stroke}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill={stroke}
+        fillOpacity={0.14}
+        dot={
+          dot === true
+            ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
+            : dot
+        }
+        activeDot={
+          activeDot === undefined || activeDot === true
+            ? ({ cx, cy }) => (
+                <NearestChartDot
+                  seriesId={series.id}
+                  cx={cx}
+                  cy={cy}
+                  stroke={stroke}
+                />
+              )
+            : activeDot
+        }
+        isAnimationActive={false}
+        {...props}
+        id={series.id}
+      />
+    </ChartSeries>
   );
 }
 
 export function ChartScatter<Row = unknown, Value = number>(
   props: ComponentProps<typeof Scatter<Row, Value>>
 ) {
+  const series = useChartSeries(props.id);
   return (
-    <Scatter<Row, Value>
-      fill={seriesColor}
-      isAnimationActive={false}
-      {...props}
-    />
-  );
-}
-
-export function ChartXAxis<Row = unknown, Value = string | number>(
-  props: ComponentProps<typeof XAxis<Row, Value>>
-) {
-  return (
-    <XAxis<Row, Value>
-      stroke="var(--atbl-muted)"
-      tickLine={false}
-      axisLine={{ stroke: 'var(--atbl-border)' }}
-      tick={{ fontSize: 'var(--atbl-type-meta-size)' }}
-      {...props}
-    />
+    <ChartSeries id={series.id}>
+      <Scatter<Row, Value>
+        fill={seriesColor}
+        isAnimationActive={false}
+        {...props}
+        id={series.id}
+      />
+    </ChartSeries>
   );
 }
 
@@ -143,6 +193,9 @@ export function ChartYAxis<Row = unknown, Value = number>(
   return (
     <YAxis<Row, Value>
       stroke="var(--atbl-muted)"
+      tickFormatter={value =>
+        typeof value === 'number' ? formatNumber(value) : String(value)
+      }
       tickLine={false}
       axisLine={false}
       tick={{ fontSize: 'var(--atbl-type-meta-size)' }}
@@ -160,7 +213,7 @@ export function ChartGrid(props: ComponentProps<typeof CartesianGrid>) {
 export function ChartTooltipContent(
   props: ComponentProps<typeof DefaultTooltipContent> & { active?: boolean }
 ) {
-  if (!props.active) return null;
+  if (!props.active || !props.payload?.length) return null;
   return (
     <TooltipSurface data-variant="chart" role="tooltip">
       <DefaultTooltipContent
@@ -174,8 +227,14 @@ export function ChartTooltipContent(
             const formatted = formatter
               ? formatter(value, name, entry, index, props.payload ?? payload)
               : Array.isArray(value)
-                ? value.join(' ~ ')
-                : value;
+                ? value
+                    .map(item =>
+                      typeof item === 'number' ? formatNumber(item) : item
+                    )
+                    .join(' ~ ')
+                : typeof value === 'number'
+                  ? formatNumber(value)
+                  : value;
             if (formatted == null) return null;
             const [displayValue, displayName] = Array.isArray(formatted)
               ? formatted
@@ -236,9 +295,30 @@ export function ChartTooltipContent(
 
 /** Uses the same surface as single-series inspection; Recharts owns interaction. */
 export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
+  const dateLabel = useDateAxisLabel(props.axisId);
+  const interaction = useContext(ChartInteraction);
   return (
     <Tooltip
-      content={<ChartTooltipContent />}
+      labelFormatter={dateLabel}
+      content={content => (
+        <ChartTooltipContent
+          {...content}
+          payload={
+            interaction?.pointer &&
+            interaction.seriesCount !== 1 &&
+            props.shared !== true
+              ? content.payload.filter(
+                  entry => entry.graphicalItemId === interaction.hovered
+                )
+              : content.payload
+          }
+        />
+      )}
+      position={
+        interaction?.pointer && interaction.point
+          ? { y: interaction.point.y }
+          : undefined
+      }
       cursor={false}
       isAnimationActive={false}
       {...props}
