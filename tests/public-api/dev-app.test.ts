@@ -350,7 +350,8 @@ mountDataApp({ app, component: App });
       return;
     }
     const upstream = httpRequest(
-      new URL(request.url!, server.url),
+      server.url,
+      { path: request.url },
       upstreamResponse => {
         response.writeHead(
           upstreamResponse.statusCode!,
@@ -501,8 +502,12 @@ test('dev:file queries the lakehouse with CLI credential names and reports its t
 
   expect(query.status, server.output()).toBe(200);
   expect(authorization).toBe(`Basic ${btoa('analyst:secret')}`);
-  expect(server.output()).toContain(`Lakehouse: ${apiBase} as analyst`);
+  expect(server.output()).toContain(
+    'Lakehouse: configured API selected (ALTERTABLE_API_BASE).'
+  );
   expect(server.output()).not.toContain('secret');
+  expect(server.output()).not.toContain('analyst');
+  expect(server.output()).not.toContain(apiBase);
 });
 
 test('dev:file maps missing lakehouse credentials to an unauthorized response', async () => {
@@ -661,11 +666,7 @@ mountDataApp({ app, component: App });
       expect(new URL(page.url()).search).toBe('?period=selected')
     );
     await writeFile(label, "export const label = 'Second preview';\n");
-    await vi.waitFor(() =>
-      expect(
-        app.getByRole('heading', { name: 'Second preview' }).isVisible()
-      ).resolves.toBe(true)
-    );
+    await app.getByRole('heading', { name: 'Second preview' }).waitFor();
     expect(
       await app.getByRole('status', { name: 'Filter' }).textContent()
     ).toBe('?period=selected');
@@ -673,20 +674,12 @@ mountDataApp({ app, component: App });
 
     await page.route('**/bundle.js', route => route.abort());
     await writeFile(label, "export const label = 'Unavailable preview';\n");
-    await vi.waitFor(() =>
-      expect(
-        page
-          .getByText('Could not load the app bundle:', { exact: false })
-          .isVisible()
-      ).resolves.toBe(true)
-    );
+    await page
+      .getByText('Could not load the app bundle:', { exact: false })
+      .waitFor();
     await page.unroute('**/bundle.js');
     await writeFile(label, "export const label = 'Recovered preview';\n");
-    await vi.waitFor(() =>
-      expect(
-        app.getByRole('heading', { name: 'Recovered preview' }).isVisible()
-      ).resolves.toBe(true)
-    );
+    await app.getByRole('heading', { name: 'Recovered preview' }).waitFor();
     expect(
       await app.getByRole('status', { name: 'Filter' }).textContent()
     ).toBe('?period=selected');
