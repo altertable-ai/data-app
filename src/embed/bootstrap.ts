@@ -13,7 +13,7 @@ export function startDataAppBootstrap({
   window?: Window;
 }) {
   let loaded: string | undefined;
-  let failed = false;
+  let failure: { cause: unknown } | undefined;
   const bundleSource = `altertable-data-app-${randomUuid()}.js`;
   const bridge = createIframeTransport({
     parentOrigin,
@@ -21,10 +21,12 @@ export function startDataAppBootstrap({
     mode: 'bundle',
     loadScript(javascript) {
       if (loaded !== undefined) {
-        if (javascript === loaded) {
-          if (failed) bridge.fail();
-          else bridge.ready();
-        } else bridge.fail();
+        if (javascript !== loaded)
+          bridge.fail(
+            new Error('This frame already evaluated a different app script.')
+          );
+        else if (failure) bridge.fail(failure.cause);
+        else bridge.ready();
 
         return;
       }
@@ -33,20 +35,21 @@ export function startDataAppBootstrap({
         const script = frame.document.createElement('script');
         script.textContent = `${javascript}\n//# sourceURL=${bundleSource}`;
         frame.document.body.append(script);
-        if (!failed) bridge.ready();
-      } catch {
-        reportError();
+        if (!failure) bridge.ready();
+      } catch (error) {
+        reportError(error);
       }
     },
   });
 
-  function reportError() {
-    failed = true;
-    bridge.fail();
+  function reportError(error: unknown) {
+    failure = { cause: error };
+    bridge.fail(error);
   }
 
   function reportBundleError(event: ErrorEvent) {
-    if (event.filename === bundleSource) reportError();
+    if (event.filename === bundleSource)
+      reportError(event.error ?? event.message);
   }
 
   function reportBundleRejection(event: PromiseRejectionEvent) {
@@ -54,7 +57,7 @@ export function startDataAppBootstrap({
       event.reason instanceof Error &&
       event.reason.stack?.includes(bundleSource)
     )
-      reportError();
+      reportError(event.reason);
   }
 
   frame.addEventListener('error', reportBundleError);

@@ -123,10 +123,15 @@ export function createDataHandler(
         },
       });
     } catch (error) {
-      const source = error instanceof DataSourceError ? error : null;
-      console.error(
-        `Data operation ${name} failed (${requestId}): ${source ? `${source.reason}${source.status ? ` (${source.status})` : ''}${source.queryName ? ` in ${source.queryName}` : ''}` : error instanceof Error ? error.name : 'unknown'}`
-      );
+      let detail = error instanceof Error ? error.name : 'unknown';
+      if (error instanceof DataSourceError) {
+        detail = error.reason;
+        if (error.status) detail += ` (${error.status})`;
+        if (error.queryName) detail += ` in ${error.queryName}`;
+        if (error.cause instanceof Error && error.cause.message)
+          detail += `: ${error.cause.message}`;
+      }
+      console.error(`Data operation ${name} failed (${requestId}): ${detail}`);
       const failure = toDataOperationFailure(error, signal.aborted);
 
       return problem(failure.status, failure.code, failure.message, requestId);

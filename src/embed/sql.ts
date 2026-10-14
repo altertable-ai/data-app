@@ -39,7 +39,9 @@ export function createSqlQueryHandler(
       context.signal.throwIfAborted();
       if (error instanceof MessageRoutingError) throw error;
       const failure = toDataOperationFailure(error);
-      throw new MessageRoutingError(failure.code, failure.message, requestId);
+      throw new MessageRoutingError(failure.code, failure.message, requestId, {
+        cause: error,
+      });
     }
   }
 

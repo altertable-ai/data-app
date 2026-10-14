@@ -65,9 +65,11 @@ export class MessageRoutingError extends Error {
   constructor(
     public readonly code: string,
     message: string,
-    public readonly requestId?: string
+    public readonly requestId?: string,
+    /** `cause` stays with the host for logs; the bridge sends only code, message, and request ID. */
+    options?: ErrorOptions
   ) {
-    super(message);
+    super(message, options);
     this.name = 'MessageRoutingError';
   }
 }

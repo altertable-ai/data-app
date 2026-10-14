@@ -5,6 +5,7 @@ import { dataApp as starterApp } from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
 import {
+  DataSourceError,
   parseDataAppAnnotationDraft,
   type QueryParameters,
 } from '@altertable/data-app/contract';
@@ -273,10 +274,16 @@ Bun.serve({
           );
           return Response.json({ columns, rows, queryId });
         } catch (error) {
-          console.error('Mocked Altertable API query failed:', error);
+          const source = error instanceof DataSourceError ? error : undefined;
+          const cause = source?.cause ?? error;
+          const message =
+            cause instanceof Error ? cause.message : String(cause);
+          console.error(
+            `Mocked Altertable API query failed (${source?.reason ?? 'error'}): ${message}`
+          );
           return Response.json(
-            { error: error instanceof Error ? error.message : String(error) },
-            { status: 502 }
+            { error: { reason: source?.reason, message } },
+            { status: source?.reason === 'rate_limited' ? 429 : 502 }
           );
         }
       }

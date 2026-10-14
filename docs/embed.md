@@ -100,9 +100,17 @@ client acknowledged initialization or a bundle script finished evaluation. It
 does not mean asynchronous data queries finished. Script errors report `failed`.
 The source bridge's `startupTimeoutMs` defaults to 30 seconds.
 
-`onDiagnostic` receives only message `direction` and `type`, never tokens or
-payloads. Routed handlers must authorize every data request. Message validation
-and iframe isolation do not grant access to data or execute SQL.
+`onDiagnostic` receives delivery metadata, never tokens or payloads: `direction`
+(`send`, `receive`, or `drop`), message `type`, and, when present, the request
+`id`, `route`, query `operation`, and error `code`, `message`, and `requestId`.
+Results and errors include `durationMs`, the host handling time. `drop` events
+report why a message from the connected iframe was ignored, such as a stale
+session or token; messages from other windows are not reported.
+
+When a `logger` is set, the iframe also forwards its view of the bridge: messages
+it sends, receives, and ignores, local timeouts, reconnect resets, and the cause
+of a `failed` status. Routed handlers must authorize every data request. Message
+validation and iframe isolation do not grant access to data or execute SQL.
 
 ## SQL query route
 

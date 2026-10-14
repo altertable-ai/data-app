@@ -30,7 +30,7 @@ export function mountDataApp<const Queries extends QueryDefinitions>({
   createRoot(root, {
     onUncaughtError(error) {
       console.error(error);
-      getDataAppTransport()?.fail();
+      getDataAppTransport()?.fail(error);
     },
   }).render(
     <DataAppProvider app={app}>

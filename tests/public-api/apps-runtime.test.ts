@@ -14,6 +14,13 @@ describe('runtime-errors', () => {
       .poll(() => page.getByRole('alert').textContent())
       .toContain('Could not load');
     await expect.poll(() => page.locator('iframe').isVisible()).toBe(false);
+    await expect
+      .poll(() =>
+        page
+          .getByRole('status', { name: 'App failures', exact: true })
+          .textContent()
+      )
+      .toContain('Uncaught render failure');
     await page.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect
       .poll(() =>
@@ -32,6 +39,13 @@ describe('runtime-errors', () => {
         .poll(() => page.getByRole('alert').textContent())
         .toContain('Could not load');
       await expect.poll(() => page.locator('iframe').isVisible()).toBe(false);
+      await expect
+        .poll(() =>
+          page
+            .getByRole('status', { name: 'App failures', exact: true })
+            .textContent()
+        )
+        .toContain(failure === 'syntax' ? 'SyntaxError' : 'Broken app');
     });
   }
 
@@ -47,6 +61,13 @@ describe('runtime-errors', () => {
       .poll(() => page.getByRole('alert').textContent())
       .toContain('Could not load');
     await expect.poll(() => page.locator('iframe').isVisible()).toBe(false);
+    await expect
+      .poll(() =>
+        page
+          .getByRole('status', { name: 'App failures', exact: true })
+          .textContent()
+      )
+      .toContain('Delayed app failure');
   });
 
   test('unhandled rejections from the app bundle remain fatal', async ({
@@ -61,6 +82,13 @@ describe('runtime-errors', () => {
       .poll(() => page.getByRole('alert').textContent())
       .toContain('Could not load');
     await expect.poll(() => page.locator('iframe').isVisible()).toBe(false);
+    await expect
+      .poll(() =>
+        page
+          .getByRole('status', { name: 'App failures', exact: true })
+          .textContent()
+      )
+      .toContain('App promise failure');
   });
 });
 

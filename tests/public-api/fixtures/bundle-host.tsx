@@ -11,6 +11,8 @@ import {
 import {
   createNavigationHandler,
   createSqlQueryHandler,
+  type DataAppDiagnostic,
+  type DataAppLogger,
   type DataAppStatus,
 } from '@altertable/data-app/embed';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
@@ -36,6 +38,13 @@ const fileRoute = defineMessageRoute({
   },
 });
 
+const offscreen = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  overflow: 'hidden',
+} as const;
+
 function Host() {
   const [echoRequests, setEchoRequests] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
@@ -49,6 +58,32 @@ function Host() {
   const [exportFailure, setExportFailure] = useState(
     params.has('export-error')
   );
+  const [failures, setFailures] = useState<string[]>([]);
+  const [diagnostics, setDiagnostics] = useState<DataAppDiagnostic[]>([]);
+  const logger: DataAppLogger = {
+    log() {},
+    info() {},
+    warn() {},
+    error(label, cause) {
+      if (
+        label !== 'Data app failed' ||
+        !cause ||
+        typeof cause !== 'object' ||
+        !('message' in cause) ||
+        typeof cause.message !== 'string'
+      )
+        return;
+      const { message } = cause;
+      const name =
+        'name' in cause && typeof cause.name === 'string'
+          ? cause.name
+          : undefined;
+      setFailures(previous => [
+        ...previous,
+        name ? `${name}: ${message}` : message,
+      ]);
+    },
+  };
   const forward = createHttpTransport();
   function download(file: { filename: string; blob: Blob }) {
     if (exportFailure) throw new Error('Export unavailable');
@@ -111,6 +146,12 @@ function Host() {
       <output aria-label="Pending requests">{pendingRequests}</output>
       <output aria-label="Cancelled requests">{cancelledRequests}</output>
       <output aria-label="Handler version">{version}</output>
+      <output aria-label="App failures" style={offscreen}>
+        {JSON.stringify(failures)}
+      </output>
+      <output aria-label="Host diagnostics" style={offscreen}>
+        {JSON.stringify(diagnostics)}
+      </output>
       <button onClick={changeHandler}>Change handler</button>
       <button
         onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}
@@ -164,6 +205,11 @@ function Host() {
         startupTimeoutMs={params.has('timeout') ? 200 : 10000}
         onStatusChange={setStatus}
         onMessage={router.dispatch}
+        logger={logger}
+        onDiagnostic={event => {
+          if (event.type !== 'runtime:log')
+            setDiagnostics(previous => [...previous, event]);
+        }}
       />
     </>
   );

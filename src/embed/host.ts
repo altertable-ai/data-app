@@ -7,8 +7,8 @@ import {
   MAX_PENDING,
   REQUEST_TIMEOUT_MS,
   validId,
+  type BridgeDiagnostic,
   type BridgeEventMessage,
-  type BridgeMessage,
 } from '@/src/core/bridge';
 
 import {
@@ -25,10 +25,8 @@ export type DataAppStatus =
   | 'ready'
   | 'failed'
   | 'disconnected';
-export type DataAppDiagnostic = {
-  direction: 'send' | 'receive';
-  type: BridgeMessage['type'];
-};
+/** Delivery metadata only; never tokens or payloads. `durationMs` measures host handling of a request, reported on its result or error. */
+export type DataAppDiagnostic = BridgeDiagnostic & { durationMs?: number };
 
 export type DataAppHost = {
   dispose: () => void;
@@ -80,6 +78,36 @@ export function attachDataAppConnection({
   let documentId: string | undefined;
   let sessionId: string | undefined;
   const pending = new Map<string, AbortController>();
+  const requestStartedAt = new Map<string, number>();
+
+  function reportDiagnostic(event: BridgeDiagnostic) {
+    if (!onDiagnostic) return;
+    if (event.direction === 'drop' || !event.id) return onDiagnostic(event);
+    switch (event.type) {
+      case 'bridge:request':
+        if (
+          !requestStartedAt.has(event.id) &&
+          requestStartedAt.size < MAX_PENDING * 2
+        )
+          requestStartedAt.set(event.id, host.performance.now());
+        break;
+      case 'bridge:cancel':
+        requestStartedAt.delete(event.id);
+        break;
+      case 'bridge:result':
+      case 'bridge:error': {
+        const startedAt = requestStartedAt.get(event.id);
+        requestStartedAt.delete(event.id);
+        if (startedAt !== undefined)
+          return onDiagnostic({
+            ...event,
+            durationMs: Math.round(host.performance.now() - startedAt),
+          });
+        break;
+      }
+    }
+    onDiagnostic(event);
+  }
 
   function hostState() {
     const presentation =
@@ -122,6 +150,7 @@ export function attachDataAppConnection({
   function cancelAll() {
     for (const controller of pending.values()) controller.abort();
     pending.clear();
+    requestStartedAt.clear();
   }
 
   const endpoint = createBridgeEndpoint({
@@ -131,7 +160,7 @@ export function attachDataAppConnection({
     opaque: connection.type === 'opaque',
     context: () => ({ documentId, sessionId, token }),
     post: message => iframe.contentWindow?.postMessage(message, targetOrigin),
-    diagnostic: (direction, type) => onDiagnostic?.({ direction, type }),
+    diagnostic: reportDiagnostic,
     invalidRequest: id => {
       if (pending.has(id)) return;
       if (pending.size >= MAX_PENDING)

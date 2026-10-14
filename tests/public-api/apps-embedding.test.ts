@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+import type { DataAppDiagnostic } from '@altertable/data-app/embed';
 import { test } from '@/tests/public-api/browser';
 
 test('a host cancels timed-out queries and aborts old work when the iframe reloads', async ({
@@ -396,6 +397,49 @@ for (const mode of ['bridge-host', 'bundle-host', 'bundle-host?packaged=1']) {
           .textContent()
       )
       .toBe('2');
+    const diagnostics: DataAppDiagnostic[] = JSON.parse(
+      (await page
+        .getByRole('status', { name: 'Host diagnostics', exact: true })
+        .textContent())!
+    );
+    expect(diagnostics).toContainEqual({
+      direction: 'drop',
+      reason: 'session_mismatch',
+      type: 'bridge:request',
+    });
+    if (captured.token)
+      expect(diagnostics).toContainEqual({
+        direction: 'drop',
+        reason: 'token_mismatch',
+        type: 'bridge:request',
+      });
+    expect(diagnostics).toContainEqual({
+      direction: 'send',
+      type: 'bridge:error',
+      id: 'malformed',
+      error: expect.objectContaining({ code: 'invalid_payload' }),
+      durationMs: expect.any(Number),
+    });
+    expect(diagnostics).toContainEqual({
+      direction: 'receive',
+      type: 'bridge:request',
+      id: captured.id,
+      route: 'test:echo',
+    });
+    expect(diagnostics).toContainEqual({
+      direction: 'send',
+      type: 'bridge:result',
+      id: captured.id,
+      durationMs: expect.any(Number),
+    });
+    expect(
+      diagnostics.filter(
+        event =>
+          event.direction !== 'drop' &&
+          event.id !== undefined &&
+          ['foreign-source', 'stale-session', 'stale-token'].includes(event.id)
+      )
+    ).toEqual([]);
   });
 }
 

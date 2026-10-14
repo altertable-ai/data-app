@@ -310,9 +310,11 @@ export class DataSourceError extends Error {
       | 'rate_limited'
       | 'query_rejected'
       | 'unavailable',
-    public readonly status?: number
+    public readonly status?: number,
+    /** `cause` stays on the server or host for logs; responses carry only the reason. */
+    options?: ErrorOptions
   ) {
-    super(`Data source ${reason}${status ? ` (${status})` : ''}.`);
+    super(`Data source ${reason}${status ? ` (${status})` : ''}.`, options);
     this.name = 'DataSourceError';
   }
 }
