@@ -261,8 +261,14 @@ domain rows when adapting chart inputs:
 </VisualizationWidget>
 ```
 
-`<BarChart>` owns pointer and keyboard activation, menus, and a declared primary
-action's More actions affordance. Alternate visualization renderers receive the
+`<BarChart>`, `<LineChart>`, `<AreaChart>`, and `<PieChart>` accept the same
+`itemActions`. Line and area points and pie legend items own pointer and keyboard
+activation, menus, and a declared primary action’s More actions affordance.
+Keep the original row fields when mapping chart items so typed actions receive
+the source row. A day drill can narrow the existing date range to that UTC day;
+a value-band drill should pass a stable band ID that the operation validates
+and resolves to server-side bounds. Fetch the matching population rather than
+filtering a capped preview. Alternate visualization renderers receive the
 same bound actions. For custom controls use `<ExplorationActionControl
  actions={actions} row={row} label={row.label} />`; imperative custom controls
 can call `actions.run(id, row, trigger)` using IDs from `actions.items(row)`.

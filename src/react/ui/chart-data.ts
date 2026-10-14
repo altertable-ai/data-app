@@ -1,14 +1,26 @@
+import type { BoundExplorationActions } from '@/src/react/action-controls';
 import { invariant } from '@/src/core/invariant';
 
 /** Ordered category or time-series sample. IDs are unique and nonblank; values are finite. */
 export type ChartItem = { id: string; label: string; value: number };
-export type ValueChartProps = {
+export type ChartItemActions<Item> =
+  | {
+      itemActions?: BoundExplorationActions<NoInfer<Item>>;
+      onItemAction?: never;
+      actionLabel?: never;
+    }
+  | {
+      itemActions?: never;
+      onItemAction?: (item: Item, trigger: HTMLElement) => void;
+      actionLabel: string;
+    };
+export type ValueChartProps<Item extends ChartItem = ChartItem> = {
   /** Ordered samples; the chart validates IDs and values when rendering. */
-  items: readonly ChartItem[];
+  items: readonly Item[];
   unit: string;
   ariaLabel: string;
   formatValue?: (value: number) => string;
-};
+} & ChartItemActions<Item>;
 
 export type CountChartProps = {
   /** Accessible measure and scope description. */

@@ -13,8 +13,12 @@
   position: relative;
   display: flex;
 }
-.altertable-trend-point {
+.altertable-trend-column {
   flex: 1;
+  min-width: 0;
+}
+.altertable-trend-point {
+  width: 100%;
   min-width: 0;
   border: 0;
   padding: 0;

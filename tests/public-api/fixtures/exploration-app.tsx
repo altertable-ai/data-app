@@ -13,7 +13,12 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app/react';
-import { BarChart } from '@altertable/data-app/react/ui';
+import {
+  BarChart,
+  LineChart,
+  AreaChart,
+  PieChart,
+} from '@altertable/data-app/react/ui';
 import {
   app,
   operations,
@@ -169,6 +174,11 @@ const actions = groups.actions(
           : undefined,
   }
 );
+const chartOptions = new URLSearchParams(location.search);
+const Chart =
+  { line: LineChart, area: AreaChart, pie: PieChart }[
+    chartOptions.get('chart') ?? ''
+  ] ?? BarChart;
 const content = view.content(source => (
   <Stack>
     <MetricWidget metric={total} source={source} />
@@ -186,11 +196,11 @@ const content = view.content(source => (
       actions={actions}
     >
       {(rows, actions) => (
-        <BarChart
+        <Chart
           ariaLabel="Geographic revenue"
           unit="USD"
           items={rows.map(row => ({ ...row, value: row.revenue }))}
-          itemActions={actions}
+          itemActions={chartOptions.has('readonly') ? undefined : actions}
         />
       )}
     </VisualizationWidget>

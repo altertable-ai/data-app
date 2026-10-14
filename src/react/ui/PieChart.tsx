@@ -1,3 +1,6 @@
+import { useChartItemActions } from '@/src/react/ui/chart-actions';
+import { AppIcon } from '@/src/react/ui/icons';
+import { Button } from '@/src/react/ui/Button';
 import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useState } from 'react';
@@ -5,23 +8,32 @@ import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
 import { validateChartItems } from '@/src/react/ui/chart-data';
 
 export type PieChartItem = ChartItem;
-export type PieChartProps = ValueChartProps & {
-  /** Omit the built-in key when composing a separate ChartLegend. */
-  showLegend?: boolean;
-};
+export type PieChartProps<Item extends ChartItem = ChartItem> =
+  ValueChartProps<Item> & {
+    /** Omit the built-in key when composing a separate ChartLegend. */
+    showLegend?: boolean;
+  };
 
 /** Nonnegative, mutually exclusive parts; shares use the sum of supplied items.
  * Include Other to represent the whole. Zero values remain in the legend; all-zero
  * data shows an empty circle. Colors follow item order. Compose inside VisualizationWidget;
  * hover/touch tooltips coordinate slice and legend emphasis without caller state. */
-export function PieChart({
+export function PieChart<Item extends ChartItem>({
   items,
   unit,
   ariaLabel,
   showLegend = true,
+  itemActions,
+  onItemAction,
+  actionLabel,
   formatValue = value => new Intl.NumberFormat().format(value),
-}: PieChartProps) {
+}: PieChartProps<Item>) {
   validateChartItems('pie', items);
+  const actions = useChartItemActions({
+    itemActions,
+    onItemAction,
+    actionLabel,
+  });
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [plotOpen, setPlotOpen] = useState(false);
   const [legendId, setLegendId] = useState<string | null>(null);
@@ -30,7 +42,7 @@ export function PieChart({
     ? items.reduce((sum, item) => sum + item.value / maximum, 0)
     : 0;
   let cursor = -Math.PI / 2;
-  const slices: (PieChartItem & {
+  const slices: (Item & {
     share: number;
     color: string;
     path: string;
@@ -133,38 +145,56 @@ export function PieChart({
               aria-label={`${ariaLabel} legend`}
               className="altertable-pie-legend"
             >
-              {slices.map(item => (
-                <ChartLegend.Item key={item.id}>
-                  <Tooltip
-                    variant="chart"
-                    content={detail(item)}
-                    onOpenChange={open =>
-                      setLegendId(current =>
-                        open ? item.id : current === item.id ? null : current
-                      )
-                    }
-                  >
-                    <button
-                      data-atbl-focus="ring"
-                      data-atbl-control="default"
-                      type="button"
-                      tabIndex={-1}
-                      aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}`}
+              {slices.map(item => {
+                const trigger = actions.triggerProps(
+                  item,
+                  `${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}`,
+                  '.altertable-pie-label'
+                );
+                const more = actions.moreProps(item);
+                return (
+                  <ChartLegend.Item key={item.id}>
+                    <Tooltip
+                      variant="chart"
+                      content={detail(item)}
+                      onOpenChange={open =>
+                        setLegendId(current =>
+                          open ? item.id : current === item.id ? null : current
+                        )
+                      }
                     >
-                      <ChartLegend.Marker kind="square" color={item.color} />
-                      <ChartLegend.Label className="altertable-pie-label">
-                        {item.label}
-                      </ChartLegend.Label>
-                      <strong>{formatValue(item.value)}</strong>
-                      <span>{percent(item.share)}</span>
-                    </button>
-                  </Tooltip>
-                </ChartLegend.Item>
-              ))}
+                      <button
+                        data-atbl-focus="ring"
+                        data-atbl-control={
+                          trigger.tabIndex === 0 ? 'action' : 'default'
+                        }
+                        {...trigger}
+                        type="button"
+                      >
+                        <ChartLegend.Marker kind="square" color={item.color} />
+                        <ChartLegend.Label className="altertable-pie-label">
+                          {item.label}
+                          {trigger['aria-haspopup'] && (
+                            <AppIcon name="disclosure" size={14} />
+                          )}
+                        </ChartLegend.Label>
+                        <strong>{formatValue(item.value)}</strong>
+                        <span>{percent(item.share)}</span>
+                      </button>
+                    </Tooltip>
+                    {more && (
+                      <Button {...more} size="compact" variant="ghost">
+                        More actions <AppIcon name="disclosure" size={14} />
+                      </Button>
+                    )}
+                  </ChartLegend.Item>
+                );
+              })}
             </ChartLegend>
           )}
         </>
       )}
+      {actions.menu}
     </section>
   );
 }
