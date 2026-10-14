@@ -1,5 +1,6 @@
 import { strToU8, zipSync } from 'fflate';
 import { getDataAppTransport } from '@/src/client/iframe';
+import { downloadBlob } from '@/src/client/download';
 
 export type CsvCell = string | number | boolean | null | undefined;
 
@@ -91,15 +92,5 @@ export async function exportCsv(
     await transport.request({ route, payload: { filename, blob } });
     return;
   }
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  try {
-    link.click();
-  } finally {
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+  downloadBlob({ filename, blob });
 }

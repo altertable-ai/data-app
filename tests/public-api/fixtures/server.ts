@@ -48,12 +48,6 @@ const database = new Database(':memory:');
 
 process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'fixture-token';
 process.env.NODE_ENV = 'production';
-const local = serveLocalApp({
-  page: starterPage,
-  operations,
-  title: 'Local starter',
-  port: 0,
-});
 const frameServer = Bun.serve({
   hostname: '127.0.0.1',
   port: 0,
@@ -165,6 +159,12 @@ const server = Bun.serve({
 });
 
 process.env.ALTERTABLE_DATA_PROXY_URL = new URL('/proxy', server.url).href;
+const local = serveLocalApp({
+  page: starterPage,
+  operations,
+  title: 'Local starter',
+  port: 0,
+});
 console.log(
   'DATA_APP_TEST_SERVER ' +
     JSON.stringify({ baseURL: server.url.href, localURL: local.url.href })
