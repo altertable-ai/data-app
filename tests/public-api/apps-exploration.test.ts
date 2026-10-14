@@ -408,3 +408,28 @@ test('invalid facet parent pairs fail before business queries and recover from t
   await heading(page, 'countries');
   expect(business).toBe(1);
 });
+
+test('keyboard chart descent returns focus to visible Filters when hierarchy controls are closed', async ({
+  page,
+}) => {
+  await page.goto('/exploration-app?primary=descend');
+  const trigger = page.getByRole('button', {
+    name: /^Break down by countries: Europe:/,
+  });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await heading(page, 'countries');
+  const filters = page.getByRole('button', { name: /^Filters(?: \(|$)/ });
+  await expect
+    .poll(() => filters.evaluate(element => element === document.activeElement))
+    .toBe(true);
+  await page.keyboard.press('Enter');
+  await page.getByRole('dialog', { name: 'Filters', exact: true }).waitFor();
+  await expect
+    .poll(() =>
+      controls(page)
+        .getByRole('button', { name: 'Country: All', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+});

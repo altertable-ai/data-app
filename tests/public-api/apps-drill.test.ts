@@ -498,3 +498,30 @@ test('record tabs retain the app destination registry for nested row drills', as
   expect(new URL(page.url()).searchParams.get('detail')).toBe('orders');
   expect(new URL(page.url()).searchParams.has('about')).toBe(false);
 });
+
+test('nested replacement details return focus to the original dashboard trigger', async ({
+  page,
+}) => {
+  await page.goto('/drill-app');
+  const origin = page.getByRole('button', {
+    name: 'View contributing orders',
+    exact: true,
+  });
+  await origin.click();
+  const detail = page.getByRole('dialog', {
+    name: 'Contributing orders',
+    exact: true,
+  });
+  await expect.poll(() => detail.getByRole('row').count()).toBe(5);
+  const nested = detail.getByRole('button', {
+    name: 'View region orders: SO-1001',
+    exact: true,
+  });
+  await nested.click();
+  await expect.poll(() => detail.getByRole('row').count()).toBe(4);
+  await page.keyboard.press('Escape');
+  await detail.waitFor({ state: 'hidden' });
+  await expect
+    .poll(() => origin.evaluate(element => element === document.activeElement))
+    .toBe(true);
+});

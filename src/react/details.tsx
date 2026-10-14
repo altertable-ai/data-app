@@ -207,11 +207,13 @@ export function DetailProvider({
     );
     // Execute exactly the parsed input that a reopened URL will use.
     content.parseInput(JSON.parse(input));
-    returnFocus.current =
-      trigger ??
-      (document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null);
+    // Replacement sheets keep the dashboard origin, not a control about to unmount.
+    if (!selected && !invalid)
+      returnFocus.current =
+        trigger ??
+        (document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null);
     writeSearch(
       { detail: request.id, detailInput: input, about: null, tab: null },
       'push'

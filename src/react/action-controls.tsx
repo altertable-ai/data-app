@@ -75,12 +75,16 @@ export function useExplorationActions<Row, Input>(
         request.apply();
         if (request.navigation)
           requestAnimationFrame(() => {
-            const navigation =
-              document.getElementById(request.navigation!) ??
-              document.querySelector<HTMLElement>(
-                '[data-view-filters-trigger]'
-              );
-            navigation?.focus({ preventScroll: true });
+            const navigation = document.getElementById(request.navigation!);
+            const sheet = navigation?.closest('dialog');
+            const target = navigation?.checkVisibility()
+              ? navigation
+              : document.querySelector<HTMLElement>(
+                  sheet?.id
+                    ? `[data-view-filters-trigger][aria-controls="${CSS.escape(sheet.id)}"]`
+                    : '[data-view-filters-trigger]'
+                );
+            target?.focus({ preventScroll: true });
           });
       }
     },
