@@ -170,3 +170,32 @@ test('date displays use app defaults when no reporting view supplies a zone', as
   });
   await expect.poll(() => details.innerText()).toContain('Europe/Paris');
 });
+
+test('calendar reset and Clear filters both reset non-default date scope and dismiss its summary', async ({
+  page,
+}) => {
+  for (const selection of [
+    'start=2026-09-28&end=2026-09-30',
+    'period=last-3',
+  ]) {
+    await page.goto('/date-presentation?' + selection);
+    const bar = page.getByRole('group', { name: 'View scope', exact: true });
+    await bar
+      .getByRole('button', { name: 'Clear filters', exact: true })
+      .click();
+    await expect.poll(() => bar.count()).toBe(0);
+    expect(new URL(page.url()).searchParams.toString()).toBe('');
+    expect(
+      await page
+        .getByRole('button', { name: 'Reset date range', exact: true })
+        .count()
+    ).toBe(0);
+    await page.goBack();
+    await bar.waitFor();
+    await page
+      .getByRole('button', { name: 'Reset date range', exact: true })
+      .click();
+    await expect.poll(() => bar.count()).toBe(0);
+    expect(new URL(page.url()).searchParams.toString()).toBe('');
+  }
+});

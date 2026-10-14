@@ -124,8 +124,9 @@ The floating bar appears only when at least one filter can be cleared. Its
 summaries open the same Filters sheet; they do not own another
 selection state. Chart breakdown selectors live in their widget headers.
 Clear removes clearable predicates and resets hierarchy scope, normalizing chart
-breakdowns to valid levels. Periods and fixed choices without a clear value retain their current
-values, as do search and display options. Reset restores configured defaults.
+breakdowns to valid levels. Date filters return to their configured default period,
+matching the calendar’s reset action. Fixed choices without a clear value retain
+their current values, as do search and display options. Reset restores configured defaults.
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,
 maximum range, time zone, and comparison rules. `defineTimeView()` is the compact

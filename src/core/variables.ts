@@ -427,6 +427,7 @@ export function dateRangeVariable<
       ? [key, startKey, endKey, comparisonKey]
       : [key, startKey, endKey],
     defaultValue,
+    clearValue: defaultValue,
     history,
     bounds,
     resolve,
