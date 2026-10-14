@@ -474,3 +474,27 @@ test('record requests cancel when leaving their tab or closing inspection', asyn
     release();
   }
 });
+
+test('record tabs retain the app destination registry for nested row drills', async ({
+  page,
+}) => {
+  await page.goto('/drill-app');
+  await page
+    .getByRole('button', { name: 'Explore Net revenue', exact: true })
+    .click();
+  const inspection = page.getByRole('dialog', {
+    name: 'Net revenue',
+    exact: true,
+  });
+  await inspection
+    .getByRole('button', { name: 'View region orders: SO-1001', exact: true })
+    .click();
+  const detail = page.getByRole('dialog', {
+    name: 'Contributing orders',
+    exact: true,
+  });
+  await expect.poll(() => detail.getByRole('row').count()).toBe(4);
+  expect(await detail.innerText()).toContain('Europe · 2026-09-01–2026-09-30');
+  expect(new URL(page.url()).searchParams.get('detail')).toBe('orders');
+  expect(new URL(page.url()).searchParams.has('about')).toBe(false);
+});

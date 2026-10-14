@@ -391,15 +391,31 @@ const viewOrder = ordersDataset.actions(action => ({
   }),
 }));
 
+const orderPopulations = {
+  all: {
+    title: 'Orders in this scope',
+    description: 'All matching orders across all statuses, newest first.',
+  },
+  paid: {
+    title: 'Paid orders',
+    description: 'Paid orders contributing to revenue, newest first.',
+  },
+  refunded: {
+    title: 'Refunded orders',
+    description:
+      'Refunded orders contributing to refunds, attributed to the order date.',
+  },
+};
 const scopeOrdersView = defineDetailView({
   id: 'scope-orders',
   title: 'Orders in this scope',
   operation: 'ordersInScope',
   dataContext: orderDataContext,
   parseInput: operations.ordersInScope.input,
-  describeInput: describeScope,
+  describeInput: input =>
+    `${orderPopulations[input.status].title} · ${describeScope(input)}`,
   isEmpty: data => data.orders.length === 0,
-  emptyFallback: { title: 'No orders in this scope' },
+  emptyFallback: { title: 'No matching orders' },
 });
 const scopedOrders = scopeOrdersView.dataset<Order>({
   ...orderDefinition,
@@ -411,24 +427,57 @@ const scopedOrders = scopeOrdersView.dataset<Order>({
   },
   name: 'Orders in this scope',
 });
+const viewScopedOrder = scopedOrders.actions(action => ({
+  order: action.detail({
+    label: 'View order',
+    target: orderDetailView,
+    input: (order, displayedInput) => ({
+      ...displayedInput,
+      orderId: order.id,
+    }),
+  }),
+}));
 const scopeOrdersContent = scopeOrdersView.content(source => (
   <TableWidget
     dataset={scopedOrders}
     source={source}
-    description="All matching orders across all statuses, newest first."
+    actions={viewScopedOrder}
+    title={
+      source.loading
+        ? 'Contributing orders'
+        : orderPopulations[source.input.status].title
+    }
+    description={
+      source.loading
+        ? undefined
+        : orderPopulations[source.input.status].description
+    }
     pagination={{ pageSize: 25 }}
   />
 ));
 const contributingOrders = orderCountMetric.records({
   target: scopeOrdersView,
-  input: displayedInput => displayedInput,
+  input: displayedInput => ({ ...displayedInput, status: 'all' as const }),
+});
+const contributingRevenue = revenueMetric.records({
+  target: scopeOrdersView,
+  input: displayedInput => ({ ...displayedInput, status: 'paid' as const }),
+});
+const contributingValue = orderValueMetric.records({
+  target: scopeOrdersView,
+  input: displayedInput => ({ ...displayedInput, status: 'all' as const }),
+});
+const contributingRefunds = refundsMetric.records({
+  target: scopeOrdersView,
+  input: displayedInput => ({ ...displayedInput, status: 'refunded' as const }),
 });
 const geographicActions = geographicDataset.actions(action => ({
   orders: action.detail({
-    label: 'View orders',
+    label: 'View paid orders',
     target: scopeOrdersView,
     input: (row, input) => ({
       ...input,
+      status: 'paid' as const,
       geography: geography.filter(
         input.geography,
         row.level === 'region'
@@ -487,16 +536,19 @@ function OrderResults({ result }: { result: OrderSource }) {
         <MetricWidget
           metric={revenueMetric}
           source={result}
+          records={contributingRevenue}
           description="Paid orders only; pending and refunded orders excluded."
         />
         <MetricWidget
           metric={orderValueMetric}
           source={result}
+          records={contributingValue}
           description="All statuses, including pending orders and refunds."
         />
         <MetricWidget
           metric={refundsMetric}
           source={result}
+          records={contributingRefunds}
           description="Refunded order value, attributed to the order date."
         />
         <VisualizationWidget

@@ -222,6 +222,8 @@ capped dashboard preview when the destination promises all contributing records.
 Use local pagination for a complete bounded result, or query-backed pagination
 for larger sources. The record mapping receives the metric's displayed input,
 including during dashboard updates. Records load only when their tab is shown.
+Record tables can use ordinary row detail actions to continue into an entity;
+register those destinations on the same `<DataApp>`.
 
 Use `when: row => ...` on a filter action when it applies only to some rows.
 

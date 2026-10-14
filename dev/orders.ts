@@ -13,6 +13,9 @@ export type OrderInput = {
   period: DateRangeRequest;
   geography: ExplorationStateOf<typeof geography>;
 };
+export type OrderRecordsInput = OrderInput & {
+  status: 'all' | 'paid' | 'refunded';
+};
 export type CountryRevenue = {
   country: string;
   orderCount: number;
@@ -220,7 +223,13 @@ export const operations = {
     },
   }),
   ordersInScope: dataApp.defineOperation({
-    input: parseInput,
+    input(value: unknown): OrderRecordsInput {
+      const scope = parseInput(value);
+      const status = (value as Record<string, unknown>).status ?? 'all';
+      if (status !== 'all' && status !== 'paid' && status !== 'refunded')
+        throw new Error('Expected all, paid, or refunded orders.');
+      return { ...scope, status };
+    },
     output(value: unknown) {
       if (!value || typeof value !== 'object')
         throw new Error('Expected orders.');
@@ -231,7 +240,11 @@ export const operations = {
         ),
       };
     },
-    checks: [{ period: checkRange, geography: geography.defaultValue }],
+    checks: (['all', 'paid', 'refunded'] as const).map(status => ({
+      period: checkRange,
+      geography: geography.defaultValue,
+      status,
+    })),
     policy: {
       maxQueryRows: 10000,
       maxResponseBytes: 4000000,
@@ -240,6 +253,7 @@ export const operations = {
     async run({ query }, input) {
       const result = await query('ordersInScope', {
         ...scopeParams(input),
+        status: input.status,
         start: input.period.range.start,
         end: input.period.range.end,
       });

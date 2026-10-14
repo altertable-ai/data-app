@@ -267,5 +267,9 @@ export function useDetailRecords(request: DetailRequest | undefined) {
     content?.target === request.target,
     `Register the ${request.id} detail content on DataApp.`
   );
-  return content.renderRecords(request.input);
+  return (
+    <DetailContext value={context}>
+      {content.renderRecords(request.input)}
+    </DetailContext>
+  );
 }

@@ -143,8 +143,23 @@ const orders = detail.dataset({
     queryNames: ['contributingOrders'],
   },
 });
+const recordRegion = orders.actions(action => ({
+  region: action.detail({
+    label: 'View region orders',
+    target: detail,
+    input: (row, displayedInput) => ({
+      ...displayedInput,
+      region: row.country === 'US' ? 'North America' : 'Europe',
+    }),
+  }),
+}));
 const detailContent = detail.content(source => (
-  <TableWidget dataset={orders} source={source} pagination={false} />
+  <TableWidget
+    dataset={orders}
+    source={source}
+    actions={recordRegion}
+    pagination={false}
+  />
 ));
 const viewOrders = regions.actions(action => ({
   orders: action.detail({

@@ -93,8 +93,10 @@ SELECT o.id, c.name AS customer, c.country, CAST(o.ordered_at AS DATE) AS day,
   o.status, o.campaign, CAST(o.amount AS DOUBLE) AS amount, count(*) OVER () AS total_count
 FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
 WHERE o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY AND ($country IS NULL OR c.country = $country) AND ($region IS NULL OR CASE WHEN c.country = 'US' THEN 'North America' ELSE 'Europe' END = $region) AND ($customerId IS NULL OR c.id = $customerId)
+AND ($status = 'all' OR o.status = $status)
 ORDER BY o.ordered_at DESC, o.id DESC`,
       params: {
+        status: { defaultValue: 'all' },
         start: {},
         end: {},
         country: { defaultValue: null },
