@@ -13,23 +13,16 @@ export function previewLakehouseEnvironment(input = process.env) {
     )
       environment[`ALTERTABLE_LAKEHOUSE_${name}`] =
         environment[`ALTERTABLE_${name}`];
-  const {
-    ALTERTABLE_DATA_PROXY_URL: proxyUrl,
-    ALTERTABLE_LAKEHOUSE_USERNAME: username,
-    ALTERTABLE_LAKEHOUSE_PASSWORD: password,
-    ALTERTABLE_API_BASE: apiBase,
-  } = environment;
+  const { ALTERTABLE_DATA_PROXY_URL: proxyUrl, ALTERTABLE_API_BASE: apiBase } =
+    environment;
   let target: string;
   if (proxyUrl)
     target =
       'Lakehouse: CLI proxy selected (ALTERTABLE_DATA_PROXY_URL takes precedence).';
-  else if (username && password)
+  else
     target = apiBase
       ? 'Lakehouse: configured API selected (ALTERTABLE_API_BASE).'
       : 'Lakehouse: https://api.altertable.ai selected.';
-  else
-    target =
-      'Lakehouse: no credentials. Set ALTERTABLE_USERNAME and ALTERTABLE_PASSWORD, and optionally ALTERTABLE_API_BASE.';
   return { environment, target };
 }
 

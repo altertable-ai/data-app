@@ -72,7 +72,12 @@ async function waitForOutput(
 }
 
 async function startFile(entry: string, env: Record<string, string> = {}) {
-  const command = run(['run', 'dev:file', entry], { PORT: '0', ...env });
+  const command = run(['run', 'dev:file', entry], {
+    PORT: '0',
+    ALTERTABLE_LAKEHOUSE_USERNAME: 'fixture',
+    ALTERTABLE_LAKEHOUSE_PASSWORD: 'fixture',
+    ...env,
+  });
   const [url] = await waitForOutput(command, /http:\/\/127\.0\.0\.1:\d+\//);
   return { ...command, url };
 }
@@ -510,28 +515,36 @@ test('dev:file queries the lakehouse with CLI credential names and reports its t
   expect(server.output()).not.toContain(apiBase);
 });
 
-test('dev:file maps missing lakehouse credentials to an unauthorized response', async () => {
-  const directory = await temporaryDirectory();
-  const entry = join(directory, 'index.tsx');
-  await writeFile(entry, "document.title = 'offline';\n");
-  const server = await startFile(entry, {
-    ALTERTABLE_DATA_PROXY_URL: '',
-    ALTERTABLE_DATA_PROXY_TOKEN: '',
-    ALTERTABLE_LAKEHOUSE_USERNAME: '',
-    ALTERTABLE_LAKEHOUSE_PASSWORD: '',
-  });
-  const query = await fetch(new URL('/api/sql', server.url), {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      origin: new URL(server.url).origin,
-    },
-    body: JSON.stringify({ statement: 'SELECT 1', limit: 1 }),
-  });
-
-  expect(query.status).toBe(401);
-  expect(await query.json()).toEqual({ reason: 'unauthorized' });
-});
+test.each(['dev:file', 'dev:dir'])(
+  '%s refuses to start without lakehouse credentials',
+  async command => {
+    const directory = await temporaryDirectory();
+    const entry = join(directory, 'index.tsx');
+    await writeFile(entry, "document.title = 'offline';\n");
+    await mkdir(join(directory, 'src'));
+    await writeFile(
+      join(directory, 'src/server.ts'),
+      "throw new Error('Server must not start');\n"
+    );
+    const server = run(
+      ['run', command, command === 'dev:file' ? entry : directory],
+      {
+        ALTERTABLE_DATA_PROXY_URL: '',
+        ALTERTABLE_DATA_PROXY_TOKEN: '',
+        ALTERTABLE_LAKEHOUSE_USERNAME: '',
+        ALTERTABLE_LAKEHOUSE_PASSWORD: '',
+        ALTERTABLE_USERNAME: '',
+        ALTERTABLE_PASSWORD: '',
+      }
+    );
+    expect(await server.exited).not.toBe(0);
+    expect(server.output()).toContain('Missing lakehouse credentials.');
+    expect(server.output()).toContain('ALTERTABLE_LAKEHOUSE_USERNAME');
+    expect(server.output()).toContain('ALTERTABLE_LAKEHOUSE_PASSWORD');
+    expect(server.output()).not.toContain('Server must not start');
+    expect(server.output()).not.toContain('running at');
+  }
+);
 
 test('dev:dir refuses a directory without a local server', async () => {
   const directory = await temporaryDirectory();
@@ -581,7 +594,11 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
     join(directory, 'bunfig.toml'),
     'preload = ["./setup.ts"]\n[serve.static]\nplugins = []\n'
   );
-  const command = run(['run', 'dev:dir', directory], { PORT: '0' });
+  const command = run(['run', 'dev:dir', directory], {
+    PORT: '0',
+    ALTERTABLE_LAKEHOUSE_USERNAME: 'fixture',
+    ALTERTABLE_LAKEHOUSE_PASSWORD: 'fixture',
+  });
   const [, firstUrl] = await waitForOutput(
     command,
     /Getting started running at (http:\/\/127\.0\.0\.1:\d+\/)/

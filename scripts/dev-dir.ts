@@ -30,6 +30,11 @@ if (!existsSync(server)) {
 }
 await ensurePackageBuild();
 
+const { environment, target } = previewLakehouseEnvironment();
+const { validateLakehouseCredentials } =
+  await import('@altertable/data-app/server/bun');
+validateLakehouseCredentials(environment);
+
 const appConfig = readAppImportPaths(directory);
 const checkoutPaths = checkoutImportPaths();
 const previewConfig = {
@@ -43,7 +48,6 @@ const configDirectory = mkdtempSync(join(tmpdir(), 'data-app-dev-dir-'));
 const tsconfig = join(configDirectory, 'tsconfig.json');
 writeFileSync(tsconfig, JSON.stringify(previewConfig));
 
-const { environment, target } = previewLakehouseEnvironment();
 console.log(target);
 const child = Bun.spawn(
   [

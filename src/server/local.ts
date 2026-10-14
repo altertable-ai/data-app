@@ -31,6 +31,7 @@ export function serveLocalApp({
   title: string;
   port?: number;
 }) {
+  const lakehouse = localLakehouse();
   const server = Bun.serve({
     hostname: '127.0.0.1',
     port,
@@ -38,7 +39,7 @@ export function serveLocalApp({
     idleTimeout: 60,
     routes: { '/': page },
     fetch: createDataHandler(operations, async () => ({
-      lakehouse: localLakehouse(),
+      lakehouse,
     })),
   });
   console.log(`${title} running at ${server.url}`);
@@ -46,20 +47,36 @@ export function serveLocalApp({
   return server;
 }
 
+/** Throw an actionable startup error when the selected lakehouse credentials are missing. */
+export function validateLakehouseCredentials(
+  environment: Record<string, string | undefined> = process.env
+): void {
+  const proxyUrl = environment.ALTERTABLE_DATA_PROXY_URL;
+  const proxyToken = environment.ALTERTABLE_DATA_PROXY_TOKEN;
+  const username = environment.ALTERTABLE_LAKEHOUSE_USERNAME;
+  const password = environment.ALTERTABLE_LAKEHOUSE_PASSWORD;
+  if (proxyUrl && !proxyToken)
+    throw new Error(
+      'Missing ALTERTABLE_DATA_PROXY_TOKEN. Set it when ALTERTABLE_DATA_PROXY_URL is configured.'
+    );
+  if (!proxyUrl && (!username || !password))
+    throw new Error(
+      'Missing lakehouse credentials. Set both ALTERTABLE_LAKEHOUSE_USERNAME and ALTERTABLE_LAKEHOUSE_PASSWORD, or use the CLI lakehouse proxy.'
+    );
+}
+
 /** Server-only SDK adapter. Local development uses the selected CLI profile's proxy. */
 export function localLakehouse(
   environment: Record<string, string | undefined> = process.env,
   request: typeof fetch = fetch
 ): Lakehouse {
+  validateLakehouseCredentials(environment);
+  const proxyUrl = environment.ALTERTABLE_DATA_PROXY_URL;
+  const proxyToken = environment.ALTERTABLE_DATA_PROXY_TOKEN;
+  const username = environment.ALTERTABLE_LAKEHOUSE_USERNAME;
+  const password = environment.ALTERTABLE_LAKEHOUSE_PASSWORD;
   return {
     async queryAll(statement, { limit, signal, params }) {
-      const proxyUrl = environment.ALTERTABLE_DATA_PROXY_URL;
-      const proxyToken = environment.ALTERTABLE_DATA_PROXY_TOKEN;
-      const username = environment.ALTERTABLE_LAKEHOUSE_USERNAME;
-      const password = environment.ALTERTABLE_LAKEHOUSE_PASSWORD;
-      if (!proxyUrl && (!username || !password))
-        throw new DataSourceError('unauthorized');
-      if (proxyUrl && !proxyToken) throw new DataSourceError('unauthorized');
       signal.throwIfAborted();
       const cancellation = new AbortController();
       const client = new AltertableLakehouseClient({

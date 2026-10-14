@@ -2,6 +2,29 @@ import { expect, test } from 'vitest';
 import { localLakehouse } from '@altertable/data-app/server/bun';
 import { DataSourceError } from '@altertable/data-app/contract';
 
+test.each([
+  {},
+  { ALTERTABLE_LAKEHOUSE_USERNAME: 'user' },
+  { ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret' },
+])(
+  'local lakehouse rejects missing credentials at construction',
+  environment => {
+    expect(() => localLakehouse(environment)).toThrow(
+      'Set both ALTERTABLE_LAKEHOUSE_USERNAME and ALTERTABLE_LAKEHOUSE_PASSWORD'
+    );
+  }
+);
+
+test('local lakehouse requires the selected proxy token even when direct credentials exist', () => {
+  expect(() =>
+    localLakehouse({
+      ALTERTABLE_DATA_PROXY_URL: 'http://127.0.0.1:1234',
+      ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
+      ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
+    })
+  ).toThrow('Missing ALTERTABLE_DATA_PROXY_TOKEN');
+});
+
 test('local lakehouse uses the official SDK for direct credentials, parameters and typed results', async () => {
   const source = localLakehouse(
     {
