@@ -249,13 +249,6 @@ export function createDataHooks<Operations extends DataOperations>(
       return {
         kind: 'hierarchy' as const,
         variable,
-        clientScope,
-        loadFacet: (operation: string, input: unknown, signal: AbortSignal) =>
-          client
-            .query(operation as keyof Operations & string, input as never, {
-              signal,
-            })
-            .then(response => response.data),
         filter(values: Partial<HierarchyValuesOf<Variable>>) {
           const next = variable.filter(variable.read(searchParams()), values);
           writeVariableValues(
@@ -264,7 +257,6 @@ export function createDataHooks<Operations extends DataOperations>(
             'push'
           );
         },
-        navigationId: `${navigationId}:${key}`,
         read: (input: Input) =>
           variable.parse(
             readViewBinding(normalized, key, input)

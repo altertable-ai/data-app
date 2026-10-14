@@ -168,11 +168,6 @@ effects: open details, filter a declared view, or descend through a hierarchy.
 Evidence references explain definitions and queries; exploration actions change
 what the reader investigates.
 
-Hierarchy selectors live in the view's Filters sheet. A floating bar summarizes
-active filters and opens that same sheet for editing; widgets keep their chart
-and row actions without repeating the controls. Chart menu triggers show a
-dropdown indicator beside the category label.
-
 ```tsx
 const placeActions = places.actions(action => ({
   orders: action.detail({
@@ -203,7 +198,8 @@ remain in the menu. A metric's row argument is `undefined`.
 Use `metric.records()` to include contributing records in its existing inspection
 sheet. Records becomes the first tab, followed by Glossary and Queries. The
 metric keeps its usual heading trigger; no separate record-opening action is
-needed. Register the destination content on `<DataApp details={[ordersContent]}>`:
+needed. Register the [destination content](views.md#detail-destinations) on
+`<DataApp details={[ordersDetail]}>`:
 
 ```tsx
 const contributingOrders = orderCount.records({

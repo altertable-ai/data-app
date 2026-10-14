@@ -4,8 +4,6 @@
   text-align: left;
 }
 .altertable-picker-label {
-  display: inline-flex;
-  align-items: center;
   flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -14,6 +12,9 @@
   color: var(--atbl-muted);
   font-size: var(--atbl-type-label-size);
   font-weight: var(--atbl-type-meta-weight);
+}
+.altertable-picker-label > svg {
+  display: block;
 }
 .altertable-picker-value {
   flex: none;

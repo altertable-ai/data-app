@@ -3,17 +3,24 @@ import { hasSelectedFacetLookup } from '@/src/core/hierarchy-source';
 import { Button } from '@/src/react/ui/Button';
 import { ControlLabelValue } from '@/src/react/ui/PickerField';
 import { useQueries } from '@tanstack/react-query';
-import type { HierarchyState } from '@/src/core/hierarchy';
+import type { HierarchyState, HierarchyVariable } from '@/src/core/hierarchy';
 import {
   parseFacetOptions,
   type DimensionSelection,
   type DimensionOption,
 } from '@/src/core/dimension';
-import type { HierarchyTarget } from '@/src/react/actions';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
 
 type HierarchyControls = {
-  target: Pick<HierarchyTarget<any>, 'variable' | 'clientScope' | 'loadFacet'>;
+  target: {
+    variable: HierarchyVariable;
+    clientScope: string;
+    loadFacet: (
+      operation: string,
+      input: unknown,
+      signal: AbortSignal
+    ) => Promise<unknown>;
+  };
   value: HierarchyState<any>;
 };
 

@@ -115,7 +115,7 @@ export function ViewControlBar({
               )
             }
           </GradientScroll>
-          <Button variant="ghost" disabled={!onClear} onClick={clearFilters}>
+          <Button variant="ghost" onClick={clearFilters}>
             Clear filters
           </Button>
         </fieldset>

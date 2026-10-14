@@ -26,18 +26,12 @@ export type HierarchyTarget<Input> = {
   variable: Omit<HierarchyVariable<any>, 'levels'> & {
     levels: readonly (HierarchyLevel & { groupLabel: string })[];
   };
-  navigationId: string;
-  clientScope: string;
-  loadFacet: (
-    operation: string,
-    input: unknown,
-    signal: AbortSignal
-  ) => Promise<unknown>;
   /** Extract the source view's preserved hierarchy state, including from nested input shapes. */
   read: (input: Input) => HierarchyState<any>;
 };
 /** A chart's breakdown paired with the view's shared hierarchy scope. */
 export type BreakdownTarget<Input> = HierarchyTarget<Input> & {
+  navigationId: string;
   breakdown: HierarchyBreakdownVariable<any>;
   readLevel: (input: Input) => string;
   update: (scope: HierarchyState<any>, level: string) => void;

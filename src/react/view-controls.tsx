@@ -106,7 +106,7 @@ export function useViewVariables<Variables extends VariableCollection>(
 
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
-  let hasActiveFilters = false;
+  let canClear = false;
   const clearedFilters: Partial<AppVariableValues<Variables>> = {};
   const searchControls: ReactNode[] = [];
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
@@ -143,7 +143,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       ).length;
       if (count) {
         activeFilterCount += count;
-        hasActiveFilters = true;
+        canClear = true;
         filterSummaries.push(onEdit => (
           <HierarchyFilterSummary
             key={name}
@@ -174,10 +174,6 @@ export function useViewVariables<Variables extends VariableCollection>(
         />
       );
       continue;
-    }
-    if (group === 'scope' && variable.clearValue !== undefined) {
-      clearedFilters[name] = variable.clearValue;
-      if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
     }
     function renderControl(labelPlacement: ControlLabelPlacement) {
       function setControlValue(
@@ -297,6 +293,10 @@ export function useViewVariables<Variables extends VariableCollection>(
       displayOptions[prominence].push(renderControl(labelPlacement));
       if (active) changedDisplayOptionCount++;
     } else {
+      if (variable.clearValue !== undefined) {
+        clearedFilters[name] = variable.clearValue;
+        if (active) canClear = true;
+      }
       allFilters.push(renderControl('above'));
       if (active) {
         const described =
@@ -355,7 +355,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     resolved,
     searchControls: searchControls.length ? searchControls : null,
     filterControls:
-      hasControls || hasActiveFilters ? (
+      hasControls || canClear ? (
         <ViewControlBar
           primaryFilters={primaryFilters}
           filterSummaries={filterSummaries}
@@ -364,9 +364,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           displayOptions={orderedDisplayOptions}
           changedDisplayOptionCount={changedDisplayOptionCount}
           onClear={
-            hasActiveFilters
-              ? () => variables.update(clearedFilters)
-              : undefined
+            canClear ? () => variables.update(clearedFilters) : undefined
           }
         />
       ) : null,

@@ -271,11 +271,10 @@ hierarchyVariable({
 scopedGroups.actions(action => ({
   filter: action.filter({
     label: 'Filter',
-    // @ts-expect-error Exploration targets must include the full bound contract.
+    // @ts-expect-error Hierarchy targets must read the displayed scope for stale-action checks.
     target: {
       kind: 'hierarchy',
       variable: geography,
-      read: () => geography.defaultValue,
       filter: (_values: { region?: string }) => {},
     },
     values: () => ({ region: 'Europe' }),

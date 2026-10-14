@@ -32,7 +32,7 @@ export type AppVariable<Value, Kind extends string = string> = {
   presentation?: VariablePresentation;
   urlKeys: readonly string[];
   defaultValue: Value;
-  /** Unrestricted value, when this variable represents a filter. */
+  /** Value restored by Clear filters; date ranges return to their configured default. */
   clearValue?: Value;
   describe?: (value: Value) => string;
   history: HistoryMode;

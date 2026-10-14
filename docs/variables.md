@@ -320,13 +320,24 @@ const salesView = defineDataView({
 });
 const hierarchyTarget = salesView.hierarchy('geography');
 const revenueBreakdown = salesView.breakdown('revenueBy');
+const placeActions = revenue.actions(action => ({
+  descend: action.descend({ target: revenueBreakdown, member: row => row.id }),
+}));
 
 <VisualizationWidget
   dataset={revenue}
   source={source}
   breakdown={revenueBreakdown}
+  actions={placeActions}
 >
-  {(rows, actions) => <BarChart items={rows} itemActions={actions} />}
+  {(rows, actions) => (
+    <BarChart
+      ariaLabel="Revenue by place"
+      unit="USD"
+      items={rows}
+      itemActions={actions}
+    />
+  )}
 </VisualizationWidget>;
 ```
 
@@ -419,19 +430,16 @@ The parser owns those named fields, validates level IDs, and falls back to valid
 levels when required ancestors are absent. Details that only list records can omit
 the breakdowns.
 Clients and HTTP handlers automatically register the required selector operations
-from these input contracts and reject conflicting operation names. No selector
-registration spread or manual parent check is needed. Input wrappers compose for
-several hierarchies. `geography.parse()` alone is structural UI validation.
+from these input contracts. No manual selector registration or parent check is
+needed. Input wrappers compose for several hierarchies. `geography.parse()` alone
+is structural UI validation.
 
-The shared executor validates selected source members in parent order before
-business queries, using the current operation's authorization, cancellation,
-and limits. Invalid or stale membership returns an invalid-input error; source
-failures prevent the business operation from running. Lookup queries appear in
-query evidence. Both browser/bundle and HTTP execution use this contract. Generated selector endpoints are named
-`key.level` and pass through the same authorization callback as ordinary
-operations. Child selectors require selected ancestors and validate their
-membership before querying child labels. These names are reserved;
-`hierarchy.operations` exposes them for authorization, without manual registration.
+Selected source members are validated in parent order before business queries,
+under the operation's authorization, cancellation, and limits. Invalid membership
+or source failures prevent execution; lookup queries appear in query evidence.
+Selector endpoints use reserved names `key.level` and the same authorization
+callback as ordinary operations. Use `hierarchy.operations` when authorizing those
+names. Child selectors also validate their selected ancestors.
 
 See the [support workload example](https://github.com/altertable-ai/data-app/blob/main/dev/support.ts)
 for the complete source, parser, and operation declarations.
@@ -445,7 +453,7 @@ for the complete source, parser, and operation declarations.
 | Select All at the root         | Clear hierarchy filters and return chart breakdowns to the root. |
 
 `<DataApp>` includes progressive hierarchy selectors in the Filters sheet.
-The floating bar summarizes selected filters only; clicking a summary opens the
+The floating bar summarizes active filters; clicking a summary opens the
 sheet. Each chart renders its own **Break down by** selector through
 `<VisualizationWidget breakdown={salesView.breakdown('revenueBy')}>`.
 Breakdown controls appear only when multiple levels are available. They never

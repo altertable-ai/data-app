@@ -7,7 +7,8 @@ source for October 7–13, 2026 UTC.
 - `app.defineHierarchy()` declares Repository → Workflow → Job. Registered
   queries supply options and validate selected members under their parents.
 - `hierarchy.input()` attaches that contract to the job operation.
-- `view.hierarchy()` binds filter and descent actions to the view.
+- `view.hierarchy()` binds shared filters; `view.breakdown()` binds a chart's
+  aggregation and descent actions.
 - Dataset actions open matching records from a hierarchy member, UTC day, or
   outcome. Pie slices and legend items use the same action.
 - `metric.records()` adds Records before Glossary and Queries in the existing
