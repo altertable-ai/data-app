@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.69.0](https://github.com/altertable-ai/data-app/compare/v0.68.0...v0.69.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove operation output parsers; data is what run returns ([#75](https://github.com/altertable-ai/data-app/issues/75))
+* **react:** catch missing filter bindings at compile time ([#67](https://github.com/altertable-ai/data-app/issues/67))
+* **react:** unify search, filters, and suggestions ([#66](https://github.com/altertable-ai/data-app/issues/66))
+* **react:** remove obsolete host skeleton APIs ([#63](https://github.com/altertable-ai/data-app/issues/63))
+
+### Features
+
+* **dev:** support external app previews with a shared Bun runtime ([#78](https://github.com/altertable-ai/data-app/issues/78)) ([a0af75c](https://github.com/altertable-ai/data-app/commit/a0af75c8134d0af636df67584c309f0b8bcb9fbe))
+* **embed:** make bridge and query failures debuggable ([#76](https://github.com/altertable-ai/data-app/issues/76)) ([a3bcf77](https://github.com/altertable-ai/data-app/commit/a3bcf779c1c1287975f29c0c964dbc9585839877))
+* **react:** add gradient scroll cues to horizontal tabs ([#73](https://github.com/altertable-ai/data-app/issues/73)) ([446fced](https://github.com/altertable-ai/data-app/commit/446fceda7140616cad19e9be2cd8769c53ec8cb9))
+* **react:** unify search, filters, and suggestions ([#66](https://github.com/altertable-ai/data-app/issues/66)) ([5fb5387](https://github.com/altertable-ai/data-app/commit/5fb53877d9d4e1930accbec5b57fe17eed665871))
+* remove operation output parsers; data is what run returns ([#75](https://github.com/altertable-ai/data-app/issues/75)) ([4411506](https://github.com/altertable-ai/data-app/commit/44115064d93f27de162c992995ffa807cc123f68))
+
+
+### Bug Fixes
+
+* **annotations:** restore widget targets, dismissal, and scrolling ([#64](https://github.com/altertable-ai/data-app/issues/64)) ([71d6940](https://github.com/altertable-ai/data-app/commit/71d694043f05a81eafd9fd12ba182a2c2f74f508))
+* **charts:** improve inspection, legends, and temporal axes ([#77](https://github.com/altertable-ai/data-app/issues/77)) ([75852ad](https://github.com/altertable-ai/data-app/commit/75852ad429490903d2d04af635d4836173ef9387))
+* **charts:** use square corners for stacked bars ([#68](https://github.com/altertable-ai/data-app/issues/68)) ([bb27ab9](https://github.com/altertable-ai/data-app/commit/bb27ab926214c17cb246b4751ed09b1c57e964d2))
+* **react:** catch missing filter bindings at compile time ([#67](https://github.com/altertable-ai/data-app/issues/67)) ([cc4d9ed](https://github.com/altertable-ai/data-app/commit/cc4d9edbc3b6706c525fbf6ee24ee20816a35c96))
+* **react:** stretch widgets inside grid items ([#71](https://github.com/altertable-ai/data-app/issues/71)) ([b8c5475](https://github.com/altertable-ai/data-app/commit/b8c5475ab59fa7f36ac29ef4a7defe4b20366910))
+* use full widget title width and official lakehouse SDK ([#70](https://github.com/altertable-ai/data-app/issues/70)) ([51ae42a](https://github.com/altertable-ai/data-app/commit/51ae42a898a8f623abb9d2efa57c78fbbae5d8ff))
+* widen app layouts and wrap grid rows sooner ([#72](https://github.com/altertable-ai/data-app/issues/72)) ([fa9fa19](https://github.com/altertable-ai/data-app/commit/fa9fa19e96dd573e4dcbc9560d6b691ed74db207))
+
+
+### Code Refactoring
+
+* **react:** remove obsolete host skeleton APIs ([#63](https://github.com/altertable-ai/data-app/issues/63)) ([2fa4efd](https://github.com/altertable-ai/data-app/commit/2fa4efd7e8686ce172785c483d1f84dcecd765d5))
+
 ## [0.68.0](https://github.com/altertable-ai/data-app/compare/v0.67.0...v0.68.0) (2026-10-09)
 
 
