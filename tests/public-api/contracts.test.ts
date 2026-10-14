@@ -169,7 +169,7 @@ test('authoring a view rejects invalid datasets and unregistered evidence', () =
   expect(() =>
     view.dataset({
       name: 'Rows',
-      select: count => [count],
+      select: (count: number) => [count],
       rowKey: row => row,
       columns: { count: { value: row => row } },
       evidence: { id: 'rows', queryNames: ['unknown' as 'rows'] },
@@ -178,8 +178,9 @@ test('authoring a view rejects invalid datasets and unregistered evidence', () =
   expect(() =>
     view.dataset({
       name: 'Rows',
-      select: count => [count],
+      select: (count: number) => [count],
       rowKey: row => row,
+      // @ts-expect-error Untyped callers must still be rejected at runtime.
       columns: {},
       evidence: { id: 'rows', queryNames: ['rows'] },
     })

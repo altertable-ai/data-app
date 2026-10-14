@@ -152,7 +152,7 @@ export function validateChoiceOptions(options: readonly ChoiceOption[]) {
   );
 }
 
-export function choiceVariable({
+export function choiceVariable<const Options extends readonly ChoiceOption[]>({
   key,
   label,
   defaultValue,
@@ -160,8 +160,8 @@ export function choiceVariable({
   history = 'push',
   presentation,
 }: ScalarVariableOptions & {
-  defaultValue: string;
-  options: readonly ChoiceOption[];
+  defaultValue: NoInfer<Options[number]['id']>;
+  options: Options & (Options extends readonly [] ? never : unknown);
 }): ChoiceVariable {
   validateChoiceOptions(options);
   function valid(value: string) {
@@ -194,7 +194,9 @@ export function choiceVariable({
   };
 }
 
-export function multiChoiceVariable({
+export function multiChoiceVariable<
+  const Options extends readonly ChoiceOption[],
+>({
   key,
   label,
   defaultValue = [],
@@ -203,8 +205,8 @@ export function multiChoiceVariable({
   history = 'push',
   presentation,
 }: Omit<ScalarVariableOptions, 'defaultValue'> & {
-  defaultValue?: readonly string[];
-  options: readonly ChoiceOption[];
+  defaultValue?: readonly NoInfer<Options[number]['id']>[];
+  options: Options & (Options extends readonly [] ? never : unknown);
   maxSelected?: number;
 }): MultiChoiceVariable {
   validateChoiceOptions(options);

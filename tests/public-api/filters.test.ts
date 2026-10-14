@@ -81,6 +81,24 @@ test('presentation intent is retained by each variable constructor without chang
     expect(value).toEqual(variable.defaultValue);
   }
 });
+
+test('dimension limits remain validated for unchecked single selections and dynamic multiple selections', () => {
+  const filter = {
+    key: 'region',
+    label: 'Region',
+    valueType: 'string' as const,
+    options: [],
+  };
+  expect(() =>
+    // @ts-expect-error JavaScript callers can supply incompatible cardinality.
+    dimensionFilter({ ...filter, selectionMode: 'single', maxSelected: 2 })
+  ).toThrow('Dimension selection limit is invalid');
+  for (const maxSelected of [0, 51, 1.5, Infinity, NaN]) {
+    expect(() =>
+      dimensionFilter({ ...filter, selectionMode: 'multiple', maxSelected })
+    ).toThrow('Dimension selection limit is invalid');
+  }
+});
 test('labeled choices validate defaults and selections and canonicalize URL state', () => {
   expect(() => numberFilter({ key: '', label: 'Amount' })).toThrow();
   expect(() => booleanFilter({ key: '', label: 'Active' })).toThrow();

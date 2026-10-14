@@ -56,7 +56,7 @@ export type OperationContext = {
 export type DataOperation<Input, Output> = {
   input: (value: unknown) => Input;
   run: (context: OperationContext, input: Input) => Promise<Output>;
-  checks: readonly Input[];
+  checks: readonly [Input, ...Input[]];
   queryNames?: Readonly<Record<string, string>>;
   policy: {
     maxQueryRows: number;
@@ -70,7 +70,7 @@ export type DataOperations = Record<
   string,
   OperationContracts[string] &
     Omit<DataOperation<never, unknown>, 'input' | 'checks'> & {
-      checks: readonly unknown[];
+      checks: readonly [unknown, ...unknown[]];
     }
 >;
 export type DataQueryInput<Operations extends OperationContracts> = {

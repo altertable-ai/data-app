@@ -68,7 +68,13 @@ function declareView() {
       glossaryId: 'count',
       format: { kind: 'count' },
     },
-    count => ({ current: count })
+    // @ts-expect-error Exercise the runtime guard for unchecked comparison selectors.
+    count => ({
+      current: count,
+      ...(new URLSearchParams(location.search).get('binding') === 'comparison'
+        ? { previous: 0 }
+        : {}),
+    })
   );
   return { view, dataset, metric };
 }

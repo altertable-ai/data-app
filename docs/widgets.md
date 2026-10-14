@@ -58,6 +58,8 @@ question from the same dataset.
 Bind reusable selections to the view. Declare evidence references directly;
 the view validates them against its own context. A dataset's columns supply both formatted
 table cells and raw CSV values. Widgets derive their readings, evidence, and empty fallback from the binding.
+Declare at least one dataset column. Metric selectors may return `previous`
+only for views with a date binding, including `defineTimeView()`.
 
 ```tsx
 const countries = activityView.dataset({
