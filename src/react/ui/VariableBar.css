@@ -143,15 +143,19 @@
 .altertable-filter-summary-label {
   color: var(--atbl-muted);
 }
-.altertable-filter-sheet .altertable-exploration-breadcrumbs ol {
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--atbl-space-sm);
-}
-.altertable-filter-sheet .altertable-exploration-separator {
-  display: none;
-}
-
 .altertable-app-main:has(.altertable-filter-summary) {
   padding-block-end: calc(6rem + env(safe-area-inset-bottom));
+}
+
+.altertable-filter-summary {
+  --atbl-focus-outline: none;
+}
+.altertable-filter-summary button:focus-visible {
+  background: var(--atbl-subtle);
+}
+
+@media (forced-colors: active) {
+  .altertable-filter-summary {
+    --atbl-focus-outline: 1px solid Highlight;
+  }
 }

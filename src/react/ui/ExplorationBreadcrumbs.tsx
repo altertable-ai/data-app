@@ -145,16 +145,12 @@ export function ExplorationBreadcrumbs({
           return (
             <li
               key={level.id}
+              style={{
+                marginInlineStart: `calc(${position} * var(--atbl-space-md))`,
+                maxInlineSize: `calc(100% - ${position} * var(--atbl-space-md))`,
+              }}
               aria-current={position === group ? 'page' : undefined}
             >
-              {position > 0 && (
-                <span
-                  className="altertable-exploration-separator"
-                  aria-hidden="true"
-                >
-                  /
-                </span>
-              )}
               <DimensionPicker
                 filter={dimension}
                 variant="ghost"

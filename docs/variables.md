@@ -103,6 +103,28 @@ const sort = choiceVariable({
 });
 ```
 
+### Control surfaces
+
+| Control intent           | Top bar                              | Filters sheet                      | Floating active-filter bar                     |
+| ------------------------ | ------------------------------------ | ---------------------------------- | ---------------------------------------------- |
+| Search                   | Separate search field                | No                                 | No                                             |
+| Scope, primary (default) | Direct control                       | Yes                                | When different from its clear value or default |
+| Scope, secondary         | Filters button opens sheet           | Yes                                | When different from its clear value or default |
+| Hierarchy                | Filters button opens sheet           | Progressive parent/child selectors | Selected members, never All levels             |
+| Display                  | Display options button opens popover | No                                 | No                                             |
+
+The same scope rule covers date ranges, fixed choices, multiple choices,
+dimensions, numeric predicates, and boolean predicates. `presentation.group`
+chooses scope or display; `presentation.prominence` chooses primary or secondary.
+Display controls all live in their own popover, ordered primary before secondary.
+Hierarchy levels belong to one variable and cannot also be declared as ordinary
+filters. Search keeps its separate input and suggestions.
+
+The floating summaries open the same Filters sheet; they do not own another
+selection state. Clear removes clearable predicates and resets hierarchy scope
+and grouping. Periods and fixed choices without a clear value retain their current
+values, as do search and display options. Reset restores configured defaults.
+
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,
 maximum range, time zone, and comparison rules. `defineTimeView()` is the compact
 path for a view whose primary input is a period. Use `defineDataView()` for fixed

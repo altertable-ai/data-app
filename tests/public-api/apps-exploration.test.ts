@@ -332,6 +332,9 @@ test('mobile summaries fit the viewport and open hierarchy selectors by keyboard
     exact: true,
   });
   await edit.focus();
+  expect(
+    await edit.evaluate(element => getComputedStyle(element).outlineStyle)
+  ).toBe('none');
   await page.keyboard.press('Enter');
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   await sheet.waitFor();
@@ -339,6 +342,14 @@ test('mobile summaries fit the viewport and open hierarchy selectors by keyboard
     name: 'Country: United States',
     exact: true,
   });
+  const region = controls(page).getByRole('button', {
+    name: 'Region: North America',
+    exact: true,
+  });
+  const rootBox = (await region.boundingBox())!;
+  const childBox = (await trigger.boundingBox())!;
+  expect(childBox.x - rootBox.x).toBeGreaterThanOrEqual(12);
+
   expect(
     await trigger
       .getByText('United States', { exact: true })

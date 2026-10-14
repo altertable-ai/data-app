@@ -1,22 +1,29 @@
-.altertable-exploration-breadcrumbs ol,
-.altertable-exploration-breadcrumbs li {
-  display: flex;
-  align-items: center;
-  gap: var(--atbl-space-xs);
-}
 .altertable-exploration-breadcrumbs ol {
-  flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--atbl-space-sm);
   margin: 0 calc(-1 * var(--atbl-control-padding-inline));
   padding: 0;
   list-style: none;
 }
 .altertable-exploration-breadcrumbs li {
+  position: relative;
+  display: flex;
+  align-items: center;
   min-width: 0;
   max-width: 100%;
 }
-.altertable-exploration-separator {
-  flex: none;
-  color: color-mix(in srgb, var(--atbl-muted) 60%, transparent);
+.altertable-exploration-breadcrumbs li + li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: calc(-1 * var(--atbl-space-sm));
+  inset-block-start: calc(-1 * var(--atbl-space-sm));
+  width: var(--atbl-space-sm);
+  height: calc(var(--atbl-control-height) / 2 + var(--atbl-space-sm));
+  border-inline-start: 1px solid var(--atbl-border);
+  border-block-end: 1px solid var(--atbl-border);
+  border-end-start-radius: var(--atbl-radius-control);
 }
 
 .altertable-exploration-breadcrumbs .altertable-field {
