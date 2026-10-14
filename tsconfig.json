@@ -16,6 +16,7 @@
   },
   "include": [
     "vitest.config.ts",
+    "knip.ts",
     "src",
     "tests",
     "scripts",

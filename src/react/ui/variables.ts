@@ -17,7 +17,6 @@ import {
   type VariableCollection,
 } from '@/src/core/variables';
 export {
-  defineAppVariables,
   searchVariable,
   choiceVariable,
   multiChoiceVariable,

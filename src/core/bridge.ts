@@ -1,7 +1,7 @@
 import { isLogEntry } from '@/src/core/logger';
 
 /** Data app delivery protocol. IDs identify a document, a shell session, and an individual call. */
-export const BRIDGE = 'altertable:data-app';
+const BRIDGE = 'altertable:data-app';
 export const PARENT_PARAM = '__altertable_parent';
 /** Bound pending requests in the client and host independently.
  * The host enforces its own limit because frames can send messages directly. */

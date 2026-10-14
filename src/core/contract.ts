@@ -45,12 +45,6 @@ export function parseEmptyInput(value: unknown): Record<string, never> {
   return {};
 }
 
-export function parseTrue(value: unknown): true {
-  invariant(value === true, 'Expected a successful check.');
-
-  return true;
-}
-
 export type { DateRange as DateRangeInput } from '@/src/core/date-range';
 export type DateRangeRequest = {
   range: DateRangeInput;

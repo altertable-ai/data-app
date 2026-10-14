@@ -26,7 +26,7 @@ import {
   useShortcut,
 } from '@/src/react/ui/shortcuts';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
+import { ThemeToggle } from '@/src/react/ui/ThemeToggle';
 import { storySteps, type StoryFinding } from '@/src/react/ui/story';
 
 export type StoryStep = {

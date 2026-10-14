@@ -40,7 +40,7 @@ type SharedProps = {
   error?: boolean;
   onRetry?: () => void;
 };
-export type SingleChoicePickerProps = SharedProps & {
+type SingleChoicePickerProps = SharedProps & {
   selectionMode: 'single';
   value: string;
   onChange: (value: string) => void;
@@ -48,7 +48,7 @@ export type SingleChoicePickerProps = SharedProps & {
   maxSelected?: never;
   emptySelectionLabel?: never;
 };
-export type MultiChoicePickerProps = SharedProps & {
+type MultiChoicePickerProps = SharedProps & {
   selectionMode: 'multiple';
   values: readonly string[];
   onChange: (values: string[]) => void;

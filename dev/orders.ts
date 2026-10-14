@@ -29,7 +29,7 @@ export type CountryRevenue = {
 };
 export type OrderDay = { day: string; orderCount: number };
 export type OrderBand = { band: string; orderCount: number };
-export type OrderTotals = {
+type OrderTotals = {
   orderCount: number;
   revenue: number;
   orderValue: number;

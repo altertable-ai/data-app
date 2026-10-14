@@ -17,7 +17,7 @@ export type CsvExport = {
   tables: readonly [CsvTable, ...CsvTable[]];
 };
 
-export function formatCsv({
+function formatCsv({
   columns,
   rows,
 }: Pick<CsvTable, 'columns' | 'rows'>): string {
@@ -45,7 +45,7 @@ function filenameWithExtension(name: string, extension: 'csv' | 'zip'): string {
   return filename;
 }
 
-export function createCsvDownload(
+function createCsvDownload(
   data: CsvExport,
   selectedTable?: CsvTable
 ): { filename: string; blob: Blob; route: 'export:csv' | 'export:zip' } {

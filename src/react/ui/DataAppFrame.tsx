@@ -16,7 +16,7 @@ import { AppScope } from '@/src/react/ui/AppScope';
 import { AppToolbar } from '@/src/react/ui/AppToolbar';
 import type { DataContext } from '@/src/react/ui/data-context';
 import type { BoundStory } from '@/src/react/ui/story';
-import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
+import { ThemeToggle } from '@/src/react/ui/ThemeToggle';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { TextContent } from '@/src/react/ui/TextContent';
 import { Stack } from '@/src/react/ui/Stack';
@@ -38,7 +38,7 @@ export type DataAppBaseProps = {
   footer?: ReactNode;
 };
 
-export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
+type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   queries?: DisclosedQuery[];
   /** Actual request activity, including retries with retained data. */
   refreshing?: boolean;

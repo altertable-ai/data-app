@@ -291,7 +291,7 @@ export function datasetTable<Data, Input, Row>(
 ) {
   return Dataset.table(dataset, source);
 }
-export function datasetCsv<Data, Input>(
+function datasetCsv<Data, Input>(
   dataset: ExportDataset<Data, Input>,
   snapshot: DisplayedSnapshot<Data, Input>
 ) {
