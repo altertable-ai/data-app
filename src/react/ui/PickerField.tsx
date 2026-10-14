@@ -25,6 +25,26 @@ export function PickerField({
   );
 }
 
+/** Shared label/value slots for filter pickers, chart selectors, and scope summaries. */
+export function ControlLabelValue({
+  label,
+  value,
+}: {
+  label?: ReactNode;
+  value: ReactNode;
+}) {
+  return (
+    <>
+      {label !== undefined && (
+        <span className="altertable-picker-label" aria-hidden="true">
+          {label}
+        </span>
+      )}
+      <strong className="altertable-picker-value">{value}</strong>
+    </>
+  );
+}
+
 /** Shared label, value, and disclosure layout for selection and predicate controls. */
 export function PickerTriggerContent({
   label,
@@ -37,12 +57,10 @@ export function PickerTriggerContent({
 }) {
   return (
     <>
-      {labelPlacement === 'inline' && (
-        <span className="altertable-picker-label" aria-hidden="true">
-          {label}
-        </span>
-      )}
-      <strong className="altertable-picker-value">{value}</strong>
+      <ControlLabelValue
+        label={labelPlacement === 'inline' ? label : undefined}
+        value={value}
+      />
       <AppIcon name="disclosure" size={14} />
     </>
   );

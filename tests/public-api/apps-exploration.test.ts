@@ -400,6 +400,68 @@ test('mobile summaries fit the viewport and open hierarchy selectors by keyboard
   ).toBe(true);
 });
 
+test('long active scopes scroll within a bounded fade while Clear filters stays fixed', async ({
+  page,
+}) => {
+  await page.goto('/exploration-app?month=10&segment=Self+serve');
+  await france(page);
+  await choose(page, 'Customer', 'Atelier Nord');
+  const bar = page.getByRole('group', { name: 'View scope', exact: true });
+  const scroller = bar.locator('[data-axis="horizontal"]');
+  const clear = bar.getByRole('button', { name: 'Clear filters', exact: true });
+  const first = scroller.getByRole('button', { name: /^Edit Month:/ });
+  for (const width of [1280, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await first.focus();
+    const fixed = (await clear.boundingBox())!;
+    const bounds = (await scroller.boundingBox())!;
+    expect(bounds.width).toBeLessThanOrEqual(576);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(fixed.x);
+    await expect
+      .poll(() =>
+        scroller.evaluate(element => element.scrollWidth > element.clientWidth)
+      )
+      .toBe(true);
+    await scroller.hover();
+    await page.mouse.wheel(800, 0);
+    await expect
+      .poll(() =>
+        scroller.evaluate(element => ({
+          scrolled: element.scrollLeft > 0,
+          faded: getComputedStyle(element).maskImage !== 'none',
+          scrollLeft: element.scrollLeft,
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+          fadeStart: element.hasAttribute('data-fade-start'),
+        }))
+      )
+      .toEqual(expect.objectContaining({ scrolled: true, faded: true }));
+    expect(Math.abs((await clear.boundingBox())!.x - fixed.x)).toBeLessThan(1);
+    expect(
+      await scroller
+        .getByRole('button', { name: 'Clear filters', exact: true })
+        .count()
+    ).toBe(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth
+      )
+    ).toBe(true);
+  }
+  const trigger = bar.getByRole('button', {
+    name: 'Open filters',
+    exact: true,
+  });
+  await trigger.click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await sheet.waitFor();
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
+  await sheet.waitFor({ state: 'hidden' });
+  await expect
+    .poll(() => trigger.evaluate(button => button === document.activeElement))
+    .toBe(true);
+});
+
 test('invalid facet parent pairs fail before business queries and recover from the filter sheet', async ({
   page,
 }) => {

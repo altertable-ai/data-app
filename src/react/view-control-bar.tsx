@@ -93,7 +93,17 @@ export function ViewControlBar({
       </VariableBar>
       {onClear && filterSummaries.length > 0 && (
         <fieldset className="altertable-filter-summary" aria-label="View scope">
-          <AppIcon name="filters" />
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Open filters"
+            aria-haspopup="dialog"
+            aria-expanded={filtersOpen}
+            aria-controls={filtersId}
+            onClick={event => openFilters(event.currentTarget)}
+          >
+            <AppIcon name="filters" />
+          </Button>
           <GradientScroll
             axis="horizontal"
             className="altertable-filter-summary-items"

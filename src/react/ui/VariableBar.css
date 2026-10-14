@@ -130,7 +130,8 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  overflow-x: auto;
+  flex: 0 1 auto;
+  max-inline-size: 36rem;
   gap: var(--atbl-space-xs);
 }
 .altertable-filter-summary-items > * {
@@ -141,8 +142,9 @@
 .altertable-filter-summary > button {
   flex-shrink: 0;
 }
-.altertable-filter-summary-label {
-  color: var(--atbl-muted);
+.altertable-filter-summary-items .altertable-picker-value {
+  max-width: none;
+  overflow: visible;
 }
 .altertable-app-main:has(.altertable-filter-summary) {
   padding-block-end: calc(6rem + env(safe-area-inset-bottom));

@@ -6,6 +6,7 @@ import type { HierarchyState } from '@/src/core/hierarchy';
 import { useContext, type ReactNode } from 'react';
 import { Button } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
+import { ControlLabelValue } from '@/src/react/ui/PickerField';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
   SearchSuggestionsContext,
@@ -325,18 +326,16 @@ export function useViewVariables<Variables extends VariableCollection>(
             onClick={onEdit}
             aria-label={`Edit ${definition.label ?? name}: ${described}`}
           >
-            {definition.kind === 'dateRange' ? (
-              <AppIcon
-                name="calendar"
-                size={16}
-                className="altertable-filter-summary-label"
-              />
-            ) : (
-              <span className="altertable-filter-summary-label">
-                {definition.label ?? name}
-              </span>
-            )}
-            {described}
+            <ControlLabelValue
+              label={
+                definition.kind === 'dateRange' ? (
+                  <AppIcon name="calendar" size={16} />
+                ) : (
+                  (definition.label ?? name)
+                )
+              }
+              value={described}
+            />
           </Button>
         ));
       }

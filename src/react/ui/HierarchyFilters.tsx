@@ -1,6 +1,7 @@
 import type { MouseEventHandler } from 'react';
 import { hasSelectedFacetLookup } from '@/src/core/hierarchy-source';
 import { Button } from '@/src/react/ui/Button';
+import { ControlLabelValue } from '@/src/react/ui/PickerField';
 import { useQueries } from '@tanstack/react-query';
 import type { HierarchyState } from '@/src/core/hierarchy';
 import {
@@ -116,8 +117,7 @@ export function HierarchyFilterSummary({
         onClick={onEdit}
         aria-label={`Edit ${level.label}: ${label}`}
       >
-        <span className="altertable-filter-summary-label">{level.label}</span>{' '}
-        {label}
+        <ControlLabelValue label={level.label} value={label} />
       </Button>
     );
   });
