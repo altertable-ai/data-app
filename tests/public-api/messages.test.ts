@@ -327,10 +327,14 @@ test('SQL host failures keep lakehouse details for host logs, not viewers', asyn
   const error = await handler(
     { statement: 'SELECT 22 CAST(1 AS INT)', limit: 1 },
     context()
-  ).catch(error => error);
-  expect(error).toMatchObject({ code: 'source_query_rejected' });
+  ).catch((error: unknown) => error);
+  expect(error).toBeInstanceOf(MessageRoutingError);
+  if (!(error instanceof MessageRoutingError)) throw error;
+  expect(error.code).toBe('source_query_rejected');
   expect(error.message).not.toContain(detail);
-  expect(error.cause.cause.message).toBe(detail);
+  expect(error.cause).toBeInstanceOf(DataSourceError);
+  if (!(error.cause instanceof DataSourceError)) throw error.cause;
+  expect(error.cause.cause).toMatchObject({ message: detail });
 });
 
 test('SQL delivery forwards statements and parameters unchanged through host authorization', async () => {

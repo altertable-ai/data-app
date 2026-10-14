@@ -13,8 +13,7 @@ export function startDataAppBootstrap({
   window?: Window;
 }) {
   let loaded: string | undefined;
-  let failure: unknown;
-  let failed = false;
+  let failure: { cause: unknown } | undefined;
   const bundleSource = `altertable-data-app-${randomUuid()}.js`;
   const bridge = createIframeTransport({
     parentOrigin,
@@ -26,7 +25,7 @@ export function startDataAppBootstrap({
           bridge.fail(
             new Error('This frame already evaluated a different app script.')
           );
-        else if (failed) bridge.fail(failure);
+        else if (failure) bridge.fail(failure.cause);
         else bridge.ready();
 
         return;
@@ -36,7 +35,7 @@ export function startDataAppBootstrap({
         const script = frame.document.createElement('script');
         script.textContent = `${javascript}\n//# sourceURL=${bundleSource}`;
         frame.document.body.append(script);
-        if (!failed) bridge.ready();
+        if (!failure) bridge.ready();
       } catch (error) {
         reportError(error);
       }
@@ -44,8 +43,7 @@ export function startDataAppBootstrap({
   });
 
   function reportError(error: unknown) {
-    failed = true;
-    failure = error;
+    failure = { cause: error };
     bridge.fail(error);
   }
 

@@ -78,23 +78,33 @@ export function attachDataAppConnection({
   let documentId: string | undefined;
   let sessionId: string | undefined;
   const pending = new Map<string, AbortController>();
-  const requestStarts = new Map<string, number>();
+  const requestStartedAt = new Map<string, number>();
 
-  function diagnostic(event: BridgeDiagnostic) {
+  function reportDiagnostic(event: BridgeDiagnostic) {
     if (!onDiagnostic) return;
     if (event.direction === 'drop' || !event.id) return onDiagnostic(event);
-    if (event.type === 'bridge:request' && !requestStarts.has(event.id)) {
-      if (requestStarts.size < MAX_PENDING * 2)
-        requestStarts.set(event.id, host.performance.now());
-    } else if (event.type === 'bridge:cancel') requestStarts.delete(event.id);
-    else if (event.type === 'bridge:result' || event.type === 'bridge:error') {
-      const start = requestStarts.get(event.id);
-      requestStarts.delete(event.id);
-      if (start !== undefined)
-        return onDiagnostic({
-          ...event,
-          durationMs: Math.round(host.performance.now() - start),
-        });
+    switch (event.type) {
+      case 'bridge:request':
+        if (
+          !requestStartedAt.has(event.id) &&
+          requestStartedAt.size < MAX_PENDING * 2
+        )
+          requestStartedAt.set(event.id, host.performance.now());
+        break;
+      case 'bridge:cancel':
+        requestStartedAt.delete(event.id);
+        break;
+      case 'bridge:result':
+      case 'bridge:error': {
+        const startedAt = requestStartedAt.get(event.id);
+        requestStartedAt.delete(event.id);
+        if (startedAt !== undefined)
+          return onDiagnostic({
+            ...event,
+            durationMs: Math.round(host.performance.now() - startedAt),
+          });
+        break;
+      }
     }
     onDiagnostic(event);
   }
@@ -140,7 +150,7 @@ export function attachDataAppConnection({
   function cancelAll() {
     for (const controller of pending.values()) controller.abort();
     pending.clear();
-    requestStarts.clear();
+    requestStartedAt.clear();
   }
 
   const endpoint = createBridgeEndpoint({
@@ -150,7 +160,7 @@ export function attachDataAppConnection({
     opaque: connection.type === 'opaque',
     context: () => ({ documentId, sessionId, token }),
     post: message => iframe.contentWindow?.postMessage(message, targetOrigin),
-    diagnostic,
+    diagnostic: reportDiagnostic,
     invalidRequest: id => {
       if (pending.has(id)) return;
       if (pending.size >= MAX_PENDING)

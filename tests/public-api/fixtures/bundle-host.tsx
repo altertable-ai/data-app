@@ -65,8 +65,19 @@ function Host() {
     info() {},
     warn() {},
     error(label, cause) {
-      if (label !== 'Data app failed') return;
-      const { name, message } = cause as { name?: string; message: string };
+      if (
+        label !== 'Data app failed' ||
+        !cause ||
+        typeof cause !== 'object' ||
+        !('message' in cause) ||
+        typeof cause.message !== 'string'
+      )
+        return;
+      const { message } = cause;
+      const name =
+        'name' in cause && typeof cause.name === 'string'
+          ? cause.name
+          : undefined;
       setFailures(previous => [
         ...previous,
         name ? `${name}: ${message}` : message,

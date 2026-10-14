@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+import type { DataAppDiagnostic } from '@altertable/data-app/embed';
 import { test } from '@/tests/public-api/browser';
 
 test('a host cancels timed-out queries and aborts old work when the iframe reloads', async ({
@@ -396,7 +397,7 @@ for (const mode of ['bridge-host', 'bundle-host', 'bundle-host?packaged=1']) {
           .textContent()
       )
       .toBe('2');
-    const diagnostics: Record<string, unknown>[] = JSON.parse(
+    const diagnostics: DataAppDiagnostic[] = JSON.parse(
       (await page
         .getByRole('status', { name: 'Host diagnostics', exact: true })
         .textContent())!
@@ -432,10 +433,11 @@ for (const mode of ['bridge-host', 'bundle-host', 'bundle-host?packaged=1']) {
       durationMs: expect.any(Number),
     });
     expect(
-      diagnostics.filter(event =>
-        ['foreign-source', 'stale-session', 'stale-token'].includes(
-          String(event.id)
-        )
+      diagnostics.filter(
+        event =>
+          event.direction !== 'drop' &&
+          event.id !== undefined &&
+          ['foreign-source', 'stale-session', 'stale-token'].includes(event.id)
       )
     ).toEqual([]);
   });
