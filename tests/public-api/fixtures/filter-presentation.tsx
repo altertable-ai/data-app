@@ -251,7 +251,6 @@ const operation = dataApp.defineOperation({
       orders: parseNumberSelection(input.orders, variables.orders),
     };
   },
-  output: (value: unknown) => value as { rows: typeof records },
   checks: [
     Object.fromEntries(
       Object.entries(variables).map(([name, variable]) => [

@@ -53,7 +53,7 @@ const client = createDataClient({
 const response = await client.query('connection', {});
 ```
 
-The client runs input parsing, operation logic, and output parsing in the browser.
+The client runs input parsing and operation logic in the browser.
 Operation policy bounds rows, duration, and response size and records query evidence. Each query sends `{ statement, limit, params? }`
 to the installed iframe bridge's `data:sql` route; the host needs no operation
 registry. Results include query evidence. Credentials remain backend-owned.

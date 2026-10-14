@@ -35,19 +35,18 @@ const dataApp = defineDataApp({
 
 const products = dataApp.defineOperation({
   input: parseProductInput,
-  output: parseProducts,
   checks: [{}],
   policy: { maxQueryRows: 100, maxDurationMs: 15000 },
   async run({ query }, input) {
     const result = await query('products', input);
-    return rowsAsRecords(result, ['org_id']);
+    return parseProducts(rowsAsRecords(result, ['name', 'price']));
   },
 });
 ```
 
 `parseProductInput()` and `parseProducts()` are app-owned example functions, not
-package exports. Validate
-filter values in the input parser. `{}` declares a required parameter; `{ defaultValue }` supplies
+package exports. Validate filter values in the input parser. Parse query rows once, in
+`run`: the value it returns is the operation's data and type, sent to the view as is. `{}` declares a required parameter; `{ defaultValue }` supplies
 a fallback. `query(name, params, { limit })` executes only registered queries and
 inherits the operation's row limit and cancellation signal.
 
@@ -73,8 +72,8 @@ export const calendar = defineDateRangeContract({
 });
 ```
 
-`parseEmptyInput()`, `parseTrue()`, `parseCount()`, and `parseDateRangeInput()` validate
-common inputs and results. `connectionCheck(dataApp.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
+`parseEmptyInput()`, `parseCount()`, and `parseDateRangeInput()` validate common inputs
+and query values. `connectionCheck(dataApp.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
 analysis result.
 
 See [server authorization](server.md) and [React views](react.md) for the two
@@ -112,9 +111,9 @@ an intentional public code, message, and optional request ID; other handler
 errors are replaced with a generic failure.
 
 `defineDataQueryRoute(operationContracts)` validates the selected operation's
-input and output and preserves its response evidence. It infers the result type
-from the selected operation when used with `createMessageClient()`. Share input and
-output parsers, not operation implementations containing SQL or credentials.
+input and preserves its response evidence. It infers the result type from the
+selected operation's `run` when used with `createMessageClient()`. Share input
+parsers and operation types, not operation implementations containing SQL or credentials.
 `dataAppRoutes` supplies generic `data:query` and `navigation:update` contracts;
 generic hosts must delegate operation validation and authorization to their
 server. Request handlers receive `{ signal }` for cancellation.

@@ -53,7 +53,7 @@ export async function executeDataOperation(
       queryParams,
     });
     const body: DataQueryBody<unknown> = {
-      data: operation.output(output),
+      data: output,
       requestId,
       queriedAt: new Date().toISOString(),
       queryIds: execution.queryIds,

@@ -189,7 +189,7 @@ export function defineDataQueryRoute<
         input: operation ? operation.input(request.input) : request.input,
       } as DataQueryInput<Operations>;
     },
-    output(value, input) {
+    output(value) {
       if (!value || typeof value !== 'object')
         throw new Error('Invalid data response.');
       const response = value as TransportResponse;
@@ -237,15 +237,7 @@ export function defineDataQueryRoute<
           ))
       )
         throw new Error('Invalid query evidence.');
-      const operation = operations?.[input.operation];
-
-      return {
-        status: response.status,
-        body: {
-          ...body,
-          data: operation ? operation.output(body.data) : body.data,
-        },
-      };
+      return { status: response.status, body };
     },
   };
 }

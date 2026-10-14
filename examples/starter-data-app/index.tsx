@@ -65,7 +65,6 @@ function parseSampleCounts(
 const operations = {
   sampleCountsByGroup: dataApp.defineOperation({
     input: parseSampleCountFilter,
-    output: parseSampleCounts,
     checks: [
       { groupName: '' },
       { groupName: 'Alpha' },

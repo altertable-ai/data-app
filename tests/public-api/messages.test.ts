@@ -76,9 +76,9 @@ test('typed routes validate both boundaries and reject unknown routes before inv
   });
 });
 
-test('an operation message client validates delivered data and preserves public errors', async () => {
+test('an operation message client validates input and the response envelope and preserves public errors', async () => {
   const route = defineDataQueryRoute({
-    count: { input: number, output: number },
+    count: { input: number },
   });
   const envelope = {
     data: 3,
@@ -103,7 +103,7 @@ test('an operation message client validates delivered data and preserves public 
     // @ts-expect-error JavaScript callers can still supply an invalid input.
     client.request('data:query', { operation: 'count', input: '1' })
   ).rejects.toMatchObject({ code: 'invalid_payload' });
-  response = { status: 200, body: { ...envelope, data: 'wrong' } };
+  response = { status: 200, body: { ...envelope, queryIds: 'q1' } };
   await expect(
     client.request('data:query', { operation: 'count', input: 1 })
   ).rejects.toMatchObject({ code: 'invalid_response' });

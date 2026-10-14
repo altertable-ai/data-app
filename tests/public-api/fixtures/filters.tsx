@@ -97,9 +97,6 @@ const operation = dataApp.defineOperation({
       country: parseDimensionSelection(input.country, country),
     };
   },
-  output(value: unknown) {
-    return value as Input;
-  },
   checks: [defaults],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run(_context, input) {

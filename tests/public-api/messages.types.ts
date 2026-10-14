@@ -11,16 +11,16 @@ const operations = {
     input(value: unknown) {
       return value as { days: number };
     },
-    output(value: unknown) {
-      return value as { events: number };
+    async run() {
+      return { events: 0 };
     },
   },
   label: {
     input(value: unknown) {
       return value as { id: string };
     },
-    output(value: unknown) {
-      return value as { label: string };
+    async run() {
+      return { label: '' };
     },
   },
 };
