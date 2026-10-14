@@ -128,9 +128,19 @@
 }
 .altertable-filter-summary-items {
   display: flex;
+  align-items: center;
   min-width: 0;
   overflow-x: auto;
   gap: var(--atbl-space-xs);
+}
+.altertable-grouping-summary {
+  display: flex;
+  align-items: center;
+}
+.altertable-grouping-summary[data-separated] {
+  border-inline-start: 1px solid var(--atbl-border);
+  padding-inline-start: var(--atbl-space-xs);
+  margin-inline-start: var(--atbl-space-xs);
 }
 .altertable-filter-summary-items > * {
   flex-shrink: 0;

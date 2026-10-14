@@ -1,15 +1,15 @@
 export { ExplorationActionControl } from '@/src/react/action-controls';
 export type { BoundExplorationActions } from '@/src/react/action-controls';
 export type { ExplorationActions, ActionFactory } from '@/src/react/actions';
-export { explorationVariable } from '@/src/core/exploration';
+export { hierarchyVariable } from '@/src/core/hierarchy';
 export type {
-  ExplorationLevel,
-  ExplorationSelection,
-  ExplorationState,
-  ExplorationVariable,
-  ExplorationStateOf,
-  ExplorationValuesOf,
-} from '@/src/core/exploration';
+  HierarchyLevel,
+  HierarchySelection,
+  HierarchyState,
+  HierarchyVariable,
+  HierarchyStateOf,
+  HierarchyValuesOf,
+} from '@/src/core/hierarchy';
 
 export type { DetailContent } from '@/src/react/details';
 /** Declared views, bound widgets, and layouts for data-app authoring. */

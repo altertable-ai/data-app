@@ -1,4 +1,4 @@
-import type { ExplorationVariable } from '@/src/core/exploration';
+import type { HierarchyVariable } from '@/src/core/hierarchy';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -41,7 +41,7 @@ export type AppVariable<Value, Kind extends string = string> = {
 
 export type VariableCollection = Record<
   string,
-  | ExplorationVariable<any>
+  | HierarchyVariable<any>
   | SearchVariable
   | ChoiceVariable
   | MultiChoiceVariable
@@ -63,7 +63,7 @@ export type AppVariableValues<Variables> = {
 /** Only known scope fields can be changed by filtering; hierarchy has its own transitions. */
 type ScopeVariables<Variables extends VariableCollection> = {
   [
-    Key in keyof Variables as Variables[Key]['kind'] extends 'exploration'
+    Key in keyof Variables as Variables[Key]['kind'] extends 'hierarchy'
       ? never
       : NonNullable<Variables[Key]['presentation']> extends { group: 'display' }
         ? never

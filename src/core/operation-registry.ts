@@ -10,7 +10,7 @@ export function resolveOperations(authored: DataOperations): DataOperations {
     )) {
       invariant(
         !Object.hasOwn(operations, name) || operations[name] === required,
-        `Operation name is reserved by exploration: ${name}.`
+        `Operation name is reserved by hierarchy: ${name}.`
       );
       operations[name] = required;
     }

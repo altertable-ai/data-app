@@ -18,7 +18,6 @@ const allKey = 'all';
 export function DimensionPicker<T extends DimensionValue>({
   filter,
   labelPlacement,
-  action,
   disabled = false,
   value,
   onChange,
@@ -29,7 +28,6 @@ export function DimensionPicker<T extends DimensionValue>({
 }: {
   filter: DimensionVariable<T>;
   labelPlacement?: ControlLabelPlacement;
-  action?: { label: string; onAction: () => void };
   disabled?: boolean;
   value: DimensionSelection<T>;
   onChange: (value: DimensionSelection<T>) => void;
@@ -84,7 +82,6 @@ export function DimensionPicker<T extends DimensionValue>({
         selectionMode="single"
         label={filter.label}
         labelPlacement={labelPlacement}
-        action={action}
         disabled={disabled}
         value={members.length ? dimensionMemberKey(members[0]!) : allKey}
         onChange={(id: string) => {
@@ -105,7 +102,6 @@ export function DimensionPicker<T extends DimensionValue>({
         selectionMode="multiple"
         label={filter.label}
         labelPlacement={labelPlacement}
-        action={action}
         disabled={disabled}
         values={members.map(dimensionMemberKey)}
         onChange={(ids: string[]) => {

@@ -1,8 +1,9 @@
 import {
-  ExplorationFilterSummary,
-  ExplorationBreadcrumbs,
-} from '@/src/react/ui/ExplorationBreadcrumbs';
-import type { ExplorationState } from '@/src/core/exploration';
+  HierarchyFilterSummary,
+  HierarchyGroupSummary,
+  HierarchyFilters,
+} from '@/src/react/ui/HierarchyFilters';
+import type { HierarchyState } from '@/src/core/hierarchy';
 import { useContext, type ReactNode } from 'react';
 import { Button } from '@/src/react/ui/Button';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
@@ -96,11 +97,15 @@ export function useViewVariables<Variables extends VariableCollection>(
   );
   const primaryFilters: ReactNode[] = [];
   const filterSummaries: FilterSummary[] = [];
+  const groupingSummaries: FilterSummary[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
   };
   const allFilters: ReactNode[] = [];
+  const hierarchyCount = Object.values(definitions).filter(
+    variable => variable.kind === 'hierarchy'
+  ).length;
 
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
@@ -119,16 +124,25 @@ export function useViewVariables<Variables extends VariableCollection>(
         : prominence === 'secondary'
           ? 'above'
           : 'inline';
-    if (definition.kind === 'exploration') {
+    if (definition.kind === 'hierarchy') {
       allFilters.push(
-        <ExplorationBreadcrumbs
+        <HierarchyFilters
           key={name}
           id={navigationId ? `${navigationId}:${name}` : undefined}
           target={{ variable: definition, clientScope, loadFacet }}
-          value={value as ExplorationState<any>}
+          value={value as HierarchyState<any>}
         />
       );
       const state = definition.parse(value);
+      groupingSummaries.push(onEdit => (
+        <HierarchyGroupSummary
+          key={name}
+          target={{ variable: definition, clientScope, loadFacet }}
+          value={state}
+          onEdit={onEdit}
+          showHierarchyLabel={hierarchyCount > 1}
+        />
+      ));
       const count = definition.levels.filter(
         level => state.selection[level.id]?.kind !== 'all'
       ).length;
@@ -136,7 +150,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         activeFilterCount += count;
         hasActiveFilters = true;
         filterSummaries.push(onEdit => (
-          <ExplorationFilterSummary
+          <HierarchyFilterSummary
             key={name}
             target={{ variable: definition, clientScope, loadFacet }}
             value={state}
@@ -344,6 +358,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         <ViewControlBar
           primaryFilters={primaryFilters}
           filterSummaries={filterSummaries}
+          groupingSummaries={groupingSummaries}
           allFilters={allFilters}
           activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}

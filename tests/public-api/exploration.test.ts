@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { explorationVariable } from '@altertable/data-app/contract';
-const geography = explorationVariable({
+import { hierarchyVariable } from '@altertable/data-app/contract';
+const geography = hierarchyVariable({
   key: 'geography',
   label: 'Geography',
   levels: [
@@ -49,7 +49,14 @@ test('exploration filters scope independently of grouping and clears descendants
   expect(geography.filter(customer, { region: null })).toEqual(
     geography.defaultValue
   );
-  expect(geography.navigate(customer, 'region')).toEqual(europe);
+  expect(geography.group(customer, 'region')).toEqual({
+    ...customer,
+    groupBy: 'region',
+  });
+  expect(geography.group(europe, 'country')).toEqual(countries);
+  expect(() => geography.group(geography.defaultValue, 'country')).toThrow(
+    'ancestors'
+  );
 });
 test('exploration validates value types, ancestry, grouping and URL state', () => {
   const countries = geography.descend(geography.defaultValue, 'Europe');

@@ -2,7 +2,7 @@ import { defineDataApp } from '@altertable/data-app';
 import {
   parseCount,
   parseLabel,
-  type ExplorationStateOf,
+  type HierarchyStateOf,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 export const supportApp = defineDataApp({
@@ -67,7 +67,7 @@ export const supportApp = defineDataApp({
     },
   },
 });
-export const teams = supportApp.defineExploration({
+export const teams = supportApp.defineHierarchy({
   key: 'teams',
   label: 'Support teams',
   levels: [
@@ -98,7 +98,7 @@ export const teams = supportApp.defineExploration({
     },
   ],
 });
-export type SupportInput = { teams: ExplorationStateOf<typeof teams> };
+export type SupportInput = { teams: HierarchyStateOf<typeof teams> };
 export type Workload = {
   level: 'region' | 'queue' | 'agent';
   id: string;

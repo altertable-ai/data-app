@@ -183,11 +183,11 @@ const placeActions = places.actions(action => ({
   filter: action.filter({
     label: 'Filter to this region',
     when: row => row.level === 'region',
-    target: salesView.exploration('geography'),
+    target: salesView.hierarchy('geography'),
     values: row => ({ region: row.id }),
   }),
   descend: action.descend({
-    target: salesView.exploration('geography'),
+    target: salesView.hierarchy('geography'),
     member: row => row.id,
   }),
 }));
@@ -234,9 +234,9 @@ Register the target's [detail content](views.md#detail-destinations) on
 distinct counts, or preview limits rather than implying every table sum
 reconciles with its headline.
 
-Filter mappings target a view's named scope variables or a bound exploration's
-typed level IDs. Exploration transitions clear descendants centrally and preserve
-grouping. Ordinary view filters cannot write exploration state. The platform
+Filter mappings target a view's named scope variables or a bound hierarchy's
+typed level IDs. Hierarchy transitions clear descendants centrally and preserve
+grouping. Ordinary view filters cannot write hierarchy state. The platform
 validates the entire update before one history entry; omitted variables retain
 their **currently applied** values. For ordinary scope variables, clear any
 app-specific dependencies in the same mapping. Display variables cannot be changed
@@ -271,7 +271,7 @@ filtering a capped preview. Alternate visualization renderers receive the
 same bound actions. For custom controls use `<ExplorationActionControl
  actions={actions} row={row} label={row.label} />`; imperative custom controls
 can call `actions.run(id, row, trigger)` using IDs from `actions.items(row)`.
-Initial loading offers no actions. Hierarchy row actions wait until displayed and applied exploration agree.
+Initial loading offers no actions. Hierarchy row actions wait until displayed and applied hierarchy state agree.
 
 See [hierarchical exploration](variables.md#hierarchical-exploration) and the
 [commerce playground](https://github.com/altertable-ai/data-app/blob/main/dev/playground.tsx)

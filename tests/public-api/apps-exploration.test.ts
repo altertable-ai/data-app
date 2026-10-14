@@ -4,7 +4,7 @@ import type { Page } from 'playwright';
 import { test } from '@/tests/public-api/browser';
 function controls(page: Page) {
   return page.getByRole('navigation', {
-    name: 'Geography exploration',
+    name: 'Geography hierarchy',
     exact: true,
   });
 }
@@ -193,11 +193,14 @@ test('hierarchy filters live only in the sheet and selected members summarize in
 }) => {
   await page.goto('/exploration-app');
   expect(await controls(page).count()).toBe(0);
+  await page
+    .getByRole('button', { name: 'Grouped by Region', exact: true })
+    .waitFor();
   expect(
     await page
-      .getByRole('group', { name: 'Active filters', exact: true })
+      .getByRole('button', { name: 'Grouped by Region', exact: true })
       .count()
-  ).toBe(0);
+  ).toBe(1);
   await openFilters(page);
   expect(
     await controls(page)
@@ -211,7 +214,13 @@ test('hierarchy filters live only in the sheet and selected members summarize in
   ).toBe(0);
   await choose(page, 'Region', 'Europe');
   await heading(page, 'regions');
-  const bar = page.getByRole('group', { name: 'Active filters', exact: true });
+  const bar = page.getByRole('group', { name: 'View scope', exact: true });
+  expect(await bar.getByText('Filtered by', { exact: true }).count()).toBe(1);
+  expect(
+    await bar
+      .getByRole('button', { name: 'Grouped by Region', exact: true })
+      .count()
+  ).toBe(1);
   await bar
     .getByRole('button', { name: 'Edit Region: Europe', exact: true })
     .waitFor();
@@ -253,7 +262,7 @@ test('clear resets hierarchy in one history entry while preserving ordinary scop
   await france(page);
   const before = state(page);
   await page
-    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('group', { name: 'View scope', exact: true })
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await heading(page, 'regions');
@@ -270,18 +279,20 @@ test('sheet ancestor grouping and browser history share the chart hierarchy stat
 }) => {
   await page.goto('/exploration-app');
   await france(page);
+  const selectedFilters = state(page).selection;
   const sheet = await openFilters(page);
   await controls(page)
-    .getByRole('button', { name: 'Country: France', exact: true })
+    .getByRole('button', { name: /Group by/ })
     .click();
-  await page
-    .getByRole('dialog', { name: 'Country options', exact: true })
-    .getByRole('button', { name: 'Group by Country', exact: true })
-    .click();
+  await page.getByRole('option', { name: 'Country', exact: true }).click();
   await sheet
     .getByRole('button', { name: 'Show results', exact: true })
     .click();
   await heading(page, 'countries');
+  expect(state(page).selection).toEqual(selectedFilters);
+  await page
+    .getByRole('button', { name: 'Grouped by Country', exact: true })
+    .waitFor();
   await page.goBack();
   await heading(page, 'customers');
   await page.goForward();
@@ -289,6 +300,40 @@ test('sheet ancestor grouping and browser history share the chart hierarchy stat
   await choose(page, 'Region', 'All');
   await heading(page, 'regions');
   expect(state(page)).toBeNull();
+});
+
+test('grouping is visible without filters and changes aggregation without changing scope', async ({
+  page,
+}) => {
+  await page.goto('/exploration-app');
+  const bar = page.getByRole('group', { name: 'View scope', exact: true });
+  await bar
+    .getByRole('button', { name: 'Grouped by Region', exact: true })
+    .waitFor();
+  expect(await bar.getByText('Filtered by', { exact: true }).count()).toBe(0);
+  expect(
+    await bar
+      .getByRole('button', { name: 'Clear filters', exact: true })
+      .count()
+  ).toBe(0);
+  await choose(page, 'Region', 'Europe');
+  const selected = state(page).selection;
+  await bar
+    .getByRole('button', { name: 'Grouped by Region', exact: true })
+    .click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await controls(page)
+    .getByRole('button', { name: /Group by/ })
+    .click();
+  await page.getByRole('option', { name: 'Country', exact: true }).click();
+  await sheet
+    .getByRole('button', { name: 'Show results', exact: true })
+    .click();
+  await heading(page, 'countries');
+  expect(state(page).selection).toEqual(selected);
+  await bar
+    .getByRole('button', { name: 'Grouped by Country', exact: true })
+    .waitFor();
 });
 
 test('pending descent shows applied summary and blocks stale row actions without widget selectors', async ({
@@ -326,7 +371,7 @@ test('mobile summaries fit the viewport and open hierarchy selectors by keyboard
   await act(page, 'North America', 'Break down by countries');
   await heading(page, 'countries');
   await choose(page, 'Country', 'United States');
-  const bar = page.getByRole('group', { name: 'Active filters', exact: true });
+  const bar = page.getByRole('group', { name: 'View scope', exact: true });
   const edit = bar.getByRole('button', {
     name: 'Edit Country: United States',
     exact: true,

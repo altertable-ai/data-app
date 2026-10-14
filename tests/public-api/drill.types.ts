@@ -77,12 +77,12 @@ void content;
 
 // Filtering and hierarchy preserve the source's typed variable contract.
 import {
-  explorationVariable,
+  hierarchyVariable,
   dimensionFilter,
-  type ExplorationStateOf,
+  type HierarchyStateOf,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
-const geography = explorationVariable({
+const geography = hierarchyVariable({
   key: 'geography',
   label: 'Geography',
   levels: [
@@ -114,7 +114,7 @@ const scoped = createDataHooks(
     scoped: DataOperation<
       {
         region: DimensionSelection<string>;
-        geography: ExplorationStateOf<typeof geography>;
+        geography: HierarchyStateOf<typeof geography>;
       },
       { id: string; label: string }[]
     >;
@@ -147,7 +147,7 @@ scopedGroups.actions(
       }),
     }),
     descend: action.descend({
-      target: scoped.exploration('geography'),
+      target: scoped.hierarchy('geography'),
       member: row => row.id,
     }),
   }),
@@ -170,7 +170,7 @@ scopedGroups.actions(action => ({
   }),
 }));
 // @ts-expect-error Only declared hierarchy variables provide breakdown targets.
-scoped.exploration('region');
+scoped.hierarchy('region');
 scopedGroups.actions(
   action => ({
     filter: action.filter({
@@ -185,7 +185,7 @@ scopedGroups.actions(
 regions.actions(action => ({
   descend: action.descend({
     // @ts-expect-error A hierarchy must read the binding's displayed input shape.
-    target: scoped.exploration('geography'),
+    target: scoped.hierarchy('geography'),
     member: row => row.regionId,
   }),
 }));
@@ -201,7 +201,7 @@ const displayVariable = choiceVariable({
 const displayView = createDataHooks(
   createDataClient<{
     display: DataOperation<
-      { sort: string; geography: ExplorationStateOf<typeof geography> },
+      { sort: string; geography: HierarchyStateOf<typeof geography> },
       number
     >;
   }>()
@@ -226,7 +226,7 @@ scopedGroups.actions(action => ({
   }),
 }));
 
-const target = scoped.exploration('geography');
+const target = scoped.hierarchy('geography');
 target.filter({ region: 'Europe' });
 // @ts-expect-error Region IDs are strings.
 target.filter({ region: 42 });
@@ -249,10 +249,10 @@ scopedGroups.actions(action => ({
 }));
 
 geography.parse(geography.defaultValue);
-const typedState: ExplorationStateOf<typeof geography> = geography.defaultValue;
+const typedState: HierarchyStateOf<typeof geography> = geography.defaultValue;
 // @ts-expect-error Grouping can only name a declared level.
 typedState.groupBy = 'unknown';
-explorationVariable({
+hierarchyVariable({
   key: 'bad',
   label: 'Bad',
   levels: [
@@ -271,7 +271,7 @@ scopedGroups.actions(action => ({
     label: 'Filter',
     // @ts-expect-error Exploration targets must include the full bound contract.
     target: {
-      kind: 'exploration',
+      kind: 'hierarchy',
       variable: geography,
       read: () => geography.defaultValue,
       filter: (_values: { region?: string }) => {},
@@ -308,7 +308,7 @@ count.records({
 
 scopedGroups.actions(action => ({
   descend: action.descend({
-    target: scoped.exploration('geography'),
+    target: scoped.hierarchy('geography'),
     // @ts-expect-error A descent selects a scalar member ID, not an object wrapper.
     member: row => ({ id: row.id }),
   }),

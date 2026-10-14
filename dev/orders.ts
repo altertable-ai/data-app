@@ -9,14 +9,14 @@ import {
   parseCount,
   type DateRangeRequest,
   type DimensionSelection,
-  type ExplorationStateOf,
+  type HierarchyStateOf,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
 import { calendar, countries } from '@/dev/commerce';
 
 export type OrderInput = {
   period: DateRangeRequest;
-  geography: ExplorationStateOf<typeof geography>;
+  geography: HierarchyStateOf<typeof geography>;
 };
 export type OrderRecordsInput = OrderInput & {
   status: 'all' | 'paid' | 'refunded';

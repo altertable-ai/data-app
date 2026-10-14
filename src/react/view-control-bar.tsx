@@ -23,6 +23,7 @@ export type FilterSummary = (
 export function ViewControlBar({
   primaryFilters,
   filterSummaries,
+  groupingSummaries,
   allFilters,
   activeFilterCount,
   displayOptions,
@@ -32,6 +33,7 @@ export function ViewControlBar({
   primaryFilters: ReactNode[];
   allFilters: ReactNode[];
   filterSummaries: FilterSummary[];
+  groupingSummaries: FilterSummary[];
   activeFilterCount: number;
   displayOptions: ReactNode[];
   changedDisplayOptionCount: number;
@@ -91,26 +93,43 @@ export function ViewControlBar({
           </DisplayOptionsPopover>
         )}
       </VariableBar>
-      {filterSummaries.length > 0 && (
-        <fieldset
-          className="altertable-filter-summary"
-          aria-label="Active filters"
-        >
+      {(filterSummaries.length > 0 || groupingSummaries.length > 0) && (
+        <fieldset className="altertable-filter-summary" aria-label="View scope">
           <AppIcon name="filters" />
           <GradientScroll
             axis="horizontal"
             className="altertable-filter-summary-items"
           >
+            {filterSummaries.length > 0 && (
+              <span className="altertable-filter-summary-label">
+                Filtered by
+              </span>
+            )}
             {
               // oxlint-disable-next-line react/refs -- Summary renderers attach the callback to buttons; they never invoke it during render.
               filterSummaries.map(render =>
                 render(event => openFilters(event.currentTarget))
               )
             }
+            {groupingSummaries.length > 0 && (
+              <div
+                className="altertable-grouping-summary"
+                data-separated={filterSummaries.length > 0 || undefined}
+              >
+                {
+                  // oxlint-disable-next-line react/refs -- Summary renderers attach this handler to buttons.
+                  groupingSummaries.map(render =>
+                    render(event => openFilters(event.currentTarget))
+                  )
+                }
+              </div>
+            )}
           </GradientScroll>
-          <Button variant="ghost" disabled={!onClear} onClick={clearFilters}>
-            Clear filters
-          </Button>
+          {filterSummaries.length > 0 && (
+            <Button variant="ghost" disabled={!onClear} onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
         </fieldset>
       )}
       {allFilters.length > 0 && (
@@ -122,7 +141,11 @@ export function ViewControlBar({
           title="Filters"
           side="left"
           className="altertable-filter-sheet"
-          description="Choose filters to narrow the results."
+          description={
+            groupingSummaries.length
+              ? 'Filter results and choose how to group them.'
+              : 'Choose filters to narrow the results.'
+          }
           footer={
             <div className="altertable-filter-sheet-actions">
               <Tooltip content="Clear all filters">

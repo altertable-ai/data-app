@@ -1,12 +1,12 @@
-export { explorationVariable } from '@/src/core/exploration';
+export { hierarchyVariable } from '@/src/core/hierarchy';
 export type {
-  ExplorationLevel,
-  ExplorationSelection,
-  ExplorationState,
-  ExplorationVariable,
-  ExplorationStateOf,
-  ExplorationValuesOf,
-} from '@/src/core/exploration';
+  HierarchyLevel,
+  HierarchySelection,
+  HierarchyState,
+  HierarchyVariable,
+  HierarchyStateOf,
+  HierarchyValuesOf,
+} from '@/src/core/hierarchy';
 
 /**
  * Shared operation contracts and input/output validation for browser and server.

@@ -6,10 +6,10 @@ import type {
   AppVariableValues,
 } from '@/src/core/variables';
 import type {
-  ExplorationVariable,
-  ExplorationStateOf,
-  ExplorationValuesOf,
-} from '@/src/core/exploration';
+  HierarchyVariable,
+  HierarchyStateOf,
+  HierarchyValuesOf,
+} from '@/src/core/hierarchy';
 import { createDetailContent } from '@/src/react/details';
 import { randomUuid } from '@/src/core/uuid';
 import { DeclaredView } from '@/src/react/view-runtime';
@@ -249,7 +249,7 @@ export function createDataHooks<Operations extends DataOperations>(
             invariant(
               variable &&
                 variable.presentation?.group !== 'display' &&
-                variable.kind !== 'exploration',
+                variable.kind !== 'hierarchy',
               `Filter actions must target scope variables: ${key}.`
             );
           }
@@ -259,26 +259,24 @@ export function createDataHooks<Operations extends DataOperations>(
             'push'
           );
         },
-        exploration<
+        hierarchy<
           Key extends {
-            [
-              K in keyof Variables
-            ]: Variables[K] extends ExplorationVariable<any> ? K : never;
+            [K in keyof Variables]: Variables[K] extends HierarchyVariable<any>
+              ? K
+              : never;
           }[keyof Variables] &
             string,
         >(key: Key) {
-          const variable = normalized.variables[
-            key
-          ] as ExplorationVariable<any>;
+          const variable = normalized.variables[key] as HierarchyVariable<any>;
           invariant(
-            variable?.kind === 'exploration',
-            `Expected a declared exploration variable: ${key}.`
+            variable?.kind === 'hierarchy',
+            `Expected a declared hierarchy variable: ${key}.`
           );
           return {
-            kind: 'exploration' as const,
+            kind: 'hierarchy' as const,
             variable: variable as Extract<
               Variables[Key],
-              ExplorationVariable<any>
+              HierarchyVariable<any>
             >,
             clientScope,
             loadFacet: (
@@ -291,12 +289,12 @@ export function createDataHooks<Operations extends DataOperations>(
                   signal,
                 })
                 .then(response => response.data),
-            filter(values: Partial<ExplorationValuesOf<Variables[Key]>>) {
+            filter(values: Partial<HierarchyValuesOf<Variables[Key]>>) {
               const current = variable.read(searchParams());
               const next = variable.filter(current, values);
               writeVariableValues(
-                { exploration: variable },
-                { exploration: next },
+                { hierarchy: variable },
+                { hierarchy: next },
                 'push'
               );
             },
@@ -304,7 +302,7 @@ export function createDataHooks<Operations extends DataOperations>(
             read: (input: Input) =>
               variable.parse(
                 readViewBinding(normalized, key, input)
-              ) as ExplorationStateOf<Variables[Key]>,
+              ) as HierarchyStateOf<Variables[Key]>,
           };
         },
         dataset<Row>(

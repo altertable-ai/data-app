@@ -1,9 +1,9 @@
 import { invariant } from '@/src/core/invariant';
 import type {
-  ExplorationLevel,
-  ExplorationState,
-  ExplorationVariable,
-} from '@/src/core/exploration';
+  HierarchyLevel,
+  HierarchyState,
+  HierarchyVariable,
+} from '@/src/core/hierarchy';
 
 import { searchParams } from '@/src/react/ui/search';
 import { writeVariableValues } from '@/src/react/ui/variables';
@@ -21,10 +21,10 @@ export function detailRequest<Input>(
 ): DetailRequest {
   return { target, id: target.id, input: target.parseInput(input) };
 }
-export type ExplorationTarget<Input> = {
-  kind: 'exploration';
-  variable: Omit<ExplorationVariable<any>, 'levels'> & {
-    levels: readonly (ExplorationLevel & { groupLabel: string })[];
+export type HierarchyTarget<Input> = {
+  kind: 'hierarchy';
+  variable: Omit<HierarchyVariable<any>, 'levels'> & {
+    levels: readonly (HierarchyLevel & { groupLabel: string })[];
   };
   navigationId: string;
   clientScope: string;
@@ -33,8 +33,8 @@ export type ExplorationTarget<Input> = {
     input: unknown,
     signal: AbortSignal
   ) => Promise<unknown>;
-  /** Extract the source view's preserved exploration state, including from nested input shapes. */
-  read: (input: Input) => ExplorationState<any>;
+  /** Extract the source view's preserved hierarchy state, including from nested input shapes. */
+  read: (input: Input) => HierarchyState<any>;
 };
 type ActionRequest =
   | { kind: 'detail'; detail: DetailRequest }
@@ -60,12 +60,12 @@ export type ActionFactory<Row, Input> = {
     when?: (row: Row) => boolean;
     target: { filter: (values: Partial<Values>) => void } & (
       | { kind?: never }
-      | ExplorationTarget<Input>
+      | HierarchyTarget<Input>
     );
     values: (row: Row) => Partial<NoInfer<Values>>;
   }): ExplorationAction<Row, Input>;
   descend(definition: {
-    target: ExplorationTarget<Input>;
+    target: HierarchyTarget<Input>;
     member: (row: Row) => string | number;
   }): ExplorationAction<Row, Input>;
 };
@@ -85,15 +85,15 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
       };
     },
     filter({ label, target, values, when }) {
-      const exploration = target.kind === 'exploration' ? target : undefined;
+      const hierarchy = target.kind === 'hierarchy' ? target : undefined;
       return {
         label: row => (typeof label === 'function' ? label(row) : label),
         available: (row, input) =>
           (when?.(row) ?? true) &&
-          (!exploration ||
-            exploration.variable.same(
-              exploration.read(input),
-              exploration.variable.read(searchParams())
+          (!hierarchy ||
+            hierarchy.variable.same(
+              hierarchy.read(input),
+              hierarchy.variable.read(searchParams())
             )),
         resolve(row) {
           return {
@@ -126,12 +126,12 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
               const displayed = variable.parse(target.read(input));
               invariant(
                 variable.same(displayed, variable.read(searchParams())),
-                'Wait for the displayed exploration before descending.'
+                'Wait for the displayed hierarchy before descending.'
               );
               const state = variable.descend(displayed, member(row));
               writeVariableValues(
-                { exploration: variable },
-                { exploration: state },
+                { hierarchy: variable },
+                { hierarchy: state },
                 'push'
               );
             },

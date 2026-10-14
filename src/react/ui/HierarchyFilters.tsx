@@ -1,27 +1,25 @@
-import { useRef, type MouseEventHandler } from 'react';
-import { hasSelectedFacetLookup } from '@/src/core/exploration-source';
+import type { MouseEventHandler } from 'react';
+import { hasSelectedFacetLookup } from '@/src/core/hierarchy-source';
 import { Button } from '@/src/react/ui/Button';
 import { useQueries } from '@tanstack/react-query';
-import type { ExplorationState } from '@/src/core/exploration';
+import type { HierarchyState } from '@/src/core/hierarchy';
 import {
   parseFacetOptions,
   type DimensionSelection,
   type DimensionOption,
 } from '@/src/core/dimension';
-import type { ExplorationTarget } from '@/src/react/actions';
+import type { HierarchyTarget } from '@/src/react/actions';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
+import { Select } from '@/src/react/ui/Select';
 import { searchParams } from '@/src/react/ui/search';
 import { writeVariableValues } from '@/src/react/ui/variables';
 
-type ExplorationControls = {
-  target: Pick<
-    ExplorationTarget<any>,
-    'variable' | 'clientScope' | 'loadFacet'
-  >;
-  value: ExplorationState<any>;
+type HierarchyControls = {
+  target: Pick<HierarchyTarget<any>, 'variable' | 'clientScope' | 'loadFacet'>;
+  value: HierarchyState<any>;
 };
 
-function useExplorationFacets({ target, value }: ExplorationControls) {
+function useHierarchyFacets({ target, value }: HierarchyControls) {
   const { variable } = target;
   const state = variable.parse(value);
   const shown: typeof variable.levels = variable.visibleLevels(state);
@@ -47,7 +45,7 @@ function useExplorationFacets({ target, value }: ExplorationControls) {
       !!mapper && (!selected || state.selection[level.id]?.kind !== 'all');
     return {
       queryKey: [
-        'exploration-facet',
+        'hierarchy-facet',
         target.clientScope,
         variable.urlKeys,
         level.id,
@@ -99,12 +97,12 @@ function useExplorationFacets({ target, value }: ExplorationControls) {
 }
 
 /** Selected hierarchy members share the selectors' facet cache and labels. */
-export function ExplorationFilterSummary({
+export function HierarchyFilterSummary({
   target,
   value,
   onEdit,
-}: ExplorationControls & { onEdit: MouseEventHandler<HTMLButtonElement> }) {
-  const { state, shown, facets } = useExplorationFacets({ target, value });
+}: HierarchyControls & { onEdit: MouseEventHandler<HTMLButtonElement> }) {
+  const { state, shown, facets } = useHierarchyFacets({ target, value });
   return shown.map((level, position) => {
     const selection = state.selection[level.id]!;
     const member = selection.kind === 'all' ? undefined : selection.members[0];
@@ -128,35 +126,53 @@ export function ExplorationFilterSummary({
   });
 }
 
+export function HierarchyGroupSummary({
+  target,
+  value,
+  onEdit,
+  showHierarchyLabel,
+}: HierarchyControls & {
+  onEdit: MouseEventHandler<HTMLButtonElement>;
+  showHierarchyLabel: boolean;
+}) {
+  return (
+    <Button variant="ghost" onClick={onEdit}>
+      <span className="altertable-filter-summary-label">Grouped by</span>{' '}
+      {showHierarchyLabel ? `${target.variable.label}: ` : ''}
+      {target.variable.level(value).label}
+    </Button>
+  );
+}
+
 /** Progressive hierarchy selectors, owned by the view's filters sheet. */
-export function ExplorationBreadcrumbs({
+export function HierarchyFilters({
   target,
   id,
   value,
-}: ExplorationControls & { id?: string }) {
-  const navigation = useRef<HTMLElement>(null);
+}: HierarchyControls & { id?: string }) {
   const { variable } = target;
-  const { state, shown, facets } = useExplorationFacets({ target, value });
-  const group = variable.levels.findIndex(level => level.id === state.groupBy);
-  function commit(next: ExplorationState<any>, focus = false) {
-    writeVariableValues(
-      { exploration: variable },
-      { exploration: next },
-      'push'
-    );
-    if (focus)
-      requestAnimationFrame(() =>
-        navigation.current?.focus({ preventScroll: true })
-      );
+  const { state, shown, facets } = useHierarchyFacets({ target, value });
+  function commit(next: HierarchyState<any>) {
+    writeVariableValues({ hierarchy: variable }, { hierarchy: next }, 'push');
   }
   return (
     <nav
-      ref={navigation}
       id={id}
       tabIndex={-1}
-      className="altertable-exploration-breadcrumbs"
-      aria-label={`${variable.label} exploration`}
+      className="altertable-hierarchy-filters"
+      aria-label={`${variable.label} hierarchy`}
     >
+      <span className="altertable-hierarchy-heading">{variable.label}</span>
+      <Select
+        label="Group by"
+        labelPlacement="above"
+        value={state.groupBy}
+        options={shown.map(level => ({ id: level.id, label: level.label }))}
+        onChange={id =>
+          commit(variable.group(variable.read(searchParams()), id))
+        }
+      />
+      <span className="altertable-hierarchy-filter-label">Filter by</span>
       <ol>
         {shown.map((level, position) => {
           const dimension = variable.dimensions[position]!;
@@ -181,7 +197,6 @@ export function ExplorationBreadcrumbs({
                 marginInlineStart: `calc(${position} * var(--atbl-space-lg))`,
                 maxInlineSize: `calc(100% - ${position} * var(--atbl-space-lg))`,
               }}
-              aria-current={position === group ? 'page' : undefined}
             >
               <DimensionPicker
                 filter={dimension}
@@ -190,15 +205,6 @@ export function ExplorationBreadcrumbs({
                 loading={!!level.facet && facet.isPending}
                 error={!!level.facet && facet.isError}
                 onRetry={() => void facet.refetch()}
-                action={
-                  position < group
-                    ? {
-                        label: `Group by ${level.label}`,
-                        onAction: () =>
-                          commit(variable.navigate(state, level.id), true),
-                      }
-                    : undefined
-                }
                 onChange={next => {
                   const member =
                     next.kind === 'all' ? undefined : next.members[0];

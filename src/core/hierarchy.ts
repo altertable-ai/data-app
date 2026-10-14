@@ -9,7 +9,7 @@ import {
 import { invariant } from '@/src/core/invariant';
 import type { AppVariable } from '@/src/core/variables';
 
-type ExplorationSource<Value extends DimensionValue> =
+type HierarchySource<Value extends DimensionValue> =
   | {
       options: readonly (DimensionOption<Value> & {
         parent?: DimensionValue;
@@ -23,23 +23,23 @@ type ExplorationSource<Value extends DimensionValue> =
         input: (selection: Record<string, DimensionSelection>) => unknown;
       };
     };
-export type ExplorationLevel = {
+export type HierarchyLevel = {
   id: string;
   label: string;
   /** Optional title wording; defaults to the selector label. */
   groupLabel?: string;
 } & (
-  | ({ valueType: 'string' } & ExplorationSource<string>)
-  | ({ valueType: 'number' } & ExplorationSource<number>)
+  | ({ valueType: 'string' } & HierarchySource<string>)
+  | ({ valueType: 'number' } & HierarchySource<number>)
 );
-type LevelValue<Level extends ExplorationLevel> = Level extends {
+type LevelValue<Level extends HierarchyLevel> = Level extends {
   valueType: 'number';
 }
   ? number
   : Level extends { valueType: 'string' }
     ? string
     : DimensionValue;
-export type ExplorationSelection<Levels extends readonly ExplorationLevel[]> = {
+export type HierarchySelection<Levels extends readonly HierarchyLevel[]> = {
   [Level in Levels[number] as Level['id']]:
     | { kind: 'all' }
     | {
@@ -49,54 +49,55 @@ export type ExplorationSelection<Levels extends readonly ExplorationLevel[]> = {
         ];
       };
 };
-export type ExplorationState<
-  Levels extends readonly ExplorationLevel[] = readonly ExplorationLevel[],
+export type HierarchyState<
+  Levels extends readonly HierarchyLevel[] = readonly HierarchyLevel[],
 > = {
-  selection: ExplorationSelection<Levels>;
+  selection: HierarchySelection<Levels>;
   groupBy: Levels[number]['id'];
 };
-export type ExplorationValues<Levels extends readonly ExplorationLevel[]> = {
+export type HierarchyValues<Levels extends readonly HierarchyLevel[]> = {
   [Level in Levels[number] as Level['id']]: LevelValue<Level> | null;
 };
-export type ExplorationVariable<
-  Levels extends readonly ExplorationLevel[] = readonly ExplorationLevel[],
-> = AppVariable<ExplorationState<Levels>, 'exploration'> & {
+export type HierarchyVariable<
+  Levels extends readonly HierarchyLevel[] = readonly HierarchyLevel[],
+> = AppVariable<HierarchyState<Levels>, 'hierarchy'> & {
   label: string;
   levels: readonly (Levels[number] & { groupLabel: string })[];
   dimensions: readonly DimensionVariable[];
-  parse: (value: unknown) => ExplorationState<Levels>;
+  parse: (value: unknown) => HierarchyState<Levels>;
   level: (
-    value: ExplorationState<Levels>
+    value: HierarchyState<Levels>
   ) => Levels[number] & { groupLabel: string };
   /** Root plus successive children whose ancestors have selected values; independent of grouping. */
   visibleLevels: (
-    state: ExplorationState<Levels>
+    state: HierarchyState<Levels>
   ) => readonly (Levels[number] & { groupLabel: string })[];
   filter: (
-    state: ExplorationState<Levels>,
-    values: Partial<ExplorationValues<Levels>>
-  ) => ExplorationState<Levels>;
+    state: HierarchyState<Levels>,
+    values: Partial<HierarchyValues<Levels>>
+  ) => HierarchyState<Levels>;
   descend: (
-    state: ExplorationState<Levels>,
+    state: HierarchyState<Levels>,
     id: DimensionValue
-  ) => ExplorationState<Levels>;
-  navigate: (
-    state: ExplorationState<Levels>,
+  ) => HierarchyState<Levels>;
+  /** Change aggregation without changing the selected filters; selected ancestors are required. */
+  group: (
+    state: HierarchyState<Levels>,
     level: Levels[number]['id']
-  ) => ExplorationState<Levels>;
+  ) => HierarchyState<Levels>;
 };
-export type ExplorationStateOf<Variable> =
-  Variable extends ExplorationVariable<infer Levels>
-    ? ExplorationState<Levels>
+export type HierarchyStateOf<Variable> =
+  Variable extends HierarchyVariable<infer Levels>
+    ? HierarchyState<Levels>
     : never;
-export type ExplorationValuesOf<Variable> =
-  Variable extends ExplorationVariable<infer Levels>
-    ? ExplorationValues<Levels>
+export type HierarchyValuesOf<Variable> =
+  Variable extends HierarchyVariable<infer Levels>
+    ? HierarchyValues<Levels>
     : never;
 
 /** One URL value owns single-member hierarchy scope and grouping. Parent edits clear descendants. */
-export function explorationVariable<
-  const Levels extends readonly ExplorationLevel[],
+export function hierarchyVariable<
+  const Levels extends readonly HierarchyLevel[],
 >({
   key,
   label,
@@ -105,7 +106,7 @@ export function explorationVariable<
   key: string;
   label: string;
   levels: Levels;
-}): ExplorationVariable<Levels> {
+}): HierarchyVariable<Levels> {
   invariant(
     !!key.trim() &&
       !!label.trim() &&
@@ -117,7 +118,7 @@ export function explorationVariable<
           (level.groupLabel === undefined || !!level.groupLabel.trim())
       ) &&
       new Set(levels.map(level => level.id)).size === levels.length,
-    'Exploration needs a key, label, and uniquely named levels.'
+    'Hierarchy needs a key, label, and uniquely named levels.'
   );
   const normalizedLevels = levels.map(level => ({
     ...level,
@@ -147,30 +148,30 @@ export function explorationVariable<
       levels.map(level => [level.id, { kind: 'all' }])
     ),
     groupBy: levels[0]!.id,
-  } as ExplorationState<Levels>;
+  } as HierarchyState<Levels>;
   function index(id: string) {
     const position = levels.findIndex(level => level.id === id);
-    invariant(position >= 0, `Unknown exploration level: ${id}.`);
+    invariant(position >= 0, `Unknown hierarchy level: ${id}.`);
     return position;
   }
-  function selected(state: ExplorationState<Levels>, id: string) {
+  function selected(state: HierarchyState<Levels>, id: string) {
     const selection = (state.selection as Record<string, DimensionSelection>)[
       id
     ]!;
     return selection.kind === 'all' ? null : selection.members[0];
   }
-  function parse(value: unknown): ExplorationState<Levels> {
+  function parse(value: unknown): HierarchyState<Levels> {
     invariant(
       value && typeof value === 'object' && !Array.isArray(value),
-      'Expected exploration state.'
+      'Expected hierarchy state.'
     );
-    const state = value as ExplorationState<Levels>;
+    const state = value as HierarchyState<Levels>;
     invariant(
       typeof state.groupBy === 'string' &&
         state.selection &&
         typeof state.selection === 'object' &&
         !Array.isArray(state.selection),
-      'Expected exploration selection and grouping.'
+      'Expected hierarchy selection and grouping.'
     );
     const group = index(state.groupBy);
     invariant(
@@ -178,7 +179,7 @@ export function explorationVariable<
         Object.keys(state.selection).every(id =>
           levels.some(level => level.id === id)
         ),
-      'Exploration selection must contain only declared levels.'
+      'Hierarchy selection must contain only declared levels.'
     );
     const selection: Record<string, DimensionSelection> = {};
     for (const [position, level] of levels.entries()) {
@@ -202,7 +203,7 @@ export function explorationVariable<
       if (entry.kind !== 'all') {
         invariant(
           entry.kind === 'include' && entry.members[0]?.kind === 'value',
-          'Exploration levels select one value.'
+          'Hierarchy levels select one value.'
         );
         const member = entry.members[0];
         const option = level.options?.find(
@@ -224,13 +225,13 @@ export function explorationVariable<
     }
     invariant(
       JSON.stringify(selection).length <= 8192,
-      'Exploration selection must fit in a shared URL.'
+      'Hierarchy selection must fit in a shared URL.'
     );
-    return { selection, groupBy: state.groupBy } as ExplorationState<Levels>;
+    return { selection, groupBy: state.groupBy } as HierarchyState<Levels>;
   }
   function filter(
-    state: ExplorationState<Levels>,
-    values: Partial<ExplorationValues<Levels>>
+    state: HierarchyState<Levels>,
+    values: Partial<HierarchyValues<Levels>>
   ) {
     let next = parse(state);
     for (const id of Object.keys(values)) index(id);
@@ -268,7 +269,7 @@ export function explorationVariable<
     }
     return next;
   }
-  function visibleLevels(state: ExplorationState<Levels>) {
+  function visibleLevels(state: HierarchyState<Levels>) {
     const next = parse(state);
     const firstAll = levels.findIndex(
       level => selected(next, level.id) === null
@@ -278,14 +279,11 @@ export function explorationVariable<
       firstAll === -1 ? levels.length : firstAll + 1
     );
   }
-  function same(
-    left: ExplorationState<Levels>,
-    right: ExplorationState<Levels>
-  ) {
+  function same(left: HierarchyState<Levels>, right: HierarchyState<Levels>) {
     return JSON.stringify(parse(left)) === JSON.stringify(parse(right));
   }
   return {
-    kind: 'exploration',
+    kind: 'hierarchy',
     label,
     levels: normalizedLevels,
     dimensions,
@@ -303,27 +301,15 @@ export function explorationVariable<
       const position = index(current.groupBy);
       invariant(
         position < levels.length - 1,
-        'Already at the final exploration level.'
+        'Already at the final hierarchy level.'
       );
       const next = filter(current, { [current.groupBy]: id } as Partial<
-        ExplorationValues<Levels>
+        HierarchyValues<Levels>
       >);
       return parse({ ...next, groupBy: levels[position + 1]!.id });
     },
-    navigate(state, id) {
-      const next = parse(state);
-      const position = index(id);
-      invariant(
-        position <= index(next.groupBy),
-        'Navigate through displayed ancestors.'
-      );
-      const selection = { ...next.selection } as Record<
-        string,
-        DimensionSelection
-      >;
-      for (const level of levels.slice(position + 1))
-        selection[level.id] = { kind: 'all' };
-      return parse({ selection, groupBy: id });
+    group(state, id) {
+      return parse({ ...parse(state), groupBy: id });
     },
     describe(state) {
       const next = parse(state);
@@ -348,7 +334,7 @@ export function explorationVariable<
       const next = parse(state);
       return { [key]: same(next, defaultValue) ? null : JSON.stringify(next) };
     },
-    valid(state): state is ExplorationState<Levels> {
+    valid(state): state is HierarchyState<Levels> {
       try {
         parse(state);
         return true;
@@ -356,5 +342,5 @@ export function explorationVariable<
         return false;
       }
     },
-  } as ExplorationVariable<Levels>;
+  } as HierarchyVariable<Levels>;
 }

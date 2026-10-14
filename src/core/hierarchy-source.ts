@@ -1,9 +1,9 @@
 import {
-  explorationVariable,
-  type ExplorationLevel,
-  type ExplorationState,
-  type ExplorationVariable,
-} from '@/src/core/exploration';
+  hierarchyVariable,
+  type HierarchyLevel,
+  type HierarchyState,
+  type HierarchyVariable,
+} from '@/src/core/hierarchy';
 import {
   parseFacetOptions,
   type DimensionValue,
@@ -48,8 +48,8 @@ type Source<Queries extends QueryDefinitions> = {
     >;
   };
 }[SourceName<Queries>];
-export type SourcedExplorationLevel<Queries extends QueryDefinitions> =
-  | Extract<ExplorationLevel, { options: readonly unknown[] }>
+export type SourcedHierarchyLevel<Queries extends QueryDefinitions> =
+  | Extract<HierarchyLevel, { options: readonly unknown[] }>
   | {
       id: string;
       label: string;
@@ -72,7 +72,7 @@ type AncestorIds<
   : never;
 export type CheckedSourceLevels<
   Queries extends QueryDefinitions,
-  Levels extends readonly SourcedExplorationLevel<Queries>[],
+  Levels extends readonly SourcedHierarchyLevel<Queries>[],
 > = {
   [Index in keyof Levels]: Levels[Index] extends {
     id: infer Id extends string;
@@ -96,16 +96,16 @@ export type CheckedSourceLevels<
 };
 type NormalizedLevel<Level> = Level extends { source: unknown }
   ? Omit<Level, 'source' | 'options'> & {
-      facet: NonNullable<ExplorationLevel['facet']>;
+      facet: NonNullable<HierarchyLevel['facet']>;
     }
   : Level;
 type NormalizedLevels<Levels extends readonly unknown[]> = {
   [Index in keyof Levels]: NormalizedLevel<Levels[Index]>;
-} & readonly ExplorationLevel[];
-export type SourcedExploration<
+} & readonly HierarchyLevel[];
+export type SourcedHierarchy<
   Key extends string,
-  Levels extends readonly SourcedExplorationLevel<any>[],
-> = ExplorationVariable<NormalizedLevels<Levels>> & {
+  Levels extends readonly SourcedHierarchyLevel<any>[],
+> = HierarchyVariable<NormalizedLevels<Levels>> & {
   /** Generated selectors, automatically registered by input(); names are reserved for authorization. */
   operations: {
     [
@@ -121,15 +121,15 @@ export type SourcedExploration<
   input: <Base extends object>(
     parseBase: (value: unknown) => Base
   ) => OperationInputParser<
-    Omit<Base, Key> & Record<Key, ExplorationState<NormalizedLevels<Levels>>>
+    Omit<Base, Key> & Record<Key, HierarchyState<NormalizedLevels<Levels>>>
   >;
 };
 
 /** One registered source query supplies both bounded options and exact membership checks. */
-export function defineSourcedExploration<
+export function defineSourcedHierarchy<
   Queries extends QueryDefinitions,
   const Key extends string,
-  const Levels extends readonly SourcedExplorationLevel<Queries>[],
+  const Levels extends readonly SourcedHierarchyLevel<Queries>[],
 >(
   queries: Queries,
   definition: {
@@ -137,13 +137,13 @@ export function defineSourcedExploration<
     label: string;
     levels: Levels & CheckedSourceLevels<Queries, Levels>;
   }
-): SourcedExploration<Key, Levels> {
+): SourcedHierarchy<Key, Levels> {
   const { key, levels } = definition;
   invariant(
     levels.every(
       level => 'source' in level || ('options' in level && level.options)
     ),
-    'App-bound exploration levels require options or a registered source.'
+    'App-bound hierarchy levels require options or a registered source.'
   );
   const sources = levels.flatMap((level, position) =>
     'source' in level && level.source
@@ -154,7 +154,7 @@ export function defineSourcedExploration<
     const query = queries[source.query];
     invariant(
       query && Object.hasOwn(query.params, 'member'),
-      'Exploration source queries must declare a member parameter.'
+      'Hierarchy source queries must declare a member parameter.'
     );
     const parent = levels[position - 1];
     invariant(
@@ -166,7 +166,7 @@ export function defineSourcedExploration<
               parameter
             ] ?? parameter) === parent.id
         ),
-      'Child exploration sources must bind their parent through a declared query parameter.'
+      'Child hierarchy sources must bind their parent through a declared query parameter.'
     );
     for (const [parameter, ancestor] of Object.entries(source.parents ?? {})) {
       invariant(
@@ -180,10 +180,10 @@ export function defineSourcedExploration<
   const validationQueries: QueryDefinitions = Object.fromEntries(
     sources.map(({ source }) => [source.query, queries[source.query]!])
   );
-  function parents(state: ExplorationState<any>, position: number) {
+  function parents(state: HierarchyState<any>, position: number) {
     return Object.fromEntries(
       levels.slice(0, position).map(level => {
-        const selection = (state as ExplorationState<any>).selection[level.id];
+        const selection = (state as HierarchyState<any>).selection[level.id];
         return [
           level.id,
           selection.kind === 'include' ? selection.members[0].value : null,
@@ -231,7 +231,7 @@ export function defineSourcedExploration<
       },
     };
   }) as NormalizedLevels<Levels>;
-  const variable = explorationVariable({ ...definition, levels: normalized });
+  const variable = hierarchyVariable({ ...definition, levels: normalized });
   const operations: Record<
     string,
     DataOperation<
@@ -262,7 +262,7 @@ export function defineSourcedExploration<
     function parseSelector(value: unknown) {
       invariant(
         value && typeof value === 'object' && !Array.isArray(value),
-        'Expected exploration ancestors.'
+        'Expected hierarchy ancestors.'
       );
       const raw = value as Record<string, unknown>;
       const selected = Object.fromEntries(
@@ -272,7 +272,7 @@ export function defineSourcedExploration<
             member === null ||
               (typeof member === entry.valueType &&
                 (typeof member !== 'number' || Number.isFinite(member))),
-            'Invalid exploration member.'
+            'Invalid hierarchy member.'
           );
           return [entry.id, member as DimensionValue | null];
         })
@@ -340,7 +340,7 @@ export function defineSourcedExploration<
     );
     invariant(
       valueIndex >= 0 && labelIndex >= 0,
-      'Exploration source queries must return value and label columns.'
+      'Hierarchy source queries must return value and label columns.'
     );
     return parseFacetOptions(
       result.rows.map(row => ({
@@ -369,7 +369,7 @@ export function defineSourcedExploration<
       params: QueryParameters,
       options: { limit: number }
     ) => Promise<QueryResult>,
-    state: ExplorationState<any>,
+    state: HierarchyState<any>,
     before = levels.length
   ) {
     for (const { level, position, source } of sources) {
@@ -403,15 +403,14 @@ export function defineSourcedExploration<
         );
         invariant(
           !Object.hasOwn(base, key),
-          'The exploration input parser owns its named hierarchy field.'
+          'The hierarchy input parser owns its named hierarchy field.'
         );
         return {
           ...base,
           [key]: variable.parse((value as Record<string, unknown>)[key]),
         };
       }) as OperationInputParser<
-        Omit<Base, Key> &
-          Record<Key, ExplorationState<NormalizedLevels<Levels>>>
+        Omit<Base, Key> & Record<Key, HierarchyState<NormalizedLevels<Levels>>>
       >;
       const inherited = parseBase.validation;
       for (const [name, declaration] of Object.entries(validationQueries)) {
@@ -421,14 +420,14 @@ export function defineSourcedExploration<
             (prior.statement === declaration.statement &&
               JSON.stringify(prior.params) ===
                 JSON.stringify(declaration.params)),
-          `Conflicting exploration source: ${name}.`
+          `Conflicting hierarchy source: ${name}.`
         );
       }
       for (const [name, required] of Object.entries(operations)) {
         invariant(
           !inherited?.operations?.[name] ||
             inherited.operations[name] === required,
-          `Conflicting exploration selector operation: ${name}.`
+          `Conflicting hierarchy selector operation: ${name}.`
         );
       }
       parse.validation = {
@@ -441,5 +440,5 @@ export function defineSourcedExploration<
       };
       return parse;
     },
-  }) as SourcedExploration<Key, Levels>;
+  }) as SourcedHierarchy<Key, Levels>;
 }

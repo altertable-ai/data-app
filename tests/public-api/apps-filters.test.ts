@@ -92,7 +92,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
       .count()
   ).toBe(1);
   await page
-    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('group', { name: 'View scope', exact: true })
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect.poll(() => table.getByRole('row').count()).toBe(9);
@@ -176,7 +176,7 @@ test('presentation groups disclose secondary restrictions and preserve them acro
   );
   await expect.poll(() => display.count()).toBe(0);
   await page
-    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('group', { name: 'View scope', exact: true })
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   expect(new URL(page.url()).searchParams.get('direction')).toBe('asc');
@@ -426,7 +426,7 @@ test('automatic filters retain separate search controls and URL state', async ({
     .poll(async () => decode(await displayed.textContent()).choice)
     .toBe('b');
   await page
-    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('group', { name: 'View scope', exact: true })
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect
@@ -479,7 +479,7 @@ test('hiding search preserves its URL value and leaves filters available', async
     .toBe('b');
   expect(new URL(page.url()).searchParams.get('q')).toBe('France');
   await page
-    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('group', { name: 'View scope', exact: true })
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect
@@ -691,11 +691,9 @@ test('generated filters apply typed predicates and clear restrictions atomically
       .getByRole('button', { name: 'Clear country', exact: true })
       .count()
   ).toBe(0);
-  expect(await page.getByRole('list', { name: 'Active filters' }).count()).toBe(
-    0
-  );
+  expect(await page.getByRole('list', { name: 'View scope' }).count()).toBe(0);
   await page
-    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('group', { name: 'View scope', exact: true })
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect
@@ -707,9 +705,7 @@ test('generated filters apply typed predicates and clear restrictions atomically
       choice: 'b',
       tags: ['a'],
     });
-  expect(await page.getByRole('list', { name: 'Active filters' }).count()).toBe(
-    0
-  );
+  expect(await page.getByRole('list', { name: 'View scope' }).count()).toBe(0);
   await page.goBack();
   await expect.poll(() => page.url()).toBe(selectedURL);
   await expect
@@ -731,7 +727,7 @@ test('generated filters apply typed predicates and clear restrictions atomically
     .poll(async () => decode(await displayed.textContent()).amount)
     .toEqual({ kind: 'range', min: 10 });
   await page
-    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('group', { name: 'View scope', exact: true })
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await page.getByRole('button', { name: 'Amount: Any', exact: true }).click();
@@ -1014,7 +1010,7 @@ test('filter actions stay balanced with long selections and Show results preserv
   await expect.poll(() => sheet.count()).toBe(0);
   expect(page.url()).toBe(selectedURL);
   await page
-    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('group', { name: 'View scope', exact: true })
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await controls.getByRole('button', { name: /^Filters(?: \(|$)/ }).click();
@@ -1056,9 +1052,7 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
       .getByRole('button', { name: 'Filters (2 active)', exact: true })
       .count()
   ).toBe(1);
-  expect(
-    await page.getByRole('group', { name: 'Active filters' }).count()
-  ).toBe(1);
+  expect(await page.getByRole('group', { name: 'View scope' }).count()).toBe(1);
   expect(
     await page
       .getByRole('button', { name: 'Edit Active account: No', exact: true })
@@ -1173,7 +1167,7 @@ test('active summaries open the shared sheet and clear predicates while preservi
     '/filter-presentation?spend=all&q=Foundry&active=false&sort=name&direction=asc'
   );
   const summaries = page.getByRole('group', {
-    name: 'Active filters',
+    name: 'View scope',
     exact: true,
   });
   await summaries
@@ -1215,7 +1209,7 @@ test('multiple member summaries retain labels and edit selections in the sheet',
   });
   await page.goto(`/filter-presentation?${params}`);
   const summaries = page.getByRole('group', {
-    name: 'Active filters',
+    name: 'View scope',
     exact: true,
   });
   await summaries

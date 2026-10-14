@@ -11,7 +11,7 @@ const app = defineDataApp({
     summary: { statement: 'SELECT 1', params: {} },
   },
 });
-const hierarchy = app.defineExploration({
+const hierarchy = app.defineHierarchy({
   key: 'teams',
   label: 'Teams',
   levels: [
@@ -29,7 +29,7 @@ const hierarchy = app.defineExploration({
     },
   ],
 });
-app.defineExploration({
+app.defineHierarchy({
   key: 'bad',
   label: 'Bad',
   levels: [
@@ -52,7 +52,7 @@ parsed.teams.selection.team = {
   members: [{ kind: 'value', value: 'bad' }],
 };
 
-app.defineExploration({
+app.defineHierarchy({
   key: 'binding',
   label: 'Binding',
   levels: [

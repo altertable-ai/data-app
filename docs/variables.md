@@ -110,7 +110,7 @@ const sort = choiceVariable({
 | Search                   | Separate search field                | No                                 | No                                             |
 | Scope, primary (default) | Direct control                       | Yes                                | When different from its clear value or default |
 | Scope, secondary         | Filters button opens sheet           | Yes                                | When different from its clear value or default |
-| Hierarchy                | Filters button opens sheet           | Progressive parent/child selectors | Selected members, never All levels             |
+| Hierarchy                | Filters button opens sheet           | Progressive parent/child selectors | Filtered by members; Grouped by current level  |
 | Display                  | Display options button opens popover | No                                 | No                                             |
 
 The same scope rule covers date ranges, fixed choices, multiple choices,
@@ -272,12 +272,12 @@ Filters apply immediately; use app-owned drafts only when the task needs Apply/C
 ## Hierarchical exploration
 
 Declare one hierarchy variable for dimensions that share a hierarchy. Use
-`explorationVariable()` for static options and `app.defineExploration()` for
+`hierarchyVariable()` for static options and `app.defineHierarchy()` for
 query-backed levels. Its single URL value owns typed `selection` and `groupBy`. Do not also declare those
 levels as ordinary filters. Dates, segments, and other scope remain independent.
 
 ```tsx
-const geography = explorationVariable({
+const geography = hierarchyVariable({
   key: 'geography',
   label: 'Geography',
   levels: [
@@ -313,7 +313,7 @@ const salesView = defineDataView({
   isEmpty: data => data.rows.length === 0,
   emptyFallback: { title: 'No matching places' },
 });
-const exploration = salesView.exploration('geography');
+const hierarchyTarget = salesView.hierarchy('geography');
 ```
 
 The operation preserves `{ period, geography }`. Validate geography with
@@ -329,7 +329,7 @@ only Region; Europe reveals Country All; selecting a country reveals Customer
 All. Selecting All clears and hides descendants. `geography.visibleLevels(state)`
 derives controls; `geography.level(state)` derives grouping.
 
-The bound target’s `exploration.filter({ country: null })` clears that level to All.
+The bound target’s `hierarchyTarget.filter({ country: null })` clears that level to All.
 For a standalone variable, use `geography.filter(state, { country: null })`. Stored state
 uses `{ kind: 'all' }`, not a null member ID. A null SQL parameter can represent
 unrestricted scope through `($country IS NULL OR country = $country)`. Selecting
@@ -338,7 +338,7 @@ single string or numeric members.
 
 ### Source-backed hierarchies
 
-Use `app.defineExploration()` for query-backed levels. Declare each relationship
+Use `app.defineHierarchy()` for query-backed levels. Declare each relationship
 once in a registered query; the platform reuses it for dropdown options and
 selected-member validation. Each source query declares `member` and returns
 `value`, `label`, and optionally `count`:
@@ -351,7 +351,7 @@ ORDER BY name
 ```
 
 ```tsx
-const geography = app.defineExploration({
+const geography = app.defineHierarchy({
   key: 'geography',
   label: 'Geography',
   levels: [
@@ -415,24 +415,25 @@ membership before querying child labels. These names are reserved;
 See the [support workload example](https://github.com/altertable-ai/data-app/blob/main/dev/support.ts)
 for the complete source, parser, and operation declarations.
 
-| Interaction                             | Result                                                   |
-| --------------------------------------- | -------------------------------------------------------- |
-| Select a different parent               | Clear descendants and retain the deepest valid grouping. |
-| Filter a chart member                   | Select that member; preserve grouping.                   |
-| Descend a chart member                  | Select that member and advance one level.                |
-| Choose Group by in an ancestor dropdown | Group by that level and clear deeper selections.         |
-| Select All at the root                  | Reset exploration.                                       |
+| Interaction                          | Result                                                   |
+| ------------------------------------ | -------------------------------------------------------- |
+| Select a different parent            | Clear descendants and retain the deepest valid grouping. |
+| Filter a chart member                | Select that member; preserve grouping.                   |
+| Descend a chart member               | Select that member and advance one level.                |
+| Change Group by in the Filters sheet | Change aggregation and preserve selected filters.        |
+| Select All at the root               | Clear hierarchy filters and return to root grouping.     |
 
 `<DataApp>` includes progressive hierarchy selectors in the Filters sheet.
-Each level opens one dropdown for its label and value. An ancestor dropdown
-also offers Group by to return to that grouping. The floating active-filter bar
-summarizes selected members using their facet labels. Clicking a summary opens
-the sheet. Widgets do not repeat hierarchy selectors. Each transition creates
+Each level opens one dropdown for its label and value. A separate Group by
+selector chooses any level whose ancestors are selected, preserving filters.
+`geography.group(state, 'region')` makes the same transition outside React.
+The floating bar separates Filtered by selections from Grouped by dimensions.
+Grouping remains visible with no filters applied. Clicking either opens the sheet. Widgets do not repeat hierarchy selectors. Each transition creates
 one history entry and preserves unrelated variables. Clear filters clears ordinary
 predicates and resets hierarchy selections and grouping, preserving dates, search,
 and display settings.
 
-Use `action.filter()` and `action.descend()` with the bound exploration target;
+Use `action.filter()` and `action.descend()` with the bound hierarchy target;
 see [widget actions](widgets.md#explore-from-widgets). Hierarchy row actions wait
-until displayed and applied exploration agree. The filter bar and sheet show applied state; widgets keep displayed context during refreshes. Derive queries, titles, scope,
+until displayed and applied hierarchy state agree. The filter bar and sheet show applied state; widgets keep displayed context during refreshes. Derive queries, titles, scope,
 CSV, and stories from the same displayed input.

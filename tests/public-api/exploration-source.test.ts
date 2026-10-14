@@ -21,7 +21,7 @@ const app = defineDataApp({
     summary: { statement: 'SELECT count(*) FROM tickets', params: {} },
   },
 });
-const hierarchy = app.defineExploration({
+const hierarchy = app.defineHierarchy({
   key: 'team',
   label: 'Teams',
   levels: [
@@ -187,11 +187,11 @@ test('input contracts register selector operations automatically with authorizat
       operations: { overview, 'team.team': overview },
       lakehouse: source(log),
     })
-  ).toThrow('reserved by exploration');
+  ).toThrow('reserved by hierarchy');
 });
 
 test('input wrappers compose membership validation and cancellation prevents business execution', async () => {
-  const other = app.defineExploration({
+  const other = app.defineHierarchy({
     key: 'second',
     label: 'Second',
     levels: [
@@ -317,7 +317,7 @@ test('selector endpoints validate sourced ancestors before querying child labels
 });
 
 test('source selectors enforce fixed ancestor membership and parent bindings', async () => {
-  const fixed = app.defineExploration({
+  const fixed = app.defineHierarchy({
     key: 'fixed',
     label: 'Fixed regions',
     levels: [
@@ -344,7 +344,7 @@ test('source selectors enforce fixed ancestor membership and parent bindings', a
   ).rejects.toMatchObject({ code: 'invalid_input' });
   expect(log).toEqual([]);
   expect(() =>
-    app.defineExploration({
+    app.defineHierarchy({
       key: 'unbound',
       label: 'Unbound',
       levels: [

@@ -8,6 +8,6 @@ export type {
 } from '@/src/core/config';
 
 export type {
-  SourcedExploration,
-  SourcedExplorationLevel,
-} from '@/src/core/exploration-source';
+  SourcedHierarchy,
+  SourcedHierarchyLevel,
+} from '@/src/core/hierarchy-source';

@@ -1,9 +1,9 @@
-import { explorationVariable } from '@altertable/data-app/contract';
+import { hierarchyVariable } from '@altertable/data-app/contract';
 import { countries } from '@/dev/commerce';
 export function regionForCountry(country: string) {
   return country === 'US' ? 'North America' : 'Europe';
 }
-export const geography = explorationVariable({
+export const geography = hierarchyVariable({
   key: 'geography',
   label: 'Geography',
   levels: [

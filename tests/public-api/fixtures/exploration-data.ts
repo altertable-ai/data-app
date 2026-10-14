@@ -1,6 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
-  type ExplorationStateOf,
+  type HierarchyStateOf,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 import {
@@ -8,7 +8,7 @@ import {
   type SalesInput,
 } from '@/tests/public-api/fixtures/drill-data';
 export type Input = SalesInput & {
-  geography: ExplorationStateOf<typeof geography>;
+  geography: HierarchyStateOf<typeof geography>;
 };
 export type GroupRow = {
   id: string;
@@ -70,7 +70,7 @@ AND ${predicates} AND CASE $selectedLevel WHEN 'region' THEN c.region WHEN 'coun
     },
   },
 });
-export const geography = app.defineExploration({
+export const geography = app.defineHierarchy({
   key: 'geography',
   label: 'Geography',
   levels: [

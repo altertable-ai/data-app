@@ -232,7 +232,7 @@ const geographicDataset = orderView.dataset({
     revenue: { value: row => row.revenue, format: currency },
   },
 });
-const geographicExploration = orderView.exploration('geography');
+const geographicExploration = orderView.hierarchy('geography');
 function describeScope(input: OrderInput) {
   const places = geography.levels.flatMap((level, index) => {
     const selection = input.geography.selection[level.id];

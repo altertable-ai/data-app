@@ -130,7 +130,7 @@ const detailContent = detail.content(source =>
     </Stack>
   )
 );
-const exploration = view.exploration('teams');
+const exploration = view.hierarchy('teams');
 const groupActions = groups.actions(action => ({
   filter: action.filter({
     label: row => `Filter to this ${row.level}`,

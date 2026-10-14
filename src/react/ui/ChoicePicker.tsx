@@ -28,8 +28,6 @@ export type { ChoiceOption } from '@/src/core/variables';
 type SharedProps = {
   label: string;
   labelPlacement?: ControlLabelPlacement;
-  /** An additional operation in the dropdown; activating it closes the picker without selecting a value. */
-  action?: { label: string; onAction: () => void };
   options: readonly ChoiceOption[];
   /** Separate source state, rendered last with a divider and the shared option component. */
   missingOption?: ChoiceOption;
@@ -68,16 +66,8 @@ export type ChoicePickerProps =
 export function ChoicePicker(props: ChoicePickerProps) {
   const labelPlacement = props.labelPlacement ?? 'inline';
   const multiple = props.selectionMode === 'multiple';
-  const {
-    label,
-    options,
-    missingOption,
-    disabled,
-    loading,
-    error,
-    onRetry,
-    action,
-  } = props;
+  const { label, options, missingOption, disabled, loading, error, onRetry } =
+    props;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
@@ -297,26 +287,11 @@ export function ChoicePicker(props: ChoicePickerProps) {
                 retryLabel="Try again"
               />
             )}
-            {(canClear || action) && (
+            {canClear && (
               <div className="altertable-choice-picker-actions">
-                {action && (
-                  <Button
-                    variant="ghost"
-                    size="compact"
-                    onPress={() => {
-                      setOpen(false);
-                      setSearch('');
-                      action.onAction();
-                    }}
-                  >
-                    {action.label}
-                  </Button>
-                )}
-                {canClear && (
-                  <Button variant="ghost" size="compact" onPress={clear}>
-                    Clear selection
-                  </Button>
-                )}
+                <Button variant="ghost" size="compact" onPress={clear}>
+                  Clear selection
+                </Button>
               </div>
             )}
           </Dialog>

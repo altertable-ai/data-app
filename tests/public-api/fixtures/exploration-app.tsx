@@ -160,12 +160,12 @@ const actions = groups.actions(
     filter: action.filter({
       label: row => `Filter to this ${row.level}`,
       when: row => row.level !== 'customer',
-      target: view.exploration('geography'),
+      target: view.hierarchy('geography'),
       values: row =>
         row.level === 'region' ? { region: row.id } : { country: row.id },
     }),
     descend: action.descend({
-      target: view.exploration('geography'),
+      target: view.hierarchy('geography'),
       member: row => row.id,
     }),
   }),
