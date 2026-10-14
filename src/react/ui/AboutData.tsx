@@ -251,7 +251,9 @@ export function InspectionSheet({
             </TabList>
           </div>
           <TabPanels>
-            {records && <TabPanel id="records">{records}</TabPanel>}
+            {records && (
+              <TabPanel id="records">{open ? records : null}</TabPanel>
+            )}
             <TabPanel id="glossary">
               {listed.length ? (
                 <div className="altertable-about-glossary-list">

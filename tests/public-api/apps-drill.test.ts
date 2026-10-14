@@ -525,3 +525,47 @@ test('nested replacement details return focus to the original dashboard trigger'
     .poll(() => origin.evaluate(element => element === document.activeElement))
     .toBe(true);
 });
+
+test('closed metric records do not query again when the dashboard scope changes', async ({
+  page,
+}) => {
+  await page.goto('/drill-app');
+  const trigger = page.getByRole('button', {
+    name: 'Explore Net revenue',
+    exact: true,
+  });
+  await trigger.click();
+  const inspection = page.getByRole('dialog', {
+    name: 'Net revenue',
+    exact: true,
+  });
+  await inspection.getByRole('rowheader').first().waitFor();
+  await page.keyboard.press('Escape');
+  await inspection.waitFor({ state: 'hidden' });
+  function isRecords(request: import('playwright').Request) {
+    return (
+      request.url().endsWith('/api/drill-query') &&
+      request.postDataJSON().statement.includes('SELECT id, customer')
+    );
+  }
+  const closedRequest = page.waitForRequest(isRecords, { timeout: 700 }).then(
+    () => true,
+    () => false
+  );
+  await page
+    .getByRole('button', { name: 'September Month', exact: true })
+    .click();
+  const overview = page.waitForResponse(
+    response =>
+      response.url().endsWith('/api/drill-query') &&
+      response.request().postDataJSON().statement.startsWith('WITH regions')
+  );
+  await page.getByRole('option', { name: 'October', exact: true }).click();
+  await overview;
+  expect(await closedRequest).toBe(false);
+  const reopenedRequest = page.waitForRequest(isRecords);
+  await trigger.click();
+  await reopenedRequest;
+  await inspection.getByRole('rowheader').first().waitFor();
+  expect(await inspection.innerText()).toContain('SO-2001');
+});
