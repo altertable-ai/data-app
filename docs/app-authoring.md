@@ -29,8 +29,9 @@ supplied query definitions when adapting their results.
 For each relevant widget, identify the next question a user might investigate.
 Provide [exploration actions](widgets.md#explore-from-widgets) when contributing records
 or entity details can answer it, or when filtering and a finer breakdown help
-explain a result. Keep scope and grouping explicit. Declare detail data, evidence,
-export, and story together; preserve the displayed scope when opening details.
+explain a result. Keep scope and grouping explicit. Use `metric.records()` for
+contributing rows in the existing inspection sheet. Declare detail data with its
+own evidence and preserve the displayed scope. Keep export and story in the main app.
 
 ## Build the exploration
 

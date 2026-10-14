@@ -534,7 +534,7 @@ const geographicActions = geographicDataset.actions(action => ({
   }),
   descend: action.descend({
     target: geographicExploration,
-    member: row => ({ id: row.id }),
+    member: row => row.id,
   }),
 }));
 type OrderSource = Parameters<Parameters<typeof orderView.content>[0]>[0];

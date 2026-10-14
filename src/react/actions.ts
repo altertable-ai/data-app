@@ -66,7 +66,7 @@ export type ActionFactory<Row, Input> = {
   }): ExplorationAction<Row, Input>;
   descend(definition: {
     target: ExplorationTarget<Input>;
-    member: (row: Row) => { id: string | number };
+    member: (row: Row) => string | number;
   }): ExplorationAction<Row, Input>;
 };
 
@@ -128,7 +128,7 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
                 variable.same(displayed, variable.read(searchParams())),
                 'Wait for the displayed exploration before descending.'
               );
-              const state = variable.descend(displayed, member(row).id);
+              const state = variable.descend(displayed, member(row));
               writeVariableValues(
                 { exploration: variable },
                 { exploration: state },

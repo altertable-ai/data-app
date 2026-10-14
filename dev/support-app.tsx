@@ -144,7 +144,7 @@ const groupActions = groups.actions(action => ({
   }),
   descend: action.descend({
     target: exploration,
-    member: row => ({ id: row.level === 'region' ? row.id : Number(row.id) }),
+    member: row => (row.level === 'region' ? row.id : Number(row.id)),
   }),
 }));
 const ticketActions = tickets.actions(action => ({

@@ -148,7 +148,7 @@ scopedGroups.actions(
     }),
     descend: action.descend({
       target: scoped.exploration('geography'),
-      member: row => ({ id: row.id }),
+      member: row => row.id,
     }),
   }),
   { primary: 'descend' }
@@ -186,7 +186,7 @@ regions.actions(action => ({
   descend: action.descend({
     // @ts-expect-error A hierarchy must read the binding's displayed input shape.
     target: scoped.exploration('geography'),
-    member: row => ({ id: row.regionId }),
+    member: row => row.regionId,
   }),
 }));
 
@@ -305,3 +305,11 @@ count.records({
   // @ts-expect-error Record destination IDs must match the typed operation input.
   input: () => ({ regionId: 'one' }),
 });
+
+scopedGroups.actions(action => ({
+  descend: action.descend({
+    target: scoped.exploration('geography'),
+    // @ts-expect-error A descent selects a scalar member ID, not an object wrapper.
+    member: row => ({ id: row.id }),
+  }),
+}));

@@ -166,7 +166,7 @@ const actions = groups.actions(
     }),
     descend: action.descend({
       target: view.exploration('geography'),
-      member: row => ({ id: row.id }),
+      member: row => row.id,
     }),
   }),
   {

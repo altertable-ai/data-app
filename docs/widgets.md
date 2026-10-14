@@ -148,8 +148,9 @@ The dataset owns evidence and empty copy; an empty row selection shows that fall
 alternate-view selection shared with its inspection sheet. Give views stable IDs
 and keep interactive state above the widget, since inspection may render it again.
 
-`<TableWidget>` searches and paginates only the supplied rows. Use query-backed
-pagination with a stable sort and total count for larger datasets. The `limit`
+`<TableWidget>` searches and paginates only the supplied rows. Larger datasets
+need app-owned query-backed pagination with a stable sort and total count;
+local pagination cannot fetch additional rows. The `limit`
 mode shows a bounded preview without local pagination. Custom tables can use
 `<DataTable>`, `<DataTableEmptyRow>`, `<DataTableTimestamp>`, and `<DataTableShare>`.
 
@@ -187,7 +188,7 @@ const placeActions = places.actions(action => ({
   }),
   descend: action.descend({
     target: salesView.exploration('geography'),
-    member: row => ({ id: row.id }),
+    member: row => row.id,
   }),
 }));
 
@@ -197,8 +198,8 @@ const placeActions = places.actions(action => ({
 Use the action factory for contextual row and destination types. Stable object
 keys supply action IDs; declaration order supplies menu order. One available
 action is direct; several appear in Explore. Set the optional second argument
-`{ primary: 'orders' }` only when a direct primary action is useful. Other actions
-remain available in the menu. A metric's row argument is `undefined`.
+`{ primary: 'orders' }` only when a direct primary action is useful. All available actions
+remain in the menu. A metric's row argument is `undefined`.
 Use `metric.records()` to include contributing records in its existing inspection
 sheet. Records becomes the first tab, followed by Glossary and Queries. The
 metric keeps its usual heading trigger; no separate record-opening action is
@@ -219,8 +220,9 @@ const contributingOrders = orderCount.records({
 
 The destination owns loading, errors, evidence, and completeness. Do not reuse a
 capped dashboard preview when the destination promises all contributing records.
-Use local pagination for a complete bounded result, or query-backed pagination
-for larger sources. The record mapping receives the metric's displayed input,
+Use local pagination for a complete bounded result. Larger sources require
+app-owned server paging; otherwise expose the limit or ask users to narrow scope
+instead of silently truncating records. The record mapping receives the metric's displayed input,
 including during dashboard updates. Records load only when their tab is shown.
 Record tables can use ordinary row detail actions to continue into an entity;
 register those destinations on the same `<DataApp>`.

@@ -133,7 +133,8 @@ Register content with `<DataApp details={[ordersDetail]} …>` and declare a
 [detail action](widgets.md#explore-from-widgets) on the source binding. Detail
 content and evidence use the destination's displayed result. Detail sheets omit
 the app toolbar; refresh, export, and story actions belong to the main app.
-The sheet keeps the dashboard mounted and restores focus when closed.
+The sheet keeps the dashboard mounted. Nested details replace the sheet; closing
+returns focus to the original dashboard trigger.
 
 A metric can reuse the same registered detail content in a Records tab of its
 inspection sheet through `metric.records()`; see [metric records](widgets.md#explore-from-widgets).
@@ -145,7 +146,8 @@ the operation, and fit in the shared URL. Use IDs rather than entire records;
 keep credentials and protected execution parameters out of inputs. Resolve
 relative periods to explicit dates when the investigation must retain its
 original dates. `describeInput()` should name the entity or population, period,
-and relevant filters. Reopened links validate input before executing a request.
+and relevant selected filters without repeating the title or unselected levels.
+Reopened links validate input before executing a request.
 
 Browser Back/Forward follows detail URL state. Close and Escape remove the detail
 state from the current URL, preserving dashboard variables. Initial failures
