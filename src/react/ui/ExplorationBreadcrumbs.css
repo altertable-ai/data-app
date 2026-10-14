@@ -17,9 +17,9 @@
 .altertable-exploration-breadcrumbs li + li::before {
   content: '';
   position: absolute;
-  inset-inline-start: calc(-1 * var(--atbl-space-sm));
+  inset-inline-start: calc(var(--atbl-space-sm) - var(--atbl-space-lg));
   inset-block-start: calc(-1 * var(--atbl-space-sm));
-  width: var(--atbl-space-sm);
+  width: calc(var(--atbl-space-lg) - var(--atbl-space-sm));
   height: calc(var(--atbl-control-height) / 2 + var(--atbl-space-sm));
   border-inline-start: 1px solid var(--atbl-border);
   border-block-end: 1px solid var(--atbl-border);

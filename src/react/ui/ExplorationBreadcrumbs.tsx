@@ -178,8 +178,8 @@ export function ExplorationBreadcrumbs({
             <li
               key={level.id}
               style={{
-                marginInlineStart: `calc(${position} * var(--atbl-space-md))`,
-                maxInlineSize: `calc(100% - ${position} * var(--atbl-space-md))`,
+                marginInlineStart: `calc(${position} * var(--atbl-space-lg))`,
+                maxInlineSize: `calc(100% - ${position} * var(--atbl-space-lg))`,
               }}
               aria-current={position === group ? 'page' : undefined}
             >

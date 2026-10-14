@@ -53,7 +53,7 @@
   top: -24px;
   z-index: 2;
   margin-top: -24px;
-  padding: 24px 0 14px;
+  padding: 24px 0 0;
   background: var(--atbl-surface);
 }
 @media (max-width: 600px) {
@@ -75,7 +75,7 @@
   background: var(--atbl-subtle);
 }
 .altertable-about-tabs .react-aria-TabPanels {
-  padding-top: 14px;
+  padding-top: 28px;
 }
 .altertable-about-tabs .react-aria-Tab {
   margin: 0;
