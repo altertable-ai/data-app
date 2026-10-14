@@ -210,7 +210,7 @@ if (result.diagnostics.length || result.manifest?.title !== 'Packed' || validate
     'utf8'
   );
   if (
-    !/from ["']typescript["']/.test(toolingSource) ||
+    !/from ["']typescript-ast["']/.test(toolingSource) ||
     /function createSourceFile/.test(toolingSource)
   )
     throw new Error('Manifest tooling must use an external compiler peer.');
@@ -218,7 +218,7 @@ if (result.diagnostics.length || result.manifest?.title !== 'Packed' || validate
     if (!path.endsWith('.js') || path === 'dist/manifest.js') continue;
     const source = await readFile(join(packageDirectory, path), 'utf8');
     if (
-      /from ["']typescript["']|function createSourceFile|node:fs/.test(
+      /from ["']typescript-ast["']|function createSourceFile|node:fs/.test(
         source
       ) &&
       !['dist/server.js', 'dist/local.js'].includes(path)
@@ -247,7 +247,7 @@ if (result.diagnostics.length || result.manifest?.title !== 'Packed' || validate
   );
   await run([
     'node',
-    join(root, 'node_modules/typescript-checker/bin/tsc'),
+    join(root, 'node_modules/typescript/bin/tsc'),
     '-p',
     join(temporary, 'tsconfig.json'),
   ]);
@@ -401,7 +401,7 @@ export { Grid };
       `import { defineDataApp } from '@altertable/data-app';
 if (typeof defineDataApp !== 'function') throw Error('Runtime import failed without parser');
 try { await import('@altertable/data-app/manifest'); throw Error('Missing optional parser unexpectedly resolved'); }
-catch (error) { if (error.code !== 'ERR_MODULE_NOT_FOUND' || !error.message.includes('typescript')) throw error; }`,
+catch (error) { if (error.code !== 'ERR_MODULE_NOT_FOUND' || !error.message.includes('typescript-ast')) throw error; }`,
     ],
     minimumConsumer
   );
@@ -413,7 +413,7 @@ catch (error) { if (error.code !== 'ERR_MODULE_NOT_FOUND' || !error.message.incl
       '--no-audit',
       '--no-fund',
       '--package-lock=false',
-      'typescript@5.9.3',
+      'typescript-ast@npm:typescript@5.9.3',
     ],
     minimumConsumer,
     { npm_config_cache: join(temporary, 'npm-cache') }

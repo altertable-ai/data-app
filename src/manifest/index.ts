@@ -1,5 +1,6 @@
 /** Static tooling only; never import this entry into an app's runtime bundle. */
-import ts from 'typescript';
+import { posix } from 'node:path';
+import ts from 'typescript-ast';
 import {
   validateDataAppManifest,
   type DataAppManifest,
@@ -32,33 +33,34 @@ export type DataAppManifestExtraction = {
 /**
  * Read one imported defineDataApp declaration from TS/TSX without executing source,
  * resolving imports, reading files, or invoking callbacks. Requires the optional
- * TypeScript 5.9 tooling peer. Any diagnostic prevents a manifest from being returned.
+ * `typescript-ast` tooling peer. Any diagnostic prevents a manifest from being returned.
+ * The caller's filename selects TS or TSX syntax; omitted filenames default to TSX.
  */
 export function extractDataAppManifest(
-  source: string
+  source: string,
+  fileName = 'source.tsx'
 ): DataAppManifestExtraction {
-  const fileName = 'data-app.tsx';
+  const sourceName = posix.normalize(fileName.replaceAll('\\', '/'));
   const file = ts.createSourceFile(
-    fileName,
+    sourceName,
     source,
     ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.TSX
+    true
   );
   // An in-memory compiler host enables public syntax diagnostics and binding identity.
   // No import or library source is loaded, including app-authored modules.
   const program = ts.createProgram({
-    rootNames: [fileName],
+    rootNames: [sourceName],
     options: { noResolve: true, noLib: true, jsx: ts.JsxEmit.Preserve },
     host: {
-      getSourceFile: name => (name === fileName ? file : undefined),
+      getSourceFile: name => (name === sourceName ? file : undefined),
       getDefaultLibFileName: () => '',
       writeFile: () => {},
       getCurrentDirectory: () => '',
       getCanonicalFileName: name => name,
       useCaseSensitiveFileNames: () => true,
       getNewLine: () => '\n',
-      fileExists: name => name === fileName,
+      fileExists: name => name === sourceName,
       readFile: () => undefined,
     },
   });
@@ -104,13 +106,14 @@ export function extractDataAppManifest(
   for (const statement of file.statements) {
     if (ts.isImportDeclaration(statement)) {
       const clause = statement.importClause;
+      if (clause?.isTypeOnly) continue;
       if (clause?.name) addBinding(clause.name);
       if (clause?.namedBindings) {
         if (ts.isNamespaceImport(clause.namedBindings))
           addBinding(clause.namedBindings.name);
         else
           for (const binding of clause.namedBindings.elements)
-            addBinding(binding.name);
+            if (!binding.isTypeOnly) addBinding(binding.name);
       }
     } else if (ts.isImportEqualsDeclaration(statement))
       addBinding(statement.name);
@@ -121,8 +124,6 @@ export function extractDataAppManifest(
       ts.isFunctionDeclaration(statement) ||
       ts.isClassDeclaration(statement) ||
       ts.isEnumDeclaration(statement) ||
-      ts.isInterfaceDeclaration(statement) ||
-      ts.isTypeAliasDeclaration(statement) ||
       ts.isModuleDeclaration(statement)
     ) {
       if (statement.name && ts.isIdentifier(statement.name))
@@ -205,7 +206,6 @@ export function extractDataAppManifest(
     moduleBindings.get(declaration.name.text) !== 1 ||
     !ts.isVariableDeclarationList(declaration.parent) ||
     !(declaration.parent.flags & ts.NodeFlags.Const) ||
-    declaration.parent.declarations.length !== 1 ||
     !ts.isVariableStatement(declaration.parent.parent) ||
     declaration.parent.parent.parent !== file
   ) {
@@ -278,6 +278,15 @@ export function extractDataAppManifest(
           continue;
         }
         const key = property.name.text;
+        if (key === '__proto__') {
+          report(
+            'literal',
+            'Prototype setters are not manifest data properties.',
+            property.name,
+            [...path, key]
+          );
+          continue;
+        }
         const propertyPath = [...path, key];
         if (keys.has(key))
           report(
@@ -289,7 +298,6 @@ export function extractDataAppManifest(
         keys.add(key);
         entries.push([key, read(property.initializer, propertyPath)]);
       }
-      // __proto__ and other special names are ordinary data keys, never assignments.
       return Object.fromEntries(entries);
     }
     report(

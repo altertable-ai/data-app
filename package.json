@@ -98,9 +98,9 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "bun run scripts/build.ts && node node_modules/typescript-checker/bin/tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
+    "build": "bun run scripts/build.ts && node node_modules/typescript/bin/tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
     "dev": "bun run scripts/dev.ts",
-    "typecheck": "bun install --frozen-lockfile && node node_modules/typescript-checker/bin/tsc --noEmit",
+    "typecheck": "bun install --frozen-lockfile && node node_modules/typescript/bin/tsc --noEmit",
     "lint": "oxlint --type-aware src tests scripts dev examples/starter-data-app vitest.config.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
@@ -143,17 +143,17 @@
     "remark-lint-no-dead-urls": "2.0.1",
     "remark-validate-links": "13.1.0",
     "testcontainers": "12.2.0",
-    "typescript": "5.9.3",
-    "typescript-checker": "npm:typescript@7.0.2",
+    "typescript": "7.0.2",
+    "typescript-ast": "npm:typescript@5.9.3",
     "vitest": "4.1.11"
   },
   "peerDependencies": {
     "react": ">=19.2.0",
     "react-dom": ">=19.2.0",
-    "typescript": ">=5.9.3 <6"
+    "typescript-ast": "npm:typescript@5.9.3"
   },
   "peerDependenciesMeta": {
-    "typescript": {
+    "typescript-ast": {
       "optional": true
     }
   },

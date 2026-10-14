@@ -55,6 +55,34 @@ function shadow(declareApp: (value: unknown) => unknown) { return declareApp({})
     });
   });
 
+  test('accepts arbitrary names, optional exports, sibling declarators, and separate type names', () => {
+    for (const text of [
+      source().replace('export const app', 'const declared'),
+      source().replace(');', '), other = 1;'),
+      source().replace('const app =', 'const other = 1, app ='),
+      source() + '\ntype app = unknown; interface AnotherType {}',
+      source() + "\nimport type { app } from 'types';",
+    ])
+      expect(extractDataAppManifest(text).diagnostics).toEqual([]);
+  });
+
+  test('uses the caller filename to parse TS declarations without assuming TSX syntax', () => {
+    const text = source() + '\nconst identity = <T>(value: T) => value;';
+    for (const fileName of [
+      'app.ts',
+      './app.ts',
+      '/src/app.ts',
+      'src/../app.ts',
+      'C:\\src\\app.ts',
+    ]) {
+      expect(extractDataAppManifest(text, fileName).diagnostics).toEqual([]);
+    }
+    expect(extractDataAppManifest(source(), 'index.tsx').diagnostics).toEqual(
+      []
+    );
+    rejected(text, 'syntax');
+  });
+
   test('accepts independent import aliases and type arguments, but rejects duplicate bindings', () => {
     const text = source()
       .replace(
@@ -141,7 +169,6 @@ throw new Error('this must never execute');`;
     source().replace('export const app', 'function create() { const app') +
       ' }',
     source() + `\nconst another = defineDataApp({ ${fields} });`,
-    source().replace(');', '), other = 1;'),
     source().replace('export const app =', 'export default'),
     source()
       .replace('defineDataApp({', 'defineDataApp(({')
@@ -272,16 +299,34 @@ throw new Error('this must never execute');`;
     ).toEqual(['queries', 'q', 'params', 'x', 'defaultValue']);
   });
 
-  test('treats special object keys as data without changing prototypes', () => {
+  test('rejects prototype setters instead of extracting data absent from the runtime object', () => {
+    rejected(
+      source(
+        argumentWith(
+          "queries: { '__proto__': { statement: 'SELECT 1', params: {} } }"
+        )
+      ),
+      'literal'
+    );
+    rejected(
+      source(
+        argumentWith(
+          "queries: { q: { statement: 'SELECT 1', params: { '__proto__': null } } }"
+        )
+      ),
+      'literal'
+    );
     const result = extractDataAppManifest(
       source(
-        `{ ${fields.replace('queries: {}', `queries: { '__proto__': { statement: 'SELECT 1', params: { constructor: {}, '__proto__': { defaultValue: null } } } }`)} }`
+        argumentWith(
+          "queries: { constructor: { statement: 'SELECT 1', params: { constructor: {} } } }"
+        )
       )
     );
     expect(result.diagnostics).toEqual([]);
-    expect(Object.hasOwn(result.manifest!.queries, '__proto__')).toBe(true);
-    expect(Object.getPrototypeOf(result.manifest!.queries)).toBe(
-      Object.prototype
+    expect(Object.hasOwn(result.manifest!.queries, 'constructor')).toBe(true);
+    expect(defineDataApp(result.manifest!).queries).toEqual(
+      result.manifest!.queries
     );
   });
 });

@@ -144,18 +144,22 @@ consumption sites; update the name contract in `style-contract.ts` when adding h
 ## Static manifest tooling
 
 CLI and backend tooling share `@altertable/data-app/manifest`. Install
-`typescript@^5.9.3` in the calling tool; it is an optional peer used only by this
-entry. Browser, server, and ordinary app imports do not load the parser. The
-package uses a separate TypeScript 7 development checker; its compiler API is
-not the tooling parser API.
+`typescript-ast@npm:typescript@5.9.3` in the calling tool; it is an optional peer
+used only by this entry. Browser, server, and ordinary app imports do not load the parser. The
+repo keeps TypeScript 7 as its normal development compiler. The optional alias
+provides the TypeScript 5.9 AST API used by the backend without downgrading repo
+tooling.
 
-`extractDataAppManifest(source)` synchronously reads TS/TSX source without
+`extractDataAppManifest(source, fileName)` synchronously reads TS/TSX source without
 executing it or resolving imports. It recognizes the named `defineDataApp`
 import from `@altertable/data-app`, including aliases and lexical shadowing.
-Exactly one call must directly initialize a single module-level `const`
-identifier. Its argument must be a direct object literal; nested values use the
-literal syntax documented on `defineDataApp()`. Duplicate keys, ambiguous
-bindings, malformed source, and executable expressions are errors.
+Exactly one call must directly initialize a module-level `const` identifier.
+Other unrelated declarators in the same statement are allowed. Its argument
+must be a direct object literal; nested values use the literal syntax documented on `defineDataApp()`. Duplicate keys, ambiguous
+bindings, prototype setters (`__proto__` properties), malformed source, and
+executable expressions are errors. The optional filename selects TS or TSX
+syntax; its default is `source.tsx`. It is a virtual name for the compiler, never
+a file to load.
 
 The result contains `manifest` and `diagnostics`. Any diagnostic sets `manifest`
 to `null`. Diagnostics have a stable category (`syntax`, `declaration`, `literal`,
@@ -178,7 +182,7 @@ compares the manifest scope to the selected profile:
 ```ts
 import { extractDataAppManifest } from '@altertable/data-app/manifest';
 
-const { manifest, diagnostics } = extractDataAppManifest(source);
+const { manifest, diagnostics } = extractDataAppManifest(source, fileName);
 if (!manifest) throw new Error(JSON.stringify(diagnostics));
 if (
   manifest.scope.organization !== profile.organization ||
@@ -193,7 +197,7 @@ A backend extracts before bundling and uses the same declared query registry:
 ```ts
 import { extractDataAppManifest } from '@altertable/data-app/manifest';
 
-const result = extractDataAppManifest(source);
+const result = extractDataAppManifest(source, fileName);
 if (!result.manifest) return { diagnostics: result.diagnostics };
 const queries = result.manifest.queries;
 // Continue with the backend's typecheck, bundle, and query authorization.
@@ -203,5 +207,8 @@ Extraction validates declarations; hosts still own authorization, credential
 isolation, profile comparisons, SQL interpretation, and query execution. To
 integrate, first release a package containing this entry, then update CLI and
 backend dependencies and replace their extraction logic with this contract.
-The backend can reuse its TypeScript 5.9 dependency. The CLI must add that
-optional tooling peer. Keep the tooling entry out of application bundles.
+Both consumers install the optional `typescript-ast` alias; the backend pins it
+to the same TypeScript 5.9 version it already uses. Backend integration also
+permits the root `@altertable/data-app` import in its package allowlist and maps
+manifest diagnostic categories into its diagnostic response. Keep the tooling
+entry out of application bundles.
