@@ -707,7 +707,6 @@ import { serveAppFile } from '@altertable/data-app/server/bun/preview';
 const preview = await serveAppFile({
   file: ${JSON.stringify(file)},
   port: 0,
-  dependenciesFrom: process.cwd(),
   lakehouse: {
     async queryAll(statement, { limit, params }) {
       return { columns: [{ name: 'statement', type: 'VARCHAR' }], rows: [[statement]], queryId: String(params?.marker ?? limit) };
@@ -827,7 +826,6 @@ import { serveAppFile } from '@altertable/data-app/server/bun/preview';
 const options = {
   file: ${JSON.stringify(file)},
   port: 0,
-  dependenciesFrom: process.cwd(),
   lakehouse: { async queryAll() { return { columns: [], rows: [] }; } },
 };
 const preview = await serveAppFile(options);

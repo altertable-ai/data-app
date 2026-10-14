@@ -26,8 +26,6 @@ export type AppFilePreviewOptions = {
   port?: number;
   /** Server-only query backend; the caller owns credentials and profile selection. */
   lakehouse: Lakehouse;
-  /** Absolute directory containing the selected data-app package and React dependencies. */
-  dependenciesFrom: string;
 };
 
 export type AppFilePreview = {
@@ -41,7 +39,6 @@ export async function serveAppFile({
   file: appFile,
   port = 25837,
   lakehouse,
-  dependenciesFrom,
 }: AppFilePreviewOptions): Promise<AppFilePreview> {
   if (
     !isAbsolute(appFile) ||
@@ -51,10 +48,8 @@ export async function serveAppFile({
     throw new Error(
       `No data app file at ${appFile}. Use an absolute file path.`
     );
-  if (!isAbsolute(dependenciesFrom))
-    throw new Error('dependenciesFrom must be an absolute directory path.');
   const packageBuildDirectory = dirname(
-    Bun.resolveSync('@altertable/data-app', dependenciesFrom)
+    Bun.resolveSync('@altertable/data-app', import.meta.dir)
   );
   let stopped = false;
   type Bundle = { javascript: string } | { error: string };
@@ -92,7 +87,7 @@ export async function serveAppFile({
       setup(build) {
         build.onResolve(
           { filter: /^(?:@altertable\/data-app|react|react-dom)(?:\/.*)?$/ },
-          args => ({ path: Bun.resolveSync(args.path, dependenciesFrom) })
+          args => ({ path: Bun.resolveSync(args.path, import.meta.dir) })
         );
         build.onResolve({ filter: /.*/ }, ({ path, resolveDir, importer }) => {
           if (!importer || !isAppInput(importer)) return undefined;

@@ -198,7 +198,6 @@ const app = defineDataApp({ title: "Server app", description: "Declare an app on
 if (typeof app.defineOperation !== "function") throw new Error("App declaration is unavailable on the server");
 const preview = await serveAppFile({
   file: new URL('./preview-app.tsx', import.meta.url).pathname,
-  dependenciesFrom: new URL('.', import.meta.url).pathname,
   port: 0,
   lakehouse: { async queryAll() { return { columns: [], rows: [] }; } },
 });

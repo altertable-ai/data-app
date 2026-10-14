@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import {
   previewLakehouseEnvironment,
   ensurePackageBuild,
-  checkoutRoot,
 } from '@/scripts/dev-resolve';
 
 const usage =
@@ -27,7 +26,6 @@ const { environment, target } = previewLakehouseEnvironment();
 const preview = await serveAppFile({
   file: appFile,
   port: Number(process.env.PORT ?? 25937),
-  dependenciesFrom: checkoutRoot,
   lakehouse: localLakehouse(environment),
 });
 console.log(`Data app ${appFile} running at ${preview.url}\n${target}`);
