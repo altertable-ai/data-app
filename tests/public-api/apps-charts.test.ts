@@ -32,6 +32,17 @@ test('mixed chart series describe their measures and inspect the same monthly va
     name: 'Monthly revenue, forecast, and conversion',
     exact: true,
   });
+  expect(
+    await chart
+      .getByRole('application', {
+        name: 'Monthly revenue, forecast, and conversion',
+        exact: true,
+      })
+      .count()
+  ).toBe(1);
+  expect(await chart.locator('svg title:not(:empty), svg[title]').count()).toBe(
+    0
+  );
   const legend = chart.getByRole('list', { name: 'Chart legend', exact: true });
   await expect.poll(() => legend.getByRole('listitem').count()).toBe(3);
   for (const name of ['Revenue (€k)', 'Forecast (€k)', 'Conversion (%)']) {
@@ -79,11 +90,11 @@ test('crowded automatic legends reserve a cell for expansion and restore their c
     exact: true,
   });
   const legend = chart.getByRole('list', { name: 'Chart legend', exact: true });
-  await expect.poll(() => legend.getByRole('listitem').count()).toBe(6);
-  const more = legend.getByRole('button', { name: '+7 more', exact: true });
+  await expect.poll(() => legend.getByRole('listitem').count()).toBe(4);
+  const more = legend.getByRole('button', { name: '+9 more', exact: true });
   await expect.poll(() => more.getAttribute('aria-expanded')).toBe('false');
-  const lastSeries = await legend.getByRole('listitem').nth(4).boundingBox();
-  const overflow = await legend.getByRole('listitem').nth(5).boundingBox();
+  const lastSeries = await legend.getByRole('listitem').nth(2).boundingBox();
+  const overflow = await legend.getByRole('listitem').nth(3).boundingBox();
   expect(Math.abs(lastSeries!.y - overflow!.y)).toBeLessThan(1);
   await more.click();
   await expect.poll(() => legend.getByRole('listitem').count()).toBe(13);
@@ -93,7 +104,7 @@ test('crowded automatic legends reserve a cell for expansion and restore their c
   const fewer = legend.getByRole('button', { name: 'Show fewer', exact: true });
   await expect.poll(() => fewer.getAttribute('aria-expanded')).toBe('true');
   await fewer.click();
-  await expect.poll(() => legend.getByRole('listitem').count()).toBe(6);
+  await expect.poll(() => legend.getByRole('listitem').count()).toBe(4);
 });
 
 test('independent legends preserve complete long names and expand on a phone', async ({
@@ -115,7 +126,7 @@ test('independent legends preserve complete long names and expand on a phone', a
   expect(
     await label.evaluate(element => element.scrollWidth > element.clientWidth)
   ).toBe(true);
-  await legend.getByRole('button', { name: '+7 more', exact: true }).tap();
+  await legend.getByRole('button', { name: '+9 more', exact: true }).tap();
   await expect.poll(() => legend.getByRole('listitem').count()).toBe(13);
   await expect
     .poll(() =>
@@ -130,7 +141,7 @@ test('independent legends preserve complete long names and expand on a phone', a
     .getByRole('button', { name: 'Switch to dark theme', exact: true })
     .tap();
   await legend.getByRole('button', { name: 'Show fewer', exact: true }).tap();
-  await expect.poll(() => legend.getByRole('listitem').count()).toBe(6);
+  await expect.poll(() => legend.getByRole('listitem').count()).toBe(4);
   await expect
     .poll(() =>
       page.evaluate(
@@ -476,4 +487,375 @@ test('stacked bars have square joins while unstacked bars and explicit radii sta
       Array(5).fill(name !== 'Default stack')
     );
   }
+});
+
+test('default composed inspection keeps series colors, hides sample dots, and formats only the hovered measure', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const bars = page.getByRole('region', { name: 'Hover bars', exact: true });
+  const green = bars.locator('path[fill="var(--atbl-chart-3)"]').first();
+  const fill = await green.evaluate(element => getComputedStyle(element).fill);
+  await green.scrollIntoViewIfNeeded();
+  const greenBox = await green.boundingBox();
+  await page.mouse.move(
+    greenBox!.x + greenBox!.width / 2,
+    greenBox!.y + greenBox!.height / 2
+  );
+  await expect
+    .poll(() => bars.getByRole('tooltip').textContent())
+    .toContain('Green : 1,234.568');
+  expect(await bars.getByRole('tooltip').textContent()).not.toContain('Purple');
+  expect(await green.evaluate(element => getComputedStyle(element).fill)).toBe(
+    fill
+  );
+  const lines = page.getByRole('region', { name: 'Hover lines', exact: true });
+  expect(await lines.locator('.recharts-line-dots circle').count()).toBe(0);
+  const curve = lines.locator('.recharts-line-curve').nth(1);
+  await curve.scrollIntoViewIfNeeded();
+  const point = await curve.evaluate(element => {
+    const path = element as SVGPathElement;
+    const point = path.getPointAtLength(path.getTotalLength() * 0.2);
+    const screen = new DOMPoint(point.x, point.y).matrixTransform(
+      path.getScreenCTM()!
+    );
+    return { x: screen.x, y: screen.y };
+  });
+  await page.mouse.move(point.x, point.y);
+  await expect
+    .poll(() => lines.getByRole('tooltip').textContent())
+    .toContain('Green : 1,234.568');
+  expect(await lines.getByRole('tooltip').textContent()).not.toContain(
+    'Purple'
+  );
+  await expect
+    .poll(() => lines.locator('.recharts-active-dot circle').count())
+    .toBe(1);
+  await page.mouse.move(0, 0);
+  await lines.getByRole('application').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect
+    .poll(() => lines.getByRole('tooltip').textContent())
+    .toContain('Purple');
+});
+
+test('touch inspection retains only the tapped series after releasing the screen', async ({
+  mobilePage,
+}) => {
+  await mobilePage.goto('/chart-legends');
+  const chart = mobilePage.getByRole('region', {
+    name: 'Hover bars',
+    exact: true,
+  });
+  await chart.locator('.recharts-bar-rectangle path').nth(2).tap();
+  await expect
+    .poll(() => chart.getByRole('tooltip').textContent())
+    .toContain('Green : 1,234.568');
+  expect(await chart.getByRole('tooltip').textContent()).not.toContain(
+    'Purple'
+  );
+  await chart.locator('.recharts-bar-rectangle path').first().tap();
+  await expect
+    .poll(() => chart.getByRole('tooltip').textContent())
+    .toContain('Purple : 2,400.123');
+  expect(await chart.getByRole('tooltip').textContent()).not.toContain('Green');
+});
+
+test('funnel conversion bars use the same palette color as composed bars', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends?palette');
+  const funnel = page.getByRole('region', {
+    name: 'Activation funnel plot',
+    exact: true,
+  });
+  const bars = page.getByRole('region', { name: 'Hover bars', exact: true });
+  const fill = await bars
+    .locator('.recharts-bar-rectangle path')
+    .first()
+    .evaluate(element => getComputedStyle(element).fill);
+  expect(
+    await funnel
+      .locator('.recharts-bar-rectangle path')
+      .first()
+      .evaluate(element => getComputedStyle(element).fill)
+  ).toBe(fill);
+});
+
+test('funnel summaries truncate long names, reserve a more cell, and separate the event path from the plot', async ({
+  page,
+  mobilePage,
+}) => {
+  for (const current of [page, mobilePage]) {
+    await current.goto('/chart-legends');
+    const funnel = current.getByRole('region', {
+      name: 'Many populations funnel',
+      exact: true,
+    });
+    const summary = funnel.getByRole('list', {
+      name: 'Funnel series',
+      exact: true,
+    });
+    const expectedCells = current === mobilePage ? 2 : 3;
+    await expect
+      .poll(() => summary.getByRole('listitem').count())
+      .toBe(expectedCells);
+    const tops = await summary
+      .getByRole('listitem')
+      .evaluateAll(items =>
+        items.map(item => item.getBoundingClientRect().top)
+      );
+    expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(1);
+    const label = summary.getByText(
+      'Population 1 — users assigned to the extended calendar experiment in Europe',
+      { exact: true }
+    );
+    expect(await label.getAttribute('title')).toBe(await label.textContent());
+    expect(
+      await label.evaluate(element => ({
+        truncated: element.scrollWidth > element.clientWidth,
+        overflow: getComputedStyle(element).textOverflow,
+      }))
+    ).toEqual({ truncated: true, overflow: 'ellipsis' });
+    const summaryBox = await summary.boundingBox();
+    const pathBox = await funnel
+      .getByText('Started onboarding → Completed onboarding', { exact: true })
+      .boundingBox();
+    const plotBox = await funnel
+      .getByRole('region', {
+        name: 'Many populations funnel plot',
+        exact: true,
+      })
+      .boundingBox();
+    expect(
+      pathBox!.y - summaryBox!.y - summaryBox!.height
+    ).toBeGreaterThanOrEqual(12);
+    expect(plotBox!.y - pathBox!.y - pathBox!.height).toBeGreaterThanOrEqual(
+      16
+    );
+    const more = summary.getByRole('button', {
+      name: `+${10 - expectedCells} more`,
+      exact: true,
+    });
+    await more.click();
+    await expect.poll(() => summary.getByRole('listitem').count()).toBe(10);
+    const fewer = summary.getByRole('button', {
+      name: 'Show fewer',
+      exact: true,
+    });
+    expect(await fewer.getAttribute('aria-expanded')).toBe('true');
+    await fewer.click();
+    await expect
+      .poll(() => summary.getByRole('listitem').count())
+      .toBe(expectedCells);
+    expect(
+      await current.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth
+      )
+    ).toBe(true);
+  }
+});
+
+test('crowded legends fill two rows and keep overflow in the final column on resize', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const legend = page
+    .getByRole('region', {
+      name: 'Response time across twelve services',
+      exact: true,
+    })
+    .getByRole('list', { name: 'Chart legend', exact: true });
+  for (const width of [1440, 960, 480, 320, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect
+      .poll(async () => {
+        const cells = await legend.getByRole('listitem').evaluateAll(items =>
+          items.map(item => {
+            const box = item.getBoundingClientRect();
+            return { y: box.y, right: box.right, text: item.textContent };
+          })
+        );
+        const rows = new Set(cells.map(cell => Math.round(cell.y))).size;
+        const firstRow = cells.filter(
+          cell => Math.abs(cell.y - cells[0]!.y) < 1
+        ).length;
+        const right = Math.max(...cells.map(cell => cell.right));
+        return (
+          cells.length <= 8 &&
+          cells.at(-1)!.text === `+${13 - cells.length} more` &&
+          rows === 2 &&
+          cells.length === firstRow * 2 &&
+          Math.abs(cells.at(-1)!.right - right) < 1
+        );
+      })
+      .toBe(true);
+  }
+});
+
+test('area and line charts show only the hovered series with formatted precision and an active dot', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const [name, selector, expected] of [
+    ['Inspection areas', '.recharts-area-curve', 'Green'],
+    ['Inspection lines', '.recharts-line-curve', 'Green'],
+  ]) {
+    const chart = page.getByRole('region', { name, exact: true });
+    expect(
+      await chart
+        .locator('.recharts-line-dots circle, .recharts-area-dots circle')
+        .count()
+    ).toBe(0);
+    const curve = chart.locator(selector).nth(1);
+    await curve.scrollIntoViewIfNeeded();
+    const point = await curve.evaluate(element => {
+      const path = element as SVGPathElement;
+      const point = path.getPointAtLength(path.getTotalLength() * 0.3);
+      const screen = new DOMPoint(point.x, point.y).matrixTransform(
+        path.getScreenCTM()!
+      );
+      return { x: screen.x, y: screen.y };
+    });
+    await page.mouse.move(point.x, point.y);
+    await expect
+      .poll(() => chart.getByRole('tooltip').textContent())
+      .toContain(expected);
+    expect(await chart.getByRole('tooltip').getByRole('listitem').count()).toBe(
+      1
+    );
+    expect(await chart.getByRole('tooltip').textContent()).not.toMatch(
+      /\d\.\d{4}/
+    );
+    await expect
+      .poll(() => chart.locator('.recharts-active-dot circle').count())
+      .toBe(1);
+  }
+});
+
+test('single-series tooltip follows the pointer across the plot away from the line', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Inspection single line',
+    exact: true,
+  });
+  const curve = chart.locator('.recharts-line-curve');
+  await curve.scrollIntoViewIfNeeded();
+  const point = await curve.evaluate(element => {
+    const path = element as SVGPathElement;
+    const point = path.getPointAtLength(path.getTotalLength() * 0.5);
+    const screen = new DOMPoint(point.x, point.y).matrixTransform(
+      path.getScreenCTM()!
+    );
+    return { x: screen.x, y: screen.y };
+  });
+  await page.mouse.move(point.x, point.y + 30);
+  await expect.poll(() => chart.getByRole('tooltip').isVisible()).toBe(true);
+  expect(await chart.getByRole('tooltip').getByRole('listitem').count()).toBe(
+    1
+  );
+  await expect
+    .poll(() => chart.locator('.recharts-active-dot circle').count())
+    .toBe(1);
+});
+
+test('filled areas suppress internal pointer outlines while preserving keyboard focus', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Inspection areas',
+    exact: true,
+  });
+  const plot = chart.getByRole('application');
+  await plot.click();
+  await expect.poll(() => chart.locator(':focus').count()).toBe(1);
+  expect(
+    await chart
+      .locator(':focus')
+      .evaluate(element => getComputedStyle(element).outlineStyle)
+  ).toBe('none');
+  await plot.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect
+    .poll(() =>
+      plot.evaluate(element => getComputedStyle(element).outlineStyle)
+    )
+    .toBe('solid');
+});
+
+test('line charts select the nearest series across empty plot space', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Inspection lines',
+    exact: true,
+  });
+  const curves = chart.locator('.recharts-line-curve');
+  await curves.first().scrollIntoViewIfNeeded();
+  for (const [index, offset, expected] of [
+    [0, -15, 'Purple'],
+    [1, 20, 'Green'],
+    [0, -15, 'Purple'],
+  ] as const) {
+    const point = await curves.nth(index).evaluate(element => {
+      const path = element as SVGPathElement;
+      const point = path.getPointAtLength(30);
+      const screen = new DOMPoint(point.x, point.y).matrixTransform(
+        path.getScreenCTM()!
+      );
+      return { x: screen.x, y: screen.y };
+    });
+    await page.mouse.move(point.x, point.y + offset);
+    await expect
+      .poll(() => chart.getByRole('tooltip').textContent())
+      .toContain(expected);
+    expect(await chart.getByRole('tooltip').getByRole('listitem').count()).toBe(
+      1
+    );
+    await expect
+      .poll(() => chart.locator('.recharts-active-dot circle').count())
+      .toBe(1);
+  }
+});
+
+test('tooltip stays anchored while moving vertically around the same point', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Inspection lines',
+    exact: true,
+  });
+  const curve = chart.locator('.recharts-line-curve').nth(1);
+  await curve.scrollIntoViewIfNeeded();
+  const point = await curve.evaluate(element => {
+    const path = element as SVGPathElement;
+    const point = path.getPointAtLength(70);
+    const screen = new DOMPoint(point.x, point.y).matrixTransform(
+      path.getScreenCTM()!
+    );
+    return { x: screen.x, y: screen.y };
+  });
+  await page.mouse.move(point.x, point.y + 10);
+  const tooltip = chart.getByRole('tooltip');
+  await expect.poll(() => tooltip.isVisible()).toBe(true);
+  const content = await tooltip.textContent();
+  const initial = await tooltip.boundingBox();
+  const dot = await chart.locator('.recharts-active-dot circle').boundingBox();
+  for (const offset of [20, 30, 15]) {
+    await page.mouse.move(point.x, point.y + offset);
+    expect(await tooltip.textContent()).toBe(content);
+    expect(await tooltip.boundingBox()).toEqual(initial);
+    expect(
+      await chart.locator('.recharts-active-dot circle').boundingBox()
+    ).toEqual(dot);
+  }
+  await page.mouse.move(point.x + 70, point.y + 10);
+  await expect.poll(() => tooltip.textContent()).not.toBe(content);
 });

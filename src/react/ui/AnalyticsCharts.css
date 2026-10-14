@@ -5,26 +5,30 @@
   font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
 }
-.altertable-funnel-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 24px;
-}
-.altertable-funnel-summary > div {
+.altertable-funnel-header {
   display: grid;
-  gap: 4px;
-  min-width: 0;
-  overflow-wrap: anywhere;
+  gap: var(--atbl-space-md);
+  padding-bottom: var(--atbl-space-lg);
 }
-.altertable-funnel-summary span {
+.altertable-funnel-summary-item {
+  display: grid;
+  gap: var(--atbl-space-xs);
+}
+.altertable-funnel-series-label {
+  display: flex;
+  align-items: center;
+  gap: var(--atbl-space-xs);
+  min-width: 0;
   color: var(--atbl-muted);
 }
-.altertable-funnel-summary .altertable-chart-legend-marker {
-  margin-right: 6px;
-}
-.altertable-funnel-summary strong {
+.altertable-funnel-series-value {
   font-size: var(--atbl-type-section-size);
   font-weight: var(--atbl-type-emphasis-weight);
+}
+.altertable-funnel-path {
+  margin: 0;
+  color: var(--atbl-muted);
+  overflow-wrap: anywhere;
 }
 .altertable-funnel-scroll,
 .altertable-journey-scroll {

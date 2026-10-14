@@ -109,6 +109,82 @@ createRoot(document.getElementById('root')!).render(
       Switch to dark theme
     </Button>
     <Grid columns={2} minItemWidth="wide">
+      <Example name="Hover defaults" description="Default chart inspection">
+        <ComposedChart
+          data={[
+            { label: 'One', green: 1234.56789, purple: 2400.12345 },
+            { label: 'Two', green: 1600.56789, purple: 2800.12345 },
+          ]}
+          ariaLabel="Hover bars"
+        >
+          <ComposedChart.XAxis dataKey="label" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Bar
+            dataKey="purple"
+            name="Purple"
+            fill="var(--atbl-chart-1)"
+          />
+          <ComposedChart.Bar
+            dataKey="green"
+            name="Green"
+            fill="var(--atbl-chart-3)"
+          />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+        <ComposedChart
+          data={[
+            { label: 'One', green: 1234.56789, purple: 2400.12345 },
+            { label: 'Two', green: 1600.56789, purple: 2800.12345 },
+          ]}
+          ariaLabel="Hover lines"
+        >
+          <ComposedChart.XAxis dataKey="label" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Line
+            dataKey="purple"
+            name="Purple"
+            stroke="var(--atbl-chart-1)"
+          />
+          <ComposedChart.Line
+            dataKey="green"
+            name="Green"
+            stroke="var(--atbl-chart-3)"
+          />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      </Example>
+      {['lines', 'areas', 'single line'].map(kind => {
+        const Series =
+          kind === 'areas' ? ComposedChart.Area : ComposedChart.Line;
+        return (
+          <Example
+            key={kind}
+            name={`Inspection ${kind}`}
+            description="Pointer inspection regression"
+          >
+            <ComposedChart
+              ariaLabel={`Inspection ${kind}`}
+              data={Array.from({ length: 12 }, (_, index) => ({
+                label: `Sample ${index + 1}`,
+                purple: 2400.12345 + index * 80,
+                green: 1200.56789 + index * 40,
+              }))}
+            >
+              <ComposedChart.XAxis dataKey="label" />
+              <ComposedChart.YAxis />
+              <ComposedChart.Tooltip />
+              <Series dataKey="purple" name="Purple" />
+              {kind !== 'single line' && (
+                <Series
+                  dataKey="green"
+                  name="Green"
+                  stroke="var(--atbl-chart-3)"
+                />
+              )}
+            </ComposedChart>
+          </Example>
+        );
+      })}
       {['Default stack', 'Rounded override', 'Unstacked bars'].map(name => (
         <Example key={name} name={name} description="Bar corner geometry">
           <ComposedChart
@@ -301,6 +377,24 @@ createRoot(document.getElementById('root')!).render(
             { id: 'free', label: 'Free plan', values: [1000, 600, 240] },
             { id: 'paid', label: 'Paid plan', values: [500, 400, 300] },
           ]}
+        />
+      </Example>
+      <Example
+        name="Funnel — many populations"
+        description="Long labels and expandable series summaries."
+      >
+        <FunnelChart
+          ariaLabel="Many populations funnel"
+          unit="users"
+          steps={[
+            { id: 'entry', label: 'Started onboarding' },
+            { id: 'end', label: 'Completed onboarding' },
+          ]}
+          series={Array.from({ length: 9 }, (_, index) => ({
+            id: `population-${index}`,
+            label: `Population ${index + 1} — users assigned to the extended calendar experiment in Europe`,
+            values: [1000 - index * 20, 250 - index * 10],
+          }))}
         />
       </Example>
       <Example

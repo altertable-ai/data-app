@@ -123,25 +123,30 @@ export function FunnelChart({
         <span>No data</span>
       ) : (
         <>
-          <div className="altertable-funnel-summary">
-            {series.map((item, index) => (
-              <div key={item.id}>
-                <span>
-                  <ChartLegend.Marker
-                    kind="square"
-                    color={`var(--atbl-chart-${(index % 8) + 1})`}
-                  />
-                  {item.label}
-                </span>
-                <strong>
-                  {formatPercent(reading(item, steps.length - 1).conversion)}
-                </strong>
-              </div>
-            ))}
+          <div className="altertable-funnel-header">
+            <ChartLegend aria-label="Funnel series" layout="single-row">
+              {series.map((item, index) => (
+                <ChartLegend.Item
+                  key={item.id}
+                  className="altertable-funnel-summary-item"
+                >
+                  <span className="altertable-funnel-series-label">
+                    <ChartLegend.Marker
+                      kind="square"
+                      color={`var(--atbl-chart-${(index % 8) + 1})`}
+                    />
+                    <ChartLegend.Label>{item.label}</ChartLegend.Label>
+                  </span>
+                  <strong className="altertable-funnel-series-value">
+                    {formatPercent(reading(item, steps.length - 1).conversion)}
+                  </strong>
+                </ChartLegend.Item>
+              ))}
+            </ChartLegend>
+            <p className="altertable-funnel-path">
+              {steps[0]!.label} → {steps.at(-1)!.label}
+            </p>
           </div>
-          <p className="altertable-analytics-note">
-            {steps[0]!.label} → {steps.at(-1)!.label}
-          </p>
           <div className="altertable-funnel-scroll">
             <div
               style={{
@@ -161,53 +166,34 @@ export function FunnelChart({
                 <ComposedChart.YAxis
                   domain={[0, 100]}
                   width={42}
-                  tickFormatter={value => `${value}%`}
+                  tickFormatter={value => formatPercent(value / 100)}
                 />
                 <defs>
                   {series.map((item, index) => (
-                    <Fragment key={item.id}>
-                      <linearGradient
-                        id={`${chartId}-gradient-${index}`}
+                    <pattern
+                      key={item.id}
+                      id={`${chartId}-hatch-${index}`}
+                      patternUnits="userSpaceOnUse"
+                      width="6"
+                      height="6"
+                      patternTransform="rotate(45)"
+                    >
+                      <rect
+                        width="8"
+                        height="8"
+                        fill={`var(--atbl-chart-${(index % 8) + 1})`}
+                        fillOpacity={0.16}
+                      />
+                      <line
                         x1="0"
+                        y1="0"
                         x2="0"
-                        y1="1"
-                        y2="0"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor={`var(--atbl-chart-${(index % 8) + 1})`}
-                          stopOpacity={0.5}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor={`var(--atbl-chart-${(index % 8) + 1})`}
-                          stopOpacity={0.7}
-                        />
-                      </linearGradient>
-                      <pattern
-                        id={`${chartId}-hatch-${index}`}
-                        patternUnits="userSpaceOnUse"
-                        width="6"
-                        height="6"
-                        patternTransform="rotate(45)"
-                      >
-                        <rect
-                          width="8"
-                          height="8"
-                          fill={`var(--atbl-chart-${(index % 8) + 1})`}
-                          fillOpacity={0.16}
-                        />
-                        <line
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="8"
-                          stroke={`var(--atbl-chart-${(index % 8) + 1})`}
-                          strokeOpacity={0.4}
-                          strokeWidth="2"
-                        />
-                      </pattern>
-                    </Fragment>
+                        y2="8"
+                        stroke={`var(--atbl-chart-${(index % 8) + 1})`}
+                        strokeOpacity={0.4}
+                        strokeWidth="2"
+                      />
+                    </pattern>
                   ))}
                 </defs>
                 {series.map((item, index) => (
@@ -216,7 +202,7 @@ export function FunnelChart({
                       dataKey={`conversion${index}`}
                       name={item.label}
                       stackId={item.id}
-                      fill={`url(#${chartId}-gradient-${index})`}
+                      fill={`var(--atbl-chart-${(index % 8) + 1})`}
                       radius={0}
                       maxBarSize={undefined}
                       activeBar={false}

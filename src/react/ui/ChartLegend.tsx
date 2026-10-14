@@ -1,6 +1,8 @@
 import {
   Children,
   useId,
+  useEffect,
+  useRef,
   useState,
   type ComponentPropsWithRef,
   type ReactNode,
@@ -10,9 +12,10 @@ import { chartBarFill } from '@/src/react/ui/chartColor';
 
 export type ChartLegendProps = {
   children: ReactNode;
-  layout?: 'horizontal' | 'vertical';
+  /** Single-row fits up to four cells before expansion, adapting to available width. */
+  layout?: 'horizontal' | 'vertical' | 'single-row';
   align?: 'start' | 'center' | 'end';
-  /** Maximum visible cells, including the expansion control; defaults to six. */
+  /** Optional cell cap, including expansion. Horizontal legends default to two rows. */
   maxVisibleItems?: number;
 } & Omit<ComponentPropsWithRef<'ul'>, 'children'>;
 
@@ -22,21 +25,49 @@ function ChartLegendRoot({
   children,
   layout = 'horizontal',
   align = 'start',
-  maxVisibleItems = 6,
+  maxVisibleItems,
   className,
   'aria-label': ariaLabel = 'Chart legend',
   ...props
 }: ChartLegendProps) {
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState(2);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    function measure() {
+      const list = containerRef.current?.firstElementChild;
+      if (list) {
+        setColumns(
+          getComputedStyle(list).gridTemplateColumns.split(' ').length
+        );
+      }
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+    measure();
+    return () => observer.disconnect();
+  }, [layout]);
   const items = Children.toArray(children);
-  const limit = Number.isFinite(maxVisibleItems)
-    ? Math.max(1, Math.floor(maxVisibleItems))
-    : 6;
+  const rowCapacity =
+    layout === 'vertical' ? 6 : columns * (layout === 'single-row' ? 1 : 2);
+  const configuredLimit =
+    typeof maxVisibleItems === 'number' && Number.isFinite(maxVisibleItems)
+      ? Math.max(1, Math.floor(maxVisibleItems))
+      : rowCapacity;
+  const cappedLimit = Math.min(configuredLimit, rowCapacity);
+  const limit =
+    layout === 'vertical'
+      ? configuredLimit
+      : cappedLimit >= columns
+        ? Math.floor(cappedLimit / columns) * columns
+        : cappedLimit;
   const visibleCount = items.length > limit ? limit - 1 : limit;
   const hiddenCount = Math.max(0, items.length - visibleCount);
   return (
-    <div className="altertable-chart-legend-container">
+    <div ref={containerRef} className="altertable-chart-legend-container">
       <ul
         id={listId}
         {...props}

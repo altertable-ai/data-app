@@ -32,7 +32,8 @@
     "examples/starter-local-data-app",
     "README.md",
     "CONTRIBUTING.md",
-    "AGENTS.md"
+    "AGENTS.md",
+    "THIRD_PARTY_NOTICES"
   ],
   "type": "module",
   "sideEffects": false,

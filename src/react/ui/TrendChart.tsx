@@ -1,3 +1,4 @@
+import { formatNumber } from '@/src/core/format';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useLayoutEffect, useRef, useState } from 'react';
 import {
@@ -20,7 +21,7 @@ export function TrendChart({
   items,
   unit,
   ariaLabel,
-  formatValue = value => new Intl.NumberFormat().format(value),
+  formatValue = formatNumber,
   area = false,
 }: ValueChartProps & { area?: boolean }) {
   validateChartItems(area ? 'area' : 'line', items);
@@ -59,7 +60,6 @@ export function TrendChart({
                     ...item,
                     plotValue: item.value / magnitude,
                   }))}
-                  title={ariaLabel}
                   responsive
                   width="100%"
                   height={220}
@@ -84,13 +84,17 @@ export function TrendChart({
                   )}
                   <ChartLine
                     dataKey="plotValue"
-                    dot={({ cx, cy, index }) => (
-                      <ChartDot
-                        cx={cx}
-                        cy={cy}
-                        active={index === activeIndex}
-                      />
-                    )}
+                    dot={({ cx, cy, index }) =>
+                      index === activeIndex ? (
+                        <ChartDot
+                          cx={cx}
+                          cy={cy}
+                          active={index === activeIndex}
+                        />
+                      ) : (
+                        <g />
+                      )
+                    }
                     activeDot={false}
                   />
                 </Plot>
