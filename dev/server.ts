@@ -1,3 +1,4 @@
+import { createReloadChannel } from '@/src/server/reload-channel';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
@@ -56,35 +57,20 @@ async function createBundleLoader(entry: string) {
 
 /** Pages reload when sources outside their own module graph change. */
 function createReloadHandler(paths: string[]) {
-  const sessionId = crypto.randomUUID();
-  const clients = new Set<ReadableStreamDefaultController<string>>();
+  const reload = createReloadChannel();
   let pending: ReturnType<typeof setTimeout> | undefined;
-  for (const path of paths)
+  const watchers = paths.map(path =>
     watch(new URL(path, import.meta.url).pathname, { recursive: true }, () => {
       clearTimeout(pending);
-      pending = setTimeout(() => {
-        for (const client of clients) client.enqueue('data: reload\n\n');
-      }, 100);
-    });
-
-  return (request: Request) =>
-    new Response(
-      new ReadableStream<string>({
-        start(client) {
-          clients.add(client);
-          client.enqueue(`event: ready\ndata: ${sessionId}\n\n`);
-          request.signal.addEventListener('abort', () =>
-            clients.delete(client)
-          );
-        },
-      }),
-      {
-        headers: {
-          'content-type': 'text/event-stream',
-          'cache-control': 'no-cache',
-        },
-      }
-    );
+      pending = setTimeout(() => reload.notify(), 100);
+    })
+  );
+  process.once('exit', () => {
+    clearTimeout(pending);
+    for (const watcher of watchers) watcher.close();
+    reload.close();
+  });
+  return reload.connect;
 }
 
 // Exercise the published single-file deployment without rebundling it.

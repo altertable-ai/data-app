@@ -1,24 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { BunPlugin } from 'bun';
 
 export const checkoutRoot = resolve(import.meta.dir, '..');
-
-/** Apps outside the checkout use its package build and its single React copy. */
-const checkoutDependencies: BunPlugin = {
-  name: 'data-app-checkout',
-  setup(build) {
-    build.onResolve(
-      { filter: /^(?:@altertable\/data-app|react|react-dom)(?:\/.*)?$/ },
-      args =>
-        args.importer.startsWith(`${checkoutRoot}/`)
-          ? undefined
-          : { path: Bun.resolveSync(args.path, checkoutRoot) }
-    );
-  },
-};
-
-export default checkoutDependencies;
 
 /** Accept the CLI's credential names and describe which lakehouse `localLakehouse()` will query. */
 export function previewLakehouseEnvironment(input = process.env) {

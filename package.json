@@ -69,6 +69,10 @@
       "types": "./dist/types/server/local.d.ts",
       "import": "./dist/local.js"
     },
+    "./server/bun/preview": {
+      "types": "./dist/types/server/preview/index.d.ts",
+      "import": "./dist/preview.js"
+    },
     "./react": {
       "types": "./dist/types/react/index.d.ts",
       "import": "./dist/react/index.js"

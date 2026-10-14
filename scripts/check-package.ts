@@ -182,14 +182,39 @@ export { DataAppBridge };
 `
   );
   await writeFile(
+    join(temporary, 'preview-app.tsx'),
+    "document.title = 'Packed preview';\n"
+  );
+  await writeFile(
     join(temporary, 'server.ts'),
     `import { defineDataApp } from "@altertable/data-app";
 import { createDataHandler } from "@altertable/data-app/server";
 import { localLakehouse } from "@altertable/data-app/server/bun";
+import { serveAppFile } from "@altertable/data-app/server/bun/preview";
+if (typeof serveAppFile !== "function") throw new Error("Preview export is unavailable");
 if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
 const app = defineDataApp({ title: "Server app", description: "Declare an app on the server.", scope: { organization: "demo", environment: "test" }, queries: {} });
 if (typeof app.defineOperation !== "function") throw new Error("App declaration is unavailable on the server");
+const preview = await serveAppFile({
+  file: new URL('./preview-app.tsx', import.meta.url).pathname,
+  dependenciesFrom: new URL('.', import.meta.url).pathname,
+  port: 0,
+  lakehouse: { async queryAll() { return { columns: [], rows: [] }; } },
+});
+try {
+  const page = await fetch(preview.url);
+  if (!page.ok || !(await page.text()).includes('<script>')) throw new Error('Packed preview host is unavailable');
+  const bundle = await fetch(new URL('/bundle.js', preview.url));
+  if (!bundle.ok || !(await bundle.text()).includes('Packed preview')) throw new Error('Packed preview bundle is unavailable');
+  const query = await fetch(new URL('/api/sql', preview.url), {
+    method: 'POST',
+    headers: { origin: preview.url.origin },
+    body: JSON.stringify({ statement: 'SELECT 1', limit: 1 }),
+  });
+  if (!query.ok) throw new Error('Packed preview SQL is unavailable');
+  await query.json();
+} finally { await preview.stop(); }
 `
   );
   await writeFile(
@@ -337,6 +362,22 @@ export { Grid };
     throw new Error('Tree-shaking removed the used Grid component.');
   if (/data-altertable-styles|\.altertable-grid/.test(shakenSource))
     throw new Error('Tree-shaking retained unused style injection.');
+  for (const source of [...javascript, hostSource, bootstrapSource]) {
+    if (
+      /\bBun\.(?:serve|build|spawn)|node:fs|serveAppFile|DATA_APP_PREVIEW_HTML|data-app-preview-dependencies/.test(
+        source
+      )
+    )
+      throw new Error('Bun preview runtime leaked into a browser entry.');
+  }
+  for (const dependency of ['bun', 'get-tsconfig'])
+    if (
+      Object.hasOwn(manifest.dependencies, dependency) ||
+      Object.hasOwn(manifest.peerDependencies, dependency)
+    )
+      throw new Error(
+        `Browser consumers must not install ${dependency} as a dependency.`
+      );
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
   await writeFile(

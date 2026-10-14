@@ -1,18 +1,19 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DataAppBridge } from '@altertable/data-app/react/embed';
+import { downloadBlob } from '@/src/client/download';
+import { DataAppBridge } from '@/src/react/embed';
 import {
   DataSourceError,
   createMessageRouter,
   defineMessageRoute,
   navigationUpdateRoute,
   sqlQueryRoute,
-} from '@altertable/data-app/contract';
+} from '@/src/core/contract';
 import {
   createNavigationHandler,
   createSqlQueryHandler,
   type DataAppStatus,
-} from '@altertable/data-app/embed';
+} from '@/src/embed';
 
 const fileExportRoute = defineMessageRoute({
   input(value: unknown): { filename: string; blob: Blob } {
@@ -28,14 +29,7 @@ const fileExportRoute = defineMessageRoute({
 });
 
 function download({ filename, blob }: { filename: string; blob: Blob }) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadBlob({ filename, blob });
   return null;
 }
 
@@ -101,8 +95,12 @@ function DevFileHost() {
     const events = new EventSource('/reload');
     // A new session means the dev server restarted, possibly with a new host page.
     events.addEventListener('ready', event => {
-      if (session && session !== event.data) location.reload();
+      if (session && session !== event.data) {
+        location.reload();
+        return;
+      }
       session = event.data;
+      void refresh();
     });
     events.onmessage = () => void refresh();
     void refresh();
@@ -118,7 +116,7 @@ function DevFileHost() {
   return (
     <>
       {status === 'failed' && (
-        <p className="dev-file-error">
+        <p className="dev-file-error dev-file-runtime-error" role="alert">
           The data app failed to start. Check the browser console.
         </p>
       )}

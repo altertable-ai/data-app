@@ -83,10 +83,34 @@ const worker = await Bun.build({
   },
 });
 
+const previewHost = await Bun.build({
+  entrypoints: ['src/server/preview/host.tsx'],
+  target: 'browser',
+  format: 'iife',
+  minify: true,
+  jsx: { runtime: 'automatic', development: false },
+  define: {
+    DATA_APP_BOOTSTRAP: JSON.stringify(bootstrapScript),
+    'process.env.NODE_ENV': '"production"',
+  },
+});
+if (!previewHost.success) throw new Error('Could not build preview host.');
+const previewHostScript = (await previewHost.outputs[0]!.text()).replace(
+  /<\/script/gi,
+  '<\\/script'
+);
+const previewHtml = (
+  await Bun.file('src/server/preview/host.html').text()
+).replace(
+  '<script type="module" src="./host.tsx"></script>',
+  () => `<script>${previewHostScript}</script>`
+);
+
 const results = [browser, worker];
 for (const [name, entry] of Object.entries({
   server: 'src/server/index.ts',
   local: 'src/server/local.ts',
+  preview: 'src/server/preview/index.ts',
 })) {
   results.push(
     await Bun.build({
@@ -95,6 +119,7 @@ for (const [name, entry] of Object.entries({
       target: 'bun',
       format: 'esm',
       external,
+      define: { DATA_APP_PREVIEW_HTML: JSON.stringify(previewHtml) },
       naming: `${name}.[ext]`,
       sourcemap: 'external',
     })
