@@ -291,6 +291,7 @@ export function explorationVariable<
     dimensions,
     urlKeys: [key],
     defaultValue,
+    clearValue: defaultValue,
     history: 'push',
     parse,
     visibleLevels,

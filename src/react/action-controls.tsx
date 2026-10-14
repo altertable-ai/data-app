@@ -4,9 +4,6 @@ import { invariant } from '@/src/core/invariant';
 import type { ExplorationActions } from '@/src/react/actions';
 import { useDetailOpener } from '@/src/react/details';
 import { searchParams, subscribeSearch } from '@/src/react/ui/search';
-import { ExplorationBreadcrumbs } from '@/src/react/ui/ExplorationBreadcrumbs';
-import type { ExplorationState } from '@/src/core/exploration';
-import type { ExplorationTarget } from '@/src/react/actions';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import {
@@ -18,10 +15,6 @@ import {
 } from '@/src/react/ui/Menu';
 
 export type BoundExplorationActions<Row> = {
-  exploration?: {
-    target: ExplorationTarget<any>;
-    state: ExplorationState<any>;
-  };
   items: (row: Row) => readonly { id: string; label: string }[];
   primary: (row: Row) => { id: string; label: string } | undefined;
   run: (id: string, row: Row, trigger?: HTMLElement) => void;
@@ -44,8 +37,6 @@ export function useExplorationActions<Row, Input>(
   );
   if (!actions || source.loading) return undefined;
   const input = source.input;
-  const target = actions.entries.find(entry => entry.effect.exploration)?.effect
-    .exploration;
   function items(row: Row) {
     return actions!.entries
       .filter(entry => entry.effect.available(row, input))
@@ -59,10 +50,6 @@ export function useExplorationActions<Row, Input>(
       });
   }
   return {
-    exploration: target && {
-      target,
-      state: target.variable.parse(target.read(input)),
-    },
     items,
     primary(row) {
       const available = items(row);
@@ -94,7 +81,11 @@ export function useExplorationActions<Row, Input>(
             const navigation =
               owner?.querySelector<HTMLElement>(
                 '[data-exploration-navigation]'
-              ) ?? document.getElementById(request.navigation!);
+              ) ??
+              document.getElementById(request.navigation!) ??
+              document.querySelector<HTMLElement>(
+                '[data-view-filters-trigger]'
+              );
             navigation?.focus({ preventScroll: true });
           });
       }
@@ -153,22 +144,5 @@ export function ExplorationActionControl<Row>({
       )}
       {menu}
     </>
-  );
-}
-
-/** Displayed hierarchy and recovery travel with the widget and its inspection. */
-export function ExplorationNavigation<Row>({
-  actions,
-}: {
-  actions?: BoundExplorationActions<Row>;
-}) {
-  const exploration = actions?.exploration;
-  if (!exploration) return null;
-  return (
-    <ExplorationBreadcrumbs
-      target={exploration.target}
-      value={exploration.state}
-      local
-    />
   );
 }

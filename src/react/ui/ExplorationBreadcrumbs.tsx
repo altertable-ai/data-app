@@ -1,35 +1,28 @@
 import { useRef } from 'react';
+import { Button } from '@/src/react/ui/Button';
 import { useQueries } from '@tanstack/react-query';
 import type { ExplorationState } from '@/src/core/exploration';
 import {
   parseFacetOptions,
   type DimensionSelection,
+  type DimensionOption,
 } from '@/src/core/dimension';
 import type { ExplorationTarget } from '@/src/react/actions';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
 import { searchParams } from '@/src/react/ui/search';
 import { writeVariableValues } from '@/src/react/ui/variables';
 
-/** One hierarchy, rendered from applied input at page level and displayed input in widgets. */
-export function ExplorationBreadcrumbs({
-  target,
-  id,
-  value,
-  local = false,
-}: {
+type ExplorationControls = {
   target: Pick<
     ExplorationTarget<any>,
     'variable' | 'clientScope' | 'loadFacet'
   >;
-  id?: string;
   value: ExplorationState<any>;
-  local?: boolean;
-}) {
-  const navigation = useRef<HTMLElement>(null);
+};
+
+function useExplorationFacets({ target, value }: ExplorationControls) {
   const { variable } = target;
   const state = variable.parse(value);
-  const stale = local && !variable.same(state, variable.read(searchParams()));
-  const group = variable.levels.findIndex(level => level.id === state.groupBy);
   const shown: typeof variable.levels = variable.visibleLevels(state);
   const facets = useQueries({
     queries: shown.map((level, position) => {
@@ -62,6 +55,57 @@ export function ExplorationBreadcrumbs({
       };
     }),
   });
+  return { state, shown, facets };
+}
+
+/** Selected hierarchy members share the selectors' facet cache and labels. */
+export function ExplorationFilterSummary({
+  target,
+  value,
+  onEdit,
+}: ExplorationControls & { onEdit: () => void }) {
+  const { state, shown, facets } = useExplorationFacets({ target, value });
+  return shown.map((level, position) => {
+    const selection = state.selection[level.id]!;
+    const member = selection.kind === 'all' ? undefined : selection.members[0];
+    if (member?.kind !== 'value') return null;
+    const options: readonly DimensionOption[] =
+      facets[position]!.data ?? level.options ?? [];
+    const label =
+      options.find(option => option.value === member.value)?.label ??
+      String(member.value);
+    return (
+      <Button
+        key={level.id}
+        variant="ghost"
+        onClick={onEdit}
+        aria-label={`Edit ${level.label}: ${label}`}
+      >
+        <span className="altertable-filter-summary-label">{level.label}</span>{' '}
+        {label}
+      </Button>
+    );
+  });
+}
+
+/** Progressive hierarchy selectors, owned by the view's filters sheet. */
+export function ExplorationBreadcrumbs({
+  target,
+  id,
+  value,
+}: {
+  target: Pick<
+    ExplorationTarget<any>,
+    'variable' | 'clientScope' | 'loadFacet'
+  >;
+  id?: string;
+  value: ExplorationState<any>;
+}) {
+  const navigation = useRef<HTMLElement>(null);
+  const { variable } = target;
+  const state = variable.parse(value);
+  const group = variable.levels.findIndex(level => level.id === state.groupBy);
+  const { shown, facets } = useExplorationFacets({ target, value });
   function commit(next: ExplorationState<any>, focus = false) {
     writeVariableValues(
       { exploration: variable },
@@ -79,8 +123,7 @@ export function ExplorationBreadcrumbs({
       id={id}
       tabIndex={-1}
       className="altertable-exploration-breadcrumbs"
-      aria-label={`${variable.label} ${local ? 'breakdown' : 'exploration'}`}
-      data-exploration-navigation={local || undefined}
+      aria-label={`${variable.label} exploration`}
     >
       <ol>
         {shown.map((level, position) => {
@@ -115,7 +158,6 @@ export function ExplorationBreadcrumbs({
               <DimensionPicker
                 filter={dimension}
                 variant="ghost"
-                disabled={stale}
                 value={state.selection[level.id] as DimensionSelection}
                 options={facet.data ?? options ?? dimension.options}
                 loading={!!level.facet && facet.isPending}

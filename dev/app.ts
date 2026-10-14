@@ -87,6 +87,21 @@ ORDER BY o.ordered_at DESC, o.id DESC LIMIT 100`,
         customerId: { defaultValue: null },
       },
     },
+    ordersInScope: {
+      statement: `
+SELECT o.id, c.name AS customer, c.country, CAST(o.ordered_at AS DATE) AS day,
+  o.status, o.campaign, CAST(o.amount AS DOUBLE) AS amount, count(*) OVER () AS total_count
+FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
+WHERE o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY AND ($country IS NULL OR c.country = $country) AND ($region IS NULL OR CASE WHEN c.country = 'US' THEN 'North America' ELSE 'Europe' END = $region) AND ($customerId IS NULL OR c.id = $customerId)
+ORDER BY o.ordered_at DESC, o.id DESC`,
+      params: {
+        start: {},
+        end: {},
+        country: { defaultValue: null },
+        region: { defaultValue: null },
+        customerId: { defaultValue: null },
+      },
+    },
     items: {
       statement: `
 WITH recent AS (SELECT o.id, c.name AS customer, c.country, CAST(o.ordered_at AS DATE) AS day,

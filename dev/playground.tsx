@@ -394,24 +394,38 @@ const viewOrder = ordersDataset.actions(action => ({
 const scopeOrdersView = defineDetailView({
   id: 'scope-orders',
   title: 'Orders in this scope',
-  operation: 'orderOverview',
+  operation: 'ordersInScope',
   dataContext: orderDataContext,
-  parseInput: operations.orderOverview.input,
+  parseInput: operations.ordersInScope.input,
   describeInput: describeScope,
-  isEmpty: data => summarizeOrders(data).orderCount === 0,
+  isEmpty: data => data.orders.length === 0,
   emptyFallback: { title: 'No orders in this scope' },
 });
-const scopedOrders = scopeOrdersView.dataset({
+const scopedOrders = scopeOrdersView.dataset<Order>({
   ...orderDefinition,
+  select: data => data.orders,
+  evidence: {
+    id: 'scoped-orders',
+    queryNames: [queryNames.ordersInScope],
+    glossaryIds: ['orders'],
+  },
   name: 'Orders in this scope',
 });
 const scopeOrdersContent = scopeOrdersView.content(source => (
   <TableWidget
     dataset={scopedOrders}
     source={source}
-    description="Latest 100 orders across all statuses. Paid orders contribute to paid revenue; pending and refunded orders are identified separately."
+    description="All matching orders across all statuses, newest first."
+    pagination={{ pageSize: 25 }}
   />
 ));
+const viewContributingOrders = orderCountMetric.actions(action => ({
+  orders: action.detail({
+    label: 'View orders',
+    target: scopeOrdersView,
+    input: (_, input) => input,
+  }),
+}));
 const geographicActions = geographicDataset.actions(action => ({
   orders: action.detail({
     label: 'View orders',
@@ -470,6 +484,7 @@ function OrderResults({ result }: { result: OrderSource }) {
         <MetricWidget
           metric={orderCountMetric}
           source={result}
+          actions={viewContributingOrders}
           description="Orders placed in any status."
         />
         <MetricWidget

@@ -106,47 +106,52 @@
   width: min(360px, 100vw);
 }
 
-.altertable-active-filters {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--atbl-space-xs);
+.altertable-filter-summary {
   margin: 0;
-  padding: 0;
-  border: 0;
   min-width: 0;
-}
-.altertable-active-filter {
-  display: inline-flex;
+  position: fixed;
+  inset-block-end: max(var(--atbl-space-md), env(safe-area-inset-bottom));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
   align-items: center;
-  max-width: min(100%, 22rem);
-  min-width: 0;
+  gap: var(--atbl-space-sm);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--atbl-space-md));
+  box-sizing: border-box;
+  padding: var(--atbl-space-xs) var(--atbl-space-sm);
   border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-control);
+  border-radius: var(--atbl-radius-overlay);
   background: var(--atbl-surface);
-  --atbl-control-height: 2rem;
-  --atbl-control-padding-block: var(--atbl-space-xs);
-  --atbl-control-padding-inline: var(--atbl-space-sm);
-  --atbl-type-label-size: var(--atbl-type-meta-size);
-  --atbl-control-text-size: var(--atbl-type-meta-size);
+  box-shadow: var(--atbl-shadow-overlay);
 }
-.altertable-active-filter > :first-child {
+.altertable-filter-summary-items {
+  display: flex;
   min-width: 0;
-  flex: 1;
+  overflow-x: auto;
+  gap: var(--atbl-space-xs);
 }
-.altertable-active-filter
-  :is(
-    .altertable-picker-trigger,
-    .altertable-select-trigger,
-    .altertable-date-range .react-aria-Group
-  ) {
-  border: 0;
-  border-start-end-radius: 0;
-  border-end-end-radius: 0;
-  background: transparent;
+.altertable-filter-summary-items > * {
+  flex-shrink: 0;
+  max-inline-size: none;
+  white-space: nowrap;
 }
-.altertable-active-filter-clear {
-  border: 0;
-  border-start-start-radius: 0;
-  border-end-start-radius: 0;
+.altertable-filter-summary > button {
+  flex-shrink: 0;
+}
+.altertable-filter-summary-label {
+  color: var(--atbl-muted);
+}
+.altertable-filter-sheet .altertable-exploration-breadcrumbs ol {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--atbl-space-sm);
+}
+.altertable-filter-sheet .altertable-exploration-separator {
+  display: none;
+}
+
+.altertable-app-main:has(.altertable-filter-summary) {
+  padding-block-end: calc(6rem + env(safe-area-inset-bottom));
 }

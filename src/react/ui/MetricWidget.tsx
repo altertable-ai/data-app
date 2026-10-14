@@ -1,3 +1,5 @@
+import { Button } from '@/src/react/ui/Button';
+import type { DataWidgetProps } from '@/src/react/ui/DataWidget';
 import { useDateFormatting } from '@/src/react/date-formatting';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
@@ -23,6 +25,7 @@ type MetricWidgetBaseProps = {
   comparison?: MetricComparison;
   evidence?: WidgetEvidence;
   action?: ReactNode;
+  primaryAction?: DataWidgetProps['primaryAction'];
   status?: WidgetStatus;
   visual?: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'about' | 'children'>;
@@ -91,6 +94,7 @@ function MetricWidgetContent({
   comparison,
   evidence,
   action,
+  primaryAction,
   status,
   visual,
   className,
@@ -105,10 +109,12 @@ function MetricWidgetContent({
       evidence={evidence}
       aria-busy={loading || props['aria-busy']}
       action={action}
+      primaryAction={primaryAction}
       status={status}
       visual={
         <MetricVisual
           loading={loading}
+          primaryAction={primaryAction}
           value={value}
           content={content}
           format={format}
@@ -123,6 +129,7 @@ function MetricWidgetContent({
 
 function MetricVisual({
   loading,
+  primaryAction,
   value,
   content,
   format,
@@ -131,6 +138,7 @@ function MetricVisual({
   visual,
 }: {
   loading: boolean;
+  primaryAction?: DataWidgetProps['primaryAction'];
   value?: number;
   content?: ReactNode;
   format?: MetricFormat;
@@ -160,6 +168,15 @@ function MetricVisual({
       >
         {loading ? (
           <Skeleton className="altertable-metric-loading-value" />
+        ) : primaryAction ? (
+          <Button
+            variant="ghost"
+            className="altertable-metric-value-action"
+            aria-label={`${primaryAction.label} details`}
+            onClick={event => primaryAction.run(event.currentTarget)}
+          >
+            {shownValue}
+          </Button>
         ) : (
           shownValue
         )}

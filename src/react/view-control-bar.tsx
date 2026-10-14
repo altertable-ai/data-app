@@ -1,8 +1,8 @@
+import { GradientScroll } from '@/src/react/ui/GradientScroll';
 import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   Children,
   useId,
-  useCallback,
   useRef,
   useState,
   type ComponentRef,
@@ -11,21 +11,13 @@ import {
 import { Dialog, DialogTrigger } from 'react-aria-components';
 import { Button, PressButton } from '@/src/react/ui/Button';
 import { AppIcon } from '@/src/react/ui/icons';
-import { FilterActions } from '@/src/react/ui/FilterActions';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
-export type ActiveFilterControl = {
-  id: string;
-  label: string;
-  renderControl: (onDeactivate: () => void) => ReactNode;
-  onClear?: () => void;
-};
-
 export function ViewControlBar({
   primaryFilters,
-  activeSecondaryFilters,
+  filterSummaries,
   allFilters,
   activeFilterCount,
   displayOptions,
@@ -34,7 +26,7 @@ export function ViewControlBar({
 }: {
   primaryFilters: ReactNode[];
   allFilters: ReactNode[];
-  activeSecondaryFilters: ActiveFilterControl[];
+  filterSummaries: ((onEdit: () => void) => ReactNode)[];
   activeFilterCount: number;
   displayOptions: ReactNode[];
   changedDisplayOptionCount: number;
@@ -43,14 +35,17 @@ export function ViewControlBar({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersId = useId();
   const filtersButtonRef = useRef<ComponentRef<'button'>>(null);
-  const focusFilters = useCallback(() => {
-    requestAnimationFrame(() => filtersButtonRef.current?.focus());
-  }, []);
+  const returnFocus = useRef<HTMLButtonElement>(null);
+  function openFilters(trigger: HTMLButtonElement) {
+    returnFocus.current = trigger;
+    setFiltersOpen(true);
+  }
   const filtersButtonLabel = activeFilterCount
     ? `Filters (${activeFilterCount} active)`
     : 'Filters';
 
   function clearFilters() {
+    returnFocus.current = filtersButtonRef.current;
     onClear?.();
     setFiltersOpen(false);
     filtersButtonRef.current?.focus();
@@ -66,12 +61,13 @@ export function ViewControlBar({
           {allFilters.length > 0 && (
             <Button
               ref={filtersButtonRef}
+              data-view-filters-trigger
               aria-label={filtersButtonLabel}
               aria-haspopup="dialog"
               aria-expanded={filtersOpen}
               aria-controls={filtersId}
               data-open={filtersOpen}
-              onClick={() => setFiltersOpen(true)}
+              onClick={event => openFilters(event.currentTarget)}
             >
               <AppIcon name="filters" />
               Filters
@@ -83,34 +79,40 @@ export function ViewControlBar({
             </Button>
           )}
           {primaryFilters}
-          {onClear && <FilterActions onClear={clearFilters} />}
         </div>
         {displayOptions.length > 0 && (
           <DisplayOptionsPopover changedCount={changedDisplayOptionCount}>
             {displayOptions}
           </DisplayOptionsPopover>
         )}
-        {activeSecondaryFilters.length > 0 && (
-          <fieldset
-            className="altertable-active-filters"
-            aria-label="Active filters"
-          >
-            {activeSecondaryFilters.map(filter => (
-              <ActiveFilter
-                key={filter.id}
-                filter={filter}
-                onDeactivate={focusFilters}
-              />
-            ))}
-          </fieldset>
-        )}
       </VariableBar>
+      {filterSummaries.length > 0 && (
+        <fieldset
+          className="altertable-filter-summary"
+          aria-label="Active filters"
+          onClickCapture={event => {
+            if (event.target instanceof Element)
+              returnFocus.current = event.target.closest('button');
+          }}
+        >
+          <AppIcon name="filters" />
+          <GradientScroll
+            axis="horizontal"
+            className="altertable-filter-summary-items"
+          >
+            {filterSummaries.map(render => render(() => setFiltersOpen(true)))}
+          </GradientScroll>
+          <Button variant="ghost" disabled={!onClear} onClick={clearFilters}>
+            Clear filters
+          </Button>
+        </fieldset>
+      )}
       {allFilters.length > 0 && (
         <Sheet
           id={filtersId}
           open={filtersOpen}
           onOpenChange={setFiltersOpen}
-          returnFocus={filtersButtonRef}
+          returnFocus={returnFocus}
           title="Filters"
           side="left"
           className="altertable-filter-sheet"
@@ -141,36 +143,6 @@ export function ViewControlBar({
         </Sheet>
       )}
     </>
-  );
-}
-
-function ActiveFilter({
-  filter,
-  onDeactivate,
-}: {
-  filter: ActiveFilterControl;
-  onDeactivate: () => void;
-}) {
-  return (
-    <div className="altertable-active-filter">
-      {filter.renderControl(onDeactivate)}
-      {filter.onClear && (
-        <Tooltip content={`Clear ${filter.label}`}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="altertable-active-filter-clear"
-            aria-label={`Clear ${filter.label}`}
-            onClick={() => {
-              filter.onClear?.();
-              onDeactivate();
-            }}
-          >
-            <AppIcon name="close" size={14} />
-          </Button>
-        </Tooltip>
-      )}
-    </div>
   );
 }
 

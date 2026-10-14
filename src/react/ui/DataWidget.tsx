@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import { formatCount } from '@/src/core/format';
+import { Button } from '@/src/react/ui/Button';
 import { AboutData } from '@/src/react/ui/AboutData';
 import { AppIcon } from '@/src/react/ui/icons';
 import {
@@ -32,6 +33,8 @@ type DataWidgetBaseProps = {
   description?: ReactNode;
   evidence?: WidgetEvidence;
   action?: ReactNode;
+  /** Primary investigation replaces the heading's default inspection action. */
+  primaryAction?: { label: string; run: (trigger: HTMLButtonElement) => void };
   /** Reserved feedback slot; retain displayed content while refreshing or after failure. */
   status?: WidgetStatus;
   footer?: ReactNode;
@@ -90,6 +93,7 @@ function DataWidgetContent({
   description,
   evidence,
   action,
+  primaryAction,
   status,
   footer,
   navigation,
@@ -127,7 +131,9 @@ function DataWidgetContent({
           queryNames: evidence.queryNames,
         }}
         aria-label={
-          typeof title === 'string' ? `Explore ${title}` : 'Explore this widget'
+          typeof title === 'string'
+            ? `${primaryAction ? 'About' : 'Explore'} ${title}`
+            : 'Explore this widget'
         }
         variant="ghost"
         className="altertable-widget-heading-trigger"
@@ -138,13 +144,15 @@ function DataWidgetContent({
         visual={visual}
         visualKind="widget"
       >
-        <span className="altertable-widget-heading-label">{title}</span>
-        {count !== undefined && (
+        <span className="altertable-widget-heading-label">
+          {primaryAction ? <AppIcon name="info" /> : title}
+        </span>
+        {!primaryAction && count !== undefined && (
           <span className="altertable-data-widget-count">
             {formatCount(count)}
           </span>
         )}
-        <AppIcon name="openDetails" size="1em" />
+        {!primaryAction && <AppIcon name="openDetails" size="1em" />}
       </AboutData>
     ) : undefined;
 
@@ -170,8 +178,20 @@ function DataWidgetContent({
             className="altertable-widget-heading"
             aria-label={typeof title === 'string' ? title : undefined}
           >
-            {help ?? title}
-            {!help && count !== undefined && (
+            {primaryAction && !busy ? (
+              <Button
+                variant="ghost"
+                className="altertable-widget-heading-trigger"
+                aria-label={primaryAction.label}
+                onClick={event => primaryAction.run(event.currentTarget)}
+              >
+                <span className="altertable-widget-heading-label">{title}</span>
+                <AppIcon name="openDetails" size="1em" />
+              </Button>
+            ) : (
+              (help ?? title)
+            )}
+            {(!help || primaryAction) && count !== undefined && (
               <span className="altertable-data-widget-count">
                 {formatCount(count)}
               </span>
@@ -181,6 +201,7 @@ function DataWidgetContent({
         </div>
         <div className="altertable-data-widget-help">
           <WidgetStatusControl status={status} />
+          {primaryAction && help}
           {action}
         </div>
       </header>

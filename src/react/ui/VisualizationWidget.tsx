@@ -13,6 +13,7 @@ type VisualizationWidgetBaseProps = Pick<
   | 'description'
   | 'count'
   | 'action'
+  | 'primaryAction'
   | 'navigation'
   | 'evidence'
   | 'status'

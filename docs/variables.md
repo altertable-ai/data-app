@@ -82,7 +82,7 @@ suppress autocomplete for a particular app.
 
 Declare controls in priority order for the user's task. Keep useful scope filters
 visible and set `presentation.prominence: 'secondary'` for less frequent ones in
-the Filters sheet. Active secondary filters remain available for direct editing.
+the Filters sheet. A floating bar summarizes active filters; each summary opens the Filters sheet.
 Choose useful defaults rather than exposing every field; declare each label once.
 
 Set `presentation.group: 'display'` for ordering or presentation choices. These
@@ -392,15 +392,16 @@ for the complete source, parser, and operation declarations.
 | Choose Group by in an ancestor dropdown | Group by that level and clear deeper selections.         |
 | Select All at the root                  | Reset exploration.                                       |
 
-`<DataApp>` renders exploration separately from ordinary filters. Relevant
-widgets and inspection reuse the same selectors. Each segment opens one
-dropdown for its label and value. An ancestor dropdown also offers Group by
-to return to that grouping. Each transition creates one history entry and
-preserves unrelated variables. Clear filters affects ordinary scope; reset
-exploration with its root selector.
+`<DataApp>` includes progressive hierarchy selectors in the Filters sheet.
+Each level opens one dropdown for its label and value. An ancestor dropdown
+also offers Group by to return to that grouping. The floating active-filter bar
+summarizes selected members using their facet labels. Clicking a summary opens
+the sheet. Widgets do not repeat hierarchy selectors. Each transition creates
+one history entry and preserves unrelated variables. Clear filters clears ordinary
+predicates and resets hierarchy selections and grouping, preserving dates, search,
+and display settings.
 
 Use `action.filter()` and `action.descend()` with the bound exploration target;
 see [widget actions](widgets.md#explore-from-widgets). Hierarchy row actions wait
-until displayed and applied exploration agree. Page controls show applied state;
-widgets keep displayed context during refreshes. Derive queries, titles, scope,
+until displayed and applied exploration agree. The filter bar and sheet show applied state; widgets keep displayed context during refreshes. Derive queries, titles, scope,
 CSV, and stories from the same displayed input.

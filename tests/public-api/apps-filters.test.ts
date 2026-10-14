@@ -91,7 +91,10 @@ test('presentation groups disclose secondary restrictions and preserve them acro
       .getByRole('button', { name: 'Filters (2 active)', exact: true })
       .count()
   ).toBe(1);
-  await scope.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
   await expect.poll(() => table.getByRole('row').count()).toBe(9);
   expect(
     await scope.getByRole('button', { name: 'Filters', exact: true }).count()
@@ -172,7 +175,10 @@ test('presentation groups disclose secondary restrictions and preserve them acro
     heading!.y + heading!.height / 2
   );
   await expect.poll(() => display.count()).toBe(0);
-  await scope.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
   expect(new URL(page.url()).searchParams.get('direction')).toBe('asc');
 });
 
@@ -419,7 +425,10 @@ test('automatic filters retain separate search controls and URL state', async ({
   await expect
     .poll(async () => decode(await displayed.textContent()).choice)
     .toBe('b');
-  await filters.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
   await expect
     .poll(async () => decode(await displayed.textContent()).search)
     .toBe('France');
@@ -469,7 +478,10 @@ test('hiding search preserves its URL value and leaves filters available', async
     .poll(async () => decode(await displayed.textContent()).choice)
     .toBe('b');
   expect(new URL(page.url()).searchParams.get('q')).toBe('France');
-  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
   await expect
     .poll(async () => decode(await displayed.textContent()).search)
     .toBe('France');
@@ -659,7 +671,7 @@ test('generated filters apply typed predicates and clear restrictions atomically
     exact: true,
   });
   const clear = page.getByRole('button', {
-    name: 'Clear',
+    name: 'Clear filters',
     exact: true,
   });
   const height = await countryButton.evaluate(
@@ -671,7 +683,7 @@ test('generated filters apply typed predicates and clear restrictions atomically
   expect(
     await page.getByRole('button', { name: 'Reset filters' }).count()
   ).toBe(0);
-  expect(await clear.textContent()).toBe('Clear');
+  expect(await clear.textContent()).toBe('Clear filters');
   expect(await clear.locator('svg').count()).toBe(0);
   const selectedURL = page.url();
   expect(
@@ -682,7 +694,10 @@ test('generated filters apply typed predicates and clear restrictions atomically
   expect(await page.getByRole('list', { name: 'Active filters' }).count()).toBe(
     0
   );
-  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
   await expect
     .poll(async () => decode(await displayed.textContent()))
     .toMatchObject({
@@ -715,7 +730,10 @@ test('generated filters apply typed predicates and clear restrictions atomically
   await expect
     .poll(async () => decode(await displayed.textContent()).amount)
     .toEqual({ kind: 'range', min: 10 });
-  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
   await page.getByRole('button', { name: 'Amount: Any', exact: true }).click();
   await choose(page, panel, 'Condition', 'Equals');
   await panel.getByRole('button', { name: 'Apply', exact: true }).click();
@@ -965,12 +983,6 @@ test('filter actions stay balanced with long selections and Show results preserv
     const inputBox = await filtersButton.boundingBox();
     const displayBox = await display.boundingBox();
     expect(Math.abs(inputBox!.y - displayBox!.y)).toBeLessThan(1);
-    if (width === 736) {
-      const clearBox = await controls
-        .getByRole('button', { name: 'Clear', exact: true })
-        .boundingBox();
-      expect(Math.abs(inputBox!.y - clearBox!.y)).toBeLessThan(1);
-    }
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth
@@ -1001,7 +1013,10 @@ test('filter actions stay balanced with long selections and Show results preserv
   await show.click();
   await expect.poll(() => sheet.count()).toBe(0);
   expect(page.url()).toBe(selectedURL);
-  await controls.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('group', { name: 'Active filters', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
   await controls.getByRole('button', { name: /^Filters(?: \(|$)/ }).click();
   expect(await clear.isDisabled()).toBe(true);
   expect(await show.isEnabled()).toBe(true);
@@ -1046,7 +1061,7 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
   ).toBe(1);
   expect(
     await page
-      .getByRole('button', { name: 'No Active account', exact: true })
+      .getByRole('button', { name: 'Edit Active account: No', exact: true })
       .count()
   ).toBe(1);
   await controls
@@ -1151,7 +1166,7 @@ test('left filter sheet clears predicates while preserving search and display se
   ).toBe(0);
 });
 
-test('compact secondary filters edit directly and clear only their restriction', async ({
+test('active summaries open the shared sheet and clear predicates while preserving search and display', async ({
   page,
 }) => {
   await page.goto(
@@ -1161,31 +1176,20 @@ test('compact secondary filters edit directly and clear only their restriction',
     name: 'Active filters',
     exact: true,
   });
-  const edit = summaries.getByRole('button', {
-    name: 'No Active account',
-    exact: true,
-  });
-  await expect.poll(() => edit.isVisible()).toBe(true);
-  const triggerBox = await edit.boundingBox();
-  const labelBox = await edit
-    .getByText('Active account', { exact: true })
-    .boundingBox();
-  expect(triggerBox).not.toBeNull();
-  expect(labelBox).not.toBeNull();
-  expect(labelBox!.x).toBeGreaterThan(triggerBox!.x + 4);
-  expect(labelBox!.x + labelBox!.width).toBeLessThan(
-    triggerBox!.x + triggerBox!.width
-  );
-  await edit.click();
-  expect(
-    await page.getByRole('dialog', { name: 'Filters', exact: true }).count()
-  ).toBe(0);
-  await page.getByRole('option', { name: 'Yes', exact: true }).click();
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('active'))
-    .toBe('true');
   await summaries
-    .getByRole('button', { name: 'Clear Active account', exact: true })
+    .getByRole('button', { name: 'Edit Active account: No', exact: true })
+    .click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await choose(page, sheet, 'Active account', 'Yes');
+  expect(new URL(page.url()).searchParams.get('active')).toBe('true');
+  await sheet
+    .getByRole('button', { name: 'Show results', exact: true })
+    .click();
+  await summaries
+    .getByRole('button', { name: 'Edit Active account: Yes', exact: true })
+    .waitFor();
+  await summaries
+    .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect.poll(() => summaries.count()).toBe(0);
   const params = new URL(page.url()).searchParams;
@@ -1193,34 +1197,9 @@ test('compact secondary filters edit directly and clear only their restriction',
   expect(params.get('sort')).toBe('name');
   expect(params.get('direction')).toBe('asc');
   expect(params.has('active')).toBe(false);
-  await expect
-    .poll(() =>
-      page
-        .getByRole('button', { name: 'Filters', exact: true })
-        .evaluate(element => element === document.activeElement)
-    )
-    .toBe(true);
-  await page.goto('/filter-presentation?spend=all&active=false');
-  await page
-    .getByRole('group', { name: 'Active filters', exact: true })
-    .getByRole('button', { name: 'No Active account', exact: true })
-    .click();
-  await page.getByRole('option', { name: 'Any', exact: true }).click();
-  await expect
-    .poll(() =>
-      page.getByRole('group', { name: 'Active filters', exact: true }).count()
-    )
-    .toBe(0);
-  await expect
-    .poll(() =>
-      page
-        .getByRole('button', { name: 'Filters', exact: true })
-        .evaluate(element => element === document.activeElement)
-    )
-    .toBe(true);
 });
 
-test('compact secondary pickers retain full labels and edit multiple selections', async ({
+test('multiple member summaries retain labels and edit selections in the sheet', async ({
   page,
 }) => {
   const params = new URLSearchParams({
@@ -1239,28 +1218,28 @@ test('compact secondary pickers retain full labels and edit multiple selections'
     name: 'Active filters',
     exact: true,
   });
-  const edit = summaries.getByRole('button', {
-    name: 'Account owner: Amira, Jonas, Lea',
-    exact: true,
-  });
-  await expect.poll(() => edit.isVisible()).toBe(true);
-  await edit.click();
+  await summaries
+    .getByRole('button', {
+      name: 'Edit Account owner: Amira, Jonas, Lea',
+      exact: true,
+    })
+    .click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await sheet.getByRole('button', { name: /^Account owner:/ }).click();
   await page.getByRole('option', { name: 'Jonas', exact: true }).click();
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('owner'))
-    .toContain('Amira');
   await expect
     .poll(() => new URL(page.url()).searchParams.get('owner'))
     .not.toContain('Jonas');
   await page.keyboard.press('Escape');
+  await sheet
+    .getByRole('button', { name: 'Show results', exact: true })
+    .click();
   await page.setViewportSize({ width: 360, height: 760 });
-  expect(
-    await summaries.evaluate(
-      element => element.scrollWidth <= element.clientWidth
-    )
-  ).toBe(true);
+  const box = (await summaries.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(360);
   await summaries
-    .getByRole('button', { name: 'Clear Account owner', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect.poll(() => summaries.count()).toBe(0);
   expect(new URL(page.url()).searchParams.has('owner')).toBe(false);

@@ -147,6 +147,13 @@ test('detail loading, retry, and empty results remain scoped', async ({
   fail = false;
   await page.keyboard.press('Escape');
   await expect.poll(() => detail.isVisible()).toBe(false);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'View contributing orders', exact: true })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
   const asia = page.getByRole('button', { name: /^View orders: Asia:/ });
   await asia.focus();
   await page.keyboard.press('Enter');
@@ -327,4 +334,36 @@ test('alternate visualization renderers receive the same scoped drill action', a
   expect(
     await page.getByRole('tab', { name: 'Records', selected: true }).count()
   ).toBe(1);
+});
+
+test('metric values open contributing records while About preserves definitions and queries', async ({
+  page,
+}) => {
+  await page.goto('/drill-app');
+  const metric = page.getByRole('region', { name: 'Net revenue', exact: true });
+  const value = metric.getByRole('button', {
+    name: 'View contributing orders details',
+    exact: true,
+  });
+  await value.waitFor();
+  expect(
+    await value.evaluate(element =>
+      parseFloat(getComputedStyle(element).fontSize)
+    )
+  ).toBeGreaterThan(24);
+  await value.click();
+  const detail = page.getByRole('dialog', {
+    name: 'Contributing orders',
+    exact: true,
+  });
+  await expect.poll(() => detail.getByRole('row').count()).toBeGreaterThan(1);
+  await page.keyboard.press('Escape');
+  await detail.waitFor({ state: 'hidden' });
+  await metric
+    .getByRole('button', { name: 'About Net revenue', exact: true })
+    .click();
+  const about = page.getByRole('dialog', { name: 'Net revenue', exact: true });
+  await about.getByRole('tab', { name: 'Glossary', exact: true }).waitFor();
+  await about.getByRole('tab', { name: 'Queries', exact: true }).click();
+  expect(await about.textContent()).toContain('SELECT');
 });

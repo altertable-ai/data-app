@@ -1,6 +1,10 @@
-import { ExplorationBreadcrumbs } from '@/src/react/ui/ExplorationBreadcrumbs';
+import {
+  ExplorationFilterSummary,
+  ExplorationBreadcrumbs,
+} from '@/src/react/ui/ExplorationBreadcrumbs';
 import type { ExplorationState } from '@/src/core/exploration';
 import { useContext, type ReactNode } from 'react';
+import { Button } from '@/src/react/ui/Button';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
   SearchSuggestionsContext,
@@ -9,10 +13,7 @@ import {
 import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
-import {
-  ViewControlBar,
-  type ActiveFilterControl,
-} from '@/src/react/view-control-bar';
+import { ViewControlBar } from '@/src/react/view-control-bar';
 import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
   NumberFilter,
@@ -91,13 +92,13 @@ export function useViewVariables<Variables extends VariableCollection>(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
   const primaryFilters: ReactNode[] = [];
-  const explorationControls: ReactNode[] = [];
+  const filterSummaries: ((onEdit: () => void) => ReactNode)[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
   };
   const allFilters: ReactNode[] = [];
-  const activeSecondaryFilters: ActiveFilterControl[] = [];
+
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
@@ -116,7 +117,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           ? 'above'
           : 'inline';
     if (definition.kind === 'exploration') {
-      explorationControls.push(
+      allFilters.push(
         <ExplorationBreadcrumbs
           key={name}
           id={navigationId ? `${navigationId}:${name}` : undefined}
@@ -124,6 +125,24 @@ export function useViewVariables<Variables extends VariableCollection>(
           value={value as ExplorationState<any>}
         />
       );
+      const state = definition.parse(value);
+      const count = definition.levels.filter(
+        level => state.selection[level.id]?.kind !== 'all'
+      ).length;
+      if (count) {
+        activeFilterCount += count;
+        hasActiveFilters = true;
+        filterSummaries.push(onEdit => (
+          <ExplorationFilterSummary
+            key={name}
+            target={{ variable: definition, clientScope, loadFacet }}
+            value={state}
+            onEdit={onEdit}
+          />
+        ));
+      }
+      clearedFilters[name] =
+        definition.clearValue as AppVariableValues<Variables>[typeof name];
       continue;
     }
     if (definition.kind === 'search') {
@@ -148,19 +167,11 @@ export function useViewVariables<Variables extends VariableCollection>(
       clearedFilters[name] = variable.clearValue;
       if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
     }
-    function renderControl(
-      labelPlacement: ControlLabelPlacement,
-      onDeactivate?: () => void
-    ) {
+    function renderControl(labelPlacement: ControlLabelPlacement) {
       function setControlValue(
         next: AppVariableValues<Variables>[typeof name]
       ) {
         variables.set(name, next);
-        if (
-          onDeactivate &&
-          variable.same(next, variable.clearValue ?? variable.defaultValue)
-        )
-          onDeactivate();
       }
       let control: ReactNode = null;
       if (definition.kind === 'dateRange') {
@@ -275,16 +286,40 @@ export function useViewVariables<Variables extends VariableCollection>(
       if (active) changedDisplayOptionCount++;
     } else {
       allFilters.push(renderControl('above'));
-      if (active && prominence === 'secondary') {
-        activeSecondaryFilters.push({
-          id: name,
-          label: definition.label ?? name,
-          renderControl: onDeactivate => renderControl('inline', onDeactivate),
-          onClear:
-            variable.clearValue === undefined
-              ? undefined
-              : () => variables.set(name, variable.clearValue),
-        });
+      if (active) {
+        const described =
+          definition.kind === 'dimension'
+            ? (() => {
+                const selection = value as DimensionSelection;
+                if (selection.kind === 'all') return 'All';
+                const options =
+                  facetState.get(name)?.data ?? definition.options;
+                const labels = selection.members
+                  .map(member =>
+                    member.kind === 'missing'
+                      ? 'No value'
+                      : (options.find(option => option.value === member.value)
+                          ?.label ?? String(member.value))
+                  )
+                  .join(', ');
+                return selection.kind === 'exclude'
+                  ? `Except ${labels}`
+                  : labels;
+              })()
+            : (variable.describe?.(value) ?? String(value));
+        filterSummaries.push(onEdit => (
+          <Button
+            key={name}
+            variant="ghost"
+            onClick={onEdit}
+            aria-label={`Edit ${definition.label ?? name}: ${described}`}
+          >
+            <span className="altertable-filter-summary-label">
+              {definition.label ?? name}
+            </span>{' '}
+            {described}
+          </Button>
+        ));
       }
       if (prominence === 'primary')
         primaryFilters.push(renderControl('inline'));
@@ -302,25 +337,20 @@ export function useViewVariables<Variables extends VariableCollection>(
     resolved,
     searchControls: searchControls.length ? searchControls : null,
     filterControls:
-      hasControls || hasActiveFilters || explorationControls.length ? (
-        <>
-          {hasControls || hasActiveFilters ? (
-            <ViewControlBar
-              primaryFilters={primaryFilters}
-              activeSecondaryFilters={activeSecondaryFilters}
-              allFilters={allFilters}
-              activeFilterCount={activeFilterCount}
-              displayOptions={orderedDisplayOptions}
-              changedDisplayOptionCount={changedDisplayOptionCount}
-              onClear={
-                hasActiveFilters
-                  ? () => variables.update(clearedFilters)
-                  : undefined
-              }
-            />
-          ) : null}
-          {explorationControls}
-        </>
+      hasControls || hasActiveFilters ? (
+        <ViewControlBar
+          primaryFilters={primaryFilters}
+          filterSummaries={filterSummaries}
+          allFilters={allFilters}
+          activeFilterCount={activeFilterCount}
+          displayOptions={orderedDisplayOptions}
+          changedDisplayOptionCount={changedDisplayOptionCount}
+          onClear={
+            hasActiveFilters
+              ? () => variables.update(clearedFilters)
+              : undefined
+          }
+        />
       ) : null,
   };
 }

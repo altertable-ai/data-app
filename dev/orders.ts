@@ -219,6 +219,45 @@ export const operations = {
       };
     },
   }),
+  ordersInScope: dataApp.defineOperation({
+    input: parseInput,
+    output(value: unknown) {
+      if (!value || typeof value !== 'object')
+        throw new Error('Expected orders.');
+      return {
+        orders: parseRows(
+          (value as Record<string, unknown>).orders,
+          parseOrder
+        ),
+      };
+    },
+    checks: [{ period: checkRange, geography: geography.defaultValue }],
+    policy: {
+      maxQueryRows: 10000,
+      maxResponseBytes: 4000000,
+      maxDurationMs: 15000,
+    },
+    async run({ query }, input) {
+      const result = await query('ordersInScope', {
+        ...scopeParams(input),
+        start: input.period.range.start,
+        end: input.period.range.end,
+      });
+      if (
+        result.rows.length &&
+        parseCount(result.rows[0]![7]) !== result.rows.length
+      )
+        throw new Error(
+          'The order list exceeds this demo’s record limit. Narrow the date range.'
+        );
+      return {
+        orders: result.rows.map(
+          ([id, customer, country, day, status, campaign, amount]) =>
+            parseOrder({ id, customer, country, day, status, campaign, amount })
+        ),
+      };
+    },
+  }),
   orderOverview: dataApp.defineOperation({
     input: parseInput,
     output: parseOrderOverview,

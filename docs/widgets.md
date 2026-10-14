@@ -167,10 +167,10 @@ effects: open details, filter a declared view, or descend through a hierarchy.
 Evidence references explain definitions and queries; exploration actions change
 what the reader investigates.
 
-A declared exploration action automatically gives `<VisualizationWidget>` and
-`<TableWidget>` the same breadcrumb navigation used at page level.
-Each segment is one selector; ancestor dropdowns also offer Group by. They remain visible at terminal levels, in empty results, and in inspection.
-Chart menu triggers show a dropdown indicator beside the category label.
+Hierarchy selectors live in the view's Filters sheet. A floating bar summarizes
+active filters and opens that same sheet for editing; widgets keep their chart
+and row actions without repeating the controls. Chart menu triggers show a
+dropdown indicator beside the category label.
 
 ```tsx
 const placeActions = places.actions(action => ({
@@ -199,6 +199,26 @@ keys supply action IDs; declaration order supplies menu order. One available
 action is direct; several appear in Explore. Set the optional second argument
 `{ primary: 'orders' }` only when a direct primary action is useful. Other actions
 remain available in the menu. A metric's row argument is `undefined`.
+A metric's primary action opens from its heading or value; About keeps definitions
+and SQL available separately. For an order-count metric, bind a detail action
+that preserves the displayed input and loads the corresponding orders:
+
+```tsx
+const viewOrders = orderCount.actions(action => ({
+  orders: action.detail({
+    label: 'View orders',
+    target: ordersView,
+    input: (_, displayedInput) => displayedInput,
+  }),
+}));
+
+<MetricWidget metric={orderCount} source={source} actions={viewOrders} />;
+```
+
+The detail operation owns completeness. Do not reuse a capped dashboard preview
+when the destination promises all contributing records. Use local pagination
+for a complete bounded result, or query-backed pagination for larger sources.
+
 Use `when: row => ...` on a filter action when it applies only to some rows.
 
 Detail mappings receive the **displayed input**, including during refreshes.

@@ -1,7 +1,6 @@
 import {
   useExplorationActions,
   ExplorationActionControl,
-  ExplorationNavigation,
   type BoundExplorationActions,
 } from '@/src/react/action-controls';
 import type { ExplorationActions } from '@/src/react/actions';
@@ -42,7 +41,7 @@ import type { DataReading } from '@/src/core/reading';
 
 export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
   Extract<DisplayMetricProps, { metric: MetricDefinition }>,
-  'metric' | 'reading'
+  'metric' | 'reading' | 'primaryAction'
 > & {
   metric: Metric<Data, Input>;
   source: ViewSource<Data, Input>;
@@ -56,15 +55,24 @@ export function MetricWidget<Data, Input>({
   ...presentation
 }: MetricWidgetProps<Data, Input>) {
   const action = useExplorationActions(actions, source, metric);
+  const primary = action?.primary(undefined);
   return (
     <DisplayMetric
       {...presentation}
       metric={metric.definition}
       reading={metric.read(source)}
+      primaryAction={
+        primary && action
+          ? {
+              label: primary.label,
+              run: trigger => action.run(primary.id, undefined, trigger),
+            }
+          : undefined
+      }
       action={
         <>
           {authoredAction}
-          {action && (
+          {action && (!primary || action.items(undefined).length > 1) && (
             <ExplorationActionControl actions={action} row={undefined} />
           )}
         </>
@@ -105,9 +113,6 @@ export function TableWidget<Row, Data, Input>({
       {...presentation}
       {...data}
       title={title ?? data.title}
-      navigation={
-        action?.exploration && <ExplorationNavigation actions={action} />
-      }
       columns={
         action
           ? [
@@ -196,9 +201,6 @@ export function VisualizationWidget<Row, Data, Input>({
       {...shell}
       title={title ?? data.title}
       reading={data.reading}
-      navigation={
-        action?.exploration && <ExplorationNavigation actions={action} />
-      }
       evidence={data.evidence}
       emptyFallback={data.emptyFallback}
       isEmpty={rows => rows.length === 0}
