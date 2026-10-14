@@ -14,7 +14,7 @@ import {
   mountDataApp,
 } from '@altertable/data-app/react';
 import { BarChart } from '@altertable/data-app/react/ui';
-import { supportApp, teams, operations } from '@/dev/support';
+import { supportApp, teams, workloadBy, operations } from '@/dev/support';
 const client = createDataClient({ operations });
 const { defineDataView, defineDetailView } = createDataHooks(client);
 const context = createDataContext(operations.overview.queryNames)({
@@ -35,7 +35,7 @@ const context = createDataContext(operations.overview.queryNames)({
 const view = defineDataView({
   operation: 'overview',
   describeInput: input => teams.describe?.(input.teams) ?? 'All support teams',
-  variables: { teams },
+  variables: { teams, workloadBy },
   dataContext: context,
   isEmpty: data => data.groups.length === 0,
   emptyFallback: { title: 'No teams match this selection' },
@@ -130,7 +130,7 @@ const detailContent = detail.content(source =>
     </Stack>
   )
 );
-const exploration = view.hierarchy('teams');
+const exploration = view.breakdown('workloadBy');
 const groupActions = groups.actions(action => ({
   filter: action.filter({
     label: row => `Filter to this ${row.level}`,
@@ -177,12 +177,13 @@ const content = view.content(source => (
     </Grid>
     <VisualizationWidget
       dataset={groups}
+      breakdown={exploration}
       source={source}
       actions={groupActions}
       title={
         source.loading
           ? 'Open backlog'
-          : `Open backlog by ${teams.level(source.input.teams).groupLabel.toLowerCase()}`
+          : `Open backlog by ${workloadBy.level(source.input.workloadBy, source.input.teams).groupLabel.toLowerCase()}`
       }
       description="Explore a team to focus the workload or break it down further."
     >

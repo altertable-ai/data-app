@@ -53,7 +53,6 @@ export type HierarchyState<
   Levels extends readonly HierarchyLevel[] = readonly HierarchyLevel[],
 > = {
   selection: HierarchySelection<Levels>;
-  groupBy: Levels[number]['id'];
 };
 export type HierarchyValues<Levels extends readonly HierarchyLevel[]> = {
   [Level in Levels[number] as Level['id']]: LevelValue<Level> | null;
@@ -65,9 +64,6 @@ export type HierarchyVariable<
   levels: readonly (Levels[number] & { groupLabel: string })[];
   dimensions: readonly DimensionVariable[];
   parse: (value: unknown) => HierarchyState<Levels>;
-  level: (
-    value: HierarchyState<Levels>
-  ) => Levels[number] & { groupLabel: string };
   /** Root plus successive children whose ancestors have selected values; independent of grouping. */
   visibleLevels: (
     state: HierarchyState<Levels>
@@ -76,15 +72,19 @@ export type HierarchyVariable<
     state: HierarchyState<Levels>,
     values: Partial<HierarchyValues<Levels>>
   ) => HierarchyState<Levels>;
-  descend: (
-    state: HierarchyState<Levels>,
-    id: DimensionValue
-  ) => HierarchyState<Levels>;
-  /** Change aggregation without changing the selected filters; selected ancestors are required. */
-  group: (
-    state: HierarchyState<Levels>,
-    level: Levels[number]['id']
-  ) => HierarchyState<Levels>;
+  /** A chart-owned URL value, separate from the shared selected scope. */
+  breakdown: (options: { key: string }) => HierarchyBreakdownVariable<Levels>;
+};
+export type HierarchyBreakdownVariable<
+  Levels extends readonly HierarchyLevel[] = readonly HierarchyLevel[],
+> = AppVariable<Levels[number]['id'], 'hierarchyBreakdown'> & {
+  hierarchy: HierarchyVariable<Levels>;
+  parse: (value: unknown) => Levels[number]['id'];
+  /** Clamp to the deepest level whose ancestors are selected. Use for queries, labels, and exports. */
+  level: (
+    value: Levels[number]['id'],
+    scope: HierarchyState<Levels>
+  ) => Levels[number] & { groupLabel: string };
 };
 export type HierarchyStateOf<Variable> =
   Variable extends HierarchyVariable<infer Levels>
@@ -95,7 +95,7 @@ export type HierarchyValuesOf<Variable> =
     ? HierarchyValues<Levels>
     : never;
 
-/** One URL value owns single-member hierarchy scope and grouping. Parent edits clear descendants. */
+/** One URL value owns single-member hierarchy scope. Parent edits clear descendants. */
 export function hierarchyVariable<
   const Levels extends readonly HierarchyLevel[],
 >({
@@ -147,7 +147,6 @@ export function hierarchyVariable<
     selection: Object.fromEntries(
       levels.map(level => [level.id, { kind: 'all' }])
     ),
-    groupBy: levels[0]!.id,
   } as HierarchyState<Levels>;
   function index(id: string) {
     const position = levels.findIndex(level => level.id === id);
@@ -167,13 +166,11 @@ export function hierarchyVariable<
     );
     const state = value as HierarchyState<Levels>;
     invariant(
-      typeof state.groupBy === 'string' &&
-        state.selection &&
+      state.selection &&
         typeof state.selection === 'object' &&
         !Array.isArray(state.selection),
-      'Expected hierarchy selection and grouping.'
+      'Expected hierarchy selection.'
     );
-    const group = index(state.groupBy);
     invariant(
       Object.keys(state.selection).length === levels.length &&
         Object.keys(state.selection).every(id =>
@@ -190,11 +187,6 @@ export function hierarchyVariable<
         entry && dimensions[position]!.valid(entry),
         `Invalid ${level.label} selection.`
       );
-      if (position < group)
-        invariant(
-          entry.kind !== 'all',
-          'Grouping requires selected ancestors.'
-        );
       if (position > 0 && entry.kind !== 'all')
         invariant(
           selected(state, levels[position - 1]!.id) !== null,
@@ -227,7 +219,7 @@ export function hierarchyVariable<
       JSON.stringify(selection).length <= 8192,
       'Hierarchy selection must fit in a shared URL.'
     );
-    return { selection, groupBy: state.groupBy } as HierarchyState<Levels>;
+    return { selection } as HierarchyState<Levels>;
   }
   function filter(
     state: HierarchyState<Levels>,
@@ -258,14 +250,7 @@ export function hierarchyVariable<
           : { kind: 'include', members: [{ kind: 'value', value: value! }] };
       for (const child of levels.slice(position + 1))
         selection[child.id] = { kind: 'all' };
-      const groupBy =
-        levels[
-          Math.min(
-            index(next.groupBy),
-            value === null ? position : position + 1
-          )
-        ]!.id;
-      next = parse({ selection, groupBy });
+      next = parse({ selection });
     }
     return next;
   }
@@ -282,7 +267,7 @@ export function hierarchyVariable<
   function same(left: HierarchyState<Levels>, right: HierarchyState<Levels>) {
     return JSON.stringify(parse(left)) === JSON.stringify(parse(right));
   }
-  return {
+  const variable: HierarchyVariable<Levels> = {
     kind: 'hierarchy',
     label,
     levels: normalizedLevels,
@@ -295,21 +280,59 @@ export function hierarchyVariable<
     visibleLevels,
     filter,
     same,
-    level: state => normalizedLevels[index(parse(state).groupBy)]!,
-    descend(state, id) {
-      const current = parse(state);
-      const position = index(current.groupBy);
+    breakdown({ key: breakdownKey }) {
       invariant(
-        position < levels.length - 1,
-        'Already at the final hierarchy level.'
+        !!breakdownKey.trim() && breakdownKey !== key,
+        'A breakdown needs its own URL key.'
       );
-      const next = filter(current, { [current.groupBy]: id } as Partial<
-        HierarchyValues<Levels>
-      >);
-      return parse({ ...next, groupBy: levels[position + 1]!.id });
-    },
-    group(state, id) {
-      return parse({ ...parse(state), groupBy: id });
+      const hierarchy = variable;
+      const defaultValue = levels[0]!.id;
+      function parse(value: unknown) {
+        if (value == null) return defaultValue;
+        invariant(
+          typeof value === 'string',
+          'Expected a hierarchy breakdown level.'
+        );
+        index(value);
+        return value as Levels[number]['id'];
+      }
+      function level(value: string, scope: HierarchyState<Levels>) {
+        const shown = visibleLevels(scope);
+        return normalizedLevels[
+          Math.min(index(parse(value)), shown.length - 1)
+        ]!;
+      }
+      return {
+        kind: 'hierarchyBreakdown',
+        hierarchy,
+        label: 'Break down by',
+        urlKeys: [breakdownKey],
+        defaultValue,
+        history: 'push',
+        parse,
+        level,
+        read(params) {
+          let requested = defaultValue;
+          try {
+            requested = parse(params.get(breakdownKey));
+          } catch {
+            /* Invalid URLs use the root level. */
+          }
+          return level(requested, hierarchy.read(params)).id;
+        },
+        write(value) {
+          const id = parse(value);
+          return { [breakdownKey]: id === defaultValue ? null : id };
+        },
+        valid(value): value is Levels[number]['id'] {
+          try {
+            return typeof value === 'string' && parse(value) === value;
+          } catch {
+            return false;
+          }
+        },
+        same: (left, right) => left === right,
+      } satisfies HierarchyBreakdownVariable<Levels>;
     },
     describe(state) {
       const next = parse(state);
@@ -342,5 +365,6 @@ export function hierarchyVariable<
         return false;
       }
     },
-  } as HierarchyVariable<Levels>;
+  };
+  return variable;
 }

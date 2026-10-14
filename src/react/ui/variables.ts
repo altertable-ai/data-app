@@ -116,6 +116,16 @@ export function writeVariableValues<Variables extends VariableCollection>(
     Object.assign(changes, variable.write(next[name]!));
     if (!history && variable.history === 'push') mode = 'push';
   }
+  // Scope edits also normalize every chart breakdown in the same history entry.
+  const params = searchParams();
+  for (const [key, value] of Object.entries(changes)) {
+    if (value === null) params.delete(key);
+    else params.set(key, value);
+  }
+  for (const variable of Object.values(definitions)) {
+    if (variable.kind !== 'hierarchyBreakdown') continue;
+    Object.assign(changes, variable.write(variable.read(params)));
+  }
   writeSearch(changes, mode);
 }
 

@@ -24,3 +24,7 @@ explicitly unrecorded; negative durations display as unavailable.
 
 The source is ready for the hosted runtime once it includes this branch's
 hierarchy and detail APIs. The current hosted validator does not support them.
+
+The CI hierarchy owns shared selections. The chart owns `jobsBy`, a separate
+URL variable created with `hierarchy.breakdown()`. Its header selects the breakdown;
+the Filters sheet and floating bar describe only the included population.

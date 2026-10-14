@@ -9,6 +9,7 @@ import {
 } from '@/tests/public-api/fixtures/drill-data';
 export type Input = SalesInput & {
   geography: HierarchyStateOf<typeof geography>;
+  revenueBy: ReturnType<typeof revenueBy.parse>;
 };
 export type GroupRow = {
   id: string;
@@ -115,12 +116,15 @@ export const geography = app.defineHierarchy({
     },
   ],
 });
-const parseInput = geography.input(salesOperations.salesOverview.input);
+export const revenueBy = geography.breakdown({ key: 'revenue-by' });
+const parseInput = geography.input(salesOperations.salesOverview.input, {
+  breakdowns: { revenueBy },
+});
 function member(selection: DimensionSelection) {
   const value = selection.kind === 'all' ? undefined : selection.members[0];
   return value?.kind === 'value' ? value.value : null;
 }
-function params(input: Input) {
+function params(input: Omit<Input, 'revenueBy'>) {
   return {
     start: input.start,
     end: input.end,
@@ -135,6 +139,7 @@ const scope: Input = {
   end: '2026-09-30',
   segment: 'Enterprise',
   geography: geography.defaultValue,
+  revenueBy: revenueBy.defaultValue,
 };
 export const operations = {
   overview: app.defineOperation({
@@ -143,7 +148,7 @@ export const operations = {
     checks: [scope],
     policy: { maxQueryRows: 100, maxDurationMs: 10000 },
     async run({ query }, input) {
-      const level = geography.level(input.geography).id;
+      const level = revenueBy.level(input.revenueBy, input.geography).id;
       const result = await query('geographicRevenue', {
         ...params(input),
         groupBy: level,

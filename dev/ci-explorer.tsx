@@ -85,6 +85,7 @@ const hierarchy = app.defineHierarchy({
     },
   ],
 });
+const jobsBy = hierarchy.breakdown({ key: 'jobs-by' });
 // Deliberate historical investigation: seven complete UTC days with verified coverage.
 const calendar = defineDateRangeContract({
   minDate: '2026-10-07',
@@ -92,13 +93,19 @@ const calendar = defineDateRangeContract({
   maxRangeDays: 7,
   timeZone: 'UTC',
 });
-const parseInput = hierarchy.input(value => {
-  const input = value as { period?: unknown; status?: unknown };
-  return {
-    period: calendar.parseRequest(input?.period),
-    status: input?.status == null ? null : parseStatus(input.status),
-  };
-});
+const parseInput = hierarchy.input(
+  value => {
+    const input = value as {
+      period?: unknown;
+      status?: unknown;
+    };
+    return {
+      period: calendar.parseRequest(input?.period),
+      status: input?.status == null ? null : parseStatus(input.status),
+    };
+  },
+  { breakdowns: { jobsBy } }
+);
 type Scope = ReturnType<typeof parseInput>;
 type Status = 'success' | 'failure' | 'cancelled';
 type JobRun = {
@@ -149,6 +156,7 @@ const operations = {
       {
         period: calendar.request({ start: '2026-10-07', end: '2026-10-13' }),
         ci: hierarchy.defaultValue,
+        jobsBy: jobsBy.defaultValue,
         status: null,
       },
     ],
@@ -224,7 +232,7 @@ const overview = defineTimeView({
   operation: 'runs',
   dataContext,
   time: { contract: calendar, defaultValue: { kind: 'preset', id: 'last-7' } },
-  variables: { ci: hierarchy },
+  variables: { ci: hierarchy, jobsBy },
   input: values => ({ ...values, status: null }),
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No CI jobs in this scope' },
@@ -323,11 +331,10 @@ function groupRows(rows: readonly JobRun[], key: (row: JobRun) => string) {
 }
 const groups = overview.dataset({
   name: 'Job executions by CI scope',
-  select: (rows, input) =>
-    groupRows(rows, row => row[input.ci.groupBy]).map(row => ({
-      ...row,
-      level: input.ci.groupBy,
-    })),
+  select: (rows, input) => {
+    const level = jobsBy.level(input.jobsBy, input.ci).id;
+    return groupRows(rows, row => row[level]).map(row => ({ ...row, level }));
+  },
   rowKey: row => row.id,
   columns: {
     name: { value: row => row.label },
@@ -380,7 +387,7 @@ const statuses = overview.dataset({
     queryNames: ['jobRuns'],
   },
 });
-const target = overview.hierarchy('ci');
+const target = overview.breakdown('jobsBy');
 const groupActions = groups.actions(action => ({
   records: action.detail({
     label: 'View job executions',
@@ -437,12 +444,13 @@ const content = overview.content(source => (
     </Grid>
     <VisualizationWidget
       dataset={groups}
+      breakdown={target}
       source={source}
       actions={groupActions}
       title={
         source.loading
           ? 'CI job executions'
-          : `Job executions by ${hierarchy.level(source.input.ci).groupLabel.toLowerCase()}`
+          : `Job executions by ${jobsBy.level(source.input.jobsBy, source.input.ci).groupLabel.toLowerCase()}`
       }
     >
       {(rows, actions) => (

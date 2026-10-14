@@ -46,14 +46,6 @@
   display: grid;
   gap: var(--atbl-space-sm);
 }
-.altertable-hierarchy-filters > .altertable-field {
-  margin-block-end: var(--atbl-space-sm);
-}
-.altertable-hierarchy-filter-label {
-  color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
-  font-weight: var(--atbl-type-label-weight);
-}
 .altertable-hierarchy-heading {
   font-weight: var(--atbl-type-label-weight);
 }

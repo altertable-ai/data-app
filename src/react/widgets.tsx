@@ -5,6 +5,8 @@ import {
 } from '@/src/react/action-controls';
 import { invariant } from '@/src/core/invariant';
 import { useDetailRecords } from '@/src/react/details';
+import { BreakdownControl } from '@/src/react/breakdown-control';
+import type { BreakdownTarget } from '@/src/react/actions';
 import type { ExplorationActions } from '@/src/react/actions';
 import {
   datasetTable,
@@ -188,12 +190,15 @@ export type VisualizationWidgetProps<
     source: ViewSource<Data, Input>;
     title?: ReactNode;
     actions?: ExplorationActions<Row, Input>;
+    /** Chart-owned aggregation over a shared hierarchy scope. */
+    breakdown?: BreakdownTarget<Input>;
   };
 export function VisualizationWidget<Row, Data, Input>({
   dataset,
   source,
   title,
   actions,
+  breakdown,
   ...presentation
 }: VisualizationWidgetProps<Row, Data, Input>) {
   const action = useExplorationActions(actions, source, dataset);
@@ -202,6 +207,16 @@ export function VisualizationWidget<Row, Data, Input>({
   return (
     <DisplayVisual<readonly Row[]>
       {...shell}
+      action={
+        breakdown ? (
+          <>
+            <BreakdownControl target={breakdown} source={source} />
+            {shell.action}
+          </>
+        ) : (
+          shell.action
+        )
+      }
       title={title ?? data.title}
       reading={data.reading}
       evidence={data.evidence}

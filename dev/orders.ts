@@ -3,7 +3,7 @@ import {
   orderValueBands,
   type OrderValueBandId,
 } from '@/dev/order-value-bands';
-import { geography } from '@/dev/geography';
+import { geography, revenueBy } from '@/dev/geography';
 import { dataApp } from '@/dev/app';
 import {
   parseCount,
@@ -17,6 +17,7 @@ import { calendar, countries } from '@/dev/commerce';
 export type OrderInput = {
   period: DateRangeRequest;
   geography: HierarchyStateOf<typeof geography>;
+  revenueBy: ReturnType<typeof revenueBy.parse>;
 };
 export type OrderRecordsInput = OrderInput & {
   status: 'all' | 'paid' | 'refunded';
@@ -73,6 +74,7 @@ function parseInput(value: unknown): OrderInput {
   return {
     period: calendar.parseRequest(input.period),
     geography: geography.parse(input.geography),
+    revenueBy: revenueBy.parse(input.revenueBy),
   };
 }
 function parseRows<Row>(
@@ -201,6 +203,7 @@ export const operations = {
       {
         period: checkRange,
         geography: geography.defaultValue,
+        revenueBy: revenueBy.defaultValue,
         orderId: 1,
       },
     ],
@@ -265,6 +268,7 @@ export const operations = {
       (status): OrderRecordsInput => ({
         period: checkRange,
         geography: geography.defaultValue,
+        revenueBy: revenueBy.defaultValue,
         status,
       })
     ),
@@ -307,13 +311,15 @@ export const operations = {
       {
         period: checkRange,
         geography: geography.defaultValue,
+        revenueBy: revenueBy.defaultValue,
       },
       {
         period: checkRange,
-        geography: geography.filter(
-          geography.descend(geography.defaultValue, 'Europe'),
-          { country: 'FI' }
-        ),
+        revenueBy: 'country',
+        geography: geography.filter(geography.defaultValue, {
+          region: 'Europe',
+          country: 'FI',
+        }),
       },
     ] satisfies OrderInput[],
     policy: { maxQueryRows: 300, maxDurationMs: 15000 },
@@ -352,19 +358,19 @@ export const operations = {
         query('items', params),
         query('geographicRevenue', {
           ...params,
-          groupBy: geography.level(input.geography).id,
+          groupBy: revenueBy.level(input.revenueBy, input.geography).id,
         }),
       ]);
       return parseOrderOverview({
         groups: geographicResult.rows.map(([id, label, revenue]) => ({
           id,
           label:
-            geography.level(input.geography).id === 'country'
+            revenueBy.level(input.revenueBy, input.geography).id === 'country'
               ? (countries.find(country => country.value === id)?.label ??
                 label)
               : label,
           revenue,
-          level: geography.level(input.geography).id,
+          level: revenueBy.level(input.revenueBy, input.geography).id,
         })),
         countries: countryResult.rows.map(
           ([country, orderCount, revenue, orderValue, refunds]) => ({

@@ -3,6 +3,7 @@ import {
   type HierarchyLevel,
   type HierarchyState,
   type HierarchyVariable,
+  type HierarchyBreakdownVariable,
 } from '@/src/core/hierarchy';
 import {
   parseFacetOptions,
@@ -102,6 +103,11 @@ type NormalizedLevel<Level> = Level extends { source: unknown }
 type NormalizedLevels<Levels extends readonly unknown[]> = {
   [Index in keyof Levels]: NormalizedLevel<Levels[Index]>;
 } & readonly HierarchyLevel[];
+type BreakdownValues<
+  Variables extends Record<string, { parse: (value: unknown) => unknown }>,
+> = {
+  [Key in keyof Variables]: ReturnType<Variables[Key]['parse']>;
+};
 export type SourcedHierarchy<
   Key extends string,
   Levels extends readonly SourcedHierarchyLevel<any>[],
@@ -118,10 +124,19 @@ export type SourcedHierarchy<
     >;
   };
   /** Adds the named hierarchy field and attaches authoritative membership validation to the parser. */
-  input: <Base extends object>(
-    parseBase: (value: unknown) => Base
+  input: <
+    Base extends object,
+    const Breakdowns extends Record<
+      string,
+      HierarchyBreakdownVariable<NormalizedLevels<Levels>>
+    > = {},
+  >(
+    parseBase: (value: unknown) => Base,
+    options?: { breakdowns: Breakdowns }
   ) => OperationInputParser<
-    Omit<Base, Key> & Record<Key, HierarchyState<NormalizedLevels<Levels>>>
+    Omit<Base, Key | keyof Breakdowns> &
+      Record<Key, HierarchyState<NormalizedLevels<Levels>>> &
+      BreakdownValues<Breakdowns>
   >;
 };
 
@@ -243,6 +258,10 @@ export function defineSourcedHierarchy<
     values: Record<string, DimensionValue | null>,
     position: number
   ) {
+    invariant(
+      levels.slice(0, position).every(level => values[level.id] != null),
+      'Hierarchy selectors require selected ancestors.'
+    );
     return variable.parse({
       selection: Object.fromEntries(
         levels.map((level, index) => [
@@ -255,7 +274,6 @@ export function defineSourcedHierarchy<
             : { kind: 'all' },
         ])
       ),
-      groupBy: levels[position]!.id,
     });
   }
   for (const { level, position, source } of sources) {
@@ -387,7 +405,24 @@ export function defineSourcedHierarchy<
   }
   return Object.assign(variable, {
     operations,
-    input<Base extends object>(parseBase: OperationInputParser<Base>) {
+    input<
+      Base extends object,
+      const Breakdowns extends Record<
+        string,
+        HierarchyBreakdownVariable<NormalizedLevels<Levels>>
+      > = {},
+    >(
+      parseBase: OperationInputParser<Base>,
+      options?: { breakdowns: Breakdowns }
+    ) {
+      const breakdowns = Object.entries(options?.breakdowns ?? {});
+      invariant(
+        breakdowns.every(
+          ([name, breakdown]) =>
+            name !== key && breakdown.hierarchy === variable
+        ),
+        'Input breakdowns must belong to this hierarchy and have distinct field names.'
+      );
       const parse = ((value: unknown) => {
         invariant(
           value && typeof value === 'object' && !Array.isArray(value),
@@ -402,15 +437,26 @@ export function defineSourcedHierarchy<
           'The base input parser must return a synchronous object.'
         );
         invariant(
-          !Object.hasOwn(base, key),
-          'The hierarchy input parser owns its named hierarchy field.'
+          !Object.hasOwn(base, key) &&
+            breakdowns.every(([name]) => !Object.hasOwn(base, name)),
+          'The hierarchy input parser owns its named hierarchy field and declared breakdowns.'
         );
+        const raw = value as Record<string, unknown>;
+        const scope = variable.parse(raw[key]);
         return {
           ...base,
-          [key]: variable.parse((value as Record<string, unknown>)[key]),
+          [key]: scope,
+          ...Object.fromEntries(
+            breakdowns.map(([name, breakdown]) => [
+              name,
+              breakdown.level(breakdown.parse(raw[name]), scope).id,
+            ])
+          ),
         };
       }) as OperationInputParser<
-        Omit<Base, Key> & Record<Key, HierarchyState<NormalizedLevels<Levels>>>
+        Omit<Base, Key | keyof Breakdowns> &
+          Record<Key, HierarchyState<NormalizedLevels<Levels>>> &
+          BreakdownValues<Breakdowns>
       >;
       const inherited = parseBase.validation;
       for (const [name, declaration] of Object.entries(validationQueries)) {

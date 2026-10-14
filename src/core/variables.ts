@@ -1,4 +1,7 @@
-import type { HierarchyVariable } from '@/src/core/hierarchy';
+import type {
+  HierarchyVariable,
+  HierarchyBreakdownVariable,
+} from '@/src/core/hierarchy';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -42,6 +45,7 @@ export type AppVariable<Value, Kind extends string = string> = {
 export type VariableCollection = Record<
   string,
   | HierarchyVariable<any>
+  | HierarchyBreakdownVariable<any>
   | SearchVariable
   | ChoiceVariable
   | MultiChoiceVariable
@@ -63,7 +67,9 @@ export type AppVariableValues<Variables> = {
 /** Only known scope fields can be changed by filtering; hierarchy has its own transitions. */
 type ScopeVariables<Variables extends VariableCollection> = {
   [
-    Key in keyof Variables as Variables[Key]['kind'] extends 'hierarchy'
+    Key in keyof Variables as Variables[Key]['kind'] extends
+      | 'hierarchy'
+      | 'hierarchyBreakdown'
       ? never
       : NonNullable<Variables[Key]['presentation']> extends { group: 'display' }
         ? never
@@ -96,6 +102,12 @@ export function defineAppVariables<const Variables extends VariableCollection>(
             presentation.prominence === 'secondary')),
       `Variable ${name} has invalid presentation.`
     );
+    if (variable.kind === 'hierarchyBreakdown') {
+      invariant(
+        Object.values(variables).includes(variable.hierarchy),
+        `Breakdown ${name} must share its hierarchy with the view.`
+      );
+    }
     for (const key of variable.urlKeys) {
       invariant(
         ![

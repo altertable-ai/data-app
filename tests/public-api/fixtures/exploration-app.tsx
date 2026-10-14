@@ -23,6 +23,7 @@ import {
   app,
   operations,
   geography,
+  revenueBy,
   type Input,
 } from '@/tests/public-api/fixtures/exploration-data';
 const client = createDataClient({
@@ -56,7 +57,7 @@ const context = createDataContext(operations.overview.queryNames)({
   },
 });
 function describe(input: Input) {
-  return `${input.start}–${input.end} · ${input.segment} · ${geography.describe?.(input.geography)} · ${geography.level(input.geography).groupLabel}`;
+  return `${input.start}–${input.end} · ${input.segment} · ${geography.describe?.(input.geography)} · ${revenueBy.level(input.revenueBy, input.geography).groupLabel}`;
 }
 const view = defineDataView({
   operation: 'overview',
@@ -81,12 +82,14 @@ const view = defineDataView({
       defaultValue: 'Enterprise',
     }),
     geography,
+    revenueBy,
   },
   input: values => ({
     start: `2026-${values.month}-01`,
     end: `2026-${values.month}-${values.month === '09' ? '30' : '31'}`,
     segment: values.segment as Input['segment'],
     geography: values.geography,
+    revenueBy: values.revenueBy,
   }),
   describeInput: describe,
   isEmpty: rows => rows.length === 0,
@@ -130,7 +133,8 @@ const detail = defineDetailView({
   operation: 'orders',
   dataContext: detailContext,
   parseInput: operations.orders.input,
-  describeInput: input => `${input.selected.label} · ${describe(input)}`,
+  describeInput: input =>
+    `${input.selected.label} · ${describe({ ...input, revenueBy: revenueBy.defaultValue })}`,
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No contributing orders' },
 });
@@ -165,7 +169,7 @@ const actions = groups.actions(
         row.level === 'region' ? { region: row.id } : { country: row.id },
     }),
     descend: action.descend({
-      target: view.hierarchy('geography'),
+      target: view.breakdown('revenueBy'),
       member: row => row.id,
     }),
   }),
@@ -193,9 +197,10 @@ const content = view.content(source => (
       title={
         source.loading
           ? 'Revenue'
-          : `Revenue by ${geography.level(source.input.geography).groupLabel.toLowerCase()}`
+          : `Revenue by ${revenueBy.level(source.input.revenueBy, source.input.geography).groupLabel.toLowerCase()}`
       }
       dataset={groups}
+      breakdown={view.breakdown('revenueBy')}
       source={source}
       actions={actions}
     >
@@ -225,7 +230,7 @@ function App() {
       story={snapshot => [
         {
           id: 'scope',
-          headline: `Revenue by ${geography.level(snapshot.input.geography).groupLabel.toLowerCase()}`,
+          headline: `Revenue by ${revenueBy.level(snapshot.input.revenueBy, snapshot.input.geography).groupLabel.toLowerCase()}`,
           context: describe(snapshot.input),
           visual: <TableWidget dataset={groups} source={snapshot} />,
           evidence: groups,

@@ -364,3 +364,53 @@ test('source selectors enforce fixed ancestor membership and parent bindings', a
     })
   ).toThrow('bind their parent');
 });
+
+test('hierarchy input owns and normalizes independent chart breakdowns without losing membership validation', async () => {
+  const jobsBy = hierarchy.breakdown({ key: 'jobs-by' });
+  const failuresBy = hierarchy.breakdown({ key: 'failures-by' });
+  const parse = hierarchy.input(() => ({}), {
+    breakdowns: { jobsBy, failuresBy },
+  });
+  expect(
+    parse({
+      team: hierarchy.defaultValue,
+      jobsBy: 'team',
+      failuresBy: 'region',
+    })
+  ).toEqual({
+    team: hierarchy.defaultValue,
+    jobsBy: 'region',
+    failuresBy: 'region',
+  });
+  const europe = hierarchy.filter(hierarchy.defaultValue, { region: 'Europe' });
+  expect(parse({ team: europe, jobsBy: 'team', failuresBy: 'region' })).toEqual(
+    { team: europe, jobsBy: 'team', failuresBy: 'region' }
+  );
+  const operation = app.defineOperation({
+    input: parse,
+    output: value => value,
+    checks: [{ team: europe, jobsBy: 'team', failuresBy: 'region' }],
+    policy: { maxQueryRows: 200, maxDurationMs: 1000 },
+    async run(_context, input) {
+      return input;
+    },
+  });
+  const log: { name: string; params: unknown; limit: number }[] = [];
+  const client = createDataClient({
+    operations: { operation },
+    lakehouse: source(log),
+  });
+  const result = await client.query('operation', {
+    team: selected(250),
+    jobsBy: 'team',
+    failuresBy: 'region',
+  });
+  expect(result.input.jobsBy).toBe('team');
+  expect(log.map(entry => entry.name)).toEqual(['regions', 'teams']);
+  expect(() => parse({ team: europe, jobsBy: 'unknown' })).toThrow('Unknown');
+  expect(() =>
+    hierarchy.input(() => ({ jobsBy: 'region' }), { breakdowns: { jobsBy } })({
+      team: europe,
+    })
+  ).toThrow('owns');
+});

@@ -10,9 +10,6 @@ import {
 } from '@/src/core/dimension';
 import type { HierarchyTarget } from '@/src/react/actions';
 import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
-import { Select } from '@/src/react/ui/Select';
-import { searchParams } from '@/src/react/ui/search';
-import { writeVariableValues } from '@/src/react/ui/variables';
 
 type HierarchyControls = {
   target: Pick<HierarchyTarget<any>, 'variable' | 'clientScope' | 'loadFacet'>;
@@ -126,35 +123,18 @@ export function HierarchyFilterSummary({
   });
 }
 
-export function HierarchyGroupSummary({
-  target,
-  value,
-  onEdit,
-  showHierarchyLabel,
-}: HierarchyControls & {
-  onEdit: MouseEventHandler<HTMLButtonElement>;
-  showHierarchyLabel: boolean;
-}) {
-  return (
-    <Button variant="ghost" onClick={onEdit}>
-      <span className="altertable-filter-summary-label">Grouped by</span>{' '}
-      {showHierarchyLabel ? `${target.variable.label}: ` : ''}
-      {target.variable.level(value).label}
-    </Button>
-  );
-}
-
 /** Progressive hierarchy selectors, owned by the view's filters sheet. */
 export function HierarchyFilters({
   target,
   id,
   value,
-}: HierarchyControls & { id?: string }) {
+  onChange,
+}: HierarchyControls & {
+  id?: string;
+  onChange: (value: HierarchyState<any>) => void;
+}) {
   const { variable } = target;
   const { state, shown, facets } = useHierarchyFacets({ target, value });
-  function commit(next: HierarchyState<any>) {
-    writeVariableValues({ hierarchy: variable }, { hierarchy: next }, 'push');
-  }
   return (
     <nav
       id={id}
@@ -163,16 +143,6 @@ export function HierarchyFilters({
       aria-label={`${variable.label} hierarchy`}
     >
       <span className="altertable-hierarchy-heading">{variable.label}</span>
-      <Select
-        label="Group by"
-        labelPlacement="above"
-        value={state.groupBy}
-        options={shown.map(level => ({ id: level.id, label: level.label }))}
-        onChange={id =>
-          commit(variable.group(variable.read(searchParams()), id))
-        }
-      />
-      <span className="altertable-hierarchy-filter-label">Filter by</span>
       <ol>
         {shown.map((level, position) => {
           const dimension = variable.dimensions[position]!;
@@ -208,8 +178,8 @@ export function HierarchyFilters({
                 onChange={next => {
                   const member =
                     next.kind === 'all' ? undefined : next.members[0];
-                  commit(
-                    variable.filter(variable.read(searchParams()), {
+                  onChange(
+                    variable.filter(state, {
                       [level.id]:
                         member?.kind === 'value' ? member.value : null,
                     })

@@ -187,7 +187,7 @@ const placeActions = places.actions(action => ({
     values: row => ({ region: row.id }),
   }),
   descend: action.descend({
-    target: salesView.hierarchy('geography'),
+    target: salesView.breakdown('revenueBy'),
     member: row => row.id,
   }),
 }));
@@ -235,8 +235,7 @@ distinct counts, or preview limits rather than implying every table sum
 reconciles with its headline.
 
 Filter mappings target a view's named scope variables or a bound hierarchy's
-typed level IDs. Hierarchy transitions clear descendants centrally and preserve
-grouping. Ordinary view filters cannot write hierarchy state. The platform
+typed level IDs. Hierarchy transitions clear descendants centrally and preserve valid chart breakdowns. Ordinary view filters cannot write hierarchy state. The platform
 validates the entire update before one history entry; omitted variables retain
 their **currently applied** values. For ordinary scope variables, clear any
 app-specific dependencies in the same mapping. Display variables cannot be changed
@@ -271,7 +270,7 @@ filtering a capped preview. Alternate visualization renderers receive the
 same bound actions. For custom controls use `<ExplorationActionControl
  actions={actions} row={row} label={row.label} />`; imperative custom controls
 can call `actions.run(id, row, trigger)` using IDs from `actions.items(row)`.
-Initial loading offers no actions. Hierarchy row actions wait until displayed and applied hierarchy state agree.
+Initial loading offers no actions. Hierarchy row actions wait until displayed and applied hierarchy scope agree; descent also checks the chart breakdown.
 
 See [hierarchical exploration](variables.md#hierarchical-exploration) and the
 [commerce playground](https://github.com/altertable-ai/data-app/blob/main/dev/playground.tsx)

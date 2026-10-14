@@ -48,8 +48,10 @@ static displays, and deliberately custom UI; see [direct composition](docs/ui.md
 Prefer derivation over repeated configuration.
 For relevant widgets, declare typed actions to open details, filter a view, or
 descend a hierarchy. Use `metric.records()` for contributing rows in the existing
-inspection sheet. Declare one hierarchy variable for selection and grouping;
-do not duplicate its levels as ordinary filters or repeat controls in widgets.
+inspection sheet. Declare a hierarchy variable for shared selections and a separate
+`hierarchy.breakdown({ key })` variable for each chart. Render aggregation with
+`<VisualizationWidget breakdown={view.breakdown(key)}>`; keep hierarchy filters
+in the Filters sheet and do not duplicate them as ordinary filters.
 For query-backed levels, use `app.defineHierarchy()` and
 `hierarchy.input(baseParser)`; the platform validates membership and resolves
 selected labels. Details inherit displayed input; filter actions preserve current

@@ -78,7 +78,7 @@ export function useExplorationActions<Row, Input>(
             const navigation = document.getElementById(request.navigation!);
             const sheet = navigation?.closest('dialog');
             const target = navigation?.checkVisibility()
-              ? navigation
+              ? (navigation.querySelector<HTMLElement>('button') ?? navigation)
               : document.querySelector<HTMLElement>(
                   sheet?.id
                     ? `[data-view-filters-trigger][aria-controls="${CSS.escape(sheet.id)}"]`

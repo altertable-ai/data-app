@@ -7,6 +7,7 @@ import type {
 } from '@/src/core/variables';
 import type {
   HierarchyVariable,
+  HierarchyBreakdownVariable,
   HierarchyStateOf,
   HierarchyValuesOf,
 } from '@/src/core/hierarchy';
@@ -237,6 +238,39 @@ export function createDataHooks<Operations extends DataOperations>(
       'variables' | 'input'
     > = definition;
     const normalized = { ...metadata, variables, input, describeInput };
+    function bindHierarchy<Variable extends HierarchyVariable<any>>(
+      key: string,
+      variable: Variable
+    ) {
+      invariant(
+        variable?.kind === 'hierarchy',
+        `Expected a declared hierarchy variable: ${key}.`
+      );
+      return {
+        kind: 'hierarchy' as const,
+        variable,
+        clientScope,
+        loadFacet: (operation: string, input: unknown, signal: AbortSignal) =>
+          client
+            .query(operation as keyof Operations & string, input as never, {
+              signal,
+            })
+            .then(response => response.data),
+        filter(values: Partial<HierarchyValuesOf<Variable>>) {
+          const next = variable.filter(variable.read(searchParams()), values);
+          writeVariableValues(
+            variables,
+            { [key]: next } as Partial<AppVariableValues<Variables>>,
+            'push'
+          );
+        },
+        navigationId: `${navigationId}:${key}`,
+        read: (input: Input) =>
+          variable.parse(
+            readViewBinding(normalized, key, input)
+          ) as HierarchyStateOf<Variable>,
+      };
+    }
     const view = Object.assign(
       new DeclaredView(
         (input?: Input) => useView(normalized, input, navigationId),
@@ -249,7 +283,8 @@ export function createDataHooks<Operations extends DataOperations>(
             invariant(
               variable &&
                 variable.presentation?.group !== 'display' &&
-                variable.kind !== 'hierarchy',
+                variable.kind !== 'hierarchy' &&
+                variable.kind !== 'hierarchyBreakdown',
               `Filter actions must target scope variables: ${key}.`
             );
           }
@@ -267,42 +302,63 @@ export function createDataHooks<Operations extends DataOperations>(
           }[keyof Variables] &
             string,
         >(key: Key) {
-          const variable = normalized.variables[key] as HierarchyVariable<any>;
-          invariant(
-            variable?.kind === 'hierarchy',
-            `Expected a declared hierarchy variable: ${key}.`
-          );
-          return {
-            kind: 'hierarchy' as const,
-            variable: variable as Extract<
+          return bindHierarchy(
+            key,
+            normalized.variables[key] as Extract<
               Variables[Key],
               HierarchyVariable<any>
-            >,
-            clientScope,
-            loadFacet: (
-              operation: string,
-              input: unknown,
-              signal: AbortSignal
-            ) =>
-              client
-                .query(operation as keyof Operations & string, input as never, {
-                  signal,
-                })
-                .then(response => response.data),
-            filter(values: Partial<HierarchyValuesOf<Variables[Key]>>) {
-              const current = variable.read(searchParams());
-              const next = variable.filter(current, values);
+            >
+          );
+        },
+        breakdown<
+          Key extends {
+            [
+              K in keyof Variables
+            ]: Variables[K] extends HierarchyBreakdownVariable<any> ? K : never;
+          }[keyof Variables] &
+            string,
+        >(key: Key) {
+          type Breakdown = Extract<
+            Variables[Key],
+            HierarchyBreakdownVariable<any>
+          >;
+          const breakdown = normalized.variables[key] as Breakdown;
+          invariant(
+            breakdown?.kind === 'hierarchyBreakdown',
+            `Expected a declared breakdown variable: ${key}.`
+          );
+          const hierarchyKey = Object.keys(variables).find(
+            name => variables[name] === breakdown.hierarchy
+          );
+          invariant(
+            hierarchyKey,
+            'A breakdown must share its hierarchy with the view.'
+          );
+          const target = bindHierarchy(
+            hierarchyKey,
+            breakdown.hierarchy as Breakdown['hierarchy']
+          );
+          return {
+            ...target,
+            breakdown,
+            update(
+              scope: HierarchyStateOf<Breakdown['hierarchy']>,
+              level: string
+            ) {
               writeVariableValues(
-                { hierarchy: variable },
-                { hierarchy: next },
+                variables,
+                { [hierarchyKey]: scope, [key]: level } as Partial<
+                  AppVariableValues<Variables>
+                >,
                 'push'
               );
             },
             navigationId: `${navigationId}:${key}`,
-            read: (input: Input) =>
-              variable.parse(
-                readViewBinding(normalized, key, input)
-              ) as HierarchyStateOf<Variables[Key]>,
+            readLevel: (input: Input) =>
+              breakdown.level(
+                readViewBinding(normalized, key, input) as string,
+                target.read(input)
+              ).id,
           };
         },
         dataset<Row>(

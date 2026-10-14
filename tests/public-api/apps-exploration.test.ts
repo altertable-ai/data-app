@@ -44,6 +44,9 @@ function state(page: Page) {
   const raw = new URL(page.url()).searchParams.get('geography');
   return raw ? JSON.parse(raw) : null;
 }
+function breakdown(page: Page) {
+  return new URL(page.url()).searchParams.get('revenue-by') ?? 'region';
+}
 async function france(page: Page) {
   await act(page, 'Europe', 'Break down by countries');
   await heading(page, 'countries');
@@ -79,14 +82,16 @@ test('invalid exploration links canonicalize before query predicates are built',
 }) => {
   const invalid = [
     [],
-    { selection: {}, groupBy: 'country' },
+    { selection: {} },
     {
       selection: {
         region: { kind: 'all' },
-        country: { kind: 'all' },
+        country: {
+          kind: 'include',
+          members: [{ kind: 'value', value: 'France' }],
+        },
         customer: { kind: 'all' },
       },
-      groupBy: 'country',
     },
   ];
   for (const value of invalid) {
@@ -193,14 +198,9 @@ test('hierarchy filters live only in the sheet and selected members summarize in
 }) => {
   await page.goto('/exploration-app');
   expect(await controls(page).count()).toBe(0);
-  await page
-    .getByRole('button', { name: 'Grouped by Region', exact: true })
+  await widget(page, 'regions')
+    .getByRole('button', { name: /^(Region|Country|Customer) Break down by$/ })
     .waitFor();
-  expect(
-    await page
-      .getByRole('button', { name: 'Grouped by Region', exact: true })
-      .count()
-  ).toBe(1);
   await openFilters(page);
   expect(
     await controls(page)
@@ -216,11 +216,7 @@ test('hierarchy filters live only in the sheet and selected members summarize in
   await heading(page, 'regions');
   const bar = page.getByRole('group', { name: 'View scope', exact: true });
   expect(await bar.getByText('Filtered by', { exact: true }).count()).toBe(1);
-  expect(
-    await bar
-      .getByRole('button', { name: 'Grouped by Region', exact: true })
-      .count()
-  ).toBe(1);
+  expect(await bar.getByRole('button', { name: /Grouped by/ }).count()).toBe(0);
   await bar
     .getByRole('button', { name: 'Edit Region: Europe', exact: true })
     .waitFor();
@@ -239,7 +235,7 @@ test('hierarchy filters live only in the sheet and selected members summarize in
   await bar
     .getByRole('button', { name: 'Edit Customer: Atelier Nord', exact: true })
     .waitFor();
-  expect(state(page).groupBy).toBe('region');
+  expect(breakdown(page)).toBe('region');
   await choose(page, 'Region', 'North America');
   expect(state(page).selection.country).toEqual({ kind: 'all' });
   expect(state(page).selection.customer).toEqual({ kind: 'all' });
@@ -274,66 +270,40 @@ test('clear resets hierarchy in one history entry while preserving ordinary scop
   expect(state(page)).toEqual(before);
 });
 
-test('sheet ancestor grouping and browser history share the chart hierarchy state', async ({
-  page,
-}) => {
-  await page.goto('/exploration-app');
-  await france(page);
-  const selectedFilters = state(page).selection;
-  const sheet = await openFilters(page);
-  await controls(page)
-    .getByRole('button', { name: /Group by/ })
-    .click();
-  await page.getByRole('option', { name: 'Country', exact: true }).click();
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
-  await heading(page, 'countries');
-  expect(state(page).selection).toEqual(selectedFilters);
-  await page
-    .getByRole('button', { name: 'Grouped by Country', exact: true })
-    .waitFor();
-  await page.goBack();
-  await heading(page, 'customers');
-  await page.goForward();
-  await heading(page, 'countries');
-  await choose(page, 'Region', 'All');
-  await heading(page, 'regions');
-  expect(state(page)).toBeNull();
-});
-
-test('grouping is visible without filters and changes aggregation without changing scope', async ({
+test('chart breakdown changes aggregation independently of filters and browser history restores both', async ({
   page,
 }) => {
   await page.goto('/exploration-app');
   const bar = page.getByRole('group', { name: 'View scope', exact: true });
-  await bar
-    .getByRole('button', { name: 'Grouped by Region', exact: true })
+  await widget(page, 'regions')
+    .getByRole('button', { name: /^(Region|Country|Customer) Break down by$/ })
     .waitFor();
-  expect(await bar.getByText('Filtered by', { exact: true }).count()).toBe(0);
-  expect(
-    await bar
-      .getByRole('button', { name: 'Clear filters', exact: true })
-      .count()
-  ).toBe(0);
-  await choose(page, 'Region', 'Europe');
+  // An unchanged ordinary scope contributes no floating filter summary.
+  expect(await bar.count()).toBe(0);
+  await france(page);
   const selected = state(page).selection;
-  await bar
-    .getByRole('button', { name: 'Grouped by Region', exact: true })
-    .click();
-  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
-  await controls(page)
-    .getByRole('button', { name: /Group by/ })
+  await widget(page, 'customers')
+    .getByRole('button', { name: /^(Region|Country|Customer) Break down by$/ })
     .click();
   await page.getByRole('option', { name: 'Country', exact: true }).click();
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
   await heading(page, 'countries');
   expect(state(page).selection).toEqual(selected);
-  await bar
-    .getByRole('button', { name: 'Grouped by Country', exact: true })
-    .waitFor();
+  expect(breakdown(page)).toBe('country');
+  await page.goBack();
+  await heading(page, 'customers');
+  await page.goForward();
+  await heading(page, 'countries');
+  const sheet = await openFilters(page);
+  expect(
+    await sheet.getByRole('button', { name: /Break down by|Group by/ }).count()
+  ).toBe(0);
+  await choose(page, 'Region', 'All');
+  await heading(page, 'regions');
+  expect(state(page)).toBeNull();
+  expect(new URL(page.url()).searchParams.get('revenue-by')).toBeNull();
+  // A later parent selection must not revive a stale deeper breakdown.
+  await choose(page, 'Region', 'Europe');
+  await heading(page, 'regions');
 });
 
 test('pending descent shows applied summary and blocks stale row actions without widget selectors', async ({
@@ -439,10 +409,10 @@ test('invalid facet parent pairs fail before business queries and recover from t
       },
       customer: { kind: 'all' },
     },
-    groupBy: 'country',
   };
   await page.goto(
-    '/exploration-app?geography=' + encodeURIComponent(JSON.stringify(bad))
+    '/exploration-app?revenue-by=country&geography=' +
+      encodeURIComponent(JSON.stringify(bad))
   );
   await page.getByText('Update the selection', { exact: true }).waitFor();
   expect(business).toBe(0);
@@ -454,7 +424,7 @@ test('invalid facet parent pairs fail before business queries and recover from t
   expect(business).toBe(1);
 });
 
-test('keyboard chart descent returns focus to visible Filters when hierarchy controls are closed', async ({
+test('keyboard chart descent focuses the visible chart breakdown control', async ({
   page,
 }) => {
   await page.goto('/exploration-app?primary=descend');
@@ -464,19 +434,14 @@ test('keyboard chart descent returns focus to visible Filters when hierarchy con
   await trigger.focus();
   await page.keyboard.press('Enter');
   await heading(page, 'countries');
-  const filters = page.getByRole('button', { name: /^Filters(?: \(|$)/ });
+  const control = widget(page, 'countries').getByRole('button', {
+    name: /^(Region|Country|Customer) Break down by$/,
+  });
   await expect
-    .poll(() => filters.evaluate(element => element === document.activeElement))
+    .poll(() => control.evaluate(element => element === document.activeElement))
     .toBe(true);
   await page.keyboard.press('Enter');
-  await page.getByRole('dialog', { name: 'Filters', exact: true }).waitFor();
-  await expect
-    .poll(() =>
-      controls(page)
-        .getByRole('button', { name: 'Country: All', exact: true })
-        .isVisible()
-    )
-    .toBe(true);
+  await page.getByRole('option', { name: 'Country', exact: true }).waitFor();
 });
 
 for (const failPage of [false, true]) {
@@ -502,10 +467,9 @@ for (const failPage of [false, true]) {
         },
         customer: { kind: 'all' },
       },
-      groupBy: 'country',
     };
     await page.goto(
-      '/exploration-app?large-facet&geography=' +
+      '/exploration-app?large-facet&revenue-by=country&geography=' +
         encodeURIComponent(JSON.stringify(selected))
     );
     const edit = page.getByRole('button', {
@@ -558,10 +522,9 @@ test('unresolved selected hierarchy values do not claim zero matches', async ({
       },
       customer: { kind: 'all' },
     },
-    groupBy: 'country',
   };
   await page.goto(
-    '/exploration-app?large-facet&geography=' +
+    '/exploration-app?large-facet&revenue-by=country&geography=' +
       encodeURIComponent(JSON.stringify(selected))
   );
   await page

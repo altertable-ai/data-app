@@ -1,6 +1,5 @@
 import {
   HierarchyFilterSummary,
-  HierarchyGroupSummary,
   HierarchyFilters,
 } from '@/src/react/ui/HierarchyFilters';
 import type { HierarchyState } from '@/src/core/hierarchy';
@@ -97,15 +96,11 @@ export function useViewVariables<Variables extends VariableCollection>(
   );
   const primaryFilters: ReactNode[] = [];
   const filterSummaries: FilterSummary[] = [];
-  const groupingSummaries: FilterSummary[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
   };
   const allFilters: ReactNode[] = [];
-  const hierarchyCount = Object.values(definitions).filter(
-    variable => variable.kind === 'hierarchy'
-  ).length;
 
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
@@ -124,6 +119,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         : prominence === 'secondary'
           ? 'above'
           : 'inline';
+    if (definition.kind === 'hierarchyBreakdown') continue;
     if (definition.kind === 'hierarchy') {
       allFilters.push(
         <HierarchyFilters
@@ -131,18 +127,15 @@ export function useViewVariables<Variables extends VariableCollection>(
           id={navigationId ? `${navigationId}:${name}` : undefined}
           target={{ variable: definition, clientScope, loadFacet }}
           value={value as HierarchyState<any>}
+          onChange={next =>
+            variables.set(
+              name,
+              next as AppVariableValues<Variables>[typeof name]
+            )
+          }
         />
       );
       const state = definition.parse(value);
-      groupingSummaries.push(onEdit => (
-        <HierarchyGroupSummary
-          key={name}
-          target={{ variable: definition, clientScope, loadFacet }}
-          value={state}
-          onEdit={onEdit}
-          showHierarchyLabel={hierarchyCount > 1}
-        />
-      ));
       const count = definition.levels.filter(
         level => state.selection[level.id]?.kind !== 'all'
       ).length;
@@ -358,7 +351,6 @@ export function useViewVariables<Variables extends VariableCollection>(
         <ViewControlBar
           primaryFilters={primaryFilters}
           filterSummaries={filterSummaries}
-          groupingSummaries={groupingSummaries}
           allFilters={allFilters}
           activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}

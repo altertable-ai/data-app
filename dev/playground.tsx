@@ -1,5 +1,5 @@
 import { orderValueBand } from '@/dev/order-value-bands';
-import { geography } from '@/dev/geography';
+import { geography, revenueBy } from '@/dev/geography';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import { dataApp } from '@/dev/app';
@@ -147,7 +147,7 @@ const orderView = defineTimeView({
     defaultValue: { kind: 'preset', id: 'last-30' },
     comparison: true,
   },
-  variables: { geography },
+  variables: { geography, revenueBy },
   input: values => values,
   isEmpty: ({ countries }) => countries.length === 0,
   emptyFallback: { title: 'No matching countries' },
@@ -232,7 +232,7 @@ const geographicDataset = orderView.dataset({
     revenue: { value: row => row.revenue, format: currency },
   },
 });
-const geographicExploration = orderView.hierarchy('geography');
+const geographicExploration = orderView.breakdown('revenueBy');
 function describeScope(input: OrderInput) {
   const places = geography.levels.flatMap((level, index) => {
     const selection = input.geography.selection[level.id];
@@ -622,9 +622,10 @@ function OrderResults({ result }: { result: OrderSource }) {
         title={
           result.loading
             ? 'Geographic revenue'
-            : `Paid revenue by ${geography.level(result.input.geography).groupLabel.toLowerCase()}`
+            : `Paid revenue by ${revenueBy.level(result.input.revenueBy, result.input.geography).groupLabel.toLowerCase()}`
         }
         dataset={geographicDataset}
+        breakdown={geographicExploration}
         source={result}
         actions={geographicActions}
         description="Explore a place to view orders, filter the dashboard, or break down further."

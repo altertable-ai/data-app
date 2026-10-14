@@ -4,6 +4,7 @@ export type {
   HierarchySelection,
   HierarchyState,
   HierarchyVariable,
+  HierarchyBreakdownVariable,
   HierarchyStateOf,
   HierarchyValuesOf,
 } from '@/src/core/hierarchy';

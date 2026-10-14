@@ -3,10 +3,10 @@ import type {
   HierarchyLevel,
   HierarchyState,
   HierarchyVariable,
+  HierarchyBreakdownVariable,
 } from '@/src/core/hierarchy';
 
 import { searchParams } from '@/src/react/ui/search';
-import { writeVariableValues } from '@/src/react/ui/variables';
 
 export type DetailTarget<Input> = {
   id: string;
@@ -35,6 +35,12 @@ export type HierarchyTarget<Input> = {
   ) => Promise<unknown>;
   /** Extract the source view's preserved hierarchy state, including from nested input shapes. */
   read: (input: Input) => HierarchyState<any>;
+};
+/** A chart's breakdown paired with the view's shared hierarchy scope. */
+export type BreakdownTarget<Input> = HierarchyTarget<Input> & {
+  breakdown: HierarchyBreakdownVariable<any>;
+  readLevel: (input: Input) => string;
+  update: (scope: HierarchyState<any>, level: string) => void;
 };
 type ActionRequest =
   | { kind: 'detail'; detail: DetailRequest }
@@ -65,7 +71,7 @@ export type ActionFactory<Row, Input> = {
     values: (row: Row) => Partial<NoInfer<Values>>;
   }): ExplorationAction<Row, Input>;
   descend(definition: {
-    target: HierarchyTarget<Input>;
+    target: BreakdownTarget<Input>;
     member: (row: Row) => string | number;
   }): ExplorationAction<Row, Input>;
 };
@@ -109,12 +115,13 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
       const { variable } = target;
       return {
         label(_row, input) {
-          return `Break down by ${variable.levels[variable.levels.findIndex(level => level.id === target.read(input).groupBy) + 1]?.groupLabel.toLowerCase() ?? 'a finer level'}`;
+          return `Break down by ${variable.levels[variable.levels.findIndex(level => level.id === target.readLevel(input)) + 1]?.groupLabel.toLowerCase() ?? 'a finer level'}`;
         },
         available(_row, input) {
           const displayed = variable.parse(target.read(input));
           return (
-            displayed.groupBy !== variable.levels.at(-1)!.id &&
+            target.readLevel(input) !== variable.levels.at(-1)!.id &&
+            target.readLevel(input) === target.breakdown.read(searchParams()) &&
             variable.same(displayed, variable.read(searchParams()))
           );
         },
@@ -125,15 +132,20 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
             apply() {
               const displayed = variable.parse(target.read(input));
               invariant(
-                variable.same(displayed, variable.read(searchParams())),
+                variable.same(displayed, variable.read(searchParams())) &&
+                  target.readLevel(input) ===
+                    target.breakdown.read(searchParams()),
                 'Wait for the displayed hierarchy before descending.'
               );
-              const state = variable.descend(displayed, member(row));
-              writeVariableValues(
-                { hierarchy: variable },
-                { hierarchy: state },
-                'push'
-              );
+              const level = target.readLevel(input);
+              const state = variable.filter(displayed, {
+                [level]: member(row),
+              });
+              const next =
+                variable.levels[
+                  variable.levels.findIndex(entry => entry.id === level) + 1
+                ]!;
+              target.update(state, next.id);
             },
           };
         },

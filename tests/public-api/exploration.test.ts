@@ -33,40 +33,40 @@ const geography = hierarchyVariable({
     },
   ],
 });
-test('exploration filters scope independently of grouping and clears descendants atomically', () => {
-  const europe = geography.filter(geography.defaultValue, { region: 'Europe' });
-  expect(europe.groupBy).toBe('region');
-  const countries = geography.descend(europe, 'Europe');
-  expect(countries.groupBy).toBe('country');
-  const customers = geography.descend(countries, 'FR');
-  const customer = geography.filter(customers, { customer: 42 });
-  expect(customer.groupBy).toBe('customer');
-  expect(geography.filter(customer, { region: 'Europe' })).toEqual(customer);
-  const america = geography.filter(customer, { region: 'America' });
-  expect(america.groupBy).toBe('country');
+const revenueBy = geography.breakdown({ key: 'revenue-by' });
+const ordersBy = geography.breakdown({ key: 'orders-by' });
+test('shared hierarchy scope and independent chart breakdowns retain their ownership', () => {
+  const france = geography.filter(geography.defaultValue, {
+    region: 'Europe',
+    country: 'FR',
+    customer: 42,
+  });
+  expect(france).not.toHaveProperty('groupBy');
+  expect(revenueBy.level('customer', france).id).toBe('customer');
+  expect(ordersBy.level('region', france).id).toBe('region');
+  const america = geography.filter(france, { region: 'America' });
   expect(america.selection.country).toEqual({ kind: 'all' });
   expect(america.selection.customer).toEqual({ kind: 'all' });
-  expect(geography.filter(customer, { region: null })).toEqual(
+  expect(revenueBy.level('customer', america).id).toBe('country');
+  expect(geography.filter(france, { region: null })).toEqual(
     geography.defaultValue
   );
-  expect(geography.group(customer, 'region')).toEqual({
-    ...customer,
-    groupBy: 'region',
-  });
-  expect(geography.group(europe, 'country')).toEqual(countries);
-  expect(() => geography.group(geography.defaultValue, 'country')).toThrow(
-    'ancestors'
-  );
+  const params = new URLSearchParams({
+    ...geography.write(france),
+    ...revenueBy.write('customer'),
+    ...ordersBy.write('region'),
+  } as Record<string, string>);
+  expect(revenueBy.read(params)).toBe('customer');
+  expect(ordersBy.read(params)).toBe('region');
+  expect(() => revenueBy.parse('unknown')).toThrow('Unknown');
 });
 test('exploration validates value types, ancestry, grouping and URL state', () => {
-  const countries = geography.descend(geography.defaultValue, 'Europe');
-  expect(() => geography.descend(countries, 'US')).toThrow('parent');
-  expect(() => geography.parse({ ...countries, groupBy: 'unknown' })).toThrow(
-    'Unknown'
+  const countries = geography.filter(geography.defaultValue, {
+    region: 'Europe',
+  });
+  expect(() => geography.filter(countries, { country: 'US' })).toThrow(
+    'parent'
   );
-  expect(() =>
-    geography.parse({ ...geography.defaultValue, groupBy: 'country' })
-  ).toThrow('ancestors');
   expect(() => geography.filter(countries, { country: 'unknown' })).toThrow(
     'selection'
   );
@@ -95,20 +95,17 @@ test('selected parents reveal children without advancing grouping or losing deep
     'region',
   ]);
   const europe = geography.filter(root, { region: 'Europe' });
-  expect(europe.groupBy).toBe('region');
   expect(geography.visibleLevels(europe).map(level => level.id)).toEqual([
     'region',
     'country',
   ]);
   const france = geography.filter(europe, { country: 'FR' });
-  expect(france.groupBy).toBe('region');
   expect(geography.visibleLevels(france).map(level => level.id)).toEqual([
     'region',
     'country',
     'customer',
   ]);
   const atelier = geography.filter(france, { customer: 42 });
-  expect(atelier.groupBy).toBe('region');
   expect(geography.describe?.(atelier)).toContain('Country: France');
   expect(geography.describe?.(atelier)).toContain('Customer: Atelier');
   const cleared = geography.filter(atelier, { country: null });

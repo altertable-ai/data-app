@@ -102,6 +102,7 @@ const geography = hierarchyVariable({
     },
   ],
 });
+const revenueBy = geography.breakdown({ key: 'revenue-by' });
 const region = dimensionFilter<string>({
   key: 'region',
   label: 'Region',
@@ -115,6 +116,7 @@ const scoped = createDataHooks(
       {
         region: DimensionSelection<string>;
         geography: HierarchyStateOf<typeof geography>;
+        revenueBy: ReturnType<typeof revenueBy.parse>;
       },
       { id: string; label: string }[]
     >;
@@ -122,7 +124,7 @@ const scoped = createDataHooks(
 ).defineDataView({
   operation: 'scoped',
   dataContext: context,
-  variables: { region, geography },
+  variables: { region, geography, revenueBy },
   describeInput: () => 'Scoped sales',
   isEmpty: data => data.length === 0,
   emptyFallback: { title: 'No groups' },
@@ -147,7 +149,7 @@ scopedGroups.actions(
       }),
     }),
     descend: action.descend({
-      target: scoped.hierarchy('geography'),
+      target: scoped.breakdown('revenueBy'),
       member: row => row.id,
     }),
   }),
@@ -308,7 +310,7 @@ count.records({
 
 scopedGroups.actions(action => ({
   descend: action.descend({
-    target: scoped.hierarchy('geography'),
+    target: scoped.breakdown('revenueBy'),
     // @ts-expect-error A descent selects a scalar member ID, not an object wrapper.
     member: row => ({ id: row.id }),
   }),

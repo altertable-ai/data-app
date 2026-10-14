@@ -110,7 +110,7 @@ const sort = choiceVariable({
 | Search                   | Separate search field                | No                                 | No                                             |
 | Scope, primary (default) | Direct control                       | Yes                                | When different from its clear value or default |
 | Scope, secondary         | Filters button opens sheet           | Yes                                | When different from its clear value or default |
-| Hierarchy                | Filters button opens sheet           | Progressive parent/child selectors | Filtered by members; Grouped by current level  |
+| Hierarchy                | Filters button opens sheet           | Progressive parent/child selectors | Selected members only                          |
 | Display                  | Display options button opens popover | No                                 | No                                             |
 
 The same scope rule covers date ranges, fixed choices, multiple choices,
@@ -121,8 +121,9 @@ Hierarchy levels belong to one variable and cannot also be declared as ordinary
 filters. Search keeps its separate input and suggestions.
 
 The floating summaries open the same Filters sheet; they do not own another
-selection state. Clear removes clearable predicates and resets hierarchy scope
-and grouping. Periods and fixed choices without a clear value retain their current
+selection state. Chart breakdown selectors live in their widget headers.
+Clear removes clearable predicates and resets hierarchy scope, normalizing chart
+breakdowns to valid levels. Periods and fixed choices without a clear value retain their current
 values, as do search and display options. Reset restores configured defaults.
 
 The [date range contract](contract.md#shared-date-ranges) owns source coverage,
@@ -273,8 +274,9 @@ Filters apply immediately; use app-owned drafts only when the task needs Apply/C
 
 Declare one hierarchy variable for dimensions that share a hierarchy. Use
 `hierarchyVariable()` for static options and `app.defineHierarchy()` for
-query-backed levels. Its single URL value owns typed `selection` and `groupBy`. Do not also declare those
-levels as ordinary filters. Dates, segments, and other scope remain independent.
+query-backed levels. Its URL value owns typed `selection` only. Declare a separate
+`geography.breakdown({ key })` variable for each chart that supports hierarchical
+aggregation. Do not also declare hierarchy levels as ordinary filters. Dates, segments, and other scope remain independent.
 
 ```tsx
 const geography = hierarchyVariable({
@@ -305,20 +307,32 @@ const geography = hierarchyVariable({
   ],
 });
 
+const revenueBy = geography.breakdown({ key: 'revenue-by' });
 const salesView = defineDataView({
   operation: 'sales',
   dataContext,
-  variables: { period, geography },
+  variables: { period, geography, revenueBy },
   describeInput: describeSalesScope,
   isEmpty: data => data.rows.length === 0,
   emptyFallback: { title: 'No matching places' },
 });
 const hierarchyTarget = salesView.hierarchy('geography');
+const revenueBreakdown = salesView.breakdown('revenueBy');
+
+<VisualizationWidget
+  dataset={revenue}
+  source={source}
+  breakdown={revenueBreakdown}
+>
+  {(rows, actions) => <BarChart items={rows} itemActions={actions} />}
+</VisualizationWidget>;
 ```
 
-The operation preserves `{ period, geography }`. Validate geography with
-`geography.parse()` and derive query predicates from its selection and grouping
-from `input.geography.groupBy`. Labels come from options or facet results;
+The operation preserves `{ period, geography, revenueBy }`. Validate geography with
+`geography.parse()` and the breakdown with `revenueBy.parse()`. Derive predicates
+from `input.geography.selection` and aggregation from
+`revenueBy.level(input.revenueBy, input.geography).id`. This resolves to a level
+whose ancestors are selected; use it for queries, titles, CSV, and stories. Labels come from options or facet results;
 IDs alone supply predicates. For nested or renamed input fields, provide typed
 `bindings` as with other scope variables.
 
@@ -327,7 +341,7 @@ shape. Static options can declare their immediate `parent` ID. Selector
 visibility follows selected parents independently of grouping: Region All shows
 only Region; Europe reveals Country All; selecting a country reveals Customer
 All. Selecting All clears and hides descendants. `geography.visibleLevels(state)`
-derives controls; `geography.level(state)` derives grouping.
+derives available filter controls and breakdown choices.
 
 The bound target’s `hierarchyTarget.filter({ country: null })` clears that level to All.
 For a standalone variable, use `geography.filter(state, { country: null })`. Stored state
@@ -372,9 +386,10 @@ const geography = app.defineHierarchy({
   ],
 });
 
+const revenueBy = geography.breakdown({ key: 'revenue-by' });
 const operations = {
   overview: app.defineOperation({
-    input: geography.input(parsePeriodInput),
+    input: geography.input(parsePeriodInput, { breakdowns: { revenueBy } }),
     // Existing output, checks, policy, and run definitions.
   }),
 };
@@ -397,6 +412,10 @@ Dropdown search filters loaded options; it does not fetch additional members.
 
 Use `geography.input(baseParser)` for every operation consuming that hierarchy,
 including details. It parses the named field and attaches source validation.
+For an operation that aggregates a chart, add `{ breakdowns: { revenueBy } }`.
+The parser owns those named fields, validates level IDs, and falls back to valid
+levels when required ancestors are absent. Details that only list records can omit
+the breakdowns.
 Clients and HTTP handlers automatically register the required selector operations
 from these input contracts and reject conflicting operation names. No selector
 registration spread or manual parent check is needed. Input wrappers compose for
@@ -415,25 +434,27 @@ membership before querying child labels. These names are reserved;
 See the [support workload example](https://github.com/altertable-ai/data-app/blob/main/dev/support.ts)
 for the complete source, parser, and operation declarations.
 
-| Interaction                          | Result                                                   |
-| ------------------------------------ | -------------------------------------------------------- |
-| Select a different parent            | Clear descendants and retain the deepest valid grouping. |
-| Filter a chart member                | Select that member; preserve grouping.                   |
-| Descend a chart member               | Select that member and advance one level.                |
-| Change Group by in the Filters sheet | Change aggregation and preserve selected filters.        |
-| Select All at the root               | Clear hierarchy filters and return to root grouping.     |
+| Interaction                    | Result                                                           |
+| ------------------------------ | ---------------------------------------------------------------- |
+| Select a different parent      | Clear descendants; fall back to valid chart breakdowns.          |
+| Filter a chart member          | Select that member; preserve valid chart breakdowns.             |
+| Descend a chart member         | Select that member and advance only that chart's breakdown.      |
+| Change a chart's Break down by | Change aggregation; preserve all selected filters.               |
+| Select All at the root         | Clear hierarchy filters and return chart breakdowns to the root. |
 
 `<DataApp>` includes progressive hierarchy selectors in the Filters sheet.
-Each level opens one dropdown for its label and value. A separate Group by
-selector chooses any level whose ancestors are selected, preserving filters.
-`geography.group(state, 'region')` makes the same transition outside React.
-The floating bar separates Filtered by selections from Grouped by dimensions.
-Grouping remains visible with no filters applied. Clicking either opens the sheet. Widgets do not repeat hierarchy selectors. Each transition creates
-one history entry and preserves unrelated variables. Clear filters clears ordinary
-predicates and resets hierarchy selections and grouping, preserving dates, search,
-and display settings.
+The floating bar summarizes selected filters only; clicking a summary opens the
+sheet. Each chart renders its own **Break down by** selector through
+`<VisualizationWidget breakdown={salesView.breakdown('revenueBy')}>`.
+Breakdown controls never appear in the Filters sheet or floating bar.
 
-Use `action.filter()` and `action.descend()` with the bound hierarchy target;
-see [widget actions](widgets.md#explore-from-widgets). Hierarchy row actions wait
-until displayed and applied hierarchy state agree. The filter bar and sheet show applied state; widgets keep displayed context during refreshes. Derive queries, titles, scope,
-CSV, and stories from the same displayed input.
+Use `action.filter()` with `salesView.hierarchy('geography')`, and
+`action.descend()` with `salesView.breakdown('revenueBy')`; see
+[widget actions](widgets.md#explore-from-widgets). A descent selects the displayed
+member and advances that chart in one history entry. Other chart breakdowns stay
+independent. Parent edits and Clear filters normalize every affected chart to a
+valid level in that same history entry, preserving unrelated variables.
+
+Hierarchy actions wait until displayed and applied scope agree; descent also
+checks the displayed breakdown. Filters show applied state, while chart controls,
+titles, and records retain displayed context during refreshes.

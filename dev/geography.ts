@@ -43,3 +43,5 @@ export const geography = hierarchyVariable({
     },
   ],
 });
+
+export const revenueBy = geography.breakdown({ key: 'revenue-by' });

@@ -98,7 +98,11 @@ export const teams = supportApp.defineHierarchy({
     },
   ],
 });
-export type SupportInput = { teams: HierarchyStateOf<typeof teams> };
+export const workloadBy = teams.breakdown({ key: 'workload-by' });
+export type SupportInput = {
+  teams: HierarchyStateOf<typeof teams>;
+  workloadBy: ReturnType<typeof workloadBy.parse>;
+};
 export type Workload = {
   level: 'region' | 'queue' | 'agent';
   id: string;
@@ -126,7 +130,7 @@ function member(selection: DimensionSelection) {
   const value = selection.kind === 'all' ? undefined : selection.members[0];
   return value?.kind === 'value' ? value.value : null;
 }
-function params(input: SupportInput) {
+function params(input: Pick<SupportInput, 'teams'>) {
   return {
     region: member(input.teams.selection.region),
     queue: member(input.teams.selection.queue),
@@ -153,15 +157,20 @@ function ticket(row: unknown[]): Ticket {
 }
 export const operations = {
   overview: supportApp.defineOperation({
-    input: teams.input(() => ({})),
+    input: teams.input(() => ({}), { breakdowns: { workloadBy } }),
     output: value => value as Overview,
-    checks: [{ teams: teams.defaultValue }],
+    checks: [
+      { teams: teams.defaultValue, workloadBy: workloadBy.defaultValue },
+    ],
     policy: { maxQueryRows: 200, maxDurationMs: 15000 },
     async run({ query }, input) {
       const scope = params(input);
       const [summary, workload, tickets] = await Promise.all([
         query('summary', scope),
-        query('workload', { ...scope, groupBy: input.teams.groupBy }),
+        query('workload', {
+          ...scope,
+          groupBy: workloadBy.level(input.workloadBy, input.teams).id,
+        }),
         query('tickets', scope, { limit: 50 }),
       ]);
       const totals = summary.rows[0]!;
@@ -169,7 +178,7 @@ export const operations = {
         backlog: parseCount(totals[0]),
         overdue: parseCount(totals[1]),
         groups: workload.rows.map(row => ({
-          level: input.teams.groupBy,
+          level: workloadBy.level(input.workloadBy, input.teams).id,
           id: parseLabel(row[0]),
           label: parseLabel(row[1]),
           backlog: parseCount(row[2]),

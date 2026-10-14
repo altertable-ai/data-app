@@ -76,3 +76,12 @@ app.defineHierarchy({
     },
   ],
 });
+
+const jobsBy = hierarchy.breakdown({ key: 'jobs-by' });
+const parsedBreakdown = hierarchy.input(() => ({}), { breakdowns: { jobsBy } })(
+  { teams: hierarchy.defaultValue }
+);
+// @ts-expect-error The parsed breakdown retains the hierarchy's level IDs.
+parsedBreakdown.jobsBy = 'unknown';
+const typedLevel: 'region' | 'team' = parsedBreakdown.jobsBy;
+void typedLevel;
