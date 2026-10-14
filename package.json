@@ -96,6 +96,8 @@
   "scripts": {
     "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
     "dev": "bun run scripts/dev.ts",
+    "dev:file": "bun run scripts/dev-file.ts",
+    "dev:dir": "bun run scripts/dev-dir.ts",
     "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
     "lint": "oxlint --type-aware src tests scripts dev examples/starter-data-app vitest.config.ts",
     "format": "oxfmt .",
@@ -127,6 +129,7 @@
     "@types/bun": "1.4.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "get-tsconfig": "4.14.3",
     "markdownlint-cli2": "0.23.3",
     "oxfmt": "0.70.0",
     "oxlint": "1.85.0",

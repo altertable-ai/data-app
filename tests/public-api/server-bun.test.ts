@@ -82,6 +82,37 @@ test('local lakehouse delivers CLI proxy queries with authentication and query e
   ).toMatchObject({ rows: [[1]], queryId: 'q1' });
 });
 
+test('local lakehouse treats empty proxy and API base variables as unset', async () => {
+  const urls: string[] = [];
+  const source = localLakehouse(
+    {
+      ALTERTABLE_DATA_PROXY_URL: '',
+      ALTERTABLE_DATA_PROXY_TOKEN: '',
+      ALTERTABLE_API_BASE: '',
+      ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
+      ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
+    },
+    Object.assign(
+      async (url: RequestInfo | URL, options?: RequestInit) => {
+        urls.push(url instanceof Request ? url.url : url.toString());
+        expect(new Headers(options?.headers).get('authorization')).toBe(
+          `Basic ${btoa('user:secret')}`
+        );
+        return new Response(
+          '{"query_id":"q1"}\n[{"name":"value","type":"INTEGER"}]\n[1]\n'
+        );
+      },
+      { preconnect() {} }
+    )
+  );
+
+  await source.queryAll('SELECT 1 AS value', {
+    limit: 1,
+    signal: new AbortController().signal,
+  });
+  expect(urls).toEqual(['https://api.altertable.ai/query']);
+});
+
 test('local lakehouse recognizes query errors in successful NDJSON responses', async () => {
   for (const body of [
     '{"query_id":"q"}\n{"error":"Wrong number of parameters"}\n',

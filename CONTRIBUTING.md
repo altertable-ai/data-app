@@ -98,6 +98,17 @@ against a mocked Altertable API
 ([altertable-mock](https://github.com/altertable-ai/altertable-mock), DuckDB)
 started with Testcontainers and stopped on exit. Public API tests use their own deterministic consumer fixtures.
 
+Run `bun run dev:file <path>` to preview a single-file data app such as
+`examples/starter-data-app/index.tsx` from anywhere on disk, or `bun run dev:dir <path>`
+for a local data app directory with `src/server.ts`. Both resolve `@altertable/data-app`
+and React from this checkout's `dist`, so the app needs no install. Run `bun run build`
+after package changes. File previews replace the app iframe on edits and preserve
+URL filters. Directory previews restart the app server when its imports change.
+Unlike `bun run dev`, neither uses the mocked API: set `ALTERTABLE_USERNAME` and `ALTERTABLE_PASSWORD` (or the
+`ALTERTABLE_LAKEHOUSE_` names) to query `https://api.altertable.ai`, or another lakehouse
+with `ALTERTABLE_API_BASE`. A CLI proxy (`ALTERTABLE_DATA_PROXY_URL`) takes precedence.
+Each command prints the lakehouse it targets on startup.
+
 Open the **Widgets** tab (`/gallery?view=widgets`) for one ready example of each
 composable data display inside `<VisualizationWidget>`. The other tabs cover
 composed apps, variants, and request states.
