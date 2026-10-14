@@ -234,7 +234,13 @@ const geographicDataset = orderView.dataset({
 });
 const geographicExploration = orderView.exploration('geography');
 function describeScope(input: OrderInput) {
-  return `${calendar.describeInput(input.period.range)} · ${geography.describe?.(input.geography)}`;
+  const places = geography.levels.flatMap((level, index) => {
+    const selection = input.geography.selection[level.id];
+    return selection.kind === 'all'
+      ? []
+      : [geography.dimensions[index]!.describe(selection)];
+  });
+  return `${calendar.describeInput(input.period.range)} · ${places.join(' / ') || 'All regions'}`;
 }
 const dayDataset = orderView.dataset({
   name: 'Orders per day',
@@ -409,12 +415,20 @@ const orderPopulations = {
 };
 const scopeOrdersView = defineDetailView({
   id: 'scope-orders',
-  title: 'Orders in this scope',
+  title: 'Orders',
   operation: 'ordersInScope',
   dataContext: orderDataContext,
   parseInput: operations.ordersInScope.input,
   describeInput: input =>
-    `${orderPopulations[input.status].title}${input.valueBand ? ` · ${orderValueBand(input.valueBand).label}` : ''} · ${describeScope(input)}`,
+    [
+      input.status === 'all' ? null : orderPopulations[input.status].title,
+      input.valueBand
+        ? `Order value: ${orderValueBand(input.valueBand).label}`
+        : null,
+      describeScope(input),
+    ]
+      .filter(Boolean)
+      .join(' · '),
   isEmpty: data => data.orders.length === 0,
   emptyFallback: { title: 'No matching orders' },
 });
