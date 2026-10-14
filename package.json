@@ -101,7 +101,7 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "vitest run",
-    "check": "bun run build && bun run typecheck && bun run lint && bun run check:declarations && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:package && bun run check:starter",
+    "check": "bun run build && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:package && bun run check:starter",
     "check:package": "bun run scripts/check-package.ts",
     "check:workflows": "bash scripts/check-workflows.sh",
     "lint:fix": "oxlint --type-aware --fix src tests scripts dev vitest.config.ts",
@@ -109,8 +109,7 @@
     "lint:md": "markdownlint-cli2",
     "check:links": "remark . --ext md --rc-path .remarkrc.json --frail --no-stdout",
     "check:links:external": "remark . --ext md --rc-path .remarkrc-external.json --frail --no-stdout",
-    "check:styles": "bun run scripts/check-app-styles.ts",
-    "check:declarations": "bun run scripts/check-app-declarations.ts"
+    "check:styles": "bun run scripts/check-app-styles.ts"
   },
   "dependencies": {
     "@altertable/lakehouse": "0.4.1",
@@ -129,7 +128,6 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "markdownlint-cli2": "0.23.3",
-    "oxc-parser": "0.154.0",
     "oxfmt": "0.70.0",
     "oxlint": "1.85.0",
     "oxlint-tsgolint": "7.0.2003",

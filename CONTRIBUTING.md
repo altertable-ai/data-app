@@ -37,13 +37,6 @@ fallbacks minimal.
 
 ## Verify changes
 
-`bun run check:declarations` parses the demo and starter app declarations without
-executing them. It is included in `bun run check`. To validate another declaration
-source, run `bun run check:declarations path/to/app.tsx`. The checker enforces one
-module-level `const` initialized by the named `defineDataApp` import (aliases are
-allowed) and literal data throughout its argument. Keep SQL literal; pass dynamic
-values through declared query parameters. TypeScript checks the configuration shape.
-
 Write high-level public API tests with Vitest in `tests/public-api`. Define an
 operation, authorize and query it, compose a view, or embed an app through
 `@altertable/data-app/<entry>`. Assert consumer-visible results and errors. Supply
