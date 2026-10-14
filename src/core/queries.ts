@@ -1,4 +1,5 @@
 import { invariant } from '@/src/core/invariant';
+import { isRecord, type ValidationIssue } from '@/src/core/validation';
 
 export type QueryParameterValue = string | number | boolean | null;
 type QueryDefinition = {
@@ -28,27 +29,68 @@ export function isQueryParameters(value: unknown): value is QueryParameters {
   );
 }
 
+/** Shared declaration validation for runtime snapshots and static manifests. */
+export function validateQueries(value: unknown): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  if (!isRecord(value))
+    return [{ path: [], message: 'Expected a query registry object.' }];
+  for (const [name, query] of Object.entries(value)) {
+    if (!isRecord(query)) {
+      issues.push({ path: [name], message: 'Expected a query object.' });
+      continue;
+    }
+    if (
+      !name.trim() ||
+      typeof query.statement !== 'string' ||
+      !query.statement.trim()
+    )
+      issues.push({
+        path: [name, 'statement'],
+        message: 'Queries need a name and SQL statement.',
+      });
+    if (!isRecord(query.params)) {
+      issues.push({
+        path: [name, 'params'],
+        message: 'Expected parameter declarations as an object.',
+      });
+      continue;
+    }
+    for (const [key, declaration] of Object.entries(query.params)) {
+      if (!isRecord(declaration)) {
+        issues.push({
+          path: [name, 'params', key],
+          message: 'Expected a parameter declaration object.',
+        });
+        continue;
+      }
+      if (
+        Object.hasOwn(declaration, 'defaultValue') &&
+        !isQueryParameterValue(declaration.defaultValue)
+      )
+        issues.push({
+          path: [name, 'params', key, 'defaultValue'],
+          message: `Invalid default for parameter ${key} in query ${name}.`,
+        });
+    }
+  }
+  return issues;
+}
+
 /** Retain authored statements and defaults, rejecting empty SQL and invalid scalar defaults. */
 export function snapshotQueries(
   definitions: QueryDefinitions
 ): QueryDefinitions {
+  const [issue] = validateQueries(definitions);
+  invariant(!issue, issue?.message ?? 'Invalid query registry.');
   return Object.freeze(
     Object.fromEntries(
       Object.entries(definitions).map(([name, query]) => {
-        invariant(
-          !!name.trim() && !!query.statement.trim(),
-          'Queries need a name and SQL statement.'
-        );
         const params = Object.freeze(
           Object.fromEntries(
-            Object.entries(query.params).map(([key, declaration]) => {
-              invariant(
-                !Object.hasOwn(declaration, 'defaultValue') ||
-                  isQueryParameterValue(declaration.defaultValue),
-                `Invalid default for parameter ${key} in query ${name}.`
-              );
-              return [key, Object.freeze({ ...declaration })];
-            })
+            Object.entries(query.params).map(([key, declaration]) => [
+              key,
+              Object.freeze({ ...declaration }),
+            ])
           )
         );
         return [name, Object.freeze({ statement: query.statement, params })];

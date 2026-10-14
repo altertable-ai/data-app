@@ -140,3 +140,68 @@ Use the four layers (`atbl.tokens`, `atbl.base`, `atbl.components`,
 `atbl.interaction`) and shared focus/state rules rather than duplicate control
 paint. Keep geometry local. Document public variables beside declarations or
 consumption sites; update the name contract in `style-contract.ts` when adding hooks.
+
+## Static manifest tooling
+
+CLI and backend tooling share `@altertable/data-app/manifest`. Install
+`typescript@^5.9.3` in the calling tool; it is an optional peer used only by this
+entry. Browser, server, and ordinary app imports do not load the parser. The
+package uses a separate TypeScript 7 development checker; its compiler API is
+not the tooling parser API.
+
+`extractDataAppManifest(source)` synchronously reads TS/TSX source without
+executing it or resolving imports. It recognizes the named `defineDataApp`
+import from `@altertable/data-app`, including aliases and lexical shadowing.
+Exactly one call must directly initialize a single module-level `const`
+identifier. Its argument must be a direct object literal; nested values use the
+literal syntax documented on `defineDataApp()`. Duplicate keys, ambiguous
+bindings, malformed source, and executable expressions are errors.
+
+The result contains `manifest` and `diagnostics`. Any diagnostic sets `manifest`
+to `null`. Diagnostics have a stable category (`syntax`, `declaration`, `literal`,
+or `schema`), message, and exclusive source range. Offsets count UTF-16 code
+units; lines and columns start at one. Schema and literal diagnostics also carry
+a field path. Missing fields point to the containing object. Callers own the
+source filename and diagnostic presentation.
+
+A manifest is plain `DataAppConfig` data. SQL strings retain their cooked literal
+text, whitespace, and placeholders. Required parameter declarations stay empty;
+scalar defaults stay unchanged. No defaults are filled and no presentation
+settings are normalized. Schema validation rejects unknown fields and follows
+the typed configuration shape. `validateDataAppManifest(value)` validates an
+unknown manifest without parsing; it returns `manifest` and field-path `issues`.
+Runtime query snapshots and manifests share query declaration validation.
+
+A CLI extracts before enabling its credential proxy or issuing a query, then
+compares the manifest scope to the selected profile:
+
+```ts
+import { extractDataAppManifest } from '@altertable/data-app/manifest';
+
+const { manifest, diagnostics } = extractDataAppManifest(source);
+if (!manifest) throw new Error(JSON.stringify(diagnostics));
+if (
+  manifest.scope.organization !== profile.organization ||
+  manifest.scope.environment !== profile.environment
+) {
+  throw new Error('App scope differs from the selected profile.');
+}
+```
+
+A backend extracts before bundling and uses the same declared query registry:
+
+```ts
+import { extractDataAppManifest } from '@altertable/data-app/manifest';
+
+const result = extractDataAppManifest(source);
+if (!result.manifest) return { diagnostics: result.diagnostics };
+const queries = result.manifest.queries;
+// Continue with the backend's typecheck, bundle, and query authorization.
+```
+
+Extraction validates declarations; hosts still own authorization, credential
+isolation, profile comparisons, SQL interpretation, and query execution. To
+integrate, first release a package containing this entry, then update CLI and
+backend dependencies and replace their extraction logic with this contract.
+The backend can reuse its TypeScript 5.9 dependency. The CLI must add that
+optional tooling peer. Keep the tooling entry out of application bundles.

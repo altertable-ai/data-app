@@ -54,7 +54,7 @@ export type DataAppDefinition<
  * This declaration does not execute queries or mount UI. Static apps use `queries: {}`.
  *
  * Declare exactly one module-level const initialized with `defineDataApp({ ... })` in the app's
- * declaration source. For the future backend extractor, the argument is read before bundling
+ * declaration source. The tooling extractor reads the argument before bundling
  * by resolving the named `defineDataApp` import from `@altertable/data-app`, including aliases.
  * Variable name is arbitrary;
  * export only for imports by other modules. The argument must be a direct object literal

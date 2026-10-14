@@ -87,6 +87,7 @@ const results = [browser, worker];
 for (const [name, entry] of Object.entries({
   server: 'src/server/index.ts',
   local: 'src/server/local.ts',
+  manifest: 'src/manifest/index.ts',
 })) {
   results.push(
     await Bun.build({

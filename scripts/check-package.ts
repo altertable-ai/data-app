@@ -114,6 +114,7 @@ try {
   await mkdir(consumerTests, { recursive: true });
   for (const name of [
     'operations.test.ts',
+    'manifest.test.ts',
     'messages.test.ts',
     'worker.test.ts',
   ]) {
@@ -185,6 +186,8 @@ export { DataAppBridge };
     join(temporary, 'server.ts'),
     `import { defineDataApp } from "@altertable/data-app";
 import { createDataHandler } from "@altertable/data-app/server";
+import { extractDataAppManifest, validateDataAppManifest } from '@altertable/data-app/manifest';
+export const tooling = { extractDataAppManifest, validateDataAppManifest };
 import { localLakehouse } from "@altertable/data-app/server/bun";
 if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
@@ -192,6 +195,36 @@ const app = defineDataApp({ title: "Server app", description: "Declare an app on
 if (typeof app.defineOperation !== "function") throw new Error("App declaration is unavailable on the server");
 `
   );
+  await writeFile(
+    join(temporary, 'manifest.mjs'),
+    `import { extractDataAppManifest, validateDataAppManifest } from '@altertable/data-app/manifest';
+const source = "import { defineDataApp as app } from '@altertable/data-app'; export const config = app({ title: 'Packed', description: '', scope: { organization: 'demo', environment: 'test' }, queries: {} }); throw Error('must not execute');";
+const result = extractDataAppManifest(source);
+if (result.diagnostics.length || result.manifest?.title !== 'Packed' || validateDataAppManifest(result.manifest).issues.length) throw Error('Packed manifest extraction failed');
+`
+  );
+  for (const runtime of ['node', 'bun'])
+    await run([runtime, join(temporary, 'manifest.mjs')], temporary);
+  const toolingSource = await readFile(
+    join(packageDirectory, 'dist/manifest.js'),
+    'utf8'
+  );
+  if (
+    !/from ["']typescript["']/.test(toolingSource) ||
+    /function createSourceFile/.test(toolingSource)
+  )
+    throw new Error('Manifest tooling must use an external compiler peer.');
+  for (const path of paths) {
+    if (!path.endsWith('.js') || path === 'dist/manifest.js') continue;
+    const source = await readFile(join(packageDirectory, path), 'utf8');
+    if (
+      /from ["']typescript["']|function createSourceFile|node:fs/.test(
+        source
+      ) &&
+      !['dist/server.js', 'dist/local.js'].includes(path)
+    )
+      throw new Error(`Parser or Node dependency leaked into ${path}`);
+  }
   await writeFile(
     join(temporary, 'tsconfig.json'),
     JSON.stringify({
@@ -213,7 +246,8 @@ if (typeof app.defineOperation !== "function") throw new Error("App declaration 
     })
   );
   await run([
-    join(root, 'node_modules/.bin/tsc'),
+    'node',
+    join(root, 'node_modules/typescript-checker/bin/tsc'),
     '-p',
     join(temporary, 'tsconfig.json'),
   ]);
@@ -358,6 +392,41 @@ export { Grid };
     minimumConsumer,
     { npm_config_cache: join(temporary, 'npm-cache') }
   );
+  // This consumer is outside the repository and has no inherited tooling peer.
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `import { defineDataApp } from '@altertable/data-app';
+if (typeof defineDataApp !== 'function') throw Error('Runtime import failed without parser');
+try { await import('@altertable/data-app/manifest'); throw Error('Missing optional parser unexpectedly resolved'); }
+catch (error) { if (error.code !== 'ERR_MODULE_NOT_FOUND' || !error.message.includes('typescript')) throw error; }`,
+    ],
+    minimumConsumer
+  );
+  await run(
+    [
+      'npm',
+      'install',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--package-lock=false',
+      'typescript@5.9.3',
+    ],
+    minimumConsumer,
+    { npm_config_cache: join(temporary, 'npm-cache') }
+  );
+  await writeFile(
+    join(minimumConsumer, 'manifest.mjs'),
+    await readFile(join(temporary, 'manifest.mjs'), 'utf8')
+  );
+  for (const runtime of ['node', 'bun'])
+    await run(
+      [runtime, join(minimumConsumer, 'manifest.mjs')],
+      minimumConsumer
+    );
   await writeFile(
     join(minimumConsumer, 'minimum.jsx'),
     `
