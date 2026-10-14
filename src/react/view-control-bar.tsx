@@ -7,6 +7,7 @@ import {
   useState,
   type ComponentRef,
   type ReactNode,
+  type MouseEventHandler,
 } from 'react';
 import { Dialog, DialogTrigger } from 'react-aria-components';
 import { Button, PressButton } from '@/src/react/ui/Button';
@@ -14,6 +15,10 @@ import { AppIcon } from '@/src/react/ui/icons';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { Sheet } from '@/src/react/ui/Sheet';
 import { Tooltip } from '@/src/react/ui/Tooltip';
+
+export type FilterSummary = (
+  onEdit: MouseEventHandler<HTMLButtonElement>
+) => ReactNode;
 
 export function ViewControlBar({
   primaryFilters,
@@ -26,7 +31,7 @@ export function ViewControlBar({
 }: {
   primaryFilters: ReactNode[];
   allFilters: ReactNode[];
-  filterSummaries: ((onEdit: () => void) => ReactNode)[];
+  filterSummaries: FilterSummary[];
   activeFilterCount: number;
   displayOptions: ReactNode[];
   changedDisplayOptionCount: number;
@@ -90,17 +95,18 @@ export function ViewControlBar({
         <fieldset
           className="altertable-filter-summary"
           aria-label="Active filters"
-          onClickCapture={event => {
-            if (event.target instanceof Element)
-              returnFocus.current = event.target.closest('button');
-          }}
         >
           <AppIcon name="filters" />
           <GradientScroll
             axis="horizontal"
             className="altertable-filter-summary-items"
           >
-            {filterSummaries.map(render => render(() => setFiltersOpen(true)))}
+            {
+              // oxlint-disable-next-line react/refs -- Summary renderers attach the callback to buttons; they never invoke it during render.
+              filterSummaries.map(render =>
+                render(event => openFilters(event.currentTarget))
+              )
+            }
           </GradientScroll>
           <Button variant="ghost" disabled={!onClear} onClick={clearFilters}>
             Clear filters

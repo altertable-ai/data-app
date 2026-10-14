@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, type MouseEventHandler } from 'react';
 import { hasSelectedFacetLookup } from '@/src/core/exploration-source';
 import { Button } from '@/src/react/ui/Button';
 import { useQueries } from '@tanstack/react-query';
@@ -103,7 +103,7 @@ export function ExplorationFilterSummary({
   target,
   value,
   onEdit,
-}: ExplorationControls & { onEdit: () => void }) {
+}: ExplorationControls & { onEdit: MouseEventHandler<HTMLButtonElement> }) {
   const { state, shown, facets } = useExplorationFacets({ target, value });
   return shown.map((level, position) => {
     const selection = state.selection[level.id]!;

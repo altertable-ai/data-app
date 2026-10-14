@@ -13,7 +13,10 @@ import {
 import type { ControlLabelPlacement } from '@/src/react/ui/PickerField';
 import { useQueries } from '@tanstack/react-query';
 import { Select } from '@/src/react/ui/Select';
-import { ViewControlBar } from '@/src/react/view-control-bar';
+import {
+  ViewControlBar,
+  type FilterSummary,
+} from '@/src/react/view-control-bar';
 import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
   NumberFilter,
@@ -92,7 +95,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
   const primaryFilters: ReactNode[] = [];
-  const filterSummaries: ((onEdit: () => void) => ReactNode)[] = [];
+  const filterSummaries: FilterSummary[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
