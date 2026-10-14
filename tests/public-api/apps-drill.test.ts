@@ -369,10 +369,28 @@ test('metric inspection opens Records first and retains glossary, queries, and s
   ).toBe('true');
   await expect.poll(() => inspection.getByRole('row').count()).toBe(5);
   expect(await inspection.innerText()).toContain('SO-1001');
+  const scope = await inspection.evaluate(dialog =>
+    dialog
+      .getAttribute('aria-describedby')
+      ?.split(' ')
+      .map(id => document.getElementById(id)?.textContent)
+      .join(' ')
+  );
+  expect(scope).toBe('All regions · 2026-09-01–2026-09-30 · Enterprise');
+  expect(
+    await inspection
+      .getByRole('tabpanel', { name: 'Records', exact: true })
+      .innerText()
+  ).not.toContain('Sales across regions and customer segments');
   const shared = page.url();
   expect(new URL(shared).searchParams.get('tab')).toBe('records');
   expect(new URL(shared).searchParams.has('detail')).toBe(false);
   await inspection.getByRole('tab', { name: 'Glossary', exact: true }).click();
+  expect(
+    await inspection
+      .getByRole('tabpanel', { name: 'Glossary', exact: true })
+      .innerText()
+  ).toContain('Sales across regions and customer segments');
   expect(await inspection.innerText()).toContain(
     'Order amount minus discounts and refunds'
   );

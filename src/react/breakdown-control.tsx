@@ -19,6 +19,8 @@ export function BreakdownControl<Input>({
   const level = source.loading
     ? breakdown.defaultValue
     : target.readLevel(source.input);
+  const levels = variable.visibleLevels(scope);
+  if (levels.length < 2) return null;
   return (
     <Select
       id={target.navigationId}
@@ -26,9 +28,7 @@ export function BreakdownControl<Input>({
       labelPlacement="inline"
       value={level}
       disabled={source.loading}
-      options={variable
-        .visibleLevels(scope)
-        .map(entry => ({ id: entry.id, label: entry.label }))}
+      options={levels.map(entry => ({ id: entry.id, label: entry.label }))}
       onChange={id => {
         const current = variable.read(searchParams());
         if (

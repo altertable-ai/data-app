@@ -950,7 +950,7 @@ test('Filters button opens the complete sheet and Escape restores focus', async 
   ).toBe(true);
 });
 
-test('filter actions stay balanced with long selections and Show results preserves filters', async ({
+test('filter actions stay balanced with long selections and Done preserves filters', async ({
   page,
 }) => {
   await page.goto('/filter-presentation?spend=all');
@@ -988,14 +988,12 @@ test('filter actions stay balanced with long selections and Show results preserv
   await controls.getByRole('button', { name: /^Filters(?: \(|$)/ }).click();
   const sheet = page.getByRole('dialog', { name: /^Filters(?: \(|$)/ });
   const clear = sheet.getByRole('button', { name: 'Clear', exact: true });
-  const show = sheet.getByRole('button', { name: 'Show results', exact: true });
+  const show = sheet.getByRole('button', { name: 'Done', exact: true });
   const actionLayout = await sheet.getByRole('button').evaluateAll(buttons => {
     const clear = buttons.find(
       button => button.textContent?.trim() === 'Clear'
     )!;
-    const show = buttons.find(
-      button => button.textContent?.trim() === 'Show results'
-    )!;
+    const show = buttons.find(button => button.textContent?.trim() === 'Done')!;
     const clearBox = clear.getBoundingClientRect();
     const showBox = show.getBoundingClientRect();
     return {
@@ -1043,9 +1041,7 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
     .click();
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   await choose(page, sheet, 'Active account', 'No');
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   await expect.poll(() => sheet.count()).toBe(0);
   expect(
     await controls
@@ -1070,14 +1066,12 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
     .toBe(true);
   expect(
     await sheet
-      .getByRole('button', { name: 'Show results', exact: true })
+      .getByRole('button', { name: 'Done', exact: true })
       .locator('kbd')
       .count()
   ).toBe(0);
   await choose(page, sheet, 'Active account', 'Any');
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   expect(
     await controls
       .getByRole('button', { name: 'Filters (1 active)', exact: true })
@@ -1176,9 +1170,7 @@ test('active summaries open the shared sheet and clear predicates while preservi
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   await choose(page, sheet, 'Active account', 'Yes');
   expect(new URL(page.url()).searchParams.get('active')).toBe('true');
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   await summaries
     .getByRole('button', { name: 'Edit Active account: Yes', exact: true })
     .waitFor();
@@ -1225,9 +1217,7 @@ test('multiple member summaries retain labels and edit selections in the sheet',
     .poll(() => new URL(page.url()).searchParams.get('owner'))
     .not.toContain('Jonas');
   await page.keyboard.press('Escape');
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   await page.setViewportSize({ width: 360, height: 760 });
   const box = (await summaries.boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);

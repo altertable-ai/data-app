@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { formatCount } from '@/src/core/format';
-import { AboutData } from '@/src/react/ui/AboutData';
+import { AboutData, type AboutSubject } from '@/src/react/ui/AboutData';
 import { AppIcon } from '@/src/react/ui/icons';
 import {
   WidgetStatusControl,
@@ -35,7 +35,7 @@ type DataWidgetBaseProps = {
   evidence?: WidgetEvidence;
   action?: ReactNode;
   /** Contributing records shown before definitions and SQL in inspection. */
-  records?: ReactNode;
+  records?: AboutSubject['records'];
   /** Reserved feedback slot; retain displayed content while refreshing or after failure. */
   status?: WidgetStatus;
   footer?: ReactNode;

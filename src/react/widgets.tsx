@@ -207,6 +207,7 @@ export function VisualizationWidget<Row, Data, Input>({
   return (
     <DisplayVisual<readonly Row[]>
       {...shell}
+      data-breakdown-target={breakdown?.navigationId}
       action={
         breakdown ? (
           <>

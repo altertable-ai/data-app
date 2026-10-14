@@ -223,7 +223,9 @@ capped dashboard preview when the destination promises all contributing records.
 Use local pagination for a complete bounded result. Larger sources require
 app-owned server paging; otherwise expose the limit or ask users to narrow scope
 instead of silently truncating records. The record mapping receives the metric's displayed input,
-including during dashboard updates. Records load only when their tab is shown.
+including during dashboard updates. The inspection header uses the destination’s
+`describeInput()` for the displayed scope; source context stays in Glossary.
+Records load only when their tab is shown.
 Record tables can use ordinary row detail actions to continue into an entity;
 register those destinations on the same `<DataApp>`.
 

@@ -1,3 +1,4 @@
+import { TextContent } from '@/src/react/ui/TextContent';
 import { DateFormattingContext } from '@/src/react/date-formatting';
 import {
   useEffect,
@@ -67,7 +68,7 @@ export type AboutSubject = {
   description?: ReactNode;
   visual?: ReactNode;
   /** Optional first inspection tab for contributing records. */
-  records?: ReactNode;
+  records?: { content: ReactNode; scope: string };
   visualKind?: 'metric' | 'chart' | 'widget';
   dataContext?: DataContext;
   references?:
@@ -211,6 +212,7 @@ export function InspectionSheet({
   );
   const heading = title ?? 'About the data';
   const summary =
+    records?.scope ??
     description ??
     resolvedContext?.description ??
     'Glossary and queries for this view.';
@@ -252,18 +254,21 @@ export function InspectionSheet({
           </div>
           <TabPanels>
             {records && (
-              <TabPanel id="records">{open ? records : null}</TabPanel>
+              <TabPanel id="records">{open ? records.content : null}</TabPanel>
             )}
             <TabPanel id="glossary">
-              {listed.length ? (
-                <div className="altertable-about-glossary-list">
-                  {listed.map(entry => (
+              <div className="altertable-about-glossary-list">
+                {records && resolvedContext?.description && (
+                  <TextContent>{resolvedContext.description}</TextContent>
+                )}
+                {listed.length ? (
+                  listed.map(entry => (
                     <GlossaryDetail key={entry.term} entry={entry} />
-                  ))}
-                </div>
-              ) : (
-                <EmptyState {...resolvedEmpty.glossary} />
-              )}
+                  ))
+                ) : (
+                  <EmptyState {...resolvedEmpty.glossary} />
+                )}
+              </div>
             </TabPanel>
             <TabPanel id="queries">
               {hasQueries ? (

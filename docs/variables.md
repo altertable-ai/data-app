@@ -120,7 +120,8 @@ Display controls all live in their own popover, ordered primary before secondary
 Hierarchy levels belong to one variable and cannot also be declared as ordinary
 filters. Search keeps its separate input and suggestions.
 
-The floating summaries open the same Filters sheet; they do not own another
+The floating bar appears only when at least one filter can be cleared. Its
+summaries open the same Filters sheet; they do not own another
 selection state. Chart breakdown selectors live in their widget headers.
 Clear removes clearable predicates and resets hierarchy scope, normalizing chart
 breakdowns to valid levels. Periods and fixed choices without a clear value retain their current
@@ -268,7 +269,7 @@ Direct `useAppVariables()` callers can use `clearAll()` and `resetAll()`. `<Filt
 with paired Apply/Cancel handlers; derive queries and visible controls from applied
 values while a draft is being edited.
 
-Filters apply immediately; use app-owned drafts only when the task needs Apply/Cancel.
+Filters apply immediately; **Done** closes the sheet without applying another change; use app-owned drafts only when the task needs Apply/Cancel.
 
 ## Hierarchical exploration
 
@@ -446,7 +447,8 @@ for the complete source, parser, and operation declarations.
 The floating bar summarizes selected filters only; clicking a summary opens the
 sheet. Each chart renders its own **Break down by** selector through
 `<VisualizationWidget breakdown={salesView.breakdown('revenueBy')}>`.
-Breakdown controls never appear in the Filters sheet or floating bar.
+Breakdown controls appear only when multiple levels are available. They never
+appear in the Filters sheet or floating bar.
 
 Use `action.filter()` with `salesView.hierarchy('geography')`, and
 `action.descend()` with `salesView.breakdown('revenueBy')`; see

@@ -91,7 +91,7 @@ export function ViewControlBar({
           </DisplayOptionsPopover>
         )}
       </VariableBar>
-      {filterSummaries.length > 0 && (
+      {onClear && filterSummaries.length > 0 && (
         <fieldset className="altertable-filter-summary" aria-label="View scope">
           <AppIcon name="filters" />
           <GradientScroll
@@ -132,7 +132,7 @@ export function ViewControlBar({
                 </Button>
               </Tooltip>
               <Button variant="primary" onClick={() => setFiltersOpen(false)}>
-                Show results
+                Done
               </Button>
             </div>
           }

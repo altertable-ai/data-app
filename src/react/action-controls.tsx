@@ -77,13 +77,18 @@ export function useExplorationActions<Row, Input>(
           requestAnimationFrame(() => {
             const navigation = document.getElementById(request.navigation!);
             const sheet = navigation?.closest('dialog');
+            const chartHeading = document.querySelector<HTMLElement>(
+              `[data-breakdown-target="${CSS.escape(request.navigation!)}"] header button`
+            );
             const target = navigation?.checkVisibility()
               ? (navigation.querySelector<HTMLElement>('button') ?? navigation)
-              : document.querySelector<HTMLElement>(
-                  sheet?.id
-                    ? `[data-view-filters-trigger][aria-controls="${CSS.escape(sheet.id)}"]`
-                    : '[data-view-filters-trigger]'
-                );
+              : chartHeading?.checkVisibility()
+                ? chartHeading
+                : document.querySelector<HTMLElement>(
+                    sheet?.id
+                      ? `[data-view-filters-trigger][aria-controls="${CSS.escape(sheet.id)}"]`
+                      : '[data-view-filters-trigger]'
+                  );
             target?.focus({ preventScroll: true });
           });
       }

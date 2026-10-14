@@ -42,6 +42,7 @@ export type DetailContent = {
   id: string;
   target: object;
   parseInput: (value: unknown) => unknown;
+  describeInput: (value: unknown) => string;
   render: (props: DetailPanelProps) => ReactNode;
   renderRecords: (input: unknown) => ReactNode;
 };
@@ -121,6 +122,7 @@ export function createDetailContent<Data, Input>(
     id: view.id,
     target: view,
     parseInput: view.parseInput,
+    describeInput: input => describeInput(view.parseInput(input)),
     render: props => <DetailPanel {...props} />,
     renderRecords: input => (
       <Records key={JSON.stringify(input)} input={view.parseInput(input)} />
@@ -269,9 +271,12 @@ export function useDetailRecords(request: DetailRequest | undefined) {
     content?.target === request.target,
     `Register the ${request.id} detail content on DataApp.`
   );
-  return (
-    <DetailContext value={context}>
-      {content.renderRecords(request.input)}
-    </DetailContext>
-  );
+  return {
+    scope: content.describeInput(request.input),
+    content: (
+      <DetailContext value={context}>
+        {content.renderRecords(request.input)}
+      </DetailContext>
+    ),
+  };
 }

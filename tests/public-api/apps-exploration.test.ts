@@ -35,9 +35,7 @@ async function choose(page: Page, label: string, value: string) {
     .getByRole('button', { name: new RegExp(`^${label}:`) })
     .click();
   await page.getByRole('option', { name: value, exact: true }).click();
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   await sheet.waitFor({ state: 'hidden' });
 }
 function state(page: Page) {
@@ -198,9 +196,14 @@ test('hierarchy filters live only in the sheet and selected members summarize in
 }) => {
   await page.goto('/exploration-app');
   expect(await controls(page).count()).toBe(0);
-  await widget(page, 'regions')
-    .getByRole('button', { name: /^(Region|Country|Customer) Break down by$/ })
-    .waitFor();
+  await heading(page, 'regions');
+  expect(
+    await widget(page, 'regions')
+      .getByRole('button', {
+        name: /^(Region|Country|Customer) Break down by$/,
+      })
+      .count()
+  ).toBe(0);
   await openFilters(page);
   expect(
     await controls(page)
@@ -254,6 +257,10 @@ test('clear resets hierarchy in one history entry while preserving ordinary scop
   page,
 }) => {
   await page.goto('/exploration-app?segment=Self+serve&month=10');
+  await heading(page, 'regions');
+  expect(
+    await page.getByRole('group', { name: 'View scope', exact: true }).count()
+  ).toBe(0);
   await france(page);
   const before = state(page);
   await page
@@ -262,6 +269,9 @@ test('clear resets hierarchy in one history entry while preserving ordinary scop
     .click();
   await heading(page, 'regions');
   expect(state(page)).toBeNull();
+  expect(
+    await page.getByRole('group', { name: 'View scope', exact: true }).count()
+  ).toBe(0);
   expect(new URL(page.url()).searchParams.get('segment')).toBe('Self serve');
   expect(new URL(page.url()).searchParams.get('month')).toBe('10');
   await page.goBack();
@@ -274,9 +284,14 @@ test('chart breakdown changes aggregation independently of filters and browser h
 }) => {
   await page.goto('/exploration-app');
   const bar = page.getByRole('group', { name: 'View scope', exact: true });
-  await widget(page, 'regions')
-    .getByRole('button', { name: /^(Region|Country|Customer) Break down by$/ })
-    .waitFor();
+  await heading(page, 'regions');
+  expect(
+    await widget(page, 'regions')
+      .getByRole('button', {
+        name: /^(Region|Country|Customer) Break down by$/,
+      })
+      .count()
+  ).toBe(0);
   // An unchanged ordinary scope contributes no floating filter summary.
   expect(await bar.count()).toBe(0);
   await france(page);
@@ -423,7 +438,7 @@ test('invalid facet parent pairs fail before business queries and recover from t
   expect(business).toBe(1);
 });
 
-test('keyboard chart descent focuses the visible chart breakdown control', async ({
+test('keyboard chart descent keeps focus in the chart when its breakdown selector appears', async ({
   page,
 }) => {
   await page.goto('/exploration-app?primary=descend');
@@ -436,6 +451,14 @@ test('keyboard chart descent focuses the visible chart breakdown control', async
   const control = widget(page, 'countries').getByRole('button', {
     name: /^(Region|Country|Customer) Break down by$/,
   });
+  const title = widget(page, 'countries').getByRole('button', {
+    name: 'Explore Revenue by countries',
+    exact: true,
+  });
+  await expect
+    .poll(() => title.evaluate(element => element === document.activeElement))
+    .toBe(true);
+  await page.keyboard.press('Tab');
   await expect
     .poll(() => control.evaluate(element => element === document.activeElement))
     .toBe(true);

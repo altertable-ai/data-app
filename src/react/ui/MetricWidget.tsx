@@ -1,3 +1,4 @@
+import type { AboutSubject } from '@/src/react/ui/AboutData';
 import { useDateFormatting } from '@/src/react/date-formatting';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
@@ -23,7 +24,7 @@ type MetricWidgetBaseProps = {
   comparison?: MetricComparison;
   evidence?: WidgetEvidence;
   action?: ReactNode;
-  records?: ReactNode;
+  records?: AboutSubject['records'];
   status?: WidgetStatus;
   visual?: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'about' | 'children'>;
