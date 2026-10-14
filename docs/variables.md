@@ -329,7 +329,8 @@ only Region; Europe reveals Country All; selecting a country reveals Customer
 All. Selecting All clears and hides descendants. `geography.visibleLevels(state)`
 derives controls; `geography.level(state)` derives grouping.
 
-`exploration.filter({ country: null })` clears that level to All. Stored state
+The bound target’s `exploration.filter({ country: null })` clears that level to All.
+For a standalone variable, use `geography.filter(state, { country: null })`. Stored state
 uses `{ kind: 'all' }`, not a null member ID. A null SQL parameter can represent
 unrestricted scope through `($country IS NULL OR country = $country)`. Selecting
 missing database values is a separate operation; hierarchies currently support
@@ -381,11 +382,16 @@ const operations = {
 
 Ancestor IDs bind automatically to matching query parameter names. When names
 differ, declare a typed map such as `parents: { regionId: 'region' }` in the
-source. Bindings can reference only earlier levels and declared query parameters.
+source. Bindings can reference only earlier levels and declared query parameters;
+each child source must bind its immediate parent.
 The platform owns `member`: null requests bounded dropdown options; a selected
 ID requests an exact lookup. Apply both ancestor predicates and the member
 predicate in source SQL. Do not paginate the exact-member lookup or validate
 against the dropdown page: valid IDs may lie outside its first 200 options.
+The platform resolves selected labels independently and shares them between the
+Filters sheet and floating summary, even when the options page fails. Unknown
+counts are omitted rather than reported as zero. No manual label lookup is needed.
+Dropdown search filters loaded options; it does not fetch additional members.
 
 Use `geography.input(baseParser)` for every operation consuming that hierarchy,
 including details. It parses the named field and attaches source validation.
@@ -400,7 +406,8 @@ and limits. Invalid or stale membership returns an invalid-input error; source
 failures prevent the business operation from running. Lookup queries appear in
 query evidence. Both browser/bundle and HTTP execution use this contract. Generated selector endpoints are named
 `key.level` and pass through the same authorization callback as ordinary
-operations. These names are reserved. `hierarchy.operations` is available when
+operations. Child selectors require selected ancestors and validate their
+membership before querying child labels. These names are reserved. `hierarchy.operations` is available when
 an authorizer needs to inspect its selector names.
 
 See the [support workload example](https://github.com/altertable-ai/data-app/blob/main/dev/support.ts)

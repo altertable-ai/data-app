@@ -4,7 +4,11 @@ import {
   type ExplorationState,
   type ExplorationVariable,
 } from '@/src/core/exploration';
-import { parseFacetOptions, type DimensionValue } from '@/src/core/dimension';
+import {
+  parseFacetOptions,
+  type DimensionValue,
+  type DimensionSelection,
+} from '@/src/core/dimension';
 import {
   resolveQueryParameters,
   type QueryDefinitions,
@@ -17,6 +21,17 @@ import {
   type QueryResult,
 } from '@/src/core/operation-types';
 import { invariant } from '@/src/core/invariant';
+
+// Browser entries can contain independent copies of core and React modules.
+const selectedFacetLookup = Symbol.for(
+  '@altertable/data-app.selected-facet-lookup'
+);
+/** Internal capability: generated source facets can resolve a selected member independently. */
+export function hasSelectedFacetLookup(facet: object | undefined): boolean {
+  return (
+    !!facet && (facet as Record<symbol, unknown>)[selectedFacetLookup] === true
+  );
+}
 
 type SourceName<Queries extends QueryDefinitions> = {
   [Name in keyof Queries]: 'member' extends keyof Queries[Name]['params']
@@ -136,34 +151,42 @@ export function defineSourcedExploration<
       : []
   );
   for (const { position, source } of sources) {
+    const query = queries[source.query];
+    invariant(
+      query && Object.hasOwn(query.params, 'member'),
+      'Exploration source queries must declare a member parameter.'
+    );
+    const parent = levels[position - 1];
+    invariant(
+      !parent ||
+        Object.keys(query.params).some(
+          parameter =>
+            parameter !== 'member' &&
+            ((source.parents as Record<string, string> | undefined)?.[
+              parameter
+            ] ?? parameter) === parent.id
+        ),
+      'Child exploration sources must bind their parent through a declared query parameter.'
+    );
     for (const [parameter, ancestor] of Object.entries(source.parents ?? {})) {
       invariant(
         parameter !== 'member' &&
-          Object.hasOwn(queries[source.query]!.params, parameter) &&
+          Object.hasOwn(query.params, parameter) &&
           levels.slice(0, position).some(level => level.id === ancestor),
         'Source parent bindings must reference earlier hierarchy levels and declared parameters.'
       );
     }
   }
   const validationQueries: QueryDefinitions = Object.fromEntries(
-    sources.map(({ source }) => {
-      const query = queries[source.query];
-      invariant(
-        query && Object.hasOwn(query.params, 'member'),
-        'Exploration source queries must declare a member parameter.'
-      );
-      return [source.query, query];
-    })
+    sources.map(({ source }) => [source.query, queries[source.query]!])
   );
   function parents(state: ExplorationState<any>, position: number) {
     return Object.fromEntries(
-      levels.slice(0, position).map((level, index) => {
+      levels.slice(0, position).map(level => {
         const selection = (state as ExplorationState<any>).selection[level.id];
         return [
           level.id,
-          index < position && selection.kind === 'include'
-            ? selection.members[0].value
-            : null,
+          selection.kind === 'include' ? selection.members[0].value : null,
         ];
       })
     );
@@ -186,6 +209,16 @@ export function defineSourcedExploration<
   }
   const normalized = levels.map(level => {
     if (!('source' in level) || !level.source) return level;
+    function input(selection: Record<string, DimensionSelection>) {
+      return Object.fromEntries(
+        levels.map(entry => {
+          const selected = selection[entry.id];
+          const member =
+            selected?.kind === 'include' ? selected.members[0] : undefined;
+          return [entry.id, member?.kind === 'value' ? member.value : null];
+        })
+      );
+    }
     return {
       id: level.id,
       label: level.label,
@@ -193,16 +226,8 @@ export function defineSourcedExploration<
       valueType: level.valueType,
       facet: {
         operation: `${key}.${level.id}`,
-        input: (selection: Record<string, any>) =>
-          Object.fromEntries(
-            levels.map(entry => {
-              const selected = selection[entry.id];
-              return [
-                entry.id,
-                selected?.kind === 'include' ? selected.members[0].value : null,
-              ];
-            })
-          ),
+        input,
+        [selectedFacetLookup]: true,
       },
     };
   }) as NormalizedLevels<Levels>;
@@ -214,30 +239,67 @@ export function defineSourcedExploration<
       { value: DimensionValue; label: string; count?: number }[]
     >
   > = {};
+  function selectorState(
+    values: Record<string, DimensionValue | null>,
+    position: number
+  ) {
+    return variable.parse({
+      selection: Object.fromEntries(
+        levels.map((level, index) => [
+          level.id,
+          index <= position && values[level.id] != null
+            ? {
+                kind: 'include',
+                members: [{ kind: 'value', value: values[level.id] }],
+              }
+            : { kind: 'all' },
+        ])
+      ),
+      groupBy: levels[position]!.id,
+    });
+  }
   for (const { level, position, source } of sources) {
+    function parseSelector(value: unknown) {
+      invariant(
+        value && typeof value === 'object' && !Array.isArray(value),
+        'Expected exploration ancestors.'
+      );
+      const raw = value as Record<string, unknown>;
+      const selected = Object.fromEntries(
+        levels.map((entry, index) => {
+          const member = index <= position ? (raw[entry.id] ?? null) : null;
+          invariant(
+            member === null ||
+              (typeof member === entry.valueType &&
+                (typeof member !== 'number' || Number.isFinite(member))),
+            'Invalid exploration member.'
+          );
+          return [entry.id, member as DimensionValue | null];
+        })
+      );
+      selectorState(selected, position);
+      return selected;
+    }
+    const input: OperationInputParser<Record<string, DimensionValue | null>> =
+      parseSelector;
+    input.validation = {
+      queries: validationQueries,
+      run: (query, values) =>
+        validateMembership(query, selectorState(values, position), position),
+    };
     operations[`${key}.${level.id}`] = {
-      input(value: unknown) {
-        invariant(
-          value && typeof value === 'object' && !Array.isArray(value),
-          'Expected exploration ancestors.'
-        );
-        const raw = value as Record<string, unknown>;
-        return Object.fromEntries(
-          levels.map((entry, index) => {
-            const selected = index < position ? raw[entry.id] : null;
-            invariant(
-              selected === null ||
-                (typeof selected === entry.valueType &&
-                  (typeof selected !== 'number' || Number.isFinite(selected))),
-              'Invalid exploration ancestor.'
-            );
-            return [entry.id, selected as DimensionValue | null];
-          })
-        );
-      },
+      input,
       output: value => parseFacetOptions(value, variable.dimensions[position]!),
-      checks: [Object.fromEntries(levels.map(entry => [entry.id, null]))],
-      queryNames: { [source.query]: source.query },
+      // Child selectors require runtime parent members, so they have no default check input.
+      checks:
+        position === 0
+          ? [Object.fromEntries(levels.map(entry => [entry.id, null]))]
+          : [],
+      queryNames: Object.fromEntries(
+        sources
+          .filter(entry => entry.position <= position)
+          .map(entry => [entry.source.query, entry.source.query])
+      ),
       policy: { maxQueryRows: 200, maxDurationMs: 15000 },
       async run(context, ancestors) {
         const query = queries[source.query]!;
@@ -248,18 +310,21 @@ export function defineSourcedExploration<
             parameters(
               source,
               Object.fromEntries(
-                Object.entries(ancestors).filter(([name]) =>
-                  levels.slice(0, position).some(level => level.id === name)
-                )
+                levels
+                  .slice(0, position)
+                  .map(level => [level.id, ancestors[level.id]!])
               ),
-              null
+              ancestors[level.id] ?? null
             ),
             context.queryParams ?? {}
           ),
-          limit: 200,
+          limit: ancestors[level.id] == null ? 200 : 2,
           signal: context.signal,
         });
-        return options(result, position);
+        const member = ancestors[level.id];
+        return member == null
+          ? options(result, position)
+          : exactMember(result, position, member);
       },
     };
   }
@@ -285,6 +350,40 @@ export function defineSourcedExploration<
       })),
       variable.dimensions[position]!
     );
+  }
+  function exactMember(
+    result: QueryResult,
+    position: number,
+    member: DimensionValue
+  ) {
+    const matches = options(result, position);
+    if (matches.length !== 1 || matches[0]!.value !== member)
+      throw new InputValidationError(
+        `The selected ${levels[position]!.label.toLowerCase()} is not available ${position === 0 ? 'in this scope' : 'within its selected parents'}.`
+      );
+    return matches;
+  }
+  async function validateMembership(
+    query: (
+      name: string,
+      params: QueryParameters,
+      options: { limit: number }
+    ) => Promise<QueryResult>,
+    state: ExplorationState<any>,
+    before = levels.length
+  ) {
+    for (const { level, position, source } of sources) {
+      if (position >= before) continue;
+      const selection = state.selection[level.id];
+      if (selection.kind === 'all') continue;
+      const member = selection.members[0].value;
+      const result = await query(
+        source.query,
+        parameters(source, parents(state, position), member),
+        { limit: 2 }
+      );
+      exactMember(result, position, member);
+    }
   }
   return Object.assign(variable, {
     operations,
@@ -337,24 +436,7 @@ export function defineSourcedExploration<
         operations: { ...inherited?.operations, ...operations },
         async run(query, input) {
           await inherited?.run(query, input as Base);
-          const state = variable.parse(input[key]);
-          for (const { level, position, source } of sources) {
-            const selection = (state as ExplorationState<any>).selection[
-              level.id
-            ];
-            if (selection.kind === 'all') continue;
-            const member = selection.members[0].value;
-            const result = await query(
-              source.query,
-              parameters(source, parents(state, position), member),
-              { limit: 2 }
-            );
-            const matches = options(result, position);
-            if (matches.length !== 1 || matches[0]!.value !== member)
-              throw new InputValidationError(
-                `The selected ${level.label.toLowerCase()} is not available ${position === 0 ? 'in this scope' : 'within its selected parents'}.`
-              );
-          }
+          await validateMembership(query, variable.parse(input[key]));
         },
       };
       return parse;

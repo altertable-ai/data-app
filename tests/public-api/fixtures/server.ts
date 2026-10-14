@@ -110,18 +110,21 @@ const server = Bun.serve({
   async fetch(request): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === '/api/drill-query') {
-      const { statement, params } = (await request.json()) as {
+      const { statement, params, limit } = (await request.json()) as {
         statement: string;
         params: Record<string, string>;
+        limit?: number;
       };
       const query = database.query(statement);
       return Response.json({
         columns: query.columnNames.map(name => ({ name })),
-        rows: query.values(
-          Object.fromEntries(
-            Object.entries(params).map(([key, value]) => [`$${key}`, value])
+        rows: query
+          .values(
+            Object.fromEntries(
+              Object.entries(params).map(([key, value]) => [`$${key}`, value])
+            )
           )
-        ),
+          .slice(0, limit),
       });
     }
     if (url.pathname === '/') return new Response('Ready');

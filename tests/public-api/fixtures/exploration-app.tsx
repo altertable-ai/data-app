@@ -31,7 +31,11 @@ const client = createDataClient({
     async queryAll(statement, options) {
       const response = await fetch('/api/drill-query', {
         method: 'POST',
-        body: JSON.stringify({ statement, params: options.params }),
+        body: JSON.stringify({
+          statement,
+          params: options.params,
+          limit: options.limit,
+        }),
         signal: options.signal,
       });
       if (!response.ok) throw new Error('Revenue source unavailable.');

@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { hasSelectedFacetLookup } from '@/src/core/exploration-source';
 import { Button } from '@/src/react/ui/Button';
 import { useQueries } from '@tanstack/react-query';
 import type { ExplorationState } from '@/src/core/exploration';
@@ -24,36 +25,75 @@ function useExplorationFacets({ target, value }: ExplorationControls) {
   const { variable } = target;
   const state = variable.parse(value);
   const shown: typeof variable.levels = variable.visibleLevels(state);
-  const facets = useQueries({
-    queries: shown.map((level, position) => {
-      const parents = Object.fromEntries(
-        variable.levels.map((entry, index) => [
-          entry.id,
-          index < position
-            ? state.selection[entry.id]
-            : { kind: 'all' as const },
-        ])
-      );
-      const input = level.facet?.input(parents);
-      return {
-        queryKey: [
-          'exploration-facet',
-          target.clientScope,
-          variable.urlKeys,
-          level.id,
-          level.facet?.operation,
-          input,
-        ],
-        enabled: !!level.facet,
-        queryFn: ({ signal }: { signal: AbortSignal }) =>
-          target
-            .loadFacet(level.facet!.operation, input, signal)
-            .then(result =>
-              parseFacetOptions(result, variable.dimensions[position]!)
-            ),
-        staleTime: 60_000,
-      };
-    }),
+  function query(
+    level: (typeof shown)[number],
+    position: number,
+    selected = false
+  ) {
+    const selections = Object.fromEntries(
+      variable.levels.map((entry, index) => [
+        entry.id,
+        index < position || (selected && index === position)
+          ? state.selection[entry.id]
+          : { kind: 'all' as const },
+      ])
+    );
+    const mapper =
+      selected && !hasSelectedFacetLookup(level.facet)
+        ? undefined
+        : level.facet?.input;
+    const input = mapper?.(selections);
+    const enabled =
+      !!mapper && (!selected || state.selection[level.id]?.kind !== 'all');
+    return {
+      queryKey: [
+        'exploration-facet',
+        target.clientScope,
+        variable.urlKeys,
+        level.id,
+        level.facet?.operation,
+        selected ? 'selected' : 'options',
+        input,
+      ],
+      enabled,
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        target
+          .loadFacet(level.facet!.operation, input, signal)
+          .then(result =>
+            parseFacetOptions(result, variable.dimensions[position]!)
+          ),
+      staleTime: 60_000,
+    };
+  }
+  const pages = useQueries({
+    queries: shown.map((level, position) => query(level, position)),
+  });
+  const selected = useQueries({
+    queries: shown.map((level, position) => query(level, position, true)),
+  });
+  const facets = pages.map((page, position) => {
+    const member = selected[position]!;
+    const data =
+      page.data || member.data
+        ? [
+            ...new Map(
+              [...(page.data ?? []), ...(member.data ?? [])].map(option => [
+                option.value,
+                option,
+              ])
+            ).values(),
+          ]
+        : undefined;
+    return {
+      data,
+      isPending: page.isPending,
+      isError: page.isError || member.isError,
+      refetch: () =>
+        Promise.all([
+          page.refetch(),
+          ...(member.isEnabled ? [member.refetch()] : []),
+        ]),
+    };
   });
   return { state, shown, facets };
 }

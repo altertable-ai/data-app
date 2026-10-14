@@ -16,6 +16,7 @@ export type GroupRow = {
   level: string;
   revenue: number;
 };
+const largeFacet = new URLSearchParams(location.search).has('large-facet');
 const predicates = `($region IS NULL OR c.region = $region) AND ($country IS NULL OR c.country = $country)
 AND ($customer IS NULL OR c.customer_id = $customer)`;
 export const app = defineDataApp({
@@ -25,8 +26,11 @@ export const app = defineDataApp({
   scope: { organization: 'demo', environment: 'sample' },
   queries: {
     countries: {
-      statement:
-        'SELECT DISTINCT country AS value, country AS label FROM sales_orders WHERE ($region IS NULL OR region = $region) AND ($member IS NULL OR country=$member) ORDER BY country',
+      statement: largeFacet
+        ? `WITH RECURSIVE countries(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM countries WHERE n<250)
+SELECT 'country-' || printf('%03d', n) AS value, 'Country ' || printf('%03d', n) AS label, n AS count
+FROM countries WHERE $region='Europe' AND ($member IS NULL OR 'country-' || printf('%03d', n)=$member) ORDER BY n`
+        : 'SELECT DISTINCT country AS value, country AS label FROM sales_orders WHERE ($region IS NULL OR region = $region) AND ($member IS NULL OR country=$member) ORDER BY country',
       params: {
         region: { defaultValue: null },
         member: { defaultValue: null },

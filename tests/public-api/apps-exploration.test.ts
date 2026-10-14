@@ -433,3 +433,107 @@ test('keyboard chart descent returns focus to visible Filters when hierarchy con
     )
     .toBe(true);
 });
+
+for (const failPage of [false, true]) {
+  test(`selected hierarchy labels resolve beyond the options page${failPage ? ' even when the page fails' : ''}`, async ({
+    page,
+  }) => {
+    if (failPage)
+      await page.route('**/api/drill-query', async route => {
+        const { statement, params } = route.request().postDataJSON();
+        if (statement.startsWith('WITH RECURSIVE') && params.member === null)
+          await route.fulfill({ status: 503 });
+        else await route.continue();
+      });
+    const selected = {
+      selection: {
+        region: {
+          kind: 'include',
+          members: [{ kind: 'value', value: 'Europe' }],
+        },
+        country: {
+          kind: 'include',
+          members: [{ kind: 'value', value: 'country-250' }],
+        },
+        customer: { kind: 'all' },
+      },
+      groupBy: 'country',
+    };
+    await page.goto(
+      '/exploration-app?large-facet&geography=' +
+        encodeURIComponent(JSON.stringify(selected))
+    );
+    const edit = page.getByRole('button', {
+      name: 'Edit Country: Country 250',
+      exact: true,
+    });
+    await edit.waitFor();
+    await edit.click();
+    const picker = controls(page).getByRole('button', {
+      name: 'Country: Country 250',
+      exact: true,
+    });
+    await picker.click();
+    const option = page.getByRole('option', {
+      name: 'Country 250',
+      exact: false,
+    });
+    await option.waitFor();
+    expect(await option.innerText()).toContain('250 matches');
+    expect(await option.getByText('0 matches', { exact: true }).count()).toBe(
+      0
+    );
+    if (!failPage) expect(await page.getByRole('option').count()).toBe(202);
+  });
+}
+
+test('unresolved selected hierarchy values do not claim zero matches', async ({
+  page,
+}) => {
+  let failLookup = true;
+  await page.route('**/api/drill-query', async route => {
+    const { statement, params } = route.request().postDataJSON();
+    if (
+      failLookup &&
+      statement.startsWith('WITH RECURSIVE') &&
+      params.member !== null
+    )
+      await route.fulfill({ status: 503 });
+    else await route.continue();
+  });
+  const selected = {
+    selection: {
+      region: {
+        kind: 'include',
+        members: [{ kind: 'value', value: 'Europe' }],
+      },
+      country: {
+        kind: 'include',
+        members: [{ kind: 'value', value: 'country-250' }],
+      },
+      customer: { kind: 'all' },
+    },
+    groupBy: 'country',
+  };
+  await page.goto(
+    '/exploration-app?large-facet&geography=' +
+      encodeURIComponent(JSON.stringify(selected))
+  );
+  await page
+    .getByRole('button', { name: 'Edit Country: country-250', exact: true })
+    .click();
+  await controls(page)
+    .getByRole('button', { name: 'Country: country-250', exact: true })
+    .click();
+  const option = page.getByRole('option', { name: 'country-250', exact: true });
+  await option.waitFor();
+  expect(await option.getByText('0 matches', { exact: true }).count()).toBe(0);
+  failLookup = false;
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await controls(page)
+    .getByRole('button', { name: 'Country: Country 250', exact: true })
+    .waitFor();
+  await page
+    .getByRole('option', { name: 'Country 250', exact: false })
+    .waitFor();
+});

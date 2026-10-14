@@ -180,7 +180,8 @@ test('input contracts register selector operations automatically with authorizat
   );
   expect(response.status).toBe(200);
   expect(authorized).toEqual(['team.team']);
-  expect(log[0]?.params).toEqual({ region: 'Europe', member: null });
+  expect(log.map(entry => entry.name)).toEqual(['regions', 'teams']);
+  expect(log.at(-1)?.params).toEqual({ region: 'Europe', member: null });
   expect(() =>
     createDataClient({
       operations: { overview, 'team.team': overview },
@@ -261,4 +262,105 @@ test('hierarchy input wrappers own their field and reject asynchronous base pars
   expect(() =>
     hierarchy.input(async () => ({}))({ team: hierarchy.defaultValue })
   ).toThrow('synchronous');
+});
+
+test('generated selectors resolve selected members outside the options page with exact bounds', async () => {
+  const log: { name: string; params: unknown; limit: number }[] = [];
+  const client = createDataClient({
+    operations: hierarchy.operations,
+    lakehouse: source(log),
+  });
+  const result = await client.query('team.team', {
+    region: 'Europe',
+    team: 250,
+  });
+  expect(result.data).toEqual([
+    { value: 250, label: 'Team outside the first page' },
+  ]);
+  expect(log.at(-1)).toEqual({
+    name: 'teams',
+    params: { region: 'Europe', member: 250 },
+    limit: 2,
+  });
+  await expect(
+    client.query('team.team', { region: 'Europe', team: 999 })
+  ).rejects.toThrow('selected team');
+});
+
+test('selector endpoints validate sourced ancestors before querying child labels', async () => {
+  const log: { name: string; params: unknown; limit: number }[] = [];
+  const client = createDataClient({
+    operations: hierarchy.operations,
+    lakehouse: source(log),
+  });
+  await expect(
+    client.query('team.team', { region: 'Unknown', team: null })
+  ).rejects.toThrow('selected region');
+  expect(log.map(entry => entry.name)).toEqual(['regions']);
+  log.length = 0;
+  await expect(
+    client.query('team.team', { region: null, team: null })
+  ).rejects.toMatchObject({ code: 'invalid_input' });
+  expect(log).toEqual([]);
+  const handler = createDataHandler({ overview }, async () => ({
+    lakehouse: source(log),
+  }));
+  const response = await handler(
+    new Request('http://localhost/api/data/team.team', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ region: 'Unknown', team: 250 }),
+    })
+  );
+  expect(response.status).toBe(400);
+  expect(log.map(entry => entry.name)).toEqual(['regions']);
+});
+
+test('source selectors enforce fixed ancestor membership and parent bindings', async () => {
+  const fixed = app.defineExploration({
+    key: 'fixed',
+    label: 'Fixed regions',
+    levels: [
+      {
+        id: 'region',
+        label: 'Region',
+        valueType: 'string',
+        options: [{ value: 'Europe', label: 'Europe' }],
+      },
+      {
+        id: 'team',
+        label: 'Team',
+        valueType: 'number',
+        source: { query: 'teams' },
+      },
+    ],
+  });
+  const log: { name: string; params: unknown; limit: number }[] = [];
+  await expect(
+    createDataClient({
+      operations: fixed.operations,
+      lakehouse: source(log),
+    }).query('fixed.team', { region: 'Unknown', team: null })
+  ).rejects.toMatchObject({ code: 'invalid_input' });
+  expect(log).toEqual([]);
+  expect(() =>
+    app.defineExploration({
+      key: 'unbound',
+      label: 'Unbound',
+      levels: [
+        {
+          id: 'team',
+          label: 'Team',
+          valueType: 'number',
+          options: [{ value: 1, label: 'Team' }],
+        },
+        {
+          id: 'region',
+          label: 'Region',
+          valueType: 'string',
+          source: { query: 'regions' },
+        },
+      ],
+    })
+  ).toThrow('bind their parent');
 });
