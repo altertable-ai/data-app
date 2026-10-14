@@ -6,9 +6,9 @@ relative or app-alias imports.
 
 Declare exactly one top-level const initialized with `defineDataApp({ ... })`, imported
 from `@altertable/data-app`. Keep executable composition outside its literal argument.
-Use schema-valid literals without spreads, computed keys,
+Use literals matching the typed app configuration without spreads, computed keys,
 references, calls, callbacks, prototype setters (`__proto__` properties), or template interpolation.
-Duplicate keys and ambiguous declarations are errors. Extraction reads and validates the argument
+Duplicate keys and ambiguous declarations are errors. Extraction reads the literal argument
 before bundling, without evaluating app code or parsing SQL. Import aliases and any variable
 name are allowed; export only for other modules. Static apps use `queries: {}`.
 

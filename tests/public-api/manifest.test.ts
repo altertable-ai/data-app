@@ -1,9 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { defineDataApp } from '@altertable/data-app';
-import {
-  extractDataAppManifest,
-  validateDataAppManifest,
-} from '@altertable/data-app/manifest';
+import { defineDataApp, type DataAppConfig } from '@altertable/data-app';
+import { extractDataAppManifest } from '@altertable/data-app/manifest';
 
 const fields = `title: 'Sales', description: 'Explore sales', scope: { organization: 'demo', environment: 'test' }, queries: {}`;
 function argumentWith(field: string) {
@@ -86,13 +83,14 @@ function shadow(declareApp: (value: unknown) => unknown) { return declareApp({})
   test('accepts independent import aliases and type arguments, but rejects duplicate bindings', () => {
     const text = source()
       .replace(
-        'import { defineDataApp }',
+        'import { defineDataApp, type DataAppConfig }',
         'import { defineDataApp, defineDataApp as unused }'
       )
       .replace('= defineDataApp(', '= defineDataApp<{}>(');
     expect(extractDataAppManifest(text).diagnostics).toEqual([]);
     rejected(
-      source() + "\nimport { defineDataApp } from '@altertable/data-app';",
+      source() +
+        "\nimport { defineDataApp, type DataAppConfig } from '@altertable/data-app';",
       'declaration'
     );
   });
@@ -117,7 +115,8 @@ function shadow(declareApp: (value: unknown) => unknown) { return declareApp({})
     expect(result.diagnostics).toEqual([]);
     expect(result.manifest?.title).toBe('Escaped Sales');
     expect(result.manifest?.description).toBe('Line one\nLine two \n');
-    const query = result.manifest!.queries.sales!;
+    const manifest = result.manifest as DataAppConfig;
+    const query = manifest.queries.sales!;
     expect(query.statement).toBe(statement);
     expect(query.params).toEqual({
       required: {},
@@ -133,7 +132,7 @@ function shadow(declareApp: (value: unknown) => unknown) { return declareApp({})
       text: { defaultValue: 'escaped ` A' },
     });
     expect(Object.is(query.params.zero!.defaultValue, -0)).toBe(true);
-    expect(defineDataApp(result.manifest!).queries).toEqual(
+    expect(defineDataApp(result.manifest as DataAppConfig).queries).toEqual(
       result.manifest!.queries
     );
   });
@@ -219,46 +218,39 @@ throw new Error('this must never execute');`;
     rejected(source(argumentWith(field)), 'literal');
   });
 
-  test.each([
-    '{}',
-    "{ title: 0, description: '', scope: { organization: 'a', environment: 'b' }, queries: {} }",
-    "{ title: 'A', description: '', scope: [] , queries: {} }",
-    "{ title: 'A', description: '', scope: { organization: '', environment: 'b' }, queries: {} }",
-    ...[
-      'extra: 1',
-      "appearance: { theme: 'auto' }",
-      'appearance: { chartColors: [1] }',
-      'dateFormatting: { timeZone: null }',
-    ].map(field => `{ ${fields}, ${field} }`),
-    ...[
-      '[]',
-      '{ q: {} }',
-      "{ q: { statement: ' ', params: {} } }",
-      "{ q: { statement: 'SELECT 1', params: { a: 1 } } }",
-      "{ q: { statement: 'SELECT 1', params: { a: { defaultValue: [] } } } }",
-      "{ q: { statement: 'SELECT 1', params: { a: { other: null } } } }",
-    ].map(
-      queries => `{ ${fields.replace('queries: {}', `queries: ${queries}`)} }`
-    ),
-  ])('reports schema errors: %s', argument => {
-    rejected(source(argument), 'schema');
+  test('extracts literal data without adding configuration schema validation', () => {
+    for (const argument of [
+      '{}',
+      `{ ${fields}, extra: { values: [1, true, null] } }`,
+      argumentWith('title: 0'),
+      argumentWith('scope: []'),
+      argumentWith("appearance: { theme: 'auto' }"),
+      argumentWith(
+        "queries: { q: { statement: '', params: { p: { defaultValue: [] } } } }"
+      ),
+    ]) {
+      const result = extractDataAppManifest(source(argument));
+      expect(result.manifest).not.toBeNull();
+      expect(result.diagnostics).toEqual([]);
+    }
+    expect(extractDataAppManifest(source('{}')).manifest).toEqual({});
+    expect(
+      extractDataAppManifest(
+        source(`{ ${fields}, extra: { values: [1, true, null] } }`)
+      ).manifest?.extra
+    ).toEqual({ values: [1, true, null] });
   });
 
-  test('locates schema errors at authored values and missing fields at their containing object', () => {
-    const text = source(
-      `{ title: 'Sales', description: '', scope: { organization: 'demo' }, queries: { q: { statement: 'SELECT $a', params: { a: { defaultValue: [] } } } } }`
+  test('locates literal errors at authored expressions', () => {
+    const text = source(argumentWith('description: getDescription()'));
+    const result = rejected(text, 'literal');
+    const issue = result.diagnostics[0]!;
+    expect(text.slice(issue.start.offset, issue.end.offset)).toBe(
+      'getDescription()'
     );
-    const result = rejected(text, 'schema');
-    const issue = result.diagnostics.find(
-      issue => issue.path?.at(-1) === 'defaultValue'
-    )!;
-    expect(text.slice(issue.start.offset, issue.end.offset)).toBe('[]');
-    expect(issue.path).toEqual(['queries', 'q', 'params', 'a', 'defaultValue']);
+    expect(issue.path).toEqual(['description']);
     expect(issue.start.line).toBe(2);
     expect(issue.start.column).toBe(issue.start.offset - text.indexOf('\n'));
-    expect(
-      result.diagnostics.find(issue => issue.path?.at(-1) === 'environment')
-    ).toBeDefined();
   });
 
   test('reports malformed source, including code outside the declaration', () => {
@@ -268,35 +260,6 @@ throw new Error('this must never execute');`;
     );
     rejected(source() + '\nconst broken = <div>;', 'syntax');
     rejected(source() + '\nconst broken = ;', 'syntax');
-  });
-
-  test('validates unknown manifest data without parsing or normalizing it', () => {
-    const manifest = {
-      title: 'A',
-      description: '',
-      scope: { organization: 'a', environment: 'b' },
-      queries: {
-        q: {
-          statement: '  SELECT $x  ',
-          params: { x: {}, y: { defaultValue: null } },
-        },
-      },
-    };
-    expect(validateDataAppManifest(manifest)).toEqual({ manifest, issues: [] });
-    expect(validateDataAppManifest(null).issues).toEqual([
-      { path: [], message: 'Expected an object.' },
-    ]);
-    expect(
-      validateDataAppManifest({
-        ...manifest,
-        queries: {
-          q: {
-            statement: 'SELECT 1',
-            params: { x: { defaultValue: Number.NaN } },
-          },
-        },
-      }).issues[0]?.path
-    ).toEqual(['queries', 'q', 'params', 'x', 'defaultValue']);
   });
 
   test('rejects prototype setters instead of extracting data absent from the runtime object', () => {
@@ -324,8 +287,10 @@ throw new Error('this must never execute');`;
       )
     );
     expect(result.diagnostics).toEqual([]);
-    expect(Object.hasOwn(result.manifest!.queries, 'constructor')).toBe(true);
-    expect(defineDataApp(result.manifest!).queries).toEqual(
+    expect(
+      Object.hasOwn(result.manifest!.queries as object, 'constructor')
+    ).toBe(true);
+    expect(defineDataApp(result.manifest as DataAppConfig).queries).toEqual(
       result.manifest!.queries
     );
   });

@@ -58,11 +58,11 @@ export type DataAppDefinition<
  * by resolving the named `defineDataApp` import from `@altertable/data-app`, including aliases.
  * Variable name is arbitrary;
  * export only for imports by other modules. The argument must be a direct object literal
- * containing schema-valid objects, arrays, strings (including templates without interpolation),
+ * containing objects, arrays, strings (including templates without interpolation),
  * finite signed numbers, booleans, and null. No spreads, computed keys, references, calls,
  * callbacks, or prototype setters (`__proto__` properties) inside it. Duplicate keys
  * and ambiguous declarations are errors. Unrelated declarators in the same const statement
- * are allowed. Extraction must validate data without evaluating app code.
+ * are allowed. Extraction must read literal data without evaluating app code.
  * TypeScript checks the shape, not AST syntax. Keep executable composition outside the call.
  *
  * SQL passes unchanged to the backend, which interprets placeholders such as `$orgId`.

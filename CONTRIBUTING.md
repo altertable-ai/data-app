@@ -162,19 +162,18 @@ syntax; its default is `source.tsx`. It is a virtual name for the compiler, neve
 a file to load.
 
 The result contains `manifest` and `diagnostics`. Any diagnostic sets `manifest`
-to `null`. Diagnostics have a stable category (`syntax`, `declaration`, `literal`,
-or `schema`), message, and exclusive source range. Offsets count UTF-16 code
-units; lines and columns start at one. Schema and literal diagnostics also carry
-a field path. Missing fields point to the containing object. Callers own the
-source filename and diagnostic presentation.
+to `null`. Diagnostics have a stable category (`syntax`, `declaration`, or
+`literal`), message, and exclusive source range. Offsets count UTF-16 code units;
+lines and columns start at one. Literal diagnostics also carry a field path.
+Callers own the source filename and diagnostic presentation.
 
-A manifest is plain `DataAppConfig` data. SQL strings retain their cooked literal
-text, whitespace, and placeholders. Required parameter declarations stay empty;
-scalar defaults stay unchanged. No defaults are filled and no presentation
-settings are normalized. Schema validation rejects unknown fields and follows
-the typed configuration shape. `validateDataAppManifest(value)` validates an
-unknown manifest without parsing; it returns `manifest` and field-path `issues`.
-Runtime query snapshots and manifests share query declaration validation.
+A manifest is a plain object of decoded literal data (`Record<string, unknown>`).
+Extraction checks declaration syntax, without checking configuration shape or
+rejecting unknown fields. TypeScript checks the app configuration, and existing
+runtime query validation still checks SQL statements and parameter defaults.
+SQL strings retain their cooked literal text, whitespace, and placeholders.
+Required parameter declarations stay empty; scalar defaults stay unchanged.
+No defaults are filled and no presentation settings are normalized.
 
 A CLI extracts before enabling its credential proxy or issuing a query, then
 compares the manifest scope to the selected profile:
@@ -184,9 +183,15 @@ import { extractDataAppManifest } from '@altertable/data-app/manifest';
 
 const { manifest, diagnostics } = extractDataAppManifest(source, fileName);
 if (!manifest) throw new Error(JSON.stringify(diagnostics));
+const scope = manifest.scope;
 if (
-  manifest.scope.organization !== profile.organization ||
-  manifest.scope.environment !== profile.environment
+  !scope ||
+  typeof scope !== 'object' ||
+  Array.isArray(scope) ||
+  !('organization' in scope) ||
+  !('environment' in scope) ||
+  scope.organization !== profile.organization ||
+  scope.environment !== profile.environment
 ) {
   throw new Error('App scope differs from the selected profile.');
 }
@@ -203,7 +208,7 @@ const queries = result.manifest.queries;
 // Continue with the backend's typecheck, bundle, and query authorization.
 ```
 
-Extraction validates declarations; hosts still own authorization, credential
+Extraction reads static declarations; hosts still own authorization, credential
 isolation, profile comparisons, SQL interpretation, and query execution. To
 integrate, first release a package containing this entry, then update CLI and
 backend dependencies and replace their extraction logic with this contract.

@@ -186,8 +186,8 @@ export { DataAppBridge };
     join(temporary, 'server.ts'),
     `import { defineDataApp } from "@altertable/data-app";
 import { createDataHandler } from "@altertable/data-app/server";
-import { extractDataAppManifest, validateDataAppManifest } from '@altertable/data-app/manifest';
-export const tooling = { extractDataAppManifest, validateDataAppManifest };
+import { extractDataAppManifest } from '@altertable/data-app/manifest';
+export const tooling = { extractDataAppManifest };
 import { localLakehouse } from "@altertable/data-app/server/bun";
 if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
@@ -197,10 +197,10 @@ if (typeof app.defineOperation !== "function") throw new Error("App declaration 
   );
   await writeFile(
     join(temporary, 'manifest.mjs'),
-    `import { extractDataAppManifest, validateDataAppManifest } from '@altertable/data-app/manifest';
+    `import { extractDataAppManifest } from '@altertable/data-app/manifest';
 const source = "import { defineDataApp as app } from '@altertable/data-app'; export const config = app({ title: 'Packed', description: '', scope: { organization: 'demo', environment: 'test' }, queries: {} }); throw Error('must not execute');";
 const result = extractDataAppManifest(source);
-if (result.diagnostics.length || result.manifest?.title !== 'Packed' || validateDataAppManifest(result.manifest).issues.length) throw Error('Packed manifest extraction failed');
+if (result.diagnostics.length || result.manifest?.title !== 'Packed') throw Error('Packed manifest extraction failed');
 `
   );
   for (const runtime of ['node', 'bun'])

@@ -1,16 +1,8 @@
 /** Static tooling only; never import this entry into an app's runtime bundle. */
 import { posix } from 'node:path';
 import ts from 'typescript-ast';
-import {
-  validateDataAppManifest,
-  type DataAppManifest,
-} from '@/src/manifest/validation';
-export { validateDataAppManifest } from '@/src/manifest/validation';
-export type {
-  DataAppManifest,
-  DataAppManifestIssue,
-  DataAppManifestValidation,
-} from '@/src/manifest/validation';
+/** Plain literal declaration data; configuration shape is checked by TypeScript. */
+export type DataAppManifest = Record<string, unknown>;
 
 /** Offsets are UTF-16 code units; lines and columns are one-based. End is exclusive. */
 export type DataAppSourcePosition = {
@@ -19,7 +11,7 @@ export type DataAppSourcePosition = {
   column: number;
 };
 export type DataAppManifestDiagnostic = {
-  code: 'syntax' | 'declaration' | 'literal' | 'schema';
+  code: 'syntax' | 'declaration' | 'literal';
   message: string;
   start: DataAppSourcePosition;
   end: DataAppSourcePosition;
@@ -230,9 +222,7 @@ export function extractDataAppManifest(
     return { manifest: null, diagnostics };
   }
 
-  const locations = new Map<string, ts.Node>();
   function read(node: ts.Expression, path: (string | number)[]): unknown {
-    locations.set(JSON.stringify(path), node);
     if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
       return node.text;
     if (node.kind === ts.SyntaxKind.TrueKeyword) return true;
@@ -309,21 +299,8 @@ export function extractDataAppManifest(
     return undefined;
   }
   const value = read(argument, []);
-  if (!diagnostics.length) {
-    const validation = validateDataAppManifest(value);
-    for (const issue of validation.issues) {
-      let path = issue.path;
-      while (!locations.has(JSON.stringify(path)) && path.length)
-        path = path.slice(0, -1);
-      report(
-        'schema',
-        issue.message,
-        locations.get(JSON.stringify(path)) ?? argument,
-        issue.path
-      );
-    }
-    if (!diagnostics.length)
-      return { manifest: validation.manifest, diagnostics };
-  }
-  return { manifest: null, diagnostics };
+  return {
+    manifest: diagnostics.length ? null : (value as DataAppManifest),
+    diagnostics,
+  };
 }
