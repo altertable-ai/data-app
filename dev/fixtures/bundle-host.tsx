@@ -50,11 +50,9 @@ import '@/dev/fixtures/dev-reload';
 import '@/dev/playground-host.css';
 injectDataAppAnnotationStyles();
 const hostOptions = new URLSearchParams(location.search);
-const isPlayground = ['/playground', '/support'].includes(location.pathname);
-const previewTitle =
-  location.pathname === '/support' ? 'Support workload' : 'Playground';
-if (isPlayground) document.title = `${previewTitle} · Altertable`;
-const appPreview = ['/starter-data-app', '/playground', '/support'].includes(
+const isPlayground = location.pathname === '/playground';
+if (isPlayground) document.title = 'Playground · Altertable';
+const appPreview = ['/starter-data-app', '/playground'].includes(
   location.pathname
 );
 const response = await fetch(
@@ -103,9 +101,7 @@ function Host() {
   const [bundleVersion, bumpBundleVersion] = useReducer(value => value + 1, 1);
   const annotationsHost = useAnnotationHost({
     sourceVersion: isPlayground ? `${sourceHash}:${bundleVersion}` : 'fixture',
-    storageKey: isPlayground
-      ? `${location.pathname === '/support' ? 'support' : 'playground'}:${location.origin}`
-      : undefined,
+    storageKey: isPlayground ? `playground:${location.origin}` : undefined,
   });
   const annotationBarRef = useRef<AnnotationBarHandle>(null);
   const sendAnnotations = useEffectEvent(async () => {
@@ -331,7 +327,7 @@ function Host() {
     >
       {isPlayground ? (
         <header className="playground-navbar">
-          <strong className="playground-title">{previewTitle}</strong>
+          <strong className="playground-title">Playground</strong>
           <output
             className="playground-connection"
             data-status={status}
@@ -485,7 +481,7 @@ function Host() {
               setHasUnsavedChanges(false);
           }}
           iframeProps={iframeProps}
-          title={isPlayground ? `${previewTitle} preview` : 'Sandbox app'}
+          title={isPlayground ? 'Orders preview' : 'Sandbox app'}
           presentation={presentation}
           source={
             urlMode

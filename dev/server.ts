@@ -131,7 +131,6 @@ serveLocalApp({
   title: starterApp.title,
   port: port + 2,
 });
-const loadSupportBundle = await createBundleLoader('../dev/support-app.tsx');
 const loadFrameBundle = await createBundleLoader('./fixtures/bridge-frame.ts');
 Bun.serve({
   hostname: '127.0.0.1',
@@ -163,7 +162,6 @@ Bun.serve({
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,
     '/playground': bundleHost,
-    '/support': bundleHost,
     [hostedApp.path]: bundleHost,
   },
   async fetch(request, server) {
@@ -214,8 +212,6 @@ Bun.serve({
       server.timeout(request, 0);
       return serveReloadEvents(request);
     }
-    if (path === '/__test/support')
-      return new Response(await loadSupportBundle());
     if (path === '/__test/playground')
       return new Response(await loadPlaygroundBundle());
     if (path === `/__test${hostedApp.path}`)

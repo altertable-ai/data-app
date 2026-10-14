@@ -3,10 +3,7 @@ import {
   formatMetric,
   pluralize,
 } from '@altertable/data-app/format';
-import {
-  Ranking,
-  type BoundExplorationActions,
-} from '@altertable/data-app/react';
+import { Ranking } from '@altertable/data-app/react';
 import { LineChart, PieChart } from '@altertable/data-app/react/ui';
 import type { CountryRevenue, OrderDay, OrderBand } from '@/dev/orders';
 
@@ -16,21 +13,13 @@ const dayLabel = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 });
 const currency = { kind: 'currency', currency: 'USD' } as const;
-export function DailyLineChart({
-  days,
-  actions,
-}: {
-  days: readonly OrderDay[];
-  actions?: BoundExplorationActions<OrderDay>;
-}) {
+export function DailyLineChart({ days }: { days: readonly OrderDay[] }) {
   return (
     <LineChart
       ariaLabel="Orders per day"
-      itemActions={actions}
       unit="orders"
       formatValue={value => formatCount(value, { compact: true })}
       items={days.map(day => ({
-        ...day,
         id: day.day,
         label: dayLabel.format(new Date(day.day)),
         value: day.orderCount,
@@ -38,21 +27,15 @@ export function DailyLineChart({
     />
   );
 }
-export function OrderValuePieChart({
-  bands,
-  actions,
-}: {
-  bands: readonly OrderBand[];
-  actions?: BoundExplorationActions<OrderBand>;
-}) {
+export function OrderValuePieChart({ bands }: { bands: readonly OrderBand[] }) {
   return (
     <PieChart
       ariaLabel="Order value distribution"
-      itemActions={actions}
       unit="orders"
       formatValue={value => formatCount(value, { compact: true })}
       items={bands.map(band => ({
-        ...band,
+        id: band.band,
+        label: band.band,
         value: band.orderCount,
       }))}
     />

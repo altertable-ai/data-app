@@ -441,9 +441,6 @@ Selector endpoints use reserved names `key.level` and the same authorization
 callback as ordinary operations. Use `hierarchy.operations` when authorizing those
 names. Child selectors also validate their selected ancestors.
 
-See the [support workload example](https://github.com/altertable-ai/data-app/blob/main/dev/support.ts)
-for the complete source, parser, and operation declarations.
-
 | Interaction                    | Result                                                           |
 | ------------------------------ | ---------------------------------------------------------------- |
 | Select a different parent      | Clear descendants; fall back to valid chart breakdowns.          |

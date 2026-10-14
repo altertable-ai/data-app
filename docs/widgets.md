@@ -270,6 +270,5 @@ same bound actions. For custom controls use `<ExplorationActionControl
 can call `actions.run(id, row, trigger)` using IDs from `actions.items(row)`.
 Initial loading offers no actions. Hierarchy row actions wait until displayed and applied hierarchy scope agree; descent also checks the chart breakdown.
 
-See [hierarchical exploration](variables.md#hierarchical-exploration) and the
-[commerce playground](https://github.com/altertable-ai/data-app/blob/main/dev/playground.tsx)
-for the complete filter, breakdown, and detail workflow.
+See [hierarchical exploration](variables.md#hierarchical-exploration) for shared
+filter scope and chart breakdown declarations.

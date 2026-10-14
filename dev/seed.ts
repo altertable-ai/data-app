@@ -1,10 +1,8 @@
-import { supportSeedStatements } from '@/dev/support-seed';
 /** App-owned commerce story; the mock only executes SQL. Dates are complete UTC days.
  * Weekdays are busier, a campaign runs 21–27 days ago, France grows in the
  * latest 60 days, and refunds rise in the latest 14. Finland has no orders. */
 const today = "CAST(current_timestamp AT TIME ZONE 'UTC' AS DATE)";
 export const seedStatements = [
-  ...supportSeedStatements,
   'CREATE SCHEMA demo',
   'CREATE TABLE demo.customers (id INTEGER, name VARCHAR, country VARCHAR, created_at TIMESTAMP)',
   'CREATE TABLE demo.products (id INTEGER, name VARCHAR, category VARCHAR, price DECIMAL(10, 2))',
