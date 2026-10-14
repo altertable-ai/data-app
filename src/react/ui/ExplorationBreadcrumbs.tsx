@@ -153,7 +153,6 @@ export function ExplorationBreadcrumbs({
             >
               <DimensionPicker
                 filter={dimension}
-                variant="ghost"
                 value={state.selection[level.id] as DimensionSelection}
                 options={facet.data ?? options ?? dimension.options}
                 loading={!!level.facet && facet.isPending}

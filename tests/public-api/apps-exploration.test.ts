@@ -349,6 +349,7 @@ test('mobile summaries fit the viewport and open hierarchy selectors by keyboard
   const rootBox = (await region.boundingBox())!;
   const childBox = (await trigger.boundingBox())!;
   expect(childBox.x - rootBox.x).toBeGreaterThanOrEqual(12);
+  expect(await trigger.getAttribute('data-variant')).toBe('outline');
 
   expect(
     await trigger
