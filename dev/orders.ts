@@ -151,7 +151,7 @@ export const operations = {
         period: checkRange,
         country: { kind: 'include', members: [{ kind: 'value', value: 'FI' }] },
       },
-    ] satisfies OrderInput[],
+    ] satisfies [OrderInput, ...OrderInput[]],
     policy: { maxQueryRows: 300, maxDurationMs: 15000 },
     async run({ query }, { country, period }) {
       const member = country.kind === 'all' ? undefined : country.members[0];

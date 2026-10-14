@@ -41,27 +41,32 @@ export function dimensionMemberKey(member: DimensionMember) {
     : `value:${typeof member.value}:${member.value}`;
 }
 
-export type DimensionFilterOptions<T extends DimensionValue> = {
+export type DimensionFilterSettings<T extends DimensionValue> = {
   key: string;
   label: string;
   valueType: T extends number ? 'number' : 'string';
-  selectionMode: 'single' | 'multiple';
   allowMissing?: boolean;
   allowExclusion?: boolean;
-  maxSelected?: number;
   history?: HistoryMode;
   presentation?: VariablePresentation;
 } & (
-  | { options: readonly DimensionOption<T>[]; facet?: never }
-  | {
-      /** A bounded operation supplies options and counts; input chooses other filters affecting counts. */
-      facet: {
-        operation: string;
-        input: (values: Record<string, unknown>) => unknown;
-      };
-      options?: never;
-    }
+  | { selectionMode: 'single'; maxSelected?: 1 }
+  | { selectionMode: 'multiple'; maxSelected?: number }
 );
+
+export type DimensionFilterOptions<T extends DimensionValue> =
+  DimensionFilterSettings<T> &
+    (
+      | { options: readonly DimensionOption<T>[]; facet?: never }
+      | {
+          /** A bounded operation supplies options and counts; input chooses other filters affecting counts. */
+          facet: {
+            operation: string;
+            input: (values: Record<string, unknown>) => unknown;
+          };
+          options?: never;
+        }
+    );
 
 /** A bounded categorical filter. URL tags distinguish missing from literal "null". */
 export function dimensionFilter<const T extends DimensionValue>(

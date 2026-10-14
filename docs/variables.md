@@ -184,13 +184,16 @@ from filter values. Choose selection modes supported by the registered query.
 Choose `selectionMode: 'single'` when one value replaces another and
 `selectionMode: 'multiple'` for independent values. `All` is an explicit choice for a single-value
 filter and the meaning of an empty selection for a multiple-value filter.
+Single-value filters always have a selection limit of one.
 
 ## Fixed choices
 
 `choiceVariable()` requires labeled `options` and a valid `defaultValue`.
 `multiChoiceVariable()` stores unique option IDs with an optional selection limit.
-An empty fixed-choice collection means no choices; categorical filters use
-`dimensionFilter()` when an empty selection should mean all records.
+Fixed-choice declarations need at least one option. Inline options or `as const`
+preserve their IDs so TypeScript checks defaults against them. An empty selected
+collection means no choices; categorical filters use `dimensionFilter()` when
+an empty selection should mean all records.
 
 ```ts
 const variables = {

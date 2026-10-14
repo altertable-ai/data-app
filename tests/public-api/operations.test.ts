@@ -33,6 +33,33 @@ function lakehouse(): Lakehouse {
   };
 }
 
+test('operation declarations retain runtime validation for unchecked check arrays and policy values', () => {
+  const base = operation();
+  expect(() =>
+    defineOperation({
+      ...base,
+      queries: {},
+      async run() {
+        return 1;
+      },
+      // @ts-expect-error JavaScript callers can bypass the nonempty tuple contract.
+      checks: [],
+    })
+  ).toThrow('Each data operation needs check inputs');
+  for (const maxQueryRows of [0, -1, 1.5, Infinity, NaN]) {
+    expect(() =>
+      defineOperation({
+        ...base,
+        queries: {},
+        async run() {
+          return 1;
+        },
+        policy: { ...base.policy, maxQueryRows },
+      })
+    ).toThrow('positive row and duration limits');
+  }
+});
+
 test('browser and HTTP operations share parsing, bounds, and query evidence', async () => {
   const operations = { count: operation() };
   const client = createDataClient({ operations, lakehouse: lakehouse() });

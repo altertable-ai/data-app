@@ -5,6 +5,8 @@ import {
   bindMetric,
   displayedScope,
   type DatasetDefinition,
+  type Dataset,
+  type Metric,
 } from '@/src/react/bindings';
 import type { AuthoringDataContext } from '@/src/react/ui/data-context';
 import type { MetricValues } from '@/src/core/reading';
@@ -26,7 +28,7 @@ import {
 } from '@/src/react/ui/variables';
 import {
   dimensionFilter,
-  type DimensionFilterOptions,
+  type DimensionFilterSettings,
   type DimensionOption,
   type DimensionValue,
 } from '@/src/core/dimension';
@@ -39,6 +41,7 @@ import {
   type ResolvedDataViewDefinition,
   type ResolvedVariables,
   type ViewBindingOptions,
+  type ViewDate,
 } from '@/src/react/view';
 import { useViewVariables } from '@/src/react/view-controls';
 
@@ -80,6 +83,52 @@ type RequiredPeriodBinding<Input> = Input extends unknown
       ? never
       : 'period'
   : never;
+
+type NonEmptyColumns<Columns extends object> = keyof Columns extends never
+  ? never
+  : Columns;
+
+type BoundDataView<
+  Name extends string,
+  Variables extends VariableCollection,
+  Input,
+  Data,
+  Context extends AuthoringDataContext,
+  HasDate extends boolean,
+> = DeclaredView<
+  Data,
+  Input,
+  ResolvedDataViewDefinition<Name, Variables, Input, Data> & {
+    describeInput: (input: Input) => string;
+  }
+> & {
+  dataset<
+    Row,
+    const Columns extends Record<string, object> = Record<string, object>,
+  >(
+    definition: DatasetDefinition<
+      Data,
+      Input,
+      Row,
+      Parameters<Context['evidence']>[0]
+    > & {
+      columns: Columns & NonEmptyColumns<Columns>;
+    }
+  ): Dataset<Data, Input, Row>;
+  metric(
+    definition: Parameters<Context['metric']>[0],
+    select: (
+      data: Data,
+      input: Input
+    ) => HasDate extends true
+      ? MetricValues
+      : { current: number; previous?: never }
+  ): Metric<Data, Input>;
+  scope(snapshot: DisplayedSnapshot<Data, Input>): string;
+  content(
+    render: (state: DataContentState<Data, Input>) => ReactNode
+  ): ViewContent<Data, Input>;
+};
 
 /** Bind declared operations to URL variables, displayed readings, and request feedback. */
 export function createDataHooks<Operations extends DataOperations>(
@@ -193,8 +242,72 @@ export function createDataHooks<Operations extends DataOperations>(
       Variables,
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
+    > & {
+      dataContext: Context;
+      date: ViewDate<Variables, InputOf<Operations[Name]>>;
+    }
+  ): BoundDataView<
+    Name,
+    Variables,
+    InputOf<Operations[Name]>,
+    OutputOf<Operations[Name]>,
+    Context,
+    true
+  >;
+  function defineDataView<
+    Name extends keyof Operations & string,
+    const Variables extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
+  >(
+    definition: DataViewDefinition<
+      Name,
+      Variables,
+      InputOf<Operations[Name]>,
+      OutputOf<Operations[Name]>
+    > & { dataContext: Context }
+  ): BoundDataView<
+    Name,
+    Variables,
+    InputOf<Operations[Name]>,
+    OutputOf<Operations[Name]>,
+    Context,
+    false
+  >;
+  function defineDataView<
+    Name extends keyof Operations & string,
+    const Variables extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
+  >(
+    definition: DataViewDefinition<
+      Name,
+      Variables,
+      InputOf<Operations[Name]>,
+      OutputOf<Operations[Name]>
     > & { dataContext: Context }
   ) {
+    return bindDataView(definition);
+  }
+
+  function bindDataView<
+    Name extends keyof Operations & string,
+    const Variables extends VariableCollection,
+    const Context extends AuthoringDataContext,
+    HasDate extends boolean = boolean,
+  >(
+    definition: DataViewDefinition<
+      Name,
+      Variables,
+      InputOf<Operations[Name]>,
+      OutputOf<Operations[Name]>
+    > & { dataContext: Context }
+  ): BoundDataView<
+    Name,
+    Variables,
+    InputOf<Operations[Name]>,
+    OutputOf<Operations[Name]>,
+    Context,
+    HasDate
+  > {
     const variables = defineAppVariables(
       definition.variables ?? {}
     ) as Variables;
@@ -217,13 +330,18 @@ export function createDataHooks<Operations extends DataOperations>(
     const view = Object.assign(
       new DeclaredView(() => useView(normalized), normalized),
       {
-        dataset<Row>(
+        dataset<
+          Row,
+          const Columns extends Record<string, object> = Record<string, object>,
+        >(
           dataset: DatasetDefinition<
             Data,
             Input,
             Row,
             Parameters<Context['evidence']>[0]
-          >
+          > & {
+            columns: Columns & NonEmptyColumns<Columns>;
+          }
         ) {
           return bindDataset(
             {
@@ -244,7 +362,12 @@ export function createDataHooks<Operations extends DataOperations>(
         },
         metric(
           metric: Parameters<Context['metric']>[0],
-          select: (data: Data, input: Input) => MetricValues
+          select: (
+            data: Data,
+            input: Input
+          ) => HasDate extends true
+            ? MetricValues
+            : { current: number; previous?: never }
         ) {
           return bindMetric(
             definition.dataContext.metric(metric),
@@ -298,10 +421,11 @@ export function createDataHooks<Operations extends DataOperations>(
   ) {
     const period = dateRangeVariable({ ...definition.time, key: 'period' });
 
-    return defineDataView<
+    return bindDataView<
       Name,
       { period: typeof period } & Additional,
-      Context
+      Context,
+      true
     >({
       operation: definition.operation,
       dataContext: definition.dataContext,
@@ -339,7 +463,7 @@ export function createDataHooks<Operations extends DataOperations>(
     Name extends keyof Operations & string,
     const T extends DimensionValue,
   >(
-    config: Omit<DimensionFilterOptions<T>, 'options' | 'facet'> & {
+    config: DimensionFilterSettings<T> & {
       facet: {
         operation: Name;
         input: (values: Record<string, unknown>) => InputOf<Operations[Name]>;
