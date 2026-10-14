@@ -1,5 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { orderValueBands } from '@/dev/order-value-bands';
 
 export const dataApp = defineDataApp({
   title: 'Orders',
@@ -44,10 +43,17 @@ GROUP BY 1 ORDER BY 1`,
     },
     ordersByValue: {
       statement: `
-SELECT CASE ${orderValueBands.map(band => `WHEN o.amount >= ${band.min}${band.max === null ? '' : ` AND o.amount < ${band.max}`} THEN '${band.id}'`).join(' ')} END AS band, count(*) AS order_count
+SELECT CASE WHEN o.amount < $smallMax THEN 'under-100'
+  WHEN o.amount < $mediumMax THEN '100-to-250'
+  WHEN o.amount < $largeMax THEN '250-to-500' ELSE '500-and-over' END AS band, count(*) AS order_count
 FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id WHERE o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY AND ($country IS NULL OR c.country = $country) AND ($region IS NULL OR CASE WHEN c.country = 'US' THEN 'North America' ELSE 'Europe' END = $region) AND ($customerId IS NULL OR c.id = $customerId)
+AND o.amount >= $minimum
 GROUP BY band ORDER BY min(o.amount)`,
       params: {
+        minimum: {},
+        smallMax: {},
+        mediumMax: {},
+        largeMax: {},
         start: {},
         end: {},
         country: { defaultValue: null },

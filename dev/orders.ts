@@ -1,4 +1,8 @@
-import { orderValueBand, type OrderValueBandId } from '@/dev/order-value-bands';
+import {
+  orderValueBand,
+  orderValueBands,
+  type OrderValueBandId,
+} from '@/dev/order-value-bands';
 import { geography } from '@/dev/geography';
 import { dataApp } from '@/dev/app';
 import {
@@ -331,7 +335,13 @@ export const operations = {
       ] = await Promise.all([
         query('ordersByCountry', params),
         query('ordersByDay', params),
-        query('ordersByValue', params),
+        query('ordersByValue', {
+          ...params,
+          minimum: orderValueBands[0].min,
+          smallMax: orderValueBands[0].max,
+          mediumMax: orderValueBands[1].max,
+          largeMax: orderValueBands[2].max,
+        }),
         query('previousPeriod', {
           ...params,
           start: period.comparison?.start ?? period.range.start,
