@@ -1,4 +1,4 @@
-import { utcTicks } from 'd3-time';
+import { utcTicks } from '@/src/core/time-interval';
 import {
   formatDate,
   formatDateTime,
