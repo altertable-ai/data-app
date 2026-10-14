@@ -1,5 +1,6 @@
 import {
   defineActions,
+  detailRequest,
   type ActionFactory,
   type DetailTarget,
   type DetailRequest,
@@ -347,11 +348,7 @@ export class Metric<Data, Input> extends RegisteredBinding {
   }): MetricRecords<Input> {
     return {
       binding: this,
-      request: displayedInput => ({
-        target,
-        id: target.id,
-        input: target.parseInput(input(displayedInput)),
-      }),
+      request: displayedInput => detailRequest(target, input(displayedInput)),
     };
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {

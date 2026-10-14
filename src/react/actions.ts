@@ -14,6 +14,13 @@ export type DetailTarget<Input> = {
   parseInput: (value: unknown) => Input;
 };
 export type DetailRequest = { target: object; id: string; input: unknown };
+/** Normalize destination input once for record tabs and explicit detail actions. */
+export function detailRequest<Input>(
+  target: DetailTarget<Input>,
+  input: NoInfer<Input>
+): DetailRequest {
+  return { target, id: target.id, input: target.parseInput(input) };
+}
 export type ExplorationTarget<Input> = {
   kind: 'exploration';
   variable: Omit<ExplorationVariable<any>, 'levels'> & {
@@ -33,8 +40,6 @@ type ActionRequest =
   | { kind: 'detail'; detail: DetailRequest }
   | { kind: 'update'; apply: () => void; navigation?: string };
 export type ExplorationAction<Row, Input> = {
-  /** Hierarchy context is rendered by the bound widget, including at terminal levels. */
-  exploration?: ExplorationTarget<Input>;
   label: (row: Row, displayedInput: Input) => string;
   available: (row: Row, displayedInput: Input) => boolean;
   resolve: (row: Row, displayedInput: Input) => ActionRequest;
@@ -74,11 +79,7 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
         resolve(row, displayedInput) {
           return {
             kind: 'detail',
-            detail: {
-              target,
-              id: target.id,
-              input: target.parseInput(input(row, displayedInput)),
-            },
+            detail: detailRequest(target, input(row, displayedInput)),
           };
         },
       };
@@ -86,7 +87,6 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
     filter({ label, target, values, when }) {
       const exploration = target.kind === 'exploration' ? target : undefined;
       return {
-        exploration,
         label: row => (typeof label === 'function' ? label(row) : label),
         available: (row, input) =>
           (when?.(row) ?? true) &&
@@ -108,7 +108,6 @@ export function actionFactory<Row, Input>(): ActionFactory<Row, Input> {
     descend({ target, member }) {
       const { variable } = target;
       return {
-        exploration: target,
         label(_row, input) {
           return `Break down by ${variable.levels[variable.levels.findIndex(level => level.id === target.read(input).groupBy) + 1]?.groupLabel.toLowerCase() ?? 'a finer level'}`;
         },
@@ -163,17 +162,6 @@ export function defineActions<
   invariant(
     !options.primary || entries.some(entry => entry.id === options.primary),
     'The primary action must be declared.'
-  );
-  const explorations = entries.flatMap(entry =>
-    entry.effect.exploration ? [entry.effect.exploration] : []
-  );
-  invariant(
-    explorations.every(
-      target =>
-        target.variable === explorations[0]?.variable &&
-        target.navigationId === explorations[0]?.navigationId
-    ),
-    'A widget action set must explore one hierarchy.'
   );
   return { binding, entries, primary: options.primary };
 }

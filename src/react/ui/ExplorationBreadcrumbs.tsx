@@ -93,19 +93,11 @@ export function ExplorationBreadcrumbs({
   target,
   id,
   value,
-}: {
-  target: Pick<
-    ExplorationTarget<any>,
-    'variable' | 'clientScope' | 'loadFacet'
-  >;
-  id?: string;
-  value: ExplorationState<any>;
-}) {
+}: ExplorationControls & { id?: string }) {
   const navigation = useRef<HTMLElement>(null);
   const { variable } = target;
-  const state = variable.parse(value);
+  const { state, shown, facets } = useExplorationFacets({ target, value });
   const group = variable.levels.findIndex(level => level.id === state.groupBy);
-  const { shown, facets } = useExplorationFacets({ target, value });
   function commit(next: ExplorationState<any>, focus = false) {
     writeVariableValues(
       { exploration: variable },

@@ -72,16 +72,10 @@ export function useExplorationActions<Row, Input>(
             : trigger;
         openDetail(request.detail, returnTrigger);
       } else {
-        const owner =
-          trigger?.closest('dialog') ??
-          trigger?.closest('.altertable-data-widget');
         request.apply();
         if (request.navigation)
           requestAnimationFrame(() => {
             const navigation =
-              owner?.querySelector<HTMLElement>(
-                '[data-exploration-navigation]'
-              ) ??
               document.getElementById(request.navigation!) ??
               document.querySelector<HTMLElement>(
                 '[data-view-filters-trigger]'
