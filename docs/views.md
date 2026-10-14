@@ -135,6 +135,11 @@ content and evidence use the destination's displayed result. Detail sheets omit
 the app toolbar; refresh, export, and story actions belong to the main app.
 The sheet keeps the dashboard mounted and restores focus when closed.
 
+A metric can reuse the same registered detail content in a Records tab of its
+inspection sheet through `metric.records()`; see [metric records](widgets.md#explore-from-widgets).
+This preserves the existing Glossary and Queries tabs without another sheet or
+record-opening action.
+
 Destination inputs must be JSON-serializable, contain only the scope needed by
 the operation, and fit in the shared URL. Use IDs rather than entire records;
 keep credentials and protected execution parameters out of inputs. Resolve

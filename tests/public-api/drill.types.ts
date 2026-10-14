@@ -8,7 +8,13 @@ import {
 
 const context = createDataContext({ sales: 'sales', orders: 'orders' })({
   description: 'Sales',
-  glossary: {},
+  glossary: {
+    count: {
+      term: 'Count',
+      definition: 'Number of regions.',
+      queryNames: ['sales'],
+    },
+  },
 });
 const hooks =
   createDataHooks(
@@ -284,3 +290,18 @@ typedState.selection.region = {
   // @ts-expect-error Region selection retains its string ID type.
   members: [{ kind: 'value', value: 42 }],
 };
+
+const count = sales.metric(
+  {
+    id: 'count',
+    glossaryId: 'count',
+    format: { kind: 'count' },
+  },
+  data => ({ current: data.length })
+);
+count.records({ target: orders, input: () => ({ regionId: 1 }) });
+count.records({
+  target: orders,
+  // @ts-expect-error Record destination IDs must match the typed operation input.
+  input: () => ({ regionId: 'one' }),
+});

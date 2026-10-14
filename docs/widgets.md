@@ -199,25 +199,29 @@ keys supply action IDs; declaration order supplies menu order. One available
 action is direct; several appear in Explore. Set the optional second argument
 `{ primary: 'orders' }` only when a direct primary action is useful. Other actions
 remain available in the menu. A metric's row argument is `undefined`.
-A metric's primary action opens from its heading or value; About keeps definitions
-and SQL available separately. For an order-count metric, bind a detail action
-that preserves the displayed input and loads the corresponding orders:
+Use `metric.records()` to include contributing records in its existing inspection
+sheet. Records becomes the first tab, followed by Glossary and Queries. The
+metric keeps its usual heading trigger; no separate record-opening action is
+needed. Register the destination content on `<DataApp details={[ordersContent]}>`:
 
 ```tsx
-const viewOrders = orderCount.actions(action => ({
-  orders: action.detail({
-    label: 'View orders',
-    target: ordersView,
-    input: (_, displayedInput) => displayedInput,
-  }),
-}));
+const contributingOrders = orderCount.records({
+  target: ordersView,
+  input: displayedInput => displayedInput,
+});
 
-<MetricWidget metric={orderCount} source={source} actions={viewOrders} />;
+<MetricWidget
+  metric={orderCount}
+  source={source}
+  records={contributingOrders}
+/>;
 ```
 
-The detail operation owns completeness. Do not reuse a capped dashboard preview
-when the destination promises all contributing records. Use local pagination
-for a complete bounded result, or query-backed pagination for larger sources.
+The destination owns loading, errors, evidence, and completeness. Do not reuse a
+capped dashboard preview when the destination promises all contributing records.
+Use local pagination for a complete bounded result, or query-backed pagination
+for larger sources. The record mapping receives the metric's displayed input,
+including during dashboard updates. Records load only when their tab is shown.
 
 Use `when: row => ...` on a filter action when it applies only to some rows.
 

@@ -61,7 +61,7 @@ function createInspectionStore() {
       selection && subjects.get(selection.inspection.key)?.id === id
         ? subjects.get(selection.inspection.key)
         : [...subjects.values()].find(subject => subject.id === id);
-    const tab = resolveAboutTab(params.get('tab'));
+    const tab = resolveAboutTab(params.get('tab'), !!inspection?.props.records);
     if (inspection?.props.open === false) inspection.props.onOpenChange?.(true);
     else if (inspection) publish({ inspection, open: true, tab });
     else if (selection?.open) {
@@ -71,7 +71,10 @@ function createInspectionStore() {
     }
   }
   function show(inspection: Inspection) {
-    const tab = inspection.props.tab ?? 'glossary';
+    const tab = resolveAboutTab(
+      inspection.props.tab,
+      !!inspection.props.records
+    );
     publish({ inspection, open: true, tab });
     writeSearch(
       { about: inspection.id, tab },

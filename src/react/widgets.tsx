@@ -3,11 +3,14 @@ import {
   ExplorationActionControl,
   type BoundExplorationActions,
 } from '@/src/react/action-controls';
+import { invariant } from '@/src/core/invariant';
+import { useDetailRecords } from '@/src/react/details';
 import type { ExplorationActions } from '@/src/react/actions';
 import {
   datasetTable,
   type Dataset,
   type Metric,
+  type MetricRecords,
   type ViewSource,
 } from '@/src/react/bindings';
 import {
@@ -41,38 +44,39 @@ import type { DataReading } from '@/src/core/reading';
 
 export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
   Extract<DisplayMetricProps, { metric: MetricDefinition }>,
-  'metric' | 'reading' | 'primaryAction'
+  'metric' | 'reading' | 'records'
 > & {
   metric: Metric<Data, Input>;
   source: ViewSource<Data, Input>;
   actions?: ExplorationActions<void, Input>;
+  records?: MetricRecords<Input>;
 };
 export function MetricWidget<Data, Input>({
   metric,
   source,
   actions,
   action: authoredAction,
+  records,
   ...presentation
 }: MetricWidgetProps<Data, Input>) {
   const action = useExplorationActions(actions, source, metric);
-  const primary = action?.primary(undefined);
+  invariant(
+    !records || records.binding === metric,
+    'Records must belong to the widget metric.'
+  );
+  const recordContent = useDetailRecords(
+    !source.loading && records ? records.request(source.input) : undefined
+  );
   return (
     <DisplayMetric
       {...presentation}
       metric={metric.definition}
       reading={metric.read(source)}
-      primaryAction={
-        primary && action
-          ? {
-              label: primary.label,
-              run: trigger => action.run(primary.id, undefined, trigger),
-            }
-          : undefined
-      }
+      records={recordContent}
       action={
         <>
           {authoredAction}
-          {action && (!primary || action.items(undefined).length > 1) && (
+          {action && (
             <ExplorationActionControl actions={action} row={undefined} />
           )}
         </>

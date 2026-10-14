@@ -34,15 +34,21 @@ import {
 } from '@/src/react/ui/InspectionProvider';
 import { useInspectionDefaults } from '@/src/react/ui/InspectionContext';
 
-export type AboutTab = 'glossary' | 'queries';
+export type AboutTab = 'records' | 'glossary' | 'queries';
 
 const aboutTabs = new Map<string, AboutTab>([
+  ['records', 'records'],
   ['glossary', 'glossary'],
   ['queries', 'queries'],
 ]);
 
-export function resolveAboutTab(tab: string | null | undefined): AboutTab {
-  return aboutTabs.get(tab ?? '') ?? 'glossary';
+export function resolveAboutTab(
+  tab: string | null | undefined,
+  records = false
+): AboutTab {
+  const selected = aboutTabs.get(tab ?? '');
+  if (selected === 'records' && !records) return 'glossary';
+  return selected ?? (records ? 'records' : 'glossary');
 }
 export type AboutEmpty = {
   glossary: { title: string; description?: string };
@@ -60,6 +66,8 @@ export type AboutSubject = {
   title?: ReactNode;
   description?: ReactNode;
   visual?: ReactNode;
+  /** Optional first inspection tab for contributing records. */
+  records?: ReactNode;
   visualKind?: 'metric' | 'chart' | 'widget';
   dataContext?: DataContext;
   references?:
@@ -154,6 +162,7 @@ export function InspectionSheet({
   description,
   visual,
   visualKind,
+  records,
   dataContext,
   references,
   queries,
@@ -212,7 +221,7 @@ export function InspectionSheet({
       onOpenChange={onOpenChange}
       title={heading}
       description={summary}
-      wide={!!visual && visualKind !== 'metric'}
+      wide={!!records || (!!visual && visualKind !== 'metric')}
       returnFocus={returnFocus}
       footer={footer}
       headerActions={headerActions}
@@ -225,7 +234,9 @@ export function InspectionSheet({
       <div className="altertable-about-body">
         <Tabs
           selectedKey={tab}
-          onSelectionChange={key => onTabChange(resolveAboutTab(String(key)))}
+          onSelectionChange={key =>
+            onTabChange(resolveAboutTab(String(key), !!records))
+          }
           className="altertable-about-tabs"
         >
           <div className="altertable-about-tabbar">
@@ -234,11 +245,13 @@ export function InspectionSheet({
                 typeof heading === 'string' ? heading : 'About the data'
               }
             >
+              {records && <Tab id="records">Records</Tab>}
               <Tab id="glossary">Glossary</Tab>
               <Tab id="queries">Queries</Tab>
             </TabList>
           </div>
           <TabPanels>
+            {records && <TabPanel id="records">{records}</TabPanel>}
             <TabPanel id="glossary">
               {listed.length ? (
                 <div className="altertable-about-glossary-list">
@@ -343,6 +356,7 @@ function InspectionTrigger({
     title,
     description: _description,
     visual: _visual,
+    records: _records,
     visualKind: _visualKind,
     dataContext: _dataContext,
     references: _references,

@@ -1,6 +1,8 @@
 import {
   defineActions,
   type ActionFactory,
+  type DetailTarget,
+  type DetailRequest,
   type ExplorationAction,
 } from '@/src/react/actions';
 import { assertSourceOwner } from '@/src/react/source-owner';
@@ -311,6 +313,12 @@ export function datasetCsv<Data, Input>(
   return ExportDataset.csv(dataset, snapshot);
 }
 
+/** A metric's contributing record destination, resolved from its displayed input. */
+export type MetricRecords<Input> = {
+  binding: object;
+  request: (displayedInput: Input) => DetailRequest;
+};
+
 export class Metric<Data, Input> extends RegisteredBinding {
   #select: (data: Data, input: Input) => MetricValues;
   #date?: (input: Input) => DateRangeRequest;
@@ -329,6 +337,22 @@ export class Metric<Data, Input> extends RegisteredBinding {
     options?: { primary?: keyof NoInfer<Entries> & string }
   ) {
     return defineActions(this, build, options);
+  }
+  records<RecordInput>({
+    target,
+    input,
+  }: {
+    target: DetailTarget<RecordInput>;
+    input: (displayedInput: Input) => NoInfer<RecordInput>;
+  }): MetricRecords<Input> {
+    return {
+      binding: this,
+      request: displayedInput => ({
+        target,
+        id: target.id,
+        input: target.parseInput(input(displayedInput)),
+      }),
+    };
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);

@@ -419,13 +419,10 @@ const scopeOrdersContent = scopeOrdersView.content(source => (
     pagination={{ pageSize: 25 }}
   />
 ));
-const viewContributingOrders = orderCountMetric.actions(action => ({
-  orders: action.detail({
-    label: 'View orders',
-    target: scopeOrdersView,
-    input: (_, input) => input,
-  }),
-}));
+const contributingOrders = orderCountMetric.records({
+  target: scopeOrdersView,
+  input: displayedInput => displayedInput,
+});
 const geographicActions = geographicDataset.actions(action => ({
   orders: action.detail({
     label: 'View orders',
@@ -484,7 +481,7 @@ function OrderResults({ result }: { result: OrderSource }) {
         <MetricWidget
           metric={orderCountMetric}
           source={result}
-          actions={viewContributingOrders}
+          records={contributingOrders}
           description="Orders placed in any status."
         />
         <MetricWidget

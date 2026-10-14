@@ -2,7 +2,13 @@ import type { AboutSubject } from '@/src/react/ui/AboutData';
 
 type EvidenceDetails = Omit<
   AboutSubject,
-  'id' | 'title' | 'description' | 'visual' | 'visualKind' | 'references'
+  | 'id'
+  | 'title'
+  | 'description'
+  | 'visual'
+  | 'visualKind'
+  | 'references'
+  | 'records'
 > & { id: string };
 
 export type WidgetEvidence = EvidenceDetails &

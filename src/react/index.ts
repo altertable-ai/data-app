@@ -14,6 +14,7 @@ export type {
 export type { DetailContent } from '@/src/react/details';
 /** Declared views, bound widgets, and layouts for data-app authoring. */
 export type {
+  MetricRecords,
   DatasetColumn,
   DatasetSuggestionOptions,
   DatasetDeclaration as DatasetDefinition,

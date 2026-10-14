@@ -160,13 +160,22 @@ const allOrders = total.actions(action => ({
     input: (_, input) => ({ ...input, region: 'All regions' }),
   }),
 }));
+const contributingRecords = total.records({
+  target: detail,
+  input: displayedInput => ({ ...displayedInput, region: 'All regions' }),
+});
 const content = view.content(source => <Results source={source} />);
 type Source = Parameters<Parameters<typeof view.content>[0]>[0];
 function Results({ source }: { source: Source }) {
   const [search, setSearch] = useState('');
   return (
     <Stack>
-      <MetricWidget metric={total} source={source} actions={allOrders} />
+      <MetricWidget
+        metric={total}
+        source={source}
+        actions={allOrders}
+        records={contributingRecords}
+      />
       <TextWidget dataset={regions} source={source} title="Displayed scope">
         {() =>
           source.loading ? null : (

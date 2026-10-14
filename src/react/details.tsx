@@ -43,6 +43,7 @@ export type DetailContent = {
   target: object;
   parseInput: (value: unknown) => unknown;
   render: (props: DetailPanelProps) => ReactNode;
+  renderRecords: (input: unknown) => ReactNode;
 };
 
 export function createDetailContent<Data, Input>(
@@ -74,45 +75,63 @@ export function createDetailContent<Data, Input>(
     const scope = describeInput(snapshot ? snapshot.input : (input as Input));
     return (
       <InspectionProvider>
-        <DateFormattingContext value={{ timeZone: result.timeZone }}>
-          <InspectionContext
-            value={{ dataContext: result.dataContext, queries: result.queries }}
-          >
-            <Sheet
-              open={open}
-              onOpenChange={next => {
-                if (!next) close();
-              }}
-              title={view.title}
-              description={scope}
-              returnFocus={returnFocus}
-              onClose={onClosed}
-              wide
-            >
-              <DataSectionBoundary
-                loadingFallback={loadingFallback}
-                result={result}
-                notice="inline"
-              >
-                {children}
-              </DataSectionBoundary>
-            </Sheet>
-          </InspectionContext>
-        </DateFormattingContext>
+        <Sheet
+          open={open}
+          onOpenChange={next => {
+            if (!next) close();
+          }}
+          title={view.title}
+          description={scope}
+          returnFocus={returnFocus}
+          onClose={onClosed}
+          wide
+        >
+          <ResultContent result={result} />
+        </Sheet>
       </InspectionProvider>
     );
   }
+  function ResultContent({
+    result,
+  }: {
+    result: ReturnType<typeof useDeclaredResult<Data, Input>>;
+  }) {
+    return (
+      <DateFormattingContext value={{ timeZone: result.timeZone }}>
+        <InspectionContext
+          value={{ dataContext: result.dataContext, queries: result.queries }}
+        >
+          <DataSectionBoundary
+            loadingFallback={loadingFallback}
+            result={result}
+            notice="inline"
+          >
+            {children}
+          </DataSectionBoundary>
+        </InspectionContext>
+      </DateFormattingContext>
+    );
+  }
+  function Records({ input }: { input: Input }) {
+    const result = useDeclaredResult(view, input);
+    return <ResultContent result={result} />;
+  }
+
   return {
     id: view.id,
     target: view,
     parseInput: view.parseInput,
     render: props => <DetailPanel {...props} />,
+    renderRecords: input => (
+      <Records key={JSON.stringify(input)} input={view.parseInput(input)} />
+    ),
   };
 }
 
 const DetailContext = createContext<{
   open: (request: DetailRequest, trigger?: HTMLElement) => void;
   active: boolean;
+  details: readonly DetailContent[];
 } | null>(null);
 export function useDetailActive() {
   return useContext(DetailContext)?.active ?? false;
@@ -200,7 +219,7 @@ export function DetailProvider({
   }
   const displayed = selected ?? retained;
   return (
-    <DetailContext value={{ open, active: !!selected || invalid }}>
+    <DetailContext value={{ open, active: !!selected || invalid, details }}>
       {children}
       {invalid ? (
         <Sheet
@@ -237,4 +256,16 @@ export function DetailProvider({
 
 export function useDetailOpener() {
   return useContext(DetailContext)?.open;
+}
+
+/** Resolve registration while inside DataApp; the resulting content can mount in its inspection host. */
+export function useDetailRecords(request: DetailRequest | undefined) {
+  const context = useContext(DetailContext);
+  if (!request) return undefined;
+  const content = context?.details.find(detail => detail.id === request.id);
+  invariant(
+    content?.target === request.target,
+    `Register the ${request.id} detail content on DataApp.`
+  );
+  return content.renderRecords(request.input);
 }

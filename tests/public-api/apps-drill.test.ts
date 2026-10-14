@@ -336,34 +336,141 @@ test('alternate visualization renderers receive the same scoped drill action', a
   ).toBe(1);
 });
 
-test('metric values open contributing records while About preserves definitions and queries', async ({
+test('metric inspection opens Records first and retains glossary, queries, and shared tab links', async ({
   page,
 }) => {
+  let records = 0;
+  page.on('request', request => {
+    if (
+      request.url().endsWith('/api/drill-query') &&
+      request.postDataJSON().statement.includes('SELECT id, customer')
+    )
+      records++;
+  });
   await page.goto('/drill-app');
   const metric = page.getByRole('region', { name: 'Net revenue', exact: true });
-  const value = metric.getByRole('button', {
-    name: 'View contributing orders details',
-    exact: true,
-  });
-  await value.waitFor();
-  expect(
-    await value.evaluate(element =>
-      parseFloat(getComputedStyle(element).fontSize)
-    )
-  ).toBeGreaterThan(24);
-  await value.click();
-  const detail = page.getByRole('dialog', {
-    name: 'Contributing orders',
-    exact: true,
-  });
-  await expect.poll(() => detail.getByRole('row').count()).toBeGreaterThan(1);
-  await page.keyboard.press('Escape');
-  await detail.waitFor({ state: 'hidden' });
+  expect(records).toBe(0);
   await metric
-    .getByRole('button', { name: 'About Net revenue', exact: true })
+    .getByRole('button', { name: 'Explore Net revenue', exact: true })
     .click();
-  const about = page.getByRole('dialog', { name: 'Net revenue', exact: true });
-  await about.getByRole('tab', { name: 'Glossary', exact: true }).waitFor();
-  await about.getByRole('tab', { name: 'Queries', exact: true }).click();
-  expect(await about.textContent()).toContain('SELECT');
+  const inspection = page.getByRole('dialog', {
+    name: 'Net revenue',
+    exact: true,
+  });
+  expect(await inspection.getByRole('tab').allTextContents()).toEqual([
+    'Records',
+    'Glossary',
+    'Queries',
+  ]);
+  expect(
+    await inspection
+      .getByRole('tab', { name: 'Records', exact: true })
+      .getAttribute('aria-selected')
+  ).toBe('true');
+  await expect.poll(() => inspection.getByRole('row').count()).toBe(5);
+  expect(await inspection.innerText()).toContain('SO-1001');
+  const shared = page.url();
+  expect(new URL(shared).searchParams.get('tab')).toBe('records');
+  expect(new URL(shared).searchParams.has('detail')).toBe(false);
+  await inspection.getByRole('tab', { name: 'Glossary', exact: true }).click();
+  expect(await inspection.innerText()).toContain(
+    'Order amount minus discounts and refunds'
+  );
+  await inspection.getByRole('tab', { name: 'Queries', exact: true }).click();
+  expect(await inspection.innerText()).toContain('SELECT');
+  await page.keyboard.press('Escape');
+  await inspection.waitFor({ state: 'hidden' });
+  await page.goto(shared);
+  await expect.poll(() => inspection.getByRole('row').count()).toBe(5);
+  expect(
+    await inspection
+      .getByRole('tab', { name: 'Records', exact: true })
+      .getAttribute('aria-selected')
+  ).toBe('true');
+});
+
+test('record tabs query the displayed metric scope while the dashboard is updating', async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => {
+    release = resolve;
+  });
+  await page.route('**/api/drill-query', async route => {
+    const body = route.request().postDataJSON();
+    if (
+      body.params.start === '2026-10-01' &&
+      body.statement.startsWith('WITH regions')
+    )
+      await gate;
+    await route.continue().catch(() => {});
+  });
+  await page.goto('/drill-app');
+  await page
+    .getByRole('button', { name: 'Explore Net revenue', exact: true })
+    .waitFor();
+  await page
+    .getByRole('button', { name: 'September Month', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'October', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Explore Net revenue', exact: true })
+    .click();
+  const inspection = page.getByRole('dialog', {
+    name: 'Net revenue',
+    exact: true,
+  });
+  await expect.poll(() => inspection.getByRole('row').count()).toBe(5);
+  expect(await inspection.innerText()).toContain('SO-1001');
+  expect(await inspection.innerText()).not.toContain('SO-2001');
+  release();
+});
+
+test('record requests cancel when leaving their tab or closing inspection', async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => {
+    release = resolve;
+  });
+  let started = 0;
+  let aborted = 0;
+  page.on('requestfailed', request => {
+    if (
+      request.url().endsWith('/api/drill-query') &&
+      request.postDataJSON().statement.includes('SELECT id, customer')
+    )
+      aborted++;
+  });
+  await page.route('**/api/drill-query', async route => {
+    if (
+      route.request().postDataJSON().statement.includes('SELECT id, customer')
+    ) {
+      started++;
+      await gate;
+    }
+    await route.continue().catch(() => {});
+  });
+  try {
+    await page.goto('/drill-app');
+    await page
+      .getByRole('button', { name: 'Explore Net revenue', exact: true })
+      .click();
+    const inspection = page.getByRole('dialog', {
+      name: 'Net revenue',
+      exact: true,
+    });
+    await expect.poll(() => started).toBe(1);
+    await inspection
+      .getByRole('tab', { name: 'Glossary', exact: true })
+      .click();
+    await expect.poll(() => aborted).toBe(1);
+    await inspection.getByRole('tab', { name: 'Records', exact: true }).click();
+    await expect.poll(() => started).toBe(2);
+    await page.keyboard.press('Escape');
+    await inspection.waitFor({ state: 'hidden' });
+    await expect.poll(() => aborted).toBe(2);
+  } finally {
+    release();
+  }
 });

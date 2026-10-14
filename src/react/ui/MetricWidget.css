@@ -89,13 +89,3 @@
   width: 6ch;
   height: 1em;
 }
-
-.altertable-metric-value > .altertable-metric-value-action {
-  font: inherit;
-  color: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-}
