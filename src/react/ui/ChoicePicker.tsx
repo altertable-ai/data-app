@@ -28,7 +28,6 @@ export type { ChoiceOption } from '@/src/core/variables';
 type SharedProps = {
   label: string;
   labelPlacement?: ControlLabelPlacement;
-  variant?: 'outline' | 'ghost';
   /** An additional operation in the dropdown; activating it closes the picker without selecting a value. */
   action?: { label: string; onAction: () => void };
   options: readonly ChoiceOption[];
@@ -186,7 +185,6 @@ export function ChoicePicker(props: ChoicePickerProps) {
           aria-controls={open ? popupId : undefined}
           className="altertable-picker-trigger"
           isDisabled={disabled}
-          variant={props.variant}
           aria-label={`${label}: ${display}`}
         >
           <PickerTriggerContent

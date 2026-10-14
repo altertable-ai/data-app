@@ -1,5 +1,3 @@
-export { ExplorationBreadcrumbs } from '@/src/react/ui/ExplorationBreadcrumbs';
-export { ExplorationActionControl } from '@/src/react/action-controls';
 /** Direct UI composition and static screens. Requests use declared views from /react. */
 export { DataAppProvider } from '@/src/react/mount';
 export { isPlainKeyEvent } from '@/src/react/ui/keyboard';

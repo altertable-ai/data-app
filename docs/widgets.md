@@ -227,8 +227,6 @@ including during dashboard updates. Records load only when their tab is shown.
 Record tables can use ordinary row detail actions to continue into an entity;
 register those destinations on the same `<DataApp>`.
 
-Use `when: row => ...` on a filter action when it applies only to some rows.
-
 Detail mappings receive the **displayed input**, including during refreshes.
 Detail sheets show contextual content without a separate app toolbar.
 Register the target's [detail content](views.md#detail-destinations) on
@@ -241,9 +239,8 @@ typed level IDs. Exploration transitions clear descendants centrally and preserv
 grouping. Ordinary view filters cannot write exploration state. The platform
 validates the entire update before one history entry; omitted variables retain
 their **currently applied** values. For ordinary scope variables, clear any
-app-specific dependencies in the same mapping. Exploration owns its descendant
-clearing. Display variables and
-exploration state cannot be changed through ordinary view filters. Shared variables are
+app-specific dependencies in the same mapping. Display variables cannot be changed
+through ordinary view filters. Shared variables are
 the explicit way to coordinate independently queried views; do not target
 individual widget IDs.
 
@@ -267,8 +264,7 @@ domain rows when adapting chart inputs:
 `itemActions`. Pie slices activate the same actions as their legend items; keep
 the built-in legend visible for keyboard access. Line and area points and pie legend items own pointer and keyboard
 activation, menus, and a declared primary action’s More actions affordance.
-Keep the original row fields when mapping chart items so typed actions receive
-the source row. A day drill can narrow the existing date range to that UTC day;
+A day drill can narrow the existing date range to that UTC day;
 a value-band drill should pass a stable band ID that the operation validates
 and resolves to server-side bounds. Fetch the matching population rather than
 filtering a capped preview. Alternate visualization renderers receive the

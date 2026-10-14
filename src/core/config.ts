@@ -67,15 +67,11 @@ export type DataAppDefinition<
  * The app owns an immutable snapshot of its registry; later input mutations do not change it.
  * This declaration does not execute queries or mount UI. Static apps use `queries: {}`.
  *
- * Declare exactly one module-level const initialized with `defineDataApp({ ... })` in the app's
- * declaration source. For the future backend extractor, the argument is read before bundling
- * by resolving the named `defineDataApp` import from `@altertable/data-app`, including aliases.
- * Variable name is arbitrary;
- * export only for imports by other modules. The argument must be a direct object literal
- * containing schema-valid objects, arrays, strings (including templates without interpolation),
- * finite signed numbers, booleans, and null. No spreads, computed keys, references, calls,
- * or callbacks inside it. Extraction must validate data without evaluating app code.
- * TypeScript checks the shape, not AST syntax. Keep executable composition outside the call.
+ * Declare one module-level const with `defineDataApp({ ... })`. Keep its argument a static
+ * object literal so tools can extract it without evaluating app code: objects, arrays,
+ * strings (including templates without interpolation), finite numbers, booleans, and null.
+ * No spreads, computed keys, references, calls, or callbacks inside the declaration.
+ * Keep executable composition outside the call. TypeScript checks shape, not this syntax.
  *
  * SQL passes unchanged to the backend, which interprets placeholders such as `$orgId`.
  * Declare every parameter with `{ defaultValue: value }` or `{}` for a required value.

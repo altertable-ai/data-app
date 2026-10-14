@@ -71,7 +71,6 @@ type TableWidgetBaseProps<Row> = {
   rowKey: (row: Row) => string | number;
   status?: WidgetStatus;
   action?: ReactNode;
-  navigation?: ReactNode;
   evidence?: WidgetEvidence;
   search?: TableWidgetSearch<Row>;
   /** Valid result with no rows; the header remains visible. */

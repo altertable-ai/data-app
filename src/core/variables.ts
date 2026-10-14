@@ -18,7 +18,7 @@ export type { HistoryMode } from '@/src/core/navigation';
 export type VariablePresentation = {
   /** Scope changes the included data; display changes its presentation. Defaults to scope. */
   group?: 'scope' | 'display';
-  /** Secondary scope controls live in the Filters sheet with compact pickers when active; secondary display options follow primary options. Defaults to primary. */
+  /** Secondary scope controls live only in the Filters sheet; secondary display options follow primary options. Defaults to primary. */
   prominence?: 'primary' | 'secondary';
 };
 

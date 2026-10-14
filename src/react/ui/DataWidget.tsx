@@ -39,8 +39,6 @@ type DataWidgetBaseProps = {
   /** Reserved feedback slot; retain displayed content while refreshing or after failure. */
   status?: WidgetStatus;
   footer?: ReactNode;
-  /** Context and recovery above the visual, also available for empty results and inspection. */
-  navigation?: ReactNode;
   bodyPadding?: 'inset' | 'flush';
 } & Omit<ComponentPropsWithRef<'section'>, 'about' | 'title' | 'children'>;
 
@@ -97,7 +95,6 @@ function DataWidgetContent({
   action,
   status,
   footer,
-  navigation,
   emptyFallback,
   bodyPadding = 'inset',
   children,
@@ -116,7 +113,6 @@ function DataWidgetContent({
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
       footer={emptyFallback ? undefined : footer}
       status={status}
-      navigation={navigation}
     >
       {content}
     </WidgetContent>
@@ -201,20 +197,15 @@ function WidgetContent({
   bodyPadding,
   footer,
   status,
-  navigation,
   children,
 }: {
   bodyPadding: 'inset' | 'flush';
   footer?: ReactNode;
   status?: WidgetStatus;
-  navigation?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <>
-      {navigation && (
-        <div className="altertable-data-widget-navigation">{navigation}</div>
-      )}
       <div
         className="altertable-data-widget-body"
         data-padding={bodyPadding}

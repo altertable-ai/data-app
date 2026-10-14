@@ -95,7 +95,7 @@ type TablePresentation<Row> = Pick<
 >;
 export type TableWidgetProps<Row, Data = unknown, Input = unknown> = Omit<
   BoundTableProps<Row>,
-  keyof TablePresentation<Row> | 'limit' | 'pagination' | 'navigation'
+  keyof TablePresentation<Row> | 'limit' | 'pagination'
 > &
   TableDisplayMode & {
     dataset: Dataset<Data, Input, Row>;
@@ -182,7 +182,6 @@ export type VisualizationWidgetProps<
   | 'views'
   | 'viewLabel'
   | 'initialView'
-  | 'navigation'
 > &
   VisualContent<Row> & {
     dataset: Dataset<Data, Input, Row>;

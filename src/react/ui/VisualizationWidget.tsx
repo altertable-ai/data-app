@@ -14,7 +14,6 @@ type VisualizationWidgetBaseProps = Pick<
   | 'count'
   | 'action'
   | 'records'
-  | 'navigation'
   | 'evidence'
   | 'status'
   | 'emptyFallback'

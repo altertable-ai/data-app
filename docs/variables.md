@@ -384,6 +384,8 @@ Ancestor IDs bind automatically to matching query parameter names. When names
 differ, declare a typed map such as `parents: { regionId: 'region' }` in the
 source. Bindings can reference only earlier levels and declared query parameters;
 each child source must bind its immediate parent.
+Other source parameters must have defaults or come from trusted server `queryParams`;
+the platform supplies only `member` and bound ancestor values.
 The platform owns `member`: null requests bounded dropdown options; a selected
 ID requests an exact lookup. Apply both ancestor predicates and the member
 predicate in source SQL. Do not paginate the exact-member lookup or validate
@@ -407,8 +409,8 @@ failures prevent the business operation from running. Lookup queries appear in
 query evidence. Both browser/bundle and HTTP execution use this contract. Generated selector endpoints are named
 `key.level` and pass through the same authorization callback as ordinary
 operations. Child selectors require selected ancestors and validate their
-membership before querying child labels. These names are reserved. `hierarchy.operations` is available when
-an authorizer needs to inspect its selector names.
+membership before querying child labels. These names are reserved;
+`hierarchy.operations` exposes them for authorization, without manual registration.
 
 See the [support workload example](https://github.com/altertable-ai/data-app/blob/main/dev/support.ts)
 for the complete source, parser, and operation declarations.

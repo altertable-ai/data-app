@@ -106,7 +106,7 @@ export type SourcedExploration<
   Key extends string,
   Levels extends readonly SourcedExplorationLevel<any>[],
 > = ExplorationVariable<NormalizedLevels<Levels>> & {
-  /** Generated selector operations; register once with the app's operations. */
+  /** Generated selectors, automatically registered by input(); names are reserved for authorization. */
   operations: {
     [
       Level in Levels[number] as Level extends { source: unknown }
