@@ -215,7 +215,6 @@ test('hierarchy filters live only in the sheet and selected members summarize in
   await choose(page, 'Region', 'Europe');
   await heading(page, 'regions');
   const bar = page.getByRole('group', { name: 'View scope', exact: true });
-  expect(await bar.getByText('Filtered by', { exact: true }).count()).toBe(1);
   expect(await bar.getByRole('button', { name: /Grouped by/ }).count()).toBe(0);
   await bar
     .getByRole('button', { name: 'Edit Region: Europe', exact: true })

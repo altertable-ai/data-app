@@ -98,7 +98,6 @@ export function ViewControlBar({
             axis="horizontal"
             className="altertable-filter-summary-items"
           >
-            <span className="altertable-filter-summary-label">Filtered by</span>
             {
               // oxlint-disable-next-line react/refs -- Summary renderers attach the callback to buttons; they never invoke it during render.
               filterSummaries.map(render =>
