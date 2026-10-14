@@ -1,3 +1,4 @@
+import { orderValueBand } from '@/dev/order-value-bands';
 import { geography } from '@/dev/geography';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
@@ -248,14 +249,14 @@ const dayDataset = orderView.dataset({
 const valueDataset = orderView.dataset({
   name: 'Orders by value',
   select: data => data.bands,
-  rowKey: row => row.band,
+  rowKey: row => row.id,
   evidence: { id: 'order-values', glossaryIds: ['orderValue'] },
   emptyFallback: {
     title: 'No orders',
     description: 'No orders in the selected UTC dates.',
   },
   columns: {
-    band: { label: 'Order value', value: row => row.band },
+    band: { label: 'Order value', value: row => row.label },
     orderCount: { label: 'Orders', value: row => row.orderCount },
   },
 });
@@ -413,7 +414,7 @@ const scopeOrdersView = defineDetailView({
   dataContext: orderDataContext,
   parseInput: operations.ordersInScope.input,
   describeInput: input =>
-    `${orderPopulations[input.status].title} · ${describeScope(input)}`,
+    `${orderPopulations[input.status].title}${input.valueBand ? ` · ${orderValueBand(input.valueBand).label}` : ''} · ${describeScope(input)}`,
   isEmpty: data => data.orders.length === 0,
   emptyFallback: { title: 'No matching orders' },
 });
@@ -471,6 +472,28 @@ const contributingRefunds = refundsMetric.records({
   target: scopeOrdersView,
   input: displayedInput => ({ ...displayedInput, status: 'refunded' as const }),
 });
+const dailyOrders = dayDataset.actions(action => ({
+  orders: action.detail({
+    label: 'View orders',
+    target: scopeOrdersView,
+    input: (day, displayedInput) => ({
+      ...displayedInput,
+      status: 'all' as const,
+      period: { range: { start: day.day, end: day.day }, comparison: null },
+    }),
+  }),
+}));
+const valueBandOrders = valueDataset.actions(action => ({
+  orders: action.detail({
+    label: 'View orders',
+    target: scopeOrdersView,
+    input: (band, displayedInput) => ({
+      ...displayedInput,
+      status: 'all' as const,
+      valueBand: band.id,
+    }),
+  }),
+}));
 const geographicActions = geographicDataset.actions(action => ({
   orders: action.detail({
     label: 'View paid orders',
@@ -556,16 +579,20 @@ function OrderResults({ result }: { result: OrderSource }) {
           description="Daily order count. Days without orders stay on the chart as zero."
           dataset={dayDataset}
           source={result}
+          actions={dailyOrders}
         >
-          {days => <DailyLineChart days={days} />}
+          {(days, actions) => <DailyLineChart days={days} actions={actions} />}
         </VisualizationWidget>
         <VisualizationWidget
           title="Order value"
           description="Share of orders by amount, in value bands."
           dataset={valueDataset}
           source={result}
+          actions={valueBandOrders}
         >
-          {bands => <OrderValuePieChart bands={bands} />}
+          {(bands, actions) => (
+            <OrderValuePieChart bands={bands} actions={actions} />
+          )}
         </VisualizationWidget>
       </Grid>
       <VisualizationWidget
@@ -702,7 +729,7 @@ function presentOrders(snapshot: OrderSnapshot) {
   if (largestValueBand)
     findings.push({
       id: 'order-values',
-      headline: `${largestValueBand.band} is the most common order value`,
+      headline: `${largestValueBand.label} is the most common order value`,
       context: `${scope}. ${formatPercent(largestValueBand.orderCount / orderCount)} of orders.`,
       visual: <OrderValuePieChart bands={bands} />,
       evidence: valueDataset,

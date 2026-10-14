@@ -1,3 +1,4 @@
+import { orderValueBand, type OrderValueBandId } from '@/dev/order-value-bands';
 import { geography } from '@/dev/geography';
 import { dataApp } from '@/dev/app';
 import {
@@ -15,6 +16,7 @@ export type OrderInput = {
 };
 export type OrderRecordsInput = OrderInput & {
   status: 'all' | 'paid' | 'refunded';
+  valueBand?: OrderValueBandId;
 };
 export type CountryRevenue = {
   country: string;
@@ -24,7 +26,11 @@ export type CountryRevenue = {
   refunds: number;
 };
 export type OrderDay = { day: string; orderCount: number };
-export type OrderBand = { band: string; orderCount: number };
+export type OrderBand = {
+  id: OrderValueBandId;
+  label: string;
+  orderCount: number;
+};
 export type OrderTotals = {
   orderCount: number;
   revenue: number;
@@ -135,10 +141,14 @@ function parseOrderOverview(value: unknown): OrderOverview {
       day: text(row.day),
       orderCount: parseCount(row.orderCount),
     })),
-    bands: parseRows(data.bands, row => ({
-      band: text(row.band),
-      orderCount: parseCount(row.orderCount),
-    })),
+    bands: parseRows(data.bands, row => {
+      const band = orderValueBand(row.id);
+      return {
+        id: band.id,
+        label: band.label,
+        orderCount: parseCount(row.orderCount),
+      };
+    }),
     orders: parseRows(data.orders, parseOrder),
     items: parseRows(data.items, parseOrderItem),
     previous:
@@ -228,7 +238,14 @@ export const operations = {
       const status = (value as Record<string, unknown>).status ?? 'all';
       if (status !== 'all' && status !== 'paid' && status !== 'refunded')
         throw new Error('Expected all, paid, or refunded orders.');
-      return { ...scope, status };
+      const valueBand = (value as Record<string, unknown>).valueBand;
+      return {
+        ...scope,
+        status,
+        ...(valueBand === undefined
+          ? {}
+          : { valueBand: orderValueBand(valueBand).id }),
+      };
     },
     output(value: unknown) {
       if (!value || typeof value !== 'object')
@@ -240,18 +257,25 @@ export const operations = {
         ),
       };
     },
-    checks: (['all', 'paid', 'refunded'] as const).map(status => ({
-      period: checkRange,
-      geography: geography.defaultValue,
-      status,
-    })),
+    checks: (['all', 'paid', 'refunded'] as const).map(
+      (status): OrderRecordsInput => ({
+        period: checkRange,
+        geography: geography.defaultValue,
+        status,
+      })
+    ),
     policy: {
       maxQueryRows: 10000,
       maxResponseBytes: 4000000,
       maxDurationMs: 15000,
     },
     async run({ query }, input) {
+      const band = input.valueBand
+        ? orderValueBand(input.valueBand)
+        : undefined;
       const result = await query('ordersInScope', {
+        amountMin: band?.min ?? null,
+        amountMax: band?.max ?? null,
         ...scopeParams(input),
         status: input.status,
         start: input.period.range.start,
@@ -342,8 +366,8 @@ export const operations = {
           })
         ),
         days: dayResult.rows.map(([day, orderCount]) => ({ day, orderCount })),
-        bands: bandResult.rows.map(([band, orderCount]) => ({
-          band,
+        bands: bandResult.rows.map(([id, orderCount]) => ({
+          id,
           orderCount,
         })),
         orders: orderResult.rows.map(

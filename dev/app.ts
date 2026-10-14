@@ -1,4 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
+import { orderValueBands } from '@/dev/order-value-bands';
 
 export const dataApp = defineDataApp({
   title: 'Orders',
@@ -43,8 +44,7 @@ GROUP BY 1 ORDER BY 1`,
     },
     ordersByValue: {
       statement: `
-SELECT CASE WHEN o.amount < 100 THEN 'Under $100' WHEN o.amount < 250 THEN '$100–250'
-  WHEN o.amount < 500 THEN '$250–500' ELSE '$500 and over' END AS band, count(*) AS order_count
+SELECT CASE ${orderValueBands.map(band => `WHEN o.amount >= ${band.min}${band.max === null ? '' : ` AND o.amount < ${band.max}`} THEN '${band.id}'`).join(' ')} END AS band, count(*) AS order_count
 FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id WHERE o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY AND ($country IS NULL OR c.country = $country) AND ($region IS NULL OR CASE WHEN c.country = 'US' THEN 'North America' ELSE 'Europe' END = $region) AND ($customerId IS NULL OR c.id = $customerId)
 GROUP BY band ORDER BY min(o.amount)`,
       params: {
@@ -94,9 +94,13 @@ SELECT o.id, c.name AS customer, c.country, CAST(o.ordered_at AS DATE) AS day,
 FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
 WHERE o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY AND ($country IS NULL OR c.country = $country) AND ($region IS NULL OR CASE WHEN c.country = 'US' THEN 'North America' ELSE 'Europe' END = $region) AND ($customerId IS NULL OR c.id = $customerId)
 AND ($status = 'all' OR o.status = $status)
+AND ($amountMin IS NULL OR o.amount >= $amountMin)
+AND ($amountMax IS NULL OR o.amount < $amountMax)
 ORDER BY o.ordered_at DESC, o.id DESC`,
       params: {
         status: { defaultValue: 'all' },
+        amountMin: { defaultValue: null },
+        amountMax: { defaultValue: null },
         start: {},
         end: {},
         country: { defaultValue: null },
