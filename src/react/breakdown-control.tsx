@@ -26,6 +26,7 @@ export function BreakdownControl<Input>({
       id={target.navigationId}
       label="Break down by"
       labelPlacement="inline"
+      align="end"
       value={level}
       disabled={source.loading}
       options={levels.map(entry => ({ id: entry.id, label: entry.label }))}
