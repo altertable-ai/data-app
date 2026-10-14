@@ -15,7 +15,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'time-interval',
-          include: ['tests/vendor/d3-time/**/*.test.js'],
+          include: ['tests/vendor/d3-time/**/*.test.{js,ts}'],
           pool: 'forks',
           env: { TZ: 'America/Los_Angeles' },
         },

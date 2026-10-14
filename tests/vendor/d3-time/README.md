@@ -8,6 +8,9 @@ repository import paths, test filenames, and formatting. Tests target the intern
 TypeScript port directly; this is a vendored compatibility suite, separate from
 public API consumer tests.
 
+`utcTicks-boundaries.test.ts` adds project-owned boundary cases alongside the
+unchanged upstream assertions.
+
 Run `bun run test --project time-interval`. The Vitest project pins
 `TZ=America/Los_Angeles`, as upstream requires for daylight-saving assertions,
 without changing the timezone of the public API tests. The suite also runs with
