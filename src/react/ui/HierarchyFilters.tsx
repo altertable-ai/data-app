@@ -139,10 +139,11 @@ export function HierarchyFilters({
     <nav
       id={id}
       tabIndex={-1}
-      className="altertable-hierarchy-filters"
+      className="altertable-field altertable-hierarchy-filters"
+      data-label-placement="above"
       aria-label={`${variable.label} hierarchy`}
     >
-      <span className="altertable-hierarchy-heading">{variable.label}</span>
+      <span className="altertable-field-label">{variable.label}</span>
       <ol>
         {shown.map((level, position) => {
           const dimension = variable.dimensions[position]!;

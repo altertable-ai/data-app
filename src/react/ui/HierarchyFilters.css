@@ -42,10 +42,3 @@
   white-space: normal;
   overflow-wrap: anywhere;
 }
-.altertable-hierarchy-filters {
-  display: grid;
-  gap: var(--atbl-space-sm);
-}
-.altertable-hierarchy-heading {
-  font-weight: var(--atbl-type-label-weight);
-}
