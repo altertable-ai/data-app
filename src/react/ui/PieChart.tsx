@@ -1,9 +1,10 @@
+import { invariant } from '@/src/core/invariant';
 import { useChartItemActions } from '@/src/react/ui/chart-actions';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
 import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
 import { validateChartItems } from '@/src/react/ui/chart-data';
 
@@ -29,11 +30,16 @@ export function PieChart<Item extends ChartItem>({
   formatValue = value => new Intl.NumberFormat().format(value),
 }: PieChartProps<Item>) {
   validateChartItems('pie', items);
+  invariant(
+    showLegend || (!itemActions && !onItemAction),
+    'Pie item actions require the built-in legend for keyboard access.'
+  );
   const actions = useChartItemActions({
     itemActions,
     onItemAction,
     actionLabel,
   });
+  const legendButtons = useRef(new Map<string, HTMLButtonElement>());
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [plotOpen, setPlotOpen] = useState(false);
   const [legendId, setLegendId] = useState<string | null>(null);
@@ -108,6 +114,16 @@ export function PieChart<Item extends ChartItem>({
                         d={item.path}
                         fill={item.color}
                         className="altertable-pie-slice"
+                        data-atbl-control={
+                          showLegend &&
+                          actions.triggerProps(item, '').tabIndex === 0
+                            ? 'action'
+                            : 'default'
+                        }
+                        // The legend owns keyboard activation, menu anchoring, and return focus.
+                        onClick={() =>
+                          legendButtons.current.get(item.id)?.click()
+                        }
                         data-active={
                           item.id ===
                             (plotOpen && previewId
@@ -142,6 +158,9 @@ export function PieChart<Item extends ChartItem>({
           {showLegend && (
             <ChartLegend
               layout="vertical"
+              maxVisibleItems={
+                itemActions || onItemAction ? items.length : undefined
+              }
               aria-label={`${ariaLabel} legend`}
               className="altertable-pie-legend"
             >
@@ -169,6 +188,11 @@ export function PieChart<Item extends ChartItem>({
                           trigger.tabIndex === 0 ? 'action' : 'default'
                         }
                         {...trigger}
+                        ref={element => {
+                          if (element)
+                            legendButtons.current.set(item.id, element);
+                          else legendButtons.current.delete(item.id);
+                        }}
                         type="button"
                       >
                         <ChartLegend.Marker kind="square" color={item.color} />

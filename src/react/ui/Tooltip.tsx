@@ -99,6 +99,7 @@ export function Tooltip({
   onPointerMove,
   onPointerLeave,
   onPointerDown,
+  onClickCapture,
   onFocusCapture,
   onBlurCapture,
   ...props
@@ -233,6 +234,18 @@ export function Tooltip({
         data-variant={variant}
         data-open={visible || undefined}
         className={classNames('altertable-tooltip-trigger', className)}
+        onClickCapture={event => {
+          onClickCapture?.(event);
+          if (
+            !event.defaultPrevented &&
+            variant === 'chart' &&
+            event.target instanceof Element &&
+            event.target.closest('[data-atbl-control="action"]')
+          ) {
+            suppressed.current = true;
+            close();
+          }
+        }}
         onPointerEnter={event => {
           onPointerEnter?.(event);
           if (

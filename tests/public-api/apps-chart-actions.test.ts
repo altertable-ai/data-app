@@ -73,3 +73,80 @@ for (const chart of ['line', 'area', 'pie']) {
     expect(await page.getByRole('menu').count()).toBe(0);
   });
 }
+
+test('pie slices activate the same menu and primary detail as their legend controls', async ({
+  page,
+  mobilePage,
+}) => {
+  for (const current of [page, mobilePage]) {
+    for (const primary of [false, true]) {
+      await current.goto(
+        `/exploration-app?chart=pie${primary ? '&primary' : ''}`
+      );
+      const chart = current.getByRole('region', {
+        name: 'Geographic revenue',
+        exact: true,
+      });
+      const legend = chart.getByRole('button', {
+        name: primary ? /^View orders: Europe:/ : /^Explore: Europe:/,
+      });
+      await legend.waitFor();
+      await chart.scrollIntoViewIfNeeded();
+      // Activate an interior point in the first visible slice, using its public SVG geometry.
+      const slice = chart.locator('svg').first().locator('path').first();
+      const point = await slice.evaluate(element => {
+        const path = element as SVGPathElement;
+        const svg = path.ownerSVGElement!;
+        const box = path.getBBox();
+        const candidate = svg.createSVGPoint();
+        for (let x = box.x + 1; x < box.x + box.width; x += 5) {
+          for (let y = box.y + 1; y < box.y + box.height; y += 5) {
+            candidate.x = x;
+            candidate.y = y;
+            if (path.isPointInFill(candidate)) {
+              const screen = candidate.matrixTransform(svg.getScreenCTM()!);
+              return { x: screen.x, y: screen.y };
+            }
+          }
+        }
+        throw new Error('No visible slice interior');
+      });
+      if (current === mobilePage)
+        await current.touchscreen.tap(point.x, point.y);
+      else await current.mouse.click(point.x, point.y);
+      const detail = current.getByRole('dialog', {
+        name: 'Contributing orders',
+        exact: true,
+      });
+      if (!primary) {
+        const menu = current.getByRole('menu', {
+          name: 'Europe actions',
+          exact: true,
+        });
+        await expect
+          .poll(() =>
+            menu.evaluate(element => element.contains(document.activeElement))
+          )
+          .toBe(true);
+        await current.keyboard.press('Escape');
+        await expect
+          .poll(() =>
+            legend.evaluate(element => element === document.activeElement)
+          )
+          .toBe(true);
+        await legend.click();
+        await current
+          .getByRole('menuitem', { name: 'View orders', exact: true })
+          .click();
+      }
+      await expect.poll(() => detail.getByRole('row').count()).toBe(4);
+      await current.keyboard.press('Escape');
+      await detail.waitFor({ state: 'hidden' });
+      await expect
+        .poll(() =>
+          legend.evaluate(element => element === document.activeElement)
+        )
+        .toBe(true);
+    }
+  }
+});

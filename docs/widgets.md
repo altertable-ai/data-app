@@ -262,7 +262,8 @@ domain rows when adapting chart inputs:
 ```
 
 `<BarChart>`, `<LineChart>`, `<AreaChart>`, and `<PieChart>` accept the same
-`itemActions`. Line and area points and pie legend items own pointer and keyboard
+`itemActions`. Pie slices activate the same actions as their legend items; keep
+the built-in legend visible for keyboard access. Line and area points and pie legend items own pointer and keyboard
 activation, menus, and a declared primary action’s More actions affordance.
 Keep the original row fields when mapping chart items so typed actions receive
 the source row. A day drill can narrow the existing date range to that UTC day;
