@@ -1083,6 +1083,39 @@ test('widget placement preserves active filter counts, editing, and clearing', a
   await expect.poll(() => floating.count()).toBe(0);
 });
 
+test('story widgets open registered details and return focus to their story trigger', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/exploration?story-actions=1');
+  await page
+    .getByRole('button', { name: 'Present story', exact: true })
+    .click();
+  const story = page.getByRole('dialog').filter({
+    has: page.getByRole('heading', { name: 'Order overview', exact: true }),
+  });
+  const trigger = story.getByRole('button', { name: /View all orders/ });
+  await trigger.click();
+  const detail = page.getByRole('dialog', {
+    name: 'Contributing orders',
+    exact: true,
+  });
+  await expect
+    .poll(() => detail.getByRole('table').innerText())
+    .toContain('order-1');
+  await detail
+    .getByRole('button', { name: 'Close panel', exact: true })
+    .click();
+  await expect
+    .poll(() => trigger.evaluate(element => document.activeElement === element))
+    .toBe(true);
+  await story
+    .getByRole('button', { name: 'Exit presentation', exact: true })
+    .click();
+  expect(errors).toEqual([]);
+});
+
 test('mapped scope choices keep actions available only for the displayed selection', async ({
   page,
 }) => {

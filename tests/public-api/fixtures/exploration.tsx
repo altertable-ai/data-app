@@ -689,7 +689,17 @@ function App() {
           id: 'overview',
           headline: 'Order overview',
           context: 'Every order in scope.',
-          visual: <MetricWidget metric={total} source={snapshot} />,
+          visual: (
+            <MetricWidget
+              metric={total}
+              source={snapshot}
+              actions={
+                new URLSearchParams(location.search).has('story-actions')
+                  ? totalActions
+                  : undefined
+              }
+            />
+          ),
           evidence: places,
         },
       ]}

@@ -92,27 +92,29 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
         }
       >
         <PrimaryViewContext value={{ declaration: view, result }}>
-          <DataAppFrame
-            {...frame}
-            request={result}
-            dataContext={result.dataContext}
-            story={snapshot =>
-              story(ownedSource(view, snapshot)).map(finding => ({
-                ...finding,
-                evidence: registeredEvidence(finding.evidence, view),
-              }))
-            }
-            csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
-              exportDatasets(
-                datasets,
-                ownedSource(view, snapshot),
-                view.scope(snapshot),
-                app.title
-              )
-            }
-          >
-            <DetailRoutes details={details}>{children}</DetailRoutes>
-          </DataAppFrame>
+          <DetailRoutes details={details}>
+            <DataAppFrame
+              {...frame}
+              request={result}
+              dataContext={result.dataContext}
+              story={snapshot =>
+                story(ownedSource(view, snapshot)).map(finding => ({
+                  ...finding,
+                  evidence: registeredEvidence(finding.evidence, view),
+                }))
+              }
+              csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
+                exportDatasets(
+                  datasets,
+                  ownedSource(view, snapshot),
+                  view.scope(snapshot),
+                  app.title
+                )
+              }
+            >
+              {children}
+            </DataAppFrame>
+          </DetailRoutes>
         </PrimaryViewContext>
       </SearchSuggestionsContext>
     </DateFormattingContext>

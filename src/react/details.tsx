@@ -2,7 +2,10 @@ import { invariant } from '@/src/core/invariant';
 import { ownedSource } from '@/src/react/source-owner';
 import { DataSectionBoundary } from '@/src/react/ui/DataSectionBoundary';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
-import { InspectionOwner } from '@/src/react/ui/InspectionProvider';
+import {
+  InspectionOwner,
+  InspectionProvider,
+} from '@/src/react/ui/InspectionProvider';
 import { Sheet } from '@/src/react/ui/Sheet';
 import {
   searchParams,
@@ -337,23 +340,25 @@ export function DetailRoutes({
   const current = stack.at(-1);
   return (
     <DetailNavigationContext value={navigation}>
-      {children}
-      {current && (
-        <DetailSheet
-          key={current.content.target.definition.id}
-          entry={current}
-          returnFocus={focusOrigin}
-          onClose={() => {
-            const trigger = focusOrigin.current;
-            writeRoute([], 'replace');
-            setStack([]);
-            requestAnimationFrame(() => {
-              if (trigger?.isConnected && trigger.getClientRects().length)
-                trigger.focus({ preventScroll: true });
-            });
-          }}
-        />
-      )}
+      <InspectionProvider>
+        {children}
+        {current && (
+          <DetailSheet
+            key={current.content.target.definition.id}
+            entry={current}
+            returnFocus={focusOrigin}
+            onClose={() => {
+              const trigger = focusOrigin.current;
+              writeRoute([], 'replace');
+              setStack([]);
+              requestAnimationFrame(() => {
+                if (trigger?.isConnected && trigger.getClientRects().length)
+                  trigger.focus({ preventScroll: true });
+              });
+            }}
+          />
+        )}
+      </InspectionProvider>
     </DetailNavigationContext>
   );
 }
