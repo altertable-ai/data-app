@@ -60,22 +60,28 @@ export function ExplorationActionControl({
           <MenuButton aria-label={`${ariaLabel}: more actions`}>
             More actions
           </MenuButton>
-          <MenuPopover>
-            <Menu aria-label={`${ariaLabel} actions`}>
-              {menuActions.map(action => (
-                <MenuItem
-                  key={action.id}
-                  id={action.id}
-                  onAction={action.onSelect}
-                >
-                  {action.label}
-                </MenuItem>
-              ))}
-            </Menu>
-          </MenuPopover>
+          <ExplorationActionMenu actions={menuActions} ariaLabel={ariaLabel} />
         </MenuTrigger>
       )}
     </span>
+  );
+}
+
+/** Menu content for an item-level trigger composed by a chart or custom control. */
+export function ExplorationActionMenu({
+  actions,
+  ariaLabel,
+}: Pick<ExplorationActionControlProps, 'actions' | 'ariaLabel'>) {
+  return (
+    <MenuPopover>
+      <Menu aria-label={`${ariaLabel} actions`}>
+        {actions.map(action => (
+          <MenuItem key={action.id} id={action.id} onAction={action.onSelect}>
+            {action.label}
+          </MenuItem>
+        ))}
+      </Menu>
+    </MenuPopover>
   );
 }
 

@@ -2,9 +2,11 @@ import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import {
   ExplorationActionControl,
+  ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from '@/src/react/ui/ExplorationActionControl';
-import { useState } from 'react';
+import { MenuButton, MenuTrigger } from '@/src/react/ui/Menu';
+import { useRef, useState } from 'react';
 import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
 import { validateValueChartItems } from '@/src/react/ui/chart-data';
 
@@ -31,6 +33,7 @@ export function PieChart<Row extends PieChartItem>({
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [plotOpen, setPlotOpen] = useState(false);
   const [legendId, setLegendId] = useState<string | null>(null);
+  const menuTriggers = useRef(new Map<string, HTMLButtonElement>());
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 0);
   const total = maximum
     ? items.reduce((sum, item) => sum + item.value / maximum, 0)
@@ -106,6 +109,8 @@ export function PieChart<Row extends PieChartItem>({
                       const action = getPrimaryExplorationAction(
                         itemActions?.(item) ?? []
                       );
+                      const opensMenu =
+                        !action && (itemActions?.(item).length ?? 0) > 1;
                       return (
                         <path
                           key={item.id}
@@ -125,23 +130,30 @@ export function PieChart<Row extends PieChartItem>({
                               event.preventDefault();
                             setPreviewId(item.id);
                           }}
-                          onClick={() => action?.onSelect()}
+                          onClick={() => {
+                            if (action) action.onSelect();
+                            else if (opensMenu)
+                              menuTriggers.current.get(item.id)?.click();
+                          }}
                           onKeyDown={event => {
                             if (
-                              action &&
+                              (action || opensMenu) &&
                               (event.key === 'Enter' || event.key === ' ')
                             ) {
                               event.preventDefault();
-                              action.onSelect();
+                              if (action) action.onSelect();
+                              else menuTriggers.current.get(item.id)?.click();
                             }
                           }}
                           aria-label={
                             action
                               ? `${item.label}: ${formatValue(item.value)} ${unit}. ${action.label}`
-                              : undefined
+                              : opensMenu
+                                ? `${item.label}: ${formatValue(item.value)} ${unit}. Actions`
+                                : undefined
                           }
-                          role={action ? 'button' : undefined}
-                          tabIndex={action ? 0 : undefined}
+                          role={action || opensMenu ? 'button' : undefined}
+                          tabIndex={action || opensMenu ? 0 : undefined}
                           onPointerEnter={event => {
                             if (event.pointerType === 'mouse')
                               setPreviewId(item.id);
@@ -156,6 +168,32 @@ export function PieChart<Row extends PieChartItem>({
                 )}
               </svg>
             </Tooltip>
+            {!showLegend &&
+              slices.map(item => {
+                const actions = itemActions?.(item) ?? [];
+                if (getPrimaryExplorationAction(actions) || actions.length < 2)
+                  return null;
+                return (
+                  <span key={item.id} className="altertable-sr-only">
+                    <MenuTrigger>
+                      <MenuButton
+                        ref={element => {
+                          if (element)
+                            menuTriggers.current.set(item.id, element);
+                          else menuTriggers.current.delete(item.id);
+                        }}
+                        aria-label={`${item.label} actions`}
+                      >
+                        {item.label} actions
+                      </MenuButton>
+                      <ExplorationActionMenu
+                        actions={actions}
+                        ariaLabel={`${item.label} actions`}
+                      />
+                    </MenuTrigger>
+                  </span>
+                );
+              })}
             {total === 0 && (
               <span className="altertable-pie-empty-label">
                 No nonzero values
@@ -182,23 +220,70 @@ export function PieChart<Row extends PieChartItem>({
                         )
                       }
                     >
-                      <button
-                        data-atbl-focus="ring"
-                        data-atbl-control="default"
-                        type="button"
-                        tabIndex={action ? 0 : -1}
-                        aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}${action ? `. ${action.label}` : ''}`}
-                        onClick={action?.onSelect}
-                      >
-                        <ChartLegend.Marker kind="square" color={item.color} />
-                        <ChartLegend.Label className="altertable-pie-label">
-                          {item.label}
-                        </ChartLegend.Label>
-                        <strong>{formatValue(item.value)}</strong>
-                        <span>{percent(item.share)}</span>
-                      </button>
+                      {action ? (
+                        <button
+                          data-atbl-focus="ring"
+                          data-atbl-control="default"
+                          type="button"
+                          aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}. ${action.label}`}
+                          onClick={action.onSelect}
+                        >
+                          <ChartLegend.Marker
+                            kind="square"
+                            color={item.color}
+                          />
+                          <ChartLegend.Label className="altertable-pie-label">
+                            {item.label}
+                          </ChartLegend.Label>
+                          <strong>{formatValue(item.value)}</strong>
+                          <span>{percent(item.share)}</span>
+                        </button>
+                      ) : actions.length > 1 ? (
+                        <MenuTrigger>
+                          <MenuButton
+                            ref={element => {
+                              if (element)
+                                menuTriggers.current.set(item.id, element);
+                              else menuTriggers.current.delete(item.id);
+                            }}
+                            aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}. Actions`}
+                          >
+                            <ChartLegend.Marker
+                              kind="square"
+                              color={item.color}
+                            />
+                            <ChartLegend.Label className="altertable-pie-label">
+                              {item.label}
+                            </ChartLegend.Label>
+                            <strong>{formatValue(item.value)}</strong>
+                            <span>{percent(item.share)}</span>
+                          </MenuButton>
+                          <ExplorationActionMenu
+                            actions={actions}
+                            ariaLabel={`${item.label} actions`}
+                          />
+                        </MenuTrigger>
+                      ) : (
+                        <button
+                          data-atbl-focus="ring"
+                          data-atbl-control="default"
+                          type="button"
+                          tabIndex={-1}
+                          aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}`}
+                        >
+                          <ChartLegend.Marker
+                            kind="square"
+                            color={item.color}
+                          />
+                          <ChartLegend.Label className="altertable-pie-label">
+                            {item.label}
+                          </ChartLegend.Label>
+                          <strong>{formatValue(item.value)}</strong>
+                          <span>{percent(item.share)}</span>
+                        </button>
+                      )}
                     </Tooltip>
-                    {actions.length > 1 && (
+                    {action && actions.length > 1 && (
                       <ExplorationActionControl
                         actions={actions}
                         ariaLabel={`${item.label} actions`}

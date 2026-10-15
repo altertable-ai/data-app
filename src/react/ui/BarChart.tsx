@@ -4,8 +4,10 @@ import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useChartScrollToEnd } from '@/src/react/ui/use-chart-scroll-to-end';
 import {
   ExplorationActionControl,
+  ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from '@/src/react/ui/ExplorationActionControl';
+import { MenuButton, MenuTrigger } from '@/src/react/ui/Menu';
 import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 
 import {
@@ -107,22 +109,53 @@ export function BarChart<Row extends BarChartItem>({
                       }
                       className="altertable-chart-column"
                     >
-                      <button
-                        data-atbl-focus="ring"
-                        data-atbl-control="default"
-                        type="button"
-                        tabIndex={action ? 0 : -1}
-                        className="altertable-selectable-bars-item"
-                        aria-label={`${item.label}: ${formatValue(item.value)} ${unit}${action ? `. ${action.label}` : ''}`}
-                        onClick={action?.onSelect}
-                      >
-                        <span className="altertable-selectable-bars-area" />
-                        <span className="altertable-selectable-bars-label">
-                          {item.label}
-                        </span>
-                      </button>
+                      {action ? (
+                        <button
+                          data-atbl-focus="ring"
+                          data-atbl-control="default"
+                          type="button"
+                          className="altertable-selectable-bars-item"
+                          aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. ${action.label}`}
+                          onClick={action.onSelect}
+                        >
+                          <span className="altertable-selectable-bars-area" />
+                          <span className="altertable-selectable-bars-label">
+                            {item.label}
+                          </span>
+                        </button>
+                      ) : actions.length > 1 ? (
+                        <MenuTrigger>
+                          <MenuButton
+                            className="altertable-selectable-bars-item"
+                            aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. Actions`}
+                          >
+                            <span className="altertable-selectable-bars-area" />
+                            <span className="altertable-selectable-bars-label">
+                              {item.label}
+                            </span>
+                          </MenuButton>
+                          <ExplorationActionMenu
+                            actions={actions}
+                            ariaLabel={`${item.label} actions`}
+                          />
+                        </MenuTrigger>
+                      ) : (
+                        <button
+                          data-atbl-focus="ring"
+                          data-atbl-control="default"
+                          type="button"
+                          tabIndex={-1}
+                          className="altertable-selectable-bars-item"
+                          aria-label={`${item.label}: ${formatValue(item.value)} ${unit}`}
+                        >
+                          <span className="altertable-selectable-bars-area" />
+                          <span className="altertable-selectable-bars-label">
+                            {item.label}
+                          </span>
+                        </button>
+                      )}
                     </Tooltip>
-                    {actions.length > 1 && (
+                    {action && actions.length > 1 && (
                       <ExplorationActionControl
                         actions={actions}
                         ariaLabel={`${item.label} actions`}
