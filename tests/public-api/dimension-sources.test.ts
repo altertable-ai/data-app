@@ -1,90 +1,10 @@
 import { expect, test } from 'vitest';
 import { defineDataApp } from '@altertable/data-app';
-import {
-  hierarchyVariable,
-  type Lakehouse,
-} from '@altertable/data-app/contract';
+import { variableInput, type Lakehouse } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
 import { createDataHandler } from '@altertable/data-app/server';
 
-const geography = hierarchyVariable({
-  key: 'geography',
-  label: 'Geography',
-  levels: [
-    {
-      id: 'region',
-      label: 'Region',
-      valueType: 'string',
-      options: [
-        { value: 'eu', label: 'Europe' },
-        { value: 'us', label: 'America' },
-      ],
-    },
-    {
-      id: 'customer',
-      label: 'Customer',
-      valueType: 'number',
-      options: [
-        { value: 1, label: 'One', parent: 'eu' },
-        { value: 2, label: 'Two', parent: 'us' },
-      ],
-    },
-    {
-      id: 'order',
-      label: 'Order',
-      valueType: 'number',
-      options: [{ value: 10, label: 'Ten', parent: 1 }],
-    },
-  ],
-});
-test('typed static hierarchy selections round trip and parent transitions clear descendants', () => {
-  const selected = geography.transition(geography.defaultValue, {
-    region: 'eu',
-    customer: 1,
-    order: 10,
-  });
-  expect(geography.describe!(selected)).toBe('Europe / One / Ten');
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries(geography.write(selected)))
-    if (value !== null) params.set(key, value);
-  expect(geography.read(params)).toEqual(selected);
-  expect(geography.transition(selected, { region: 'us' })).toEqual({
-    selection: {
-      region: { kind: 'include', members: [{ kind: 'value', value: 'us' }] },
-      customer: { kind: 'all' },
-      order: { kind: 'all' },
-    },
-  });
-  expect(
-    geography.transition(selected, { customer: null }).selection.order
-  ).toEqual({ kind: 'all' });
-  expect(() =>
-    geography.transition(selected, { region: 'us', customer: 1 })
-  ).toThrow('Invalid Geography');
-  expect(() =>
-    geography.transition(geography.defaultValue, { customer: 1 })
-  ).toThrow('Invalid Geography');
-  expect(() =>
-    geography.parse({
-      selection: {
-        region: { kind: 'include', members: [{ kind: 'missing' }] },
-      },
-    })
-  ).toThrow();
-});
-test('chart breakdowns normalize independently against shared population', () => {
-  const revenue = geography.breakdown({ key: 'revenue-by' });
-  const orders = geography.breakdown({ key: 'orders-by' });
-  expect(revenue.level('order', geography.defaultValue).id).toBe('order');
-  expect(orders.level('region', geography.defaultValue).id).toBe('region');
-  const selected = geography.transition(geography.defaultValue, {
-    region: 'eu',
-  });
-  expect(orders.level('region', selected).id).toBe('region');
-  expect(revenue.level('order', selected).id).toBe('order');
-});
-
-function sourceApp() {
+function sourceApp(mode: 'single' | 'multiple' = 'single') {
   const app = defineDataApp({
     title: 'Sales',
     description: 'Sales',
@@ -97,38 +17,34 @@ function sourceApp() {
       },
       customers: {
         statement:
-          'SELECT id AS value, name AS label FROM customers WHERE region = $regionId AND tenant = $tenant AND ($member IS NULL OR id = $member)',
-        params: { regionId: {}, member: {}, tenant: {} },
+          'SELECT id AS value, name AS label FROM customers WHERE tenant = $tenant AND ($member IS NULL OR id = $member)',
+        params: { member: {}, tenant: { defaultValue: 'public' } },
       },
       business: { statement: 'SELECT sales FROM sales', params: {} },
     },
   });
-  const hierarchy = app.defineHierarchy({
-    key: 'geography',
-    label: 'Geography',
-    levels: [
-      {
-        id: 'region',
-        label: 'Region',
-        valueType: 'string',
-        source: { query: 'regions' },
-      },
-      {
-        id: 'customer',
-        label: 'Customer',
-        valueType: 'number',
-        source: { query: 'customers', parents: { regionId: 'region' } },
-      },
-    ],
+  const region = app.defineDimension({
+    key: 'region',
+    label: 'Region',
+    selectionMode: 'single',
+    valueType: 'string',
+    source: { query: 'regions' },
   });
-  const revenueBy = hierarchy.breakdown({ key: 'revenue-by' });
-  const parse = hierarchy.input(() => ({}), { breakdowns: { revenueBy } });
+  const customer = app.defineDimension({
+    key: 'customer',
+    label: 'Customer',
+    selectionMode: mode,
+    allowExclusion: true,
+    valueType: 'number',
+    source: { query: 'customers' },
+  });
+  const parse = variableInput(() => ({}), { region, customer });
   const input = {
-    geography: hierarchy.transition(hierarchy.defaultValue, {
-      region: 'eu',
-      customer: 999,
-    }),
-    revenueBy: 'customer' as const,
+    region: { kind: 'all' } as const,
+    customer: {
+      kind: 'include' as const,
+      members: [{ kind: 'value' as const, value: 999 }],
+    },
   };
   const operations = {
     sales: app.defineOperation({
@@ -140,10 +56,10 @@ function sourceApp() {
       },
     }),
   };
-  return { app, hierarchy, input, operations };
+  return { app, region, customer, input, operations };
 }
 
-test('source validation runs exact lookups in parent order and discloses them before the business query', async () => {
+test('a selected customer validates independently and discloses its exact lookup before the business query', async () => {
   const { operations, input } = sourceApp();
   const calls: string[] = [];
   const lakehouse: Lakehouse = {
@@ -161,7 +77,6 @@ test('source validation runs exact lookups in parent order and discloses them be
         calls.push('customer');
         expect(params).toEqual({
           member: 999,
-          regionId: 'eu',
           tenant: 'trusted',
         });
         return {
@@ -186,9 +101,8 @@ test('source validation runs exact lookups in parent order and discloses them be
   );
   expect(response.status).toBe(200);
   const body = await response.json();
-  expect(calls).toEqual(['region', 'customer', 'business']);
+  expect(calls).toEqual(['customer', 'business']);
   expect(body.queries.map((query: { name: string }) => query.name)).toEqual([
-    'regions',
     'customers',
     'business',
   ]);
@@ -202,7 +116,7 @@ test('invalid memberships and failed lookups prevent business execution', async 
       operations,
       lakehouse: {
         async queryAll(statement) {
-          if (statement.includes('FROM regions')) {
+          if (statement.includes('FROM customers')) {
             if (fail) throw new Error('Lookup failed');
             return {
               columns: [{ name: 'value' }, { name: 'label' }],
@@ -221,45 +135,20 @@ test('invalid memberships and failed lookups prevent business execution', async 
   }
 });
 
-test('source declarations require member and the immediate parent binding', () => {
+test('source declarations require an exact lookup parameter', () => {
   const { app } = sourceApp();
   expect(() =>
-    app.defineHierarchy({
+    app.defineDimension({
       key: 'bad',
       label: 'Bad',
-      levels: [
-        {
-          id: 'region',
-          label: 'Region',
-          valueType: 'string',
-          source: { query: 'business' },
-        },
-      ],
+      valueType: 'string',
+      selectionMode: 'single',
+      source: { query: 'business' },
     })
   ).toThrow('declare member');
-  expect(() =>
-    app.defineHierarchy({
-      key: 'bad',
-      label: 'Bad',
-      levels: [
-        {
-          id: 'region',
-          label: 'Region',
-          valueType: 'string',
-          source: { query: 'regions' },
-        },
-        {
-          id: 'customer',
-          label: 'Customer',
-          valueType: 'number',
-          source: { query: 'customers' },
-        },
-      ],
-    })
-  ).toThrow('immediate parent');
 });
 
-test('invalid child membership under a valid parent is rejected before the business query', async () => {
+test('invalid independent membership is rejected before the business query', async () => {
   const { operations, input } = sourceApp();
   const calls: string[] = [];
   const handler = createDataHandler(operations, async () => ({
@@ -290,11 +179,11 @@ test('invalid child membership under a valid parent is rejected before the busin
     })
   );
   expect(response.status).toBe(400);
-  expect(calls).toEqual(['regions', 'customers']);
+  expect(calls).toEqual(['customers']);
 });
 
 test('cancellation during a membership lookup prevents late business execution', async () => {
-  const { operations, hierarchy, input } = sourceApp();
+  const { operations, input } = sourceApp();
   let completeLookup: (() => void) | undefined;
   let startLookup: (() => void) | undefined;
   const started = new Promise<void>(resolve => {
@@ -305,14 +194,14 @@ test('cancellation during a membership lookup prevents late business execution',
     operations,
     lakehouse: {
       async queryAll(statement) {
-        if (statement.includes('FROM regions')) {
+        if (statement.includes('FROM customers')) {
           startLookup!();
           await new Promise<void>(resolve => {
             completeLookup = resolve;
           });
           return {
             columns: [{ name: 'value' }, { name: 'label' }],
-            rows: [['eu', 'Europe']],
+            rows: [[999, 'Beyond first page']],
           };
         }
         business = true;
@@ -321,14 +210,7 @@ test('cancellation during a membership lookup prevents late business execution',
     },
   });
   const controller = new AbortController();
-  const request = client.query(
-    'sales',
-    {
-      ...input,
-      geography: hierarchy.transition(hierarchy.defaultValue, { region: 'eu' }),
-    },
-    { signal: controller.signal }
-  );
+  const request = client.query('sales', input, { signal: controller.signal });
   const rejected = expect(request).rejects.toBeDefined();
   await started;
   controller.abort();
@@ -339,7 +221,7 @@ test('cancellation during a membership lookup prevents late business execution',
 });
 
 test('HTTP automatically registers authorized selectors and exact selected labels separately from options', async () => {
-  const { operations, hierarchy } = sourceApp();
+  const { operations } = sourceApp();
   let authorized = 0;
   let queried = 0;
   const handler = createDataHandler(operations, async () => {
@@ -355,7 +237,6 @@ test('HTTP automatically registers authorized selectors and exact selected label
               rows: [['eu', 'Europe']],
             };
           expect(params).toEqual({
-            regionId: 'eu',
             member: 999,
             tenant: 'trusted',
           });
@@ -370,22 +251,78 @@ test('HTTP automatically registers authorized selectors and exact selected label
   });
   // Generated controls request this selector without adding it to the author's operation registry.
   const response = await handler(
-    new Request(
-      'http://localhost/api/data/__hierarchy%3Ageography%3Acustomer',
-      {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          scope: hierarchy.transition(hierarchy.defaultValue, { region: 'eu' }),
-          member: 999,
-        }),
-      }
-    )
+    new Request('http://localhost/api/data/__dimension%3Acustomer', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        member: 999,
+      }),
+    })
   );
   expect(response.status).toBe(200);
   expect((await response.json()).data).toEqual([
     { value: 999, label: 'Beyond first page' },
   ]);
   expect(authorized).toBe(1);
-  expect(queried).toBe(2);
+  expect(queried).toBe(1);
+});
+
+for (const kind of ['include', 'exclude'] as const) {
+  test(`every ${kind} member validates independently before business execution`, async () => {
+    const { operations, input } = sourceApp('multiple');
+    const calls: (number | string)[] = [];
+    const client = createDataClient({
+      operations,
+      lakehouse: {
+        async queryAll(statement, { params }) {
+          if (statement.includes('FROM customers')) {
+            calls.push(params!.member as number);
+            return {
+              columns: [{ name: 'value' }, { name: 'label' }],
+              rows: [[params!.member, `Customer ${params!.member}`]],
+            };
+          }
+          calls.push('business');
+          return { columns: [], rows: [] };
+        },
+      },
+    });
+    await client.query('sales', {
+      ...input,
+      customer: {
+        kind,
+        members: [
+          { kind: 'value', value: 999 },
+          { kind: 'value', value: 1000 },
+        ],
+      },
+    });
+    expect(calls).toEqual([999, 1000, 'business']);
+  });
+}
+
+test('malformed selections fail at the parser boundary', () => {
+  const { operations, input } = sourceApp();
+  for (const members of [
+    [null],
+    [{ kind: 'value', value: 'wrong type' }],
+    [{ kind: 'missing' }],
+  ])
+    expect(() =>
+      operations.sales.input({
+        ...input,
+        customer: { kind: 'include', members },
+      })
+    ).toThrow('Invalid Customer');
+});
+
+test('composed parsers retain source validation and reject replacement variables', () => {
+  const { operations, region, customer } = sourceApp();
+  expect(() =>
+    variableInput(operations.sales.input, { customer, region })
+  ).not.toThrow();
+  const other = sourceApp().customer;
+  expect(() =>
+    variableInput(operations.sales.input, { customer: other })
+  ).toThrow('already declared');
 });

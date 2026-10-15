@@ -1,3 +1,4 @@
+import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import { useState } from 'react';
@@ -14,6 +15,7 @@ import {
   injectDataAppStyles,
   useDetailNavigation,
   searchVariable,
+  choiceVariable,
 } from '@altertable/data-app/react';
 import {
   BarChart,
@@ -30,60 +32,86 @@ const app = defineDataApp({
   queries: {
     countries: {
       statement:
-        'SELECT value, label FROM countries WHERE region = $region AND ($member IS NULL OR value = $member)',
-      params: { member: {}, region: {} },
+        'SELECT value, label FROM countries WHERE ($member IS NULL OR value = $member)',
+      params: { member: {} },
     },
     sales: { statement: 'SELECT sales', params: {} },
     orders: { statement: 'SELECT orders', params: {} },
   },
 });
-const geography = app.defineHierarchy({
-  key: 'geography',
-  label: 'Geography',
-  levels: [
-    {
-      id: 'region',
-      label: 'Region',
-      valueType: 'string',
-      options: [
-        { value: 'eu', label: 'Europe' },
-        { value: 'us', label: 'America' },
-      ],
-    },
-    {
-      id: 'country',
-      label: 'Country',
-      valueType: 'string',
-      source: { query: 'countries' },
-    },
+const region = dimensionFilter<string>({
+  key: 'region',
+  label: 'Region',
+  valueType: 'string',
+  selectionMode: 'single',
+  presentation: { prominence: 'secondary' },
+  options: [
+    { value: 'eu', label: 'Europe' },
+    { value: 'us', label: 'America' },
   ],
 });
-const revenueBy = geography.breakdown({
+const country = app.defineDimension({
+  key: 'country',
+  label: 'Country',
+  valueType: 'string',
+  selectionMode: 'single',
+  presentation: { prominence: 'secondary' },
+  source: { query: 'countries' },
+});
+const filters = { region, country };
+const defaultFilters = {
+  region: region.defaultValue,
+  country: country.defaultValue,
+};
+function describeFilters(input: typeof defaultFilters) {
+  return (
+    Object.entries(filters)
+      .filter(
+        ([key, filter]) =>
+          !filter.same(input[key as keyof typeof filters], filter.defaultValue)
+      )
+      .map(([key, filter]) =>
+        filter.describe(input[key as keyof typeof filters])
+      )
+      .join(' / ') || 'All countries'
+  );
+}
+const choices = [
+  { id: 'region', label: 'Region' },
+  { id: 'country', label: 'Country' },
+] as const;
+const revenueBy = choiceVariable({
   key: 'revenue-by',
   label: 'Revenue breakdown',
+  defaultValue: 'region',
+  options: choices,
+  presentation: { group: 'display', control: 'widget' },
 });
-const ordersBy = geography.breakdown({
+const ordersBy = choiceVariable({
   key: 'orders-by',
   label: 'Orders breakdown',
+  defaultValue: 'region',
+  options: choices,
+  presentation: { group: 'display', control: 'widget' },
 });
 const search = searchVariable({ key: 'q', label: 'Search' });
-const parseInput = geography.input(
+const parseInput = variableInput(
   (value: unknown) => {
     const input = value as { search: unknown };
     if (!input || typeof input.search !== 'string')
       throw new Error('Invalid search');
     return { search: input.search };
   },
-  { breakdowns: { revenueBy, ordersBy } }
+  { ...filters, revenueBy, ordersBy }
 );
 type Input = ReturnType<typeof parseInput>;
 type Row = {
   id: string;
   label: string;
   revenue: number;
-  level: 'region' | 'country';
+  dimension: 'region' | 'country';
 };
-const parseOrders = geography.input((value: unknown) => {
+const parseOrders = variableInput((value: unknown) => {
   const input = value as { placeId?: unknown; search?: unknown };
   if (
     !input ||
@@ -94,14 +122,14 @@ const parseOrders = geography.input((value: unknown) => {
     placeId: input.placeId as string | undefined,
     search: typeof input.search === 'string' ? input.search : '',
   };
-});
+}, filters);
 const operations = {
   sales: app.defineOperation({
     input: parseInput,
     checks: [
       {
         search: '',
-        geography: geography.defaultValue,
+        ...defaultFilters,
         revenueBy: 'region',
         ordersBy: 'region',
       } as Input,
@@ -122,25 +150,20 @@ const operations = {
           );
         });
       function rows(by: typeof revenueBy): Row[] {
-        const level = by.level(
-          input[by === revenueBy ? 'revenueBy' : 'ordersBy'],
-          input.geography
-        ).id;
-        return level === 'region'
+        const dimension = input[by === revenueBy ? 'revenueBy' : 'ordersBy'];
+        return dimension === 'region'
           ? [
-              { id: 'eu', label: 'Europe', revenue: 10, level },
-              { id: 'us', label: 'America', revenue: 5, level },
+              { id: 'eu', label: 'Europe', revenue: 10, dimension },
+              { id: 'us', label: 'America', revenue: 5, dimension },
             ]
-          : [{ id: 'fr', label: 'France', revenue: 10, level }];
+          : [{ id: 'fr', label: 'France', revenue: 10, dimension }];
       }
       return { revenue: rows(revenueBy), orders: rows(ordersBy), input };
     },
   }),
   orders: app.defineOperation({
     input: parseOrders,
-    checks: [
-      { geography: geography.defaultValue, placeId: undefined, search: '' },
-    ],
+    checks: [{ ...defaultFilters, placeId: undefined, search: '' }],
     policy: { maxQueryRows: 200, maxDurationMs: 10000 },
     async run({ query }, input) {
       await query('orders');
@@ -152,7 +175,7 @@ const operations = {
           {
             id: 'order-1',
             place: input.placeId ?? 'all',
-            scope: geography.describe!(input.geography),
+            scope: describeFilters(input),
             search: input.search,
           },
         ],
@@ -177,7 +200,7 @@ const client = createDataClient({
               ? [['far', 'Far beyond first page']]
               : params?.member === null
                 ? [['fr', 'France']]
-                : params?.member === 'fr' && params.region === 'eu'
+                : params?.member === 'fr'
                   ? [['fr', 'France']]
                   : [],
         };
@@ -189,7 +212,7 @@ const client = createDataClient({
 const query = client.query.bind(client);
 client.query = (name, input, options) => {
   if (
-    String(name).startsWith('__hierarchy:') &&
+    String(name).startsWith('__dimension:') &&
     (input as { member?: unknown }).member != null &&
     new URLSearchParams(location.search).has('fail-label') &&
     document.body.dataset.retryLabels !== 'true'
@@ -215,8 +238,8 @@ const context = createDataContext({
 const sales = hooks.defineDataView({
   operation: 'sales',
   dataContext: context,
-  variables: { geography, revenueBy, ordersBy, search },
-  describeInput: input => geography.describe!(input.geography),
+  variables: { ...filters, revenueBy, ordersBy, search },
+  describeInput: input => describeFilters(input),
   isEmpty: () => false,
   emptyFallback: { title: 'No sales' },
 });
@@ -227,7 +250,7 @@ const ordersView = hooks.defineDetailView({
   dataContext: context,
   parseInput: operations.orders.input,
   describeInput: input =>
-    `${geography.describe!(input.geography)}: ${input.placeId ?? 'all'}`,
+    `${describeFilters(input)}: ${input.placeId ?? 'all'}`,
   isEmpty: data => !data.rows.length,
   emptyFallback: { title: 'No orders' },
 });
@@ -240,7 +263,7 @@ function DetailRouteProbe() {
         onClick={() => {
           try {
             navigation.open(ordersView, {
-              geography: geography.defaultValue,
+              ...defaultFilters,
               search: '',
               placeId: 'x'.repeat(
                 Number(new URLSearchParams(location.search).get('input-size'))
@@ -342,10 +365,15 @@ const orderPlaces = sales.dataset({
   },
   evidence: { id: 'orders-chart', queryNames: ['sales'] },
 });
-const descendActions = places.actions(action => ({
-  descend: action.descend({
-    target: sales.breakdown('revenueBy'),
-    member: row => row.id,
+const drillActions = places.actions(action => ({
+  drill: action.filter({
+    label: 'Drill down',
+    when: row => row.dimension === 'region',
+    target: sales.filter(),
+    values: row => ({
+      region: { kind: 'include', members: [{ kind: 'value', value: row.id }] },
+    }),
+    breakdown: { target: sales.breakdown('revenueBy'), value: () => 'country' },
   }),
 }));
 const details = orderPlaces.actions(action => ({
@@ -362,9 +390,20 @@ const menuActions = places.actions(
       target: ordersView,
       input: (row, displayed) => ({ ...displayed, placeId: row.id }),
     }),
-    descend: action.descend({
-      target: sales.breakdown('revenueBy'),
-      member: row => row.id,
+    drill: action.filter({
+      label: 'Drill down',
+      when: row => row.dimension === 'region',
+      target: sales.filter(),
+      values: row => ({
+        region: {
+          kind: 'include',
+          members: [{ kind: 'value', value: row.id }],
+        },
+      }),
+      breakdown: {
+        target: sales.breakdown('revenueBy'),
+        value: () => 'country',
+      },
     }),
   }),
   {
@@ -372,7 +411,7 @@ const menuActions = places.actions(
       new URLSearchParams(location.search).get('primary') === 'orders'
         ? 'orders'
         : new URLSearchParams(location.search).has('primary')
-          ? 'descend'
+          ? 'drill'
           : undefined,
   }
 );
@@ -385,8 +424,13 @@ const pieMenuActions = orderPlaces.actions(
     }),
     filter: action.filter({
       label: 'Filter region',
-      target: sales.hierarchy('geography'),
-      values: row => ({ region: row.id }),
+      target: sales.filter(),
+      values: row => ({
+        region: {
+          kind: 'include',
+          members: [{ kind: 'value', value: row.id }],
+        },
+      }),
     }),
   }),
   {
@@ -455,9 +499,9 @@ const content = sales.content(source => (
         actions={menuActions}
       />
     )}
-    <TextWidget dataset={places} source={source} title="Displayed levels">
+    <TextWidget dataset={places} source={source} title="Displayed breakdowns">
       {() => (
-        <output aria-label="Displayed levels">
+        <output aria-label="Displayed breakdowns">
           {source.loading
             ? ''
             : JSON.stringify({
@@ -471,7 +515,7 @@ const content = sales.content(source => (
     <VisualizationWidget
       dataset={places}
       source={source}
-      actions={menus ? menuActions : descendActions}
+      actions={menus ? menuActions : drillActions}
       breakdown={sales.breakdown('revenueBy')}
     >
       {(rows, actions) => (

@@ -1,9 +1,5 @@
 import type { IsUnion } from '@/src/core/queries';
 import { facetSource, type FacetVariable } from '@/src/core/facets';
-import type {
-  HierarchyVariable,
-  BreakdownVariable,
-} from '@/src/core/hierarchy';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -24,6 +20,8 @@ export type { HistoryMode } from '@/src/core/navigation';
 export type VariablePresentation = {
   /** Scope changes the included data; display changes its presentation. Defaults to scope. */
   group?: 'scope' | 'display';
+  /** Widget controls render beside their visualization instead of in the toolbar. */
+  control?: 'toolbar' | 'widget';
   /** Secondary scope controls live in the Filters sheet with compact pickers when active; secondary display options follow primary options. Defaults to primary. */
   prominence?: 'primary' | 'secondary';
 };
@@ -47,10 +45,8 @@ export type AppVariable<Value, Kind extends string = string> = {
 
 export type VariableCollection = Record<
   string,
-  | HierarchyVariable<any>
-  | BreakdownVariable<any>
   | SearchVariable
-  | ChoiceVariable
+  | ChoiceVariable<any>
   | MultiChoiceVariable
   | DateRangeVariable
   | DimensionVariable<any>
@@ -116,6 +112,9 @@ export function defineAppVariables<const Variables extends VariableCollection>(
         (presentation !== null &&
           typeof presentation === 'object' &&
           !Array.isArray(presentation) &&
+          (presentation.control === undefined ||
+            presentation.control === 'toolbar' ||
+            presentation.control === 'widget') &&
           (presentation.group === undefined ||
             presentation.group === 'scope' ||
             presentation.group === 'display') &&
@@ -150,7 +149,10 @@ type ScalarVariableOptions = {
 
 export type SearchVariable = AppVariable<string, 'search'>;
 export type ChoiceOption = { id: string; label: string; description?: string };
-export type ChoiceVariable = AppVariable<string, 'choice'> & {
+export type ChoiceVariable<Value extends string = string> = AppVariable<
+  Value,
+  'choice'
+> & {
   options: readonly ChoiceOption[];
 };
 export type MultiChoiceVariable = AppVariable<
@@ -212,7 +214,7 @@ export function choiceVariable<
   presentation?: Presentation;
   defaultValue: NoInfer<Options[number]['id']>;
   options: Options & (Options extends readonly [] ? never : unknown);
-}): ChoiceVariable & { presentation?: Presentation } {
+}): ChoiceVariable<Options[number]['id']> & { presentation?: Presentation } {
   validateChoiceOptions(options);
   function valid(value: string) {
     return (
@@ -503,28 +505,4 @@ export function dateRangeVariable({
   );
 
   return variable;
-}
-
-/** Normalize linked chart levels together with population changes before writing one URL entry. */
-export function normalizeVariableValues<Variables extends VariableCollection>(
-  definitions: Variables,
-  values: AppVariableValues<Variables>
-): AppVariableValues<Variables> {
-  const normalized = { ...values };
-  for (const [name, variable] of Object.entries(definitions)) {
-    if (variable.kind !== 'breakdown') continue;
-    const hierarchyName = Object.keys(definitions).find(
-      key => definitions[key] === variable.hierarchy
-    );
-    invariant(
-      hierarchyName,
-      `Breakdown ${name} needs its hierarchy in the same view.`
-    );
-    const scope = values[hierarchyName as keyof Variables];
-    (normalized as Record<string, unknown>)[name] = variable.level(
-      (values as Record<string, string>)[name]!,
-      scope as never
-    ).id;
-  }
-  return normalized;
 }

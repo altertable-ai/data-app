@@ -256,70 +256,59 @@ values while a draft is being edited.
 
 Filters apply immediately; use app-owned drafts only when the task needs Apply/Cancel.
 
-## Hierarchies and chart breakdowns
+## Independent filters and chart breakdowns
 
-Declare shared population selections with `hierarchyVariable()` from `/contract`
-for static options, or `app.defineHierarchy()` for query-backed levels. A child
-static option declares its immediate `parent`. Each level selects All or one
-string/numeric value; missing database values are separate from hierarchy members.
+Each dimension owns its selection. Readers can select Germany without selecting
+a region; changing or clearing Region preserves Country and Customer. Filters
+combine in the operation's query. Incompatible selections can return an empty
+result; keep the selections visible so readers can correct them.
+
+Use `dimensionFilter()` for static options or `app.defineDimension()` for query-backed
+options. `variableInput()` from `/contract` validates named variables alongside an
+app-owned base parser. Use it on every operation consuming these filters, including
+details. Declare the same variables on the view and preserve them in operation input.
 
 ```ts
-const geography = app.defineHierarchy({
-  key: 'geography',
-  label: 'Geography',
-  levels: [
-    {
-      id: 'region',
-      label: 'Region',
-      valueType: 'string',
-      options: regionOptions,
-    },
-    {
-      id: 'country',
-      label: 'Country',
-      valueType: 'string',
-      source: { query: 'countries' },
-    },
+const country = app.defineDimension({
+  key: 'country',
+  label: 'Country',
+  valueType: 'string',
+  selectionMode: 'single',
+  presentation: { prominence: 'secondary' },
+  source: { query: 'countries' },
+});
+const revenueBy = choiceVariable({
+  key: 'revenue-by',
+  label: 'Revenue breakdown',
+  defaultValue: 'region',
+  options: [
+    { id: 'region', label: 'Region' },
+    { id: 'country', label: 'Country' },
   ],
+  presentation: { group: 'display', control: 'widget' },
 });
-const revenueBy = geography.breakdown({ key: 'revenue-by' });
-const ordersBy = geography.breakdown({ key: 'orders-by' });
-const parseInput = geography.input(parsePeriodInput, {
-  breakdowns: { revenueBy, ordersBy },
-});
+const parseInput = variableInput(parsePeriodInput, { country, revenueBy });
 ```
 
-Use this parser on every operation consuming the hierarchy, including details;
-record destinations can omit breakdowns. Declare all variables on the view and
-preserve their typed selections in operation input. For nested scopes supply
-`binding` to the hierarchy parser and matching view `bindings`.
-Derive predicates from `input.geography.selection`; derive aggregation and chart
-labels from `revenueBy.level(input.revenueBy, input.geography)`.
-Each chart independently chooses its breakdown over the shared population.
+A breakdown is an ordinary display choice, independent of population filters.
+`<VisualizationWidget breakdown={view.breakdown('revenueBy')}>` renders that
+choice in its header. `presentation.control: 'widget'` omits it from the toolbar.
+Declare each chart's choice separately when readers should control them independently.
 
-Each source query declares `member` and returns `value`, `label`, and optional
+Each source query declares nullable `member` and returns `value`, `label`, and optional
 `count`. `member = null` requests at most 200 options; a selected value requests
-an exact lookup under its ancestors. A child source binds its immediate parent.
-Ancestor IDs bind matching parameter names; use `parents: { regionId: 'region' }`
-for different names. Other query parameters need defaults or trusted server values.
+an exact lookup. Other query parameters need defaults or trusted server values.
 Keep SQL and parameter declarations literal in `defineDataApp()`.
 
 ```sql
-SELECT id AS value, name AS label
+SELECT code AS value, name AS label
 FROM countries
-WHERE region = $region
-  AND ($member IS NULL OR id = $member)
+WHERE ($member IS NULL OR code = $member)
 ORDER BY name
 ```
 
-Selected members validate in parent order before business queries. Lookups share
-operation authorization, cancellation, limits, and disclosed query evidence.
-Selected labels resolve separately from the options page, including when that
-page fails. Picker search only searches supplied options; it does not fetch
-additional members.
-
-Hierarchy filters live in the Filters sheet. A chart's `breakdown` prop places
-its selector in the widget header. Parent changes clear descendants and normalize
-affected breakdowns in one history update. `null` in `transition()` clears a
-level to All. Clear filters preserves search and display choices and returns dates
-to their configured defaults.
+Exact selected-member lookups run before business queries, sharing authorization,
+cancellation, execution limits, and query evidence. Labels resolve separately from
+the options page, including when it fails. Picker search searches supplied options;
+it does not fetch additional members. Clear filters preserves search and display
+choices and returns dates to their configured defaults.

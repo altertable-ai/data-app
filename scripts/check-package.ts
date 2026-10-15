@@ -111,10 +111,11 @@ try {
     JSON.stringify({ name: 'packed-data-app-consumer', type: 'module' })
   );
   const consumerTests = join(temporary, 'tests/public-api');
-  await writeFile(
-    join(temporary, 'exploration.types.ts'),
-    await readFile(join(root, 'tests/public-api/exploration.types.ts'), 'utf8')
-  );
+  for (const name of ['exploration.types.ts', 'dimension-sources.types.ts'])
+    await writeFile(
+      join(temporary, name),
+      await readFile(join(root, 'tests/public-api', name), 'utf8')
+    );
   await mkdir(consumerTests, { recursive: true });
   for (const name of [
     'operations.test.ts',
@@ -243,6 +244,7 @@ try {
         'embed.tsx',
         'server.ts',
         'exploration.types.ts',
+        'dimension-sources.types.ts',
         'node_modules/@altertable/data-app/examples/starter-data-app/index.tsx',
       ],
     })

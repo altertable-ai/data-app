@@ -176,13 +176,29 @@ const placeActions = places.actions(
     }),
     filter: action.filter({
       label: 'Filter to this region',
-      when: row => row.level === 'region',
-      target: salesView.hierarchy('geography'),
-      values: row => ({ region: row.id }),
+      when: row => row.dimension === 'region',
+      target: salesView.filter(),
+      values: row => ({
+        region: {
+          kind: 'include',
+          members: [{ kind: 'value', value: row.id }],
+        },
+      }),
     }),
-    descend: action.descend({
-      target: salesView.breakdown('revenueBy'),
-      member: row => row.id,
+    drill: action.filter({
+      label: 'Drill down',
+      when: row => row.dimension === 'region',
+      target: salesView.filter(),
+      values: row => ({
+        region: {
+          kind: 'include',
+          members: [{ kind: 'value', value: row.id }],
+        },
+      }),
+      breakdown: {
+        target: salesView.breakdown('revenueBy'),
+        value: () => 'country',
+      },
     }),
   }),
   { primary: 'orders' }
@@ -215,7 +231,7 @@ The first copy action names the text it copies. Copy summary includes the displa
 label, formatted value, unit, and pie share. Successful copies are silent; failures
 are announced and shown on the chart.
 Right-click opens the menu at the pointer; Shift+F10 anchors it to the control.
-Breakdown controls keep their selected level visible and their accessible names.
+Breakdown controls keep their selected choice visible and their accessible names.
 Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.
 
 `<TableWidget actions={placeActions}>` adds row actions without changing the
@@ -224,12 +240,11 @@ dataset or its CSV export. `<MetricWidget>` accepts actions declared with
 the displayed operation input as their second argument. Actions must belong to
 the metric or dataset rendered by the widget.
 
-`view.filter()` targets ordinary scope variables; `view.hierarchy(key)` targets
-typed hierarchy selections; `view.breakdown(key)` targets that chart's aggregation
-and descent. Filters preserve unrelated current selections. Hierarchy transitions
-wait for displayed and applied scope to agree; descent also checks the displayed
-breakdown and requires its ancestors to be selected. Each transition writes one
-history entry.
+`view.filter()` targets scope variables. An optional `breakdown` explicitly updates
+one chart's display choice in the same history entry. Filters preserve unrelated
+selections. Filter actions wait for displayed and applied scope to agree; actions
+that also change a breakdown check that chart's displayed choice. No filter change
+implicitly changes another filter or chart.
 
 A day drill passes its day. A value-band drill passes a stable band ID; validate
 it in the destination operation and derive bounds there. Query matching records

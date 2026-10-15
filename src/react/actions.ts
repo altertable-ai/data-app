@@ -1,14 +1,9 @@
 import { invariant } from '@/src/core/invariant';
-import type { HierarchyLevel, HierarchyPatch } from '@/src/core/hierarchy';
 import {
   FilterTarget,
-  HierarchyTarget,
   BreakdownTarget,
   targetAvailable,
   applyFilter,
-  applyHierarchy,
-  canDescend,
-  descend,
 } from '@/src/react/exploration';
 import type { DetailView } from '@/src/react/details';
 import type {
@@ -16,26 +11,11 @@ import type {
   ItemActions,
 } from '@/src/react/ui/ExplorationActionControl';
 
-type ActionCondition<Row> = { label?: string; when?: (row: Row) => boolean };
+type ActionCondition<Row> = { label: string; when?: (row: Row) => boolean };
 type DetailAction<Row, Input, DestinationInput> = ActionCondition<Row> & {
   label: string;
   target: DetailView<any, DestinationInput>;
   input: (row: Row, displayedInput: Input) => DestinationInput;
-};
-type FilterPatch<Target> =
-  Target extends FilterTarget<infer Patch>
-    ? Patch
-    : Target extends HierarchyTarget<infer Levels>
-      ? HierarchyPatch<Levels>
-      : never;
-type DescendAction<
-  Row,
-  Levels extends readonly HierarchyLevel[],
-> = ActionCondition<Row> & {
-  target: BreakdownTarget<Levels>;
-  member: (
-    row: Row
-  ) => Levels[number]['valueType'] extends 'number' ? number : string | number;
 };
 export type ActionDeclaration<Row, Input> = ActionCondition<Row> &
   (
@@ -44,11 +24,14 @@ export type ActionDeclaration<Row, Input> = ActionCondition<Row> &
         target: DetailView<any, any>;
         input: (row: Row, input: Input) => unknown;
       }
-    | { kind: 'filter'; target: object; values: (row: Row) => object }
     | {
-        kind: 'descend';
-        target: BreakdownTarget<any>;
-        member: (row: Row) => string | number;
+        kind: 'filter';
+        target: object;
+        values: (row: Row) => object;
+        breakdown?: {
+          target: BreakdownTarget<any>;
+          value: (row: Row) => string;
+        };
       }
   );
 export class ActionBuilder<Row, Input> {
@@ -58,24 +41,21 @@ export class ActionBuilder<Row, Input> {
     return { ...config, kind: 'detail' };
   }
   filter<
-    Target extends FilterTarget<any> | HierarchyTarget<any>,
-    const Values extends FilterPatch<Target>,
+    Patch extends object,
+    const Values extends NoInfer<Patch>,
+    Value extends string = never,
   >(
     config: ActionCondition<Row> & {
       label: string;
-      target: Target;
-      values: (
-        row: Row
-      ) => Values &
-        Record<Exclude<keyof Values, keyof FilterPatch<Target>>, never>;
+      target: FilterTarget<Patch>;
+      values: (row: Row) => Values & NoInfer<Patch>;
+      breakdown?: {
+        target: BreakdownTarget<Value>;
+        value: (row: Row) => NoInfer<Value>;
+      };
     }
   ): ActionDeclaration<Row, Input> {
     return { ...config, kind: 'filter' };
-  }
-  descend<Levels extends readonly HierarchyLevel[]>(
-    config: DescendAction<Row, Levels>
-  ): ActionDeclaration<Row, Input> {
-    return { ...config, kind: 'descend' };
   }
 }
 const actionSets = new WeakMap<
@@ -134,17 +114,16 @@ export function resolveActions<Row, Input>(
       ([id, action]): ExplorationAction[] => {
         if (action.when && !action.when(row)) return [];
         if (
-          (action.kind === 'descend' ||
-            (action.kind === 'filter' &&
-              action.target instanceof HierarchyTarget)) &&
+          action.kind === 'filter' &&
           (!targetAvailable(action.target, input, viewOwner!) ||
-            (action.kind === 'descend' && !canDescend(action.target, input)))
+            (action.breakdown &&
+              !targetAvailable(action.breakdown.target, input, viewOwner!)))
         )
           return [];
         return [
           {
             id,
-            label: action.label ?? 'Drill down',
+            label: action.label,
             primary: declaration.primary === id,
             onSelect(trigger) {
               if (action.kind === 'detail') {
@@ -159,21 +138,18 @@ export function resolveActions<Row, Input>(
                 );
                 return;
               }
-              if (action.kind === 'descend') {
-                if (
-                  targetAvailable(action.target, input, viewOwner!) &&
-                  canDescend(action.target, input)
-                )
-                  descend(action.target, action.member(row));
-                return;
-              }
-              if (action.target instanceof HierarchyTarget) {
-                if (targetAvailable(action.target, input, viewOwner!))
-                  applyHierarchy(action.target, action.values(row));
-              } else
+              if (
+                targetAvailable(action.target, input, viewOwner!) &&
+                (!action.breakdown ||
+                  targetAvailable(action.breakdown.target, input, viewOwner!))
+              )
                 applyFilter(
                   action.target,
-                  action.values(row) as Record<string, unknown>
+                  action.values(row) as Record<string, unknown>,
+                  action.breakdown && {
+                    target: action.breakdown.target,
+                    value: action.breakdown.value(row),
+                  }
                 );
             },
           },

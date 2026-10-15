@@ -9,7 +9,6 @@ import {
 import type { DatePresetId, DateRange } from '@/src/core/date-range';
 import {
   defineAppVariables,
-  normalizeVariableValues,
   type AppVariable,
   type AppVariableValues,
   type DateRangeSelection,
@@ -130,7 +129,7 @@ export function useAppVariables<const Variables extends VariableCollection>(
   }, [zoneKey]);
 
   const params = new URLSearchParams(search);
-  let values = {} as AppVariableValues<Variables>;
+  const values = {} as AppVariableValues<Variables>;
   const canonical: Record<string, string | null> = {};
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const variable = definitions[name] as unknown as AppVariable<
@@ -140,13 +139,6 @@ export function useAppVariables<const Variables extends VariableCollection>(
     values[name] = value;
     Object.assign(canonical, variable.write(value));
   }
-
-  values = normalizeVariableValues(definitions, values);
-  for (const [name, variable] of Object.entries(definitions))
-    Object.assign(
-      canonical,
-      (variable as AppVariable<any>).write(values[name as keyof Variables])
-    );
 
   useEffect(() => {
     if (
@@ -172,17 +164,6 @@ export function useAppVariables<const Variables extends VariableCollection>(
       Object.assign(changes, variable.write(value));
       if (!history && variable.history === 'push') mode = 'push';
     }
-    const normalized = normalizeVariableValues(definitions, {
-      ...values,
-      ...next,
-    });
-    for (const [name, variable] of Object.entries(definitions))
-      Object.assign(
-        changes,
-        (variable as AppVariable<any>).write(
-          normalized[name as keyof Variables]
-        )
-      );
     writeSearch(changes, mode);
   }
 

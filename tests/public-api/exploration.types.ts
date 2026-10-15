@@ -1,46 +1,57 @@
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  hierarchyVariable,
+  dimensionFilter,
   type DataOperation,
 } from '@altertable/data-app/contract';
 import {
   createDataHooks,
   createDataContext,
   choiceVariable,
-  multiChoiceVariable,
   MetricWidget,
   TableWidget,
   type AppVariableValues,
 } from '@altertable/data-app/react';
-const geography = hierarchyVariable({
-  key: 'geography',
-  label: 'Geography',
-  levels: [
-    {
-      id: 'region',
-      label: 'Region',
-      valueType: 'string',
-      options: [{ value: 'eu', label: 'Europe' }],
-    },
-    {
-      id: 'customer',
-      label: 'Customer',
-      valueType: 'number',
-      options: [{ value: 1, label: 'One', parent: 'eu' }],
-    },
-  ],
+const region = dimensionFilter<string>({
+  key: 'region',
+  label: 'Region',
+  valueType: 'string',
+  selectionMode: 'single',
+  options: [{ value: 'eu', label: 'Europe' }],
 });
-const by = geography.breakdown({ key: 'by' });
+const customer = dimensionFilter<number>({
+  key: 'customer',
+  label: 'Customer',
+  valueType: 'number',
+  selectionMode: 'single',
+  options: [{ value: 1, label: 'One' }],
+});
+const by = choiceVariable({
+  key: 'by',
+  label: 'Breakdown',
+  defaultValue: 'region',
+  options: [
+    { id: 'region', label: 'Region' },
+    { id: 'customer', label: 'Customer' },
+  ],
+  presentation: { group: 'display', control: 'widget' },
+});
 const sort = choiceVariable({
   key: 'sort',
   options: [{ id: 'asc', label: 'Ascending' }],
   defaultValue: 'asc',
   presentation: { group: 'display' },
 });
+const mode = choiceVariable({
+  key: 'mode',
+  defaultValue: 'all',
+  options: [{ id: 'all', label: 'All' }],
+});
 type Input = {
-  geography: typeof geography.defaultValue;
+  region: typeof region.defaultValue;
+  customer: typeof customer.defaultValue;
   by: 'region' | 'customer';
   sort: string;
+  mode: string;
 };
 const hooks =
   createDataHooks(
@@ -57,17 +68,16 @@ const context = createDataContext({ sales: 'sales' })({
 const view = hooks.defineDataView({
   operation: 'sales',
   dataContext: context,
-  variables: { geography, by, sort },
+  variables: { region, customer, by, sort, mode },
   describeInput: () => 'Sales',
   isEmpty: () => false,
   emptyFallback: { title: 'Empty' },
 });
-view.hierarchy('geography');
 view.breakdown('by');
-// @ts-expect-error Only hierarchy variables are hierarchy targets.
-view.hierarchy('by');
-// @ts-expect-error Only breakdown variables are breakdown targets.
-view.breakdown('geography');
+// @ts-expect-error Only display choices can be chart breakdown targets.
+view.breakdown('region');
+// @ts-expect-error Scope choices cannot be chart breakdown targets.
+view.breakdown('mode');
 const rows = view.dataset({
   name: 'Rows',
   select: data => data.rows,
@@ -78,20 +88,26 @@ const rows = view.dataset({
 rows.actions(action => ({
   good: action.filter({
     label: 'Region',
-    target: view.hierarchy('geography'),
-    values: () => ({ region: 'eu' }),
+    target: view.filter(),
+    values: () => ({
+      region: { kind: 'include', members: [{ kind: 'value', value: 'eu' }] },
+    }),
   }),
   wrong: action.filter({
     label: 'Customer',
-    target: view.hierarchy('geography'),
-    // @ts-expect-error Numeric hierarchy members retain their type.
-    values: () => ({ customer: 'one' }),
-  }),
-  scope: action.filter({
-    label: 'Scope',
     target: view.filter(),
-    // @ts-expect-error Ordinary filters cannot write hierarchy selections.
-    values: () => ({ geography: geography.defaultValue }),
+    values: () => ({
+      customer: {
+        kind: 'include',
+        members: [
+          {
+            kind: 'value',
+            // @ts-expect-error Numeric members retain their type.
+            value: 'one',
+          },
+        ],
+      },
+    }),
   }),
   breakdown: action.filter({
     label: 'Breakdown',
@@ -108,9 +124,21 @@ rows.actions(action => ({
 }));
 rows.actions(
   action => ({
-    descend: action.descend({
-      target: view.breakdown('by'),
-      member: row => row.id,
+    drill: action.filter({
+      label: 'Drill down',
+      target: view.filter(),
+      values: () => ({ region: region.defaultValue }),
+      breakdown: { target: view.breakdown('by'), value: () => 'customer' },
+    }),
+    wrongChoice: action.filter({
+      label: 'Wrong',
+      target: view.filter(),
+      values: () => ({}),
+      breakdown: {
+        target: view.breakdown('by'),
+        // @ts-expect-error Chart choice IDs are preserved.
+        value: () => 'unknown',
+      },
     }),
   }),
   {
@@ -126,15 +154,19 @@ const total = view.metric(
 const metricActions = total.actions(action => ({
   region: action.filter({
     label: 'Europe',
-    target: view.hierarchy('geography'),
-    values: () => ({ region: 'eu' }),
+    target: view.filter(),
+    values: () => ({
+      region: { kind: 'include', members: [{ kind: 'value', value: 'eu' }] },
+    }),
   }),
 }));
 const rowActions = rows.actions(action => ({
   region: action.filter({
     label: 'Europe',
-    target: view.hierarchy('geography'),
-    values: () => ({ region: 'eu' }),
+    target: view.filter(),
+    values: () => ({
+      region: { kind: 'include', members: [{ kind: 'value', value: 'eu' }] },
+    }),
   }),
 }));
 MetricWidget({
@@ -156,33 +188,14 @@ TableWidget({
   actions: metricActions,
 });
 
-const numericHierarchy = hierarchyVariable({
-  key: 'numeric',
-  label: 'Numeric',
-  levels: [
-    {
-      id: 'region',
-      label: 'Region',
-      valueType: 'number',
-      options: [{ value: 1, label: 'One' }],
-    },
-  ],
-});
-const stringVariables = {
-  geography,
-  by,
-  scope: choiceVariable({
-    key: 'scope',
-    defaultValue: 'a',
-    options: [{ id: 'a', label: 'A' }],
-  }),
-};
+const stringVariables = { region, by };
 const numberVariables = {
-  geography: numericHierarchy,
-  by: numericHierarchy.breakdown({ key: 'by' }),
-  scope: multiChoiceVariable({
-    key: 'scope',
-    options: [{ id: 'a', label: 'A' }],
+  region: customer,
+  by: choiceVariable({
+    key: 'by',
+    defaultValue: 'one',
+    options: [{ id: 'one', label: 'One' }],
+    presentation: { group: 'display' },
   }),
 };
 const targetHooks =
@@ -198,33 +211,29 @@ const targetHooks =
       >;
     }>()
   );
-const targetView = {
+const definition = {
   dataContext: context,
   describeInput: () => 'Targets',
   isEmpty: () => false,
   emptyFallback: { title: 'Empty' },
 };
-const stringTargets = targetHooks.defineDataView({
-  ...targetView,
+const strings = targetHooks.defineDataView({
+  ...definition,
   operation: 'strings',
   variables: stringVariables,
 });
-const numberTargets = targetHooks.defineDataView({
-  ...targetView,
+const numbers = targetHooks.defineDataView({
+  ...definition,
   operation: 'numbers',
   variables: numberVariables,
 });
-const stringFilter = stringTargets.filter();
-const numberFilter = numberTargets.filter();
-const stringHierarchy = stringTargets.hierarchy('geography');
-const numberHierarchy = numberTargets.hierarchy('geography');
-const stringBreakdown = stringTargets.breakdown('by');
-const numberBreakdown = numberTargets.breakdown('by');
-// @ts-expect-error Filter targets preserve their ordinary selection types in declarations.
+const stringFilter = strings.filter();
+const numberFilter = numbers.filter();
+const stringBreakdown = strings.breakdown('by');
+const numberBreakdown = numbers.breakdown('by');
+// @ts-expect-error Filter targets preserve member types in declarations.
 numberFilter satisfies typeof stringFilter;
-// @ts-expect-error Hierarchy targets preserve level IDs and member types in declarations.
-numberHierarchy satisfies typeof stringHierarchy;
-// @ts-expect-error Breakdown targets preserve their hierarchy's levels in declarations.
+// @ts-expect-error Breakdown targets preserve choice IDs in declarations.
 numberBreakdown satisfies typeof stringBreakdown;
-// @ts-expect-error Target kinds remain distinct even when their hierarchy levels match.
-stringHierarchy satisfies typeof stringBreakdown;
+// @ts-expect-error Target kinds remain distinct.
+stringFilter satisfies typeof stringBreakdown;

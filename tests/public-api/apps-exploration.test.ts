@@ -1,26 +1,41 @@
 import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 
+function selection(value: string | null) {
+  return value === null
+    ? { kind: 'all' }
+    : { kind: 'include', members: [{ kind: 'value', value }] };
+}
 function scope(region: string | null, country: string | null = null) {
-  return {
-    selection: {
-      region:
-        region === null
-          ? { kind: 'all' }
-          : { kind: 'include', members: [{ kind: 'value', value: region }] },
-      country:
-        country === null
-          ? { kind: 'all' }
-          : { kind: 'include', members: [{ kind: 'value', value: country }] },
-    },
-  };
+  return { region: selection(region), country: selection(country) };
+}
+function routeFilters(region: string | null, country: string | null = null) {
+  return Object.fromEntries(
+    Object.entries({ region, country }).flatMap(([name, value]) =>
+      value === null
+        ? []
+        : [[name, JSON.stringify({ kind: 'include', members: [['v', value]] })]]
+    )
+  );
+}
+function readFilters(url: string) {
+  const params = new URL(url).searchParams;
+  return Object.fromEntries(
+    ['region', 'country'].map(name => {
+      const raw = params.get(name);
+      return [
+        name,
+        raw ? selection(JSON.parse(raw).members[0][1]) : selection(null),
+      ];
+    })
+  );
 }
 
-test('chart breakdowns are independent and descent updates shared scope in one history entry', async ({
+test('chart breakdowns are independent and an explicit drill updates filter and chart in one history entry', async ({
   page,
 }) => {
   await page.goto('/exploration');
-  const displayed = page.locator('output[aria-label="Displayed levels"]');
+  const displayed = page.locator('output[aria-label="Displayed breakdowns"]');
   await expect
     .poll(() => displayed.textContent())
     .toContain('"revenue":"region"');
@@ -42,9 +57,7 @@ test('chart breakdowns are independent and descent updates shared scope in one h
   await expect
     .poll(() => displayed.textContent())
     .toContain('"revenue":"country","orders":"region"');
-  expect(
-    JSON.parse(new URL(page.url()).searchParams.get('geography')!)
-  ).toEqual(scope('eu'));
+  expect(readFilters(page.url())).toEqual(scope('eu'));
   await expect
     .poll(() =>
       page
@@ -63,11 +76,11 @@ test('chart breakdowns are independent and descent updates shared scope in one h
     .toContain('"revenue":"country","orders":"region"');
 });
 
-test('hierarchy controls resolve selected labels outside a failed options page', async ({
+test('dimension controls resolve selected labels outside a failed options page', async ({
   page,
 }) => {
   const params = new URLSearchParams({
-    geography: JSON.stringify(scope('eu', 'far')),
+    ...routeFilters('eu', 'far'),
     'fail-options': '1',
     'revenue-by': 'country',
     'orders-by': 'country',
@@ -77,7 +90,7 @@ test('hierarchy controls resolve selected labels outside a failed options page',
     .poll(() =>
       page
         .getByRole('button', {
-          name: 'Open filters: Geography: Europe / Far beyond first page',
+          name: 'Open filters: Country: Far beyond first page',
           exact: true,
         })
         .count()
@@ -101,7 +114,7 @@ test('hierarchy controls resolve selected labels outside a failed options page',
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect
-    .poll(() => new URL(page.url()).searchParams.get('geography'))
+    .poll(() => new URL(page.url()).searchParams.get('region'))
     .toBeNull();
   expect(new URL(page.url()).searchParams.get('revenue-by')).toBe('country');
   expect(
@@ -115,7 +128,7 @@ test('selected-label failures are visible and retry recovers the picker and summ
   page,
 }) => {
   const params = new URLSearchParams({
-    geography: JSON.stringify(scope('eu', 'far')),
+    ...routeFilters('eu', 'far'),
     'fail-label': '1',
   });
   await page.goto(`/exploration?${params}`);
@@ -144,7 +157,7 @@ test('selected-label failures are visible and retry recovers the picker and summ
     .poll(() =>
       page
         .getByRole('button', {
-          name: 'Open filters: Geography: Europe / Far beyond first page',
+          name: 'Open filters: Country: Far beyond first page',
           exact: true,
         })
         .count()
@@ -188,7 +201,7 @@ test('metric and table actions share detail navigation and restore their trigger
   await page
     .getByRole('menuitem', { name: 'View orders', exact: true })
     .click();
-  await expect.poll(() => detail.innerText()).toContain('All geography: eu');
+  await expect.poll(() => detail.innerText()).toContain('All countries: eu');
   await detail
     .getByRole('button', { name: 'Close panel', exact: true })
     .click();
@@ -197,35 +210,36 @@ test('metric and table actions share detail navigation and restore their trigger
     .toBe(true);
 });
 
-test('hierarchy child controls appear only after selecting an ancestor and apply immediately', async ({
+test('country filters apply independently and survive changing or clearing region', async ({
   page,
 }) => {
   await page.goto('/exploration');
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   const filters = page.getByRole('dialog', { name: 'Filters', exact: true });
-  expect(await filters.getByRole('button', { name: / Country$/ }).count()).toBe(
-    0
-  );
-  await filters
-    .getByRole('button', { name: 'Region: All', exact: true })
-    .click();
-  await page.getByRole('option', { name: 'Europe', exact: true }).click();
-  await expect
-    .poll(() =>
-      filters.getByRole('button', { name: 'Country: All', exact: true }).count()
-    )
-    .toBe(1);
-  expect(
-    JSON.parse(new URL(page.url()).searchParams.get('geography')!)
-  ).toEqual(scope('eu'));
   await filters
     .getByRole('button', { name: 'Country: All', exact: true })
     .click();
   await page.getByRole('option', { name: 'France', exact: true }).click();
-  expect(
-    JSON.parse(new URL(page.url()).searchParams.get('geography')!)
-  ).toEqual(scope('eu', 'fr'));
+  expect(readFilters(page.url())).toEqual(scope(null, 'fr'));
+  await filters
+    .getByRole('button', { name: 'Region: All', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'America', exact: true }).click();
+  expect(readFilters(page.url())).toEqual(scope('us', 'fr'));
+  await filters
+    .getByRole('button', { name: 'Region: America', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'All', exact: true }).click();
+  expect(readFilters(page.url())).toEqual(scope(null, 'fr'));
   await filters.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.reload();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: /Open filters: Country: France/ })
+        .count()
+    )
+    .toBe(1);
 });
 
 test('metric records use the existing inspection tabs and load only on Records', async ({
@@ -252,7 +266,7 @@ test('metric records use the existing inspection tabs and load only on Records',
     '1'
   );
   expect(
-    await inspection.getByText('All geography: all', { exact: true }).count()
+    await inspection.getByText('All countries: all', { exact: true }).count()
   ).toBe(1);
   expect(
     await inspection
@@ -307,7 +321,10 @@ test('shared detail links reject malformed scope before the destination executes
 }) => {
   const params = new URLSearchParams({
     details: JSON.stringify([
-      { id: 'orders', input: { geography: scope(null, 'fr') } },
+      {
+        id: 'orders',
+        input: { region: { kind: 'invalid' }, country: selection('fr') },
+      },
     ]),
   });
   await page.goto(`/exploration?${params}`);
@@ -566,7 +583,7 @@ test('bar and pie hit targets open menus with multiple actions and restore stabl
     .getByRole('menuitem', { name: 'Filter region', exact: true })
     .click();
   await expect
-    .poll(() => new URL(page.url()).searchParams.get('geography'))
+    .poll(() => new URL(page.url()).searchParams.get('region'))
     .toContain('eu');
 });
 
@@ -679,7 +696,7 @@ test('pie ellipsis, slice context menu, and legend keyboard menu share actions a
     .getByRole('menuitem', { name: 'Filter region', exact: true })
     .click();
   await expect
-    .poll(() => new URL(page.url()).searchParams.get('geography'))
+    .poll(() => new URL(page.url()).searchParams.get('region'))
     .toContain('eu');
   for (const trigger of [
     slice,
@@ -735,7 +752,7 @@ test('icon breakdown controls explain their purpose on keyboard focus', async ({
   await page.getByRole('option', { name: 'Country', exact: true }).click();
   await expect
     .poll(() =>
-      page.locator('output[aria-label="Displayed levels"]').textContent()
+      page.locator('output[aria-label="Displayed breakdowns"]').textContent()
     )
     .toContain('"revenue":"country"');
 });
@@ -794,7 +811,7 @@ test('bar marks open records while label menus retain explicit drill-down', asyn
   await expect
     .poll(() => detail.getByRole('table').innerText())
     .toContain('order-1');
-  expect(new URL(page.url()).searchParams.has('geography')).toBe(false);
+  expect(new URL(page.url()).searchParams.has('region')).toBe(false);
   await detail
     .getByRole('button', { name: 'Close panel', exact: true })
     .click();
@@ -803,7 +820,7 @@ test('bar marks open records while label menus retain explicit drill-down', asyn
     .click();
   await page.getByRole('menuitem', { name: 'Drill down', exact: true }).click();
   await expect
-    .poll(() => new URL(page.url()).searchParams.get('geography'))
+    .poll(() => new URL(page.url()).searchParams.get('region'))
     .toContain('eu');
 });
 
@@ -831,10 +848,10 @@ test('bar labels open menus with a small aligned chevron and preserve scope unti
       .evaluate(element => getComputedStyle(element).color)
   ).toBe(await label.evaluate(element => getComputedStyle(element).color));
   await label.click();
-  expect(new URL(page.url()).searchParams.has('geography')).toBe(false);
+  expect(new URL(page.url()).searchParams.has('region')).toBe(false);
   await page.getByRole('menuitem', { name: 'Drill down', exact: true }).click();
   await expect
-    .poll(() => new URL(page.url()).searchParams.get('geography'))
+    .poll(() => new URL(page.url()).searchParams.get('region'))
     .toContain('eu');
 });
 

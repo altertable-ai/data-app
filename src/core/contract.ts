@@ -1,7 +1,7 @@
 import {
-  attachHierarchySelectors,
-  validateHierarchyInput,
-} from '@/src/core/hierarchy';
+  attachDimensionSelectors,
+  validateVariableInput,
+} from '@/src/core/dimension-source';
 /**
  * Shared operation contracts and input validation for browser and server.
  * @module @altertable/data-app/contract
@@ -425,12 +425,12 @@ export function defineOperation<
           definition.projections
         );
       }
-      await validateHierarchyInput(operation.input, input, query);
+      await validateVariableInput(operation.input, input, query);
       context.signal.throwIfAborted();
       return operation.run({ signal: context.signal, query }, input);
     },
   };
-  attachHierarchySelectors(defined, queries);
+  attachDimensionSelectors(defined, queries);
   return defined;
 }
 
@@ -530,12 +530,4 @@ export type {
   BooleanFilter,
 } from '@/src/core/filters';
 
-export { hierarchyVariable } from '@/src/core/hierarchy';
-export type {
-  HierarchyVariable,
-  HierarchyScope,
-  HierarchySelection,
-  HierarchyLevel,
-  HierarchyPatch,
-  BreakdownVariable,
-} from '@/src/core/hierarchy';
+export { variableInput } from '@/src/core/dimension-source';

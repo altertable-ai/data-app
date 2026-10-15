@@ -1,4 +1,4 @@
-import { HierarchyMembershipError } from '@/src/core/hierarchy';
+import { DimensionMembershipError } from '@/src/core/dimension-source';
 import { DataSourceError } from '@/src/core/contract';
 import type {
   DataOperations,
@@ -178,7 +178,7 @@ const sourceErrorMessages = {
 export function toDataOperationFailure(error: unknown, aborted = false) {
   if (
     error instanceof OperationInputError ||
-    error instanceof HierarchyMembershipError
+    error instanceof DimensionMembershipError
   )
     return {
       status: 400,

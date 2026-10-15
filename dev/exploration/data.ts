@@ -1,6 +1,13 @@
+import {
+  choiceVariable,
+  type AppVariableValues,
+} from '@altertable/data-app/react';
 import { defineDataApp } from '@altertable/data-app';
 import {
   defineDateRangeContract,
+  dimensionFilter,
+  variableInput,
+  type DimensionSelection,
   parseCount,
   parseLabel,
   rowsAsRecords,
@@ -10,19 +17,19 @@ import {
 export const app = defineDataApp({
   title: 'Sales explorer',
   description:
-    'Follow paid revenue from region to country to customer, then inspect the orders behind it.',
+    'Explore paid revenue by region, country, or customer and inspect contributing orders.',
   scope: { organization: 'Sample store', environment: 'Demo' },
   queries: {
     countries: {
       statement: `SELECT code AS value, name AS label FROM countries
-        WHERE region = $region AND ($member IS NULL OR code = $member) ORDER BY name LIMIT 200`,
-      params: { region: {}, member: {} },
+        WHERE ($member IS NULL OR code = $member) ORDER BY name LIMIT 200`,
+      params: { member: {} },
     },
     customers: {
-      statement: `SELECT c.id AS value, c.name AS label FROM customers c JOIN countries g ON g.code = c.country
-        WHERE g.region = $region AND c.country = $country AND ($member IS NULL OR c.id = $member)
+      statement: `SELECT c.id AS value, c.name AS label FROM customers c
+        WHERE ($member IS NULL OR c.id = $member)
         ORDER BY c.name LIMIT 200`,
-      params: { region: {}, country: {}, member: {} },
+      params: { member: {} },
     },
     totals: {
       statement: `SELECT COUNT(*) AS orders, COALESCE(SUM(o.amount_cents), 0) / 100.0 AS revenue,
@@ -34,9 +41,9 @@ export const app = defineDataApp({
       params: { start: {}, end: {}, region: {}, country: {}, customer: {} },
     },
     places: {
-      statement: `SELECT CASE $level WHEN 'region' THEN g.region WHEN 'country' THEN g.code ELSE CAST(c.id AS TEXT) END AS member,
-        CASE $level WHEN 'region' THEN g.region WHEN 'country' THEN g.name ELSE c.name END AS label,
-        COUNT(*) AS orders, SUM(o.amount_cents) / 100.0 AS revenue, MIN(g.region) AS region, MIN(g.code) AS country
+      statement: `SELECT CASE $dimension WHEN 'region' THEN g.region WHEN 'country' THEN g.code ELSE CAST(c.id AS TEXT) END AS member,
+        CASE $dimension WHEN 'region' THEN g.region WHEN 'country' THEN g.name ELSE c.name END AS label,
+        COUNT(*) AS orders, SUM(o.amount_cents) / 100.0 AS revenue
         FROM orders o JOIN customers c ON c.id = o.customer_id JOIN countries g ON g.code = c.country
         WHERE o.status = 'paid' AND o.day BETWEEN $start AND $end
           AND ($region IS NULL OR g.region = $region) AND ($country IS NULL OR c.country = $country)
@@ -48,7 +55,7 @@ export const app = defineDataApp({
         region: {},
         country: {},
         customer: {},
-        level: {},
+        dimension: {},
       },
     },
     days: {
@@ -88,52 +95,97 @@ export const calendar = defineDateRangeContract({
   maxRangeDays: 14,
   timeZone: 'UTC',
 });
-export const geography = app.defineHierarchy({
-  key: 'geography',
-  label: 'Geography',
-  levels: [
-    {
-      id: 'region',
-      label: 'Region',
-      valueType: 'string',
-      options: [
-        { value: 'Europe', label: 'Europe' },
-        { value: 'North America', label: 'North America' },
-      ],
-    },
-    {
-      id: 'country',
-      label: 'Country',
-      valueType: 'string',
-      source: { query: 'countries' },
-    },
-    {
-      id: 'customer',
-      label: 'Customer',
-      valueType: 'number',
-      source: { query: 'customers' },
-    },
+export const region = dimensionFilter<string>({
+  key: 'region',
+  label: 'Region',
+  valueType: 'string',
+  selectionMode: 'single',
+  presentation: { prominence: 'secondary' },
+  options: [
+    { value: 'Europe', label: 'Europe' },
+    { value: 'North America', label: 'North America' },
   ],
 });
-export const revenueBy = geography.breakdown({
+export const country = app.defineDimension({
+  key: 'country',
+  label: 'Country',
+  valueType: 'string',
+  selectionMode: 'single',
+  presentation: { prominence: 'secondary' },
+  source: { query: 'countries' },
+});
+export const customer = app.defineDimension({
+  key: 'customer',
+  label: 'Customer',
+  valueType: 'number',
+  selectionMode: 'single',
+  presentation: { prominence: 'secondary' },
+  source: { query: 'customers' },
+});
+export const filters = { region, country, customer };
+export const breakdownOptions = [
+  { id: 'region', label: 'Region' },
+  { id: 'country', label: 'Country' },
+  { id: 'customer', label: 'Customer' },
+] as const;
+export const revenueBy = choiceVariable({
   key: 'revenue-by',
   label: 'Revenue breakdown',
+  defaultValue: 'region',
+  options: breakdownOptions,
+  presentation: { group: 'display', control: 'widget' },
 });
-export const ordersBy = geography.breakdown({
+export const ordersBy = choiceVariable({
   key: 'orders-by',
   label: 'Orders breakdown',
+  defaultValue: 'region',
+  options: breakdownOptions,
+  presentation: { group: 'display', control: 'widget' },
 });
+export function selectedValue<Value extends string | number>(
+  selection: DimensionSelection<Value>
+): Value | null {
+  return selection.kind === 'all' || selection.members[0]?.kind !== 'value'
+    ? null
+    : selection.members[0].value;
+}
+export function placeFilter(
+  row: Place
+): Partial<AppVariableValues<typeof filters>> {
+  if (row.dimension === 'customer')
+    return {
+      customer: {
+        kind: 'include',
+        members: [{ kind: 'value', value: row.member }],
+      },
+    };
+  if (row.dimension === 'country')
+    return {
+      country: {
+        kind: 'include',
+        members: [{ kind: 'value', value: row.member }],
+      },
+    };
+  return {
+    region: {
+      kind: 'include',
+      members: [{ kind: 'value', value: row.member }],
+    },
+  };
+}
 function parsePeriod(value: unknown) {
   if (!value || typeof value !== 'object') throw new Error('Choose a period.');
   return {
     period: calendar.parseRequest((value as { period: unknown }).period),
   };
 }
-const parseOverview = geography.input(parsePeriod, {
-  breakdowns: { revenueBy, ordersBy },
+const parseOverview = variableInput(parsePeriod, {
+  ...filters,
+  revenueBy,
+  ordersBy,
 });
 export type OverviewInput = ReturnType<typeof parseOverview>;
-const parseRecords = geography.input((value: unknown) => {
+const parseRecords = variableInput((value: unknown) => {
   const { period } = parsePeriod(value);
   const input = value as { day?: unknown; orderId?: unknown };
   const day =
@@ -148,18 +200,16 @@ const parseRecords = geography.input((value: unknown) => {
     orderId:
       input.orderId === undefined ? undefined : parseCount(input.orderId),
   };
-});
+}, filters);
 export type RecordsInput = ReturnType<typeof parseRecords>;
 export type Place = {
   id: string;
   label: string;
-  region: string;
-  country: string;
   revenue: number;
   orders: number;
 } & (
-  | { level: 'region' | 'country'; member: string }
-  | { level: 'customer'; member: number }
+  | { dimension: 'region' | 'country'; member: string }
+  | { dimension: 'customer'; member: number }
 );
 function amount(value: unknown) {
   const parsed =
@@ -170,50 +220,34 @@ function amount(value: unknown) {
     throw new Error('Invalid revenue.');
   return parsed;
 }
-function places(result: QueryResult, level: Place['level']): Place[] {
-  return rowsAsRecords(result, [
-    'member',
-    'label',
-    'orders',
-    'revenue',
-    'region',
-    'country',
-  ]).map(row => ({
-    id: `${level}:${level === 'customer' ? parseCount(row.member) : parseLabel(row.member)}`,
-    label: parseLabel(row.label),
-    orders: parseCount(row.orders),
-    revenue: amount(row.revenue),
-    region: parseLabel(row.region),
-    country: parseLabel(row.country),
-    ...(level === 'customer'
-      ? { level, member: parseCount(row.member) }
-      : { level, member: parseLabel(row.member) }),
-  }));
+function places(result: QueryResult, dimension: Place['dimension']): Place[] {
+  return rowsAsRecords(result, ['member', 'label', 'orders', 'revenue']).map(
+    row => ({
+      id: `${dimension}:${dimension === 'customer' ? parseCount(row.member) : parseLabel(row.member)}`,
+      label: parseLabel(row.label),
+      orders: parseCount(row.orders),
+      revenue: amount(row.revenue),
+      ...(dimension === 'customer'
+        ? { dimension, member: parseCount(row.member) }
+        : { dimension, member: parseLabel(row.member) }),
+    })
+  );
 }
-function parameters(input: {
-  period: OverviewInput['period'];
-  geography: OverviewInput['geography'];
-}) {
-  const { selection } = input.geography;
+function parameters(
+  input: Pick<OverviewInput, 'period' | 'region' | 'country' | 'customer'>
+) {
   return {
     ...input.period.range,
-    region:
-      selection.region.kind === 'all'
-        ? null
-        : selection.region.members[0].value,
-    country:
-      selection.country.kind === 'all'
-        ? null
-        : selection.country.members[0].value,
-    customer:
-      selection.customer.kind === 'all'
-        ? null
-        : selection.customer.members[0].value,
+    region: selectedValue(input.region),
+    country: selectedValue(input.country),
+    customer: selectedValue(input.customer),
   };
 }
 const defaultScope = {
   period: calendar.request({ start: '2026-10-01', end: '2026-10-14' }),
-  geography: geography.defaultValue,
+  region: region.defaultValue,
+  country: country.defaultValue,
+  customer: customer.defaultValue,
 };
 export const operations = {
   overview: app.defineOperation({
@@ -228,12 +262,12 @@ export const operations = {
     policy: { maxQueryRows: 200, maxDurationMs: 10000 },
     async run({ query }, input) {
       const params = parameters(input);
-      const revenueLevel = revenueBy.level(input.revenueBy, input.geography).id;
-      const orderLevel = ordersBy.level(input.ordersBy, input.geography).id;
+      const revenueDimension = input.revenueBy;
+      const orderDimension = input.ordersBy;
       const [totals, revenue, orders, days] = await Promise.all([
         query('totals', params),
-        query('places', { ...params, level: revenueLevel }),
-        query('places', { ...params, level: orderLevel }),
+        query('places', { ...params, dimension: revenueDimension }),
+        query('places', { ...params, dimension: orderDimension }),
         query('days', params),
       ]);
       const total = rowsAsRecords(totals, [
@@ -247,8 +281,8 @@ export const operations = {
           revenue: amount(total.revenue),
           customers: parseCount(total.customers),
         },
-        revenue: places(revenue, revenueLevel),
-        orders: places(orders, orderLevel),
+        revenue: places(revenue, revenueDimension),
+        orders: places(orders, orderDimension),
         days: rowsAsRecords(days, ['day', 'orders', 'revenue']).map(row => ({
           day: parseLabel(row.day),
           orders: parseCount(row.orders),
@@ -284,22 +318,13 @@ export const operations = {
   }),
 };
 export function scopeForPlace(input: OverviewInput, row: Place): RecordsInput {
-  const scope =
-    row.level === 'customer'
-      ? geography.transition(input.geography, {
-          region: row.region,
-          country: row.country,
-          customer: row.member,
-        })
-      : row.level === 'country'
-        ? geography.transition(input.geography, {
-            region: row.region,
-            country: row.member,
-          })
-        : geography.transition(input.geography, { region: row.member });
+  const { period, region, country, customer } = input;
   return {
-    period: input.period,
-    geography: scope,
+    period,
+    region,
+    country,
+    customer,
+    ...placeFilter(row),
     day: undefined,
     orderId: undefined,
   };

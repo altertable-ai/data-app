@@ -1,5 +1,4 @@
 import { facetSource, type FacetVariable } from '@/src/core/facets';
-import { useHierarchyControls } from '@/src/react/hierarchy-controls';
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
@@ -91,13 +90,53 @@ export function useViewVariables<Variables extends VariableCollection>(
   const facetState = new Map(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
-  const hierarchyControls = useHierarchyControls(
-    definitions,
-    resolved,
-    clientScope,
-    loadFacet,
-    (name, value) => variables.set(name, value)
-  );
+  const lookups = facets.flatMap(([name, filter]) => {
+    const value = resolved[name] as DimensionSelection;
+    return filter.lookup && value.kind !== 'all'
+      ? value.members.flatMap(member =>
+          member.kind === 'value' ? [{ name, filter, value: member.value }] : []
+        )
+      : [];
+  });
+  const lookupQueries = useQueries({
+    queries: lookups.map(({ name, filter, value }) => ({
+      queryKey: [
+        'dimension-member',
+        clientScope,
+        name,
+        filter.lookup!.operation,
+        value,
+      ],
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        loadFacet(filter.lookup!.operation, { member: value }, signal).then(
+          result => parseFacetOptions(result, filter)
+        ),
+      staleTime: 60000,
+      gcTime: 300000,
+    })),
+  });
+  function dimensionState(name: string, filter: DimensionVariable<any>) {
+    const facet = facetState.get(name);
+    const selected = lookups.flatMap((item, index) =>
+      item.name === name ? [lookupQueries[index]!] : []
+    );
+    const options = [...(facet?.data ?? filter.options)];
+    for (const lookup of selected)
+      for (const option of lookup.data ?? []) {
+        const index = options.findIndex(item => item.value === option.value);
+        if (index < 0) options.push(option);
+        else options[index] = option;
+      }
+    return {
+      options,
+      loading: !!facet?.isPending || selected.some(item => item.isPending),
+      error: !!facet?.isError || selected.some(item => item.isError),
+      retry: () => {
+        void facet?.refetch();
+        for (const lookup of selected) void lookup.refetch();
+      },
+    };
+  }
   const primaryFilters: ReactNode[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
@@ -114,7 +153,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     const definition = definitions[name]!;
     const value = variables.values[name];
     const variable = definition as AppVariable<any>;
-    if (definition.kind === 'breakdown') continue;
+    if (definition.presentation?.control === 'widget') continue;
     const group = definition.presentation?.group ?? 'scope';
     const prominence = definition.presentation?.prominence ?? 'primary';
     const labelPlacement =
@@ -152,9 +191,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         variables.set(name, next);
       }
       let control: ReactNode = null;
-      if (definition.kind === 'hierarchy') {
-        control = hierarchyControls.get(name)?.control;
-      } else if (definition.kind === 'dateRange') {
+      if (definition.kind === 'dateRange') {
         const selection = value as DateRangeSelection;
         control = (
           <DateRangePicker
@@ -169,17 +206,17 @@ export function useViewVariables<Variables extends VariableCollection>(
         );
       } else if (definition.kind === 'dimension') {
         const filter = definition as DimensionSelectionVariable;
-        const facet = facetState.get(name);
+        const facet = dimensionState(name, filter);
         control = (
           <DimensionPicker
             key={name}
             labelPlacement={labelPlacement}
             filter={filter}
             value={value as DimensionSelection}
-            options={facet?.data ?? filter.options}
-            loading={!!facet?.isPending}
-            error={!!facet?.isError}
-            onRetry={() => void facet?.refetch()}
+            options={facet.options}
+            loading={facet.loading}
+            error={facet.error}
+            onRetry={facet.retry}
             onChange={next =>
               setControlValue(next as AppVariableValues<Variables>[typeof name])
             }
@@ -271,10 +308,11 @@ export function useViewVariables<Variables extends VariableCollection>(
           id: name,
           label: definition.label ?? name,
           summary:
-            definition.kind === 'hierarchy'
-              ? (hierarchyControls.get(name)?.summary ??
-                definition.label ??
-                name)
+            definition.kind === 'dimension'
+              ? definition.describe(
+                  value as DimensionSelection,
+                  dimensionState(name, definition).options
+                )
               : (variable.describe?.(value) ?? String(value)),
         });
       }

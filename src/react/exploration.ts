@@ -4,44 +4,27 @@ import type {
   AppVariableValues,
   VariableCollection,
 } from '@/src/core/variables';
-import { normalizeVariableValues } from '@/src/core/variables';
-import {
-  selectedMember,
-  type HierarchyVariable,
-  type HierarchyLevel,
-  type HierarchyPatch,
-  type BreakdownVariable,
-} from '@/src/core/hierarchy';
+import type { ChoiceVariable } from '@/src/core/variables';
 import { invariant } from '@/src/core/invariant';
 import { resolveViewInput, type ViewBindings } from '@/src/react/view';
 import { searchParams, writeSearch } from '@/src/react/ui/search';
 
 declare const filterPatch: unique symbol;
-declare const hierarchyLevels: unique symbol;
-declare const breakdownLevels: unique symbol;
+declare const breakdownValue: unique symbol;
 
 export class FilterTarget<Patch> {
   declare readonly [filterPatch]: Patch;
 }
-export class HierarchyTarget<Levels extends readonly HierarchyLevel[]> {
-  declare readonly [hierarchyLevels]: Levels;
+export class BreakdownTarget<Value extends string> {
+  declare readonly [breakdownValue]: Value;
 }
-export class BreakdownTarget<Levels extends readonly HierarchyLevel[]> {
-  declare readonly [breakdownLevels]: Levels;
-}
-export type OrdinaryScope<Variables extends VariableCollection> = Partial<{
-  [
-    Key in keyof Variables as Variables[Key] extends {
-      kind: 'hierarchy' | 'breakdown';
-    }
-      ? never
-      : Extract<
-            Variables[Key]['presentation'],
-            { group: 'display' }
-          > extends never
-        ? Key
-        : never
-  ]: AppVariableValues<Variables>[Key];
+export type FilterPatch<Variables extends VariableCollection> = Partial<{
+  [Key in keyof Variables]: Extract<
+    Variables[Key]['presentation'],
+    { group: 'display' }
+  > extends never
+    ? AppVariableValues<Variables>[Key]
+    : never;
 }>;
 type TargetDefinition = {
   owner: object;
@@ -54,30 +37,20 @@ type TargetDefinition = {
 const targets = new WeakMap<object, TargetDefinition>();
 export function createFilterTarget<Variables extends VariableCollection>(
   definition: TargetDefinition
-): FilterTarget<OrdinaryScope<Variables>> {
-  const target = new FilterTarget<OrdinaryScope<Variables>>();
+): FilterTarget<FilterPatch<Variables>> {
+  const target = new FilterTarget<FilterPatch<Variables>>();
   targets.set(target, definition);
   return target;
 }
-export function createHierarchyTarget<Levels extends readonly HierarchyLevel[]>(
+export function createBreakdownTarget<Value extends string>(
   definition: TargetDefinition
-): HierarchyTarget<Levels> {
+): BreakdownTarget<Value> {
+  const variable = definition.variables[definition.key!];
   invariant(
-    definition.variables[definition.key!]?.kind === 'hierarchy',
-    'Choose a hierarchy variable.'
+    variable?.kind === 'choice' && variable.presentation?.group === 'display',
+    'Choose a display choice variable.'
   );
-  const target = new HierarchyTarget<Levels>();
-  targets.set(target, definition);
-  return target;
-}
-export function createBreakdownTarget<Levels extends readonly HierarchyLevel[]>(
-  definition: TargetDefinition
-): BreakdownTarget<Levels> {
-  invariant(
-    definition.variables[definition.key!]?.kind === 'breakdown',
-    'Choose a breakdown variable.'
-  );
-  const target = new BreakdownTarget<Levels>();
+  const target = new BreakdownTarget<Value>();
   targets.set(target, definition);
   return target;
 }
@@ -97,32 +70,28 @@ function readInput(definition: TargetDefinition, key: string, input: unknown) {
 }
 function appliedValues(definition: TargetDefinition) {
   const params = searchParams();
-  return normalizeVariableValues(
-    definition.variables,
-    Object.fromEntries(
-      Object.entries(definition.variables).map(([name, variable]) => [
-        name,
-        variable.read(params),
-      ])
-    )
+  return Object.fromEntries(
+    Object.entries(definition.variables).map(([name, variable]) => [
+      name,
+      variable.read(params),
+    ])
   );
 }
 function commit(definition: TargetDefinition, values: Record<string, unknown>) {
-  const normalized = normalizeVariableValues(definition.variables, values);
   // Apply the same preservation checks as the view before mutating its route.
   const resolved = Object.fromEntries(
     Object.entries(definition.variables).map(([name, variable]) => [
       name,
       variable.kind === 'dateRange'
-        ? variable.input(normalized[name] as never)
-        : normalized[name],
+        ? variable.input(values[name] as never)
+        : values[name],
     ])
   );
   resolveViewInput<any, unknown>(definition, resolved);
   const changes = Object.assign(
     {},
     ...Object.entries(definition.variables).map(([name, variable]) =>
-      (variable as AppVariable<any>).write(normalized[name])
+      (variable as AppVariable<any>).write(values[name])
     )
   );
   writeSearch(changes, 'push');
@@ -139,10 +108,7 @@ export function targetAvailable(
   );
   const applied = appliedValues(definition);
   return Object.entries(definition.variables).every(([key, variable]) => {
-    if (
-      variable.presentation?.group === 'display' ||
-      variable.kind === 'breakdown'
-    ) {
+    if (variable.presentation?.group === 'display') {
       if (!(target instanceof BreakdownTarget && key === definition.key))
         return true;
     }
@@ -153,91 +119,42 @@ export function targetAvailable(
       : (variable as AppVariable<any>).same(applied[key], shown);
   });
 }
-export function applyFilter(target: object, patch: Record<string, unknown>) {
+/** Apply an explicit scope patch and optional chart choice in one history entry. */
+export function applyFilter(
+  target: object,
+  patch: Record<string, unknown>,
+  breakdown?: { target: BreakdownTarget<any>; value: string }
+) {
   const definition = targets.get(target)!;
   const values = appliedValues(definition);
   for (const [key, value] of Object.entries(patch)) {
     const variable = definition.variables[key];
     invariant(
       variable &&
-        !['hierarchy', 'breakdown'].includes(variable.kind) &&
         variable.presentation?.group !== 'display' &&
         (variable as AppVariable<any>).valid(value),
-      'Filter actions can only update ordinary scope variables.'
+      'Filter actions can only update scope variables.'
     );
+  }
+  if (breakdown) {
+    const choice = breakdownDefinition(breakdown.target);
+    invariant(
+      choice.owner === definition.owner,
+      'Breakdown must belong to the filter view.'
+    );
+    const variable = choice.variables[choice.key!]!;
+    invariant(
+      (variable as AppVariable<any>).valid(breakdown.value),
+      'Invalid breakdown.'
+    );
+    patch = { ...patch, [choice.key!]: breakdown.value };
   }
   commit(definition, { ...values, ...patch });
 }
-export function applyHierarchy(
-  target: object,
-  patch: HierarchyPatch<readonly HierarchyLevel[]>
-) {
-  const definition = targets.get(target)!;
-  const hierarchy = definition.variables[definition.key!] as HierarchyVariable;
-  const values = appliedValues(definition);
-  commit(definition, {
-    ...values,
-    [definition.key!]: hierarchy.transition(
-      values[definition.key!] as never,
-      patch
-    ),
-  });
-}
-export function canDescend(target: BreakdownTarget<any>, input: unknown) {
-  const definition = targets.get(target)!;
-  const breakdown = definition.variables[definition.key!] as BreakdownVariable;
-  const hierarchyName = Object.keys(definition.variables).find(
-    key => definition.variables[key] === breakdown.hierarchy
-  )!;
-  const scope = readInput(definition, hierarchyName, input) as never;
-  const current = breakdown.level(
-    readInput(definition, definition.key!, input) as string,
-    scope
-  );
-  const index = breakdown.hierarchy.levels.findIndex(
-    level => level.id === current.id
-  );
-  return (
-    index < breakdown.hierarchy.levels.length - 1 &&
-    breakdown.hierarchy.levels
-      .slice(0, index)
-      .every(level => selectedMember(scope, level.id) !== null)
-  );
-}
-export function descend(target: BreakdownTarget<any>, member: string | number) {
-  const definition = targets.get(target)!;
-  const breakdown = definition.variables[definition.key!] as BreakdownVariable;
-  const values = appliedValues(definition);
-  const hierarchyName = Object.keys(definition.variables).find(
-    key => definition.variables[key] === breakdown.hierarchy
-  )!;
-  const scope = values[hierarchyName] as never;
-  const current = breakdown.level(values[definition.key!] as string, scope);
-  const next =
-    breakdown.hierarchy.levels[
-      breakdown.hierarchy.levels.findIndex(level => level.id === current.id) + 1
-    ];
-  invariant(next, 'The last hierarchy level cannot descend.');
-  commit(definition, {
-    ...values,
-    [hierarchyName]: breakdown.hierarchy.transition(scope, {
-      [current.id]: member,
-    }),
-    [definition.key!]: next.id,
-  });
-}
 export function breakdownState(target: BreakdownTarget<any>, input?: unknown) {
   const definition = breakdownDefinition(target);
-  const variable = definition.variables[definition.key!] as BreakdownVariable;
+  const variable = definition.variables[definition.key!] as ChoiceVariable;
   const values = appliedValues(definition);
-  const hierarchyKey = Object.keys(definition.variables).find(
-    key => definition.variables[key] === variable.hierarchy
-  )!;
-  const scope = (
-    input === undefined
-      ? values[hierarchyKey]
-      : readInput(definition, hierarchyKey, input)
-  ) as never;
   const value = (
     input === undefined
       ? values[definition.key!]
@@ -245,13 +162,10 @@ export function breakdownState(target: BreakdownTarget<any>, input?: unknown) {
   ) as string;
   return {
     variable,
-    level: variable.level(value, scope),
-    options: variable.options(scope),
+    value,
+    options: variable.options,
     set(id: string) {
-      invariant(
-        variable.options(scope).some(level => level.id === id),
-        'Invalid breakdown.'
-      );
+      invariant(variable.valid(id), 'Invalid breakdown.');
       commit(definition, { ...values, [definition.key!]: id });
     },
   };

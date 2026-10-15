@@ -123,7 +123,7 @@ const ordersDetail = ordersView.content(source => (
 
 Declare `orders` with `ordersView.dataset()`. Detail inputs contain serializable
 scope and IDs; exclude entire records, credentials, and protected server values.
-Validate membership through the same hierarchy parser used by the dashboard.
+Validate selected members through the same `variableInput()` parser used by the dashboard.
 Shared links validate before execution. Nested destinations replace the single
 detail sheet; the main app retains ownership of exports and stories.
 The complete route supports up to 20 destinations and 16,384 serialized characters;

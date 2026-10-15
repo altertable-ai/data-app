@@ -241,7 +241,7 @@ export function VisualizationWidget<Row, Data, Input>({
       recoverFocus.current = false;
       controlRef.current?.querySelector('button')?.focus();
     }
-  }, [state?.level.id]);
+  }, [state?.value]);
   function resolvedActions(row: Row) {
     return itemActions(row).map(action => ({
       ...action,
@@ -263,7 +263,7 @@ export function VisualizationWidget<Row, Data, Input>({
           id: level.id,
           label: level.label,
         }))}
-        value={state.level.id}
+        value={state.value}
         onChange={id => state.set(id)}
       />
     </div>

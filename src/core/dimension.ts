@@ -30,7 +30,12 @@ export type DimensionSelectionVariable<
   allowExclusion: boolean;
   maxSelected: number;
   options: readonly DimensionOption<T>[];
-  describe: (selection: DimensionSelection<T>) => string;
+  /** Exact selected-value lookup, independent of the option page. */
+  lookup?: { operation: string };
+  describe: (
+    selection: DimensionSelection<T>,
+    options?: readonly DimensionOption<T>[]
+  ) => string;
 };
 
 /** A fixed-option dimension retains its distinction from query-backed facets. */
@@ -48,10 +53,9 @@ export function dimensionMemberKey(member: DimensionMember) {
     : ['value', typeof member.value, member.value].join(KEY_SEPARATOR);
 }
 
-export type DimensionFilterSettings<T extends DimensionValue> = {
+export type DimensionSettings = {
   key: string;
   label: string;
-  valueType: T extends number ? 'number' : 'string';
   allowMissing?: boolean;
   allowExclusion?: boolean;
   history?: HistoryMode;
@@ -60,6 +64,9 @@ export type DimensionFilterSettings<T extends DimensionValue> = {
   | { selectionMode: 'single'; maxSelected?: 1 }
   | { selectionMode: 'multiple'; maxSelected?: number }
 );
+
+export type DimensionFilterSettings<T extends DimensionValue> =
+  DimensionSettings & { valueType: T extends number ? 'number' : 'string' };
 
 export type DimensionFilterOptions<T extends DimensionValue> =
   DimensionFilterSettings<T> & {
@@ -122,6 +129,7 @@ export function createDimensionFilter<const T extends DimensionValue>(
   const defaultValue = allSelection;
 
   function validMember(member: DimensionMember<T>): boolean {
+    if (!member || typeof member !== 'object') return false;
     if (member.kind === 'missing') return allowMissing;
     if (member.kind !== 'value' || typeof member.value !== valueType)
       return false;
@@ -143,9 +151,10 @@ export function createDimensionFilter<const T extends DimensionValue>(
       value.members.length > maxSelected
     )
       return false;
+    if (!value.members.every(validMember)) return false;
     const ids = value.members.map(dimensionMemberKey);
 
-    return new Set(ids).size === ids.length && value.members.every(validMember);
+    return new Set(ids).size === ids.length;
   }
 
   function encode(value: DimensionSelection<T>) {
@@ -212,14 +221,17 @@ export function createDimensionFilter<const T extends DimensionValue>(
     write(value) {
       return { [key]: encode(value) };
     },
-    describe(value) {
+    describe(
+      value: DimensionSelection<T>,
+      suppliedOptions: readonly DimensionOption<T>[] = options
+    ) {
       return value.kind === 'all'
         ? `All ${label.toLocaleLowerCase()}`
         : `${value.kind === 'exclude' ? 'Exclude: ' : ''}${value.members
             .map(member =>
               member.kind === 'missing'
                 ? 'Missing'
-                : (options.find(option => option.value === member.value)
+                : (suppliedOptions.find(option => option.value === member.value)
                     ?.label ?? String(member.value))
             )
             .join(', ')}`;

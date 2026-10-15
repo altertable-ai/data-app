@@ -3,17 +3,12 @@ import type { IsUnion } from '@/src/core/queries';
 import { facetSource, type FacetVariable } from '@/src/core/facets';
 import {
   createFilterTarget,
-  createHierarchyTarget,
   createBreakdownTarget,
   type FilterTarget,
-  type HierarchyTarget,
   type BreakdownTarget,
-  type OrdinaryScope,
+  type FilterPatch,
 } from '@/src/react/exploration';
-import type {
-  HierarchyVariable,
-  BreakdownVariable,
-} from '@/src/core/hierarchy';
+import type { ChoiceVariable } from '@/src/core/variables';
 import { randomUuid } from '@/src/core/uuid';
 import { DeclaredView } from '@/src/react/view-runtime';
 import {
@@ -120,16 +115,19 @@ type BoundDataView<
     describeInput: (input: Input) => string;
   }
 > & {
-  filter(): FilterTarget<OrdinaryScope<Variables>>;
-  hierarchy<Key extends keyof Variables & string>(
-    key: Key & (Variables[Key] extends HierarchyVariable<any> ? unknown : never)
-  ): Variables[Key] extends HierarchyVariable<infer Levels>
-    ? HierarchyTarget<Levels>
-    : never;
+  filter(): FilterTarget<FilterPatch<Variables>>;
   breakdown<Key extends keyof Variables & string>(
-    key: Key & (Variables[Key] extends BreakdownVariable<any> ? unknown : never)
-  ): Variables[Key] extends BreakdownVariable<infer Levels>
-    ? BreakdownTarget<Levels>
+    key: Key &
+      (Variables[Key] extends ChoiceVariable<any>
+        ? Extract<
+            Variables[Key]['presentation'],
+            { group: 'display' }
+          > extends never
+          ? never
+          : unknown
+        : never)
+  ): Variables[Key] extends ChoiceVariable<infer Value>
+    ? BreakdownTarget<Value>
     : never;
   dataset<
     Row,
@@ -446,16 +444,6 @@ export function createDataHooks<Operations extends DataOperations>(
             input,
             bindings: definition.bindings,
             date: definition.date,
-          });
-        },
-        hierarchy(key: string) {
-          return createHierarchyTarget({
-            owner: view,
-            variables,
-            input,
-            bindings: definition.bindings,
-            date: definition.date,
-            key,
           });
         },
         breakdown(key: string) {

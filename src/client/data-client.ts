@@ -1,5 +1,5 @@
 import type { IsUnion, KnownRecord } from '@/src/core/queries';
-import { withHierarchySelectors } from '@/src/core/hierarchy';
+import { withDimensionSelectors } from '@/src/core/dimension-source';
 import { randomUuid } from '@/src/core/uuid';
 import { createHttpTransport, DataAppError } from '@/src/client/transport';
 import { getDataAppTransport, localFrameBridge } from '@/src/client/iframe';
@@ -92,7 +92,7 @@ export function createDataClient<Operations extends DataOperations>(
 ): DataClient<Operations> {
   if (options.operations)
     return createOperationClient({
-      operations: withHierarchySelectors(options.operations),
+      operations: withDimensionSelectors(options.operations),
       lakehouse: options.lakehouse,
     });
   const http = createHttpTransport(options);

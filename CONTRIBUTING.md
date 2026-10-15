@@ -101,7 +101,7 @@ started with Testcontainers and stopped on exit. Public API tests use their own 
 Run `bun run dev:exploration` for the self-contained Sales explorer at
 `http://127.0.0.1:27419/`. It uses deterministic sample orders in SQLite and
 requires no credentials or Docker. Its declared views demonstrate source-backed
-hierarchies, independent chart breakdowns, contributing records, and nested details.
+dimension filters, independent chart breakdowns, contributing records, and nested details.
 
 Run `bun run dev:file <path>` to preview a single-file data app such as
 `examples/starter-data-app/index.tsx` from anywhere on disk, or `bun run dev:dir <path>`
@@ -159,15 +159,15 @@ consumption sites; update the name contract in `style-contract.ts` when adding h
 
 ## Exploration contracts
 
-Keep hierarchy selections, chart breakdowns, and detail inputs independent.
+Keep dimension selections, chart display choices, and detail inputs independent.
 Input parsers carry private validation capabilities; operation construction
 registers selector operations, and both delivery paths apply normal authorization
-and execution limits. Validate exact selected members in ancestor order and
+and execution limits. Validate exact selected members before business queries and
 include their queries in evidence. Never use a bounded options page as membership
 validation. Controls and summaries share selected-member resolution.
 
-Normalize every linked breakdown before one URL write when changing population
-or descending. Keep facet loading and cache state out of action targets; targets
+Filter actions explicitly name any chart choice they update and write both in one
+history entry. Keep facet loading and cache state out of action targets; targets
 carry only ownership and navigation meaning. Actions and record destinations use
-displayed input during refreshes. Keep core hierarchy contracts independent of
+displayed input during refreshes. Keep core variable contracts independent of
 React, and keep query declarations statically extractable.

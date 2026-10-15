@@ -26,7 +26,11 @@ import { BarChart, LineChart, PieChart } from '@altertable/data-app/react/ui';
 import {
   app,
   calendar,
-  geography,
+  region,
+  country,
+  customer,
+  breakdownOptions,
+  placeFilter,
   revenueBy,
   ordersBy,
   operations,
@@ -44,7 +48,15 @@ function dollars(value: number) {
 function describeScope(
   input: RecordsInput | Parameters<typeof operations.overview.run>[1]
 ) {
-  return `${calendar.describeInput(input.period.range)} · ${geography.describe!(input.geography)}${'day' in input && input.day ? ` · ${input.day}` : ''}`;
+  const labels = [
+    region.describe(input.region),
+    country.describe(input.country),
+    customer.describe(input.customer),
+  ].filter(
+    (_, index) =>
+      [input.region, input.country, input.customer][index]!.kind !== 'all'
+  );
+  return `${calendar.describeInput(input.period.range)} · ${labels.join(' · ') || 'All customers'}${'day' in input && input.day ? ` · ${input.day}` : ''}`;
 }
 const context = createDataContext(operations.overview.queryNames)({
   description:
@@ -59,7 +71,7 @@ const context = createDataContext(operations.overview.queryNames)({
     orders: {
       term: 'Paid orders',
       definition:
-        'One record per paid order in the selected dates and geography. Its contributing records use exactly the same inclusion rule.',
+        'One record per paid order in the selected dates and filters. Its contributing records use exactly the same inclusion rule.',
       queryNames: ['totals', 'places', 'days'],
     },
     customers: {
@@ -88,7 +100,9 @@ const view = hooks.defineDataView({
       contract: calendar,
       defaultValue: { kind: 'dates', start: '2026-10-01', end: '2026-10-14' },
     }),
-    geography,
+    region,
+    country,
+    customer,
     revenueBy,
     ordersBy,
   },
@@ -96,7 +110,7 @@ const view = hooks.defineDataView({
   isEmpty: data => data.totals.orders === 0,
   emptyFallback: {
     title: 'No paid orders',
-    description: 'Choose another period or clear the geography filters.',
+    description: 'Choose another period or clear the filters.',
   },
 });
 const recordsView = hooks.defineDetailView({
@@ -218,7 +232,9 @@ const revenueRecords = revenue.records({
   target: recordsView,
   input: input => ({
     period: input.period,
-    geography: input.geography,
+    region: input.region,
+    country: input.country,
+    customer: input.customer,
     day: undefined,
     orderId: undefined,
   }),
@@ -227,7 +243,9 @@ const orderRecords = paidOrders.records({
   target: recordsView,
   input: input => ({
     period: input.period,
-    geography: input.geography,
+    region: input.region,
+    country: input.country,
+    customer: input.customer,
     day: undefined,
     orderId: undefined,
   }),
@@ -292,9 +310,20 @@ const revenueActions = revenuePlaces.actions(
       target: recordsView,
       input: (row, input) => scopeForPlace(input, row),
     }),
-    descend: action.descend({
-      target: view.breakdown('revenueBy'),
-      member: row => row.member,
+    filter: action.filter({
+      label: 'Filter to this value',
+      target: view.filter(),
+      values: placeFilter,
+    }),
+    drill: action.filter({
+      label: 'Drill down',
+      when: row => row.dimension !== 'customer',
+      target: view.filter(),
+      values: placeFilter,
+      breakdown: {
+        target: view.breakdown('revenueBy'),
+        value: row => (row.dimension === 'region' ? 'country' : 'customer'),
+      },
     }),
   }),
   { primary: 'orders' }
@@ -306,15 +335,20 @@ const orderActions = orderPlaces.actions(
       target: recordsView,
       input: (row, input) => scopeForPlace(input, row),
     }),
-    descend: action.descend({
-      target: view.breakdown('ordersBy'),
-      member: row => row.member,
+    drill: action.filter({
+      label: 'Drill down',
+      when: row => row.dimension !== 'customer',
+      target: view.filter(),
+      values: placeFilter,
+      breakdown: {
+        target: view.breakdown('ordersBy'),
+        value: row => (row.dimension === 'region' ? 'country' : 'customer'),
+      },
     }),
     filter: action.filter({
-      label: 'Filter to this region',
-      when: row => row.level === 'region',
-      target: view.hierarchy('geography'),
-      values: row => ({ region: row.region }),
+      label: 'Filter to this value',
+      target: view.filter(),
+      values: placeFilter,
     }),
   }),
   { primary: 'orders' }
@@ -325,7 +359,9 @@ const dayActions = days.actions(action => ({
     target: recordsView,
     input: (row, input) => ({
       period: input.period,
-      geography: input.geography,
+      region: input.region,
+      country: input.country,
+      customer: input.customer,
       day: row.day,
       orderId: undefined,
     }),
@@ -344,7 +380,7 @@ const content = view.content(source => (
         return (
           <p>
             {leader
-              ? `${leader.label} contributes ${formatPercent(leader.revenue / total)} of ${dollars(total)} in paid revenue. Change either chart’s breakdown to compare the same population at another level.`
+              ? `${leader.label} contributes ${formatPercent(leader.revenue / total)} of ${dollars(total)} in paid revenue. Change either chart’s breakdown to compare the same population by another dimension.`
               : 'No paid revenue in this scope.'}
           </p>
         );
@@ -378,9 +414,9 @@ const content = view.content(source => (
         title={
           source.loading
             ? 'Paid revenue'
-            : `Paid revenue by ${revenueBy.level(source.input.revenueBy, source.input.geography).label.toLowerCase()}`
+            : `Paid revenue by ${breakdownOptions.find(option => option.id === source.input.revenueBy)!.label.toLowerCase()}`
         }
-        description="Select a bar to see its paid orders. Open its label menu to drill down."
+        description="Select a bar to see its paid orders, or open its label menu."
       >
         {(rows, actions) => (
           <BarChart
@@ -400,7 +436,7 @@ const content = view.content(source => (
         title={
           source.loading
             ? 'Paid orders'
-            : `Paid orders by ${ordersBy.level(source.input.ordersBy, source.input.geography).label.toLowerCase()}`
+            : `Paid orders by ${breakdownOptions.find(option => option.id === source.input.ordersBy)!.label.toLowerCase()}`
         }
         description="Select a slice for its orders. Open a legend row for exploration and copy actions."
       >
