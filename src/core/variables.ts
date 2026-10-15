@@ -1,5 +1,9 @@
 import type { IsUnion } from '@/src/core/queries';
 import { facetSource, type FacetVariable } from '@/src/core/facets';
+import type {
+  HierarchyVariable,
+  BreakdownVariable,
+} from '@/src/core/hierarchy';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -43,6 +47,8 @@ export type AppVariable<Value, Kind extends string = string> = {
 
 export type VariableCollection = Record<
   string,
+  | HierarchyVariable<any>
+  | BreakdownVariable<any>
   | SearchVariable
   | ChoiceVariable
   | MultiChoiceVariable
@@ -420,6 +426,7 @@ export function dateRangeVariable({
       ? [key, startKey, endKey, comparisonKey]
       : [key, startKey, endKey],
     defaultValue,
+    clearValue: defaultValue,
     history,
     bounds,
     resolve,
@@ -490,4 +497,28 @@ export function dateRangeVariable({
   );
 
   return variable;
+}
+
+/** Normalize linked chart levels together with population changes before writing one URL entry. */
+export function normalizeVariableValues<Variables extends VariableCollection>(
+  definitions: Variables,
+  values: AppVariableValues<Variables>
+): AppVariableValues<Variables> {
+  const normalized = { ...values };
+  for (const [name, variable] of Object.entries(definitions)) {
+    if (variable.kind !== 'breakdown') continue;
+    const hierarchyName = Object.keys(definitions).find(
+      key => definitions[key] === variable.hierarchy
+    );
+    invariant(
+      hierarchyName,
+      `Breakdown ${name} needs its hierarchy in the same view.`
+    );
+    const scope = values[hierarchyName as keyof Variables];
+    (normalized as Record<string, unknown>)[name] = variable.level(
+      (values as Record<string, string>)[name]!,
+      scope as never
+    ).id;
+  }
+  return normalized;
 }

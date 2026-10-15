@@ -1,3 +1,4 @@
+import { HierarchyMembershipError } from '@/src/core/hierarchy';
 import { DataSourceError } from '@/src/core/contract';
 import type {
   DataOperations,
@@ -174,7 +175,10 @@ const sourceErrorMessages = {
 };
 
 export function toDataOperationFailure(error: unknown, aborted = false) {
-  if (error instanceof OperationInputError)
+  if (
+    error instanceof OperationInputError ||
+    error instanceof HierarchyMembershipError
+  )
     return {
       status: 400,
       code: 'invalid_input',

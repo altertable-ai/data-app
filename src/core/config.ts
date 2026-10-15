@@ -1,3 +1,8 @@
+import {
+  bindHierarchySources,
+  type HierarchyLevel,
+  type HierarchyVariable,
+} from '@/src/core/hierarchy';
 /**
  * App configuration shared by browser and server.
  * @module @altertable/data-app
@@ -40,6 +45,19 @@ export type DataAppDefinition<
   Queries extends QueryDefinitions = QueryDefinitions,
 > = Readonly<Omit<DataAppConfig<Queries>, 'queries'>> & {
   readonly queries: QuerySnapshot<Queries>;
+  defineHierarchy<
+    const Key extends string,
+    const Levels extends readonly (Omit<HierarchyLevel, 'source'> & {
+      source?: {
+        query: keyof Queries & string;
+        parents?: Readonly<Record<string, string>>;
+      };
+    })[],
+  >(config: {
+    key: Key;
+    label: string;
+    levels: Levels;
+  }): HierarchyVariable<Levels, Key>;
   defineOperation<Input, Output>(
     operation: OperationDefinition<Input, Output, Queries>
   ): ReturnType<typeof defineOperation<Input, Output, Queries>>;
@@ -74,6 +92,9 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
   return Object.freeze({
     ...config,
     queries,
+    defineHierarchy(config) {
+      return bindHierarchySources(config, queries);
+    },
     defineOperation<Input, Output>(
       operation: OperationDefinition<Input, Output, Queries>
     ) {

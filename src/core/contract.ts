@@ -1,3 +1,7 @@
+import {
+  attachHierarchySelectors,
+  validateHierarchyInput,
+} from '@/src/core/hierarchy';
 /**
  * Shared operation contracts and input validation for browser and server.
  * @module @altertable/data-app/contract
@@ -392,10 +396,12 @@ export function defineOperation<
   ) as { readonly [Name in keyof Queries & string]: Name };
   for (const input of operation.checks) operation.input(input);
 
-  return {
+  const defined: Omit<DataOperation<Input, Output>, 'queryNames'> & {
+    queryNames: { readonly [Name in keyof Queries & string]: Name };
+  } = {
     ...operation,
     queryNames,
-    run(context, input) {
+    async run(context, input) {
       async function query<Name extends keyof Queries & string>(
         name: Name,
         values: Partial<QueryParameters> = {},
@@ -419,9 +425,12 @@ export function defineOperation<
           definition.projections
         );
       }
+      await validateHierarchyInput(operation.input, input, query);
       return operation.run({ signal: context.signal, query }, input);
     },
   };
+  attachHierarchySelectors(defined, queries);
+  return defined;
 }
 
 /** The built-in connection operation shares one contract with setup clients. */
@@ -519,3 +528,13 @@ export type {
   BooleanSelection,
   BooleanFilter,
 } from '@/src/core/filters';
+
+export { hierarchyVariable } from '@/src/core/hierarchy';
+export type {
+  HierarchyVariable,
+  HierarchyScope,
+  HierarchySelection,
+  HierarchyLevel,
+  HierarchyPatch,
+  BreakdownVariable,
+} from '@/src/core/hierarchy';

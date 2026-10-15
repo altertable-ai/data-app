@@ -1,3 +1,4 @@
+import { withHierarchySelectors } from '@/src/core/hierarchy';
 import {
   readRequestBody,
   RequestBodyTooLargeError,
@@ -29,6 +30,7 @@ export function createDataHandler(
   operations: DataOperations,
   authorize: (request: Request, operation: string) => Promise<RequestAccess>
 ) {
+  operations = withHierarchySelectors(operations);
   async function handleDataRequest(request: Request): Promise<Response> {
     const requestId = crypto.randomUUID();
     const url = new URL(request.url);
