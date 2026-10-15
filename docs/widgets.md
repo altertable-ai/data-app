@@ -160,3 +160,62 @@ For embedded theme and chrome, see [parent presentation](embed.md#parent-present
 
 `<TooltipProvider>` shares hover timing outside `<DataApp>`; the app already
 provides it.
+
+## Exploration actions
+
+Declare actions on their dataset and pass them to its visualization. Detail
+mappings receive the displayed operation input, including during refreshes.
+
+```tsx
+const placeActions = places.actions(
+  action => ({
+    orders: action.detail({
+      label: 'View orders',
+      target: ordersView,
+      input: (row, displayedInput) => ({ ...displayedInput, placeId: row.id }),
+    }),
+    filter: action.filter({
+      label: 'Filter to this region',
+      when: row => row.level === 'region',
+      target: salesView.hierarchy('geography'),
+      values: row => ({ region: row.id }),
+    }),
+    descend: action.descend({
+      target: salesView.breakdown('revenueBy'),
+      member: row => row.id,
+    }),
+  }),
+  { primary: 'orders' }
+);
+
+<VisualizationWidget
+  dataset={places}
+  source={source}
+  actions={placeActions}
+  breakdown={salesView.breakdown('revenueBy')}
+>
+  {(rows, actions) => (
+    <BarChart
+      ariaLabel="Revenue by place"
+      unit="USD"
+      items={rows.map(row => ({ ...row, value: row.revenue }))}
+      itemActions={actions}
+    />
+  )}
+</VisualizationWidget>;
+```
+
+Keep domain fields when adapting chart items. Bar, line, area, pie slices and
+pie legend items share the same action contract. One available action is direct;
+multiple actions use a menu. A declared `primary` remains direct beside that menu.
+Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.
+
+`view.filter()` targets ordinary scope variables; `view.hierarchy(key)` targets
+typed hierarchy selections; `view.breakdown(key)` targets that chart's aggregation
+and descent. Filters preserve unrelated current selections. Hierarchy transitions
+wait for displayed and applied scope to agree; descent also checks the displayed
+breakdown. Each transition writes one history entry.
+
+A day drill passes its day. A value-band drill passes a stable band ID; validate
+it in the destination operation and derive bounds there. Query matching records
+rather than filtering a capped dashboard preview. See [detail destinations](views.md#detail-destinations).

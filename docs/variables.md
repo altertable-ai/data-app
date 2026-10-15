@@ -15,7 +15,7 @@ operation input and derive SQL parameters inside the operation.
 
 `dimensionFilter()` from `/contract` requires exactly one option source: fixed `options` or a `facet`.
 Use `defineFacetFilter()` to bind a facet operation and its typed input. `<DimensionPicker>` offers missing values separately and keeps selected values
-available when they have zero matches.
+available when options refresh or fail; unknown counts remain undisclosed.
 
 ## Declare controls once
 
@@ -82,7 +82,7 @@ suppress autocomplete for a particular app.
 
 Declare controls in priority order for the user's task. Keep useful scope filters
 visible and set `presentation.prominence: 'secondary'` for less frequent ones in
-the Filters sheet. Active secondary filters remain available for direct editing.
+the Filters sheet. Active filter summaries reopen the same Filters sheet.
 Choose useful defaults rather than exposing every field; declare each label once.
 
 Set `presentation.group: 'display'` for ordering or presentation choices. These
@@ -255,3 +255,71 @@ with paired Apply/Cancel handlers; derive queries and visible controls from appl
 values while a draft is being edited.
 
 Filters apply immediately; use app-owned drafts only when the task needs Apply/Cancel.
+
+## Hierarchies and chart breakdowns
+
+Declare shared population selections with `hierarchyVariable()` from `/contract`
+for static options, or `app.defineHierarchy()` for query-backed levels. A child
+static option declares its immediate `parent`. Each level selects All or one
+string/numeric value; missing database values are separate from hierarchy members.
+
+```ts
+const geography = app.defineHierarchy({
+  key: 'geography',
+  label: 'Geography',
+  levels: [
+    {
+      id: 'region',
+      label: 'Region',
+      valueType: 'string',
+      options: regionOptions,
+    },
+    {
+      id: 'country',
+      label: 'Country',
+      valueType: 'string',
+      source: { query: 'countries' },
+    },
+  ],
+});
+const revenueBy = geography.breakdown({ key: 'revenue-by' });
+const ordersBy = geography.breakdown({ key: 'orders-by' });
+const parseInput = geography.input(parsePeriodInput, {
+  breakdowns: { revenueBy, ordersBy },
+});
+```
+
+Use this parser on every operation consuming the hierarchy, including details;
+record destinations can omit breakdowns. Declare all variables on the view and
+preserve their typed selections in operation input. For nested scopes supply
+`binding` to the hierarchy parser and matching view `bindings`.
+Derive predicates from `input.geography.selection`; derive aggregation and chart
+labels from `revenueBy.level(input.revenueBy, input.geography)`.
+Each chart independently chooses its breakdown over the shared population.
+
+Each source query declares `member` and returns `value`, `label`, and optional
+`count`. `member = null` requests at most 200 options; a selected value requests
+an exact lookup under its ancestors. A child source binds its immediate parent.
+Ancestor IDs bind matching parameter names; use `parents: { regionId: 'region' }`
+for different names. Other query parameters need defaults or trusted server values.
+Keep SQL and parameter declarations literal in `defineDataApp()`.
+
+```sql
+SELECT id AS value, name AS label
+FROM countries
+WHERE region = $region
+  AND ($member IS NULL OR id = $member)
+ORDER BY name
+```
+
+Selected members validate in parent order before business queries. Lookups share
+operation authorization, cancellation, limits, and disclosed query evidence.
+Selected labels resolve separately from the options page, including when that
+page fails. Picker search only searches supplied options; it does not fetch
+additional members.
+
+Hierarchy filters live in the Filters sheet. A chart's `breakdown` prop places
+its selector in the widget header. Parent changes clear descendants and normalize
+affected breakdowns in one history update. `null` in `transition()` clears a
+level to All. Clear filters preserves search and display choices and returns dates
+to their configured defaults.

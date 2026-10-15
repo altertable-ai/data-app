@@ -98,3 +98,55 @@ errors, and refreshes instead of duplicating request state in app code.
 
 A measured zero is valid data. Define `isEmpty` for the analysis and provide
 useful `emptyFallback` copy.
+
+## Detail destinations
+
+Use `createDataHooks(client).defineDetailView()` for a scoped population or entity.
+The destination owns its input parser, operation, datasets, evidence, and content.
+Pass its content to `<DataApp details={[ordersDetail]}>`:
+
+```tsx
+const ordersView = defineDetailView({
+  id: 'orders',
+  title: 'Contributing orders',
+  operation: 'orders',
+  dataContext,
+  parseInput: operations.orders.input,
+  describeInput: describeOrderScope,
+  isEmpty: data => data.rows.length === 0,
+  emptyFallback: { title: 'No contributing orders' },
+});
+const ordersDetail = ordersView.content(source => (
+  <TableWidget dataset={orders} source={source} />
+));
+```
+
+Declare `orders` with `ordersView.dataset()`. Detail inputs contain serializable
+scope and IDs; exclude entire records, credentials, and protected server values.
+Validate membership through the same hierarchy parser used by the dashboard.
+Shared links validate before execution. Nested destinations replace the single
+detail sheet; the main app retains ownership of exports and stories.
+
+### Contributing metric records
+
+Attach a destination to a metric and supply it to the existing inspection trigger:
+
+```tsx
+const contributingOrders = orderCount.records({
+  target: ordersView,
+  input: displayedInput => displayedInput,
+});
+
+<MetricWidget
+  metric={orderCount}
+  source={source}
+  records={contributingOrders}
+/>;
+```
+
+Inspection tabs become Records, Glossary, Queries. Records load when their tab
+is shown; the destination's `describeInput()` supplies their scope. Source context
+belongs in Glossary. Match record inclusion to the metric and explain non-additive
+metrics. State completeness limits visibly in destination content. Local pagination
+covers only supplied rows; larger populations need explicit server paging or a
+visible limit.
