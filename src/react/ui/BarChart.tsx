@@ -181,6 +181,7 @@ export function BarChart<Row extends BarChartItem>({
                     </Tooltip>
                     {action && actions.length > 1 && (
                       <ExplorationActionControl
+                        layout="stacked"
                         ref={element => {
                           if (element)
                             menuTriggers.current.set(item.id, element);

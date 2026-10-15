@@ -430,7 +430,7 @@ test('shared metric records links select the dashboard metric when story visuals
   expect(errors).toEqual([]);
 });
 
-test('pie ellipsis, slice context menu, and legend keyboard menu share trailing actions', async ({
+test('pie ellipsis, slice context menu, and legend keyboard menu share actions at the correct origin', async ({
   page,
 }) => {
   await page.goto('/exploration?menus=1&primary=1');
@@ -452,14 +452,20 @@ test('pie ellipsis, slice context menu, and legend keyboard menu share trailing 
   expect(choices).toEqual(['Filter region']);
   const triggerBox = await more.boundingBox();
   const menuBox = await menu.boundingBox();
-  expect(
-    Math.abs(menuBox!.x + menuBox!.width - triggerBox!.x - triggerBox!.width)
-  ).toBeLessThan(12);
+  expect(Math.abs(menuBox!.x - triggerBox!.x)).toBeLessThan(12);
   await page.keyboard.press('Escape');
-  await slice.click({ button: 'right' });
+  const sliceBox = await slice.boundingBox();
+  const point = {
+    x: sliceBox!.x + sliceBox!.width * 0.6,
+    y: sliceBox!.y + sliceBox!.height * 0.55,
+  };
+  await page.mouse.click(point.x, point.y, { button: 'right' });
   await expect
     .poll(() => menu.getByRole('menuitem').allTextContents())
     .toEqual(choices);
+  const contextBox = await menu.boundingBox();
+  expect(Math.abs(contextBox!.x - point.x)).toBeLessThan(14);
+  expect(Math.abs(contextBox!.y - point.y)).toBeLessThan(16);
   await page.keyboard.press('Escape');
   await legend.press('Shift+F10');
   await expect

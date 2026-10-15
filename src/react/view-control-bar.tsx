@@ -113,7 +113,7 @@ export function ViewControlBar({
                   <span className="altertable-picker-label">
                     {filter.label}
                   </span>
-                  <strong>{filter.summary}</strong>
+                  <span>{filter.summary}</span>
                 </Button>
               ))}
             </GradientScroll>

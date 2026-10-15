@@ -8,6 +8,9 @@ import {
 } from '@/src/react/ui/Menu';
 import {
   useRef,
+  useContext,
+  useLayoutEffect,
+  useState,
   type ComponentRef,
   type RefObject,
   type Ref,
@@ -15,6 +18,12 @@ import {
 } from 'react';
 import { useMergeRefs } from '@floating-ui/react';
 import { AppIcon } from '@/src/react/ui/icons';
+import { RootMenuTriggerStateContext } from 'react-aria-components';
+
+const contextPoints = new WeakMap<
+  HTMLButtonElement,
+  { x: number; y: number }
+>();
 
 /** A resolved action available for one displayed exploration item. */
 export type ExplorationAction = {
@@ -34,6 +43,8 @@ export type ExplorationActionControlProps = {
   ariaLabel: string;
   /** Use when another item-level hit target already exposes the primary action. */
   hidePrimary?: boolean;
+  /** Inline actions sit beside a label; stacked actions disclose choices below it. */
+  layout?: 'inline' | 'stacked';
   /** Shares this menu trigger with an item's context and keyboard actions. */
   ref?: Ref<HTMLButtonElement>;
   className?: string;
@@ -48,6 +59,7 @@ export function ExplorationActionControl({
   ariaLabel,
   className,
   hidePrimary = false,
+  layout = 'inline',
   ref,
 }: ExplorationActionControlProps) {
   const menuTrigger = useRef<ComponentRef<'button'> | null>(null);
@@ -75,14 +87,18 @@ export function ExplorationActionControl({
             ref={mergedTrigger}
             variant="ghost"
             size="icon-compact"
+            className="altertable-exploration-action-trigger"
             aria-label={`${ariaLabel}: more actions`}
           >
-            <AppIcon name="moreActions" />
+            <AppIcon
+              name={layout === 'stacked' ? 'disclosure' : 'moreActions'}
+            />
           </MenuButton>
           <ExplorationActionMenu
             actions={menuActions}
             ariaLabel={ariaLabel}
             triggerRef={menuTrigger}
+            placement={layout === 'stacked' ? 'bottom' : 'bottom start'}
           />
         </MenuTrigger>
       )}
@@ -95,37 +111,77 @@ export function ExplorationActionMenu({
   actions,
   ariaLabel,
   triggerRef,
+  placement = 'bottom end',
 }: Pick<ExplorationActionControlProps, 'actions' | 'ariaLabel'> & {
   triggerRef?: RefObject<ComponentRef<'button'> | null>;
+  placement?: 'bottom' | 'bottom start' | 'bottom end';
 }) {
+  const state = useContext(RootMenuTriggerStateContext);
+  const anchor = useRef<HTMLSpanElement>(null);
+  const [point, setPoint] = useState<{ x: number; y: number }>();
+  useLayoutEffect(() => {
+    const trigger = triggerRef?.current;
+    setPoint(state?.isOpen && trigger ? contextPoints.get(trigger) : undefined);
+    if (!state?.isOpen && trigger) contextPoints.delete(trigger);
+  }, [state?.isOpen, triggerRef]);
   return (
-    <MenuPopover placement="bottom end">
-      <Menu aria-label={`${ariaLabel} actions`}>
-        {actions.map(action => (
-          <MenuItem
-            key={action.id}
-            id={action.id}
-            onAction={() => action.onSelect(triggerRef?.current ?? undefined)}
-          >
-            {action.label}
-          </MenuItem>
-        ))}
-      </Menu>
-    </MenuPopover>
+    <>
+      {point && (
+        <span
+          ref={anchor}
+          aria-hidden="true"
+          style={{
+            position: 'fixed',
+            left: point.x,
+            top: point.y,
+            width: 0,
+            height: 0,
+          }}
+        />
+      )}
+      <MenuPopover
+        placement={point ? 'bottom start' : placement}
+        triggerRef={point ? anchor : triggerRef}
+        offset={point ? 2 : undefined}
+      >
+        <Menu aria-label={`${ariaLabel} actions`}>
+          {actions.map(action => (
+            <MenuItem
+              key={action.id}
+              id={action.id}
+              onAction={() => action.onSelect(triggerRef?.current ?? undefined)}
+            >
+              {action.label}
+            </MenuItem>
+          ))}
+        </Menu>
+      </MenuPopover>
+    </>
   );
 }
 
-/** Reuse the item's anchored menu for pointer and keyboard context requests. */
+/** Reuse the item's menu for pointer and keyboard context requests. */
 export function explorationMenuEvents(
   trigger: RefObject<HTMLButtonElement | null>
 ) {
-  function open(event: { preventDefault: () => void }) {
+  function open(
+    event: { preventDefault: () => void },
+    point?: { x: number; y: number }
+  ) {
     if (!trigger.current) return;
     event.preventDefault();
+    if (point) contextPoints.set(trigger.current, point);
+    else contextPoints.delete(trigger.current);
     trigger.current.click();
   }
   return {
-    onContextMenu: open,
+    onContextMenu: (event: {
+      preventDefault: () => void;
+      clientX: number;
+      clientY: number;
+    }) => {
+      open(event, { x: event.clientX, y: event.clientY });
+    },
     onKeyDown(event: KeyboardEvent<Element>) {
       if (
         event.key === 'ContextMenu' ||

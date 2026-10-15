@@ -165,7 +165,7 @@ function DataWidgetContent({
       aria-labelledby={props['aria-labelledby'] ?? titleId}
     >
       <header className="altertable-data-widget-header">
-        <div>
+        <div className="altertable-data-widget-heading-row">
           <Heading
             id={titleId}
             className="altertable-widget-heading"
@@ -178,15 +178,15 @@ function DataWidgetContent({
               </span>
             )}
           </Heading>
-          {description && <p>{description}</p>}
+          <div
+            className="altertable-data-widget-help"
+            data-has-action={!!action || undefined}
+          >
+            <WidgetStatusControl status={status} />
+            {action}
+          </div>
         </div>
-        <div
-          className="altertable-data-widget-help"
-          data-has-action={!!action || undefined}
-        >
-          <WidgetStatusControl status={status} />
-          {action}
-        </div>
+        {description && <p>{description}</p>}
       </header>
       {visual}
     </section>

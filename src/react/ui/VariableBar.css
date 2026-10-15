@@ -128,7 +128,7 @@
   max-inline-size: calc(100vw - 2 * var(--atbl-space-md));
   padding: var(--atbl-space-xs);
   border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-control);
+  border-radius: 999px;
   background: var(--atbl-surface);
   box-shadow: var(--atbl-shadow-overlay);
 }
@@ -150,4 +150,11 @@
 .altertable-filter-summaries > button {
   gap: var(--atbl-space-xs);
   font-size: var(--atbl-type-label-size);
+}
+
+.altertable-active-filters .altertable-button {
+  border-radius: 999px;
+}
+.altertable-filter-summaries > button {
+  font-weight: var(--atbl-type-meta-weight);
 }

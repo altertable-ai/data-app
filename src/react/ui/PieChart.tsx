@@ -248,8 +248,6 @@ export function PieChart<Row extends PieChartItem>({
                           <ChartLegend.Label className="altertable-pie-label">
                             {item.label}
                           </ChartLegend.Label>
-                          <strong>{formatValue(item.value)}</strong>
-                          <span>{percent(item.share)}</span>
                         </button>
                       ) : actions.length > 1 ? (
                         <MenuTrigger>
@@ -269,8 +267,6 @@ export function PieChart<Row extends PieChartItem>({
                             <ChartLegend.Label className="altertable-pie-label">
                               {item.label}
                             </ChartLegend.Label>
-                            <strong>{formatValue(item.value)}</strong>
-                            <span>{percent(item.share)}</span>
                           </MenuButton>
                           <ExplorationActionMenu
                             actions={actions}
@@ -293,8 +289,6 @@ export function PieChart<Row extends PieChartItem>({
                           <ChartLegend.Label className="altertable-pie-label">
                             {item.label}
                           </ChartLegend.Label>
-                          <strong>{formatValue(item.value)}</strong>
-                          <span>{percent(item.share)}</span>
                         </button>
                       )}
                     </Tooltip>
@@ -310,6 +304,12 @@ export function PieChart<Row extends PieChartItem>({
                         hidePrimary={Boolean(action)}
                       />
                     )}
+                    <strong className="altertable-pie-value">
+                      {formatValue(item.value)}
+                    </strong>
+                    <span className="altertable-pie-share">
+                      {percent(item.share)}
+                    </span>
                   </ChartLegend.Item>
                 );
               })}

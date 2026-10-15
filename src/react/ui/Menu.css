@@ -29,3 +29,18 @@
   margin: 4px 0;
   background: var(--atbl-border);
 }
+
+.altertable-exploration-action-trigger {
+  --atbl-control-hover-surface: transparent;
+  --atbl-control-pressed-surface: transparent;
+  --atbl-control-open-surface: transparent;
+  color: var(--atbl-text);
+}
+.altertable-exploration-action-trigger:is(
+  :hover,
+  [data-hovered],
+  [aria-expanded='true']
+) {
+  color: var(--atbl-accent);
+  background: transparent;
+}
