@@ -26,6 +26,8 @@ export type AppFilePreviewOptions = {
   port?: number;
   /** Server-only query backend; the caller owns credentials and profile selection. */
   lakehouse: Lakehouse;
+  /** Override data-app and React import resolution, such as for checkout development. */
+  resolveDependency?: (specifier: string) => string;
 };
 
 export type AppFilePreview = {
@@ -39,6 +41,7 @@ export async function serveAppFile({
   file: appFile,
   port = 25837,
   lakehouse,
+  resolveDependency,
 }: AppFilePreviewOptions): Promise<AppFilePreview> {
   if (
     !isAbsolute(appFile) ||
@@ -107,7 +110,9 @@ export async function serveAppFile({
             filter:
               /^(?:@altertable\/data-app(?:-react|-embed|-bun|-worker)?|react|react-dom)(?:\/.*)?$/,
           },
-          args => ({ path: resolvePreviewDependency(args.path) })
+          args => ({
+            path: (resolveDependency ?? resolvePreviewDependency)(args.path),
+          })
         );
         build.onResolve({ filter: /.*/ }, ({ path, resolveDir, importer }) => {
           if (!importer || !isAppInput(importer)) return undefined;
