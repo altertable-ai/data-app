@@ -27,7 +27,8 @@ const dataApp = defineDataApp({
   appearance: { theme: 'system' },
   queries: {
     products: {
-      statement: 'SELECT * FROM products WHERE org_id = $orgId LIMIT $limit',
+      statement:
+        'SELECT name, unit_price AS "unitPrice" FROM products WHERE org_id = $orgId LIMIT $limit',
       params: { orgId: {}, limit: { defaultValue: 10 } },
     },
   },
@@ -39,14 +40,17 @@ const products = dataApp.defineOperation({
   policy: { maxQueryRows: 100, maxDurationMs: 15000 },
   async run({ query }, input) {
     const result = await query('products', input);
-    return parseProducts(rowsAsRecords(result, ['name', 'price']));
+    return parseProducts(rowsAsRecords(result, ['name', 'unitPrice']));
   },
 });
 ```
 
 `parseProductInput()` and `parseProducts()` are app-owned example functions, not
 package exports. Validate filter values in the input parser. Parse query rows once, in
-`run`: the value it returns is the operation's data and type, sent to the view as is. `{}` declares a required parameter; `{ defaultValue }` supplies
+`run`: the value it returns is the operation's data and type, sent to the view as is.
+`rowsAsRecords()` keys each record by the exact SQL column names and rejects results
+missing a listed column. It does not convert `snake_case`; alias columns in SQL, as with
+`"unitPrice"`, or list and read the returned names. `{}` declares a required parameter; `{ defaultValue }` supplies
 a fallback. `query(name, params, { limit })` executes only registered queries and
 inherits the operation's row limit and cancellation signal.
 Declare at least one valid input in `checks`; use a nonempty tuple for checks
