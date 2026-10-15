@@ -191,7 +191,24 @@ test('render failure stays in one widget and rendering retry never reruns SQL', 
   await chart.getByRole('button', { name: 'Break visualization' }).click();
   await expect
     .poll(() => chart.getByRole('alert').textContent())
-    .toContain('Couldn’t display this widget');
+    .toContain('Couldn’t display results.');
+  const messageBox = await chart
+    .getByText('Couldn’t display results.', { exact: true })
+    .boundingBox();
+  const retryBox = await chart
+    .getByRole('button', { name: 'Retry', exact: true })
+    .boundingBox();
+  expect(messageBox).not.toBeNull();
+  expect(retryBox).not.toBeNull();
+  expect(
+    Math.abs(
+      messageBox!.y +
+        messageBox!.height / 2 -
+        retryBox!.y -
+        retryBox!.height / 2
+    )
+  ).toBeLessThan(3);
+
   expect(
     await page
       .getByRole('region', { name: 'Acquisition', exact: true })
@@ -201,7 +218,7 @@ test('render failure stays in one widget and rendering retry never reruns SQL', 
   await chart.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect
     .poll(() => chart.getByRole('alert').textContent())
-    .toContain('Couldn’t display this widget');
+    .toContain('Couldn’t display results.');
   await chart.getByRole('button', { name: 'Repair visualization' }).click();
   await chart.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect.poll(() => chart.textContent()).toContain('41 customers');
@@ -295,7 +312,7 @@ test('malformed rows fail normal operation parsing and recover through the same 
   });
   await expect
     .poll(() => chart.getByRole('alert').textContent())
-    .toContain('The data request failed');
+    .toContain('Couldn’t load results');
   await choose(page, 'Acquisition', 'Success');
   await chart.getByRole('button', { name: 'Retry', exact: true }).click();
   await page
@@ -475,7 +492,7 @@ test('an accepted result resets a render failure even when returned values are u
   await chart.getByRole('button', { name: 'Break visualization' }).click();
   await expect
     .poll(() => chart.getByRole('alert').textContent())
-    .toContain('Couldn’t display this widget');
+    .toContain('Couldn’t display results.');
   await chart.getByRole('button', { name: 'Repair visualization' }).click();
   await page.getByRole('button', { name: 'Refresh data', exact: true }).click();
   await page
@@ -483,4 +500,33 @@ test('an accepted result resets a render failure even when returned values are u
     .click();
   await expect.poll(() => chart.getByRole('alert').count()).toBe(0);
   await expect.poll(() => chart.textContent()).toContain('0 customers');
+});
+
+test('inline query errors wrap within a narrow widget while keeping recovery available', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 812 });
+  await page.goto('/recovery');
+  await choose(page, 'Acquisition', 'Unavailable');
+  await page
+    .getByRole('button', { name: 'Complete Acquisition', exact: true })
+    .click();
+  const chart = page.getByRole('region', {
+    name: 'Acquisition chart',
+    exact: true,
+  });
+  const alert = chart.getByRole('alert');
+  await expect
+    .poll(() => alert.textContent())
+    .toContain('Data source unavailable.');
+  expect(
+    await alert.getByRole('button', { name: 'Retry', exact: true }).isVisible()
+  ).toBe(true);
+  const bounds = await alert.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(320);
+  expect(
+    await alert.evaluate(element => element.scrollWidth <= element.clientWidth)
+  ).toBe(true);
 });

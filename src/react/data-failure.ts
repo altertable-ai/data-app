@@ -2,49 +2,39 @@ import { DataAppError } from '@/src/client/transport';
 
 const failures = {
   source_unauthorized: {
-    title: 'Connection needs attention',
-    message: 'Ask the app owner to reconnect the lakehouse.',
+    message: 'Connection unavailable. Ask the app owner to reconnect it.',
     retryable: false,
   },
   source_forbidden: {
-    title: 'Data access denied',
-    message:
-      'The selected profile cannot read this data. Ask the app owner for access.',
+    message: 'Data access denied. Ask the app owner for access.',
     retryable: false,
   },
   source_query_rejected: {
-    title: 'Couldn’t load results',
-    message: 'This data app’s query was rejected. Ask the app owner to fix it.',
+    message: 'Couldn’t load results. Ask the app owner to check the query.',
     retryable: false,
   },
   source_rate_limited: {
-    title: 'Data source is busy',
-    message: 'The lakehouse is handling too many requests.',
+    message: 'Data source is busy. Try again shortly.',
     retryable: true,
   },
   timeout: {
-    title: 'Request timed out',
-    message: 'The lakehouse took too long to respond.',
+    message: 'Request timed out.',
     retryable: true,
   },
   source_unavailable: {
-    title: 'Couldn’t load results',
-    message: 'The lakehouse isn’t responding.',
+    message: 'Couldn’t load results. Data source unavailable.',
     retryable: true,
   },
   invalid_input: {
-    title: 'Check the selected inputs',
-    message: 'Choose valid inputs and try again.',
+    message: 'Check the selected inputs.',
     retryable: false,
   },
   query_failed: {
-    title: 'Couldn’t load results',
-    message: 'The data request failed.',
+    message: 'Couldn’t load results.',
     retryable: true,
   },
   request_failed: {
-    title: 'Couldn’t load results',
-    message: 'The data request failed.',
+    message: 'Couldn’t load results.',
     retryable: true,
   },
 } as const;
@@ -69,14 +59,5 @@ export function getDataFailure(cause: unknown): DataFailure {
     message: failures[code].message,
     retryable: failures[code].retryable,
     ...(error?.requestId ? { requestId: error.requestId } : {}),
-  };
-}
-
-export function errorPresentation(cause: unknown) {
-  const failure = getDataFailure(cause);
-  return {
-    title: failures[failure.code].title,
-    description: failure.message,
-    retryable: failure.retryable,
   };
 }

@@ -1,5 +1,5 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
-import { errorPresentation } from '@/src/react/data-failure';
+import { getDataFailure } from '@/src/react/data-failure';
 import { Button } from '@/src/react/ui/Button';
 import { useInspectionDefaults } from '@/src/react/ui/InspectionContext';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';
@@ -62,7 +62,7 @@ export function DataSectionBoundary<Data, Input>({
       loadingFallback={loadingFallback}
       emptyFallback={<EmptyState {...fallback} />}
       error={cause => {
-        const presentation = errorPresentation(cause);
+        const presentation = getDataFailure(cause);
         const retryAction =
           error?.onRetry ??
           (presentation.retryable ? () => void result.refetch() : undefined);
@@ -70,14 +70,21 @@ export function DataSectionBoundary<Data, Input>({
         return (
           <StatusPanel
             status="error"
-            title={error?.title ?? presentation.title}
-            description={error?.description ?? presentation.description}
-            action={retryAction && <Button onClick={retryAction}>Retry</Button>}
+            layout="inline"
+            title={error?.title ?? presentation.message}
+            description={error?.description}
+            action={
+              retryAction && (
+                <Button variant="ghost" size="compact" onClick={retryAction}>
+                  Retry
+                </Button>
+              )
+            }
           />
         );
       }}
       staleError={cause =>
-        error?.onRetry || errorPresentation(cause).retryable ? (
+        error?.onRetry || getDataFailure(cause).retryable ? (
           <Button onClick={error?.onRetry ?? (() => void result.refetch())}>
             Retry
           </Button>

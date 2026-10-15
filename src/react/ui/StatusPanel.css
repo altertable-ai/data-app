@@ -55,3 +55,31 @@
     flex-direction: column;
   }
 }
+
+.altertable-status-panel[data-layout='inline'] {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--atbl-space-sm);
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.altertable-status-panel[data-layout='inline'] > svg {
+  flex: none;
+  margin: 0;
+}
+.altertable-status-panel[data-layout='inline'] .altertable-status-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.altertable-status-panel[data-layout='inline'] strong {
+  font-weight: var(--atbl-type-label-weight);
+}
+.altertable-status-panel[data-layout='inline'] .altertable-status-action {
+  grid-column: auto;
+}

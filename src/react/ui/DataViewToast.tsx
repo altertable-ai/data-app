@@ -1,4 +1,4 @@
-import { errorPresentation } from '@/src/react/data-failure';
+import { getDataFailure } from '@/src/react/data-failure';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { DataView } from '@/src/core/data-view';
 import { Toast } from '@/src/react/ui/Toast';
@@ -52,7 +52,7 @@ export function DataViewToast<Data, Input>({
     <Toast
       state={state}
       onRetry={
-        view.kind === 'stale-error' && !errorPresentation(view.error).retryable
+        view.kind === 'stale-error' && !getDataFailure(view.error).retryable
           ? undefined
           : onRetry
       }

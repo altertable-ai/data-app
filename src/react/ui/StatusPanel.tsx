@@ -4,6 +4,8 @@ import { AppIcon } from '@/src/react/ui/icons';
 
 export type StatusPanelProps = {
   status: 'loading' | 'empty' | 'error';
+  /** Compact feedback inside an existing surface. */
+  layout?: 'panel' | 'inline';
   title: ReactNode;
   description?: ReactNode;
   details?: ReactNode;
@@ -13,6 +15,7 @@ export type StatusPanelProps = {
 
 export function StatusPanel({
   status,
+  layout = 'panel',
   title,
   description,
   details,
@@ -27,6 +30,7 @@ export function StatusPanel({
       {...props}
       className={classNames('altertable-status-panel', className)}
       data-status={status}
+      data-layout={layout}
       role={role ?? (status === 'error' ? 'alert' : 'status')}
     >
       {status === 'error' && <AppIcon name="error" size={18} />}

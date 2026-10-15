@@ -1,5 +1,5 @@
 import { WidgetRequestContext } from '@/src/react/widget-request';
-import { errorPresentation } from '@/src/react/data-failure';
+import { getDataFailure } from '@/src/react/data-failure';
 import { StatusPanel } from '@/src/react/ui/StatusPanel';
 import { Button } from '@/src/react/ui/Button';
 import { getAnnotationProps } from '@/src/react/annotations/getAnnotationProps';
@@ -109,7 +109,7 @@ function DataWidgetContent({
   if (view?.kind === 'updating')
     status = { kind: 'updating', message: view.message };
   else if (view?.kind === 'stale-error') {
-    const presentation = errorPresentation(view.error);
+    const presentation = getDataFailure(view.error);
     status = {
       kind: 'error',
       message: view.message,
@@ -119,15 +119,21 @@ function DataWidgetContent({
     };
   } else if (request) status ??= { kind: 'idle' };
   if (view?.kind === 'error') {
-    const presentation = errorPresentation(view.error);
+    const presentation = getDataFailure(view.error);
     children = (
       <StatusPanel
         status="error"
-        title={presentation.title}
-        description={presentation.description}
+        layout="inline"
+        title={presentation.message}
         action={
           presentation.retryable && (
-            <Button onClick={() => void request?.refetch()}>Retry</Button>
+            <Button
+              variant="ghost"
+              size="compact"
+              onClick={() => void request?.refetch()}
+            >
+              Retry
+            </Button>
           )
         }
       />

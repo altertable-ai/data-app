@@ -92,7 +92,10 @@ export function WidgetRecovery<Data, Input>({
       fallback={retry =>
         inline ? (
           <span role="alert">
-            Couldn’t display value. <Button onClick={retry}>Retry</Button>
+            Couldn’t display value.{' '}
+            <Button variant="ghost" size="compact" onClick={retry}>
+              Retry
+            </Button>
           </span>
         ) : (
           <WidgetRequestContext
@@ -113,9 +116,13 @@ export function WidgetRecovery<Data, Input>({
             >
               <StatusPanel
                 status="error"
-                title="Couldn’t display this widget"
-                description="Try again. If this continues, ask the app owner to fix the visualization."
-                action={<Button onClick={retry}>Retry</Button>}
+                layout="inline"
+                title="Couldn’t display results."
+                action={
+                  <Button variant="ghost" size="compact" onClick={retry}>
+                    Retry
+                  </Button>
+                }
               />
             </DataWidget>
           </WidgetRequestContext>
