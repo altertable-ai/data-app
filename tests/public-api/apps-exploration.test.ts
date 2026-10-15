@@ -413,3 +413,71 @@ test('line and area day actions pass the selected calendar day', async ({
       .click();
   }
 });
+
+test('shared metric records links select the dashboard metric when story visuals reuse it', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/exploration?about=total&tab=records');
+  const inspection = page.getByRole('dialog', {
+    name: 'Order count',
+    exact: true,
+  });
+  await expect.poll(() => inspection.innerText()).toContain('order-1');
+  await inspection.getByRole('tab', { name: 'Queries', exact: true }).click();
+  await expect.poll(() => inspection.innerText()).toContain('SELECT sales');
+  expect(errors).toEqual([]);
+});
+
+test('pie ellipsis, slice context menu, and legend keyboard menu share trailing actions', async ({
+  page,
+}) => {
+  await page.goto('/exploration?menus=1&primary=1');
+  const slice = page.getByRole('button', {
+    name: 'Europe: 10 orders. View orders',
+    exact: true,
+  });
+  const legend = page.getByRole('button', {
+    name: 'Europe: 10 orders, 66.7%. View orders',
+    exact: true,
+  });
+  const more = page.getByRole('button', {
+    name: 'Europe actions: more actions',
+    exact: true,
+  });
+  await more.click();
+  const menu = page.getByRole('menu');
+  const choices = await menu.getByRole('menuitem').allTextContents();
+  expect(choices).toEqual(['Filter region']);
+  const triggerBox = await more.boundingBox();
+  const menuBox = await menu.boundingBox();
+  expect(
+    Math.abs(menuBox!.x + menuBox!.width - triggerBox!.x - triggerBox!.width)
+  ).toBeLessThan(12);
+  await page.keyboard.press('Escape');
+  await slice.click({ button: 'right' });
+  await expect
+    .poll(() => menu.getByRole('menuitem').allTextContents())
+    .toEqual(choices);
+  await page.keyboard.press('Escape');
+  await legend.press('Shift+F10');
+  await expect
+    .poll(() => menu.getByRole('menuitem').allTextContents())
+    .toEqual(choices);
+  await menu
+    .getByRole('menuitem', { name: 'Filter region', exact: true })
+    .click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('geography'))
+    .toContain('eu');
+  for (const trigger of [
+    slice,
+    legend,
+    page.getByRole('button', { name: 'Explore Order count', exact: true }),
+  ]) {
+    expect(
+      await trigger.evaluate(element => getComputedStyle(element).cursor)
+    ).toBe('pointer');
+  }
+});

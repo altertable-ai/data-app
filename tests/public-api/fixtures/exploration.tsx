@@ -325,18 +325,25 @@ const menuActions = places.actions(action => ({
     member: row => row.id,
   }),
 }));
-const pieMenuActions = orderPlaces.actions(action => ({
-  orders: action.detail({
-    label: 'View orders',
-    target: ordersView,
-    input: (row, displayed) => ({ ...displayed, placeId: row.id }),
+const pieMenuActions = orderPlaces.actions(
+  action => ({
+    orders: action.detail({
+      label: 'View orders',
+      target: ordersView,
+      input: (row, displayed) => ({ ...displayed, placeId: row.id }),
+    }),
+    filter: action.filter({
+      label: 'Filter region',
+      target: sales.hierarchy('geography'),
+      values: row => ({ region: row.id }),
+    }),
   }),
-  filter: action.filter({
-    label: 'Filter region',
-    target: sales.hierarchy('geography'),
-    values: row => ({ region: row.id }),
-  }),
-}));
+  {
+    primary: new URLSearchParams(location.search).has('primary')
+      ? 'orders'
+      : undefined,
+  }
+);
 const menus = new URLSearchParams(location.search).has('menus');
 const days = sales.dataset({
   name: 'Days',
@@ -456,7 +463,15 @@ function App() {
       view={sales}
       datasets={[places, orderPlaces, ...(showDays ? [days] : [])]}
       details={[ordersDetail, orderRecordDetail]}
-      story={() => []}
+      story={snapshot => [
+        {
+          id: 'overview',
+          headline: 'Order overview',
+          context: 'Every order in scope.',
+          visual: <MetricWidget metric={total} source={snapshot} />,
+          evidence: places,
+        },
+      ]}
     >
       <DataSection content={content} />
     </DataApp>

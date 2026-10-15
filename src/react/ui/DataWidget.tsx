@@ -180,7 +180,10 @@ function DataWidgetContent({
           </Heading>
           {description && <p>{description}</p>}
         </div>
-        <div className="altertable-data-widget-help">
+        <div
+          className="altertable-data-widget-help"
+          data-has-action={!!action || undefined}
+        >
           <WidgetStatusControl status={status} />
           {action}
         </div>

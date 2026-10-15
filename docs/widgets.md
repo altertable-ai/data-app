@@ -208,6 +208,10 @@ const placeActions = places.actions(
 Keep domain fields when adapting chart items. Bar, line, area, pie slices and
 pie legend items share the same action contract. One available action is direct;
 multiple actions use a menu. A declared `primary` remains direct beside that menu.
+Trailing action buttons use a horizontal ellipsis and align their menus to the
+end. Right-click or press Shift+F10 on a chart item or pie legend item to open the
+same menu. Breakdown controls keep the selected level visible beside an icon and
+retain their accessible names.
 Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.
 
 `view.filter()` targets ordinary scope variables; `view.hierarchy(key)` targets

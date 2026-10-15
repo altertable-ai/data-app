@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AppIcon } from '@/src/react/ui/icons';
+import { AppIcon, type AppIconName } from '@/src/react/ui/icons';
 
 /** Inline labels sit with the value; above and beside labels have a separate layout slot. */
 export type ControlLabelPlacement = 'inline' | 'above' | 'beside';
@@ -30,17 +30,23 @@ export function PickerTriggerContent({
   label,
   labelPlacement,
   value,
+  icon,
 }: {
   label: string;
   labelPlacement: ControlLabelPlacement;
   value: ReactNode;
+  icon?: AppIconName;
 }) {
   return (
     <>
-      {labelPlacement === 'inline' && (
-        <span className="altertable-picker-label" aria-hidden="true">
-          {label}
-        </span>
+      {icon ? (
+        <AppIcon name={icon} />
+      ) : (
+        labelPlacement === 'inline' && (
+          <span className="altertable-picker-label" aria-hidden="true">
+            {label}
+          </span>
+        )
       )}
       <strong className="altertable-picker-value">{value}</strong>
       <AppIcon name="disclosure" size={14} />

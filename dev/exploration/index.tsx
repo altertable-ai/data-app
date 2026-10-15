@@ -54,13 +54,13 @@ const context = createDataContext(operations.overview.queryNames)({
       term: 'Paid revenue',
       definition:
         'The sum of paid order amounts in USD, attributed to the order date. Refunded orders are excluded. This is sample data.',
-      queryNames: ['totals', 'places', 'days', 'records'],
+      queryNames: ['totals', 'places', 'days'],
     },
     orders: {
       term: 'Paid orders',
       definition:
         'One record per paid order in the selected dates and geography. Its contributing records use exactly the same inclusion rule.',
-      queryNames: ['totals', 'places', 'days', 'records'],
+      queryNames: ['totals', 'places', 'days'],
     },
     customers: {
       term: 'Paying customers',
@@ -68,6 +68,14 @@ const context = createDataContext(operations.overview.queryNames)({
         'Distinct customers with at least one paid order in scope. Customers are counted once across the period, so daily counts would not be additive.',
       queryNames: ['totals'],
     },
+  },
+});
+const recordsContext = createDataContext(operations.records.queryNames)({
+  description: context.description,
+  glossary: {
+    revenue: { ...context.glossary.revenue, queryNames: ['records'] },
+    orders: { ...context.glossary.orders, queryNames: ['records'] },
+    customers: { ...context.glossary.customers, queryNames: ['records'] },
   },
 });
 const view = hooks.defineDataView({
@@ -95,7 +103,7 @@ const recordsView = hooks.defineDetailView({
   id: 'paid-orders',
   title: 'Contributing paid orders',
   operation: 'records',
-  dataContext: context,
+  dataContext: recordsContext,
   parseInput: operations.records.input,
   describeInput: describeScope,
   isEmpty: data => !data.rows.length,
@@ -105,7 +113,7 @@ const orderView = hooks.defineDetailView({
   id: 'order',
   title: 'Order detail',
   operation: 'records',
-  dataContext: context,
+  dataContext: recordsContext,
   parseInput(value) {
     const input = operations.records.input(value);
     if (input.orderId === undefined) throw new Error('Choose an order.');
@@ -372,7 +380,7 @@ const content = view.content(source => (
             ? 'Paid revenue'
             : `Paid revenue by ${revenueBy.level(source.input.revenueBy, source.input.geography).label.toLowerCase()}`
         }
-          description="Select a bar to explore its scope or contributing paid orders."
+        description="Select a bar to explore its scope or contributing paid orders."
       >
         {(rows, actions) => (
           <BarChart

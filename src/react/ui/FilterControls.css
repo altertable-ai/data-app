@@ -162,7 +162,7 @@
   font-size: var(--atbl-control-text-size, var(--atbl-type-body-size));
   min-width: 90px;
 }
-.altertable-select-trigger > svg {
+.altertable-select-trigger > svg:last-child {
   flex: none;
   margin-inline-start: var(--atbl-space-sm);
   color: var(--atbl-muted);
@@ -261,6 +261,6 @@
   display: inline-flex;
   gap: 0;
 }
-.altertable-select-trigger.altertable-picker-trigger > svg {
+.altertable-select-trigger.altertable-picker-trigger > svg:last-child {
   margin-inline-start: auto;
 }

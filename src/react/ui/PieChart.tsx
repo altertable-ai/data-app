@@ -2,6 +2,7 @@ import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import {
   ExplorationActionControl,
+  explorationMenuEvents,
   ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from '@/src/react/ui/ExplorationActionControl';
@@ -106,6 +107,11 @@ export function PieChart<Row extends PieChartItem>({
                   slices
                     .filter(item => item.share > 0)
                     .map(item => {
+                      const menuTrigger = {
+                        get current() {
+                          return menuTriggers.current.get(item.id) ?? null;
+                        },
+                      };
                       const action = getPrimaryExplorationAction(
                         itemActions?.(item) ?? []
                       );
@@ -135,7 +141,11 @@ export function PieChart<Row extends PieChartItem>({
                             else if (opensMenu)
                               menuTriggers.current.get(item.id)?.click();
                           }}
+                          onContextMenu={
+                            explorationMenuEvents(menuTrigger).onContextMenu
+                          }
                           onKeyDown={event => {
+                            explorationMenuEvents(menuTrigger).onKeyDown(event);
                             if (
                               (action || opensMenu) &&
                               (event.key === 'Enter' || event.key === ' ')
@@ -153,6 +163,9 @@ export function PieChart<Row extends PieChartItem>({
                                 : undefined
                           }
                           role={action || opensMenu ? 'button' : undefined}
+                          data-atbl-control={
+                            action || opensMenu ? 'action' : undefined
+                          }
                           tabIndex={action || opensMenu ? 0 : undefined}
                           onPointerEnter={event => {
                             if (event.pointerType === 'mouse')
@@ -171,32 +184,18 @@ export function PieChart<Row extends PieChartItem>({
             {!showLegend &&
               slices.map(item => {
                 const actions = itemActions?.(item) ?? [];
-                if (getPrimaryExplorationAction(actions) || actions.length < 2)
-                  return null;
-                const menuTrigger: RefObject<ComponentRef<'button'> | null> = {
-                  get current() {
-                    return menuTriggers.current.get(item.id) ?? null;
-                  },
-                };
+                if (actions.length < 2) return null;
                 return (
                   <span key={item.id} className="altertable-sr-only">
-                    <MenuTrigger>
-                      <MenuButton
-                        ref={element => {
-                          if (element)
-                            menuTriggers.current.set(item.id, element);
-                          else menuTriggers.current.delete(item.id);
-                        }}
-                        aria-label={`${item.label} actions`}
-                      >
-                        {item.label} actions
-                      </MenuButton>
-                      <ExplorationActionMenu
-                        actions={actions}
-                        ariaLabel={`${item.label} actions`}
-                        triggerRef={menuTrigger}
-                      />
-                    </MenuTrigger>
+                    <ExplorationActionControl
+                      ref={element => {
+                        if (element) menuTriggers.current.set(item.id, element);
+                        else menuTriggers.current.delete(item.id);
+                      }}
+                      actions={actions}
+                      ariaLabel={`${item.label} actions`}
+                      hidePrimary
+                    />
                   </span>
                 );
               })}
@@ -234,9 +233,10 @@ export function PieChart<Row extends PieChartItem>({
                       {action ? (
                         <button
                           data-atbl-focus="ring"
-                          data-atbl-control="default"
+                          data-atbl-control="action"
                           type="button"
                           aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}. ${action.label}`}
+                          {...explorationMenuEvents(menuTrigger)}
                           onClick={event =>
                             action.onSelect(event.currentTarget)
                           }
@@ -254,6 +254,7 @@ export function PieChart<Row extends PieChartItem>({
                       ) : actions.length > 1 ? (
                         <MenuTrigger>
                           <MenuButton
+                            {...explorationMenuEvents(menuTrigger)}
                             ref={element => {
                               if (element)
                                 menuTriggers.current.set(item.id, element);
@@ -299,6 +300,11 @@ export function PieChart<Row extends PieChartItem>({
                     </Tooltip>
                     {action && actions.length > 1 && (
                       <ExplorationActionControl
+                        ref={element => {
+                          if (element)
+                            menuTriggers.current.set(item.id, element);
+                          else menuTriggers.current.delete(item.id);
+                        }}
                         actions={actions}
                         ariaLabel={`${item.label} actions`}
                         hidePrimary={Boolean(action)}

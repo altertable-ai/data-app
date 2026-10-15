@@ -23,7 +23,7 @@
   font-size: var(--atbl-type-label-size);
   font-weight: var(--atbl-type-label-weight);
 }
-.altertable-picker-trigger > svg {
+.altertable-picker-trigger > svg:last-child {
   flex: none;
   margin-left: auto;
   color: var(--atbl-muted);

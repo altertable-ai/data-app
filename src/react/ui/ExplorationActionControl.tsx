@@ -6,7 +6,15 @@ import {
   MenuPopover,
   MenuTrigger,
 } from '@/src/react/ui/Menu';
-import { useRef, type ComponentRef, type RefObject } from 'react';
+import {
+  useRef,
+  type ComponentRef,
+  type RefObject,
+  type Ref,
+  type KeyboardEvent,
+} from 'react';
+import { useMergeRefs } from '@floating-ui/react';
+import { AppIcon } from '@/src/react/ui/icons';
 
 /** A resolved action available for one displayed exploration item. */
 export type ExplorationAction = {
@@ -26,6 +34,8 @@ export type ExplorationActionControlProps = {
   ariaLabel: string;
   /** Use when another item-level hit target already exposes the primary action. */
   hidePrimary?: boolean;
+  /** Shares this menu trigger with an item's context and keyboard actions. */
+  ref?: Ref<HTMLButtonElement>;
   className?: string;
 };
 
@@ -38,8 +48,10 @@ export function ExplorationActionControl({
   ariaLabel,
   className,
   hidePrimary = false,
+  ref,
 }: ExplorationActionControlProps) {
   const menuTrigger = useRef<ComponentRef<'button'> | null>(null);
+  const mergedTrigger = useMergeRefs([menuTrigger, ref]);
   const primary = getPrimaryExplorationAction(actions);
   const menuActions = primary
     ? actions.filter(action => action !== primary)
@@ -60,10 +72,12 @@ export function ExplorationActionControl({
       {menuActions.length > 0 && (
         <MenuTrigger>
           <MenuButton
-            ref={menuTrigger}
+            ref={mergedTrigger}
+            variant="ghost"
+            size="icon-compact"
             aria-label={`${ariaLabel}: more actions`}
           >
-            More actions
+            <AppIcon name="moreActions" />
           </MenuButton>
           <ExplorationActionMenu
             actions={menuActions}
@@ -85,7 +99,7 @@ export function ExplorationActionMenu({
   triggerRef?: RefObject<ComponentRef<'button'> | null>;
 }) {
   return (
-    <MenuPopover>
+    <MenuPopover placement="bottom end">
       <Menu aria-label={`${ariaLabel} actions`}>
         {actions.map(action => (
           <MenuItem
@@ -99,6 +113,27 @@ export function ExplorationActionMenu({
       </Menu>
     </MenuPopover>
   );
+}
+
+/** Reuse the item's anchored menu for pointer and keyboard context requests. */
+export function explorationMenuEvents(
+  trigger: RefObject<HTMLButtonElement | null>
+) {
+  function open(event: { preventDefault: () => void }) {
+    if (!trigger.current) return;
+    event.preventDefault();
+    trigger.current.click();
+  }
+  return {
+    onContextMenu: open,
+    onKeyDown(event: KeyboardEvent<Element>) {
+      if (
+        event.key === 'ContextMenu' ||
+        (event.shiftKey && event.key === 'F10')
+      )
+        open(event);
+    },
+  };
 }
 
 /** The direct action for an item, when the action declaration supplies one. */

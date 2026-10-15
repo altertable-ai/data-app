@@ -15,10 +15,13 @@ import { SelectionMark } from '@/src/react/ui/SelectionMark';
 import { validateChoiceOptions, type ChoiceOption } from '@/src/core/variables';
 import { invariant } from '@/src/core/invariant';
 import { classNames } from '@/src/react/ui/classNames';
+import type { AppIconName } from '@/src/react/ui/icons';
 
 export type SelectProps = {
   label: string;
   labelPlacement?: ControlLabelPlacement;
+  /** Replace the inline text label with a decorative icon; the accessible label remains. */
+  icon?: AppIconName;
   options: readonly ChoiceOption[];
   value: string;
   onChange: (value: string) => void;
@@ -41,6 +44,7 @@ export function Select({
   className,
   align = 'start',
   labelPlacement = 'above',
+  icon,
   ...props
 }: SelectProps) {
   const inline = labelPlacement === 'inline';
@@ -72,6 +76,7 @@ export function Select({
           label={label}
           labelPlacement={labelPlacement}
           value={<SelectValue>{selected.label}</SelectValue>}
+          icon={icon}
         />
       </PressButton>
       <PopoverSurface

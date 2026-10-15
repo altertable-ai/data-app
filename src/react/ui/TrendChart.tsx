@@ -3,6 +3,7 @@ import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useChartScrollToEnd } from '@/src/react/ui/use-chart-scroll-to-end';
 import {
   ExplorationActionControl,
+  explorationMenuEvents,
   ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from '@/src/react/ui/ExplorationActionControl';
@@ -148,10 +149,11 @@ export function TrendChart<Row extends ChartItem>({
                           {action ? (
                             <button
                               data-atbl-focus="ring"
-                              data-atbl-control="default"
+                              data-atbl-control="action"
                               type="button"
                               className="altertable-trend-point"
                               aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. ${action.label}`}
+                              {...explorationMenuEvents(menuTrigger)}
                               onClick={event =>
                                 action.onSelect(event.currentTarget)
                               }
@@ -164,6 +166,7 @@ export function TrendChart<Row extends ChartItem>({
                           ) : actions.length > 1 ? (
                             <MenuTrigger>
                               <MenuButton
+                                {...explorationMenuEvents(menuTrigger)}
                                 ref={element => {
                                   if (element)
                                     menuTriggers.current.set(item.id, element);
@@ -201,6 +204,11 @@ export function TrendChart<Row extends ChartItem>({
                         </Tooltip>
                         {action && actions.length > 1 && (
                           <ExplorationActionControl
+                            ref={element => {
+                              if (element)
+                                menuTriggers.current.set(item.id, element);
+                              else menuTriggers.current.delete(item.id);
+                            }}
                             actions={actions}
                             ariaLabel={`${item.label} actions`}
                             hidePrimary={Boolean(action)}

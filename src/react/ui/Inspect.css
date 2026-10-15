@@ -24,6 +24,7 @@
     transition: opacity var(--atbl-duration-fast) var(--atbl-ease-standard);
   }
   :is(
+    .altertable-data-widget-help[data-has-action='true'],
     .altertable-metric-widget:hover .altertable-metric-help,
     .altertable-metric-widget:focus-within .altertable-metric-help,
     .altertable-data-widget:hover .altertable-data-widget-help,
