@@ -84,6 +84,7 @@ function createOperationLakehouse(
   const queries: DisclosedQuery[] = [];
   const lakehouse: Lakehouse = {
     async queryAll(statement, options) {
+      signal.throwIfAborted();
       if (!Number.isInteger(options.limit) || options.limit < 1)
         throw new Error('Query needs a positive row limit.');
       if (

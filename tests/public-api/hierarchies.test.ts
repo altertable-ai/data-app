@@ -80,7 +80,7 @@ test('chart breakdowns normalize independently against shared population', () =>
   const selected = geography.transition(geography.defaultValue, {
     region: 'eu',
   });
-  expect(orders.level('region', selected).id).toBe('customer');
+  expect(orders.level('region', selected).id).toBe('region');
   expect(revenue.level('order', selected).id).toBe('order');
 });
 
@@ -257,4 +257,135 @@ test('source declarations require member and the immediate parent binding', () =
       ],
     })
   ).toThrow('immediate parent');
+});
+
+test('invalid child membership under a valid parent is rejected before the business query', async () => {
+  const { operations, input } = sourceApp();
+  const calls: string[] = [];
+  const handler = createDataHandler(operations, async () => ({
+    queryParams: { tenant: 'trusted' },
+    lakehouse: {
+      async queryAll(statement) {
+        if (statement.includes('FROM regions')) {
+          calls.push('regions');
+          return {
+            columns: [{ name: 'value' }, { name: 'label' }],
+            rows: [['eu', 'Europe']],
+          };
+        }
+        if (statement.includes('FROM customers')) {
+          calls.push('customers');
+          return { columns: [{ name: 'value' }, { name: 'label' }], rows: [] };
+        }
+        calls.push('business');
+        return { columns: [], rows: [] };
+      },
+    },
+  }));
+  const response = await handler(
+    new Request('http://localhost/api/data/sales', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(input),
+    })
+  );
+  expect(response.status).toBe(400);
+  expect(calls).toEqual(['regions', 'customers']);
+});
+
+test('cancellation during a membership lookup prevents late business execution', async () => {
+  const { operations, hierarchy, input } = sourceApp();
+  let completeLookup: (() => void) | undefined;
+  let startLookup: (() => void) | undefined;
+  const started = new Promise<void>(resolve => {
+    startLookup = resolve;
+  });
+  let business = false;
+  const client = createDataClient({
+    operations,
+    lakehouse: {
+      async queryAll(statement) {
+        if (statement.includes('FROM regions')) {
+          startLookup!();
+          await new Promise<void>(resolve => {
+            completeLookup = resolve;
+          });
+          return {
+            columns: [{ name: 'value' }, { name: 'label' }],
+            rows: [['eu', 'Europe']],
+          };
+        }
+        business = true;
+        return { columns: [], rows: [] };
+      },
+    },
+  });
+  const controller = new AbortController();
+  const request = client.query(
+    'sales',
+    {
+      ...input,
+      geography: hierarchy.transition(hierarchy.defaultValue, { region: 'eu' }),
+    },
+    { signal: controller.signal }
+  );
+  const rejected = expect(request).rejects.toBeDefined();
+  await started;
+  controller.abort();
+  await rejected;
+  completeLookup!();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  expect(business).toBe(false);
+});
+
+test('HTTP automatically registers authorized selectors and exact selected labels separately from options', async () => {
+  const { operations, hierarchy } = sourceApp();
+  let authorized = 0;
+  let queried = 0;
+  const handler = createDataHandler(operations, async () => {
+    authorized++;
+    return {
+      queryParams: { tenant: 'trusted' },
+      lakehouse: {
+        async queryAll(statement, { params, limit }) {
+          queried++;
+          if (statement.includes('FROM regions'))
+            return {
+              columns: [{ name: 'value' }, { name: 'label' }],
+              rows: [['eu', 'Europe']],
+            };
+          expect(params).toEqual({
+            regionId: 'eu',
+            member: 999,
+            tenant: 'trusted',
+          });
+          expect(limit).toBe(2);
+          return {
+            columns: [{ name: 'value' }, { name: 'label' }],
+            rows: [[999, 'Beyond first page']],
+          };
+        },
+      },
+    };
+  });
+  // Generated controls request this selector without adding it to the author's operation registry.
+  const response = await handler(
+    new Request(
+      'http://localhost/api/data/__hierarchy%3Ageography%3Acustomer',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          scope: hierarchy.transition(hierarchy.defaultValue, { region: 'eu' }),
+          member: 999,
+        }),
+      }
+    )
+  );
+  expect(response.status).toBe(200);
+  expect((await response.json()).data).toEqual([
+    { value: 999, label: 'Beyond first page' },
+  ]);
+  expect(authorized).toBe(1);
+  expect(queried).toBe(2);
 });

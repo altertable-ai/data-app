@@ -426,6 +426,7 @@ export function defineOperation<
         );
       }
       await validateHierarchyInput(operation.input, input, query);
+      context.signal.throwIfAborted();
       return operation.run({ signal: context.signal, query }, input);
     },
   };

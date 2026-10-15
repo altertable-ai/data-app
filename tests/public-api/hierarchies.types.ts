@@ -46,12 +46,36 @@ app.defineHierarchy({
   key: 'geo',
   label: 'Geography',
   levels: [
-    // @ts-expect-error Source queries are registered names.
     {
       id: 'region',
       label: 'Region',
       valueType: 'string',
+      // @ts-expect-error Source queries are registered names.
       source: { query: 'unknown' },
+    },
+  ],
+});
+
+const nestedParser = geography.input(
+  (value: unknown) => ({
+    scope: geography.parse((value as { scope: unknown }).scope),
+  }),
+  { binding: input => input.scope }
+);
+const nested = nestedParser({});
+void nested.scope.selection.customer;
+// @ts-expect-error A nested binding does not invent a top-level hierarchy field.
+void nested.geography;
+hierarchyVariable({
+  key: 'source',
+  label: 'Source',
+  levels: [
+    {
+      id: 'region',
+      label: 'Region',
+      valueType: 'string',
+      // @ts-expect-error Static hierarchies cannot reference query sources.
+      source: { query: 'regions' },
     },
   ],
 });

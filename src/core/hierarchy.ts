@@ -68,13 +68,20 @@ export type HierarchyVariable<
     const Breakdowns extends Record<string, BreakdownVariable<Levels>> = {},
   >(
     parse: (value: unknown) => Input,
-    options?: {
+    options: {
       breakdowns?: Breakdowns;
-      binding?: (input: Input) => HierarchyScope<Levels>;
+      binding: (input: Input) => HierarchyScope<Levels>;
     }
   ): (
     value: unknown
-  ) => Input & { [Name in Key]: HierarchyScope<Levels> } & {
+  ) => Input & { [Name in keyof Breakdowns]: Levels[number]['id'] };
+  input<
+    Input,
+    const Breakdowns extends Record<string, BreakdownVariable<Levels>> = {},
+  >(
+    parse: (value: unknown) => Input,
+    options?: { breakdowns?: Breakdowns; binding?: never }
+  ): (value: unknown) => Input & { [Name in Key]: HierarchyScope<Levels> } & {
     [Name in keyof Breakdowns]: Levels[number]['id'];
   };
 };
@@ -89,6 +96,25 @@ export function selectedMember(
 
 /** Hierarchies own only population selections; each chart declares its own breakdown. */
 export function hierarchyVariable<
+  const Levels extends readonly (HierarchyLevel & {
+    source?: never;
+    options: NonNullable<HierarchyLevel['options']>;
+  })[],
+  const Key extends string,
+>(config: {
+  key: Key;
+  label: string;
+  levels: Levels & (Levels extends readonly [] ? never : unknown);
+  history?: HistoryMode;
+}): HierarchyVariable<Levels, Key> {
+  invariant(
+    config.levels.every(level => !level.source),
+    'Static hierarchies require options; use app.defineHierarchy for sources.'
+  );
+  return createHierarchy<Levels, Key>(config);
+}
+
+function createHierarchy<
   const Levels extends readonly HierarchyLevel[],
   const Key extends string,
 >(config: {
@@ -116,7 +142,8 @@ export function hierarchyVariable<
           typeof option.value === level.valueType &&
           (typeof option.value !== 'number' || Number.isFinite(option.value)) &&
           !!option.label.trim() &&
-          (index === 0 || option.parent !== undefined) &&
+          (index === 0 ||
+            typeof option.parent === levels[index - 1]!.valueType) &&
           (option.count === undefined ||
             (Number.isSafeInteger(option.count) && option.count >= 0))
       ),
@@ -303,14 +330,7 @@ export function hierarchyVariable<
         same: (left, right) => left === right,
         options(scope) {
           hierarchy.parse(scope);
-          // A selected ancestor is no longer a useful aggregation; retain the deepest level for entity inspection.
-          const first = Math.min(
-            levels.findLastIndex(
-              level => selectedMember(scope, level.id) !== null
-            ) + 1,
-            levels.length - 1
-          );
-          return levels.slice(first);
+          return levels;
         },
         level(value, scope) {
           const options = breakdown.options(scope);
@@ -320,7 +340,7 @@ export function hierarchyVariable<
       return breakdown;
     },
     input(parse, options) {
-      const parser = (value: unknown) => {
+      function parser(value: unknown) {
         const input = parse(value);
         invariant(
           input && typeof input === 'object',
@@ -352,7 +372,7 @@ export function hierarchyVariable<
         ) => infer Result
           ? Result
           : never;
-      };
+      }
       const previous = parserHierarchies.get(parse) ?? [];
       parserHierarchies.set(parser, [
         ...previous,
@@ -376,8 +396,26 @@ type ParserHierarchy = {
 };
 const parserHierarchies = new WeakMap<Function, readonly ParserHierarchy[]>();
 const sourceRegistries = new WeakMap<object, QueryDefinitions>();
-const operationSelectors = new WeakMap<object, DataOperations>();
-export class HierarchyMembershipError extends Error {}
+const selectorsKey = Symbol.for('@altertable/data-app/hierarchy-selectors');
+const selectorOwnerKey = Symbol.for(
+  '@altertable/data-app/hierarchy-selector-owner'
+);
+const membershipErrorKey = Symbol.for(
+  '@altertable/data-app/hierarchy-membership-error'
+);
+type OperationWithSelectors = DataOperation<any, any> & {
+  [selectorsKey]?: DataOperations;
+  [selectorOwnerKey]?: object;
+};
+export class HierarchyMembershipError extends Error {
+  readonly [membershipErrorKey] = true;
+  static [Symbol.hasInstance](value: unknown): boolean {
+    return (
+      value instanceof Error &&
+      (value as { [membershipErrorKey]?: unknown })[membershipErrorKey] === true
+    );
+  }
+}
 
 /** Internal parser capabilities never become author-supplied operation flags. */
 export async function validateHierarchyInput(
@@ -494,7 +532,7 @@ export function bindHierarchySources<
   config: { key: Key; label: string; levels: Levels },
   queries: QueryDefinitions
 ): HierarchyVariable<Levels, Key> {
-  const hierarchy = hierarchyVariable(config as never);
+  const hierarchy = createHierarchy(config as never);
   for (const [index, level] of config.levels.entries()) {
     if (!level.source) continue;
     const query = queries[level.source.query];
@@ -507,7 +545,8 @@ export function bindHierarchySources<
       invariant(
         parameter !== 'member' &&
           Object.hasOwn(query.params, parameter) &&
-          ancestors.includes(id),
+          ancestors.includes(id) &&
+          (!ancestors.includes(parameter) || parameter === id),
         'Invalid hierarchy parent binding.'
       );
     if (index > 0) {
@@ -538,6 +577,13 @@ export function attachHierarchySelectors(
       hierarchy.levels as readonly HierarchyLevel[]
     ).entries()) {
       if (!level.source) continue;
+      const registered = sourceRegistries.get(hierarchy)?.[level.source.query];
+      invariant(
+        registered &&
+          JSON.stringify(registered) ===
+            JSON.stringify(queries[level.source.query]),
+        'Hierarchy sources must belong to the operation query registry.'
+      );
       const name = hierarchySelectorName(hierarchy, level);
       selectors[name] = {
         input(value: unknown) {
@@ -551,7 +597,9 @@ export function attachHierarchySelectors(
             request.member === null ||
               (typeof request.member === level.valueType &&
                 (typeof request.member !== 'number' ||
-                  Number.isFinite(request.member))),
+                  Number.isFinite(request.member)) &&
+                (typeof request.member !== 'string' ||
+                  request.member.length <= 1000)),
             'Invalid requested member.'
           );
           invariant(
@@ -563,8 +611,9 @@ export function attachHierarchySelectors(
         },
         checks: [null],
         policy: {
-          ...operation.policy,
-          maxQueryRows: Math.max(200, operation.policy.maxQueryRows),
+          maxDurationMs: 15_000,
+          maxQueryRows: 200,
+          maxResponseBytes: 1_000_000,
         },
         queryNames: Object.fromEntries(
           Object.keys(queries).map(name => [name, name])
@@ -576,11 +625,11 @@ export function attachHierarchySelectors(
             member: string | number | null;
           }
         ) {
-          const query = (
+          function query(
             name: string,
             values: QueryParameters,
             options: { limit: number }
-          ) => {
+          ) {
             const definition = queries[name]!;
             return context.lakehouse.queryAll(definition.statement, {
               name,
@@ -592,7 +641,7 @@ export function attachHierarchySelectors(
               limit: options.limit,
               signal: context.signal,
             });
-          };
+          }
           await validateMembers(hierarchy, input.scope, query, index);
           const options = await loadHierarchyOptions(
             hierarchy,
@@ -609,9 +658,12 @@ export function attachHierarchySelectors(
           return options;
         },
       } as DataOperation<any, any>;
+      Object.defineProperty(selectors[name]!, selectorOwnerKey, {
+        value: hierarchy,
+      });
     }
   }
-  operationSelectors.set(operation, selectors);
+  Object.defineProperty(operation, selectorsKey, { value: selectors });
 }
 export function withHierarchySelectors<Operations extends DataOperations>(
   operations: Operations
@@ -619,11 +671,17 @@ export function withHierarchySelectors<Operations extends DataOperations>(
   const expanded: DataOperations = { ...operations };
   for (const operation of Object.values(operations))
     for (const [name, selector] of Object.entries(
-      operationSelectors.get(operation) ?? {}
+      (operation as OperationWithSelectors)[selectorsKey] ?? {}
     )) {
       invariant(
         !Object.hasOwn(operations, name),
         'Reserved hierarchy operation name.'
+      );
+      invariant(
+        !expanded[name] ||
+          (expanded[name] as OperationWithSelectors)[selectorOwnerKey] ===
+            (selector as OperationWithSelectors)[selectorOwnerKey],
+        'Hierarchy keys must be unique across the app.'
       );
       expanded[name] ??= selector;
     }

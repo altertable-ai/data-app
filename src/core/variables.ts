@@ -126,7 +126,7 @@ export function defineAppVariables<const Variables extends VariableCollection>(
     );
     for (const key of variable.urlKeys) {
       invariant(
-        !['view', 'about', 'tab', 'present', 'step'].includes(key),
+        !['view', 'about', 'tab', 'present', 'step', 'details'].includes(key),
         `Variable ${name} uses reserved URL key: ${key}.`
       );
       invariant(
@@ -198,17 +198,21 @@ export function validateChoiceOptions(options: readonly ChoiceOption[]) {
   );
 }
 
-export function choiceVariable<const Options extends readonly ChoiceOption[]>({
+export function choiceVariable<
+  const Options extends readonly ChoiceOption[],
+  const Presentation extends VariablePresentation | undefined = undefined,
+>({
   key,
   label,
   defaultValue,
   options,
   history = 'push',
   presentation,
-}: ScalarVariableOptions & {
+}: Omit<ScalarVariableOptions, 'presentation'> & {
+  presentation?: Presentation;
   defaultValue: NoInfer<Options[number]['id']>;
   options: Options & (Options extends readonly [] ? never : unknown);
-}): ChoiceVariable {
+}): ChoiceVariable & { presentation?: Presentation } {
   validateChoiceOptions(options);
   function valid(value: string) {
     return (
@@ -242,6 +246,7 @@ export function choiceVariable<const Options extends readonly ChoiceOption[]>({
 
 export function multiChoiceVariable<
   const Options extends readonly ChoiceOption[],
+  const Presentation extends VariablePresentation | undefined = undefined,
 >({
   key,
   label,
@@ -250,11 +255,12 @@ export function multiChoiceVariable<
   maxSelected = options.length,
   history = 'push',
   presentation,
-}: Omit<ScalarVariableOptions, 'defaultValue'> & {
+}: Omit<ScalarVariableOptions, 'defaultValue' | 'presentation'> & {
+  presentation?: Presentation;
   defaultValue?: readonly NoInfer<Options[number]['id']>[];
   options: Options & (Options extends readonly [] ? never : unknown);
   maxSelected?: number;
-}): MultiChoiceVariable {
+}): MultiChoiceVariable & { presentation?: Presentation } {
   validateChoiceOptions(options);
   invariant(
     Number.isSafeInteger(maxSelected) &&
