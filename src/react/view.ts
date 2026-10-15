@@ -41,27 +41,24 @@ export type ViewBindings<
 }>;
 
 type RequiredFilterBindingKeys<Variables extends VariableCollection, Input> = {
-  [Key in keyof Variables]: Variables[Key]['kind'] extends 'choice'
-    ? Extract<
-        Variables[Key]['presentation'],
-        { group: 'display' }
-      > extends never
-      ? never
-      : Key extends keyof Input
+  [Key in keyof Variables]: Variables[Key]['kind'] extends 'dateRange'
+    ? never
+    : Variables[Key]['kind'] extends 'choice'
+      ? [Input] extends [Record<Key, unknown>]
         ? ResolvedVariables<Variables>[Key] extends Input[Key]
           ? never
           : Key
         : Key
-    : Extract<
-          Variables[Key]['kind'],
-          'dimension' | 'numberFilter' | 'booleanFilter'
-        > extends never
-      ? never
-      : [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
-        ? [ResolvedVariables<Variables>[Key]] extends [Input[Key]]
-          ? never
+      : Extract<
+            Variables[Key]['presentation'],
+            { group: 'display' }
+          > extends never
+        ? [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
+          ? [ResolvedVariables<Variables>[Key]] extends [Input[Key]]
+            ? never
+            : Key
           : Key
-        : Key;
+        : never;
 }[keyof Variables];
 
 /** Derive compatible top-level filter bindings; require readers for other input shapes. */
@@ -215,10 +212,8 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
   }
   for (const [key, variable] of Object.entries(definition.variables)) {
     if (
-      !['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind) &&
-      !(
-        variable.kind === 'choice' && variable.presentation?.group === 'display'
-      )
+      variable.kind === 'dateRange' ||
+      (variable.presentation?.group === 'display' && variable.kind !== 'choice')
     )
       continue;
     const filter = variable as AppVariable<any>;

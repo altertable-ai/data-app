@@ -12,6 +12,8 @@ import {
 } from '@altertable/data-app/contract';
 import {
   choiceVariable,
+  searchVariable,
+  multiChoiceVariable,
   createDataContext,
   createDataHooks,
 } from '@altertable/data-app/react';
@@ -49,6 +51,8 @@ const hooks =
   createDataHooks(
     createDataClient<{
       flattened: DataOperation<{ org: string; windowId: string }, number>;
+      mappedSearch: DataOperation<{ query: string }, number>;
+      mappedChoices: DataOperation<{ selected: readonly string[] }, number>;
       direct: DataOperation<
         { organization: DimensionSelection<string>; window: string },
         number
@@ -198,12 +202,66 @@ hooks.defineDataView({
     active: input => input.filters.active,
   },
 });
-// Ordinary choices may map to different scalar operation fields.
+// Renamed scope choices need a reader for displayed-state freshness.
+// @ts-expect-error A renamed scope choice requires a binding.
 hooks.defineDataView({
   ...feedback,
   operation: 'flattened',
   variables: { window: variables.window },
   input: values => ({ org: '', windowId: values.window }),
+});
+hooks.defineDataView({
+  ...feedback,
+  operation: 'flattened',
+  variables: { window: variables.window },
+  input: values => ({ org: '', windowId: values.window }),
+  bindings: {
+    window: input => {
+      if (input.windowId !== '90') throw new Error('Invalid window');
+      return input.windowId;
+    },
+  },
+});
+
+const search = { search: searchVariable({ key: 'q', label: 'Search' }) };
+// @ts-expect-error A renamed search needs a reader.
+hooks.defineDataView({
+  ...feedback,
+  operation: 'mappedSearch',
+  variables: search,
+  input: values => ({ query: values.search }),
+});
+hooks.defineDataView({
+  ...feedback,
+  operation: 'mappedSearch',
+  variables: search,
+  input: values => ({ query: values.search }),
+  bindings: { search: input => input.query },
+});
+const selections = {
+  choices: multiChoiceVariable({
+    key: 'choices',
+    label: 'Choices',
+    options: [
+      { id: 'one', label: 'One' },
+      { id: 'two', label: 'Two' },
+    ],
+    defaultValue: [],
+  }),
+};
+// @ts-expect-error A renamed multi-choice needs a reader.
+hooks.defineDataView({
+  ...feedback,
+  operation: 'mappedChoices',
+  variables: selections,
+  input: values => ({ selected: values.choices }),
+});
+hooks.defineDataView({
+  ...feedback,
+  operation: 'mappedChoices',
+  variables: selections,
+  input: values => ({ selected: values.choices }),
+  bindings: { choices: input => input.selected },
 });
 
 const time = {

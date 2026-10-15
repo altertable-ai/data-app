@@ -1045,3 +1045,45 @@ test('removing the active period returns dates and comparison to their defaults'
   expect(params.has('end')).toBe(false);
   expect(params.has('compare')).toBe(false);
 });
+
+test('mapped scope choices keep actions available only for the displayed selection', async ({
+  page,
+}) => {
+  await page.goto('/exploration?menus=1');
+  const bars = page.getByRole('region', { name: 'Revenue bars', exact: true });
+  const mark = bars.getByRole('button', {
+    name: /^Europe: 10 USD\./,
+  });
+  await mark.click();
+  await expect
+    .poll(() =>
+      page.getByRole('menuitem', { name: 'Drill down', exact: true }).count()
+    )
+    .toBe(1);
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /Window/ }).click();
+  await page.getByRole('option', { name: 'Previous', exact: true }).click();
+  await mark.click({ button: 'right' });
+  await page
+    .getByRole('menuitem', { name: 'View orders', exact: true })
+    .waitFor();
+  expect(
+    await page
+      .getByRole('menuitem', { name: 'Drill down', exact: true })
+      .count()
+  ).toBe(0);
+  await page.getByRole('menu').press('Escape');
+  await expect.poll(() => page.getByRole('menu').count()).toBe(0);
+  await page.evaluate(() => window.dispatchEvent(new Event('release-sales')));
+  await expect
+    .poll(() =>
+      page.locator('output[aria-label="Displayed breakdowns"]').textContent()
+    )
+    .toContain('"windowId":"previous"');
+  await mark.click();
+  await expect
+    .poll(() =>
+      page.getByRole('menuitem', { name: 'Drill down', exact: true }).count()
+    )
+    .toBe(1);
+});

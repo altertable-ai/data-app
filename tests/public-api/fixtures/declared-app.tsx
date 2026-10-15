@@ -16,12 +16,12 @@ type TransportResponse = Awaited<ReturnType<DataTransport>>;
 
 const pending = new Map<string, (response: TransportResponse) => void>();
 const client = createDataClient<{
-  alpha: DataOperation<{ version: number }, { count: number }>;
+  alpha: DataOperation<{ version: string }, { count: number }>;
   beta: DataOperation<Record<string, never>, { count: number }>;
 }>({
   transport(name, input, signal) {
     const version =
-      name === 'alpha' ? (input as { version: number }).version : 1;
+      name === 'alpha' ? (input as { version: string }).version : 1;
     const key = [name, version].join(':');
     document.body.dataset[`${name}Requests`] = String(
       Number(document.body.dataset[`${name}Requests`] ?? 0) + 1
@@ -54,7 +54,6 @@ const alpha = hooks.defineDataView({
       defaultValue: '1',
     }),
   },
-  input: values => ({ version: Number(values.version) }),
   describeInput: input => `version ${input.version}`,
   isEmpty: () => false,
   emptyFallback: { title: 'No alpha' },

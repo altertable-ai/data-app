@@ -43,7 +43,7 @@ const relatedSearch = new URLSearchParams(location.search).has('relatedSearch');
 if (relatedSearch)
   catalog.people.push({ id: 99, name: 'Alpha person', team: 'Design' });
 const client = createDataClient<{
-  catalog: DataOperation<{ q: string }, typeof catalog>;
+  catalog: DataOperation<{ q: string; notes?: string }, typeof catalog>;
 }>({
   async transport(_name, value) {
     document.body.dataset.requests = String(
@@ -90,7 +90,7 @@ if (new URLSearchParams(location.search).has('noSearch')) {
 const view = createDataHooks(client).defineDataView({
   operation: 'catalog',
   variables: searchVariables,
-  input: values => ({ q: values.q ?? '' }),
+  input: values => ({ ...values, q: values.q ?? '' }),
   dataContext: createDataContext({ catalog: 'catalog' })({
     description: 'Illustrative people and projects.',
     glossary: {

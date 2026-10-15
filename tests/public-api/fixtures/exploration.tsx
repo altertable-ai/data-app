@@ -95,13 +95,24 @@ const ordersBy = choiceVariable({
   options: choices,
   presentation: { group: 'display', control: 'widget' },
 });
+const windowChoice = choiceVariable({
+  key: 'window',
+  label: 'Window',
+  defaultValue: 'recent',
+  options: [
+    { id: 'recent', label: 'Recent' },
+    { id: 'previous', label: 'Previous' },
+  ],
+});
 const search = searchVariable({ key: 'q', label: 'Search' });
 const parseInput = variableInput(
   (value: unknown) => {
-    const input = value as { search: unknown };
+    const input = value as { search: unknown; windowId: unknown };
     if (!input || typeof input.search !== 'string')
       throw new Error('Invalid search');
-    return { search: input.search };
+    if (input.windowId !== 'recent' && input.windowId !== 'previous')
+      throw new Error('Invalid window');
+    return { search: input.search, windowId: input.windowId } as const;
   },
   { ...filters, revenueBy, ordersBy }
 );
@@ -130,6 +141,7 @@ const operations = {
     checks: [
       {
         search: '',
+        windowId: 'recent',
         ...defaultFilters,
         revenueBy: 'region',
         ordersBy: 'region',
@@ -138,6 +150,16 @@ const operations = {
     policy: { maxQueryRows: 200, maxDurationMs: 10000 },
     async run({ query, signal }, input) {
       await query('sales');
+      if (input.windowId === 'previous')
+        await new Promise<void>((resolve, reject) => {
+          window.addEventListener('release-sales', () => resolve(), {
+            once: true,
+            signal,
+          });
+          signal.addEventListener('abort', () => reject(signal.reason), {
+            once: true,
+          });
+        });
       if (input.search === 'delay')
         await new Promise<void>((resolve, reject) => {
           const timer = setTimeout(resolve, 600);
@@ -239,7 +261,9 @@ const context = createDataContext({
 const sales = hooks.defineDataView({
   operation: 'sales',
   dataContext: context,
-  variables: { ...filters, revenueBy, ordersBy, search },
+  variables: { ...filters, revenueBy, ordersBy, search, window: windowChoice },
+  input: ({ window, ...values }) => ({ ...values, windowId: window }),
+  bindings: { window: input => input.windowId },
   describeInput: input => describeFilters(input),
   isEmpty: () => false,
   emptyFallback: { title: 'No sales' },
@@ -247,7 +271,9 @@ const sales = hooks.defineDataView({
 const otherSales = hooks.defineDataView({
   operation: 'sales',
   dataContext: context,
-  variables: { ...filters, revenueBy, ordersBy, search },
+  variables: { ...filters, revenueBy, ordersBy, search, window: windowChoice },
+  input: ({ window, ...values }) => ({ ...values, windowId: window }),
+  bindings: { window: input => input.windowId },
   describeInput: describeFilters,
   isEmpty: () => false,
   emptyFallback: { title: 'No sales' },
@@ -565,6 +591,7 @@ const content = sales.content(source => (
                 revenue: source.input.revenueBy,
                 orders: source.input.ordersBy,
                 search: source.input.search,
+                windowId: source.input.windowId,
               })}
         </output>
       )}
