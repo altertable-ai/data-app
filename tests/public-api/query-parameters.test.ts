@@ -8,23 +8,23 @@ import { createDataHandler } from '@altertable/data-app/server';
 
 const app = defineDataApp({
   title: 'Parameters',
-  description: 'Resolve typed values from their declared owner.',
+  description: 'Resolve typed parameters from host, caller, and defaults.',
   scope: { organization: 'demo', environment: 'test' },
   queries: {
     values: {
       statement: 'SELECT $search, $limit, $enabled, $region, $orgId',
       projections: { value: { type: 'number' } },
       params: {
-        search: { type: 'string', source: 'input' },
-        limit: { type: 'number', source: 'input', defaultValue: 10 },
-        enabled: { type: 'boolean', source: 'input', defaultValue: false },
+        search: { type: 'string' },
+        limit: { type: 'number', defaultValue: 10 },
+        enabled: { type: 'boolean', defaultValue: false },
         region: {
           type: 'string',
           nullable: true,
-          source: 'input',
+
           defaultValue: null,
         },
-        orgId: { type: 'string', source: 'context' },
+        orgId: { type: 'string' },
       },
     },
   },
@@ -62,14 +62,12 @@ async function execute(
   return { status: response.status, delivered };
 }
 
-test('query values come only from their declared owner and defaults preserve falsy values', async () => {
+test('host values are protected and caller values and defaults preserve falsy values', async () => {
   expect(
     await execute(
       { search: '', limit: 0, enabled: false, region: null },
       {
         orgId: 'trusted',
-        search: 'not-input',
-        limit: 999,
         unrelated: 'ignored',
       }
     )
@@ -102,9 +100,9 @@ test('query values come only from their declared owner and defaults preserve fal
     ],
   });
 });
-test('malformed parameter values and ownership violations fail before SQL execution', async () => {
+test('malformed parameters and context overrides fail before SQL execution', async () => {
   for (const [values, context] of [
-    [{}, { orgId: 'trusted', search: 'cannot-fill-input' }],
+    [{}, { orgId: 'trusted' }],
     [{ search: 'text' }, {}],
     [{ search: 'text' }, { orgId: 123 }],
     [{ search: 'text', orgId: 'spoofed' }, { orgId: 'trusted' }],
@@ -119,4 +117,21 @@ test('malformed parameter values and ownership violations fail before SQL execut
       delivered: [],
     });
   }
+});
+
+test('host context can supply any declared parameter', async () => {
+  expect(
+    await execute({}, { orgId: 'trusted', search: 'host', limit: 5 })
+  ).toEqual({
+    status: 200,
+    delivered: [
+      {
+        orgId: 'trusted',
+        search: 'host',
+        limit: 5,
+        enabled: false,
+        region: null,
+      },
+    ],
+  });
 });

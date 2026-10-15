@@ -21,34 +21,21 @@ const dataApp = defineDataApp({
       statement:
         'SELECT org_id FROM products WHERE org_id = $orgId LIMIT $limit',
       params: {
-        orgId: { type: 'string', source: 'input' },
-        limit: { type: 'number', source: 'input', defaultValue: 10 },
+        orgId: { type: 'string' },
+        limit: { type: 'number', defaultValue: 10 },
       },
     },
   },
 });
 
-function products(
-  values: Record<string, unknown> = {},
-  source: 'input' | 'context' = 'input'
-) {
-  const definition: QueryDefinitions[string] = {
-    ...dataApp.queries.products,
-    params: {
-      ...dataApp.queries.products.params,
-      orgId:
-        source === 'context'
-          ? { type: 'string', source: 'context' }
-          : { type: 'string', source: 'input' },
-    },
-  };
+function products(values: Record<string, unknown> = {}) {
+  const definition: QueryDefinitions[string] = dataApp.queries.products;
   return defineOperation({
     // @ts-expect-error Exercise an intentionally erased runtime registry.
     queries: { products: definition },
     input: parseEmptyInput,
     checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
-    // @ts-expect-error The intentionally erased registry also lacks a provable JSON result contract.
     async run({ query }) {
       // @ts-expect-error Exercise runtime validation of an untyped parameter bag.
       return query('products', values);
@@ -156,7 +143,7 @@ test('HTTP authorization supplies protected parameter values and callers cannot 
   const statements: DeliveredQuery[] = [];
   for (const values of [{}, { orgId: 'other-org' }]) {
     const handler = createDataHandler(
-      { products: products(values, 'context') },
+      { products: products(values) },
       async () => ({
         lakehouse: source(statements),
 
@@ -186,7 +173,7 @@ test('registry validation checks declarations and defaults without interpreting 
     {
       statement: 'SELECT $value',
       params: {
-        value: { type: 'number', source: 'input', defaultValue: Infinity },
+        value: { type: 'number', defaultValue: Infinity },
       },
       projections: { value: { type: 'number' } },
     },
@@ -219,10 +206,10 @@ test('query delivery preserves SQL and parameter values for backend interpretati
         projections: { org_id: { type: 'string' } } as const,
         statement,
         params: {
-          text: { type: 'string', source: 'input' },
-          number: { type: 'number', source: 'input', defaultValue: 0 },
-          boolean: { type: 'boolean', source: 'input', defaultValue: false },
-          nullable: { type: 'null', source: 'input', defaultValue: null },
+          text: { type: 'string' },
+          number: { type: 'number', defaultValue: 0 },
+          boolean: { type: 'boolean', defaultValue: false },
+          nullable: { type: 'null', defaultValue: null },
         },
       },
     },
@@ -289,7 +276,7 @@ test('SQL placeholders and syntax are passed to the backend without inspection',
       params: {
         value: {
           type: 'string',
-          source: 'input',
+
           defaultValue: 'raw\nvalue\0',
         },
       },
@@ -326,7 +313,7 @@ test('app definitions keep their query registries independent', async () => {
       count: {
         projections: { org_id: { type: 'string' } } as const,
         statement: 'SELECT $limit',
-        params: { limit: { type: 'number', source: 'input', defaultValue: 3 } },
+        params: { limit: { type: 'number', defaultValue: 3 } },
       },
     },
   });
@@ -339,7 +326,7 @@ test('app definitions keep their query registries independent', async () => {
       count: {
         projections: { org_id: { type: 'string' } } as const,
         statement: 'SELECT $limit + 1',
-        params: { limit: { type: 'number', source: 'input', defaultValue: 7 } },
+        params: { limit: { type: 'number', defaultValue: 7 } },
       },
     },
   });
@@ -375,7 +362,7 @@ test('the app owns one immutable registry independent of later caller mutations'
       selected: {
         projections: { org_id: { type: 'string' } } as const,
         statement: 'SELECT $value',
-        params: { value: { type: 'number', source: 'input', defaultValue: 3 } },
+        params: { value: { type: 'number', defaultValue: 3 } },
       },
     },
   } satisfies DataAppConfig;
@@ -385,7 +372,7 @@ test('the app owns one immutable registry independent of later caller mutations'
     selected: {
       projections: { org_id: { type: 'string' } } as const,
       statement: 'SELECT $value + 1',
-      params: { value: { type: 'number', source: 'input', defaultValue: 7 } },
+      params: { value: { type: 'number', defaultValue: 7 } },
     },
   };
   originalQueries.selected.statement = 'SELECT 99';
@@ -418,7 +405,7 @@ test('the app owns one immutable registry independent of later caller mutations'
   }).query('selected', {});
   expect(app.queries.selected).toEqual({
     statement: 'SELECT $value',
-    params: { value: { type: 'number', source: 'input', defaultValue: 3 } },
+    params: { value: { type: 'number', defaultValue: 3 } },
     projections: { org_id: { type: 'string' } },
   });
   expect(statements).toEqual([

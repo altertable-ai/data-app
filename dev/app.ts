@@ -24,13 +24,13 @@ FROM demo.customers c LEFT JOIN demo.orders o ON o.customer_id = c.id AND o.orde
 WHERE ($countryMode = 'all' OR CASE WHEN $countryMode = 'include' THEN c.country IS NOT DISTINCT FROM $country ELSE c.country IS DISTINCT FROM $country END)
 GROUP BY c.country ORDER BY revenue DESC, c.country`,
       params: {
-        start: { type: 'string', source: 'input' },
-        end: { type: 'string', source: 'input' },
-        countryMode: { type: 'string', source: 'input', defaultValue: 'all' },
+        start: { type: 'string' },
+        end: { type: 'string' },
+        countryMode: { type: 'string', defaultValue: 'all' },
         country: {
           type: 'string',
           nullable: true,
-          source: 'input',
+
           defaultValue: null,
         },
       },
@@ -46,13 +46,13 @@ LEFT JOIN (
 ) o ON CAST(o.ordered_at AS DATE) = CAST(g.day AS DATE)
 GROUP BY 1 ORDER BY 1`,
       params: {
-        start: { type: 'string', source: 'input' },
-        end: { type: 'string', source: 'input' },
-        countryMode: { type: 'string', source: 'input', defaultValue: 'all' },
+        start: { type: 'string' },
+        end: { type: 'string' },
+        countryMode: { type: 'string', defaultValue: 'all' },
         country: {
           type: 'string',
           nullable: true,
-          source: 'input',
+
           defaultValue: null,
         },
       },
@@ -68,13 +68,13 @@ SELECT CASE WHEN o.amount < 100 THEN 'Under $100' WHEN o.amount < 250 THEN '$100
 FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id WHERE o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY AND ($countryMode = 'all' OR CASE WHEN $countryMode = 'include' THEN c.country IS NOT DISTINCT FROM $country ELSE c.country IS DISTINCT FROM $country END)
 GROUP BY band ORDER BY min(o.amount)`,
       params: {
-        start: { type: 'string', source: 'input' },
-        end: { type: 'string', source: 'input' },
-        countryMode: { type: 'string', source: 'input', defaultValue: 'all' },
+        start: { type: 'string' },
+        end: { type: 'string' },
+        countryMode: { type: 'string', defaultValue: 'all' },
         country: {
           type: 'string',
           nullable: true,
-          source: 'input',
+
           defaultValue: null,
         },
       },
@@ -94,16 +94,16 @@ SELECT count(o.id) AS order_count,
 FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
 WHERE $enabled AND o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY AND ($countryMode = 'all' OR CASE WHEN $countryMode = 'include' THEN c.country IS NOT DISTINCT FROM $country ELSE c.country IS DISTINCT FROM $country END)`,
       params: {
-        start: { type: 'string', source: 'input' },
-        end: { type: 'string', source: 'input' },
-        countryMode: { type: 'string', source: 'input', defaultValue: 'all' },
+        start: { type: 'string' },
+        end: { type: 'string' },
+        countryMode: { type: 'string', defaultValue: 'all' },
         country: {
           type: 'string',
           nullable: true,
-          source: 'input',
+
           defaultValue: null,
         },
-        enabled: { type: 'boolean', source: 'input', defaultValue: false },
+        enabled: { type: 'boolean', defaultValue: false },
       },
     },
     orders: {
@@ -123,13 +123,13 @@ FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
 WHERE o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST($end AS DATE) + INTERVAL 1 DAY AND ($countryMode = 'all' OR CASE WHEN $countryMode = 'include' THEN c.country IS NOT DISTINCT FROM $country ELSE c.country IS DISTINCT FROM $country END)
 ORDER BY o.ordered_at DESC, o.id DESC LIMIT 100`,
       params: {
-        start: { type: 'string', source: 'input' },
-        end: { type: 'string', source: 'input' },
-        countryMode: { type: 'string', source: 'input', defaultValue: 'all' },
+        start: { type: 'string' },
+        end: { type: 'string' },
+        countryMode: { type: 'string', defaultValue: 'all' },
         country: {
           type: 'string',
           nullable: true,
-          source: 'input',
+
           defaultValue: null,
         },
       },
@@ -152,13 +152,13 @@ SELECT i.order_id, p.name, p.category, i.quantity, CAST(i.unit_price AS DOUBLE) 
 FROM recent r JOIN demo.order_items i ON i.order_id = r.id JOIN demo.products p ON p.id = i.product_id
 ORDER BY i.order_id DESC, p.id`,
       params: {
-        start: { type: 'string', source: 'input' },
-        end: { type: 'string', source: 'input' },
-        countryMode: { type: 'string', source: 'input', defaultValue: 'all' },
+        start: { type: 'string' },
+        end: { type: 'string' },
+        countryMode: { type: 'string', defaultValue: 'all' },
         country: {
           type: 'string',
           nullable: true,
-          source: 'input',
+
           defaultValue: null,
         },
       },

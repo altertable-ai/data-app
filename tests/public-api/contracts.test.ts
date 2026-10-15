@@ -67,7 +67,7 @@ test('a calendar and dimension declaration validates and escapes the input used 
           statement:
             'SELECT count FROM activity WHERE region = $region OR region IS NULL',
           params: {
-            region: { type: 'string', nullable: true, source: 'input' },
+            region: { type: 'string', nullable: true },
           },
         },
       },

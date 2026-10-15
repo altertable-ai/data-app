@@ -72,71 +72,18 @@ async function verifyResults() {
 }
 void verifyResults;
 
-async function date() {
-  return new Date();
+const clock = defineOperation({
+  ...definition,
+  async run() {
+    return new Date('2026-01-01');
+  },
+});
+async function verifyInferredOutput() {
+  const response = await createDataClient({ operations: { clock } }).query(
+    'clock',
+    {}
+  );
+  const date: Date = response.data;
+  return date;
 }
-// @ts-expect-error Dates become strings on the wire.
-defineOperation({ ...definition, run: date });
-// @ts-expect-error Bound operations share the same inferred output contract.
-app.defineOperation({ ...definition, run: date });
-async function nestedDate() {
-  return { rows: [{ date: new Date() }] };
-}
-// @ts-expect-error JSON compatibility applies to nested values.
-defineOperation({ ...definition, run: nestedDate });
-async function map() {
-  return new Map<string, number>();
-}
-// @ts-expect-error Maps do not retain their API through JSON.
-defineOperation({ ...definition, run: map });
-async function set() {
-  return new Set<string>();
-}
-// @ts-expect-error Sets do not retain their API through JSON.
-defineOperation({ ...definition, run: set });
-async function bigint() {
-  return { count: 1n };
-}
-// @ts-expect-error Bigint has no JSON representation.
-defineOperation({ ...definition, run: bigint });
-async function callback() {
-  return { read: () => 1 };
-}
-// @ts-expect-error Functions are dropped by JSON serialization.
-defineOperation({ ...definition, run: callback });
-async function missing() {
-  return undefined;
-}
-// @ts-expect-error A root undefined would drop the data field.
-defineOperation({ ...definition, run: missing });
-async function requiredUndefined(): Promise<{ count: number | undefined }> {
-  return { count: undefined };
-}
-// @ts-expect-error Required fields cannot disappear during delivery.
-defineOperation({ ...definition, run: requiredUndefined });
-async function undefinedEntry() {
-  return [undefined];
-}
-// @ts-expect-error Undefined array entries become null.
-defineOperation({ ...definition, run: undefinedEntry });
-async function optionalEntry(): Promise<readonly [string?]> {
-  return [];
-}
-// @ts-expect-error Optional tuple entries may contain undefined, which becomes null.
-defineOperation({ ...definition, run: optionalEntry });
-async function unknownResult(): Promise<unknown> {
-  return report;
-}
-// @ts-expect-error An output annotation cannot erase the result contract.
-defineOperation({ ...definition, run: unknownResult });
-const erasedDefinition = { ...definition, run: unknownResult };
-// @ts-expect-error An explicit unknown type argument cannot bypass the result contract.
-defineOperation<Record<string, never>, unknown, {}>(erasedDefinition);
-// @ts-expect-error An explicit any type argument cannot bypass the result contract.
-defineOperation<Record<string, never>, any, {}>({ ...definition, run: date });
-const secret = Symbol('secret');
-async function symbols() {
-  return { [secret]: 'hidden', label: 'visible' };
-}
-// @ts-expect-error Symbol properties are not carried over JSON.
-defineOperation({ ...definition, run: symbols });
+void verifyInferredOutput;

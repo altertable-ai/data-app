@@ -16,7 +16,7 @@ function operation() {
       count: {
         projections: { count: { type: 'number' } } as const,
         statement: 'SELECT $count',
-        params: { count: { type: 'number', source: 'input' } },
+        params: { count: { type: 'number' } },
       },
     },
     policy: { maxQueryRows: 2, maxDurationMs: 100 },
@@ -242,7 +242,7 @@ test('an authorized client queries an operation with validated input and query e
         count: {
           projections: { count: { type: 'number' } } as const,
           statement: 'SELECT $count',
-          params: { count: { type: 'number', source: 'input' } },
+          params: { count: { type: 'number' } },
         },
       },
       policy: { maxQueryRows: 2, maxDurationMs: 1000 },

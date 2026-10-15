@@ -24,8 +24,7 @@ export const handleDataRequest = createDataHandler(
 The app supplies `authenticate()` and `lakehouseFor()`, then routes `/api/data/*`
 requests to the handler. Authorize every viewer and operation, and scope the
 returned lakehouse to the viewer's permitted data. Supply trusted registry
-parameters through `queryParams`, declared with `source: 'context'` in the query.
-Query callers cannot override them. Origin and Fetch Metadata
+parameters through `queryParams`; query callers cannot override them. Origin and Fetch Metadata
 checks reject cross-site browser requests; they do not authenticate viewers.
 
 The handler validates operation input, enforces query row and duration

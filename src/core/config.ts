@@ -31,7 +31,7 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
     appearance?: AppearanceOptions;
     /** Shared date display defaults. Reporting views and individual fields may override the time zone. */
     dateFormatting?: { locale?: string; timeZone?: string };
-    /** Named SQL statements with typed parameters, ownership, and result projections. */
+    /** Named SQL statements with typed parameters and result projections. */
     queries: Queries;
   };
 
@@ -63,10 +63,9 @@ export type DataAppDefinition<
  * TypeScript checks the shape, not AST syntax. Keep executable composition outside the call.
  *
  * SQL passes unchanged to the backend, which interprets placeholders such as `$orgId`.
- * Declare each parameter's type and source: 'input' or 'context'.
- * Input values are required unless defaultValue is supplied. Context values come only from the host.
+ * Declare each parameter's type and optional defaultValue.
  * Values are finite numbers, strings, booleans, or null, never SQL fragments or identifiers.
- * Caller values override input defaults; only context-owned parameters read trusted queryParams.
+ * Host queryParams supply protected values; callers cannot override them.
  */
 export function defineDataApp<const Queries extends QueryDefinitions>(
   config: DataAppConfig<Queries> & { queries: CheckedQueries<Queries> }

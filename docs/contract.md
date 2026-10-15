@@ -25,7 +25,7 @@ const dataApp = defineDataApp({
       statement:
         'SELECT name, unit_price AS "unitPrice" FROM products WHERE org_id = $orgId LIMIT $limit',
       params: {
-        orgId: { type: 'string', source: 'context' },
+        orgId: { type: 'string' },
         limit: { type: 'number', defaultValue: 10 },
       },
       projections: {
@@ -49,13 +49,13 @@ const products = dataApp.defineOperation({
 
 `parseProductInput()` is app-owned. Validate inputs there and business rules in
 `run()`. Derive operation data from `query()` rows; clients and views infer the
-returned type. Handle empty results and return JSON data, using ISO strings for dates.
+returned type. Handle empty results. HTTP results must be JSON-serializable.
 Include representative valid inputs in `checks`.
 
-Parameters default to `source: 'input'`; `defaultValue` supplies an omitted value.
-Use `source: 'context'` for protected values supplied through trusted host
-`queryParams`; callers cannot override them. `query(name, params, { limit })`
-inherits the operation's row limit and cancellation signal.
+Host `queryParams` supplies protected parameters; callers cannot override them.
+Other values come from `query()` arguments or `defaultValue`. Missing values are
+checked before execution. `query(name, params, { limit })` inherits the operation's
+row limit and cancellation signal.
 
 ### Declare query projections
 
@@ -65,9 +65,10 @@ with `"unitPrice"` above.
 Determine nullability from the schema and SQL, even when sampled rows contain no
 nulls. Update projections when changing SQL.
 
-`query()` converts result cells to the declared types before `run()` uses them;
-unsupported conversions fail. Parameters are validated without conversion.
-Preserve nulls with `nullable: true`. For exact numeric precision, return SQL text
+`query()` converts result cells to the declared types before `run()` uses them.
+Numbers that cannot be converted become `"##ERROR##"`; booleans use JavaScript
+truthiness. Nulls pass through unless `nullable: false`. Parameters are validated
+without conversion. For exact numeric precision, return SQL text
 and declare `string`.
 
 Results include query evidence; use `products.queryNames` with `createDataContext()`

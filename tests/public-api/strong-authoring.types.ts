@@ -24,7 +24,7 @@ const header = {
 };
 const inputQuery = {
   statement: 'SELECT $search AS value',
-  params: { search: { type: 'string', source: 'input' } },
+  params: { search: { type: 'string' } },
   projections: { value: { type: 'string' } },
 } as const;
 const emptyQuery = {
@@ -46,7 +46,7 @@ const widenedParams: Readonly<Record<string, QueryParameter>> =
   inputQuery.params;
 defineDataApp({
   ...header,
-  // @ts-expect-error Names and ownership must remain available at the authoring boundary.
+  // @ts-expect-error Names and types must remain available at the authoring boundary.
   queries: { items: { ...inputQuery, params: widenedParams } },
 });
 const projections: QueryProjections = inputQuery.projections;
@@ -69,7 +69,6 @@ app.defineOperation({
   checks: [{}],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }) {
-    // @ts-expect-error Required inputs remain required with satisfies.
     await query('items');
     // @ts-expect-error Names remain exact with satisfies.
     await query('invented');
@@ -145,19 +144,11 @@ hooks.defineDataView(dependent);
 const noDefault = {
   ...inputQuery,
   params: {
-    search: { type: 'string', source: 'input', defaultValue: undefined },
+    search: { type: 'string', defaultValue: undefined },
   },
 } as const;
 // @ts-expect-error A default must be a concrete typed value, never undefined.
 defineDataApp({ ...header, queries: { items: noDefault } });
-const undefinedContextDefault = {
-  ...inputQuery,
-  params: {
-    search: { type: 'string', source: 'context', defaultValue: undefined },
-  },
-} as const;
-// @ts-expect-error Context ownership prohibits even explicit undefined defaults.
-defineDataApp({ ...header, queries: { items: undefinedContextDefault } });
 const untyped = createDataClient();
 async function unknownDelivery() {
   const response = await untyped.query('external', {});

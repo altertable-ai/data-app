@@ -20,44 +20,17 @@ export type QueryRow<Projections extends QueryProjections> =
     : never;
 
 export type QueryParameterValue = string | number | boolean | null;
-type ParameterSource<Value> =
-  | { source?: 'input'; defaultValue?: Value }
-  | { source: 'context'; defaultValue?: never };
-/** Parameters default to input ownership; context values come only from the host. */
+/** Typed scalar parameters with optional fallback values. */
 export type QueryParameter = {
   [Type in QueryValueType]:
-    | ({ type: Type; nullable?: false } & ParameterSource<QueryValues[Type]>)
-    | ({ type: Type; nullable: true } & ParameterSource<
-        QueryValues[Type] | null
-      >);
+    | { type: Type; nullable?: false; defaultValue?: QueryValues[Type] }
+    | { type: Type; nullable: true; defaultValue?: QueryValues[Type] | null };
 }[QueryValueType];
 
-type InputParameterNames<
-  Params extends Readonly<Record<string, QueryParameter>>,
-> = {
-  [Name in keyof Params]: Params[Name] extends { source: 'context' }
-    ? never
-    : Name;
-}[keyof Params];
-type RequiredParameterNames<
-  Params extends Readonly<Record<string, QueryParameter>>,
-> = {
-  [Name in InputParameterNames<Params>]: Params[Name] extends {
-    defaultValue: QueryParameterValue;
-  }
-    ? never
-    : Name;
-}[InputParameterNames<Params>];
-/** Caller-owned values; context parameters cannot be supplied by an operation. */
+/** Callers may omit values supplied by host context or declaration defaults. */
 export type QueryInputParameters<
   Params extends Readonly<Record<string, QueryParameter>>,
-> = {
-  [Name in RequiredParameterNames<Params>]: QueryValue<Params[Name]>;
-} & {
-  [
-    Name in Exclude<InputParameterNames<Params>, RequiredParameterNames<Params>>
-  ]?: QueryValue<Params[Name]>;
-};
+> = { [Name in keyof Params]?: QueryValue<Params[Name]> };
 type QueryDefinition = {
   statement: string;
   params: Readonly<Record<string, QueryParameter>>;
@@ -95,15 +68,11 @@ type CheckedParameters<
   Params extends Readonly<Record<string, QueryParameter>>,
 > = KnownRecord<Params> & {
   [Name in keyof Params]: CheckedField<Params[Name]> &
-    (true extends IsUnion<Params[Name]['source']>
-      ? never
-      : 'defaultValue' extends keyof Params[Name]
-        ? Params[Name] extends { source: 'context' }
-          ? never
-          : undefined extends Params[Name]['defaultValue']
-            ? never
-            : Params[Name]
-        : Params[Name]);
+    ('defaultValue' extends keyof Params[Name]
+      ? undefined extends Params[Name]['defaultValue']
+        ? never
+        : Params[Name]
+      : Params[Name]);
 };
 
 type CheckedProjections<Projections extends QueryProjections> =
@@ -114,7 +83,7 @@ type CheckedProjections<Projections extends QueryProjections> =
         ? never
         : { [Name in keyof Projections]: CheckedField<Projections[Name]> });
 
-/** Author declarations preserve finite names, fixed owners/types, and one parameter map. */
+/** Author declarations preserve finite names, fixed types, and one parameter map. */
 export type CheckedQueries<Queries extends QueryDefinitions> =
   KnownRecord<Queries> &
     ('' extends keyof Queries ? never : unknown) & {
@@ -202,17 +171,6 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
                   isQueryParameterValue(declaration.defaultValue),
                 `Invalid default for parameter ${key} in query ${name}.`
               );
-              invariant(
-                declaration.source === undefined ||
-                  declaration.source === 'input' ||
-                  declaration.source === 'context',
-                `Invalid source for parameter ${key}.`
-              );
-              invariant(
-                declaration.source !== 'context' ||
-                  !Object.hasOwn(declaration, 'defaultValue'),
-                `Context parameter ${key} cannot have a default.`
-              );
               return [key, snapshotField(declaration)];
             })
           )
@@ -274,16 +232,6 @@ export function decodeQueryResult<Projections extends QueryProjections>(
     };
   });
   const names = returnedColumns.map(column => column.name);
-  const expected = Object.keys(projections);
-  if (
-    names.length !== expected.length ||
-    new Set(names).size !== names.length ||
-    names.some(name => !Object.hasOwn(projections, name))
-  ) {
-    throw new Error(
-      'Query result columns do not match the declared projections.'
-    );
-  }
   const rows = Array.from(result.rows, row => {
     if (!Array.isArray(row) || row.length !== names.length) {
       throw new Error('Query result row has the wrong width.');
@@ -291,7 +239,7 @@ export function decodeQueryResult<Projections extends QueryProjections>(
     return Object.fromEntries(
       names.map((name, index) => [
         name,
-        decodeQueryCell(row[index], projections[name]!, name),
+        castQueryCell(row[index], projections[name]),
       ])
     ) as QueryRow<Projections>;
   });
@@ -302,56 +250,45 @@ export function decodeQueryResult<Projections extends QueryProjections>(
   };
 }
 
-function decodeQueryCell(
+function castQueryCell(
   value: unknown,
-  field: QueryField,
-  column: string
+  field: QueryField | undefined
 ): string | number | boolean | null {
-  if (value === null) {
-    if (field.type === 'null' || field.nullable === true) return null;
-  } else if (field.type === 'string') {
-    if (typeof value === 'string' || typeof value === 'boolean')
-      return String(value);
-    if (typeof value === 'number' && Number.isFinite(value))
-      return String(value);
-  } else if (field.type === 'boolean') {
-    if (typeof value === 'boolean') return value;
-    if (value === 1 || value === '1' || value === 'true') return true;
-    if (value === 0 || value === '0' || value === 'false') return false;
-  } else if (field.type === 'number') {
-    const number =
-      typeof value === 'boolean'
-        ? Number(value)
-        : typeof value === 'number'
-          ? value
-          : typeof value === 'string' &&
-              /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)
-            ? Number(value)
-            : NaN;
-    const underflow =
-      typeof value === 'string' &&
-      number === 0 &&
-      /[1-9]/.test(value.split(/[eE]/)[0]!);
+  if (field === undefined) {
     if (
-      Number.isFinite(number) &&
-      !underflow &&
-      (!Number.isInteger(number) || Number.isSafeInteger(number))
+      typeof value === 'string' ||
+      typeof value === 'boolean' ||
+      typeof value === 'number'
     )
-      return number;
+      return value;
+    if (value === null) return null;
+    return JSON.stringify(value);
   }
-  throw new Error(
-    `Query column ${column} cannot be decoded as ${field.type}${field.nullable ? ' or null' : ''}.`
-  );
+
+  if (
+    value === null &&
+    (field.nullable === true || field.nullable === undefined)
+  )
+    return null;
+
+  switch (field.type) {
+    case 'string':
+      return String(value);
+    case 'number': {
+      const number = Number(value);
+      if (Number.isFinite(number)) return number;
+      return '##ERROR##';
+    }
+    case 'boolean':
+      return Boolean(value);
+    case 'null':
+      return null;
+  }
 }
 
-/** Resolve each declared value from its owner and validate it before SQL execution. */
+/** Host context supplies protected values; callers and defaults fill the remaining parameters. */
 export function resolveQueryParameters(
-  declarations: Readonly<
-    Record<
-      string,
-      Pick<QueryParameter, 'type' | 'nullable' | 'source' | 'defaultValue'>
-    >
-  >,
+  declarations: Readonly<Record<string, QueryParameter>>,
   values: Partial<QueryParameters>,
   context: QueryParameters
 ): QueryParameters {
@@ -360,19 +297,16 @@ export function resolveQueryParameters(
   for (const key of Object.keys(values)) {
     if (!Object.hasOwn(declarations, key))
       throw new Error(`Unknown parameter ${key}.`);
-    if (declarations[key]!.source === 'context')
+    if (Object.hasOwn(context, key))
       throw new Error(`Cannot override context parameter ${key}.`);
   }
   return Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
-      const value =
-        declaration.source === 'context'
-          ? Object.hasOwn(context, key)
-            ? context[key]
-            : undefined
-          : Object.hasOwn(values, key) && values[key] !== undefined
-            ? values[key]
-            : declaration.defaultValue;
+      const value = Object.hasOwn(context, key)
+        ? context[key]
+        : Object.hasOwn(values, key) && values[key] !== undefined
+          ? values[key]
+          : declaration.defaultValue;
       if (value === undefined) throw new Error(`Missing parameter ${key}.`);
       const nullable =
         declaration.type === 'null' || declaration.nullable === true;

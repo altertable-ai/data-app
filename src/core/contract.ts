@@ -6,7 +6,6 @@
 import { parseDate, today } from '@internationalized/date';
 import { formatDateRange } from '@/src/core/format';
 import { invariant } from '@/src/core/invariant';
-import type { JsonData } from '@/src/core/json-data';
 import {
   snapshotQueries,
   resolveQueryParameters,
@@ -316,7 +315,7 @@ type ExactQueryParameters<Expected, Params extends object> = Params &
   Record<Exclude<keyof Params, keyof Expected>, never> &
   (Params extends (...args: never[]) => unknown ? never : object);
 
-type InputParameterNames<
+type ParameterNames<
   Queries extends QueryDefinitions,
   Name extends keyof Queries,
 > = Name extends keyof Queries
@@ -339,28 +338,18 @@ export type RegisteredQuery<Queries extends QueryDefinitions> = <
 >(
   name: Name &
     (true extends IsUnion<NoInfer<Name>>
-      ? [InputParameterNames<Queries, Name>] extends [never]
+      ? [ParameterNames<Queries, Name>] extends [never]
         ? unknown
         : never
       : unknown),
-  ...args: {} extends RegisteredQueryParameters<Queries, NoInfer<Name>>
-    ? [
-        params?: ExactQueryParameters<
-          RegisteredQueryParameters<Queries, NoInfer<Name>>,
-          Params
-        >,
-        options?: { limit?: Limit & QueryLimit<NoInfer<Limit>> },
-      ]
-    : [
-        params: ExactQueryParameters<
-          RegisteredQueryParameters<Queries, NoInfer<Name>>,
-          Params
-        >,
-        options?: { limit?: Limit & QueryLimit<NoInfer<Limit>> },
-      ]
+  params?: ExactQueryParameters<
+    RegisteredQueryParameters<Queries, NoInfer<Name>>,
+    Params
+  >,
+  options?: { limit?: Limit & QueryLimit<NoInfer<Limit>> }
 ) => Promise<QueryResult<QueryRow<Queries[Name]['projections']>>>;
 
-/** Infer data from run, then check that its shape survives JSON delivery. */
+/** Infer operation data from run(). */
 export type OperationDefinition<
   Input,
   Output,
@@ -371,7 +360,7 @@ export type OperationDefinition<
       query: RegisteredQuery<NoInfer<Queries>>;
     },
     input: Input
-  ) => Promise<Output & NoInfer<JsonData<Output>>>;
+  ) => Promise<Output>;
 };
 
 export function defineOperation<
@@ -446,12 +435,7 @@ export function connectionCheck<
   const Queries extends QueryDefinitions & {
     connection: QueryDefinitions[string];
   },
->(
-  queries: CheckedQueries<Queries> &
-    ({} extends QueryInputParameters<Queries['connection']['params']>
-      ? object
-      : never)
-): ConnectionOperation {
+>(queries: CheckedQueries<Queries>): ConnectionOperation {
   const connection: QueryDefinitions[string] = queries.connection;
   return defineOperation({
     queries: { connection } as CheckedQueries<{

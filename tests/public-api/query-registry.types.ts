@@ -16,7 +16,7 @@ const dataApp = defineDataApp({
     products: {
       projections: { value: { type: 'number' } } as const,
       statement: 'SELECT $limit',
-      params: { limit: { type: 'number', source: 'input', defaultValue: 10 } },
+      params: { limit: { type: 'number', defaultValue: 10 } },
     },
     ping: {
       projections: { value: { type: 'number' } } as const,
@@ -26,7 +26,7 @@ const dataApp = defineDataApp({
     signUps: {
       projections: { value: { type: 'number' } } as const,
       statement: 'SELECT $days',
-      params: { days: { type: 'number', source: 'input', defaultValue: 7 } },
+      params: { days: { type: 'number', defaultValue: 7 } },
     },
   },
 });
@@ -144,7 +144,7 @@ defineDataApp({
     scalar: {
       projections: { value: { type: 'number' } } as const,
       statement: 'SELECT $value',
-      params: { value: { type: 'number', source: 'input', defaultValue: [] } },
+      params: { value: { type: 'number', defaultValue: [] } },
     },
   },
 });
@@ -199,7 +199,7 @@ const mutableQueries = {
   products: {
     projections: { value: { type: 'number' } } as const,
     statement: 'SELECT $limit',
-    params: { limit: { type: 'number', source: 'input', defaultValue: 1 } },
+    params: { limit: { type: 'number', defaultValue: 1 } },
   },
 } satisfies QueryDefinitions;
 const immutableApp = defineDataApp({

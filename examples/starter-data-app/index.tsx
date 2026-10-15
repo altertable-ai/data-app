@@ -35,8 +35,8 @@ SELECT group_name, sample_count FROM sample_counts
 WHERE $groupName = '' OR group_name = $groupName
 ORDER BY group_name LIMIT $limit`,
       params: {
-        groupName: { type: 'string', source: 'input', defaultValue: '' },
-        limit: { type: 'number', source: 'input', defaultValue: 10 },
+        groupName: { type: 'string', defaultValue: '' },
+        limit: { type: 'number', defaultValue: 10 },
       },
     },
   },

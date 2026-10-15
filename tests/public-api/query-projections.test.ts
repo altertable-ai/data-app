@@ -107,9 +107,56 @@ test('projection declarations decode typed records by returned name in browser a
   ]);
 });
 
-test('empty query results still require the exact declared column names', async () => {
-  const empty = { ...result(), rows: [] };
-  expect((await client(empty).query('revenue', {})).data).toEqual([]);
+async function castRows(
+  response: QueryResult,
+  name: 'casts' | 'nullable' = 'casts'
+) {
+  const declarations = defineDataApp({
+    title: 'Casts',
+    description: 'Apply declared casts.',
+    scope: { organization: 'demo', environment: 'test' },
+    queries: {
+      casts: {
+        statement: 'SELECT label, amount, enabled, placeholder',
+        params: {},
+        projections: {
+          label: { type: 'string', nullable: false },
+          amount: { type: 'number', nullable: false },
+          enabled: { type: 'boolean', nullable: false },
+          placeholder: { type: 'null' },
+        },
+      },
+      nullable: {
+        statement: 'SELECT label, amount, enabled',
+        params: {},
+        projections: {
+          label: { type: 'string' },
+          amount: { type: 'number', nullable: true },
+          enabled: { type: 'boolean' },
+        },
+      },
+    },
+  });
+  const cast = declarations.defineOperation({
+    input: parseEmptyInput,
+    checks: [{}],
+    policy: { maxQueryRows: 10, maxDurationMs: 1000 },
+    async run({ query }) {
+      return (await query(name)).rows;
+    },
+  });
+  const responseClient = createDataClient({
+    operations: { cast },
+    lakehouse: {
+      async queryAll() {
+        return response;
+      },
+    },
+  });
+  return (await responseClient.query('cast', {})).data;
+}
+
+test('returned aliases may differ from projections, including for empty results', async () => {
   for (const columns of [
     [],
     result().columns.slice(1),
@@ -117,42 +164,70 @@ test('empty query results still require the exact declared column names', async 
     result().columns.map(() => ({ name: 'country' })),
     result().columns.map(column => ({ name: `${column.name}_changed` })),
   ]) {
-    await expect(
-      client({ ...empty, columns }).query('revenue', {})
-    ).rejects.toMatchObject({ code: 'query_failed' });
+    expect(
+      (await client({ ...result(), columns, rows: [] }).query('revenue', {}))
+        .data
+    ).toEqual([]);
   }
+  expect(
+    await castRows({
+      columns: [{ name: 'extra' }, { name: 'label' }],
+      rows: [
+        [{ count: 1 }, 42],
+        [undefined, false],
+      ],
+    })
+  ).toEqual([
+    { extra: '{"count":1}', label: '42' },
+    { extra: undefined, label: 'false' },
+  ]);
 });
 
-test('invalid cells and row widths fail before unvalidated data reaches operation callers', async () => {
-  for (const [column, invalid] of [
-    ['country', null],
-    ['country', {}],
-    ['country', Infinity],
-    ['revenue', null],
-    ['revenue', undefined],
-    ['revenue', ''],
-    ['revenue', ' 1 '],
-    ['revenue', '0x10'],
-    ['revenue', 'Infinity'],
-    ['revenue', '1e-1000'],
-    ['revenue', NaN],
-    ['revenue', Infinity],
-    ['revenue', Number.MAX_SAFE_INTEGER + 1],
-    ['revenue', '9007199254740993'],
-    ['note', {}],
-    ['active', 'yes'],
-    ['active', 2],
-    ['enabled', 'False'],
-  ] as const) {
-    const response = result();
-    response.rows[0]![
-      response.columns.findIndex(item => item.name === column)
-    ] = invalid;
-    await expect(client(response).query('revenue', {})).rejects.toMatchObject({
-      code: 'query_failed',
-      message: 'The data request failed.',
-    });
-  }
+test('cells use scalar casts and numeric failures return the error marker', async () => {
+  expect(
+    await castRows({
+      columns: ['label', 'amount', 'enabled', 'placeholder'].map(name => ({
+        name,
+      })),
+      rows: [
+        [null, null, null, 'ignored'],
+        [{}, '', 'false', undefined],
+        [Infinity, '0x10', 0, 42],
+        [undefined, 'bad', [], false],
+        [false, Infinity, '', null],
+        [true, '1e-1000', '0', true],
+      ],
+    })
+  ).toEqual([
+    { label: 'null', amount: 0, enabled: false, placeholder: null },
+    { label: '[object Object]', amount: 0, enabled: true, placeholder: null },
+    { label: 'Infinity', amount: 16, enabled: false, placeholder: null },
+    {
+      label: 'undefined',
+      amount: '##ERROR##',
+      enabled: true,
+      placeholder: null,
+    },
+    { label: 'false', amount: '##ERROR##', enabled: false, placeholder: null },
+    { label: 'true', amount: 0, enabled: true, placeholder: null },
+  ]);
+});
+
+test('null cells pass through fields with omitted or true nullable flags', async () => {
+  expect(
+    await castRows(
+      {
+        columns: ['label', 'amount', 'enabled', 'extra'].map(name => ({
+          name,
+        })),
+        rows: [[null, null, null, null]],
+      },
+      'nullable'
+    )
+  ).toEqual([{ label: null, amount: null, enabled: null, extra: null }]);
+});
+
+test('query result row widths still match the returned columns', async () => {
   for (const rows of [[[]], [[...result().rows[0]!, 'extra']]]) {
     await expect(
       client({ ...result(), rows }).query('revenue', {})
@@ -285,7 +360,9 @@ test('all-null rows preserve nullable values and intentional null-only projectio
   ]);
   for (const invalid of [undefined, 0, false, '']) {
     response.rows = [[null, null, null, invalid]];
-    await expect(dataClient.query('values', {})).rejects.toThrow();
+    expect((await dataClient.query('values', {})).data).toEqual([
+      { amount: null, label: null, enabled: null, placeholder: null },
+    ]);
   }
 });
 
@@ -336,7 +413,7 @@ test('run manipulates declared scalar types after query casting in browser and H
     },
   };
   const expected = [
-    { name: '42', amount: 3.5, enabled: true, note: null },
+    { name: '42', amount: 3.5, enabled: false, note: null },
     { name: 'FALSE', amount: 2, enabled: false, note: '7' },
     { name: 'NAME', amount: 1, enabled: true, note: 'true' },
   ];

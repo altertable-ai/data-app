@@ -55,61 +55,32 @@ test('browser and HTTP delivery preserve inferred JSON results and optional fiel
   expect(remote.data.note).toBeUndefined();
 });
 
-test('the shared execution boundary rejects values JSON would drop, transform, or fail to encode', async () => {
-  const cycle: { self?: unknown } = {};
-  cycle.self = cycle;
-  const symbol = Symbol('metadata');
-  const values: unknown[] = [
-    new Date('2026-01-01'),
-    { date: new Date('2026-01-01') },
-    new Map(),
-    new Set(),
-    1n,
-    () => 1,
-    Symbol('value'),
-    undefined,
-    NaN,
-    Infinity,
-    -Infinity,
-    [undefined],
-    Array(1),
-    Object.assign([1], { extra: true }),
-    { callback: () => 1 },
-    { [symbol]: 'hidden' },
-    Object.defineProperty({}, 'hidden', { value: 1 }),
-    {
-      get count() {
-        return 1;
-      },
-    },
-    cycle,
-  ];
-  for (const value of values) {
-    const unchecked = {
+test('operation results use the delivery adapter serialization without additional JSON assertions', async () => {
+  const date = new Date('2026-01-01');
+  const operations = {
+    clock: defineOperation({
       ...definition,
       async run() {
-        return value;
+        return { date, amount: Infinity };
       },
-    };
-    const operations = {
-      // @ts-expect-error Exercise an unchecked JavaScript operation at the runtime boundary.
-      report: defineOperation(unchecked),
-    };
-    const browser = createDataClient({ operations, lakehouse });
-    await expect(browser.query('report', {})).rejects.toMatchObject({
-      code: 'query_failed',
-    });
-    const handler = createDataHandler(operations, async () => ({ lakehouse }));
-    const response = await handler(
-      new Request('https://app.test/api/data/report', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: '{}',
-      })
-    );
-    expect(response.status).toBe(502);
-    expect(await response.json()).toMatchObject({
-      error: { code: 'query_failed' },
-    });
-  }
+    }),
+  };
+  const local = await createDataClient({ operations, lakehouse }).query(
+    'clock',
+    {}
+  );
+  expect(local.data.date).toBe(date);
+  expect(local.data.amount).toBe(Infinity);
+  const handler = createDataHandler(operations, async () => ({ lakehouse }));
+  const response = await handler(
+    new Request('https://app.test/api/data/clock', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: '{}',
+    })
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    data: { date: date.toISOString(), amount: null },
+  });
 });
