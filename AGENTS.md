@@ -48,6 +48,9 @@ static displays, and deliberately custom UI; see [direct composition](docs/ui.md
 Prefer derivation over repeated configuration. Keep static context outside loading boundaries. Derive labels, findings, and
 exports from the displayed result and its input. Edit app-owned files; installed
 package files are dependencies.
+Declare typed `params` and `projections`; derive operation data from `query()` rows
+without duplicate schemas or type assertions. See [contracts](docs/contract.md)
+and [facets](docs/variables.md#fixed-options-and-query-backed-facets).
 
 Keep `docs/` focused on knowledge agents need to build data apps. Put package
 implementation, testing, and release guidance in `CONTRIBUTING.md`.

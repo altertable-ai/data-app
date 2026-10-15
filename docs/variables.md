@@ -160,22 +160,28 @@ facet operation returns parsed dimension options. Its input mapper uses current
 resolved variables, including other filters:
 
 ```ts
-const { defineFacetFilter, defineTimeView } = createDataHooks(client);
+const { defineFacetFilter } = createDataHooks(client);
+const period = dateRangeVariable({
+  key: 'period',
+  contract: calendar,
+  defaultValue: { kind: 'preset', id: 'last-7' },
+});
 const region = defineFacetFilter({
   key: 'region',
   label: 'Region',
   valueType: 'string',
   selectionMode: 'multiple',
   facet: {
+    context: { period },
     operation: 'regions',
-    input: values => ({ period: values.period as DateRangeRequest }),
+    input: values => ({ period: values.period }),
   },
 });
 ```
 
-The client's operation map defines `regions` and its typed period input;
-import `DateRangeRequest` from `/contract`. Put `region` in the view's `variables`
-alongside its period. Use `parseFacetOptions()` to validate facet results.
+Declare mapper dependencies in `facet.context` (`{}` for none), and include them
+alongside the facet in the view's `variables`. Mapper inputs and option values are
+inferred from the variables and operation; options must match `valueType`.
 For the operation's input parser, use `parseDimensionSelection(value, region)` from `/contract`.
 A dimension without an explicit selection represents all members.
 Map parsed selections to the query's declared parameters; do not construct SQL
