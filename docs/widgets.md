@@ -55,6 +55,16 @@ visualization workflow.
 Use widget `views` when a chart and another representation answer the same
 question from the same dataset.
 
+## Live and explicit sources
+
+A metric or dataset identifies its owning view. Without `source`, a widget reads
+that view's shared displayed result from `<DataApp>`; the view must be registered
+there. Loading, failure, retry, and displayed scope follow the same result.
+
+Pass `source` to render the result from `view.content()` or a frozen story snapshot.
+The binding still checks that the source belongs to its own view. An explicit
+source does not start or subscribe to a request.
+
 ## Declare datasets and metrics
 
 Bind reusable selections to the view. Declare evidence references directly;

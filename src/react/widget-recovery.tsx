@@ -116,7 +116,6 @@ export function WidgetRecovery<Data, Input>({
             >
               <StatusPanel
                 status="error"
-                layout="inline"
                 title="Couldn’t display results."
                 action={
                   <Button variant="ghost" size="compact" onClick={retry}>

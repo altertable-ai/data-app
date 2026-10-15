@@ -1,8 +1,8 @@
 import type { DataReading } from '@/src/core/reading';
 import type { DataContext } from '@/src/react/ui/data-context';
 import { createContext, useContext } from 'react';
-import type { ViewControlBar } from '@/src/react/view-control-bar';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ViewControlBarProps } from '@/src/react/view-control-bar';
+import type { ReactNode } from 'react';
 import type { DataView, DisplayedSnapshot } from '@/src/core/data-view';
 import type { DisclosedQuery } from '@/src/core/contract';
 import type { EmptyContent } from '@/src/react/ui/presentation';
@@ -20,7 +20,7 @@ export type ViewResult<Data, Input> = {
   queries?: DisclosedQuery[];
   searchControls?: ReactNode;
   filterControls?: ReactNode;
-  controlBar?: ComponentProps<typeof ViewControlBar>;
+  controlBar?: ViewControlBarProps;
   emptyFallback: EmptyContent;
 };
 

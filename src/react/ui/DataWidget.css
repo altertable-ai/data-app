@@ -88,13 +88,6 @@
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     );
 }
-.altertable-data-widget-body > .altertable-status-panel {
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 0;
-}
 
 .altertable-widget-heading-trigger .altertable-data-widget-count {
   margin-inline-start: 0;

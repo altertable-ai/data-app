@@ -70,7 +70,6 @@ export function DataSectionBoundary<Data, Input>({
         return (
           <StatusPanel
             status="error"
-            layout="inline"
             title={error?.title ?? presentation.message}
             description={error?.description}
             action={

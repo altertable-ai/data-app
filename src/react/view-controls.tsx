@@ -11,6 +11,7 @@ import { Select } from '@/src/react/ui/Select';
 import {
   ViewControlBar,
   type ActiveFilterControl,
+  type ViewControlBarProps,
 } from '@/src/react/view-control-bar';
 import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
@@ -285,7 +286,7 @@ export function useViewVariables<Variables extends VariableCollection>(
   ];
   const hasControls = allFilters.length > 0 || orderedDisplayOptions.length > 0;
 
-  const controlBar = {
+  const controlBar: ViewControlBarProps = {
     primaryFilters,
     activeSecondaryFilters,
     allFilters,

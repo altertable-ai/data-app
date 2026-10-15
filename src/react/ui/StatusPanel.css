@@ -1,42 +1,24 @@
 .altertable-status-panel {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--atbl-space-lg);
-  padding: var(--atbl-space-lg);
-  border: 1px solid var(--atbl-border);
-  border-radius: var(--atbl-radius-surface);
-  background: var(--atbl-surface);
+  justify-content: flex-start;
+  gap: var(--atbl-space-sm);
+  min-width: 0;
   color: var(--atbl-muted);
   font-size: var(--atbl-type-label-size);
   line-height: 1.5;
 }
-.altertable-status-panel[data-status='error'] {
-  box-sizing: border-box;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
-  align-items: start;
-  column-gap: 14px;
-  row-gap: 18px;
-  width: min(100%, 520px);
-  margin: clamp(16px, 4vw, 48px) auto 0;
-}
-.altertable-status-panel[data-status='error'] > svg {
-  margin-top: 1px;
+.altertable-status-panel > svg {
+  flex: none;
   color: var(--atbl-danger);
 }
-.altertable-status-panel[data-status='error'] .altertable-status-action {
-  grid-column: 2;
-}
-.altertable-status-panel[data-status='error'] .altertable-status-copy {
+.altertable-status-copy {
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 .altertable-status-panel strong {
   color: var(--atbl-text);
-  font-weight: 650;
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-status-panel p {
   margin: 4px 0 0;
@@ -48,38 +30,4 @@
 }
 .altertable-status-action {
   flex: none;
-}
-@media (max-width: 600px) {
-  .altertable-status-panel:not([data-status='error']) {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}
-
-.altertable-status-panel[data-layout='inline'] {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--atbl-space-sm);
-  width: auto;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.altertable-status-panel[data-layout='inline'] > svg {
-  flex: none;
-  margin: 0;
-}
-.altertable-status-panel[data-layout='inline'] .altertable-status-copy {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.altertable-status-panel[data-layout='inline'] strong {
-  font-weight: var(--atbl-type-label-weight);
-}
-.altertable-status-panel[data-layout='inline'] .altertable-status-action {
-  grid-column: auto;
 }

@@ -23,6 +23,16 @@ export type ActiveFilterControl = {
   onClear?: () => void;
 };
 
+export type ViewControlBarProps = {
+  primaryFilters: ReactNode[];
+  allFilters: ReactNode[];
+  activeSecondaryFilters: ActiveFilterControl[];
+  activeFilterCount: number;
+  displayOptions: ReactNode[];
+  changedDisplayOptionCount: number;
+  onClear?: () => void;
+};
+
 export function ViewControlBar({
   primaryFilters,
   activeSecondaryFilters,
@@ -31,15 +41,7 @@ export function ViewControlBar({
   displayOptions,
   changedDisplayOptionCount,
   onClear,
-}: {
-  primaryFilters: ReactNode[];
-  allFilters: ReactNode[];
-  activeSecondaryFilters: ActiveFilterControl[];
-  activeFilterCount: number;
-  displayOptions: ReactNode[];
-  changedDisplayOptionCount: number;
-  onClear?: () => void;
-}) {
+}: ViewControlBarProps) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersId = useId();
   const filtersButtonRef = useRef<ComponentRef<'button'>>(null);

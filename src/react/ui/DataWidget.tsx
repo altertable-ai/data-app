@@ -123,7 +123,6 @@ function DataWidgetContent({
     children = (
       <StatusPanel
         status="error"
-        layout="inline"
         title={presentation.message}
         action={
           presentation.retryable && (
