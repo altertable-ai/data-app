@@ -16,21 +16,42 @@ import type { EmptyContent } from '@/src/react/ui/presentation';
 import type { TableWidgetColumn } from '@/src/react/ui/TableWidget';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
-/** Displayed data, or an initial loading reading. Pending filter values are never a source. */
+/** Explicit live feedback; frozen snapshots have no request actions. */
+type SourceFeedback = {
+  refetch?: () => unknown;
+  cancel?: () => unknown;
+  revision?: string;
+  scope?: DataReading<string>;
+};
+
+/** A selector can read displayed data or produce an initial skeleton reading. */
+export type ReadableSource<Data, Input> = SourceFeedback &
+  ({ state: 'loading' } | DisplayedSnapshot<Data, Input>);
+
+/** A required widget source carries every request state without inventing data. */
 export type ViewSource<Data, Input> =
-  | { loading: true }
-  | { loading?: false; data: Data; input: Input };
-type SourceReading<Source, Value> = Source extends { loading: true }
+  | ReadableSource<Data, Input>
+  | (SourceFeedback &
+      (
+        | { state: 'error'; error: Error }
+        | { state: 'empty'; input: Input; emptyFallback: EmptyContent }
+      ));
+
+type SourceReading<Source, Value> = Source extends { state: 'loading' }
   ? { loading: true }
   : { loading: false; value: Value };
 
-function readSource<Data, Input, Value, Source extends ViewSource<Data, Input>>(
+function readSource<
+  Data,
+  Input,
+  Value,
+  Source extends ReadableSource<Data, Input>,
+>(
   source: Source,
   select: (data: Data, input: Input) => Value
 ): SourceReading<Source, Value> {
-  // The generic return preserves a ready snapshot's value for story authors.
   return (
-    source.loading
+    source.state === 'loading'
       ? { loading: true }
       : { loading: false, value: select(source.data, source.input) }
   ) as SourceReading<Source, Value>;
@@ -84,10 +105,6 @@ export class RegisteredBinding {
     this.#owner = owner;
     this.#evidence = evidence;
   }
-  static owner(binding: RegisteredBinding): object {
-    invariant(binding.#owner, 'A live binding requires a declared view.');
-    return binding.#owner;
-  }
   static assertSource(binding: RegisteredBinding, source: object): void {
     binding.assertSource(source);
   }
@@ -120,7 +137,7 @@ export function registeredEvidence(
 export class ExportDataset<Data, Input> extends RegisteredBinding {
   /** @internal Undefined means this dataset declares no record suggestions. */
   readSearchSuggestions(
-    _source: ViewSource<Data, Input>
+    _source: ReadableSource<Data, Input>
   ): DataReading<readonly SearchSuggestion[]> | undefined {
     return undefined;
   }
@@ -239,7 +256,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     this.#suggestions = definition.suggestions;
   }
   override readSearchSuggestions(
-    source: ViewSource<Data, Input>
+    source: ReadableSource<Data, Input>
   ): DataReading<readonly SearchSuggestion[]> | undefined {
     const suggestions = this.#suggestions;
     if (!suggestions) return undefined;
@@ -269,7 +286,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     );
     return { loading: false, value: items };
   }
-  read = <Source extends ViewSource<Data, Input>>(source: Source) => {
+  read = <Source extends ReadableSource<Data, Input>>(source: Source) => {
     this.assertSource(source);
     return readSource<Data, Input, readonly Row[], Source>(
       source,
@@ -278,7 +295,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
   };
   static table<Data, Input, Row>(
     dataset: Dataset<Data, Input, Row>,
-    source: ViewSource<Data, Input>
+    source: ReadableSource<Data, Input>
   ) {
     return { ...dataset.#table, reading: dataset.read(source) };
   }
@@ -294,7 +311,7 @@ export function bindDataset<Data, Input, Row>(
 
 export function datasetTable<Data, Input, Row>(
   dataset: Dataset<Data, Input, Row>,
-  source: ViewSource<Data, Input>
+  source: ReadableSource<Data, Input>
 ) {
   return Dataset.table(dataset, source);
 }
@@ -318,7 +335,7 @@ export class Metric<Data, Input> extends RegisteredBinding {
     this.#select = select;
     this.#date = date;
   }
-  read = <Source extends ViewSource<Data, Input>>(source: Source) => {
+  read = <Source extends ReadableSource<Data, Input>>(source: Source) => {
     this.assertSource(source);
     return readSource<
       Data,

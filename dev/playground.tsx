@@ -312,7 +312,7 @@ type OrderSource = Parameters<Parameters<typeof orderView.content>[0]>[0];
 function OrderResults({ result }: { result: OrderSource }) {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const selectedOrder = result.loading
+  const selectedOrder = !('data' in result)
     ? undefined
     : result.data.orders.find(order => order.id === selectedId);
   const tableDataset = useMemo(
@@ -464,7 +464,10 @@ function OrderResults({ result }: { result: OrderSource }) {
   );
 }
 const orderContent = orderView.content(result => (
-  <OrderResults key={JSON.stringify(result.input)} result={result} />
+  <OrderResults
+    key={JSON.stringify('input' in result ? result.input : null)}
+    result={result}
+  />
 ));
 type OrderSnapshot = Parameters<typeof orderView.scope>[0];
 function presentOrders(snapshot: OrderSnapshot) {

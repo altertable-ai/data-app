@@ -21,6 +21,10 @@ bash scripts/install-test-browser.sh
 bun run test tests/public-api/apps-recovery.test.ts
 ```
 
+The toolbar belongs to Sales by default. Use **Use Acquisition** (or
+`?primary=acquisition`) to exercise acquisition stories and exports. Each section
+has independent refresh and cancel controls; changing Market updates both views.
+
 ## Reproduce the flows
 
 Reload to reset request counts and displayed data. Every query waits for
@@ -30,20 +34,20 @@ errors or artificial response delays.
 
 | Flow                      | Steps and expected result                                                                                                                                                                                                                                                            |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Initial loading           | Reload. Both groups show skeletons; story is disabled and exports identify unavailable datasets.                                                                                                                                                                                     |
+| Initial loading           | Reload. Both groups show skeletons; the primary story and export actions are disabled.                                                                                                                                                                                               |
 | Independent success       | Complete Sales. Both sales widgets share the result; acquisition still waits.                                                                                                                                                                                                        |
 | Initial failure and retry | Choose Unavailable for acquisition and complete it. Its metric, table, narrative, and chart show errors. Retry one acquisition widget: only acquisition's request count increases. Choose Success and complete it to recover all acquisition widgets.                                |
 | Failed refresh            | Complete both requests, choose Unavailable for acquisition, and change Market to Europe. Old results remain visible while waiting. Complete both requests. Sales shows Europe; acquisition keeps All markets with a warning. Its CSV and story retain that displayed scope and data. |
 | Measured zero             | Choose Measured zero and complete acquisition. Zero renders as data in the metric, table, narrative, and chart.                                                                                                                                                                      |
-| Empty result              | Choose Empty result, refresh, and complete acquisition. Its widgets show the empty fallback. Its old finding and export are unavailable; Export all stays disabled.                                                                                                                  |
+| Empty result              | Choose Empty result, refresh, and complete acquisition. Its widgets show the empty fallback. Its old data is removed. If acquisition owns the toolbar, story and export disable.                                                                                                     |
 | Busy source               | Choose Rate limited and complete a request. The widget explains the busy source and offers Retry.                                                                                                                                                                                    |
 | Access or SQL failure     | Choose Access denied or Rejected SQL. The widget directs the reader to the app owner and omits query Retry. The toolbar can refresh after the underlying problem is fixed.                                                                                                           |
 | Invalid source rows       | Choose Invalid query rows. Operation parsing fails instead of inventing data. Choose Success, Retry, and complete the new request to recover.                                                                                                                                        |
 | Rendering failure         | After acquisition succeeds, click Break visualization. Only the chart fails. Retry before repair reproduces the failure. Click Repair visualization, then Retry: the chart recovers without another query.                                                                           |
-| Cancellation              | After both views succeed, Refresh data, then Cancel refresh. Pending requests abort, updating feedback stops, and the displayed results retain their original scope, including after changing Market. Complete buttons disable for canceled requests.                                |
+| Cancellation              | After both views succeed, Refresh acquisition, then Cancel acquisition. Its pending request aborts, updating feedback stops, and the displayed results retain their original scope, including after changing Market. Complete buttons disable for canceled requests.                 |
 | Deadline                  | Open the URL with `?flow=timeout`. Complete Sales and leave acquisition waiting. Its actual 2.5-second operation deadline produces a local timeout. Retry and complete acquisition before the next deadline.                                                                         |
-| Frozen story              | Refresh both views, open Present story, then let a waiting response finish. The open story keeps its starting snapshots. Close and reopen to read the new displayed results.                                                                                                         |
-| Frozen export             | Open Export while acquisition waits or has a retained error. Complete the request while the menu remains open. Menu choices and downloads keep the starting snapshots; reopen to see the new result.                                                                                 |
+| Frozen story              | Select Acquisition as the toolbar view, refresh acquisition, open Present story, then let a waiting response finish. The open story keeps its starting snapshot. Close and reopen to read the new displayed result.                                                                  |
+| Frozen export             | Select Acquisition as the toolbar view. Open Export while acquisition waits or has a retained error. Complete the request while the menu remains open. Menu choices and downloads keep the starting snapshot; reopen to see the new result.                                          |
 
 The browser tests complete requests behind open overlays through DOM events on
 these same visible controls. Interactive exploration normally uses the controls

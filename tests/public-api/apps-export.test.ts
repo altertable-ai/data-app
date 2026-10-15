@@ -86,7 +86,11 @@ describe('export', () => {
       .fill('Beta');
     await expect
       .poll(() =>
-        app.getByRole('status').filter({ hasText: 'Updating…' }).isVisible()
+        app
+          .getByRole('region', { name: 'Total samples', exact: true })
+          .getByRole('status')
+          .filter({ hasText: 'Refreshing' })
+          .isVisible()
       )
       .toBe(true);
     await expectExport(
@@ -110,6 +114,7 @@ describe('export', () => {
     await expect
       .poll(() =>
         app
+          .getByRole('region', { name: 'Total samples', exact: true })
           .getByRole('alert')
           .filter({
             hasText:
@@ -129,7 +134,7 @@ describe('export', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('main')
+          .getByRole('region', { name: 'Total samples', exact: true })
           .getByText('No matching groups', { exact: true })
           .isVisible()
       )

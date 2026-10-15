@@ -40,7 +40,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
     }
   }
 
-  if (!csv || (!csv.tables.length && !csv.unavailable?.length)) {
+  if (!csv?.tables.length) {
     return (
       <IconButton
         icon="export"
@@ -70,7 +70,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
           Couldn’t export data.
         </Toast>
       )}
-      {csv.tables.length === 1 && !csv.unavailable?.length ? (
+      {csv.tables.length === 1 ? (
         <IconButton
           icon="export"
           variant="elevated"
@@ -118,30 +118,11 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
                   textValue={`Export ${table.name} CSV`}
                   aria-label={`Export ${table.name} CSV`}
                 >
-                  <span>
-                    Export {table.name}
-                    {table.scope
-                      ? ` — ${table.scope}${table.stale ? ' (last result)' : ''}`
-                      : ''}
-                  </span>
+                  <span>Export {table.name}</span>
                   <span className="altertable-export-format">CSV</span>
                 </MenuItem>
               ))}
-              {displayed?.unavailable?.map(name => (
-                <MenuItem
-                  key={`unavailable:${name}`}
-                  id={`unavailable:${name}`}
-                  isDisabled
-                  textValue={`${name} unavailable`}
-                  aria-label={`${name} unavailable`}
-                >
-                  <span>{name} — unavailable</span>
-                </MenuItem>
-              ))}
               <MenuItem
-                isDisabled={
-                  !!displayed?.unavailable?.length || !displayed?.tables.length
-                }
                 id="all"
                 textValue="Export all ZIP"
                 aria-label="Export all ZIP"

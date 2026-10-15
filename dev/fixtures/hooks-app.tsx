@@ -1,9 +1,10 @@
 import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { useDeclaredResult } from '@/src/react/view-runtime';
 import { DeclaredApp, dataApp } from '@/dev/fixtures/declared-app';
-import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { DataBoundary } from '@/src/react/ui/DataBoundary';
+import { StatusPanel } from '@/src/react/ui/StatusPanel';
 import { bindDataset } from '@/src/react/bindings';
-import { defineDataContent } from '@/src/react/content';
+import { defineDataContent } from '@/dev/fixtures/content';
 import { ClientCacheApp } from '@/dev/fixtures/client-cache';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -179,9 +180,12 @@ function App() {
       <p data-testid="evidence">
         {result.queries?.map(query => query.name).join(',') ?? 'none'}
       </p>
-      <DataSection
-        result={result}
-        emptyFallback={{ title: 'No activity' }}
+      <DataBoundary
+        view={result.view}
+        emptyFallback={null}
+        error={() => (
+          <StatusPanel status="error" title="Couldn’t load results." />
+        )}
         {...narrative}
       />
     </>

@@ -28,7 +28,7 @@ While no displayed snapshot is available, the export action stays visible and di
 Declare [datasets](widgets.md#declare-datasets-and-metrics) once and pass
 `datasets={[countries, otherDataset]}` to `<DataApp>`. The toolbar
 exports those datasets with raw values and a safe filename derived from the
-displayed scope. List every distinct dataset the app shows.
+displayed scope. List every distinct dataset the primary view shows.
 
 Reuse bound metrics in story visuals:
 
@@ -51,24 +51,13 @@ Dataset accessors return raw values; do not preformat numbers as display
 labels. Null and undefined become empty cells, while measured zero stays zero.
 The helpers handle quoting and spreadsheet formula protection.
 
-## Independent views
+## Independent sections
 
-With `<DataApp views={{ sales: salesView, acquisition: acquisitionView }}>`, story
-callbacks receive those keys with typed displayed snapshots. A view without a
-displayed result is `undefined`; check it before deriving findings. Export datasets
-must belong to a registered view and have distinct names. Story evidence must
-belong to a registered view with a displayed result.
+The toolbar's stories and exports belong to `<DataApp>`'s primary `view`.
+Independent sections recover separately and do not contribute implicit snapshots
+or datasets to that toolbar. Keep datasets and findings that must agree in one
+operation and view. Derive story context from `view.scope(snapshot)` and use
+`snapshot.state` to identify a retained failed refresh when relevant.
 
-Derive claims from each snapshot's data and original input. Cross-view findings
-must check that all required snapshots exist and have compatible scopes; keep
-claims that must update together on one view. The platform adds each finding's
-evidence view scope and marks a retained failed refresh as the last successful
-result.
-
-The export menu labels each dataset with its displayed scope and retained-error
-status. Unavailable datasets stay visible and disabled. Export all is disabled
-until every declared dataset has a displayed result. Individual available datasets
-remain exportable.
-
-Opening a story or export menu freezes its displayed results. Reopen it to use
+Opening a story or export menu freezes its displayed result. Reopen it to use
 new results. An export retry repeats the failed download's original data.

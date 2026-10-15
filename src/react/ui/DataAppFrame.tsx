@@ -15,16 +15,14 @@ import { AppLayout } from '@/src/react/ui/AppLayout';
 import { AppScope } from '@/src/react/ui/AppScope';
 import { AppToolbar } from '@/src/react/ui/AppToolbar';
 import type { DataContext } from '@/src/react/ui/data-context';
-import type { StoryFinding } from '@/src/react/ui/story';
 import type { BoundStory } from '@/src/react/ui/story';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { VariableBar } from '@/src/react/ui/VariableBar';
 import { TextContent } from '@/src/react/ui/TextContent';
 import { Stack } from '@/src/react/ui/Stack';
-import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import { InspectionProvider } from '@/src/react/ui/InspectionProvider';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
-import type { SectionResult } from '@/src/react/ui/DataSectionBoundary';
+import type { DataView } from '@/src/core/data-view';
 
 export type DataAppBaseProps = {
   children: ReactNode;
@@ -39,7 +37,9 @@ export type DataAppBaseProps = {
   footer?: ReactNode;
 };
 
-export type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
+export type DataAppRequest<Data, Input> = {
+  view: DataView<Data, Input>;
+  refetch: () => unknown;
   queries?: DisclosedQuery[];
   /** Actual request activity, including retries with retained data. */
   refreshing?: boolean;
@@ -64,11 +64,6 @@ export type DataAppProps<Data = unknown, Input = unknown> =
   | (DataAppBaseProps &
       DataAppControlProps & {
         request: DataAppRequest<Data, Input>;
-        /** Internal multi-view artifacts have independent availability. */
-        artifacts?: {
-          findings: readonly StoryFinding[];
-          csvExport: CsvExport | null;
-        };
         /** Findings are always derived from the result currently visible to the user. */
         story: BoundStory<Data, Input>;
         /** Export every distinct dataset in the displayed result. */
@@ -105,10 +100,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   });
 
   const snapshot = request && displayedSnapshot(request.view);
-  const artifacts = 'artifacts' in props ? props.artifacts : undefined;
-  const findings =
-    artifacts?.findings ??
-    (request && snapshot ? props.story(snapshot) : undefined);
+  const findings = request && snapshot ? props.story(snapshot) : undefined;
   const story = findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
@@ -119,13 +111,11 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   const toolbar = (
     <AppToolbar
       csvExport={
-        artifacts
-          ? artifacts.csvExport
-          : request
-            ? snapshot
-              ? props.csvExport(snapshot)
-              : null
-            : props.csvExport
+        request
+          ? snapshot
+            ? props.csvExport(snapshot)
+            : null
+          : props.csvExport
       }
       requestState={request?.view.kind}
       refresh={
@@ -233,12 +223,6 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
             <footer className="altertable-app-content-footer">
               <TextContent>{props.footer}</TextContent>
             </footer>
-          )}
-          {request && (
-            <DataViewToast
-              view={request.view}
-              onRetry={() => void request.refetch()}
-            />
           )}
         </AppLayout>
       </InspectionContext>

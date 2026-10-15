@@ -392,13 +392,14 @@ function CustomerTable({
   customers,
 }: {
   customers: ReturnType<typeof createCustomers>;
-  source:
-    | { loading: true }
-    | { loading: false; data: { rows: typeof records }; input: Input };
+  source: import('@altertable/data-app/react').ViewSource<
+    { rows: typeof records },
+    Input
+  >;
 }) {
   const filters = useAppVariables(customerFilters);
   const hasActiveFilters =
-    !source.loading &&
+    'input' in source &&
     (source.input.country.kind !== 'all' ||
       source.input.segment.kind !== 'all' ||
       source.input.active.kind !== 'all' ||

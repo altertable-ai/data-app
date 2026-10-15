@@ -50,18 +50,9 @@ test('widgets isolate initial query failure and retry only their shared view', a
       )
       .toContain('Couldn’t load results');
   }
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
   expect(
-    await page
-      .getByRole('menuitem', { name: 'Acquisition unavailable' })
-      .getAttribute('aria-disabled')
-  ).toBe('true');
-  expect(
-    await page
-      .getByRole('menuitem', { name: 'Export all ZIP' })
-      .getAttribute('aria-disabled')
-  ).toBe('true');
-  await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Export', exact: true }).isEnabled()
+  ).toBe(true);
   await chart.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect
     .poll(() => page.getByLabel('Acquisition requests').textContent())
@@ -91,7 +82,7 @@ async function choose(
   await page.getByRole('option', { name: response, exact: true }).click();
 }
 async function ready(page: import('playwright').Page) {
-  await page.goto('/recovery');
+  await page.goto('/recovery?primary=acquisition');
   for (const name of ['Sales', 'Acquisition'])
     await page
       .getByRole('button', { name: `Complete ${name}`, exact: true })
@@ -135,13 +126,6 @@ test('different-input refresh failure preserves each widget scope, story and CSV
     .poll(() => chart.getByRole('alert').textContent())
     .toContain('Showing All markets while Europe is unavailable');
   await page.getByRole('button', { name: 'Export', exact: true }).click();
-  await expect
-    .poll(() =>
-      page
-        .getByRole('menuitem', { name: 'Export Acquisition CSV', exact: true })
-        .textContent()
-    )
-    .toContain('All markets (last result)');
   const download = page.waitForEvent('download');
   await page
     .getByRole('menuitem', { name: 'Export Acquisition CSV', exact: true })
@@ -154,7 +138,6 @@ test('different-input refresh failure preserves each widget scope, story and CSV
     .click();
   const dialog = page.getByRole('dialog');
   await expect.poll(() => dialog.isVisible()).toBe(true);
-  await page.keyboard.press('ArrowRight');
   await expect
     .poll(() => dialog.textContent())
     .toContain('Acquired customers: 41');
@@ -233,7 +216,7 @@ test('render failure stays in one widget and rendering retry never reruns SQL', 
 test('measured zero remains data, while successful empty results remove prior findings and exports', async ({
   page,
 }) => {
-  await page.goto('/recovery');
+  await page.goto('/recovery?primary=acquisition');
   await choose(page, 'Acquisition', 'Measured zero');
   await page
     .getByRole('button', { name: 'Complete Sales', exact: true })
@@ -255,19 +238,16 @@ test('measured zero remains data, while successful empty results remove prior fi
     .poll(() => chart.textContent())
     .toContain('No acquisitions in this market');
   expect(await chart.getByRole('alert').count()).toBe(0);
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
   expect(
     await page
-      .getByRole('menuitem', { name: 'Acquisition unavailable', exact: true })
-      .getAttribute('aria-disabled')
-  ).toBe('true');
-  await page.keyboard.press('Escape');
-  await page
-    .getByRole('button', { name: 'Cancel refresh', exact: true })
-    .click();
-  await expect
-    .poll(() => page.getByLabel('Sales requests').textContent())
-    .toBe('2 requests · settled');
+      .getByRole('button', { name: 'Export CSV', exact: true })
+      .isDisabled()
+  ).toBe(true);
+  expect(
+    await page
+      .getByRole('button', { name: 'Present story', exact: true })
+      .isDisabled()
+  ).toBe(true);
 });
 
 for (const [response, message] of [
@@ -355,7 +335,6 @@ test('an open story freezes its starting snapshots while a real request complete
     .click();
   const dialog = page.getByRole('dialog');
   await expect.poll(() => dialog.isVisible()).toBe(true);
-  await page.keyboard.press('ArrowRight');
   await expect
     .poll(() => dialog.textContent())
     .toContain('Acquired customers: 41');
@@ -374,7 +353,6 @@ test('an open story freezes its starting snapshots while a real request complete
     .getByRole('button', { name: 'Present story', exact: true })
     .click();
   await expect.poll(() => dialog.isVisible()).toBe(true);
-  await page.keyboard.press('ArrowRight');
   await expect
     .poll(() => dialog.textContent())
     .toContain('Acquired customers: 42');
@@ -416,12 +394,12 @@ test('canceling a same-input refresh restores displayed data without a failure s
   await ready(page);
   await page.getByRole('button', { name: 'Refresh data', exact: true }).click();
   await expect
-    .poll(() => page.getByLabel('Sales requests').textContent())
+    .poll(() => page.getByLabel('Acquisition requests').textContent())
     .toBe('2 requests · waiting');
   await page
     .getByRole('button', { name: 'Cancel refresh', exact: true })
     .click();
-  for (const name of ['Sales', 'Acquisition']) {
+  for (const name of ['Acquisition']) {
     await expect
       .poll(() => page.getByLabel(`${name} requests`).textContent())
       .toBe('2 requests · settled');
@@ -478,7 +456,7 @@ test('canceling a changed-filter request stops updating feedback and preserves t
 test('an accepted result resets a render failure even when returned values are unchanged', async ({
   page,
 }) => {
-  await page.goto('/recovery');
+  await page.goto('/recovery?primary=acquisition');
   await choose(page, 'Acquisition', 'Measured zero');
   for (const name of ['Sales', 'Acquisition'])
     await page

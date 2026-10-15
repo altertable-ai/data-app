@@ -76,7 +76,7 @@ import {
   type WidgetStatus,
   type AppIconName,
 } from '@altertable/data-app/react/ui';
-import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+
 import { type DataView } from '@/src/core/data-view';
 import '@/dev/fixtures/gallery.css';
 
@@ -829,23 +829,6 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               </Button>
             ))}
           </VariableBar>
-        </Case>
-        <Case
-          title="DataSection"
-          note="Opt-in inline notice above a local section’s retained content. Widget feedback belongs in its toolbar; page feedback belongs in page actions."
-        >
-          <DataSection
-            loadingFallback={<ContentSkeleton variant="panel" />}
-            result={{ view: dataView, refetch: () => setRequest('ready') }}
-            emptyFallback={empty}
-            label="Fixture request"
-          >
-            {(data, input) => (
-              <p>
-                {data} · {input}
-              </p>
-            )}
-          </DataSection>
         </Case>
         <Case
           title="Custom DataBoundary"

@@ -98,7 +98,9 @@ function AdvancePeriod({ period }: AdvancePeriodProps) {
 }
 const content = view.content(source => (
   <>
-    <AdvancePeriod period={source.loading ? undefined : source.input.period} />
+    <AdvancePeriod
+      period={'data' in source ? source.input.period : undefined}
+    />
     <MetricWidget metric={metric} source={source} annotationId="revenue" />
   </>
 ));

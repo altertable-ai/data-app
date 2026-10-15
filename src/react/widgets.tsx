@@ -4,6 +4,7 @@ import {
   type Dataset,
   type Metric,
   type ViewSource,
+  type ReadableSource,
 } from '@/src/react/bindings';
 import {
   MetricWidget as DisplayMetric,
@@ -37,17 +38,17 @@ import type { DataReading } from '@/src/core/reading';
 export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
   Extract<DisplayMetricProps, { metric: MetricDefinition }>,
   'metric' | 'reading'
-> & { metric: Metric<Data, Input>; source?: ViewSource<Data, Input> };
+> & { metric: Metric<Data, Input>; source: ViewSource<Data, Input> };
 function MetricWidgetContent<Data, Input>({
   metric,
   source,
   ...presentation
-}: MetricWidgetProps<Data, Input>) {
+}: MetricWidgetProps<Data, Input> & { source: ReadableSource<Data, Input> }) {
   return (
     <DisplayMetric
       {...presentation}
       metric={metric.definition}
-      reading={metric.read(source!)}
+      reading={metric.read(source)}
     />
   );
 }
@@ -66,7 +67,7 @@ export type TableWidgetProps<Row, Data = unknown, Input = unknown> = Omit<
 > &
   TableDisplayMode & {
     dataset: Dataset<Data, Input, Row>;
-    source?: ViewSource<Data, Input>;
+    source: ViewSource<Data, Input>;
     title?: ReactNode;
   };
 function TableWidgetContent<Row, Data, Input>({
@@ -74,8 +75,10 @@ function TableWidgetContent<Row, Data, Input>({
   source,
   title,
   ...presentation
-}: TableWidgetProps<Row, Data, Input>) {
-  const data = datasetTable(dataset, source!);
+}: TableWidgetProps<Row, Data, Input> & {
+  source: ReadableSource<Data, Input>;
+}) {
+  const data = datasetTable(dataset, source);
   return (
     <DisplayTable {...presentation} {...data} title={title ?? data.title} />
   );
@@ -118,7 +121,7 @@ export type VisualizationWidgetProps<
 > &
   VisualContent<Row> & {
     dataset: Dataset<Data, Input, Row>;
-    source?: ViewSource<Data, Input>;
+    source: ViewSource<Data, Input>;
     title?: ReactNode;
   };
 function VisualizationWidgetContent<Row, Data, Input>({
@@ -126,8 +129,10 @@ function VisualizationWidgetContent<Row, Data, Input>({
   source,
   title,
   ...presentation
-}: VisualizationWidgetProps<Row, Data, Input>) {
-  const data = datasetTable(dataset, source!);
+}: VisualizationWidgetProps<Row, Data, Input> & {
+  source: ReadableSource<Data, Input>;
+}) {
+  const data = datasetTable(dataset, source);
   return (
     <DisplayVisual
       {...presentation}
@@ -143,13 +148,13 @@ type NarrativeBinding<Data, Input, Row> =
   | {
       metric: Metric<Data, Input>;
       dataset?: never;
-      source?: ViewSource<Data, Input>;
+      source: ViewSource<Data, Input>;
       children?: (values: MetricValues) => ReactNode;
     }
   | {
       metric?: never;
       dataset: Dataset<Data, Input, Row>;
-      source?: ViewSource<Data, Input>;
+      source: ViewSource<Data, Input>;
       children: (rows: readonly Row[]) => ReactNode;
     };
 export type TextWidgetProps<
@@ -162,7 +167,9 @@ export type TextWidgetProps<
 > &
   NarrativeBinding<Data, Input, Row> & { title?: ReactNode };
 function TextWidgetContent<Data, Input, Row>(
-  props: TextWidgetProps<Data, Input, Row>
+  props: TextWidgetProps<Data, Input, Row> & {
+    source: ReadableSource<Data, Input>;
+  }
 ) {
   if (props.metric) {
     const { metric, source, title, children, ...presentation } = props;
@@ -171,7 +178,7 @@ function TextWidgetContent<Data, Input, Row>(
         {...presentation}
         title={title ?? metric.definition.label}
         evidence={metric.definition.evidence}
-        reading={metric.read(source!)}
+        reading={metric.read(source)}
       >
         {children ??
           (values => formatMetric(values.current, metric.definition.format))}
@@ -184,7 +191,7 @@ function TextWidgetContent<Data, Input, Row>(
       {...presentation}
       title={title ?? dataset.name}
       evidence={dataset.evidence}
-      reading={dataset.read(source!)}
+      reading={dataset.read(source)}
     >
       {children}
     </DisplayText>
@@ -211,7 +218,9 @@ export type DataValueProps<
       }
   );
 function DataValueContent<Data, Input, Row>(
-  props: DataValueProps<Data, Input, Row>
+  props: DataValueProps<Data, Input, Row> & {
+    source: ReadableSource<Data, Input>;
+  }
 ) {
   if (props.metric) {
     const {
@@ -224,7 +233,7 @@ function DataValueContent<Data, Input, Row>(
     return (
       <DisplayValue
         {...presentation}
-        reading={metric.read(source!)}
+        reading={metric.read(source)}
         loadingFallback={loadingFallback}
       >
         {children ??
@@ -243,28 +252,14 @@ function DataValueContent<Data, Input, Row>(
     return (
       <DisplayValue
         {...presentation}
-        reading={dataset.read(source!)}
+        reading={dataset.read(source)}
         loadingFallback={loadingFallback}
       >
         {children}
       </DisplayValue>
     );
   }
-  const {
-    scope,
-    children,
-    loadingFallback = <Skeleton inline />,
-    ...presentation
-  } = props;
-  return (
-    <DisplayValue
-      {...presentation}
-      reading={scope}
-      loadingFallback={loadingFallback}
-    >
-      {children ?? (value => value)}
-    </DisplayValue>
-  );
+  return null;
 }
 
 export function MetricWidget<Data, Input>(
@@ -344,7 +339,23 @@ export function TextWidget<Data, Input, Row>(
 export function DataValue<Data, Input, Row>(
   props: DataValueProps<Data, Input, Row>
 ) {
-  if (props.scope) return <DataValueContent {...props} />;
+  if (props.scope) {
+    const {
+      scope,
+      children,
+      loadingFallback = <Skeleton inline />,
+      ...presentation
+    } = props;
+    return (
+      <DisplayValue
+        {...presentation}
+        reading={scope}
+        loadingFallback={loadingFallback}
+      >
+        {children ?? (value => value)}
+      </DisplayValue>
+    );
+  }
   return (
     <WidgetRecovery
       binding={props.metric ?? props.dataset!}

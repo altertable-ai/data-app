@@ -73,7 +73,7 @@ const app: DataAppProps<number, Record<string, never>> = {
   showSearchSuggestions: false,
 };
 const content = view.content(result => (
-  <p>{result.loading ? 'Loading' : result.data}</p>
+  <p>{'data' in result ? result.data : result.state}</p>
 ));
 const section: DataSectionProps<number, Record<string, never>> = {
   content,
@@ -117,7 +117,7 @@ void view.csvExport;
 <DataApp {...app} datasets={[]} />;
 <TableWidget
   dataset={dataset}
-  source={{ data: 1, input: {} }}
+  source={{ state: 'ready', data: 1, input: {} }}
   // @ts-expect-error A table derives its reading from the dataset and source.
   reading={{ loading: false, value: [1] }}
 />;
@@ -154,30 +154,39 @@ const boundMetric = view.metric(
 );
 // @ts-expect-error Metric adapters are internal.
 void boundMetric.props;
-<VisualizationWidget dataset={dataset} source={{ data: 1, input: {} }}>
+<VisualizationWidget
+  dataset={dataset}
+  source={{ state: 'ready', data: 1, input: {} }}
+>
   {rows => <p>{rows[0]}</p>}
 </VisualizationWidget>;
 <VisualizationWidget
   dataset={dataset}
-  source={{ loading: true }}
+  source={{ state: 'loading' }}
   viewLabel="View"
   views={[{ id: 'values', label: 'Values', render: rows => <p>{rows[0]}</p> }]}
 />;
 <VisualizationWidget
   dataset={dataset}
-  source={{ data: 1, input: {} }}
+  source={{ state: 'ready', data: 1, input: {} }}
   // @ts-expect-error Empty state is derived from the dataset selection.
   isEmpty={() => false}
 >
   {rows => <p>{rows[0]}</p>}
 </VisualizationWidget>;
 
-<DataValue metric={boundMetric} source={{ data: 1, input: {} }} />;
-<TextWidget metric={boundMetric} source={{ data: 1, input: {} }} />;
-<DataValue dataset={dataset} source={{ data: 1, input: {} }}>
+<DataValue
+  metric={boundMetric}
+  source={{ state: 'ready', data: 1, input: {} }}
+/>;
+<TextWidget
+  metric={boundMetric}
+  source={{ state: 'ready', data: 1, input: {} }}
+/>;
+<DataValue dataset={dataset} source={{ state: 'ready', data: 1, input: {} }}>
   {rows => rows[0]}
 </DataValue>;
-<TextWidget dataset={dataset} source={{ data: 1, input: {} }}>
+<TextWidget dataset={dataset} source={{ state: 'ready', data: 1, input: {} }}>
   {rows => <p>{rows[0]}</p>}
 </TextWidget>;
 <DataValue scope={{ loading: true }} />;
@@ -188,7 +197,7 @@ type _RawColumn = authoring.TableWidgetColumn<number>;
 // @ts-expect-error Arbitrary readings belong to direct UI composition.
 <DataValue reading={{ loading: false, value: 1 }}>{value => value}</DataValue>;
 <MetricWidget
-  source={{ data: 1, input: {} }}
+  source={{ state: 'ready', data: 1, input: {} }}
   // @ts-expect-error A metric must be created by the declared view.
   metric={{ definition: boundMetric.definition, read: boundMetric.read }}
 />;
@@ -352,7 +361,11 @@ const datedRows = view.dataset({
   },
   evidence: { id: 'dated-values', queryNames: ['count'] },
 });
-<TableWidget dataset={datedRows} source={{ loading: true }} headingLevel={3} />;
+<TableWidget
+  dataset={datedRows}
+  source={{ state: 'loading' }}
+  headingLevel={3}
+/>;
 <authoring.SectionHeading level={2}>Activity</authoring.SectionHeading>;
 <authoring.DateDisplay value="2026-09-24" format={{ kind: 'date' }} />;
 // @ts-expect-error Semantic heading levels must be valid HTML heading levels below the page title.

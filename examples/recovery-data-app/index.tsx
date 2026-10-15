@@ -18,8 +18,7 @@ import {
   VisualizationWidget,
   injectDataAppStyles,
   mountDataApp,
-  type AppFinding,
-  type AppSnapshots,
+  DataSection,
 } from '@altertable/data-app/react';
 import { BarChart, Select } from '@altertable/data-app/react/ui';
 // eslint-disable-next-line no-restricted-imports -- Packaged examples resolve their own files.
@@ -175,27 +174,24 @@ const customers = acquisitionView.metric(
   { id: 'acquired', glossaryId: 'acquired', format: { kind: 'count' } },
   data => ({ current: data.rows.reduce((total, row) => total + row.value, 0) })
 );
-const views = { sales: salesView, acquisition: acquisitionView };
-function story(snapshots: AppSnapshots<typeof views>): AppFinding[] {
-  const findings: AppFinding[] = [];
-  if (snapshots.sales)
-    findings.push({
-      id: 'sales',
-      headline: `Revenue: ${revenue.read(snapshots.sales).value.current} EUR`,
-      visual: <MetricWidget metric={revenue} source={snapshots.sales} />,
-      evidence: revenue,
-    });
-  if (snapshots.acquisition)
-    findings.push({
-      id: 'acquisition',
-      headline: `Acquired customers: ${customers.read(snapshots.acquisition).value.current}`,
-      visual: (
-        <MetricWidget metric={customers} source={snapshots.acquisition} />
-      ),
-      evidence: customers,
-    });
-  return findings;
-}
+// The toolbar owns exactly one view. The other section remains independent.
+const primaryIsAcquisition =
+  new URLSearchParams(location.search).get('primary') === 'acquisition';
+const primaryView = primaryIsAcquisition ? acquisitionView : salesView;
+const primaryDataset = primaryIsAcquisition ? acquisition : sales;
+const primaryMetric = primaryIsAcquisition ? customers : revenue;
+const primaryTotal = primaryView.dataset({
+  name: 'Total',
+  select: data => [
+    { total: data.rows.reduce((sum, row) => sum + row.value, 0) },
+  ],
+  rowKey: () => 'total',
+  evidence: {
+    id: 'total',
+    queryNames: [primaryIsAcquisition ? 'acquisition' : 'sales'],
+  },
+  columns: { total: { value: row => row.total } },
+});
 const responseOptions: { id: ResponseMode; label: string }[] = [
   { id: 'success', label: 'Success' },
   { id: 'zero', label: 'Measured zero' },
@@ -215,8 +211,8 @@ function SimulationControls() {
         <p>
           Choose the next response, then complete the waiting request. Retry
           creates another waiting request. Change Market to reproduce refreshes
-          with different inputs. Refresh data requests both views; Cancel
-          refresh aborts pending work.
+          with different inputs. The toolbar refreshes its primary view. Each
+          section also has its own refresh and cancel controls.
         </p>
       </TextContent>
       <Grid columns={2}>
@@ -280,7 +276,21 @@ function FragileChart({
 function App() {
   const [broken, setBroken] = useState(false);
   return (
-    <DataApp views={views} datasets={[sales, acquisition]} story={story}>
+    <DataApp
+      view={primaryView}
+      datasets={[primaryDataset, primaryTotal]}
+      story={snapshot => [
+        {
+          id: 'primary',
+          headline: primaryIsAcquisition
+            ? `Acquired customers: ${customers.read(snapshot).value.current}`
+            : `Revenue: ${revenue.read(snapshot).value.current} EUR`,
+          context: `${primaryView.scope(snapshot)}${snapshot.state === 'stale-error' ? ' · last successful result' : ''}`,
+          visual: <MetricWidget metric={primaryMetric} source={snapshot} />,
+          evidence: primaryMetric,
+        },
+      ]}
+    >
       <Stack>
         <SimulationControls />
         <TextContent>
@@ -291,30 +301,75 @@ function App() {
             present.
           </p>
         </TextContent>
-        <Grid columns={2}>
-          <MetricWidget metric={revenue} />
-          <TableWidget dataset={sales} pagination={false} />
-          <MetricWidget metric={customers} />
-          <TableWidget dataset={acquisition} pagination={false} />
-          <TextWidget title="Acquisition finding" metric={customers}>
-            {values => <p>Acquired {values.current} customers.</p>}
-          </TextWidget>
-          <VisualizationWidget
-            title="Acquisition chart"
-            dataset={acquisition}
-            action={
-              <Button onClick={() => setBroken(value => !value)}>
-                {broken ? 'Repair visualization' : 'Break visualization'}
-              </Button>
-            }
-          >
-            {rows => <FragileChart broken={broken} rows={rows} />}
-          </VisualizationWidget>
-        </Grid>
         <TextContent>
           <p>
-            Inline revenue: <DataValue metric={revenue} />.
+            Toolbar: {primaryIsAcquisition ? 'Acquisition' : 'Sales'}.{' '}
+            <a href="?primary=sales">Use Sales</a> ·{' '}
+            <a href="?primary=acquisition">Use Acquisition</a>
           </p>
+        </TextContent>
+        <DataSection
+          content={salesView.content(source => (
+            <Stack>
+              <Button onClick={() => source.refetch()}>Refresh sales</Button>
+              <Button onClick={() => source.cancel()}>Cancel sales</Button>
+              <Grid columns={2}>
+                <MetricWidget metric={revenue} source={source} />
+                <TableWidget
+                  dataset={sales}
+                  source={source}
+                  pagination={false}
+                />
+              </Grid>
+              <TextContent>
+                <p>
+                  Inline revenue: <DataValue metric={revenue} source={source} />
+                  .
+                </p>
+              </TextContent>
+            </Stack>
+          ))}
+        />
+        <DataSection
+          content={acquisitionView.content(source => (
+            <Stack>
+              <Button onClick={() => source.refetch()}>
+                Refresh acquisition
+              </Button>
+              <Button onClick={() => source.cancel()}>
+                Cancel acquisition
+              </Button>
+              <Grid columns={2}>
+                <MetricWidget metric={customers} source={source} />
+                <TableWidget
+                  dataset={acquisition}
+                  source={source}
+                  pagination={false}
+                />
+                <TextWidget
+                  title="Acquisition finding"
+                  metric={customers}
+                  source={source}
+                >
+                  {values => <p>Acquired {values.current} customers.</p>}
+                </TextWidget>
+                <VisualizationWidget
+                  title="Acquisition chart"
+                  dataset={acquisition}
+                  source={source}
+                  action={
+                    <Button onClick={() => setBroken(value => !value)}>
+                      {broken ? 'Repair visualization' : 'Break visualization'}
+                    </Button>
+                  }
+                >
+                  {rows => <FragileChart broken={broken} rows={rows} />}
+                </VisualizationWidget>
+              </Grid>
+            </Stack>
+          ))}
+        />
+        <TextContent>
           <p>
             Break the chart to isolate a render failure. Repair visualization
             removes the cause; Retry remounts the chart without running SQL.

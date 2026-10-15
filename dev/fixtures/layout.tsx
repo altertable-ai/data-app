@@ -11,7 +11,9 @@ import {
   injectDataAppStyles,
 } from '@altertable/data-app/react';
 import { DataAppProvider, MetricWidget } from '@altertable/data-app/react/ui';
-import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
+import { DataBoundary } from '@/src/react/ui/DataBoundary';
+import { EmptyState } from '@altertable/data-app/react';
+import { StatusPanel } from '@/src/react/ui/StatusPanel';
 import { type DataView } from '@/src/core/data-view';
 
 const dataApp = defineDataApp({
@@ -96,13 +98,16 @@ createRoot(document.getElementById('root')!).render(
           <h2>Layout contract</h2>
           <p>Shared spacing at every width.</p>
         </TextContent>
-        <DataSection
-          result={{ view, refetch() {} }}
-          emptyFallback={{ title: 'No results' }}
+        <DataBoundary
+          view={view}
+          emptyFallback={<EmptyState title="No results" />}
+          error={() => (
+            <StatusPanel status="error" title="Couldn’t load results." />
+          )}
           loadingFallback={<Cards loading />}
         >
           {() => <Cards />}
-        </DataSection>
+        </DataBoundary>
       </Stack>
       <TextContent>
         <p>Following section</p>

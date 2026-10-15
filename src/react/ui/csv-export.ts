@@ -7,9 +7,6 @@ export type CsvCell = string | number | boolean | null | undefined;
 /** One named dataset with ordered columns and raw displayed values. */
 export type CsvTable = {
   name: string;
-  /** Displayed scope and freshness; omitted for static exports. */
-  scope?: string;
-  stale?: boolean;
   columns: readonly string[];
   rows: readonly (readonly CsvCell[])[];
 };
@@ -17,9 +14,7 @@ export type CsvTable = {
 /** All distinct datasets in the displayed result; filename names the download. */
 export type CsvExport = {
   filename: string;
-  tables: readonly CsvTable[];
-  /** Declared datasets that have no displayed result; combined export stays disabled. */
-  unavailable?: readonly string[];
+  tables: readonly [CsvTable, ...CsvTable[]];
 };
 
 export function formatCsv({
@@ -54,8 +49,6 @@ export function createCsvDownload(
   data: CsvExport,
   selectedTable?: CsvTable
 ): { filename: string; blob: Blob; route: 'export:csv' | 'export:zip' } {
-  if (!selectedTable && data.unavailable?.length)
-    throw new Error('Some export datasets are unavailable.');
   if (!data.tables.length)
     throw new Error('CSV export needs at least one dataset.');
   const names = data.tables.map(table =>

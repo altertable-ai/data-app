@@ -387,7 +387,7 @@ export function createDataHooks<Operations extends DataOperations>(
             >
           ) => ReactNode
         ): ViewContent<Data, Input> {
-          return new ViewContent(view, render, describeInput);
+          return new ViewContent(view, render);
         },
       }
     );
@@ -531,7 +531,6 @@ export function createDataHooks<Operations extends DataOperations>(
           : undefined,
       searchControls: variables.searchControls,
       filterControls: variables.filterControls,
-      controlBar: variables.controlBar,
       variables,
     };
   }

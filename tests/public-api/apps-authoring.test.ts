@@ -161,7 +161,11 @@ describe('authoring', () => {
       .toBe(true);
     await expect
       .poll(() =>
-        app.getByRole('status').filter({ hasText: 'Updating…' }).isVisible()
+        app
+          .getByRole('region', { name: 'Total samples', exact: true })
+          .getByRole('status')
+          .filter({ hasText: 'Refreshing' })
+          .isVisible()
       )
       .toBe(true);
     release!();
@@ -195,6 +199,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
+          .getByRole('region', { name: 'Total samples', exact: true })
           .getByRole('alert')
           .filter({
             hasText:
@@ -229,7 +234,10 @@ describe('authoring', () => {
       .getByRole('button', { name: 'Exit presentation', exact: true })
       .click();
     fail = false;
-    await app.getByRole('button', { name: 'Try again', exact: true }).click();
+    await app
+      .getByRole('region', { name: 'Total samples', exact: true })
+      .getByRole('button', { name: 'Retry', exact: true, disabled: false })
+      .click();
     await expect
       .poll(() =>
         app
@@ -242,7 +250,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('main')
+          .getByRole('region', { name: 'Total samples', exact: true })
           .getByText('No matching groups', { exact: true })
           .isVisible()
       )
@@ -259,7 +267,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
-          .getByRole('main')
+          .getByRole('region', { name: 'Total samples', exact: true })
           .getByText('No matching groups', { exact: true })
           .isVisible()
       )
@@ -317,6 +325,7 @@ describe('authoring', () => {
     await expect
       .poll(() =>
         app
+          .getByRole('region', { name: 'Total samples', exact: true })
           .getByRole('alert')
           .filter({ hasText: 'Couldn’t load results' })
           .isVisible()
@@ -337,7 +346,10 @@ describe('authoring', () => {
       )
       .toBe(true);
     fail = false;
-    await app.getByRole('button', { name: 'Retry', exact: true }).click();
+    await app
+      .getByRole('region', { name: 'Total samples', exact: true })
+      .getByRole('button', { name: 'Retry', exact: true, disabled: false })
+      .click();
     await expect
       .poll(() =>
         app

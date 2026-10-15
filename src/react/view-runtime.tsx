@@ -1,7 +1,6 @@
 import type { DataReading } from '@/src/core/reading';
 import type { DataContext } from '@/src/react/ui/data-context';
-import { createContext, useContext } from 'react';
-import type { ViewControlBarProps } from '@/src/react/view-control-bar';
+import { createContext } from 'react';
 import type { ReactNode } from 'react';
 import type { DataView, DisplayedSnapshot } from '@/src/core/data-view';
 import type { DisclosedQuery } from '@/src/core/contract';
@@ -20,7 +19,6 @@ export type ViewResult<Data, Input> = {
   queries?: DisclosedQuery[];
   searchControls?: ReactNode;
   filterControls?: ReactNode;
-  controlBar?: ViewControlBarProps;
   emptyFallback: EmptyContent;
 };
 
@@ -65,20 +63,3 @@ export function getViewDefinition<Data, Input, Definition>(
 ): Definition {
   return DeclaredView.definition(view);
 }
-
-/** Shared request ownership for source-free widgets and sections. */
-export const ViewResultsContext = createContext<ReadonlyMap<
-  object,
-  ViewResult<any, any>
-> | null>(null);
-
-export function useSharedViewResult<Data, Input>(view: object) {
-  return useContext(ViewResultsContext)?.get(view) as
-    | ViewResult<Data, Input>
-    | undefined;
-}
-
-/** Variables already rendered by an earlier registered view. */
-export const HiddenViewVariablesContext = createContext<ReadonlySet<object>>(
-  new Set()
-);

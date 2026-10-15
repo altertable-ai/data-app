@@ -40,7 +40,7 @@ import { VariableBar } from '@/src/react/ui/VariableBar';
 import { type WidgetEvidence, mountDataApp } from '@altertable/data-app/react';
 import { BarChart } from '@altertable/data-app/react/ui';
 import { bindDataset } from '@/src/react/bindings';
-import { defineDataContent } from '@/src/react/content';
+import { defineDataContent } from '@/dev/fixtures/content';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';
 import { resolveDataView } from '@/src/core/data-view';
 import { writeSearch } from '@/src/react/ui/search';

@@ -1,7 +1,5 @@
-import { WidgetRequestContext } from '@/src/react/widget-request';
+import { WidgetSourceContext } from '@/src/react/widget-source';
 import { getDataFailure } from '@/src/react/data-failure';
-import { StatusPanel } from '@/src/react/ui/StatusPanel';
-import { Button } from '@/src/react/ui/Button';
 import { getAnnotationProps } from '@/src/react/annotations/getAnnotationProps';
 import {
   useId,
@@ -104,47 +102,22 @@ function DataWidgetContent({
   emptyFallback?: EmptyContent;
   children: ReactNode;
 }) {
-  const request = useContext(WidgetRequestContext);
-  const view = request?.renderFailed ? undefined : request?.view;
-  if (view?.kind === 'updating')
+  const request = useContext(WidgetSourceContext);
+  const source = request?.source;
+  const view = request?.renderFailed ? undefined : source;
+  if (view?.state === 'updating')
     status = { kind: 'updating', message: view.message };
-  else if (view?.kind === 'stale-error') {
+  else if (view?.state === 'stale-error') {
     const presentation = getDataFailure(view.error);
     status = {
       kind: 'error',
       message: view.message,
-      onRetry: presentation.retryable
-        ? () => void request?.refetch()
-        : undefined,
+      onRetry:
+        presentation.retryable && source?.refetch
+          ? () => void source.refetch?.()
+          : undefined,
     };
   } else if (request) status ??= { kind: 'idle' };
-  if (view?.kind === 'error') {
-    const presentation = getDataFailure(view.error);
-    children = (
-      <StatusPanel
-        status="error"
-        title={presentation.message}
-        action={
-          presentation.retryable && (
-            <Button
-              variant="ghost"
-              size="compact"
-              onClick={() => void request?.refetch()}
-            >
-              Retry
-            </Button>
-          )
-        }
-      />
-    );
-    emptyFallback = undefined;
-    footer = undefined;
-    props['aria-busy'] = undefined;
-  } else if (view?.kind === 'empty') {
-    emptyFallback = request?.emptyFallback;
-    footer = undefined;
-    props['aria-busy'] = undefined;
-  }
   const titleId = useId();
   const Heading = `h${headingLevel}` as ElementType;
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
@@ -220,8 +193,8 @@ function DataWidgetContent({
             )}
           </Heading>
           {description && <p>{description}</p>}
-          {request?.scope && !request.scope.loading && (
-            <p>{request.scope.value}</p>
+          {source?.scope && !source.scope.loading && (
+            <p>{source.scope.value}</p>
           )}
         </div>
         <div className="altertable-data-widget-help">

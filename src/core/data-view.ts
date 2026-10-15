@@ -20,9 +20,12 @@ export type DataView<T, Input = unknown> =
     };
 
 export type DataSnapshot<Data, Input> = { data: Data; input: Input };
-export type DisplayedSnapshot<Data, Input> = DataSnapshot<Data, Input> & {
-  state: 'ready' | 'updating' | 'stale-error';
-};
+export type DisplayedSnapshot<Data, Input> = DataSnapshot<Data, Input> &
+  (
+    | { state: 'ready' }
+    | { state: 'updating'; message: string }
+    | { state: 'stale-error'; error: Error; message: string }
+  );
 
 /** The result currently shown to the reader, including the input that produced it. */
 export function displayedSnapshot<Data, Input>(
@@ -31,7 +34,20 @@ export function displayedSnapshot<Data, Input>(
   if (view.kind === 'ready')
     return { data: view.data, input: view.input, state: view.kind };
   if (view.kind === 'updating' || view.kind === 'stale-error')
-    return { data: view.data, input: view.displayedInput, state: view.kind };
+    return view.kind === 'updating'
+      ? {
+          data: view.data,
+          input: view.displayedInput,
+          state: view.kind,
+          message: view.message,
+        }
+      : {
+          data: view.data,
+          input: view.displayedInput,
+          state: view.kind,
+          error: view.error,
+          message: view.message,
+        };
 
   return undefined;
 }

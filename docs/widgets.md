@@ -2,9 +2,8 @@
 
 ## Choose a widget
 
-Metrics, tables, and visualizations from `/react` consume view bindings. Omit
-`source` to use their registered live view; pass it for explicit content or frozen
-snapshots. For static displays, use
+Metrics, tables, and visualizations from `/react` consume view bindings and a
+required `source` from `view.content()` or a frozen story snapshot. For static displays, use
 [direct UI composition](ui.md).
 Manage requests in the [view and section](views.md); show skeletons for loading
 readings without inventing values. Use `isEmpty` for the predicate and
@@ -55,15 +54,13 @@ visualization workflow.
 Use widget `views` when a chart and another representation answer the same
 question from the same dataset.
 
-## Live and explicit sources
+## Explicit sources
 
-A metric or dataset identifies its owning view. Without `source`, a widget reads
-that view's shared displayed result from `<DataApp>`; the view must be registered
-there. Loading, failure, retry, and displayed scope follow the same result.
-
-Pass `source` to render the result from `view.content()` or a frozen story snapshot.
-The binding still checks that the source belongs to its own view. An explicit
-source does not start or subscribe to a request.
+Every bound widget requires `source`. Pass the source supplied by its owning
+view's `content()` callback or story snapshot. The binding validates ownership;
+a supplied source never starts a request. Widgets derive loading, failure, retry,
+and displayed scope from that source. Direct selectors require a readable source;
+narrow error and empty states before calling `read()`.
 
 ## Declare datasets and metrics
 

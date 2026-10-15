@@ -154,10 +154,11 @@ consumption sites; update the name contract in `style-contract.ts` when adding h
 
 ## Widget recovery contracts
 
-A registered view has one React request owner. Widgets and sections reuse its
-result; they do not subscribe independently. Registry composition must preserve
-hook order when views change. Query cancellation and late responses must not
-replace another input's displayed result.
+Each section owns its request; a section using the primary view reuses the
+`<DataApp>` result. Bound widgets require an explicit owned source. Section
+content runs for every discriminated source state; selectors run only for loading
+or displayed sources. Query cancellation and late responses must not replace
+another input's displayed result.
 
 Operations return validated domain data atomically. Binding selectors run only on
 available data, retain source ownership checks, and share the view's displayed
@@ -167,9 +168,8 @@ render failures. Keep query retry policy centralized and omit ineffective retrie
 for access and rejected-SQL failures.
 
 Stories and exports use displayed snapshots, including retained failures. Freeze
-artifacts on opening and preserve failed download payloads for retry. Never silently
-export an incomplete combined result. Validate variable URL ownership, data context
-conflicts, binding ownership, and unique export names at composition boundaries.
+artifacts on opening and preserve failed download payloads for retry. The primary view owns toolbar artifacts. Validate binding ownership and unique
+export names at composition boundaries.
 
 Use `examples/recovery-data-app` for deterministic browser reproductions. Keep its
 simulation at the public lakehouse boundary so normal execution, parsing, and

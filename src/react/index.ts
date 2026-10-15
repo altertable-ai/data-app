@@ -117,11 +117,7 @@ export { DateDisplay } from '@/src/react/ui/DateDisplay';
 export type { DateDisplayProps } from '@/src/react/ui/DateDisplay';
 export { useDateFormatting } from '@/src/react/date-formatting';
 
-export type {
-  AppSnapshots,
-  AppFinding,
-  MultiViewDataAppProps,
-} from '@/src/react/multi-view-app';
-
 export { getDataFailure } from '@/src/react/data-failure';
 export type { DataFailure } from '@/src/react/data-failure';
+
+export type { ViewSource, ReadableSource } from '@/src/react/bindings';

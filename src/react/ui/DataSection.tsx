@@ -1,7 +1,7 @@
 import { DateFormattingContext } from '@/src/react/date-formatting';
-import { sectionContent, type ViewContent } from '@/src/react/content';
-import { useContext, type ComponentPropsWithRef, type ReactNode } from 'react';
-import { DataSectionBoundary } from '@/src/react/ui/DataSectionBoundary';
+import { ViewContent } from '@/src/react/content';
+import { useContext, type ComponentPropsWithRef } from 'react';
+import type { EmptyContent } from '@/src/react/ui/presentation';
 import {
   InspectionContext,
   useInspectionDefaults,
@@ -10,58 +10,45 @@ import {
   PrimaryViewContext,
   type ViewResult,
   useDeclaredResult,
-  useSharedViewResult,
 } from '@/src/react/view-runtime';
-import type { EmptyContent } from '@/src/react/ui/presentation';
 
 export type DataSectionProps<Data, Input = unknown> = {
   content: ViewContent<Data, Input>;
   emptyFallback?: EmptyContent;
-  error?: { title: ReactNode; description?: ReactNode; onRetry?: () => void };
   label?: string;
 } & Omit<ComponentPropsWithRef<'div'>, 'children' | 'content'>;
 
-export function DataSection<Data, Input>({
+/** Render the declared layout in every request state; bound widgets own recovery. */
+function SectionContent<Data, Input>({
   content,
-  ...presentation
-}: DataSectionProps<Data, Input>) {
+  result,
+  emptyFallback,
+  label,
+  ...props
+}: DataSectionProps<Data, Input> & { result: ViewResult<Data, Input> }) {
+  return (
+    <div {...props} role={label ? 'region' : undefined} aria-label={label}>
+      {ViewContent.render(content, result, emptyFallback)}
+    </div>
+  );
+}
+
+export function DataSection<Data, Input>(props: DataSectionProps<Data, Input>) {
   const primary = useContext(PrimaryViewContext);
-  const { view, ...section } = sectionContent(content);
-  const shared = useSharedViewResult<Data, Input>(view);
+  const view = ViewContent.view(props.content);
   if (primary?.declaration === view) {
-    // Identity proves the shared result belongs to this content's declaration.
-    const result = primary.result as ViewResult<Data, Input>;
     return (
-      <DataSectionBoundary
-        {...section}
-        {...presentation}
-        result={result}
-        notice="none"
+      <SectionContent
+        {...props}
+        result={primary.result as ViewResult<Data, Input>}
       />
     );
   }
-  if (shared)
-    return (
-      <DataSectionBoundary
-        {...section}
-        {...presentation}
-        result={shared}
-        notice="inline"
-      />
-    );
-  return <IndependentSection view={view} {...section} {...presentation} />;
+  return <IndependentSection {...props} />;
 }
-
-function IndependentSection<Data, Input>({
-  view,
-  ...props
-}: Omit<DataSectionProps<Data, Input>, 'content'> &
-  ReturnType<typeof sectionContent<Data, Input>>) {
-  const result = useDeclaredResult(view);
+function IndependentSection<Data, Input>(props: DataSectionProps<Data, Input>) {
+  const result = useDeclaredResult(ViewContent.view(props.content));
   const defaults = useInspectionDefaults();
-  const section = (
-    <DataSectionBoundary {...props} result={result} notice="inline" />
-  );
   return (
     <DateFormattingContext value={{ timeZone: result.timeZone }}>
       <InspectionContext
@@ -71,7 +58,7 @@ function IndependentSection<Data, Input>({
           queries: result.queries,
         }}
       >
-        {section}
+        <SectionContent {...props} result={result} />
       </InspectionContext>
     </DateFormattingContext>
   );

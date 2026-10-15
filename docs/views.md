@@ -101,49 +101,43 @@ useful `emptyFallback` copy.
 
 ## Recover widgets independently
 
-Register independently available views on `<DataApp>` and render bound widgets
-directly. Omit `source` to use the binding's registered live view:
+Pass the source from `view.content()` to every bound widget. `<DataApp>` owns
+one primary view; `<DataSection>` executes independent views separately:
 
 ```tsx
-<DataApp
-  views={{ sales: salesView, acquisition: acquisitionView }}
-  datasets={[sales, acquisition]}
-  story={({ sales, acquisition }) => [
-    ...(sales ? salesFindings(sales) : []),
-    ...(acquisition ? acquisitionFindings(acquisition) : []),
-  ]}
->
-  <Grid columns={2}>
-    <MetricWidget metric={revenue} />
-    <TableWidget dataset={acquisition} />
-  </Grid>
-</DataApp>
+const salesContent = salesView.content(source => (
+  <MetricWidget metric={revenue} source={source} />
+));
+const acquisitionContent = acquisitionView.content(source => (
+  <TableWidget dataset={acquisition} source={source} />
+));
+
+<DataApp view={salesView} datasets={[sales]} story={salesFindings}>
+  <DataSection content={salesContent} />
+  <DataSection content={acquisitionContent} />
+</DataApp>;
 ```
 
-Widgets derive skeletons, empty results, errors, displayed scope, and retry from
-their view. An initial failure replaces the body; a failed refresh retains the
-last successful result and its original input. Retry refreshes the widget's whole
-view. Rendering retry remounts only the failed widget, without rerunning SQL.
-Access and rejected-query failures direct the reader to the app owner.
+Widgets preserve their frames across loading, empty results, and errors. A failed
+refresh retains the last successful result and its original input. Retry refreshes
+the widget's whole view. Rendering retry remounts only the failed widget, without
+rerunning SQL. Access and rejected-query failures omit ineffective retries.
 
-Put widgets that must agree on one view. Use separate views for independently
-available data. An uncaught query failure rejects its entire operation; successful
-sibling queries are not partial results. A failed request is unavailable data;
-never replace it with zero or an empty array.
+The source has an explicit `state`: `loading`, `error`, `empty`, `ready`,
+`updating`, or `stale-error`. Only the last three contain displayed `data`.
+Narrow with `'data' in source` before deriving custom content. Binding `read()`
+accepts loading or displayed sources; widgets also accept error and empty sources.
+Live section sources supply `refetch()` and `cancel()`; frozen story snapshots
+carry only the displayed result. A widget never starts a request.
 
-Reuse the same variable definition across views to show one shared control.
-Conflicting variable names or URL keys are rejected. Use unique glossary and
-identifier entries, or share their definitions across data contexts.
+Keep widgets that must agree on one view. An uncaught query failure rejects its
+entire operation; successful sibling queries are not partial results. Never
+replace failed requests with zero or empty arrays. Use the same URL variable
+when independent views intentionally share a filter.
 
-Use `view.content()` with `<DataSection>` for a shared custom layout, and pass its
-`source` explicitly. Explicit sources render the supplied snapshot without starting
-a request. A live widget must belong to a view registered on its containing
-`<DataApp>`. Rendering boundaries catch React rendering and selector failures;
-handle asynchronous callbacks through the normal request path.
+For custom feedback, `getDataFailure(error)` returns a safe message, typed code,
+retryability, and optional request ID. Rendering boundaries catch selectors and
+React rendering; asynchronous callbacks use the normal request path.
 
 See the [recovery example](../examples/recovery-data-app/README.md) for deterministic
-failure controls and the same workflows exercised by browser tests.
-
-For deliberately custom request UI, `getDataFailure(error)` returns a safe message,
-typed code, retryability, and optional request ID. Keep business data separate from
-request failures; default widgets need no error configuration.
+failure controls and browser-tested workflows.

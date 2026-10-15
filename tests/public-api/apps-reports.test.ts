@@ -114,22 +114,23 @@ for (const width of [375, 1280]) {
         page
           .getByRole('alert')
           .filter({ hasText: 'Couldn’t load results' })
-          .isVisible()
+          .count()
       )
-      .toBe(true);
+      .toBe(2);
     await readable();
     respond = undefined;
-    await page.getByRole('button', { name: 'Retry', exact: true }).click();
+    await page
+      .getByRole('region', { name: 'Events', exact: true })
+      .first()
+      .getByRole('button', { name: 'Retry', exact: true })
+      .click();
     await expect.poll(() => Boolean(respond)).toBe(true);
     respond!([]);
     await expect
       .poll(() =>
-        page
-          .getByRole('main')
-          .getByText('No activity', { exact: true })
-          .isVisible()
+        page.getByRole('main').getByText('No activity', { exact: true }).count()
       )
-      .toBe(true);
+      .toBe(2);
     await readable();
     respond = undefined;
     await page
@@ -176,9 +177,9 @@ for (const width of [375, 1280]) {
         page
           .getByRole('alert')
           .filter({ hasText: /Couldn’t refresh/ })
-          .isVisible()
+          .count()
       )
-      .toBe(true);
+      .toBe(2);
     await readable();
     expect(
       await cards

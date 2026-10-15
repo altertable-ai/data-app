@@ -1,17 +1,15 @@
-import { Component, useContext, type ReactNode } from 'react';
-import { invariant } from '@/src/core/invariant';
-import { RegisteredBinding, type ViewSource } from '@/src/react/bindings';
-import { ownedSource } from '@/src/react/source-owner';
-import { ViewResultsContext } from '@/src/react/view-runtime';
-import { WidgetRequestContext } from '@/src/react/widget-request';
-import { DateFormattingContext } from '@/src/react/date-formatting';
+import { Component, type ReactNode } from 'react';
 import {
-  InspectionContext,
-  useInspectionDefaults,
-} from '@/src/react/ui/InspectionContext';
+  RegisteredBinding,
+  type ViewSource,
+  type ReadableSource,
+} from '@/src/react/bindings';
+import { WidgetSourceContext } from '@/src/react/widget-source';
 import { DataWidget, type DataWidgetProps } from '@/src/react/ui/DataWidget';
 import { StatusPanel } from '@/src/react/ui/StatusPanel';
+import { EmptyState } from '@/src/react/ui/EmptyState';
 import { Button } from '@/src/react/ui/Button';
+import { getDataFailure } from '@/src/react/data-failure';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 
 /** Reset rendering locally; a new displayed result also clears a previous render failure. */
@@ -54,7 +52,7 @@ export function WidgetRecovery<Data, Input>({
   children,
 }: {
   binding: RegisteredBinding;
-  source?: ViewSource<Data, Input>;
+  source: ViewSource<Data, Input>;
   title: ReactNode;
   description?: ReactNode;
   evidence?: WidgetEvidence;
@@ -70,24 +68,67 @@ export function WidgetRecovery<Data, Input>({
     | 'aria-label'
     | 'aria-labelledby'
   >;
-  children: (source: ViewSource<Data, Input>) => ReactNode;
+  children: (source: ReadableSource<Data, Input>) => ReactNode;
 }) {
-  const results = useContext(ViewResultsContext);
-  const defaults = useInspectionDefaults();
-  const owner = RegisteredBinding.owner(binding);
-  if (source) RegisteredBinding.assertSource(binding, source);
-  const request = source ? undefined : results?.get(owner);
-  invariant(
-    source || request,
-    'A widget without source must belong to a view registered on DataApp.'
-  );
-  const displayed: ViewSource<Data, Input> =
-    source ??
-    ownedSource(owner, request!.snapshot ?? { loading: true as const });
-  const content = (
+  RegisteredBinding.assertSource(binding, source);
+  function shell(body: ReactNode, renderFailed = false) {
+    return (
+      <WidgetSourceContext value={{ source, renderFailed }}>
+        <DataWidget
+          {...frame}
+          title={title}
+          description={description}
+          evidence={evidence}
+          action={action}
+        >
+          {body}
+        </DataWidget>
+      </WidgetSourceContext>
+    );
+  }
+  if (source.state === 'error') {
+    const failure = getDataFailure(source.error);
+    const retry = failure.retryable && source.refetch;
+    return inline ? (
+      <span role="alert">
+        Unavailable
+        {retry && (
+          <Button variant="ghost" size="compact" onClick={() => void retry()}>
+            Retry
+          </Button>
+        )}
+      </span>
+    ) : (
+      shell(
+        <StatusPanel
+          status="error"
+          title={failure.message}
+          action={
+            retry && (
+              <Button
+                variant="ghost"
+                size="compact"
+                onClick={() => void retry()}
+              >
+                Retry
+              </Button>
+            )
+          }
+        />
+      )
+    );
+  }
+  if (source.state === 'empty')
+    return inline ? (
+      <span>No results</span>
+    ) : (
+      shell(<EmptyState {...source.emptyFallback} />)
+    );
+  return (
     <RenderRecovery
       resetKey={
-        request?.revision ?? (displayed.loading ? undefined : displayed.data)
+        source.revision ??
+        (source.state === 'loading' ? undefined : source.data)
       }
       fallback={retry =>
         inline ? (
@@ -98,71 +139,35 @@ export function WidgetRecovery<Data, Input>({
             </Button>
           </span>
         ) : (
-          <WidgetRequestContext
-            value={request ? { ...request, renderFailed: true } : null}
-          >
-            <DataWidget
-              headingLevel={frame?.headingLevel}
-              annotationId={frame?.annotationId}
-              id={frame?.id}
-              className={frame?.className}
-              style={frame?.style}
-              aria-label={frame?.['aria-label']}
-              aria-labelledby={frame?.['aria-labelledby']}
-              title={title}
-              description={description}
-              evidence={evidence}
-              action={action}
-            >
-              <StatusPanel
-                status="error"
-                title="Couldn’t display results."
-                action={
-                  <Button variant="ghost" size="compact" onClick={retry}>
-                    Retry
-                  </Button>
-                }
-              />
-            </DataWidget>
-          </WidgetRequestContext>
+          shell(
+            <StatusPanel
+              status="error"
+              title="Couldn’t display results."
+              action={
+                <Button variant="ghost" size="compact" onClick={retry}>
+                  Retry
+                </Button>
+              }
+            />,
+            true
+          )
         )
       }
     >
-      <WidgetRequestContext value={request ?? null}>
-        <RenderSource source={displayed}>{children}</RenderSource>
-      </WidgetRequestContext>
+      <WidgetSourceContext value={{ source }}>
+        <RenderSource source={source}>{children}</RenderSource>
+      </WidgetSourceContext>
     </RenderRecovery>
-  );
-  if (!request) return content;
-  return (
-    <DateFormattingContext value={{ timeZone: request.timeZone }}>
-      <InspectionContext
-        value={{
-          ...defaults,
-          dataContext: request.dataContext,
-          queries: request.queries,
-        }}
-      >
-        {inline &&
-        (request.view.kind === 'error' || request.view.kind === 'empty') ? (
-          <span role={request.view.kind === 'error' ? 'alert' : undefined}>
-            Unavailable
-          </span>
-        ) : (
-          content
-        )}
-      </InspectionContext>
-    </DateFormattingContext>
   );
 }
 
-/** Invoke user selectors below the rendering boundary. */
+/** User selectors execute below the render boundary and only receive readable states. */
 function RenderSource<Data, Input>({
   source,
   children,
 }: {
-  source: ViewSource<Data, Input>;
-  children: (source: ViewSource<Data, Input>) => ReactNode;
+  source: ReadableSource<Data, Input>;
+  children: (source: ReadableSource<Data, Input>) => ReactNode;
 }) {
   return children(source);
 }

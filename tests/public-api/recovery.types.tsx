@@ -1,12 +1,12 @@
-import type {
-  AppSnapshots,
-  MultiViewDataAppProps,
-} from '@altertable/data-app/react';
 import {
   createDataHooks,
   createDataContext,
   MetricWidget,
   DataApp,
+  DataValue,
+  TableWidget,
+  VisualizationWidget,
+  TextWidget,
 } from '@altertable/data-app/react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
@@ -47,59 +47,55 @@ const dataset = sales.dataset({
   evidence: { id: 'sales', queryNames: ['sales'] },
   columns: { amount: { value: row => row.amount } },
 });
-const views = { sales, users };
-function check(snapshots: AppSnapshots<typeof views>) {
-  if (snapshots.sales) {
-    const amount: number = snapshots.sales.data.amount;
-    // @ts-expect-error Sales snapshots do not contain user counts.
-    const count = snapshots.sales.data.count;
-    return [amount, count];
+// @ts-expect-error Every bound widget requires its explicit source.
+const missing = <MetricWidget metric={metric} />;
+const content = sales.content(source => {
+  // @ts-expect-error Error, empty and loading sources have no displayed data.
+  const _unsafe = source.data;
+  if ('data' in source) {
+    const amount: number = source.data.amount;
+    const reading = metric.read(source);
+    void [amount, reading];
   }
-  if (snapshots.users) {
-    const count: number = snapshots.users.data.count;
-    const team: string = snapshots.users.input.team;
-    const wrongSource = (
-      // @ts-expect-error Explicit sources retain their data/input types.
-      <MetricWidget metric={metric} source={snapshots.users} />
-    );
-    return [count, team, wrongSource];
+  if (source.state !== 'error' && source.state !== 'empty') {
+    // @ts-expect-error A loading-or-displayed reading must be narrowed before accessing its value.
+    const _value = metric.read(source).value;
   }
-  // @ts-expect-error Snapshots expose only registered view keys.
-  return snapshots.other;
-}
-const valid = <MetricWidget metric={metric} />;
-const multi = (
+  if (source.state === 'error' || source.state === 'empty') {
+    // @ts-expect-error Selectors only accept readable sources.
+    metric.read(source);
+  }
+  return <MetricWidget metric={metric} source={source} />;
+});
+const other = users.content(source => (
+  // @ts-expect-error Sources retain their data and input types.
+  <MetricWidget metric={metric} source={source} />
+));
+const app = (
   <DataApp
-    views={views}
+    view={sales}
     datasets={[dataset]}
-    story={({ sales }) =>
-      sales
-        ? [
-            {
-              id: 'sales',
-              headline: String(sales.data.amount),
-              visual: <MetricWidget metric={metric} source={sales} />,
-              evidence: metric,
-            },
-          ]
-        : []
-    }
+    story={snapshot => [
+      {
+        id: 'sales',
+        headline: String(snapshot.data.amount),
+        visual: <MetricWidget metric={metric} source={snapshot} />,
+        evidence: metric,
+      },
+    ]}
   >
-    {valid}
-  </DataApp>
-);
-const props: MultiViewDataAppProps<typeof views> = {
-  views,
-  datasets: [dataset],
-  story: () => [],
-  children: valid,
-};
-void [check, multi, props];
-
-const empty = (
-  // @ts-expect-error A multi-view app needs at least one declared view.
-  <DataApp views={{}} datasets={[dataset]} story={() => []}>
     {null}
   </DataApp>
 );
-void empty;
+void [missing, content, other, app];
+
+// @ts-expect-error Tables require an explicit source.
+<TableWidget dataset={dataset} />;
+// @ts-expect-error Visualizations require an explicit source.
+<VisualizationWidget dataset={dataset}>
+  {rows => String(rows.length)}
+</VisualizationWidget>;
+// @ts-expect-error Bound narratives require an explicit source.
+<TextWidget metric={metric} />;
+// @ts-expect-error Inline bound values require an explicit source.
+<DataValue metric={metric} />;
