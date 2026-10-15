@@ -402,7 +402,7 @@ const content = view.content(source => (
             ? 'Paid orders'
             : `Paid orders by ${ordersBy.level(source.input.ordersBy, source.input.geography).label.toLowerCase()}`
         }
-        description="Select a slice or legend item for its orders. More actions filters or descends."
+        description="Select a slice for its orders. Open a legend row for exploration and copy actions."
       >
         {(rows, actions) => (
           <PieChart

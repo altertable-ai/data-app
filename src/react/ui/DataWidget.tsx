@@ -2,12 +2,14 @@ import type { InspectionRecords } from '@/src/react/ui/AboutData';
 import { getAnnotationProps } from '@/src/react/annotations/getAnnotationProps';
 import {
   useId,
+  useContext,
   type ComponentPropsWithRef,
   type ElementType,
   type ReactNode,
 } from 'react';
 import { formatCount } from '@/src/core/format';
 import { AboutData } from '@/src/react/ui/AboutData';
+import { InspectionVisual } from '@/src/react/ui/InspectionProvider';
 import { AppIcon } from '@/src/react/ui/icons';
 import {
   WidgetStatusControl,
@@ -104,6 +106,7 @@ function DataWidgetContent({
   children: ReactNode;
 }) {
   const titleId = useId();
+  const inspectionVisual = useContext(InspectionVisual);
   const Heading = `h${headingLevel}` as ElementType;
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
   const visual = (
@@ -145,7 +148,7 @@ function DataWidgetContent({
             {formatCount(count)}
           </span>
         )}
-        <AppIcon name="openDetails" size="1em" />
+        {!inspectionVisual && <AppIcon name="openDetails" size="1em" />}
       </AboutData>
     ) : undefined;
 

@@ -3,6 +3,7 @@ import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useChartScrollToEnd } from '@/src/react/ui/use-chart-scroll-to-end';
 import {
   ExplorationActionControl,
+  useChartActions,
   explorationMenuEvents,
   ExplorationActionMenu,
   getPrimaryExplorationAction,
@@ -42,6 +43,7 @@ export function TrendChart<Row extends ChartItem>({
 }: ValueChartProps<Row> & { kind: 'line' | 'area' }) {
   validateValueChartItems(kind, items);
   const Plot = kind === 'area' ? RechartsAreaChart : RechartsLineChart;
+  const chartActions = useChartActions();
   const [activeIndex, setActiveIndex] = useState<number>();
   const scrollport = useChartScrollToEnd(items);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
@@ -114,7 +116,12 @@ export function TrendChart<Row extends ChartItem>({
               </div>
               <div className="altertable-trend-points">
                 {items.map((item, index) => {
-                  const actions = itemActions?.(item) ?? [];
+                  const declaredActions = itemActions?.(item) ?? [];
+                  const actions = chartActions.actions(
+                    declaredActions,
+                    item.label,
+                    `${formatValue(item.value)} ${unit}`
+                  );
                   const action = getPrimaryExplorationAction(actions);
                   const menuTrigger: RefObject<ComponentRef<'button'> | null> =
                     {
@@ -204,6 +211,7 @@ export function TrendChart<Row extends ChartItem>({
                         </Tooltip>
                         {action && (
                           <ExplorationActionControl
+                            contextOnly={declaredActions.length === 1}
                             indicator="chevron"
                             ref={element => {
                               if (element)
@@ -224,6 +232,7 @@ export function TrendChart<Row extends ChartItem>({
           </div>
         </>
       )}
+      {chartActions.feedback}
     </section>
   );
 }

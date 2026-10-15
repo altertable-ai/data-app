@@ -205,13 +205,16 @@ const placeActions = places.actions(
 </VisualizationWidget>;
 ```
 
-Keep domain fields when adapting chart items. Bar, line, area, pie slices and
-pie legend items share the same action contract. One available action is direct;
-multiple actions use a menu. A declared `primary` remains direct beside that menu; the menu retains every available action.
-Pie legend actions sit beside the label as an ellipsis; bar labels use an inline
-disclosure chevron. A single action remains available through the context menu. Right-click opens the same menu at the pointer; Shift+F10
-anchors it to the control. Breakdown controls keep the selected level visible beside an icon and
-retain their accessible names.
+Keep domain fields when adapting chart items. Bar, line, area, pie slices, and
+pie legend items share the same action contract. Chart marks keep a sole or
+declared `primary` action direct. The full pie legend row and bar label open the
+menu; bar labels use a small inline disclosure chevron.
+
+Menus retain every available action and group Copy label and Copy details after
+exploration actions. Copied details use the displayed label, formatted value,
+unit, and pie share. Copy success or failure is announced and shown on the chart.
+Right-click opens the menu at the pointer; Shift+F10 anchors it to the control.
+Breakdown controls keep their selected level visible and their accessible names.
 Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.
 
 `view.filter()` targets ordinary scope variables; `view.hierarchy(key)` targets

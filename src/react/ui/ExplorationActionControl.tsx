@@ -5,12 +5,15 @@ import {
   MenuItem,
   MenuPopover,
   MenuTrigger,
+  MenuSeparator,
 } from '@/src/react/ui/Menu';
 import {
   useRef,
   useContext,
   useLayoutEffect,
   useState,
+  useEffect,
+  Fragment,
   type ComponentRef,
   type RefObject,
   type Ref,
@@ -37,6 +40,8 @@ export type ExplorationAction = {
   onSelect: (trigger?: HTMLElement | SVGElement) => void;
   /** Keep this action directly available when other actions require a menu. */
   primary?: boolean;
+  /** Keep utility actions separate from exploration destinations. */
+  group?: 'clipboard';
 };
 
 /** Resolves the actions available for a displayed domain row. */
@@ -166,24 +171,31 @@ export function ExplorationActionMenu({
         />
       )}
       <MenuPopover
+        className="altertable-exploration-action-menu"
         placement={point ? 'bottom start' : placement}
         triggerRef={point ? anchor : triggerRef}
         offset={point ? 2 : undefined}
       >
         <Menu aria-label={`${ariaLabel} actions`}>
-          {actions.map(action => (
-            <MenuItem
-              key={action.id}
-              id={action.id}
-              onAction={() => {
-                const trigger = triggerRef?.current;
-                action.onSelect(
-                  trigger ? (contextOrigins.get(trigger) ?? trigger) : undefined
-                );
-              }}
-            >
-              {action.label}
-            </MenuItem>
+          {actions.map((action, index) => (
+            <Fragment key={action.id}>
+              {action.group === 'clipboard' &&
+                actions[index - 1]?.group !== 'clipboard' &&
+                index > 0 && <MenuSeparator />}
+              <MenuItem
+                id={action.id}
+                onAction={() => {
+                  const trigger = triggerRef?.current;
+                  action.onSelect(
+                    trigger
+                      ? (contextOrigins.get(trigger) ?? trigger)
+                      : undefined
+                  );
+                }}
+              >
+                {action.label}
+              </MenuItem>
+            </Fragment>
           ))}
         </Menu>
       </MenuPopover>
@@ -191,32 +203,83 @@ export function ExplorationActionMenu({
   );
 }
 
+/** Adds clipboard utilities derived only from the displayed chart item. */
+export function useChartActions() {
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    if (!message) return;
+    const timer = setTimeout(() => setMessage(''), 2000);
+    return () => clearTimeout(timer);
+  }, [message]);
+  async function copy(text: string, success: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setMessage(success);
+    } catch {
+      setMessage('Couldn’t copy. Try again.');
+    }
+  }
+  return {
+    actions(
+      declared: readonly ExplorationAction[],
+      label: string,
+      summary: string
+    ): readonly ExplorationAction[] {
+      if (!declared.length) return declared;
+      const primary = getPrimaryExplorationAction(declared);
+      return [
+        ...declared.map(action => ({ ...action, primary: action === primary })),
+        {
+          id: '$copy-label',
+          label: 'Copy label',
+          group: 'clipboard',
+          onSelect: () => void copy(label, 'Label copied'),
+        },
+        {
+          id: '$copy-details',
+          label: 'Copy details',
+          group: 'clipboard',
+          onSelect: () => void copy(`${label}\n${summary}`, 'Details copied'),
+        },
+      ];
+    },
+    feedback: message ? (
+      <output className="altertable-chart-copy-status">{message}</output>
+    ) : null,
+  };
+}
+
+export function openExplorationMenu(
+  trigger: RefObject<HTMLButtonElement | null>,
+  event: { preventDefault: () => void; currentTarget?: EventTarget | null },
+  point?: { x: number; y: number }
+) {
+  if (!trigger.current) return;
+  event.preventDefault();
+  if (
+    event.currentTarget instanceof HTMLElement ||
+    event.currentTarget instanceof SVGElement
+  )
+    contextOrigins.set(trigger.current, event.currentTarget);
+  if (point) contextPoints.set(trigger.current, point);
+  else contextPoints.delete(trigger.current);
+  trigger.current.click();
+}
+
 /** Reuse the item's menu for pointer and keyboard context requests. */
 export function explorationMenuEvents(
   trigger: RefObject<HTMLButtonElement | null>
 ) {
-  function open(
-    event: { preventDefault: () => void; currentTarget?: EventTarget | null },
-    point?: { x: number; y: number }
-  ) {
-    if (!trigger.current) return;
-    event.preventDefault();
-    if (
-      event.currentTarget instanceof HTMLElement ||
-      event.currentTarget instanceof SVGElement
-    )
-      contextOrigins.set(trigger.current, event.currentTarget);
-    if (point) contextPoints.set(trigger.current, point);
-    else contextPoints.delete(trigger.current);
-    trigger.current.click();
-  }
   return {
     onContextMenu: (event: {
       preventDefault: () => void;
       clientX: number;
       clientY: number;
     }) => {
-      open(event, { x: event.clientX, y: event.clientY });
+      openExplorationMenu(trigger, event, {
+        x: event.clientX,
+        y: event.clientY,
+      });
     },
     onKeyDown(event: KeyboardEvent<Element>) {
       if (
@@ -226,7 +289,11 @@ export function explorationMenuEvents(
         const bounds = trigger.current?.hasAttribute('data-context-only')
           ? event.currentTarget.getBoundingClientRect()
           : undefined;
-        open(event, bounds ? { x: bounds.left, y: bounds.bottom } : undefined);
+        openExplorationMenu(
+          trigger,
+          event,
+          bounds ? { x: bounds.left, y: bounds.bottom } : undefined
+        );
       }
     },
   };

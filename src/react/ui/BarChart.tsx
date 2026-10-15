@@ -1,9 +1,11 @@
+import { AppIcon } from '@/src/react/ui/icons';
 import { formatNumber } from '@/src/core/format';
 import { chartBarFill } from '@/src/react/ui/chartColor';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useChartScrollToEnd } from '@/src/react/ui/use-chart-scroll-to-end';
 import {
-  ExplorationActionControl,
+  openExplorationMenu,
+  useChartActions,
   explorationMenuEvents,
   ExplorationActionMenu,
   getPrimaryExplorationAction,
@@ -46,6 +48,7 @@ export function BarChart<Row extends BarChartItem>({
   itemActions,
 }: BarChartProps<Row>) {
   validateValueChartItems('bar', items);
+  const chartActions = useChartActions();
   const [activeId, setActiveId] = useState<string>();
   const scrollport = useChartScrollToEnd(items);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
@@ -92,7 +95,11 @@ export function BarChart<Row extends BarChartItem>({
           </div>
           <div className="altertable-selectable-bars-items">
             {items.map(item => {
-              const actions = itemActions?.(item) ?? [];
+              const actions = chartActions.actions(
+                itemActions?.(item) ?? [],
+                item.label,
+                `${formatValue(item.value)} ${unit}`
+              );
               const action = getPrimaryExplorationAction(actions);
               const menuTrigger: RefObject<ComponentRef<'button'> | null> = {
                 get current() {
@@ -137,26 +144,20 @@ export function BarChart<Row extends BarChartItem>({
                         >
                           <span className="altertable-selectable-bars-area" />
                         </button>
-                      ) : actions.length > 1 ? (
-                        <MenuTrigger>
-                          <MenuButton
-                            {...explorationMenuEvents(menuTrigger)}
-                            ref={element => {
-                              if (element)
-                                menuTriggers.current.set(item.id, element);
-                              else menuTriggers.current.delete(item.id);
-                            }}
-                            className="altertable-selectable-bars-item"
-                            aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. Actions`}
-                          >
-                            <span className="altertable-selectable-bars-area" />
-                          </MenuButton>
-                          <ExplorationActionMenu
-                            actions={actions}
-                            ariaLabel={`${item.label} actions`}
-                            triggerRef={menuTrigger}
-                          />
-                        </MenuTrigger>
+                      ) : actions.length ? (
+                        <button
+                          type="button"
+                          data-atbl-focus="ring"
+                          data-atbl-control="action"
+                          className="altertable-selectable-bars-item"
+                          aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. Actions`}
+                          {...explorationMenuEvents(menuTrigger)}
+                          onClick={event =>
+                            openExplorationMenu(menuTrigger, event)
+                          }
+                        >
+                          <span className="altertable-selectable-bars-area" />
+                        </button>
                       ) : (
                         <button
                           data-atbl-focus="ring"
@@ -172,38 +173,33 @@ export function BarChart<Row extends BarChartItem>({
                     </Tooltip>
                     <div className="altertable-chart-item-label-row">
                       {actions.length ? (
-                        <button
-                          type="button"
-                          tabIndex={-1}
-                          data-atbl-control="action"
-                          data-atbl-focus="ring"
-                          className="altertable-selectable-bars-label"
-                          aria-label={`${item.label}: ${action?.label ?? 'Actions'}`}
-                          {...explorationMenuEvents(menuTrigger)}
-                          onClick={event => {
-                            if (action) action.onSelect(event.currentTarget);
-                            else menuTrigger.current?.click();
-                          }}
-                        >
-                          {item.label}
-                        </button>
+                        <MenuTrigger>
+                          <MenuButton
+                            className="altertable-selectable-bars-label"
+                            variant="ghost"
+                            size="compact"
+                            {...explorationMenuEvents(menuTrigger)}
+                            ref={element => {
+                              if (element)
+                                menuTriggers.current.set(item.id, element);
+                              else menuTriggers.current.delete(item.id);
+                            }}
+                            aria-label={`${item.label}: Actions`}
+                          >
+                            {item.label}
+                            <AppIcon name="disclosure" size={12} />
+                          </MenuButton>
+                          <ExplorationActionMenu
+                            actions={actions}
+                            ariaLabel={item.label}
+                            triggerRef={menuTrigger}
+                            placement="bottom"
+                          />
+                        </MenuTrigger>
                       ) : (
                         <span className="altertable-selectable-bars-label">
                           {item.label}
                         </span>
-                      )}
-                      {action && (
-                        <ExplorationActionControl
-                          indicator="chevron"
-                          ref={element => {
-                            if (element)
-                              menuTriggers.current.set(item.id, element);
-                            else menuTriggers.current.delete(item.id);
-                          }}
-                          actions={actions}
-                          ariaLabel={`${item.label} actions`}
-                          hidePrimary={Boolean(action)}
-                        />
                       )}
                     </div>
                   </div>
@@ -213,6 +209,7 @@ export function BarChart<Row extends BarChartItem>({
           </div>
         </div>
       </div>
+      {chartActions.feedback}
     </section>
   );
 }

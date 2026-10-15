@@ -60,3 +60,24 @@
 .altertable-exploration-actions[data-context-only] {
   position: absolute;
 }
+
+.altertable-selectable-bars,
+.altertable-pie-chart,
+.altertable-trend-chart {
+  position: relative;
+}
+.altertable-chart-copy-status {
+  position: absolute;
+  inset-inline-end: 8px;
+  inset-block-end: 4px;
+  padding: 4px 8px;
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  box-shadow: var(--atbl-shadow-overlay);
+  font-size: var(--atbl-type-meta-size);
+}
+.altertable-exploration-action-menu {
+  min-width: 180px;
+  width: max-content;
+}

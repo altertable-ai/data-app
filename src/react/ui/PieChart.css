@@ -74,8 +74,8 @@
   border-bottom: 1px solid var(--atbl-border);
 }
 .altertable-pie-legend .altertable-tooltip-trigger {
-  flex: 0 1 auto;
-  width: auto;
+  flex: 1;
+  width: 100%;
   min-width: 0;
 }
 .altertable-pie-legend .altertable-tooltip-trigger button {

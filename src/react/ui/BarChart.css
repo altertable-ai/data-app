@@ -86,3 +86,15 @@
 .altertable-chart-item-label-row > span {
   display: inline-flex;
 }
+
+.altertable-chart-item-label-row .altertable-selectable-bars-label {
+  --atbl-control-hover-surface: transparent;
+  --atbl-control-open-surface: transparent;
+  --atbl-control-pressed-surface: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 0;
+  padding: 0;
+  color: inherit;
+}

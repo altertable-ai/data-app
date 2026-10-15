@@ -168,6 +168,12 @@ test('metric records use the existing inspection tabs and load only on Records',
   expect(
     await inspection.getByText('All geography: all', { exact: true }).count()
   ).toBe(1);
+  expect(
+    await inspection
+      .getByRole('heading', { name: 'Orders', exact: true })
+      .locator('svg')
+      .count()
+  ).toBe(0);
   expect(await inspection.getByRole('tab').allTextContents()).toEqual([
     'Records',
     'Glossary',
@@ -237,10 +243,13 @@ test('nested details replace one sheet and close to the original dashboard trigg
 }) => {
   await page.goto('/exploration');
   const trigger = page.getByRole('button', {
-    name: 'Europe: 10 orders, 66.7%. View orders',
+    name: 'Europe: 10 orders, 66.7%. Actions',
     exact: true,
   });
   await trigger.click();
+  await page
+    .getByRole('menuitem', { name: 'View orders', exact: true })
+    .click();
   const detail = page.getByRole('dialog', {
     name: 'Contributing orders',
     exact: true,
@@ -302,10 +311,13 @@ test('browser Back closes a detail and recovers its mounted dashboard trigger', 
 }) => {
   await page.goto('/exploration');
   const trigger = page.getByRole('button', {
-    name: 'Europe: 10 orders, 66.7%. View orders',
+    name: 'Europe: 10 orders, 66.7%. Actions',
     exact: true,
   });
   await trigger.click();
+  await page
+    .getByRole('menuitem', { name: 'View orders', exact: true })
+    .click();
   await page
     .getByRole('dialog', { name: 'Contributing orders', exact: true })
     .waitFor();
@@ -441,19 +453,19 @@ test('pie ellipsis, slice context menu, and legend keyboard menu share actions a
     exact: true,
   });
   const legend = page.getByRole('button', {
-    name: 'Europe: 10 orders, 66.7%. View orders',
+    name: 'Europe: 10 orders, 66.7%. Actions',
     exact: true,
   });
-  const more = page
-    .getByRole('list', { name: 'Order shares legend', exact: true })
-    .getByRole('button', {
-      name: 'Europe actions: more actions',
-      exact: true,
-    });
+  const more = legend;
   await more.click();
   const menu = page.getByRole('menu');
   const choices = await menu.getByRole('menuitem').allTextContents();
-  expect(choices).toEqual(['View orders', 'Filter region']);
+  expect(choices).toEqual([
+    'View orders',
+    'Filter region',
+    'Copy label',
+    'Copy details',
+  ]);
   const triggerBox = await more.boundingBox();
   const menuBox = await menu.boundingBox();
   expect(Math.abs(menuBox!.x - triggerBox!.x)).toBeLessThan(12);
@@ -498,7 +510,7 @@ test('single-action pie slices and legend labels retain pointer menus and return
   await page.goto('/exploration');
   for (const name of [
     'Europe: 10 orders. View orders',
-    'Europe: 10 orders, 66.7%. View orders',
+    'Europe: 10 orders, 66.7%. Actions',
   ]) {
     const target = page.getByRole('button', { name, exact: true });
     await target.click({ button: 'right' });
@@ -522,29 +534,90 @@ test('single-action pie slices and legend labels retain pointer menus and return
   }
 });
 
-test('bar disclosure is inline with its label and centered vertically', async ({
+test('bar labels open menus with a small aligned chevron and preserve scope until selection', async ({
   page,
 }) => {
   await page.goto('/exploration?menus=1&primary=1');
   const chart = page.getByRole('region', { name: 'Revenue bars', exact: true });
   const label = chart.getByRole('button', {
-    name: 'Europe: Drill down',
+    name: 'Europe: Actions',
     exact: true,
   });
-  const disclosure = chart.getByRole('button', {
-    name: 'Europe actions: more actions',
-    exact: true,
-  });
-  await disclosure.waitFor();
+  await label.waitFor();
   const labelBox = await label.boundingBox();
-  const disclosureBox = await disclosure.boundingBox();
+  const iconBox = await label.locator('svg').boundingBox();
+  expect(iconBox!.width).toBe(12);
   expect(
     Math.abs(
-      labelBox!.y +
-        labelBox!.height / 2 -
-        disclosureBox!.y -
-        disclosureBox!.height / 2
+      labelBox!.y + labelBox!.height / 2 - iconBox!.y - iconBox!.height / 2
     )
   ).toBeLessThan(1);
-  expect(disclosureBox!.x - labelBox!.x - labelBox!.width).toBeLessThan(10);
+  expect(
+    await label
+      .locator('svg')
+      .evaluate(element => getComputedStyle(element).color)
+  ).toBe(await label.evaluate(element => getComputedStyle(element).color));
+  await label.click();
+  expect(new URL(page.url()).searchParams.has('geography')).toBe(false);
+  await page.getByRole('menuitem', { name: 'Drill down', exact: true }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('geography'))
+    .toContain('eu');
+});
+
+test('the entire legend row opens copy actions with displayed values and feedback', async ({
+  page,
+}) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.goto('/exploration');
+  const legend = page.getByRole('button', {
+    name: 'Europe: 10 orders, 66.7%. Actions',
+    exact: true,
+  });
+  await legend.waitFor();
+  await legend.scrollIntoViewIfNeeded();
+  const row = await legend.boundingBox();
+  await page.mouse.click(row!.x + row!.width - 5, row!.y + row!.height / 2);
+  await page.getByRole('menuitem', { name: 'Copy label', exact: true }).click();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe('Europe');
+  await expect
+    .poll(() => page.getByRole('status').allTextContents())
+    .toContain('Label copied');
+  await legend.click();
+  await page
+    .getByRole('menuitem', { name: 'Copy details', exact: true })
+    .click();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe('Europe\n10 orders · 66.7%');
+  await expect
+    .poll(() => page.getByRole('status').allTextContents())
+    .toContain('Details copied');
+});
+
+test('copy failures show feedback instead of reporting success', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: async () => {
+          throw new Error('Permission denied');
+        },
+      },
+    });
+  });
+  await page.goto('/exploration');
+  await page
+    .getByRole('button', {
+      name: 'Europe: 10 orders, 66.7%. Actions',
+      exact: true,
+    })
+    .click();
+  await page.getByRole('menuitem', { name: 'Copy label', exact: true }).click();
+  await expect
+    .poll(() => page.getByRole('status').allTextContents())
+    .toContain('Couldn’t copy. Try again.');
 });
