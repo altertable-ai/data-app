@@ -1,4 +1,4 @@
-import { utcTicks } from '@altertable/data-app/internal';
+import { utcTicks } from './time-interval.ts';
 import {
   formatDate,
   formatDateTime,

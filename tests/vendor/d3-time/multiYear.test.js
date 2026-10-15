@@ -1,6 +1,6 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { timeYear } from '@/packages/data-app/src/core/time-interval.ts';
+import { timeYear } from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { local } from '@/tests/vendor/d3-time/date.js';
 
 it('timeYear.every(n).floor(date) returns integer multiples of n years', () => {

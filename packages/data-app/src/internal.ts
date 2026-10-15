@@ -41,7 +41,6 @@ export {
   type MetricReading,
   type MetricValues,
 } from './core/reading.ts';
-export { utcTicks } from './core/time-interval.ts';
 export { randomUuid } from './core/uuid.ts';
 export {
   type AppVariable,

@@ -3,7 +3,7 @@ import assert from 'assert';
 import {
   utcSunday,
   utcWeek,
-} from '@/packages/data-app/src/core/time-interval.ts';
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { utc } from '@/tests/vendor/d3-time/date.js';
 
 it('utcWeek.floor(date) returns sundays', () => {

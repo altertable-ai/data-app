@@ -3,7 +3,7 @@ import assert from 'assert';
 import {
   timeMinute,
   timeTicks,
-} from '@/packages/data-app/src/core/time-interval.ts';
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { local } from '@/tests/vendor/d3-time/date.js';
 
 it('timeTicks(start, stop, interval) respects the specified interval', () => {

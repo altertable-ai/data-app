@@ -4,7 +4,7 @@ import { utc } from '@/tests/vendor/d3-time/date.js';
 import {
   utcThursday,
   utcThursdays,
-} from '@/packages/data-app/src/core/time-interval.ts';
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 
 it('utcThursdays in an alias for utcThursday.range', () => {
   assert.strictEqual(utcThursdays, utcThursday.range);

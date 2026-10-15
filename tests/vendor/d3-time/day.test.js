@@ -4,7 +4,7 @@ import {
   timeDay,
   timeDays,
   timeYear,
-} from '@/packages/data-app/src/core/time-interval.ts';
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { local, utc } from '@/tests/vendor/d3-time/date.js';
 
 it('timeDays in an alias for timeDay.range', () => {

@@ -107,8 +107,13 @@ try {
       for (const path of Object.values(target))
         assert(paths.has(path.slice(2)), `${manifest.name}: missing ${path}`);
     }
-    for (const path of ['README.md', 'LICENSE', 'THIRD_PARTY_NOTICES'])
+    for (const path of ['README.md', 'LICENSE'])
       assert(paths.has(path), `${manifest.name}: missing ${path}`);
+    assert.equal(
+      paths.has('THIRD_PARTY_NOTICES'),
+      manifest.name === '@altertable/data-app-react',
+      `${manifest.name}: only React ships the vendored d3 notices`
+    );
     assert(
       ![...paths].some(path => /^(src|tests)\//.test(path)),
       'Source or tests leaked into archive'

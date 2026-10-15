@@ -4,7 +4,7 @@ import { local } from '@/tests/vendor/d3-time/date.js';
 import {
   timeWednesday,
   timeWednesdays,
-} from '@/packages/data-app/src/core/time-interval.ts';
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 
 it('timeWednesdays in an alias for timeWednesday.range', () => {
   assert.strictEqual(timeWednesdays, timeWednesday.range);

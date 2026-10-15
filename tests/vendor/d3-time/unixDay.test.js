@@ -3,7 +3,7 @@ import assert from 'assert';
 import {
   unixDay,
   unixDays,
-} from '@/packages/data-app/src/core/time-interval.ts';
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { utc } from '@/tests/vendor/d3-time/date.js';
 
 it('unixDays in an alias for unixDay.range', () => {

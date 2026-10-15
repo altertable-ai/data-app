@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { utcTicks } from '@/packages/data-app/src/core/time-interval.ts';
+import { utcTicks } from '@/packages/data-app-react/src/ui/time-interval.ts';
 
 it.each([
   {
