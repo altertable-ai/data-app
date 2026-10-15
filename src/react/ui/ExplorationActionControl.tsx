@@ -18,11 +18,16 @@ import {
 } from 'react';
 import { useMergeRefs } from '@floating-ui/react';
 import { AppIcon } from '@/src/react/ui/icons';
+import { classNames } from '@/src/react/ui/classNames';
 import { RootMenuTriggerStateContext } from 'react-aria-components';
 
 const contextPoints = new WeakMap<
   HTMLButtonElement,
   { x: number; y: number }
+>();
+const contextOrigins = new WeakMap<
+  HTMLButtonElement,
+  HTMLElement | SVGElement
 >();
 
 /** A resolved action available for one displayed exploration item. */
@@ -43,8 +48,10 @@ export type ExplorationActionControlProps = {
   ariaLabel: string;
   /** Use when another item-level hit target already exposes the primary action. */
   hidePrimary?: boolean;
-  /** Inline actions sit beside a label; stacked actions disclose choices below it. */
-  layout?: 'inline' | 'stacked';
+  /** Own a context menu without adding a second visible or keyboard trigger. */
+  contextOnly?: boolean;
+  /** Chart labels use a chevron; other action menus use an ellipsis. */
+  indicator?: 'ellipsis' | 'chevron';
   /** Shares this menu trigger with an item's context and keyboard actions. */
   ref?: Ref<HTMLButtonElement>;
   className?: string;
@@ -52,28 +59,32 @@ export type ExplorationActionControlProps = {
 
 /**
  * Presents exploration actions consistently: a sole action is direct, an explicit
- * primary action stays direct, and remaining choices use an accessible menu.
+ * primary action stays direct, and all available choices remain in the menu.
  */
 export function ExplorationActionControl({
   actions,
   ariaLabel,
   className,
   hidePrimary = false,
-  layout = 'inline',
+  contextOnly = false,
+  indicator = 'ellipsis',
   ref,
 }: ExplorationActionControlProps) {
   const menuTrigger = useRef<ComponentRef<'button'> | null>(null);
   const mergedTrigger = useMergeRefs([menuTrigger, ref]);
   const primary = getPrimaryExplorationAction(actions);
-  const menuActions = primary
-    ? actions.filter(action => action !== primary)
-    : actions;
+  const hiddenMenuTrigger = contextOnly || actions.length === 1;
 
   if (actions.length === 0) return null;
 
   return (
-    <span className={className}>
-      {primary && !hidePrimary && (
+    <span
+      className={classNames('altertable-exploration-actions', className)}
+      data-context-only={
+        contextOnly || (hidePrimary && actions.length === 1) || undefined
+      }
+    >
+      {primary && !hidePrimary && !contextOnly && (
         <Button
           onClick={event => primary.onSelect(event.currentTarget)}
           aria-label={`${ariaLabel}: ${primary.label}`}
@@ -81,26 +92,38 @@ export function ExplorationActionControl({
           {primary.label}
         </Button>
       )}
-      {menuActions.length > 0 && (
-        <MenuTrigger>
-          <MenuButton
-            ref={mergedTrigger}
-            variant="ghost"
-            size="icon-compact"
-            className="altertable-exploration-action-trigger"
-            aria-label={`${ariaLabel}: more actions`}
-          >
-            <AppIcon
-              name={layout === 'stacked' ? 'disclosure' : 'moreActions'}
+      {actions.length > 0 && (
+        <span aria-hidden={hiddenMenuTrigger || undefined}>
+          <MenuTrigger>
+            <MenuButton
+              ref={mergedTrigger}
+              variant="ghost"
+              size="icon-compact"
+              className="altertable-exploration-action-trigger"
+              onContextMenu={event =>
+                explorationMenuEvents(menuTrigger).onContextMenu(event)
+              }
+              onKeyDown={event =>
+                explorationMenuEvents(menuTrigger).onKeyDown(event)
+              }
+              data-context-only={hiddenMenuTrigger || undefined}
+              excludeFromTabOrder={hiddenMenuTrigger}
+              aria-hidden={hiddenMenuTrigger || undefined}
+              preventFocusOnPress={hiddenMenuTrigger}
+              aria-label={`${ariaLabel}: more actions`}
+            >
+              <AppIcon
+                name={indicator === 'chevron' ? 'disclosure' : 'moreActions'}
+              />
+            </MenuButton>
+            <ExplorationActionMenu
+              actions={actions}
+              ariaLabel={ariaLabel}
+              triggerRef={menuTrigger}
+              placement={indicator === 'chevron' ? 'bottom' : 'bottom start'}
             />
-          </MenuButton>
-          <ExplorationActionMenu
-            actions={menuActions}
-            ariaLabel={ariaLabel}
-            triggerRef={menuTrigger}
-            placement={layout === 'stacked' ? 'bottom' : 'bottom start'}
-          />
-        </MenuTrigger>
+          </MenuTrigger>
+        </span>
       )}
     </span>
   );
@@ -122,7 +145,10 @@ export function ExplorationActionMenu({
   useLayoutEffect(() => {
     const trigger = triggerRef?.current;
     setPoint(state?.isOpen && trigger ? contextPoints.get(trigger) : undefined);
-    if (!state?.isOpen && trigger) contextPoints.delete(trigger);
+    if (!state?.isOpen && trigger) {
+      contextPoints.delete(trigger);
+      contextOrigins.delete(trigger);
+    }
   }, [state?.isOpen, triggerRef]);
   return (
     <>
@@ -149,7 +175,12 @@ export function ExplorationActionMenu({
             <MenuItem
               key={action.id}
               id={action.id}
-              onAction={() => action.onSelect(triggerRef?.current ?? undefined)}
+              onAction={() => {
+                const trigger = triggerRef?.current;
+                action.onSelect(
+                  trigger ? (contextOrigins.get(trigger) ?? trigger) : undefined
+                );
+              }}
             >
               {action.label}
             </MenuItem>
@@ -165,11 +196,16 @@ export function explorationMenuEvents(
   trigger: RefObject<HTMLButtonElement | null>
 ) {
   function open(
-    event: { preventDefault: () => void },
+    event: { preventDefault: () => void; currentTarget?: EventTarget | null },
     point?: { x: number; y: number }
   ) {
     if (!trigger.current) return;
     event.preventDefault();
+    if (
+      event.currentTarget instanceof HTMLElement ||
+      event.currentTarget instanceof SVGElement
+    )
+      contextOrigins.set(trigger.current, event.currentTarget);
     if (point) contextPoints.set(trigger.current, point);
     else contextPoints.delete(trigger.current);
     trigger.current.click();
@@ -186,8 +222,12 @@ export function explorationMenuEvents(
       if (
         event.key === 'ContextMenu' ||
         (event.shiftKey && event.key === 'F10')
-      )
-        open(event);
+      ) {
+        const bounds = trigger.current?.hasAttribute('data-context-only')
+          ? event.currentTarget.getBoundingClientRect()
+          : undefined;
+        open(event, bounds ? { x: bounds.left, y: bounds.bottom } : undefined);
+      }
     },
   };
 }

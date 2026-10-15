@@ -280,7 +280,10 @@ export function InspectionSheet({
 export function AboutData(props: AboutDataProps) {
   const owner = useContext(InspectionOwner);
   const visual = useContext(InspectionVisual);
-  if (visual) return <span>{props.children ?? props.title}</span>;
+  if (visual)
+    return (
+      <span className={props.className}>{props.children ?? props.title}</span>
+    );
   invariant(owner, 'Inspection requires DataApp or DataAppProvider.');
   return <InspectionTrigger {...props} />;
 }

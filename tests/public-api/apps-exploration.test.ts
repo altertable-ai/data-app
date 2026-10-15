@@ -36,7 +36,9 @@ test('chart breakdowns are independent and descent updates shared scope in one h
     .poll(() => displayed.textContent())
     .toContain('"revenue":"region"');
   const bars = page.getByRole('region', { name: 'Revenue bars', exact: true });
-  await bars.getByRole('button', { name: /Europe/ }).click();
+  await bars
+    .getByRole('button', { name: 'Europe: 10 USD. Drill down', exact: true })
+    .click();
   await expect
     .poll(() => displayed.textContent())
     .toContain('"revenue":"country","orders":"region"');
@@ -442,14 +444,16 @@ test('pie ellipsis, slice context menu, and legend keyboard menu share actions a
     name: 'Europe: 10 orders, 66.7%. View orders',
     exact: true,
   });
-  const more = page.getByRole('button', {
-    name: 'Europe actions: more actions',
-    exact: true,
-  });
+  const more = page
+    .getByRole('list', { name: 'Order shares legend', exact: true })
+    .getByRole('button', {
+      name: 'Europe actions: more actions',
+      exact: true,
+    });
   await more.click();
   const menu = page.getByRole('menu');
   const choices = await menu.getByRole('menuitem').allTextContents();
-  expect(choices).toEqual(['Filter region']);
+  expect(choices).toEqual(['View orders', 'Filter region']);
   const triggerBox = await more.boundingBox();
   const menuBox = await menu.boundingBox();
   expect(Math.abs(menuBox!.x - triggerBox!.x)).toBeLessThan(12);
@@ -486,4 +490,61 @@ test('pie ellipsis, slice context menu, and legend keyboard menu share actions a
       await trigger.evaluate(element => getComputedStyle(element).cursor)
     ).toBe('pointer');
   }
+});
+
+test('single-action pie slices and legend labels retain pointer menus and return to their origin', async ({
+  page,
+}) => {
+  await page.goto('/exploration');
+  for (const name of [
+    'Europe: 10 orders. View orders',
+    'Europe: 10 orders, 66.7%. View orders',
+  ]) {
+    const target = page.getByRole('button', { name, exact: true });
+    await target.click({ button: 'right' });
+    const menu = page.getByRole('menu');
+    await menu
+      .getByRole('menuitem', { name: 'View orders', exact: true })
+      .click();
+    const detail = page.getByRole('dialog', {
+      name: 'Contributing orders',
+      exact: true,
+    });
+    await expect.poll(() => detail.innerText()).toContain('order-1');
+    await detail
+      .getByRole('button', { name: 'Close panel', exact: true })
+      .click();
+    await expect
+      .poll(() =>
+        target.evaluate(element => document.activeElement === element)
+      )
+      .toBe(true);
+  }
+});
+
+test('bar disclosure is inline with its label and centered vertically', async ({
+  page,
+}) => {
+  await page.goto('/exploration?menus=1&primary=1');
+  const chart = page.getByRole('region', { name: 'Revenue bars', exact: true });
+  const label = chart.getByRole('button', {
+    name: 'Europe: Drill down',
+    exact: true,
+  });
+  const disclosure = chart.getByRole('button', {
+    name: 'Europe actions: more actions',
+    exact: true,
+  });
+  await disclosure.waitFor();
+  const labelBox = await label.boundingBox();
+  const disclosureBox = await disclosure.boundingBox();
+  expect(
+    Math.abs(
+      labelBox!.y +
+        labelBox!.height / 2 -
+        disclosureBox!.y -
+        disclosureBox!.height / 2
+    )
+  ).toBeLessThan(1);
+  expect(disclosureBox!.x - labelBox!.x - labelBox!.width).toBeLessThan(10);
 });

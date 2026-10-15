@@ -202,9 +202,9 @@ export function TrendChart<Row extends ChartItem>({
                             </button>
                           )}
                         </Tooltip>
-                        {action && actions.length > 1 && (
+                        {action && (
                           <ExplorationActionControl
-                            layout="stacked"
+                            indicator="chevron"
                             ref={element => {
                               if (element)
                                 menuTriggers.current.set(item.id, element);

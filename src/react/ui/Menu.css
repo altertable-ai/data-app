@@ -44,3 +44,19 @@
   color: var(--atbl-accent);
   background: transparent;
 }
+
+.altertable-exploration-action-trigger[data-context-only] {
+  visibility: hidden;
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+  min-inline-size: 0;
+  min-block-size: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+}
+
+.altertable-exploration-actions[data-context-only] {
+  position: absolute;
+}

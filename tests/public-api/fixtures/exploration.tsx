@@ -314,17 +314,24 @@ const details = orderPlaces.actions(action => ({
     input: (row, displayed) => ({ ...displayed, placeId: row.id }),
   }),
 }));
-const menuActions = places.actions(action => ({
-  orders: action.detail({
-    label: 'View orders',
-    target: ordersView,
-    input: (row, displayed) => ({ ...displayed, placeId: row.id }),
+const menuActions = places.actions(
+  action => ({
+    orders: action.detail({
+      label: 'View orders',
+      target: ordersView,
+      input: (row, displayed) => ({ ...displayed, placeId: row.id }),
+    }),
+    descend: action.descend({
+      target: sales.breakdown('revenueBy'),
+      member: row => row.id,
+    }),
   }),
-  descend: action.descend({
-    target: sales.breakdown('revenueBy'),
-    member: row => row.id,
-  }),
-}));
+  {
+    primary: new URLSearchParams(location.search).has('primary')
+      ? 'descend'
+      : undefined,
+  }
+);
 const pieMenuActions = orderPlaces.actions(
   action => ({
     orders: action.detail({

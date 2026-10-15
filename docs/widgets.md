@@ -207,9 +207,9 @@ const placeActions = places.actions(
 
 Keep domain fields when adapting chart items. Bar, line, area, pie slices and
 pie legend items share the same action contract. One available action is direct;
-multiple actions use a menu. A declared `primary` remains direct beside that menu.
-Pie legend actions sit beside the label as an ellipsis; stacked chart labels use
-a disclosure chevron. Right-click opens the same menu at the pointer; Shift+F10
+multiple actions use a menu. A declared `primary` remains direct beside that menu; the menu retains every available action.
+Pie legend actions sit beside the label as an ellipsis; bar labels use an inline
+disclosure chevron. A single action remains available through the context menu. Right-click opens the same menu at the pointer; Shift+F10
 anchors it to the control. Breakdown controls keep the selected level visible beside an icon and
 retain their accessible names.
 Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.

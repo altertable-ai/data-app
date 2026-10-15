@@ -200,6 +200,7 @@ export function VisualizationWidget<Row, Data, Input>({
         label={state.variable.label ?? 'Break down by'}
         labelPlacement="inline"
         icon="breakdown"
+        size="compact"
         align="end"
         options={state.options.map(level => ({
           id: level.id,

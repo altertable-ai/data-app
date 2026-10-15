@@ -31,16 +31,18 @@ export function PickerTriggerContent({
   labelPlacement,
   value,
   icon,
+  iconSize = 18,
 }: {
   label: string;
   labelPlacement: ControlLabelPlacement;
   value: ReactNode;
   icon?: AppIconName;
+  iconSize?: number;
 }) {
   return (
     <>
       {icon ? (
-        <AppIcon name={icon} />
+        <AppIcon name={icon} size={iconSize} />
       ) : (
         labelPlacement === 'inline' && (
           <span className="altertable-picker-label" aria-hidden="true">

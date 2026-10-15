@@ -35,6 +35,7 @@ export function PieChart<Row extends PieChartItem>({
   const [plotOpen, setPlotOpen] = useState(false);
   const [legendId, setLegendId] = useState<string | null>(null);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
+  const plotMenuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 0);
   const total = maximum
     ? items.reduce((sum, item) => sum + item.value / maximum, 0)
@@ -109,7 +110,11 @@ export function PieChart<Row extends PieChartItem>({
                     .map(item => {
                       const menuTrigger = {
                         get current() {
-                          return menuTriggers.current.get(item.id) ?? null;
+                          return (
+                            menuTriggers.current.get(item.id) ??
+                            plotMenuTriggers.current.get(item.id) ??
+                            null
+                          );
                         },
                       };
                       const action = getPrimaryExplorationAction(
@@ -181,24 +186,25 @@ export function PieChart<Row extends PieChartItem>({
                 )}
               </svg>
             </Tooltip>
-            {!showLegend &&
-              slices.map(item => {
-                const actions = itemActions?.(item) ?? [];
-                if (actions.length < 2) return null;
-                return (
-                  <span key={item.id} className="altertable-sr-only">
-                    <ExplorationActionControl
-                      ref={element => {
-                        if (element) menuTriggers.current.set(item.id, element);
-                        else menuTriggers.current.delete(item.id);
-                      }}
-                      actions={actions}
-                      ariaLabel={`${item.label} actions`}
-                      hidePrimary
-                    />
-                  </span>
-                );
-              })}
+            {slices.map(item => {
+              const actions = itemActions?.(item) ?? [];
+              if (actions.length === 0) return null;
+              return (
+                <span key={item.id} className="altertable-sr-only">
+                  <ExplorationActionControl
+                    ref={element => {
+                      if (element)
+                        plotMenuTriggers.current.set(item.id, element);
+                      else plotMenuTriggers.current.delete(item.id);
+                    }}
+                    actions={actions}
+                    ariaLabel={`${item.label} actions`}
+                    contextOnly
+                    hidePrimary
+                  />
+                </span>
+              );
+            })}
             {total === 0 && (
               <span className="altertable-pie-empty-label">
                 No nonzero values
@@ -292,7 +298,7 @@ export function PieChart<Row extends PieChartItem>({
                         </button>
                       )}
                     </Tooltip>
-                    {action && actions.length > 1 && (
+                    {action && (
                       <ExplorationActionControl
                         ref={element => {
                           if (element)

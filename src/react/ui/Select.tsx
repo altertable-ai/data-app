@@ -22,6 +22,7 @@ export type SelectProps = {
   labelPlacement?: ControlLabelPlacement;
   /** Replace the inline text label with a decorative icon; the accessible label remains. */
   icon?: AppIconName;
+  size?: 'default' | 'compact';
   options: readonly ChoiceOption[];
   value: string;
   onChange: (value: string) => void;
@@ -45,6 +46,7 @@ export function Select({
   align = 'start',
   labelPlacement = 'above',
   icon,
+  size,
   ...props
 }: SelectProps) {
   const inline = labelPlacement === 'inline';
@@ -67,6 +69,7 @@ export function Select({
         {label}
       </Label>
       <PressButton
+        size={size}
         className={classNames(
           'altertable-select-trigger',
           inline && 'altertable-picker-trigger'
@@ -77,6 +80,7 @@ export function Select({
           labelPlacement={labelPlacement}
           value={<SelectValue>{selected.label}</SelectValue>}
           icon={icon}
+          iconSize={size === 'compact' ? 14 : undefined}
         />
       </PressButton>
       <PopoverSurface

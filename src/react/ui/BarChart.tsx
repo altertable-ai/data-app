@@ -136,9 +136,6 @@ export function BarChart<Row extends BarChartItem>({
                           }
                         >
                           <span className="altertable-selectable-bars-area" />
-                          <span className="altertable-selectable-bars-label">
-                            {item.label}
-                          </span>
                         </button>
                       ) : actions.length > 1 ? (
                         <MenuTrigger>
@@ -153,9 +150,6 @@ export function BarChart<Row extends BarChartItem>({
                             aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. Actions`}
                           >
                             <span className="altertable-selectable-bars-area" />
-                            <span className="altertable-selectable-bars-label">
-                              {item.label}
-                            </span>
                           </MenuButton>
                           <ExplorationActionMenu
                             actions={actions}
@@ -173,25 +167,45 @@ export function BarChart<Row extends BarChartItem>({
                           aria-label={`${item.label}: ${formatValue(item.value)} ${unit}`}
                         >
                           <span className="altertable-selectable-bars-area" />
-                          <span className="altertable-selectable-bars-label">
-                            {item.label}
-                          </span>
                         </button>
                       )}
                     </Tooltip>
-                    {action && actions.length > 1 && (
-                      <ExplorationActionControl
-                        layout="stacked"
-                        ref={element => {
-                          if (element)
-                            menuTriggers.current.set(item.id, element);
-                          else menuTriggers.current.delete(item.id);
-                        }}
-                        actions={actions}
-                        ariaLabel={`${item.label} actions`}
-                        hidePrimary={Boolean(action)}
-                      />
-                    )}
+                    <div className="altertable-chart-item-label-row">
+                      {actions.length ? (
+                        <button
+                          type="button"
+                          tabIndex={-1}
+                          data-atbl-control="action"
+                          data-atbl-focus="ring"
+                          className="altertable-selectable-bars-label"
+                          aria-label={`${item.label}: ${action?.label ?? 'Actions'}`}
+                          {...explorationMenuEvents(menuTrigger)}
+                          onClick={event => {
+                            if (action) action.onSelect(event.currentTarget);
+                            else menuTrigger.current?.click();
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                      ) : (
+                        <span className="altertable-selectable-bars-label">
+                          {item.label}
+                        </span>
+                      )}
+                      {action && (
+                        <ExplorationActionControl
+                          indicator="chevron"
+                          ref={element => {
+                            if (element)
+                              menuTriggers.current.set(item.id, element);
+                            else menuTriggers.current.delete(item.id);
+                          }}
+                          actions={actions}
+                          ariaLabel={`${item.label} actions`}
+                          hidePrimary={Boolean(action)}
+                        />
+                      )}
+                    </div>
                   </div>
                 </Fragment>
               );

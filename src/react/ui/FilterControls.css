@@ -264,3 +264,8 @@
 .altertable-select-trigger.altertable-picker-trigger > svg:last-child {
   margin-inline-start: auto;
 }
+
+.altertable-select-trigger[data-size='compact'] {
+  --atbl-type-label-size: var(--atbl-type-meta-size);
+  min-width: 0;
+}

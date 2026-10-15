@@ -31,7 +31,11 @@
   border-bottom: 1px solid var(--atbl-border);
 }
 .altertable-selectable-bars-label {
-  padding-top: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   font-size: var(--atbl-type-meta-size);
   white-space: nowrap;
 }
@@ -68,4 +72,17 @@
 .altertable-selectable-bars-items {
   position: relative;
   display: flex;
+}
+
+.altertable-chart-item-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--atbl-space-xs);
+  min-height: var(--atbl-control-compact-height);
+  padding-top: 4px;
+  color: var(--atbl-muted);
+}
+.altertable-chart-item-label-row > span {
+  display: inline-flex;
 }
