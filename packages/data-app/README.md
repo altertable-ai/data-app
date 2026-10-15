@@ -1,19 +1,38 @@
 # @altertable/data-app
 
-Portable app definitions, contracts, formatting, browser clients, and request handling.
+Portable definitions, contracts, formatting, browser clients, and request handlers
+for Altertable data apps.
+
+## Installation
+
+```fish
+bun add @altertable/data-app
+```
+
+## Usage
+
+Declare an app's identity and query registry:
 
 ```ts
 import { defineDataApp } from '@altertable/data-app';
-import { createDataClient } from '@altertable/data-app/client';
-import { createDataHandler } from '@altertable/data-app/server';
+
+const app = defineDataApp({
+  title: 'Activity',
+  description: 'Explore activity across your organization.',
+  scope: { organization: 'demo', environment: 'production' },
+  queries: {},
+});
 ```
 
-This package has no React peer requirement. Add `@altertable/data-app-react` to
-build app UI, `@altertable/data-app-embed` to host iframes, or
-`@altertable/data-app-bun` for local Bun serving.
+Use `/contract` for operations and validation, `/client` for browser requests,
+and `/server` for request handling. Add `@altertable/data-app-react` to build app
+UI or `@altertable/data-app-embed` to host an app. This package requires no React.
 
-See the [guide](https://github.com/altertable-ai/data-app/blob/main/docs/app-authoring.md)
-and [repository](https://github.com/altertable-ai/data-app) for examples.
+## Documentation
 
-For agent-assisted authoring, read [AGENTS.md](AGENTS.md) and the
-[authoring guide](docs/app-authoring.md). Guides and starters ship with this package.
+Start with [app authoring](docs/app-authoring.md). Guides, starters, and
+[agent instructions](AGENTS.md) ship with this package.
+
+## License
+
+[MIT](LICENSE)

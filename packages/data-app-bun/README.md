@@ -1,15 +1,42 @@
 # @altertable/data-app-bun
 
-Bun local serving, server-only lakehouse access, and single-file app previews.
+Local Bun servers, lakehouse access, and development previews for Altertable data apps.
 
-```ts
-import { localLakehouse, serveLocalApp } from '@altertable/data-app-bun';
-import { serveAppFile } from '@altertable/data-app-bun/preview';
+## Installation
+
+```fish
+bun add @altertable/data-app-bun
+bun add --dev @types/bun
 ```
 
-Requires the Bun runtime. Keep credentials and authorization in server modules.
-For portable request handling, use `@altertable/data-app/server`.
-The preview host is bundled at build time; this package does not require React peers.
+Requires the Bun runtime. Add `@types/bun` when using TypeScript.
 
-See the [guide](https://github.com/altertable-ai/data-app/blob/main/docs/server-bun.md)
-and [repository](https://github.com/altertable-ai/data-app) for examples.
+## Usage
+
+Serve a local app's HTML entry and operation registry:
+
+```ts
+import { serveLocalApp } from '@altertable/data-app-bun';
+import page from './index.html';
+import { operations } from './operations.ts';
+
+serveLocalApp({ page, operations, title: 'Activity' });
+```
+
+The app supplies `index.html` and `operations.ts`. Use `localLakehouse()` inside
+server operations for lakehouse access. Keep credentials on the server.
+
+For single-file previews, use `serveAppFile()` from
+`@altertable/data-app-bun/preview`. Its host is bundled; consumers need no React
+peers. Local serving does not authenticate hosted viewers; use
+`@altertable/data-app/server` with per-request authorization for hosted apps.
+
+## Documentation
+
+See the [Bun guide](https://github.com/altertable-ai/data-app/blob/main/docs/server-bun.md)
+and [local starter](https://github.com/altertable-ai/data-app/tree/main/examples/starter-local-data-app)
+for operations, credentials, and previews.
+
+## License
+
+[MIT](LICENSE)

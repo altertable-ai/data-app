@@ -1,7 +1,7 @@
 {
   "name": "@altertable/data-app-embed",
   "version": "0.69.0",
-  "description": "Framework-neutral iframe hosting, sandbox bootstrap, and a lightweight React host adapter.",
+  "description": "Iframe hosting, sandbox bootstrap, and React host bindings for Altertable data apps.",
   "keywords": [
     "altertable",
     "analytics",

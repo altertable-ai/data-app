@@ -28,7 +28,10 @@ Keep style injection explicit; importing React must not modify the DOM. Add new
 styles to `packages/data-app-react/src/styles.css`. Do not edit generated `dist`.
 
 Use relative imports within each package and declared package exports across
-packages. Use repository-root `@/` imports for contributor tooling and fixtures.
+packages. Relative source imports include their `.ts` or `.tsx` extension; builds
+emit JavaScript and normalize declaration imports to `.js`. Consumers import
+package names and exported subpaths. Use repository-root `@/` imports for
+contributor tooling and fixtures.
 Consumer tests and examples import the published package names. The base
 `/internal` entry is shared implementation for coordinated packages; app authors
 use documented entries. Run `bun run lint:fix` and `bun run format` for

@@ -1,7 +1,7 @@
 {
   "name": "@altertable/data-app-react",
   "version": "0.69.0",
-  "description": "React bindings, widgets, layouts, controls, styles, exports, and annotations for Altertable data apps.",
+  "description": "React components, hooks, styles, and authoring tools for Altertable data apps.",
   "keywords": [
     "altertable",
     "analytics",

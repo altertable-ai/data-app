@@ -1,19 +1,62 @@
 # @altertable/data-app-embed
 
-Framework-neutral iframe hosting, sandbox bootstrap, and a lightweight React host adapter.
+Iframe hosting, sandbox bootstrap, and React host bindings for Altertable data apps.
+
+## Installation
+
+```fish
+bun add @altertable/data-app-embed
+```
+
+React hosts also install React 19.2 or newer:
+
+```fish
+bun add react
+```
+
+## Usage
+
+Connect an iframe to your host's message router:
 
 ```ts
 import { attachDataAppBridge } from '@altertable/data-app-embed';
+
+const host = attachDataAppBridge({
+  iframe,
+  source: { type: 'url', url: 'https://apps.example.com/report' },
+  onMessage: router.dispatch,
+});
+
+// When the host removes the iframe:
+host.dispose();
 ```
 
-React hosts can use `<DataAppBridge>`:
+The host supplies `iframe` and `router`, including authorization for data access.
+The app URL must have a different origin from the host.
 
-```ts
+React hosts can let `<DataAppBridge>` own the iframe:
+
+```tsx
 import { DataAppBridge } from '@altertable/data-app-embed/react';
+
+<DataAppBridge
+  title="Activity report"
+  source={{ type: 'url', url: 'https://apps.example.com/report' }}
+  onMessage={router.dispatch}
+/>;
 ```
 
-The framework-neutral entry does not require React. The `/react` entry requires
-React 19.2 or newer and does not install app widgets, charts, or React DOM.
+The `/react` entry wraps the embedding engine with React lifecycle handling. It
+requires no React DOM or `@altertable/data-app-react`. That separate package builds
+the app UI inside the iframe. Neither package imports the other.
 
-See the [guide](https://github.com/altertable-ai/data-app/blob/main/docs/embed.md)
-and [repository](https://github.com/altertable-ai/data-app) for examples.
+## Documentation
+
+See [embedding](https://github.com/altertable-ai/data-app/blob/main/docs/embed.md)
+for message routing, sandbox policy, and bundle sources, or
+[React embedding](https://github.com/altertable-ai/data-app/blob/main/docs/react-embed.md)
+for lifecycle and loading states.
+
+## License
+
+[MIT](LICENSE)

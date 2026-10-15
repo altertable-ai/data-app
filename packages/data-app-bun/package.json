@@ -1,7 +1,7 @@
 {
   "name": "@altertable/data-app-bun",
   "version": "0.69.0",
-  "description": "Bun local serving, server-only lakehouse access, and single-file app previews.",
+  "description": "Local Bun servers, lakehouse access, and development previews for Altertable data apps.",
   "keywords": [
     "altertable",
     "analytics",

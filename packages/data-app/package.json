@@ -1,7 +1,7 @@
 {
   "name": "@altertable/data-app",
   "version": "0.69.0",
-  "description": "Portable app definitions, contracts, formatting, browser clients, and request handling.",
+  "description": "Portable definitions, contracts, formatting, browser clients, and request handlers for Altertable data apps.",
   "keywords": [
     "altertable",
     "analytics",

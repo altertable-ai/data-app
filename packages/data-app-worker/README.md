@@ -1,10 +1,39 @@
 # @altertable/data-app-worker
 
-Self-contained sandbox Worker for serving Altertable data app iframes.
+Self-contained sandbox Worker for serving Altertable data apps.
 
-Resolve `@altertable/data-app-worker` as the deployment entry. The published
-JavaScript has no runtime imports and requires no React or Bun installation.
-Configure the hosting domain and allowed parent origins in the Worker environment.
+## Installation
 
-See the [guide](https://github.com/altertable-ai/data-app/blob/main/docs/worker.md)
-and [repository](https://github.com/altertable-ai/data-app) for examples.
+```fish
+bun add @altertable/data-app-worker
+```
+
+## Usage
+
+Resolve the installed Worker asset and read it for your deployment tooling:
+
+```js
+import { readFile } from 'node:fs/promises';
+
+const workerScript = await readFile(
+  new URL(import.meta.resolve('@altertable/data-app-worker')),
+  'utf8'
+);
+```
+
+Upload `workerScript` as the deployment's main module. Configure the string
+bindings `DOMAIN_NAME` (runtime domain) and `PARENT_ORIGINS` (trusted host origins),
+plus your deployment's domains and routes.
+
+The published JavaScript includes the bootstrap and HTML with no runtime imports.
+The deployed Worker requires no React or Bun. Data queries go through the host's
+authorized message router.
+
+## Documentation
+
+See the [Worker guide](https://github.com/altertable-ai/data-app/blob/main/docs/worker.md)
+for deployment, bindings, and origin rules.
+
+## License
+
+[MIT](LICENSE)

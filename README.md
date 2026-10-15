@@ -34,7 +34,7 @@ hosts use the embed package; React hosts add React and import
 `@altertable/data-app-embed/react`. Neither requires the app UI stack.
 All packages share a coordinated release version.
 
-## Build an app
+## Usage
 
 Apps can be embedded in Altertable, ChatGPT, Claude, and other hosts that support
 MCP Apps through a host integration, or run locally in a browser.

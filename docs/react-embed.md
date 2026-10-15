@@ -2,7 +2,8 @@
 
 Import `<DataAppBridge>` from `@altertable/data-app-embed/react`. This entry depends
 on React and the embedding engine, and does not load the app's widgets, React
-Query, or CSS.
+Query, or CSS. `@altertable/data-app-react` builds the UI inside the iframe;
+neither package imports the other. Both use the base package's contracts.
 
 The bridge owns iframe setup and `postMessage()` communication. The consuming
 frontend or CLI owns its shell: fetching a bundle, subscriptions, layout, loading

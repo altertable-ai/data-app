@@ -11,7 +11,13 @@ public API consumer tests.
 `utcTicks-boundaries.test.ts` adds project-owned boundary cases alongside the
 unchanged upstream assertions.
 
+## Usage
+
 Run `bun run test --project time-interval`. The Vitest project pins
 `TZ=America/Los_Angeles`, as upstream requires for daylight-saving assertions,
 without changing the timezone of the public API tests. The suite also runs with
 `bun run test` and `bun run check`.
+
+## License
+
+Upstream tests use the [ISC license](LICENSE).

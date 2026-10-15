@@ -1,7 +1,7 @@
 {
   "name": "@altertable/data-app-worker",
   "version": "0.69.0",
-  "description": "Self-contained sandbox Worker for serving Altertable data app iframes.",
+  "description": "Self-contained sandbox Worker for serving Altertable data apps.",
   "keywords": [
     "altertable",
     "analytics",
