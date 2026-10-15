@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { useDeclaredResult } from '@/src/react/view-runtime';
 import { DeclaredApp, dataApp } from '@/dev/fixtures/declared-app';
@@ -49,7 +50,9 @@ const pending = new Map<string, (response: TransportResponse) => void>();
 const client = createDataClient<typeof operations>({
   transport(name, input, signal) {
     return new Promise((resolve, reject) => {
-      const key = `${name}:${(input as { version: number }).version}`;
+      const key = [name, (input as { version: number }).version].join(
+        KEY_SEPARATOR
+      );
 
       function abort() {
         pending.delete(key);
@@ -120,7 +123,7 @@ function App() {
   );
 
   function settle(failed: boolean) {
-    pending.get(`${operation}:${version}`)?.(
+    pending.get([operation, version].join(KEY_SEPARATOR))?.(
       failed
         ? {
             status: 502,
@@ -138,7 +141,7 @@ function App() {
                 operation === 'alpha'
                   ? { kind: 'alpha', count: version }
                   : { kind: 'beta', label: `Beta ${version}` },
-              requestId: `${operation}:${version}`,
+              requestId: [operation, version].join(KEY_SEPARATOR),
               queriedAt: '2026-09-30T00:00:00Z',
               queryIds: [],
               queries: [

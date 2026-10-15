@@ -322,9 +322,10 @@ export function dateRangeVariable({
   comparison = false,
   presentation,
 }: DateRangeVariableOptions): DateRangeVariable {
-  const startKey = key === 'period' ? 'start' : `${key}-start`;
-  const endKey = key === 'period' ? 'end' : `${key}-end`;
-  const comparisonKey = key === 'period' ? 'compare' : `${key}-compare`;
+  const startKey = key === 'period' ? 'start' : [key, 'start'].join('-');
+  const endKey = key === 'period' ? 'end' : [key, 'end'].join('-');
+  const comparisonKey =
+    key === 'period' ? 'compare' : [key, 'compare'].join('-');
   const bounds = contract.bounds;
 
   function resolve(selection: DateRangeSelection): DateRange {

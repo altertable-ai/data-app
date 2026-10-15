@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { FilterControlsPreview } from '@/dev/fixtures/filter-controls';
 import {
   gallerySections,
@@ -299,7 +300,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               variant =>
                 (['default', 'compact'] as const).map(size => (
                   <Button
-                    key={`${variant}-${size}`}
+                    key={[variant, size].join(KEY_SEPARATOR)}
                     variant={variant}
                     size={size}
                   >

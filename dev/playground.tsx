@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { useMemo, useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import { dataApp } from '@/dev/app';
@@ -262,7 +263,7 @@ const ordersDataset = orderView.dataset(orderDefinition);
 const itemDefinition = {
   name: 'Items for recent orders',
   select: (data: OrderOverview) => data.items,
-  rowKey: (row: OrderItem) => `${row.orderId}:${row.product}`,
+  rowKey: (row: OrderItem) => [row.orderId, row.product].join(KEY_SEPARATOR),
   evidence: {
     id: 'order-items',
     queryNames: [queryNames.orders, queryNames.items],

@@ -28,7 +28,7 @@ const rows = [
   { id: 'first', name: 'Café <table>', count: 1234 },
   { id: 'second', name: 'Measured zero', count: 0 },
   ...Array.from({ length: 10 }, (_, index) => ({
-    id: `row-${index}`,
+    id: ['row', index].join(':'),
     name: `Group ${index}`,
     count: index,
   })),

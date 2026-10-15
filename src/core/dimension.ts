@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import type {
   AppVariable,
   HistoryMode,
@@ -38,7 +39,7 @@ const allSelection: DimensionSelection<never> = { kind: 'all' };
 export function dimensionMemberKey(member: DimensionMember) {
   return member.kind === 'missing'
     ? 'missing'
-    : `value:${typeof member.value}:${member.value}`;
+    : ['value', typeof member.value, member.value].join(KEY_SEPARATOR);
 }
 
 export type DimensionFilterSettings<T extends DimensionValue> = {

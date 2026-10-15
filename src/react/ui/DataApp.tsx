@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { DateFormattingContext } from '@/src/react/date-formatting';
 import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
 import { useDataApp } from '@/src/react/app-context';
@@ -68,7 +69,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
               ? []
               : reading.value.map(item => ({
                   ...item,
-                  id: `${index}:${item.id}`,
+                  id: [index, item.id].join(KEY_SEPARATOR),
                 })),
           ];
         })

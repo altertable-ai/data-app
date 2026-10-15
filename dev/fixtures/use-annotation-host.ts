@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { useRef, useState } from 'react';
 import { injectDataAppAnnotationStyles } from '@altertable/data-app/react';
 import { useAnnotationDrafts } from '@/dev/fixtures/useAnnotationDrafts';
@@ -22,7 +23,9 @@ export function useAnnotationHost(options: AnnotationHostOptions) {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string>();
   const [selectionId, setSelectionId] = useState<string>();
-  const scopeKey = `${options.storageKey ?? ''}:${options.sourceVersion}`;
+  const scopeKey = [options.storageKey ?? '', options.sourceVersion].join(
+    KEY_SEPARATOR
+  );
   const [previousScopeKey, setPreviousScopeKey] = useState(scopeKey);
   if (previousScopeKey !== scopeKey) {
     setPreviousScopeKey(scopeKey);

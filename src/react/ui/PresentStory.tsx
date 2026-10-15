@@ -1,4 +1,5 @@
 import {
+  type ComponentRef,
   useEffect,
   useEffectEvent,
   useId,
@@ -93,9 +94,9 @@ export function PresentStory({
   ...props
 }: PresentStoryProps) {
   const steps = storySteps(findings, dataContext);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const headline = useRef<HTMLHeadingElement>(null);
+  const dialog = useRef<ComponentRef<'dialog'>>(null);
+  const trigger = useRef<ComponentRef<'button'>>(null);
+  const headline = useRef<ComponentRef<'h2'>>(null);
   const ownedFullscreenElement = useRef<HTMLElement | null>(null);
   const isOpening = useRef(false);
   const headlineId = useId();
