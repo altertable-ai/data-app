@@ -2,6 +2,7 @@ import { invariant } from '@/src/core/invariant';
 import { ownedSource } from '@/src/react/source-owner';
 import { DataSectionBoundary } from '@/src/react/ui/DataSectionBoundary';
 import { InspectionContext } from '@/src/react/ui/InspectionContext';
+import { InspectionOwner } from '@/src/react/ui/InspectionProvider';
 import { Sheet } from '@/src/react/ui/Sheet';
 import {
   searchParams,
@@ -111,31 +112,42 @@ type DetailEntry = {
 
 type RoutedDetail = { id: string; input: unknown };
 const detailsParam = 'details';
+const maxDetailRouteLength = 16_384;
+const maxDetailRouteDepth = 20;
+
+function validateRoute(value: unknown) {
+  invariant(
+    Array.isArray(value) &&
+      value.every(
+        item => item && typeof item === 'object' && typeof item.id === 'string'
+      ),
+    'Invalid detail route.'
+  );
+  const serialized = JSON.stringify(value);
+  invariant(
+    value.length <= maxDetailRouteDepth &&
+      serialized.length <= maxDetailRouteLength,
+    'Detail route exceeds its bound.'
+  );
+  return { route: value as RoutedDetail[], serialized };
+}
 
 function readRoute(
   details: readonly DetailContent<unknown, unknown>[]
 ): readonly DetailEntry[] | null {
   const raw = searchParams().get(detailsParam);
   if (!raw) return [];
-  if (raw.length > 16_384) return null;
+  if (raw.length > maxDetailRouteLength) return null;
   try {
-    const route = JSON.parse(raw) as unknown;
-    if (!Array.isArray(route) || route.length > 20) return null;
+    const { route } = validateRoute(JSON.parse(raw));
     return route.map(item => {
-      if (
-        !item ||
-        typeof item !== 'object' ||
-        typeof (item as RoutedDetail).id !== 'string'
-      )
-        throw new Error('Invalid detail route.');
       const content = details.find(
-        candidate =>
-          candidate.target.definition.id === (item as RoutedDetail).id
+        candidate => candidate.target.definition.id === item.id
       );
       if (!content) throw new Error('Unknown detail route.');
       return {
         content,
-        input: parseDetailInput(content.target, (item as RoutedDetail).input),
+        input: parseDetailInput(content.target, item.input),
         trigger: { current: null },
       };
     });
@@ -148,14 +160,16 @@ function writeRoute(
   entries: readonly DetailEntry[],
   mode: 'push' | 'replace' = 'push'
 ) {
-  const route = entries.map(entry => ({
-    id: entry.content.target.definition.id,
-    input: entry.input,
-  }));
+  const { serialized } = validateRoute(
+    entries.map(entry => ({
+      id: entry.content.target.definition.id,
+      input: entry.input,
+    }))
+  );
   writeSearch(
     {
-      [detailsParam]: route.length ? JSON.stringify(route) : null,
-      ...(route.length ? { about: null, tab: null } : {}),
+      [detailsParam]: entries.length ? serialized : null,
+      ...(entries.length ? { about: null, tab: null } : {}),
     },
     mode
   );
@@ -174,13 +188,23 @@ const DetailNavigationContext = createContext<DetailNavigation | null>(null);
 /** Resolve a detail target from an interaction. The destination validates input before fetching. */
 export function useDetailNavigation(): DetailNavigation {
   const navigation = useContext(DetailNavigationContext);
-  return (
-    navigation ?? {
-      open() {
-        invariant(false, 'Detail navigation requires DataApp details.');
-      },
-    }
-  );
+  const inspection = useContext(InspectionOwner);
+  return navigation
+    ? {
+        open(target, input, trigger) {
+          const selection = inspection?.snapshot();
+          const origin =
+            trigger?.closest('dialog') && selection?.open
+              ? (selection.inspection.trigger.current ?? trigger)
+              : trigger;
+          navigation.open(target, input, origin);
+        },
+      }
+    : {
+        open() {
+          invariant(false, 'Detail navigation requires DataApp details.');
+        },
+      };
 }
 
 function DetailContentBody<Data, Input>({

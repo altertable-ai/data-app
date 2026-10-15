@@ -1,5 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
+import { useState } from 'react';
 import {
   createDataHooks,
   createDataContext,
@@ -11,6 +12,7 @@ import {
   TextWidget,
   mountDataApp,
   injectDataAppStyles,
+  useDetailNavigation,
   searchVariable,
 } from '@altertable/data-app/react';
 import {
@@ -229,6 +231,33 @@ const ordersView = hooks.defineDetailView({
   isEmpty: data => !data.rows.length,
   emptyFallback: { title: 'No orders' },
 });
+function DetailRouteProbe() {
+  const navigation = useDetailNavigation();
+  const [error, setError] = useState('');
+  return (
+    <>
+      <button
+        onClick={() => {
+          try {
+            navigation.open(ordersView, {
+              geography: geography.defaultValue,
+              search: '',
+              placeId: 'x'.repeat(
+                Number(new URLSearchParams(location.search).get('input-size'))
+              ),
+            });
+          } catch (error) {
+            setError((error as Error).message);
+          }
+        }}
+      >
+        Open bounded detail
+      </button>
+      <output aria-label="Detail navigation error">{error}</output>
+    </>
+  );
+}
+const routeProbe = new URLSearchParams(location.search).has('route-probe');
 const orders = ordersView.dataset({
   name: 'Orders',
   select: data => data.rows,
@@ -270,6 +299,7 @@ const orderActions = orders.actions(action => ({
 }));
 const ordersDetail = ordersView.content(source => (
   <>
+    {routeProbe && <DetailRouteProbe />}
     <p>
       Showing supplied records, up to 200. Local pagination covers these rows.
     </p>
@@ -407,6 +437,7 @@ const totalActions = total.actions(action => ({
 }));
 const content = sales.content(source => (
   <>
+    {routeProbe && <DetailRouteProbe />}
     <MetricWidget
       metric={total}
       source={source}

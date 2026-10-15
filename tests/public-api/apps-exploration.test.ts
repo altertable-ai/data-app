@@ -324,6 +324,48 @@ test('shared detail links reject malformed scope before the destination executes
   ).toBeNull();
 });
 
+for (const { size, depth } of [
+  { size: 9000, depth: 1 },
+  { size: 1, depth: 20 },
+]) {
+  test(`detail routes reject overflow atomically at input size ${size}`, async ({
+    page,
+  }) => {
+    await page.goto(`/exploration?route-probe=1&input-size=${size}`);
+    await page
+      .getByRole('button', { name: 'Open bounded detail', exact: true })
+      .click();
+    const detail = page.getByRole('dialog', {
+      name: 'Contributing orders',
+      exact: true,
+    });
+    const open = detail.getByRole('button', {
+      name: 'Open bounded detail',
+      exact: true,
+    });
+    for (let index = 1; index < depth; index++) await open.click();
+    const url = page.url();
+    const historyLength = await page.evaluate(() => history.length);
+    expect(JSON.parse(new URL(url).searchParams.get('details')!)).toHaveLength(
+      depth
+    );
+    await open.click();
+    await expect
+      .poll(() =>
+        detail
+          .getByRole('status', { name: 'Detail navigation error' })
+          .textContent()
+      )
+      .toContain('Detail route exceeds its bound.');
+    expect(page.url()).toBe(url);
+    expect(await page.evaluate(() => history.length)).toBe(historyLength);
+    await page.reload();
+    await expect
+      .poll(() => detail.getByRole('table').innerText())
+      .toContain('order-1');
+  });
+}
+
 test('nested details replace one sheet and close to the original dashboard trigger', async ({
   page,
 }) => {
@@ -391,6 +433,47 @@ test('a record inspection can replace itself with a detail and return to its met
     .poll(() => trigger.evaluate(element => document.activeElement === element))
     .toBe(true);
 });
+
+for (const widget of ['chart', 'table'] as const) {
+  test(`${widget} inspection detail actions return keyboard focus to the dashboard`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto('/exploration?widget-actions=1&menus=1&primary=1');
+    const title = widget === 'chart' ? 'Revenue' : 'Places table';
+    const trigger = page.getByRole('button', {
+      name: `Explore ${title}`,
+      exact: true,
+    });
+    await trigger.press('Enter');
+    const inspection = page.getByRole('dialog', { name: title, exact: true });
+    const action = inspection.getByRole('button', {
+      name:
+        widget === 'chart' ? 'Europe: Actions' : 'Revenue: eu: more actions',
+      exact: true,
+    });
+    await action.press('Enter');
+    await page
+      .getByRole('menuitem', { name: 'View orders', exact: true })
+      .press('Enter');
+    const detail = page.getByRole('dialog', {
+      name: 'Contributing orders',
+      exact: true,
+    });
+    await expect
+      .poll(() => detail.getByRole('table').innerText())
+      .toContain('order-1');
+    await detail.press('Escape');
+    await expect
+      .poll(() =>
+        trigger.evaluate(element => document.activeElement === element)
+      )
+      .toBe(true);
+    expect(new URL(page.url()).searchParams.has('about')).toBe(false);
+    expect(errors).toEqual([]);
+  });
+}
 
 test('browser Back closes a detail and recovers its mounted dashboard trigger', async ({
   page,
