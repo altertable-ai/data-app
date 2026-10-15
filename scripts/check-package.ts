@@ -251,17 +251,59 @@ export { createDataHandler } from '@altertable/data-app/server';`
     ],
     reactHost
   );
-  const bunOnly = join(temporary, 'bun-only');
-  excludes(
-    await install(bunOnly, [archive(''), archive('-embed'), archive('-bun')]),
-    [
-      ...uiDependencies.filter(
-        name => !['@altertable/lakehouse', 'get-tsconfig'].includes(name)
-      ),
-      'react',
-      'react-dom',
-    ]
+  const authoring = join(temporary, 'react-authoring');
+  const authoringNames = await install(authoring, [
+    archive(''),
+    archive('-react'),
+    'react@19.2.0',
+    'react-dom@19.2.0',
+    '@types/react@19.3.0',
+    '@types/react-dom@19.3.0',
+  ]);
+  excludes(authoringNames, [
+    'bun',
+    '@types/bun',
+    '@altertable/lakehouse',
+    'get-tsconfig',
+    '@altertable/data-app-bun',
+    '@altertable/data-app-embed',
+    '@altertable/data-app-worker',
+  ]);
+  await typecheck(
+    authoring,
+    `export { defineDataApp } from '@altertable/data-app';
+export { createDataHooks, Grid, MetricWidget } from '@altertable/data-app-react';
+export { MetricWidget as StaticMetric } from '@altertable/data-app-react/ui';`
   );
+  await writeFile(
+    join(authoring, 'app.jsx'),
+    `import React from 'react';
+import { renderToString } from 'react-dom/server';
+import { MetricWidget } from '@altertable/data-app-react/ui';
+const html = renderToString(<MetricWidget label="Authoring only" value={0} format={{kind:'count'}} />);
+if (!html.includes('Authoring only') || !html.includes('>0<')) throw new Error('Authoring render failed');`
+  );
+  await run(['bun', join(authoring, 'app.jsx')], authoring);
+  await run(
+    [
+      'bun',
+      'build',
+      join(authoring, 'app.jsx'),
+      '--target=browser',
+      '--outdir',
+      join(authoring, 'dist'),
+    ],
+    authoring
+  );
+  const bunOnly = join(temporary, 'bun-only');
+  excludes(await install(bunOnly, [archive(''), archive('-bun')]), [
+    '@altertable/data-app-embed',
+    ...uiDependencies.filter(
+      name => !['@altertable/lakehouse', 'get-tsconfig'].includes(name)
+    ),
+    'react',
+    'react-dom',
+  ]);
   await run(
     [
       'bun',

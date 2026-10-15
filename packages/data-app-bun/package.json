@@ -53,11 +53,11 @@
   },
   "dependencies": {
     "@altertable/data-app": "0.69.0",
-    "@altertable/data-app-embed": "0.69.0",
     "@altertable/lakehouse": "0.4.1",
     "get-tsconfig": "4.14.3"
   },
   "devDependencies": {
+    "@altertable/data-app-embed": "0.69.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   }

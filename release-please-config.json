@@ -87,7 +87,7 @@
         {
           "type": "json",
           "path": "packages/data-app-bun/package.json",
-          "jsonpath": "$.dependencies['@altertable/data-app-embed']"
+          "jsonpath": "$.devDependencies['@altertable/data-app-embed']"
         },
         {
           "type": "json",
