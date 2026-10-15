@@ -111,6 +111,92 @@ test('hierarchy controls resolve selected labels outside a failed options page',
   ).toBe(0);
 });
 
+test('selected-label failures are visible and retry recovers the picker and summary', async ({
+  page,
+}) => {
+  const params = new URLSearchParams({
+    geography: JSON.stringify(scope('eu', 'far')),
+    'fail-label': '1',
+  });
+  await page.goto(`/exploration?${params}`);
+  await page.getByRole('button', { name: 'Open filters', exact: true }).click();
+  const filters = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await filters
+    .getByRole('button', { name: 'Country: far', exact: true })
+    .click();
+  await expect
+    .poll(() => page.getByRole('alert').allTextContents())
+    .toContain('Couldn’t load valuesTry again');
+  await page.evaluate(() => {
+    document.body.dataset.retryLabels = 'true';
+  });
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('option', { name: 'Far beyond first page', exact: true })
+        .count()
+    )
+    .toBe(1);
+  await page.keyboard.press('Escape');
+  await filters.getByRole('button', { name: 'Done', exact: true }).click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', {
+          name: 'Open filters: Geography: Europe / Far beyond first page',
+          exact: true,
+        })
+        .count()
+    )
+    .toBe(1);
+});
+
+test('metric and table actions share detail navigation and restore their triggers', async ({
+  page,
+}) => {
+  await page.goto('/exploration?widget-actions=1&primary=1');
+  const metricAction = page.getByRole('button', {
+    name: 'Order count: View all orders',
+    exact: true,
+  });
+  await metricAction.click();
+  const detail = page.getByRole('dialog', {
+    name: 'Contributing orders',
+    exact: true,
+  });
+  await expect.poll(() => detail.innerText()).toContain('all');
+  await detail
+    .getByRole('button', { name: 'Close panel', exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      metricAction.evaluate(element => document.activeElement === element)
+    )
+    .toBe(true);
+  const table = page.getByRole('region', { name: 'Places table', exact: true });
+  expect(
+    await table
+      .getByRole('columnheader', { name: 'Actions', exact: true })
+      .count()
+  ).toBe(1);
+  const menu = table.getByRole('button', {
+    name: 'Revenue: eu: more actions',
+    exact: true,
+  });
+  await menu.click();
+  await page
+    .getByRole('menuitem', { name: 'View orders', exact: true })
+    .click();
+  await expect.poll(() => detail.innerText()).toContain('All geography: eu');
+  await detail
+    .getByRole('button', { name: 'Close panel', exact: true })
+    .click();
+  await expect
+    .poll(() => menu.evaluate(element => document.activeElement === element))
+    .toBe(true);
+});
+
 test('hierarchy child controls appear only after selecting an ancestor and apply immediately', async ({
   page,
 }) => {
@@ -581,7 +667,7 @@ test('bar labels open menus with a small aligned chevron and preserve scope unti
     .toContain('eu');
 });
 
-test('the entire legend row opens copy actions with displayed values and feedback', async ({
+test('the entire legend row copies displayed values without success notifications', async ({
   page,
 }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -598,9 +684,7 @@ test('the entire legend row opens copy actions with displayed values and feedbac
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe('Europe');
-  await expect
-    .poll(() => page.getByRole('status').allTextContents())
-    .toContain('Label copied');
+  expect(await page.getByText('Label copied', { exact: true }).count()).toBe(0);
   await legend.click();
   await page
     .getByRole('menuitem', { name: 'Copy details', exact: true })
@@ -608,9 +692,9 @@ test('the entire legend row opens copy actions with displayed values and feedbac
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe('Europe\n10 orders · 66.7%');
-  await expect
-    .poll(() => page.getByRole('status').allTextContents())
-    .toContain('Details copied');
+  expect(await page.getByText('Details copied', { exact: true }).count()).toBe(
+    0
+  );
 });
 
 test('copy failures show feedback instead of reporting success', async ({

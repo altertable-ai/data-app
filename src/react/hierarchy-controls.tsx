@@ -141,7 +141,7 @@ export function useHierarchyControls(
               })),
             ]}
             loading={!!optionsQuery?.isPending}
-            error={!!optionsQuery?.isError}
+            error={!!optionsQuery?.isError || !!selectedQuery?.isError}
             onRetry={() => {
               void optionsQuery?.refetch();
               void selectedQuery?.refetch();

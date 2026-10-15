@@ -184,6 +184,17 @@ const client = createDataClient({
     },
   },
 });
+const query = client.query.bind(client);
+client.query = (name, input, options) => {
+  if (
+    String(name).startsWith('__hierarchy:') &&
+    (input as { member?: unknown }).member != null &&
+    new URLSearchParams(location.search).has('fail-label') &&
+    document.body.dataset.retryLabels !== 'true'
+  )
+    return Promise.reject(new Error('Selected label unavailable'));
+  return query(name, input, options);
+};
 const hooks = createDataHooks(client);
 const context = createDataContext({
   sales: 'sales',
@@ -384,9 +395,32 @@ const records = total.records({
   target: ordersView,
   input: input => ({ ...input, placeId: undefined }),
 });
+const widgetActions = new URLSearchParams(location.search).has(
+  'widget-actions'
+);
+const totalActions = total.actions(action => ({
+  orders: action.detail({
+    label: 'View all orders',
+    target: ordersView,
+    input: (_row, input) => ({ ...input, placeId: undefined }),
+  }),
+}));
 const content = sales.content(source => (
   <>
-    <MetricWidget metric={total} source={source} records={records} />
+    <MetricWidget
+      metric={total}
+      source={source}
+      records={records}
+      actions={widgetActions ? totalActions : undefined}
+    />
+    {widgetActions && (
+      <TableWidget
+        dataset={places}
+        source={source}
+        title="Places table"
+        actions={menuActions}
+      />
+    )}
     <TextWidget dataset={places} source={source} title="Displayed levels">
       {() => (
         <output aria-label="Displayed levels">

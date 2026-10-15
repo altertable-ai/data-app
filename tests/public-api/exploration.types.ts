@@ -7,6 +7,8 @@ import {
   createDataHooks,
   createDataContext,
   choiceVariable,
+  MetricWidget,
+  TableWidget,
 } from '@altertable/data-app/react';
 const geography = hierarchyVariable({
   key: 'geography',
@@ -46,7 +48,9 @@ const hooks =
   );
 const context = createDataContext({ sales: 'sales' })({
   description: 'Sales',
-  glossary: {},
+  glossary: {
+    total: { term: 'Total', definition: 'Total value.', queryNames: ['sales'] },
+  },
 });
 const view = hooks.defineDataView({
   operation: 'sales',
@@ -112,3 +116,40 @@ rows.actions(
     primary: 'missing',
   }
 );
+
+const total = view.metric(
+  { id: 'total', glossaryId: 'total', format: { kind: 'count' } },
+  data => ({ current: data.rows.length })
+);
+const metricActions = total.actions(action => ({
+  region: action.filter({
+    label: 'Europe',
+    target: view.hierarchy('geography'),
+    values: () => ({ region: 'eu' }),
+  }),
+}));
+const rowActions = rows.actions(action => ({
+  region: action.filter({
+    label: 'Europe',
+    target: view.hierarchy('geography'),
+    values: () => ({ region: 'eu' }),
+  }),
+}));
+MetricWidget({
+  metric: total,
+  source: { loading: true },
+  actions: metricActions,
+});
+TableWidget({ dataset: rows, source: { loading: true }, actions: rowActions });
+MetricWidget({
+  metric: total,
+  source: { loading: true },
+  // @ts-expect-error Metric actions have no dataset row.
+  actions: rowActions,
+});
+TableWidget({
+  dataset: rows,
+  source: { loading: true },
+  // @ts-expect-error Dataset actions retain their row type.
+  actions: metricActions,
+});

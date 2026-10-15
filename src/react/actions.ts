@@ -37,7 +37,7 @@ type DescendAction<
     row: Row
   ) => Levels[number]['valueType'] extends 'number' ? number : string | number;
 };
-export type DatasetAction<Row, Input> = ActionCondition<Row> &
+export type ActionDeclaration<Row, Input> = ActionCondition<Row> &
   (
     | {
         kind: 'detail';
@@ -54,7 +54,7 @@ export type DatasetAction<Row, Input> = ActionCondition<Row> &
 export class ActionBuilder<Row, Input> {
   detail<DestinationInput>(
     config: DetailAction<Row, Input, DestinationInput>
-  ): DatasetAction<Row, Input> {
+  ): ActionDeclaration<Row, Input> {
     return { ...config, kind: 'detail' };
   }
   filter<
@@ -69,49 +69,50 @@ export class ActionBuilder<Row, Input> {
       ) => Values &
         Record<Exclude<keyof Values, keyof FilterPatch<Target>>, never>;
     }
-  ): DatasetAction<Row, Input> {
+  ): ActionDeclaration<Row, Input> {
     return { ...config, kind: 'filter' };
   }
   descend<Levels extends readonly HierarchyLevel[]>(
     config: DescendAction<Row, Levels>
-  ): DatasetAction<Row, Input> {
+  ): ActionDeclaration<Row, Input> {
     return { ...config, kind: 'descend' };
   }
 }
 const actionSets = new WeakMap<
   object,
   {
-    dataset: object;
-    actions: Record<string, DatasetAction<any, any>>;
+    binding: object;
+    actions: Record<string, ActionDeclaration<any, any>>;
     primary?: string;
   }
 >();
-/** Actions are owned by one dataset; displayed rows and input are supplied by its widget. */
-export class DatasetActions<Row, Input> {
-  declare private row: Row;
-  declare private input: Input;
+declare const actionTypes: unique symbol;
+
+/** Actions belong to one metric or dataset; its widget supplies displayed rows and input. */
+export class ExplorationActions<Row, Input> {
+  declare readonly [actionTypes]: { row: Row; input: Input };
 }
-export function defineDatasetActions<
+export function defineActions<
   Row,
   Input,
-  const Actions extends Record<string, DatasetAction<Row, Input>>,
+  const Actions extends Record<string, ActionDeclaration<Row, Input>>,
 >(
-  dataset: object,
+  binding: object,
   build: (action: ActionBuilder<Row, Input>) => Actions,
   options?: { primary?: keyof Actions & string }
-): DatasetActions<Row, Input> {
+): ExplorationActions<Row, Input> {
   const actions = build(new ActionBuilder<Row, Input>());
   invariant(
     !options?.primary || Object.hasOwn(actions, options.primary),
     'Primary action must be declared.'
   );
-  const result = new DatasetActions<Row, Input>();
-  actionSets.set(result, { dataset, actions, primary: options?.primary });
+  const result = new ExplorationActions<Row, Input>();
+  actionSets.set(result, { binding, actions, primary: options?.primary });
   return result;
 }
-export function resolveDatasetActions<Row, Input>(
-  set: DatasetActions<Row, Input> | undefined,
-  dataset: object,
+export function resolveActions<Row, Input>(
+  set: ExplorationActions<Row, Input> | undefined,
+  binding: object,
   viewOwner: object | undefined,
   source: { loading?: boolean; input?: Input },
   open: (
@@ -123,8 +124,8 @@ export function resolveDatasetActions<Row, Input>(
   if (!set) return () => [];
   const declaration = actionSets.get(set);
   invariant(
-    declaration?.dataset === dataset,
-    'Actions must belong to the widget dataset.'
+    declaration?.binding === binding,
+    'Actions must belong to the widget metric or dataset.'
   );
   return row => {
     if (source.loading) return [];

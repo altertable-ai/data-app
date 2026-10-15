@@ -163,7 +163,7 @@ provides it.
 
 ## Exploration actions
 
-Declare actions on their dataset and pass them to its visualization. Detail
+Declare actions on their dataset or metric and pass them to its widget. Detail
 mappings receive the displayed operation input, including during refreshes.
 
 ```tsx
@@ -212,10 +212,16 @@ menu; bar labels use a small inline disclosure chevron.
 
 Menus retain every available action and group Copy label and Copy details after
 exploration actions. Copied details use the displayed label, formatted value,
-unit, and pie share. Copy success or failure is announced and shown on the chart.
+unit, and pie share. Successful copies are silent; failures are announced and shown on the chart.
 Right-click opens the menu at the pointer; Shift+F10 anchors it to the control.
 Breakdown controls keep their selected level visible and their accessible names.
 Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.
+
+`<TableWidget actions={placeActions}>` adds row actions without changing the
+dataset or its CSV export. `<MetricWidget>` accepts actions declared with
+`metric.actions()`; metric action mappings receive `undefined` for the row and
+the displayed operation input as their second argument. Actions must belong to
+the metric or dataset rendered by the widget.
 
 `view.filter()` targets ordinary scope variables; `view.hierarchy(key)` targets
 typed hierarchy selections; `view.breakdown(key)` targets that chart's aggregation

@@ -573,9 +573,8 @@ export function attachHierarchySelectors(
 ) {
   const selectors: DataOperations = {};
   for (const { hierarchy } of parserHierarchies.get(operation.input) ?? []) {
-    for (const [index, level] of (
-      hierarchy.levels as readonly HierarchyLevel[]
-    ).entries()) {
+    const levels = hierarchy.levels as readonly HierarchyLevel[];
+    for (const [index, level] of levels.entries()) {
       if (!level.source) continue;
       const registered = sourceRegistries.get(hierarchy)?.[level.source.query];
       invariant(
@@ -616,7 +615,11 @@ export function attachHierarchySelectors(
           maxResponseBytes: 1_000_000,
         },
         queryNames: Object.fromEntries(
-          Object.keys(queries).map(name => [name, name])
+          levels
+            .slice(0, index + 1)
+            .flatMap(level =>
+              level.source ? [[level.source.query, level.source.query]] : []
+            )
         ),
         async run(
           context,

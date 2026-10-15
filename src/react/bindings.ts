@@ -1,10 +1,10 @@
 import { KEY_SEPARATOR } from '@/src/core/keys';
 import { parseDetailInput, type DetailNavigation } from '@/src/react/details';
 import {
-  defineDatasetActions,
+  defineActions,
   type ActionBuilder,
-  type DatasetActions,
-  type DatasetAction,
+  type ExplorationActions,
+  type ActionDeclaration,
 } from '@/src/react/actions';
 import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
@@ -244,11 +244,11 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     };
     this.#suggestions = definition.suggestions;
   }
-  actions<const Actions extends Record<string, DatasetAction<Row, Input>>>(
+  actions<const Actions extends Record<string, ActionDeclaration<Row, Input>>>(
     build: (action: ActionBuilder<Row, Input>) => Actions,
     options?: { primary?: keyof Actions & string }
-  ): DatasetActions<Row, Input> {
-    return defineDatasetActions(this, build, options);
+  ): ExplorationActions<Row, Input> {
+    return defineActions(this, build, options);
   }
   override readSearchSuggestions(
     source: ViewSource<Data, Input>
@@ -351,6 +351,12 @@ export class Metric<Data, Input> extends RegisteredBinding {
     input: (displayedInput: Input) => DetailInput;
   }) {
     return new MetricRecords(this, options.target, options.input);
+  }
+  actions<const Actions extends Record<string, ActionDeclaration<void, Input>>>(
+    build: (action: ActionBuilder<void, Input>) => Actions,
+    options?: { primary?: keyof Actions & string }
+  ): ExplorationActions<void, Input> {
+    return defineActions(this, build, options);
   }
 }
 

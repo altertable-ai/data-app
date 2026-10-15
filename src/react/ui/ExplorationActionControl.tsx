@@ -12,7 +12,6 @@ import {
   useContext,
   useLayoutEffect,
   useState,
-  useEffect,
   Fragment,
   type ComponentRef,
   type RefObject,
@@ -205,18 +204,13 @@ export function ExplorationActionMenu({
 
 /** Adds clipboard utilities derived only from the displayed chart item. */
 export function useChartActions() {
-  const [message, setMessage] = useState('');
-  useEffect(() => {
-    if (!message) return;
-    const timer = setTimeout(() => setMessage(''), 2000);
-    return () => clearTimeout(timer);
-  }, [message]);
-  async function copy(text: string, success: string) {
+  const [error, setError] = useState('');
+  async function copy(text: string) {
+    setError('');
     try {
       await navigator.clipboard.writeText(text);
-      setMessage(success);
     } catch {
-      setMessage('Couldn’t copy. Try again.');
+      setError('Couldn’t copy. Try again.');
     }
   }
   return {
@@ -233,18 +227,18 @@ export function useChartActions() {
           id: '$copy-label',
           label: 'Copy label',
           group: 'clipboard',
-          onSelect: () => void copy(label, 'Label copied'),
+          onSelect: () => void copy(label),
         },
         {
           id: '$copy-details',
           label: 'Copy details',
           group: 'clipboard',
-          onSelect: () => void copy(`${label}\n${summary}`, 'Details copied'),
+          onSelect: () => void copy(`${label}\n${summary}`),
         },
       ];
     },
-    feedback: message ? (
-      <output className="altertable-chart-copy-status">{message}</output>
+    feedback: error ? (
+      <output className="altertable-chart-copy-status">{error}</output>
     ) : null,
   };
 }

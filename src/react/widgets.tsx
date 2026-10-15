@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import {
-  resolveDatasetActions,
-  type DatasetActions,
-} from '@/src/react/actions';
+import { resolveActions, type ExplorationActions } from '@/src/react/actions';
 import { RegisteredBinding } from '@/src/react/bindings';
 import { useDetailNavigation } from '@/src/react/details';
 import { breakdownState, type BreakdownTarget } from '@/src/react/exploration';
 import { Select } from '@/src/react/ui/Select';
-import type { ItemActions } from '@/src/react/ui/ExplorationActionControl';
+import {
+  ExplorationActionControl,
+  type ItemActions,
+} from '@/src/react/ui/ExplorationActionControl';
 import {
   datasetTable,
   type Dataset,
@@ -49,24 +49,46 @@ export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
   'metric' | 'reading' | 'records'
 > & {
   metric: Metric<Data, Input>;
-  source: ViewSource<Data, Input>;
+  source: ViewSource<NoInfer<Data>, NoInfer<Input>>;
   records?: MetricRecords<Data, Input, any, any>;
+  actions?: ExplorationActions<void, NoInfer<Input>>;
 };
 export function MetricWidget<Data, Input>({
   metric,
   source,
   records,
+  actions,
+  action,
   ...presentation
 }: MetricWidgetProps<Data, Input>) {
   const navigation = useDetailNavigation();
+  const itemActions = resolveActions(
+    actions,
+    metric,
+    RegisteredBinding.owner(metric),
+    source,
+    (target, input, trigger) => navigation.open(target, input, trigger)
+  );
   const [widgetElement, setWidgetElement] =
     useState<ComponentRef<'div'> | null>(null);
+  const availableActions = itemActions(undefined);
   return (
     <DisplayMetric
       {...presentation}
       ref={setWidgetElement}
       metric={metric.definition}
       reading={metric.read(source)}
+      action={
+        action || availableActions.length ? (
+          <>
+            {action}
+            <ExplorationActionControl
+              actions={availableActions}
+              ariaLabel={metric.definition.label}
+            />
+          </>
+        ) : undefined
+      }
       records={
         records
           ? MetricRecords.render(records, metric, source, {
@@ -98,18 +120,53 @@ export type TableWidgetProps<Row, Data = unknown, Input = unknown> = Omit<
 > &
   TableDisplayMode & {
     dataset: Dataset<Data, Input, Row>;
-    source: ViewSource<Data, Input>;
+    source: ViewSource<NoInfer<Data>, NoInfer<Input>>;
     title?: ReactNode;
+    actions?: ExplorationActions<NoInfer<Row>, NoInfer<Input>>;
   };
 export function TableWidget<Row, Data, Input>({
   dataset,
   source,
   title,
+  actions,
   ...presentation
 }: TableWidgetProps<Row, Data, Input>) {
   const data = datasetTable(dataset, source);
+  const navigation = useDetailNavigation();
+  const itemActions = resolveActions(
+    actions,
+    dataset,
+    RegisteredBinding.owner(dataset),
+    source,
+    (target, input, trigger) => navigation.open(target, input, trigger)
+  );
+  const hasRowActions =
+    actions &&
+    (data.reading.loading ||
+      data.reading.value.some(row => itemActions(row).length > 0));
   return (
-    <DisplayTable {...presentation} {...data} title={title ?? data.title} />
+    <DisplayTable
+      {...presentation}
+      {...data}
+      title={title ?? data.title}
+      columns={
+        hasRowActions
+          ? [
+              ...data.columns,
+              {
+                id: '$exploration-actions',
+                header: 'Actions',
+                cell: row => (
+                  <ExplorationActionControl
+                    actions={itemActions(row)}
+                    ariaLabel={`${data.title}: ${data.rowKey(row)}`}
+                  />
+                ),
+              },
+            ]
+          : data.columns
+      }
+    />
   );
 }
 type BoundVisual<Row> = Extract<
@@ -150,9 +207,9 @@ export type VisualizationWidgetProps<
 > &
   VisualContent<Row> & {
     dataset: Dataset<Data, Input, Row>;
-    source: ViewSource<Data, Input>;
+    source: ViewSource<NoInfer<Data>, NoInfer<Input>>;
     title?: ReactNode;
-    actions?: DatasetActions<Row, Input>;
+    actions?: ExplorationActions<NoInfer<Row>, NoInfer<Input>>;
     breakdown?: BreakdownTarget<any>;
   };
 export function VisualizationWidget<Row, Data, Input>({
@@ -169,7 +226,7 @@ export function VisualizationWidget<Row, Data, Input>({
 }: VisualizationWidgetProps<Row, Data, Input>) {
   const data = datasetTable(dataset, source);
   const navigation = useDetailNavigation();
-  const itemActions = resolveDatasetActions(
+  const itemActions = resolveActions(
     actions,
     dataset,
     RegisteredBinding.owner(dataset),
@@ -240,13 +297,13 @@ type NarrativeBinding<Data, Input, Row> =
   | {
       metric: Metric<Data, Input>;
       dataset?: never;
-      source: ViewSource<Data, Input>;
+      source: ViewSource<NoInfer<Data>, NoInfer<Input>>;
       children?: (values: MetricValues) => ReactNode;
     }
   | {
       metric?: never;
       dataset: Dataset<Data, Input, Row>;
-      source: ViewSource<Data, Input>;
+      source: ViewSource<NoInfer<Data>, NoInfer<Input>>;
       children: (rows: readonly Row[]) => ReactNode;
     };
 export type TextWidgetProps<

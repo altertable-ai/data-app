@@ -1,4 +1,5 @@
 import { GradientScroll } from '@/src/react/ui/GradientScroll';
+import { ControlLabelValue } from '@/src/react/ui/PickerField';
 import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 import {
   Children,
@@ -110,10 +111,10 @@ export function ViewControlBar({
                   aria-label={`Open filters: ${filter.label}: ${filter.summary}`}
                   onClick={() => setFiltersOpen(true)}
                 >
-                  <span className="altertable-picker-label">
-                    {filter.label}
-                  </span>
-                  <span>{filter.summary}</span>
+                  <ControlLabelValue
+                    label={filter.label}
+                    value={filter.summary}
+                  />
                 </Button>
               ))}
             </GradientScroll>
