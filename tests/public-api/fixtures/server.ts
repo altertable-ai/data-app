@@ -1,4 +1,4 @@
-import recoveryApp from '@/examples/recovery-data-app/index.html';
+import recoveryApp from '@/tests/public-api/fixtures/recovery-app/index.html';
 import { Database } from 'bun:sqlite';
 import { serveLocalApp } from '@altertable/data-app/server/bun';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';

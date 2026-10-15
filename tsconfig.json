@@ -20,7 +20,6 @@
     "tests",
     "scripts",
     "dev",
-    "examples/starter-data-app/index.tsx",
-    "examples/recovery-data-app"
+    "examples/starter-data-app/index.tsx"
   ]
 }

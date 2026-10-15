@@ -21,19 +21,18 @@ import {
   DataSection,
 } from '@altertable/data-app/react';
 import { BarChart, Select } from '@altertable/data-app/react/ui';
-// eslint-disable-next-line no-restricted-imports -- Packaged examples resolve their own files.
 import {
   createSimulation,
   type ResponseMode,
   type SourceName,
-} from './simulation';
+} from '@/tests/public-api/fixtures/recovery-app/simulation';
 
 const flow = new URLSearchParams(location.search).get('flow');
 const simulation = createSimulation();
 const app = defineDataApp({
   title: 'Reliable results',
-  description:
-    'A deterministic recovery example. Every request waits for you to complete it.',
+  description: 'Deterministic query recovery.',
+
   scope: { organization: 'demo', environment: 'simulation' },
   queries: {
     sales: {
@@ -202,19 +201,10 @@ const responseOptions: { id: ResponseMode; label: string }[] = [
   { id: 'rejected', label: 'Rejected SQL' },
   { id: 'malformed', label: 'Invalid query rows' },
 ];
-function SimulationControls() {
+function RequestControls() {
   useSyncExternalStore(simulation.subscribe, simulation.snapshot);
   return (
     <Stack>
-      <TextContent>
-        <h2>Reproduce a request</h2>
-        <p>
-          Choose the next response, then complete the waiting request. Retry
-          creates another waiting request. Change Market to reproduce refreshes
-          with different inputs. The toolbar refreshes its primary view. Each
-          section also has its own refresh and cancel controls.
-        </p>
-      </TextContent>
       <Grid columns={2}>
         {(['sales', 'acquisition'] as const).map(name => (
           <SourceControls key={name} name={name} />
@@ -253,7 +243,7 @@ function FragileChart({
   broken: boolean;
   rows: readonly { channel: string; value: number }[];
 }) {
-  if (broken) throw new Error('Example visualization failed.');
+  if (broken) throw new Error('Fixture visualization failed.');
   return (
     <Stack>
       <BarChart
@@ -292,27 +282,10 @@ function App() {
       ]}
     >
       <Stack>
-        <SimulationControls />
-        <TextContent>
-          <h2>Displayed results</h2>
-          <p>
-            Sales widgets share one request. Acquisition recovers independently.
-            A zero remains a measured value; an empty response has no result to
-            present.
-          </p>
-        </TextContent>
-        <TextContent>
-          <p>
-            Toolbar: {primaryIsAcquisition ? 'Acquisition' : 'Sales'}.{' '}
-            <a href="?primary=sales">Use Sales</a> ·{' '}
-            <a href="?primary=acquisition">Use Acquisition</a>
-          </p>
-        </TextContent>
+        <RequestControls />
         <DataSection
           content={salesView.content(source => (
             <Stack>
-              <Button onClick={() => source.refetch()}>Refresh sales</Button>
-              <Button onClick={() => source.cancel()}>Cancel sales</Button>
               <Grid columns={2}>
                 <MetricWidget metric={revenue} source={source} />
                 <TableWidget
@@ -332,50 +305,35 @@ function App() {
         />
         <DataSection
           content={acquisitionView.content(source => (
-            <Stack>
-              <Button onClick={() => source.refetch()}>
-                Refresh acquisition
-              </Button>
-              <Button onClick={() => source.cancel()}>
-                Cancel acquisition
-              </Button>
-              <Grid columns={2}>
-                <MetricWidget metric={customers} source={source} />
-                <TableWidget
-                  dataset={acquisition}
-                  source={source}
-                  pagination={false}
-                />
-                <TextWidget
-                  title="Acquisition finding"
-                  metric={customers}
-                  source={source}
-                >
-                  {values => <p>Acquired {values.current} customers.</p>}
-                </TextWidget>
-                <VisualizationWidget
-                  title="Acquisition chart"
-                  dataset={acquisition}
-                  source={source}
-                  action={
-                    <Button onClick={() => setBroken(value => !value)}>
-                      {broken ? 'Repair visualization' : 'Break visualization'}
-                    </Button>
-                  }
-                >
-                  {rows => <FragileChart broken={broken} rows={rows} />}
-                </VisualizationWidget>
-              </Grid>
-            </Stack>
+            <Grid columns={2}>
+              <MetricWidget metric={customers} source={source} />
+              <TableWidget
+                dataset={acquisition}
+                source={source}
+                pagination={false}
+              />
+              <TextWidget
+                title="Acquisition finding"
+                metric={customers}
+                source={source}
+              >
+                {values => <p>Acquired {values.current} customers.</p>}
+              </TextWidget>
+              <VisualizationWidget
+                title="Acquisition chart"
+                dataset={acquisition}
+                source={source}
+                action={
+                  <Button onClick={() => setBroken(value => !value)}>
+                    {broken ? 'Repair visualization' : 'Break visualization'}
+                  </Button>
+                }
+              >
+                {rows => <FragileChart broken={broken} rows={rows} />}
+              </VisualizationWidget>
+            </Grid>
           ))}
         />
-        <TextContent>
-          <p>
-            Break the chart to isolate a render failure. Repair visualization
-            removes the cause; Retry remounts the chart without running SQL.
-            Retrying before repair reproduces the same failure.
-          </p>
-        </TextContent>
       </Stack>
     </DataApp>
   );

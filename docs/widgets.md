@@ -54,14 +54,6 @@ visualization workflow.
 Use widget `views` when a chart and another representation answer the same
 question from the same dataset.
 
-## Explicit sources
-
-Every bound widget requires `source`. Pass the source supplied by its owning
-view's `content()` callback or story snapshot. The binding validates ownership;
-a supplied source never starts a request. Widgets derive loading, failure, retry,
-and displayed scope from that source. Direct selectors require a readable source;
-narrow error and empty states before calling `read()`.
-
 ## Declare datasets and metrics
 
 Bind reusable selections to the view. Declare evidence references directly;

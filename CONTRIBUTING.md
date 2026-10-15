@@ -171,6 +171,5 @@ Stories and exports use displayed snapshots, including retained failures. Freeze
 artifacts on opening and preserve failed download payloads for retry. The primary view owns toolbar artifacts. Validate binding ownership and unique
 export names at composition boundaries.
 
-Use `examples/recovery-data-app` for deterministic browser reproductions. Keep its
-simulation at the public lakehouse boundary so normal execution, parsing, and
-deadline behavior remain covered.
+Recovery tests inject failures at the public lakehouse boundary so execution,
+parsing, cancellation, and deadlines remain covered.

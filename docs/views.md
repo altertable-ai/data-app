@@ -90,19 +90,8 @@ charts, and custom views.
 
 ## Preserve displayed results
 
-Bind widgets to the source supplied by `view.content()`. Derive scope labels,
-stories, and exports from its displayed input, including during refreshes.
-Keep related datasets in one view so their results stay consistent; use
-`<DataSection>` for independently queried content. Let the view handle loading,
-errors, and refreshes instead of duplicating request state in app code.
-
-A measured zero is valid data. Define `isEmpty` for the analysis and provide
-useful `emptyFallback` copy.
-
-## Recover widgets independently
-
-Pass the source from `view.content()` to every bound widget. `<DataApp>` owns
-one primary view; `<DataSection>` executes independent views separately:
+`<DataApp>` owns one primary view and its toolbar. Use `<DataSection>` for
+independently queried content, passing each view's source to its bound widgets:
 
 ```tsx
 const salesContent = salesView.content(source => (
@@ -119,25 +108,18 @@ const acquisitionContent = acquisitionView.content(source => (
 ```
 
 Widgets preserve their frames across loading, empty results, and errors. A failed
-refresh retains the last successful result and its original input. Retry refreshes
-the widget's whole view. Rendering retry remounts only the failed widget, without
-rerunning SQL. Access and rejected-query failures omit ineffective retries.
+refresh retains the displayed data and its original input. Query Retry refreshes
+the whole view; rendering Retry remounts only the failed widget without SQL.
+Access and rejected-query failures omit ineffective retries.
 
-The source has an explicit `state`: `loading`, `error`, `empty`, `ready`,
-`updating`, or `stale-error`. Only the last three contain displayed `data`.
-Narrow with `'data' in source` before deriving custom content. Binding `read()`
-accepts loading or displayed sources; widgets also accept error and empty sources.
-Live section sources supply `refetch()` and `cancel()`; frozen story snapshots
-carry only the displayed result. A widget never starts a request.
+Derive labels, findings, and exports from the displayed input. For custom content,
+narrow with `'data' in source` before reading data. Live content also provides
+`refetch()` and `cancel()`. A widget never starts a request.
 
-Keep widgets that must agree on one view. An uncaught query failure rejects its
-entire operation; successful sibling queries are not partial results. Never
-replace failed requests with zero or empty arrays. Use the same URL variable
-when independent views intentionally share a filter.
+Keep results that must agree in one operation and view. An uncaught query failure
+rejects the entire operation. Never substitute zero or empty arrays for a failure;
+a measured zero is data. Define `isEmpty` and useful `emptyFallback` copy.
 
-For custom feedback, `getDataFailure(error)` returns a safe message, typed code,
-retryability, and optional request ID. Rendering boundaries catch selectors and
-React rendering; asynchronous callbacks use the normal request path.
-
-See the [recovery example](../examples/recovery-data-app/README.md) for deterministic
-failure controls and browser-tested workflows.
+Use `getDataFailure(error)` for safe custom feedback and retryability. Rendering
+boundaries catch selectors and React rendering; asynchronous callbacks use the
+normal request path.

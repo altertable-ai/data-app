@@ -1,4 +1,3 @@
-import recoveryApp from '@/examples/recovery-data-app/index.html';
 import { createReloadChannel } from '@/src/server/reload-channel';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
@@ -135,7 +134,6 @@ Bun.serve({
   port,
   development: isDevelopment && { hmr: true },
   routes: {
-    '/recovery': recoveryApp,
     '/inspection-app': inspectionApp,
     '/gallery': gallery,
     '/chart-legends': chartLegends,

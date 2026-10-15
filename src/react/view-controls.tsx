@@ -10,7 +10,6 @@ import { Select } from '@/src/react/ui/Select';
 import {
   ViewControlBar,
   type ActiveFilterControl,
-  type ViewControlBarProps,
 } from '@/src/react/view-control-bar';
 import { NumberFilterPicker } from '@/src/react/ui/NumberFilterPicker';
 import type {
@@ -283,24 +282,25 @@ export function useViewVariables<Variables extends VariableCollection>(
   ];
   const hasControls = allFilters.length > 0 || orderedDisplayOptions.length > 0;
 
-  const controlBar: ViewControlBarProps = {
-    primaryFilters,
-    activeSecondaryFilters,
-    allFilters,
-    activeFilterCount,
-    displayOptions: orderedDisplayOptions,
-    changedDisplayOptionCount,
-    onClear: hasActiveFilters
-      ? () => variables.update(clearedFilters)
-      : undefined,
-  };
   return {
     ...variables,
     resolved,
     searchControls: searchControls.length ? searchControls : null,
     filterControls:
       hasControls || hasActiveFilters ? (
-        <ViewControlBar {...controlBar} />
+        <ViewControlBar
+          primaryFilters={primaryFilters}
+          activeSecondaryFilters={activeSecondaryFilters}
+          allFilters={allFilters}
+          activeFilterCount={activeFilterCount}
+          displayOptions={orderedDisplayOptions}
+          changedDisplayOptionCount={changedDisplayOptionCount}
+          onClear={
+            hasActiveFilters
+              ? () => variables.update(clearedFilters)
+              : undefined
+          }
+        />
       ) : null,
   };
 }

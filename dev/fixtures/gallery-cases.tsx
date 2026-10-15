@@ -19,7 +19,6 @@ import { AppScope } from '@/src/react/ui/AppScope';
 import { AppToolbar } from '@/src/react/ui/AppToolbar';
 import { AppFooter } from '@/src/react/ui/AppFooter';
 import { VariableBar } from '@/src/react/ui/VariableBar';
-import { DataViewToast } from '@/src/react/ui/DataViewToast';
 import {
   Breakdown,
   Button,
@@ -223,7 +222,6 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
   const [uncached, setUncached] = useState<'error' | 'loading' | 'ready'>(
     'error'
   );
-  const [notice, setNotice] = useState(false);
   const [cycle, setCycle] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [dates, setDates] = useState<DateRange | null>({
@@ -1069,20 +1067,6 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               onChange={setDimensionValue}
             />
           </VariableBar>
-        </Case>
-        <Case title="Page notice and delayed request feedback">
-          <Button onClick={() => setNotice(!notice)}>
-            {notice ? 'Hide page notice' : 'Show page notice'}
-          </Button>
-          <DataViewToast
-            view={dataView}
-            notice={
-              notice
-                ? 'A page-level notice keeps the content in place.'
-                : undefined
-            }
-            onRetry={() => setRequest('ready')}
-          />
         </Case>
         <Case title="Footer with custom attribution">
           <AppFooter attribution={<span>Fixture attribution</span>}>
