@@ -1,0 +1,22 @@
+import { useState } from 'react';
+import {
+  createAnnotationClient,
+  getDataAppTransport,
+} from '@altertable/data-app/client';
+import { MessageRoutingError } from '@altertable/data-app/contract';
+
+/** Bind annotation delivery to this app's current iframe bridge. The host owns storage and submission. */
+export function useDataAppAnnotations() {
+  const [client] = useState(() =>
+    createAnnotationClient((message, signal) => {
+      const transport = getDataAppTransport();
+      if (!transport)
+        throw new MessageRoutingError(
+          'unsupported_route',
+          'Annotations are unavailable in this app.'
+        );
+      return transport.request(message, signal);
+    })
+  );
+  return client;
+}

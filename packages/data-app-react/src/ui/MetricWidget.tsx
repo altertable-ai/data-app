@@ -1,0 +1,184 @@
+import { useDateFormatting } from '../date-formatting.ts';
+import { type ComponentPropsWithRef, type ReactNode } from 'react';
+import { type WidgetStatus } from './RequestHint.tsx';
+import { VisualizationWidget } from './VisualizationWidget.tsx';
+import { type WidgetEvidence } from './WidgetEvidence.ts';
+import { AppIcon } from './icons.ts';
+import {
+  comparisonChange,
+  type MetricComparison,
+} from './metric-comparison.ts';
+import { classNames } from './classNames.ts';
+import { formatMetric, type MetricFormat } from '@altertable/data-app/format';
+import { Skeleton } from './Skeleton.tsx';
+import { type MetricReading } from '@altertable/data-app/internal';
+import { metricComparison, type MetricDefinition } from './metric.ts';
+
+type MetricWidgetBaseProps = {
+  label: string;
+  /** Document outline level. The label keeps the shared widget-heading appearance. */
+  headingLevel?: 2 | 3 | 4 | 5 | 6;
+  annotationId?: string;
+  description?: ReactNode;
+  comparison?: MetricComparison;
+  evidence?: WidgetEvidence;
+  action?: ReactNode;
+  status?: WidgetStatus;
+  visual?: ReactNode;
+} & Omit<ComponentPropsWithRef<'div'>, 'about' | 'children'>;
+
+type UnboundMetricWidgetProps = MetricWidgetBaseProps &
+  (
+    | { loading: true; value?: never; format?: never; content?: never }
+    | ({ loading?: false } & (
+        | { value: number; format: MetricFormat; content?: never }
+        | { content: ReactNode; value?: never; format?: never }
+      ))
+  );
+
+/** VisualizationWidget with a formatted metric, optional comparison, and evidence. */
+export type MetricWidgetProps =
+  | UnboundMetricWidgetProps
+  | (Omit<MetricWidgetBaseProps, 'label' | 'comparison' | 'evidence'> & {
+      metric: MetricDefinition;
+      reading: MetricReading;
+      label?: never;
+      value?: never;
+      format?: never;
+      content?: never;
+      comparison?: never;
+      evidence?: never;
+      loading?: never;
+    });
+
+export function MetricWidget(props: MetricWidgetProps) {
+  const dateFormatting = useDateFormatting();
+  if ('metric' in props) {
+    const { metric, reading, ...rest } = props;
+    if (reading.loading)
+      return (
+        <MetricWidgetContent
+          {...rest}
+          label={metric.label}
+          evidence={metric.evidence}
+          loading
+        />
+      );
+
+    return (
+      <MetricWidgetContent
+        {...rest}
+        label={metric.label}
+        value={reading.value.current}
+        format={metric.format}
+        evidence={metric.evidence}
+        comparison={metricComparison(metric, reading, dateFormatting)}
+      />
+    );
+  }
+
+  return <MetricWidgetContent {...props} />;
+}
+
+function MetricWidgetContent({
+  label,
+  annotationId,
+  value,
+  content,
+  format,
+  loading = false,
+  description,
+  comparison,
+  evidence,
+  action,
+  status,
+  visual,
+  className,
+  ...props
+}: UnboundMetricWidgetProps) {
+  return (
+    <VisualizationWidget
+      {...props}
+      className={classNames('altertable-metric-widget', className)}
+      title={label}
+      annotationId={annotationId}
+      evidence={evidence}
+      aria-busy={loading || props['aria-busy']}
+      action={action}
+      status={status}
+      visual={
+        <MetricVisual
+          loading={loading}
+          value={value}
+          content={content}
+          format={format}
+          comparison={comparison}
+          description={description}
+          visual={visual}
+        />
+      }
+    />
+  );
+}
+
+function MetricVisual({
+  loading,
+  value,
+  content,
+  format,
+  comparison,
+  description,
+  visual,
+}: {
+  loading: boolean;
+  value?: number;
+  content?: ReactNode;
+  format?: MetricFormat;
+  comparison?: MetricComparison;
+  description?: ReactNode;
+  visual?: ReactNode;
+}) {
+  const shownValue = format ? formatMetric(value as number, format) : content;
+  const change = comparison ? comparisonChange(comparison) : null;
+  const shownTrend =
+    change?.percent != null ? (
+      <span className="altertable-metric-change" data-tone={change.tone}>
+        <AppIcon name={change.icon} size={14} />
+        {Math.abs(change.percent).toFixed(1)}% vs{' '}
+        {comparison?.previous?.periodLabel?.toLowerCase() ?? 'previous period'}
+      </span>
+    ) : comparison?.previous?.value === null ? (
+      <span className="altertable-metric-change" data-tone="neutral">
+        Previous period unavailable
+      </span>
+    ) : null;
+  const reading = (
+    <div className="altertable-metric-reading">
+      <strong
+        className="altertable-metric-value"
+        data-unavailable={shownValue === '—' || undefined}
+      >
+        {loading ? (
+          <Skeleton className="altertable-metric-loading-value" />
+        ) : (
+          shownValue
+        )}
+      </strong>
+      {shownTrend && (
+        <span className="altertable-metric-trend">{shownTrend}</span>
+      )}
+    </div>
+  );
+  const visualization = visual && (
+    <div className="altertable-metric-visual">{visual}</div>
+  );
+  return (
+    <>
+      {reading}
+      {description && (
+        <small className="altertable-metric-description">{description}</small>
+      )}
+      {visualization}
+    </>
+  );
+}

@@ -1,8 +1,12 @@
 # Releasing
 
-This repository releases one npm package, `@altertable/data-app`. All public
-entries share its version. Release Please manages `package.json`, the release
-manifest, `CHANGELOG.md`, GitHub tags, and release notes.
+This repository releases five npm packages together: `@altertable/data-app`,
+`@altertable/data-app-embed`, `@altertable/data-app-react`,
+`@altertable/data-app-bun`, and `@altertable/data-app-worker`.
+They share one version, one release PR, one `v<version>` tag, and one changelog.
+The private root's `package.json` is the release version source. Release Please
+updates package versions and internal dependency ranges through its configured
+JSON extra-file updates. The root is never published.
 
 ## Repository setup
 
@@ -13,7 +17,7 @@ workflow falls back to `GITHUB_TOKEN`, but PRs created or updated with that toke
 do not trigger subsequent GitHub Actions workflows. Use the dedicated token
 when requiring CI checks on release PRs.
 
-Configure the npm trusted publisher for `@altertable/data-app`:
+Configure an npm trusted publisher for each of the five package names:
 
 | Setting           | Value                                               |
 | ----------------- | --------------------------------------------------- |
@@ -33,9 +37,10 @@ If the npm package does not exist yet, establish it and configure its trusted
 publisher before expecting automated publication to succeed. Package and npm
 account setup are maintainer actions outside repository CI.
 
-The manifest starts at the imported runtime version `0.59.1`. This records the
-version baseline, not a claim that it is published. Release Please computes the
-next version from release-relevant commits on `main`.
+The existing release manifest and `v<version>` history continue to identify the
+coordinated release. New package manifests start at the same version as the base
+package. Release Please computes the next version from release-relevant commits
+on `main`; the first split release is a breaking change.
 
 While the package is below `1.0.0`, breaking changes bump the minor version via
 `bump-minor-pre-major`. Features also bump the minor version, and fixes bump the
@@ -45,19 +50,24 @@ option when preparing the first stable `1.0.0` release.
 ## Release flow
 
 1. Merge Conventional Commits into `main`.
-2. Release Please opens or updates a release PR with the version and changelog.
+2. Release Please opens or updates a release PR with the version, changelog,
+   package manifests, and internal dependency ranges. The workflow refreshes
+   `bun.lock` on that release branch and pushes it only when it changed. A
+   dedicated `RELEASE_PLEASE_TOKEN` lets that commit trigger CI.
 3. Review and merge that PR. Release Please creates its `v<version>` tag and
    GitHub release.
 4. The workflow resolves the tag to a commit SHA and runs the same source,
    package, and workflow checks against that revision. The publish job checks out
-   that SHA, confirms the tag has not moved, builds, and publishes to npm.
+   that SHA, confirms the tag has not moved, builds, and publishes packages to npm in dependency order: base, embed,
+   React, Bun, Worker. npm publication is not atomic across packages.
 
 GitHub release creation precedes the publication checks. A failed check blocks
 npm publication and leaves the GitHub release available for a retry.
 
-The publish job checks that the tag matches `package.json`, that the GitHub
-release exists and is not a draft, and that GitHub OIDC is available. An existing
-npm version is skipped. Registry errors other than a missing version stop the
+The publish job checks that the tag matches the private root version and all package versions, that the GitHub
+release exists and is not a draft, and that GitHub OIDC is available. Each existing
+npm package version is skipped. A failure stops publication of later packages;
+retrying resumes the same release without republishing completed packages. Registry errors other than a missing version stop the
 job rather than being treated as permission to publish.
 
 CodeQL and dependency review are separate workflows. Branch protection can

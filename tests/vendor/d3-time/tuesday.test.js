@@ -1,6 +1,9 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { timeTuesday, timeTuesdays } from '@/src/core/time-interval';
+import {
+  timeTuesday,
+  timeTuesdays,
+} from '@/packages/data-app/src/core/time-interval.ts';
 import { local } from '@/tests/vendor/d3-time/date.js';
 
 it('timeTuesdays in an alias for timeTuesday.range', () => {

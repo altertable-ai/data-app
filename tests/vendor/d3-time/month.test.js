@@ -1,6 +1,9 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { timeMonth, timeMonths } from '@/src/core/time-interval';
+import {
+  timeMonth,
+  timeMonths,
+} from '@/packages/data-app/src/core/time-interval.ts';
 import { local, utc } from '@/tests/vendor/d3-time/date.js';
 
 it('timeMonths in an alias for timeMonth.range', () => {

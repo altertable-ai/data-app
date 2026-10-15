@@ -3,20 +3,13 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@altertable/data-app",
-      "dependencies": {
-        "@altertable/lakehouse": "0.4.1",
-        "@floating-ui/react": "0.27.20",
-        "@internationalized/date": "3.12.4",
-        "@tanstack/react-query": "5.104.0",
-        "fflate": "0.8.3",
-        "fuzzysort": "4.0.2",
-        "html-to-image": "1.11.13",
-        "lucide-react": "1.48.0",
-        "react-aria-components": "1.21.1",
-        "recharts": "3.10.1",
-      },
+      "name": "data-app-workspace",
       "devDependencies": {
+        "@altertable/data-app": "0.69.0",
+        "@altertable/data-app-bun": "0.69.0",
+        "@altertable/data-app-embed": "0.69.0",
+        "@altertable/data-app-react": "0.69.0",
+        "@altertable/data-app-worker": "0.69.0",
         "@types/bun": "1.4.2",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
@@ -36,15 +29,13 @@
         "typescript": "7.0.2",
         "vitest": "4.1.11",
       },
-      "peerDependencies": {
-        "react": ">=19.2.0",
-        "react-dom": ">=19.2.0",
-      },
     },
     "examples/starter-local-data-app": {
       "name": "data-app-starter",
       "dependencies": {
-        "@altertable/data-app": "file:../..",
+        "@altertable/data-app": "0.69.0",
+        "@altertable/data-app-bun": "0.69.0",
+        "@altertable/data-app-react": "0.69.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
       },
@@ -58,9 +49,78 @@
         "typescript": "7.0.2",
       },
     },
+    "packages/data-app": {
+      "name": "@altertable/data-app",
+      "version": "0.69.0",
+      "dependencies": {
+        "@internationalized/date": "3.12.4",
+      },
+    },
+    "packages/data-app-bun": {
+      "name": "@altertable/data-app-bun",
+      "version": "0.69.0",
+      "dependencies": {
+        "@altertable/data-app": "0.69.0",
+        "@altertable/data-app-embed": "0.69.0",
+        "@altertable/lakehouse": "0.4.1",
+        "get-tsconfig": "4.14.3",
+      },
+      "devDependencies": {
+        "react": "19.3.0",
+        "react-dom": "19.3.0",
+      },
+    },
+    "packages/data-app-embed": {
+      "name": "@altertable/data-app-embed",
+      "version": "0.69.0",
+      "dependencies": {
+        "@altertable/data-app": "0.69.0",
+      },
+      "peerDependencies": {
+        "react": ">=19.2.0",
+      },
+      "optionalPeers": [
+        "react",
+      ],
+    },
+    "packages/data-app-react": {
+      "name": "@altertable/data-app-react",
+      "version": "0.69.0",
+      "dependencies": {
+        "@altertable/data-app": "0.69.0",
+        "@floating-ui/react": "0.27.20",
+        "@internationalized/date": "3.12.4",
+        "@tanstack/react-query": "5.104.0",
+        "fflate": "0.8.3",
+        "fuzzysort": "4.0.2",
+        "html-to-image": "1.11.13",
+        "lucide-react": "1.48.0",
+        "react-aria-components": "1.21.1",
+        "recharts": "3.10.1",
+      },
+      "peerDependencies": {
+        "react": ">=19.2.0",
+        "react-dom": ">=19.2.0",
+      },
+    },
+    "packages/data-app-worker": {
+      "name": "@altertable/data-app-worker",
+      "version": "0.69.0",
+      "devDependencies": {
+        "@altertable/data-app-embed": "0.69.0",
+      },
+    },
   },
   "packages": {
-    "@altertable/data-app": ["@altertable/data-app@root:", {}],
+    "@altertable/data-app": ["@altertable/data-app@workspace:packages/data-app"],
+
+    "@altertable/data-app-bun": ["@altertable/data-app-bun@workspace:packages/data-app-bun"],
+
+    "@altertable/data-app-embed": ["@altertable/data-app-embed@workspace:packages/data-app-embed"],
+
+    "@altertable/data-app-react": ["@altertable/data-app-react@workspace:packages/data-app-react"],
+
+    "@altertable/data-app-worker": ["@altertable/data-app-worker@workspace:packages/data-app-worker"],
 
     "@altertable/lakehouse": ["@altertable/lakehouse@0.4.1", "", {}, "sha512-m7d15cWt+WUGW7lVw2KYGD+Se8MzO25G7SWSuFd+OasBxWmOJNa2IrgvOHGVEbnZ+kexTUy9NjAGQ69sG4V91w=="],
 

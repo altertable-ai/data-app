@@ -89,7 +89,7 @@ Use the [standard layout](layout.md) and built-in toolbar actions.
 ### Organize the exploration
 
 Use sections for a focused question and for findings users should compare
-side by side. Add app-level `<Tabs>` from `/react/ui` when the exploration has
+side by side. Add app-level `<Tabs>` from `@altertable/data-app-react/ui` when the exploration has
 distinct analytical questions, such as Overview, Retention, and Segments, each
 with its own context and group of widgets. Lead with the most useful overview
 and label tabs by the question or subject they explore.

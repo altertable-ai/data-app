@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Stack } from '@altertable/data-app/react';
+import { Stack } from '@altertable/data-app-react';
 import {
   dimensionFilter,
   numberFilter,
@@ -27,7 +27,7 @@ import {
   SearchField,
   SegmentedControl,
   Select,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 
 const options = [
   { id: 'orders', label: 'Orders' },

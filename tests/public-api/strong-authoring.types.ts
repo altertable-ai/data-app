@@ -1,4 +1,4 @@
-import { useAppVariables } from '@altertable/data-app/react/ui';
+import { useAppVariables } from '@altertable/data-app-react/ui';
 type VariableCollection = Parameters<typeof useAppVariables>[0];
 import { defineDataApp } from '@altertable/data-app';
 import {
@@ -15,7 +15,7 @@ import {
   createDataHooks,
   createDataContext,
   searchVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 const header = {
   title: 'Contracts',

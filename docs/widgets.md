@@ -2,7 +2,7 @@
 
 ## Choose a widget
 
-Metrics, tables, and visualizations from `/react` consume view bindings and a source. For static displays, use
+Metrics, tables, and visualizations from `@altertable/data-app-react` consume view bindings and a source. For static displays, use
 [direct UI composition](ui.md).
 Manage requests in the [view and section](views.md); show skeletons for loading
 readings without inventing values. Use `isEmpty` for the predicate and
@@ -24,8 +24,8 @@ Use [layout](layout.md) for `<Stack>`, `<Grid>`, and responsive `<GridItem>` spa
 
 Choose the component by the user's question. Compose dataset visuals inside
 `<VisualizationWidget>`; use `<MetricWidget>` for a headline value. Built-in
-charts come from `/react/ui`; `<Ranking>`, `<Breakdown>`, and `<Comparison>`
-are also available from `/react`.
+charts come from `@altertable/data-app-react/ui`; `<Ranking>`, `<Breakdown>`, and `<Comparison>`
+are also available from `@altertable/data-app-react`.
 
 | Question or need                                                          | Component          | Guidance                                                                                                                                                            |
 | ------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -144,7 +144,7 @@ filtered data to the text and its related visualization.
 ## Custom visuals and controls
 
 `<Ranking>`, `<Breakdown>`, and `<Comparison>`
-compose inside authored widgets. Use [built-in charts](ui.md#charts) from `/react/ui`
+compose inside authored widgets. Use [built-in charts](ui.md#charts) from `@altertable/data-app-react/ui`
 inside `<VisualizationWidget dataset={dataset} source={result}>` for displayed rows.
 The dataset owns evidence and empty copy; an empty row selection shows that fallback. A visualization's `views` declaration keeps
 alternate-view selection shared with its inspection sheet. Give views stable IDs

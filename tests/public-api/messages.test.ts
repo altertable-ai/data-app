@@ -12,7 +12,7 @@ import { createMessageClient } from '@altertable/data-app/client';
 import {
   createNavigationHandler,
   createSqlQueryHandler,
-} from '@altertable/data-app/embed';
+} from '@altertable/data-app-embed';
 
 function number(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value))

@@ -1,0 +1,42 @@
+import { type ComponentPropsWithRef, type ReactNode } from 'react';
+import { AppIcon } from './icons.ts';
+import { classNames } from './classNames.ts';
+
+/** One search control surface for picker search and table/page search. */
+export function SearchInput({
+  focusRing = true,
+  size = 'default',
+  endAction,
+  loading = false,
+  className,
+  ...props
+}: Omit<ComponentPropsWithRef<'input'>, 'size' | 'children'> & {
+  size?: 'default' | 'compact';
+  /** Picker search delegates focus indication to the active option. */
+  focusRing?: boolean;
+  endAction?: ReactNode;
+  /** Replaces the search glyph in its existing space; input and results remain usable. */
+  loading?: boolean;
+}) {
+  return (
+    <div
+      data-atbl-internal-surface={focusRing ? 'field' : undefined}
+      data-atbl-focus={focusRing ? 'group' : undefined}
+      className="altertable-search-input-wrap"
+      data-size={size}
+    >
+      <AppIcon
+        name={loading ? 'loading' : 'search'}
+        size={17}
+        className={loading ? 'altertable-search-input-spinner' : undefined}
+      />
+      <input
+        data-atbl-control="text"
+        {...props}
+        type="search"
+        className={classNames('altertable-search-input', className)}
+      />
+      {endAction}
+    </div>
+  );
+}

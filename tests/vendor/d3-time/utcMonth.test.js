@@ -1,6 +1,9 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { utcMonth, utcMonths } from '@/src/core/time-interval';
+import {
+  utcMonth,
+  utcMonths,
+} from '@/packages/data-app/src/core/time-interval.ts';
 import { utc } from '@/tests/vendor/d3-time/date.js';
 
 it('utcMonths in an alias for utcMonth.range', () => {

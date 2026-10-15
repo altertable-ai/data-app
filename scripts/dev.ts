@@ -2,6 +2,7 @@ import { watch } from 'node:fs';
 import { resolve } from 'node:path';
 import { GenericContainer, Wait } from 'testcontainers';
 import { seedStatements } from '@/dev/seed';
+import { packages } from '@/scripts/packages';
 
 const root = resolve(import.meta.dir, '..');
 const mockApiPort = 15000;
@@ -123,15 +124,18 @@ async function rebuild() {
   }
 }
 
-watch(resolve(root, 'src'), { recursive: true }, () => {
-  clearTimeout(rebuildTimer);
-  rebuildTimer = setTimeout(() => void rebuild(), 50);
-});
+const sourceWatchers = packages.map(({ directory }) =>
+  watch(resolve(root, directory, 'src'), { recursive: true }, () => {
+    clearTimeout(rebuildTimer);
+    rebuildTimer = setTimeout(() => void rebuild(), 50);
+  })
+);
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const)
   process.on(signal, async () => {
     stopping = true;
     readyWatcher.close();
+    for (const watcher of sourceWatchers) watcher.close();
     clearTimeout(restartTimer);
     server.kill();
     wakeForBuild?.();

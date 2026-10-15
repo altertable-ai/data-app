@@ -7,7 +7,7 @@ import {
   PieChart,
   type ComposedChartProps,
   type LineChartProps,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 
 // Compile public declarations as an app would: existing item props and composable row props.
 const items = [{ id: 'jan', label: 'Jan', value: 12 }] as const;

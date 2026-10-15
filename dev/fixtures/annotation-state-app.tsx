@@ -14,7 +14,7 @@ import {
   injectDataAppStyles,
   mountDataApp,
   searchVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 type PeriodInput = { period: string };
 

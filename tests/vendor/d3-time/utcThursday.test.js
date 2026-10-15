@@ -1,7 +1,10 @@
 import { it } from 'vitest';
 import assert from 'assert';
 import { utc } from '@/tests/vendor/d3-time/date.js';
-import { utcThursday, utcThursdays } from '@/src/core/time-interval';
+import {
+  utcThursday,
+  utcThursdays,
+} from '@/packages/data-app/src/core/time-interval.ts';
 
 it('utcThursdays in an alias for utcThursday.range', () => {
   assert.strictEqual(utcThursdays, utcThursday.range);

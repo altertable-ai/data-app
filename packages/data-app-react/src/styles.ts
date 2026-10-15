@@ -1,0 +1,23 @@
+import { injectStyles } from './injectStyles.ts';
+
+// Replaced with the compiled stylesheet by the package build.
+declare const DATA_APP_STYLES: string;
+
+export interface DataAppStylesOptions {
+  /** Defaults to the current browser document. */
+  document?: Document;
+  /** Nonce permitted by the document's style-src CSP. */
+  nonce?: string;
+}
+
+/** Install the complete UI stylesheet once per document, before mounting. */
+export function injectDataAppStyles(
+  options: DataAppStylesOptions = {}
+): HTMLStyleElement {
+  return injectStyles({
+    name: 'injectDataAppStyles',
+    attribute: 'data-altertable-styles',
+    css: DATA_APP_STYLES,
+    options,
+  });
+}

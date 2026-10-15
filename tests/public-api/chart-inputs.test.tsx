@@ -7,7 +7,7 @@ import {
   PieChart,
   ScatterChart,
   type ScatterChartItem,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 
 test('standalone charts preserve their item validation and empty-result contract', () => {
   for (const Chart of [BarChart, LineChart, AreaChart, PieChart]) {

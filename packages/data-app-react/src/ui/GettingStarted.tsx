@@ -1,0 +1,129 @@
+import { createDataContext as registerContext } from './data-context.ts';
+import { useDeclaredResult } from '../view-runtime.tsx';
+import { createDataClient } from '@altertable/data-app/client';
+import type { ConnectionOperation } from '@altertable/data-app/contract';
+import { createDataHooks } from '../hooks.ts';
+import { AppIcon } from './icons.ts';
+import { Button } from './Button.tsx';
+import { DataApp } from './StaticDataApp.tsx';
+import type { DataContext } from './data-context.ts';
+
+const connectionContext = registerContext({})({
+  description: 'Connection setup',
+  glossary: {},
+});
+
+const client = /* @__PURE__ */ createDataClient<{
+  connection: ConnectionOperation;
+}>();
+const { defineDataView } = /* @__PURE__ */ createDataHooks(client);
+
+const connectionView = defineDataView({
+  dataContext: connectionContext,
+  operation: 'connection',
+  describeInput: () => 'the connection',
+  isEmpty: () => false,
+  emptyFallback: { title: 'No connection' },
+});
+
+/** Query-backed connection state and next steps for a newly created app. Mount within
+ * `DataAppProvider` and register `connection: connectionCheck(app.queries)` on the server. */
+export function GettingStarted({ dataContext }: { dataContext: DataContext }) {
+  const connection = useDeclaredResult(connectionView);
+  const state =
+    connection.view.kind === 'error' || connection.view.kind === 'stale-error'
+      ? 'error'
+      : connection.refreshing || !connection.snapshot
+        ? 'checking'
+        : 'connected';
+
+  return (
+    <DataApp
+      dataContext={dataContext}
+      description="Check your lakehouse connection, then build a view around a real question."
+      queries={connection.queries}
+      toolbarActions={
+        <Button
+          disabled={connection.refreshing}
+          onClick={() => connection.refetch()}
+        >
+          Check connection
+        </Button>
+      }
+    >
+      <section
+        className="starter-connection"
+        data-state={state}
+        role={state === 'error' ? 'alert' : 'status'}
+      >
+        <div className="starter-connection-icon">
+          <AppIcon
+            name={
+              state === 'connected'
+                ? 'check'
+                : state === 'error'
+                  ? 'error'
+                  : 'loading'
+            }
+            size={24}
+          />
+        </div>
+        <div className="starter-connection-copy">
+          <span className="starter-eyebrow">Lakehouse connection</span>
+          <h2>
+            {state === 'connected'
+              ? 'Connected'
+              : state === 'error'
+                ? 'Connection not verified'
+                : 'Checking connection…'}
+          </h2>
+          <p>
+            {state === 'connected'
+              ? 'A query completed successfully using this app’s current profile. You’re ready to build your first view.'
+              : state === 'error'
+                ? connection.snapshot
+                  ? 'An earlier query succeeded, but the latest check failed. Check the profile and try again.'
+                  : 'The query could not complete. Check the profile and lakehouse access, then try again.'
+                : 'Running a lightweight query with this app’s current profile.'}
+          </p>
+          {state === 'connected' && (
+            <small>This check does not verify access to every dataset.</small>
+          )}
+        </div>
+        {state === 'error' && (
+          <Button onClick={() => connection.refetch()}>Try again</Button>
+        )}
+      </section>
+
+      <section className="starter-next" aria-labelledby="starter-next-title">
+        <div className="starter-next-heading">
+          <span className="starter-eyebrow">Next steps</span>
+          <h2 id="starter-next-title">Turn this starter into a useful app</h2>
+          <p>Start with one question your readers need answered.</p>
+        </div>
+        <ol className="starter-steps">
+          <li>
+            <strong>Choose a question</strong>
+            <p>
+              Decide what someone should learn or do after opening this app.
+            </p>
+          </li>
+          <li>
+            <strong>Find the right data</strong>
+            <p>
+              Inspect the relevant catalogs, tables, and columns before writing
+              the query.
+            </p>
+          </li>
+          <li>
+            <strong>Build the first view</strong>
+            <p>
+              Replace the connection check in <code>src/operations.ts</code>,
+              then render its result in <code>src/App.tsx</code>.
+            </p>
+          </li>
+        </ol>
+      </section>
+    </DataApp>
+  );
+}

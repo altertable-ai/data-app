@@ -19,8 +19,8 @@ if (!existsSync(appFile) || !statSync(appFile).isFile()) {
 }
 await ensurePackageBuild();
 const [{ serveAppFile }, { localLakehouse }] = await Promise.all([
-  import('@altertable/data-app/server/bun/preview'),
-  import('@altertable/data-app/server/bun'),
+  import('@altertable/data-app-bun/preview'),
+  import('@altertable/data-app-bun'),
 ]);
 const { environment, target } = previewLakehouseEnvironment();
 const preview = await serveAppFile({

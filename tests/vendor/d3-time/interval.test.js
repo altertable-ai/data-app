@@ -7,7 +7,7 @@ import {
   timeMinute,
   timeSecond,
   timeYear,
-} from '@/src/core/time-interval';
+} from '@/packages/data-app/src/core/time-interval.ts';
 import { local, utc } from '@/tests/vendor/d3-time/date.js';
 
 it('timeInterval() is equivalent to timeInterval.floor(new Date)', () => {

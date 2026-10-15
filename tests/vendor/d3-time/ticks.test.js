@@ -1,6 +1,9 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { timeMinute, timeTicks } from '@/src/core/time-interval';
+import {
+  timeMinute,
+  timeTicks,
+} from '@/packages/data-app/src/core/time-interval.ts';
 import { local } from '@/tests/vendor/d3-time/date.js';
 
 it('timeTicks(start, stop, interval) respects the specified interval', () => {

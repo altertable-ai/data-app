@@ -38,10 +38,9 @@ on the server. This local adapter does not authorize hosted viewers.
 
 ## Make it your app
 
-This checkout uses `file:../..` to exercise the built package before publication.
-When copying the starter elsewhere, replace that dependency with the published
-package using `bun add @altertable/data-app`, `npm install @altertable/data-app`,
-or `pnpm add @altertable/data-app`, then regenerate your lockfile.
+This starter declares the published base, React, and Bun packages. Inside this
+repository, Bun links their workspace builds. When copying the starter elsewhere,
+run `bun install` to install those packages from npm.
 
 ```fish
 bun run check

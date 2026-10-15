@@ -1,4 +1,4 @@
-import { injectDataAppStyles } from '@altertable/data-app/react';
+import { injectDataAppStyles } from '@altertable/data-app-react';
 
 document.querySelector('#inject')!.addEventListener('click', () => {
   injectDataAppStyles({ nonce: 'styles-test' });

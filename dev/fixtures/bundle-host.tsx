@@ -1,6 +1,6 @@
-import { KEY_SEPARATOR } from '@/src/core/keys';
-import { AppIcon } from '@altertable/data-app/react/ui';
-import { Kbd } from '@/src/react/ui/Kbd';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { AppIcon } from '@altertable/data-app-react/ui';
+import { Kbd } from '@/packages/data-app-react/src/ui/Kbd.tsx';
 import { useAnnotationHost } from '@/dev/fixtures/use-annotation-host';
 import type { Theme } from '@altertable/data-app/appearance';
 import {
@@ -18,17 +18,17 @@ import {
   injectDataAppAnnotationStyles,
   Tooltip,
   TooltipProvider,
-} from '@altertable/data-app/react';
-import '@/src/react/ui/Tooltip.css';
-import '@/src/react/ui/Kbd.css';
+} from '@altertable/data-app-react';
+import '@/packages/data-app-react/src/ui/Tooltip.css';
+import '@/packages/data-app-react/src/ui/Kbd.css';
 
 import {
   shortcuts,
   useShortcut,
   ariaKeyShortcuts,
-} from '@/src/react/ui/shortcuts';
+} from '@/packages/data-app-react/src/ui/shortcuts.ts';
 import { createRoot } from 'react-dom/client';
-import { DataAppBridge } from '@altertable/data-app/react/embed';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
   MessageRoutingError,
   annotationDraftRoute,
@@ -47,7 +47,7 @@ import {
   type DataAppStatus,
   createNavigationHandler,
   createSqlQueryHandler,
-} from '@altertable/data-app/embed';
+} from '@altertable/data-app-embed';
 import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
 import '@/dev/fixtures/dev-reload';
 import '@/dev/playground-host.css';

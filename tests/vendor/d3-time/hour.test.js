@@ -1,6 +1,6 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { timeHour } from '@/src/core/time-interval';
+import { timeHour } from '@/packages/data-app/src/core/time-interval.ts';
 import { local, utc } from '@/tests/vendor/d3-time/date.js';
 
 it('timeHour.floor(date) returns hours', () => {

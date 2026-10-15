@@ -10,7 +10,7 @@ import {
   TextWidget,
   VisualizationWidget,
   searchVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import type { DataTransport } from '@altertable/data-app/client';
 type TransportResponse = Awaited<ReturnType<DataTransport>>;
 

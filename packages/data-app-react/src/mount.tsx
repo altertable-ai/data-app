@@ -1,0 +1,74 @@
+import { I18nProvider } from 'react-aria-components';
+import { useState, type ComponentType, type ReactNode } from 'react';
+import { DataAppContext } from './app-context.ts';
+import { InspectionProvider } from './ui/InspectionProvider.tsx';
+import {
+  getDataAppTransport,
+  getDataAppNavigation,
+} from '@altertable/data-app/client';
+import { createRoot } from 'react-dom/client';
+import { invariant } from '@altertable/data-app/internal';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  dataAppTitle,
+  type DataAppDefinition,
+  type QueryDefinitions,
+} from '@altertable/data-app/config';
+
+/** Mount once per document; installs document identity and the shared request provider. */
+export function mountDataApp<const Queries extends QueryDefinitions>({
+  app,
+  component: Component,
+  root = document.getElementById('root'),
+}: {
+  app: DataAppDefinition<Queries>;
+  component: ComponentType;
+  root?: HTMLElement | null;
+}): void {
+  invariant(root, 'Data app root element is missing.');
+  document.documentElement.lang = navigator.language;
+  document.title = dataAppTitle(app);
+  getDataAppNavigation();
+  createRoot(root, {
+    onUncaughtError(error) {
+      console.error(error);
+      getDataAppTransport()?.fail(error);
+    },
+  }).render(
+    <DataAppProvider app={app}>
+      <Component />
+    </DataAppProvider>
+  );
+}
+
+/** Provide one app identity and shared requests to a custom React root. */
+export function DataAppProvider<const Queries extends QueryDefinitions>({
+  app,
+  children,
+}: {
+  app: DataAppDefinition<Queries>;
+  children: ReactNode;
+}) {
+  const [client] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+            refetchOnWindowFocus: false,
+            staleTime: 30_000,
+          },
+        },
+      })
+  );
+
+  return (
+    <DataAppContext value={app}>
+      <I18nProvider locale={app.dateFormatting?.locale ?? 'en-US'}>
+        <QueryClientProvider client={client}>
+          <InspectionProvider>{children}</InspectionProvider>
+        </QueryClientProvider>
+      </I18nProvider>
+    </DataAppContext>
+  );
+}

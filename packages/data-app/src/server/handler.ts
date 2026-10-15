@@ -1,0 +1,157 @@
+import { readRequestBody, RequestBodyTooLargeError } from './request-body.ts';
+import {
+  executeDataOperation,
+  toDataOperationFailure,
+} from '../core/operation.ts';
+import {
+  DataSourceError,
+  type DataOperations,
+  type Lakehouse,
+  type QueryParameters,
+} from '../core/contract.ts';
+
+/** Authorization result for one viewer request. A hosted adapter must scope its lakehouse client. */
+export type RequestAccess = {
+  lakehouse: Lakehouse;
+  /** Trusted values shared across queries; each query uses only its declared keys. */
+  queryParams?: QueryParameters;
+};
+
+/**
+ * Execute named operations on the server. The app supplies operations and viewer authorization.
+ * JSON, Origin, and Fetch Metadata checks reject cross-site browser POSTs; they do not
+ * authenticate another local process. Query evidence accompanies every result.
+ */
+export function createDataHandler(
+  operations: DataOperations,
+  authorize: (request: Request, operation: string) => Promise<RequestAccess>
+) {
+  async function handleDataRequest(request: Request): Promise<Response> {
+    const requestId = crypto.randomUUID();
+    const url = new URL(request.url);
+    if (!url.pathname.startsWith('/api/data/'))
+      return new Response('Not found', { status: 404 });
+    const encodedName = url.pathname.slice('/api/data/'.length);
+    if (!encodedName || encodedName.includes('/'))
+      return problem(404, 'not_found', 'Unknown data operation.', requestId);
+    let name: string;
+    try {
+      name = decodeURIComponent(encodedName);
+    } catch {
+      return problem(404, 'not_found', 'Unknown data operation.', requestId);
+    }
+    if (!Object.hasOwn(operations, name))
+      return problem(404, 'not_found', 'Unknown data operation.', requestId);
+    if (request.method !== 'POST')
+      return problem(405, 'method_not_allowed', 'Use POST.', requestId);
+    if (
+      request.headers
+        .get('content-type')
+        ?.split(';')[0]
+        ?.trim()
+        .toLowerCase() !== 'application/json'
+    )
+      return problem(
+        415,
+        'unsupported_media_type',
+        'Use application/json.',
+        requestId
+      );
+    const origin = request.headers.get('origin');
+    const fetchSite = request.headers.get('sec-fetch-site');
+    const fetchMode = request.headers.get('sec-fetch-mode');
+    if (
+      (origin !== null && origin !== url.origin) ||
+      (fetchSite !== null && fetchSite !== 'same-origin') ||
+      (fetchSite !== null && origin === null) ||
+      (fetchMode !== null &&
+        fetchMode !== 'cors' &&
+        fetchMode !== 'same-origin')
+    )
+      return problem(
+        403,
+        'cross_origin_request',
+        'The data request must come from this app.',
+        requestId
+      );
+    let access: RequestAccess;
+    try {
+      access = await authorize(request, name);
+    } catch {
+      return problem(
+        403,
+        'forbidden',
+        'You cannot run this data operation.',
+        requestId
+      );
+    }
+    const operation = operations[name]!;
+    let input: unknown;
+    if (request.signal.aborted)
+      return problem(504, 'timeout', 'The data request timed out.', requestId);
+    try {
+      const body = await readRequestBody(request, MAX_INPUT_BYTES);
+      input = JSON.parse(body);
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError)
+        return problem(
+          413,
+          'input_too_large',
+          'Input is too large.',
+          requestId
+        );
+
+      return problem(
+        400,
+        'invalid_input',
+        "Check this operation's inputs.",
+        requestId
+      );
+    }
+    const signal = request.signal;
+    try {
+      const { serializedBody } = await executeDataOperation(operation, input, {
+        lakehouse: access.lakehouse,
+        signal,
+        requestId,
+        operationName: name,
+        queryParams: access.queryParams,
+      });
+      return new Response(serializedBody, {
+        headers: {
+          'cache-control': 'no-store',
+          'content-type': 'application/json',
+        },
+      });
+    } catch (error) {
+      let detail = error instanceof Error ? error.name : 'unknown';
+      if (error instanceof DataSourceError) {
+        detail = error.reason;
+        if (error.status) detail += ` (${error.status})`;
+        if (error.queryName) detail += ` in ${error.queryName}`;
+        if (error.cause instanceof Error && error.cause.message)
+          detail += `: ${error.cause.message}`;
+      }
+      console.error(`Data operation ${name} failed (${requestId}): ${detail}`);
+      const failure = toDataOperationFailure(error, signal.aborted);
+
+      return problem(failure.status, failure.code, failure.message, requestId);
+    }
+  }
+
+  return handleDataRequest;
+}
+
+function problem(
+  status: number,
+  code: string,
+  message: string,
+  requestId: string
+): Response {
+  return Response.json(
+    { error: { code, message, requestId } },
+    { status, headers: { 'cache-control': 'no-store' } }
+  );
+}
+
+const MAX_INPUT_BYTES = 16_384;

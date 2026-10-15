@@ -339,7 +339,7 @@ test('dev:file catches up after an edit missed during a reload disconnection', a
   function appSource(label: string) {
     return `
 import { defineDataApp } from '@altertable/data-app';
-import { mountDataApp } from '@altertable/data-app/react';
+import { mountDataApp } from '@altertable/data-app-react';
 const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'test', environment: 'test' }, queries: {} });
 function App() { return <h1>${label}</h1>; }
 mountDataApp({ app, component: App });
@@ -426,7 +426,7 @@ test('dev:file handles SQL body-limit responses and downloads exported blobs thr
     entry,
     `
 import { defineDataApp } from '@altertable/data-app';
-import { mountDataApp } from '@altertable/data-app/react';
+import { mountDataApp } from '@altertable/data-app-react';
 import { getDataAppTransport } from '@altertable/data-app/client';
 const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'test', environment: 'test' }, queries: {} });
 function App() {
@@ -606,7 +606,7 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
 
   expect(command.output()).toContain('App preload preserved');
   const page = await fetch(firstUrl!);
-  expect(page.status).toBe(200);
+  expect(page.status, command.output()).toBe(200);
   const script = (await page.text()).match(/src="([^"]+\.js)"/)?.[1];
   expect(script).toBeDefined();
   const client = await fetch(new URL(script!, firstUrl));
@@ -646,7 +646,7 @@ test('dev:file replaces the rendered iframe and preserves URL filters after edit
     entry,
     `
 import { defineDataApp } from '@altertable/data-app';
-import { mountDataApp } from '@altertable/data-app/react';
+import { mountDataApp } from '@altertable/data-app-react';
 import { getDataAppNavigation } from '@altertable/data-app/client';
 import { label } from './label';
 import './style.css';
@@ -708,7 +708,7 @@ test('the public Bun preview serves injected data and rejects foreign requests',
   const command = run([
     '--eval',
     `
-import { serveAppFile } from '@altertable/data-app/server/bun/preview';
+import { serveAppFile } from '@altertable/data-app-bun/preview';
 const preview = await serveAppFile({
   file: ${JSON.stringify(file)},
   port: 0,
@@ -827,7 +827,7 @@ test('the public Bun preview keeps remaining reload clients working and releases
   const command = run([
     '--eval',
     `
-import { serveAppFile } from '@altertable/data-app/server/bun/preview';
+import { serveAppFile } from '@altertable/data-app-bun/preview';
 const options = {
   file: ${JSON.stringify(file)},
   port: 0,

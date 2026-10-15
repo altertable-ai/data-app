@@ -1,8 +1,8 @@
-import { MessageRoutingError } from '@/src/core/messages';
+import { MessageRoutingError } from '@altertable/data-app/contract';
 import {
   parseDataAppAnnotationDraft,
   type DataAppAnnotationDraft,
-} from '@/src/core/annotations';
+} from '@altertable/data-app/contract';
 import type { AnnotationDraftSnapshot } from '@/dev/fixtures/annotation-storage';
 
 export function createAnnotationDraftStore(

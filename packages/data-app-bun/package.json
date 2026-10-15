@@ -1,0 +1,65 @@
+{
+  "name": "@altertable/data-app-bun",
+  "version": "0.69.0",
+  "description": "Bun local serving, server-only lakehouse access, and single-file app previews.",
+  "keywords": [
+    "altertable",
+    "analytics",
+    "data-app",
+    "react",
+    "typescript"
+  ],
+  "homepage": "https://github.com/altertable-ai/data-app",
+  "bugs": {
+    "url": "https://github.com/altertable-ai/data-app/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Altertable",
+    "url": "https://altertable.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altertable-ai/data-app.git",
+    "directory": "packages/data-app-bun"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./preview": {
+      "types": "./dist/types/preview/index.d.ts",
+      "import": "./dist/preview/index.js"
+    },
+    "./reload": {
+      "types": "./dist/types/reload-channel.d.ts",
+      "import": "./dist/reload-channel.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts data-app-bun"
+  },
+  "dependencies": {
+    "@altertable/data-app": "0.69.0",
+    "@altertable/data-app-embed": "0.69.0",
+    "@altertable/lakehouse": "0.4.1",
+    "get-tsconfig": "4.14.3"
+  },
+  "devDependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

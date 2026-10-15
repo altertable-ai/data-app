@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createRoot } from 'react-dom/client';
 import { defineQueryNames } from '@altertable/data-app/contract';
-import { DataAppFrame as DataApp } from '@/src/react/ui/DataAppFrame';
+import { DataAppFrame as DataApp } from '@/packages/data-app-react/src/ui/DataAppFrame.tsx';
 import {
   createDataContext,
   Stack,
@@ -9,10 +9,10 @@ import {
   GridItem,
   TextContent,
   injectDataAppStyles,
-} from '@altertable/data-app/react';
-import { DataAppProvider, MetricWidget } from '@altertable/data-app/react/ui';
-import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
-import { type DataView } from '@/src/core/data-view';
+} from '@altertable/data-app-react';
+import { DataAppProvider, MetricWidget } from '@altertable/data-app-react/ui';
+import { DataSectionBoundary as DataSection } from '@/packages/data-app-react/src/ui/DataSectionBoundary.tsx';
+import { type DataView } from '@altertable/data-app/internal';
 
 const dataApp = defineDataApp({
   title: 'Layout contract',
