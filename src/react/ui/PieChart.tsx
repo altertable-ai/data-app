@@ -6,7 +6,7 @@ import {
   getPrimaryExplorationAction,
 } from '@/src/react/ui/ExplorationActionControl';
 import { MenuButton, MenuTrigger } from '@/src/react/ui/Menu';
-import { useRef, useState } from 'react';
+import { useRef, useState, type ComponentRef, type RefObject } from 'react';
 import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
 import { validateValueChartItems } from '@/src/react/ui/chart-data';
 
@@ -33,7 +33,7 @@ export function PieChart<Row extends PieChartItem>({
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [plotOpen, setPlotOpen] = useState(false);
   const [legendId, setLegendId] = useState<string | null>(null);
-  const menuTriggers = useRef(new Map<string, HTMLButtonElement>());
+  const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 0);
   const total = maximum
     ? items.reduce((sum, item) => sum + item.value / maximum, 0)
@@ -111,6 +111,12 @@ export function PieChart<Row extends PieChartItem>({
                       );
                       const opensMenu =
                         !action && (itemActions?.(item).length ?? 0) > 1;
+                      const menuTrigger: RefObject<ComponentRef<'button'> | null> =
+                        {
+                          get current() {
+                            return menuTriggers.current.get(item.id) ?? null;
+                          },
+                        };
                       return (
                         <path
                           key={item.id}
@@ -130,8 +136,8 @@ export function PieChart<Row extends PieChartItem>({
                               event.preventDefault();
                             setPreviewId(item.id);
                           }}
-                          onClick={() => {
-                            if (action) action.onSelect();
+                          onClick={event => {
+                            if (action) action.onSelect(event.currentTarget);
                             else if (opensMenu)
                               menuTriggers.current.get(item.id)?.click();
                           }}
@@ -141,7 +147,7 @@ export function PieChart<Row extends PieChartItem>({
                               (event.key === 'Enter' || event.key === ' ')
                             ) {
                               event.preventDefault();
-                              if (action) action.onSelect();
+                              if (action) action.onSelect(event.currentTarget);
                               else menuTriggers.current.get(item.id)?.click();
                             }
                           }}
@@ -173,6 +179,11 @@ export function PieChart<Row extends PieChartItem>({
                 const actions = itemActions?.(item) ?? [];
                 if (getPrimaryExplorationAction(actions) || actions.length < 2)
                   return null;
+                const menuTrigger: RefObject<ComponentRef<'button'> | null> = {
+                  get current() {
+                    return menuTriggers.current.get(item.id) ?? null;
+                  },
+                };
                 return (
                   <span key={item.id} className="altertable-sr-only">
                     <MenuTrigger>
@@ -189,6 +200,7 @@ export function PieChart<Row extends PieChartItem>({
                       <ExplorationActionMenu
                         actions={actions}
                         ariaLabel={`${item.label} actions`}
+                        triggerRef={menuTrigger}
                       />
                     </MenuTrigger>
                   </span>
@@ -209,6 +221,11 @@ export function PieChart<Row extends PieChartItem>({
               {slices.map(item => {
                 const actions = itemActions?.(item) ?? [];
                 const action = getPrimaryExplorationAction(actions);
+                const menuTrigger: RefObject<ComponentRef<'button'> | null> = {
+                  get current() {
+                    return menuTriggers.current.get(item.id) ?? null;
+                  },
+                };
                 return (
                   <ChartLegend.Item key={item.id}>
                     <Tooltip
@@ -226,7 +243,9 @@ export function PieChart<Row extends PieChartItem>({
                           data-atbl-control="default"
                           type="button"
                           aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}. ${action.label}`}
-                          onClick={action.onSelect}
+                          onClick={event =>
+                            action.onSelect(event.currentTarget)
+                          }
                         >
                           <ChartLegend.Marker
                             kind="square"
@@ -261,6 +280,7 @@ export function PieChart<Row extends PieChartItem>({
                           <ExplorationActionMenu
                             actions={actions}
                             ariaLabel={`${item.label} actions`}
+                            triggerRef={menuTrigger}
                           />
                         </MenuTrigger>
                       ) : (

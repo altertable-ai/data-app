@@ -8,7 +8,14 @@ import {
   getPrimaryExplorationAction,
 } from '@/src/react/ui/ExplorationActionControl';
 import { MenuButton, MenuTrigger } from '@/src/react/ui/Menu';
-import { Fragment, useLayoutEffect, useRef, useState } from 'react';
+import {
+  Fragment,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentRef,
+  type RefObject,
+} from 'react';
 
 import {
   validateValueChartItems,
@@ -40,6 +47,7 @@ export function BarChart<Row extends BarChartItem>({
   validateValueChartItems('bar', items);
   const [activeId, setActiveId] = useState<string>();
   const scrollport = useChartScrollToEnd(items);
+  const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
 
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 1);
 
@@ -85,6 +93,11 @@ export function BarChart<Row extends BarChartItem>({
             {items.map(item => {
               const actions = itemActions?.(item) ?? [];
               const action = getPrimaryExplorationAction(actions);
+              const menuTrigger: RefObject<ComponentRef<'button'> | null> = {
+                get current() {
+                  return menuTriggers.current.get(item.id) ?? null;
+                },
+              };
               return (
                 <Fragment key={item.id}>
                   <div className="altertable-chart-item-actions">
@@ -116,7 +129,9 @@ export function BarChart<Row extends BarChartItem>({
                           type="button"
                           className="altertable-selectable-bars-item"
                           aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. ${action.label}`}
-                          onClick={action.onSelect}
+                          onClick={event =>
+                            action.onSelect(event.currentTarget)
+                          }
                         >
                           <span className="altertable-selectable-bars-area" />
                           <span className="altertable-selectable-bars-label">
@@ -126,6 +141,11 @@ export function BarChart<Row extends BarChartItem>({
                       ) : actions.length > 1 ? (
                         <MenuTrigger>
                           <MenuButton
+                            ref={element => {
+                              if (element)
+                                menuTriggers.current.set(item.id, element);
+                              else menuTriggers.current.delete(item.id);
+                            }}
                             className="altertable-selectable-bars-item"
                             aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. Actions`}
                           >
@@ -137,6 +157,7 @@ export function BarChart<Row extends BarChartItem>({
                           <ExplorationActionMenu
                             actions={actions}
                             ariaLabel={`${item.label} actions`}
+                            triggerRef={menuTrigger}
                           />
                         </MenuTrigger>
                       ) : (

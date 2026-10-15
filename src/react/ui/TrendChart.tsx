@@ -7,7 +7,14 @@ import {
   getPrimaryExplorationAction,
 } from '@/src/react/ui/ExplorationActionControl';
 import { MenuButton, MenuTrigger } from '@/src/react/ui/Menu';
-import { Fragment, useLayoutEffect, useRef, useState } from 'react';
+import {
+  Fragment,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentRef,
+  type RefObject,
+} from 'react';
 import {
   AreaChart as RechartsAreaChart,
   LineChart as RechartsLineChart,
@@ -36,6 +43,7 @@ export function TrendChart<Row extends ChartItem>({
   const Plot = kind === 'area' ? RechartsAreaChart : RechartsLineChart;
   const [activeIndex, setActiveIndex] = useState<number>();
   const scrollport = useChartScrollToEnd(items);
+  const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
   const magnitude = items.reduce(
     (max, item) => Math.max(max, Math.abs(item.value)),
     1
@@ -107,6 +115,12 @@ export function TrendChart<Row extends ChartItem>({
                 {items.map((item, index) => {
                   const actions = itemActions?.(item) ?? [];
                   const action = getPrimaryExplorationAction(actions);
+                  const menuTrigger: RefObject<ComponentRef<'button'> | null> =
+                    {
+                      get current() {
+                        return menuTriggers.current.get(item.id) ?? null;
+                      },
+                    };
                   return (
                     <Fragment key={item.id}>
                       <div className="altertable-chart-item-actions">
@@ -138,7 +152,9 @@ export function TrendChart<Row extends ChartItem>({
                               type="button"
                               className="altertable-trend-point"
                               aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. ${action.label}`}
-                              onClick={action.onSelect}
+                              onClick={event =>
+                                action.onSelect(event.currentTarget)
+                              }
                             >
                               <span className="altertable-trend-hit" />
                               <span className="altertable-trend-label">
@@ -148,6 +164,11 @@ export function TrendChart<Row extends ChartItem>({
                           ) : actions.length > 1 ? (
                             <MenuTrigger>
                               <MenuButton
+                                ref={element => {
+                                  if (element)
+                                    menuTriggers.current.set(item.id, element);
+                                  else menuTriggers.current.delete(item.id);
+                                }}
                                 className="altertable-trend-point"
                                 aria-label={`${item.label}: ${formatValue(item.value)} ${unit}. Actions`}
                               >
@@ -159,6 +180,7 @@ export function TrendChart<Row extends ChartItem>({
                               <ExplorationActionMenu
                                 actions={actions}
                                 ariaLabel={`${item.label} actions`}
+                                triggerRef={menuTrigger}
                               />
                             </MenuTrigger>
                           ) : (

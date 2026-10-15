@@ -6,12 +6,13 @@ import {
   MenuPopover,
   MenuTrigger,
 } from '@/src/react/ui/Menu';
+import { useRef, type ComponentRef, type RefObject } from 'react';
 
 /** A resolved action available for one displayed exploration item. */
 export type ExplorationAction = {
   id: string;
   label: string;
-  onSelect: () => void;
+  onSelect: (trigger?: HTMLElement | SVGElement) => void;
   /** Keep this action directly available when other actions require a menu. */
   primary?: boolean;
 };
@@ -38,6 +39,7 @@ export function ExplorationActionControl({
   className,
   hidePrimary = false,
 }: ExplorationActionControlProps) {
+  const menuTrigger = useRef<ComponentRef<'button'> | null>(null);
   const primary = getPrimaryExplorationAction(actions);
   const menuActions = primary
     ? actions.filter(action => action !== primary)
@@ -49,7 +51,7 @@ export function ExplorationActionControl({
     <span className={className}>
       {primary && !hidePrimary && (
         <Button
-          onClick={primary.onSelect}
+          onClick={event => primary.onSelect(event.currentTarget)}
           aria-label={`${ariaLabel}: ${primary.label}`}
         >
           {primary.label}
@@ -57,10 +59,17 @@ export function ExplorationActionControl({
       )}
       {menuActions.length > 0 && (
         <MenuTrigger>
-          <MenuButton aria-label={`${ariaLabel}: more actions`}>
+          <MenuButton
+            ref={menuTrigger}
+            aria-label={`${ariaLabel}: more actions`}
+          >
             More actions
           </MenuButton>
-          <ExplorationActionMenu actions={menuActions} ariaLabel={ariaLabel} />
+          <ExplorationActionMenu
+            actions={menuActions}
+            ariaLabel={ariaLabel}
+            triggerRef={menuTrigger}
+          />
         </MenuTrigger>
       )}
     </span>
@@ -71,12 +80,19 @@ export function ExplorationActionControl({
 export function ExplorationActionMenu({
   actions,
   ariaLabel,
-}: Pick<ExplorationActionControlProps, 'actions' | 'ariaLabel'>) {
+  triggerRef,
+}: Pick<ExplorationActionControlProps, 'actions' | 'ariaLabel'> & {
+  triggerRef?: RefObject<ComponentRef<'button'> | null>;
+}) {
   return (
     <MenuPopover>
       <Menu aria-label={`${ariaLabel} actions`}>
         {actions.map(action => (
-          <MenuItem key={action.id} id={action.id} onAction={action.onSelect}>
+          <MenuItem
+            key={action.id}
+            id={action.id}
+            onAction={() => action.onSelect(triggerRef?.current ?? undefined)}
+          >
             {action.label}
           </MenuItem>
         ))}
