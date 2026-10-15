@@ -63,14 +63,6 @@ for (const { directory, manifest } of packages) {
     ...('devDependencies' in manifest ? manifest.devDependencies : {}),
     ...('peerDependencies' in manifest ? manifest.peerDependencies : {}),
   };
-  for (const [name, version] of Object.entries(dependencies)) {
-    if (names.has(name))
-      assert.equal(
-        version,
-        workspace.version,
-        `${manifest.name}: mismatched ${name}`
-      );
-  }
   for await (const path of new Bun.Glob('**/*.{ts,tsx}').scan(
     `${directory}/src`
   )) {

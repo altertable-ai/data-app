@@ -5,8 +5,8 @@ This repository releases five npm packages together: `@altertable/data-app`,
 `@altertable/data-app-bun`, and `@altertable/data-app-worker`.
 They share one version, one release PR, one `v<version>` tag, and one changelog.
 The private root's `package.json` is the release version source. Release Please
-updates package versions and internal dependency ranges through its configured
-JSON extra-file updates. The root is never published.
+automatically updates all five package versions and internal dependency pins
+through its configured JSON extra-file updates. The root is never published.
 
 ## Repository setup
 
@@ -51,7 +51,7 @@ option when preparing the first stable `1.0.0` release.
 
 1. Merge Conventional Commits into `main`.
 2. Release Please opens or updates a release PR with the version, changelog,
-   package manifests, and internal dependency ranges. The workflow refreshes
+   package manifests, and internal dependency pins. The workflow refreshes
    `bun.lock` on that release branch and pushes it only when it changed. A
    dedicated `RELEASE_PLEASE_TOKEN` lets that commit trigger CI.
 3. Review and merge that PR. Release Please creates its `v<version>` tag and

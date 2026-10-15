@@ -19,11 +19,11 @@ async function bundle(options: Parameters<typeof Bun.build>[0]) {
   return result;
 }
 
-async function inline(entrypoint: string, format: 'iife' | 'esm' = 'iife') {
+async function inline(entrypoint: string) {
   const result = await bundle({
     entrypoints: [entrypoint],
     target: 'browser',
-    format,
+    format: 'iife',
     minify: true,
     jsx: { runtime: 'automatic', development: false },
     define: { 'process.env.NODE_ENV': '"production"' },

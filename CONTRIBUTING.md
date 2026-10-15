@@ -59,7 +59,7 @@ bundling, and Bun previews without workspace hoisting.
 
 Write high-level public API tests with Vitest in `tests/public-api`. Define an
 operation, authorize and query it, compose a view, or embed an app through
-`@altertable/data-app/<entry>`. Assert consumer-visible results and errors. Supply
+the published package exports. Assert consumer-visible results and errors. Supply
 data and failures through public dependency injection; do not import private
 source, fabricate internal state, or assert implementation details. Prefer queries by role and accessible name, or by label for form fields. Scope
 content assertions to the relevant region, status, alert, or dialog; use text
@@ -110,7 +110,7 @@ rate limits can cause failures unrelated to a change.
 
 Run `bun run dev` to preview UI examples at `http://127.0.0.1:27418/gallery`
 and a playground at `/playground` (`dev/playground.tsx`, querying the demo
-tables from `dev/seed.ts` that `scripts/dev.ts` seeds). It builds once, then rebuilds `dist` when `packages/`
+tables from `dev/seed.ts` that `scripts/dev.ts` seeds). It builds once, then rebuilds `dist` when package source
 changes; open pages reload on package, fixture, and playground edits. Restart it after changing
 `dev/server.ts`; rerun `bun run build` to refresh declarations. Add `?delay=2000` to a host page URL
 to delay its SQL responses and inspect loading states. It needs Docker: SQL runs
