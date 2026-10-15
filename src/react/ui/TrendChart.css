@@ -14,6 +14,7 @@
   display: flex;
 }
 .altertable-trend-point {
+  --atbl-focus-outline: none;
   flex: 1;
   min-width: 0;
   border: 0;
@@ -23,6 +24,11 @@
 }
 .altertable-trend-point:focus {
   outline: none;
+}
+.altertable-trend-point:focus-visible .altertable-trend-label {
+  color: var(--atbl-text);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 .altertable-trend-hit {
   display: block;

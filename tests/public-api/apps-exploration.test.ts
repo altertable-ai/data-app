@@ -581,6 +581,9 @@ test('line and area day actions pass the selected calendar day', async ({
       exact: true,
     });
     await trigger.focus();
+    expect(
+      await trigger.evaluate(element => getComputedStyle(element).outlineStyle)
+    ).toBe('none');
     await trigger.press('Enter');
     const detail = page.getByRole('dialog', {
       name: 'Contributing orders',
@@ -632,8 +635,8 @@ test('pie ellipsis, slice context menu, and legend keyboard menu share actions a
   expect(choices).toEqual([
     'View orders',
     'Filter region',
-    'Copy label',
-    'Copy details',
+    'Copy “Europe”',
+    'Copy summary',
   ]);
   const triggerBox = await more.boundingBox();
   const menuBox = await menu.boundingBox();
@@ -717,6 +720,24 @@ test('single-action pie slices and legend labels retain pointer menus and return
       )
       .toBe(true);
   }
+});
+
+test('icon breakdown controls explain their purpose on keyboard focus', async ({
+  page,
+}) => {
+  await page.goto('/exploration');
+  const breakdown = page.getByRole('button', { name: /Revenue breakdown/ });
+  await breakdown.focus();
+  await expect
+    .poll(() => page.getByRole('tooltip').textContent())
+    .toBe('Revenue breakdown');
+  await breakdown.press('Enter');
+  await page.getByRole('option', { name: 'Country', exact: true }).click();
+  await expect
+    .poll(() =>
+      page.locator('output[aria-label="Displayed levels"]').textContent()
+    )
+    .toContain('"revenue":"country"');
 });
 
 test('action menus and breakdown dropdowns share public spacing overrides', async ({
@@ -830,14 +851,16 @@ test('the entire legend row copies displayed values without success notification
   await legend.scrollIntoViewIfNeeded();
   const row = await legend.boundingBox();
   await page.mouse.click(row!.x + row!.width - 5, row!.y + row!.height / 2);
-  await page.getByRole('menuitem', { name: 'Copy label', exact: true }).click();
+  await page
+    .getByRole('menuitem', { name: 'Copy “Europe”', exact: true })
+    .click();
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe('Europe');
   expect(await page.getByText('Label copied', { exact: true }).count()).toBe(0);
   await legend.click();
   await page
-    .getByRole('menuitem', { name: 'Copy details', exact: true })
+    .getByRole('menuitem', { name: 'Copy summary', exact: true })
     .click();
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
@@ -866,7 +889,9 @@ test('copy failures show feedback instead of reporting success', async ({
       exact: true,
     })
     .click();
-  await page.getByRole('menuitem', { name: 'Copy label', exact: true }).click();
+  await page
+    .getByRole('menuitem', { name: 'Copy “Europe”', exact: true })
+    .click();
   await expect
     .poll(() => page.getByRole('status').allTextContents())
     .toContain('Couldn’t copy. Try again.');

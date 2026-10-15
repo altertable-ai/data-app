@@ -210,9 +210,10 @@ pie legend items share the same action contract. Chart marks keep a sole or
 declared `primary` action direct. The full pie legend row and bar label open the
 menu; bar labels use a small inline disclosure chevron.
 
-Menus retain every available action and group Copy label and Copy details after
-exploration actions. Copied details use the displayed label, formatted value,
-unit, and pie share. Successful copies are silent; failures are announced and shown on the chart.
+Menus retain every available action and group copying after exploration actions.
+The first copy action names the text it copies. Copy summary includes the displayed
+label, formatted value, unit, and pie share. Successful copies are silent; failures
+are announced and shown on the chart.
 Right-click opens the menu at the pointer; Shift+F10 anchors it to the control.
 Breakdown controls keep their selected level visible and their accessible names.
 Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.

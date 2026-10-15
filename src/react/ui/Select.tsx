@@ -1,4 +1,5 @@
 import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
+import { Tooltip } from '@/src/react/ui/Tooltip';
 import {
   Select as AriaSelect,
   Label,
@@ -53,6 +54,23 @@ export function Select({
   validateChoiceOptions(options);
   const selected = options.find(option => option.id === value);
   invariant(selected, 'Select value must refer to an available option.');
+  const trigger = (
+    <PressButton
+      size={size}
+      className={classNames(
+        'altertable-select-trigger',
+        inline && 'altertable-picker-trigger'
+      )}
+    >
+      <PickerTriggerContent
+        label={label}
+        labelPlacement={labelPlacement}
+        value={<SelectValue>{selected.label}</SelectValue>}
+        icon={icon}
+        iconSize={size === 'compact' ? 14 : undefined}
+      />
+    </PressButton>
+  );
   return (
     <AriaSelect
       {...props}
@@ -68,21 +86,7 @@ export function Select({
       <Label className={inline ? 'altertable-sr-only' : undefined}>
         {label}
       </Label>
-      <PressButton
-        size={size}
-        className={classNames(
-          'altertable-select-trigger',
-          inline && 'altertable-picker-trigger'
-        )}
-      >
-        <PickerTriggerContent
-          label={label}
-          labelPlacement={labelPlacement}
-          value={<SelectValue>{selected.label}</SelectValue>}
-          icon={icon}
-          iconSize={size === 'compact' ? 14 : undefined}
-        />
-      </PressButton>
+      {icon && inline ? <Tooltip content={label}>{trigger}</Tooltip> : trigger}
       <PopoverSurface
         className="altertable-select-popover"
         placement={`bottom ${align}`}

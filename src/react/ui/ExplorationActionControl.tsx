@@ -226,13 +226,13 @@ export function useChartActions() {
         ...declared.map(action => ({ ...action, primary: action === primary })),
         {
           id: '$copy-label',
-          label: 'Copy label',
+          label: `Copy “${label}”`,
           group: 'clipboard',
           onSelect: () => void copy(label),
         },
         {
           id: '$copy-details',
-          label: 'Copy details',
+          label: 'Copy summary',
           group: 'clipboard',
           onSelect: () => void copy(`${label}\n${summary}`),
         },
