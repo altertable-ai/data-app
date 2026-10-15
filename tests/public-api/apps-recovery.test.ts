@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 
-// The public example is the fixture: every transition uses its visible controls.
+// Requests use the real operation executor with a deterministic injected lakehouse.
 test('widgets isolate initial query failure and retry only their shared view', async ({
   page,
 }) => {
@@ -53,6 +53,8 @@ test('widgets isolate initial query failure and retry only their shared view', a
   expect(
     await page.getByRole('button', { name: 'Export', exact: true }).isEnabled()
   ).toBe(true);
+  expect(await chart.getAttribute('dataset')).toBeNull();
+  expect(await chart.getAttribute('source')).toBeNull();
   await chart.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect
     .poll(() => page.getByLabel('Acquisition requests').textContent())
@@ -358,35 +360,48 @@ test('an open story freezes its starting snapshots while a real request complete
     .toContain('Acquired customers: 42');
 });
 
-test('an open export menu freezes the dataset values and availability used by its download', async ({
-  page,
-}) => {
-  await ready(page);
-  await page.getByRole('button', { name: 'Refresh data', exact: true }).click();
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Complete Acquisition', exact: true })
-    .dispatchEvent('click');
-  await expect
-    .poll(() => page.getByLabel('Acquisition requests').textContent())
-    .toBe('2 requests · settled');
-  const pending = page.waitForEvent('download');
-  await page
-    .getByRole('menuitem', { name: 'Export Acquisition CSV', exact: true })
-    .click();
-  const download = await pending;
-  expect(await readFile((await download.path())!, 'utf8')).toContain(
-    'All markets,41'
-  );
-  await page.getByRole('button', { name: 'Export', exact: true }).click();
-  const next = page.waitForEvent('download');
-  await page
-    .getByRole('menuitem', { name: 'Export Acquisition CSV', exact: true })
-    .click();
-  expect(await readFile((await (await next).path())!, 'utf8')).toContain(
-    'All markets,42'
-  );
-});
+for (const response of ['Success', 'Empty result']) {
+  test(`an open export menu preserves its displayed data when a refresh returns ${response}`, async ({
+    page,
+  }) => {
+    await ready(page);
+    await choose(page, 'Acquisition', response);
+    await page
+      .getByRole('button', { name: 'Refresh data', exact: true })
+      .click();
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    await page
+      .getByRole('button', { name: 'Complete Acquisition', exact: true })
+      .dispatchEvent('click');
+    await expect
+      .poll(() => page.getByLabel('Acquisition requests').textContent())
+      .toBe('2 requests · settled');
+    const pending = page.waitForEvent('download');
+    await page
+      .getByRole('menuitem', { name: 'Export Acquisition CSV', exact: true })
+      .click();
+    const download = await pending;
+    expect(await readFile((await download.path())!, 'utf8')).toContain(
+      'All markets,41'
+    );
+    if (response === 'Empty result') {
+      expect(
+        await page
+          .getByRole('button', { name: 'Export CSV', exact: true })
+          .isDisabled()
+      ).toBe(true);
+      return;
+    }
+    await page.getByRole('button', { name: 'Export', exact: true }).click();
+    const next = page.waitForEvent('download');
+    await page
+      .getByRole('menuitem', { name: 'Export Acquisition CSV', exact: true })
+      .click();
+    expect(await readFile((await (await next).path())!, 'utf8')).toContain(
+      'All markets,42'
+    );
+  });
+}
 
 test('canceling a same-input refresh restores displayed data without a failure state', async ({
   page,

@@ -228,3 +228,45 @@ describe('export', () => {
         .toBe(true);
     });
 });
+
+test('failed export retries its original data after the displayed query becomes empty', async ({
+  page,
+}) => {
+  await page.goto('/starter-data-app?export-error');
+  const app = page.frameLocator('iframe');
+  await expect
+    .poll(() =>
+      app
+        .getByRole('row', { name: 'Alpha 2,200,000', exact: true })
+        .filter({ visible: true })
+        .isVisible()
+    )
+    .toBe(true);
+  await app.getByRole('button', { name: 'Export CSV', exact: true }).click();
+  const failure = app
+    .getByRole('alert')
+    .filter({ hasText: 'Couldn’t export data.' });
+  await expect.poll(() => failure.isVisible()).toBe(true);
+  await app
+    .getByRole('searchbox', { name: 'Group', exact: true })
+    .fill('missing');
+  await expect
+    .poll(() =>
+      app
+        .getByRole('region', { name: 'Total samples', exact: true })
+        .getByText('No matching groups', { exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  expect(await failure.isVisible()).toBe(true);
+  await page
+    .getByRole('button', { name: 'Allow exports', exact: true })
+    .click();
+  const pending = page.waitForEvent('download');
+  await failure.getByRole('button', { name: 'Try again', exact: true }).click();
+  const result = await pending;
+  expect(result.suggestedFilename()).toBe('sample-counts-all-groups.csv');
+  expect(await readFile((await result.path())!, 'utf8')).toContain(
+    'Alpha,2200000'
+  );
+});

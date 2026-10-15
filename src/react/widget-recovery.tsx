@@ -72,10 +72,25 @@ export function WidgetRecovery<Data, Input>({
 }) {
   RegisteredBinding.assertSource(binding, source);
   function shell(body: ReactNode, renderFailed = false) {
+    const {
+      headingLevel,
+      annotationId,
+      id,
+      className,
+      style,
+      'aria-label': ariaLabel,
+      'aria-labelledby': ariaLabelledBy,
+    } = frame ?? {};
     return (
       <WidgetSourceContext value={{ source, renderFailed }}>
         <DataWidget
-          {...frame}
+          headingLevel={headingLevel}
+          annotationId={annotationId}
+          id={id}
+          className={className}
+          style={style}
+          aria-label={ariaLabel}
+          aria-labelledby={ariaLabelledBy}
           title={title}
           description={description}
           evidence={evidence}

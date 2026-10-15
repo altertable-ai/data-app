@@ -17,84 +17,66 @@ import { Toast } from '@/src/react/ui/Toast';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
 export function ExportControl({ csv }: { csv?: CsvExport }) {
-  const [open, setOpen] = useState(false);
-  const [frozen, setFrozen] = useState<CsvExport>();
-  const [attempt, setAttempt] = useState<{
-    csv: CsvExport;
-    table?: CsvTable;
-  }>();
-  const displayed = open && frozen ? frozen : csv;
-  const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
+  const [menu, setMenu] = useState<CsvExport>();
+  const [downloadState, setDownloadState] = useState<
+    | { kind: 'idle' | 'pending' }
+    | { kind: 'error'; csv: CsvExport; table?: CsvTable }
+  >({ kind: 'idle' });
+  const displayed = menu ?? csv;
+  const pending = downloadState.kind === 'pending';
 
-  async function download(table?: CsvTable) {
-    const payload = displayed;
-    if (!payload?.tables.length) return;
-    setAttempt({ csv: payload, table });
-    setOpen(false);
-    setStatus('pending');
+  async function download(payload: CsvExport, table?: CsvTable) {
+    setMenu(undefined);
+    setDownloadState({ kind: 'pending' });
     try {
       await exportCsv(payload, table);
-      setStatus('idle');
+      setDownloadState({ kind: 'idle' });
     } catch {
-      setStatus('error');
+      setDownloadState({ kind: 'error', csv: payload, table });
     }
-  }
-
-  if (!csv?.tables.length) {
-    return (
-      <IconButton
-        icon="export"
-        variant="elevated"
-        label="Export CSV"
-        tooltip="Export data…"
-        disabled
-      />
-    );
   }
 
   return (
     <>
-      {status === 'error' && (
+      {downloadState.kind === 'error' && (
         <Toast
           state="error"
           position="top"
-          onRetry={() => {
-            if (!attempt) return;
-            setStatus('pending');
-            void exportCsv(attempt.csv, attempt.table).then(
-              () => setStatus('idle'),
-              () => setStatus('error')
-            );
-          }}
+          onRetry={() => void download(downloadState.csv, downloadState.table)}
         >
           Couldn’t export data.
         </Toast>
       )}
-      {csv.tables.length === 1 ? (
+      {!displayed ? (
         <IconButton
           icon="export"
           variant="elevated"
           label="Export CSV"
           tooltip="Export data…"
-          disabled={status === 'pending'}
-          aria-busy={status === 'pending'}
-          onClick={() => void download()}
+          disabled
+        />
+      ) : displayed.tables.length === 1 ? (
+        <IconButton
+          icon="export"
+          variant="elevated"
+          label="Export CSV"
+          tooltip="Export data…"
+          disabled={pending}
+          aria-busy={pending}
+          onClick={() => void download(displayed)}
         />
       ) : (
         <MenuTrigger
-          isOpen={open}
-          onOpenChange={next => {
-            if (next) setFrozen(csv);
-            setOpen(next);
-          }}
+          isOpen={!!menu}
+          onOpenChange={open => setMenu(open ? csv : undefined)}
         >
           <Tooltip content="Export data…">
             <MenuButton
               variant="elevated"
               size="icon"
               aria-label="Export"
-              isDisabled={status === 'pending'}
-              aria-busy={status === 'pending'}
+              isDisabled={pending}
+              aria-busy={pending}
             >
               <AppIcon name="export" />
             </MenuButton>
@@ -107,11 +89,12 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
               aria-label="Export data"
               onAction={key =>
                 void download(
-                  key === 'all' ? undefined : displayed?.tables[Number(key)]
+                  displayed,
+                  key === 'all' ? undefined : displayed.tables[Number(key)]
                 )
               }
             >
-              {(displayed?.tables ?? []).map((table, index) => (
+              {displayed.tables.map((table, index) => (
                 <MenuItem
                   key={index}
                   id={index}
