@@ -368,9 +368,12 @@ const menuActions = places.actions(
     }),
   }),
   {
-    primary: new URLSearchParams(location.search).has('primary')
-      ? 'descend'
-      : undefined,
+    primary:
+      new URLSearchParams(location.search).get('primary') === 'orders'
+        ? 'orders'
+        : new URLSearchParams(location.search).has('primary')
+          ? 'descend'
+          : undefined,
   }
 );
 const pieMenuActions = orderPlaces.actions(

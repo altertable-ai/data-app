@@ -60,7 +60,7 @@
 .altertable-live-frequency-popover {
   z-index: 1000;
   min-width: 190px;
-  padding: 4px;
+  padding: var(--atbl-dropdown-padding);
   border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-control);
   background: var(--atbl-surface);
@@ -73,10 +73,16 @@
   justify-content: space-between;
   gap: 16px;
   min-height: calc(var(--atbl-control-height) - 2px);
-  padding: 6px 9px;
+  padding: var(--atbl-dropdown-item-padding-block)
+    var(--atbl-dropdown-item-padding-inline);
   border-radius: 4px;
   font-size: var(--atbl-type-label-size);
   outline: none;
+}
+.altertable-live-frequency-popover [role='listbox'] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--atbl-dropdown-item-gap);
 }
 .altertable-live-frequency-popover [role='option'][data-selected] {
   font-weight: var(--atbl-type-label-weight);

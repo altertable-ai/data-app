@@ -90,6 +90,7 @@ export function ExplorationActionControl({
     >
       {primary && !hidePrimary && !contextOnly && (
         <Button
+          variant="inline"
           onClick={event => primary.onSelect(event.currentTarget)}
           aria-label={`${ariaLabel}: ${primary.label}`}
         >

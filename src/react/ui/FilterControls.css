@@ -174,8 +174,8 @@
 .altertable-select-options {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 6px;
+  gap: var(--atbl-dropdown-item-gap);
+  padding: var(--atbl-dropdown-padding);
   max-height: min(320px, 60dvh);
   overflow: auto;
   outline: none;
@@ -184,7 +184,8 @@
   display: flex;
   align-items: center;
   gap: var(--atbl-space-sm);
-  padding: 8px 10px;
+  padding: var(--atbl-dropdown-item-padding-block)
+    var(--atbl-dropdown-item-padding-inline);
   border-radius: var(--atbl-radius-control);
   outline: none;
 }

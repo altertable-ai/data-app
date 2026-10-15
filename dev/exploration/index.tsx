@@ -162,7 +162,7 @@ function ContributingOrders({ source }: { source: RecordSource }) {
         ...recordColumns.id,
         format: (row: Order) => (
           <Button
-            variant="ghost"
+            variant="inline"
             onClick={event => {
               if (!source.loading)
                 navigation.open(
@@ -287,17 +287,17 @@ const totals = view.dataset({
 });
 const revenueActions = revenuePlaces.actions(
   action => ({
-    descend: action.descend({
-      target: view.breakdown('revenueBy'),
-      member: row => row.member,
-    }),
     orders: action.detail({
       label: 'View paid orders',
       target: recordsView,
       input: (row, input) => scopeForPlace(input, row),
     }),
+    descend: action.descend({
+      target: view.breakdown('revenueBy'),
+      member: row => row.member,
+    }),
   }),
-  { primary: 'descend' }
+  { primary: 'orders' }
 );
 const orderActions = orderPlaces.actions(
   action => ({
@@ -380,7 +380,7 @@ const content = view.content(source => (
             ? 'Paid revenue'
             : `Paid revenue by ${revenueBy.level(source.input.revenueBy, source.input.geography).label.toLowerCase()}`
         }
-        description="Select a bar to explore its scope or contributing paid orders."
+        description="Select a bar to see its paid orders. Open its label menu to drill down."
       >
         {(rows, actions) => (
           <BarChart
@@ -488,7 +488,7 @@ function App() {
       <Stack>
         <TextContent>
           <p>
-            <strong>Try it:</strong> select a revenue bar to descend, use
+            <strong>Try it:</strong> select a revenue bar to see its orders, use
             Filters to narrow the shared population, or change a chart’s
             breakdown independently. Explore a metric title for Records,
             Glossary, and Queries.

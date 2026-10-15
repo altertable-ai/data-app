@@ -719,6 +719,73 @@ test('single-action pie slices and legend labels retain pointer menus and return
   }
 });
 
+test('action menus and breakdown dropdowns share public spacing overrides', async ({
+  page,
+}) => {
+  await page.goto('/exploration?menus=1');
+  await page.addStyleTag({
+    content:
+      ':root { --atbl-dropdown-padding: 7px; --atbl-dropdown-item-padding-block: 3px; --atbl-dropdown-item-padding-inline: 13px; }',
+  });
+  const chart = page.getByRole('region', { name: 'Revenue bars', exact: true });
+  await chart
+    .getByRole('button', { name: 'Europe: Actions', exact: true })
+    .click();
+  const menuItem = page.getByRole('menuitem', {
+    name: 'View orders',
+    exact: true,
+  });
+  expect(
+    await menuItem.evaluate(element => getComputedStyle(element).padding)
+  ).toBe('3px 13px');
+  expect(
+    await page
+      .getByRole('menu')
+      .evaluate(element => getComputedStyle(element.parentElement!).padding)
+  ).toBe('7px');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: /Revenue breakdown/ }).click();
+  const option = page.getByRole('option', { name: 'Country', exact: true });
+  expect(
+    await option.evaluate(element => getComputedStyle(element).padding)
+  ).toBe('3px 13px');
+  expect(
+    await page
+      .getByRole('listbox')
+      .evaluate(element => getComputedStyle(element).padding)
+  ).toBe('7px');
+});
+
+test('bar marks open records while label menus retain explicit drill-down', async ({
+  page,
+}) => {
+  await page.goto('/exploration?menus=1&primary=orders');
+  const chart = page.getByRole('region', { name: 'Revenue bars', exact: true });
+  const bar = chart.getByRole('button', {
+    name: 'Europe: 10 USD. View orders',
+    exact: true,
+  });
+  await bar.click();
+  const detail = page.getByRole('dialog', {
+    name: 'Contributing orders',
+    exact: true,
+  });
+  await expect
+    .poll(() => detail.getByRole('table').innerText())
+    .toContain('order-1');
+  expect(new URL(page.url()).searchParams.has('geography')).toBe(false);
+  await detail
+    .getByRole('button', { name: 'Close panel', exact: true })
+    .click();
+  await chart
+    .getByRole('button', { name: 'Europe: Actions', exact: true })
+    .click();
+  await page.getByRole('menuitem', { name: 'Drill down', exact: true }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('geography'))
+    .toContain('eu');
+});
+
 test('bar labels open menus with a small aligned chevron and preserve scope until selection', async ({
   page,
 }) => {
