@@ -151,8 +151,16 @@ export function applyFilter(
   }
   commit(definition, { ...values, ...patch });
 }
-export function breakdownState(target: BreakdownTarget<any>, input?: unknown) {
+export function breakdownState(
+  target: BreakdownTarget<any>,
+  owner: object | undefined,
+  input?: unknown
+) {
   const definition = breakdownDefinition(target);
+  invariant(
+    definition.owner === owner,
+    'Breakdown targets must belong to the dataset view.'
+  );
   const variable = definition.variables[definition.key!] as ChoiceVariable;
   const values = appliedValues(definition);
   const value = (

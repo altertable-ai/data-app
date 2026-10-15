@@ -9,6 +9,7 @@ import {
   choiceVariable,
   MetricWidget,
   TableWidget,
+  VisualizationWidget,
   type AppVariableValues,
 } from '@altertable/data-app/react';
 const region = dimensionFilter<string>({
@@ -237,3 +238,22 @@ numberFilter satisfies typeof stringFilter;
 numberBreakdown satisfies typeof stringBreakdown;
 // @ts-expect-error Target kinds remain distinct.
 stringFilter satisfies typeof stringBreakdown;
+
+VisualizationWidget({
+  dataset: rows,
+  source: { loading: true },
+  actions: rowActions,
+  viewLabel: 'Display',
+  views: [
+    {
+      id: 'chart',
+      label: 'Chart',
+      render: (data, actions) => {
+        actions(data[0]!);
+        // @ts-expect-error Alternate-view actions retain the dataset row type.
+        actions({ id: 1, value: 2 });
+        return null;
+      },
+    },
+  ],
+});

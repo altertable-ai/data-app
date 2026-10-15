@@ -173,9 +173,12 @@ type BoundVisual<Row> = Extract<
   DisplayVisualProps<readonly Row[]>,
   { reading: DataReading<readonly Row[]> }
 >;
-export type VisualizationWidgetView<Row> = DisplayVisualizationView<
-  readonly Row[]
->;
+export type VisualizationWidgetView<Row> = Omit<
+  DisplayVisualizationView<readonly Row[]>,
+  'render'
+> & {
+  render: (rows: readonly Row[], actions: ItemActions<Row>) => ReactNode;
+};
 type VisualContent<Row> =
   | {
       children: (rows: readonly Row[], actions: ItemActions<Row>) => ReactNode;
@@ -233,7 +236,8 @@ export function VisualizationWidget<Row, Data, Input>({
     source,
     (target, input, trigger) => navigation.open(target, input, trigger)
   );
-  const state = breakdown && breakdownState(breakdown);
+  const state =
+    breakdown && breakdownState(breakdown, RegisteredBinding.owner(dataset));
   const controlRef = useRef<ComponentRef<'div'>>(null);
   const recoverFocus = useRef(false);
   useEffect(() => {
@@ -280,13 +284,16 @@ export function VisualizationWidget<Row, Data, Input>({
     isEmpty: (rows: readonly Row[]) => rows.length === 0,
   };
   return children ? (
-    <DisplayVisual {...common}>
+    <DisplayVisual<readonly Row[]> {...common}>
       {rows => children(rows, resolvedActions)}
     </DisplayVisual>
   ) : (
-    <DisplayVisual
+    <DisplayVisual<readonly Row[]>
       {...common}
-      views={views!}
+      views={views!.map(view => ({
+        ...view,
+        render: rows => view.render(rows, resolvedActions),
+      }))}
       viewLabel={viewLabel!}
       initialView={initialView}
     />

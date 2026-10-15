@@ -165,6 +165,8 @@ provides it.
 
 Declare actions on their dataset or metric and pass them to its widget. Detail
 mappings receive the displayed operation input, including during refreshes.
+Both `children` and alternate-view `render` callbacks receive the displayed rows
+and the same action resolver.
 
 ```tsx
 const placeActions = places.actions(

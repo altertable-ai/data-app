@@ -1,7 +1,7 @@
 import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
-import { useState } from 'react';
+import { Component, useState, type ReactNode } from 'react';
 import {
   createDataHooks,
   createDataContext,
@@ -23,6 +23,7 @@ import {
   AreaChart,
   PieChart,
   ExplorationActionControl,
+  type ItemActions,
 } from '@altertable/data-app/react/ui';
 
 const app = defineDataApp({
@@ -243,6 +244,30 @@ const sales = hooks.defineDataView({
   isEmpty: () => false,
   emptyFallback: { title: 'No sales' },
 });
+const otherSales = hooks.defineDataView({
+  operation: 'sales',
+  dataContext: context,
+  variables: { ...filters, revenueBy, ordersBy, search },
+  describeInput: describeFilters,
+  isEmpty: () => false,
+  emptyFallback: { title: 'No sales' },
+});
+class ConfigurationBoundary extends Component<
+  { children: ReactNode },
+  { error: string }
+> {
+  state = { error: '' };
+  static getDerivedStateFromError(error: Error) {
+    return { error: error.message };
+  }
+  render() {
+    return this.state.error ? (
+      <p role="alert">{this.state.error}</p>
+    ) : (
+      this.props.children
+    );
+  }
+}
 const ordersView = hooks.defineDetailView({
   id: 'orders',
   title: 'Contributing orders',
@@ -482,6 +507,38 @@ const totalActions = total.actions(action => ({
     input: (_row, input) => ({ ...input, placeId: undefined }),
   }),
 }));
+const alternateViews = new URLSearchParams(location.search).has(
+  'alternate-views'
+);
+const foreignBreakdown = new URLSearchParams(location.search).has(
+  'foreign-breakdown'
+);
+const revenueViews = [
+  {
+    id: 'bars',
+    label: 'Bars',
+    render: (rows: readonly Row[], actions: ItemActions<Row>) => (
+      <BarChart
+        ariaLabel="Alternate bars"
+        unit="USD"
+        items={rows.map(row => ({ ...row, value: row.revenue }))}
+        itemActions={actions}
+      />
+    ),
+  },
+  {
+    id: 'shares',
+    label: 'Shares',
+    render: (rows: readonly Row[], actions: ItemActions<Row>) => (
+      <PieChart
+        ariaLabel="Alternate shares"
+        unit="USD"
+        items={rows.map(row => ({ ...row, value: row.revenue }))}
+        itemActions={actions}
+      />
+    ),
+  },
+];
 const content = sales.content(source => (
   <>
     {routeProbe && <DetailRouteProbe />}
@@ -512,21 +569,34 @@ const content = sales.content(source => (
         </output>
       )}
     </TextWidget>
-    <VisualizationWidget
-      dataset={places}
-      source={source}
-      actions={menus ? menuActions : drillActions}
-      breakdown={sales.breakdown('revenueBy')}
-    >
-      {(rows, actions) => (
-        <BarChart
-          ariaLabel="Revenue bars"
-          unit="USD"
-          items={rows.map(row => ({ ...row, value: row.revenue }))}
-          itemActions={actions}
-        />
-      )}
-    </VisualizationWidget>
+    {alternateViews ? (
+      <VisualizationWidget
+        dataset={places}
+        source={source}
+        actions={menuActions}
+        breakdown={sales.breakdown('revenueBy')}
+        views={revenueViews}
+        viewLabel="Revenue display"
+      />
+    ) : (
+      <VisualizationWidget
+        dataset={places}
+        source={source}
+        actions={menus ? menuActions : drillActions}
+        breakdown={(foreignBreakdown ? otherSales : sales).breakdown(
+          'revenueBy'
+        )}
+      >
+        {(rows, actions) => (
+          <BarChart
+            ariaLabel="Revenue bars"
+            unit="USD"
+            items={rows.map(row => ({ ...row, value: row.revenue }))}
+            itemActions={actions}
+          />
+        )}
+      </VisualizationWidget>
+    )}
     <VisualizationWidget
       dataset={orderPlaces}
       source={source}
@@ -592,7 +662,9 @@ function App() {
         },
       ]}
     >
-      <DataSection content={content} />
+      <ConfigurationBoundary>
+        <DataSection content={content} />
+      </ConfigurationBoundary>
     </DataApp>
   );
 }

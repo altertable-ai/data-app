@@ -913,3 +913,72 @@ test('copy failures show feedback instead of reporting success', async ({
     .poll(() => page.getByRole('status').allTextContents())
     .toContain('Couldn’t copy. Try again.');
 });
+
+test('alternate visualization views retain detail and atomic filter actions', async ({
+  page,
+}) => {
+  await page.goto('/exploration?alternate-views=1&menus=1');
+  await page.getByRole('tab', { name: 'Shares', exact: true }).click();
+  const chart = page.getByRole('region', {
+    name: 'Alternate shares',
+    exact: true,
+  });
+  const mark = chart.getByRole('button', {
+    name: 'Europe: 10 USD. Actions',
+    exact: true,
+  });
+  await mark.click();
+  await page
+    .getByRole('menuitem', { name: 'View orders', exact: true })
+    .click();
+  const detail = page.getByRole('dialog', {
+    name: 'Contributing orders',
+    exact: true,
+  });
+  await expect
+    .poll(() => detail.getByRole('table').innerText())
+    .toContain('order-1');
+  await detail
+    .getByRole('button', { name: 'Close panel', exact: true })
+    .click();
+  const legend = chart.getByRole('button', {
+    name: 'Europe: 10 USD, 66.7%. Actions',
+    exact: true,
+  });
+  await expect
+    .poll(() => legend.evaluate(element => document.activeElement === element))
+    .toBe(true);
+  const before = page.url();
+  await mark.click();
+  await page.getByRole('menuitem', { name: 'Drill down', exact: true }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('revenue-by'))
+    .toBe('country');
+  expect(readFilters(page.url())).toEqual(scope('eu'));
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: /Revenue breakdown/ })
+        .evaluate(element => document.activeElement === element)
+    )
+    .toBe(true);
+  await page.goBack();
+  await expect.poll(() => page.url()).toBe(before);
+  expect(
+    await page
+      .getByRole('tab', { name: 'Shares', exact: true })
+      .getAttribute('aria-selected')
+  ).toBe('true');
+});
+
+test('visualization widgets reject breakdown targets from another view', async ({
+  page,
+}) => {
+  await page.goto('/exploration?foreign-breakdown=1');
+  await expect
+    .poll(() => page.getByRole('alert').innerText())
+    .toContain('Breakdown targets must belong to the dataset view.');
+  expect(
+    await page.getByRole('button', { name: /Revenue breakdown/ }).count()
+  ).toBe(0);
+});
