@@ -7,8 +7,10 @@ import {
   createDataHooks,
   createDataContext,
   choiceVariable,
+  multiChoiceVariable,
   MetricWidget,
   TableWidget,
+  type AppVariableValues,
 } from '@altertable/data-app/react';
 const geography = hierarchyVariable({
   key: 'geography',
@@ -153,3 +155,76 @@ TableWidget({
   // @ts-expect-error Dataset actions retain their row type.
   actions: metricActions,
 });
+
+const numericHierarchy = hierarchyVariable({
+  key: 'numeric',
+  label: 'Numeric',
+  levels: [
+    {
+      id: 'region',
+      label: 'Region',
+      valueType: 'number',
+      options: [{ value: 1, label: 'One' }],
+    },
+  ],
+});
+const stringVariables = {
+  geography,
+  by,
+  scope: choiceVariable({
+    key: 'scope',
+    defaultValue: 'a',
+    options: [{ id: 'a', label: 'A' }],
+  }),
+};
+const numberVariables = {
+  geography: numericHierarchy,
+  by: numericHierarchy.breakdown({ key: 'by' }),
+  scope: multiChoiceVariable({
+    key: 'scope',
+    options: [{ id: 'a', label: 'A' }],
+  }),
+};
+const targetHooks =
+  createDataHooks(
+    createDataClient<{
+      strings: DataOperation<
+        AppVariableValues<typeof stringVariables>,
+        unknown
+      >;
+      numbers: DataOperation<
+        AppVariableValues<typeof numberVariables>,
+        unknown
+      >;
+    }>()
+  );
+const targetView = {
+  dataContext: context,
+  describeInput: () => 'Targets',
+  isEmpty: () => false,
+  emptyFallback: { title: 'Empty' },
+};
+const stringTargets = targetHooks.defineDataView({
+  ...targetView,
+  operation: 'strings',
+  variables: stringVariables,
+});
+const numberTargets = targetHooks.defineDataView({
+  ...targetView,
+  operation: 'numbers',
+  variables: numberVariables,
+});
+const stringFilter = stringTargets.filter();
+const numberFilter = numberTargets.filter();
+const stringHierarchy = stringTargets.hierarchy('geography');
+const numberHierarchy = numberTargets.hierarchy('geography');
+const stringBreakdown = stringTargets.breakdown('by');
+const numberBreakdown = numberTargets.breakdown('by');
+// @ts-expect-error Filter targets preserve their ordinary selection types in declarations.
+numberFilter satisfies typeof stringFilter;
+// @ts-expect-error Hierarchy targets preserve level IDs and member types in declarations.
+numberHierarchy satisfies typeof stringHierarchy;
+// @ts-expect-error Breakdown targets preserve their hierarchy's levels in declarations.
+numberBreakdown satisfies typeof stringBreakdown;
+// @ts-expect-error Target kinds remain distinct even when their hierarchy levels match.
+stringHierarchy satisfies typeof stringBreakdown;

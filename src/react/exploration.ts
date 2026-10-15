@@ -16,14 +16,18 @@ import { invariant } from '@/src/core/invariant';
 import { resolveViewInput, type ViewBindings } from '@/src/react/view';
 import { searchParams, writeSearch } from '@/src/react/ui/search';
 
+declare const filterPatch: unique symbol;
+declare const hierarchyLevels: unique symbol;
+declare const breakdownLevels: unique symbol;
+
 export class FilterTarget<Patch> {
-  declare private patch: Patch;
+  declare readonly [filterPatch]: Patch;
 }
 export class HierarchyTarget<Levels extends readonly HierarchyLevel[]> {
-  declare private levels: Levels;
+  declare readonly [hierarchyLevels]: Levels;
 }
 export class BreakdownTarget<Levels extends readonly HierarchyLevel[]> {
-  declare private levels: Levels;
+  declare readonly [breakdownLevels]: Levels;
 }
 export type OrdinaryScope<Variables extends VariableCollection> = Partial<{
   [
