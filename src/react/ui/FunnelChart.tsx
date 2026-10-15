@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { invariant } from '@/src/core/invariant';
 import { useSvgId } from '@/src/react/ui/useSvgId';
@@ -21,6 +22,100 @@ export type FunnelChartProps = CountChartProps & {
   steps: readonly FunnelChartStep[];
   series: readonly FunnelChartSeries[];
 };
+
+type FunnelPopulation = {
+  id: string;
+  label: string;
+  color: string;
+  hatchId: string;
+};
+type FunnelReading = {
+  population: FunnelPopulation;
+  current: number;
+  previous: number;
+  dropped: number;
+  conversion: number | null;
+  dropOff: number | null;
+  conversionPercent: number;
+  dropOffPercent: number;
+};
+type FunnelRow = {
+  id: string;
+  label: string;
+  index: number;
+  readings: ReadonlyMap<string, FunnelReading>;
+};
+
+function createFunnelModel(
+  steps: readonly FunnelChartStep[],
+  series: readonly FunnelChartSeries[],
+  chartId: string
+) {
+  for (const [kind, items] of [
+    ['funnel step', steps],
+    ['funnel series', series],
+  ] as const) {
+    const ids = new Set<string>();
+    for (const item of items) {
+      invariant(
+        item.id.trim().length > 0 && !ids.has(item.id),
+        `${kind} chart IDs must be nonblank and unique.`
+      );
+      ids.add(item.id);
+    }
+  }
+  for (const item of series) {
+    invariant(
+      item.values.length === steps.length,
+      'funnel chart counts must align with steps.'
+    );
+    item.values.forEach((value, index) => {
+      invariant(
+        Number.isFinite(value) && value >= 0,
+        'funnel chart counts must be finite and nonnegative.'
+      );
+      invariant(
+        index === 0 || value <= item.values[index - 1]!,
+        'funnel chart counts must be nonincreasing.'
+      );
+    });
+  }
+  const populations: FunnelPopulation[] = series.map((item, index) => ({
+    id: item.id,
+    label: item.label,
+    color: `var(--atbl-chart-${(index % 8) + 1})`,
+    hatchId: [chartId, 'hatch', index].join('-'),
+  }));
+  const rows: FunnelRow[] = steps.map((step, index) => ({
+    id: step.id,
+    label: step.label,
+    index,
+    readings: new Map(
+      series.map((item, seriesIndex) => {
+        const first = item.values[0] ?? 0;
+        const current = item.values[index]!;
+        const previous = item.values[Math.max(0, index - 1)]!;
+        const dropped = previous - current;
+        const conversion = first > 0 ? current / first : null;
+        const dropOff = first > 0 ? dropped / first : null;
+        return [
+          item.id,
+          {
+            population: populations[seriesIndex]!,
+            current,
+            previous,
+            dropped,
+            conversion,
+            dropOff,
+            conversionPercent: (conversion ?? 0) * 100,
+            dropOffPercent: (dropOff ?? (index === 0 ? 1 : 0)) * 100,
+          },
+        ];
+      })
+    ),
+  }));
+  return { populations, rows };
+}
 
 /** Conversion columns with previous-step drop-off, normalized to each series' first step.
  * Owns series highlighting and portion-specific inspection; compose inside VisualizationWidget. */
@@ -56,63 +151,7 @@ export function FunnelChart({
     cancelClear();
     clearTimer.current = setTimeout(() => setHighlighted(null), 100);
   }
-  for (const [kind, items] of [
-    ['funnel step', steps],
-    ['funnel series', series],
-  ] as const) {
-    const ids = new Set<string>();
-    for (const item of items) {
-      invariant(
-        item.id.trim().length > 0 && !ids.has(item.id),
-        `${kind} chart IDs must be nonblank and unique.`
-      );
-      ids.add(item.id);
-    }
-  }
-  for (const item of series) {
-    invariant(
-      item.values.length === steps.length,
-      'funnel chart counts must align with steps.'
-    );
-    item.values.forEach((value, index) => {
-      invariant(
-        Number.isFinite(value) && value >= 0,
-        'funnel chart counts must be finite and nonnegative.'
-      );
-      invariant(
-        index === 0 || value <= item.values[index - 1]!,
-        'funnel chart counts must be nonincreasing.'
-      );
-    });
-  }
-  function reading(item: FunnelChartSeries, index: number) {
-    const first = item.values[0] ?? 0;
-    const current = item.values[index]!;
-    const previous = item.values[Math.max(0, index - 1)]!;
-    return {
-      current,
-      previous,
-      dropped: previous - current,
-      conversion: first > 0 ? current / first : null,
-      dropOff: first > 0 ? (previous - current) / first : null,
-    };
-  }
-  const data = steps.map((step, index) => ({
-    label: step.label,
-    index,
-    ...Object.fromEntries(
-      series.flatMap((item, seriesIndex) => {
-        const value = reading(item, index);
-        return [
-          [`conversion${seriesIndex}`, (value.conversion ?? 0) * 100],
-          [
-            `drop${seriesIndex}`,
-            (value.dropOff ?? (index === 0 ? 1 : 0)) * 100,
-          ],
-        ];
-      })
-    ),
-  }));
+  const { populations, rows } = createFunnelModel(steps, series, chartId);
   return (
     <section
       className={classNames('altertable-funnel-chart', className)}
@@ -125,20 +164,19 @@ export function FunnelChart({
         <>
           <div className="altertable-funnel-header">
             <ChartLegend aria-label="Funnel series" layout="single-row">
-              {series.map((item, index) => (
+              {populations.map(item => (
                 <ChartLegend.Item
                   key={item.id}
                   className="altertable-funnel-summary-item"
                 >
                   <span className="altertable-funnel-series-label">
-                    <ChartLegend.Marker
-                      kind="square"
-                      color={`var(--atbl-chart-${(index % 8) + 1})`}
-                    />
+                    <ChartLegend.Marker kind="square" color={item.color} />
                     <ChartLegend.Label>{item.label}</ChartLegend.Label>
                   </span>
                   <strong className="altertable-funnel-series-value">
-                    {formatPercent(reading(item, steps.length - 1).conversion)}
+                    {formatPercent(
+                      rows.at(-1)?.readings.get(item.id)?.conversion ?? null
+                    )}
                   </strong>
                 </ChartLegend.Item>
               ))}
@@ -154,7 +192,7 @@ export function FunnelChart({
               }}
             >
               <ComposedChart
-                data={data}
+                data={rows}
                 ariaLabel={`${ariaLabel} plot`}
                 height={300}
                 barCategoryGap="4%"
@@ -169,10 +207,10 @@ export function FunnelChart({
                   tickFormatter={value => formatPercent(value / 100)}
                 />
                 <defs>
-                  {series.map((item, index) => (
+                  {populations.map(item => (
                     <pattern
                       key={item.id}
-                      id={`${chartId}-hatch-${index}`}
+                      id={item.hatchId}
                       patternUnits="userSpaceOnUse"
                       width="6"
                       height="6"
@@ -181,7 +219,7 @@ export function FunnelChart({
                       <rect
                         width="8"
                         height="8"
-                        fill={`var(--atbl-chart-${(index % 8) + 1})`}
+                        fill={item.color}
                         fillOpacity={0.16}
                       />
                       <line
@@ -189,20 +227,22 @@ export function FunnelChart({
                         y1="0"
                         x2="0"
                         y2="8"
-                        stroke={`var(--atbl-chart-${(index % 8) + 1})`}
+                        stroke={item.color}
                         strokeOpacity={0.4}
                         strokeWidth="2"
                       />
                     </pattern>
                   ))}
                 </defs>
-                {series.map((item, index) => (
+                {populations.map(item => (
                   <Fragment key={item.id}>
                     <ComposedChart.Bar
-                      dataKey={`conversion${index}`}
+                      dataKey={(row: FunnelRow) =>
+                        row.readings.get(item.id)?.conversionPercent ?? 0
+                      }
                       name={item.label}
                       stackId={item.id}
-                      fill={`var(--atbl-chart-${(index % 8) + 1})`}
+                      fill={item.color}
                       radius={0}
                       maxBarSize={undefined}
                       activeBar={false}
@@ -219,10 +259,12 @@ export function FunnelChart({
                       }
                     />
                     <ComposedChart.Bar
-                      dataKey={`drop${index}`}
+                      dataKey={(row: FunnelRow) =>
+                        row.readings.get(item.id)?.dropOffPercent ?? 0
+                      }
                       name={`${item.label} drop-off`}
                       stackId={item.id}
-                      fill={`url(#${chartId}-hatch-${index})`}
+                      fill={`url(#${item.hatchId})`}
                       opacity={
                         !highlighted || highlighted.id === item.id ? 1 : 0.2
                       }
@@ -240,51 +282,59 @@ export function FunnelChart({
                   </Fragment>
                 ))}
                 <ComposedChart.Tooltip
-                  content={({ active, payload }) => {
-                    const index = payload?.[0]?.payload.index;
-                    if (!active || typeof index !== 'number') return null;
-                    const tooltipItems = series
+                  content={({ active, activeIndex }) => {
+                    const row =
+                      activeIndex == null
+                        ? undefined
+                        : rows[Number(activeIndex)];
+                    if (!active || !row) return null;
+                    const tooltipItems = [...row.readings.values()]
                       .filter(
-                        item =>
+                        value =>
                           !highlighted ||
-                          highlighted.step !== index ||
-                          item.id === highlighted.id
+                          highlighted.step !== row.index ||
+                          value.population.id === highlighted.id
                       )
-                      .flatMap(item => {
-                        const value = reading(item, index);
-                        const selected = highlighted?.step === index;
+                      .flatMap(value => {
+                        const item = value.population;
+                        const selected = highlighted?.step === row.index;
                         const readings = selected
                           ? [highlighted.conversion]
                           : [true, false];
-                        const seriesIndex = series.indexOf(item);
-                        return readings.map(conversion => ({
-                          name: item.label,
-                          graphicalItemId: `${item.id}-${conversion ? 'conversion' : 'drop-off'}`,
-                          dataKey: `${item.id}-${conversion ? 'conversion' : 'drop-off'}`,
-                          color: `var(--atbl-chart-${(seriesIndex % 8) + 1})`,
-                          value:
-                            (conversion ? value.conversion : value.dropOff) ??
-                            0,
-                          formatter: () => (
-                            <>
-                              {formatPercent(
-                                conversion ? value.conversion : value.dropOff
-                              )}{' '}
-                              {conversion ? 'conversion' : 'drop-off'}
-                              <span className="altertable-funnel-tooltip-detail">
-                                {formatValue(
-                                  conversion ? value.current : value.dropped
+                        return readings.map(conversion => {
+                          const key = [
+                            item.id,
+                            conversion ? 'conversion' : 'drop-off',
+                          ].join(KEY_SEPARATOR);
+                          return {
+                            name: item.label,
+                            graphicalItemId: key,
+                            dataKey: key,
+                            color: item.color,
+                            value:
+                              (conversion ? value.conversion : value.dropOff) ??
+                              0,
+                            formatter: () => (
+                              <>
+                                {formatPercent(
+                                  conversion ? value.conversion : value.dropOff
                                 )}{' '}
-                                of {formatValue(value.previous)} {unit}
-                              </span>
-                            </>
-                          ),
-                        }));
+                                {conversion ? 'conversion' : 'drop-off'}
+                                <span className="altertable-funnel-tooltip-detail">
+                                  {formatValue(
+                                    conversion ? value.current : value.dropped
+                                  )}{' '}
+                                  of {formatValue(value.previous)} {unit}
+                                </span>
+                              </>
+                            ),
+                          };
+                        });
                       });
                     return (
                       <ChartTooltipContent
                         active
-                        label={steps[index]!.label}
+                        label={row.label}
                         payload={tooltipItems}
                       />
                     );
@@ -294,20 +344,17 @@ export function FunnelChart({
             </div>
           </div>
           <ul className="altertable-sr-only">
-            {steps.map((step, index) => (
-              <li key={step.id}>
-                {step.label}
-                {series.map(item => {
-                  const value = reading(item, index);
-                  return (
-                    <span key={item.id}>
-                      {' '}
-                      · {item.label}: {formatValue(value.current)} {unit},{' '}
-                      {formatPercent(value.conversion)} conversion,{' '}
-                      {formatValue(value.dropped)} dropped off
-                    </span>
-                  );
-                })}
+            {rows.map(row => (
+              <li key={row.id}>
+                {row.label}
+                {[...row.readings.values()].map(value => (
+                  <span key={value.population.id}>
+                    {' '}
+                    · {value.population.label}: {formatValue(value.current)}{' '}
+                    {unit}, {formatPercent(value.conversion)} conversion,{' '}
+                    {formatValue(value.dropped)} dropped off
+                  </span>
+                ))}
               </li>
             ))}
           </ul>

@@ -31,18 +31,26 @@ export type RetentionChartProps = CountChartProps & {
   series: readonly RetentionChartSeries[];
 };
 
-/** Query-defined retention curves with count inspection and dotted incomplete periods.
- * Rates are not recomputed from counts. Compose inside VisualizationWidget. */
-export function RetentionChart({
-  series,
-  unit,
-  ariaLabel,
-  className,
-  formatValue = formatNumber,
-}: RetentionChartProps) {
+type RetentionReading = {
+  point: RetentionChartPoint;
+  completePercent: number | null;
+  incompletePercent: number | null;
+  description: string;
+};
+type RetentionRow = {
+  offset: number;
+  label: string;
+  readings: Map<string, RetentionReading>;
+};
+
+function createRetentionModel(
+  series: readonly RetentionChartSeries[],
+  unit: string,
+  formatValue: (value: number) => string
+) {
   const ids = new Set<string>();
-  const offsets = new Map<number, string>();
-  for (const item of series) {
+  const rowsByOffset = new Map<number, RetentionRow>();
+  const cohorts = series.map((item, index) => {
     invariant(
       item.id.trim().length > 0 && !ids.has(item.id),
       'retention series chart IDs must be nonblank and unique.'
@@ -53,87 +61,111 @@ export function RetentionChart({
       'retention chart counts must be finite and nonnegative.'
     );
     const seen = new Set<number>();
-    for (const point of item.points) {
-      invariant(
-        Number.isSafeInteger(point.offset) &&
-          point.offset >= 0 &&
-          !seen.has(point.offset),
-        'retention chart offsets must be unique nonnegative integers within each series.'
-      );
-      seen.add(point.offset);
-      invariant(
-        point.rate === null ||
-          (Number.isFinite(point.rate) && point.rate >= 0 && point.rate <= 1),
-        'retention chart rates must be finite fractions between 0 and 1, or null.'
-      );
-      invariant(
-        (point.rate === null) === (point.retainedCount === null),
-        'retention chart unobserved rates and counts must both be null.'
-      );
-      if (point.retainedCount !== null) {
+    let previous: RetentionReading | undefined;
+    const readings = [...item.points]
+      .sort((a, b) => a.offset - b.offset)
+      .map(point => {
         invariant(
-          Number.isFinite(point.retainedCount) && point.retainedCount >= 0,
-          'retention chart counts must be finite and nonnegative.'
+          Number.isSafeInteger(point.offset) &&
+            point.offset >= 0 &&
+            !seen.has(point.offset),
+          'retention chart offsets must be unique nonnegative integers within each series.'
+        );
+        seen.add(point.offset);
+        invariant(
+          point.rate === null ||
+            (Number.isFinite(point.rate) && point.rate >= 0 && point.rate <= 1),
+          'retention chart rates must be finite fractions between 0 and 1, or null.'
         );
         invariant(
-          point.retainedCount <= item.cohortSize,
-          'retention chart retained counts cannot exceed cohort size.'
+          (point.rate === null) === (point.retainedCount === null),
+          'retention chart unobserved rates and counts must both be null.'
         );
-      }
-      invariant(
-        !offsets.has(point.offset) || offsets.get(point.offset) === point.label,
-        'retention chart labels must agree for the same offset.'
-      );
-      offsets.set(point.offset, point.label);
-    }
-  }
-  const data: ({ offset: number; label: string } & Record<
-    string,
-    number | string | null
-  >)[] = [...offsets]
-    .sort(([a], [b]) => a - b)
-    .map(([offset, label]) => ({
-      offset,
-      label,
-      ...Object.fromEntries(
-        series.flatMap((_, index) => [
-          [`rate${index}`, null],
-          [`tail${index}`, null],
-        ])
-      ),
-    }));
-  series.forEach((item, index) => {
-    const points = [...item.points].sort((a, b) => a.offset - b.offset);
-    points.forEach((point, pointIndex) => {
-      const row = data.find(row => row.offset === point.offset)!;
-      row[point.incomplete ? `tail${index}` : `rate${index}`] =
-        point.rate === null ? null : point.rate * 100;
-      if (point.incomplete && pointIndex > 0) {
-        const previous = points[pointIndex - 1]!;
-        data.find(row => row.offset === previous.offset)![`tail${index}`] =
-          previous.rate === null ? null : previous.rate * 100;
-      }
-    });
+        if (point.retainedCount !== null) {
+          invariant(
+            Number.isFinite(point.retainedCount) && point.retainedCount >= 0,
+            'retention chart counts must be finite and nonnegative.'
+          );
+          invariant(
+            point.retainedCount <= item.cohortSize,
+            'retention chart retained counts cannot exceed cohort size.'
+          );
+        }
+        let row = rowsByOffset.get(point.offset);
+        invariant(
+          !row || row.label === point.label,
+          'retention chart labels must agree for the same offset.'
+        );
+        if (!row) {
+          row = {
+            offset: point.offset,
+            label: point.label,
+            readings: new Map(),
+          };
+          rowsByOffset.set(point.offset, row);
+        }
+        const percent = point.rate === null ? null : point.rate * 100;
+        const reading: RetentionReading = {
+          point,
+          completePercent: point.incomplete ? null : percent,
+          incompletePercent: point.incomplete ? percent : null,
+          description:
+            point.rate === null || point.retainedCount === null
+              ? 'Not observed'
+              : `${formatPercent(point.rate)} · ${formatValue(point.retainedCount)} / ${formatValue(item.cohortSize)} ${unit}${point.incomplete ? ' · Incomplete period' : ''}`,
+        };
+        // The dotted tail starts at the preceding supplied observation.
+        if (point.incomplete && previous) {
+          previous.incompletePercent =
+            previous.completePercent ?? previous.incompletePercent;
+        }
+        row.readings.set(item.id, reading);
+        previous = reading;
+        return reading;
+      });
+    return {
+      id: item.id,
+      label: item.label,
+      color: `var(--atbl-chart-${(index % 8) + 1})`,
+      readings,
+    };
   });
+  const rows = [...rowsByOffset.values()].sort((a, b) => a.offset - b.offset);
+  return { rows, rowsByOffset, cohorts };
+}
+
+/** Query-defined retention curves with count inspection and dotted incomplete periods.
+ * Rates are not recomputed from counts. Compose inside VisualizationWidget. */
+export function RetentionChart({
+  series,
+  unit,
+  ariaLabel,
+  className,
+  formatValue = formatNumber,
+}: RetentionChartProps) {
+  const { rows, rowsByOffset, cohorts } = createRetentionModel(
+    series,
+    unit,
+    formatValue
+  );
   return (
     <section
       className={classNames('altertable-retention-chart', className)}
       aria-label={ariaLabel}
     >
-      {data.length === 0 ? (
+      {rows.length === 0 ? (
         <span>No data</span>
       ) : (
         <>
-          <ComposedChart data={data} ariaLabel={`${ariaLabel} plot`}>
+          <ComposedChart data={rows} ariaLabel={`${ariaLabel} plot`}>
             <ComposedChart.CartesianGrid />
             <ComposedChart.XAxis
               dataKey="offset"
               type="number"
-              domain={[0, Math.max(1, ...offsets.keys())]}
+              domain={[0, Math.max(1, rows.at(-1)?.offset ?? 0)]}
+              ticks={rows.map(row => row.offset)}
               tickFormatter={value =>
-                offsets.get(Number(value)) ??
-                (data[0]?.label.replace(/\d+(?:\.\d+)?/, String(value)) ||
-                  String(value))
+                rowsByOffset.get(Number(value))?.label ?? ''
               }
             />
             <ComposedChart.YAxis
@@ -141,18 +173,22 @@ export function RetentionChart({
               width={42}
               tickFormatter={value => `${value}%`}
             />
-            {series.map((item, index) => (
+            {cohorts.map(item => (
               <Fragment key={item.id}>
                 <ComposedChart.Line
-                  dataKey={`rate${index}`}
+                  dataKey={(row: RetentionRow) =>
+                    row.readings.get(item.id)?.completePercent ?? null
+                  }
                   name={item.label}
-                  stroke={`var(--atbl-chart-${(index % 8) + 1})`}
+                  stroke={item.color}
                   connectNulls={false}
                 />
                 <ComposedChart.Line
-                  dataKey={`tail${index}`}
+                  dataKey={(row: RetentionRow) =>
+                    row.readings.get(item.id)?.incompletePercent ?? null
+                  }
                   name={item.label}
-                  stroke={`var(--atbl-chart-${(index % 8) + 1})`}
+                  stroke={item.color}
                   strokeDasharray="3 3"
                   dot={false}
                   activeDot={false}
@@ -162,23 +198,21 @@ export function RetentionChart({
             ))}
             <ComposedChart.Tooltip
               filterNull={false}
-              content={({ active, payload }) => {
-                const offset = payload?.[0]?.payload.offset;
-                if (!active || typeof offset !== 'number') return null;
+              content={({ active, label }) => {
+                const row =
+                  typeof label === 'number'
+                    ? rowsByOffset.get(label)
+                    : undefined;
+                if (!active || !row) return null;
                 return (
                   <TooltipSurface data-variant="chart" role="tooltip">
-                    <strong>{offsets.get(offset)}</strong>
-                    {series.map(item => {
-                      const point = item.points.find(
-                        point => point.offset === offset
-                      );
-                      if (!point) return null;
+                    <strong>{row.label}</strong>
+                    {cohorts.map(item => {
+                      const reading = row.readings.get(item.id);
+                      if (!reading) return null;
                       return (
                         <span key={item.id}>
-                          {item.label}:{' '}
-                          {point.rate === null
-                            ? 'Not observed'
-                            : `${formatPercent(point.rate)} · ${formatValue(point.retainedCount!)} / ${formatValue(item.cohortSize)} ${unit}${point.incomplete ? ' · Incomplete period' : ''}`}
+                          {item.label}: {reading.description}
                         </span>
                       );
                     })}
@@ -188,27 +222,24 @@ export function RetentionChart({
             />
           </ComposedChart>
           <ChartLegend aria-label={`${ariaLabel} cohorts`}>
-            {series.map((item, index) => (
+            {cohorts.map(item => (
               <ChartLegend.Item key={item.id}>
-                <ChartLegend.Marker
-                  kind="square"
-                  color={`var(--atbl-chart-${(index % 8) + 1})`}
-                />
+                <ChartLegend.Marker kind="square" color={item.color} />
                 <ChartLegend.Label>{item.label}</ChartLegend.Label>
               </ChartLegend.Item>
             ))}
           </ChartLegend>
-          <ul className="altertable-sr-only">
-            {series.map(item => (
+          <ul
+            className="altertable-sr-only"
+            aria-label={`${ariaLabel} readings`}
+          >
+            {cohorts.map(item => (
               <li key={item.id}>
                 {item.label}
-                {item.points.map(point => (
-                  <span key={point.offset}>
+                {item.readings.map(reading => (
+                  <span key={reading.point.offset}>
                     {' '}
-                    · {point.label}:{' '}
-                    {point.rate === null
-                      ? 'Not observed'
-                      : `${formatPercent(point.rate)} · ${formatValue(point.retainedCount!)} / ${formatValue(item.cohortSize)} ${unit}${point.incomplete ? ' · Incomplete period' : ''}`}
+                    · {reading.point.label}: {reading.description}
                   </span>
                 ))}
               </li>

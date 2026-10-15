@@ -1,10 +1,11 @@
 import { formatNumber } from '@/src/core/format';
 import { chartBarFill } from '@/src/react/ui/chartColor';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { useChartScrollToEnd } from '@/src/react/ui/use-chart-scroll-to-end';
 
 import {
-  validateChartItems,
+  validateValueChartItems,
   type ChartItem,
   type ValueChartProps,
 } from '@/src/react/ui/chart-data';
@@ -28,14 +29,9 @@ export function BarChart({
   ariaLabel,
   formatValue = formatNumber,
 }: BarChartProps) {
-  validateChartItems('bar', items);
+  validateValueChartItems('bar', items);
   const [activeId, setActiveId] = useState<string>();
-  const scrollport = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const element = scrollport.current;
-    if (element) element.scrollLeft = element.scrollWidth - element.clientWidth;
-  }, [items]);
+  const scrollport = useChartScrollToEnd(items);
 
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 1);
 

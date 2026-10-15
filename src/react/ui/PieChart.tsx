@@ -2,7 +2,7 @@ import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { useState } from 'react';
 import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
-import { validateChartItems } from '@/src/react/ui/chart-data';
+import { validateValueChartItems } from '@/src/react/ui/chart-data';
 
 export type PieChartItem = ChartItem;
 export type PieChartProps = ValueChartProps & {
@@ -21,7 +21,7 @@ export function PieChart({
   showLegend = true,
   formatValue = value => new Intl.NumberFormat().format(value),
 }: PieChartProps) {
-  validateChartItems('pie', items);
+  validateValueChartItems('pie', items);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [plotOpen, setPlotOpen] = useState(false);
   const [legendId, setLegendId] = useState<string | null>(null);
