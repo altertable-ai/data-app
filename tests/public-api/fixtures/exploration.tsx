@@ -56,7 +56,12 @@ const country = app.defineDimension({
   label: 'Country',
   valueType: 'string',
   selectionMode: 'single',
-  presentation: { prominence: 'secondary' },
+  presentation: {
+    prominence: 'secondary',
+    control: new URLSearchParams(location.search).has('widget-country')
+      ? 'widget'
+      : 'toolbar',
+  },
   source: { query: 'countries' },
 });
 const filters = { region, country };

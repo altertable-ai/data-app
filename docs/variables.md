@@ -293,6 +293,7 @@ const parseInput = variableInput(parsePeriodInput, { country, revenueBy });
 A breakdown is an ordinary display choice, independent of population filters.
 `<VisualizationWidget breakdown={view.breakdown('revenueBy')}>` renders that
 choice in its header. `presentation.control: 'widget'` omits it from the toolbar.
+Scope filters still appear in the Filters sheet, active summaries, and Clear filters.
 Declare each chart's choice separately when readers should control them independently.
 
 Each source query declares nullable `member` and returns `value`, `label`, and optional

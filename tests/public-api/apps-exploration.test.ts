@@ -1046,6 +1046,43 @@ test('removing the active period returns dates and comparison to their defaults'
   expect(params.has('compare')).toBe(false);
 });
 
+test('widget placement preserves active filter counts, editing, and clearing', async ({
+  page,
+}) => {
+  const params = new URLSearchParams({
+    ...routeFilters(null, 'fr'),
+    'widget-country': '1',
+  });
+  await page.goto(`/exploration?${params}`);
+  const floating = page.getByRole('group', {
+    name: 'Active filters',
+    exact: true,
+  });
+  await expect.poll(() => floating.innerText()).toContain('France');
+  await page
+    .getByRole('button', { name: 'Filters (1 active)', exact: true })
+    .click();
+  const panel = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await expect.poll(() => panel.innerText()).toContain('Country');
+  await panel.getByRole('button', { name: 'Close panel', exact: true }).click();
+  const remove = floating.getByRole('button', {
+    name: 'Remove Country filter',
+    exact: true,
+  });
+  await remove.hover();
+  const backgrounds = await remove.evaluate(element => ({
+    button: getComputedStyle(element).backgroundColor,
+    chip: getComputedStyle(element.parentElement!).backgroundColor,
+  }));
+  expect(backgrounds.button).not.toBe('rgba(0, 0, 0, 0)');
+  expect(backgrounds.button).not.toBe(backgrounds.chip);
+  await floating
+    .getByRole('button', { name: 'Clear filters', exact: true })
+    .click();
+  await expect.poll(() => readFilters(page.url())).toEqual(scope(null));
+  await expect.poll(() => floating.count()).toBe(0);
+});
+
 test('mapped scope choices keep actions available only for the displayed selection', async ({
   page,
 }) => {

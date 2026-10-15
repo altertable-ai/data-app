@@ -153,7 +153,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     const definition = definitions[name]!;
     const value = variables.values[name];
     const variable = definition as AppVariable<any>;
-    if (definition.presentation?.control === 'widget') continue;
+    const widgetControl = definition.presentation?.control === 'widget';
     const group = definition.presentation?.group ?? 'scope';
     const prominence = definition.presentation?.prominence ?? 'primary';
     const labelPlacement =
@@ -163,6 +163,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           ? 'above'
           : 'inline';
     if (definition.kind === 'search') {
+      if (widgetControl) continue;
       searchControls.push(
         <ViewSearchField
           key={name}
@@ -299,6 +300,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         : (variable.clearValue ?? variable.defaultValue);
     const active = !variable.same(value, baseline);
     if (group === 'display') {
+      if (widgetControl) continue;
       displayOptions[prominence].push(renderControl(labelPlacement));
       if (active) changedDisplayOptionCount++;
     } else {
@@ -321,7 +323,7 @@ export function useViewVariables<Variables extends VariableCollection>(
               : (variable.describe?.(value) ?? String(value)),
         });
       }
-      if (prominence === 'primary')
+      if (!widgetControl && prominence === 'primary')
         primaryFilters.push(renderControl('inline'));
       if (active) activeFilterCount++;
     }

@@ -20,7 +20,8 @@ export type { HistoryMode } from '@/src/core/navigation';
 export type VariablePresentation = {
   /** Scope changes the included data; display changes its presentation. Defaults to scope. */
   group?: 'scope' | 'display';
-  /** Widget controls render beside their visualization instead of in the toolbar. */
+  /** Widget controls render beside their visualization instead of in the toolbar.
+   * Scope filters remain available in the Filters sheet and active summaries. */
   control?: 'toolbar' | 'widget';
   /** Secondary scope controls live in the Filters sheet with compact pickers when active; secondary display options follow primary options. Defaults to primary. */
   prominence?: 'primary' | 'secondary';
