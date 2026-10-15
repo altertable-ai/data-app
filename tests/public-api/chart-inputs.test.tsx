@@ -71,3 +71,50 @@ test('scatter charts validate observation identities and both numeric coordinate
     }
   }
 });
+
+test('pie actions receive original rows even when domain fields match plot metadata', () => {
+  const rows = [
+    {
+      id: 'zero',
+      label: 'Zero',
+      value: 0,
+      path: '/zero',
+      share: 42,
+      color: 'domain-zero',
+    },
+    {
+      id: 'a',
+      label: 'Alpha',
+      value: 3,
+      path: '/alpha',
+      share: 43,
+      color: 'domain-alpha',
+    },
+    {
+      id: 'b',
+      label: 'Beta',
+      value: 7,
+      path: '/beta',
+      share: 44,
+      color: 'domain-beta',
+    },
+  ];
+  for (const showLegend of [true, false]) {
+    const received: (typeof rows)[number][] = [];
+    renderToStaticMarkup(
+      <PieChart
+        items={rows}
+        ariaLabel="Values"
+        unit="orders"
+        showLegend={showLegend}
+        itemActions={row => {
+          received.push(row);
+          return [{ id: 'inspect', label: 'Inspect', onSelect() {} }];
+        }}
+      />
+    );
+    expect(received.length).toBeGreaterThan(0);
+    for (const row of received)
+      expect(row).toBe(rows.find(original => original.id === row.id));
+  }
+});

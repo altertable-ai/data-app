@@ -44,11 +44,12 @@ export function PieChart<Row extends PieChartItem>({
     ? items.reduce((sum, item) => sum + item.value / maximum, 0)
     : 0;
   let cursor = -Math.PI / 2;
-  const slices: (Row & {
+  const slices: {
+    row: Row;
     share: number;
     color: string;
     path: string;
-  })[] = [];
+  }[] = [];
   for (const [index, item] of items.entries()) {
     const share = total ? item.value / maximum / total : 0;
     const start = cursor;
@@ -58,7 +59,7 @@ export function PieChart<Row extends PieChartItem>({
       return `${110 + Math.cos(angle) * 100},${110 + Math.sin(angle) * 100}`;
     }
     slices.push({
-      ...item,
+      row: item,
       share,
       color: `var(--atbl-chart-${(index % 8) + 1})`,
       path: `${share === 1 ? 'M' : 'M110,110 L'}${point(start)} A100,100 0 0 1 ${point(middle)} A100,100 0 0 1 ${point(cursor)} Z`,
@@ -70,24 +71,26 @@ export function PieChart<Row extends PieChartItem>({
       maximumFractionDigits: 1,
     }).format(share);
   }
-  function detail(item: (typeof slices)[number]) {
+  function detail(slice: (typeof slices)[number]) {
+    const item = slice.row;
     return (
       <>
         <strong>{item.label}</strong>
         <span>
-          {formatValue(item.value)} {unit} · {percent(item.share)}
+          {formatValue(item.value)} {unit} · {percent(slice.share)}
         </span>
       </>
     );
   }
-  function actionsFor(item: (typeof slices)[number]) {
+  function actionsFor(slice: (typeof slices)[number]) {
+    const item = slice.row;
     return chartActions.actions(
       itemActions?.(item) ?? [],
       item.label,
-      `${formatValue(item.value)} ${unit} · ${percent(item.share)}`
+      `${formatValue(item.value)} ${unit} · ${percent(slice.share)}`
     );
   }
-  const preview = slices.find(item => item.id === previewId);
+  const preview = slices.find(slice => slice.row.id === previewId);
   return (
     <section className="altertable-pie-chart" aria-label={ariaLabel}>
       {items.length === 0 && <span>No data</span>}
@@ -116,8 +119,9 @@ export function PieChart<Row extends PieChartItem>({
                   />
                 ) : (
                   slices
-                    .filter(item => item.share > 0)
-                    .map(item => {
+                    .filter(slice => slice.share > 0)
+                    .map(slice => {
+                      const item = slice.row;
                       const menuTrigger = {
                         get current() {
                           return (
@@ -128,15 +132,15 @@ export function PieChart<Row extends PieChartItem>({
                         },
                       };
                       const action = getPrimaryExplorationAction(
-                        actionsFor(item)
+                        actionsFor(slice)
                       );
                       const opensMenu =
                         !action && (itemActions?.(item).length ?? 0) > 1;
                       return (
                         <path
                           key={item.id}
-                          d={item.path}
-                          fill={item.color}
+                          d={slice.path}
+                          fill={slice.color}
                           className="altertable-pie-slice"
                           data-active={
                             item.id ===
@@ -195,8 +199,9 @@ export function PieChart<Row extends PieChartItem>({
                 )}
               </svg>
             </Tooltip>
-            {slices.map(item => {
-              const actions = actionsFor(item);
+            {slices.map(slice => {
+              const item = slice.row;
+              const actions = actionsFor(slice);
               if (actions.length === 0) return null;
               return (
                 <span key={item.id} className="altertable-sr-only">
@@ -226,17 +231,18 @@ export function PieChart<Row extends PieChartItem>({
               aria-label={`${ariaLabel} legend`}
               className="altertable-pie-legend"
             >
-              {slices.map(item => {
-                const actions = actionsFor(item);
+              {slices.map(slice => {
+                const item = slice.row;
+                const actions = actionsFor(slice);
                 const menuTrigger: RefObject<ComponentRef<'button'> | null> = {
                   get current() {
                     return menuTriggers.current.get(item.id) ?? null;
                   },
                 };
-                const label = `${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}${actions.length ? '. Actions' : ''}`;
+                const label = `${item.label}: ${formatValue(item.value)} ${unit}, ${percent(slice.share)}${actions.length ? '. Actions' : ''}`;
                 const contents = (
                   <>
-                    <ChartLegend.Marker kind="square" color={item.color} />
+                    <ChartLegend.Marker kind="square" color={slice.color} />
                     <ChartLegend.Label className="altertable-pie-label">
                       {item.label}
                     </ChartLegend.Label>
@@ -251,7 +257,7 @@ export function PieChart<Row extends PieChartItem>({
                       {formatValue(item.value)}
                     </strong>
                     <span className="altertable-pie-share">
-                      {percent(item.share)}
+                      {percent(slice.share)}
                     </span>
                   </>
                 );
@@ -259,7 +265,7 @@ export function PieChart<Row extends PieChartItem>({
                   <ChartLegend.Item key={item.id}>
                     <Tooltip
                       variant="chart"
-                      content={detail(item)}
+                      content={detail(slice)}
                       onOpenChange={open =>
                         setLegendId(current =>
                           open ? item.id : current === item.id ? null : current
