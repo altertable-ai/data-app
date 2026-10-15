@@ -111,12 +111,6 @@ export function PieChart<Row extends PieChartItem>({
                       );
                       const opensMenu =
                         !action && (itemActions?.(item).length ?? 0) > 1;
-                      const menuTrigger: RefObject<ComponentRef<'button'> | null> =
-                        {
-                          get current() {
-                            return menuTriggers.current.get(item.id) ?? null;
-                          },
-                        };
                       return (
                         <path
                           key={item.id}

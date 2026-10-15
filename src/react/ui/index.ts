@@ -208,3 +208,10 @@ export type { SectionHeadingProps } from '@/src/react/ui/SectionHeading';
 export { DateDisplay } from '@/src/react/ui/DateDisplay';
 export type { DateDisplayProps } from '@/src/react/ui/DateDisplay';
 export { useDateFormatting } from '@/src/react/date-formatting';
+
+export { ExplorationActionControl } from '@/src/react/ui/ExplorationActionControl';
+export type {
+  ExplorationActionControlProps,
+  ExplorationAction,
+  ItemActions,
+} from '@/src/react/ui/ExplorationActionControl';

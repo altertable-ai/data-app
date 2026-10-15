@@ -1,4 +1,5 @@
 import { facetSource, type FacetVariable } from '@/src/core/facets';
+import { useHierarchyControls } from '@/src/react/hierarchy-controls';
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
@@ -90,6 +91,13 @@ export function useViewVariables<Variables extends VariableCollection>(
   const facetState = new Map(
     facets.map(([name], index) => [name, facetQueries[index]!])
   );
+  const hierarchyControls = useHierarchyControls(
+    definitions,
+    resolved,
+    clientScope,
+    loadFacet,
+    (name, value) => variables.set(name, value)
+  );
   const primaryFilters: ReactNode[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
@@ -106,6 +114,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     const definition = definitions[name]!;
     const value = variables.values[name];
     const variable = definition as AppVariable<any>;
+    if (definition.kind === 'breakdown') continue;
     const group = definition.presentation?.group ?? 'scope';
     const prominence = definition.presentation?.prominence ?? 'primary';
     const labelPlacement =
@@ -136,22 +145,16 @@ export function useViewVariables<Variables extends VariableCollection>(
       clearedFilters[name] = variable.clearValue;
       if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
     }
-    function renderControl(
-      labelPlacement: ControlLabelPlacement,
-      onDeactivate?: () => void
-    ) {
+    function renderControl(labelPlacement: ControlLabelPlacement) {
       function setControlValue(
         next: AppVariableValues<Variables>[typeof name]
       ) {
         variables.set(name, next);
-        if (
-          onDeactivate &&
-          variable.same(next, variable.clearValue ?? variable.defaultValue)
-        )
-          onDeactivate();
       }
       let control: ReactNode = null;
-      if (definition.kind === 'dateRange') {
+      if (definition.kind === 'hierarchy') {
+        control = hierarchyControls.get(name)?.control;
+      } else if (definition.kind === 'dateRange') {
         const selection = value as DateRangeSelection;
         control = (
           <DateRangePicker
@@ -263,15 +266,16 @@ export function useViewVariables<Variables extends VariableCollection>(
       if (active) changedDisplayOptionCount++;
     } else {
       allFilters.push(renderControl('above'));
-      if (active && prominence === 'secondary') {
+      if (active) {
         activeSecondaryFilters.push({
           id: name,
           label: definition.label ?? name,
-          renderControl: onDeactivate => renderControl('inline', onDeactivate),
-          onClear:
-            variable.clearValue === undefined
-              ? undefined
-              : () => variables.set(name, variable.clearValue),
+          summary:
+            definition.kind === 'hierarchy'
+              ? (hierarchyControls.get(name)?.summary ??
+                definition.label ??
+                name)
+              : (variable.describe?.(value) ?? String(value)),
         });
       }
       if (prominence === 'primary')

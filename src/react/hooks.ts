@@ -1,6 +1,19 @@
 import type { CheckedVariableDeclarations } from '@/src/core/variables';
 import type { IsUnion } from '@/src/core/queries';
 import { facetSource, type FacetVariable } from '@/src/core/facets';
+import {
+  createFilterTarget,
+  createHierarchyTarget,
+  createBreakdownTarget,
+  type FilterTarget,
+  type HierarchyTarget,
+  type BreakdownTarget,
+  type OrdinaryScope,
+} from '@/src/react/exploration';
+import type {
+  HierarchyVariable,
+  BreakdownVariable,
+} from '@/src/core/hierarchy';
 import { randomUuid } from '@/src/core/uuid';
 import { DeclaredView } from '@/src/react/view-runtime';
 import {
@@ -48,6 +61,7 @@ import {
   type ViewDate,
 } from '@/src/react/view';
 import { useViewVariables } from '@/src/react/view-controls';
+import { DetailView, type DetailViewDefinition } from '@/src/react/details';
 
 const clientScopes = new WeakMap<object, string>();
 
@@ -106,6 +120,17 @@ type BoundDataView<
     describeInput: (input: Input) => string;
   }
 > & {
+  filter(): FilterTarget<OrdinaryScope<Variables>>;
+  hierarchy<Key extends keyof Variables & string>(
+    key: Key & (Variables[Key] extends HierarchyVariable<any> ? unknown : never)
+  ): Variables[Key] extends HierarchyVariable<infer Levels>
+    ? HierarchyTarget<Levels>
+    : never;
+  breakdown<Key extends keyof Variables & string>(
+    key: Key & (Variables[Key] extends BreakdownVariable<any> ? unknown : never)
+  ): Variables[Key] extends BreakdownVariable<infer Levels>
+    ? BreakdownTarget<Levels>
+    : never;
   dataset<
     Row,
     const Columns extends Record<string, object> = Record<string, object>,
@@ -179,6 +204,28 @@ type CheckedFacetSources<
         : never
       : never
     : Variables[Key];
+};
+
+type BoundDetailView<
+  Data,
+  Input,
+  Context extends AuthoringDataContext,
+> = DetailView<Data, Input> & {
+  dataset<
+    Row,
+    const Columns extends Record<string, object> = Record<string, object>,
+  >(
+    definition: DatasetDefinition<
+      Data,
+      Input,
+      Row,
+      Parameters<Context['evidence']>[0]
+    > & { columns: Columns & NonEmptyColumns<Columns> }
+  ): Dataset<Data, Input, Row>;
+  metric(
+    definition: Parameters<Context['metric']>[0],
+    select: (data: Data, input: Input) => { current: number; previous?: never }
+  ): Metric<Data, Input>;
 };
 
 /** Bind declared operations to URL variables, displayed readings, and request feedback. */
@@ -392,6 +439,35 @@ export function createDataHooks<Operations extends DataOperations>(
     const view = Object.assign(
       new DeclaredView(() => useView(normalized), normalized),
       {
+        filter() {
+          return createFilterTarget<Variables>({
+            owner: view,
+            variables,
+            input,
+            bindings: definition.bindings,
+            date: definition.date,
+          });
+        },
+        hierarchy(key: string) {
+          return createHierarchyTarget({
+            owner: view,
+            variables,
+            input,
+            bindings: definition.bindings,
+            date: definition.date,
+            key,
+          });
+        },
+        breakdown(key: string) {
+          return createBreakdownTarget({
+            owner: view,
+            variables,
+            input,
+            bindings: definition.bindings,
+            date: definition.date,
+            key,
+          });
+        },
         dataset<
           Row,
           const Columns extends Record<string, object> = Record<string, object>,
@@ -453,7 +529,92 @@ export function createDataHooks<Operations extends DataOperations>(
         },
       }
     );
-    return view;
+    return view as BoundDataView<
+      Name,
+      Variables,
+      Input,
+      Data,
+      Context,
+      HasDate
+    >;
+  }
+
+  /** Define a typed destination whose untrusted navigation input is validated before querying. */
+  function defineDetailView<
+    Name extends keyof Operations & string,
+    const Context extends AuthoringDataContext = AuthoringDataContext,
+  >(
+    definition: DetailViewDefinition<
+      OutputOf<Operations[Name]>,
+      InputOf<Operations[Name]>
+    > & {
+      operation: Name;
+      dataContext: Context;
+    }
+  ): BoundDetailView<
+    OutputOf<Operations[Name]>,
+    InputOf<Operations[Name]>,
+    Context
+  > {
+    type Data = OutputOf<Operations[Name]>;
+    type Input = InputOf<Operations[Name]>;
+    const target = new DetailView<Data, Input>(definition, input => {
+      const request = useDataView(definition.operation, input, {
+        isEmpty: definition.isEmpty,
+        describeInput: definition.describeInput,
+      });
+      return {
+        view: request.view,
+        dataContext: definition.dataContext,
+        snapshot: request.snapshot,
+        scope: displayedScope(request.view, definition.describeInput),
+        refetch() {
+          void request.refetch();
+        },
+        cancel: request.cancel,
+        refreshing: request.refreshing,
+        queries: request.queries,
+        emptyFallback: definition.emptyFallback,
+      };
+    });
+    return Object.assign(target, {
+      dataset<
+        Row,
+        const Columns extends Record<string, object> = Record<string, object>,
+      >(
+        dataset: DatasetDefinition<
+          Data,
+          Input,
+          Row,
+          Parameters<Context['evidence']>[0]
+        > & { columns: Columns & NonEmptyColumns<Columns> }
+      ) {
+        return bindDataset(
+          {
+            ...dataset,
+            evidence: definition.dataContext.evidence(dataset.evidence),
+          },
+          target
+        );
+      },
+      metric(
+        metric: Parameters<Context['metric']>[0],
+        select: (
+          data: Data,
+          input: Input
+        ) => {
+          current: number;
+          previous?: number;
+        }
+      ) {
+        return bindMetric(
+          definition.dataContext.metric(metric),
+          select,
+          undefined,
+          target
+        );
+      },
+    });
   }
 
   /** One time declaration owns the URL picker, operation input, and displayed-period label.
@@ -531,7 +692,7 @@ export function createDataHooks<Operations extends DataOperations>(
   /** Bind typed options to a registered operation and explicitly declared variable dependencies.
    * The input mapper receives only resolved context values; consuming views must include that context.
    * Options are cached for 60 seconds; known values survive refreshes and errors.
-   * Selected values absent from a new result remain available with a zero count. */
+   * Selected values absent from a new result remain available without an invented count. */
 
   function defineFacetFilter<
     const Context extends VariableCollection,
@@ -642,6 +803,7 @@ export function createDataHooks<Operations extends DataOperations>(
 
   return {
     defineDataView,
+    defineDetailView,
     defineTimeView,
     defineFacetFilter,
   };

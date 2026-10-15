@@ -21,6 +21,7 @@ import {
   type DeclaredView,
   useDeclaredResult,
 } from '@/src/react/view-runtime';
+import { DetailRoutes, type DetailContent } from '@/src/react/details';
 
 export type DataAppProps<Data, Input = unknown> = Omit<
   DataAppBaseProps,
@@ -42,6 +43,8 @@ export type DataAppProps<Data, Input = unknown> = Omit<
       ExportDataset<Data, Input>,
       ...ExportDataset<Data, Input>[],
     ];
+    /** Detail destinations available to dataset actions and metric record inspection. */
+    details?: readonly DetailContent<any, any>[];
   };
 
 /** Executes the primary view and owns its controls, inspection, exports, and stories. */
@@ -51,6 +54,8 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
     datasets,
     story,
     showSearchSuggestions = true,
+    details = [],
+    children,
     ...frame
   } = props;
   const app = useDataApp();
@@ -105,7 +110,9 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
                 app.title
               )
             }
-          />
+          >
+            <DetailRoutes details={details}>{children}</DetailRoutes>
+          </DataAppFrame>
         </PrimaryViewContext>
       </SearchSuggestionsContext>
     </DateFormattingContext>

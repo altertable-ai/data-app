@@ -1,3 +1,4 @@
+import type { InspectionRecords } from '@/src/react/ui/AboutData';
 import { getAnnotationProps } from '@/src/react/annotations/getAnnotationProps';
 import {
   useId,
@@ -31,6 +32,8 @@ type DataWidgetBaseProps = {
   count?: number;
   description?: ReactNode;
   evidence?: WidgetEvidence;
+  /** Lazy detail records rendered as the first inspection tab. */
+  records?: InspectionRecords;
   action?: ReactNode;
   /** Reserved feedback slot; retain displayed content while refreshing or after failure. */
   status?: WidgetStatus;
@@ -87,6 +90,7 @@ function DataWidgetContent({
   count,
   description,
   evidence,
+  records,
   action,
   status,
   footer,
@@ -131,6 +135,7 @@ function DataWidgetContent({
         title={title}
         headerActions={<WidgetStatusControl status={status} />}
         description={description}
+        records={records}
         visual={visual}
         visualKind="widget"
       >

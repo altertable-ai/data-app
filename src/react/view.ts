@@ -43,7 +43,7 @@ export type ViewBindings<
 type RequiredFilterBindingKeys<Variables extends VariableCollection, Input> = {
   [Key in keyof Variables]: Extract<
     Variables[Key]['kind'],
-    'dimension' | 'numberFilter' | 'booleanFilter'
+    'dimension' | 'numberFilter' | 'booleanFilter' | 'hierarchy' | 'breakdown'
   > extends never
     ? never
     : [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
@@ -148,7 +148,9 @@ export function describeViewInput<Input>(definition: {
     );
     const filters = Object.entries(definition.variables)
       .filter(([, variable]) =>
-        ['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind)
+        ['dimension', 'numberFilter', 'booleanFilter', 'hierarchy'].includes(
+          variable.kind
+        )
       )
       .map(([key, filter]) => {
         const variable = filter as AppVariable<any>;
@@ -197,7 +199,15 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
     );
   }
   for (const [key, variable] of Object.entries(definition.variables)) {
-    if (!['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind))
+    if (
+      ![
+        'dimension',
+        'numberFilter',
+        'booleanFilter',
+        'hierarchy',
+        'breakdown',
+      ].includes(variable.kind)
+    )
       continue;
     const filter = variable as AppVariable<any>;
     const selected = values[key] as never;
