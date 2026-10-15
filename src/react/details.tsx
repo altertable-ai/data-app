@@ -19,6 +19,7 @@ import {
   type RefObject,
 } from 'react';
 import type { EmptyContent } from '@/src/react/ui/presentation';
+import type { ViewSource } from '@/src/react/bindings';
 import type { ViewResult } from '@/src/react/view-runtime';
 
 export type DetailViewDefinition<Data, Input> = {
@@ -41,11 +42,7 @@ export class DetailView<Data, Input> {
     invariant(!!definition.id.trim(), 'A detail view needs a nonempty ID.');
   }
 
-  content(
-    render: (
-      source: { loading: true } | { data: Data; input: Input }
-    ) => ReactNode
-  ) {
+  content(render: (source: ViewSource<Data, Input>) => ReactNode) {
     const content = new DetailContent(this, render);
     this.#content = content;
     return content;
@@ -102,9 +99,7 @@ export function parseDetailInput<Data, Input>(
 export class DetailContent<Data, Input> {
   constructor(
     readonly target: DetailView<Data, Input>,
-    readonly render: (
-      source: { loading: true } | { data: Data; input: Input }
-    ) => ReactNode
+    readonly render: (source: ViewSource<Data, Input>) => ReactNode
   ) {}
 }
 

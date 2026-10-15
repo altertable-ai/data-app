@@ -6,6 +6,7 @@ import type {
 } from '@/src/core/variables';
 import { normalizeVariableValues } from '@/src/core/variables';
 import {
+  selectedMember,
   type HierarchyVariable,
   type HierarchyLevel,
   type HierarchyPatch,
@@ -189,9 +190,14 @@ export function canDescend(target: BreakdownTarget<any>, input: unknown) {
     readInput(definition, definition.key!, input) as string,
     scope
   );
+  const index = breakdown.hierarchy.levels.findIndex(
+    level => level.id === current.id
+  );
   return (
-    breakdown.hierarchy.levels.findIndex(level => level.id === current.id) <
-    breakdown.hierarchy.levels.length - 1
+    index < breakdown.hierarchy.levels.length - 1 &&
+    breakdown.hierarchy.levels
+      .slice(0, index)
+      .every(level => selectedMember(scope, level.id) !== null)
   );
 }
 export function descend(target: BreakdownTarget<any>, member: string | number) {

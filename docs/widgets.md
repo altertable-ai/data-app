@@ -214,7 +214,8 @@ Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.
 typed hierarchy selections; `view.breakdown(key)` targets that chart's aggregation
 and descent. Filters preserve unrelated current selections. Hierarchy transitions
 wait for displayed and applied scope to agree; descent also checks the displayed
-breakdown. Each transition writes one history entry.
+breakdown and requires its ancestors to be selected. Each transition writes one
+history entry.
 
 A day drill passes its day. A value-band drill passes a stable band ID; validate
 it in the destination operation and derive bounds there. Query matching records
