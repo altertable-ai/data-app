@@ -306,6 +306,11 @@ export function useViewVariables<Variables extends VariableCollection>(
       if (active) {
         activeSecondaryFilters.push({
           id: name,
+          onRemove: () =>
+            variables.set(
+              name,
+              baseline as AppVariableValues<Variables>[typeof name]
+            ),
           label: definition.label ?? name,
           summary:
             definition.kind === 'dimension'

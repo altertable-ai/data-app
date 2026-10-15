@@ -147,18 +147,27 @@
   flex: none;
 }
 
-.altertable-filter-summaries > button {
+.altertable-active-filter-label {
   gap: var(--atbl-space-xs);
   font-size: var(--atbl-type-label-size);
+  padding-inline-end: var(--atbl-space-xs);
+  font-weight: var(--atbl-type-meta-weight);
 }
 
 .altertable-active-filters .altertable-button {
   border-radius: 999px;
 }
-.altertable-filter-summaries > button {
-  font-weight: var(--atbl-type-meta-weight);
-}
 .altertable-filter-summaries .altertable-picker-value {
   max-width: none;
   font-weight: inherit;
+}
+
+.altertable-active-filter {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--atbl-subtle);
+}
+.altertable-active-filter-remove {
+  color: var(--atbl-muted);
 }

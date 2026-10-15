@@ -21,6 +21,7 @@ export type ActiveFilterControl = {
   id: string;
   label: string;
   summary: string;
+  onRemove: () => void;
 };
 
 export function ViewControlBar({
@@ -43,6 +44,7 @@ export function ViewControlBar({
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersId = useId();
   const filtersButtonRef = useRef<ComponentRef<'button'>>(null);
+  const activeFiltersButtonRef = useRef<ComponentRef<'button'>>(null);
   const filtersButtonLabel = activeFilterCount
     ? `Filters (${activeFilterCount} active)`
     : 'Filters';
@@ -51,6 +53,15 @@ export function ViewControlBar({
     onClear?.();
     setFiltersOpen(false);
     filtersButtonRef.current?.focus();
+  }
+
+  function removeFilter(filter: ActiveFilterControl) {
+    filter.onRemove();
+    requestAnimationFrame(() => {
+      (activeFiltersButtonRef.current ?? filtersButtonRef.current)?.focus({
+        preventScroll: true,
+      });
+    });
   }
 
   return (
@@ -95,6 +106,7 @@ export function ViewControlBar({
             <Button
               variant="ghost"
               size="icon"
+              ref={activeFiltersButtonRef}
               aria-label="Open filters"
               onClick={() => setFiltersOpen(true)}
             >
@@ -105,17 +117,30 @@ export function ViewControlBar({
               className="altertable-filter-summaries"
             >
               {activeSecondaryFilters.map(filter => (
-                <Button
-                  key={filter.id}
-                  variant="ghost"
-                  aria-label={`Open filters: ${filter.label}: ${filter.summary}`}
-                  onClick={() => setFiltersOpen(true)}
-                >
-                  <ControlLabelValue
-                    label={filter.label}
-                    value={filter.summary}
-                  />
-                </Button>
+                <div key={filter.id} className="altertable-active-filter">
+                  <Button
+                    variant="ghost"
+                    className="altertable-active-filter-label"
+                    aria-label={`Open filters: ${filter.label}: ${filter.summary}`}
+                    onClick={() => setFiltersOpen(true)}
+                  >
+                    <ControlLabelValue
+                      label={filter.label}
+                      value={filter.summary}
+                    />
+                  </Button>
+                  <Tooltip content={`Remove ${filter.label} filter`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="altertable-active-filter-remove"
+                      aria-label={`Remove ${filter.label} filter`}
+                      onClick={() => removeFilter(filter)}
+                    >
+                      <AppIcon name="close" size={14} />
+                    </Button>
+                  </Tooltip>
+                </div>
               ))}
             </GradientScroll>
             <Button variant="ghost" onClick={clearFilters}>

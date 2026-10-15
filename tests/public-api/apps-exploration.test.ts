@@ -982,3 +982,66 @@ test('visualization widgets reject breakdown targets from another view', async (
     await page.getByRole('button', { name: /Revenue breakdown/ }).count()
   ).toBe(0);
 });
+
+test('active filters can be removed individually without changing other filters or display choices', async ({
+  page,
+}) => {
+  const params = new URLSearchParams({
+    ...routeFilters('eu', 'fr'),
+    q: 'retained',
+    'revenue-by': 'country',
+  });
+  await page.goto(`/exploration?${params}`);
+  const floating = page.getByRole('group', {
+    name: 'Active filters',
+    exact: true,
+  });
+  await floating
+    .getByRole('button', { name: 'Remove Country filter', exact: true })
+    .click();
+  await expect.poll(() => readFilters(page.url())).toEqual(scope('eu'));
+  expect(await page.getByRole('dialog').count()).toBe(0);
+  await expect
+    .poll(() =>
+      floating
+        .getByRole('button', { name: 'Open filters', exact: true })
+        .evaluate(element => document.activeElement === element)
+    )
+    .toBe(true);
+  await floating
+    .getByRole('button', { name: 'Remove Region filter', exact: true })
+    .press('Enter');
+  await expect.poll(() => floating.count()).toBe(0);
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'Filters', exact: true })
+        .evaluate(element => document.activeElement === element)
+    )
+    .toBe(true);
+  const result = new URL(page.url()).searchParams;
+  expect(result.get('q')).toBe('retained');
+  expect(result.get('revenue-by')).toBe('country');
+  expect(result.has('region')).toBe(false);
+  expect(result.has('country')).toBe(false);
+  await page.goBack();
+  await expect.poll(() => readFilters(page.url())).toEqual(scope('eu'));
+});
+
+test('removing the active period returns dates and comparison to their defaults', async ({
+  page,
+}) => {
+  await page.goto('/time-app?start=2026-03-10&end=2026-03-12&compare=previous');
+  const floating = page.getByRole('group', {
+    name: 'Active filters',
+    exact: true,
+  });
+  await floating
+    .getByRole('button', { name: 'Remove Date range filter', exact: true })
+    .click();
+  await expect.poll(() => floating.count()).toBe(0);
+  const params = new URL(page.url()).searchParams;
+  expect(params.has('start')).toBe(false);
+  expect(params.has('end')).toBe(false);
+  expect(params.has('compare')).toBe(false);
+});
