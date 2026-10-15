@@ -78,6 +78,7 @@
   font-size: var(--atbl-type-meta-size);
 }
 .altertable-exploration-action-menu {
+  --atbl-focus-outline: none;
   min-width: 180px;
   width: max-content;
 }

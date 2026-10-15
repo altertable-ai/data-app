@@ -64,6 +64,16 @@
   overflow-wrap: anywhere;
   min-width: 0;
 }
+.altertable-pie-menu-indicator {
+  color: var(--atbl-muted);
+  opacity: 0.5;
+}
+.altertable-pie-legend
+  button:is(:hover, :focus-visible, [aria-expanded='true'])
+  .altertable-pie-menu-indicator {
+  color: var(--atbl-text);
+  opacity: 1;
+}
 
 .altertable-tooltip-trigger.altertable-pie-tooltip[data-variant='chart'] {
   width: min(100%, 220px);

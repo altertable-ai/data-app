@@ -241,7 +241,11 @@ export function PieChart<Row extends PieChartItem>({
                       {item.label}
                     </ChartLegend.Label>
                     {actions.length > 0 && (
-                      <AppIcon name="moreActions" size={14} />
+                      <AppIcon
+                        name="moreActions"
+                        size={14}
+                        className="altertable-pie-menu-indicator"
+                      />
                     )}
                     <strong className="altertable-pie-value">
                       {formatValue(item.value)}

@@ -482,6 +482,22 @@ test('pie ellipsis, slice context menu, and legend keyboard menu share actions a
   const contextBox = await menu.boundingBox();
   expect(Math.abs(contextBox!.x - point.x)).toBeLessThan(14);
   expect(Math.abs(contextBox!.y - point.y)).toBeLessThan(16);
+  const firstAction = menu.getByRole('menuitem').first();
+  expect(
+    await firstAction.evaluate(
+      element => getComputedStyle(element).outlineStyle
+    )
+  ).toBe('none');
+  await menu.press('Home');
+  await firstAction.press('ArrowDown');
+  await expect
+    .poll(() =>
+      menu
+        .getByRole('menuitem')
+        .nth(1)
+        .evaluate(element => document.activeElement === element)
+    )
+    .toBe(true);
   await page.keyboard.press('Escape');
   await legend.press('Shift+F10');
   await expect
