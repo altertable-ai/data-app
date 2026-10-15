@@ -98,6 +98,11 @@ against a mocked Altertable API
 ([altertable-mock](https://github.com/altertable-ai/altertable-mock), DuckDB)
 started with Testcontainers and stopped on exit. Public API tests use their own deterministic consumer fixtures.
 
+Run `bun run dev:exploration` for the self-contained Sales explorer at
+`http://127.0.0.1:27419/`. It uses deterministic sample orders in SQLite and
+requires no credentials or Docker. Its declared views demonstrate source-backed
+hierarchies, independent chart breakdowns, contributing records, and nested details.
+
 Run `bun run dev:file <path>` to preview a single-file data app such as
 `examples/starter-data-app/index.tsx` from anywhere on disk, or `bun run dev:dir <path>`
 for a local data app directory with `src/server.ts`. Both resolve `@altertable/data-app`
