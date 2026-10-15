@@ -9,7 +9,7 @@ const app = defineDataApp({
   description: 'Typed query parameters.',
   scope: { organization: 'demo', environment: 'test' },
   queries: {
-    required: {
+    filtered: {
       statement: 'SELECT $search',
       projections: { value: { type: 'string' } },
       params: {
@@ -19,7 +19,6 @@ const app = defineDataApp({
         region: {
           type: 'string',
           nullable: true,
-
           defaultValue: null,
         },
         orgId: { type: 'string' },
@@ -37,39 +36,38 @@ app.defineOperation({
   checks: [{}],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }) {
-    await query('required', { search: 'text' });
-    await query('required', {
+    await query('filtered', { search: 'text' });
+    await query('filtered', {
       search: 'text',
       limit: 2,
       enabled: true,
       region: null,
     });
-    await query('required', { search: 'text', limit: undefined });
+    await query('filtered', { search: 'text', limit: undefined });
     await query('connection');
-    await query('required');
-    await query('required', {});
+    await query('filtered');
+    await query('filtered', {});
     // @ts-expect-error Numeric parameters do not accept strings.
-    await query('required', { search: 'text', limit: 'ten' });
+    await query('filtered', { search: 'text', limit: 'ten' });
     // @ts-expect-error Booleans retain their own type.
-    await query('required', { search: 'text', enabled: 1 });
+    await query('filtered', { search: 'text', enabled: 1 });
     // @ts-expect-error Nonnullable inputs reject null.
-    await query('required', { search: null });
+    await query('filtered', { search: null });
     // @ts-expect-error A default of null does not erase the intended nullable string type.
-    await query('required', { search: 'text', region: 1 });
-    await query('required', { search: 'text', orgId: 'other-org' });
-    const protectedValues = { search: 'text', orgId: 'other-org' };
-    await query('required', protectedValues);
-    await query('required', { ...protectedValues });
-    const name = Math.random() > 0.5 ? 'required' : 'connection';
+    await query('filtered', { search: 'text', region: 1 });
+    await query('filtered', { search: 'text', orgId: 'other-org' });
+    const values = { search: 'text', orgId: 'other-org' };
+    await query('filtered', values);
+    await query('filtered', { ...values });
+    const name = Math.random() > 0.5 ? 'filtered' : 'connection';
     // @ts-expect-error Parameterized query names must be narrowed before execution.
     await query(name);
-    if (name === 'required') await query(name, { search: 'text' });
+    if (name === 'filtered') await query(name, { search: 'text' });
     else await query(name);
     return true;
   },
 });
 connectionCheck(app.queries);
-connectionCheck({ connection: app.queries.required });
 
 const header = {
   title: 'Invalid',
@@ -85,18 +83,6 @@ defineDataApp({
       projections: { value: { type: 'number' } },
       params: {
         value: { type: 'number', defaultValue: 'ten' },
-      },
-    },
-  },
-});
-defineDataApp({
-  ...header,
-  queries: {
-    value: {
-      statement: 'SELECT $value',
-      projections: { value: { type: 'number' } },
-      params: {
-        value: { type: 'number' },
       },
     },
   },

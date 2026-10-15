@@ -21,7 +21,6 @@ const app = defineDataApp({
         region: {
           type: 'string',
           nullable: true,
-
           defaultValue: null,
         },
         orgId: { type: 'string' },

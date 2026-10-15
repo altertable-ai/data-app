@@ -1,6 +1,8 @@
 import { invariant } from '@/src/core/invariant';
 import type { QueryResult } from '@/src/core/operation-types';
 
+const QUERY_CAST_ERROR = '##ERROR##';
+
 type QueryValues = {
   string: string;
   number: number;
@@ -14,10 +16,9 @@ export type QueryProjections = Readonly<Record<string, QueryField>>;
 type QueryValue<Field extends QueryField> =
   | QueryValues[Field['type']]
   | (Field extends { nullable: true } ? null : never);
-export type QueryRow<Projections extends QueryProjections> =
-  Projections extends unknown
-    ? { -readonly [Name in keyof Projections]: QueryValue<Projections[Name]> }
-    : never;
+export type QueryRow<Projections extends QueryProjections> = {
+  -readonly [Name in keyof Projections]: QueryValue<Projections[Name]>;
+};
 
 export type QueryParameterValue = string | number | boolean | null;
 /** Typed scalar parameters with optional fallback values. */
@@ -265,19 +266,14 @@ function castQueryCell(
     return JSON.stringify(value);
   }
 
-  if (
-    value === null &&
-    (field.nullable === true || field.nullable === undefined)
-  )
-    return null;
+  if (value === null && field.nullable !== false) return null;
 
   switch (field.type) {
     case 'string':
       return String(value);
     case 'number': {
       const number = Number(value);
-      if (Number.isFinite(number)) return number;
-      return '##ERROR##';
+      return Number.isFinite(number) ? number : QUERY_CAST_ERROR;
     }
     case 'boolean':
       return Boolean(value);
@@ -310,11 +306,10 @@ export function resolveQueryParameters(
       if (value === undefined) throw new Error(`Missing parameter ${key}.`);
       const nullable =
         declaration.type === 'null' || declaration.nullable === true;
-      const primitive = declaration.type;
       if (
         !(value === null
           ? nullable
-          : typeof value === primitive && isQueryParameterValue(value))
+          : typeof value === declaration.type && isQueryParameterValue(value))
       )
         throw new Error(`Parameter ${key} does not match ${declaration.type}.`);
       return [key, value];

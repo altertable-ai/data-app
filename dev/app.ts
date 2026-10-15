@@ -30,7 +30,6 @@ GROUP BY c.country ORDER BY revenue DESC, c.country`,
         country: {
           type: 'string',
           nullable: true,
-
           defaultValue: null,
         },
       },
@@ -52,7 +51,6 @@ GROUP BY 1 ORDER BY 1`,
         country: {
           type: 'string',
           nullable: true,
-
           defaultValue: null,
         },
       },
@@ -74,7 +72,6 @@ GROUP BY band ORDER BY min(o.amount)`,
         country: {
           type: 'string',
           nullable: true,
-
           defaultValue: null,
         },
       },
@@ -100,7 +97,6 @@ WHERE $enabled AND o.ordered_at >= CAST($start AS DATE) AND o.ordered_at < CAST(
         country: {
           type: 'string',
           nullable: true,
-
           defaultValue: null,
         },
         enabled: { type: 'boolean', defaultValue: false },
@@ -129,7 +125,6 @@ ORDER BY o.ordered_at DESC, o.id DESC LIMIT 100`,
         country: {
           type: 'string',
           nullable: true,
-
           defaultValue: null,
         },
       },
@@ -158,7 +153,6 @@ ORDER BY i.order_id DESC, p.id`,
         country: {
           type: 'string',
           nullable: true,
-
           defaultValue: null,
         },
       },
