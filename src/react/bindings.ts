@@ -84,6 +84,13 @@ export class RegisteredBinding {
     this.#owner = owner;
     this.#evidence = evidence;
   }
+  static owner(binding: RegisteredBinding): object {
+    invariant(binding.#owner, 'A live binding requires a declared view.');
+    return binding.#owner;
+  }
+  static assertSource(binding: RegisteredBinding, source: object): void {
+    binding.assertSource(source);
+  }
   protected assertSource(source: object) {
     if (this.#owner) assertSourceOwner(this.#owner, source);
   }

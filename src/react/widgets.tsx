@@ -1,3 +1,4 @@
+import { WidgetRecovery } from '@/src/react/widget-recovery';
 import {
   datasetTable,
   type Dataset,
@@ -36,8 +37,8 @@ import type { DataReading } from '@/src/core/reading';
 export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
   Extract<DisplayMetricProps, { metric: MetricDefinition }>,
   'metric' | 'reading'
-> & { metric: Metric<Data, Input>; source: ViewSource<Data, Input> };
-export function MetricWidget<Data, Input>({
+> & { metric: Metric<Data, Input>; source?: ViewSource<Data, Input> };
+function MetricWidgetContent<Data, Input>({
   metric,
   source,
   ...presentation
@@ -46,7 +47,7 @@ export function MetricWidget<Data, Input>({
     <DisplayMetric
       {...presentation}
       metric={metric.definition}
-      reading={metric.read(source)}
+      reading={metric.read(source!)}
     />
   );
 }
@@ -65,16 +66,16 @@ export type TableWidgetProps<Row, Data = unknown, Input = unknown> = Omit<
 > &
   TableDisplayMode & {
     dataset: Dataset<Data, Input, Row>;
-    source: ViewSource<Data, Input>;
+    source?: ViewSource<Data, Input>;
     title?: ReactNode;
   };
-export function TableWidget<Row, Data, Input>({
+function TableWidgetContent<Row, Data, Input>({
   dataset,
   source,
   title,
   ...presentation
 }: TableWidgetProps<Row, Data, Input>) {
-  const data = datasetTable(dataset, source);
+  const data = datasetTable(dataset, source!);
   return (
     <DisplayTable {...presentation} {...data} title={title ?? data.title} />
   );
@@ -117,16 +118,16 @@ export type VisualizationWidgetProps<
 > &
   VisualContent<Row> & {
     dataset: Dataset<Data, Input, Row>;
-    source: ViewSource<Data, Input>;
+    source?: ViewSource<Data, Input>;
     title?: ReactNode;
   };
-export function VisualizationWidget<Row, Data, Input>({
+function VisualizationWidgetContent<Row, Data, Input>({
   dataset,
   source,
   title,
   ...presentation
 }: VisualizationWidgetProps<Row, Data, Input>) {
-  const data = datasetTable(dataset, source);
+  const data = datasetTable(dataset, source!);
   return (
     <DisplayVisual
       {...presentation}
@@ -142,13 +143,13 @@ type NarrativeBinding<Data, Input, Row> =
   | {
       metric: Metric<Data, Input>;
       dataset?: never;
-      source: ViewSource<Data, Input>;
+      source?: ViewSource<Data, Input>;
       children?: (values: MetricValues) => ReactNode;
     }
   | {
       metric?: never;
       dataset: Dataset<Data, Input, Row>;
-      source: ViewSource<Data, Input>;
+      source?: ViewSource<Data, Input>;
       children: (rows: readonly Row[]) => ReactNode;
     };
 export type TextWidgetProps<
@@ -160,7 +161,7 @@ export type TextWidgetProps<
   'reading' | 'evidence' | 'children' | 'title' | 'emptyFallback'
 > &
   NarrativeBinding<Data, Input, Row> & { title?: ReactNode };
-export function TextWidget<Data, Input, Row>(
+function TextWidgetContent<Data, Input, Row>(
   props: TextWidgetProps<Data, Input, Row>
 ) {
   if (props.metric) {
@@ -170,7 +171,7 @@ export function TextWidget<Data, Input, Row>(
         {...presentation}
         title={title ?? metric.definition.label}
         evidence={metric.definition.evidence}
-        reading={metric.read(source)}
+        reading={metric.read(source!)}
       >
         {children ??
           (values => formatMetric(values.current, metric.definition.format))}
@@ -183,7 +184,7 @@ export function TextWidget<Data, Input, Row>(
       {...presentation}
       title={title ?? dataset.name}
       evidence={dataset.evidence}
-      reading={dataset.read(source)}
+      reading={dataset.read(source!)}
     >
       {children}
     </DisplayText>
@@ -209,7 +210,7 @@ export type DataValueProps<
         children?: (scope: string) => ReactNode;
       }
   );
-export function DataValue<Data, Input, Row>(
+function DataValueContent<Data, Input, Row>(
   props: DataValueProps<Data, Input, Row>
 ) {
   if (props.metric) {
@@ -223,7 +224,7 @@ export function DataValue<Data, Input, Row>(
     return (
       <DisplayValue
         {...presentation}
-        reading={metric.read(source)}
+        reading={metric.read(source!)}
         loadingFallback={loadingFallback}
       >
         {children ??
@@ -242,7 +243,7 @@ export function DataValue<Data, Input, Row>(
     return (
       <DisplayValue
         {...presentation}
-        reading={dataset.read(source)}
+        reading={dataset.read(source!)}
         loadingFallback={loadingFallback}
       >
         {children}
@@ -263,5 +264,95 @@ export function DataValue<Data, Input, Row>(
     >
       {children ?? (value => value)}
     </DisplayValue>
+  );
+}
+
+export function MetricWidget<Data, Input>(
+  props: MetricWidgetProps<Data, Input>
+) {
+  return (
+    <WidgetRecovery
+      frame={props}
+      binding={props.metric}
+      source={props.source}
+      title={props.metric.definition.label}
+      description={props.description}
+      evidence={props.metric.definition.evidence}
+      action={props.action}
+    >
+      {source => <MetricWidgetContent {...props} source={source} />}
+    </WidgetRecovery>
+  );
+}
+export function TableWidget<Row, Data, Input>(
+  props: TableWidgetProps<Row, Data, Input>
+) {
+  return (
+    <WidgetRecovery
+      frame={props}
+      binding={props.dataset}
+      source={props.source}
+      title={props.title ?? props.dataset.name}
+      description={props.description}
+      evidence={props.dataset.evidence}
+      action={props.action}
+    >
+      {source => <TableWidgetContent {...props} source={source} />}
+    </WidgetRecovery>
+  );
+}
+export function VisualizationWidget<Row, Data, Input>(
+  props: VisualizationWidgetProps<Row, Data, Input>
+) {
+  return (
+    <WidgetRecovery
+      frame={props}
+      binding={props.dataset}
+      source={props.source}
+      title={props.title ?? props.dataset.name}
+      description={props.description}
+      evidence={props.dataset.evidence}
+      action={props.action}
+    >
+      {source => <VisualizationWidgetContent {...props} source={source} />}
+    </WidgetRecovery>
+  );
+}
+export function TextWidget<Data, Input, Row>(
+  props: TextWidgetProps<Data, Input, Row>
+) {
+  const binding = props.metric ?? props.dataset;
+  return (
+    <WidgetRecovery
+      frame={props}
+      binding={binding}
+      source={props.source}
+      title={
+        props.title ??
+        (props.metric ? props.metric.definition.label : props.dataset.name)
+      }
+      description={props.description}
+      evidence={
+        props.metric ? props.metric.definition.evidence : props.dataset.evidence
+      }
+      action={props.action}
+    >
+      {source => <TextWidgetContent {...props} source={source} />}
+    </WidgetRecovery>
+  );
+}
+export function DataValue<Data, Input, Row>(
+  props: DataValueProps<Data, Input, Row>
+) {
+  if (props.scope) return <DataValueContent {...props} />;
+  return (
+    <WidgetRecovery
+      binding={props.metric ?? props.dataset!}
+      source={props.source}
+      title="Value"
+      inline
+    >
+      {source => <DataValueContent {...props} source={source} />}
+    </WidgetRecovery>
   );
 }

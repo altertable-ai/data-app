@@ -1,3 +1,4 @@
+import recoveryApp from '@/examples/recovery-data-app/index.html';
 import { Database } from 'bun:sqlite';
 import { serveLocalApp } from '@altertable/data-app/server/bun';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
@@ -60,9 +61,11 @@ const frameServer = Bun.serve({
   },
 });
 const server = Bun.serve({
+  development: false,
   hostname: '127.0.0.1',
   port,
   routes: {
+    '/recovery': recoveryApp,
     '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
     '/starter-data-app': bundleHost,

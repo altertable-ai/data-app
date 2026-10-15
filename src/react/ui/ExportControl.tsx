@@ -18,23 +18,29 @@ import { Tooltip } from '@/src/react/ui/Tooltip';
 
 export function ExportControl({ csv }: { csv?: CsvExport }) {
   const [open, setOpen] = useState(false);
+  const [frozen, setFrozen] = useState<CsvExport>();
+  const [attempt, setAttempt] = useState<{
+    csv: CsvExport;
+    table?: CsvTable;
+  }>();
+  const displayed = open && frozen ? frozen : csv;
   const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
 
-  const [retryTableName, setRetryTableName] = useState<string>();
   async function download(table?: CsvTable) {
-    if (!csv?.tables.length) return;
+    const payload = displayed;
+    if (!payload?.tables.length) return;
+    setAttempt({ csv: payload, table });
     setOpen(false);
-    setRetryTableName(table?.name);
     setStatus('pending');
     try {
-      await exportCsv(csv, table);
+      await exportCsv(payload, table);
       setStatus('idle');
     } catch {
       setStatus('error');
     }
   }
 
-  if (!csv?.tables.length) {
+  if (!csv || (!csv.tables.length && !csv.unavailable?.length)) {
     return (
       <IconButton
         icon="export"
@@ -52,16 +58,19 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
         <Toast
           state="error"
           position="top"
-          onRetry={() =>
-            void download(
-              csv.tables.find(table => table.name === retryTableName)
-            )
-          }
+          onRetry={() => {
+            if (!attempt) return;
+            setStatus('pending');
+            void exportCsv(attempt.csv, attempt.table).then(
+              () => setStatus('idle'),
+              () => setStatus('error')
+            );
+          }}
         >
           Couldn’t export data.
         </Toast>
       )}
-      {csv.tables.length === 1 ? (
+      {csv.tables.length === 1 && !csv.unavailable?.length ? (
         <IconButton
           icon="export"
           variant="elevated"
@@ -72,7 +81,13 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
           onClick={() => void download()}
         />
       ) : (
-        <MenuTrigger isOpen={open} onOpenChange={setOpen}>
+        <MenuTrigger
+          isOpen={open}
+          onOpenChange={next => {
+            if (next) setFrozen(csv);
+            setOpen(next);
+          }}
+        >
           <Tooltip content="Export data…">
             <MenuButton
               variant="elevated"
@@ -92,22 +107,41 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
               aria-label="Export data"
               onAction={key =>
                 void download(
-                  key === 'all' ? undefined : csv.tables[Number(key)]
+                  key === 'all' ? undefined : displayed?.tables[Number(key)]
                 )
               }
             >
-              {csv.tables.map((table, index) => (
+              {(displayed?.tables ?? []).map((table, index) => (
                 <MenuItem
                   key={index}
                   id={index}
                   textValue={`Export ${table.name} CSV`}
                   aria-label={`Export ${table.name} CSV`}
                 >
-                  <span>Export {table.name}</span>
+                  <span>
+                    Export {table.name}
+                    {table.scope
+                      ? ` — ${table.scope}${table.stale ? ' (last result)' : ''}`
+                      : ''}
+                  </span>
                   <span className="altertable-export-format">CSV</span>
                 </MenuItem>
               ))}
+              {displayed?.unavailable?.map(name => (
+                <MenuItem
+                  key={`unavailable:${name}`}
+                  id={`unavailable:${name}`}
+                  isDisabled
+                  textValue={`${name} unavailable`}
+                  aria-label={`${name} unavailable`}
+                >
+                  <span>{name} — unavailable</span>
+                </MenuItem>
+              ))}
               <MenuItem
+                isDisabled={
+                  !!displayed?.unavailable?.length || !displayed?.tables.length
+                }
                 id="all"
                 textValue="Export all ZIP"
                 aria-label="Export all ZIP"

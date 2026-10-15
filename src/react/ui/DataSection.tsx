@@ -10,6 +10,7 @@ import {
   PrimaryViewContext,
   type ViewResult,
   useDeclaredResult,
+  useSharedViewResult,
 } from '@/src/react/view-runtime';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 
@@ -26,6 +27,7 @@ export function DataSection<Data, Input>({
 }: DataSectionProps<Data, Input>) {
   const primary = useContext(PrimaryViewContext);
   const { view, ...section } = sectionContent(content);
+  const shared = useSharedViewResult<Data, Input>(view);
   if (primary?.declaration === view) {
     // Identity proves the shared result belongs to this content's declaration.
     const result = primary.result as ViewResult<Data, Input>;
@@ -38,6 +40,15 @@ export function DataSection<Data, Input>({
       />
     );
   }
+  if (shared)
+    return (
+      <DataSectionBoundary
+        {...section}
+        {...presentation}
+        result={shared}
+        notice="inline"
+      />
+    );
   return <IndependentSection view={view} {...section} {...presentation} />;
 }
 

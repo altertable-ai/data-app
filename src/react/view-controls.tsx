@@ -1,3 +1,4 @@
+import { HiddenViewVariablesContext } from '@/src/react/view-runtime';
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
@@ -46,6 +47,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     signal: AbortSignal
   ) => Promise<unknown>
 ) {
+  const hidden = useContext(HiddenViewVariablesContext);
   const variables = useAppVariables(definitions);
   const resolved = {} as ResolvedVariables<Variables>;
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
@@ -101,6 +103,7 @@ export function useViewVariables<Variables extends VariableCollection>(
   const searchControls: ReactNode[] = [];
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const definition = definitions[name]!;
+    if (hidden.has(definition)) continue;
     const value = variables.values[name];
     const variable = definition as AppVariable<any>;
     const group = definition.presentation?.group ?? 'scope';
@@ -282,25 +285,25 @@ export function useViewVariables<Variables extends VariableCollection>(
   ];
   const hasControls = allFilters.length > 0 || orderedDisplayOptions.length > 0;
 
+  const controlBar = {
+    primaryFilters,
+    activeSecondaryFilters,
+    allFilters,
+    activeFilterCount,
+    displayOptions: orderedDisplayOptions,
+    changedDisplayOptionCount,
+    onClear: hasActiveFilters
+      ? () => variables.update(clearedFilters)
+      : undefined,
+  };
   return {
     ...variables,
     resolved,
     searchControls: searchControls.length ? searchControls : null,
+    controlBar: hasControls || hasActiveFilters ? controlBar : undefined,
     filterControls:
       hasControls || hasActiveFilters ? (
-        <ViewControlBar
-          primaryFilters={primaryFilters}
-          activeSecondaryFilters={activeSecondaryFilters}
-          allFilters={allFilters}
-          activeFilterCount={activeFilterCount}
-          displayOptions={orderedDisplayOptions}
-          changedDisplayOptionCount={changedDisplayOptionCount}
-          onClear={
-            hasActiveFilters
-              ? () => variables.update(clearedFilters)
-              : undefined
-          }
-        />
+        <ViewControlBar {...controlBar} />
       ) : null,
   };
 }

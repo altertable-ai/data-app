@@ -1,7 +1,7 @@
 # Stories and CSV export
 
 Every `<DataApp>` from `/react` supplies both `story` and `datasets`, derived from
-the displayed snapshot. Story and export selectors do not run before a result is available.
+the displayed snapshot. For a single view, story and export selectors do not run before a result is available.
 Setup and static screens use `<DataApp>` from `/react/ui`; they may omit both
 or pass a direct `CsvExport` object.
 
@@ -50,3 +50,25 @@ Use the [format helpers](formatting-and-appearance.md) for story prose.
 Dataset accessors return raw values; do not preformat numbers as display
 labels. Null and undefined become empty cells, while measured zero stays zero.
 The helpers handle quoting and spreadsheet formula protection.
+
+## Independent views
+
+With `<DataApp views={{ sales: salesView, acquisition: acquisitionView }}>`, story
+callbacks receive those keys with typed displayed snapshots. A view without a
+displayed result is `undefined`; check it before deriving findings. Export datasets
+must belong to a registered view and have distinct names. Story evidence must
+belong to a registered view with a displayed result.
+
+Derive claims from each snapshot's data and original input. Cross-view findings
+must check that all required snapshots exist and have compatible scopes; keep
+claims that must update together on one view. The platform adds each finding's
+evidence view scope and marks a retained failed refresh as the last successful
+result.
+
+The export menu labels each dataset with its displayed scope and retained-error
+status. Unavailable datasets stay visible and disabled. Export all is disabled
+until every declared dataset has a displayed result. Individual available datasets
+remain exportable.
+
+Opening a story or export menu freezes its displayed results. Reopen it to use
+new results. An export retry repeats the failed download's original data.

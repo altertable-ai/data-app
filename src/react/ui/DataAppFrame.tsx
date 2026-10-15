@@ -15,6 +15,7 @@ import { AppLayout } from '@/src/react/ui/AppLayout';
 import { AppScope } from '@/src/react/ui/AppScope';
 import { AppToolbar } from '@/src/react/ui/AppToolbar';
 import type { DataContext } from '@/src/react/ui/data-context';
+import type { StoryFinding } from '@/src/react/ui/story';
 import type { BoundStory } from '@/src/react/ui/story';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { VariableBar } from '@/src/react/ui/VariableBar';
@@ -63,6 +64,11 @@ export type DataAppProps<Data = unknown, Input = unknown> =
   | (DataAppBaseProps &
       DataAppControlProps & {
         request: DataAppRequest<Data, Input>;
+        /** Internal multi-view artifacts have independent availability. */
+        artifacts?: {
+          findings: readonly StoryFinding[];
+          csvExport: CsvExport | null;
+        };
         /** Findings are always derived from the result currently visible to the user. */
         story: BoundStory<Data, Input>;
         /** Export every distinct dataset in the displayed result. */
@@ -99,7 +105,10 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   });
 
   const snapshot = request && displayedSnapshot(request.view);
-  const findings = request && snapshot ? props.story(snapshot) : undefined;
+  const artifacts = 'artifacts' in props ? props.artifacts : undefined;
+  const findings =
+    artifacts?.findings ??
+    (request && snapshot ? props.story(snapshot) : undefined);
   const story = findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
@@ -110,11 +119,13 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   const toolbar = (
     <AppToolbar
       csvExport={
-        request
-          ? snapshot
-            ? props.csvExport(snapshot)
-            : null
-          : props.csvExport
+        artifacts
+          ? artifacts.csvExport
+          : request
+            ? snapshot
+              ? props.csvExport(snapshot)
+              : null
+            : props.csvExport
       }
       requestState={request?.view.kind}
       refresh={
@@ -132,17 +143,15 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
           : undefined
       }
       story={
-        story
+        request || story
           ? {
-              ...story,
+              findings: findings ?? [],
               title: app.title,
               scope,
               dataContext,
               theme: themeController,
             }
-          : request
-            ? null
-            : undefined
+          : undefined
       }
       aboutData={
         <AboutData

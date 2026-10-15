@@ -2,7 +2,9 @@
 
 ## Choose a widget
 
-Metrics, tables, and visualizations from `/react` consume view bindings and a source. For static displays, use
+Metrics, tables, and visualizations from `/react` consume view bindings. Omit
+`source` to use their registered live view; pass it for explicit content or frozen
+snapshots. For static displays, use
 [direct UI composition](ui.md).
 Manage requests in the [view and section](views.md); show skeletons for loading
 readings without inventing values. Use `isEmpty` for the predicate and

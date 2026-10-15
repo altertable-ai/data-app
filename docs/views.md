@@ -98,3 +98,52 @@ errors, and refreshes instead of duplicating request state in app code.
 
 A measured zero is valid data. Define `isEmpty` for the analysis and provide
 useful `emptyFallback` copy.
+
+## Recover widgets independently
+
+Register independently available views on `<DataApp>` and render bound widgets
+directly. Omit `source` to use the binding's registered live view:
+
+```tsx
+<DataApp
+  views={{ sales: salesView, acquisition: acquisitionView }}
+  datasets={[sales, acquisition]}
+  story={({ sales, acquisition }) => [
+    ...(sales ? salesFindings(sales) : []),
+    ...(acquisition ? acquisitionFindings(acquisition) : []),
+  ]}
+>
+  <Grid columns={2}>
+    <MetricWidget metric={revenue} />
+    <TableWidget dataset={acquisition} />
+  </Grid>
+</DataApp>
+```
+
+Widgets derive skeletons, empty results, errors, displayed scope, and retry from
+their view. An initial failure replaces the body; a failed refresh retains the
+last successful result and its original input. Retry refreshes the widget's whole
+view. Rendering retry remounts only the failed widget, without rerunning SQL.
+Access and rejected-query failures direct the reader to the app owner.
+
+Put widgets that must agree on one view. Use separate views for independently
+available data. An uncaught query failure rejects its entire operation; successful
+sibling queries are not partial results. A failed request is unavailable data;
+never replace it with zero or an empty array.
+
+Reuse the same variable definition across views to show one shared control.
+Conflicting variable names or URL keys are rejected. Use unique glossary and
+identifier entries, or share their definitions across data contexts.
+
+Use `view.content()` with `<DataSection>` for a shared custom layout, and pass its
+`source` explicitly. Explicit sources render the supplied snapshot without starting
+a request. A live widget must belong to a view registered on its containing
+`<DataApp>`. Rendering boundaries catch React rendering and selector failures;
+handle asynchronous callbacks through the normal request path.
+
+See the [recovery example](../examples/recovery-data-app/README.md) for deterministic
+failure controls and the same workflows exercised by browser tests.
+
+For deliberately custom request UI, `getDataFailure(error)` returns a safe message,
+typed code, retryability, and optional request ID. Keep business data separate from
+request failures; default widgets need no error configuration.

@@ -517,6 +517,7 @@ export function createDataHooks<Operations extends DataOperations>(
       },
       cancel: request.cancel,
       refreshing: request.refreshing,
+      revision: request.response?.requestId,
       queries: request.queries,
       emptyFallback: definition.emptyFallback,
       timeZone:
@@ -530,6 +531,7 @@ export function createDataHooks<Operations extends DataOperations>(
           : undefined,
       searchControls: variables.searchControls,
       filterControls: variables.filterControls,
+      controlBar: variables.controlBar,
       variables,
     };
   }

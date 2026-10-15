@@ -337,7 +337,7 @@ test('unchecked metric comparisons require a date binding at runtime', async ({
   await page.goto('/ownership?binding=comparison');
   await expect
     .poll(() => page.getByRole('alert').textContent())
-    .toContain('Metric comparisons require a view date binding.');
+    .toContain('Couldn’t display this widget');
 });
 
 test('a report can display, export and present bindings from its own view', async ({

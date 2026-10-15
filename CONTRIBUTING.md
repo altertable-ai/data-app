@@ -151,3 +151,26 @@ Use the four layers (`atbl.tokens`, `atbl.base`, `atbl.components`,
 `atbl.interaction`) and shared focus/state rules rather than duplicate control
 paint. Keep geometry local. Document public variables beside declarations or
 consumption sites; update the name contract in `style-contract.ts` when adding hooks.
+
+## Widget recovery contracts
+
+A registered view has one React request owner. Widgets and sections reuse its
+result; they do not subscribe independently. Registry composition must preserve
+hook order when views change. Query cancellation and late responses must not
+replace another input's displayed result.
+
+Operations return validated domain data atomically. Binding selectors run only on
+available data, retain source ownership checks, and share the view's displayed
+snapshot and input. Rendering failures stay inside the widget frame; rendering
+retry resets the failed subtree without refetching. Accepted results reset prior
+render failures. Keep query retry policy centralized and omit ineffective retries
+for access and rejected-SQL failures.
+
+Stories and exports use displayed snapshots, including retained failures. Freeze
+artifacts on opening and preserve failed download payloads for retry. Never silently
+export an incomplete combined result. Validate variable URL ownership, data context
+conflicts, binding ownership, and unique export names at composition boundaries.
+
+Use `examples/recovery-data-app` for deterministic browser reproductions. Keep its
+simulation at the public lakehouse boundary so normal execution, parsing, and
+deadline behavior remain covered.

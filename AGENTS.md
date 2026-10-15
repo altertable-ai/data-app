@@ -51,3 +51,12 @@ package files are dependencies.
 
 Keep `docs/` focused on knowledge agents need to build data apps. Put package
 implementation, testing, and release guidance in `CONTRIBUTING.md`.
+
+## Reliable results
+
+Register independent views on `<DataApp views={...}>` and render bound widgets
+without `source` for automatic loading, failure, and recovery. Keep widgets that
+must agree on one view; Retry refreshes that whole view. Use explicit sources for
+custom shared content and frozen stories. Return validated domain data from
+operations; do not substitute zero or empty arrays for failed requests. See
+[reproducible recovery](examples/recovery-data-app/README.md).

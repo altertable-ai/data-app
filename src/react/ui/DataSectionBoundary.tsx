@@ -1,5 +1,5 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
-import { DataAppError } from '@/src/client/transport';
+import { errorPresentation } from '@/src/react/data-failure';
 import { Button } from '@/src/react/ui/Button';
 import { useInspectionDefaults } from '@/src/react/ui/InspectionContext';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';
@@ -8,56 +8,6 @@ import { invariant } from '@/src/core/invariant';
 import { EmptyState } from '@/src/react/ui/EmptyState';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 import { StatusPanel } from '@/src/react/ui/StatusPanel';
-
-function errorPresentation(cause: Error) {
-  const code = cause instanceof DataAppError ? cause.code : 'request_failed';
-  switch (code) {
-    case 'source_unauthorized':
-      return {
-        title: 'Connection needs attention',
-        description: 'Ask the app owner to reconnect the lakehouse.',
-        retryable: false,
-      };
-    case 'source_forbidden':
-      return {
-        title: 'Data access denied',
-        description:
-          'The selected profile cannot read this data. Ask the app owner for access.',
-        retryable: false,
-      };
-    case 'source_query_rejected':
-      return {
-        title: 'Couldn’t load results',
-        description:
-          'This data app’s query was rejected. Ask the app owner to fix it.',
-        retryable: false,
-      };
-    case 'source_rate_limited':
-      return {
-        title: 'Data source is busy',
-        description: 'The lakehouse is handling too many requests.',
-        retryable: true,
-      };
-    case 'timeout':
-      return {
-        title: 'Request timed out',
-        description: 'The lakehouse took too long to respond.',
-        retryable: true,
-      };
-    case 'source_unavailable':
-      return {
-        title: 'Couldn’t load results',
-        description: 'The lakehouse isn’t responding.',
-        retryable: true,
-      };
-    default:
-      return {
-        title: 'Couldn’t load results',
-        description: 'The data request failed.',
-        retryable: true,
-      };
-  }
-}
 
 export type SectionResult<Data, Input> = {
   view: DataView<Data, Input>;
@@ -126,11 +76,13 @@ export function DataSectionBoundary<Data, Input>({
           />
         );
       }}
-      staleError={() => (
-        <Button onClick={error?.onRetry ?? (() => void result.refetch())}>
-          Retry
-        </Button>
-      )}
+      staleError={cause =>
+        error?.onRetry || errorPresentation(cause).retryable ? (
+          <Button onClick={error?.onRetry ?? (() => void result.refetch())}>
+            Retry
+          </Button>
+        ) : null
+      }
     >
       {children}
     </DataBoundary>

@@ -1,3 +1,9 @@
+import {
+  MultiViewDataApp,
+  type MultiViewDataAppProps,
+  type DataAppViews,
+} from '@/src/react/multi-view-app';
+import { ViewResultsContext } from '@/src/react/view-runtime';
 import { DateFormattingContext } from '@/src/react/date-formatting';
 import { SearchSuggestionsContext } from '@/src/react/search-suggestions';
 import { useDataApp } from '@/src/react/app-context';
@@ -44,7 +50,23 @@ export type DataAppProps<Data, Input = unknown> = Omit<
   };
 
 /** Executes the primary view and owns its controls, inspection, exports, and stories. */
-export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
+export function DataApp<const Views extends DataAppViews>(
+  props: MultiViewDataAppProps<Views>
+): React.ReactNode;
+export function DataApp<Data, Input>(
+  props: DataAppProps<Data, Input>
+): React.ReactNode;
+export function DataApp(
+  props: DataAppProps<any, any> | MultiViewDataAppProps<DataAppViews>
+) {
+  return 'views' in props ? (
+    <MultiViewDataApp {...props} />
+  ) : (
+    <SingleViewDataApp {...props} />
+  );
+}
+
+function SingleViewDataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   const {
     view,
     datasets,
@@ -74,39 +96,41 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
         })
       : [];
   return (
-    <DateFormattingContext value={{ timeZone: result.timeZone }}>
-      <SearchSuggestionsContext
-        value={
-          suggestionGroups.length
-            ? {
-                groups: suggestionGroups,
-                busy: result.refreshing,
+    <ViewResultsContext value={new Map([[view, result]])}>
+      <DateFormattingContext value={{ timeZone: result.timeZone }}>
+        <SearchSuggestionsContext
+          value={
+            suggestionGroups.length
+              ? {
+                  groups: suggestionGroups,
+                  busy: result.refreshing,
+                }
+              : null
+          }
+        >
+          <PrimaryViewContext value={{ declaration: view, result }}>
+            <DataAppFrame
+              {...frame}
+              request={result}
+              dataContext={result.dataContext}
+              story={snapshot =>
+                story(ownedSource(view, snapshot)).map(finding => ({
+                  ...finding,
+                  evidence: registeredEvidence(finding.evidence, view),
+                }))
               }
-            : null
-        }
-      >
-        <PrimaryViewContext value={{ declaration: view, result }}>
-          <DataAppFrame
-            {...frame}
-            request={result}
-            dataContext={result.dataContext}
-            story={snapshot =>
-              story(ownedSource(view, snapshot)).map(finding => ({
-                ...finding,
-                evidence: registeredEvidence(finding.evidence, view),
-              }))
-            }
-            csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
-              exportDatasets(
-                datasets,
-                ownedSource(view, snapshot),
-                view.scope(snapshot),
-                app.title
-              )
-            }
-          />
-        </PrimaryViewContext>
-      </SearchSuggestionsContext>
-    </DateFormattingContext>
+              csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
+                exportDatasets(
+                  datasets,
+                  ownedSource(view, snapshot),
+                  view.scope(snapshot),
+                  app.title
+                )
+              }
+            />
+          </PrimaryViewContext>
+        </SearchSuggestionsContext>
+      </DateFormattingContext>
+    </ViewResultsContext>
   );
 }

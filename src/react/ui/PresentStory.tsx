@@ -92,7 +92,9 @@ export function PresentStory({
   ref,
   ...props
 }: PresentStoryProps) {
-  const steps = storySteps(findings, dataContext);
+  const [frozenSteps, setFrozenSteps] = useState<StoryStep[]>();
+  const steps =
+    frozenSteps ?? (findings.length ? storySteps(findings, dataContext) : []);
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const headline = useRef<HTMLHeadingElement>(null);
@@ -121,9 +123,13 @@ export function PresentStory({
           availableSteps.find(item => item.id === requested)?.id ??
             availableSteps[0]!.id
         );
-        if (!dialog.current?.open) dialog.current?.showModal();
+        if (!dialog.current?.open) {
+          setFrozenSteps(availableSteps);
+          dialog.current?.showModal();
+        }
       } else if (dialog.current?.open) {
         dialog.current.close();
+        setFrozenSteps(undefined);
       }
     }
     syncFromUrl();
@@ -183,6 +189,7 @@ export function PresentStory({
     const ownerDocument = presentationDialog.ownerDocument;
     const fullscreenElement = ownerDocument.documentElement;
     isOpening.current = true;
+    setFrozenSteps(steps);
     try {
       if (!ownerDocument.fullscreenElement && ownerDocument.fullscreenEnabled) {
         await fullscreenElement.requestFullscreen();
@@ -260,6 +267,7 @@ export function PresentStory({
         onClose={event => {
           if (event.target !== event.currentTarget) return;
           exitPresentationFullscreen();
+          setFrozenSteps(undefined);
           if (searchParams().get('present') === '1') writePresentation();
           trigger.current?.focus({ preventScroll: true });
         }}

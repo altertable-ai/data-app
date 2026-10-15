@@ -70,7 +70,7 @@ export function resolveDataView<Data, Input>({
         ? `Couldn’t refresh. Showing the last result for ${describe(shown.input)}.`
         : `Couldn’t refresh. Showing ${describe(shown.input)} while ${describe(requestedInput)} is unavailable.`,
     };
-  if (pending || !currentInput)
+  if (pending)
     return {
       kind: 'updating',
       data: shown.data,

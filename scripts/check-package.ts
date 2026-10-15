@@ -71,6 +71,10 @@ try {
     'docs/react-embed.md',
     'docs/worker.md',
     'examples/starter-data-app/index.tsx',
+    'examples/recovery-data-app/index.tsx',
+    'examples/recovery-data-app/simulation.ts',
+    'examples/recovery-data-app/serve.ts',
+    'examples/recovery-data-app/README.md',
     'examples/starter-local-data-app/README.md',
     'examples/starter-local-data-app/AGENTS.md',
     'examples/starter-local-data-app/package.json',
@@ -233,6 +237,7 @@ try {
         'embed.tsx',
         'server.ts',
         'node_modules/@altertable/data-app/examples/starter-data-app/index.tsx',
+        'node_modules/@altertable/data-app/examples/recovery-data-app/index.tsx',
       ],
     })
   );
@@ -331,6 +336,7 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
   const hosted = await Bun.build({
     entrypoints: [
       join(packageDirectory, 'examples/starter-data-app/index.tsx'),
+      join(packageDirectory, 'examples/recovery-data-app/index.tsx'),
     ],
     target: 'browser',
     format: 'iife',

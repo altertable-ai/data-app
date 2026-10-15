@@ -1,3 +1,4 @@
+import { errorPresentation } from '@/src/react/data-failure';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { DataView } from '@/src/core/data-view';
 import { Toast } from '@/src/react/ui/Toast';
@@ -48,7 +49,14 @@ export function DataViewToast<Data, Input>({
   const state = failed ? 'error' : showingUpdate ? 'updating' : 'notice';
 
   return (
-    <Toast state={state} onRetry={onRetry}>
+    <Toast
+      state={state}
+      onRetry={
+        view.kind === 'stale-error' && !errorPresentation(view.error).retryable
+          ? undefined
+          : onRetry
+      }
+    >
       {failed
         ? (message ?? detail)
         : showingUpdate
