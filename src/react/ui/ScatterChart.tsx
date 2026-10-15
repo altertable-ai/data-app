@@ -1,6 +1,6 @@
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
-import { validateChartItems } from '@/src/react/ui/chart-data';
+import { validateScatterChartItems } from '@/src/react/ui/chart-data';
 
 import type { ScatterChartItem } from '@/src/react/ui/chart-data';
 export type { ScatterChartItem } from '@/src/react/ui/chart-data';
@@ -56,7 +56,7 @@ export function ScatterChart({
   formatX = formatNumber,
   formatY = formatNumber,
 }: ScatterChartProps) {
-  validateChartItems('scatter', items);
+  validateScatterChartItems(items);
   const xScale = scale(items.map(item => item.x));
   const yScale = scale(items.map(item => item.y));
   return (

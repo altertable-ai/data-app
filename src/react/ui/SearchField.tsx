@@ -113,8 +113,8 @@ export function SearchField({
   }, [focusShortcut]);
   const id = useId();
   const inputId = inputProps?.id ?? id;
-  const descriptionId = description ? `${id}-description` : undefined;
-  const statusId = status ? `${id}-status` : undefined;
+  const descriptionId = description ? [id, 'description'].join('-') : undefined;
+  const statusId = status ? [id, 'status'].join('-') : undefined;
 
   return (
     <search

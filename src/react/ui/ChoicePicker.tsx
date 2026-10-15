@@ -4,7 +4,7 @@ import {
   PickerTriggerContent,
   type ControlLabelPlacement,
 } from '@/src/react/ui/PickerField';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ComponentRef } from 'react';
 import {
   Dialog,
   DialogTrigger,
@@ -70,8 +70,8 @@ export function ChoicePicker(props: ChoicePickerProps) {
     props;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const searchRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<ComponentRef<'input'>>(null);
+  const listRef = useRef<ComponentRef<'div'>>(null);
   const statusId = useId();
   const popupId = useId();
   const chosen = multiple ? props.values : [props.value];

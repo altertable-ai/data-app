@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import type { ComponentPropsWithRef } from 'react';
 import { classNames } from '@/src/react/ui/classNames';
 import type { SearchMatchValue } from '@/src/react/ui/searchItems';
@@ -15,7 +16,11 @@ export function SearchMatch({ match, className, ...props }: SearchMatchProps) {
     const end = Math.max(start, Math.min(text.length, range.end));
     if (start > position) parts.push(text.slice(position, start));
     if (end > start)
-      parts.push(<mark key={`${start}-${end}`}>{text.slice(start, end)}</mark>);
+      parts.push(
+        <mark key={[start, end].join(KEY_SEPARATOR)}>
+          {text.slice(start, end)}
+        </mark>
+      );
     position = end;
   }
   if (position < text.length) parts.push(text.slice(position));

@@ -1,6 +1,7 @@
 import { formatNumber } from '@/src/core/format';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useState } from 'react';
+import { useChartScrollToEnd } from '@/src/react/ui/use-chart-scroll-to-end';
 import {
   AreaChart as RechartsAreaChart,
   LineChart as RechartsLineChart,
@@ -14,7 +15,7 @@ import {
   ChartYAxis,
 } from '@/src/react/ui/chart-primitives';
 import type { ValueChartProps } from '@/src/react/ui/chart-data';
-import { validateChartItems } from '@/src/react/ui/chart-data';
+import { validateValueChartItems } from '@/src/react/ui/chart-data';
 
 /** Ordered, equally spaced samples; negative values share an explicit zero baseline. */
 export function TrendChart({
@@ -22,16 +23,12 @@ export function TrendChart({
   unit,
   ariaLabel,
   formatValue = formatNumber,
-  area = false,
-}: ValueChartProps & { area?: boolean }) {
-  validateChartItems(area ? 'area' : 'line', items);
-  const Plot = area ? RechartsAreaChart : RechartsLineChart;
+  kind,
+}: ValueChartProps & { kind: 'line' | 'area' }) {
+  validateValueChartItems(kind, items);
+  const Plot = kind === 'area' ? RechartsAreaChart : RechartsLineChart;
   const [activeIndex, setActiveIndex] = useState<number>();
-  const scrollport = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const element = scrollport.current;
-    if (element) element.scrollLeft = element.scrollWidth - element.clientWidth;
-  }, [items]);
+  const scrollport = useChartScrollToEnd(items);
   const magnitude = items.reduce(
     (max, item) => Math.max(max, Math.abs(item.value)),
     1
@@ -73,7 +70,7 @@ export function TrendChart({
                     domain={[low, high === low ? low + 1 : high]}
                   />
                   <ReferenceLine y={0} stroke="var(--atbl-border)" />
-                  {area && (
+                  {kind === 'area' && (
                     <ChartArea
                       dataKey="plotValue"
                       stroke="none"

@@ -1,4 +1,5 @@
 import {
+  type ComponentRef,
   createContext,
   useContext,
   useEffect,
@@ -23,7 +24,7 @@ type Inspection = {
   key: string;
   id: string;
   props: AboutDataProps;
-  trigger: RefObject<HTMLButtonElement | null>;
+  trigger: RefObject<ComponentRef<'button'> | null>;
 };
 type Selection = {
   inspection: Inspection;

@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { parseDate, today, type CalendarDate } from '@internationalized/date';
 
 /** ISO calendar dates; the app operation defines timezone and inclusive bounds. */
@@ -85,7 +86,7 @@ export function availableDatePresets({
         86_400_000 +
       1;
     const range = { start: start.toString(), end: end.toString() };
-    const key = `${range.start}/${range.end}`;
+    const key = [range.start, range.end].join(KEY_SEPARATOR);
     if (
       days < 1 ||
       (maxRangeDays && days > maxRangeDays) ||

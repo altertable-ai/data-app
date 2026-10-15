@@ -1,13 +1,15 @@
+import { classNames } from '@/src/react/ui/classNames';
 import { ChartDateAxes } from '@/src/react/ui/chart-date-axis';
 import {
   useState,
   useCallback,
-  useRef,
-  useLayoutEffect,
   type PointerEvent,
   type ComponentProps,
 } from 'react';
-import { ChartInteraction } from '@/src/react/ui/chart-interaction';
+import {
+  ChartInteractionContext,
+  type ChartPoint,
+} from '@/src/react/ui/chart-interaction';
 import { ComposedChartLegend as Legend } from '@/src/react/ui/ComposedChartLegend';
 import {
   ComposedChart as RechartsComposedChart,
@@ -34,20 +36,21 @@ import {
   ChartTooltip as Tooltip,
 } from '@/src/react/ui/chart-primitives';
 
-function closestSeries(
-  hovered: string | null,
-  points: ReadonlyMap<string, { x: number; y: number }>,
-  position: { x: number; y: number } | null
+function findNearestSeriesId(
+  hoveredSeriesId: string | null,
+  points: ReadonlyMap<string, ChartPoint>,
+  position: ChartPoint | null
 ) {
-  let selected = hovered;
-  if (position && points.size > 0 && (hovered == null || points.has(hovered))) {
-    let distance = Infinity;
-    for (const [id, point] of points) {
-      const candidate = Math.hypot(point.x - position.x, point.y - position.y);
-      if (candidate < distance) {
-        distance = candidate;
-        selected = id;
-      }
+  // Bars and scatter points use direct hits; line and area samples use distance.
+  if (!position || (hoveredSeriesId != null && !points.has(hoveredSeriesId)))
+    return hoveredSeriesId;
+  let selected = hoveredSeriesId;
+  let distance = Infinity;
+  for (const [id, point] of points) {
+    const candidate = Math.hypot(point.x - position.x, point.y - position.y);
+    if (candidate < distance) {
+      distance = candidate;
+      selected = id;
     }
   }
   return selected;
@@ -79,14 +82,15 @@ function ComposedChartRoot<Row>({
   className,
   ...props
 }: ComposedChartProps<Row>) {
-  const [pointerFocus, setPointerFocus] = useState(false);
-  const [pointer, setPointer] = useState(false);
-  const [hovered, setHovered] = useState<string | null>(null);
-  const pointerPosition = useRef<{ x: number; y: number } | null>(null);
-  const [nearest, setNearest] = useState<string | null>(null);
-  const [points, setPoints] = useState<
-    ReadonlyMap<string, { x: number; y: number }>
-  >(() => new Map());
+  const [hasPointerFocus, setHasPointerFocus] = useState(false);
+  const [isPointerInspection, setIsPointerInspection] = useState(false);
+  const [hoveredSeriesId, setHoveredSeriesId] = useState<string | null>(null);
+  const [pointerPosition, setPointerPosition] = useState<ChartPoint | null>(
+    null
+  );
+  const [points, setPoints] = useState<ReadonlyMap<string, ChartPoint>>(
+    () => new Map()
+  );
   const registerPoint = useCallback((id: string, x: number, y: number) => {
     setPoints(current => new Map(current).set(id, { x, y }));
     return () =>
@@ -97,20 +101,39 @@ function ComposedChartRoot<Row>({
       });
   }, []);
   function trackPointer(event: PointerEvent<HTMLElement>) {
-    setPointer(true);
     const svg = event.currentTarget.querySelector('svg[role="application"]');
-    if (!(svg instanceof SVGSVGElement)) return;
+    if (
+      !(svg instanceof SVGSVGElement) ||
+      !(event.target instanceof Node) ||
+      !svg.contains(event.target)
+    ) {
+      resetPointerInspection();
+      return false;
+    }
+    setIsPointerInspection(true);
+    // Direct-hit series do not need pointer coordinates to select a sample.
+    if (hoveredSeriesId != null && !points.has(hoveredSeriesId)) {
+      setPointerPosition(null);
+      return true;
+    }
     const matrix = svg.getScreenCTM();
-    if (!matrix) return;
+    if (!matrix) return true;
     const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
       matrix.inverse()
     );
-    pointerPosition.current = { x: point.x, y: point.y };
-    setNearest(closestSeries(hovered, points, pointerPosition.current));
+    setPointerPosition({ x: point.x, y: point.y });
+    return true;
   }
-  useLayoutEffect(() => {
-    setNearest(closestSeries(hovered, points, pointerPosition.current));
-  }, [hovered, points]);
+  function resetPointerInspection() {
+    setIsPointerInspection(false);
+    setHoveredSeriesId(null);
+    setPointerPosition(null);
+  }
+  const activeSeriesId = findNearestSeriesId(
+    hoveredSeriesId,
+    points,
+    pointerPosition
+  );
   const [seriesIds, setSeriesIds] = useState<ReadonlySet<string>>(
     () => new Set()
   );
@@ -125,46 +148,41 @@ function ComposedChartRoot<Row>({
     };
   }, []);
   return (
-    <ChartInteraction.Provider
+    <ChartInteractionContext.Provider
       value={{
-        pointer,
-        hovered: nearest,
-        point: nearest == null ? undefined : points.get(nearest),
+        isPointerInspection,
+        activeSeriesId,
+        activePoint:
+          activeSeriesId == null ? undefined : points.get(activeSeriesId),
         registerPoint,
-        setHovered,
+        setHoveredSeriesId,
         seriesCount: seriesIds.size,
         registerSeries,
       }}
     >
       <section
-        className={['altertable-composed-chart', className]
-          .filter(Boolean)
-          .join(' ')}
+        className={classNames('altertable-composed-chart', className)}
         aria-label={ariaLabel}
-        data-atbl-internal-pointer-focus={pointerFocus || undefined}
+        data-atbl-internal-pointer-focus={hasPointerFocus || undefined}
         onPointerDownCapture={event => {
-          setPointerFocus(true);
-          trackPointer(event);
+          setHasPointerFocus(trackPointer(event));
         }}
         onPointerOverCapture={trackPointer}
         onPointerMoveCapture={trackPointer}
         onPointerLeave={event => {
           if (event.pointerType !== 'touch') {
-            setHovered(null);
-            pointerPosition.current = null;
-            setNearest(null);
+            resetPointerInspection();
           }
         }}
         onKeyDownCapture={() => {
-          setPointerFocus(false);
-          setPointer(false);
-          pointerPosition.current = null;
-          setNearest(null);
-          setHovered(null);
+          setHasPointerFocus(false);
+          resetPointerInspection();
         }}
         onBlurCapture={event => {
-          if (!event.currentTarget.contains(event.relatedTarget))
-            setPointerFocus(false);
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setHasPointerFocus(false);
+            resetPointerInspection();
+          }
         }}
       >
         <ChartDateAxes data={data}>
@@ -179,7 +197,7 @@ function ComposedChartRoot<Row>({
           />
         </ChartDateAxes>
       </section>
-    </ChartInteraction.Provider>
+    </ChartInteractionContext.Provider>
   );
 }
 

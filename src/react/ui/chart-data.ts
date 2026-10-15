@@ -27,15 +27,9 @@ export type ScatterChartItem = {
   x: number;
   y: number;
 };
-type ChartKind = 'bar' | 'line' | 'area' | 'pie' | 'scatter';
-type ItemFor<Kind extends ChartKind> = Kind extends 'scatter'
-  ? ScatterChartItem
-  : ChartItem;
-/** Validate standalone item-based chart inputs. */
-export function validateChartItems<Kind extends ChartKind>(
-  kind: Kind,
-  items: readonly ItemFor<Kind>[]
-): void {
+type ValueChartKind = 'bar' | 'line' | 'area' | 'pie';
+
+function validateChartIds(kind: string, items: readonly { id: string }[]) {
   const ids = new Set<string>();
   for (const item of items) {
     invariant(
@@ -47,22 +41,34 @@ export function validateChartItems<Kind extends ChartKind>(
       `${kind} chart IDs must be nonempty and unique: duplicate "${item.id}".`
     );
     ids.add(item.id);
-    if (kind === 'scatter') {
-      const point = item as ScatterChartItem;
-      invariant(
-        Number.isFinite(point.x) && Number.isFinite(point.y),
-        `scatter chart "${item.id}" requires finite values for x and y.`
-      );
-    } else {
-      const point = item as ChartItem;
-      invariant(
-        Number.isFinite(point.value),
-        `${kind} chart "${item.id}" requires finite values.`
-      );
-      invariant(
-        (kind !== 'bar' && kind !== 'pie') || point.value >= 0,
-        `${kind} chart "${item.id}" requires nonnegative values.`
-      );
-    }
+  }
+}
+
+export function validateValueChartItems(
+  kind: ValueChartKind,
+  items: readonly ChartItem[]
+): void {
+  validateChartIds(kind, items);
+  for (const item of items) {
+    invariant(
+      Number.isFinite(item.value),
+      `${kind} chart "${item.id}" requires finite values.`
+    );
+    invariant(
+      (kind !== 'bar' && kind !== 'pie') || item.value >= 0,
+      `${kind} chart "${item.id}" requires nonnegative values.`
+    );
+  }
+}
+
+export function validateScatterChartItems(
+  items: readonly ScatterChartItem[]
+): void {
+  validateChartIds('scatter', items);
+  for (const item of items) {
+    invariant(
+      Number.isFinite(item.x) && Number.isFinite(item.y),
+      `scatter chart "${item.id}" requires finite values for x and y.`
+    );
   }
 }

@@ -5,10 +5,14 @@ import {
   parseDateTime,
 } from '@/src/core/date-format';
 
-const day = 86400000;
+const day = 86_400_000;
+const calendarDatePattern = /^\d{4}-\d{2}-\d{2}$/;
+function isCalendarDate(value: unknown): value is string {
+  return typeof value === 'string' && calendarDatePattern.test(value);
+}
 /** Only ISO calendar dates and zoned instants are inferred. Numbers require scale="utc". */
 export function chartTimestamp(value: unknown, numeric = false): number | null {
-  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (isCalendarDate(value)) {
     return parseDateTime(`${value}T00:00:00Z`)?.getTime() ?? null;
   }
   if (
@@ -21,21 +25,42 @@ export function chartTimestamp(value: unknown, numeric = false): number | null {
   return null;
 }
 
-export function timeModel(values: readonly unknown[], numeric = false) {
-  if (!values.length) return null;
-  const parsed = values.map(value => chartTimestamp(value, numeric));
-  if (parsed.some(value => value == null)) return null;
-  const times = [...new Set(parsed as number[])].sort((a, b) => a - b);
-  const start = times[0]!;
-  const end = times.at(-1)!;
-  const gaps = times.slice(1).map((value, index) => value - times[index]!);
-  const precision = gaps.reduce((minimum, gap) => Math.min(minimum, gap), day);
-  const dateOnly = values.every(
-    value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
-  );
-  const seconds = times.some(value => value % 60000 !== 0) || precision < 60000;
+type ChartTimeModel = {
+  start: number;
+  end: number;
+  times: readonly number[];
+  /** Smallest gap in milliseconds; a single instant uses a one-day extent. */
+  minimumInterval: number;
+  tooltip: (value: unknown) => string;
+};
+
+export function timeModel(
+  values: readonly unknown[],
+  numeric = false
+): ChartTimeModel | null {
+  const timestamps = new Set<number>();
+  for (const value of values) {
+    const timestamp = chartTimestamp(value, numeric);
+    if (timestamp == null) return null;
+    timestamps.add(timestamp);
+  }
+  const times = [...timestamps].sort((a, b) => a - b);
+  const start = times[0];
+  const end = times.at(-1);
+  if (start == null || end == null) return null;
+  let minimumInterval = Infinity;
+  for (let index = 1; index < times.length; index++) {
+    minimumInterval = Math.min(
+      minimumInterval,
+      times[index]! - times[index - 1]!
+    );
+  }
+  if (times.length === 1) minimumInterval = day;
+  const dateOnly = values.every(isCalendarDate);
+  const seconds =
+    times.some(value => value % 60_000 !== 0) || minimumInterval < 60_000;
   const milliseconds =
-    times.some(value => value % 1000 !== 0) || precision < 1000;
+    times.some(value => value % 1_000 !== 0) || minimumInterval < 1_000;
   function tooltip(value: unknown) {
     const time = chartTimestamp(value, true);
     if (time == null)
@@ -65,9 +90,7 @@ export function timeModel(values: readonly unknown[], numeric = false) {
     start,
     end,
     times,
-    precision: gaps.length
-      ? gaps.reduce((minimum, gap) => Math.min(minimum, gap), Infinity)
-      : day,
+    minimumInterval,
     tooltip,
   };
 }
@@ -79,10 +102,7 @@ function datePart(value: number, options: Intl.DateTimeFormatOptions) {
   }).format(value);
 }
 
-export function timeTicks(
-  model: NonNullable<ReturnType<typeof timeModel>>,
-  width: number
-) {
+export function timeTicks(model: ChartTimeModel, width: number) {
   const { start, end } = model;
   const firstDate = new Date(start);
   const lastDate = new Date(end);
@@ -102,16 +122,16 @@ export function timeTicks(
       : utcTicks(
           new Date(start),
           new Date(end),
-          Math.min(count, (end - start) / model.precision)
+          Math.min(count, (end - start) / model.minimumInterval)
         ).map(Number);
   const step =
     ticks.length > 1
       ? ticks[1]! - ticks[0]!
-      : Math.max(end - start, model.precision);
+      : Math.max(end - start, model.minimumInterval);
   // Calendar intervals are a hint. Keep the actual extent visible, then thin by pixel distance.
   const candidates = [...new Set([start, ...ticks, end])].sort((a, b) => a - b);
   ticks = [start];
-  const gap = step < 1000 ? 110 : 80;
+  const gap = step < 1_000 ? 110 : 80;
   for (const value of candidates.slice(1)) {
     if (((value - ticks.at(-1)!) / (end - start)) * width >= gap)
       ticks.push(value);
@@ -136,13 +156,13 @@ export function timeTicks(
       return { main: String(date.getUTCFullYear()), context: '' };
     if (
       step >= 28 * day &&
-      (model.precision >= 28 * day || end - start >= 180 * day)
+      (model.minimumInterval >= 28 * day || end - start >= 180 * day)
     )
       return {
         main: datePart(value, { month: 'short' }),
         context: spansYears && yearChanged ? String(date.getUTCFullYear()) : '',
       };
-    if (step >= day && !(model.precision < day && end - start <= 3 * day))
+    if (step >= day && !(model.minimumInterval < day && end - start <= 3 * day))
       return {
         main: datePart(value, { month: 'short', day: 'numeric' }),
         context: spansYears && yearChanged ? String(date.getUTCFullYear()) : '',
@@ -151,8 +171,8 @@ export function timeTicks(
       main: datePart(value, {
         hour: '2-digit',
         minute: '2-digit',
-        ...(step < 60000 ? { second: '2-digit' as const } : {}),
-        ...(step < 1000 ? { fractionalSecondDigits: 3 as const } : {}),
+        ...(step < 60_000 ? { second: '2-digit' as const } : {}),
+        ...(step < 1_000 ? { fractionalSecondDigits: 3 as const } : {}),
         hourCycle: 'h23',
       }),
       context:

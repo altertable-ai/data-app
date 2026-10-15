@@ -1,4 +1,5 @@
 import {
+  type ComponentRef,
   Children,
   useId,
   useEffect,
@@ -32,7 +33,7 @@ function ChartLegendRoot({
 }: ChartLegendProps) {
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<ComponentRef<'div'>>(null);
   const [columns, setColumns] = useState(2);
   useEffect(() => {
     const container = containerRef.current;

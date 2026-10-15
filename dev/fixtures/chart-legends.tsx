@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { applyAppearance } from '@altertable/data-app/appearance';
@@ -30,7 +31,7 @@ const serviceSeries = [
   'Storage',
   'Analytics',
 ].map((name, index) => ({
-  key: `service${index}`,
+  key: ['service', index].join(KEY_SEPARATOR),
   name,
   label: `${name} — production workspaces in ${index % 2 === 0 ? 'Europe' : 'North America'} (ms)`,
   color: `var(--atbl-chart-${(index % 8) + 1})`,

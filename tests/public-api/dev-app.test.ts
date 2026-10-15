@@ -667,12 +667,7 @@ mountDataApp({ app, component: App });
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(server.url);
     const app = page.frameLocator('iframe');
-    await vi.waitFor(async () =>
-      expect(
-        await app.getByRole('heading', { name: 'First preview' }).isVisible(),
-        errors.join('\n') + ' ' + (await page.locator('body').innerText())
-      ).toBe(true)
-    );
+    await app.getByRole('heading', { name: 'First preview' }).waitFor();
     expect(
       await app
         .getByRole('heading', { name: 'First preview' })

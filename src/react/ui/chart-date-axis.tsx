@@ -17,11 +17,12 @@ import {
 import { formatNumber } from '@/src/core/format';
 
 type LabelFormatter = (value: unknown) => string;
-const DateAxes = createContext<{
+type ChartDateAxesApi = {
   data: readonly unknown[];
   formatters: ReadonlyMap<string | number, LabelFormatter>;
   register: (id: string | number, formatter: LabelFormatter) => () => void;
-} | null>(null);
+};
+const ChartDateAxesContext = createContext<ChartDateAxesApi | null>(null);
 
 export function ChartDateAxes({
   data,
@@ -46,13 +47,13 @@ export function ChartDateAxes({
     []
   );
   return (
-    <DateAxes.Provider value={{ data, formatters, register }}>
+    <ChartDateAxesContext.Provider value={{ data, formatters, register }}>
       {children}
-    </DateAxes.Provider>
+    </ChartDateAxesContext.Provider>
   );
 }
 export function useDateAxisLabel(id: string | number = 0) {
-  return useContext(DateAxes)?.formatters.get(id);
+  return useContext(ChartDateAxesContext)?.formatters.get(id);
 }
 function field(row: unknown, key: string | number): unknown {
   if (row == null || typeof row !== 'object') return undefined;
@@ -69,18 +70,27 @@ function field(row: unknown, key: string | number): unknown {
     );
 }
 
+const xAxisDefaults = {
+  stroke: 'var(--atbl-muted)',
+  tickFormatter: (value: unknown) =>
+    typeof value === 'number' ? formatNumber(value) : String(value),
+  tickLine: false,
+  axisLine: { stroke: 'var(--atbl-border)' },
+  tick: { fontSize: 'var(--atbl-type-meta-size)' },
+};
+
 /**
  * Infers temporal input from ISO dates, zoned ISO timestamps, and Date values.
  * Use scale="utc" for epoch milliseconds or type="category" for date-like categories.
  * Explicit tick formatters and tick lists retain authored axis behavior.
  */
-export function ChartXAxis<Row = unknown, Value = string | number>(
+export function ChartXAxis<Row = unknown, Value = string | number | Date>(
   props: ComponentProps<typeof XAxis<Row, Value>>
 ) {
-  const context = useContext(DateAxes);
+  const context = useContext(ChartDateAxesContext);
   const plot = usePlotArea();
   const data = context?.data;
-  const dataKey = props.dataKey;
+  const { dataKey, ...axisProps } = props;
   const numeric = props.scale === 'utc';
   const enabled =
     numeric ||
@@ -105,32 +115,33 @@ export function ChartXAxis<Row = unknown, Value = string | number>(
     () => (model ? register?.(id, model.tooltip) : undefined),
     [register, id, model]
   );
-  const axis = model ? timeTicks(model, plot?.width ?? 400) : undefined;
+  if (!model || dataKey == null) {
+    return <XAxis<Row, Value> {...xAxisDefaults} {...props} />;
+  }
+  const automaticTicks =
+    props.ticks == null && props.tickFormatter == null
+      ? timeTicks(model, plot?.width ?? 400)
+      : null;
   return (
-    <XAxis
-      stroke="var(--atbl-muted)"
-      tickFormatter={value =>
-        typeof value === 'number' ? formatNumber(value) : String(value)
+    <XAxis<Row, number | null>
+      {...xAxisDefaults}
+      scale="utc"
+      domain={
+        model.start === model.end
+          ? [
+              model.start - model.minimumInterval / 2,
+              model.end + model.minimumInterval / 2,
+            ]
+          : [model.start, model.end]
       }
-      tickLine={false}
-      axisLine={{ stroke: 'var(--atbl-border)' }}
-      tick={{ fontSize: 'var(--atbl-type-meta-size)' }}
-      {...(model && axis
-        ? {
-            type: 'number' as const,
-            scale: 'utc' as const,
-            domain:
-              model.start === model.end
-                ? [
-                    model.start - model.precision / 2,
-                    model.end + model.precision / 2,
-                  ]
-                : [model.start, model.end],
-            ticks: axis.ticks,
-            interval: 0 as const,
-            height: 48,
-            tick: ({ x, y, payload, index }: XAxisTickContentProps) => {
-              const label = axis.label(Number(payload.value), index);
+      ticks={automaticTicks?.ticks}
+      interval={automaticTicks ? 0 : undefined}
+      height={48}
+      tickFormatter={model.tooltip}
+      tick={
+        automaticTicks
+          ? ({ x, y, payload, index }: XAxisTickContentProps) => {
+              const label = automaticTicks.label(Number(payload.value), index);
               return (
                 <text
                   x={x}
@@ -140,7 +151,7 @@ export function ChartXAxis<Row = unknown, Value = string | number>(
                   textAnchor={
                     index === 0
                       ? 'start'
-                      : index === axis.ticks.length - 1
+                      : index === automaticTicks.ticks.length - 1
                         ? 'end'
                         : 'middle'
                   }
@@ -155,22 +166,17 @@ export function ChartXAxis<Row = unknown, Value = string | number>(
                   )}
                 </text>
               );
-            },
-          }
-        : {})}
-      {...(props as ComponentProps<typeof XAxis>)}
-      {...(model
-        ? {
-            type: 'number' as const,
-            dataKey: (row: unknown) =>
-              chartTimestamp(
-                typeof dataKey === 'function'
-                  ? dataKey(row as Row)
-                  : field(row, dataKey!),
-                numeric
-              ),
-          }
-        : {})}
+            }
+          : xAxisDefaults.tick
+      }
+      {...axisProps}
+      type="number"
+      dataKey={row =>
+        chartTimestamp(
+          typeof dataKey === 'function' ? dataKey(row) : field(row, dataKey),
+          numeric
+        )
+      }
     />
   );
 }

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { type ComponentRef, useLayoutEffect, useRef, useState } from 'react';
 import { invariant } from '@/src/core/invariant';
 import { Button } from '@/src/react/ui/Button';
 import { classNames } from '@/src/react/ui/classNames';
@@ -84,7 +84,7 @@ function JourneyFlow({
     buildJourneyFlow(paths, expandedBranch),
     visibleEventsByDepth
   );
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<ComponentRef<'div'>>(null);
   const pendingDepth = useRef<number | null>(null);
   const depthCount = Math.max(0, ...graph.nodes.map(node => node.depth)) + 1;
   const startingCount = graph.nodes

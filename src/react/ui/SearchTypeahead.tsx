@@ -110,7 +110,7 @@ export function SearchTypeahead({
   useEffect(() => {
     if (active) {
       document
-        .getElementById(`${listId}-${encodeURIComponent(active.id)}`)
+        .getElementById([listId, encodeURIComponent(active.id)].join('-'))
         ?.scrollIntoView({ block: 'nearest' });
     }
   }, [active, listId]);
@@ -133,7 +133,7 @@ export function SearchTypeahead({
           'aria-expanded': open,
           'aria-controls': open ? listId : undefined,
           'aria-activedescendant': active
-            ? `${listId}-${encodeURIComponent(active.id)}`
+            ? [listId, encodeURIComponent(active.id)].join('-')
             : undefined,
           autoComplete: 'off',
           onFocus(event) {
@@ -210,7 +210,7 @@ export function SearchTypeahead({
               {items.map(item => (
                 <li
                   key={item.id}
-                  id={`${listId}-${encodeURIComponent(item.id)}`}
+                  id={[listId, encodeURIComponent(item.id)].join('-')}
                   role="option"
                   aria-selected={active?.id === item.id}
                   data-atbl-control="action"

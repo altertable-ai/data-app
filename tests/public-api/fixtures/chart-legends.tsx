@@ -1,4 +1,5 @@
-import { type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { Line as NativeLine } from 'recharts';
 import { createRoot } from 'react-dom/client';
 import { applyAppearance } from '@altertable/data-app/appearance';
 import { Button, Grid, GridItem, Stack } from '@altertable/data-app/react';
@@ -19,7 +20,11 @@ import {
 injectDataAppStyles();
 applyAppearance(
   new URLSearchParams(location.search).has('palette')
-    ? { theme: 'light', accentColor: '#cc5500', chartColors: ['#8040c0'] }
+    ? {
+        theme: 'light',
+        accentColor: '#cc5500',
+        chartColors: ['#8040c0', '#208040'],
+      }
     : { theme: 'light' }
 );
 
@@ -50,7 +55,7 @@ const serviceSeries = [
   'Storage',
   'Analytics',
 ].map((name, index) => ({
-  key: `service${index}`,
+  key: ['service', index].join(':'),
   name,
   label: `${name} — production workspaces in ${index % 2 === 0 ? 'Europe' : 'North America'} (ms)`,
   color: `var(--atbl-chart-${(index % 8) + 1})`,
@@ -102,6 +107,145 @@ function formatValue(value: number) {
   return value.toFixed(1);
 }
 
+function PieLegendExample() {
+  const [showLegend, setShowLegend] = useState(true);
+  return (
+    <>
+      <Button onClick={() => setShowLegend(value => !value)}>
+        {showLegend ? 'Hide pie legend' : 'Show pie legend'}
+      </Button>
+      <PieChart
+        items={samples
+          .slice(0, 3)
+          .map(item => ({ ...item, value: Math.abs(item.value) }))}
+        unit="ms"
+        ariaLabel="Standalone pie plot"
+        showLegend={showLegend}
+        formatValue={formatValue}
+      />
+    </>
+  );
+}
+
+function RecentSamples() {
+  const [count, setCount] = useState(20);
+  const items = Array.from({ length: count }, (_, index) => ({
+    id: String(index),
+    label: `Sample ${index + 1}`,
+    value: index + 1,
+  }));
+  return (
+    <>
+      <Button onClick={() => setCount(30)}>Load newer samples</Button>
+      {[
+        { Chart: BarChart, name: 'Recent bar' },
+        { Chart: LineChart, name: 'Recent line' },
+        { Chart: AreaChart, name: 'Recent area' },
+      ].map(({ Chart, name }) => (
+        <Chart key={name} items={items} unit="ms" ariaLabel={name} />
+      ))}
+    </>
+  );
+}
+
+const legendRows = [
+  { x: 0, alpha: 10, beta: 20 },
+  { x: 1, alpha: 15, beta: 25 },
+];
+function alphaAccessor(row: (typeof legendRows)[number]) {
+  return row.alpha;
+}
+function betaAccessor(row: (typeof legendRows)[number]) {
+  return row.beta;
+}
+const legendKinds = [
+  'line',
+  'area',
+  'bar',
+  'scatter',
+  'native-key',
+  'native-accessor',
+  'native-shared',
+] as const;
+type LegendKind = (typeof legendKinds)[number];
+
+function LegendNote({ name }: { name: string }) {
+  const [note, setNote] = useState('');
+  return (
+    <label>
+      {name}
+      <input
+        aria-label={`${name} note`}
+        value={note}
+        onChange={event => setNote(event.target.value)}
+      />
+    </label>
+  );
+}
+function LegendIdentityExample({ kind }: { kind: LegendKind }) {
+  const [descending, setDescending] = useState(false);
+  const [removeAlpha, setRemoveAlpha] = useState(false);
+  const [renamed, setRenamed] = useState(false);
+  const Series =
+    kind === 'area'
+      ? ComposedChart.Area
+      : kind === 'bar'
+        ? ComposedChart.Bar
+        : kind === 'scatter'
+          ? ComposedChart.Scatter
+          : ComposedChart.Line;
+  return (
+    <>
+      <Button onClick={() => setDescending(value => !value)}>
+        Reverse legend
+      </Button>
+      <Button onClick={() => setRemoveAlpha(true)}>Remove Alpha</Button>
+      <Button onClick={() => setRenamed(true)}>Rename Alpha</Button>
+      <ComposedChart data={legendRows} ariaLabel={`${kind} identity plot`}>
+        <ComposedChart.XAxis dataKey="x" type="number" />
+        <ComposedChart.YAxis />
+        {(['alpha', 'beta'] as const)
+          .filter(key => !removeAlpha || key !== 'alpha')
+          .map(key => {
+            const name =
+              key === 'alpha' ? (renamed ? 'First' : 'Alpha') : 'Beta';
+            return kind.startsWith('native') ? (
+              <NativeLine
+                key={key}
+                id={kind === 'native-shared' ? key : undefined}
+                dataKey={
+                  kind === 'native-accessor'
+                    ? key === 'alpha'
+                      ? alphaAccessor
+                      : betaAccessor
+                    : kind === 'native-shared'
+                      ? 'alpha'
+                      : key
+                }
+                name={name}
+              />
+            ) : (
+              <Series key={key} dataKey={key} name={name} />
+            );
+          })}
+        <ComposedChart.Tooltip />
+        <ComposedChart.Legend
+          itemSorter={entry =>
+            descending
+              ? entry.value === 'Beta'
+                ? 0
+                : 1
+              : entry.value === 'Beta'
+                ? 1
+                : 0
+          }
+          formatter={name => <LegendNote name={String(name)} />}
+        />
+      </ComposedChart>
+    </>
+  );
+}
+
 // Keep large-series rendering cases out of the public gallery.
 createRoot(document.getElementById('root')!).render(
   <Stack>
@@ -109,6 +253,12 @@ createRoot(document.getElementById('root')!).render(
       Switch to dark theme
     </Button>
     <Grid columns={2} minItemWidth="wide">
+      <Example
+        name="Recent samples"
+        description="Latest displayed samples remain visible after updates."
+      >
+        <RecentSamples />
+      </Example>
       <Example name="Hover defaults" description="Default chart inspection">
         <ComposedChart
           data={[
@@ -335,6 +485,12 @@ createRoot(document.getElementById('root')!).render(
           ariaLabel="Standalone line"
           formatValue={formatValue}
         />
+        <ChartLegend aria-label="Measures">
+          <ChartLegend.Item>
+            <ChartLegend.Marker kind="line" color="var(--atbl-chart-1)" />
+            <ChartLegend.Label>Response time (ms)</ChartLegend.Label>
+          </ChartLegend.Item>
+        </ChartLegend>
       </Example>
       <Example
         name="Standalone area"
@@ -351,14 +507,7 @@ createRoot(document.getElementById('root')!).render(
         name="Standalone pie"
         description="Original values and share inspection."
       >
-        <PieChart
-          items={samples
-            .slice(0, 3)
-            .map(item => ({ ...item, value: Math.abs(item.value) }))}
-          unit="ms"
-          ariaLabel="Standalone pie"
-          formatValue={formatValue}
-        />
+        <PieLegendExample />
       </Example>
 
       <Example
@@ -391,7 +540,7 @@ createRoot(document.getElementById('root')!).render(
             { id: 'end', label: 'Completed onboarding' },
           ]}
           series={Array.from({ length: 9 }, (_, index) => ({
-            id: `population-${index}`,
+            id: ['population', index].join(':'),
             label: `Population ${index + 1} — users assigned to the extended calendar experiment in Europe`,
             values: [1000 - index * 20, 250 - index * 10],
           }))}
@@ -535,6 +684,85 @@ createRoot(document.getElementById('root')!).render(
               count: 10,
               converted: null,
               truncated: true,
+            },
+          ]}
+        />
+      </Example>
+      {legendKinds.map(kind => (
+        <Example
+          key={kind}
+          name={`${kind} legend identity`}
+          description="Series retain their own notes when the legend changes."
+        >
+          <LegendIdentityExample kind={kind} />
+        </Example>
+      ))}
+      <Example
+        name="Sparse retention"
+        description="Authored period labels and missing observations."
+        span={2}
+      >
+        <RetentionChart
+          ariaLabel="Sparse retention"
+          unit="users"
+          series={[
+            {
+              id: 'alpha',
+              label: 'Alpha',
+              cohortSize: 100,
+              points: [
+                {
+                  offset: 11,
+                  label: 'Cohort 2026 / week 11',
+                  rate: 0.15,
+                  retainedCount: 15,
+                  incomplete: true,
+                },
+                {
+                  offset: 0,
+                  label: 'Cohort 2026 / week 0',
+                  rate: 0.8,
+                  retainedCount: 90,
+                },
+                {
+                  offset: 7,
+                  label: 'Cohort 2026 / week 7',
+                  rate: 0,
+                  retainedCount: 0,
+                },
+                {
+                  offset: 2,
+                  label: 'Cohort 2026 / week 2',
+                  rate: null,
+                  retainedCount: null,
+                },
+              ],
+            },
+            {
+              id: 'beta',
+              label: 'Beta',
+              cohortSize: 50,
+              points: [
+                {
+                  offset: 0,
+                  label: 'Cohort 2026 / week 0',
+                  rate: 1,
+                  retainedCount: 50,
+                },
+                {
+                  offset: 2,
+                  label: 'Cohort 2026 / week 2',
+                  rate: 0.4,
+                  retainedCount: 20,
+                },
+                {
+                  offset: 11,
+                  label: 'Cohort 2026 / week 11',
+                  rate: 0.2,
+                  retainedCount: 10,
+                  incomplete: true,
+                },
+              ],
             },
           ]}
         />

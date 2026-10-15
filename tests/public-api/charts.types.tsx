@@ -20,11 +20,18 @@ const existing: LineChartProps = {
 type Row = {
   month: string;
   timestamp: number;
+  observedAt: Date;
   revenue: number;
   target: number | null;
 };
 const rows: readonly Row[] = [
-  { month: 'Jan', timestamp: 0, revenue: 12, target: null },
+  {
+    month: 'Jan',
+    timestamp: 0,
+    observedAt: new Date(0),
+    revenue: 12,
+    target: null,
+  },
 ];
 const composed: ComposedChartProps<Row> = {
   data: rows,
@@ -42,12 +49,26 @@ const charts = (
     <PieChart {...existing} showLegend={false} />
     <ComposedChart {...composed}>
       <ComposedChart.XAxis<Row> dataKey="month" />
+      <ComposedChart.XAxis<Row, string>
+        dataKey={row => row.month}
+        xAxisId="authored"
+        type="category"
+        tickFormatter={value => `Month: ${value}`}
+      />
+      <ComposedChart.XAxis<Row, Date>
+        dataKey={row => row.observedAt}
+        xAxisId="callback-time"
+        scale="utc"
+        ticks={[0]}
+        tickFormatter={value => String(value)}
+      />
       <ComposedChart.XAxis<Row>
         dataKey="timestamp"
         type="number"
         xAxisId="time"
         hide
       />
+      <ComposedChart.XAxis<Row> dataKey="observedAt" xAxisId="observed" hide />
       <ComposedChart.YAxis yAxisId="revenue" />
       <ComposedChart.Bar<Row> dataKey="revenue" yAxisId="revenue" />
       <ComposedChart.Bar<Row> dataKey="target" yAxisId="revenue" />
@@ -80,3 +101,18 @@ void missingName;
 // @ts-expect-error Marker geometry must be deliberate when composing a legend.
 const unspecifiedMarker = <ChartLegend.Marker color="var(--atbl-chart-1)" />;
 void unspecifiedMarker;
+
+const unexpectedTitle: ComposedChartProps<Row> = {
+  ...composed,
+  // @ts-expect-error Plot descriptions belong to the containing widget.
+  title: 'Revenue',
+};
+void unexpectedTitle;
+
+const incompatibleAxisAccessor: Parameters<
+  typeof ComposedChart.XAxis<Row, string>
+>[0] = {
+  // @ts-expect-error Authored accessors retain their declared value type.
+  dataKey: row => row.observedAt,
+};
+void incompatibleAxisAccessor;

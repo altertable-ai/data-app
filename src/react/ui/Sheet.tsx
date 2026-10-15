@@ -1,4 +1,5 @@
 import {
+  type ComponentRef,
   useEffect,
   useId,
   useRef,
@@ -58,7 +59,7 @@ export function Sheet({
   ref,
   ...props
 }: SheetProps) {
-  const dialog = useRef<HTMLDialogElement>(null);
+  const dialog = useRef<ComponentRef<'dialog'>>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleId = useId();
   const descriptionId = useId();

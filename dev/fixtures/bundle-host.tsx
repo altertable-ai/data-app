@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { AppIcon } from '@altertable/data-app/react/ui';
 import { Kbd } from '@/src/react/ui/Kbd';
 import { useAnnotationHost } from '@/dev/fixtures/use-annotation-host';
@@ -8,6 +9,7 @@ import {
   useReducer,
   useRef,
   useState,
+  type ComponentRef,
 } from 'react';
 import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';
 import {
@@ -98,7 +100,7 @@ function Host() {
     hostOptions.has('annotation-error')
   );
   const [sentCount, setSentCount] = useState(0);
-  const hostRef = useRef<HTMLDivElement>(null);
+  const hostRef = useRef<ComponentRef<'div'>>(null);
   const [theme, setTheme] = useState<Theme>('dark');
   const [parentPresentation, setParentPresentation] = useState(true);
   const [embedded, setEmbedded] = useState(true);
@@ -107,8 +109,12 @@ function Host() {
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
   const [bundleVersion, bumpBundleVersion] = useReducer(value => value + 1, 1);
   const annotationsHost = useAnnotationHost({
-    sourceVersion: isPlayground ? `${sourceHash}:${bundleVersion}` : 'fixture',
-    storageKey: isPlayground ? `playground:${location.origin}` : undefined,
+    sourceVersion: isPlayground
+      ? [sourceHash, bundleVersion].join(KEY_SEPARATOR)
+      : 'fixture',
+    storageKey: isPlayground
+      ? ['playground', location.origin].join(KEY_SEPARATOR)
+      : undefined,
   });
   const annotationBarRef = useRef<AnnotationBarHandle>(null);
   const sendAnnotations = useEffectEvent(async () => {

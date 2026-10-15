@@ -63,35 +63,34 @@ test('time ticks fit narrow cards and stay readable in both themes', async ({
   await page.goto('/date-axes');
   for (const width of [1280, 640, 320]) {
     await page.setViewportSize({ width, height: 1000 });
-    await expect
-      .poll(async () =>
-        page.getByRole('application').evaluateAll(axes =>
-          axes.every(axis => {
-            const labels = [
-              ...axis.querySelectorAll(
-                'text:not([orientation]) tspan, text[orientation="bottom"] tspan'
-              ),
-            ]
-              .map(label => label.getBoundingClientRect())
-              .sort((a, b) => a.x - b.x);
-            return (
-              labels.length > 0 &&
-              labels.every((label, index) =>
-                labels
+    for (const plot of await page.getByRole('application').all()) {
+      await expect
+        .poll(async () => {
+          // Match displayed category/date text, excluding numeric Y-axis readings.
+          const labels = await plot.getByText(/\D|^\d{4}$/).all();
+          const boxes = await Promise.all(
+            labels.map(label => label.boundingBox())
+          );
+          return (
+            boxes.length > 0 &&
+            boxes.every(
+              (box, index) =>
+                box &&
+                boxes
                   .slice(index + 1)
                   .every(
                     other =>
-                      label.bottom <= other.top ||
-                      other.bottom <= label.top ||
-                      label.right + 3 <= other.left ||
-                      other.right + 3 <= label.left
+                      other &&
+                      (box.y + box.height <= other.y ||
+                        other.y + other.height <= box.y ||
+                        box.x + box.width + 3 <= other.x ||
+                        other.x + other.width + 3 <= box.x)
                   )
-              )
-            );
-          })
-        )
-      )
-      .toBe(true);
+            )
+          );
+        })
+        .toBe(true);
+    }
     await expect
       .poll(() =>
         page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)
@@ -118,18 +117,27 @@ test('time axes preserve irregular spacing, fine precision, numeric opt-in and c
   });
   expect(await uneven.textContent()).not.toContain('2024');
   expect(await uneven.textContent()).toMatch(/Feb|Mar|Apr/);
-  const positions = await uneven
-    .locator('.recharts-line-curve')
-    .first()
-    .evaluate(element =>
-      [...element.getAttribute('d')!.matchAll(/[ML]([\d.-]+),/g)].map(match =>
-        Number(match[1])
-      )
+  await uneven.scrollIntoViewIfNeeded();
+  const first = await uneven.getByText('Feb 27', { exact: true }).boundingBox();
+  const last = await uneven.getByText('Apr 1', { exact: true }).boundingBox();
+  const bounds = await uneven.boundingBox();
+  const left = first!.x;
+  const right = last!.x + last!.width;
+  // Three daily gaps precede a month-long gap: quarter/late plot positions inspect
+  // Mar 1 / Apr 1, rather than the Feb 28 / Mar 1 readings of equal category spacing.
+  for (const [fraction, date] of [
+    [0.25, 'Mar 1, 2024'],
+    [0.8, 'Apr 1, 2024'],
+  ] as const) {
+    await page.mouse.move(
+      left + (right - left) * fraction,
+      bounds!.y + bounds!.height / 2
     );
-  expect(positions).toHaveLength(5);
-  expect(
-    (positions[4]! - positions[3]!) / (positions[1]! - positions[0]!)
-  ).toBeCloseTo(31, 1);
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain(date);
+  }
+  await page.mouse.move(0, 0);
   const fine = page.getByRole('application', {
     name: 'One second · milliseconds',
     exact: true,
@@ -158,4 +166,58 @@ test('time axes preserve irregular spacing, fine precision, numeric opt-in and c
 
       .textContent()
   ).toContain('2024-01-01');
+});
+
+test('temporal input preserves single and repeated instants and falls back for mixed categories', async ({
+  page,
+}) => {
+  await page.goto('/date-axes?edge-cases');
+  for (const [name, date] of [
+    ['One observed date', 'Feb 29, 2024'],
+    ['Repeated instants', '09:30:00.125'],
+    ['Date observations', 'Mar 1, 2024'],
+  ] as const) {
+    const plot = page.getByRole('application', { name, exact: true });
+    await plot.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain(date);
+  }
+  const categories = page.getByRole('application', {
+    name: 'Mixed date and category',
+    exact: true,
+  });
+  expect(await categories.textContent()).toContain('2024-02-29');
+  expect(await categories.textContent()).toContain('Unknown');
+});
+
+test('authored category accessors and UTC tick overrides retain their public contracts', async ({
+  page,
+}) => {
+  await page.goto('/date-axes?edge-cases');
+  const categories = page.getByRole('application', {
+    name: 'Authored category accessor',
+    exact: true,
+  });
+  await expect
+    .poll(() => categories.textContent())
+    .toContain('[Tier: Starter]');
+  expect(await categories.textContent()).toContain('[Tier: Team]');
+  const formatted = page.getByRole('application', {
+    name: 'UTC ticks with authored formatter',
+    exact: true,
+  });
+  await expect.poll(() => formatted.textContent()).toContain('Hour 0');
+  expect(await formatted.textContent()).toContain('Hour 12');
+  await formatted.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect
+    .poll(() => page.getByRole('tooltip').textContent())
+    .toContain('Oct 14, 2026');
+  const explicit = page.getByRole('application', {
+    name: 'UTC ticks with authored positions',
+    exact: true,
+  });
+  expect(await explicit.textContent()).toContain('Oct 14, 2026, 06:00');
 });

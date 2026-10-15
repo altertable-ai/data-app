@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
 import type { SearchSuggestion } from '@/src/react/ui/SearchTypeahead';
@@ -250,7 +251,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
       const title = suggestions.title(row);
       invariant(!!title.trim(), 'Search suggestions need a nonempty title.');
       return {
-        id: `${typeof key}:${key}`,
+        id: [typeof key, key].join(KEY_SEPARATOR),
         title,
         description: suggestions.description?.(row),
         onSelect: onSelect ? () => onSelect(row) : undefined,

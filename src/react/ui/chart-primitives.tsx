@@ -3,9 +3,10 @@ export { ChartXAxis } from '@/src/react/ui/chart-date-axis';
 import { useContext, useLayoutEffect, type ComponentProps } from 'react';
 import { formatNumber } from '@/src/core/format';
 import {
-  ChartInteraction,
+  ChartInteractionContext,
   ChartSeries,
   useChartSeries,
+  isChartSeriesActive,
 } from '@/src/react/ui/chart-interaction';
 import {
   Area,
@@ -44,16 +45,13 @@ function NearestChartDot({
   cy,
   stroke,
 }: DotProps & { seriesId: string }) {
-  const interaction = useContext(ChartInteraction);
+  const interaction = useContext(ChartInteractionContext);
   const registerPoint = interaction?.registerPoint;
   useLayoutEffect(() => {
     if (cx == null || cy == null) return;
     return registerPoint?.(seriesId, cx, cy);
   }, [registerPoint, seriesId, cx, cy]);
-  const active =
-    !interaction?.pointer ||
-    interaction.seriesCount === 1 ||
-    interaction.hovered === seriesId;
+  const active = isChartSeriesActive(interaction, seriesId);
   return active ? (
     <ChartDot
       cx={cx}
@@ -296,7 +294,7 @@ export function ChartTooltipContent(
 /** Uses the same surface as single-series inspection; Recharts owns interaction. */
 export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
   const dateLabel = useDateAxisLabel(props.axisId);
-  const interaction = useContext(ChartInteraction);
+  const interaction = useContext(ChartInteractionContext);
   return (
     <Tooltip
       labelFormatter={dateLabel}
@@ -304,19 +302,19 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
         <ChartTooltipContent
           {...content}
           payload={
-            interaction?.pointer &&
+            interaction?.isPointerInspection &&
             interaction.seriesCount !== 1 &&
             props.shared !== true
               ? content.payload.filter(
-                  entry => entry.graphicalItemId === interaction.hovered
+                  entry => entry.graphicalItemId === interaction.activeSeriesId
                 )
               : content.payload
           }
         />
       )}
       position={
-        interaction?.pointer && interaction.point
-          ? { y: interaction.point.y }
+        interaction?.isPointerInspection && interaction.activePoint
+          ? { y: interaction.activePoint.y }
           : undefined
       }
       cursor={false}

@@ -7,6 +7,7 @@ import {
   useId,
   useSyncExternalStore,
   type ComponentPropsWithRef,
+  type ComponentRef,
   type ReactNode,
   type RefObject,
 } from 'react';
@@ -171,7 +172,7 @@ export function InspectionSheet({
   onOpenChange: (open: boolean) => void;
   tab: AboutTab;
   onTabChange: (tab: AboutTab) => void;
-  returnFocus: RefObject<HTMLButtonElement | null>;
+  returnFocus: RefObject<ComponentRef<'button'> | null>;
 }) {
   const defaults = useInspectionDefaults();
   const resolvedContext = dataContext ?? defaults?.dataContext;
@@ -288,7 +289,7 @@ function InspectionTrigger({
   const owner = useContext(InspectionOwner)!;
   const defaults = useInspectionDefaults();
   const dateFormatting = useContext(DateFormattingContext);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<ComponentRef<'button'>>(null);
   const mergedTrigger = useMergeRefs([triggerRef, ref]);
   const key = useId();
   const id = subjectId(props);

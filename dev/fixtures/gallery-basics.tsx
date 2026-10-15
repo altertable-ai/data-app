@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { type ReactNode } from 'react';
 import { Comparison } from '@altertable/data-app/react';
 import {
@@ -74,7 +75,7 @@ const revenueAndConversion = [
 ];
 
 const serviceSeries = ['API', 'Search', 'Exports'].map((name, index) => ({
-  key: `service${index}`,
+  key: ['service', index].join(KEY_SEPARATOR),
   name,
   dots: name !== 'Search',
   color: `var(--atbl-chart-${index + 1})`,

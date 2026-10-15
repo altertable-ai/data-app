@@ -1,3 +1,4 @@
+import { KEY_SEPARATOR } from '@/src/core/keys';
 import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
@@ -21,7 +22,7 @@ const client = createDataClient<{
   transport(name, input, signal) {
     const version =
       name === 'alpha' ? (input as { version: number }).version : 1;
-    const key = `${name}:${version}`;
+    const key = [name, version].join(KEY_SEPARATOR);
     document.body.dataset[`${name}Requests`] = String(
       Number(document.body.dataset[`${name}Requests`] ?? 0) + 1
     );
@@ -130,11 +131,11 @@ const betaContent = beta.content(result => (
 ));
 
 function resolve(name: 'alpha' | 'beta', version: number) {
-  pending.get(`${name}:${version}`)?.({
+  pending.get([name, version].join(KEY_SEPARATOR))?.({
     status: 200,
     body: {
       data: { count: version },
-      requestId: `${name}:${version}`,
+      requestId: [name, version].join(KEY_SEPARATOR),
       queriedAt: '2026-10-07T00:00:00Z',
       queryIds: [],
       queries: [{ name, statement: `SELECT ${name}` }],

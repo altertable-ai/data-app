@@ -116,7 +116,8 @@ conversion windows, and cohort definitions; these components visualize results.
 - `<FunnelChart>`: ordered steps and aligned, nonincreasing counts per population.
 - `<RetentionChart>`: numeric offsets, fractional rates (`0.25`, not `25`), retained
   counts, and cohort size. Distinguish unobserved (`null`), observed zero, and
-  observed but still accumulating (`incomplete`) periods.
+  observed but still accumulating (`incomplete`) periods. Offset labels come from
+  supplied points; numeric spacing preserves elapsed distance.
 - `<JourneyChart>`: full ordered paths with counts and outcomes; preserve repeated
   events and mark cut-off paths as `truncated`.
 
@@ -150,6 +151,13 @@ primitives are also available.
   )}
 </VisualizationWidget>
 ```
+
+For irregular time intervals, use `<ComposedChart.XAxis>` with ISO dates, zoned
+ISO timestamps, or `Date` values; spacing follows elapsed time. Use `scale="utc"`
+for epoch milliseconds, or `type="category"` to keep date-like labels categorical.
+On UTC axes, supplied `ticks` and `tickFormatter` take precedence over automatic labels.
+Preserve missing measures as `null` and choose `connectNulls` deliberately; do not
+replace missing observations with zero.
 
 Label series and units clearly. See component JSDoc and the
 [Recharts API](https://recharts.github.io/en-US/api/ComposedChart/) for options.
