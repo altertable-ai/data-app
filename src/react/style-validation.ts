@@ -34,7 +34,7 @@ export function validateAuthoredStyles(
 
   // CSS selectors and DOM queries may select stable roots, but not private descendants.
   for (const [, name] of source.matchAll(/\.(altertable-[\w-]+)/g)) {
-    if (!Object.hasOwn(dataAppStyleClasses, name))
+    if (name && !Object.hasOwn(dataAppStyleClasses, name))
       diagnostics.add(
         `Unsupported selector .${name}. Use a component className or documented root.`
       );

@@ -55,7 +55,7 @@ const errorBrand = Symbol.for('@altertable/data-app/MessageRoutingError');
 export class MessageRoutingError extends Error {
   readonly [errorBrand] = true;
 
-  static [Symbol.hasInstance](value: unknown): boolean {
+  static override [Symbol.hasInstance](value: unknown): boolean {
     return (
       value instanceof Error &&
       (value as { [errorBrand]?: unknown })[errorBrand] === true

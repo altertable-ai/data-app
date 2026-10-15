@@ -3,7 +3,11 @@ import {
   type DataClientOptions,
   type DataTransport,
 } from '@altertable/data-app/client';
-import { connectionCheck, type Lakehouse } from '@altertable/data-app/contract';
+import {
+  connectionCheck,
+  type ConnectionOperation,
+  type Lakehouse,
+} from '@altertable/data-app/contract';
 
 // Compile-only assertions: invalid configurations must never run.
 async function verifyClientOptions(
@@ -13,11 +17,22 @@ async function verifyClientOptions(
 ) {
   const operations = {
     connection: connectionCheck({
-      connection: { statement: 'SELECT 1', params: {} },
+      connection: {
+        projections: { connection_check: { type: 'number' } } as const,
+        statement: 'SELECT 1',
+        params: {},
+      },
     }),
   };
-  createDataClient<typeof operations>();
+  // @ts-expect-error The connection helper does not declare arbitrary query names.
+  void operations.connection.queryNames.invented;
+  const external = createDataClient<typeof operations>();
+  const externalData: true = (await external.query('connection', {})).data;
+  void externalData;
   createDataClient<typeof operations>({});
+  const setup = createDataClient<{ connection: ConnectionOperation }>();
+  const setupData: true = (await setup.query('connection', {})).data;
+  void setupData;
   createDataClient<typeof operations>({ transport });
   createDataClient<typeof operations>({
     endpoint: '/api/data',

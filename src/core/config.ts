@@ -2,10 +2,23 @@
  * App configuration shared by browser and server.
  * @module @altertable/data-app
  */
-import { defineOperation } from '@/src/core/contract';
+import { defineOperation, type OperationDefinition } from '@/src/core/contract';
 import type { AppearanceOptions } from '@/src/core/appearance';
-import { snapshotQueries, type QueryDefinitions } from '@/src/core/queries';
-export type { QueryDefinitions, QueryParameterValue } from '@/src/core/queries';
+import {
+  snapshotQueries,
+  type QueryDefinitions,
+  type CheckedQueries,
+  type QuerySnapshot,
+} from '@/src/core/queries';
+export type {
+  QueryDefinitions,
+  QueryParameterValue,
+  QueryParameter,
+  QueryValueType,
+  QueryField,
+  QueryProjections,
+  QueryRow,
+} from '@/src/core/queries';
 
 export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
   {
@@ -18,31 +31,17 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
     appearance?: AppearanceOptions;
     /** Shared date display defaults. Reporting views and individual fields may override the time zone. */
     dateFormatting?: { locale?: string; timeZone?: string };
-    /** Named SQL statements and parameter defaults used by app operations. */
+    /** Named SQL statements with typed parameters, ownership, and result projections. */
     queries: Queries;
   };
-
-type ImmutableQueries<Queries extends QueryDefinitions> = {
-  readonly [Name in keyof Queries]: {
-    readonly statement: Queries[Name]['statement'];
-    readonly params: {
-      readonly [Param in keyof Queries[Name]['params']]: Readonly<
-        Queries[Name]['params'][Param]
-      >;
-    };
-  };
-};
 
 /** An app declaration with operations bound to its query registry. */
 export type DataAppDefinition<
   Queries extends QueryDefinitions = QueryDefinitions,
 > = Readonly<Omit<DataAppConfig<Queries>, 'queries'>> & {
-  readonly queries: ImmutableQueries<Queries>;
+  readonly queries: QuerySnapshot<Queries>;
   defineOperation<Input, Output>(
-    operation: Omit<
-      Parameters<typeof defineOperation<Input, Output, Queries>>[0],
-      'queries'
-    >
+    operation: OperationDefinition<Input, Output, Queries>
   ): ReturnType<typeof defineOperation<Input, Output, Queries>>;
 };
 
@@ -64,27 +63,24 @@ export type DataAppDefinition<
  * TypeScript checks the shape, not AST syntax. Keep executable composition outside the call.
  *
  * SQL passes unchanged to the backend, which interprets placeholders such as `$orgId`.
- * Declare every parameter with `{ defaultValue: value }` or `{}` for a required value.
+ * Declare each parameter's type and source: 'input' or 'context'.
+ * Input values are required unless defaultValue is supplied. Context values come only from the host.
  * Values are finite numbers, strings, booleans, or null, never SQL fragments or identifiers.
- * Caller values override defaults; trusted server `queryParams` cannot be overridden.
+ * Caller values override input defaults; only context-owned parameters read trusted queryParams.
  */
 export function defineDataApp<const Queries extends QueryDefinitions>(
-  config: DataAppConfig<Queries>
+  config: DataAppConfig<Queries> & { queries: CheckedQueries<Queries> }
 ): DataAppDefinition<Queries> {
-  const queries = snapshotQueries(config.queries) as Queries &
-    ImmutableQueries<Queries>;
+  const queries = snapshotQueries<Queries>(config.queries);
   return Object.freeze({
     ...config,
     queries,
     defineOperation<Input, Output>(
-      operation: Omit<
-        Parameters<typeof defineOperation<Input, Output, Queries>>[0],
-        'queries'
-      >
+      operation: OperationDefinition<Input, Output, Queries>
     ) {
       return defineOperation<Input, Output, Queries>({
         ...operation,
-        queries,
+        queries: queries as unknown as CheckedQueries<Queries>,
       });
     },
   });

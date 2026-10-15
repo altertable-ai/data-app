@@ -15,9 +15,10 @@ export type OutputOf<T> = T extends {
   ? Output
   : unknown;
 
-export type QueryResult = {
+/** Lakehouse results contain positional unknown cells; registered queries supply decoded records. */
+export type QueryResult<Row = unknown[]> = {
   columns: { name: string; type?: string }[];
-  rows: unknown[][];
+  rows: Row[];
   queryId?: string;
 };
 
@@ -51,7 +52,7 @@ export type OperationContext = {
 /**
  * The input parser runs in the operation executor's runtime: server for HTTP apps, browser for
  * bundle apps. Browser validation does not replace backend authorization or query limits.
- * `run` parses query rows once; its result is the operation's data.
+ * Registered queries decode rows from their declared projections; `run` derives the operation's data.
  */
 export type DataOperation<Input, Output> = {
   input: (value: unknown) => Input;

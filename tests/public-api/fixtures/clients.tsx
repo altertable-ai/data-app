@@ -11,6 +11,7 @@ import {
 } from '@altertable/data-app/contract';
 import {
   createDataHooks,
+  searchVariable,
   createDataContext,
   DataApp,
   DataSection,
@@ -20,8 +21,11 @@ import {
 } from '@altertable/data-app/react';
 
 type Operations = {
-  count: DataOperation<{ category: DimensionSelection<string> }, number>;
-  categories: DataOperation<Record<string, never>, DimensionOption<string>[]>;
+  count: DataOperation<
+    { category: DimensionSelection<string>; search: string },
+    number
+  >;
+  categories: DataOperation<{ search: string }, DimensionOption<string>[]>;
 };
 const pending = new Map<
   string,
@@ -39,10 +43,19 @@ function response(data: unknown): Awaited<ReturnType<DataTransport>> {
 }
 function makeApp(id: string) {
   const client = createDataClient<Operations>({
-    transport(operation, _input, signal) {
+    transport(operation, input, signal) {
+      const search =
+        input &&
+        typeof input === 'object' &&
+        'search' in input &&
+        typeof input.search === 'string'
+          ? input.search
+          : '';
       if (operation === 'categories')
         return Promise.resolve(
-          response([{ value: id, label: `${id} category` }])
+          response([
+            { value: id, label: `${id} category${search ? ` ${search}` : ''}` },
+          ])
         );
       return new Promise((resolve, reject) => {
         pending.set(id, resolve);
@@ -58,17 +71,22 @@ function makeApp(id: string) {
     },
   });
   const hooks = createDataHooks(client);
-  const category = hooks.defineFacetFilter<'categories', string>({
+  const search = searchVariable({ key: 'search', label: 'Search categories' });
+  const category = hooks.defineFacetFilter({
     key: 'category',
     label: 'Category',
     valueType: 'string',
     selectionMode: 'single',
-    facet: { operation: 'categories', input: () => ({}) },
+    facet: {
+      context: { search },
+      operation: 'categories',
+      input: values => ({ search: values.search }),
+    },
   });
   const view = hooks.defineDataView({
     operation: 'count',
     dataContext: context,
-    variables: { category },
+    variables: { search, category },
     describeInput: () => `${id} scope`,
     isEmpty: () => false,
     emptyFallback: { title: 'No counts' },

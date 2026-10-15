@@ -5,14 +5,18 @@ import type {
   AppVariableValues,
   DateRangeVariable,
   VariableCollection,
+  CheckedFacetContexts,
 } from '@/src/core/variables';
 import type { DateRangeRequest } from '@/src/core/contract';
 import { invariant } from '@/src/core/invariant';
 
+type ResolvedVariable<Variable> = Variable extends DateRangeVariable
+  ? DateRangeRequest
+  : AppVariableValues<{ value: Variable }>['value'];
 export type ResolvedVariables<Variables extends VariableCollection> = {
-  [Key in keyof Variables]: Variables[Key] extends DateRangeVariable
-    ? DateRangeRequest
-    : AppVariableValues<Variables>[Key];
+  [Key in keyof Variables]:
+    | ResolvedVariable<Variables[Key]>
+    | (string extends keyof Variables ? undefined : never);
 };
 
 type DateVariableKey<Variables extends VariableCollection> = {
@@ -97,8 +101,8 @@ export type DataViewDefinition<
   /** Inherited by DataSection unless it supplies its own copy. */
   emptyFallback: EmptyContent;
 } & (keyof Variables extends never
-  ? { variables?: Variables }
-  : { variables: Variables }) &
+  ? { variables?: Variables & CheckedFacetContexts<NoInfer<Variables>> }
+  : { variables: Variables & CheckedFacetContexts<NoInfer<Variables>> }) &
   ViewInputMapping<NoInfer<Variables>, Input> &
   ViewBindingOptions<NoInfer<Variables>, Input> &
   (

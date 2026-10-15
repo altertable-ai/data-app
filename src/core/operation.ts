@@ -1,4 +1,5 @@
 import { DataSourceError } from '@/src/core/contract';
+import { assertJsonData } from '@/src/core/json-data';
 import type {
   DataOperations,
   DisclosedQuery,
@@ -52,6 +53,7 @@ export async function executeDataOperation(
       signal,
       queryParams,
     });
+    assertJsonData(output);
     const body: DataQueryBody<unknown> = {
       data: output,
       requestId,

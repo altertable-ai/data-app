@@ -1,3 +1,4 @@
+import type { IsUnion, KnownRecord } from '@/src/core/queries';
 import { randomUuid } from '@/src/core/uuid';
 import { createHttpTransport, DataAppError } from '@/src/client/transport';
 import { getDataAppTransport, localFrameBridge } from '@/src/client/iframe';
@@ -23,38 +24,70 @@ export type DataResponse<Output, Input = unknown> = DataQueryBody<Output> & {
   input: Input;
 };
 
+declare const clientContract: unique symbol;
 export type DataClient<Operations extends DataOperations> = {
+  /** Preserve the operation registry when passing clients through helpers. */
+  readonly [clientContract]: (operations: Operations) => Operations;
   query<Name extends keyof Operations & string>(
-    name: Name,
-    input: InputOf<Operations[Name]>,
+    this: void,
+    name: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown),
+    input: InputOf<Operations[NoInfer<Name>]>,
     options?: { signal?: AbortSignal }
   ): Promise<
     DataResponse<OutputOf<Operations[Name]>, InputOf<Operations[Name]>>
   >;
 };
 
-/** Browser operations and named-operation delivery are mutually exclusive configurations. */
+/** The factory is the only place that grants a client its invariant contract witness. */
+function typedClient<Operations extends DataOperations>(
+  implementation: Pick<DataClient<Operations>, 'query'>
+): DataClient<Operations> {
+  return implementation as DataClient<Operations>;
+}
+
+type TransportOptions = {
+  operations?: never;
+  lakehouse?: never;
+  transport?: DataTransport;
+  endpoint?: string;
+  fetch?: typeof fetch;
+};
+/** Browser operations and named-operation delivery are mutually exclusive. */
 export type DataClientOptions<Operations extends DataOperations> =
-  | {
-      operations: Operations;
-      lakehouse?: Lakehouse;
-      transport?: never;
-      endpoint?: never;
-      fetch?: never;
-    }
-  | {
-      operations?: never;
-      lakehouse?: never;
-      transport?: DataTransport;
-      endpoint?: string;
-      fetch?: typeof fetch;
-    };
+  (KnownRecord<Operations> extends never
+    ? never
+    : true extends {
+          [Name in keyof Operations]: IsUnion<Operations[Name]>;
+        }[keyof Operations]
+      ? never
+      : unknown) &
+    (
+      | {
+          operations: Operations;
+          lakehouse?: Lakehouse;
+          transport?: never;
+          endpoint?: never;
+          fetch?: never;
+        }
+      | TransportOptions
+    );
 
 const dataQueryRoute = defineDataQueryRoute();
 
 /** Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. */
 export function createDataClient<Operations extends DataOperations>(
-  options: DataClientOptions<Operations> = {}
+  options: DataClientOptions<Operations>
+): DataClient<Operations>;
+/** Named clients derive data from the declared operations' run return types. */
+export function createDataClient<Operations extends DataOperations>(
+  ...args: DataClientOptions<Operations> extends never ? [options: never] : []
+): DataClient<Operations>;
+/** Without an operation contract, external operation data remains unknown. */
+export function createDataClient(
+  options?: TransportOptions
+): DataClient<DataOperations>;
+export function createDataClient<Operations extends DataOperations>(
+  options: DataClientOptions<Operations> | TransportOptions = {}
 ): DataClient<Operations> {
   if (options.operations)
     return createOperationClient({
@@ -64,7 +97,7 @@ export function createDataClient<Operations extends DataOperations>(
   const http = createHttpTransport(options);
   const useHttp = options.endpoint !== undefined || options.fetch !== undefined;
 
-  return {
+  return typedClient<Operations>({
     async query(name, input, { signal } = {}) {
       const transport =
         options.transport ??
@@ -73,6 +106,7 @@ export function createDataClient<Operations extends DataOperations>(
       const ok = response.status >= 200 && response.status < 300;
       let body: Omit<DataResponse<OutputOf<Operations[typeof name]>>, 'input'>;
       try {
+        // The envelope is validated here; the shared operation contract owns data.
         body = dataQueryRoute.output(response, { operation: name, input })
           .body as typeof body;
       } catch (error) {
@@ -87,18 +121,19 @@ export function createDataClient<Operations extends DataOperations>(
 
       return { ...body, input };
     },
-  };
+  });
 }
 
 function createOperationClient<Operations extends DataOperations>(options: {
   operations: Operations;
   lakehouse?: Lakehouse;
 }): DataClient<Operations> {
-  return {
+  const operations = Object.freeze({ ...options.operations });
+  return typedClient<Operations>({
     async query(name, input, { signal } = {}) {
       signal?.throwIfAborted();
       const requestId = randomUuid();
-      if (!Object.hasOwn(options.operations, name))
+      if (!Object.hasOwn(operations, name))
         throw new DataAppError(
           'Unknown data operation.',
           'not_found',
@@ -117,16 +152,12 @@ function createOperationClient<Operations extends DataOperations>(options: {
         );
 
       try {
-        const { body } = await executeDataOperation(
-          options.operations[name]!,
-          input,
-          {
-            lakehouse,
-            signal: signal ?? new AbortController().signal,
-            requestId,
-            operationName: name,
-          }
-        );
+        const { body } = await executeDataOperation(operations[name]!, input, {
+          lakehouse,
+          signal: signal ?? new AbortController().signal,
+          requestId,
+          operationName: name,
+        });
 
         return { ...body, input } as DataResponse<
           OutputOf<Operations[typeof name]>,
@@ -139,5 +170,5 @@ function createOperationClient<Operations extends DataOperations>(options: {
         throw new DataAppError(failure.message, failure.code, requestId);
       }
     },
-  };
+  });
 }

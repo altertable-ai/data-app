@@ -1,7 +1,7 @@
 import { createDataContext as registerContext } from '@/src/react/ui/data-context';
 import { useDeclaredResult } from '@/src/react/view-runtime';
 import { createDataClient } from '@/src/client/data-client';
-import { connectionCheck } from '@/src/core/contract';
+import type { ConnectionOperation } from '@/src/core/contract';
 import { createDataHooks } from '@/src/react/hooks';
 import { AppIcon } from '@/src/react/ui/icons';
 import { Button } from '@/src/react/ui/Button';
@@ -13,10 +13,10 @@ const connectionContext = registerContext({})({
   glossary: {},
 });
 
-const client = /* @__PURE__ */ createDataClient();
-const { defineDataView } = /* @__PURE__ */ createDataHooks<{
-  connection: ReturnType<typeof connectionCheck>;
-}>(client);
+const client = /* @__PURE__ */ createDataClient<{
+  connection: ConnectionOperation;
+}>();
+const { defineDataView } = /* @__PURE__ */ createDataHooks(client);
 
 const connectionView = defineDataView({
   dataContext: connectionContext,

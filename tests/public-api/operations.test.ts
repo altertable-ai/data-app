@@ -12,11 +12,17 @@ function operation() {
   return defineOperation({
     input: parseCount,
     checks: [3],
-    queries: { count: { statement: 'SELECT $count', params: { count: {} } } },
+    queries: {
+      count: {
+        projections: { count: { type: 'number' } } as const,
+        statement: 'SELECT $count',
+        params: { count: { type: 'number', source: 'input' } },
+      },
+    },
     policy: { maxQueryRows: 2, maxDurationMs: 100 },
     async run({ query }, input) {
       const result = await query('count', { count: input }, { limit: 8 });
-      return result.rows[0]![0];
+      return result.rows[0]!.count;
     },
   });
 }
@@ -156,7 +162,7 @@ test('browser and HTTP execution preserve public source failures across package 
 test('browser execution keeps run failures private and enforces row and response byte bounds', async () => {
   const base = operation();
   const source = lakehouse();
-  const cases = [
+  const cases: { operation: typeof base; lakehouse: Lakehouse }[] = [
     {
       operation: {
         ...base,
@@ -232,11 +238,17 @@ test('an authorized client queries an operation with validated input and query e
     count: defineOperation({
       input: parseCount,
       checks: [3],
-      queries: { count: { statement: 'SELECT $count', params: { count: {} } } },
+      queries: {
+        count: {
+          projections: { count: { type: 'number' } } as const,
+          statement: 'SELECT $count',
+          params: { count: { type: 'number', source: 'input' } },
+        },
+      },
       policy: { maxQueryRows: 2, maxDurationMs: 1000 },
       async run({ query }, input) {
         const result = await query('count', { count: input });
-        return result.rows[0]![0];
+        return result.rows[0]!.count;
       },
     }),
   };
@@ -361,4 +373,12 @@ test('browser operations retain cryptographic request IDs without randomUUID and
     insecureRandom.mockRestore();
     vi.unstubAllGlobals();
   }
+});
+
+test('browser clients capture registered operations before mutable aliases can remove them', async () => {
+  const operations = { count: operation() };
+  const client = createDataClient({ operations, lakehouse: lakehouse() });
+  const mutable: { count?: typeof operations.count } = operations;
+  delete mutable.count;
+  expect((await client.query('count', 3)).data).toBe(3);
 });

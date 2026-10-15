@@ -1,11 +1,149 @@
 import { invariant } from '@/src/core/invariant';
+import type { QueryResult } from '@/src/core/operation-types';
+
+type QueryValues = {
+  string: string;
+  number: number;
+  boolean: boolean;
+  null: null;
+};
+/** Primitive values after decoding, independent of SQL storage types. */
+export type QueryValueType = keyof QueryValues;
+export type QueryField = { type: QueryValueType; nullable?: boolean };
+export type QueryProjections = Readonly<Record<string, QueryField>>;
+type QueryValue<Field extends QueryField> =
+  | QueryValues[Field['type']]
+  | (Field extends { nullable: true } ? null : never);
+export type QueryRow<Projections extends QueryProjections> =
+  Projections extends unknown
+    ? { -readonly [Name in keyof Projections]: QueryValue<Projections[Name]> }
+    : never;
 
 export type QueryParameterValue = string | number | boolean | null;
+type ParameterSource<Value> =
+  | { source?: 'input'; defaultValue?: Value }
+  | { source: 'context'; defaultValue?: never };
+/** Parameters default to input ownership; context values come only from the host. */
+export type QueryParameter = {
+  [Type in QueryValueType]:
+    | ({ type: Type; nullable?: false } & ParameterSource<QueryValues[Type]>)
+    | ({ type: Type; nullable: true } & ParameterSource<
+        QueryValues[Type] | null
+      >);
+}[QueryValueType];
+
+type InputParameterNames<
+  Params extends Readonly<Record<string, QueryParameter>>,
+> = {
+  [Name in keyof Params]: Params[Name] extends { source: 'context' }
+    ? never
+    : Name;
+}[keyof Params];
+type RequiredParameterNames<
+  Params extends Readonly<Record<string, QueryParameter>>,
+> = {
+  [Name in InputParameterNames<Params>]: Params[Name] extends {
+    defaultValue: QueryParameterValue;
+  }
+    ? never
+    : Name;
+}[InputParameterNames<Params>];
+/** Caller-owned values; context parameters cannot be supplied by an operation. */
+export type QueryInputParameters<
+  Params extends Readonly<Record<string, QueryParameter>>,
+> = {
+  [Name in RequiredParameterNames<Params>]: QueryValue<Params[Name]>;
+} & {
+  [
+    Name in Exclude<InputParameterNames<Params>, RequiredParameterNames<Params>>
+  ]?: QueryValue<Params[Name]>;
+};
 type QueryDefinition = {
   statement: string;
-  params: Readonly<Record<string, { defaultValue?: QueryParameterValue }>>;
+  params: Readonly<Record<string, QueryParameter>>;
+  projections: QueryProjections;
 };
 export type QueryDefinitions = Readonly<Record<string, QueryDefinition>>;
+export type IsUnion<Value, Whole = Value> = Value extends Whole
+  ? [Whole] extends [Value]
+    ? false
+    : true
+  : never;
+export type KnownRecord<RecordType> = '__proto__' extends keyof RecordType
+  ? never
+  : string extends keyof RecordType
+    ? never
+    : Exclude<keyof RecordType, string> extends never
+      ? true extends IsUnion<RecordType>
+        ? never
+        : RecordType
+      : never;
+type CheckedField<Field extends QueryField> =
+  true extends IsUnion<Field>
+    ? never
+    : true extends IsUnion<Field['type']>
+      ? never
+      : 'nullable' extends keyof Field
+        ? Field extends { nullable: infer Nullable }
+          ? boolean extends Nullable
+            ? never
+            : Field
+          : never
+        : Field;
+
+type CheckedParameters<
+  Params extends Readonly<Record<string, QueryParameter>>,
+> = KnownRecord<Params> & {
+  [Name in keyof Params]: CheckedField<Params[Name]> &
+    (true extends IsUnion<Params[Name]['source']>
+      ? never
+      : 'defaultValue' extends keyof Params[Name]
+        ? Params[Name] extends { source: 'context' }
+          ? never
+          : undefined extends Params[Name]['defaultValue']
+            ? never
+            : Params[Name]
+        : Params[Name]);
+};
+
+type CheckedProjections<Projections extends QueryProjections> =
+  KnownRecord<Projections> &
+    (keyof Projections extends never
+      ? never
+      : '' extends keyof Projections
+        ? never
+        : { [Name in keyof Projections]: CheckedField<Projections[Name]> });
+
+/** Author declarations preserve finite names, fixed owners/types, and one parameter map. */
+export type CheckedQueries<Queries extends QueryDefinitions> =
+  KnownRecord<Queries> &
+    ('' extends keyof Queries ? never : unknown) & {
+      [Name in keyof Queries]: KnownRecord<Queries[Name]> & {
+        statement: Queries[Name]['statement'] extends ''
+          ? never
+          : Queries[Name]['statement'];
+        params: CheckedParameters<Queries[Name]['params']>;
+        projections: CheckedProjections<Queries[Name]['projections']>;
+      };
+    };
+type FrozenField<Field extends QueryField> = Field extends unknown
+  ? Readonly<Field>
+  : never;
+export type QuerySnapshot<Queries extends QueryDefinitions> = {
+  readonly [Name in keyof Queries]: {
+    readonly statement: Queries[Name]['statement'];
+    readonly params: {
+      readonly [Param in keyof Queries[Name]['params']]: FrozenField<
+        Queries[Name]['params'][Param]
+      >;
+    };
+    readonly projections: {
+      readonly [Field in keyof Queries[Name]['projections']]: FrozenField<
+        Queries[Name]['projections'][Field]
+      >;
+    };
+  };
+};
 
 /** Parameters are scalar SQL values, never identifiers or SQL fragments. */
 export type QueryParameters = Readonly<Record<string, QueryParameterValue>>;
@@ -28,10 +166,27 @@ export function isQueryParameters(value: unknown): value is QueryParameters {
   );
 }
 
-/** Retain authored statements and defaults, rejecting empty SQL and invalid scalar defaults. */
-export function snapshotQueries(
-  definitions: QueryDefinitions
-): QueryDefinitions {
+function snapshotField<Field extends QueryField>(
+  field: Field
+): Readonly<Field> {
+  invariant(
+    field &&
+      typeof field === 'object' &&
+      !Array.isArray(field) &&
+      (field.type === 'string' ||
+        field.type === 'number' ||
+        field.type === 'boolean' ||
+        field.type === 'null') &&
+      (field.nullable === undefined || typeof field.nullable === 'boolean'),
+    'Query fields need a supported type and a boolean nullable flag.'
+  );
+  return Object.freeze({ ...field });
+}
+
+/** Snapshot the query's SQL, parameter defaults, and decoded result contract. */
+export function snapshotQueries<const Queries extends QueryDefinitions>(
+  definitions: Queries
+): QuerySnapshot<Queries> {
   return Object.freeze(
     Object.fromEntries(
       Object.entries(definitions).map(([name, query]) => {
@@ -47,45 +202,187 @@ export function snapshotQueries(
                   isQueryParameterValue(declaration.defaultValue),
                 `Invalid default for parameter ${key} in query ${name}.`
               );
-              return [key, Object.freeze({ ...declaration })];
+              invariant(
+                declaration.source === undefined ||
+                  declaration.source === 'input' ||
+                  declaration.source === 'context',
+                `Invalid source for parameter ${key}.`
+              );
+              invariant(
+                declaration.source !== 'context' ||
+                  !Object.hasOwn(declaration, 'defaultValue'),
+                `Context parameter ${key} cannot have a default.`
+              );
+              return [key, snapshotField(declaration)];
             })
           )
         );
-        return [name, Object.freeze({ statement: query.statement, params })];
+        const projectionEntries = Object.entries(query.projections);
+        invariant(
+          projectionEntries.length > 0 &&
+            projectionEntries.every(([alias]) => !!alias.trim()),
+          'Queries need at least one named projection.'
+        );
+        return [
+          name,
+          Object.freeze({
+            statement: query.statement,
+            params,
+            projections: Object.freeze(
+              Object.fromEntries(
+                projectionEntries.map(([alias, field]) => [
+                  alias,
+                  snapshotField(field),
+                ])
+              )
+            ),
+          }),
+        ];
       })
     )
+  ) as QuerySnapshot<Queries>;
+}
+
+/** Decode each returned cell once, matching aliases independently of result order. */
+export function decodeQueryResult<Projections extends QueryProjections>(
+  result: QueryResult,
+  projections: Projections
+): QueryResult<QueryRow<Projections>> {
+  if (
+    !result ||
+    !Array.isArray(result.columns) ||
+    !Array.isArray(result.rows) ||
+    (result.queryId !== undefined && typeof result.queryId !== 'string')
+  ) {
+    throw new Error('Query result must contain columns and rows.');
+  }
+  const returnedColumns = Array.from(result.columns, column => {
+    if (
+      !column ||
+      typeof column !== 'object' ||
+      Array.isArray(column) ||
+      typeof column.name !== 'string' ||
+      (column.type !== undefined && typeof column.type !== 'string')
+    ) {
+      throw new Error(
+        'Query result columns must have names and optional type strings.'
+      );
+    }
+    return {
+      name: column.name,
+      ...(column.type === undefined ? {} : { type: column.type }),
+    };
+  });
+  const names = returnedColumns.map(column => column.name);
+  const expected = Object.keys(projections);
+  if (
+    names.length !== expected.length ||
+    new Set(names).size !== names.length ||
+    names.some(name => !Object.hasOwn(projections, name))
+  ) {
+    throw new Error(
+      'Query result columns do not match the declared projections.'
+    );
+  }
+  const rows = Array.from(result.rows, row => {
+    if (!Array.isArray(row) || row.length !== names.length) {
+      throw new Error('Query result row has the wrong width.');
+    }
+    return Object.fromEntries(
+      names.map((name, index) => [
+        name,
+        decodeQueryCell(row[index], projections[name]!, name),
+      ])
+    ) as QueryRow<Projections>;
+  });
+  return {
+    columns: returnedColumns,
+    rows,
+    ...(result.queryId === undefined ? {} : { queryId: result.queryId }),
+  };
+}
+
+function decodeQueryCell(
+  value: unknown,
+  field: QueryField,
+  column: string
+): string | number | boolean | null {
+  if (value === null) {
+    if (field.type === 'null' || field.nullable === true) return null;
+  } else if (field.type === 'string') {
+    if (typeof value === 'string' || typeof value === 'boolean')
+      return String(value);
+    if (typeof value === 'number' && Number.isFinite(value))
+      return String(value);
+  } else if (field.type === 'boolean') {
+    if (typeof value === 'boolean') return value;
+    if (value === 1 || value === '1' || value === 'true') return true;
+    if (value === 0 || value === '0' || value === 'false') return false;
+  } else if (field.type === 'number') {
+    const number =
+      typeof value === 'boolean'
+        ? Number(value)
+        : typeof value === 'number'
+          ? value
+          : typeof value === 'string' &&
+              /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(value)
+            ? Number(value)
+            : NaN;
+    const underflow =
+      typeof value === 'string' &&
+      number === 0 &&
+      /[1-9]/.test(value.split(/[eE]/)[0]!);
+    if (
+      Number.isFinite(number) &&
+      !underflow &&
+      (!Number.isInteger(number) || Number.isSafeInteger(number))
+    )
+      return number;
+  }
+  throw new Error(
+    `Query column ${column} cannot be decoded as ${field.type}${field.nullable ? ' or null' : ''}.`
   );
 }
 
-/** Context owns protected values; callers supply filters; defaults fill remaining declarations. */
+/** Resolve each declared value from its owner and validate it before SQL execution. */
 export function resolveQueryParameters(
-  declarations: QueryDefinition['params'],
+  declarations: Readonly<
+    Record<
+      string,
+      Pick<QueryParameter, 'type' | 'nullable' | 'source' | 'defaultValue'>
+    >
+  >,
   values: Partial<QueryParameters>,
   context: QueryParameters
 ): QueryParameters {
-  invariant(
-    values && typeof values === 'object' && !Array.isArray(values),
-    'Supply query parameter values as an object.'
-  );
+  if (!values || typeof values !== 'object' || Array.isArray(values))
+    throw new Error('Supply query parameter values as an object.');
   for (const key of Object.keys(values)) {
-    invariant(Object.hasOwn(declarations, key), `Unknown parameter ${key}.`);
-    invariant(
-      !Object.hasOwn(context, key),
-      `Cannot override context parameter ${key}.`
-    );
+    if (!Object.hasOwn(declarations, key))
+      throw new Error(`Unknown parameter ${key}.`);
+    if (declarations[key]!.source === 'context')
+      throw new Error(`Cannot override context parameter ${key}.`);
   }
   return Object.fromEntries(
     Object.entries(declarations).map(([key, declaration]) => {
-      const value = Object.hasOwn(context, key)
-        ? context[key]
-        : Object.hasOwn(values, key)
-          ? values[key]
-          : declaration.defaultValue;
-      invariant(value !== undefined, `Missing parameter ${key}.`);
-      invariant(
-        isQueryParameterValue(value),
-        `Parameter ${key} must be a scalar value.`
-      );
+      const value =
+        declaration.source === 'context'
+          ? Object.hasOwn(context, key)
+            ? context[key]
+            : undefined
+          : Object.hasOwn(values, key) && values[key] !== undefined
+            ? values[key]
+            : declaration.defaultValue;
+      if (value === undefined) throw new Error(`Missing parameter ${key}.`);
+      const nullable =
+        declaration.type === 'null' || declaration.nullable === true;
+      const primitive = declaration.type;
+      if (
+        !(value === null
+          ? nullable
+          : typeof value === primitive && isQueryParameterValue(value))
+      )
+        throw new Error(`Parameter ${key} does not match ${declaration.type}.`);
       return [key, value];
     })
   );

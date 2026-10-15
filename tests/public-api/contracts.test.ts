@@ -63,9 +63,12 @@ test('a calendar and dimension declaration validates and escapes the input used 
       checks: [input],
       queries: {
         activity: {
+          projections: { count: { type: 'number' } } as const,
           statement:
             'SELECT count FROM activity WHERE region = $region OR region IS NULL',
-          params: { region: {} },
+          params: {
+            region: { type: 'string', nullable: true, source: 'input' },
+          },
         },
       },
       policy: { maxQueryRows: 1, maxDurationMs: 1000 },
@@ -77,7 +80,7 @@ test('a calendar and dimension declaration validates and escapes the input used 
               ? selected.region.members[0].value
               : null,
         });
-        return parseCount(result.rows[0]![0]);
+        return parseCount(result.rows[0]!.count);
       },
     }),
   };

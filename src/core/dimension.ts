@@ -1,4 +1,5 @@
 import { KEY_SEPARATOR } from '@/src/core/keys';
+import { facetSource } from '@/src/core/facets';
 import type {
   AppVariable,
   HistoryMode,
@@ -18,20 +19,25 @@ export type DimensionOption<T extends DimensionValue = DimensionValue> = {
   label: string;
   count?: number;
 };
+export type DimensionSelectionVariable<
+  T extends DimensionValue = DimensionValue,
+> = AppVariable<DimensionSelection<T>, 'dimension'> & {
+  readonly optionsSource: 'fixed' | 'query';
+  label: string;
+  selectionMode: 'single' | 'multiple';
+  readonly valueType: T extends number ? 'number' : 'string';
+  allowMissing: boolean;
+  allowExclusion: boolean;
+  maxSelected: number;
+  options: readonly DimensionOption<T>[];
+  describe: (selection: DimensionSelection<T>) => string;
+};
+
+/** A fixed-option dimension retains its distinction from query-backed facets. */
 export type DimensionVariable<T extends DimensionValue = DimensionValue> =
-  AppVariable<DimensionSelection<T>, 'dimension'> & {
-    label: string;
-    selectionMode: 'single' | 'multiple';
-    valueType: 'string' | 'number';
-    allowMissing: boolean;
-    allowExclusion: boolean;
-    maxSelected: number;
-    options: readonly DimensionOption<T>[];
-    facet?: {
-      operation: string;
-      input: (values: Record<string, unknown>) => unknown;
-    };
-    describe: (selection: DimensionSelection<T>) => string;
+  DimensionSelectionVariable<T> & {
+    readonly optionsSource: 'fixed';
+    readonly [facetSource]?: never;
   };
 
 const allSelection: DimensionSelection<never> = { kind: 'all' };
@@ -56,23 +62,31 @@ export type DimensionFilterSettings<T extends DimensionValue> = {
 );
 
 export type DimensionFilterOptions<T extends DimensionValue> =
-  DimensionFilterSettings<T> &
-    (
-      | { options: readonly DimensionOption<T>[]; facet?: never }
-      | {
-          /** A bounded operation supplies options and counts; input chooses other filters affecting counts. */
-          facet: {
-            operation: string;
-            input: (values: Record<string, unknown>) => unknown;
-          };
-          options?: never;
-        }
-    );
+  DimensionFilterSettings<T> & {
+    options: readonly DimensionOption<T>[];
+    facet?: never;
+  };
 
-/** A bounded categorical filter. URL tags distinguish missing from literal "null". */
+/** A bounded categorical filter with app-owned fixed options. */
+export function dimensionFilter<const T extends string>(
+  config: DimensionFilterOptions<T>
+): DimensionVariable<T>;
+export function dimensionFilter<const T extends number>(
+  config: DimensionFilterOptions<T>
+): DimensionVariable<T>;
 export function dimensionFilter<const T extends DimensionValue>(
   config: DimensionFilterOptions<T>
 ): DimensionVariable<T> {
+  return { ...createDimensionFilter(config), optionsSource: 'fixed' };
+}
+
+/** Shared fixed-option and query-backed selection behavior. */
+export function createDimensionFilter<const T extends DimensionValue>(
+  config: DimensionFilterSettings<T> & {
+    options: readonly DimensionOption<T>[];
+  },
+  dynamic = false
+): DimensionSelectionVariable<T> {
   const { key, label, selectionMode, valueType } = config;
   const options = config.options ?? [];
   const optionKeys = options.map(option =>
@@ -111,7 +125,7 @@ export function dimensionFilter<const T extends DimensionValue>(
     if (member.kind === 'missing') return allowMissing;
     if (member.kind !== 'value' || typeof member.value !== valueType)
       return false;
-    if (!config.facet) return allowed.has(dimensionMemberKey(member));
+    if (!dynamic) return allowed.has(dimensionMemberKey(member));
 
     return typeof member.value === 'number'
       ? Number.isFinite(member.value)
@@ -175,12 +189,12 @@ export function dimensionFilter<const T extends DimensionValue>(
 
   return {
     kind: 'dimension',
+    optionsSource: dynamic ? 'query' : 'fixed',
     presentation: config.presentation,
     label,
     valueType,
     selectionMode,
     options,
-    facet: config.facet,
     allowMissing,
     allowExclusion: config.allowExclusion ?? false,
     maxSelected,
@@ -216,7 +230,7 @@ export function dimensionFilter<const T extends DimensionValue>(
 /** Server-side parser; call from the operation input parser before building SQL. */
 export function parseDimensionSelection<T extends DimensionValue>(
   value: unknown,
-  filter: DimensionVariable<T>
+  filter: DimensionSelectionVariable<T>
 ): DimensionSelection<T> {
   invariant(
     filter.valid(value as DimensionSelection<T>),
@@ -229,7 +243,7 @@ export function parseDimensionSelection<T extends DimensionValue>(
 /** Validate bounded facet results before showing them in a picker. */
 export function parseFacetOptions<T extends DimensionValue>(
   value: unknown,
-  filter: DimensionVariable<T>
+  filter: DimensionSelectionVariable<T>
 ): DimensionOption<T>[] {
   invariant(
     Array.isArray(value) && value.length <= 200,

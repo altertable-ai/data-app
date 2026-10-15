@@ -601,7 +601,8 @@ function ticker(
     if (Number.isNaN(target)) low = high;
     while (low < high) {
       const middle = (low + high) >>> 1;
-      if (tickIntervals[middle][2] <= target) low = middle + 1;
+      // Binary-search bounds keep the midpoint within the interval table.
+      if (tickIntervals[middle]![2] <= target) low = middle + 1;
       else high = middle;
     }
     const i = low;
@@ -611,12 +612,10 @@ function ticker(
       );
     if (i === 0)
       return millisecond.every(Math.max(tickStep(+start, +stop, count), 1));
-    const [t, step] =
-      tickIntervals[
-        target / tickIntervals[i - 1][2] < tickIntervals[i][2] / target
-          ? i - 1
-          : i
-      ];
+    // The edge cases above leave an interval on both sides of i.
+    const previous = tickIntervals[i - 1]!;
+    const next = tickIntervals[i]!;
+    const [t, step] = target / previous[2] < next[2] / target ? previous : next;
     return t.every(step);
   }
 

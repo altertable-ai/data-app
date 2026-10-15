@@ -1,3 +1,6 @@
+import type { CheckedVariableDeclarations } from '@/src/core/variables';
+import type { IsUnion } from '@/src/core/queries';
+import { facetSource, type FacetVariable } from '@/src/core/facets';
 import { randomUuid } from '@/src/core/uuid';
 import { DeclaredView } from '@/src/react/view-runtime';
 import {
@@ -20,6 +23,7 @@ import { displayedSnapshot, resolveDataView } from '@/src/core/data-view';
 import {
   defineAppVariables,
   type VariableCollection,
+  type CheckedFacetContexts,
 } from '@/src/core/variables';
 import {
   dateRangeVariable,
@@ -27,7 +31,7 @@ import {
   type DateRangeVariableOptions,
 } from '@/src/react/ui/variables';
 import {
-  dimensionFilter,
+  createDimensionFilter,
   type DimensionFilterSettings,
   type DimensionOption,
   type DimensionValue,
@@ -130,6 +134,53 @@ type BoundDataView<
   ): ViewContent<Data, Input>;
 };
 
+type FacetOperationName<
+  Operations extends DataOperations,
+  Value extends DimensionValue,
+> = {
+  [Name in keyof Operations & string]: OutputOf<
+    Operations[Name]
+  > extends readonly DimensionOption<Value>[]
+    ? Name
+    : never;
+}[keyof Operations & string];
+type FacetConfig<
+  Operations extends DataOperations,
+  Value extends DimensionValue,
+  Context extends VariableCollection,
+  Name extends keyof Operations & string,
+> = DimensionFilterSettings<Value> & {
+  facet: {
+    context: Context &
+      CheckedVariableDeclarations<NoInfer<Context>> &
+      (string extends keyof Context ? never : unknown);
+    operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
+    input: (
+      values: ResolvedVariables<NoInfer<Context>>
+    ) => InputOf<Operations[NoInfer<Name>]>;
+  };
+};
+
+type CheckedFacetSources<
+  Operations extends DataOperations,
+  Variables extends VariableCollection,
+> = CheckedVariableDeclarations<Variables> & {
+  [Key in keyof Variables]: Variables[Key] extends FacetVariable<
+    infer Value,
+    infer _Context,
+    infer Name,
+    infer Input
+  >
+    ? Name extends keyof Operations
+      ? Input extends InputOf<Operations[Name]>
+        ? OutputOf<Operations[Name]> extends readonly DimensionOption<Value>[]
+          ? Variables[Key]
+          : never
+        : never
+      : never
+    : Variables[Key];
+};
+
 /** Bind declared operations to URL variables, displayed readings, and request feedback. */
 export function createDataHooks<Operations extends DataOperations>(
   client: DataClient<Operations>
@@ -145,7 +196,7 @@ export function createDataHooks<Operations extends DataOperations>(
     const query = useQuery({
       queryKey,
       queryFn({ signal }) {
-        return client.query(name, input, { signal });
+        return client.query(name as never, input, { signal });
       },
       placeholderData(previousData, previousQuery) {
         return previousQuery?.queryKey[1] === clientScope &&
@@ -243,6 +294,10 @@ export function createDataHooks<Operations extends DataOperations>(
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
     > & {
+      operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
+      variables?: Variables &
+        CheckedFacetSources<Operations, NoInfer<Variables>>;
+    } & {
       dataContext: Context;
       date: ViewDate<Variables, InputOf<Operations[Name]>>;
     }
@@ -264,7 +319,11 @@ export function createDataHooks<Operations extends DataOperations>(
       Variables,
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
-    > & { dataContext: Context }
+    > & {
+      operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
+      variables?: Variables &
+        CheckedFacetSources<Operations, NoInfer<Variables>>;
+    } & { dataContext: Context }
   ): BoundDataView<
     Name,
     Variables,
@@ -283,7 +342,10 @@ export function createDataHooks<Operations extends DataOperations>(
       Variables,
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
-    > & { dataContext: Context }
+    > & {
+      variables?: Variables &
+        CheckedFacetSources<Operations, NoInfer<Variables>>;
+    } & { dataContext: Context }
   ) {
     return bindDataView(definition);
   }
@@ -406,10 +468,20 @@ export function createDataHooks<Operations extends DataOperations>(
     const Context extends AuthoringDataContext = AuthoringDataContext,
   >(
     definition: {
-      operation: Name;
+      operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
       dataContext: Context;
       time: Omit<DateRangeVariableOptions, 'key'>;
-      variables?: Additional & { period?: never };
+      variables?: Additional &
+        CheckedVariableDeclarations<NoInfer<Additional>> & {
+          period?: never;
+        } & Omit<
+          CheckedFacetContexts<TimeVariables<NoInfer<Additional>>>,
+          'period'
+        > &
+        Omit<
+          CheckedFacetSources<Operations, TimeVariables<NoInfer<Additional>>>,
+          'period'
+        >;
       isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
       emptyFallback: EmptyContent;
     } & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>> &
@@ -431,7 +503,8 @@ export function createDataHooks<Operations extends DataOperations>(
       dataContext: definition.dataContext,
       variables: { period, ...definition.variables } as {
         period: typeof period;
-      } & Additional,
+      } & Additional &
+        CheckedFacetContexts<NoInfer<TimeVariables<Additional>>>,
       bindings: definition.bindings,
       input(values) {
         if (definition.input) return definition.input(values);
@@ -455,24 +528,57 @@ export function createDataHooks<Operations extends DataOperations>(
     });
   }
 
-  /** Bind a facet source to a declared operation and its typed input.
+  /** Bind typed options to a registered operation and explicitly declared variable dependencies.
+   * The input mapper receives only resolved context values; consuming views must include that context.
    * Options are cached for 60 seconds; known values survive refreshes and errors.
    * Selected values absent from a new result remain available with a zero count. */
 
   function defineFacetFilter<
-    Name extends keyof Operations & string,
-    const T extends DimensionValue,
+    const Context extends VariableCollection,
+    const Name extends FacetOperationName<Operations, string>,
   >(
-    config: DimensionFilterSettings<T> & {
+    config: FacetConfig<Operations, string, Context, Name>
+  ): FacetVariable<string, Readonly<Context>, Name, InputOf<Operations[Name]>>;
+  function defineFacetFilter<
+    const Context extends VariableCollection,
+    const Name extends FacetOperationName<Operations, number>,
+  >(
+    config: FacetConfig<Operations, number, Context, Name>
+  ): FacetVariable<number, Readonly<Context>, Name, InputOf<Operations[Name]>>;
+  function defineFacetFilter<
+    const Context extends VariableCollection,
+    Value extends DimensionValue,
+    Name extends keyof Operations & string,
+  >(
+    config: DimensionFilterSettings<Value> & {
       facet: {
+        context: Context;
         operation: Name;
-        input: (values: Record<string, unknown>) => InputOf<Operations[Name]>;
+        input: (
+          values: ResolvedVariables<Context>
+        ) => InputOf<Operations[Name]>;
       };
-    } & (OutputOf<Operations[Name]> extends readonly DimensionOption<T>[]
-        ? object
-        : never)
+    }
   ) {
-    return dimensionFilter<T>(config);
+    const context = Object.freeze({ ...config.facet.context });
+    const operation = config.facet.operation;
+    const mapInput = config.facet.input;
+    return Object.assign(
+      createDimensionFilter<Value>({ ...config, options: [] }, true),
+      {
+        optionsSource: 'query' as const,
+        [facetSource]: Object.freeze({
+          context,
+          operation,
+          input(values: Record<string, unknown>) {
+            const resolved = Object.fromEntries(
+              Object.keys(context).map(name => [name, values[name]])
+            ) as ResolvedVariables<Context>;
+            return mapInput(resolved);
+          },
+        }),
+      }
+    );
   }
 
   function useView<
@@ -491,7 +597,7 @@ export function createDataHooks<Operations extends DataOperations>(
       clientScope,
       (operation, input, signal) =>
         client
-          .query(operation as keyof Operations & string, input as never, {
+          .query(operation as never, input as never, {
             signal,
           })
           .then(response => response.data)

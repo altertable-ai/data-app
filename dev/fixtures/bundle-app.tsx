@@ -1,6 +1,9 @@
 import { injectDataAppStyles } from '@altertable/data-app/react';
 import { defineDataApp } from '@altertable/data-app';
-import { connectionCheck } from '@altertable/data-app/contract';
+import {
+  connectionCheck,
+  type ConnectionOperation,
+} from '@altertable/data-app/contract';
 import { useState } from 'react';
 import {
   createMessageClient,
@@ -24,7 +27,11 @@ const dataApp = defineDataApp({
   scope: { organization: 'test', environment: 'prod' },
   appearance: { theme: 'system' },
   queries: {
-    connection: { statement: 'SELECT 1 AS connection_check', params: {} },
+    connection: {
+      projections: { connection_check: { type: 'number' } },
+      statement: 'SELECT 1 AS connection_check',
+      params: {},
+    },
   },
 });
 const bridge = getDataAppTransport()!;
@@ -124,7 +131,7 @@ function App() {
       <button
         onClick={() => {
           void createDataClient<{
-            forbidden: ReturnType<typeof connectionCheck>;
+            forbidden: ConnectionOperation;
           }>()
             .query('forbidden', {})
             .catch(error =>
