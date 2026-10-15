@@ -107,7 +107,6 @@ export class DetailContent<Data, Input> {
 type DetailEntry = {
   content: DetailContent<unknown, unknown>;
   input: unknown;
-  trigger: RefObject<HTMLElement | SVGElement | null>;
 };
 
 type RoutedDetail = { id: string; input: unknown };
@@ -148,7 +147,6 @@ function readRoute(
       return {
         content,
         input: parseDetailInput(content.target, item.input),
-        trigger: { current: null },
       };
     });
   } catch {
@@ -255,7 +253,7 @@ function DetailSheet({
   onClose,
 }: {
   entry: DetailEntry;
-  returnFocus: DetailEntry['trigger'];
+  returnFocus: RefObject<HTMLElement | SVGElement | null>;
   onClose: () => void;
 }) {
   const result = entry.content.target.useResult(entry.input);
@@ -313,7 +311,6 @@ export function DetailRoutes({
           {
             content,
             input: parsed,
-            trigger: { current: trigger ?? null },
           },
         ];
         writeRoute(next);
@@ -332,18 +329,7 @@ export function DetailRoutes({
             trigger.focus({ preventScroll: true });
         });
       }
-      if (!route) return setStack([]);
-      setStack(previous =>
-        route.map((entry, index) => ({
-          ...entry,
-          trigger:
-            previous[index]?.content.target === entry.content.target &&
-            JSON.stringify(previous[index]?.input) ===
-              JSON.stringify(entry.input)
-              ? previous[index].trigger
-              : entry.trigger,
-        }))
-      );
+      setStack(route ?? []);
     }
     sync();
     return subscribeSearch(sync);
