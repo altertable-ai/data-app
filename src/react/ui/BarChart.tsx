@@ -1,8 +1,12 @@
 import { formatNumber } from '@/src/core/format';
 import { chartBarFill } from '@/src/react/ui/chartColor';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import { useState } from 'react';
 import { useChartScrollToEnd } from '@/src/react/ui/use-chart-scroll-to-end';
+import {
+  ExplorationActionControl,
+  getPrimaryExplorationAction,
+} from '@/src/react/ui/ExplorationActionControl';
+import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   validateValueChartItems,
@@ -19,16 +23,18 @@ import {
 
 export type BarChartItem = ChartItem;
 
-export type BarChartProps = ValueChartProps;
+export type BarChartProps<Row extends BarChartItem = BarChartItem> =
+  ValueChartProps<Row>;
 
 /** Nonnegative category values. Compose inside VisualizationWidget for a titled panel.
  * Owns hover/touch tooltips; no selection state or keyboard navigation. */
-export function BarChart({
+export function BarChart<Row extends BarChartItem>({
   items,
   unit,
   ariaLabel,
   formatValue = formatNumber,
-}: BarChartProps) {
+  itemActions,
+}: BarChartProps<Row>) {
   validateValueChartItems('bar', items);
   const [activeId, setActiveId] = useState<string>();
   const scrollport = useChartScrollToEnd(items);
@@ -74,40 +80,59 @@ export function BarChart({
             </RechartsBarChart>
           </div>
           <div className="altertable-selectable-bars-items">
-            {items.map(item => (
-              <Tooltip
-                key={item.id}
-                variant="chart"
-                onOpenChange={open =>
-                  setActiveId(current =>
-                    open ? item.id : current === item.id ? undefined : current
-                  )
-                }
-                content={
-                  <>
-                    <strong>{item.label}</strong>
-                    <span>
-                      {formatValue(item.value)} {unit}
-                    </span>
-                  </>
-                }
-                className="altertable-chart-column"
-              >
-                <button
-                  data-atbl-focus="ring"
-                  data-atbl-control="default"
-                  type="button"
-                  tabIndex={-1}
-                  className="altertable-selectable-bars-item"
-                  aria-label={`${item.label}: ${formatValue(item.value)} ${unit}`}
-                >
-                  <span className="altertable-selectable-bars-area" />
-                  <span className="altertable-selectable-bars-label">
-                    {item.label}
-                  </span>
-                </button>
-              </Tooltip>
-            ))}
+            {items.map(item => {
+              const actions = itemActions?.(item) ?? [];
+              const action = getPrimaryExplorationAction(actions);
+              return (
+                <Fragment key={item.id}>
+                  <div className="altertable-chart-item-actions">
+                    <Tooltip
+                      variant="chart"
+                      onOpenChange={open =>
+                        setActiveId(current =>
+                          open
+                            ? item.id
+                            : current === item.id
+                              ? undefined
+                              : current
+                        )
+                      }
+                      content={
+                        <>
+                          <strong>{item.label}</strong>
+                          <span>
+                            {formatValue(item.value)} {unit}
+                          </span>
+                        </>
+                      }
+                      className="altertable-chart-column"
+                    >
+                      <button
+                        data-atbl-focus="ring"
+                        data-atbl-control="default"
+                        type="button"
+                        tabIndex={action ? 0 : -1}
+                        className="altertable-selectable-bars-item"
+                        aria-label={`${item.label}: ${formatValue(item.value)} ${unit}${action ? `. ${action.label}` : ''}`}
+                        onClick={action?.onSelect}
+                      >
+                        <span className="altertable-selectable-bars-area" />
+                        <span className="altertable-selectable-bars-label">
+                          {item.label}
+                        </span>
+                      </button>
+                    </Tooltip>
+                    {actions.length > 1 && (
+                      <ExplorationActionControl
+                        actions={actions}
+                        ariaLabel={`${item.label} actions`}
+                        hidePrimary={Boolean(action)}
+                      />
+                    )}
+                  </div>
+                </Fragment>
+              );
+            })}
           </div>
         </div>
       </div>

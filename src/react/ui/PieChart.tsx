@@ -1,26 +1,32 @@
 import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { Tooltip } from '@/src/react/ui/Tooltip';
+import {
+  ExplorationActionControl,
+  getPrimaryExplorationAction,
+} from '@/src/react/ui/ExplorationActionControl';
 import { useState } from 'react';
 import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
 import { validateValueChartItems } from '@/src/react/ui/chart-data';
 
 export type PieChartItem = ChartItem;
-export type PieChartProps = ValueChartProps & {
-  /** Omit the built-in key when composing a separate ChartLegend. */
-  showLegend?: boolean;
-};
+export type PieChartProps<Row extends PieChartItem = PieChartItem> =
+  ValueChartProps<Row> & {
+    /** Omit the built-in key when composing a separate ChartLegend. */
+    showLegend?: boolean;
+  };
 
 /** Nonnegative, mutually exclusive parts; shares use the sum of supplied items.
  * Include Other to represent the whole. Zero values remain in the legend; all-zero
  * data shows an empty circle. Colors follow item order. Compose inside VisualizationWidget;
  * hover/touch tooltips coordinate slice and legend emphasis without caller state. */
-export function PieChart({
+export function PieChart<Row extends PieChartItem>({
   items,
   unit,
   ariaLabel,
   showLegend = true,
   formatValue = value => new Intl.NumberFormat().format(value),
-}: PieChartProps) {
+  itemActions,
+}: PieChartProps<Row>) {
   validateValueChartItems('pie', items);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [plotOpen, setPlotOpen] = useState(false);
@@ -30,7 +36,7 @@ export function PieChart({
     ? items.reduce((sum, item) => sum + item.value / maximum, 0)
     : 0;
   let cursor = -Math.PI / 2;
-  const slices: (PieChartItem & {
+  const slices: (Row & {
     share: number;
     color: string;
     path: string;
@@ -79,7 +85,13 @@ export function PieChart({
               onOpenChange={setPlotOpen}
               content={preview ? detail(preview) : null}
             >
-              <svg viewBox="0 0 220 220" aria-hidden="true" focusable="false">
+              <svg
+                viewBox="0 0 220 220"
+                aria-hidden={itemActions ? undefined : true}
+                aria-label={itemActions ? ariaLabel : undefined}
+                focusable={itemActions ? undefined : false}
+                role={itemActions ? 'group' : undefined}
+              >
                 {total === 0 ? (
                   <circle
                     cx="110"
@@ -90,34 +102,57 @@ export function PieChart({
                 ) : (
                   slices
                     .filter(item => item.share > 0)
-                    .map(item => (
-                      <path
-                        key={item.id}
-                        d={item.path}
-                        fill={item.color}
-                        className="altertable-pie-slice"
-                        data-active={
-                          item.id ===
-                            (plotOpen && previewId
-                              ? previewId
-                              : showLegend
-                                ? legendId
-                                : null) || undefined
-                        }
-                        onPointerDown={event => {
-                          if (plotOpen && previewId !== item.id)
-                            event.preventDefault();
-                          setPreviewId(item.id);
-                        }}
-                        onPointerEnter={event => {
-                          if (event.pointerType === 'mouse')
+                    .map(item => {
+                      const action = getPrimaryExplorationAction(
+                        itemActions?.(item) ?? []
+                      );
+                      return (
+                        <path
+                          key={item.id}
+                          d={item.path}
+                          fill={item.color}
+                          className="altertable-pie-slice"
+                          data-active={
+                            item.id ===
+                              (plotOpen && previewId
+                                ? previewId
+                                : showLegend
+                                  ? legendId
+                                  : null) || undefined
+                          }
+                          onPointerDown={event => {
+                            if (plotOpen && previewId !== item.id)
+                              event.preventDefault();
                             setPreviewId(item.id);
-                        }}
-                        onPointerLeave={event => {
-                          if (event.pointerType === 'mouse') setPreviewId(null);
-                        }}
-                      />
-                    ))
+                          }}
+                          onClick={() => action?.onSelect()}
+                          onKeyDown={event => {
+                            if (
+                              action &&
+                              (event.key === 'Enter' || event.key === ' ')
+                            ) {
+                              event.preventDefault();
+                              action.onSelect();
+                            }
+                          }}
+                          aria-label={
+                            action
+                              ? `${item.label}: ${formatValue(item.value)} ${unit}. ${action.label}`
+                              : undefined
+                          }
+                          role={action ? 'button' : undefined}
+                          tabIndex={action ? 0 : undefined}
+                          onPointerEnter={event => {
+                            if (event.pointerType === 'mouse')
+                              setPreviewId(item.id);
+                          }}
+                          onPointerLeave={event => {
+                            if (event.pointerType === 'mouse')
+                              setPreviewId(null);
+                          }}
+                        />
+                      );
+                    })
                 )}
               </svg>
             </Tooltip>
@@ -133,34 +168,46 @@ export function PieChart({
               aria-label={`${ariaLabel} legend`}
               className="altertable-pie-legend"
             >
-              {slices.map(item => (
-                <ChartLegend.Item key={item.id}>
-                  <Tooltip
-                    variant="chart"
-                    content={detail(item)}
-                    onOpenChange={open =>
-                      setLegendId(current =>
-                        open ? item.id : current === item.id ? null : current
-                      )
-                    }
-                  >
-                    <button
-                      data-atbl-focus="ring"
-                      data-atbl-control="default"
-                      type="button"
-                      tabIndex={-1}
-                      aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}`}
+              {slices.map(item => {
+                const actions = itemActions?.(item) ?? [];
+                const action = getPrimaryExplorationAction(actions);
+                return (
+                  <ChartLegend.Item key={item.id}>
+                    <Tooltip
+                      variant="chart"
+                      content={detail(item)}
+                      onOpenChange={open =>
+                        setLegendId(current =>
+                          open ? item.id : current === item.id ? null : current
+                        )
+                      }
                     >
-                      <ChartLegend.Marker kind="square" color={item.color} />
-                      <ChartLegend.Label className="altertable-pie-label">
-                        {item.label}
-                      </ChartLegend.Label>
-                      <strong>{formatValue(item.value)}</strong>
-                      <span>{percent(item.share)}</span>
-                    </button>
-                  </Tooltip>
-                </ChartLegend.Item>
-              ))}
+                      <button
+                        data-atbl-focus="ring"
+                        data-atbl-control="default"
+                        type="button"
+                        tabIndex={action ? 0 : -1}
+                        aria-label={`${item.label}: ${formatValue(item.value)} ${unit}, ${percent(item.share)}${action ? `. ${action.label}` : ''}`}
+                        onClick={action?.onSelect}
+                      >
+                        <ChartLegend.Marker kind="square" color={item.color} />
+                        <ChartLegend.Label className="altertable-pie-label">
+                          {item.label}
+                        </ChartLegend.Label>
+                        <strong>{formatValue(item.value)}</strong>
+                        <span>{percent(item.share)}</span>
+                      </button>
+                    </Tooltip>
+                    {actions.length > 1 && (
+                      <ExplorationActionControl
+                        actions={actions}
+                        ariaLabel={`${item.label} actions`}
+                        hidePrimary={Boolean(action)}
+                      />
+                    )}
+                  </ChartLegend.Item>
+                );
+              })}
             </ChartLegend>
           )}
         </>

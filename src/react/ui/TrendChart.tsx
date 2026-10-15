@@ -1,7 +1,11 @@
 import { formatNumber } from '@/src/core/format';
 import { Tooltip } from '@/src/react/ui/Tooltip';
-import { useState } from 'react';
 import { useChartScrollToEnd } from '@/src/react/ui/use-chart-scroll-to-end';
+import {
+  ExplorationActionControl,
+  getPrimaryExplorationAction,
+} from '@/src/react/ui/ExplorationActionControl';
+import { Fragment, useLayoutEffect, useRef, useState } from 'react';
 import {
   AreaChart as RechartsAreaChart,
   LineChart as RechartsLineChart,
@@ -14,17 +18,18 @@ import {
   ChartXAxis,
   ChartYAxis,
 } from '@/src/react/ui/chart-primitives';
-import type { ValueChartProps } from '@/src/react/ui/chart-data';
+import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
 import { validateValueChartItems } from '@/src/react/ui/chart-data';
 
 /** Ordered, equally spaced samples; negative values share an explicit zero baseline. */
-export function TrendChart({
+export function TrendChart<Row extends ChartItem>({
   items,
   unit,
   ariaLabel,
   formatValue = formatNumber,
   kind,
-}: ValueChartProps & { kind: 'line' | 'area' }) {
+  itemActions,
+}: ValueChartProps<Row> & { kind: 'line' | 'area' }) {
   validateValueChartItems(kind, items);
   const Plot = kind === 'area' ? RechartsAreaChart : RechartsLineChart;
   const [activeIndex, setActiveIndex] = useState<number>();
@@ -97,40 +102,59 @@ export function TrendChart({
                 </Plot>
               </div>
               <div className="altertable-trend-points">
-                {items.map((item, index) => (
-                  <Tooltip
-                    key={item.id}
-                    variant="chart"
-                    onOpenChange={open =>
-                      setActiveIndex(current =>
-                        open ? index : current === index ? undefined : current
-                      )
-                    }
-                    content={
-                      <>
-                        <strong>{item.label}</strong>
-                        <span>
-                          {formatValue(item.value)} {unit}
-                        </span>
-                      </>
-                    }
-                    className="altertable-chart-column"
-                  >
-                    <button
-                      data-atbl-focus="ring"
-                      data-atbl-control="default"
-                      type="button"
-                      tabIndex={-1}
-                      className="altertable-trend-point"
-                      aria-label={`${item.label}: ${formatValue(item.value)} ${unit}`}
-                    >
-                      <span className="altertable-trend-hit" />
-                      <span className="altertable-trend-label">
-                        {item.label}
-                      </span>
-                    </button>
-                  </Tooltip>
-                ))}
+                {items.map((item, index) => {
+                  const actions = itemActions?.(item) ?? [];
+                  const action = getPrimaryExplorationAction(actions);
+                  return (
+                    <Fragment key={item.id}>
+                      <div className="altertable-chart-item-actions">
+                        <Tooltip
+                          variant="chart"
+                          onOpenChange={open =>
+                            setActiveIndex(current =>
+                              open
+                                ? index
+                                : current === index
+                                  ? undefined
+                                  : current
+                            )
+                          }
+                          content={
+                            <>
+                              <strong>{item.label}</strong>
+                              <span>
+                                {formatValue(item.value)} {unit}
+                              </span>
+                            </>
+                          }
+                          className="altertable-chart-column"
+                        >
+                          <button
+                            data-atbl-focus="ring"
+                            data-atbl-control="default"
+                            type="button"
+                            tabIndex={action ? 0 : -1}
+                            className="altertable-trend-point"
+                            aria-label={`${item.label}: ${formatValue(item.value)} ${unit}${action ? `. ${action.label}` : ''}`}
+                            onClick={action?.onSelect}
+                          >
+                            <span className="altertable-trend-hit" />
+                            <span className="altertable-trend-label">
+                              {item.label}
+                            </span>
+                          </button>
+                        </Tooltip>
+                        {actions.length > 1 && (
+                          <ExplorationActionControl
+                            actions={actions}
+                            ariaLabel={`${item.label} actions`}
+                            hidePrimary={Boolean(action)}
+                          />
+                        )}
+                      </div>
+                    </Fragment>
+                  );
+                })}
               </div>
             </div>
           </div>

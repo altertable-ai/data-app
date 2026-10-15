@@ -36,15 +36,30 @@
   white-space: nowrap;
 }
 
-.altertable-tooltip-trigger.altertable-chart-column[data-variant='chart'] {
+.altertable-chart-item-actions {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 36px;
+}
+.altertable-chart-item-actions
+  > .altertable-tooltip-trigger.altertable-chart-column[data-variant='chart'] {
   flex: 1;
   width: auto;
   height: auto;
   min-width: 36px;
   align-items: flex-start;
 }
-.altertable-chart-column > button {
+.altertable-chart-item-actions .altertable-chart-column > button {
   width: 100%;
+}
+.altertable-chart-item-actions > span {
+  align-self: center;
+}
+.altertable-chart-item-actions > span .altertable-button {
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: var(--atbl-type-meta-size);
 }
 
 .altertable-selectable-bars-plot {
