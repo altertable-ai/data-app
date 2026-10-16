@@ -4,7 +4,13 @@ import { createDataHandler } from '@altertable/data-app/server';
 import { localLakehouse } from '@altertable/data-app/server/bun';
 const totalsOperation = defineOperation({
   checks: [1],
-  queries: { totals: { statement: 'SELECT 1', params: {} } },
+  queries: {
+    totals: {
+      projections: { value: { type: 'number' } } as const,
+      statement: 'SELECT 1',
+      params: {},
+    },
+  },
   input(value: unknown) {
     if (value !== 1) throw new Error('Bad input');
 
@@ -33,7 +39,11 @@ test('HTTP operations validate inputs, enforce row policy, and return query evid
       async queryAll(_statement: string, options: { limit: number }) {
         requestedLimit = options.limit;
 
-        return { columns: [], rows: [[1]], queryId: 'query-1' };
+        return {
+          columns: [{ name: 'value' }],
+          rows: [[1]],
+          queryId: 'query-1',
+        };
       },
     },
   }));
@@ -82,7 +92,7 @@ test('HTTP requests require JSON and an allowed same-origin delivery context', a
   const handle = createDataHandler({ totals: totalsOperation }, async () => ({
     lakehouse: {
       async queryAll() {
-        return { columns: [], rows: [] };
+        return { columns: [{ name: 'value' }], rows: [] };
       },
     },
   }));
@@ -320,6 +330,7 @@ function streamedRequest(
       cancel() {
         state.cancelled = true;
         if (options.slowCancel) return new Promise(() => {});
+        return undefined;
       },
     },
     { highWaterMark: 0 }
@@ -328,7 +339,7 @@ function streamedRequest(
     method: 'POST',
     body,
     duplex: 'half',
-    signal: options.signal,
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
     headers: {
       'content-type': 'application/json',
       ...(options.length && { 'content-length': options.length }),
@@ -383,7 +394,7 @@ test('oversize input cancels remaining consumption regardless of Content-Length'
     let calls = 0;
     const { request, state } = streamedRequest(
       [new Uint8Array(16385), new Uint8Array(20000)],
-      { length, slowCancel: true }
+      { ...(length === undefined ? {} : { length }), slowCancel: true }
     );
     const response = await responseWithin(inputHandler(() => calls++)(request));
     expect(response.status).toBe(413);

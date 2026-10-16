@@ -548,3 +548,36 @@ test('query parameters remain readable within a phone-width inspection sheet', a
     })
   ).toBe(true);
 });
+
+test('facet contexts resolve declared variables and refresh options when dependencies change', async ({
+  page,
+}) => {
+  await page.goto('/clients?search=initial');
+  const search = page.getByRole('searchbox', {
+    name: 'Search categories',
+    exact: true,
+  });
+  await expect.poll(() => search.inputValue()).toBe('initial');
+  const category = page.getByRole('button', {
+    name: 'Category: All',
+    exact: true,
+  });
+  await category.click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('option', { name: 'A category initial', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  await page.keyboard.press('Escape');
+  await search.fill('updated');
+  await category.click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('option', { name: 'A category updated', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+});

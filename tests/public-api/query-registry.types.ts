@@ -3,6 +3,7 @@ import {
   defineOperation,
   parseEmptyInput,
   connectionCheck,
+  type QueryDefinitions,
 } from '@altertable/data-app/contract';
 import type { OutputOf } from '@altertable/data-app/client';
 
@@ -13,13 +14,19 @@ const dataApp = defineDataApp({
   appearance: {},
   queries: {
     products: {
+      projections: { value: { type: 'number' } } as const,
       statement: 'SELECT $limit',
-      params: { limit: { defaultValue: 10 } },
+      params: { limit: { type: 'number', defaultValue: 10 } },
     },
-    ping: { statement: 'SELECT 1', params: {} },
+    ping: {
+      projections: { value: { type: 'number' } } as const,
+      statement: 'SELECT 1',
+      params: {},
+    },
     signUps: {
+      projections: { value: { type: 'number' } } as const,
       statement: 'SELECT $days',
-      params: { days: { defaultValue: 7 } },
+      params: { days: { type: 'number', defaultValue: 7 } },
     },
   },
 });
@@ -73,7 +80,11 @@ const operation = dataApp.defineOperation({
 void operation.queryNames.inventedQuery;
 
 const connection = connectionCheck({
-  connection: { statement: 'SELECT 1', params: {} },
+  connection: {
+    projections: { value: { type: 'number' } } as const,
+    statement: 'SELECT 1',
+    params: {},
+  },
 });
 // @ts-expect-error Connectivity helpers preserve their query names too.
 void connection.queryNames.inventedQuery;
@@ -123,16 +134,17 @@ defineDataApp({
   description: 'Validate query parameter declarations.',
   scope: { organization: 'demo', environment: 'test' },
   appearance: {},
+  // @ts-expect-error Parameter maps and defaults must match the authoring schema.
   queries: {
     ping: {
+      projections: { value: { type: 'number' } } as const,
       statement: 'SELECT 1',
-      // @ts-expect-error Parameter declarations must be a keyed object.
       params: [],
     },
     scalar: {
+      projections: { value: { type: 'number' } } as const,
       statement: 'SELECT $value',
-      // @ts-expect-error Defaults must be scalar SQL values.
-      params: { value: { defaultValue: [] } },
+      params: { value: { type: 'number', defaultValue: [] } },
     },
   },
 });
@@ -185,10 +197,11 @@ defineDataApp({
 
 const mutableQueries = {
   products: {
+    projections: { value: { type: 'number' } } as const,
     statement: 'SELECT $limit',
-    params: { limit: { defaultValue: 1 } },
+    params: { limit: { type: 'number', defaultValue: 1 } },
   },
-};
+} satisfies QueryDefinitions;
 const immutableApp = defineDataApp({
   title: 'Owned queries',
   description: 'Inspect immutable query defaults.',

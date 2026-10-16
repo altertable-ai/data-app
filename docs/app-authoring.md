@@ -11,8 +11,8 @@ Declare the query source of truth with `defineDataApp()`. Generate
 operations with `dataApp.defineOperation()` and execute queries by
 name with parameter values. When a query registry is supplied, use only its queries
 and preserve its SQL. Otherwise, inspect the data and declare the queries the app needs.
-Derive displays, exports, and findings from their results. See
-[named queries](contract.md#execute-named-queries).
+Declare inspected result aliases in `projections` and derive displays, exports,
+and findings from the typed rows. See [named queries](contract.md#execute-named-queries).
 
 Inspect the relevant catalogs, tables, and fields, their time coverage, and
 existing definitions. Choose a question the available data can answer.
@@ -59,7 +59,7 @@ refresh, and failure.
 | Task                                             | Documentation                                                     |
 | ------------------------------------------------ | ----------------------------------------------------------------- |
 | Choose components, CSS tokens, and styling hooks | [Styling](styling.md)                                             |
-| Define queries, inputs, and result parsing       | [Operations](contract.md)                                         |
+| Define queries, inputs, and typed results        | [Operations](contract.md)                                         |
 | Build views, filters, and request states         | [Views](views.md)                                                 |
 | Introduce and explain visualizations             | [Narrative text](widgets.md#narrative-text)                       |
 | Find formatters and presentation helpers         | [App helpers](formatting-and-appearance.md)                       |

@@ -1,3 +1,5 @@
+import type { IsUnion } from '@/src/core/queries';
+import { facetSource, type FacetVariable } from '@/src/core/facets';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -7,6 +9,7 @@ import type { DateRangeContract, DateRangeRequest } from '@/src/core/contract';
 import type {
   DimensionSelection,
   DimensionVariable,
+  DimensionSelectionVariable,
 } from '@/src/core/dimension';
 import type { NumberFilter, BooleanFilter } from '@/src/core/filters';
 import { invariant } from '@/src/core/invariant';
@@ -45,11 +48,12 @@ export type VariableCollection = Record<
   | MultiChoiceVariable
   | DateRangeVariable
   | DimensionVariable<any>
+  | FacetVariable<any, any, string, unknown>
   | NumberFilter
   | BooleanFilter
 >;
 export type AppVariableValues<Variables> = {
-  [Key in keyof Variables]: Variables[Key] extends DimensionVariable<
+  [Key in keyof Variables]: Variables[Key] extends DimensionSelectionVariable<
     infer Value
   >
     ? DimensionSelection<Value>
@@ -57,6 +61,42 @@ export type AppVariableValues<Variables> = {
       ? Value
       : never;
 };
+
+/** Keep conditional declarations narrowed so every dependency has one contract. */
+export type CheckedVariableDeclarations<Variables extends VariableCollection> =
+  true extends IsUnion<Variables>
+    ? never
+    : string extends keyof Variables
+      ? Variables
+      : '__proto__' extends keyof Variables
+        ? never
+        : {
+            [Name in keyof Variables]: true extends IsUnion<Variables[Name]>
+              ? never
+              : Variables[Name];
+          };
+
+/** Every facet dependency must be present with a compatible variable declaration. */
+export type CheckedFacetContexts<Variables extends VariableCollection> =
+  CheckedVariableDeclarations<Variables> &
+    (string extends keyof Variables
+      ? Extract<
+          Variables[keyof Variables],
+          { optionsSource: 'query' }
+        > extends never
+        ? Variables
+        : never
+      : {
+          [Name in keyof Variables]: Variables[Name] extends {
+            [facetSource]: { context: infer Context };
+          }
+            ? string extends keyof Context
+              ? never
+              : Variables extends Context
+                ? Variables[Name]
+                : never
+            : Variables[Name];
+        });
 
 /** Name variables once in the app. URL keys must be unique across its controls. */
 export function defineAppVariables<const Variables extends VariableCollection>(

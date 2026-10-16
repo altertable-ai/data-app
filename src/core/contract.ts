@@ -9,14 +9,23 @@ import { invariant } from '@/src/core/invariant';
 import {
   snapshotQueries,
   resolveQueryParameters,
+  decodeQueryResult,
   type QueryDefinitions,
+  type CheckedQueries,
   type QueryParameters,
-  type QueryParameterValue,
+  type QueryInputParameters,
+  type QueryRow,
+  type IsUnion,
 } from '@/src/core/queries';
 export type {
   QueryDefinitions,
   QueryParameters,
   QueryParameterValue,
+  QueryParameter,
+  QueryValueType,
+  QueryField,
+  QueryProjections,
+  QueryRow,
 } from '@/src/core/queries';
 import type { DateRange as DateRangeInput } from '@/src/core/date-range';
 import type {
@@ -255,28 +264,6 @@ export function parseLabel(value: unknown, maxLength = 100): string {
   return value;
 }
 
-/** Rejects missing or duplicate columns and rows whose width differs from the column list. */
-export function rowsAsRecords(
-  result: QueryResult,
-  requiredColumns: readonly string[]
-): Record<string, unknown>[] {
-  const names = result.columns.map(column => column.name);
-  invariant(
-    new Set(names).size === names.length &&
-      requiredColumns.every(name => names.includes(name)),
-    'Query result columns do not match the expected shape.'
-  );
-
-  return result.rows.map(row => {
-    invariant(
-      row.length === names.length,
-      'Query result row has the wrong width.'
-    );
-
-    return Object.fromEntries(names.map((name, index) => [name, row[index]]));
-  });
-}
-
 export function defineQueryNames<const Names extends Record<string, string>>(
   names: Names
 ): Names {
@@ -296,7 +283,7 @@ export class DataSourceError extends Error {
   readonly [sourceErrorBrand] = true;
   queryName?: string;
 
-  static [Symbol.hasInstance](value: unknown): boolean {
+  static override [Symbol.hasInstance](value: unknown): boolean {
     return (
       value instanceof Error &&
       (value as { [sourceErrorBrand]?: unknown })[sourceErrorBrand] === true
@@ -322,37 +309,67 @@ export class DataSourceError extends Error {
 type RegisteredQueryParameters<
   Queries extends QueryDefinitions,
   Name extends keyof Queries,
-> = keyof Queries[Name]['params'] extends never
-  ? Record<string, never>
-  : Partial<Record<keyof Queries[Name]['params'], QueryParameterValue>>;
+> = QueryInputParameters<Queries[Name]['params']>;
+type ExactQueryParameters<Expected, Params extends object> = Params &
+  Expected &
+  Record<Exclude<keyof Params, keyof Expected>, never> &
+  (Params extends (...args: never[]) => unknown ? never : object);
+
+type ParameterNames<
+  Queries extends QueryDefinitions,
+  Name extends keyof Queries,
+> = Name extends keyof Queries
+  ? keyof RegisteredQueryParameters<Queries, Name>
+  : never;
+
+/** Dynamic limits are checked at execution; known limits must be positive integers. */
+type QueryLimit<Limit extends number> = number extends Limit
+  ? number
+  : `${Limit}` extends '0' | `-${string}`
+    ? never
+    : `${Limit}` extends `${bigint}`
+      ? Limit
+      : never;
 
 export type RegisteredQuery<Queries extends QueryDefinitions> = <
   Name extends keyof Queries & string,
   const Params extends object = {},
+  const Limit extends number = number,
 >(
-  name: Name,
-  params?: Params &
-    NoInfer<RegisteredQueryParameters<Queries, Name>> &
-    NoInfer<
-      Record<Exclude<keyof Params, keyof Queries[Name]['params']>, never>
-    > &
-    NoInfer<Params extends (...args: never[]) => unknown ? never : object>,
-  options?: { limit?: number }
-) => Promise<QueryResult>;
+  name: Name &
+    (true extends IsUnion<NoInfer<Name>>
+      ? [ParameterNames<Queries, Name>] extends [never]
+        ? unknown
+        : never
+      : unknown),
+  params?: ExactQueryParameters<
+    RegisteredQueryParameters<Queries, NoInfer<Name>>,
+    Params
+  >,
+  options?: { limit?: Limit & QueryLimit<NoInfer<Limit>> }
+) => Promise<QueryResult<QueryRow<Queries[Name]['projections']>>>;
+
+/** Infer operation data from run(). */
+export type OperationDefinition<
+  Input,
+  Output,
+  Queries extends QueryDefinitions,
+> = Omit<DataOperation<Input, Output>, 'run' | 'queryNames'> & {
+  run: (
+    context: Pick<OperationContext, 'signal'> & {
+      query: RegisteredQuery<NoInfer<Queries>>;
+    },
+    input: Input
+  ) => Promise<Output>;
+};
 
 export function defineOperation<
   Input,
   Output,
   const Queries extends QueryDefinitions,
 >(
-  operation: Omit<DataOperation<Input, Output>, 'run' | 'queryNames'> & {
-    queries: Queries;
-    run: (
-      context: Pick<OperationContext, 'signal'> & {
-        query: RegisteredQuery<NoInfer<Queries>>;
-      },
-      input: Input
-    ) => Promise<Output>;
+  operation: OperationDefinition<Input, Output, Queries> & {
+    queries: CheckedQueries<Queries>;
   }
 ): Omit<DataOperation<Input, Output>, 'queryNames'> & {
   queryNames: { readonly [Name in keyof Queries & string]: Name };
@@ -379,8 +396,8 @@ export function defineOperation<
     ...operation,
     queryNames,
     run(context, input) {
-      function query(
-        name: keyof Queries & string,
+      async function query<Name extends keyof Queries & string>(
+        name: Name,
         values: Partial<QueryParameters> = {},
         options?: { limit?: number }
       ) {
@@ -391,26 +408,39 @@ export function defineOperation<
           values,
           context.queryParams ?? {}
         );
-        return context.lakehouse.queryAll(definition.statement, {
+        const result = await context.lakehouse.queryAll(definition.statement, {
           name,
           params,
           limit: options?.limit ?? operation.policy.maxQueryRows,
           signal: context.signal,
         });
+        return decodeQueryResult<Queries[Name]['projections']>(
+          result,
+          definition.projections
+        );
       }
       return operation.run({ signal: context.signal, query }, input);
     },
   };
 }
 
+/** The built-in connection operation shares one contract with setup clients. */
+export type ConnectionOperation = Omit<
+  DataOperation<Record<string, never>, true>,
+  'queryNames'
+> & { queryNames: { readonly connection: 'connection' } };
+
 /** A connectivity probe uses the app's registered connection query. */
 export function connectionCheck<
   const Queries extends QueryDefinitions & {
     connection: QueryDefinitions[string];
   },
->(queries: Queries) {
+>(queries: CheckedQueries<Queries>): ConnectionOperation {
+  const connection: QueryDefinitions[string] = queries.connection;
   return defineOperation({
-    queries,
+    queries: { connection } as CheckedQueries<{
+      connection: QueryDefinitions[string];
+    }>,
     input: parseEmptyInput,
     checks: [{}],
     policy: { maxQueryRows: 1, maxDurationMs: 15_000 },

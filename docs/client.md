@@ -15,18 +15,17 @@ const response = await client.query('activity', input, { signal });
 ```
 
 The app defines `operations`, `input`, and an optional cancellation `signal`.
-Operation input and output types are inferred from the server operation map. Keep the
-server operation map import type-only so its implementations stay on the server.
-The shared app declaration contains the query registry and is browser-safe.
+Inputs and data are inferred from the operation map and `run()`. Keep the import
+type-only so operation implementations stay on the server.
 
 The default endpoint is `/api/data`. Override it with
-`createDataClient({ endpoint, fetch })` to change the base URL or supply a Fetch
+`createDataClient<typeof operations>({ endpoint, fetch })` to change the base URL or supply a Fetch
 implementation. Calls POST JSON to `/api/data/:operation`; the client sends
 operation inputs rather than SQL or credentials.
 
 `DataResponse` contains `data`, the exact request `input`, `requestId`,
 `queriedAt`, `queryIds`, and executed `queries`. Use the returned input when labeling stale data during a refresh.
-HTTP and iframe delivery validate the same success envelope: data, request ID,
+HTTP and iframe delivery validate the success envelope: data, request ID,
 query timestamp, query IDs, and optional query evidence. Malformed responses
 reject with `invalid_response`.
 
@@ -72,7 +71,7 @@ the host through the existing bridge cancellation protocol.
 
 ## Iframe transport
 
-`createDataClient({ transport })` accepts a `DataTransport`. Without an explicit
+`createDataClient<typeof operations>({ transport })` accepts a `DataTransport`. Without an explicit
 transport, endpoint, or Fetch implementation, it discovers an installed iframe
 transport before falling back to HTTP. Explicit endpoint/Fetch options select
 HTTP. `createHttpTransport()` provides the underlying operation delivery adapter.

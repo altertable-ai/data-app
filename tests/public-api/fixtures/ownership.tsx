@@ -98,11 +98,11 @@ class AuthoringBoundary extends Component<
   { children: ReactNode },
   { message: string }
 > {
-  state = { message: '' };
+  override state = { message: '' };
   static getDerivedStateFromError(error: Error) {
     return { message: error.message };
   }
-  render() {
+  override render() {
     return this.state.message ? (
       <p role="alert">{this.state.message}</p>
     ) : (

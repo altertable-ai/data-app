@@ -37,16 +37,22 @@ export class DeclaredView<Data, Input, Definition = unknown> {
       throw new Error('Missing view definition.');
     return view.#definition;
   }
-  static useResult<Data, Input>(
-    view: DeclaredView<Data, Input>
-  ): ViewResult<Data, Input> {
-    return view.#useResult();
+  static useResult<View extends DeclaredView<unknown, unknown>>(
+    view: View
+  ): DeclaredViewResult<View> {
+    return view.#useResult() as DeclaredViewResult<View>;
   }
 }
 
-export function useDeclaredResult<Data, Input>(
-  view: DeclaredView<Data, Input>
-): ViewResult<Data, Input> {
+/** Distribute across declarations so each result keeps its own data and input together. */
+type DeclaredViewResult<View> =
+  View extends DeclaredView<infer Data, infer Input>
+    ? ViewResult<Data, Input>
+    : never;
+
+export function useDeclaredResult<View extends DeclaredView<unknown, unknown>>(
+  view: View
+): DeclaredViewResult<View> {
   return DeclaredView.useResult(view);
 }
 

@@ -251,11 +251,19 @@ export function ChoicePicker(props: ChoicePickerProps) {
                       />
                       <span className="altertable-choice-picker-option-content">
                         <span>
-                          <SearchMatch match={hit.matches.label} />
+                          {hit.matches.label ? (
+                            <SearchMatch match={hit.matches.label} />
+                          ) : (
+                            hit.item.label
+                          )}
                         </span>
                         {hit.item.description && (
                           <small>
-                            <SearchMatch match={hit.matches.description} />
+                            {hit.matches.description ? (
+                              <SearchMatch match={hit.matches.description} />
+                            ) : (
+                              hit.item.description
+                            )}
                           </small>
                         )}
                       </span>

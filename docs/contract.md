@@ -8,17 +8,12 @@ import operation types using `import type`.
 
 ## Execute named queries
 
-Declare SQL once with `defineDataApp()` to preserve exact query and parameter
-names. Use stable `lowerCamelCase` IDs describing the result, such as `products`,
-`productsByCategory`, or `dailyRevenue`. Use plural names for row lists; keep parameter
-values in `params`. Every query must include `params`; use `{}` when it declares no
-parameters.
-The app owns an immutable registry snapshot. Define operations with
-`dataApp.defineOperation()`.
+Declare queries with `defineDataApp()` and operations with `dataApp.defineOperation()`.
+Use descriptive `lowerCamelCase` query names. Declare parameter types in `params`
+(use `{}` for none) and returned aliases in `projections`.
 
 ```ts
 import { defineDataApp } from '@altertable/data-app';
-import { rowsAsRecords } from '@altertable/data-app/contract';
 
 const dataApp = defineDataApp({
   title: 'Products',
@@ -29,7 +24,14 @@ const dataApp = defineDataApp({
     products: {
       statement:
         'SELECT name, unit_price AS "unitPrice" FROM products WHERE org_id = $orgId LIMIT $limit',
-      params: { orgId: {}, limit: { defaultValue: 10 } },
+      params: {
+        orgId: { type: 'string' },
+        limit: { type: 'number', defaultValue: 10 },
+      },
+      projections: {
+        name: { type: 'string' },
+        unitPrice: { type: 'number', nullable: true },
+      },
     },
   },
 });
@@ -40,26 +42,38 @@ const products = dataApp.defineOperation({
   policy: { maxQueryRows: 100, maxDurationMs: 15000 },
   async run({ query }, input) {
     const result = await query('products', input);
-    return parseProducts(rowsAsRecords(result, ['name', 'unitPrice']));
+    return result.rows;
   },
 });
 ```
 
-`parseProductInput()` and `parseProducts()` are app-owned example functions, not
-package exports. Validate filter values in the input parser. Parse query rows once, in
-`run`: the value it returns is the operation's data and type, sent to the view as is.
-`rowsAsRecords()` keys each record by the exact SQL column names and rejects results
-missing a listed column. It does not convert `snake_case`; alias columns in SQL, as with
-`"unitPrice"`, or list and read the returned names. `{}` declares a required parameter; `{ defaultValue }` supplies
-a fallback. `query(name, params, { limit })` executes only registered queries and
-inherits the operation's row limit and cancellation signal.
-Declare at least one valid input in `checks`; use a nonempty tuple for checks
-defined separately from the operation.
+`parseProductInput()` is app-owned. Validate inputs there and business rules in
+`run()`. Derive operation data from `query()` rows; clients and views infer the
+returned type. Handle empty results. HTTP results must be JSON-serializable.
+Include representative valid inputs in `checks`.
 
-SQL and resolved parameter values pass unchanged to the backend. Results include
-query evidence; use `products.queryNames` with `createDataContext()` to bind it.
-For HTTP apps, authorization can supply protected `queryParams`, such as `orgId`.
-The host/backend enforces data access and limits.
+Host `queryParams` supplies protected parameters; callers cannot override them.
+Other values come from `query()` arguments or `defaultValue`. Missing values are
+checked before execution. `query(name, params, { limit })` inherits the operation's
+row limit and cancellation signal.
+
+### Declare query projections
+
+Inspect each query and declare every returned alias with `{ type, nullable? }`.
+Result keys keep the exact SQL names; alias columns in SQL to change casing, as
+with `"unitPrice"` above.
+Determine nullability from the schema and SQL, even when sampled rows contain no
+nulls. Update projections when changing SQL.
+
+`query()` converts result cells to the declared types before `run()` uses them.
+Numbers that cannot be converted become `"##ERROR##"`; booleans use JavaScript
+truthiness. Nulls pass through unless `nullable: false`. Parameters are validated
+without conversion. For exact numeric precision, return SQL text
+and declare `string`.
+
+Results include query evidence; use `products.queryNames` with `createDataContext()`
+to bind it. The host/backend enforces data access and limits; see
+[server authorization](server.md).
 
 ## Shared date ranges
 

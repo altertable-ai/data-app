@@ -1,10 +1,12 @@
 import { dataApp } from '@/dev/app';
+import type { OutputOf } from '@altertable/data-app/client';
 import {
   dimensionFilter,
   parseDimensionSelection,
   parseCount,
   type DateRangeRequest,
   type DimensionSelection,
+  type QueryRow,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
 import { calendar, countries } from '@/dev/commerce';
@@ -20,45 +22,6 @@ export type OrderInput = {
   period: DateRangeRequest;
   country: DimensionSelection<string>;
 };
-export type CountryRevenue = {
-  country: string;
-  orderCount: number;
-  revenue: number;
-  orderValue: number;
-  refunds: number;
-};
-export type OrderDay = { day: string; orderCount: number };
-export type OrderBand = { band: string; orderCount: number };
-export type OrderTotals = {
-  orderCount: number;
-  revenue: number;
-  orderValue: number;
-  refunds: number;
-};
-export type Order = {
-  id: number;
-  customer: string;
-  country: string;
-  day: string;
-  status: string;
-  campaign: string;
-  amount: number;
-};
-export type OrderItem = {
-  orderId: number;
-  product: string;
-  category: string;
-  quantity: number;
-  unitPrice: number;
-};
-export type OrderOverview = {
-  countries: CountryRevenue[];
-  days: OrderDay[];
-  bands: OrderBand[];
-  orders: Order[];
-  items: OrderItem[];
-  previous: OrderTotals | null;
-};
 function parseInput(value: unknown): OrderInput {
   if (!value || typeof value !== 'object')
     throw new Error('Expected order filters.');
@@ -68,74 +31,18 @@ function parseInput(value: unknown): OrderInput {
     country: parseDimensionSelection(input.country, countryFilter),
   };
 }
-function parseRows<Row>(
-  value: unknown,
-  parseRow: (row: Record<string, unknown>) => Row
-): Row[] {
-  if (!Array.isArray(value)) throw new Error('Expected rows.');
-  return value.map(row => {
-    if (!row || typeof row !== 'object') throw new Error('Expected a row.');
-    return parseRow(row);
-  });
-}
-function text(value: unknown): string {
-  if (typeof value !== 'string') throw new Error('Expected text.');
+function amount(value: number): number {
+  if (value < 0) throw new Error('Expected a nonnegative amount.');
   return value;
 }
-function amount(value: unknown): number {
-  const number =
-    typeof value === 'number' || (typeof value === 'string' && value.trim())
-      ? Number(value)
-      : NaN;
-  if (!Number.isFinite(number) || number < 0)
-    throw new Error('Expected a nonnegative amount.');
-  return number;
-}
-function totals(row: Record<string, unknown>): OrderTotals {
+function totals(
+  row: QueryRow<typeof dataApp.queries.previousPeriod.projections>
+) {
   return {
-    orderCount: parseCount(row.orderCount),
+    orderCount: parseCount(row.order_count),
     revenue: amount(row.revenue),
-    orderValue: amount(row.orderValue),
+    orderValue: amount(row.order_value),
     refunds: amount(row.refunds),
-  };
-}
-function parseOrderOverview(value: unknown): OrderOverview {
-  if (!value || typeof value !== 'object')
-    throw new Error('Expected an order overview.');
-  const data = value as Record<string, unknown>;
-  return {
-    countries: parseRows(data.countries, row => ({
-      country: text(row.country),
-      ...totals(row),
-    })),
-    days: parseRows(data.days, row => ({
-      day: text(row.day),
-      orderCount: parseCount(row.orderCount),
-    })),
-    bands: parseRows(data.bands, row => ({
-      band: text(row.band),
-      orderCount: parseCount(row.orderCount),
-    })),
-    orders: parseRows(data.orders, row => ({
-      id: parseCount(row.id),
-      customer: text(row.customer),
-      country: text(row.country),
-      day: text(row.day),
-      status: text(row.status),
-      campaign: text(row.campaign),
-      amount: amount(row.amount),
-    })),
-    items: parseRows(data.items, row => ({
-      orderId: parseCount(row.orderId),
-      product: text(row.product),
-      category: text(row.category),
-      quantity: parseCount(row.quantity),
-      unitPrice: amount(row.unitPrice),
-    })),
-    previous:
-      data.previous === null
-        ? null
-        : totals(data.previous as Record<string, unknown>),
   };
 }
 const checkRange = calendar.request(
@@ -181,53 +88,44 @@ export const operations = {
         query('orders', params),
         query('items', params),
       ]);
-      return parseOrderOverview({
-        countries: countryResult.rows.map(
-          ([country, orderCount, revenue, orderValue, refunds]) => ({
-            country,
-            orderCount,
-            revenue,
-            orderValue,
-            refunds,
-          })
-        ),
-        days: dayResult.rows.map(([day, orderCount]) => ({ day, orderCount })),
-        bands: bandResult.rows.map(([band, orderCount]) => ({
-          band,
-          orderCount,
+      return {
+        countries: countryResult.rows.map(row => ({
+          country: row.country,
+          ...totals(row),
         })),
-        orders: orderResult.rows.map(
-          ([id, customer, country, day, status, campaign, amount]) => ({
-            id,
-            customer,
-            country,
-            day,
-            status,
-            campaign,
-            amount,
-          })
-        ),
-        items: itemResult.rows.map(
-          ([orderId, product, category, quantity, unitPrice]) => ({
-            orderId,
-            product,
-            category,
-            quantity,
-            unitPrice,
-          })
-        ),
-        previous: period.comparison
-          ? (() => {
-              const [orderCount, revenue, orderValue, refunds] =
-                previousResult.rows[0]!;
-              return { orderCount, revenue, orderValue, refunds };
-            })()
-          : null,
-      });
+        days: dayResult.rows.map(row => ({
+          day: row.day,
+          orderCount: parseCount(row.order_count),
+        })),
+        bands: bandResult.rows.map(row => ({
+          band: row.band,
+          orderCount: parseCount(row.order_count),
+        })),
+        orders: orderResult.rows.map(row => ({
+          ...row,
+          id: parseCount(row.id),
+          amount: amount(row.amount),
+        })),
+        items: itemResult.rows.map(row => ({
+          orderId: parseCount(row.order_id),
+          product: row.name,
+          category: row.category,
+          quantity: parseCount(row.quantity),
+          unitPrice: amount(row.unit_price),
+        })),
+        previous: period.comparison ? totals(previousResult.rows[0]!) : null,
+      };
     },
   }),
 };
 export const queryNames = operations.orderOverview.queryNames;
+export type OrderOverview = OutputOf<typeof operations.orderOverview>;
+export type CountryRevenue = OrderOverview['countries'][number];
+export type OrderDay = OrderOverview['days'][number];
+export type OrderBand = OrderOverview['bands'][number];
+export type Order = OrderOverview['orders'][number];
+export type OrderItem = OrderOverview['items'][number];
+export type OrderTotals = NonNullable<OrderOverview['previous']>;
 
 function sum<Row>(rows: readonly Row[], value: (row: Row) => number) {
   return rows.reduce((total, row) => total + value(row), 0);

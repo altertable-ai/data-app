@@ -18,5 +18,11 @@ export const dataApp = defineDataApp({
       heading: "system",
     },
   },
-  queries: { connection: { statement: "SELECT 1 AS connection_check", params: {} } },
+  queries: {
+    connection: {
+      projections: { connection_check: { type: "number" } },
+      statement: "SELECT 1 AS connection_check",
+      params: {},
+    },
+  },
 });

@@ -27,7 +27,9 @@ const dataApp = defineDataApp({
 const hooks = createDataHooks(
   createDataClient<{
     activity: DataOperation<Record<string, never>, number[]>;
-  }>({ transport: createHttpTransport({ endpoint: '/layout-data' }) })
+  }>({
+    transport: createHttpTransport({ endpoint: '/layout-data' }),
+  })
 );
 const context = createDataContext({ activity: 'activity' })({
   description: 'Responsive activity report',

@@ -1,3 +1,4 @@
+import { facetSource, type FacetVariable } from '@/src/core/facets';
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
@@ -25,7 +26,7 @@ import { DimensionPicker } from '@/src/react/ui/DimensionPicker';
 import {
   parseFacetOptions,
   type DimensionSelection,
-  type DimensionVariable,
+  type DimensionSelectionVariable,
 } from '@/src/core/dimension';
 import {
   dateRangeControl,
@@ -58,12 +59,14 @@ export function useViewVariables<Variables extends VariableCollection>(
     ) as ResolvedVariables<Variables>[typeof name];
   }
   const facets = Object.entries(definitions).filter(
-    (entry): entry is [string, DimensionVariable<any>] =>
-      entry[1].kind === 'dimension' && !!entry[1].facet
+    (entry): entry is [string, FacetVariable<any, any, string, unknown>] =>
+      entry[1].kind === 'dimension' &&
+      entry[1].optionsSource === 'query' &&
+      facetSource in entry[1]
   );
   const facetQueries = useQueries({
     queries: facets.map(([name, filter]) => {
-      const facet = filter.facet!;
+      const facet = filter[facetSource];
       const input = facet.input({ ...resolved, [name]: { kind: 'all' } });
 
       return {
@@ -162,7 +165,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           />
         );
       } else if (definition.kind === 'dimension') {
-        const filter = definition as DimensionVariable;
+        const filter = definition as DimensionSelectionVariable;
         const facet = facetState.get(name);
         control = (
           <DimensionPicker

@@ -6,6 +6,7 @@ import {
   defineOperation,
   parseEmptyInput,
   type DimensionSelection,
+  type DimensionOption,
 } from '@/src/core/contract';
 import { createDataHooks } from '@/src/react/hooks';
 import type { TransportResponse } from '@/src/core/bridge';
@@ -33,7 +34,7 @@ const operations = {
     input: parseEmptyInput,
     checks: [{}],
     policy,
-    async run() {
+    async run(): Promise<DimensionOption<string>[]> {
       return [];
     },
   }),
@@ -93,6 +94,7 @@ const view = hooksA.defineDataView({
       valueType: 'string',
       selectionMode: 'single',
       facet: {
+        context: {},
         operation: 'facet',
         input() {
           return {};
@@ -117,7 +119,6 @@ function Panel({ id, hooks }: { id: string; hooks: typeof hooksA }) {
     hooks.defineDataView({
       ...getViewDefinition(view),
       dataContext: context,
-      date: undefined,
     })
   );
 

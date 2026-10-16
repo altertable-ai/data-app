@@ -5,4 +5,9 @@ export type {
   DataAppDefinition,
   QueryDefinitions,
   QueryParameterValue,
+  QueryParameter,
+  QueryValueType,
+  QueryField,
+  QueryProjections,
+  QueryRow,
 } from '@/src/core/config';

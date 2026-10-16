@@ -9,7 +9,11 @@ import { ClientCacheApp } from '@/dev/fixtures/client-cache';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { injectDataAppStyles } from '@altertable/data-app/react';
-import { createDataClient, type OutputOf } from '@/src/client/index';
+import {
+  createDataClient,
+  type InputOf,
+  type OutputOf,
+} from '@/src/client/index';
 import { defineOperation } from '@/src/core/contract';
 import type { TransportResponse } from '@/src/core/bridge';
 import { createDataHooks } from '@/src/react/hooks';
@@ -99,27 +103,32 @@ const narrative = defineDataContent<
     }}
     reading={narrativeRows.read(result)}
   >
-    {([{ value, version }]) => (
-      <p>
-        {value} for selection {version}
-      </p>
-    )}
+    {rows =>
+      rows.map(({ value, version }) => (
+        <p key={version}>
+          {value} for selection {version}
+        </p>
+      ))
+    }
   </TextWidget>
 ));
 
 function App() {
   const [operation, setOperation] = useState<'alpha' | 'beta'>('alpha');
   const [version, setVersion] = useState(1);
+  const definition = {
+    dataContext: context,
+    variables: {},
+    input: () => ({ version }),
+    describeInput: (input: InputOf<typeof operations.alpha>) =>
+      `selection ${input.version}`,
+    isEmpty: () => false,
+    emptyFallback: { title: 'No activity' },
+  };
   const result = useDeclaredResult(
-    defineDataView({
-      dataContext: context,
-      operation,
-      variables: {},
-      input: () => ({ version }),
-      describeInput: input => `selection ${input.version}`,
-      isEmpty: () => false,
-      emptyFallback: { title: 'No activity' },
-    })
+    operation === 'alpha'
+      ? defineDataView({ ...definition, operation: 'alpha' })
+      : defineDataView({ ...definition, operation: 'beta' })
   );
 
   function settle(failed: boolean) {

@@ -156,14 +156,16 @@ const narrative = defineDataContent<{ count: number }, { region: string }>(
       evidence={{ id: 'text-activity', queryNames: ['gallery-trend'] }}
       reading={narrativeRows.read(result)}
     >
-      {([{ count, region }]) => (
-        <p>
-          {count === 0
-            ? `No activity was recorded in ${region}.`
-            : `${count} people were active in ${region}.`}{' '}
-          Compare feature use below to understand their activity.
-        </p>
-      )}
+      {rows =>
+        rows.map(({ count, region }) => (
+          <p key={region}>
+            {count === 0
+              ? `No activity was recorded in ${region}.`
+              : `${count} people were active in ${region}.`}{' '}
+            Compare feature use below to understand their activity.
+          </p>
+        ))
+      }
     </TextWidget>
   )
 );

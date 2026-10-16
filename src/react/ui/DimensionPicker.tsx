@@ -4,7 +4,7 @@ import type {
   DimensionOption,
   DimensionSelection,
   DimensionValue,
-  DimensionVariable,
+  DimensionSelectionVariable,
 } from '@/src/core/dimension';
 import { dimensionMemberKey } from '@/src/core/dimension';
 import { invariant } from '@/src/core/invariant';
@@ -25,7 +25,7 @@ export function DimensionPicker<T extends DimensionValue>({
   error = false,
   onRetry,
 }: {
-  filter: DimensionVariable<T>;
+  filter: DimensionSelectionVariable<T>;
   labelPlacement?: ControlLabelPlacement;
   value: DimensionSelection<T>;
   onChange: (value: DimensionSelection<T>) => void;

@@ -105,11 +105,14 @@ const context = createDataContext({ count: 'count' })({
   description: 'Counts',
   glossary: { count: { term: 'Count', definition: 'Measured count' } },
 });
-const hooks = createDataHooks<{
-  count: DataOperation<Record<string, never>, number>;
-  time: DataOperation<DateRangeRequest, number>;
-  regions: DataOperation<Record<string, never>, DimensionOption<string>[]>;
-}>(createDataClient());
+const hooks =
+  createDataHooks(
+    createDataClient<{
+      count: DataOperation<Record<string, never>, number>;
+      time: DataOperation<DateRangeRequest, number>;
+      regions: DataOperation<Record<string, never>, DimensionOption<string>[]>;
+    }>()
+  );
 const feedback = {
   dataContext: context,
   isEmpty: () => false,
@@ -174,7 +177,7 @@ view.dataset({ ...dataset, columns: emptyColumns });
 // @ts-expect-error Columns retain the inferred row type.
 view.dataset({ ...dataset, columns: { count: { value: row => row.missing } } });
 
-const facet = { operation: 'regions' as const, input: () => ({}) };
+const facet = { context: {}, operation: 'regions' as const, input: () => ({}) };
 hooks.defineFacetFilter({
   key: 'region',
   label: 'Region',
@@ -183,12 +186,29 @@ hooks.defineFacetFilter({
   maxSelected: 1,
   facet,
 });
-// @ts-expect-error Typed facet declarations also constrain single-selection limits.
-hooks.defineFacetFilter({
+const invalidFacetLimit = {
   key: 'region',
   label: 'Region',
   valueType: 'string',
   selectionMode: 'single',
   maxSelected: 2,
   facet,
+} as const;
+// @ts-expect-error Typed facet declarations also constrain single-selection limits.
+hooks.defineFacetFilter(invalidFacetLimit);
+
+const mixedDimension = {
+  key: 'mixed',
+  label: 'Mixed',
+  valueType: 'string',
+  selectionMode: 'single',
+  options: [{ value: 42, label: 'Numeric' }],
+} as const;
+// @ts-expect-error A union generic cannot uncouple string settings from numeric options.
+dimensionFilter<string | number>(mixedDimension);
+declare const mixedValueType: 'string' | 'number';
+// @ts-expect-error Select a primitive contract before declaring fixed options.
+dimensionFilter<string | number>({
+  ...mixedDimension,
+  valueType: mixedValueType,
 });

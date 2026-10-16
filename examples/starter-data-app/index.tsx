@@ -25,14 +25,18 @@ const dataApp = defineDataApp({
   appearance: { theme: 'system' },
   queries: {
     sampleCountsByGroup: {
+      projections: {
+        group_name: { type: 'string' },
+        sample_count: { type: 'number' },
+      },
       statement: `
 WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
 SELECT group_name, sample_count FROM sample_counts
 WHERE $groupName = '' OR group_name = $groupName
 ORDER BY group_name LIMIT $limit`,
       params: {
-        groupName: { defaultValue: '' },
-        limit: { defaultValue: 10 },
+        groupName: { type: 'string', defaultValue: '' },
+        limit: { type: 'number', defaultValue: 10 },
       },
     },
   },
@@ -48,20 +52,6 @@ function parseSampleCountFilter(value: unknown) {
     throw new Error('Expected a group name of at most 40 characters.');
   return { groupName: value.groupName };
 }
-function parseSampleCounts(
-  value: unknown
-): { groupName: string; sampleCount: number }[] {
-  if (!Array.isArray(value))
-    throw new Error('Expected sample counts by group.');
-  return value.map(row => {
-    if (!row || typeof row !== 'object' || typeof row.groupName !== 'string')
-      throw new Error('Expected a group name.');
-    return {
-      groupName: row.groupName,
-      sampleCount: parseCount(row.sampleCount),
-    };
-  });
-}
 const operations = {
   sampleCountsByGroup: dataApp.defineOperation({
     input: parseSampleCountFilter,
@@ -73,12 +63,10 @@ const operations = {
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const queryResult = await query('sampleCountsByGroup', { groupName });
-      return parseSampleCounts(
-        queryResult.rows.map(([groupName, sampleCount]) => ({
-          groupName,
-          sampleCount,
-        }))
-      );
+      return queryResult.rows.map(row => ({
+        groupName: row.group_name,
+        sampleCount: parseCount(row.sample_count),
+      }));
     },
   }),
 };

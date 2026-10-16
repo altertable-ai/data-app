@@ -45,44 +45,53 @@ const filters = {
   amount: numberFilter({ key: 'amount', label: 'Amount' }),
   active: booleanFilter({ key: 'active', label: 'Active' }),
 };
-const hooks = createDataHooks<{
-  flattened: DataOperation<{ org: string; windowId: string }, number>;
-  direct: DataOperation<
-    { organization: DimensionSelection<string>; window: string },
-    number
-  >;
-  optional: DataOperation<
-    { organization?: DimensionSelection<string>; window: string },
-    number
-  >;
-  wrongType: DataOperation<{ organization: string; window: string }, number>;
-  narrow: DataOperation<{ organization: { kind: 'all' } }, number>;
-  mixedVariable: DataOperation<{ org: string }, number>;
-  union: DataOperation<
-    { organization: DimensionSelection<string> } | { org: string },
-    number
-  >;
-  nested: DataOperation<{ filters: Filters }, number>;
-  time: DataOperation<DateRangeRequest, number>;
-  shadowedTime: DataOperation<DateRangeRequest & { period?: string }, number>;
-  unionTime: DataOperation<
-    DateRangeRequest | { period: DateRangeRequest },
-    number
-  >;
-  nestedTime: DataOperation<
-    {
-      filters: {
-        period: DateRangeRequest;
-        organization: DimensionSelection<string>;
-      };
-    },
-    number
-  >;
-  directTime: DataOperation<
-    { period: DateRangeRequest; organization: DimensionSelection<string> },
-    number
-  >;
-}>(createDataClient());
+const hooks =
+  createDataHooks(
+    createDataClient<{
+      flattened: DataOperation<{ org: string; windowId: string }, number>;
+      direct: DataOperation<
+        { organization: DimensionSelection<string>; window: string },
+        number
+      >;
+      optional: DataOperation<
+        { organization?: DimensionSelection<string>; window: string },
+        number
+      >;
+      wrongType: DataOperation<
+        { organization: string; window: string },
+        number
+      >;
+      narrow: DataOperation<{ organization: { kind: 'all' } }, number>;
+      mixedVariable: DataOperation<{ org: string }, number>;
+      union: DataOperation<
+        { organization: DimensionSelection<string> } | { org: string },
+        number
+      >;
+      nested: DataOperation<{ filters: Filters }, number>;
+      time: DataOperation<DateRangeRequest, number>;
+      shadowedTime: DataOperation<
+        DateRangeRequest & { period?: string },
+        number
+      >;
+      unionTime: DataOperation<
+        DateRangeRequest | { period: DateRangeRequest },
+        number
+      >;
+      nestedTime: DataOperation<
+        {
+          filters: {
+            period: DateRangeRequest;
+            organization: DimensionSelection<string>;
+          };
+        },
+        number
+      >;
+      directTime: DataOperation<
+        { period: DateRangeRequest; organization: DimensionSelection<string> },
+        number
+      >;
+    }>()
+  );
 const feedback = {
   dataContext: context,
   describeInput: () => 'usage',
@@ -101,10 +110,10 @@ hooks.defineDataView({
 });
 
 declare const mixedVariable: typeof organization | typeof variables.window;
-// @ts-expect-error A variable that can be a dimension filter also needs a binding.
 hooks.defineDataView({
   ...feedback,
   operation: 'mixedVariable',
+  // @ts-expect-error Narrow a variable declaration before deriving its bindings.
   variables: { organization: mixedVariable },
   input: () => ({ org: 'worldia' }),
 });

@@ -32,9 +32,12 @@ const context = registerContext({ count: 'count' })({
   },
 });
 
-const hooks = createDataHooks<{
-  count: DataOperation<Record<string, never>, number>;
-}>(createDataClient());
+const hooks =
+  createDataHooks(
+    createDataClient<{
+      count: DataOperation<Record<string, never>, number>;
+    }>()
+  );
 const view = hooks.defineDataView({
   dataContext: context,
   operation: 'count',
