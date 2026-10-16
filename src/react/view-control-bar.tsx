@@ -106,24 +106,32 @@ export function ViewControlBar({
         aria-label="View controls"
       >
         <div className="altertable-filter-bar-inputs">
-          {allFilters.length > 0 && (
-            <Button
-              ref={filtersButtonRef}
-              aria-label={filtersButtonLabel}
-              aria-haspopup="dialog"
-              aria-expanded={filtersOpen}
-              aria-controls={filtersId}
-              data-open={filtersOpen}
-              onClick={event => openFilters(event.currentTarget)}
-            >
-              <AppIcon name="filters" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="altertable-control-count" aria-hidden="true">
-                  {activeFilterCount}
-                </span>
+          {(allFilters.length > 0 || onClear) && (
+            <div className="altertable-primary-control-actions">
+              {allFilters.length > 0 && (
+                <Button
+                  ref={filtersButtonRef}
+                  aria-label={filtersButtonLabel}
+                  aria-haspopup="dialog"
+                  aria-expanded={filtersOpen}
+                  aria-controls={filtersId}
+                  data-open={filtersOpen}
+                  onClick={event => openFilters(event.currentTarget)}
+                >
+                  <AppIcon name="filters" />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span
+                      className="altertable-control-count"
+                      aria-hidden="true"
+                    >
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </Button>
               )}
-            </Button>
+              {onClear && <FilterActions onClear={clearFilters} />}
+            </div>
           )}
           {primaryFilters}
           {secondaryFilters.length > 0 && (
@@ -141,15 +149,10 @@ export function ViewControlBar({
             </fieldset>
           )}
         </div>
-        {(onClear || displayOptions.length > 0) && (
-          <div className="altertable-primary-control-actions">
-            {onClear && <FilterActions onClear={clearFilters} />}
-            {displayOptions.length > 0 && (
-              <DisplayOptionsPopover changedCount={changedDisplayOptionCount}>
-                {displayOptions}
-              </DisplayOptionsPopover>
-            )}
-          </div>
+        {displayOptions.length > 0 && (
+          <DisplayOptionsPopover changedCount={changedDisplayOptionCount}>
+            {displayOptions}
+          </DisplayOptionsPopover>
         )}
       </VariableBar>
       {toolbarAboveViewport && activeFilters.length > 0 && (
