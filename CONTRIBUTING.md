@@ -151,18 +151,3 @@ Use the four layers (`atbl.tokens`, `atbl.base`, `atbl.components`,
 `atbl.interaction`) and shared focus/state rules rather than duplicate control
 paint. Keep geometry local. Document public variables beside declarations or
 consumption sites; update the name contract in `style-contract.ts` when adding hooks.
-
-## Exploration contracts
-
-Keep dimension selections, chart display choices, and detail inputs independent.
-Input parsers carry private validation capabilities; operation construction
-registers selector operations, and both delivery paths apply normal authorization
-and execution limits. Validate exact selected members before business queries and
-include their queries in evidence. Never use a bounded options page as membership
-validation. Controls and summaries share selected-member resolution.
-
-Filter actions explicitly name any chart choice they update and write both in one
-history entry. Keep facet loading and cache state out of action targets; targets
-carry only ownership and navigation meaning. Actions and record destinations use
-displayed input during refreshes. Keep core variable contracts independent of
-React, and keep query declarations statically extractable.
