@@ -8,7 +8,6 @@ import type {
   CheckedFacetContexts,
 } from '@/src/core/variables';
 import type { DateRangeRequest } from '@/src/core/contract';
-import { invariant } from '@/src/core/invariant';
 
 type ResolvedVariable<Variable> = Variable extends DateRangeVariable
   ? DateRangeRequest
@@ -183,6 +182,15 @@ export function describeViewInput<Input>(
   return describeInput;
 }
 
+function sameRange(
+  a: DateRangeRequest['comparison'],
+  b: DateRangeRequest['comparison']
+) {
+  return a === b || (!!a && !!b && a.start === b.start && a.end === b.end);
+}
+
+/** Map the selected values to operation input. A problem means the mapper dropped or
+ * changed a selection, so the input does not describe what the reader chose. */
 export function resolveViewInput<Variables extends VariableCollection, Input>(
   definition: {
     input: (values: ResolvedVariables<Variables>) => Input;
@@ -191,29 +199,22 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
     bindings?: ViewBindings<Variables, Input>;
   },
   values: ResolvedVariables<Variables>
-): Input {
+): { input: Input; problem?: string } {
   const input = definition.input(values);
   if (definition.date) {
     const selected = values[definition.date.variable] as DateRangeRequest;
     const mapped = definition.date.input(input);
-    // oxlint-disable-next-line data-app/no-runtime-assertion -- Author input mappers run at runtime.
-    invariant(
-      mapped && mapped.range && 'comparison' in mapped,
-      'The operation input must preserve the selected date range and comparison.'
-    );
-
-    function sameRange(
-      a: DateRangeRequest['comparison'],
-      b: DateRangeRequest['comparison']
-    ) {
-      return a === b || (!!a && !!b && a.start === b.start && a.end === b.end);
-    }
-    // oxlint-disable-next-line data-app/no-runtime-assertion -- Author input mappers run at runtime.
-    invariant(
-      sameRange(selected.range, mapped.range) &&
-        sameRange(selected.comparison, mapped.comparison),
-      'The operation input must preserve the selected date range and comparison.'
-    );
+    if (
+      !mapped?.range ||
+      !('comparison' in mapped) ||
+      !sameRange(selected.range, mapped.range) ||
+      !sameRange(selected.comparison, mapped.comparison)
+    )
+      return {
+        input,
+        problem:
+          'The operation input must preserve the selected date range and comparison.',
+      };
   }
   for (const [key, variable] of Object.entries(definition.variables)) {
     if (
@@ -224,14 +225,17 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
     const filter = variable as AppVariable<any>;
     const selected = values[key] as never;
     const mapped = readViewBinding(definition, key, input);
-    // oxlint-disable-next-line data-app/no-runtime-assertion -- Author input mappers run at runtime.
-    invariant(
-      filter.valid(mapped as never) && filter.same(selected, mapped as never),
-      `The operation input must preserve the ${key} filter selection.`
-    );
+    if (
+      !filter.valid(mapped as never) ||
+      !filter.same(selected, mapped as never)
+    )
+      return {
+        input,
+        problem: `The operation input must preserve the ${key} filter selection.`,
+      };
   }
 
-  return input;
+  return { input };
 }
 
 function readViewBinding<Input>(

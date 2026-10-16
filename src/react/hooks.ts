@@ -21,8 +21,8 @@ import {
 } from '@/src/react/bindings';
 import type { AuthoringDataContext } from '@/src/react/ui/data-context';
 import type { MetricValues } from '@/src/core/reading';
-import type { DisplayedSnapshot } from '@/src/core/data-view';
-import { useState, type ReactNode } from 'react';
+import type { DataView, DisplayedSnapshot } from '@/src/core/data-view';
+import { useMemo, useState, type ReactNode } from 'react';
 import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DataOperations, DateRangeRequest } from '@/src/core/contract';
 import type { DataClient } from '@/src/client/data-client';
@@ -232,12 +232,14 @@ export function createDataHooks<Operations extends DataOperations>(
 
   function useDataQuery<Name extends keyof Operations & string>(
     name: Name,
-    input: InputOf<Operations[Name]>
+    input: InputOf<Operations[Name]>,
+    enabled = true
   ) {
     const queryClient = useQueryClient();
     const queryKey = ['data-operation', clientScope, name, input] as const;
     const query = useQuery({
       queryKey,
+      enabled,
       queryFn({ signal }) {
         return client.query(name as never, input, { signal });
       },
@@ -270,9 +272,16 @@ export function createDataHooks<Operations extends DataOperations>(
     options: {
       isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
       describeInput?: (input: InputOf<Operations[Name]>) => string;
+      /** The input does not describe the selection; the view fails without requesting. */
+      inputProblem?: string;
     }
   ) {
-    const query = useDataQuery(name, input);
+    const { inputProblem } = options;
+    const query = useDataQuery(name, input, !inputProblem);
+    const inputError = useMemo(
+      () => (inputProblem ? new Error(inputProblem) : undefined),
+      [inputProblem]
+    );
     const [last, setLast] = useState<{
       clientScope: string;
       name: Name;
@@ -300,19 +309,26 @@ export function createDataHooks<Operations extends DataOperations>(
         ? last.response
         : undefined);
     const snapshot = response && { data: response.data, input: response.input };
-    const view = resolveDataView({
-      requestedInput: input,
-      current:
-        snapshot && !query.isPlaceholderData && sameInput(snapshot.input, input)
-          ? snapshot
-          : undefined,
-      previous: snapshot,
-      pending: query.isFetching,
-      error: query.error instanceof Error ? query.error : undefined,
-      sameInput,
-      describe: options.describeInput ?? (() => 'this view'),
-      isEmpty: options.isEmpty,
-    });
+    const view: DataView<
+      OutputOf<Operations[Name]>,
+      InputOf<Operations[Name]>
+    > = inputError
+      ? { kind: 'error', error: inputError }
+      : resolveDataView({
+          requestedInput: input,
+          current:
+            snapshot &&
+            !query.isPlaceholderData &&
+            sameInput(snapshot.input, input)
+              ? snapshot
+              : undefined,
+          previous: snapshot,
+          pending: query.isFetching,
+          error: query.error instanceof Error ? query.error : undefined,
+          sameInput,
+          describe: options.describeInput ?? (() => 'this view'),
+          isEmpty: options.isEmpty,
+        });
 
     return {
       ...query,
@@ -750,11 +766,11 @@ export function createDataHooks<Operations extends DataOperations>(
           .then(response => response.data)
     );
     const { describeInput } = definition;
-    const request = useDataView(
-      definition.operation,
-      resolveViewInput(definition, variables.resolved),
-      definition
-    );
+    const { input, problem } = resolveViewInput(definition, variables.resolved);
+    const request = useDataView(definition.operation, input, {
+      ...definition,
+      inputProblem: problem,
+    });
 
     return {
       view: request.view,

@@ -1,7 +1,7 @@
 import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
-import { Component, useState, type ReactNode } from 'react';
+import { Component, type ReactNode } from 'react';
 import {
   createDataHooks,
   createDataContext,
@@ -273,11 +273,17 @@ const context = createDataContext({
     },
   },
 });
+// Simulates an input mapper that drops the reader's search selection.
+const dropSearch = new URLSearchParams(location.search).has('drop-search');
 const sales = hooks.defineDataView({
   operation: 'sales',
   dataContext: context,
   variables: { ...filters, revenueBy, ordersBy, search, window: windowChoice },
-  input: ({ window, ...values }) => ({ ...values, windowId: window }),
+  input: ({ window, ...values }) => ({
+    ...values,
+    ...(dropSearch ? { search: '' } : {}),
+    windowId: window,
+  }),
   bindings: { window: input => input.windowId },
   describeInput: input => describeFilters(input),
   isEmpty: () => false,
@@ -322,28 +328,20 @@ const ordersView = hooks.defineDetailView({
 });
 function DetailRouteProbe() {
   const navigation = useDetailNavigation();
-  const [error, setError] = useState('');
   return (
-    <>
-      <button
-        onClick={() => {
-          try {
-            navigation.open(ordersView, {
-              ...defaultFilters,
-              search: '',
-              placeId: 'x'.repeat(
-                Number(new URLSearchParams(location.search).get('input-size'))
-              ),
-            });
-          } catch (error) {
-            setError((error as Error).message);
-          }
-        }}
-      >
-        Open bounded detail
-      </button>
-      <output aria-label="Detail navigation error">{error}</output>
-    </>
+    <button
+      onClick={() =>
+        navigation.open(ordersView, {
+          ...defaultFilters,
+          search: '',
+          placeId: 'x'.repeat(
+            Number(new URLSearchParams(location.search).get('input-size'))
+          ),
+        })
+      }
+    >
+      Open bounded detail
+    </button>
   );
 }
 const routeProbe = new URLSearchParams(location.search).has('route-probe');

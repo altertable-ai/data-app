@@ -71,8 +71,11 @@ function appliedValues(definition: TargetDefinition) {
     ])
   );
 }
-function commit(definition: TargetDefinition, values: Record<string, unknown>) {
-  // Apply the same preservation checks as the view before mutating its route.
+/** Whether the view's input mapper preserves these values, as the view requires. */
+function preserved(
+  definition: TargetDefinition,
+  values: Record<string, unknown>
+): boolean {
   const resolved = Object.fromEntries(
     Object.entries(definition.variables).map(([name, variable]) => [
       name,
@@ -81,7 +84,9 @@ function commit(definition: TargetDefinition, values: Record<string, unknown>) {
         : values[name],
     ])
   );
-  resolveViewInput<any, unknown>(definition, resolved);
+  return !resolveViewInput<any, unknown>(definition, resolved).problem;
+}
+function commit(definition: TargetDefinition, values: Record<string, unknown>) {
   const changes = Object.assign(
     {},
     ...Object.entries(definition.variables).map(([name, variable]) =>
@@ -114,24 +119,24 @@ export function targetAvailable(
       : (variable as AppVariable<any>).same(applied[key], shown);
   });
 }
-/** Apply an explicit scope patch and optional chart choice in one history entry. */
-export function applyFilter(
+/** The values a filter action would commit, or undefined when the row's values cannot be
+ * applied: they are not valid scope values, or the view could not represent them. */
+function filterValues(
   target: object,
   patch: Record<string, unknown>,
   breakdown?: { target: BreakdownTarget<any>; value: string }
-) {
+): Record<string, unknown> | undefined {
   const definition = targets.get(target)!;
-  const values = appliedValues(definition);
-  for (const [key, value] of Object.entries(patch)) {
+  const scoped = Object.entries(patch).every(([key, value]) => {
     const variable = definition.variables[key];
-    // oxlint-disable-next-line data-app/no-runtime-assertion -- Patch values come from displayed rows.
-    invariant(
+    return (
       variable &&
-        variable.presentation?.group !== 'display' &&
-        (variable as AppVariable<any>).valid(value),
-      'Filter actions can only update scope variables.'
+      variable.presentation?.group !== 'display' &&
+      (variable as AppVariable<any>).valid(value)
     );
-  }
+  });
+  if (!scoped) return undefined;
+  let values = { ...appliedValues(definition), ...patch };
   if (breakdown) {
     const choice = breakdownDefinition(breakdown.target);
     // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
@@ -139,15 +144,28 @@ export function applyFilter(
       choice.owner === definition.owner,
       'Breakdown must belong to the filter view.'
     );
-    const variable = choice.variables[choice.key!]!;
-    // oxlint-disable-next-line data-app/no-runtime-assertion -- Breakdown values come from rows and selections.
-    invariant(
-      (variable as AppVariable<any>).valid(breakdown.value),
-      'Invalid breakdown.'
-    );
-    patch = { ...patch, [choice.key!]: breakdown.value };
+    const variable = choice.variables[choice.key!] as AppVariable<any>;
+    if (!variable.valid(breakdown.value)) return undefined;
+    values = { ...values, [choice.key!]: breakdown.value };
   }
-  commit(definition, { ...values, ...patch });
+  return preserved(definition, values) ? values : undefined;
+}
+/** Whether a row's filter action can be offered; invalid row values hide the action. */
+export function filterApplicable(
+  target: object,
+  patch: Record<string, unknown>,
+  breakdown?: { target: BreakdownTarget<any>; value: string }
+): boolean {
+  return !!filterValues(target, patch, breakdown);
+}
+/** Apply an explicit scope patch and optional chart choice in one history entry. */
+export function applyFilter(
+  target: object,
+  patch: Record<string, unknown>,
+  breakdown?: { target: BreakdownTarget<any>; value: string }
+) {
+  const values = filterValues(target, patch, breakdown);
+  if (values) commit(targets.get(target)!, values);
 }
 export function breakdownState(
   target: BreakdownTarget<any>,
@@ -172,9 +190,10 @@ export function breakdownState(
     value,
     options: variable.options,
     set(id: string) {
-      // oxlint-disable-next-line data-app/no-runtime-assertion -- Breakdown values come from rows and selections.
-      invariant(variable.valid(id), 'Invalid breakdown.');
-      commit(definition, { ...values, [definition.key!]: id });
+      const next = { ...values, [definition.key!]: id };
+      // Choices come from the variable's own options; skip anything the view cannot show.
+      if (variable.valid(id) && preserved(definition, next))
+        commit(definition, next);
     },
   };
 }

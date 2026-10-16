@@ -253,31 +253,26 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     const { onSelect } = suggestions;
     const reading = this.read(source);
     if (reading.loading) return reading;
-    const items = reading.value.map(row => {
+    // Suggestions are auxiliary: skip rows without a usable key or title.
+    const items = new Map<string, SearchSuggestion>();
+    for (const row of reading.value) {
       const key = this.#table.rowKey(row);
-      // oxlint-disable-next-line data-app/no-runtime-assertion -- Row keys are an authoring contract.
-      invariant(
-        typeof key === 'string'
-          ? !!key
-          : typeof key === 'number' && Number.isFinite(key),
-        'Suggestion row keys must be nonempty strings or finite numbers.'
-      );
       const title = suggestions.title(row);
-      // oxlint-disable-next-line data-app/no-runtime-assertion -- Titles come from displayed rows.
-      invariant(!!title.trim(), 'Search suggestions need a nonempty title.');
-      return {
-        id: [typeof key, key].join(KEY_SEPARATOR),
+      const id = [typeof key, key].join(KEY_SEPARATOR);
+      if (
+        (typeof key === 'string' ? !key : !Number.isFinite(key)) ||
+        !title.trim() ||
+        items.has(id)
+      )
+        continue;
+      items.set(id, {
+        id,
         title,
         description: suggestions.description?.(row),
         onSelect: onSelect ? () => onSelect(row) : undefined,
-      };
-    });
-    // oxlint-disable-next-line data-app/no-runtime-assertion -- Row keys are an authoring contract.
-    invariant(
-      new Set(items.map(item => item.id)).size === items.length,
-      'Search suggestion row keys must be unique.'
-    );
-    return { loading: false, value: items };
+      });
+    }
+    return { loading: false, value: [...items.values()] };
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);
@@ -371,7 +366,10 @@ export class MetricRecords<Data, Input, DetailData, DetailInput> {
   render(source: ViewSource<Data, Input>, navigation?: DetailNavigation) {
     this.#metric.read(source);
     if (source.loading) return undefined;
-    const input = parseDetailInput(this.#target, this.#input(source.input));
+    const parsed = parseDetailInput(this.#target, this.#input(source.input));
+    // Records are only offered for a usable detail input.
+    if (!parsed) return undefined;
+    const { input } = parsed;
     return {
       scope: this.#target.definition.describeInput(input),
       content: createElement(DetailRecords, {

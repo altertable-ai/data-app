@@ -4,6 +4,7 @@ import {
   BreakdownTarget,
   targetAvailable,
   applyFilter,
+  filterApplicable,
 } from '@/src/react/exploration';
 import type { DetailView } from '@/src/react/details';
 import type {
@@ -86,6 +87,19 @@ export function defineActions<
   actionSets.set(result, { binding, actions, primary: options?.primary });
   return result;
 }
+function filterArguments<Row>(
+  action: Extract<ActionDeclaration<Row, unknown>, { kind: 'filter' }>,
+  row: Row
+) {
+  return [
+    action.target,
+    action.values(row) as Record<string, unknown>,
+    action.breakdown && {
+      target: action.breakdown.target,
+      value: action.breakdown.value(row),
+    },
+  ] as const;
+}
 export function resolveActions<Row, Input>(
   set: ExplorationActions<Row, Input> | undefined,
   binding: object,
@@ -114,7 +128,8 @@ export function resolveActions<Row, Input>(
           action.kind === 'filter' &&
           (!targetAvailable(action.target, input, viewOwner!) ||
             (action.breakdown &&
-              !targetAvailable(action.breakdown.target, input, viewOwner!)))
+              !targetAvailable(action.breakdown.target, input, viewOwner!)) ||
+            !filterApplicable(...filterArguments(action, row)))
         )
           return [];
         return [
@@ -140,14 +155,7 @@ export function resolveActions<Row, Input>(
                 (!action.breakdown ||
                   targetAvailable(action.breakdown.target, input, viewOwner!))
               )
-                applyFilter(
-                  action.target,
-                  action.values(row) as Record<string, unknown>,
-                  action.breakdown && {
-                    target: action.breakdown.target,
-                    value: action.breakdown.value(row),
-                  }
-                );
+                applyFilter(...filterArguments(action, row));
             },
           },
         ];
