@@ -140,12 +140,16 @@ export function ViewControlBar({
               ))}
             </fieldset>
           )}
-          {onClear && <FilterActions onClear={clearFilters} />}
         </div>
-        {displayOptions.length > 0 && (
-          <DisplayOptionsPopover changedCount={changedDisplayOptionCount}>
-            {displayOptions}
-          </DisplayOptionsPopover>
+        {(onClear || displayOptions.length > 0) && (
+          <div className="altertable-primary-control-actions">
+            {onClear && <FilterActions onClear={clearFilters} />}
+            {displayOptions.length > 0 && (
+              <DisplayOptionsPopover changedCount={changedDisplayOptionCount}>
+                {displayOptions}
+              </DisplayOptionsPopover>
+            )}
+          </div>
         )}
       </VariableBar>
       {toolbarAboveViewport && activeFilters.length > 0 && (

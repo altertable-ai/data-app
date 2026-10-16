@@ -941,6 +941,9 @@ test('filter actions stay balanced with long selections and Done preserves filte
   page,
 }) => {
   await page.goto('/filter-presentation?spend=all');
+  await page.addStyleTag({
+    content: ':root { --atbl-type-label-size: 17px; }',
+  });
   const controls = page.getByRole('group', {
     name: 'View controls',
     exact: true,
@@ -966,12 +969,10 @@ test('filter actions stay balanced with long selections and Done preserves filte
     const inputBox = await filtersButton.boundingBox();
     const displayBox = await display.boundingBox();
     expect(Math.abs(inputBox!.y - displayBox!.y)).toBeLessThan(1);
-    if (width === 736) {
-      const clearBox = await controls
-        .getByRole('button', { name: 'Clear', exact: true })
-        .boundingBox();
-      expect(Math.abs(inputBox!.y - clearBox!.y)).toBeLessThan(1);
-    }
+    const clearBox = await controls
+      .getByRole('button', { name: 'Clear', exact: true })
+      .boundingBox();
+    expect(Math.abs(inputBox!.y - clearBox!.y)).toBeLessThan(1);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth

@@ -15,6 +15,11 @@
   align-items: start;
   gap: var(--atbl-space-sm);
 }
+.altertable-primary-control-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--atbl-space-sm);
+}
 .altertable-filter-bar-inputs {
   display: flex;
   align-items: center;
