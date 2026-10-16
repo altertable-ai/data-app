@@ -96,11 +96,13 @@ export type TableWidgetProps<Row> = TableWidgetBaseProps<Row> &
 
 export function TableWidget<Row>(props: TableWidgetProps<Row>) {
   const { pagination, limit, columns } = props;
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Sizes may be dynamic numbers, as with query limits.
   invariant(
     !pagination ||
       (Number.isSafeInteger(pagination.pageSize) && pagination.pageSize >= 1),
     'TableWidget pagination.pageSize must be a positive integer.'
   );
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Sizes may be dynamic numbers, as with query limits.
   invariant(
     limit === undefined || (Number.isSafeInteger(limit) && limit >= 1),
     'TableWidget limit must be a positive integer.'

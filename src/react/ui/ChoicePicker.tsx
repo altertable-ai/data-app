@@ -89,6 +89,7 @@ export function ChoicePicker(props: ChoicePickerProps) {
     ids.every(id => !!id.trim()) && new Set(ids).size === ids.length,
     'ChoicePicker option IDs must be nonempty and unique.'
   );
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Sizes may be dynamic numbers, as with query limits.
   invariant(
     !multiple ||
       (Number.isSafeInteger(props.maxSelected) && props.maxSelected >= 1),

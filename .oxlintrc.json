@@ -71,9 +71,7 @@
         "src/react/bindings.ts",
         "src/react/details.tsx",
         "src/react/exploration.ts",
-        "src/react/source-owner.ts",
-        "src/react/ui/ChoicePicker.tsx",
-        "src/react/ui/TableWidget.tsx"
+        "src/react/source-owner.ts"
       ],
       "rules": {
         "data-app/no-runtime-assertion": "error"
