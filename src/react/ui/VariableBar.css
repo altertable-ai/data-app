@@ -127,6 +127,10 @@
   inset-block-end: var(--atbl-space-md);
   inset-inline-start: 50%;
   transform: translateX(-50%);
+  opacity: 1;
+  transition:
+    opacity var(--atbl-duration-normal) var(--atbl-ease-enter),
+    transform var(--atbl-duration-normal) var(--atbl-ease-enter);
   align-items: center;
   flex-wrap: nowrap;
   max-inline-size: calc(100vw - 2 * var(--atbl-space-md));
@@ -135,6 +139,17 @@
   border-radius: var(--atbl-radius-surface);
   background: var(--atbl-surface);
   box-shadow: var(--atbl-shadow-overlay);
+}
+@starting-style {
+  .altertable-active-filters {
+    opacity: 0;
+    transform: translate(-50%, var(--atbl-space-sm));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .altertable-active-filters {
+    transition-property: opacity;
+  }
 }
 .altertable-active-filters > button {
   flex: none;
