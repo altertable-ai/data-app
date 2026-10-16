@@ -53,6 +53,7 @@ export function Select({
   const inline = labelPlacement === 'inline';
   validateChoiceOptions(options);
   const selected = options.find(option => option.id === value);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Option IDs are an authoring contract.
   invariant(selected, 'Select value must refer to an available option.');
   const trigger = (
     <PressButton

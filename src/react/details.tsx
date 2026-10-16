@@ -43,6 +43,7 @@ export class DetailView<Data, Input> {
     readonly definition: DetailViewDefinition<Data, Input>,
     readonly useResult: (input: Input) => ViewResult<Data, Input>
   ) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail IDs are an authoring contract.
     invariant(!!definition.id.trim(), 'A detail view needs a nonempty ID.');
   }
 
@@ -88,10 +89,12 @@ export function parseDetailInput<Data, Input>(
       )
     );
   }
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail routes are parsed from the URL.
   invariant(
     serializable(input),
     'Detail inputs must contain JSON scope and IDs.'
   );
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail routes are parsed from the URL.
   invariant(
     JSON.stringify(input).length <= 16_384,
     'Detail input exceeds its bound.'
@@ -118,6 +121,7 @@ const maxDetailRouteLength = 16_384;
 const maxDetailRouteDepth = 20;
 
 function validateRoute(value: unknown) {
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail routes are parsed from the URL.
   invariant(
     Array.isArray(value) &&
       value.every(
@@ -126,6 +130,7 @@ function validateRoute(value: unknown) {
     'Invalid detail route.'
   );
   const serialized = JSON.stringify(value);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail routes are parsed from the URL.
   invariant(
     value.length <= maxDetailRouteDepth &&
       serialized.length <= maxDetailRouteLength,
@@ -146,6 +151,7 @@ function readRoute(
       const content = details.find(
         candidate => candidate.target.definition.id === item.id
       );
+      // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail routes are parsed from the URL.
       if (!content) throw new Error('Unknown detail route.');
       return {
         content,
@@ -203,6 +209,7 @@ export function useDetailNavigation(): DetailNavigation {
       }
     : {
         open() {
+          // oxlint-disable-next-line data-app/no-runtime-assertion -- React context is resolved at render.
           invariant(false, 'Detail navigation requires DataApp details.');
         },
       };
@@ -292,6 +299,7 @@ export function DetailRoutes({
     stackRef.current = stack;
   }, [stack]);
   const targets = useMemo(() => {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail IDs are an authoring contract.
     invariant(
       new Set(details.map(content => content.target.definition.id)).size ===
         details.length,

@@ -84,6 +84,7 @@ export function DimensionPicker<T extends DimensionValue>({
         onChange={(id: string) => {
           if (id === allKey) return onChange({ kind: 'all' });
           const member = byKey.get(id);
+          // oxlint-disable-next-line data-app/no-runtime-assertion -- Selection keys come from UI events.
           invariant(member, `Unknown ${filter.label} option.`);
           onChange({ kind: mode, members: [member] });
         }}
@@ -104,6 +105,7 @@ export function DimensionPicker<T extends DimensionValue>({
           if (!ids.length) return onChange({ kind: 'all' });
           const selected = ids.map(id => {
             const member = byKey.get(id);
+            // oxlint-disable-next-line data-app/no-runtime-assertion -- Selection keys come from UI events.
             invariant(member, `Unknown ${filter.label} option.`);
 
             return member;

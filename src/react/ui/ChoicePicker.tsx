@@ -84,6 +84,7 @@ export function ChoicePicker(props: ChoicePickerProps) {
     id => selectedOptions.find(option => option.id === id)?.label ?? id
   );
   const ids = selectedOptions.map(option => option.id);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Option IDs are an authoring contract.
   invariant(
     ids.every(id => !!id.trim()) && new Set(ids).size === ids.length,
     'ChoicePicker option IDs must be nonempty and unique.'
@@ -93,16 +94,19 @@ export function ChoicePicker(props: ChoicePickerProps) {
       (Number.isSafeInteger(props.maxSelected) && props.maxSelected >= 1),
     'ChoicePicker maxSelected must be a positive integer.'
   );
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- The caller controls the selection at runtime.
   invariant(
     !multiple ||
       (new Set(chosen).size === chosen.length &&
         chosen.length <= props.maxSelected),
     'ChoicePicker selection must be unique and within maxSelected.'
   );
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Option IDs are an authoring contract.
   invariant(
     loading || error || chosen.every(id => ids.includes(id)),
     'ChoicePicker selection must refer to available option IDs.'
   );
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Labels are authored copy.
   invariant(
     !multiple || !!props.emptySelectionLabel.trim(),
     'ChoicePicker emptySelectionLabel must describe the empty selection.'

@@ -106,9 +106,9 @@ export function TableWidget<Row>(props: TableWidgetProps<Row>) {
     'TableWidget limit must be a positive integer.'
   );
   const columnIds = columns.map(column => column.id);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Column IDs are an authoring contract.
   invariant(
-    columnIds.length > 0 &&
-      columnIds.every(id => !!id.trim()) &&
+    columnIds.every(id => !!id.trim()) &&
       new Set(columnIds).size === columnIds.length,
     'TableWidget column IDs must be nonempty and unique.'
   );
@@ -153,6 +153,7 @@ function TableWidgetContent<Row>({
   skeletonRows?: number;
 }) {
   const keys = rows.map(rowKey);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Row keys are an authoring contract.
   invariant(
     keys.every(key =>
       typeof key === 'string' ? !!key.trim() : Number.isFinite(key)

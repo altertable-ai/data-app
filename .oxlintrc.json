@@ -68,31 +68,12 @@
       "files": ["src/react/**"],
       "excludeFiles": [
         "src/react/actions.ts",
-        "src/react/app-context.ts",
         "src/react/bindings.ts",
         "src/react/details.tsx",
         "src/react/exploration.ts",
         "src/react/source-owner.ts",
-        "src/react/view-runtime.tsx",
-        "src/react/view.ts",
-        "src/react/ui/AboutData.tsx",
-        "src/react/ui/Breakdown.tsx",
-        "src/react/ui/Checkbox.tsx",
-        "src/react/ui/CheckboxGroup.tsx",
         "src/react/ui/ChoicePicker.tsx",
-        "src/react/ui/DimensionPicker.tsx",
-        "src/react/ui/FunnelChart.tsx",
-        "src/react/ui/JourneyChart.tsx",
-        "src/react/ui/Ranking.tsx",
-        "src/react/ui/RetentionChart.tsx",
-        "src/react/ui/Select.tsx",
-        "src/react/ui/TableWidget.tsx",
-        "src/react/ui/chart-data.ts",
-        "src/react/ui/csv-export.ts",
-        "src/react/ui/data-context.ts",
-        "src/react/ui/story.ts",
-        "src/react/ui/variables.ts",
-        "src/react/ui/widget-views.ts"
+        "src/react/ui/TableWidget.tsx"
       ],
       "rules": {
         "data-app/no-runtime-assertion": "error"

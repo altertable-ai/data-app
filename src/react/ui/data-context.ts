@@ -74,6 +74,7 @@ export function createDataContext<const Names extends Record<string, string>>(
           }
       )
     ): WidgetEvidence {
+      // oxlint-disable-next-line data-app/no-runtime-assertion -- Evidence IDs are an authoring contract.
       invariant(!!input.id.trim(), 'Evidence needs a nonempty ID.');
       const validated = {
         id: input.id,

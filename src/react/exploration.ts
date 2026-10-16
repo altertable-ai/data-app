@@ -124,6 +124,7 @@ export function applyFilter(
   const values = appliedValues(definition);
   for (const [key, value] of Object.entries(patch)) {
     const variable = definition.variables[key];
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Patch values come from displayed rows.
     invariant(
       variable &&
         variable.presentation?.group !== 'display' &&
@@ -138,6 +139,7 @@ export function applyFilter(
       'Breakdown must belong to the filter view.'
     );
     const variable = choice.variables[choice.key!]!;
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Breakdown values come from rows and selections.
     invariant(
       (variable as AppVariable<any>).valid(breakdown.value),
       'Invalid breakdown.'
@@ -168,6 +170,7 @@ export function breakdownState(
     value,
     options: variable.options,
     set(id: string) {
+      // oxlint-disable-next-line data-app/no-runtime-assertion -- Breakdown values come from rows and selections.
       invariant(variable.valid(id), 'Invalid breakdown.');
       commit(definition, { ...values, [definition.key!]: id });
     },

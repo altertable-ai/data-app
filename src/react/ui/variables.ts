@@ -160,6 +160,7 @@ export function useAppVariables<const Variables extends VariableCollection>(
         AppVariableValues<Variables>[typeof name]
       >;
       const value = next[name]!;
+      // oxlint-disable-next-line data-app/no-runtime-assertion -- Values are checked against runtime option sets.
       invariant(variable.valid(value), `Invalid value for variable ${name}.`);
       Object.assign(changes, variable.write(value));
       if (!history && variable.history === 'push') mode = 'push';

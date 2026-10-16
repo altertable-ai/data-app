@@ -161,7 +161,9 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     owner?: object,
     timeZone?: string
   ) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Dataset names are authored copy.
     invariant(!!definition.name.trim(), 'A dataset needs a name.');
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Column IDs are an authoring contract.
     invariant(
       Object.keys(definition.columns).every(id => !!id.trim()),
       'A dataset needs nonempty column IDs.'
@@ -255,6 +257,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     if (reading.loading) return reading;
     const items = reading.value.map(row => {
       const key = this.#table.rowKey(row);
+      // oxlint-disable-next-line data-app/no-runtime-assertion -- Row keys are an authoring contract.
       invariant(
         typeof key === 'string'
           ? !!key
@@ -262,6 +265,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
         'Suggestion row keys must be nonempty strings or finite numbers.'
       );
       const title = suggestions.title(row);
+      // oxlint-disable-next-line data-app/no-runtime-assertion -- Titles come from displayed rows.
       invariant(!!title.trim(), 'Search suggestions need a nonempty title.');
       return {
         id: [typeof key, key].join(KEY_SEPARATOR),
@@ -270,6 +274,7 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
         onSelect: onSelect ? () => onSelect(row) : undefined,
       };
     });
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Row keys are an authoring contract.
     invariant(
       new Set(items.map(item => item.id)).size === items.length,
       'Search suggestion row keys must be unique.'

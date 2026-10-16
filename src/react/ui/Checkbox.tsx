@@ -28,6 +28,7 @@ export function Checkbox({
 }: CheckboxProps) {
   const group = useContext(CheckboxGroupContext);
   const descriptionId = useId();
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- React context is resolved at render.
   invariant(
     value === undefined || group,
     'A checkbox with value must belong to a CheckboxGroup.'
