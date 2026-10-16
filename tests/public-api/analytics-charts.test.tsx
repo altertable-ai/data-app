@@ -112,11 +112,11 @@ test('funnel preserves frontend conversion and previous-step drop-off for indepe
         />
       )
     ).toContain('role="alert"');
-  expect(() =>
+  expect(
     renderToStaticMarkup(
       <FunnelChart {...funnel} steps={[funnel.steps[0]!, funnel.steps[0]!]} />
     )
-  ).toThrow(/unique/);
+  ).toMatch(/role="alert".*unique/);
 });
 
 test('retention preserves query rates, counts, unobserved periods, and incomplete tails', () => {
@@ -146,14 +146,14 @@ test('retention preserves query rates, counts, unobserved periods, and incomplet
         />
       )
     ).toContain('role="alert"');
-  expect(() =>
+  expect(
     renderToStaticMarkup(
       <RetentionChart
         {...retention}
         series={[retention.series[0]!, retention.series[0]!]}
       />
     )
-  ).toThrow(/unique/);
+  ).toMatch(/role="alert".*unique/);
 });
 
 test('journey starts with two prefix-aware steps and derives population counts and shares', () => {
@@ -190,14 +190,14 @@ test('journey starts with two prefix-aware steps and derives population counts a
     expect(
       renderToStaticMarkup(<JourneyChart {...journey} paths={[path]} />)
     ).toContain('role="alert"');
-  expect(() =>
+  expect(
     renderToStaticMarkup(
       <JourneyChart
         {...journey}
         paths={[journey.paths[0]!, journey.paths[0]!]}
       />
     )
-  ).toThrow(/unique/);
+  ).toMatch(/role="alert".*unique/);
 });
 
 test('SVG definition IDs are distinct and preserve different React identifier prefixes', () => {

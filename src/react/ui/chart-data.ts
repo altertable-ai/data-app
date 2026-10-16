@@ -1,4 +1,3 @@
-import { invariant } from '@/src/core/invariant';
 import type { ItemActions } from '@/src/react/ui/ExplorationActionControl';
 
 /** Ordered category or time-series sample. IDs are unique and nonblank; values are finite. */
@@ -32,25 +31,20 @@ export type ScatterChartItem = {
 };
 type ValueChartKind = 'bar' | 'line' | 'area' | 'pie';
 
-/** IDs key rows, legends, and actions, so they are an authoring contract. */
-export function validateChartIds(
+/** Describe the first blank or duplicate item ID; IDs key rows, legends, and actions. */
+export function chartIdProblem(
   kind: string,
   items: readonly { id: string }[]
-) {
+): string | undefined {
   const ids = new Set<string>();
   for (const item of items) {
-    // oxlint-disable-next-line data-app/no-runtime-assertion -- Nonblank IDs are an authoring contract.
-    invariant(
-      item.id.trim().length > 0,
-      `${kind} chart IDs must be nonempty and unique: blank ID.`
-    );
-    // oxlint-disable-next-line data-app/no-runtime-assertion -- Unique IDs are an authoring contract.
-    invariant(
-      !ids.has(item.id),
-      `${kind} chart IDs must be nonempty and unique: duplicate "${item.id}".`
-    );
+    if (!item.id.trim())
+      return `${kind} chart IDs must be nonempty and unique: blank ID.`;
+    if (ids.has(item.id))
+      return `${kind} chart IDs must be nonempty and unique: duplicate "${item.id}".`;
     ids.add(item.id);
   }
+  return undefined;
 }
 
 /** Describe the first displayed value a chart cannot plot. */

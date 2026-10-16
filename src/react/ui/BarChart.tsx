@@ -1,4 +1,4 @@
-import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import { AppIcon } from '@/src/react/ui/icons';
 import { formatNumber } from '@/src/core/format';
 import { chartBarFill } from '@/src/react/ui/chartColor';
@@ -21,7 +21,7 @@ import {
 } from 'react';
 
 import {
-  validateChartIds,
+  chartIdProblem,
   valueChartProblem,
   type ChartItem,
   type ValueChartProps,
@@ -48,8 +48,8 @@ export function BarChart<Row extends BarChartItem>({
   formatValue = formatNumber,
   itemActions,
 }: BarChartProps<Row>) {
-  validateChartIds('bar', items);
-  const problem = valueChartProblem('bar', items);
+  const problem =
+    chartIdProblem('bar', items) ?? valueChartProblem('bar', items);
   const chartActions = useChartActions();
   const [activeId, setActiveId] = useState<string>();
   const scrollport = useChartScrollToEnd(items);
@@ -57,7 +57,7 @@ export function BarChart<Row extends BarChartItem>({
   if (problem)
     return (
       <section aria-label={ariaLabel}>
-        <ChartDataProblem problem={problem} />
+        <DataProblem problem={problem} />
       </section>
     );
 

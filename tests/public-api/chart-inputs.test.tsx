@@ -6,11 +6,12 @@ import {
   AreaChart,
   PieChart,
   ScatterChart,
+  TableWidget,
   type ScatterChartItem,
 } from '@altertable/data-app/react/ui';
 import { Breakdown, Ranking } from '@altertable/data-app/react';
 
-test('standalone charts reject invalid IDs and report unplottable values', () => {
+test('standalone charts report invalid IDs and unplottable values', () => {
   for (const Chart of [BarChart, LineChart, AreaChart, PieChart]) {
     function render(
       items: readonly { id: string; label: string; value: number }[]
@@ -20,14 +21,14 @@ test('standalone charts reject invalid IDs and report unplottable values', () =>
       );
     }
     expect(render([])).toContain('No data');
-    expect(() =>
+    expect(
       render([
         { id: 'same', label: 'A', value: 1 },
         { id: 'same', label: 'B', value: 2 },
       ])
-    ).toThrow(/unique/);
-    expect(() => render([{ id: '', label: 'A', value: 1 }])).toThrow(
-      /blank ID/
+    ).toMatch(/role="alert".*unique/);
+    expect(render([{ id: '', label: 'A', value: 1 }])).toMatch(
+      /role="alert".*blank ID/
     );
     expect(render([{ id: 'a', label: 'A', value: NaN }])).toMatch(
       /role="alert".*requires finite values/
@@ -62,8 +63,10 @@ test('scatter charts validate observation identities and both numeric coordinate
   expect(render([observation])).toContain(
     'Account A: Duration -5 ms, Revenue 0 euros'
   );
-  expect(() => render([observation, observation])).toThrow(/unique/);
-  expect(() => render([{ ...observation, id: '  ' }])).toThrow(/blank ID/);
+  expect(render([observation, observation])).toMatch(/role="alert".*unique/);
+  expect(render([{ ...observation, id: '  ' }])).toMatch(
+    /role="alert".*blank ID/
+  );
   for (const coordinate of ['x', 'y'] as const) {
     for (const value of [NaN, Infinity, -Infinity]) {
       expect(render([{ ...observation, [coordinate]: value }])).toMatch(
@@ -73,7 +76,18 @@ test('scatter charts validate observation identities and both numeric coordinate
   }
 });
 
-test('readings report unplottable values instead of throwing', () => {
+test('readings and tables report unusable rows instead of throwing', () => {
+  expect(
+    renderToStaticMarkup(
+      <TableWidget
+        title="Rows"
+        columns={[{ id: 'name', header: 'Name', cell: row => row.name }]}
+        rows={[{ name: 'A' }, { name: 'B' }]}
+        rowKey={() => 'same'}
+        emptyFallback={{ title: 'No rows' }}
+      />
+    )
+  ).toMatch(/role="alert".*row keys must be nonempty and unique/);
   expect(
     renderToStaticMarkup(
       <Ranking items={[{ id: 'a', label: 'A', value: Infinity }]} />

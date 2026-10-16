@@ -7,6 +7,7 @@ import {
 } from 'react';
 import { useMergeRefs } from '@floating-ui/react';
 import { invariant } from '@/src/core/invariant';
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
 import { VisualizationWidget } from '@/src/react/ui/VisualizationWidget';
@@ -155,13 +156,12 @@ function TableWidgetContent<Row>({
   skeletonRows?: number;
 }) {
   const keys = rows.map(rowKey);
-  // oxlint-disable-next-line data-app/no-runtime-assertion -- Row keys are an authoring contract.
-  invariant(
+  const problem =
     keys.every(key =>
       typeof key === 'string' ? !!key.trim() : Number.isFinite(key)
-    ) && new Set(keys.map(String)).size === keys.length,
-    'TableWidget row keys must be nonempty and unique.'
-  );
+    ) && new Set(keys.map(String)).size === keys.length
+      ? undefined
+      : 'TableWidget row keys must be nonempty and unique.';
   const rowKeys = JSON.stringify(keys);
 
   const pageSize =
@@ -250,28 +250,34 @@ function TableWidgetContent<Row>({
       {...props}
       className={classNames('altertable-table-widget', props.className)}
       title={title}
-      count={loading || !showCount ? undefined : (count ?? hits.length)}
+      count={
+        loading || !showCount || problem ? undefined : (count ?? hits.length)
+      }
       description={description}
       action={action}
       evidence={evidence}
       aria-busy={loading || props['aria-busy']}
-      footer={pager}
+      footer={problem ? undefined : pager}
       visual={
-        <div className="altertable-table-widget-content">
-          <TableWidgetTable
-            columns={columns}
-            visible={visible}
-            rowKey={rowKey}
-            rowCount={rows.length}
-            matchCount={hits.length}
-            search={search}
-            emptyFallback={emptyFallback}
-            noMatchesFallback={noMatchesFallback}
-            onClearFilters={onClearFilters}
-            loading={loading}
-            skeletonRows={skeletonRows}
-          />
-        </div>
+        problem ? (
+          <DataProblem problem={problem} />
+        ) : (
+          <div className="altertable-table-widget-content">
+            <TableWidgetTable
+              columns={columns}
+              visible={visible}
+              rowKey={rowKey}
+              rowCount={rows.length}
+              matchCount={hits.length}
+              search={search}
+              emptyFallback={emptyFallback}
+              noMatchesFallback={noMatchesFallback}
+              onClearFilters={onClearFilters}
+              loading={loading}
+              skeletonRows={skeletonRows}
+            />
+          </div>
+        )
       }
     />
   );

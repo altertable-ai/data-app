@@ -6,10 +6,10 @@ import { ComposedChart } from '@/src/react/ui/ComposedChart';
 import { ChartTooltipContent } from '@/src/react/ui/chart-primitives';
 import { classNames } from '@/src/react/ui/classNames';
 import {
-  validateChartIds,
+  chartIdProblem,
   type CountChartProps,
 } from '@/src/react/ui/chart-data';
-import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import { formatNumber, formatPercent } from '@/src/core/format';
 
 /** Ordered step with a unique, nonblank ID. */
@@ -143,13 +143,14 @@ export function FunnelChart({
     cancelClear();
     clearTimer.current = setTimeout(() => setHighlighted(null), 100);
   }
-  validateChartIds('funnel step', steps);
-  validateChartIds('funnel series', series);
-  const problem = funnelProblem(steps, series);
+  const problem =
+    chartIdProblem('funnel step', steps) ??
+    chartIdProblem('funnel series', series) ??
+    funnelProblem(steps, series);
   if (problem)
     return (
       <section className={className} aria-label={ariaLabel}>
-        <ChartDataProblem problem={problem} />
+        <DataProblem problem={problem} />
       </section>
     );
   const { populations, rows } = createFunnelModel(steps, series, chartId);

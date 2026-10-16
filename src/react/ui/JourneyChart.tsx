@@ -2,10 +2,10 @@ import { type ComponentRef, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/src/react/ui/Button';
 import { classNames } from '@/src/react/ui/classNames';
 import {
-  validateChartIds,
+  chartIdProblem,
   type CountChartProps,
 } from '@/src/react/ui/chart-data';
-import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import { formatNumber, formatPercent } from '@/src/core/format';
 import {
   buildJourneyFlow,
@@ -49,8 +49,8 @@ export function JourneyChart({
   className,
   formatValue = formatNumber,
 }: JourneyChartProps) {
-  validateChartIds('journey path', paths);
-  const problem = journeyProblem(paths);
+  const problem =
+    chartIdProblem('journey path', paths) ?? journeyProblem(paths);
   // A changed displayed result starts a new exploration, including in inspection views.
   return (
     <section
@@ -58,7 +58,7 @@ export function JourneyChart({
       aria-label={ariaLabel}
     >
       {problem ? (
-        <ChartDataProblem problem={problem} />
+        <DataProblem problem={problem} />
       ) : paths.length === 0 ? (
         <span>No data</span>
       ) : (

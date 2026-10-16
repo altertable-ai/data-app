@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef, CSSProperties, ReactNode } from 'react';
 import { formatCount, formatPercent } from '@/src/core/format';
-import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import { classNames } from '@/src/react/ui/classNames';
 import { chartColor } from '@/src/react/ui/chartColor';
 
@@ -28,7 +28,7 @@ export function Breakdown({
     )
   )
     return (
-      <ChartDataProblem
+      <DataProblem
         className={className}
         problem="Breakdown items must be nonnegative parts of the observed total."
       />

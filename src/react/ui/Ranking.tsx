@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { formatCount } from '@/src/core/format';
-import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import { classNames } from '@/src/react/ui/classNames';
 
 export type RankingItem = {
@@ -23,7 +23,7 @@ export function Ranking({
 }: RankingProps) {
   if (!items.every(item => Number.isFinite(item.value) && item.value >= 0))
     return (
-      <ChartDataProblem
+      <DataProblem
         className={className}
         problem="Ranking values must be finite and nonnegative."
       />

@@ -4,10 +4,10 @@ import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { TooltipSurface } from '@/src/react/ui/TooltipSurface';
 import { classNames } from '@/src/react/ui/classNames';
 import {
-  validateChartIds,
+  chartIdProblem,
   type CountChartProps,
 } from '@/src/react/ui/chart-data';
-import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import { formatNumber, formatPercent } from '@/src/core/format';
 
 export type RetentionChartPoint = {
@@ -147,12 +147,12 @@ export function RetentionChart({
   className,
   formatValue = formatNumber,
 }: RetentionChartProps) {
-  validateChartIds('retention series', series);
-  const problem = retentionProblem(series);
+  const problem =
+    chartIdProblem('retention series', series) ?? retentionProblem(series);
   if (problem)
     return (
       <section className={className} aria-label={ariaLabel}>
-        <ChartDataProblem problem={problem} />
+        <DataProblem problem={problem} />
       </section>
     );
   const { rows, rowsByOffset, cohorts } = createRetentionModel(
