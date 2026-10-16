@@ -8,7 +8,6 @@ import type {
   CheckedFacetContexts,
 } from '@/src/core/variables';
 import type { DateRangeRequest } from '@/src/core/contract';
-import { invariant } from '@/src/core/invariant';
 
 type ResolvedVariable<Variable> = Variable extends DateRangeVariable
   ? DateRangeRequest
@@ -134,32 +133,35 @@ export type ResolvedDataViewDefinition<
   Data,
 > = Omit<
   DataViewDefinition<Name, Variables, Input, Data>,
-  'variables' | 'input'
+  'variables' | 'input' | 'describeInput'
 > & {
   variables: Variables;
   input: (values: ResolvedVariables<Variables>) => Input;
+  describeInput: (input: Input) => string;
 };
 
-export function describeViewInput<Input>(definition: {
-  variables: VariableCollection;
-  bindings?: Partial<Record<string, (input: Input) => unknown>>;
-  date?: { variable: string; input: (input: Input) => DateRangeRequest };
-  describeInput?: (input: Input) => string;
-}): (input: Input) => string {
-  const date = definition.date;
-  const variable = date && definition.variables[date.variable];
-  invariant(
-    !date || variable?.kind === 'dateRange',
-    'The view date must reference a date range variable.'
-  );
+export function describeViewInput<Input>(
+  definition: {
+    variables: VariableCollection;
+    bindings?: Partial<Record<string, (input: Input) => unknown>>;
+  } & (
+    | {
+        date: { variable: string; input: (input: Input) => DateRangeRequest };
+        describeInput?: (input: Input) => string;
+      }
+    | { date?: never; describeInput: (input: Input) => string }
+  )
+): (input: Input) => string {
+  if (!definition.date) return definition.describeInput;
   if (definition.describeInput) return definition.describeInput;
-  invariant(date && variable, 'A view needs a date binding or describeInput.');
-  const dateBinding = date;
+  const dateBinding = definition.date;
+  // ViewDate keys only name date range variables.
+  const variable = definition.variables[
+    dateBinding.variable
+  ] as DateRangeVariable;
 
   function describeInput(input: Input) {
-    const period = (variable as DateRangeVariable).describeInput(
-      dateBinding.input(input)
-    );
+    const period = variable.describeInput(dateBinding.input(input));
     const filters = Object.entries(definition.variables)
       .filter(([, variable]) =>
         ['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind)
@@ -180,6 +182,15 @@ export function describeViewInput<Input>(definition: {
   return describeInput;
 }
 
+function sameRange(
+  a: DateRangeRequest['comparison'],
+  b: DateRangeRequest['comparison']
+) {
+  return a === b || (!!a && !!b && a.start === b.start && a.end === b.end);
+}
+
+/** Map the selected values to operation input. A problem means the mapper dropped or
+ * changed a selection, so the input does not describe what the reader chose. */
 export function resolveViewInput<Variables extends VariableCollection, Input>(
   definition: {
     input: (values: ResolvedVariables<Variables>) => Input;
@@ -188,27 +199,22 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
     bindings?: ViewBindings<Variables, Input>;
   },
   values: ResolvedVariables<Variables>
-): Input {
+): { input: Input; problem?: string } {
   const input = definition.input(values);
   if (definition.date) {
     const selected = values[definition.date.variable] as DateRangeRequest;
     const mapped = definition.date.input(input);
-    invariant(
-      mapped && mapped.range && 'comparison' in mapped,
-      'The operation input must preserve the selected date range and comparison.'
-    );
-
-    function sameRange(
-      a: DateRangeRequest['comparison'],
-      b: DateRangeRequest['comparison']
-    ) {
-      return a === b || (!!a && !!b && a.start === b.start && a.end === b.end);
-    }
-    invariant(
-      sameRange(selected.range, mapped.range) &&
-        sameRange(selected.comparison, mapped.comparison),
-      'The operation input must preserve the selected date range and comparison.'
-    );
+    if (
+      !mapped?.range ||
+      !('comparison' in mapped) ||
+      !sameRange(selected.range, mapped.range) ||
+      !sameRange(selected.comparison, mapped.comparison)
+    )
+      return {
+        input,
+        problem:
+          'The operation input must preserve the selected date range and comparison.',
+      };
   }
   for (const [key, variable] of Object.entries(definition.variables)) {
     if (
@@ -219,13 +225,17 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
     const filter = variable as AppVariable<any>;
     const selected = values[key] as never;
     const mapped = readViewBinding(definition, key, input);
-    invariant(
-      filter.valid(mapped as never) && filter.same(selected, mapped as never),
-      `The operation input must preserve the ${key} filter selection.`
-    );
+    if (
+      !filter.valid(mapped as never) ||
+      !filter.same(selected, mapped as never)
+    )
+      return {
+        input,
+        problem: `The operation input must preserve the ${key} filter selection.`,
+      };
   }
 
-  return input;
+  return { input };
 }
 
 function readViewBinding<Input>(

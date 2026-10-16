@@ -9,6 +9,7 @@ export function useDataAppAnnotations() {
     createAnnotationClient((message, signal) => {
       const transport = getDataAppTransport();
       if (!transport)
+        // oxlint-disable-next-line data-app/no-runtime-assertion -- Hosts without a transport.
         throw new MessageRoutingError(
           'unsupported_route',
           'Annotations are unavailable in this app.'

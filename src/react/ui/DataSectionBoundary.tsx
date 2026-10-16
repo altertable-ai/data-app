@@ -4,7 +4,6 @@ import { Button } from '@/src/react/ui/Button';
 import { useInspectionDefaults } from '@/src/react/ui/InspectionContext';
 import { DataBoundary } from '@/src/react/ui/DataBoundary';
 import type { DataView } from '@/src/core/data-view';
-import { invariant } from '@/src/core/invariant';
 import { EmptyState } from '@/src/react/ui/EmptyState';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 import { StatusPanel } from '@/src/react/ui/StatusPanel';
@@ -92,13 +91,9 @@ export function DataSectionBoundary<Data, Input>({
   notice: feedback,
   ...props
 }: DataSectionProps<Data, Input>) {
+  // DataSectionProps requires a fallback on the result when props omit one.
   const fallback =
-    emptyFallback ??
-    ('emptyFallback' in result ? result.emptyFallback : undefined);
-  invariant(
-    fallback,
-    'A section needs an empty fallback from its result or props.'
-  );
+    emptyFallback ?? (result as { emptyFallback: EmptyContent }).emptyFallback;
   const defaults = useInspectionDefaults();
   const notice =
     feedback ?? (defaults?.primaryView === result.view ? 'none' : 'inline');

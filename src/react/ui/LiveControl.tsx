@@ -1,5 +1,4 @@
 import type { ComponentPropsWithRef } from 'react';
-import { invariant } from '@/src/core/invariant';
 import {
   Button as AriaButton,
   ListBox,
@@ -15,10 +14,15 @@ import { classNames } from '@/src/react/ui/classNames';
 export type LiveIntervalSeconds = 30 | 60 | 300;
 
 const intervals = [
-  { seconds: 30, label: 'Every 30 seconds', description: 'every 30 seconds' },
-  { seconds: 60, label: 'Every minute', description: 'every minute' },
-  { seconds: 300, label: 'Every 5 minutes', description: 'every 5 minutes' },
+  { seconds: 30, label: 'Every 30 seconds' },
+  { seconds: 60, label: 'Every minute' },
+  { seconds: 300, label: 'Every 5 minutes' },
 ] as const;
+const frequencies: Record<LiveIntervalSeconds, string> = {
+  30: 'every 30 seconds',
+  60: 'every minute',
+  300: 'every 5 minutes',
+};
 
 export type LiveControlProps = {
   enabled: boolean;
@@ -36,10 +40,7 @@ export function LiveControl({
   className,
   ...props
 }: LiveControlProps) {
-  const frequency = intervals.find(
-    interval => interval.seconds === intervalSeconds
-  )?.description;
-  invariant(frequency, 'LiveControl requires a supported update interval.');
+  const frequency = frequencies[intervalSeconds];
 
   return (
     <div

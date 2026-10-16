@@ -19,6 +19,7 @@ export function CheckboxGroup({
   disabled,
   ...props
 }: CheckboxGroupProps) {
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Checkbox values are an authoring contract.
   invariant(
     new Set(values).size === values.length,
     'Checkbox group values must be unique.'

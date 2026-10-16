@@ -7,7 +7,6 @@ import type {
   DimensionSelectionVariable,
 } from '@/src/core/dimension';
 import { dimensionMemberKey } from '@/src/core/dimension';
-import { invariant } from '@/src/core/invariant';
 import { ChoicePicker, type ChoiceOption } from '@/src/react/ui/ChoicePicker';
 import { Select } from '@/src/react/ui/Select';
 import { FilterBar } from '@/src/react/ui/FilterBar';
@@ -83,9 +82,9 @@ export function DimensionPicker<T extends DimensionValue>({
         value={members.length ? dimensionMemberKey(members[0]!) : allKey}
         onChange={(id: string) => {
           if (id === allKey) return onChange({ kind: 'all' });
+          // IDs come from this picker's options; ignore anything else.
           const member = byKey.get(id);
-          invariant(member, `Unknown ${filter.label} option.`);
-          onChange({ kind: mode, members: [member] });
+          if (member) onChange({ kind: mode, members: [member] });
         }}
         options={[{ id: allKey, label: 'All' }, ...choices]}
         missingOption={missingOption}
@@ -101,13 +100,9 @@ export function DimensionPicker<T extends DimensionValue>({
         labelPlacement={labelPlacement}
         values={members.map(dimensionMemberKey)}
         onChange={(ids: string[]) => {
-          if (!ids.length) return onChange({ kind: 'all' });
-          const selected = ids.map(id => {
-            const member = byKey.get(id);
-            invariant(member, `Unknown ${filter.label} option.`);
-
-            return member;
-          });
+          // IDs come from this picker's options; ignore anything else.
+          const selected = ids.flatMap(id => byKey.get(id) ?? []);
+          if (!selected.length) return onChange({ kind: 'all' });
           onChange({ kind: mode, members: selected });
         }}
         options={choices}

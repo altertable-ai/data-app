@@ -4,6 +4,7 @@ import {
   BreakdownTarget,
   targetAvailable,
   applyFilter,
+  filterApplicable,
 } from '@/src/react/exploration';
 import type { DetailView } from '@/src/react/details';
 import type {
@@ -82,13 +83,22 @@ export function defineActions<
   options?: { primary?: keyof Actions & string }
 ): ExplorationActions<Row, Input> {
   const actions = build(new ActionBuilder<Row, Input>());
-  invariant(
-    !options?.primary || Object.hasOwn(actions, options.primary),
-    'Primary action must be declared.'
-  );
   const result = new ExplorationActions<Row, Input>();
   actionSets.set(result, { binding, actions, primary: options?.primary });
   return result;
+}
+function filterArguments<Row>(
+  action: Extract<ActionDeclaration<Row, unknown>, { kind: 'filter' }>,
+  row: Row
+) {
+  return [
+    action.target,
+    action.values(row) as Record<string, unknown>,
+    action.breakdown && {
+      target: action.breakdown.target,
+      value: action.breakdown.value(row),
+    },
+  ] as const;
 }
 export function resolveActions<Row, Input>(
   set: ExplorationActions<Row, Input> | undefined,
@@ -103,6 +113,7 @@ export function resolveActions<Row, Input>(
 ): ItemActions<Row> {
   if (!set) return () => [];
   const declaration = actionSets.get(set);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
   invariant(
     declaration?.binding === binding,
     'Actions must belong to the widget metric or dataset.'
@@ -117,7 +128,8 @@ export function resolveActions<Row, Input>(
           action.kind === 'filter' &&
           (!targetAvailable(action.target, input, viewOwner!) ||
             (action.breakdown &&
-              !targetAvailable(action.breakdown.target, input, viewOwner!)))
+              !targetAvailable(action.breakdown.target, input, viewOwner!)) ||
+            !filterApplicable(...filterArguments(action, row)))
         )
           return [];
         return [
@@ -143,14 +155,7 @@ export function resolveActions<Row, Input>(
                 (!action.breakdown ||
                   targetAvailable(action.breakdown.target, input, viewOwner!))
               )
-                applyFilter(
-                  action.target,
-                  action.values(row) as Record<string, unknown>,
-                  action.breakdown && {
-                    target: action.breakdown.target,
-                    value: action.breakdown.value(row),
-                  }
-                );
+                applyFilter(...filterArguments(action, row));
             },
           },
         ];

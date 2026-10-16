@@ -7,6 +7,7 @@ import {
   InspectionProvider,
 } from '@/src/react/ui/InspectionProvider';
 import { Sheet } from '@/src/react/ui/Sheet';
+import { StatusPanel } from '@/src/react/ui/StatusPanel';
 import {
   searchParams,
   subscribeSearch,
@@ -43,6 +44,7 @@ export class DetailView<Data, Input> {
     readonly definition: DetailViewDefinition<Data, Input>,
     readonly useResult: (input: Input) => ViewResult<Data, Input>
   ) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail IDs are an authoring contract.
     invariant(!!definition.id.trim(), 'A detail view needs a nonempty ID.');
   }
 
@@ -53,6 +55,7 @@ export class DetailView<Data, Input> {
   }
 
   static content<Data, Input>(target: DetailView<Data, Input>) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Destinations are registered at runtime.
     invariant(
       target.#content,
       'A detail destination needs content before it can be opened.'
@@ -61,12 +64,18 @@ export class DetailView<Data, Input> {
   }
 }
 
-/** Validate destination input before it enters either navigation or a lazy records query. */
+/** Validate destination input before it enters either navigation or a lazy records query.
+ * Undefined means the input is unusable: parseInput rejected it or it is not bounded JSON. */
 export function parseDetailInput<Data, Input>(
   target: DetailView<Data, Input>,
   value: unknown
-): Input {
-  const input = target.definition.parseInput(value);
+): { input: Input } | undefined {
+  let input: Input;
+  try {
+    input = target.definition.parseInput(value);
+  } catch {
+    return undefined;
+  }
   function serializable(value: unknown, depth = 0): boolean {
     if (depth > 20) return false;
     if (
@@ -88,15 +97,9 @@ export function parseDetailInput<Data, Input>(
       )
     );
   }
-  invariant(
-    serializable(input),
-    'Detail inputs must contain JSON scope and IDs.'
-  );
-  invariant(
-    JSON.stringify(input).length <= 16_384,
-    'Detail input exceeds its bound.'
-  );
-  return input;
+  return serializable(input) && JSON.stringify(input).length <= 16_384
+    ? { input }
+    : undefined;
 }
 
 /** A destination’s rendered body. Pass these to DataApp.details. */
@@ -117,21 +120,22 @@ const detailsParam = 'details';
 const maxDetailRouteLength = 16_384;
 const maxDetailRouteDepth = 20;
 
-function validateRoute(value: unknown) {
-  invariant(
-    Array.isArray(value) &&
-      value.every(
-        item => item && typeof item === 'object' && typeof item.id === 'string'
-      ),
-    'Invalid detail route.'
-  );
+/** Undefined means the route is malformed or exceeds its bounds. */
+function boundedRoute(
+  value: unknown
+): { route: RoutedDetail[]; serialized: string } | undefined {
+  if (
+    !Array.isArray(value) ||
+    !value.every(
+      item => item && typeof item === 'object' && typeof item.id === 'string'
+    )
+  )
+    return undefined;
   const serialized = JSON.stringify(value);
-  invariant(
-    value.length <= maxDetailRouteDepth &&
-      serialized.length <= maxDetailRouteLength,
-    'Detail route exceeds its bound.'
-  );
-  return { route: value as RoutedDetail[], serialized };
+  return value.length <= maxDetailRouteDepth &&
+    serialized.length <= maxDetailRouteLength
+    ? { route: value, serialized }
+    : undefined;
 }
 
 function readRoute(
@@ -140,33 +144,39 @@ function readRoute(
   const raw = searchParams().get(detailsParam);
   if (!raw) return [];
   if (raw.length > maxDetailRouteLength) return null;
+  let value: unknown;
   try {
-    const { route } = validateRoute(JSON.parse(raw));
-    return route.map(item => {
-      const content = details.find(
-        candidate => candidate.target.definition.id === item.id
-      );
-      if (!content) throw new Error('Unknown detail route.');
-      return {
-        content,
-        input: parseDetailInput(content.target, item.input),
-      };
-    });
+    value = JSON.parse(raw);
   } catch {
     return null;
   }
+  const route = boundedRoute(value)?.route;
+  if (!route) return null;
+  const entries: DetailEntry[] = [];
+  for (const item of route) {
+    const content = details.find(
+      candidate => candidate.target.definition.id === item.id
+    );
+    const parsed = content && parseDetailInput(content.target, item.input);
+    if (!content || !parsed) return null;
+    entries.push({ content, input: parsed.input });
+  }
+  return entries;
 }
 
+/** False leaves the route unchanged because the entries exceed its bounds. */
 function writeRoute(
   entries: readonly DetailEntry[],
   mode: 'push' | 'replace' = 'push'
-) {
-  const { serialized } = validateRoute(
+): boolean {
+  const bounded = boundedRoute(
     entries.map(entry => ({
       id: entry.content.target.definition.id,
       input: entry.input,
     }))
   );
+  if (!bounded) return false;
+  const { serialized } = bounded;
   writeSearch(
     {
       [detailsParam]: entries.length ? serialized : null,
@@ -174,6 +184,7 @@ function writeRoute(
     },
     mode
   );
+  return true;
 }
 
 export type DetailNavigation = {
@@ -203,6 +214,7 @@ export function useDetailNavigation(): DetailNavigation {
       }
     : {
         open() {
+          // oxlint-disable-next-line data-app/no-runtime-assertion -- React context is resolved at render.
           invariant(false, 'Detail navigation requires DataApp details.');
         },
       };
@@ -277,6 +289,16 @@ function DetailSheet({
   );
 }
 
+function DetailProblem() {
+  return (
+    <StatusPanel
+      status="error"
+      title="This detail can't be opened"
+      description="The selected item doesn't identify records this detail can show."
+    />
+  );
+}
+
 /** Mounts one replacement sheet for a stack of detail destinations. */
 export function DetailRoutes({
   details,
@@ -286,12 +308,17 @@ export function DetailRoutes({
   children: ReactNode;
 }) {
   const [stack, setStack] = useState<readonly DetailEntry[]>([]);
+  // A destination whose input was unusable; it replaces the current sheet until closed.
+  const [failed, setFailed] = useState<DetailContent<unknown, unknown> | null>(
+    null
+  );
   const stackRef = useRef(stack);
   const focusOrigin = useRef<HTMLElement | SVGElement | null>(null);
   useEffect(() => {
     stackRef.current = stack;
   }, [stack]);
   const targets = useMemo(() => {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Detail IDs are an authoring contract.
     invariant(
       new Set(details.map(content => content.target.definition.id)).size ===
         details.length,
@@ -303,20 +330,22 @@ export function DetailRoutes({
     () => ({
       open(target, input, trigger) {
         const content = targets.get(target as DetailView<unknown, unknown>);
+        // oxlint-disable-next-line data-app/no-runtime-assertion -- Destinations are registered at runtime.
         invariant(
           content,
           'This detail destination is not registered on DataApp.'
         );
         const parsed = parseDetailInput(content.target, input);
         if (!stackRef.current.length) focusOrigin.current = trigger ?? null;
-        const next = [
+        const next = parsed && [
           ...stackRef.current,
-          {
-            content,
-            input: parsed,
-          },
+          { content, input: parsed.input },
         ];
-        writeRoute(next);
+        if (!next || !writeRoute(next)) {
+          setFailed(content);
+          return;
+        }
+        setFailed(null);
         setStack(next);
       },
     }),
@@ -342,21 +371,34 @@ export function DetailRoutes({
     <DetailNavigationContext value={navigation}>
       <InspectionProvider>
         {children}
-        {current && (
-          <DetailSheet
-            key={current.content.target.definition.id}
-            entry={current}
-            returnFocus={focusOrigin}
-            onClose={() => {
-              const trigger = focusOrigin.current;
-              writeRoute([], 'replace');
-              setStack([]);
-              requestAnimationFrame(() => {
-                if (trigger?.isConnected && trigger.getClientRects().length)
-                  trigger.focus({ preventScroll: true });
-              });
+        {failed ? (
+          <Sheet
+            open
+            onOpenChange={open => {
+              if (!open) setFailed(null);
             }}
-          />
+            title={failed.target.definition.title}
+            returnFocus={focusOrigin}
+          >
+            <DetailProblem />
+          </Sheet>
+        ) : (
+          current && (
+            <DetailSheet
+              key={current.content.target.definition.id}
+              entry={current}
+              returnFocus={focusOrigin}
+              onClose={() => {
+                const trigger = focusOrigin.current;
+                writeRoute([], 'replace');
+                setStack([]);
+                requestAnimationFrame(() => {
+                  if (trigger?.isConnected && trigger.getClientRects().length)
+                    trigger.focus({ preventScroll: true });
+                });
+              }}
+            />
+          )
         )}
       </InspectionProvider>
     </DetailNavigationContext>
@@ -374,9 +416,11 @@ export function DetailRecords({
   navigation?: DetailNavigation;
 }) {
   const parsed = parseDetailInput(content.target, input);
-  return (
+  return parsed ? (
     <DetailNavigationContext value={navigation ?? null}>
-      <DetailBody content={content} input={parsed} />
+      <DetailBody content={content} input={parsed.input} />
     </DetailNavigationContext>
+  ) : (
+    <DetailProblem />
   );
 }

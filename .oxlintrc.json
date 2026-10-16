@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["eslint", "typescript", "unicorn", "oxc", "react", "jsx-a11y"],
+  "jsPlugins": ["./scripts/oxlint/no-runtime-assertion.ts"],
   "categories": {
     "correctness": "error"
   },
@@ -61,6 +62,12 @@
       "files": ["tests/vendor/d3-time/**"],
       "rules": {
         "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": ["src/react/**"],
+      "rules": {
+        "data-app/no-runtime-assertion": "error"
       }
     }
   ]

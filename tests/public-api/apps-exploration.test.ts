@@ -366,12 +366,8 @@ for (const { size, depth } of [
     );
     await open.click();
     await expect
-      .poll(() =>
-        detail
-          .getByRole('status', { name: 'Detail navigation error' })
-          .textContent()
-      )
-      .toContain('Detail route exceeds its bound.');
+      .poll(() => detail.getByRole('alert').textContent())
+      .toContain("This detail can't be opened");
     expect(page.url()).toBe(url);
     expect(await page.evaluate(() => history.length)).toBe(historyLength);
     await page.reload();
@@ -380,6 +376,51 @@ for (const { size, depth } of [
       .toContain('order-1');
   });
 }
+
+test('an unusable detail input opens an error sheet without changing the route', async ({
+  page,
+}) => {
+  await page.goto('/exploration?route-probe=1&input-size=20000');
+  await page
+    .getByRole('button', { name: 'Open bounded detail', exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('dialog', { name: 'Contributing orders', exact: true })
+        .getByRole('alert')
+        .textContent()
+    )
+    .toContain("This detail can't be opened");
+  expect(new URL(page.url()).searchParams.has('details')).toBe(false);
+});
+
+test('filter actions are not offered for row values the filter rejects', async ({
+  page,
+}) => {
+  await page.goto('/exploration?orders-by=country');
+  await page
+    .getByRole('button', { name: /^France: 10 orders, .*\. Actions$/ })
+    .click();
+  const choices = await page
+    .getByRole('menu')
+    .getByRole('menuitem')
+    .allTextContents();
+  expect(choices).toContain('View orders');
+  expect(choices).not.toContain('Filter region');
+});
+
+test('an input mapper that drops a selection fails its view, not the app', async ({
+  page,
+}) => {
+  await page.goto('/exploration?drop-search=1&q=north');
+  await expect.poll(() => page.getByRole('alert').count()).toBeGreaterThan(0);
+  await expect
+    .poll(() =>
+      page.getByRole('button', { name: 'Export CSV', exact: true }).count()
+    )
+    .toBe(1);
+});
 
 test('nested details replace one sheet and close to the original dashboard trigger', async ({
   page,

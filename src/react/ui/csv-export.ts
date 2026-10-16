@@ -21,8 +21,10 @@ export function formatCsv({
   columns,
   rows,
 }: Pick<CsvTable, 'columns' | 'rows'>): string {
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Direct CSV exports are built at runtime.
   if (!columns.length) throw new Error('CSV export needs at least one column.');
   if (rows.some(row => row.length !== columns.length))
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Direct CSV exports are built at runtime.
     throw new Error('CSV rows must match the export columns.');
   function cell(value: CsvCell): string {
     if (value === null || value === undefined) return '';
@@ -41,6 +43,7 @@ function filenameWithExtension(name: string, extension: 'csv' | 'zip'): string {
     ? name
     : `${name.replace(/\.(?:csv|zip)$/i, '')}.${extension}`;
   if (!name.trim() || filename.length > 255 || /[\p{Cc}\\/]/u.test(filename))
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Filenames are built from displayed scope.
     throw new Error('Export filenames must be nonempty names without paths.');
   return filename;
 }
@@ -50,11 +53,13 @@ export function createCsvDownload(
   selectedTable?: CsvTable
 ): { filename: string; blob: Blob; route: 'export:csv' | 'export:zip' } {
   if (!data.tables.length)
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Direct CSV exports are built at runtime.
     throw new Error('CSV export needs at least one dataset.');
   const names = data.tables.map(table =>
     filenameWithExtension(table.name, 'csv')
   );
   if (new Set(names.map(name => name.toLowerCase())).size !== names.length)
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Dataset names are an authoring contract.
     throw new Error('CSV dataset names must be unique.');
   const table =
     selectedTable ?? (data.tables.length === 1 ? data.tables[0] : undefined);
