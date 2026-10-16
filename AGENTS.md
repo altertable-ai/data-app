@@ -36,6 +36,7 @@ Read the matching guide before generating an app. Package contributors follow
 | Task                                   | Read                                                           |
 | -------------------------------------- | -------------------------------------------------------------- |
 | Choose hosted or local execution       | [App authoring](docs/app-authoring.md)                         |
+| Plan a coherent exploration and story  | [Composition](docs/composition.md)                             |
 | Load data and compose loading states   | [Views](docs/views.md)                                         |
 | Add filters                            | [Variables](docs/variables.md)                                 |
 | Compose visuals, tables, and narrative | [Widgets](docs/widgets.md), [layout](docs/layout.md)           |

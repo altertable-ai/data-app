@@ -17,6 +17,13 @@ and findings from the typed rows. See [named queries](contract.md#execute-named-
 Inspect the relevant catalogs, tables, and fields, their time coverage, and
 existing definitions. Choose a question the available data can answer.
 
+## Compose the exploration
+
+Plan the question, analytical sequence, and role of each display before choosing
+components. Follow [Compose an exploration](composition.md) to connect filters,
+widgets, layout, and narrative into a coherent investigation, then distill its
+supported findings into a story.
+
 ## Choose the visualizations
 
 Before implementing queries and rendering, identify the question each visual
