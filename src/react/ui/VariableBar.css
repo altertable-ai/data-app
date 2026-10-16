@@ -58,7 +58,7 @@
   block-size: 1.25rem;
   padding-inline: 0.25rem;
   box-sizing: border-box;
-  border-radius: 999px;
+  border-radius: var(--atbl-radius-control);
   background: var(--atbl-subtle);
   font-size: var(--atbl-type-meta-size);
   font-variant-numeric: tabular-nums;
@@ -132,7 +132,7 @@
   max-inline-size: calc(100vw - 2 * var(--atbl-space-md));
   padding: var(--atbl-space-xs);
   border: 1px solid var(--atbl-border);
-  border-radius: 999px;
+  border-radius: var(--atbl-radius-surface);
   background: var(--atbl-surface);
   box-shadow: var(--atbl-shadow-overlay);
 }
@@ -158,10 +158,6 @@
   font-weight: var(--atbl-type-meta-weight);
 }
 
-.altertable-active-filter .altertable-button,
-.altertable-active-filters .altertable-button {
-  border-radius: 999px;
-}
 .altertable-active-filter .altertable-picker-value {
   max-width: none;
   font-weight: inherit;
@@ -170,7 +166,7 @@
 .altertable-active-filter {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
+  border-radius: var(--atbl-radius-control);
   background: var(--atbl-subtle);
 }
 .altertable-active-filter-remove {
