@@ -83,7 +83,6 @@
         "src/react/ui/DimensionPicker.tsx",
         "src/react/ui/FunnelChart.tsx",
         "src/react/ui/JourneyChart.tsx",
-        "src/react/ui/LiveControl.tsx",
         "src/react/ui/Ranking.tsx",
         "src/react/ui/RetentionChart.tsx",
         "src/react/ui/Select.tsx",
@@ -91,7 +90,6 @@
         "src/react/ui/chart-data.ts",
         "src/react/ui/csv-export.ts",
         "src/react/ui/data-context.ts",
-        "src/react/ui/data-identifiers.tsx",
         "src/react/ui/story.ts",
         "src/react/ui/variables.ts",
         "src/react/ui/widget-views.ts"
