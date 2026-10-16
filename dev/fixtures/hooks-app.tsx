@@ -1,23 +1,23 @@
-import { KEY_SEPARATOR } from '@/src/core/keys';
-import { createDataContext as registerContext } from '@/src/react/ui/data-context';
-import { useDeclaredResult } from '@/src/react/view-runtime';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { createDataContext as registerContext } from '@/packages/data-app-react/src/ui/data-context.ts';
+import { useDeclaredResult } from '@/packages/data-app-react/src/view-runtime.tsx';
 import { DeclaredApp, dataApp } from '@/dev/fixtures/declared-app';
-import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
-import { bindDataset } from '@/src/react/bindings';
-import { defineDataContent } from '@/src/react/content';
+import { DataSectionBoundary as DataSection } from '@/packages/data-app-react/src/ui/DataSectionBoundary.tsx';
+import { bindDataset } from '@/packages/data-app-react/src/bindings.ts';
+import { defineDataContent } from '@/packages/data-app-react/src/content.ts';
 import { ClientCacheApp } from '@/dev/fixtures/client-cache';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { injectDataAppStyles } from '@altertable/data-app/react';
+import { injectDataAppStyles } from '@altertable/data-app-react';
 import {
   createDataClient,
   type InputOf,
   type OutputOf,
-} from '@/src/client/index';
-import { defineOperation } from '@/src/core/contract';
-import type { TransportResponse } from '@/src/core/bridge';
-import { createDataHooks } from '@/src/react/hooks';
-import { DataAppProvider, TextWidget } from '@altertable/data-app/react/ui';
+} from '@altertable/data-app/client';
+import { defineOperation } from '@altertable/data-app/contract';
+import type { TransportResponse } from '@altertable/data-app/contract';
+import { createDataHooks } from '@/packages/data-app-react/src/hooks.ts';
+import { DataAppProvider, TextWidget } from '@altertable/data-app-react/ui';
 
 injectDataAppStyles();
 

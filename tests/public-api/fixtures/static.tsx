@@ -9,7 +9,7 @@ import {
   formatDateRange,
   pluralize,
 } from '@altertable/data-app/format';
-import { mountDataApp, injectDataAppStyles } from '@altertable/data-app/react';
+import { mountDataApp, injectDataAppStyles } from '@altertable/data-app-react';
 import {
   DataApp,
   DataAppProvider,
@@ -17,7 +17,7 @@ import {
   TableWidget,
   LineChart,
   PieChart,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 const dataApp = defineDataApp({
   title: 'Activity report',
   description: 'Explore activity across groups.',

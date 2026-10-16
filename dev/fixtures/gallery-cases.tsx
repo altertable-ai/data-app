@@ -1,4 +1,4 @@
-import { KEY_SEPARATOR } from '@/src/core/keys';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { FilterControlsPreview } from '@/dev/fixtures/filter-controls';
 import {
   gallerySections,
@@ -15,12 +15,12 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { AppHeader } from '@/src/react/ui/AppHeader';
-import { AppScope } from '@/src/react/ui/AppScope';
-import { AppToolbar } from '@/src/react/ui/AppToolbar';
-import { AppFooter } from '@/src/react/ui/AppFooter';
-import { VariableBar } from '@/src/react/ui/VariableBar';
-import { DataViewToast } from '@/src/react/ui/DataViewToast';
+import { AppHeader } from '@/packages/data-app-react/src/ui/AppHeader.tsx';
+import { AppScope } from '@/packages/data-app-react/src/ui/AppScope.tsx';
+import { AppToolbar } from '@/packages/data-app-react/src/ui/AppToolbar.tsx';
+import { AppFooter } from '@/packages/data-app-react/src/ui/AppFooter.tsx';
+import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
+import { DataViewToast } from '@/packages/data-app-react/src/ui/DataViewToast.tsx';
 import {
   Breakdown,
   Button,
@@ -35,15 +35,15 @@ import {
   Stack,
   Tooltip,
   UpdatedAt,
-} from '@altertable/data-app/react';
-import { Comparison } from '@altertable/data-app/react';
-import { BarChart } from '@altertable/data-app/react/ui';
-import { ContentSkeleton } from '@/src/react/ui/ContentSkeleton';
-import { DataBoundary } from '@/src/react/ui/DataBoundary';
-import { Kbd } from '@/src/react/ui/Kbd';
-import { StatusPanel } from '@/src/react/ui/StatusPanel';
-import { WidgetDisclosure } from '@/src/react/ui/WidgetDisclosure';
-import { WidgetViewTabs } from '@/src/react/ui/WidgetViewTabs';
+} from '@altertable/data-app-react';
+import { Comparison } from '@altertable/data-app-react';
+import { BarChart } from '@altertable/data-app-react/ui';
+import { ContentSkeleton } from '@/packages/data-app-react/src/ui/ContentSkeleton.tsx';
+import { DataBoundary } from '@/packages/data-app-react/src/ui/DataBoundary.tsx';
+import { Kbd } from '@/packages/data-app-react/src/ui/Kbd.tsx';
+import { StatusPanel } from '@/packages/data-app-react/src/ui/StatusPanel.tsx';
+import { WidgetDisclosure } from '@/packages/data-app-react/src/ui/WidgetDisclosure.tsx';
+import { WidgetViewTabs } from '@/packages/data-app-react/src/ui/WidgetViewTabs.tsx';
 import {
   DimensionPicker,
   AboutData,
@@ -76,9 +76,9 @@ import {
   type LiveIntervalSeconds,
   type WidgetStatus,
   type AppIconName,
-} from '@altertable/data-app/react/ui';
-import { DataSectionBoundary as DataSection } from '@/src/react/ui/DataSectionBoundary';
-import { type DataView } from '@/src/core/data-view';
+} from '@altertable/data-app-react/ui';
+import { DataSectionBoundary as DataSection } from '@/packages/data-app-react/src/ui/DataSectionBoundary.tsx';
+import { type DataView } from '@altertable/data-app/internal';
 import '@/dev/fixtures/gallery.css';
 
 const dimension = dimensionFilter({

@@ -1,196 +1,386 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { join, posix } from 'node:path';
+import { join, posix, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import manifest from '@/package.json';
+import assert from 'node:assert/strict';
+import workspace from '@/package.json';
+import { packages } from '@/scripts/packages';
 
 const root = process.cwd();
 const bunVersion = (await readFile(join(root, '.bun-version'), 'utf8')).trim();
-if (manifest.packageManager !== `bun@${bunVersion}`)
-  throw new Error('packageManager must match .bun-version.');
-const temporary = await mkdtemp(join(root, '.package-check-'));
-const minimumConsumer = await mkdtemp(
-  join(tmpdir(), 'data-app-minimum-react-')
-);
+assert.equal(workspace.packageManager, `bun@${bunVersion}`);
+// Outside the checkout: neither hoisted dependencies nor repository aliases can help.
+const temporary = await mkdtemp(join(tmpdir(), 'data-app-packages-'));
 
-async function run(
-  command: string[],
-  cwd = root,
-  extraEnv: Record<string, string> = {}
-) {
+async function run(command: string[], cwd = temporary) {
   const child = Bun.spawn(command, {
     cwd,
-    env: { ...process.env, ...extraEnv },
+    env: { ...process.env, npm_config_cache: join(temporary, 'npm-cache') },
     stdout: 'pipe',
     stderr: 'pipe',
   });
-  const [stdout, stderr, exitCode] = await Promise.all([
+  const [stdout, stderr, code] = await Promise.all([
     new Response(child.stdout).text(),
     new Response(child.stderr).text(),
     child.exited,
   ]);
-  if (exitCode !== 0)
+  if (code !== 0)
     throw new Error(`${command.join(' ')} failed:\n${stdout}${stderr}`);
-
   return stdout;
 }
 
-try {
-  const packed = JSON.parse(
-    await run(
-      ['npm', 'pack', '--json', '--pack-destination', temporary],
-      root,
-      { npm_config_cache: join(temporary, 'npm-cache') }
-    )
-  ) as [{ filename: string; files: { path: string }[] }];
-  const archive = packed[0];
-  if (!archive) throw new Error('npm pack did not produce an archive.');
-  const paths = new Set(archive.files.map(file => file.path));
-  const required = [
-    'AGENTS.md',
-    'dist/server.js',
-    'dist/types/client/index.d.ts',
-    'dist/types/server/index.d.ts',
-    'dist/types/react/index.d.ts',
-    'CONTRIBUTING.md',
-    'docs/app-authoring.md',
-    'docs/hosted-apps.md',
-    'docs/local-data-apps.md',
-    'docs/contract.md',
-    'docs/client.md',
-    'docs/react.md',
-    'docs/ui.md',
-    'docs/views.md',
-    'docs/variables.md',
-    'docs/widgets.md',
-    'docs/data-context.md',
-    'docs/stories-and-export.md',
-    'docs/formatting-and-appearance.md',
-    'docs/server.md',
-    'docs/server-bun.md',
-    'docs/embed.md',
-    'docs/react-embed.md',
-    'docs/worker.md',
-    'examples/starter-data-app/index.tsx',
-    'examples/starter-local-data-app/README.md',
-    'examples/starter-local-data-app/AGENTS.md',
-    'examples/starter-local-data-app/package.json',
-    'examples/starter-local-data-app/app.ts',
-    'examples/starter-local-data-app/src/App.tsx',
-    'examples/starter-local-data-app/src/server.ts',
-  ];
-  for (const value of Object.values(manifest.exports)) {
-    for (const path of Object.values(value)) required.push(path.slice(2));
-  }
-  for (const path of required) {
-    if (!paths.has(path)) throw new Error(`Package is missing ${path}`);
-  }
-  if (
-    [...paths].some(
-      path => path.startsWith('src/') || path.startsWith('tests/')
-    )
-  )
-    throw new Error('Package contains source or tests.');
-
-  const packageDirectory = join(
-    temporary,
-    'node_modules',
-    '@altertable',
-    'data-app'
-  );
-  await mkdir(packageDirectory, { recursive: true });
-  await run([
-    'tar',
-    '-xzf',
-    join(temporary, archive.filename),
-    '-C',
-    packageDirectory,
-    '--strip-components=1',
-  ]);
+async function install(directory: string, dependencies: string[]) {
+  await mkdir(directory, { recursive: true });
   await writeFile(
-    join(temporary, 'package.json'),
-    JSON.stringify({ name: 'packed-data-app-consumer', type: 'module' })
+    join(directory, 'package.json'),
+    JSON.stringify({ private: true, type: 'module' })
   );
-  const consumerTests = join(temporary, 'tests/public-api');
-  await mkdir(consumerTests, { recursive: true });
-  for (const name of [
-    'operations.test.ts',
-    'messages.test.ts',
-    'worker.test.ts',
-  ]) {
-    await writeFile(
-      join(consumerTests, name),
-      await readFile(join(root, 'tests/public-api', name), 'utf8')
-    );
-  }
   await run(
     [
-      'node',
-      join(root, 'node_modules/vitest/vitest.mjs'),
-      'run',
-      '--root',
-      temporary,
-      '--config',
-      join(root, 'vitest.config.ts'),
+      'npm',
+      'install',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--package-lock=false',
+      ...dependencies,
     ],
-    temporary
+    directory
   );
-  for (const path of paths) {
-    if (path.endsWith('.d.ts')) {
-      const declaration = await readFile(join(packageDirectory, path), 'utf8');
-      if (declaration.includes('@/'))
-        throw new Error(`Repository alias leaked into ${path}`);
+  const tree = JSON.parse(
+    await run(['npm', 'ls', '--all', '--json'], directory)
+  );
+  const names = new Set<string>();
+  function visit(node: { dependencies?: Record<string, typeof node> }) {
+    for (const [name, child] of Object.entries(node.dependencies ?? {})) {
+      // npm ls includes an empty record for an absent optional peer.
+      if (Object.keys(child).length) names.add(name);
+      visit(child);
+    }
+  }
+  visit(tree);
+  return names;
+}
+
+function excludes(names: Set<string>, forbidden: string[]) {
+  for (const name of forbidden)
+    assert(!names.has(name), `Unexpected installed dependency: ${name}`);
+}
+
+async function typecheck(directory: string, source: string) {
+  await writeFile(join(directory, 'consumer.ts'), source);
+  await writeFile(
+    join(directory, 'tsconfig.json'),
+    JSON.stringify({
+      compilerOptions: {
+        target: 'ESNext',
+        module: 'Preserve',
+        moduleResolution: 'bundler',
+        strict: true,
+        noEmit: true,
+        types: [],
+      },
+      include: ['consumer.ts'],
+    })
+  );
+  await run(
+    [
+      join(root, 'node_modules/.bin/tsc'),
+      '-p',
+      join(directory, 'tsconfig.json'),
+    ],
+    directory
+  );
+}
+
+try {
+  const archives = new Map<string, string>();
+  for (const { directory, manifest } of packages) {
+    const packed = JSON.parse(
+      await run(
+        ['npm', 'pack', '--json', '--pack-destination', temporary],
+        resolve(root, directory)
+      )
+    ) as [{ filename: string; files: { path: string }[]; size: number }];
+    const archive = packed[0];
+    const paths = new Set(archive.files.map(file => file.path));
+    for (const target of Object.values(manifest.exports)) {
+      for (const path of Object.values(target))
+        assert(paths.has(path.slice(2)), `${manifest.name}: missing ${path}`);
+    }
+    for (const path of ['README.md', 'LICENSE'])
+      assert(paths.has(path), `${manifest.name}: missing ${path}`);
+    assert.equal(
+      paths.has('THIRD_PARTY_NOTICES'),
+      manifest.name === '@altertable/data-app-react',
+      `${manifest.name}: only React ships the vendored d3 notices`
+    );
+    assert(
+      ![...paths].some(path => /^(src|tests)\//.test(path)),
+      'Source or tests leaked into archive'
+    );
+    const unpacked = join(temporary, 'unpacked', manifest.name);
+    await mkdir(unpacked, { recursive: true });
+    await run([
+      'tar',
+      '-xzf',
+      join(temporary, archive.filename),
+      '-C',
+      unpacked,
+      '--strip-components=1',
+    ]);
+    const published = JSON.parse(
+      await readFile(join(unpacked, 'package.json'), 'utf8')
+    );
+    assert(
+      !JSON.stringify(published).includes('workspace:'),
+      'Unresolved workspace version'
+    );
+    if (manifest.name === '@altertable/data-app') {
+      for (const path of [
+        'AGENTS.md',
+        'CONTRIBUTING.md',
+        'docs/app-authoring.md',
+        'examples/starter-data-app/index.tsx',
+        'examples/starter-local-data-app/package.json',
+      ])
+        assert(paths.has(path), `Missing authoring material: ${path}`);
+    }
+    for (const path of paths) {
+      if (path.endsWith('.md')) {
+        const markdown = await readFile(join(unpacked, path), 'utf8');
+        for (const [, href] of markdown.matchAll(/\]\(([^)]+)\)/g)) {
+          if (!href || /^(?:https?:|#)/.test(href)) continue;
+          const target = href.split('#')[0];
+          assert(
+            !target || paths.has(posix.join(posix.dirname(path), target)),
+            `Broken packaged documentation link: ${path} -> ${href}`
+          );
+        }
+      }
+      if (!path.endsWith('.d.ts')) continue;
+      const declaration = await readFile(join(unpacked, path), 'utf8');
+      assert(
+        !declaration.includes('@/'),
+        `Repository alias leaked into ${path}`
+      );
       for (const [, specifier] of declaration.matchAll(
         /\b(?:from|import)\s*(?:\(\s*)?["'](\.[^"']+)["']/g
       )) {
-        if (!specifier) continue;
         const target = posix
-          .join(posix.dirname(path), specifier)
+          .join(posix.dirname(path), specifier!)
           .replace(/\.js$/, '.d.ts');
-        if (!paths.has(target))
-          throw new Error(`Broken declaration import: ${path} -> ${specifier}`);
+        assert(
+          paths.has(target),
+          `Broken declaration: ${manifest.name}/${path} -> ${specifier}`
+        );
       }
     }
-    if (!path.endsWith('.md')) continue;
-    const markdown = await readFile(join(packageDirectory, path), 'utf8');
-    for (const [, href] of markdown.matchAll(/\]\(([^)]+)\)/g)) {
-      if (!href || /^(?:https?:|#)/.test(href)) continue;
-      const target = href.split('#')[0];
-      if (target && !paths.has(posix.join(posix.dirname(path), target)))
-        throw new Error(
-          `Broken packaged documentation link: ${path} -> ${href}`
-        );
-    }
+    archives.set(manifest.name, join(temporary, archive.filename));
+    console.log(`${manifest.name}: ${archive.size} packed bytes`);
   }
+  function archive(name: string) {
+    const result = archives.get(`@altertable/data-app${name}`);
+    assert(result, `Missing archive: ${name}`);
+    return result;
+  }
+  const uiDependencies = [
+    '@altertable/lakehouse',
+    '@floating-ui/react',
+    '@tanstack/react-query',
+    'react-aria-components',
+    'recharts',
+    'lucide-react',
+    'fflate',
+    'fuzzysort',
+    'html-to-image',
+    'get-tsconfig',
+  ];
+  const base = join(temporary, 'base');
+  const baseNames = await install(base, [archive('')]);
+  excludes(baseNames, [...uiDependencies, 'react', 'react-dom', '@types/bun']);
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `
+    import { defineDataApp } from '@altertable/data-app';
+    import { createDataClient } from '@altertable/data-app/client';
+    import { createDataHandler } from '@altertable/data-app/server';
+    if ([defineDataApp, createDataClient, createDataHandler].some(value => typeof value !== 'function')) throw new Error('Portable exports unavailable');
+  `,
+    ],
+    base
+  );
+  await typecheck(
+    base,
+    `export { defineDataApp } from '@altertable/data-app';
+export { createDataClient } from '@altertable/data-app/client';
+export { createDataHandler } from '@altertable/data-app/server';`
+  );
+  console.log(
+    `Base consumer: ${baseNames.size} installed dependency names; no React or server adapter.`
+  );
+  const embedOnly = join(temporary, 'embed-only');
+  excludes(await install(embedOnly, [archive(''), archive('-embed')]), [
+    ...uiDependencies,
+    'react',
+    'react-dom',
+  ]);
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `import { attachDataAppBridge } from '@altertable/data-app-embed'; if (typeof attachDataAppBridge !== 'function') throw new Error('Embed unavailable');`,
+    ],
+    embedOnly
+  );
+  await typecheck(embedOnly, `export * from '@altertable/data-app-embed';`);
+  const reactHost = join(temporary, 'react-host');
+  excludes(
+    await install(reactHost, [archive(''), archive('-embed'), 'react@19.2.0']),
+    [...uiDependencies, 'react-dom']
+  );
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `import { DataAppBridge } from '@altertable/data-app-embed/react'; if (typeof DataAppBridge !== 'function') throw new Error('React embed unavailable');`,
+    ],
+    reactHost
+  );
+  const authoring = join(temporary, 'react-authoring');
+  const authoringNames = await install(authoring, [
+    archive(''),
+    archive('-react'),
+    'react@19.2.0',
+    'react-dom@19.2.0',
+    '@types/react@19.3.0',
+    '@types/react-dom@19.3.0',
+  ]);
+  excludes(authoringNames, [
+    'bun',
+    '@types/bun',
+    '@altertable/lakehouse',
+    'get-tsconfig',
+    '@altertable/data-app-bun',
+    '@altertable/data-app-embed',
+    '@altertable/data-app-worker',
+  ]);
+  await typecheck(
+    authoring,
+    `export { defineDataApp } from '@altertable/data-app';
+export { createDataHooks, Grid, MetricWidget } from '@altertable/data-app-react';
+export { MetricWidget as StaticMetric } from '@altertable/data-app-react/ui';`
+  );
+  await writeFile(
+    join(authoring, 'app.jsx'),
+    `import React from 'react';
+import { renderToString } from 'react-dom/server';
+import { MetricWidget } from '@altertable/data-app-react/ui';
+const html = renderToString(<MetricWidget label="Authoring only" value={0} format={{kind:'count'}} />);
+if (!html.includes('Authoring only') || !html.includes('>0<')) throw new Error('Authoring render failed');`
+  );
+  await run(['bun', join(authoring, 'app.jsx')], authoring);
+  await run(
+    [
+      'bun',
+      'build',
+      join(authoring, 'app.jsx'),
+      '--target=browser',
+      '--outdir',
+      join(authoring, 'dist'),
+    ],
+    authoring
+  );
+  const bunOnly = join(temporary, 'bun-only');
+  excludes(await install(bunOnly, [archive(''), archive('-bun')]), [
+    '@altertable/data-app-embed',
+    ...uiDependencies.filter(
+      name => !['@altertable/lakehouse', 'get-tsconfig'].includes(name)
+    ),
+    'react',
+    'react-dom',
+  ]);
+  await run(
+    [
+      'bun',
+      '-e',
+      `import { localLakehouse } from '@altertable/data-app-bun';
+import { serveAppFile } from '@altertable/data-app-bun/preview';
+if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') throw new Error('Bun exports unavailable');`,
+    ],
+    bunOnly
+  );
+  const workerOnly = join(temporary, 'worker-only');
+  const workerNames = await install(workerOnly, [archive('-worker')]);
+  assert.deepEqual([...workerNames], ['@altertable/data-app-worker']);
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `import worker from '@altertable/data-app-worker'; if (typeof worker.fetch !== 'function') throw new Error('Worker unavailable');`,
+    ],
+    workerOnly
+  );
+  await typecheck(
+    workerOnly,
+    `export { default } from '@altertable/data-app-worker';`
+  );
+  await install(temporary, [
+    ...archives.values(),
+    'react@19.2.0',
+    'react-dom@19.2.0',
+    '@types/react@19.3.0',
+    '@types/react-dom@19.3.0',
+    '@types/bun@1.4.2',
+  ]);
+  await writeFile(
+    join(temporary, 'hosted.tsx'),
+    await readFile(
+      join(
+        temporary,
+        'node_modules/@altertable/data-app/examples/starter-data-app/index.tsx'
+      ),
+      'utf8'
+    )
+  );
   await writeFile(
     join(temporary, 'browser.tsx'),
     `import { defineDataApp } from "@altertable/data-app";
 import { createDataClient } from "@altertable/data-app/client";
-import { Grid, injectDataAppStyles } from '@altertable/data-app/react';
-import { MetricWidget } from '@altertable/data-app/react/ui';
+import { Grid, injectDataAppStyles } from '@altertable/data-app-react';
+import { MetricWidget } from '@altertable/data-app-react/ui';
 injectDataAppStyles();
 import { defineDateRangeContract, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
-import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app/embed";
-import { DataAppBridge } from "@altertable/data-app/react/embed";
+import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app-embed";
+import { DataAppBridge } from "@altertable/data-app-embed/react";
 export const app = defineDataApp({ title: "Packed app", description: "Portable declaration", scope: { organization: "demo", environment: "test" }, queries: {} });
 export const api = { defineDataApp, createDataClient, Grid, MetricWidget, defineDateRangeContract, createMessageRouter, defineMessageRoute, attachDataAppBridge, startDataAppBootstrap, DataAppBridge };
 `
   );
   await writeFile(
     join(temporary, 'embed.tsx'),
-    `import { DataAppBridge } from "@altertable/data-app/react/embed";
+    `import { DataAppBridge } from "@altertable/data-app-embed/react";
 export { DataAppBridge };
 `
   );
   await writeFile(
     join(temporary, 'preview-app.tsx'),
-    "document.title = 'Packed preview';\n"
+    `import { MetricWidget } from '@altertable/data-app-react/ui';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
+document.title = 'Packed preview';
+console.log(MetricWidget, DataAppBridge);\n`
   );
   await writeFile(
     join(temporary, 'server.ts'),
     `import { defineDataApp } from "@altertable/data-app";
 import { createDataHandler } from "@altertable/data-app/server";
-import { localLakehouse } from "@altertable/data-app/server/bun";
-import { serveAppFile } from "@altertable/data-app/server/bun/preview";
+import { localLakehouse } from "@altertable/data-app-bun";
+import { serveAppFile } from "@altertable/data-app-bun/preview";
 if (typeof serveAppFile !== "function") throw new Error("Preview export is unavailable");
 if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
@@ -234,12 +424,7 @@ try {
         noEmit: true,
         skipLibCheck: true,
       },
-      include: [
-        'browser.tsx',
-        'embed.tsx',
-        'server.ts',
-        'node_modules/@altertable/data-app/examples/starter-data-app/index.tsx',
-      ],
+      include: ['browser.tsx', 'embed.tsx', 'server.ts', 'hosted.tsx'],
     })
   );
   await run([
@@ -249,7 +434,7 @@ try {
   ]);
   await run(['bun', join(temporary, 'server.ts')], temporary);
   const workerAsset = await readFile(
-    join(packageDirectory, 'dist/worker.js'),
+    join(temporary, 'node_modules/@altertable/data-app-worker/dist/index.js'),
     'utf8'
   );
   if (/^import\s|\bimport\s*\(/m.test(workerAsset))
@@ -284,7 +469,7 @@ try {
 
   await writeFile(
     join(temporary, 'bootstrap.ts'),
-    `import { startDataAppBootstrap } from '@altertable/data-app/embed';
+    `import { startDataAppBootstrap } from '@altertable/data-app-embed';
 startDataAppBootstrap({ parentOrigin: 'https://host.example' });
 `
   );
@@ -335,9 +520,7 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
   }
 
   const hosted = await Bun.build({
-    entrypoints: [
-      join(packageDirectory, 'examples/starter-data-app/index.tsx'),
-    ],
+    entrypoints: [join(temporary, 'hosted.tsx')],
     target: 'browser',
     format: 'iife',
   });
@@ -351,7 +534,7 @@ startDataAppBootstrap({ parentOrigin: 'https://host.example' });
 
   await writeFile(
     join(temporary, 'tree-shaking.tsx'),
-    `import { Grid } from '@altertable/data-app/react';
+    `import { Grid } from '@altertable/data-app-react';
 export { Grid };
 `
   );
@@ -375,43 +558,16 @@ export { Grid };
     )
       throw new Error('Bun preview runtime leaked into a browser entry.');
   }
-  for (const dependency of ['bun', 'get-tsconfig'])
-    if (
-      Object.hasOwn(manifest.dependencies, dependency) ||
-      Object.hasOwn(manifest.peerDependencies, dependency)
-    )
-      throw new Error(
-        `Browser consumers must not install ${dependency} as a dependency.`
-      );
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
   await writeFile(
-    join(minimumConsumer, 'package.json'),
-    JSON.stringify({ private: true, type: 'module' })
-  );
-  await run(
-    [
-      'npm',
-      'install',
-      '--ignore-scripts',
-      '--no-audit',
-      '--no-fund',
-      '--package-lock=false',
-      join(temporary, archive.filename),
-      'react@19.2.0',
-      'react-dom@19.2.0',
-    ],
-    minimumConsumer,
-    { npm_config_cache: join(temporary, 'npm-cache') }
-  );
-  await writeFile(
-    join(minimumConsumer, 'minimum.jsx'),
+    join(temporary, 'minimum.jsx'),
     `
 import React from 'react';
 import * as ReactDOM from 'react-dom';
 import { renderToString } from 'react-dom/server';
-import { MetricWidget } from '@altertable/data-app/react/ui';
-import { injectDataAppStyles } from '@altertable/data-app/react';
+import { MetricWidget } from '@altertable/data-app-react/ui';
+import { injectDataAppStyles } from '@altertable/data-app-react';
 if (typeof document !== 'undefined' || typeof injectDataAppStyles !== 'function')
   throw new Error('React styles must be importable without a DOM');
 if (React.version !== '19.2.0' || ReactDOM.version !== '19.2.0' || typeof React.useEffectEvent !== 'function')
@@ -420,9 +576,9 @@ const html = renderToString(<MetricWidget label="Minimum React" value={0} format
 if (!html.includes('Minimum React') || !html.includes('>0<')) throw new Error('Minimum React render failed');
 `
   );
-  await run(['bun', join(minimumConsumer, 'minimum.jsx')], minimumConsumer);
+  await run(['bun', join(temporary, 'minimum.jsx')], temporary);
   const minimumBuild = await Bun.build({
-    entrypoints: [join(minimumConsumer, 'minimum.jsx')],
+    entrypoints: [join(temporary, 'minimum.jsx')],
     target: 'browser',
   });
   if (!minimumBuild.success)
@@ -433,6 +589,5 @@ if (!html.includes('Minimum React') || !html.includes('>0<')) throw new Error('M
     'Packed documentation, exports, declarations, explicit styles, tree-shaking, and server imports verified.'
   );
 } finally {
-  await rm(minimumConsumer, { recursive: true, force: true });
   await rm(temporary, { recursive: true, force: true });
 }

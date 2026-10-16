@@ -1,0 +1,50 @@
+{
+  "name": "@altertable/data-app-worker",
+  "version": "0.69.0",
+  "description": "Self-contained sandbox Worker for serving Altertable data apps.",
+  "keywords": [
+    "altertable",
+    "analytics",
+    "data-app",
+    "react",
+    "typescript"
+  ],
+  "homepage": "https://github.com/altertable-ai/data-app",
+  "bugs": {
+    "url": "https://github.com/altertable-ai/data-app/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Altertable",
+    "url": "https://altertable.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altertable-ai/data-app.git",
+    "directory": "packages/data-app-worker"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts data-app-worker"
+  },
+  "devDependencies": {
+    "@altertable/data-app-embed": "0.69.0"
+  }
+}

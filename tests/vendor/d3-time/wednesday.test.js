@@ -1,7 +1,10 @@
 import { it } from 'vitest';
 import assert from 'assert';
 import { local } from '@/tests/vendor/d3-time/date.js';
-import { timeWednesday, timeWednesdays } from '@/src/core/time-interval';
+import {
+  timeWednesday,
+  timeWednesdays,
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 
 it('timeWednesdays in an alias for timeWednesday.range', () => {
   assert.strictEqual(timeWednesdays, timeWednesday.range);

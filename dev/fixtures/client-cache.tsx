@@ -1,15 +1,18 @@
-import { createDataContext as registerContext } from '@/src/react/ui/data-context';
-import { useDeclaredResult, getViewDefinition } from '@/src/react/view-runtime';
+import { createDataContext as registerContext } from '@/packages/data-app-react/src/ui/data-context.ts';
+import {
+  useDeclaredResult,
+  getViewDefinition,
+} from '@/packages/data-app-react/src/view-runtime.tsx';
 import { useState } from 'react';
-import { createDataClient } from '@/src/client/index';
+import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
   parseEmptyInput,
   type DimensionSelection,
   type DimensionOption,
-} from '@/src/core/contract';
-import { createDataHooks } from '@/src/react/hooks';
-import type { TransportResponse } from '@/src/core/bridge';
+} from '@altertable/data-app/contract';
+import { createDataHooks } from '@/packages/data-app-react/src/hooks.ts';
+import type { TransportResponse } from '@altertable/data-app/contract';
 
 const context = registerContext({})({
   description: 'Fixture context',

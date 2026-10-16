@@ -12,11 +12,11 @@ bun run check
 
 | Task                                    | Location                                                       |
 | --------------------------------------- | -------------------------------------------------------------- |
-| Operations, validation, and data state  | `src/core`                                                     |
-| Browser clients and navigation          | `src/client`                                                   |
-| Request authorization and local serving | `src/server`                                                   |
-| Iframe hosting and bootstrap            | `src/embed`, `src/worker`                                      |
-| React bindings and UI                   | `src/react`                                                    |
+| Operations, validation, and data state  | `packages/data-app/src/core`                                   |
+| Browser clients and navigation          | `packages/data-app/src/client`                                 |
+| Request authorization and local serving | `packages/data-app/src/server`, `packages/data-app-bun/src`    |
+| Iframe hosting and bootstrap            | `packages/data-app-embed`, `packages/data-app-worker`          |
+| React bindings and UI                   | `packages/data-app-react/src`                                  |
 | Consumer examples                       | `examples/starter-local-data-app`, `examples/starter-data-app` |
 | Public guides                           | `docs`                                                         |
 | Build, package checks, and releases     | `scripts`                                                      |
@@ -25,21 +25,44 @@ Keep browser entries free of server implementations and credentials. Core,
 client, server, and embed remain independent of React. Implementations import
 focused modules; public entry points declare the supported exports explicitly.
 Keep style injection explicit; importing React must not modify the DOM. Add new
-styles to `src/react/styles.css`. Do not edit generated `dist`.
+styles to `packages/data-app-react/src/styles.css`. Do not edit generated `dist`.
 
-Use `@/src/...` imports in repository source and `@altertable/data-app/<entry>`
-in consumer tests and examples. Run `bun run lint:fix` and `bun run format` for
+Use relative imports within each package and declared package exports across
+packages. Relative source imports include their `.ts` or `.tsx` extension; builds
+emit JavaScript and normalize declaration imports to `.js`. Consumers import
+package names and exported subpaths. Use repository-root `@/` imports for
+contributor tooling and fixtures.
+Consumer tests and examples import the published package names. The base
+`/internal` entry is shared implementation for coordinated packages; app authors
+use documented entries. Run `bun run lint:fix` and `bun run format` for
 style fixes.
 
 Compose the gallery from provided components, including layouts. Let primitives
 own sizing, spacing, and responsive behavior. Report missing primitives and keep
 fallbacks minimal.
 
+## Workspace packages
+
+The root is private. Publishable packages live in `packages/`; examples remain
+private workspaces. `scripts/packages.ts` lists packages in dependency order.
+Run `bun run build` from the root to build JavaScript, declarations, explicit
+styles, the embed bootstrap, the bundled preview host, and the standalone Worker.
+Package-level builds require their dependencies to have been built first.
+
+Every package declares its own runtime dependencies and peers. Cross-package
+builds externalize dependencies to preserve shared module identity. The Worker,
+bootstrap, and preview host are deliberately self-contained build artifacts.
+
+`bun run check:boundaries` verifies ownership and release version consistency.
+`bun run check:package` packs every package and installs consumer combinations
+outside the checkout to verify dependency isolation, portable types, browser
+bundling, and Bun previews without workspace hoisting.
+
 ## Verify changes
 
 Write high-level public API tests with Vitest in `tests/public-api`. Define an
 operation, authorize and query it, compose a view, or embed an app through
-`@altertable/data-app/<entry>`. Assert consumer-visible results and errors. Supply
+the published package exports. Assert consumer-visible results and errors. Supply
 data and failures through public dependency injection; do not import private
 source, fabricate internal state, or assert implementation details. Prefer queries by role and accessible name, or by label for form fields. Scope
 content assertions to the relevant region, status, alert, or dialog; use text
@@ -90,7 +113,7 @@ rate limits can cause failures unrelated to a change.
 
 Run `bun run dev` to preview UI examples at `http://127.0.0.1:27418/gallery`
 and a playground at `/playground` (`dev/playground.tsx`, querying the demo
-tables from `dev/seed.ts` that `scripts/dev.ts` seeds). It builds once, then rebuilds `dist` when `src`
+tables from `dev/seed.ts` that `scripts/dev.ts` seeds). It builds once, then rebuilds `dist` when package source
 changes; open pages reload on package, fixture, and playground edits. Restart it after changing
 `dev/server.ts`; rerun `bun run build` to refresh declarations. Add `?delay=2000` to a host page URL
 to delay its SQL responses and inspect loading states. It needs Docker: SQL runs
@@ -101,7 +124,7 @@ started with Testcontainers and stopped on exit. Public API tests use their own 
 Run `bun run dev:file <path>` to preview a single-file data app such as
 `examples/starter-data-app/index.tsx` from anywhere on disk, or `bun run dev:dir <path>`
 for a local data app directory with `src/server.ts`. Both resolve `@altertable/data-app`
-and React from this checkout's `dist`, so the app needs no install. Run `bun run build`
+and React from this checkout's package builds, so the app needs no install. Run `bun run build`
 after package changes. File previews replace the app iframe on edits and preserve
 URL filters. Directory previews restart the app server when its imports change.
 Unlike `bun run dev`, neither uses the mocked API: set `ALTERTABLE_USERNAME` and `ALTERTABLE_PASSWORD` (or the

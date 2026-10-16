@@ -14,7 +14,7 @@ import {
   choiceVariable,
   createDataContext,
   createDataHooks,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 const context = createDataContext({ usage: 'usage' })({
   description: 'Usage with preserved filter selections.',

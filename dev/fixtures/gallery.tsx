@@ -24,8 +24,8 @@ import {
   TabPanels,
   TabPanel,
   useViewTab,
-} from '@altertable/data-app/react/ui';
-import { injectDataAppStyles } from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
+import { injectDataAppStyles } from '@altertable/data-app-react/ui';
 import {
   PeriodSummary,
   Breakdown,
@@ -35,15 +35,15 @@ import {
   Stack,
   Tooltip,
   TextContent,
-} from '@altertable/data-app/react';
-import { VariableBar } from '@/src/react/ui/VariableBar';
-import { type WidgetEvidence, mountDataApp } from '@altertable/data-app/react';
-import { BarChart } from '@altertable/data-app/react/ui';
-import { bindDataset } from '@/src/react/bindings';
-import { defineDataContent } from '@/src/react/content';
-import { DataBoundary } from '@/src/react/ui/DataBoundary';
-import { resolveDataView } from '@/src/core/data-view';
-import { writeSearch } from '@/src/react/ui/search';
+} from '@altertable/data-app-react';
+import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
+import { type WidgetEvidence, mountDataApp } from '@altertable/data-app-react';
+import { BarChart } from '@altertable/data-app-react/ui';
+import { bindDataset } from '@/packages/data-app-react/src/bindings.ts';
+import { defineDataContent } from '@/packages/data-app-react/src/content.ts';
+import { DataBoundary } from '@/packages/data-app-react/src/ui/DataBoundary.tsx';
+import { resolveDataView } from '@altertable/data-app/internal';
+import { writeSearch } from '@/packages/data-app-react/src/ui/search.ts';
 
 const options = [
   { id: 'http', label: 'HTTP' },

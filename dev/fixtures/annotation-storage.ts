@@ -1,7 +1,7 @@
 import {
   parseDataAppAnnotationDraft,
   type DataAppAnnotationDraft,
-} from '@/src/core/annotations';
+} from '@altertable/data-app/contract';
 
 export type AnnotationDraftSnapshot = {
   sourceVersion: string;

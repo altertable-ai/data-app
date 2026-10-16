@@ -1,7 +1,7 @@
-import { AppFooter } from '@/src/react/ui/AppFooter';
-import { VariableBar } from '@/src/react/ui/VariableBar';
-import { AppHeader } from '@/src/react/ui/AppHeader';
-import { AppLayout } from '@/src/react/ui/AppLayout';
+import { AppFooter } from '@/packages/data-app-react/src/ui/AppFooter.tsx';
+import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
+import { AppHeader } from '@/packages/data-app-react/src/ui/AppHeader.tsx';
+import { AppLayout } from '@/packages/data-app-react/src/ui/AppLayout.tsx';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { applyAppearance } from '@altertable/data-app/appearance';
@@ -13,14 +13,14 @@ import {
   MetricWidget,
   DataWidget,
   DataTable,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 import {
   injectDataAppStyles,
   Button,
   Grid,
   Comparison,
   TextContent,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 injectDataAppStyles();
 const params = new URLSearchParams(location.search);

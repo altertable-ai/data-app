@@ -4,20 +4,20 @@ import {
   mountDataApp,
   injectDataAppStyles,
   Button,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import {
   DataApp,
   DataWidget,
   MetricWidget,
   AboutData,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 const dataApp = defineDataApp({
   title: 'Inspection ownership',
   description: 'Inspect query evidence for displayed results.',
   scope: { organization: 'Test', environment: 'local' },
   queries: {},
 });
-const evidence: import('@altertable/data-app/react').WidgetEvidence = {
+const evidence: import('@altertable/data-app-react').WidgetEvidence = {
   id: 'shared',
   queryNames: ['counts'],
 };

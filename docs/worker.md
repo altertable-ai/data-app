@@ -1,6 +1,6 @@
 # Cloudflare Worker asset
 
-`@altertable/data-app/worker` resolves to a precompiled, self-contained ESM Worker
+`@altertable/data-app-worker` resolves to a precompiled, self-contained ESM Worker
 script. Upload this one file as the deployment's main module. It includes the
 bootstrap and HTML; no bundling, HTML generation,
 runtime imports, or asset fetches are needed in the hosting backend.
@@ -13,7 +13,7 @@ its contents to your deployment tooling:
 import { readFile } from 'node:fs/promises';
 
 const workerScript = await readFile(
-  new URL(import.meta.resolve('@altertable/data-app/worker')),
+  new URL(import.meta.resolve('@altertable/data-app-worker')),
   'utf8'
 );
 // Upload workerScript as worker.js, with main_module = "worker.js".
@@ -48,9 +48,9 @@ navigation. Bundle apps execute their operation registry in the browser and send
 SQL through the [host query route](embed.md#sql-query-route); the Worker does not
 resolve operation names or execute queries. Data requests require backend authorization.
 
-If Terraform reads a file, copy the resolved `/worker` asset unchanged to that
+If Terraform reads a file, copy the resolved `@altertable/data-app-worker` asset unchanged to that
 file during deployment preparation. Configure `DOMAIN_NAME`, `PARENT_ORIGINS`,
 domains, routes, and deployment settings in Terraform. Upgrade the host package
 and Worker together for protocol changes.
 Custom hosts that bundle their own bootstrap can use `startDataAppBootstrap()` from
-[/embed](embed.md#trusted-bootstrap).
+[the embed package](embed.md#trusted-bootstrap).

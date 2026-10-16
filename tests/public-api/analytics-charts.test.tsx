@@ -8,7 +8,7 @@ import {
   type FunnelChartProps,
   type RetentionChartProps,
   type JourneyChartProps,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 
 const shared = {
   ariaLabel: 'Product analytics',

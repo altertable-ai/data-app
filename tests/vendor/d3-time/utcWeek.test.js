@@ -1,6 +1,9 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { utcSunday, utcWeek } from '@/src/core/time-interval';
+import {
+  utcSunday,
+  utcWeek,
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { utc } from '@/tests/vendor/d3-time/date.js';
 
 it('utcWeek.floor(date) returns sundays', () => {

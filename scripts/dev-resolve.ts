@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { packages } from '@/scripts/packages';
 
 export const checkoutRoot = resolve(import.meta.dir, '..');
 
@@ -27,7 +28,14 @@ export function previewLakehouseEnvironment(input = process.env) {
 }
 
 export async function ensurePackageBuild() {
-  if (existsSync(resolve(checkoutRoot, 'dist/index.js'))) return;
+  if (
+    packages.every(({ directory, manifest }) =>
+      Object.values(manifest.exports).every(target =>
+        existsSync(resolve(checkoutRoot, directory, target.import))
+      )
+    )
+  )
+    return;
   const build = Bun.spawn([process.execPath, 'run', 'build'], {
     cwd: checkoutRoot,
     stdout: 'inherit',

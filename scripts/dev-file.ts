@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import {
   previewLakehouseEnvironment,
   ensurePackageBuild,
+  checkoutRoot,
 } from '@/scripts/dev-resolve';
 
 const usage =
@@ -19,14 +20,15 @@ if (!existsSync(appFile) || !statSync(appFile).isFile()) {
 }
 await ensurePackageBuild();
 const [{ serveAppFile }, { localLakehouse }] = await Promise.all([
-  import('@altertable/data-app/server/bun/preview'),
-  import('@altertable/data-app/server/bun'),
+  import('@altertable/data-app-bun/preview'),
+  import('@altertable/data-app-bun'),
 ]);
 const { environment, target } = previewLakehouseEnvironment();
 const preview = await serveAppFile({
   file: appFile,
   port: Number(process.env.PORT ?? 25937),
   lakehouse: localLakehouse(environment),
+  resolveDependency: specifier => Bun.resolveSync(specifier, checkoutRoot),
 });
 console.log(`Data app ${appFile} running at ${preview.url}\n${target}`);
 for (const signal of ['SIGINT', 'SIGTERM'] as const)

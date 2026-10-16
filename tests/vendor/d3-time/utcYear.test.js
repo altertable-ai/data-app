@@ -1,6 +1,6 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { utcYear } from '@/src/core/time-interval';
+import { utcYear } from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { utc } from '@/tests/vendor/d3-time/date.js';
 
 it('utcYear.floor(date) returns years', () => {

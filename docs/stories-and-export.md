@@ -1,14 +1,14 @@
 # Stories and CSV export
 
-Every `<DataApp>` from `/react` supplies both `story` and `datasets`, derived from
+Every `<DataApp>` from `@altertable/data-app-react` supplies both `story` and `datasets`, derived from
 the displayed snapshot. Story and export selectors do not run before a result is available.
-Setup and static screens use `<DataApp>` from `/react/ui`; they may omit both
+Setup and static screens use `<DataApp>` from `@altertable/data-app-react/ui`; they may omit both
 or pass a direct `CsvExport` object.
 
 ## Present data with stories
 
 Set `story` on `<DataApp>` to enable **Present story** in the toolbar.
-For custom shells, `/react/ui` provides `<PresentStory>`; see [direct UI composition](ui.md). Start from the [data app starter](../examples/starter-data-app/index.tsx).
+For custom shells, `@altertable/data-app-react/ui` provides `<PresentStory>`; see [direct UI composition](ui.md). Start from the [data app starter](../examples/starter-data-app/index.tsx).
 
 Return one to four findings with a headline, a visual, and registered source
 evidence. Set `evidence` to the registered dataset or metric binding. The app

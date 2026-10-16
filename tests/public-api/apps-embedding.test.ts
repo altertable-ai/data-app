@@ -1,5 +1,5 @@
 import { expect } from 'vitest';
-import type { DataAppDiagnostic } from '@altertable/data-app/embed';
+import type { DataAppDiagnostic } from '@altertable/data-app-embed';
 import { test } from '@/tests/public-api/browser';
 
 test('a host cancels timed-out queries and aborts old work when the iframe reloads', async ({

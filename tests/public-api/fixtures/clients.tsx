@@ -18,7 +18,7 @@ import {
   TextWidget,
   mountDataApp,
   injectDataAppStyles,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 type Operations = {
   count: DataOperation<

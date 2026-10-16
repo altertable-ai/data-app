@@ -1,0 +1,81 @@
+{
+  "name": "@altertable/data-app",
+  "version": "0.69.0",
+  "description": "Portable definitions, contracts, formatting, browser clients, and request handlers for Altertable data apps.",
+  "keywords": [
+    "altertable",
+    "analytics",
+    "data-app",
+    "react",
+    "typescript"
+  ],
+  "homepage": "https://github.com/altertable-ai/data-app",
+  "bugs": {
+    "url": "https://github.com/altertable-ai/data-app/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Altertable",
+    "url": "https://altertable.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altertable-ai/data-app.git",
+    "directory": "packages/data-app"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "docs",
+    "examples",
+    "AGENTS.md",
+    "CONTRIBUTING.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./contract": {
+      "types": "./dist/types/core/contract.d.ts",
+      "import": "./dist/core/contract.js"
+    },
+    "./config": {
+      "types": "./dist/types/core/config.d.ts",
+      "import": "./dist/core/config.js"
+    },
+    "./format": {
+      "types": "./dist/types/core/format.d.ts",
+      "import": "./dist/core/format.js"
+    },
+    "./appearance": {
+      "types": "./dist/types/core/appearance.d.ts",
+      "import": "./dist/core/appearance.js"
+    },
+    "./client": {
+      "types": "./dist/types/client/index.d.ts",
+      "import": "./dist/client/index.js"
+    },
+    "./server": {
+      "types": "./dist/types/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    },
+    "./internal": {
+      "types": "./dist/types/internal.d.ts",
+      "import": "./dist/internal.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts data-app"
+  },
+  "dependencies": {
+    "@internationalized/date": "3.12.4"
+  }
+}

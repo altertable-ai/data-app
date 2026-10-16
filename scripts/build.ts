@@ -1,143 +1,139 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import manifest from '@/package.json';
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { packages } from '@/scripts/packages';
 
-// Watch rebuilds keep declarations and let open pages pick up the new files.
-if (!process.argv.includes('--incremental'))
-  await rm('dist', { recursive: true, force: true });
-const external = [
-  ...Object.keys(manifest.dependencies),
-  ...Object.keys(manifest.peerDependencies),
-];
+// Package scripts can also invoke this runner from their own directory.
+const root = resolve(import.meta.dir, '..');
+process.chdir(root);
+const selected = process.argv
+  .slice(2)
+  .find(argument => !argument.startsWith('--'));
+if (selected && !packages.some(pkg => pkg.directory === `packages/${selected}`))
+  throw new Error(`Unknown package: ${selected}`);
+const incremental = process.argv.includes('--incremental');
 
-// Compile explicit stylesheets; importing React never installs them.
-async function compileStyles(entrypoint: string): Promise<string> {
-  const styles = await Bun.build({
+async function bundle(options: Parameters<typeof Bun.build>[0]) {
+  const result = await Bun.build(options);
+  if (!result.success)
+    throw new Error(result.logs.map(log => log.message).join('\n'));
+  return result;
+}
+
+async function inline(entrypoint: string) {
+  const result = await bundle({
     entrypoints: [entrypoint],
     target: 'browser',
+    format: 'iife',
+    minify: true,
+    jsx: { runtime: 'automatic', development: false },
+    define: { 'process.env.NODE_ENV': '"production"' },
   });
-  if (!styles.success) {
-    for (const log of styles.logs) console.error(log);
-    throw new Error(`Could not build ${entrypoint}.`);
+  return result.outputs[0]!.text();
+}
+
+for (const { directory, manifest } of packages) {
+  if (selected && directory !== `packages/${selected}`) continue;
+  const outdir = `${directory}/dist`;
+  if (!incremental) await rm(outdir, { recursive: true, force: true });
+  if (!incremental && manifest.name === '@altertable/data-app') {
+    for (const name of ['docs', 'examples', 'AGENTS.md', 'CONTRIBUTING.md']) {
+      await rm(`${directory}/${name}`, { recursive: true, force: true });
+      await cp(name, `${directory}/${name}`, {
+        recursive: true,
+        filter: path => !/(?:^|\/)(?:node_modules|dist)(?:\/|$)/.test(path),
+      });
+    }
   }
-  const stylesheet = styles.outputs.find(output =>
-    output.path.endsWith('.css')
+  const define: Record<string, string> = {};
+  const external = [
+    ...Object.keys('dependencies' in manifest ? manifest.dependencies : {}),
+    ...Object.keys(
+      'peerDependencies' in manifest ? manifest.peerDependencies : {}
+    ),
+  ];
+  if (manifest.name === '@altertable/data-app-embed') {
+    const bootstrap = await inline(`${directory}/src/standalone.ts`);
+    define.DATA_APP_BOOTSTRAP = JSON.stringify(bootstrap);
+  }
+  if (manifest.name === '@altertable/data-app-react') {
+    for (const [constant, entry] of Object.entries({
+      DATA_APP_STYLES: 'styles.css',
+      ANNOTATION_STYLES: 'annotations/styles.css',
+    })) {
+      const styles = await bundle({
+        entrypoints: [`${directory}/src/${entry}`],
+        target: 'browser',
+      });
+      const stylesheet = styles.outputs.find(output =>
+        output.path.endsWith('.css')
+      );
+      if (!stylesheet) throw new Error(`Missing stylesheet: ${entry}`);
+      define[constant] = JSON.stringify(await stylesheet.text());
+    }
+  }
+  if (manifest.name === '@altertable/data-app-bun') {
+    const script = (await inline(`${directory}/src/preview/host.tsx`)).replace(
+      /<\/script/gi,
+      '<\\/script'
+    );
+    const html = (
+      await Bun.file(`${directory}/src/preview/host.html`).text()
+    ).replace(
+      '<script type="module" src="./host.tsx"></script>',
+      () => `<script>${script}</script>`
+    );
+    define.DATA_APP_PREVIEW_HTML = JSON.stringify(html);
+  }
+  const entrypoints = Object.values(manifest.exports).map(
+    target =>
+      `${directory}/src/${target.import.slice('./dist/'.length).replace(/\.js$/, '.ts')}`
   );
-  if (!stylesheet) throw new Error(`${entrypoint} stylesheet is missing.`);
-  return stylesheet.text();
-}
-const [dataAppStyles, annotationStyles] = await Promise.all([
-  compileStyles('src/react/styles.css'),
-  compileStyles('src/react/annotations/styles.css'),
-]);
-
-const bootstrap = await Bun.build({
-  entrypoints: ['src/embed/standalone.ts'],
-  target: 'browser',
-  format: 'iife',
-  minify: true,
-});
-
-if (!bootstrap.success) throw new Error('Could not build bootstrap.');
-const bootstrapScript = await bootstrap.outputs[0]!.text();
-
-// Browser entries share chunks so error classes and transport helpers retain
-// their identity across public entry points. Hosts do not import the app UI.
-const browser = await Bun.build({
-  entrypoints: [
-    'src/index.ts',
-    'src/core/contract.ts',
-    'src/core/config.ts',
-    'src/core/format.ts',
-    'src/core/appearance.ts',
-    'src/client/index.ts',
-    'src/embed/index.ts',
-    'src/react/index.ts',
-    'src/react/ui/index.ts',
-    'src/react/embed/index.ts',
-  ],
-  root: 'src',
-  outdir: 'dist',
-  target: 'browser',
-  jsx: { runtime: 'automatic', development: false },
-  format: 'esm',
-  splitting: true,
-  define: {
-    DATA_APP_BOOTSTRAP: JSON.stringify(bootstrapScript),
-    DATA_APP_STYLES: JSON.stringify(dataAppStyles),
-    ANNOTATION_STYLES: JSON.stringify(annotationStyles),
-  },
-  external,
-  naming: { entry: '[dir]/[name].[ext]', chunk: 'chunks/[name]-[hash].[ext]' },
-  sourcemap: 'external',
-});
-
-const worker = await Bun.build({
-  entrypoints: ['src/worker/index.ts'],
-  outdir: 'dist',
-  target: 'browser',
-  format: 'esm',
-  naming: 'worker.js',
-  define: {
-    DATA_APP_BOOTSTRAP: JSON.stringify(bootstrapScript),
-  },
-});
-
-const previewHost = await Bun.build({
-  entrypoints: ['src/server/preview/host.tsx'],
-  target: 'browser',
-  format: 'iife',
-  minify: true,
-  jsx: { runtime: 'automatic', development: false },
-  define: {
-    DATA_APP_BOOTSTRAP: JSON.stringify(bootstrapScript),
-    'process.env.NODE_ENV': '"production"',
-  },
-});
-if (!previewHost.success) throw new Error('Could not build preview host.');
-const previewHostScript = (await previewHost.outputs[0]!.text()).replace(
-  /<\/script/gi,
-  '<\\/script'
-);
-const previewHtml = (
-  await Bun.file('src/server/preview/host.html').text()
-).replace(
-  '<script type="module" src="./host.tsx"></script>',
-  () => `<script>${previewHostScript}</script>`
-);
-
-const results = [browser, worker];
-for (const [name, entry] of Object.entries({
-  server: 'src/server/index.ts',
-  local: 'src/server/local.ts',
-  preview: 'src/server/preview/index.ts',
-})) {
-  results.push(
-    await Bun.build({
-      entrypoints: [entry],
-      outdir: 'dist',
-      target: 'bun',
-      format: 'esm',
-      external,
-      define: { DATA_APP_PREVIEW_HTML: JSON.stringify(previewHtml) },
-      naming: `${name}.[ext]`,
-      sourcemap: 'external',
-    })
-  );
-}
-for (const result of results) {
-  if (!result.success) {
-    for (const log of result.logs) console.error(log);
-    throw new Error('Could not build package.');
-  }
-  for (const output of result.outputs) {
-    if (!output.path.startsWith(join(process.cwd(), 'dist')))
-      throw new Error(`Unexpected build output: ${output.path}`);
+  await bundle({
+    entrypoints,
+    root: `${directory}/src`,
+    outdir,
+    target: manifest.name === '@altertable/data-app-bun' ? 'bun' : 'browser',
+    jsx: { runtime: 'automatic', development: false },
+    format: 'esm',
+    splitting: manifest.name !== '@altertable/data-app-worker',
+    external,
+    define,
+    naming: {
+      entry: '[dir]/[name].[ext]',
+      chunk: 'chunks/[name]-[hash].[ext]',
+    },
+    sourcemap: 'external',
+  });
+  if (!incremental) {
+    const tsc = Bun.spawn(
+      [
+        'bun',
+        'x',
+        '--no-install',
+        'tsc',
+        '-p',
+        `${directory}/tsconfig.build.json`,
+      ],
+      {
+        stdout: 'inherit',
+        stderr: 'inherit',
+      }
+    );
+    if ((await tsc.exited) !== 0)
+      throw new Error(`Declarations failed: ${manifest.name}`);
+    const declarations = `${directory}/dist/types`;
+    for await (const file of new Bun.Glob('**/*.d.ts').scan(declarations)) {
+      const path = `${declarations}/${file}`;
+      const source = await Bun.file(path).text();
+      await Bun.write(
+        path,
+        source
+          .replace(/^import\s+['"][^'"]+\.css['"];\s*$/gm, '')
+          .replace(/(['"])(\.[^'"]+)\.tsx?\1/g, '$1$2.js$1')
+      );
+    }
   }
 }
-
-// The dev runner restarts only after every JavaScript output is available.
-// Keep this signal outside dist: clean builds remove that directory.
 await mkdir('node_modules/.cache', { recursive: true });
 await writeFile(
   'node_modules/.cache/data-app-build-ready',

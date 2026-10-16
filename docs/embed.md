@@ -1,6 +1,6 @@
 # Embed a data app
 
-Import framework-neutral host APIs from `@altertable/data-app/embed`. For React
+Import framework-neutral host APIs from `@altertable/data-app-embed`. For React
 hosts, see [React embedding](react-embed.md). Neither embedding entry requires the
 app UI stylesheet.
 
@@ -10,7 +10,7 @@ app UI stylesheet.
 message delivery. The host supplies an iframe and a validated message dispatcher:
 
 ```ts
-import { attachDataAppBridge } from '@altertable/data-app/embed';
+import { attachDataAppBridge } from '@altertable/data-app-embed';
 
 const host = attachDataAppBridge({
   iframe,
@@ -59,7 +59,7 @@ For other hosts that own their HTML and security policy, bundle this initializer
 into the bootstrap document before any app code:
 
 ```ts
-import { startDataAppBootstrap } from '@altertable/data-app/embed';
+import { startDataAppBootstrap } from '@altertable/data-app-embed';
 
 const dispose = startDataAppBootstrap({
   parentOrigin: 'https://host.example.com',
@@ -121,7 +121,7 @@ import {
   createMessageRouter,
   sqlQueryRoute,
 } from '@altertable/data-app/contract';
-import { createSqlQueryHandler } from '@altertable/data-app/embed';
+import { createSqlQueryHandler } from '@altertable/data-app-embed';
 
 const router = createMessageRouter(
   { 'data:sql': sqlQueryRoute },

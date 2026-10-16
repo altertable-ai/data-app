@@ -1,6 +1,6 @@
-import { createReloadChannel } from '@/src/server/reload-channel';
+import { createReloadChannel } from '@altertable/data-app-bun/reload';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
-import { localLakehouse, serveLocalApp } from '@altertable/data-app/server/bun';
+import { localLakehouse, serveLocalApp } from '@altertable/data-app-bun';
 import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
 import { dataApp as starterApp } from '@/examples/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
@@ -75,8 +75,8 @@ function createReloadHandler(paths: string[]) {
 
 // Exercise the published single-file deployment without rebundling it.
 const { default: worker } = (await import(
-  import.meta.resolve('@altertable/data-app/worker')
-)) as typeof import('@/src/worker');
+  import.meta.resolve('@altertable/data-app-worker')
+)) as typeof import('@/packages/data-app-worker/src/index.ts');
 const loadFixtureBundle = await createBundleLoader('./fixtures/bundle-app.tsx');
 const loadAnnotationStateBundle = await createBundleLoader(
   './fixtures/annotation-state-app.tsx'

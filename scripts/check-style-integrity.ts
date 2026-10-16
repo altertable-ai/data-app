@@ -3,13 +3,17 @@ import { Glob } from 'bun';
 import {
   dataAppStyleClasses,
   dataAppStyleTokens,
-} from '@/src/react/style-contract';
-const files = await Array.fromAsync(new Glob('src/react/**/*.css').scan('.'));
+} from '@/packages/data-app-react/src/style-contract.ts';
+const files = await Array.fromAsync(
+  new Glob('packages/data-app-react/src/**/*.css').scan('.')
+);
 const sources = await Promise.all(files.map(path => Bun.file(path).text()));
 const tokenConsumers = await Promise.all(
-  (await Array.fromAsync(new Glob('src/react/**/*.{ts,tsx}').scan('.'))).map(
-    path => Bun.file(path).text()
-  )
+  (
+    await Array.fromAsync(
+      new Glob('packages/data-app-react/src/**/*.{ts,tsx}').scan('.')
+    )
+  ).map(path => Bun.file(path).text())
 );
 const styles = [...sources, ...tokenConsumers].join('\n');
 const definitions = new Set(
@@ -25,7 +29,7 @@ for (const [index, source] of sources.entries()) {
         match[2],
       `${files[index]}: unresolved token ${match[1]}`
     );
-  if (files[index]!.startsWith('src/react/ui/'))
+  if (files[index]!.startsWith('packages/data-app-react/src/ui/'))
     assert(
       !/box-shadow:[^;]*rgb\(/.test(source),
       `${files[index]}: hardcoded shadow color`
@@ -34,8 +38,8 @@ for (const [index, source] of sources.entries()) {
 for (const [name, hook] of Object.entries(dataAppStyleClasses)) {
   const source = await Bun.file(
     hook.kind === 'root'
-      ? `src/react/ui/${hook.component.split('.')[0]}.tsx`
-      : 'src/react/base.css'
+      ? `packages/data-app-react/src/ui/${hook.component.split('.')[0]}.tsx`
+      : 'packages/data-app-react/src/base.css'
   ).text();
   assert(
     new RegExp(String.raw`(?<![\w-])${name}(?![\w-])`).test(source),
@@ -52,9 +56,9 @@ for (const name of dataAppStyleTokens) {
 }
 const controls =
   /<(button|summary|AriaButton|ListBoxItem|DateSegment|CalendarCell|AriaTab|AriaTabPanel)\b([^>]*?)>/g;
-for await (const path of new Glob('src/react/{ui,annotations}/*.tsx').scan(
-  '.'
-)) {
+for await (const path of new Glob(
+  'packages/data-app-react/src/{ui,annotations}/*.tsx'
+).scan('.')) {
   const source = await Bun.file(path).text();
   for (const [, tag, attributes] of source.matchAll(controls)) {
     assert(

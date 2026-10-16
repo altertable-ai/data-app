@@ -1,6 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
-import { createDataContext as registerContext } from '@altertable/data-app/react';
-import * as authoring from '@altertable/data-app/react';
+import { createDataContext as registerContext } from '@altertable/data-app-react';
+import * as authoring from '@altertable/data-app-react';
 import {
   createDataHooks,
   DataApp,
@@ -13,7 +13,7 @@ import {
   type DataAppProps,
   type DataSectionProps,
   type TableWidgetProps,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
 import {
@@ -23,7 +23,7 @@ import {
   useAppVariables,
   PresentStory,
   AboutData,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 
 const context = registerContext({ count: 'count' })({
   description: 'Fixture context',

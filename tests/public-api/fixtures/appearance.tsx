@@ -8,7 +8,7 @@ import {
   Grid,
   injectDataAppStyles,
   type DataAppStyle,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import {
   Select,
   LiveControl,
@@ -17,7 +17,7 @@ import {
   DataWidget,
   SearchField,
   Sheet,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 let cleanup: (() => void) | undefined;
 const actionStyle: DataAppStyle = {
   '--atbl-control-height': '60px',

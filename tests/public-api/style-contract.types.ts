@@ -1,7 +1,7 @@
 import type {
   DataAppStyle,
   DataAppStyleHooks,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 const style = {
   padding: '8px',

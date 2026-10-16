@@ -12,9 +12,9 @@ import {
   createNavigationHandler,
   type DataAppDiagnostic,
   type DataAppLogger,
-} from '@altertable/data-app/embed';
+} from '@altertable/data-app-embed';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
-import { DataAppBridge } from '@altertable/data-app/react/embed';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
 
 function Host() {
   const [echoRequests, setEchoRequests] = useState(0);

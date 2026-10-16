@@ -8,7 +8,7 @@ import {
   createDataHooks,
   DataApp,
   DataSection,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import type { operations } from '#app/operations.ts';
 
 const client = createDataClient<typeof operations>();

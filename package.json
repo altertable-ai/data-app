@@ -1,136 +1,39 @@
 {
-  "name": "@altertable/data-app",
+  "name": "data-app-workspace",
   "version": "0.69.0",
-  "description": "A TypeScript and React toolkit with APIs, components, and authoring guides for developers and AI agents to build data apps powered by Altertable.",
-  "keywords": [
-    "altertable",
-    "analytics",
-    "data-app",
-    "react",
-    "typescript"
-  ],
-  "homepage": "https://github.com/altertable-ai/data-app",
-  "bugs": {
-    "url": "https://github.com/altertable-ai/data-app/issues"
-  },
-  "license": "MIT",
-  "author": {
-    "name": "Altertable",
-    "url": "https://altertable.ai"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/altertable-ai/data-app.git"
-  },
+  "private": true,
   "workspaces": [
+    "packages/*",
     "examples/starter-local-data-app"
   ],
-  "files": [
-    "dist",
-    "docs",
-    "examples/starter-data-app",
-    "examples/starter-local-data-app",
-    "README.md",
-    "CONTRIBUTING.md",
-    "AGENTS.md",
-    "THIRD_PARTY_NOTICES"
-  ],
   "type": "module",
-  "sideEffects": false,
-  "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./contract": {
-      "types": "./dist/types/core/contract.d.ts",
-      "import": "./dist/core/contract.js"
-    },
-    "./config": {
-      "types": "./dist/types/core/config.d.ts",
-      "import": "./dist/core/config.js"
-    },
-    "./format": {
-      "types": "./dist/types/core/format.d.ts",
-      "import": "./dist/core/format.js"
-    },
-    "./appearance": {
-      "types": "./dist/types/core/appearance.d.ts",
-      "import": "./dist/core/appearance.js"
-    },
-    "./client": {
-      "types": "./dist/types/client/index.d.ts",
-      "import": "./dist/client/index.js"
-    },
-    "./server": {
-      "types": "./dist/types/server/index.d.ts",
-      "import": "./dist/server.js"
-    },
-    "./server/bun": {
-      "types": "./dist/types/server/local.d.ts",
-      "import": "./dist/local.js"
-    },
-    "./server/bun/preview": {
-      "types": "./dist/types/server/preview/index.d.ts",
-      "import": "./dist/preview.js"
-    },
-    "./react": {
-      "types": "./dist/types/react/index.d.ts",
-      "import": "./dist/react/index.js"
-    },
-    "./embed": {
-      "types": "./dist/types/embed/index.d.ts",
-      "import": "./dist/embed/index.js"
-    },
-    "./worker": {
-      "default": "./dist/worker.js"
-    },
-    "./react/embed": {
-      "types": "./dist/types/react/embed/index.d.ts",
-      "import": "./dist/react/embed/index.js"
-    },
-    "./react/ui": {
-      "types": "./dist/types/react/ui/index.d.ts",
-      "import": "./dist/react/ui/index.js"
-    }
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
-  },
   "scripts": {
-    "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
+    "build": "bun run scripts/build.ts",
     "dev": "bun run scripts/dev.ts",
     "dev:file": "bun run scripts/dev-file.ts",
     "dev:dir": "bun run scripts/dev-dir.ts",
     "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
-    "lint": "oxlint --type-aware src tests scripts dev examples/starter-data-app vitest.config.ts",
+    "lint": "oxlint --type-aware packages tests scripts dev examples/starter-data-app vitest.config.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "vitest run",
-    "check": "bun run build && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:package && bun run check:starter",
+    "check": "bun run build && bun run check:boundaries && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:package && bun run check:starter",
     "check:package": "bun run scripts/check-package.ts",
     "check:workflows": "bash scripts/check-workflows.sh",
-    "lint:fix": "oxlint --type-aware --fix src tests scripts dev vitest.config.ts",
+    "lint:fix": "oxlint --type-aware --fix packages tests scripts dev vitest.config.ts",
     "check:starter": "bun run scripts/check-starter.ts",
     "lint:md": "markdownlint-cli2",
     "check:links": "remark . --ext md --rc-path .remarkrc.json --frail --no-stdout",
     "check:links:external": "remark . --ext md --rc-path .remarkrc-external.json --frail --no-stdout",
-    "check:styles": "bun run scripts/check-app-styles.ts"
-  },
-  "dependencies": {
-    "@altertable/lakehouse": "0.4.1",
-    "@floating-ui/react": "0.27.20",
-    "@internationalized/date": "3.12.4",
-    "@tanstack/react-query": "5.104.0",
-    "fflate": "0.8.3",
-    "fuzzysort": "4.0.2",
-    "html-to-image": "1.11.13",
-    "lucide-react": "1.48.0",
-    "react-aria-components": "1.21.1",
-    "recharts": "3.10.1"
+    "check:styles": "bun run scripts/check-app-styles.ts",
+    "check:boundaries": "bun run scripts/check-boundaries.ts"
   },
   "devDependencies": {
+    "@altertable/data-app": "0.69.0",
+    "@altertable/data-app-bun": "0.69.0",
+    "@altertable/data-app-embed": "0.69.0",
+    "@altertable/data-app-react": "0.69.0",
+    "@altertable/data-app-worker": "0.69.0",
     "@types/bun": "1.4.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
@@ -149,10 +52,6 @@
     "testcontainers": "12.2.0",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
-  },
-  "peerDependencies": {
-    "react": ">=19.2.0",
-    "react-dom": ">=19.2.0"
   },
   "packageManager": "bun@1.4.2"
 }

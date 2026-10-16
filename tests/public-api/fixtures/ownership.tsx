@@ -12,7 +12,7 @@ import {
   TableWidget,
   mountDataApp,
   injectDataAppStyles,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 const dataApp = defineDataApp({
   title: 'Binding ownership',
   description: 'Verify that displayed bindings follow their owning view.',

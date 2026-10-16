@@ -113,7 +113,7 @@ import {
   defineMessageRoute,
   navigationUpdateRoute,
 } from '@altertable/data-app/contract';
-import { createNavigationHandler } from '@altertable/data-app/embed';
+import { createNavigationHandler } from '@altertable/data-app-embed';
 
 const routes = {
   'demo:echo': defineMessageRoute({ input: parseString, output: parseString }),

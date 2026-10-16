@@ -16,7 +16,7 @@ import {
   mountDataApp,
   MetricWidget,
   searchVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 const dataApp = defineDataApp({
   title: 'Sample counts',

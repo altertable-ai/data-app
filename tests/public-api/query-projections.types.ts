@@ -5,7 +5,7 @@ import {
   parseEmptyInput,
   type QueryRow,
 } from '@altertable/data-app/contract';
-import { createDataContext, createDataHooks } from '@altertable/data-app/react';
+import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 
 const app = defineDataApp({
   title: 'Column types',

@@ -35,7 +35,7 @@ formatCount(2_200_000); // "2,200,000"
 For signed or fractional measures, use `formatNumber()` with
 `notation: 'compact'` and preserve the measure's units.
 
-Import `chartColor()` from `/react` to select colors from the configured palette.
+Import `chartColor()` from `@altertable/data-app-react` to select colors from the configured palette.
 `<PeriodSummary>` describes reporting periods; `<UpdatedAt>` and
 `<DateTimeTooltip>` expose readable timestamps with exact-date details.
 `<DataTableTimestamp>` and `<DataTableShare>` format custom table cells.
