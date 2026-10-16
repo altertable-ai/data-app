@@ -106,7 +106,7 @@
   width: min(360px, 100vw);
 }
 
-.altertable-toolbar-filter-summaries {
+.altertable-toolbar-filter-editors {
   margin: 0;
   padding: 0;
   border: 0;
@@ -115,14 +115,6 @@
   align-items: center;
   gap: var(--atbl-space-xs);
   min-width: 0;
-}
-
-.altertable-toolbar-filter {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--atbl-space-xs);
-  min-width: 0;
-  max-width: 100%;
 }
 
 .altertable-active-filters {

@@ -206,6 +206,11 @@ export function useViewVariables<Variables extends VariableCollection>(
       clearedFilters[name] = variable.clearValue;
       if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
     }
+    const baseline =
+      group === 'display'
+        ? variable.defaultValue
+        : (variable.clearValue ?? variable.defaultValue);
+    const active = !variable.same(value, baseline);
     function renderControl(
       labelPlacement: ControlLabelPlacement,
       onClear?: () => void
@@ -214,7 +219,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         next: AppVariableValues<Variables>[typeof name]
       ) {
         variables.set(name, next);
-        if (variable.same(next, baseline)) onClear?.();
+        if (onClear && variable.same(next, baseline)) onClear();
       }
       let control: ReactNode = null;
       if (definition.kind === 'dateRange') {
@@ -319,11 +324,6 @@ export function useViewVariables<Variables extends VariableCollection>(
       }
       return control;
     }
-    const baseline =
-      group === 'display'
-        ? variable.defaultValue
-        : (variable.clearValue ?? variable.defaultValue);
-    const active = !variable.same(value, baseline);
     if (group === 'display') {
       if (widgetControl) continue;
       displayOptions[prominence].push(renderControl(labelPlacement));

@@ -1055,17 +1055,23 @@ test('widget placement preserves active filter counts, editing, and clearing', a
     'widget-country': '1',
   });
   await page.goto(`/exploration?${params}`);
-  const floating = page.getByRole('group', {
+  const toolbarFilters = page.getByRole('group', {
     name: 'Active toolbar filters',
     exact: true,
   });
-  await expect.poll(() => floating.innerText()).toContain('France');
+  await expect.poll(() => toolbarFilters.innerText()).toContain('France');
   await page
     .getByRole('button', { name: 'Filters (1 active)', exact: true })
     .click();
   const panel = page.getByRole('dialog', { name: 'Filters', exact: true });
   await expect.poll(() => panel.innerText()).toContain('Country');
   await panel.getByRole('button', { name: 'Close panel', exact: true }).click();
+  await expect.poll(() => panel.count()).toBe(0);
+  await scrollPastToolbar(page);
+  const floating = page.getByRole('group', {
+    name: 'Active filters',
+    exact: true,
+  });
   const remove = floating.getByRole('button', {
     name: 'Remove Country filter',
     exact: true,
@@ -1077,9 +1083,8 @@ test('widget placement preserves active filter counts, editing, and clearing', a
   }));
   expect(backgrounds.button).not.toBe('rgba(0, 0, 0, 0)');
   expect(backgrounds.button).not.toBe(backgrounds.chip);
-  await page
-    .getByRole('group', { name: 'View controls', exact: true })
-    .getByRole('button', { name: 'Clear', exact: true })
+  await floating
+    .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect.poll(() => readFilters(page.url())).toEqual(scope(null));
   await expect.poll(() => floating.count()).toBe(0);

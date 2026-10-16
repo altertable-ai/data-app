@@ -128,15 +128,14 @@ export function ViewControlBar({
           {primaryFilters}
           {secondaryFilters.length > 0 && (
             <fieldset
-              className="altertable-toolbar-filter-summaries"
+              className="altertable-toolbar-filter-editors"
               aria-label="Active toolbar filters"
             >
               {secondaryFilters.map(filter => (
-                <ToolbarFilter
+                <ActiveFilterEditor
                   key={filter.id}
                   filter={filter}
-                  onClear={() => requestAnimationFrame(focusFiltersButton)}
-                  onRemove={removeFilter}
+                  onClear={focusFiltersButton}
                 />
               ))}
             </fieldset>
@@ -228,21 +227,14 @@ export function ViewControlBar({
   );
 }
 
-function ToolbarFilter({
+function ActiveFilterEditor({
   filter,
   onClear,
-  onRemove,
 }: {
   filter: ActiveFilterControl;
   onClear: () => void;
-  onRemove: (filter: ActiveFilterControl) => void;
 }) {
-  return (
-    <div className="altertable-toolbar-filter">
-      {filter.renderToolbarControl?.(onClear)}
-      <RemoveFilterButton filter={filter} onRemove={onRemove} />
-    </div>
-  );
+  return filter.renderToolbarControl?.(() => requestAnimationFrame(onClear));
 }
 
 function ActiveFilterChip({
@@ -264,30 +256,18 @@ function ActiveFilterChip({
       >
         <ControlLabelValue label={filter.label} value={filter.summary} />
       </Button>
-      <RemoveFilterButton filter={filter} onRemove={onRemove} />
+      <Tooltip content={`Remove ${filter.label} filter`}>
+        <Button
+          variant="ghost"
+          size="icon-compact"
+          className="altertable-active-filter-remove"
+          aria-label={`Remove ${filter.label} filter`}
+          onClick={() => onRemove(filter)}
+        >
+          <AppIcon name="close" size={14} />
+        </Button>
+      </Tooltip>
     </div>
-  );
-}
-
-function RemoveFilterButton({
-  filter,
-  onRemove,
-}: {
-  filter: ActiveFilterControl;
-  onRemove: (filter: ActiveFilterControl) => void;
-}) {
-  return (
-    <Tooltip content={`Remove ${filter.label} filter`}>
-      <Button
-        variant="ghost"
-        size="icon-compact"
-        className="altertable-active-filter-remove"
-        aria-label={`Remove ${filter.label} filter`}
-        onClick={() => onRemove(filter)}
-      >
-        <AppIcon name="close" size={14} />
-      </Button>
-    </Tooltip>
   );
 }
 

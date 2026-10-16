@@ -2,7 +2,7 @@ import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
 
-test('toolbar and floating summaries disclose the same active scope without duplicating primary controls', async ({
+test('toolbar editors and floating summaries disclose the same active scope without duplicating primary controls', async ({
   page,
 }) => {
   const params = new URLSearchParams({
@@ -28,6 +28,9 @@ test('toolbar and floating summaries disclose the same active scope without dupl
     .getByRole('button', { name: 'Region: Europe', exact: true })
     .waitFor();
   expect(await floating.count()).toBe(0);
+  expect(
+    await toolbar.getByRole('button', { name: /^Remove .* filter$/ }).count()
+  ).toBe(0);
   expect(
     await toolbar
       .getByRole('button', { name: 'Choose dates Date range', exact: true })
@@ -71,8 +74,9 @@ test('toolbar and floating summaries disclose the same active scope without dupl
     )
     .toBe(true);
   await inline
-    .getByRole('button', { name: 'Remove Region filter', exact: true })
+    .getByRole('button', { name: 'Region: Europe', exact: true })
     .click();
+  await page.getByRole('option', { name: 'All', exact: true }).click();
   await expect
     .poll(() => new URL(page.url()).searchParams.has('region'))
     .toBe(false);
@@ -133,12 +137,13 @@ test('active secondary filters edit directly and preserve unrelated URL state', 
     members: [['v', 'us']],
   });
   await inline
-    .getByRole('button', { name: 'Remove Country filter', exact: true })
-    .press('Enter');
+    .getByRole('button', { name: 'Country: France', exact: true })
+    .click();
+  await page.getByRole('option', { name: 'All', exact: true }).click();
   await expect
     .poll(() =>
       inline
-        .getByRole('button', { name: 'Remove Country filter', exact: true })
+        .getByRole('button', { name: 'Country: France', exact: true })
         .count()
     )
     .toBe(0);
