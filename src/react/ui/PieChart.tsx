@@ -11,7 +11,8 @@ import {
 import { MenuButton, MenuTrigger } from '@/src/react/ui/Menu';
 import { useRef, useState, type ComponentRef, type RefObject } from 'react';
 import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
-import { validateValueChartItems } from '@/src/react/ui/chart-data';
+import { validateChartIds, valueChartProblem } from '@/src/react/ui/chart-data';
+import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
 
 export type PieChartItem = ChartItem;
 export type PieChartProps<Row extends PieChartItem = PieChartItem> =
@@ -32,13 +33,20 @@ export function PieChart<Row extends PieChartItem>({
   formatValue = value => new Intl.NumberFormat().format(value),
   itemActions,
 }: PieChartProps<Row>) {
-  validateValueChartItems('pie', items);
+  validateChartIds('pie', items);
+  const problem = valueChartProblem('pie', items);
   const chartActions = useChartActions();
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [plotOpen, setPlotOpen] = useState(false);
   const [legendId, setLegendId] = useState<string | null>(null);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
   const plotMenuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
+  if (problem)
+    return (
+      <section aria-label={ariaLabel}>
+        <ChartDataProblem problem={problem} />
+      </section>
+    );
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 0);
   const total = maximum
     ? items.reduce((sum, item) => sum + item.value / maximum, 0)

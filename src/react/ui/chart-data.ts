@@ -32,13 +32,19 @@ export type ScatterChartItem = {
 };
 type ValueChartKind = 'bar' | 'line' | 'area' | 'pie';
 
-function validateChartIds(kind: string, items: readonly { id: string }[]) {
+/** IDs key rows, legends, and actions, so they are an authoring contract. */
+export function validateChartIds(
+  kind: string,
+  items: readonly { id: string }[]
+) {
   const ids = new Set<string>();
   for (const item of items) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Nonblank IDs are an authoring contract.
     invariant(
       item.id.trim().length > 0,
       `${kind} chart IDs must be nonempty and unique: blank ID.`
     );
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Unique IDs are an authoring contract.
     invariant(
       !ids.has(item.id),
       `${kind} chart IDs must be nonempty and unique: duplicate "${item.id}".`
@@ -47,31 +53,27 @@ function validateChartIds(kind: string, items: readonly { id: string }[]) {
   }
 }
 
-export function validateValueChartItems(
+/** Describe the first displayed value a chart cannot plot. */
+export function valueChartProblem(
   kind: ValueChartKind,
   items: readonly ChartItem[]
-): void {
-  validateChartIds(kind, items);
+): string | undefined {
   for (const item of items) {
-    invariant(
-      Number.isFinite(item.value),
-      `${kind} chart "${item.id}" requires finite values.`
-    );
-    invariant(
-      (kind !== 'bar' && kind !== 'pie') || item.value >= 0,
-      `${kind} chart "${item.id}" requires nonnegative values.`
-    );
+    if (!Number.isFinite(item.value))
+      return `${kind} chart "${item.id}" requires finite values.`;
+    if ((kind === 'bar' || kind === 'pie') && item.value < 0)
+      return `${kind} chart "${item.id}" requires nonnegative values.`;
   }
+  return undefined;
 }
 
-export function validateScatterChartItems(
+export function scatterChartProblem(
   items: readonly ScatterChartItem[]
-): void {
-  validateChartIds('scatter', items);
-  for (const item of items) {
-    invariant(
-      Number.isFinite(item.x) && Number.isFinite(item.y),
-      `scatter chart "${item.id}" requires finite values for x and y.`
-    );
-  }
+): string | undefined {
+  const item = items.find(
+    item => !Number.isFinite(item.x) || !Number.isFinite(item.y)
+  );
+  return (
+    item && `scatter chart "${item.id}" requires finite values for x and y.`
+  );
 }

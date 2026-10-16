@@ -8,8 +8,9 @@ import {
   ScatterChart,
   type ScatterChartItem,
 } from '@altertable/data-app/react/ui';
+import { Breakdown, Ranking } from '@altertable/data-app/react';
 
-test('standalone charts preserve their item validation and empty-result contract', () => {
+test('standalone charts reject invalid IDs and report unplottable values', () => {
   for (const Chart of [BarChart, LineChart, AreaChart, PieChart]) {
     function render(
       items: readonly { id: string; label: string; value: number }[]
@@ -28,12 +29,12 @@ test('standalone charts preserve their item validation and empty-result contract
     expect(() => render([{ id: '', label: 'A', value: 1 }])).toThrow(
       /blank ID/
     );
-    expect(() => render([{ id: 'a', label: 'A', value: NaN }])).toThrow(
-      /finite/
+    expect(render([{ id: 'a', label: 'A', value: NaN }])).toMatch(
+      /role="alert".*requires finite values/
     );
     if (Chart === BarChart || Chart === PieChart) {
-      expect(() => render([{ id: 'a', label: 'A', value: -1 }])).toThrow(
-        /nonnegative/
+      expect(render([{ id: 'a', label: 'A', value: -1 }])).toMatch(
+        /role="alert".*requires nonnegative values/
       );
     } else {
       expect(render([{ id: 'a', label: 'A', value: -1 }])).toContain(
@@ -65,11 +66,24 @@ test('scatter charts validate observation identities and both numeric coordinate
   expect(() => render([{ ...observation, id: '  ' }])).toThrow(/blank ID/);
   for (const coordinate of ['x', 'y'] as const) {
     for (const value of [NaN, Infinity, -Infinity]) {
-      expect(() => render([{ ...observation, [coordinate]: value }])).toThrow(
-        /finite values for x and y/
+      expect(render([{ ...observation, [coordinate]: value }])).toMatch(
+        /role="alert".*finite values for x and y/
       );
     }
   }
+});
+
+test('readings report unplottable values instead of throwing', () => {
+  expect(
+    renderToStaticMarkup(
+      <Ranking items={[{ id: 'a', label: 'A', value: Infinity }]} />
+    )
+  ).toMatch(/role="alert".*finite and nonnegative/);
+  expect(
+    renderToStaticMarkup(
+      <Breakdown total={1} items={[{ id: 'a', label: 'A', value: 2 }]} />
+    )
+  ).toMatch(/role="alert".*parts of the observed total/);
 });
 
 test('pie actions receive original rows even when domain fields match plot metadata', () => {

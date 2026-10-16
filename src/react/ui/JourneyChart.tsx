@@ -1,8 +1,11 @@
 import { type ComponentRef, useLayoutEffect, useRef, useState } from 'react';
-import { invariant } from '@/src/core/invariant';
 import { Button } from '@/src/react/ui/Button';
 import { classNames } from '@/src/react/ui/classNames';
-import type { CountChartProps } from '@/src/react/ui/chart-data';
+import {
+  validateChartIds,
+  type CountChartProps,
+} from '@/src/react/ui/chart-data';
+import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
 import { formatNumber, formatPercent } from '@/src/core/format';
 import {
   buildJourneyFlow,
@@ -17,6 +20,26 @@ export type JourneyChartProps = CountChartProps & {
   paths: readonly JourneyChartPath[];
 };
 
+/** Describe the first displayed path a journey cannot plot. */
+function journeyProblem(
+  paths: readonly JourneyChartPath[]
+): string | undefined {
+  let total = 0;
+  for (const path of paths) {
+    if (!Number.isFinite(path.count) || path.count < 0)
+      return 'journey chart counts must be finite and nonnegative.';
+    if (
+      !path.steps.length ||
+      path.steps.some(step => !step.event.trim().length)
+    )
+      return 'journey chart paths require nonblank events.';
+    total += path.count;
+  }
+  return Number.isFinite(total)
+    ? undefined
+    : 'journey chart total count must be finite.';
+}
+
 /** Path exploration with two initial steps, expandable prefixes, and three events per depth.
  * Counts and flows use the Step 1 population. Compose inside VisualizationWidget. */
 export function JourneyChart({
@@ -26,36 +49,17 @@ export function JourneyChart({
   className,
   formatValue = formatNumber,
 }: JourneyChartProps) {
-  const ids = new Set<string>();
-  let total = 0;
-  for (const path of paths) {
-    invariant(
-      path.id.trim().length > 0 && !ids.has(path.id),
-      'journey path chart IDs must be nonblank and unique.'
-    );
-    ids.add(path.id);
-    invariant(
-      Number.isFinite(path.count) && path.count >= 0,
-      'journey chart counts must be finite and nonnegative.'
-    );
-    total += path.count;
-    invariant(
-      path.steps.length > 0 &&
-        path.steps.every(step => step.event.trim().length > 0),
-      'journey chart paths require nonblank events.'
-    );
-  }
-  invariant(
-    Number.isFinite(total),
-    'journey chart total count must be finite.'
-  );
+  validateChartIds('journey path', paths);
+  const problem = journeyProblem(paths);
   // A changed displayed result starts a new exploration, including in inspection views.
   return (
     <section
       className={classNames('altertable-journey-chart', className)}
       aria-label={ariaLabel}
     >
-      {paths.length === 0 ? (
+      {problem ? (
+        <ChartDataProblem problem={problem} />
+      ) : paths.length === 0 ? (
         <span>No data</span>
       ) : (
         <JourneyFlow

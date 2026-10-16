@@ -29,7 +29,8 @@ import {
   ChartYAxis,
 } from '@/src/react/ui/chart-primitives';
 import type { ChartItem, ValueChartProps } from '@/src/react/ui/chart-data';
-import { validateValueChartItems } from '@/src/react/ui/chart-data';
+import { validateChartIds, valueChartProblem } from '@/src/react/ui/chart-data';
+import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
 
 /** Ordered, equally spaced samples; negative values share an explicit zero baseline. */
 export function TrendChart<Row extends ChartItem>({
@@ -40,12 +41,19 @@ export function TrendChart<Row extends ChartItem>({
   kind,
   itemActions,
 }: ValueChartProps<Row> & { kind: 'line' | 'area' }) {
-  validateValueChartItems(kind, items);
+  validateChartIds(kind, items);
+  const problem = valueChartProblem(kind, items);
   const Plot = kind === 'area' ? RechartsAreaChart : RechartsLineChart;
   const chartActions = useChartActions();
   const [activeIndex, setActiveIndex] = useState<number>();
   const scrollport = useChartScrollToEnd(items);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
+  if (problem)
+    return (
+      <section aria-label={ariaLabel}>
+        <ChartDataProblem problem={problem} />
+      </section>
+    );
   const magnitude = items.reduce(
     (max, item) => Math.max(max, Math.abs(item.value)),
     1

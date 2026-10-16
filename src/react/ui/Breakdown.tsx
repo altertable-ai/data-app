@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef, CSSProperties, ReactNode } from 'react';
 import { formatCount, formatPercent } from '@/src/core/format';
-import { invariant } from '@/src/core/invariant';
+import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
 import { classNames } from '@/src/react/ui/classNames';
 import { chartColor } from '@/src/react/ui/chartColor';
 
@@ -19,13 +19,20 @@ export function Breakdown({
   className,
   ...props
 }: BreakdownProps) {
-  invariant(
-    Number.isFinite(total) &&
+  if (
+    !(
+      Number.isFinite(total) &&
       total >= 0 &&
       items.every(item => Number.isFinite(item.value) && item.value >= 0) &&
-      items.reduce((sum, item) => sum + item.value, 0) <= total,
-    'Breakdown items must be nonnegative parts of the observed total.'
-  );
+      items.reduce((sum, item) => sum + item.value, 0) <= total
+    )
+  )
+    return (
+      <ChartDataProblem
+        className={className}
+        problem="Breakdown items must be nonnegative parts of the observed total."
+      />
+    );
   const dominant = total > 0 && items.some(item => item.value / total >= 0.85);
 
   return (

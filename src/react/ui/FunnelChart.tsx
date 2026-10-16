@@ -1,12 +1,15 @@
 import { KEY_SEPARATOR } from '@/src/core/keys';
 import { Fragment, useEffect, useRef, useState } from 'react';
-import { invariant } from '@/src/core/invariant';
 import { useSvgId } from '@/src/react/ui/useSvgId';
 import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { ComposedChart } from '@/src/react/ui/ComposedChart';
 import { ChartTooltipContent } from '@/src/react/ui/chart-primitives';
 import { classNames } from '@/src/react/ui/classNames';
-import type { CountChartProps } from '@/src/react/ui/chart-data';
+import {
+  validateChartIds,
+  type CountChartProps,
+} from '@/src/react/ui/chart-data';
+import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
 import { formatNumber, formatPercent } from '@/src/core/format';
 
 /** Ordered step with a unique, nonblank ID. */
@@ -46,40 +49,29 @@ type FunnelRow = {
   readings: ReadonlyMap<string, FunnelReading>;
 };
 
+/** Describe the first displayed series a funnel cannot plot. */
+function funnelProblem(
+  steps: readonly FunnelChartStep[],
+  series: readonly FunnelChartSeries[]
+): string | undefined {
+  for (const item of series) {
+    if (item.values.length !== steps.length)
+      return 'funnel chart counts must align with steps.';
+    for (const [index, value] of item.values.entries()) {
+      if (!Number.isFinite(value) || value < 0)
+        return 'funnel chart counts must be finite and nonnegative.';
+      if (index > 0 && value > item.values[index - 1]!)
+        return 'funnel chart counts must be nonincreasing.';
+    }
+  }
+  return undefined;
+}
+
 function createFunnelModel(
   steps: readonly FunnelChartStep[],
   series: readonly FunnelChartSeries[],
   chartId: string
 ) {
-  for (const [kind, items] of [
-    ['funnel step', steps],
-    ['funnel series', series],
-  ] as const) {
-    const ids = new Set<string>();
-    for (const item of items) {
-      invariant(
-        item.id.trim().length > 0 && !ids.has(item.id),
-        `${kind} chart IDs must be nonblank and unique.`
-      );
-      ids.add(item.id);
-    }
-  }
-  for (const item of series) {
-    invariant(
-      item.values.length === steps.length,
-      'funnel chart counts must align with steps.'
-    );
-    item.values.forEach((value, index) => {
-      invariant(
-        Number.isFinite(value) && value >= 0,
-        'funnel chart counts must be finite and nonnegative.'
-      );
-      invariant(
-        index === 0 || value <= item.values[index - 1]!,
-        'funnel chart counts must be nonincreasing.'
-      );
-    });
-  }
   const populations: FunnelPopulation[] = series.map((item, index) => ({
     id: item.id,
     label: item.label,
@@ -151,6 +143,15 @@ export function FunnelChart({
     cancelClear();
     clearTimer.current = setTimeout(() => setHighlighted(null), 100);
   }
+  validateChartIds('funnel step', steps);
+  validateChartIds('funnel series', series);
+  const problem = funnelProblem(steps, series);
+  if (problem)
+    return (
+      <section className={className} aria-label={ariaLabel}>
+        <ChartDataProblem problem={problem} />
+      </section>
+    );
   const { populations, rows } = createFunnelModel(steps, series, chartId);
   return (
     <section

@@ -104,14 +104,14 @@ test('funnel preserves frontend conversion and previous-step drop-off for indepe
     [100, Infinity],
     [100, 101],
   ])
-    expect(() =>
+    expect(
       renderToStaticMarkup(
         <FunnelChart
           {...funnel}
           series={[{ id: 'x', label: 'Invalid', values }]}
         />
       )
-    ).toThrow();
+    ).toContain('role="alert"');
   expect(() =>
     renderToStaticMarkup(
       <FunnelChart {...funnel} steps={[funnel.steps[0]!, funnel.steps[0]!]} />
@@ -136,7 +136,7 @@ test('retention preserves query rates, counts, unobserved periods, and incomplet
     { offset: -1, label: 'Day -1', rate: 0, retainedCount: 0 },
     { offset: 0, label: 'Day 0', rate: NaN, retainedCount: 0 },
   ])
-    expect(() =>
+    expect(
       renderToStaticMarkup(
         <RetentionChart
           {...shared}
@@ -145,7 +145,7 @@ test('retention preserves query rates, counts, unobserved periods, and incomplet
           ]}
         />
       )
-    ).toThrow();
+    ).toContain('role="alert"');
   expect(() =>
     renderToStaticMarkup(
       <RetentionChart
@@ -187,9 +187,9 @@ test('journey starts with two prefix-aware steps and derives population counts a
     { ...journey.paths[0]!, count: Infinity },
     { ...journey.paths[0]!, steps: [] },
   ])
-    expect(() =>
+    expect(
       renderToStaticMarkup(<JourneyChart {...journey} paths={[path]} />)
-    ).toThrow();
+    ).toContain('role="alert"');
   expect(() =>
     renderToStaticMarkup(
       <JourneyChart

@@ -1,6 +1,10 @@
 import { Tooltip } from '@/src/react/ui/Tooltip';
 
-import { validateScatterChartItems } from '@/src/react/ui/chart-data';
+import {
+  scatterChartProblem,
+  validateChartIds,
+} from '@/src/react/ui/chart-data';
+import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
 
 import type { ScatterChartItem } from '@/src/react/ui/chart-data';
 export type { ScatterChartItem } from '@/src/react/ui/chart-data';
@@ -56,7 +60,14 @@ export function ScatterChart({
   formatX = formatNumber,
   formatY = formatNumber,
 }: ScatterChartProps) {
-  validateScatterChartItems(items);
+  validateChartIds('scatter', items);
+  const problem = scatterChartProblem(items);
+  if (problem)
+    return (
+      <section aria-label={ariaLabel}>
+        <ChartDataProblem problem={problem} />
+      </section>
+    );
   const xScale = scale(items.map(item => item.x));
   const yScale = scale(items.map(item => item.y));
   return (

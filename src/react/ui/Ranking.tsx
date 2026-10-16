@@ -1,6 +1,6 @@
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import { formatCount } from '@/src/core/format';
-import { invariant } from '@/src/core/invariant';
+import { ChartDataProblem } from '@/src/react/ui/ChartDataProblem';
 import { classNames } from '@/src/react/ui/classNames';
 
 export type RankingItem = {
@@ -21,10 +21,13 @@ export function Ranking({
   className,
   ...props
 }: RankingProps) {
-  invariant(
-    items.every(item => Number.isFinite(item.value) && item.value >= 0),
-    'Ranking values must be finite and nonnegative.'
-  );
+  if (!items.every(item => Number.isFinite(item.value) && item.value >= 0))
+    return (
+      <ChartDataProblem
+        className={className}
+        problem="Ranking values must be finite and nonnegative."
+      />
+    );
   const max = Math.max(0, ...items.map(item => item.value));
 
   return (
