@@ -105,6 +105,19 @@ const context = createDataContext({ count: 'count' })({
   description: 'Counts',
   glossary: { count: { term: 'Count', definition: 'Measured count' } },
 });
+createDataContext({ count: 'count' })({
+  description: 'Counts',
+  glossary: {
+    count: {
+      term: 'Count',
+      definition: 'Measured count',
+      // @ts-expect-error Glossary entries reference registered query names.
+      queryNames: ['missing'],
+    },
+  },
+});
+// @ts-expect-error Evidence names at least one glossary entry or query.
+context.evidence({ id: 'none', glossaryIds: [] });
 const hooks =
   createDataHooks(
     createDataClient<{
@@ -150,6 +163,22 @@ const dated = hooks.defineDataView({
   input: values => values.period,
   date: { variable: 'period', input: input => input },
 });
+const mode = choiceVariable({
+  key: 'mode',
+  options: choices,
+  defaultValue: 'a',
+});
+hooks.defineDataView({
+  ...feedback,
+  operation: 'time',
+  variables: { period, mode },
+  input: values => values.period,
+  bindings: { mode: (): 'a' => 'a' },
+  // @ts-expect-error A view date names a date range variable.
+  date: { variable: 'mode', input: input => input },
+});
+// @ts-expect-error A view needs a date binding or describeInput.
+hooks.defineDataView({ ...feedback, operation: 'count' });
 dated.metric(metric, data => ({ current: data, previous: 0 }));
 dated.metric(metric, data => ({ current: data, previous: null }));
 const timeView = hooks.defineTimeView({

@@ -111,9 +111,7 @@ type BoundDataView<
 > = DeclaredView<
   Data,
   Input,
-  ResolvedDataViewDefinition<Name, Variables, Input, Data> & {
-    describeInput: (input: Input) => string;
-  }
+  ResolvedDataViewDefinition<Name, Variables, Input, Data>
 > & {
   filter(): FilterTarget<FilterPatch<Variables>>;
   breakdown<Key extends keyof Variables & string>(
@@ -431,7 +429,7 @@ export function createDataHooks<Operations extends DataOperations>(
     type Input = InputOf<Operations[Name]>;
     const metadata: Omit<
       DataViewDefinition<Name, Variables, Input, Data>,
-      'variables' | 'input'
+      'variables' | 'input' | 'describeInput'
     > = definition;
     const normalized = { ...metadata, variables, input, describeInput };
     const view = Object.assign(
@@ -751,15 +749,11 @@ export function createDataHooks<Operations extends DataOperations>(
           })
           .then(response => response.data)
     );
-    const describeInput =
-      describeViewInput<InputOf<Operations[Name]>>(definition);
+    const { describeInput } = definition;
     const request = useDataView(
       definition.operation,
       resolveViewInput(definition, variables.resolved),
-      {
-        ...definition,
-        describeInput,
-      }
+      definition
     );
 
     return {

@@ -45,11 +45,6 @@ export function createFilterTarget<Variables extends VariableCollection>(
 export function createBreakdownTarget<Value extends string>(
   definition: TargetDefinition
 ): BreakdownTarget<Value> {
-  const variable = definition.variables[definition.key!];
-  invariant(
-    variable?.kind === 'choice' && variable.presentation?.group === 'display',
-    'Choose a display choice variable.'
-  );
   const target = new BreakdownTarget<Value>();
   targets.set(target, definition);
   return target;

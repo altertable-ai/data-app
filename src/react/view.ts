@@ -134,32 +134,35 @@ export type ResolvedDataViewDefinition<
   Data,
 > = Omit<
   DataViewDefinition<Name, Variables, Input, Data>,
-  'variables' | 'input'
+  'variables' | 'input' | 'describeInput'
 > & {
   variables: Variables;
   input: (values: ResolvedVariables<Variables>) => Input;
+  describeInput: (input: Input) => string;
 };
 
-export function describeViewInput<Input>(definition: {
-  variables: VariableCollection;
-  bindings?: Partial<Record<string, (input: Input) => unknown>>;
-  date?: { variable: string; input: (input: Input) => DateRangeRequest };
-  describeInput?: (input: Input) => string;
-}): (input: Input) => string {
-  const date = definition.date;
-  const variable = date && definition.variables[date.variable];
-  invariant(
-    !date || variable?.kind === 'dateRange',
-    'The view date must reference a date range variable.'
-  );
+export function describeViewInput<Input>(
+  definition: {
+    variables: VariableCollection;
+    bindings?: Partial<Record<string, (input: Input) => unknown>>;
+  } & (
+    | {
+        date: { variable: string; input: (input: Input) => DateRangeRequest };
+        describeInput?: (input: Input) => string;
+      }
+    | { date?: never; describeInput: (input: Input) => string }
+  )
+): (input: Input) => string {
+  if (!definition.date) return definition.describeInput;
   if (definition.describeInput) return definition.describeInput;
-  invariant(date && variable, 'A view needs a date binding or describeInput.');
-  const dateBinding = date;
+  const dateBinding = definition.date;
+  // ViewDate keys only name date range variables.
+  const variable = definition.variables[
+    dateBinding.variable
+  ] as DateRangeVariable;
 
   function describeInput(input: Input) {
-    const period = (variable as DateRangeVariable).describeInput(
-      dateBinding.input(input)
-    );
+    const period = variable.describeInput(dateBinding.input(input));
     const filters = Object.entries(definition.variables)
       .filter(([, variable]) =>
         ['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind)

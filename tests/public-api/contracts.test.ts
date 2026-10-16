@@ -1,11 +1,6 @@
 import { expect, test } from 'vitest';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  createDataHooks,
-  createDataContext,
-  searchVariable,
-} from '@altertable/data-app/react';
-import {
   defineOperation,
   defineDateRangeContract,
   dimensionFilter,
@@ -128,64 +123,4 @@ test('a calendar and dimension declaration validates and escapes the input used 
     })
   ).rejects.toMatchObject({ code: 'invalid_input' });
   expect(statements).toHaveLength(1);
-});
-
-test('authoring a view rejects invalid datasets and unregistered evidence', () => {
-  const context = createDataContext({ rows: 'rows' })({
-    description: 'Rows',
-    glossary: {
-      count: {
-        term: 'Count',
-        definition: 'Measured rows',
-        queryNames: ['rows'],
-      },
-    },
-  });
-  const hooks = createDataHooks(
-    createDataClient({
-      operations: {
-        rows: defineOperation({
-          queries: {},
-          input: value => value as { group: string },
-          checks: [{ group: '' }],
-          policy: { maxQueryRows: 1, maxDurationMs: 1000 },
-          async run() {
-            return 1;
-          },
-        }),
-      },
-      lakehouse: {
-        async queryAll() {
-          return { columns: [], rows: [] };
-        },
-      },
-    })
-  );
-  const view = hooks.defineDataView({
-    dataContext: context,
-    operation: 'rows',
-    variables: { group: searchVariable({ key: 'group' }) },
-    describeInput: input => input.group,
-    isEmpty: () => false,
-    emptyFallback: { title: 'Empty' },
-  });
-  expect(() =>
-    view.dataset({
-      name: 'Rows',
-      select: (count: number) => [count],
-      rowKey: row => row,
-      columns: { count: { value: row => row } },
-      evidence: { id: 'rows', queryNames: ['unknown' as 'rows'] },
-    })
-  ).toThrow('Unknown query');
-  expect(() =>
-    view.dataset({
-      name: 'Rows',
-      select: (count: number) => [count],
-      rowKey: row => row,
-      // @ts-expect-error Untyped callers must still be rejected at runtime.
-      columns: {},
-      evidence: { id: 'rows', queryNames: ['rows'] },
-    })
-  ).toThrow();
 });

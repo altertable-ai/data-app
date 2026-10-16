@@ -82,10 +82,6 @@ export function defineActions<
   options?: { primary?: keyof Actions & string }
 ): ExplorationActions<Row, Input> {
   const actions = build(new ActionBuilder<Row, Input>());
-  invariant(
-    !options?.primary || Object.hasOwn(actions, options.primary),
-    'Primary action must be declared.'
-  );
   const result = new ExplorationActions<Row, Input>();
   actionSets.set(result, { binding, actions, primary: options?.primary });
   return result;

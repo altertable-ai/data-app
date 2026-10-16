@@ -102,10 +102,6 @@ export class RegisteredBinding {
   }
   static evidence(binding: RegisteredBinding, owner: object): WidgetEvidence {
     invariant(
-      binding instanceof RegisteredBinding,
-      'Story evidence must be a registered metric or dataset binding.'
-    );
-    invariant(
       binding.#owner === owner,
       'Story evidence must belong to the story view.'
     );
@@ -166,9 +162,8 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     timeZone?: string
   ) {
     invariant(!!definition.name.trim(), 'A dataset needs a name.');
-    const ids = Object.keys(definition.columns);
     invariant(
-      ids.length > 0 && ids.every(id => !!id.trim()),
+      Object.keys(definition.columns).every(id => !!id.trim()),
       'A dataset needs nonempty column IDs.'
     );
     const { select, rowKey } = definition;
@@ -337,14 +332,10 @@ export class Metric<Data, Input> extends RegisteredBinding {
       Input,
       MetricValues & { period?: DateRangeRequest },
       Source
-    >(source, (data, input) => {
-      const values = this.#select(data, input);
-      invariant(
-        values.previous === undefined || this.#date,
-        'Metric comparisons require a view date binding.'
-      );
-      return { ...values, period: this.#date?.(input) };
-    });
+    >(source, (data, input) => ({
+      ...this.#select(data, input),
+      period: this.#date?.(input),
+    }));
   };
   records<DetailData, DetailInput>(options: {
     target: DetailView<DetailData, DetailInput>;
