@@ -91,7 +91,7 @@ test('dimension controls resolve selected labels outside a failed options page',
     .poll(() =>
       page
         .getByRole('button', {
-          name: 'Open filters: Country: Far beyond first page',
+          name: 'Country: Far beyond first page',
           exact: true,
         })
         .count()
@@ -159,7 +159,7 @@ test('selected-label failures are visible and retry recovers the picker and summ
     .poll(() =>
       page
         .getByRole('button', {
-          name: 'Open filters: Country: Far beyond first page',
+          name: 'Country: Far beyond first page',
           exact: true,
         })
         .count()
@@ -236,11 +236,7 @@ test('country filters apply independently and survive changing or clearing regio
   await filters.getByRole('button', { name: 'Done', exact: true }).click();
   await page.reload();
   await expect
-    .poll(() =>
-      page
-        .getByRole('button', { name: /Open filters: Country: France/ })
-        .count()
-    )
+    .poll(() => page.getByRole('button', { name: /Country: France/ }).count())
     .toBe(1);
 });
 

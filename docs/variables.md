@@ -296,8 +296,8 @@ A breakdown is an ordinary display choice, independent of population filters.
 choice in its header. `presentation.control: 'widget'` omits it from the toolbar.
 Scope filters still appear in the Filters sheet, active summaries, and Clear filters.
 Primary controls stay in the toolbar. Active non-primary filters appear beside them
-as removable chips. Once the toolbar scrolls above the viewport, a floating summary
-shows every active filter; either surface opens the same Filters sheet.
+as editable controls with a remove button. Once the toolbar scrolls above the viewport,
+a floating summary shows every active filter and opens the Filters sheet.
 Declare each chart's choice separately when readers should control them independently.
 
 Each source query declares a nullable `member` parameter matching `valueType` and

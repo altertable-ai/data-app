@@ -206,11 +206,15 @@ export function useViewVariables<Variables extends VariableCollection>(
       clearedFilters[name] = variable.clearValue;
       if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
     }
-    function renderControl(labelPlacement: ControlLabelPlacement) {
+    function renderControl(
+      labelPlacement: ControlLabelPlacement,
+      onClear?: () => void
+    ) {
       function setControlValue(
         next: AppVariableValues<Variables>[typeof name]
       ) {
         variables.set(name, next);
+        if (variable.same(next, baseline)) onClear?.();
       }
       let control: ReactNode = null;
       if (definition.kind === 'dateRange') {
@@ -329,7 +333,10 @@ export function useViewVariables<Variables extends VariableCollection>(
       if (active) {
         activeFilters.push({
           id: name,
-          primary: !widgetControl && prominence === 'primary',
+          renderToolbarControl:
+            !widgetControl && prominence === 'primary'
+              ? undefined
+              : onClear => renderControl('inline', onClear),
           onRemove: () =>
             variables.set(
               name,

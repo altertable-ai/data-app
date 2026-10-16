@@ -25,7 +25,7 @@ test('toolbar and floating summaries disclose the same active scope without dupl
     exact: true,
   });
   await inline
-    .getByRole('button', { name: 'Open filters: Region: Europe', exact: true })
+    .getByRole('button', { name: 'Region: Europe', exact: true })
     .waitFor();
   expect(await floating.count()).toBe(0);
   expect(
@@ -100,13 +100,14 @@ test('toolbar and floating summaries disclose the same active scope without dupl
     .toBe(true);
 });
 
-test('inactive secondary filters stay in the sheet and active chips preserve unrelated URL state', async ({
+test('active secondary filters edit directly and preserve unrelated URL state', async ({
   page,
 }) => {
   const params = new URLSearchParams({
     q: 'retained',
     'revenue-by': 'country',
     country: JSON.stringify({ kind: 'include', members: [['v', 'fr']] }),
+    region: JSON.stringify({ kind: 'include', members: [['v', 'eu']] }),
   });
   await page.goto(`/exploration?${params}`);
   const toolbar = page.getByRole('group', {
@@ -118,34 +119,19 @@ test('inactive secondary filters stay in the sheet and active chips preserve unr
     exact: true,
   });
   await inline
-    .getByRole('button', { name: 'Open filters: Country: France', exact: true })
-    .waitFor();
-  expect(
-    await inline
-      .getByRole('button', { name: 'Remove Region filter', exact: true })
-      .count()
-  ).toBe(0);
-  await inline
-    .getByRole('button', { name: 'Open filters: Country: France', exact: true })
+    .getByRole('button', { name: 'Region: Europe', exact: true })
     .click();
-  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   expect(
-    await sheet
-      .getByRole('button', { name: 'Region: All', exact: true })
-      .count()
-  ).toBe(1);
-  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
-  await expect.poll(() => sheet.count()).toBe(0);
-  await expect
-    .poll(() =>
-      inline
-        .getByRole('button', {
-          name: 'Open filters: Country: France',
-          exact: true,
-        })
-        .evaluate(element => document.activeElement === element)
-    )
-    .toBe(true);
+    await page.getByRole('dialog', { name: 'Filters', exact: true }).count()
+  ).toBe(0);
+  await page.getByRole('option', { name: 'America', exact: true }).click();
+  await inline
+    .getByRole('button', { name: 'Region: America', exact: true })
+    .waitFor();
+  expect(JSON.parse(new URL(page.url()).searchParams.get('region')!)).toEqual({
+    kind: 'include',
+    members: [['v', 'us']],
+  });
   await inline
     .getByRole('button', { name: 'Remove Country filter', exact: true })
     .press('Enter');
@@ -159,4 +145,40 @@ test('inactive secondary filters stay in the sheet and active chips preserve unr
   expect(new URL(page.url()).searchParams.has('country')).toBe(false);
   expect(new URL(page.url()).searchParams.get('q')).toBe('retained');
   expect(new URL(page.url()).searchParams.get('revenue-by')).toBe('country');
+  await toolbar.getByRole('button', { name: /^Filters/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await sheet
+    .getByRole('button', { name: 'Country: All', exact: true })
+    .waitFor();
+});
+
+test('clearing a secondary filter through its editor removes the toolbar control', async ({
+  page,
+}) => {
+  const country = JSON.stringify({ kind: 'include', members: [['v', 'fr']] });
+  await page.goto(`/exploration?${new URLSearchParams({ country })}`);
+  const toolbar = page.getByRole('group', {
+    name: 'View controls',
+    exact: true,
+  });
+  const inline = toolbar.getByRole('group', {
+    name: 'Active toolbar filters',
+    exact: true,
+  });
+  await inline
+    .getByRole('button', { name: 'Country: France', exact: true })
+    .click();
+  expect(
+    await page.getByRole('dialog', { name: 'Filters', exact: true }).count()
+  ).toBe(0);
+  await page.getByRole('option', { name: 'All', exact: true }).click();
+  await expect.poll(() => inline.count()).toBe(0);
+  expect(new URL(page.url()).searchParams.has('country')).toBe(false);
+  await expect
+    .poll(() =>
+      toolbar
+        .getByRole('button', { name: 'Filters', exact: true })
+        .evaluate(element => document.activeElement === element)
+    )
+    .toBe(true);
 });

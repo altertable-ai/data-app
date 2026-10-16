@@ -1044,7 +1044,7 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
   expect(
     await page
       .getByRole('button', {
-        name: 'Open filters: Active account: No',
+        name: 'No Active account',
         exact: true,
       })
       .count()

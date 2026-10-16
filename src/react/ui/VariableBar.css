@@ -117,6 +117,14 @@
   min-width: 0;
 }
 
+.altertable-toolbar-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--atbl-space-xs);
+  min-width: 0;
+  max-width: 100%;
+}
+
 .altertable-active-filters {
   display: flex;
   gap: var(--atbl-space-xs);
