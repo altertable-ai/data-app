@@ -164,7 +164,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     secondary: [],
   };
   const allFilters: ReactNode[] = [];
-  const activeSecondaryFilters: ActiveFilterControl[] = [];
+  const activeFilters: ActiveFilterControl[] = [];
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
@@ -327,8 +327,9 @@ export function useViewVariables<Variables extends VariableCollection>(
     } else {
       allFilters.push(renderControl('above'));
       if (active) {
-        activeSecondaryFilters.push({
+        activeFilters.push({
           id: name,
+          primary: !widgetControl && prominence === 'primary',
           onRemove: () =>
             variables.set(
               name,
@@ -363,7 +364,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       hasControls || hasActiveFilters ? (
         <ViewControlBar
           primaryFilters={primaryFilters}
-          activeSecondaryFilters={activeSecondaryFilters}
+          activeFilters={activeFilters}
           allFilters={allFilters}
           activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}

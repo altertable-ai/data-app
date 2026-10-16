@@ -1,6 +1,7 @@
 import { expect } from 'vitest';
 import type { Page, Locator } from 'playwright';
 import { test } from '@/tests/public-api/browser';
+import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
 
 async function choose(
   page: Page,
@@ -1038,7 +1039,7 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
       .count()
   ).toBe(1);
   expect(
-    await page.getByRole('group', { name: 'Active filters' }).count()
+    await page.getByRole('group', { name: 'Active toolbar filters' }).count()
   ).toBe(1);
   expect(
     await page
@@ -1154,6 +1155,7 @@ test('floating summaries open the Filters sheet and preserve unrelated variables
   await page.goto(
     '/filter-presentation?spend=all&q=Foundry&active=false&sort=name&direction=asc'
   );
+  await scrollPastToolbar(page);
   const summaries = page.getByRole('group', {
     name: 'Active filters',
     exact: true,
@@ -1203,6 +1205,7 @@ test('floating summaries scroll within their bar and reopen the same sheet for m
     }),
   });
   await page.goto(`/filter-presentation?${params}`);
+  await scrollPastToolbar(page);
   const summaries = page.getByRole('group', {
     name: 'Active filters',
     exact: true,
@@ -1226,7 +1229,8 @@ test('floating summaries scroll within their bar and reopen the same sheet for m
     .not.toContain('Jonas');
   await page.keyboard.press('Escape');
   await sheet.getByRole('button', { name: 'Done', exact: true }).click();
-  await page.setViewportSize({ width: 360, height: 760 });
+  await page.setViewportSize({ width: 360, height: 320 });
+  await scrollPastToolbar(page);
   expect(
     await summaries.evaluate(
       element => element.scrollWidth <= element.clientWidth

@@ -106,18 +106,22 @@
   width: min(360px, 100vw);
 }
 
-.altertable-active-filters {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--atbl-space-xs);
+.altertable-toolbar-filter-summaries {
   margin: 0;
   padding: 0;
   border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--atbl-space-xs);
   min-width: 0;
 }
 
 .altertable-active-filters {
+  display: flex;
+  gap: var(--atbl-space-xs);
+  margin: 0;
+  min-width: 0;
   position: fixed;
   z-index: 40;
   inset-block-end: var(--atbl-space-md);
@@ -154,10 +158,11 @@
   font-weight: var(--atbl-type-meta-weight);
 }
 
+.altertable-active-filter .altertable-button,
 .altertable-active-filters .altertable-button {
   border-radius: 999px;
 }
-.altertable-filter-summaries .altertable-picker-value {
+.altertable-active-filter .altertable-picker-value {
   max-width: none;
   font-weight: inherit;
 }

@@ -295,6 +295,9 @@ A breakdown is an ordinary display choice, independent of population filters.
 `<VisualizationWidget breakdown={view.breakdown('revenueBy')}>` renders that
 choice in its header. `presentation.control: 'widget'` omits it from the toolbar.
 Scope filters still appear in the Filters sheet, active summaries, and Clear filters.
+Primary controls stay in the toolbar. Active non-primary filters appear beside them
+as removable chips. Once the toolbar scrolls above the viewport, a floating summary
+shows every active filter; either surface opens the same Filters sheet.
 Declare each chart's choice separately when readers should control them independently.
 
 Each source query declares a nullable `member` parameter matching `valueType` and

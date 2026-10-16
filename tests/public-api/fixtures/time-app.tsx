@@ -28,6 +28,11 @@ const calendar = defineDateRangeContract({
 const region = dimensionFilter<string>({
   key: 'region',
   label: 'Region',
+  presentation: {
+    prominence: new URLSearchParams(location.search).has('secondaryRegion')
+      ? 'secondary'
+      : 'primary',
+  },
   valueType: 'string',
   selectionMode: 'single',
   allowMissing: true,

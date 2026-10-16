@@ -1,5 +1,6 @@
 import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
+import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
 
 function selection(value: string | null) {
   return value === null
@@ -96,7 +97,7 @@ test('dimension controls resolve selected labels outside a failed options page',
         .count()
     )
     .toBe(1);
-  await page.getByRole('button', { name: 'Open filters', exact: true }).click();
+  await page.getByRole('button', { name: /^Filters/ }).click();
   const filters = page.getByRole('dialog', { name: 'Filters', exact: true });
   await expect
     .poll(() =>
@@ -111,7 +112,8 @@ test('dimension controls resolve selected labels outside a failed options page',
   expect(await filters.getByText('0 matches', { exact: true }).count()).toBe(0);
   await filters.getByRole('button', { name: 'Done', exact: true }).click();
   await page
-    .getByRole('button', { name: 'Clear filters', exact: true })
+    .getByRole('group', { name: 'View controls', exact: true })
+    .getByRole('button', { name: 'Clear', exact: true })
     .click();
   await expect
     .poll(() => new URL(page.url()).searchParams.get('region'))
@@ -132,7 +134,7 @@ test('selected-label failures are visible and retry recovers the picker and summ
     'fail-label': '1',
   });
   await page.goto(`/exploration?${params}`);
-  await page.getByRole('button', { name: 'Open filters', exact: true }).click();
+  await page.getByRole('button', { name: /^Filters/ }).click();
   const filters = page.getByRole('dialog', { name: 'Filters', exact: true });
   await filters
     .getByRole('button', { name: 'Country: far', exact: true })
@@ -522,6 +524,7 @@ test('floating filters include non-default dates and comparisons and clear to th
     'compare=previous',
   ]) {
     await page.goto(`/time-app?${search}`);
+    await scrollPastToolbar(page);
     const floating = page.getByRole('group', {
       name: 'Active filters',
       exact: true,
@@ -992,6 +995,7 @@ test('active filters can be removed individually without changing other filters 
     'revenue-by': 'country',
   });
   await page.goto(`/exploration?${params}`);
+  await scrollPastToolbar(page);
   const floating = page.getByRole('group', {
     name: 'Active filters',
     exact: true,
@@ -1032,6 +1036,7 @@ test('removing the active period returns dates and comparison to their defaults'
   page,
 }) => {
   await page.goto('/time-app?start=2026-03-10&end=2026-03-12&compare=previous');
+  await scrollPastToolbar(page);
   const floating = page.getByRole('group', {
     name: 'Active filters',
     exact: true,
@@ -1055,7 +1060,7 @@ test('widget placement preserves active filter counts, editing, and clearing', a
   });
   await page.goto(`/exploration?${params}`);
   const floating = page.getByRole('group', {
-    name: 'Active filters',
+    name: 'Active toolbar filters',
     exact: true,
   });
   await expect.poll(() => floating.innerText()).toContain('France');
@@ -1076,8 +1081,9 @@ test('widget placement preserves active filter counts, editing, and clearing', a
   }));
   expect(backgrounds.button).not.toBe('rgba(0, 0, 0, 0)');
   expect(backgrounds.button).not.toBe(backgrounds.chip);
-  await floating
-    .getByRole('button', { name: 'Clear filters', exact: true })
+  await page
+    .getByRole('group', { name: 'View controls', exact: true })
+    .getByRole('button', { name: 'Clear', exact: true })
     .click();
   await expect.poll(() => readFilters(page.url())).toEqual(scope(null));
   await expect.poll(() => floating.count()).toBe(0);
