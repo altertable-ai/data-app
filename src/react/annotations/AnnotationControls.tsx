@@ -392,6 +392,7 @@ export function AnnotationControls({
       else {
         const capture = screenshot.current;
         if (!capture || capture.draftId !== editor.draft.id)
+          // oxlint-disable-next-line data-app/no-runtime-assertion -- Capture completes asynchronously.
           throw new Error('Annotation capture is unavailable.');
         const image = await capture.result;
         if (!image) {

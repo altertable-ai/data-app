@@ -14,6 +14,7 @@ export function injectStyles({
   const target =
     options.document ??
     (typeof document === 'undefined' ? undefined : document);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Server rendering has no document.
   if (!target) throw new Error(`${name} requires a browser document.`);
   const existing = target.querySelector<HTMLStyleElement>(
     `style[${attribute}]`
