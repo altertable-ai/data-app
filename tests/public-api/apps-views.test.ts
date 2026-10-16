@@ -360,6 +360,18 @@ test('a report can display, export and present bindings from its own view', asyn
   expect(await page.getByRole('alert').count()).toBe(0);
 });
 
+test('a story presents its first four findings', async ({ page }) => {
+  await page.goto('/ownership?binding=five-findings');
+  await page
+    .getByRole('button', { name: 'Present story', exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      page.getByRole('dialog').getByLabel('Finding 1 of 4').isVisible()
+    )
+    .toBe(true);
+});
+
 test('a phone reader can select filters, compare periods and inspect results by touch', async ({
   mobilePage: page,
 }) => {

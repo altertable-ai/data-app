@@ -113,21 +113,24 @@ function App() {
             ? other.dataset
             : own.dataset,
         ]}
-        story={snapshot => [
-          {
-            id: 'count',
-            headline: 'Measured count',
-            context: 'Count from the displayed view',
-            visual: <MetricWidget metric={own.metric} source={snapshot} />,
-            visualKind: 'metric',
-            evidence:
-              binding === 'story-metric'
-                ? other.metric
-                : binding === 'story-dataset'
-                  ? other.dataset
-                  : own.metric,
-          },
-        ]}
+        story={snapshot =>
+          Array.from(
+            { length: binding === 'five-findings' ? 5 : 1 },
+            (_, index) => ({
+              id: index ? `count-${index}` : 'count',
+              headline: index ? `Measured count ${index}` : 'Measured count',
+              context: 'Count from the displayed view',
+              visual: <MetricWidget metric={own.metric} source={snapshot} />,
+              visualKind: 'metric' as const,
+              evidence:
+                binding === 'story-metric'
+                  ? other.metric
+                  : binding === 'story-dataset'
+                    ? other.dataset
+                    : own.metric,
+            })
+          )
+        }
       >
         <DataSection content={content} />
       </DataApp>
