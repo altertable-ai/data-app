@@ -124,16 +124,22 @@
   min-width: 0;
   position: fixed;
   z-index: 40;
-  inset-block-end: var(--atbl-space-md);
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
+  inset-block-start: calc(
+    100dvh - var(--atbl-space-md) - env(safe-area-inset-bottom, 0px)
+  );
+  inset-inline-start: 50vw;
+  transform: translate(-50%, -100%);
   opacity: 1;
   transition:
     opacity var(--atbl-duration-normal) var(--atbl-ease-enter),
     transform var(--atbl-duration-normal) var(--atbl-ease-enter);
   align-items: center;
   flex-wrap: nowrap;
-  max-inline-size: calc(100vw - 2 * var(--atbl-space-md));
+  max-inline-size: calc(
+    100vw - 2 *
+      (var(--atbl-space-md) +
+        max(env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)))
+  );
   padding: var(--atbl-space-xs);
   border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-surface);
@@ -143,7 +149,7 @@
 @starting-style {
   .altertable-active-filters {
     opacity: 0;
-    transform: translate(-50%, var(--atbl-space-sm));
+    transform: translate(-50%, calc(-100% + var(--atbl-space-sm)));
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -192,4 +198,11 @@
     var(--atbl-subtle)
   );
   color: var(--atbl-muted);
+}
+
+@media (any-pointer: coarse) {
+  .altertable-active-filters .altertable-button {
+    min-inline-size: 44px;
+    min-block-size: 44px;
+  }
 }

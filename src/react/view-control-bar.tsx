@@ -177,8 +177,12 @@ export function ViewControlBar({
             ))}
           </GradientScroll>
           {onClear && (
-            <Button variant="ghost" onClick={clearFilters}>
-              Clear filters
+            <Button
+              variant="ghost"
+              aria-label="Clear filters"
+              onClick={clearFilters}
+            >
+              Clear
             </Button>
           )}
         </fieldset>
@@ -251,6 +255,7 @@ function ActiveFilterChip({
       <Button
         variant="ghost"
         className="altertable-active-filter-label"
+        data-atbl-focus="inset"
         aria-label={`Open filters: ${filter.label}: ${filter.summary}`}
         onClick={event => onOpen(event.currentTarget)}
       >
@@ -261,6 +266,7 @@ function ActiveFilterChip({
           variant="ghost"
           size="icon-compact"
           className="altertable-active-filter-remove"
+          data-atbl-focus="inset"
           aria-label={`Remove ${filter.label} filter`}
           onClick={() => onRemove(filter)}
         >

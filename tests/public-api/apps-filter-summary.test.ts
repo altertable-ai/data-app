@@ -187,3 +187,79 @@ test('clearing a secondary filter through its editor removes the toolbar control
     )
     .toBe(true);
 });
+
+test('floating filters respect touch targets and portrait and landscape safe areas', async ({
+  mobilePage: page,
+}) => {
+  const session = await page.context().newCDPSession(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const country = JSON.stringify({ kind: 'include', members: [['v', 'fr']] });
+  await page.goto(`/exploration?${new URLSearchParams({ country })}`);
+  const floating = page.getByRole('group', {
+    name: 'Active filters',
+    exact: true,
+  });
+  for (const { width, left, right, bottom, fontSize = 16 } of [
+    { width: 320, left: 0, right: 0, bottom: 34 },
+    { width: 375, left: 0, right: 0, bottom: 34 },
+    { width: 667, left: 44, right: 0, bottom: 21 },
+    { width: 667, left: 0, right: 44, bottom: 21 },
+    { width: 320, left: 0, right: 0, bottom: 34, fontSize: 32 },
+  ]) {
+    await page.setViewportSize({ width, height: 320 });
+    await session.send('Emulation.setSafeAreaInsetsOverride', {
+      insets: { top: 0, left, right, bottom },
+    });
+    await page.addStyleTag({ content: `:root { font-size: ${fontSize}px; }` });
+    await scrollPastToolbar(page);
+    const bounds = await floating.boundingBox();
+    const horizontalInset = Math.max(left, right) + 16;
+    expect(bounds!.x).toBeGreaterThanOrEqual(horizontalInset - 1);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
+      width - horizontalInset + 1
+    );
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(
+      320 - bottom - 16 + 1
+    );
+    const targets = await floating.getByRole('button').evaluateAll(elements =>
+      elements.map(element => {
+        const rect = element.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+      })
+    );
+    for (const target of targets) {
+      expect(target.width).toBeGreaterThanOrEqual(44);
+      expect(target.height).toBeGreaterThanOrEqual(44);
+    }
+    expect(
+      await floating.evaluate(
+        element => element.scrollWidth <= element.clientWidth
+      )
+    ).toBe(true);
+    expect(
+      await floating.evaluate(
+        element => getComputedStyle(element).transitionProperty
+      )
+    ).toBe('opacity');
+    // Page-end actions must scroll fully above the floating controls.
+    const attribution = page.getByRole('link', {
+      name: 'Powered by Altertable',
+      exact: true,
+    });
+    await attribution.focus();
+    const footerBounds = await attribution.boundingBox();
+    const barBounds = await floating.boundingBox();
+    expect(footerBounds!.y + footerBounds!.height).toBeLessThan(barBounds!.y);
+  }
+  await page.addStyleTag({ content: ':root { font-size: 16px; }' });
+  await floating
+    .getByRole('button', { name: 'Open filters', exact: true })
+    .tap();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await sheet.getByRole('button', { name: 'Done', exact: true }).tap();
+  await expect.poll(() => sheet.count()).toBe(0);
+  await floating
+    .getByRole('button', { name: 'Remove Country filter', exact: true })
+    .tap();
+  await expect.poll(() => floating.count()).toBe(0);
+});
