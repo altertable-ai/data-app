@@ -160,3 +160,94 @@ For embedded theme and chrome, see [parent presentation](embed.md#parent-present
 
 `<TooltipProvider>` shares hover timing outside `<DataApp>`; the app already
 provides it.
+
+## Exploration actions
+
+Declare actions on their dataset or metric and pass them to its widget. Detail
+mappings receive the displayed operation input, including during refreshes.
+Both `children` and alternate-view `render` callbacks receive the displayed rows
+and the same action resolver.
+
+```tsx
+const placeActions = places.actions(
+  action => ({
+    orders: action.detail({
+      label: 'View orders',
+      target: ordersView,
+      input: (row, displayedInput) => ({ ...displayedInput, placeId: row.id }),
+    }),
+    filter: action.filter({
+      label: 'Filter to this region',
+      when: row => row.dimension === 'region',
+      target: salesView.filter(),
+      values: row => ({
+        region: {
+          kind: 'include',
+          members: [{ kind: 'value', value: row.id }],
+        },
+      }),
+    }),
+    drill: action.filter({
+      label: 'Drill down',
+      when: row => row.dimension === 'region',
+      target: salesView.filter(),
+      values: row => ({
+        region: {
+          kind: 'include',
+          members: [{ kind: 'value', value: row.id }],
+        },
+      }),
+      breakdown: {
+        target: salesView.breakdown('revenueBy'),
+        value: () => 'country',
+      },
+    }),
+  }),
+  { primary: 'orders' }
+);
+
+<VisualizationWidget
+  dataset={places}
+  source={source}
+  actions={placeActions}
+  breakdown={salesView.breakdown('revenueBy')}
+>
+  {(rows, actions) => (
+    <BarChart
+      ariaLabel="Revenue by place"
+      unit="USD"
+      items={rows.map(row => ({ ...row, value: row.revenue }))}
+      itemActions={actions}
+    />
+  )}
+</VisualizationWidget>;
+```
+
+Keep domain fields when adapting chart items. Bar, line, area, pie slices, and
+pie legend items share the same action contract. Chart marks keep a sole or
+declared `primary` action direct. The full pie legend row and bar label open the
+menu; bar labels use a small inline disclosure chevron.
+
+Menus retain every available action and group copying after exploration actions.
+The first copy action names the text it copies. Copy summary includes the displayed
+label, formatted value, unit, and pie share. Successful copies are silent; failures
+are announced and shown on the chart.
+Right-click opens the menu at the pointer; Shift+F10 anchors it to the control.
+Breakdown controls keep their selected choice visible and their accessible names.
+Custom controls can compose `<ExplorationActionControl>` from `/react/ui`.
+
+`<TableWidget actions={placeActions}>` adds row actions without changing the
+dataset or its CSV export. `<MetricWidget>` accepts actions declared with
+`metric.actions()`; metric action mappings receive `undefined` for the row and
+the displayed operation input as their second argument. Actions must belong to
+the metric or dataset rendered by the widget.
+
+`view.filter()` targets scope variables. An optional `breakdown` explicitly updates
+one chart's display choice in the same history entry. Filters preserve unrelated
+selections. Filter actions wait for displayed and applied scope to agree; actions
+that also change a breakdown check that chart's displayed choice. No filter change
+implicitly changes another filter or chart.
+
+A day drill passes its day. A value-band drill passes a stable band ID; validate
+it in the destination operation and derive bounds there. Query matching records
+rather than filtering a capped dashboard preview. See [detail destinations](views.md#detail-destinations).

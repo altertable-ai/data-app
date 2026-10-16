@@ -29,6 +29,7 @@ import {
 import { Tooltip } from '@/src/react/ui/Tooltip';
 import { ThemeToggle } from '@/src/react/ui/ThemeSelector';
 import { storySteps, type StoryFinding } from '@/src/react/ui/story';
+import { InspectionVisual } from '@/src/react/ui/InspectionProvider';
 
 export type StoryStep = {
   id: string;
@@ -344,7 +345,7 @@ export function PresentStory({
                 className="altertable-present-visual"
                 data-kind={step.visualKind}
               >
-                {step.visual}
+                <InspectionVisual value={true}>{step.visual}</InspectionVisual>
               </div>
             </GradientScroll>
             <nav className="altertable-present-nav" aria-label="Story findings">

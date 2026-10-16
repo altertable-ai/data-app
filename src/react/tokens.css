@@ -60,6 +60,14 @@
   --atbl-control-gap: 0.5rem;
   --atbl-control-disabled-opacity: 0.5;
 
+  /* Shared dropdown panel and item spacing. */
+  --atbl-dropdown-padding: calc(var(--atbl-control-padding-block) * 2 / 3);
+  --atbl-dropdown-item-padding-block: var(--atbl-control-padding-block);
+  --atbl-dropdown-item-padding-inline: calc(
+    var(--atbl-control-padding-inline) * 3 / 4
+  );
+  --atbl-dropdown-item-gap: 2px;
+
   /* Control, widget, and overlay corner radii. */
   --atbl-radius-control: 7px;
   --atbl-radius-surface: 12px;

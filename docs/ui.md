@@ -223,3 +223,6 @@ and `<NumberRangeField>` as inline input primitives when composing forms.
 
 Use `<Button variant="primary">` for the main committing action, such as Apply.
 Use outline and ghost buttons for secondary actions.
+Use `<Button variant="inline">` for actions within text or table cells. It has no
+control padding or background and underlines on hover. Keep button semantics for
+opening a sheet; use links for navigation to a URL.

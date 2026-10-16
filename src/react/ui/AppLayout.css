@@ -51,3 +51,15 @@
   font-size: var(--atbl-type-body-size);
   max-width: none;
 }
+
+/* Reserve the floating controls' footprint for page-end content and focus scrolling. */
+:root:has(.altertable-active-filters) {
+  --atbl-active-filters-clearance: calc(
+    env(safe-area-inset-bottom, 0px) + 2 * var(--atbl-space-md) +
+      max(44px, var(--atbl-control-height)) + 2 * var(--atbl-space-xs) + 2px
+  );
+  scroll-padding-block-end: var(--atbl-active-filters-clearance);
+}
+.altertable-app-layout:has(.altertable-active-filters) {
+  padding-block-end: var(--atbl-active-filters-clearance);
+}

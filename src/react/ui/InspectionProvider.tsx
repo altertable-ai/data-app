@@ -72,7 +72,9 @@ function createInspectionStore() {
     }
   }
   function show(inspection: Inspection) {
-    const tab = inspection.props.tab ?? 'glossary';
+    const tab =
+      inspection.props.tab ??
+      (inspection.props.records ? 'records' : 'glossary');
     publish({ inspection, open: true, tab });
     writeSearch(
       { about: inspection.id, tab },

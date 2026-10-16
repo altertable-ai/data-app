@@ -1,3 +1,7 @@
+import {
+  attachDimensionSelectors,
+  validateVariableInput,
+} from '@/src/core/dimension-source';
 /**
  * Shared operation contracts and input validation for browser and server.
  * @module @altertable/data-app/contract
@@ -392,10 +396,12 @@ export function defineOperation<
   ) as { readonly [Name in keyof Queries & string]: Name };
   for (const input of operation.checks) operation.input(input);
 
-  return {
+  const defined: Omit<DataOperation<Input, Output>, 'queryNames'> & {
+    queryNames: { readonly [Name in keyof Queries & string]: Name };
+  } = {
     ...operation,
     queryNames,
-    run(context, input) {
+    async run(context, input) {
       async function query<Name extends keyof Queries & string>(
         name: Name,
         values: Partial<QueryParameters> = {},
@@ -419,9 +425,13 @@ export function defineOperation<
           definition.projections
         );
       }
+      await validateVariableInput(operation.input, input, query);
+      context.signal.throwIfAborted();
       return operation.run({ signal: context.signal, query }, input);
     },
   };
+  attachDimensionSelectors(defined, queries);
+  return defined;
 }
 
 /** The built-in connection operation shares one contract with setup clients. */
@@ -519,3 +529,5 @@ export type {
   BooleanSelection,
   BooleanFilter,
 } from '@/src/core/filters';
+
+export { variableInput } from '@/src/core/dimension-source';

@@ -1,3 +1,4 @@
+import { DimensionMembershipError } from '@/src/core/dimension-source';
 import { DataSourceError } from '@/src/core/contract';
 import type {
   DataOperations,
@@ -83,6 +84,7 @@ function createOperationLakehouse(
   const queries: DisclosedQuery[] = [];
   const lakehouse: Lakehouse = {
     async queryAll(statement, options) {
+      signal.throwIfAborted();
       if (!Number.isInteger(options.limit) || options.limit < 1)
         throw new Error('Query needs a positive row limit.');
       if (
@@ -174,7 +176,10 @@ const sourceErrorMessages = {
 };
 
 export function toDataOperationFailure(error: unknown, aborted = false) {
-  if (error instanceof OperationInputError)
+  if (
+    error instanceof OperationInputError ||
+    error instanceof DimensionMembershipError
+  )
     return {
       status: 400,
       code: 'invalid_input',

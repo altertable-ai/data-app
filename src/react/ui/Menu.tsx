@@ -4,7 +4,6 @@ import {
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
   MenuSection,
-  Popover,
   Separator,
   type MenuProps,
   type MenuItemProps,
@@ -12,12 +11,13 @@ import {
 } from 'react-aria-components';
 import { SelectionMark } from '@/src/react/ui/SelectionMark';
 import { classNames } from '@/src/react/ui/classNames';
+import { PopoverSurface } from '@/src/react/ui/PopoverSurface';
 
 export { MenuTrigger, MenuSection };
 export { PressButton as MenuButton } from '@/src/react/ui/Button';
 export type { MenuProps, MenuItemProps, MenuTriggerProps };
 
-export type MenuPopoverProps = ComponentPropsWithRef<typeof Popover>;
+export type MenuPopoverProps = ComponentPropsWithRef<typeof PopoverSurface>;
 
 /** Anchored popup for a Menu; the surrounding MenuTrigger owns focus and dismissal. */
 export function MenuPopover({
@@ -26,7 +26,7 @@ export function MenuPopover({
   ...props
 }: MenuPopoverProps) {
   return (
-    <Popover
+    <PopoverSurface
       {...props}
       placement={placement}
       className={state =>

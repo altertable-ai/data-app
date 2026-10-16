@@ -1,5 +1,6 @@
 import type { IsUnion } from '@/src/core/queries';
 import { facetSource, type FacetVariable } from '@/src/core/facets';
+import type { SourceDimensionVariable } from '@/src/core/dimension-source';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -20,6 +21,9 @@ export type { HistoryMode } from '@/src/core/navigation';
 export type VariablePresentation = {
   /** Scope changes the included data; display changes its presentation. Defaults to scope. */
   group?: 'scope' | 'display';
+  /** Widget controls render beside their visualization instead of in the toolbar.
+   * Scope filters remain available in the Filters sheet and active summaries. */
+  control?: 'toolbar' | 'widget';
   /** Secondary scope controls live in the Filters sheet with compact pickers when active; secondary display options follow primary options. Defaults to primary. */
   prominence?: 'primary' | 'secondary';
 };
@@ -44,11 +48,12 @@ export type AppVariable<Value, Kind extends string = string> = {
 export type VariableCollection = Record<
   string,
   | SearchVariable
-  | ChoiceVariable
+  | ChoiceVariable<any>
   | MultiChoiceVariable
   | DateRangeVariable
   | DimensionVariable<any>
   | FacetVariable<any, any, string, unknown>
+  | SourceDimensionVariable<any>
   | NumberFilter
   | BooleanFilter
 >;
@@ -82,7 +87,7 @@ export type CheckedFacetContexts<Variables extends VariableCollection> =
     (string extends keyof Variables
       ? Extract<
           Variables[keyof Variables],
-          { optionsSource: 'query' }
+          { [facetSource]: unknown }
         > extends never
         ? Variables
         : never
@@ -110,6 +115,9 @@ export function defineAppVariables<const Variables extends VariableCollection>(
         (presentation !== null &&
           typeof presentation === 'object' &&
           !Array.isArray(presentation) &&
+          (presentation.control === undefined ||
+            presentation.control === 'toolbar' ||
+            presentation.control === 'widget') &&
           (presentation.group === undefined ||
             presentation.group === 'scope' ||
             presentation.group === 'display') &&
@@ -120,7 +128,7 @@ export function defineAppVariables<const Variables extends VariableCollection>(
     );
     for (const key of variable.urlKeys) {
       invariant(
-        !['view', 'about', 'tab', 'present', 'step'].includes(key),
+        !['view', 'about', 'tab', 'present', 'step', 'details'].includes(key),
         `Variable ${name} uses reserved URL key: ${key}.`
       );
       invariant(
@@ -144,7 +152,10 @@ type ScalarVariableOptions = {
 
 export type SearchVariable = AppVariable<string, 'search'>;
 export type ChoiceOption = { id: string; label: string; description?: string };
-export type ChoiceVariable = AppVariable<string, 'choice'> & {
+export type ChoiceVariable<Value extends string = string> = AppVariable<
+  Value,
+  'choice'
+> & {
   options: readonly ChoiceOption[];
 };
 export type MultiChoiceVariable = AppVariable<
@@ -192,17 +203,21 @@ export function validateChoiceOptions(options: readonly ChoiceOption[]) {
   );
 }
 
-export function choiceVariable<const Options extends readonly ChoiceOption[]>({
+export function choiceVariable<
+  const Options extends readonly ChoiceOption[],
+  const Presentation extends VariablePresentation | undefined = undefined,
+>({
   key,
   label,
   defaultValue,
   options,
   history = 'push',
   presentation,
-}: ScalarVariableOptions & {
+}: Omit<ScalarVariableOptions, 'presentation'> & {
+  presentation?: Presentation;
   defaultValue: NoInfer<Options[number]['id']>;
   options: Options & (Options extends readonly [] ? never : unknown);
-}): ChoiceVariable {
+}): ChoiceVariable<Options[number]['id']> & { presentation?: Presentation } {
   validateChoiceOptions(options);
   function valid(value: string) {
     return (
@@ -236,6 +251,7 @@ export function choiceVariable<const Options extends readonly ChoiceOption[]>({
 
 export function multiChoiceVariable<
   const Options extends readonly ChoiceOption[],
+  const Presentation extends VariablePresentation | undefined = undefined,
 >({
   key,
   label,
@@ -244,11 +260,12 @@ export function multiChoiceVariable<
   maxSelected = options.length,
   history = 'push',
   presentation,
-}: Omit<ScalarVariableOptions, 'defaultValue'> & {
+}: Omit<ScalarVariableOptions, 'defaultValue' | 'presentation'> & {
+  presentation?: Presentation;
   defaultValue?: readonly NoInfer<Options[number]['id']>[];
   options: Options & (Options extends readonly [] ? never : unknown);
   maxSelected?: number;
-}): MultiChoiceVariable {
+}): MultiChoiceVariable & { presentation?: Presentation } {
   validateChoiceOptions(options);
   invariant(
     Number.isSafeInteger(maxSelected) &&
@@ -420,6 +437,7 @@ export function dateRangeVariable({
       ? [key, startKey, endKey, comparisonKey]
       : [key, startKey, endKey],
     defaultValue,
+    clearValue: defaultValue,
     history,
     bounds,
     resolve,

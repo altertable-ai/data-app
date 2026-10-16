@@ -45,7 +45,6 @@ export function DimensionPicker<T extends DimensionValue>({
       available.unshift({
         value: member.value,
         label: String(member.value),
-        count: 0,
       });
 
   const byKey = new Map<string, DimensionMember<T>>();

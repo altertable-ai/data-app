@@ -3,7 +3,7 @@
   max-width: min(320px, calc(100vw - 32px));
   max-height: min(320px, var(--available-height));
   overflow: auto;
-  padding: 4px;
+  padding: var(--atbl-dropdown-padding);
   border: 1px solid var(--atbl-border);
   border-radius: var(--atbl-radius-control);
   background: var(--atbl-surface);
@@ -11,6 +11,9 @@
   color: var(--atbl-text);
 }
 .altertable-export-popover [role='menu'] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--atbl-dropdown-item-gap);
   outline: none;
 }
 .altertable-export-popover [role='menuitem'] {
@@ -19,7 +22,8 @@
   justify-content: space-between;
   gap: 16px;
   min-height: 34px;
-  padding: 6px 9px;
+  padding: var(--atbl-dropdown-item-padding-block)
+    var(--atbl-dropdown-item-padding-inline);
   border-radius: 4px;
   font-size: var(--atbl-type-label-size);
   outline: none;

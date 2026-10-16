@@ -1,3 +1,4 @@
+import type { InspectionRecords } from '@/src/react/ui/AboutData';
 import { useDateFormatting } from '@/src/react/date-formatting';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
 import type { WidgetStatus } from '@/src/react/ui/RequestHint';
@@ -22,6 +23,7 @@ type MetricWidgetBaseProps = {
   description?: ReactNode;
   comparison?: MetricComparison;
   evidence?: WidgetEvidence;
+  records?: InspectionRecords;
   action?: ReactNode;
   status?: WidgetStatus;
   visual?: ReactNode;
@@ -90,6 +92,7 @@ function MetricWidgetContent({
   description,
   comparison,
   evidence,
+  records,
   action,
   status,
   visual,
@@ -103,6 +106,7 @@ function MetricWidgetContent({
       title={label}
       annotationId={annotationId}
       evidence={evidence}
+      records={records}
       aria-busy={loading || props['aria-busy']}
       action={action}
       status={status}

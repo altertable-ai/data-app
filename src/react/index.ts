@@ -4,6 +4,7 @@ export type {
   DatasetSuggestionOptions,
   DatasetDeclaration as DatasetDefinition,
 } from '@/src/react/bindings';
+export type { MetricRecords } from '@/src/react/bindings';
 export { injectDataAppStyles } from '@/src/react/styles';
 export type { DataAppStylesOptions } from '@/src/react/styles';
 export type {
@@ -13,6 +14,12 @@ export type {
 } from '@/src/react/style-contract';
 export { mountDataApp } from '@/src/react/mount';
 export { createDataHooks } from '@/src/react/hooks';
+export {
+  DetailView,
+  DetailContent,
+  useDetailNavigation,
+} from '@/src/react/details';
+export type { DetailViewDefinition } from '@/src/react/details';
 export type { CsvCell } from '@/src/react/ui/csv-export';
 export { DataApp } from '@/src/react/ui/DataApp';
 export type { DataAppProps } from '@/src/react/ui/DataApp';

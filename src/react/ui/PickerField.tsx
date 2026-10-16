@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AppIcon } from '@/src/react/ui/icons';
+import { AppIcon, type AppIconName } from '@/src/react/ui/icons';
 
 /** Inline labels sit with the value; above and beside labels have a separate layout slot. */
 export type ControlLabelPlacement = 'inline' | 'above' | 'beside';
@@ -25,24 +25,47 @@ export function PickerField({
   );
 }
 
-/** Shared label, value, and disclosure layout for selection and predicate controls. */
-export function PickerTriggerContent({
+/** Shared label and value slots for pickers and active-filter summaries. */
+export function ControlLabelValue({
   label,
-  labelPlacement,
   value,
 }: {
-  label: string;
-  labelPlacement: ControlLabelPlacement;
+  label?: ReactNode;
   value: ReactNode;
 }) {
   return (
     <>
-      {labelPlacement === 'inline' && (
+      {label !== undefined && (
         <span className="altertable-picker-label" aria-hidden="true">
           {label}
         </span>
       )}
       <strong className="altertable-picker-value">{value}</strong>
+    </>
+  );
+}
+
+/** Shared label, value, and disclosure layout for selection and predicate controls. */
+export function PickerTriggerContent({
+  label,
+  labelPlacement,
+  value,
+  icon,
+  iconSize = 18,
+}: {
+  label: string;
+  labelPlacement: ControlLabelPlacement;
+  value: ReactNode;
+  icon?: AppIconName;
+  iconSize?: number;
+}) {
+  return (
+    <>
+      {icon && <AppIcon name={icon} size={iconSize} />}
+      <ControlLabelValue
+        label={!icon && labelPlacement === 'inline' ? label : undefined}
+        value={value}
+      />
       <AppIcon name="disclosure" size={14} />
     </>
   );

@@ -1,10 +1,13 @@
 import { invariant } from '@/src/core/invariant';
+import type { ItemActions } from '@/src/react/ui/ExplorationActionControl';
 
 /** Ordered category or time-series sample. IDs are unique and nonblank; values are finite. */
 export type ChartItem = { id: string; label: string; value: number };
-export type ValueChartProps = {
+export type ValueChartProps<Row extends ChartItem = ChartItem> = {
   /** Ordered samples; the chart validates IDs and values when rendering. */
-  items: readonly ChartItem[];
+  items: readonly Row[];
+  /** Actions available for each displayed item. Domain fields remain available to this callback. */
+  itemActions?: ItemActions<Row>;
   unit: string;
   ariaLabel: string;
   formatValue?: (value: number) => string;

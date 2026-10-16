@@ -1,3 +1,4 @@
+import exploration from '@/tests/public-api/fixtures/exploration.html';
 import { Database } from 'bun:sqlite';
 import { serveLocalApp } from '@altertable/data-app/server/bun';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
@@ -63,6 +64,7 @@ const server = Bun.serve({
   hostname: '127.0.0.1',
   port,
   routes: {
+    '/exploration': exploration,
     '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
     '/starter-data-app': bundleHost,

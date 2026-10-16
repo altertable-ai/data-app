@@ -1,3 +1,9 @@
+import {
+  bindDimensionSource,
+  type DimensionSourceConfig,
+  type DimensionSourceQueryName,
+  type SourceDimensionVariable,
+} from '@/src/core/dimension-source';
 /**
  * App configuration shared by browser and server.
  * @module @altertable/data-app
@@ -40,6 +46,11 @@ export type DataAppDefinition<
   Queries extends QueryDefinitions = QueryDefinitions,
 > = Readonly<Omit<DataAppConfig<Queries>, 'queries'>> & {
   readonly queries: QuerySnapshot<Queries>;
+  defineDimension<const Type extends 'string' | 'number'>(
+    config: DimensionSourceConfig<Type> & {
+      source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
+    }
+  ): SourceDimensionVariable<{ string: string; number: number }[Type]>;
   defineOperation<Input, Output>(
     operation: OperationDefinition<Input, Output, Queries>
   ): ReturnType<typeof defineOperation<Input, Output, Queries>>;
@@ -74,6 +85,13 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
   return Object.freeze({
     ...config,
     queries,
+    defineDimension<const Type extends 'string' | 'number'>(
+      config: DimensionSourceConfig<Type> & {
+        source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
+      }
+    ) {
+      return bindDimensionSource<Type>(config, queries);
+    },
     defineOperation<Input, Output>(
       operation: OperationDefinition<Input, Output, Queries>
     ) {

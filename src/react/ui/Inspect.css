@@ -24,6 +24,7 @@
     transition: opacity var(--atbl-duration-fast) var(--atbl-ease-standard);
   }
   :is(
+    .altertable-data-widget-help[data-has-action='true'],
     .altertable-metric-widget:hover .altertable-metric-help,
     .altertable-metric-widget:focus-within .altertable-metric-help,
     .altertable-data-widget:hover .altertable-data-widget-help,
@@ -49,13 +50,13 @@
 }
 
 /* Inspection lives on the heading; the toolbar is reserved for actions and status. */
-.altertable-button.altertable-widget-heading-trigger {
+.altertable-widget-heading-trigger {
   --atbl-control-hover-surface: transparent;
   --atbl-control-pressed-surface: transparent;
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: flex-start;
-  gap: var(--atbl-space-xs);
+  gap: var(--atbl-space-sm);
   min-height: 0;
   padding: 0;
   border: 0;
@@ -74,6 +75,7 @@
   color: var(--atbl-text);
 }
 .altertable-widget-heading-trigger > svg {
+  margin-inline-start: var(--atbl-space-xs);
   display: inline-block;
   flex: none;
   align-self: center;

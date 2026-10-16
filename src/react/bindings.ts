@@ -1,4 +1,11 @@
 import { KEY_SEPARATOR } from '@/src/core/keys';
+import { parseDetailInput, type DetailNavigation } from '@/src/react/details';
+import {
+  defineActions,
+  type ActionBuilder,
+  type ExplorationActions,
+  type ActionDeclaration,
+} from '@/src/react/actions';
 import { assertSourceOwner } from '@/src/react/source-owner';
 import type { EvidenceDeclaration } from '@/src/react/ui/data-context';
 import type { SearchSuggestion } from '@/src/react/ui/SearchTypeahead';
@@ -16,6 +23,7 @@ import type { MetricDefinition } from '@/src/react/ui/metric';
 import type { EmptyContent } from '@/src/react/ui/presentation';
 import type { TableWidgetColumn } from '@/src/react/ui/TableWidget';
 import type { WidgetEvidence } from '@/src/react/ui/WidgetEvidence';
+import { DetailRecords, DetailView } from '@/src/react/details';
 
 /** Displayed data, or an initial loading reading. Pending filter values are never a source. */
 export type ViewSource<Data, Input> =
@@ -84,6 +92,10 @@ export class RegisteredBinding {
   constructor(owner?: object, evidence?: WidgetEvidence) {
     this.#owner = owner;
     this.#evidence = evidence;
+  }
+  /** @internal */
+  static owner(binding: RegisteredBinding): object | undefined {
+    return binding.#owner;
   }
   protected assertSource(source: object) {
     if (this.#owner) assertSourceOwner(this.#owner, source);
@@ -232,6 +244,12 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     };
     this.#suggestions = definition.suggestions;
   }
+  actions<const Actions extends Record<string, ActionDeclaration<Row, Input>>>(
+    build: (action: ActionBuilder<Row, Input>) => Actions,
+    options?: { primary?: keyof Actions & string }
+  ): ExplorationActions<Row, Input> {
+    return defineActions(this, build, options);
+  }
   override readSearchSuggestions(
     source: ViewSource<Data, Input>
   ): DataReading<readonly SearchSuggestion[]> | undefined {
@@ -328,6 +346,59 @@ export class Metric<Data, Input> extends RegisteredBinding {
       return { ...values, period: this.#date?.(input) };
     });
   };
+  records<DetailData, DetailInput>(options: {
+    target: DetailView<DetailData, DetailInput>;
+    input: (displayedInput: Input) => DetailInput;
+  }) {
+    return new MetricRecords(this, options.target, options.input);
+  }
+  actions<const Actions extends Record<string, ActionDeclaration<void, Input>>>(
+    build: (action: ActionBuilder<void, Input>) => Actions,
+    options?: { primary?: keyof Actions & string }
+  ): ExplorationActions<void, Input> {
+    return defineActions(this, build, options);
+  }
+}
+
+/** A metric-owned record destination. It can only render from that metric's displayed source. */
+export class MetricRecords<Data, Input, DetailData, DetailInput> {
+  #metric: Metric<Data, Input>;
+  #target: DetailView<DetailData, DetailInput>;
+  #input: (displayedInput: Input) => DetailInput;
+  constructor(
+    metric: Metric<Data, Input>,
+    target: DetailView<DetailData, DetailInput>,
+    input: (displayedInput: Input) => DetailInput
+  ) {
+    this.#metric = metric;
+    this.#target = target;
+    this.#input = input;
+  }
+  render(source: ViewSource<Data, Input>, navigation?: DetailNavigation) {
+    this.#metric.read(source);
+    if (source.loading) return undefined;
+    const input = parseDetailInput(this.#target, this.#input(source.input));
+    return {
+      scope: this.#target.definition.describeInput(input),
+      content: createElement(DetailRecords, {
+        content: DetailView.content(this.#target),
+        input,
+        navigation,
+      }),
+    };
+  }
+  static render<Data, Input, DetailData, DetailInput>(
+    records: MetricRecords<Data, Input, DetailData, DetailInput>,
+    metric: Metric<Data, Input>,
+    source: ViewSource<Data, Input>,
+    navigation?: DetailNavigation
+  ) {
+    invariant(
+      records.#metric === metric,
+      'Metric records must belong to the metric rendered by this widget.'
+    );
+    return records.render(source, navigation);
+  }
 }
 export function bindMetric<Data, Input>(
   definition: MetricDefinition,
