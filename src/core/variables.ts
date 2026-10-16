@@ -1,5 +1,6 @@
 import type { IsUnion } from '@/src/core/queries';
 import { facetSource, type FacetVariable } from '@/src/core/facets';
+import type { SourceDimensionVariable } from '@/src/core/dimension-source';
 import {
   availableDatePresets,
   type DatePresetId,
@@ -52,6 +53,7 @@ export type VariableCollection = Record<
   | DateRangeVariable
   | DimensionVariable<any>
   | FacetVariable<any, any, string, unknown>
+  | SourceDimensionVariable<any>
   | NumberFilter
   | BooleanFilter
 >;
@@ -85,7 +87,7 @@ export type CheckedFacetContexts<Variables extends VariableCollection> =
     (string extends keyof Variables
       ? Extract<
           Variables[keyof Variables],
-          { optionsSource: 'query' }
+          { [facetSource]: unknown }
         > extends never
         ? Variables
         : never

@@ -84,7 +84,7 @@ app.defineOperation({
 
 type Source = {
   strings: DataOperation<{ search: string }, DimensionOption<string>[]>;
-  view: DataOperation<Record<string, never>, number>;
+  view: DataOperation<{ search: string }, number>;
 };
 const hooks = createDataHooks(createDataClient<Source>());
 const search = searchVariable({ key: 'search' });
@@ -106,7 +106,7 @@ const variables: VariableCollection = { region: facet };
 const feedback = {
   operation: 'view' as const,
   dataContext: createDataContext({})({ description: 'View', glossary: {} }),
-  input: () => ({}),
+  input: (values: { search?: string }) => ({ search: values.search ?? '' }),
   describeInput: () => 'All',
   isEmpty: () => false,
   emptyFallback: { title: 'Empty' },

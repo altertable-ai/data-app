@@ -1,8 +1,9 @@
 import {
   bindDimensionSource,
   type DimensionSourceConfig,
+  type DimensionSourceQueryName,
+  type SourceDimensionVariable,
 } from '@/src/core/dimension-source';
-import type { DimensionVariable } from '@/src/core/dimension';
 /**
  * App configuration shared by browser and server.
  * @module @altertable/data-app
@@ -47,9 +48,9 @@ export type DataAppDefinition<
   readonly queries: QuerySnapshot<Queries>;
   defineDimension<const Type extends 'string' | 'number'>(
     config: DimensionSourceConfig<Type> & {
-      source: { query: keyof Queries & string };
+      source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
     }
-  ): DimensionVariable<{ string: string; number: number }[Type]>;
+  ): SourceDimensionVariable<{ string: string; number: number }[Type]>;
   defineOperation<Input, Output>(
     operation: OperationDefinition<Input, Output, Queries>
   ): ReturnType<typeof defineOperation<Input, Output, Queries>>;
@@ -86,7 +87,7 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
     queries,
     defineDimension<const Type extends 'string' | 'number'>(
       config: DimensionSourceConfig<Type> & {
-        source: { query: keyof Queries & string };
+        source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
       }
     ) {
       return bindDimensionSource<Type>(config, queries);

@@ -34,10 +34,19 @@ const app = defineDataApp({
     countries: {
       statement:
         'SELECT value, label FROM countries WHERE ($member IS NULL OR value = $member)',
-      params: { member: {} },
+      params: { member: { type: 'string', nullable: true } },
+      projections: { value: { type: 'string' }, label: { type: 'string' } },
     },
-    sales: { statement: 'SELECT sales', params: {} },
-    orders: { statement: 'SELECT orders', params: {} },
+    sales: {
+      statement: 'SELECT sales',
+      params: {},
+      projections: { sales: { type: 'number' } },
+    },
+    orders: {
+      statement: 'SELECT orders',
+      params: {},
+      projections: { orders: { type: 'number' } },
+    },
   },
 });
 const region = dimensionFilter<string>({
@@ -237,17 +246,18 @@ const client = createDataClient({
     },
   },
 });
-const query = client.query.bind(client);
-client.query = (name, input, options) => {
-  if (
-    String(name).startsWith('__dimension:') &&
-    (input as { member?: unknown }).member != null &&
-    new URLSearchParams(location.search).has('fail-label') &&
-    document.body.dataset.retryLabels !== 'true'
-  )
-    return Promise.reject(new Error('Selected label unavailable'));
-  return query(name, input, options);
-};
+client.query = new Proxy(client.query, {
+  apply(query, receiver, [name, input, options]) {
+    if (
+      String(name).startsWith('__dimension:') &&
+      input?.member != null &&
+      new URLSearchParams(location.search).has('fail-label') &&
+      document.body.dataset.retryLabels !== 'true'
+    )
+      return Promise.reject(new Error('Selected label unavailable'));
+    return Reflect.apply(query, receiver, [name, input, options]);
+  },
+});
 const hooks = createDataHooks(client);
 const context = createDataContext({
   sales: 'sales',
@@ -287,11 +297,11 @@ class ConfigurationBoundary extends Component<
   { children: ReactNode },
   { error: string }
 > {
-  state = { error: '' };
+  override state = { error: '' };
   static getDerivedStateFromError(error: Error) {
     return { error: error.message };
   }
-  render() {
+  override render() {
     return this.state.error ? (
       <p role="alert">{this.state.error}</p>
     ) : (

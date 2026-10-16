@@ -40,6 +40,9 @@
   gap: 0;
   margin-bottom: 14px;
 }
+.altertable-pie-legend .altertable-chart-legend-overflow {
+  padding-block-start: var(--atbl-space-sm);
+}
 .altertable-pie-legend .altertable-tooltip-trigger button {
   display: flex;
   align-items: center;

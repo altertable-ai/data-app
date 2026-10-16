@@ -1,4 +1,8 @@
 import { facetSource, type FacetVariable } from '@/src/core/facets';
+import {
+  dimensionSource,
+  type SourceDimensionVariable,
+} from '@/src/core/dimension-source';
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from '@/src/react/ui/SearchTypeahead';
 import {
@@ -64,21 +68,33 @@ export function useViewVariables<Variables extends VariableCollection>(
       entry[1].optionsSource === 'query' &&
       facetSource in entry[1]
   );
-  const facetQueries = useQueries({
-    queries: facets.map(([name, filter]) => {
+  const sourceDimensions = Object.entries(definitions).filter(
+    (entry): entry is [string, SourceDimensionVariable<any>] =>
+      entry[1].kind === 'dimension' && dimensionSource in entry[1]
+  );
+  const optionSources = [
+    ...facets.map(([name, filter]) => {
       const facet = filter[facetSource];
-      const input = facet.input({ ...resolved, [name]: { kind: 'all' } });
-
       return {
-        queryKey: [
-          'dimension-facet',
-          clientScope,
-          name,
-          facet.operation,
-          input,
-        ],
+        name,
+        filter,
+        operation: facet.operation,
+        input: facet.input({ ...resolved, [name]: { kind: 'all' } }),
+      };
+    }),
+    ...sourceDimensions.map(([name, filter]) => ({
+      name,
+      filter,
+      operation: filter[dimensionSource].operation,
+      input: { member: null },
+    })),
+  ];
+  const optionQueries = useQueries({
+    queries: optionSources.map(({ name, filter, operation, input }) => {
+      return {
+        queryKey: ['dimension-facet', clientScope, name, operation, input],
         queryFn({ signal }: { signal: AbortSignal }) {
-          return loadFacet(facet.operation, input, signal).then(result =>
+          return loadFacet(operation, input, signal).then(result =>
             parseFacetOptions(result, filter)
           );
         },
@@ -88,11 +104,11 @@ export function useViewVariables<Variables extends VariableCollection>(
     }),
   });
   const facetState = new Map(
-    facets.map(([name], index) => [name, facetQueries[index]!])
+    optionSources.map(({ name }, index) => [name, optionQueries[index]!])
   );
-  const lookups = facets.flatMap(([name, filter]) => {
+  const lookups = sourceDimensions.flatMap(([name, filter]) => {
     const value = resolved[name] as DimensionSelection;
-    return filter.lookup && value.kind !== 'all'
+    return value.kind !== 'all'
       ? value.members.flatMap(member =>
           member.kind === 'value' ? [{ name, filter, value: member.value }] : []
         )
@@ -104,18 +120,23 @@ export function useViewVariables<Variables extends VariableCollection>(
         'dimension-member',
         clientScope,
         name,
-        filter.lookup!.operation,
+        filter[dimensionSource].operation,
         value,
       ],
       queryFn: ({ signal }: { signal: AbortSignal }) =>
-        loadFacet(filter.lookup!.operation, { member: value }, signal).then(
-          result => parseFacetOptions(result, filter)
-        ),
+        loadFacet(
+          filter[dimensionSource].operation,
+          { member: value },
+          signal
+        ).then(result => parseFacetOptions(result, filter)),
       staleTime: 60000,
       gcTime: 300000,
     })),
   });
-  function dimensionState(name: string, filter: DimensionVariable<any>) {
+  function dimensionState(
+    name: string,
+    filter: DimensionSelectionVariable<any>
+  ) {
     const facet = facetState.get(name);
     const selected = lookups.flatMap((item, index) =>
       item.name === name ? [lookupQueries[index]!] : []

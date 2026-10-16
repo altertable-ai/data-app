@@ -1130,7 +1130,8 @@ test('mapped scope choices keep actions available only for the displayed selecti
       page.getByRole('menuitem', { name: 'Drill down', exact: true }).count()
     )
     .toBe(1);
-  await page.keyboard.press('Escape');
+  await page.getByRole('menu').press('Escape');
+  await expect.poll(() => page.getByRole('menu').count()).toBe(0);
   await page.getByRole('button', { name: /Window/ }).click();
   await page.getByRole('option', { name: 'Previous', exact: true }).click();
   await mark.click({ button: 'right' });

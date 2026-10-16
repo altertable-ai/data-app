@@ -1,8 +1,8 @@
 import {
-  dimensionFilter,
+  createDimensionFilter,
   parseFacetOptions,
   type DimensionSettings,
-  type DimensionVariable,
+  type DimensionSelectionVariable,
   type DimensionValue,
   type DimensionSelection,
 } from '@/src/core/dimension';
@@ -12,6 +12,7 @@ import type {
 } from '@/src/core/variables';
 import { invariant } from '@/src/core/invariant';
 import {
+  decodeQueryResult,
   resolveQueryParameters,
   type QueryDefinitions,
   type QueryParameters,
@@ -23,6 +24,12 @@ import type {
 } from '@/src/core/operation-types';
 
 type Source = { query: string; queries: QueryDefinitions };
+export const dimensionSource = Symbol('data-app.dimensionSource');
+export type SourceDimensionVariable<Value extends DimensionValue> =
+  DimensionSelectionVariable<Value> & {
+    readonly optionsSource: 'query';
+    readonly [dimensionSource]: { readonly operation: string };
+  };
 const sources = new WeakMap<object, Source>();
 const parserVariables = new WeakMap<Function, VariableCollection>();
 const selectorsKey = Symbol.for('@altertable/data-app/dimension-selectors');
@@ -36,7 +43,7 @@ type WithSelectors = DataOperation<any, any> & {
 };
 export class DimensionMembershipError extends Error {
   readonly [invalidMemberKey] = true;
-  static [Symbol.hasInstance](value: unknown): boolean {
+  static override [Symbol.hasInstance](value: unknown): boolean {
     return (
       value instanceof Error &&
       (value as { [invalidMemberKey]?: unknown })[invalidMemberKey] === true
@@ -97,11 +104,32 @@ export type DimensionSourceConfig<Type extends 'string' | 'number'> =
     valueType: Type;
     source: { query: string };
   };
+export type DimensionSourceQueryName<
+  Queries extends QueryDefinitions,
+  Type extends 'string' | 'number',
+> = {
+  [Name in keyof Queries & string]: Queries[Name] extends {
+    params: { member: { type: Type; nullable: true } };
+    projections: {
+      value: { type: Type; nullable?: false };
+      label: { type: 'string'; nullable?: false };
+    };
+  }
+    ? 'count' extends keyof Queries[Name]['projections']
+      ? Queries[Name]['projections']['count'] extends {
+          type: 'number';
+          nullable?: false;
+        }
+        ? Name
+        : never
+      : Name
+    : never;
+}[keyof Queries & string];
 /** A query supplies independent options and exact member lookup; it declares a nullable `member` parameter. */
 export function bindDimensionSource<const Type extends 'string' | 'number'>(
   config: DimensionSourceConfig<Type>,
   queries: QueryDefinitions
-): DimensionVariable<{ string: string; number: number }[Type]> {
+): SourceDimensionVariable<{ string: string; number: number }[Type]> {
   invariant(
     !config.allowMissing,
     'Source dimensions require concrete members.'
@@ -111,12 +139,38 @@ export function bindDimensionSource<const Type extends 'string' | 'number'>(
     query && Object.hasOwn(query.params, 'member'),
     'Dimension sources must declare member.'
   );
+  const member = query.params.member!;
+  const { value, label, count } = query.projections;
+  invariant(
+    member.type === config.valueType &&
+      member.nullable === true &&
+      value?.type === config.valueType &&
+      value.nullable !== true &&
+      label?.type === 'string' &&
+      label.nullable !== true &&
+      (!count || (count.type === 'number' && count.nullable !== true)),
+    'Dimension sources require a matching nullable member and concrete value, label, and count projections.'
+  );
   const operation = `__dimension:${config.key}`;
-  const variable = dimensionFilter<any>({
-    ...config,
-    facet: { operation, input: () => ({ member: null }) },
-  });
-  variable.lookup = { operation };
+  const variable = Object.assign(
+    createDimensionFilter<{ string: string; number: number }[Type]>(
+      {
+        ...config,
+        valueType: config.valueType as unknown as {
+          string: string;
+          number: number;
+        }[Type] extends number
+          ? 'number'
+          : 'string',
+        options: [],
+      },
+      true
+    ),
+    {
+      optionsSource: 'query' as const,
+      [dimensionSource]: Object.freeze({ operation }),
+    }
+  );
   sources.set(variable, { query: config.source.query, queries });
   return variable;
 }
@@ -125,9 +179,9 @@ type Query = (
   name: string,
   params: QueryParameters,
   options: { limit: number }
-) => Promise<QueryResult>;
+) => Promise<QueryResult<Record<string, unknown>>>;
 async function loadOptions(
-  variable: DimensionVariable<any>,
+  variable: DimensionSelectionVariable<any>,
   member: DimensionValue | null,
   query: Query
 ) {
@@ -144,19 +198,7 @@ async function loadOptions(
       names.includes('label'),
     'Dimension source must return value and label.'
   );
-  const options = parseFacetOptions(
-    result.rows.map(row => {
-      invariant(row.length === names.length, 'Invalid dimension source row.');
-      return {
-        value: row[names.indexOf('value')],
-        label: row[names.indexOf('label')],
-        ...(names.includes('count')
-          ? { count: row[names.indexOf('count')] }
-          : {}),
-      };
-    }),
-    variable
-  );
+  const options = parseFacetOptions(result.rows, variable);
   if (member !== null && (options.length !== 1 || options[0]!.value !== member))
     throw new DimensionMembershipError(`Invalid ${variable.label} member.`);
   return options;
@@ -185,7 +227,8 @@ export function attachDimensionSelectors(
   for (const variable of Object.values(
     parserVariables.get(operation.input) ?? {}
   )) {
-    if (variable.kind !== 'dimension') continue;
+    if (variable.kind !== 'dimension' || !(dimensionSource in variable))
+      continue;
     const source = sources.get(variable);
     if (!source) continue;
     invariant(
@@ -193,7 +236,7 @@ export function attachDimensionSelectors(
         JSON.stringify(queries[source.query]),
       'Dimension sources must belong to the operation query registry.'
     );
-    const name = variable.lookup!.operation;
+    const name = variable[dimensionSource].operation;
     invariant(
       !selectors[name] ||
         (selectors[name] as WithSelectors)[ownerKey] === variable,
@@ -224,19 +267,27 @@ export function attachDimensionSelectors(
       },
       queryNames: { [source.query]: source.query },
       async run(context, input: { member: DimensionValue | null }) {
-        return loadOptions(variable, input.member, (name, params, options) => {
-          const definition = queries[name]!;
-          return context.lakehouse.queryAll(definition.statement, {
-            name,
-            params: resolveQueryParameters(
-              definition.params,
-              params,
-              context.queryParams ?? {}
-            ),
-            limit: options.limit,
-            signal: context.signal,
-          });
-        });
+        return loadOptions(
+          variable,
+          input.member,
+          async (name, params, options) => {
+            const definition = queries[name]!;
+            const result = await context.lakehouse.queryAll(
+              definition.statement,
+              {
+                name,
+                params: resolveQueryParameters(
+                  definition.params,
+                  params,
+                  context.queryParams ?? {}
+                ),
+                limit: options.limit,
+                signal: context.signal,
+              }
+            );
+            return decodeQueryResult(result, definition.projections);
+          }
+        );
       },
     } as DataOperation<any, any>;
     Object.defineProperty(selectors[name]!, ownerKey, { value: variable });

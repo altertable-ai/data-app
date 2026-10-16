@@ -13,8 +13,9 @@ Bindings are required when the operation input cannot supply a compatible
 top-level filter field or the calendar request. Keep parsed selections in the
 operation input and derive SQL parameters inside the operation.
 
-`dimensionFilter()` from `/contract` requires exactly one option source: fixed `options` or a `facet`.
-Use `defineFacetFilter()` to bind a facet operation and its typed input. `<DimensionPicker>` offers missing values separately and keeps selected values
+`dimensionFilter()` from `/contract` uses fixed `options`. Use `defineFacetFilter()`
+for options derived from declared variable context, or `app.defineDimension()`
+for independent source options and exact member lookup. `<DimensionPicker>` offers missing values separately and keeps selected values
 available when options refresh or fail; unknown counts remain undisclosed.
 
 ## Declare controls once
@@ -296,8 +297,9 @@ choice in its header. `presentation.control: 'widget'` omits it from the toolbar
 Scope filters still appear in the Filters sheet, active summaries, and Clear filters.
 Declare each chart's choice separately when readers should control them independently.
 
-Each source query declares nullable `member` and returns `value`, `label`, and optional
-`count`. `member = null` requests at most 200 options; a selected value requests
+Each source query declares a nullable `member` parameter matching `valueType` and
+nonnullable projections for `value` (the same type), `label` (string), and optional
+`count` (number). `member = null` requests at most 200 options; a selected value requests
 an exact lookup. Other query parameters need defaults or trusted server values.
 Keep SQL and parameter declarations literal in `defineDataApp()`.
 

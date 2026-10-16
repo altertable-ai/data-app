@@ -11,7 +11,6 @@ import {
 import { MenuButton, MenuTrigger } from '@/src/react/ui/Menu';
 import {
   Fragment,
-  useLayoutEffect,
   useRef,
   useState,
   type ComponentRef,

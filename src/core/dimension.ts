@@ -30,8 +30,6 @@ export type DimensionSelectionVariable<
   allowExclusion: boolean;
   maxSelected: number;
   options: readonly DimensionOption<T>[];
-  /** Exact selected-value lookup, independent of the option page. */
-  lookup?: { operation: string };
   describe: (
     selection: DimensionSelection<T>,
     options?: readonly DimensionOption<T>[]

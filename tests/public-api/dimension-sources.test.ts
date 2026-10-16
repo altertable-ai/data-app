@@ -13,14 +13,27 @@ function sourceApp(mode: 'single' | 'multiple' = 'single') {
       regions: {
         statement:
           'SELECT region AS value, region AS label FROM regions WHERE ($member IS NULL OR region = $member)',
-        params: { member: {} },
+        params: { member: { type: 'string', nullable: true } },
+        projections: { value: { type: 'string' }, label: { type: 'string' } },
       },
       customers: {
         statement:
           'SELECT id AS value, name AS label FROM customers WHERE tenant = $tenant AND ($member IS NULL OR id = $member)',
-        params: { member: {}, tenant: { defaultValue: 'public' } },
+        params: {
+          member: { type: 'number', nullable: true },
+          tenant: { type: 'string', defaultValue: 'public' },
+        },
+        projections: {
+          value: { type: 'number' },
+          label: { type: 'string' },
+          count: { type: 'number' },
+        },
       },
-      business: { statement: 'SELECT sales FROM sales', params: {} },
+      business: {
+        statement: 'SELECT sales FROM sales',
+        params: {},
+        projections: { sales: { type: 'number' } },
+      },
     },
   });
   const region = app.defineDimension({
@@ -143,9 +156,24 @@ test('source declarations require an exact lookup parameter', () => {
       label: 'Bad',
       valueType: 'string',
       selectionMode: 'single',
+      // @ts-expect-error Exercise invalid JavaScript source declarations.
       source: { query: 'business' },
     })
   ).toThrow('declare member');
+});
+
+test('source declarations reject a query with the wrong member and option type', () => {
+  const { app } = sourceApp();
+  expect(() =>
+    app.defineDimension({
+      key: 'bad',
+      label: 'Bad',
+      valueType: 'string',
+      selectionMode: 'single',
+      // @ts-expect-error JavaScript consumers must receive the same contract validation.
+      source: { query: 'customers' },
+    })
+  ).toThrow('matching nullable member');
 });
 
 test('invalid independent membership is rejected before the business query', async () => {
