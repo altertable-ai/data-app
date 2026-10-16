@@ -76,6 +76,7 @@
 }
 
 .altertable-chart-legend-overflow {
+  padding-block-start: var(--atbl-space-sm);
   grid-column: -2 / -1;
   min-width: 0;
   color: var(--atbl-muted);

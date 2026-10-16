@@ -169,6 +169,7 @@
   background: var(--atbl-subtle);
 }
 .altertable-active-filter-remove {
+  margin-inline-end: var(--atbl-space-xs);
   --atbl-control-hover-surface: color-mix(
     in srgb,
     var(--atbl-text) 14%,

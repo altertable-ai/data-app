@@ -98,3 +98,18 @@
   padding: 0;
   color: inherit;
 }
+
+.altertable-chart-item-label-row button.altertable-selectable-bars-label {
+  padding: var(--atbl-space-xs) 6px;
+  border: 1px solid transparent;
+  border-radius: var(--atbl-radius-control);
+}
+
+.altertable-chart-item-label-row
+  button.altertable-selectable-bars-label:is(
+    :hover,
+    [data-hovered],
+    [aria-expanded='true']
+  ) {
+  border-color: var(--atbl-border);
+}

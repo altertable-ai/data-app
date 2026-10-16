@@ -132,7 +132,7 @@ export function ViewControlBar({
                   <Tooltip content={`Remove ${filter.label} filter`}>
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="icon-compact"
                       className="altertable-active-filter-remove"
                       aria-label={`Remove ${filter.label} filter`}
                       onClick={() => removeFilter(filter)}
