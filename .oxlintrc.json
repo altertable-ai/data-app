@@ -66,13 +66,6 @@
     },
     {
       "files": ["src/react/**"],
-      "excludeFiles": [
-        "src/react/actions.ts",
-        "src/react/bindings.ts",
-        "src/react/details.tsx",
-        "src/react/exploration.ts",
-        "src/react/source-owner.ts"
-      ],
       "rules": {
         "data-app/no-runtime-assertion": "error"
       }

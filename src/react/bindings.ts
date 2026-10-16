@@ -88,8 +88,8 @@ export type DatasetDeclaration<Data, Input, Row> = DatasetDefinition<
 /** Real view ownership and registered references, shared by metrics and datasets. */
 export class RegisteredBinding {
   #owner?: object;
-  #evidence?: WidgetEvidence;
-  constructor(owner?: object, evidence?: WidgetEvidence) {
+  #evidence: WidgetEvidence;
+  constructor(owner: object | undefined, evidence: WidgetEvidence) {
     this.#owner = owner;
     this.#evidence = evidence;
   }
@@ -98,16 +98,14 @@ export class RegisteredBinding {
     return binding.#owner;
   }
   protected assertSource(source: object) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
     if (this.#owner) assertSourceOwner(this.#owner, source);
   }
   static evidence(binding: RegisteredBinding, owner: object): WidgetEvidence {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
     invariant(
       binding.#owner === owner,
       'Story evidence must belong to the story view.'
-    );
-    invariant(
-      binding.#evidence,
-      'Story evidence must have registered references.'
     );
     return binding.#evidence;
   }
@@ -130,8 +128,8 @@ export class ExportDataset<Data, Input> extends RegisteredBinding {
   constructor(
     readonly name: string,
     csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable,
-    owner?: object,
-    evidence?: WidgetEvidence
+    owner: object | undefined,
+    evidence: WidgetEvidence
   ) {
     super(owner, evidence);
     this.#csv = csv;
@@ -389,6 +387,7 @@ export class MetricRecords<Data, Input, DetailData, DetailInput> {
     source: ViewSource<Data, Input>,
     navigation?: DetailNavigation
   ) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
     invariant(
       records.#metric === metric,
       'Metric records must belong to the metric rendered by this widget.'

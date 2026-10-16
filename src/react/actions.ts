@@ -99,6 +99,7 @@ export function resolveActions<Row, Input>(
 ): ItemActions<Row> {
   if (!set) return () => [];
   const declaration = actionSets.get(set);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
   invariant(
     declaration?.binding === binding,
     'Actions must belong to the widget metric or dataset.'

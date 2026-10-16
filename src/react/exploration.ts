@@ -50,9 +50,8 @@ export function createBreakdownTarget<Value extends string>(
   return target;
 }
 export function breakdownDefinition(target: BreakdownTarget<any>) {
-  const definition = targets.get(target);
-  invariant(definition, 'Invalid breakdown target.');
-  return definition;
+  // Breakdown targets are only created, and registered, by createBreakdownTarget.
+  return targets.get(target)!;
 }
 function readInput(definition: TargetDefinition, key: string, input: unknown) {
   return (
@@ -97,6 +96,7 @@ export function targetAvailable(
   owner: object
 ): boolean {
   const definition = targets.get(target);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
   invariant(
     definition && definition.owner === owner,
     'Exploration targets must belong to the dataset view.'
@@ -134,6 +134,7 @@ export function applyFilter(
   }
   if (breakdown) {
     const choice = breakdownDefinition(breakdown.target);
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
     invariant(
       choice.owner === definition.owner,
       'Breakdown must belong to the filter view.'
@@ -154,6 +155,7 @@ export function breakdownState(
   input?: unknown
 ) {
   const definition = breakdownDefinition(target);
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
   invariant(
     definition.owner === owner,
     'Breakdown targets must belong to the dataset view.'

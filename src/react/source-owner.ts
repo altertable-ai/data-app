@@ -13,6 +13,7 @@ export function ownedSource<Source extends object>(
 }
 
 export function assertSourceOwner(owner: object, source: object): void {
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
   invariant(
     owners.get(source) === owner,
     'A binding requires the displayed source from its own view.'

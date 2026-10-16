@@ -54,6 +54,7 @@ export class DetailView<Data, Input> {
   }
 
   static content<Data, Input>(target: DetailView<Data, Input>) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Destinations are registered at runtime.
     invariant(
       target.#content,
       'A detail destination needs content before it can be opened.'
@@ -311,6 +312,7 @@ export function DetailRoutes({
     () => ({
       open(target, input, trigger) {
         const content = targets.get(target as DetailView<unknown, unknown>);
+        // oxlint-disable-next-line data-app/no-runtime-assertion -- Destinations are registered at runtime.
         invariant(
           content,
           'This detail destination is not registered on DataApp.'
