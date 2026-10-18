@@ -9,6 +9,11 @@ both derived from the displayed result. Setup and static screens may omit them.
 Follow [app authoring](docs/app-authoring.md) for the shared workflow, the data app
 and local data app paths, and task-specific documentation.
 
+Look up exports in the generated [API reference](REFERENCE.md), which ships in
+the package. It has one line per export and per prop, with types, `?` for
+optional, and a JSDoc summary. `rg '^LineChart\b' REFERENCE.md` returns a
+component and its props.
+
 ## Styling
 
 Use components and typed props first; customize through app-owned `className`
@@ -43,6 +48,7 @@ Read the matching guide before generating an app. Package contributors follow
 | Define sources and evidence            | [Data context](docs/data-context.md)                           |
 | Present findings and export results    | [Stories and export](docs/stories-and-export.md)               |
 | Format values and appearance           | [Formatting and appearance](docs/formatting-and-appearance.md) |
+| Look up props, signatures, and types   | [API reference](REFERENCE.md)                                  |
 
 Use `/react` with declared views and bound widgets. `/react/ui` is for setup,
 static displays, and deliberately custom UI; see [direct composition](docs/ui.md).

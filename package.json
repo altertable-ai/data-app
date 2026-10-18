@@ -30,6 +30,7 @@
     "docs",
     "examples/starter-data-app",
     "examples/starter-local-data-app",
+    "REFERENCE.md",
     "README.md",
     "CONTRIBUTING.md",
     "AGENTS.md",
@@ -99,7 +100,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts",
+    "build": "bun run scripts/build.ts && tsc -p tsconfig.build.json && bun run scripts/build-declarations.ts && bun run scripts/build-reference.ts",
     "dev": "bun run scripts/dev.ts",
     "dev:file": "bun run scripts/dev-file.ts",
     "dev:dir": "bun run scripts/dev-dir.ts",
@@ -108,8 +109,9 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "vitest run",
-    "check": "bun run build && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:package && bun run check:starter",
+    "check": "bun run build && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:reference && bun run check:package && bun run check:starter",
     "check:package": "bun run scripts/check-package.ts",
+    "check:reference": "bun run scripts/build-reference.ts --check",
     "check:workflows": "bash scripts/check-workflows.sh",
     "lint:fix": "oxlint --type-aware --fix src tests scripts dev vitest.config.ts",
     "check:starter": "bun run scripts/check-starter.ts",

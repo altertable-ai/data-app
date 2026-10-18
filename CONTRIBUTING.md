@@ -63,20 +63,28 @@ and [hosted authoring](docs/hosted-apps.md).
 `bun run check` builds first and runs all required source, Markdown, local link, package, and starter
 checks. Build before running consumer tests individually.
 
-| Command                        | Purpose                                             |
-| ------------------------------ | --------------------------------------------------- |
-| `bun run build`                | Build JavaScript, declarations, and injected styles |
-| `bun run check:styles`         | Validate authored styling hooks                     |
-| `bun run typecheck`            | Check source, tests, and scripts                    |
-| `bun run lint`                 | Run type-aware lint checks                          |
-| `bun run lint:md`              | Check Markdown structure and syntax                 |
-| `bun run check:links`          | Validate local files, images, and heading links     |
-| `bun run check:links:external` | Check external URLs (requires network access)       |
-| `bun run format`               | Format source and docs                              |
-| `bun run test`                 | Verify high-level public API workflows with Vitest  |
-| `bun run check:package`        | Verify the npm archive as a consumer                |
-| `bun run check:starter`        | Typecheck, lint, and build the starter              |
-| `bun run check:workflows`      | Validate workflows and shell scripts                |
+| Command                        | Purpose                                            |
+| ------------------------------ | -------------------------------------------------- |
+| `bun run build`                | Build JavaScript, declarations, styles, reference  |
+| `bun run check:reference`      | Verify the staged `REFERENCE.md` is current        |
+| `bun run check:styles`         | Validate authored styling hooks                    |
+| `bun run typecheck`            | Check source, tests, and scripts                   |
+| `bun run lint`                 | Run type-aware lint checks                         |
+| `bun run lint:md`              | Check Markdown structure and syntax                |
+| `bun run check:links`          | Validate local files, images, and heading links    |
+| `bun run check:links:external` | Check external URLs (requires network access)      |
+| `bun run format`               | Format source and docs                             |
+| `bun run test`                 | Verify high-level public API workflows with Vitest |
+| `bun run check:package`        | Verify the npm archive as a consumer               |
+| `bun run check:starter`        | Typecheck, lint, and build the starter             |
+| `bun run check:workflows`      | Validate workflows and shell scripts               |
+
+`scripts/build-reference.ts` generates `REFERENCE.md` from the emitted
+declarations with the TypeScript checker, covering every typed `exports` entry
+point. Commit it when a build changes it. Generation fails when an export or prop
+type does not resolve, and `bun run check:reference` fails when the staged file
+differs from the generated one. Improve entries through JSDoc and types, not by
+editing the file.
 
 Markdown checks cover all authored `.md` files, including `AGENTS.md` and the
 starter docs. Oxfmt owns formatting. Release Please owns `CHANGELOG.md`, so

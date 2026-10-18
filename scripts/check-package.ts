@@ -47,6 +47,7 @@ try {
   const paths = new Set(archive.files.map(file => file.path));
   const required = [
     'AGENTS.md',
+    'REFERENCE.md',
     'dist/server.js',
     'dist/types/client/index.d.ts',
     'dist/types/server/index.d.ts',
