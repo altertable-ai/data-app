@@ -10,7 +10,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
+  font-size: var(--atbl-type-label-size);
   font-weight: var(--atbl-type-meta-weight);
 }
 .altertable-picker-value {
@@ -23,7 +23,7 @@
   font-size: var(--atbl-type-label-size);
   font-weight: var(--atbl-type-label-weight);
 }
-.altertable-picker-trigger > svg {
+.altertable-picker-trigger > svg:last-child {
   flex: none;
   margin-left: auto;
   color: var(--atbl-muted);
@@ -74,15 +74,16 @@
 .altertable-choice-picker-popover .react-aria-ListBox {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 8px;
+  gap: var(--atbl-dropdown-item-gap);
+  padding: var(--atbl-dropdown-padding);
   outline: none;
 }
 .altertable-choice-picker-popover .react-aria-ListBoxItem {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: var(--atbl-dropdown-item-padding-block)
+    var(--atbl-dropdown-item-padding-inline);
   border-radius: var(--atbl-radius-control);
   outline: none;
 }

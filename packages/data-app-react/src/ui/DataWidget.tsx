@@ -1,19 +1,22 @@
+import type { InspectionRecords } from './AboutData.tsx';
 import { getAnnotationProps } from '../annotations/getAnnotationProps.ts';
 import {
   useId,
+  useContext,
   type ComponentPropsWithRef,
   type ElementType,
   type ReactNode,
 } from 'react';
 import { formatCount } from '@altertable/data-app/format';
 import { AboutData } from './AboutData.tsx';
+import { InspectionVisual } from './InspectionProvider.tsx';
 import { AppIcon } from './icons.ts';
 import { WidgetStatusControl, type WidgetStatus } from './RequestHint.tsx';
 import { classNames } from './classNames.ts';
 import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { EmptyState } from './EmptyState.tsx';
-import { type EmptyContent, type BoundWidgetReading } from './presentation.ts';
-import { type WidgetEvidence } from './WidgetEvidence.ts';
+import type { EmptyContent, BoundWidgetReading } from './presentation.ts';
+import type { WidgetEvidence } from './WidgetEvidence.ts';
 
 type DataWidgetBaseProps = {
   title: ReactNode;
@@ -25,6 +28,8 @@ type DataWidgetBaseProps = {
   count?: number;
   description?: ReactNode;
   evidence?: WidgetEvidence;
+  /** Lazy detail records rendered as the first inspection tab. */
+  records?: InspectionRecords;
   action?: ReactNode;
   /** Reserved feedback slot; retain displayed content while refreshing or after failure. */
   status?: WidgetStatus;
@@ -81,6 +86,7 @@ function DataWidgetContent({
   count,
   description,
   evidence,
+  records,
   action,
   status,
   footer,
@@ -94,6 +100,7 @@ function DataWidgetContent({
   children: ReactNode;
 }) {
   const titleId = useId();
+  const inspectionVisual = useContext(InspectionVisual);
   const Heading = `h${headingLevel}` as ElementType;
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
   const visual = (
@@ -125,6 +132,7 @@ function DataWidgetContent({
         title={title}
         headerActions={<WidgetStatusControl status={status} />}
         description={description}
+        records={records}
         visual={visual}
         visualKind="widget"
       >
@@ -134,7 +142,7 @@ function DataWidgetContent({
             {formatCount(count)}
           </span>
         )}
-        <AppIcon name="openDetails" size="1em" />
+        {!inspectionVisual && <AppIcon name="openDetails" size="1em" />}
       </AboutData>
     ) : undefined;
 
@@ -154,7 +162,7 @@ function DataWidgetContent({
       aria-labelledby={props['aria-labelledby'] ?? titleId}
     >
       <header className="altertable-data-widget-header">
-        <div>
+        <div className="altertable-data-widget-heading-row">
           <Heading
             id={titleId}
             className="altertable-widget-heading"
@@ -167,12 +175,15 @@ function DataWidgetContent({
               </span>
             )}
           </Heading>
-          {description && <p>{description}</p>}
+          <div
+            className="altertable-data-widget-help"
+            data-has-action={!!action || undefined}
+          >
+            <WidgetStatusControl status={status} />
+            {action}
+          </div>
         </div>
-        <div className="altertable-data-widget-help">
-          <WidgetStatusControl status={status} />
-          {action}
-        </div>
+        {description && <p>{description}</p>}
       </header>
       {visual}
     </section>

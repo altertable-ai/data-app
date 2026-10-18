@@ -32,7 +32,7 @@ export type SheetProps = {
   placement?: 'side' | 'center';
   /** Edge for side placement. Defaults to right; small screens use a bottom sheet. */
   side?: 'left' | 'right';
-  returnFocus?: RefObject<HTMLElement | null>;
+  returnFocus?: RefObject<HTMLElement | SVGElement | null>;
 } & SheetDialogProps;
 
 /**

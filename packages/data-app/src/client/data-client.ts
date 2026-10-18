@@ -1,4 +1,5 @@
 import type { IsUnion, KnownRecord } from '../core/queries.ts';
+import { withDimensionSelectors } from '../core/dimension-source.ts';
 import { randomUuid } from '../core/uuid.ts';
 import { createHttpTransport, DataAppError } from './transport.ts';
 import { getDataAppTransport, localFrameBridge } from './iframe.ts';
@@ -91,7 +92,7 @@ export function createDataClient<Operations extends DataOperations>(
 ): DataClient<Operations> {
   if (options.operations)
     return createOperationClient({
-      operations: options.operations,
+      operations: withDimensionSelectors(options.operations),
       lakehouse: options.lakehouse,
     });
   const http = createHttpTransport(options);

@@ -27,7 +27,7 @@ const context = createDataContext({ rows: 'rows' })({
 });
 const hooks = createDataHooks(
   createDataClient<{
-    rows: DataOperation<Record<string, never>, number>;
+    rows: DataOperation<{ search: string }, number>;
   }>({
     async transport() {
       return {
@@ -48,7 +48,6 @@ function declareView() {
     dataContext: context,
     operation: 'rows',
     variables: { search: searchVariable({ key: 'q', label: 'Search rows' }) },
-    input: () => ({}),
     describeInput: () => 'all rows',
     isEmpty: () => false,
     emptyFallback: { title: 'No rows' },

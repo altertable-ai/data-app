@@ -192,7 +192,12 @@ export function useAppVariables<const Variables extends VariableCollection>(
     update(
       Object.fromEntries(
         Object.entries(definitions)
-          .filter(([, variable]) => variable.clearValue !== undefined)
+          .filter(
+            ([, variable]) =>
+              variable.clearValue !== undefined &&
+              variable.kind !== 'search' &&
+              variable.presentation?.group !== 'display'
+          )
           .map(([name, variable]) => [name, variable.clearValue])
       ) as Partial<AppVariableValues<Variables>>,
       'push'

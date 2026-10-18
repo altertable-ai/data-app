@@ -1,6 +1,7 @@
 import { expect } from 'vitest';
 import type { Page, Locator } from 'playwright';
 import { test } from '@/tests/public-api/browser';
+import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
 
 async function choose(
   page: Page,
@@ -936,10 +937,13 @@ test('Filters button opens the complete sheet and Escape restores focus', async 
   ).toBe(true);
 });
 
-test('filter actions stay balanced with long selections and Show results preserves filters', async ({
+test('filter actions stay balanced with long selections and Done preserves filters', async ({
   page,
 }) => {
   await page.goto('/filter-presentation?spend=all');
+  await page.addStyleTag({
+    content: ':root { --atbl-type-label-size: 17px; }',
+  });
   const controls = page.getByRole('group', {
     name: 'View controls',
     exact: true,
@@ -965,12 +969,10 @@ test('filter actions stay balanced with long selections and Show results preserv
     const inputBox = await filtersButton.boundingBox();
     const displayBox = await display.boundingBox();
     expect(Math.abs(inputBox!.y - displayBox!.y)).toBeLessThan(1);
-    if (width === 736) {
-      const clearBox = await controls
-        .getByRole('button', { name: 'Clear', exact: true })
-        .boundingBox();
-      expect(Math.abs(inputBox!.y - clearBox!.y)).toBeLessThan(1);
-    }
+    const clearBox = await controls
+      .getByRole('button', { name: 'Clear', exact: true })
+      .boundingBox();
+    expect(Math.abs(inputBox!.y - clearBox!.y)).toBeLessThan(1);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth
@@ -980,14 +982,12 @@ test('filter actions stay balanced with long selections and Show results preserv
   await controls.getByRole('button', { name: /^Filters(?: \(|$)/ }).click();
   const sheet = page.getByRole('dialog', { name: /^Filters(?: \(|$)/ });
   const clear = sheet.getByRole('button', { name: 'Clear', exact: true });
-  const show = sheet.getByRole('button', { name: 'Show results', exact: true });
+  const show = sheet.getByRole('button', { name: 'Done', exact: true });
   const actionLayout = await sheet.getByRole('button').evaluateAll(buttons => {
     const clear = buttons.find(
       button => button.textContent?.trim() === 'Clear'
     )!;
-    const show = buttons.find(
-      button => button.textContent?.trim() === 'Show results'
-    )!;
+    const show = buttons.find(button => button.textContent?.trim() === 'Done')!;
     const clearBox = clear.getBoundingClientRect();
     const showBox = show.getBoundingClientRect();
     return {
@@ -1032,9 +1032,7 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
     .click();
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   await choose(page, sheet, 'Active account', 'No');
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   await expect.poll(() => sheet.count()).toBe(0);
   expect(
     await controls
@@ -1042,11 +1040,14 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
       .count()
   ).toBe(1);
   expect(
-    await page.getByRole('group', { name: 'Active filters' }).count()
+    await page.getByRole('group', { name: 'Active toolbar filters' }).count()
   ).toBe(1);
   expect(
     await page
-      .getByRole('button', { name: 'No Active account', exact: true })
+      .getByRole('button', {
+        name: 'No Active account',
+        exact: true,
+      })
       .count()
   ).toBe(1);
   await controls
@@ -1061,14 +1062,12 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
     .toBe(true);
   expect(
     await sheet
-      .getByRole('button', { name: 'Show results', exact: true })
+      .getByRole('button', { name: 'Done', exact: true })
       .locator('kbd')
       .count()
   ).toBe(0);
   await choose(page, sheet, 'Active account', 'Any');
-  await sheet
-    .getByRole('button', { name: 'Show results', exact: true })
-    .click();
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   expect(
     await controls
       .getByRole('button', { name: 'Filters (1 active)', exact: true })
@@ -1151,41 +1150,31 @@ test('left filter sheet clears predicates while preserving search and display se
   ).toBe(0);
 });
 
-test('compact secondary filters edit directly and clear only their restriction', async ({
+test('floating summaries open the Filters sheet and preserve unrelated variables when cleared', async ({
   page,
 }) => {
   await page.goto(
     '/filter-presentation?spend=all&q=Foundry&active=false&sort=name&direction=asc'
   );
+  await scrollPastToolbar(page);
   const summaries = page.getByRole('group', {
     name: 'Active filters',
     exact: true,
   });
-  const edit = summaries.getByRole('button', {
-    name: 'No Active account',
-    exact: true,
-  });
-  await expect.poll(() => edit.isVisible()).toBe(true);
-  const triggerBox = await edit.boundingBox();
-  const labelBox = await edit
-    .getByText('Active account', { exact: true })
-    .boundingBox();
-  expect(triggerBox).not.toBeNull();
-  expect(labelBox).not.toBeNull();
-  expect(labelBox!.x).toBeGreaterThan(triggerBox!.x + 4);
-  expect(labelBox!.x + labelBox!.width).toBeLessThan(
-    triggerBox!.x + triggerBox!.width
-  );
-  await edit.click();
-  expect(
-    await page.getByRole('dialog', { name: 'Filters', exact: true }).count()
-  ).toBe(0);
-  await page.getByRole('option', { name: 'Yes', exact: true }).click();
+  await summaries
+    .getByRole('button', {
+      name: 'Open filters: Active account: No',
+      exact: true,
+    })
+    .click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await choose(page, sheet, 'Active account', 'Yes');
   await expect
     .poll(() => new URL(page.url()).searchParams.get('active'))
     .toBe('true');
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   await summaries
-    .getByRole('button', { name: 'Clear Active account', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect.poll(() => summaries.count()).toBe(0);
   const params = new URL(page.url()).searchParams;
@@ -1200,27 +1189,9 @@ test('compact secondary filters edit directly and clear only their restriction',
         .evaluate(element => element === document.activeElement)
     )
     .toBe(true);
-  await page.goto('/filter-presentation?spend=all&active=false');
-  await page
-    .getByRole('group', { name: 'Active filters', exact: true })
-    .getByRole('button', { name: 'No Active account', exact: true })
-    .click();
-  await page.getByRole('option', { name: 'Any', exact: true }).click();
-  await expect
-    .poll(() =>
-      page.getByRole('group', { name: 'Active filters', exact: true }).count()
-    )
-    .toBe(0);
-  await expect
-    .poll(() =>
-      page
-        .getByRole('button', { name: 'Filters', exact: true })
-        .evaluate(element => element === document.activeElement)
-    )
-    .toBe(true);
 });
 
-test('compact secondary pickers retain full labels and edit multiple selections', async ({
+test('floating summaries scroll within their bar and reopen the same sheet for multiple selections', async ({
   page,
 }) => {
   const params = new URLSearchParams({
@@ -1235,32 +1206,39 @@ test('compact secondary pickers retain full labels and edit multiple selections'
     }),
   });
   await page.goto(`/filter-presentation?${params}`);
+  await scrollPastToolbar(page);
   const summaries = page.getByRole('group', {
     name: 'Active filters',
     exact: true,
   });
-  const edit = summaries.getByRole('button', {
-    name: 'Account owner: Amira, Jonas, Lea',
-    exact: true,
-  });
-  await expect.poll(() => edit.isVisible()).toBe(true);
-  await edit.click();
+  await summaries
+    .getByRole('button', {
+      name: 'Open filters: Account owner: Amira, Jonas, Lea',
+      exact: true,
+    })
+    .click();
+  const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
+  await sheet
+    .getByRole('button', {
+      name: 'Account owner: Amira, Jonas, Lea',
+      exact: true,
+    })
+    .click();
   await page.getByRole('option', { name: 'Jonas', exact: true }).click();
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('owner'))
-    .toContain('Amira');
   await expect
     .poll(() => new URL(page.url()).searchParams.get('owner'))
     .not.toContain('Jonas');
   await page.keyboard.press('Escape');
-  await page.setViewportSize({ width: 360, height: 760 });
+  await sheet.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.setViewportSize({ width: 360, height: 320 });
+  await scrollPastToolbar(page);
   expect(
     await summaries.evaluate(
       element => element.scrollWidth <= element.clientWidth
     )
   ).toBe(true);
   await summaries
-    .getByRole('button', { name: 'Clear Account owner', exact: true })
+    .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
   await expect.poll(() => summaries.count()).toBe(0);
   expect(new URL(page.url()).searchParams.has('owner')).toBe(false);

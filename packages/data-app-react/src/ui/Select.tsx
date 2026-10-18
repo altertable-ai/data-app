@@ -1,4 +1,5 @@
 import { PopoverSurface } from './PopoverSurface.tsx';
+import { Tooltip } from './Tooltip.tsx';
 import {
   Select as AriaSelect,
   Label,
@@ -15,13 +16,17 @@ import { SelectionMark } from './SelectionMark.tsx';
 import {
   validateChoiceOptions,
   type ChoiceOption,
-  invariant,
 } from '@altertable/data-app/internal';
+import { invariant } from '@altertable/data-app/internal';
 import { classNames } from './classNames.ts';
+import type { AppIconName } from './icons.ts';
 
 export type SelectProps = {
   label: string;
   labelPlacement?: ControlLabelPlacement;
+  /** Replace the inline text label with a decorative icon; the accessible label remains. */
+  icon?: AppIconName;
+  size?: 'default' | 'compact';
   options: readonly ChoiceOption[];
   value: string;
   onChange: (value: string) => void;
@@ -44,12 +49,31 @@ export function Select({
   className,
   align = 'start',
   labelPlacement = 'above',
+  icon,
+  size,
   ...props
 }: SelectProps) {
   const inline = labelPlacement === 'inline';
   validateChoiceOptions(options);
   const selected = options.find(option => option.id === value);
   invariant(selected, 'Select value must refer to an available option.');
+  const trigger = (
+    <PressButton
+      size={size}
+      className={classNames(
+        'altertable-select-trigger',
+        inline && 'altertable-picker-trigger'
+      )}
+    >
+      <PickerTriggerContent
+        label={label}
+        labelPlacement={labelPlacement}
+        value={<SelectValue>{selected.label}</SelectValue>}
+        icon={icon}
+        iconSize={size === 'compact' ? 14 : undefined}
+      />
+    </PressButton>
+  );
   return (
     <AriaSelect
       {...props}
@@ -65,18 +89,7 @@ export function Select({
       <Label className={inline ? 'altertable-sr-only' : undefined}>
         {label}
       </Label>
-      <PressButton
-        className={classNames(
-          'altertable-select-trigger',
-          inline && 'altertable-picker-trigger'
-        )}
-      >
-        <PickerTriggerContent
-          label={label}
-          labelPlacement={labelPlacement}
-          value={<SelectValue>{selected.label}</SelectValue>}
-        />
-      </PressButton>
+      {icon && inline ? <Tooltip content={label}>{trigger}</Tooltip> : trigger}
       <PopoverSurface
         className="altertable-select-popover"
         placement={`bottom ${align}`}

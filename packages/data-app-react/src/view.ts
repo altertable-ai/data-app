@@ -41,16 +41,24 @@ export type ViewBindings<
 }>;
 
 type RequiredFilterBindingKeys<Variables extends VariableCollection, Input> = {
-  [Key in keyof Variables]: Extract<
-    Variables[Key]['kind'],
-    'dimension' | 'numberFilter' | 'booleanFilter'
-  > extends never
+  [Key in keyof Variables]: Variables[Key]['kind'] extends 'dateRange'
     ? never
-    : [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
-      ? [ResolvedVariables<Variables>[Key]] extends [Input[Key]]
-        ? never
+    : Variables[Key]['kind'] extends 'choice'
+      ? [Input] extends [Record<Key, unknown>]
+        ? ResolvedVariables<Variables>[Key] extends Input[Key]
+          ? never
+          : Key
         : Key
-      : Key;
+      : Extract<
+            Variables[Key]['presentation'],
+            { group: 'display' }
+          > extends never
+        ? [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
+          ? [ResolvedVariables<Variables>[Key]] extends [Input[Key]]
+            ? never
+            : Key
+          : Key
+        : never;
 }[keyof Variables];
 
 /** Derive compatible top-level filter bindings; require readers for other input shapes. */
@@ -75,7 +83,13 @@ export type ViewBindingOptions<
 type SameViewInput<Variables extends VariableCollection, Input> = [
   ResolvedVariables<Variables>,
 ] extends [Input]
-  ? [Input] extends [ResolvedVariables<Variables>]
+  ? [Input] extends [
+      {
+        [Key in keyof Variables]: Variables[Key]['kind'] extends 'choice'
+          ? string
+          : ResolvedVariables<Variables>[Key];
+      },
+    ]
     ? [Input] extends [Record<string, never>]
       ? true
       : [keyof Input] extends [keyof Variables]
@@ -197,7 +211,10 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
     );
   }
   for (const [key, variable] of Object.entries(definition.variables)) {
-    if (!['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind))
+    if (
+      variable.kind === 'dateRange' ||
+      (variable.presentation?.group === 'display' && variable.kind !== 'choice')
+    )
       continue;
     const filter = variable as AppVariable<any>;
     const selected = values[key] as never;

@@ -28,9 +28,12 @@ import { Tooltip } from './Tooltip.tsx';
 import { InspectionOwner, InspectionVisual } from './InspectionProvider.tsx';
 import { useInspectionDefaults } from './InspectionContext.tsx';
 
-export type AboutTab = 'glossary' | 'queries';
+export type InspectionRecords = { scope: string; content: ReactNode };
+
+export type AboutTab = 'records' | 'glossary' | 'queries';
 
 const aboutTabs = new Map<string, AboutTab>([
+  ['records', 'records'],
   ['glossary', 'glossary'],
   ['queries', 'queries'],
 ]);
@@ -64,6 +67,7 @@ export type AboutSubject = {
       }
     | { kind: 'entries'; entries: readonly GlossaryEntry[] };
   queries?: DisclosedQuery[];
+  records?: InspectionRecords;
 };
 
 export type AboutDataProps = AboutSubject & {
@@ -151,6 +155,7 @@ export function InspectionSheet({
   dataContext,
   references,
   queries,
+  records,
   empty,
   footer,
   sheetProps,
@@ -195,6 +200,7 @@ export function InspectionSheet({
     query => !names || names.includes(query.name)
   );
   const heading = title ?? 'About the data';
+  const activeTab = tab === 'records' && !records ? 'glossary' : tab;
   const summary =
     description ??
     resolvedContext?.description ??
@@ -205,7 +211,7 @@ export function InspectionSheet({
       open={open}
       onOpenChange={onOpenChange}
       title={heading}
-      description={summary}
+      description={activeTab === 'records' && records ? records.scope : summary}
       wide={!!visual && visualKind !== 'metric'}
       returnFocus={returnFocus}
       footer={footer}
@@ -218,7 +224,7 @@ export function InspectionSheet({
       )}
       <div className="altertable-about-body">
         <Tabs
-          selectedKey={tab}
+          selectedKey={activeTab}
           onSelectionChange={key => onTabChange(resolveAboutTab(String(key)))}
           className="altertable-about-tabs"
         >
@@ -228,11 +234,17 @@ export function InspectionSheet({
                 typeof heading === 'string' ? heading : 'About the data'
               }
             >
+              {records && <Tab id="records">Records</Tab>}
               <Tab id="glossary">Glossary</Tab>
               <Tab id="queries">Queries</Tab>
             </TabList>
           </div>
           <TabPanels>
+            {records && (
+              <TabPanel id="records">
+                {activeTab === 'records' ? records.content : null}
+              </TabPanel>
+            )}
             <TabPanel id="glossary">
               {listed.length ? (
                 <div className="altertable-about-glossary-list">
@@ -261,7 +273,10 @@ export function InspectionSheet({
 export function AboutData(props: AboutDataProps) {
   const owner = useContext(InspectionOwner);
   const visual = useContext(InspectionVisual);
-  if (visual) return <span>{props.children ?? props.title}</span>;
+  if (visual)
+    return (
+      <span className={props.className}>{props.children ?? props.title}</span>
+    );
   invariant(owner, 'Inspection requires DataApp or DataAppProvider.');
   return <InspectionTrigger {...props} />;
 }
@@ -342,6 +357,7 @@ function InspectionTrigger({
     references: _references,
     queries: _queries,
     empty: _empty,
+    records: _records,
     footer: _footer,
     sheetProps: _sheetProps,
     headerActions: _headerActions,

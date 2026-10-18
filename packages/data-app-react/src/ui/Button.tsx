@@ -3,7 +3,8 @@ import { Button as AriaButton } from 'react-aria-components';
 import { classNames } from './classNames.ts';
 
 export type ButtonProps = ComponentPropsWithRef<'button'> & {
-  variant?: 'primary' | 'elevated' | 'outline' | 'ghost';
+  /** Inline actions retain button semantics without a padded control surface. */
+  variant?: 'primary' | 'elevated' | 'outline' | 'ghost' | 'inline';
   size?: 'default' | 'compact' | 'icon' | 'icon-compact';
 };
 

@@ -37,7 +37,12 @@ type Operations = {
     number
   >;
   view: DataOperation<
-    { region: DimensionSelection<string>; numeric: DimensionSelection<number> },
+    {
+      region: DimensionSelection<string>;
+      numeric: DimensionSelection<number>;
+      search: string;
+      extra: string;
+    },
     number
   >;
 };
@@ -153,7 +158,14 @@ const base = {
   input: (values: {
     region: DimensionSelection<string>;
     numeric: DimensionSelection<number>;
-  }) => ({ region: values.region, numeric: values.numeric }),
+    search?: string;
+    extra?: string;
+  }) => ({
+    region: values.region,
+    numeric: values.numeric,
+    search: values.search ?? '',
+    extra: values.extra ?? 'table',
+  }),
 };
 hooks.defineDataView({
   ...base,

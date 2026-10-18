@@ -1,6 +1,6 @@
 {
   "name": "data-app-workspace",
-  "version": "0.69.0",
+  "version": "0.70.0",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -29,15 +29,17 @@
     "check:boundaries": "bun run scripts/check-boundaries.ts"
   },
   "devDependencies": {
-    "@altertable/data-app": "0.69.0",
-    "@altertable/data-app-bun": "0.69.0",
-    "@altertable/data-app-embed": "0.69.0",
-    "@altertable/data-app-react": "0.69.0",
-    "@altertable/data-app-worker": "0.69.0",
+    "@altertable/data-app": "0.70.0",
+    "@altertable/data-app-bun": "0.70.0",
+    "@altertable/data-app-embed": "0.70.0",
+    "@altertable/data-app-react": "0.70.0",
+    "@altertable/data-app-worker": "0.70.0",
     "@types/bun": "1.4.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "fflate": "0.8.3",
     "get-tsconfig": "4.14.3",
+    "lucide-react": "1.48.0",
     "markdownlint-cli2": "0.23.3",
     "oxfmt": "0.70.0",
     "oxlint": "1.85.0",
@@ -45,6 +47,7 @@
     "playwright": "1.63.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "recharts": "3.10.1",
     "remark-cli": "12.0.1",
     "remark-gfm": "4.0.1",
     "remark-lint-no-dead-urls": "2.0.1",

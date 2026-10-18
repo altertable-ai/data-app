@@ -1,8 +1,9 @@
+import type { InspectionRecords } from './AboutData.tsx';
 import { useDateFormatting } from '../date-formatting.ts';
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
-import { type WidgetStatus } from './RequestHint.tsx';
+import type { ComponentPropsWithRef, ReactNode } from 'react';
+import type { WidgetStatus } from './RequestHint.tsx';
 import { VisualizationWidget } from './VisualizationWidget.tsx';
-import { type WidgetEvidence } from './WidgetEvidence.ts';
+import type { WidgetEvidence } from './WidgetEvidence.ts';
 import { AppIcon } from './icons.ts';
 import {
   comparisonChange,
@@ -11,7 +12,7 @@ import {
 import { classNames } from './classNames.ts';
 import { formatMetric, type MetricFormat } from '@altertable/data-app/format';
 import { Skeleton } from './Skeleton.tsx';
-import { type MetricReading } from '@altertable/data-app/internal';
+import type { MetricReading } from '@altertable/data-app/internal';
 import { metricComparison, type MetricDefinition } from './metric.ts';
 
 type MetricWidgetBaseProps = {
@@ -22,6 +23,7 @@ type MetricWidgetBaseProps = {
   description?: ReactNode;
   comparison?: MetricComparison;
   evidence?: WidgetEvidence;
+  records?: InspectionRecords;
   action?: ReactNode;
   status?: WidgetStatus;
   visual?: ReactNode;
@@ -90,6 +92,7 @@ function MetricWidgetContent({
   description,
   comparison,
   evidence,
+  records,
   action,
   status,
   visual,
@@ -103,6 +106,7 @@ function MetricWidgetContent({
       title={label}
       annotationId={annotationId}
       evidence={evidence}
+      records={records}
       aria-busy={loading || props['aria-busy']}
       action={action}
       status={status}

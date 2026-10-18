@@ -1,10 +1,9 @@
-import { type ComponentPropsWithRef } from 'react';
+import type { ComponentPropsWithRef } from 'react';
 import {
   MenuTrigger,
   Menu as AriaMenu,
   MenuItem as AriaMenuItem,
   MenuSection,
-  Popover,
   Separator,
   type MenuProps,
   type MenuItemProps,
@@ -12,12 +11,13 @@ import {
 } from 'react-aria-components';
 import { SelectionMark } from './SelectionMark.tsx';
 import { classNames } from './classNames.ts';
+import { PopoverSurface } from './PopoverSurface.tsx';
+
 export { MenuTrigger, MenuSection };
 export { PressButton as MenuButton } from './Button.tsx';
-
 export type { MenuProps, MenuItemProps, MenuTriggerProps };
 
-export type MenuPopoverProps = ComponentPropsWithRef<typeof Popover>;
+export type MenuPopoverProps = ComponentPropsWithRef<typeof PopoverSurface>;
 
 /** Anchored popup for a Menu; the surrounding MenuTrigger owns focus and dismissal. */
 export function MenuPopover({
@@ -26,7 +26,7 @@ export function MenuPopover({
   ...props
 }: MenuPopoverProps) {
   return (
-    <Popover
+    <PopoverSurface
       {...props}
       placement={placement}
       className={state =>

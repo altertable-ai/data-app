@@ -40,7 +40,10 @@
   gap: 0;
   margin-bottom: 14px;
 }
-.altertable-pie-legend button {
+.altertable-pie-legend .altertable-chart-legend-overflow {
+  padding-block-start: var(--atbl-space-sm);
+}
+.altertable-pie-legend .altertable-tooltip-trigger button {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -48,7 +51,6 @@
   min-width: 0;
   padding: 8px 4px;
   border: 0;
-  border-bottom: 1px solid var(--atbl-border);
   background: transparent;
   color: var(--atbl-text);
   text-align: left;
@@ -58,21 +60,63 @@
 .altertable-pie-legend [data-open] > button {
   background: var(--atbl-subtle);
 }
-.altertable-pie-legend button:focus {
+.altertable-pie-legend .altertable-tooltip-trigger button:focus {
   outline: none;
 }
 .altertable-pie-label {
-  flex: 1;
   overflow-wrap: anywhere;
   min-width: 0;
 }
-.altertable-pie-legend button > span:last-child {
+.altertable-pie-menu-indicator {
   color: var(--atbl-muted);
-  min-width: 4ch;
-  text-align: right;
+  opacity: 0.5;
+}
+.altertable-pie-legend
+  button:is(:hover, :focus-visible, [aria-expanded='true'])
+  .altertable-pie-menu-indicator {
+  color: var(--atbl-text);
+  opacity: 1;
 }
 
 .altertable-tooltip-trigger.altertable-pie-tooltip[data-variant='chart'] {
   width: min(100%, 220px);
   height: auto;
+}
+
+.altertable-pie-legend .altertable-chart-legend-item {
+  border-bottom: 1px solid var(--atbl-border);
+}
+.altertable-pie-legend .altertable-tooltip-trigger {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+}
+.altertable-pie-legend .altertable-tooltip-trigger button {
+  font: inherit;
+}
+
+.altertable-pie-value {
+  margin-inline-start: auto;
+}
+.altertable-pie-share {
+  color: var(--atbl-muted);
+  min-inline-size: 4ch;
+  text-align: end;
+}
+.altertable-pie-slice:focus {
+  outline: none;
+}
+.altertable-pie-plot
+  svg:has(.altertable-pie-slice:focus-visible)
+  .altertable-pie-slice:not(:focus-visible) {
+  opacity: 0.3;
+}
+.altertable-pie-slice:focus-visible {
+  filter: brightness(1.15);
+}
+@media (forced-colors: active) {
+  .altertable-pie-slice:focus-visible {
+    stroke: Highlight;
+    stroke-width: 3px;
+  }
 }

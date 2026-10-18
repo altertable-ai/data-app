@@ -5,15 +5,17 @@
     "": {
       "name": "data-app-workspace",
       "devDependencies": {
-        "@altertable/data-app": "0.69.0",
-        "@altertable/data-app-bun": "0.69.0",
-        "@altertable/data-app-embed": "0.69.0",
-        "@altertable/data-app-react": "0.69.0",
-        "@altertable/data-app-worker": "0.69.0",
+        "@altertable/data-app": "0.70.0",
+        "@altertable/data-app-bun": "0.70.0",
+        "@altertable/data-app-embed": "0.70.0",
+        "@altertable/data-app-react": "0.70.0",
+        "@altertable/data-app-worker": "0.70.0",
         "@types/bun": "1.4.2",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
+        "fflate": "0.8.3",
         "get-tsconfig": "4.14.3",
+        "lucide-react": "1.48.0",
         "markdownlint-cli2": "0.23.3",
         "oxfmt": "0.70.0",
         "oxlint": "1.85.0",
@@ -21,6 +23,7 @@
         "playwright": "1.63.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
+        "recharts": "3.10.1",
         "remark-cli": "12.0.1",
         "remark-gfm": "4.0.1",
         "remark-lint-no-dead-urls": "2.0.1",
@@ -33,9 +36,9 @@
     "examples/starter-local-data-app": {
       "name": "data-app-starter",
       "dependencies": {
-        "@altertable/data-app": "0.69.0",
-        "@altertable/data-app-bun": "0.69.0",
-        "@altertable/data-app-react": "0.69.0",
+        "@altertable/data-app": "0.70.0",
+        "@altertable/data-app-bun": "0.70.0",
+        "@altertable/data-app-react": "0.70.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
       },
@@ -51,30 +54,30 @@
     },
     "packages/data-app": {
       "name": "@altertable/data-app",
-      "version": "0.69.0",
+      "version": "0.70.0",
       "dependencies": {
         "@internationalized/date": "3.12.4",
       },
     },
     "packages/data-app-bun": {
       "name": "@altertable/data-app-bun",
-      "version": "0.69.0",
+      "version": "0.70.0",
       "dependencies": {
-        "@altertable/data-app": "0.69.0",
+        "@altertable/data-app": "0.70.0",
         "@altertable/lakehouse": "0.4.1",
         "get-tsconfig": "4.14.3",
       },
       "devDependencies": {
-        "@altertable/data-app-embed": "0.69.0",
+        "@altertable/data-app-embed": "0.70.0",
         "react": "19.3.0",
         "react-dom": "19.3.0",
       },
     },
     "packages/data-app-embed": {
       "name": "@altertable/data-app-embed",
-      "version": "0.69.0",
+      "version": "0.70.0",
       "dependencies": {
-        "@altertable/data-app": "0.69.0",
+        "@altertable/data-app": "0.70.0",
       },
       "peerDependencies": {
         "react": ">=19.2.0",
@@ -85,9 +88,9 @@
     },
     "packages/data-app-react": {
       "name": "@altertable/data-app-react",
-      "version": "0.69.0",
+      "version": "0.70.0",
       "dependencies": {
-        "@altertable/data-app": "0.69.0",
+        "@altertable/data-app": "0.70.0",
         "@floating-ui/react": "0.27.20",
         "@internationalized/date": "3.12.4",
         "@tanstack/react-query": "5.104.0",
@@ -105,9 +108,9 @@
     },
     "packages/data-app-worker": {
       "name": "@altertable/data-app-worker",
-      "version": "0.69.0",
+      "version": "0.70.0",
       "devDependencies": {
-        "@altertable/data-app-embed": "0.69.0",
+        "@altertable/data-app-embed": "0.70.0",
       },
     },
   },

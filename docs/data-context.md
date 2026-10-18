@@ -2,6 +2,8 @@
 
 Set `dataContext: context` in each view for source descriptions, glossary, and
 permitted query evidence. App inspection and the view's sections use that context.
+Keep glossary query references scoped to that view's executed queries. Detail
+views declare their own context when their queries differ.
 Render registered identifiers where `<DataIdentifier>` is used.
 
 Physical source identifiers name inspected tables and columns. Glossary entries

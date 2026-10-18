@@ -1,4 +1,8 @@
 import { facetSource, type FacetVariable } from '@altertable/data-app/internal';
+import {
+  dimensionSource,
+  type SourceDimensionVariable,
+} from '@altertable/data-app/internal';
 import { useContext, type ReactNode } from 'react';
 import { SearchTypeahead } from './ui/SearchTypeahead.tsx';
 import {
@@ -64,21 +68,33 @@ export function useViewVariables<Variables extends VariableCollection>(
       entry[1].optionsSource === 'query' &&
       facetSource in entry[1]
   );
-  const facetQueries = useQueries({
-    queries: facets.map(([name, filter]) => {
+  const sourceDimensions = Object.entries(definitions).filter(
+    (entry): entry is [string, SourceDimensionVariable<any>] =>
+      entry[1].kind === 'dimension' && dimensionSource in entry[1]
+  );
+  const optionSources = [
+    ...facets.map(([name, filter]) => {
       const facet = filter[facetSource];
-      const input = facet.input({ ...resolved, [name]: { kind: 'all' } });
-
       return {
-        queryKey: [
-          'dimension-facet',
-          clientScope,
-          name,
-          facet.operation,
-          input,
-        ],
+        name,
+        filter,
+        operation: facet.operation,
+        input: facet.input({ ...resolved, [name]: { kind: 'all' } }),
+      };
+    }),
+    ...sourceDimensions.map(([name, filter]) => ({
+      name,
+      filter,
+      operation: filter[dimensionSource].operation,
+      input: { member: null },
+    })),
+  ];
+  const optionQueries = useQueries({
+    queries: optionSources.map(({ name, filter, operation, input }) => {
+      return {
+        queryKey: ['dimension-facet', clientScope, name, operation, input],
         queryFn({ signal }: { signal: AbortSignal }) {
-          return loadFacet(facet.operation, input, signal).then(result =>
+          return loadFacet(operation, input, signal).then(result =>
             parseFacetOptions(result, filter)
           );
         },
@@ -88,15 +104,67 @@ export function useViewVariables<Variables extends VariableCollection>(
     }),
   });
   const facetState = new Map(
-    facets.map(([name], index) => [name, facetQueries[index]!])
+    optionSources.map(({ name }, index) => [name, optionQueries[index]!])
   );
+  const lookups = sourceDimensions.flatMap(([name, filter]) => {
+    const value = resolved[name] as DimensionSelection;
+    return value.kind !== 'all'
+      ? value.members.flatMap(member =>
+          member.kind === 'value' ? [{ name, filter, value: member.value }] : []
+        )
+      : [];
+  });
+  const lookupQueries = useQueries({
+    queries: lookups.map(({ name, filter, value }) => ({
+      queryKey: [
+        'dimension-member',
+        clientScope,
+        name,
+        filter[dimensionSource].operation,
+        value,
+      ],
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        loadFacet(
+          filter[dimensionSource].operation,
+          { member: value },
+          signal
+        ).then(result => parseFacetOptions(result, filter)),
+      staleTime: 60000,
+      gcTime: 300000,
+    })),
+  });
+  function dimensionState(
+    name: string,
+    filter: DimensionSelectionVariable<any>
+  ) {
+    const facet = facetState.get(name);
+    const selected = lookups.flatMap((item, index) =>
+      item.name === name ? [lookupQueries[index]!] : []
+    );
+    const options = [...(facet?.data ?? filter.options)];
+    for (const lookup of selected)
+      for (const option of lookup.data ?? []) {
+        const index = options.findIndex(item => item.value === option.value);
+        if (index < 0) options.push(option);
+        else options[index] = option;
+      }
+    return {
+      options,
+      loading: !!facet?.isPending || selected.some(item => item.isPending),
+      error: !!facet?.isError || selected.some(item => item.isError),
+      retry: () => {
+        void facet?.refetch();
+        for (const lookup of selected) void lookup.refetch();
+      },
+    };
+  }
   const primaryFilters: ReactNode[] = [];
   const displayOptions: { primary: ReactNode[]; secondary: ReactNode[] } = {
     primary: [],
     secondary: [],
   };
   const allFilters: ReactNode[] = [];
-  const activeSecondaryFilters: ActiveFilterControl[] = [];
+  const activeFilters: ActiveFilterControl[] = [];
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
@@ -106,6 +174,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     const definition = definitions[name]!;
     const value = variables.values[name];
     const variable = definition as AppVariable<any>;
+    const widgetControl = definition.presentation?.control === 'widget';
     const group = definition.presentation?.group ?? 'scope';
     const prominence = definition.presentation?.prominence ?? 'primary';
     const labelPlacement =
@@ -115,6 +184,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           ? 'above'
           : 'inline';
     if (definition.kind === 'search') {
+      if (widgetControl) continue;
       searchControls.push(
         <ViewSearchField
           key={name}
@@ -136,19 +206,20 @@ export function useViewVariables<Variables extends VariableCollection>(
       clearedFilters[name] = variable.clearValue;
       if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
     }
+    const baseline =
+      group === 'display'
+        ? variable.defaultValue
+        : (variable.clearValue ?? variable.defaultValue);
+    const active = !variable.same(value, baseline);
     function renderControl(
       labelPlacement: ControlLabelPlacement,
-      onDeactivate?: () => void
+      onClear?: () => void
     ) {
       function setControlValue(
         next: AppVariableValues<Variables>[typeof name]
       ) {
         variables.set(name, next);
-        if (
-          onDeactivate &&
-          variable.same(next, variable.clearValue ?? variable.defaultValue)
-        )
-          onDeactivate();
+        if (onClear && variable.same(next, baseline)) onClear();
       }
       let control: ReactNode = null;
       if (definition.kind === 'dateRange') {
@@ -166,17 +237,17 @@ export function useViewVariables<Variables extends VariableCollection>(
         );
       } else if (definition.kind === 'dimension') {
         const filter = definition as DimensionSelectionVariable;
-        const facet = facetState.get(name);
+        const facet = dimensionState(name, filter);
         control = (
           <DimensionPicker
             key={name}
             labelPlacement={labelPlacement}
             filter={filter}
             value={value as DimensionSelection}
-            options={facet?.data ?? filter.options}
-            loading={!!facet?.isPending}
-            error={!!facet?.isError}
-            onRetry={() => void facet?.refetch()}
+            options={facet.options}
+            loading={facet.loading}
+            error={facet.error}
+            onRetry={facet.retry}
             onChange={next =>
               setControlValue(next as AppVariableValues<Variables>[typeof name])
             }
@@ -253,28 +324,35 @@ export function useViewVariables<Variables extends VariableCollection>(
       }
       return control;
     }
-    const baseline =
-      group === 'display'
-        ? variable.defaultValue
-        : (variable.clearValue ?? variable.defaultValue);
-    const active = !variable.same(value, baseline);
     if (group === 'display') {
+      if (widgetControl) continue;
       displayOptions[prominence].push(renderControl(labelPlacement));
       if (active) changedDisplayOptionCount++;
     } else {
       allFilters.push(renderControl('above'));
-      if (active && prominence === 'secondary') {
-        activeSecondaryFilters.push({
+      if (active) {
+        activeFilters.push({
           id: name,
-          label: definition.label ?? name,
-          renderControl: onDeactivate => renderControl('inline', onDeactivate),
-          onClear:
-            variable.clearValue === undefined
+          renderToolbarControl:
+            !widgetControl && prominence === 'primary'
               ? undefined
-              : () => variables.set(name, variable.clearValue),
+              : onClear => renderControl('inline', onClear),
+          onRemove: () =>
+            variables.set(
+              name,
+              baseline as AppVariableValues<Variables>[typeof name]
+            ),
+          label: definition.label ?? name,
+          summary:
+            definition.kind === 'dimension'
+              ? definition.describe(
+                  value as DimensionSelection,
+                  dimensionState(name, definition).options
+                )
+              : (variable.describe?.(value) ?? String(value)),
         });
       }
-      if (prominence === 'primary')
+      if (!widgetControl && prominence === 'primary')
         primaryFilters.push(renderControl('inline'));
       if (active) activeFilterCount++;
     }
@@ -293,7 +371,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       hasControls || hasActiveFilters ? (
         <ViewControlBar
           primaryFilters={primaryFilters}
-          activeSecondaryFilters={activeSecondaryFilters}
+          activeFilters={activeFilters}
           allFilters={allFilters}
           activeFilterCount={activeFilterCount}
           displayOptions={orderedDisplayOptions}

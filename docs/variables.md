@@ -13,9 +13,10 @@ Bindings are required when the operation input cannot supply a compatible
 top-level filter field or the calendar request. Keep parsed selections in the
 operation input and derive SQL parameters inside the operation.
 
-`dimensionFilter()` from `/contract` requires exactly one option source: fixed `options` or a `facet`.
-Use `defineFacetFilter()` to bind a facet operation and its typed input. `<DimensionPicker>` offers missing values separately and keeps selected values
-available when they have zero matches.
+`dimensionFilter()` from `/contract` uses fixed `options`. Use `defineFacetFilter()`
+for options derived from declared variable context, or `app.defineDimension()`
+for independent source options and exact member lookup. `<DimensionPicker>` offers missing values separately and keeps selected values
+available when options refresh or fail; unknown counts remain undisclosed.
 
 ## Declare controls once
 
@@ -82,7 +83,7 @@ suppress autocomplete for a particular app.
 
 Declare controls in priority order for the user's task. Keep useful scope filters
 visible and set `presentation.prominence: 'secondary'` for less frequent ones in
-the Filters sheet. Active secondary filters remain available for direct editing.
+the Filters sheet. Active filter summaries reopen the same Filters sheet.
 Choose useful defaults rather than exposing every field; declare each label once.
 
 Set `presentation.group: 'display'` for ordering or presentation choices. These
@@ -255,3 +256,65 @@ with paired Apply/Cancel handlers; derive queries and visible controls from appl
 values while a draft is being edited.
 
 Filters apply immediately; use app-owned drafts only when the task needs Apply/Cancel.
+
+## Independent filters and chart breakdowns
+
+Each dimension owns its selection. Readers can select Germany without selecting
+a region; changing or clearing Region preserves Country and Customer. Filters
+combine in the operation's query. Incompatible selections can return an empty
+result; keep the selections visible so readers can correct them.
+
+Use `dimensionFilter()` for static options or `app.defineDimension()` for query-backed
+options. `variableInput()` from `/contract` validates named variables alongside an
+app-owned base parser. Use it on every operation consuming these filters, including
+details. Declare the same variables on the view and preserve them in operation input.
+
+```ts
+const country = app.defineDimension({
+  key: 'country',
+  label: 'Country',
+  valueType: 'string',
+  selectionMode: 'single',
+  presentation: { prominence: 'secondary' },
+  source: { query: 'countries' },
+});
+const revenueBy = choiceVariable({
+  key: 'revenue-by',
+  label: 'Revenue breakdown',
+  defaultValue: 'region',
+  options: [
+    { id: 'region', label: 'Region' },
+    { id: 'country', label: 'Country' },
+  ],
+  presentation: { group: 'display', control: 'widget' },
+});
+const parseInput = variableInput(parsePeriodInput, { country, revenueBy });
+```
+
+A breakdown is an ordinary display choice, independent of population filters.
+`<VisualizationWidget breakdown={view.breakdown('revenueBy')}>` renders that
+choice in its header. `presentation.control: 'widget'` omits it from the toolbar.
+Scope filters still appear in the Filters sheet, active summaries, and Clear filters.
+Primary controls stay in the toolbar. Active non-primary filters appear beside them
+as editable controls. Once the toolbar scrolls above the viewport,
+a floating summary shows every active filter and opens the Filters sheet.
+Declare each chart's choice separately when readers should control them independently.
+
+Each source query declares a nullable `member` parameter matching `valueType` and
+nonnullable projections for `value` (the same type), `label` (string), and optional
+`count` (number). `member = null` requests at most 200 options; a selected value requests
+an exact lookup. Other query parameters need defaults or trusted server values.
+Keep SQL and parameter declarations literal in `defineDataApp()`.
+
+```sql
+SELECT code AS value, name AS label
+FROM countries
+WHERE ($member IS NULL OR code = $member)
+ORDER BY name
+```
+
+Exact selected-member lookups run before business queries, sharing authorization,
+cancellation, execution limits, and query evidence. Labels resolve separately from
+the options page, including when it fails. Picker search searches supplied options;
+it does not fetch additional members. Clear filters preserves search and display
+choices and returns dates to their configured defaults.

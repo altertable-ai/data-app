@@ -26,6 +26,10 @@ fallback in app CSS. Use `:root` for shared theme overrides, including menus and
 Prefer `app.appearance` for brand and chart colors. When overriding accent tokens,
 choose a contrasting foreground too. Keep text inputs at least 16px on mobile.
 
+Menus and selection dropdowns share `--atbl-dropdown-padding`,
+`--atbl-dropdown-item-padding-block`, `--atbl-dropdown-item-padding-inline`, and
+`--atbl-dropdown-item-gap`. Their default padding follows the control density.
+
 ## Native controls
 
 Use package controls when possible. For a custom native control:

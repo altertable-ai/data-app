@@ -82,3 +82,8 @@ export {
   createDimensionFilter,
   type DimensionSelectionVariable,
 } from './core/dimension.ts';
+
+export {
+  dimensionSource,
+  type SourceDimensionVariable,
+} from './core/dimension-source.ts';

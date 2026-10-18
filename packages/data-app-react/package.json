@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-react",
-  "version": "0.69.0",
+  "version": "0.70.0",
   "description": "React components, hooks, styles, and authoring tools for Altertable data apps.",
   "keywords": [
     "altertable",
@@ -49,7 +49,7 @@
     "build": "bun ../../scripts/build.ts data-app-react"
   },
   "dependencies": {
-    "@altertable/data-app": "0.69.0",
+    "@altertable/data-app": "0.70.0",
     "@floating-ui/react": "0.27.20",
     "@internationalized/date": "3.12.4",
     "@tanstack/react-query": "5.104.0",

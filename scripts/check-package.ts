@@ -406,6 +406,11 @@ try {
 } finally { await preview.stop(); }
 `
   );
+  for (const name of ['exploration.types.ts', 'dimension-sources.types.ts'])
+    await writeFile(
+      join(temporary, name),
+      await readFile(join(root, 'tests/public-api', name), 'utf8')
+    );
   await writeFile(
     join(temporary, 'tsconfig.json'),
     JSON.stringify({
@@ -424,7 +429,14 @@ try {
         noEmit: true,
         skipLibCheck: true,
       },
-      include: ['browser.tsx', 'embed.tsx', 'server.ts', 'hosted.tsx'],
+      include: [
+        'browser.tsx',
+        'embed.tsx',
+        'server.ts',
+        'hosted.tsx',
+        'exploration.types.ts',
+        'dimension-sources.types.ts',
+      ],
     })
   );
   await run([

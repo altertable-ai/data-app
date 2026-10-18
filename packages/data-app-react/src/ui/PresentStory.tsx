@@ -10,9 +10,9 @@ import {
   type ReactNode,
 } from 'react';
 import { useMergeRefs } from '@floating-ui/react';
-import { type ThemeController } from '@altertable/data-app/appearance';
+import type { ThemeController } from '@altertable/data-app/appearance';
 import { AboutData, type AboutEmpty } from './AboutData.tsx';
-import { type DataContext } from './data-context.ts';
+import type { DataContext } from './data-context.ts';
 import { AppIcon } from './icons.ts';
 import { IconButton } from './IconButton.tsx';
 import { GradientScroll } from './GradientScroll.tsx';
@@ -21,6 +21,7 @@ import { isEditingTarget, shortcuts, useShortcut } from './shortcuts.ts';
 import { Tooltip } from './Tooltip.tsx';
 import { ThemeToggle } from './ThemeSelector.tsx';
 import { storySteps, type StoryFinding } from './story.ts';
+import { InspectionVisual } from './InspectionProvider.tsx';
 
 export type StoryStep = {
   id: string;
@@ -336,7 +337,7 @@ export function PresentStory({
                 className="altertable-present-visual"
                 data-kind={step.visualKind}
               >
-                {step.visual}
+                <InspectionVisual value={true}>{step.visual}</InspectionVisual>
               </div>
             </GradientScroll>
             <nav className="altertable-present-nav" aria-label="Story findings">
