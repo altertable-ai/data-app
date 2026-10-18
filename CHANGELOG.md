@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.70.0](https://github.com/altertable-ai/data-app/compare/v0.69.0...v0.70.0) (2026-10-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **types:** derive query and facet contracts from declarations ([#85](https://github.com/altertable-ai/data-app/issues/85))
+* **types:** catch invalid data app declarations at compile time ([#79](https://github.com/altertable-ai/data-app/issues/79))
+
+### Features
+
+* **exploration:** add typed drill-down actions and scoped detail views ([d952738](https://github.com/altertable-ai/data-app/commit/d952738daea0e0d149eaedc9fc2ba1a0dc7fd33b))
+* **types:** catch invalid data app declarations at compile time ([#79](https://github.com/altertable-ai/data-app/issues/79)) ([5ac4224](https://github.com/altertable-ai/data-app/commit/5ac42240f5b85a8de60ae47b252669bda9b6e10f))
+* **types:** derive query and facet contracts from declarations ([#85](https://github.com/altertable-ai/data-app/issues/85)) ([bf5dfed](https://github.com/altertable-ai/data-app/commit/bf5dfedcfb3bb40415b20064d2e7baf5d1dc91da))
+
+
+### Bug Fixes
+
+* **docs:** clarify there is no casing translation in query results ([#86](https://github.com/altertable-ai/data-app/issues/86)) ([d624cda](https://github.com/altertable-ai/data-app/commit/d624cdafaab54a5e50c28e7b51fb46ed0c499cdd))
+
 ## [0.69.0](https://github.com/altertable-ai/data-app/compare/v0.68.0...v0.69.0) (2026-10-14)
 
 
