@@ -598,7 +598,7 @@ for (const source of ['bundle', 'packaged', 'url']) {
   });
 }
 
-test('a content-sized frame follows its app height and keeps sheets in the visible page', async ({
+test('a content-sized frame follows its app height, omits the toolbar, and keeps sheets in the visible page', async ({
   page,
 }) => {
   await page.goto('/bundle-host?content-sizing=1');
@@ -606,6 +606,11 @@ test('a content-sized frame follows its app height and keeps sheets in the visib
   const app = page.frameLocator('iframe');
   const main = app.getByRole('main');
   await expect.poll(() => main.isVisible()).toBe(true);
+  const toolbarAction = app.getByRole('button', {
+    name: 'Custom toolbar action',
+    exact: true,
+  });
+  expect(await toolbarAction.count()).toBe(0);
   const root = app.locator(':root');
   function frameHeight() {
     return frame.evaluate(element => element.getBoundingClientRect().height);
@@ -632,7 +637,9 @@ test('a content-sized frame follows its app height and keeps sheets in the visib
   await expect.poll(frameHeight).toBeGreaterThanOrEqual(initial + 2000);
   expect(await overflow()).toBe(0);
 
-  await app.getByRole('button', { name: 'Explore data', exact: true }).click();
+  await app
+    .getByRole('button', { name: 'Inspect report', exact: true })
+    .click();
   const sheet = app.getByRole('dialog');
   const { height: viewport } = page.viewportSize()!;
   async function fitsViewport() {
@@ -665,6 +672,7 @@ test('a content-sized frame follows its app height and keeps sheets in the visib
   await expect
     .poll(async () => Math.round(await frameHeight()))
     .toBe(Math.round(viewport * 0.8));
+  await expect.poll(() => toolbarAction.isVisible()).toBe(true);
 });
 
 test('a content-sized frame stops following growth that tracks its own height', async ({

@@ -12,7 +12,11 @@ import {
   getDataAppNavigation,
   DataAppError,
 } from '@altertable/data-app/client';
-import { DataApp, useAppVariables } from '@altertable/data-app-react/ui';
+import {
+  AboutData,
+  DataApp,
+  useAppVariables,
+} from '@altertable/data-app-react/ui';
 import { mountDataApp, searchVariable } from '@altertable/data-app-react';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const dataApp = defineDataApp({
@@ -133,6 +137,7 @@ function App() {
       <button onClick={() => setContent('viewport')}>
         Show viewport-height content
       </button>
+      <AboutData shortcut={false}>Inspect report</AboutData>
       {content !== 'short' && (
         <div
           style={{ height: content === 'long' ? '2000px' : '100dvh' }}

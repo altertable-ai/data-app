@@ -93,6 +93,8 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   const presentation = useDataAppPresentation();
   useContentSizingSupport();
   const isEmbedded = presentation?.surface === 'embedded';
+  // A content-sized app reads as part of the parent page, which owns page actions.
+  const showToolbar = presentation?.sizing !== 'content';
   const themeController = useAppAppearance(app.appearance, presentation?.theme);
   const bodyRef = useRef<ComponentRef<'div'>>(null);
   useEffect(() => {
@@ -103,7 +105,8 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   });
 
   const snapshot = request && displayedSnapshot(request.view);
-  const findings = request && snapshot ? props.story(snapshot) : undefined;
+  const findings =
+    showToolbar && request && snapshot ? props.story(snapshot) : undefined;
   const story = findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
@@ -111,7 +114,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
       environment={app.scope.environment}
     />
   );
-  const toolbar = (
+  const toolbar = showToolbar && (
     <AppToolbar
       csvExport={
         request
