@@ -31,7 +31,8 @@ MCP Apps through a host integration, or run locally in a browser.
 | Remote data app | [Remote guide](docs/hosted-apps.md)    | [Single file](examples/starter-data-app/index.tsx)         |
 | Local data app  | [Local guide](docs/local-data-apps.md) | [Local project](examples/starter-local-data-app/README.md) |
 
-For agent-assisted work, direct your agent to [AGENTS.md](AGENTS.md).
+For agent-assisted work, direct your agent to [AGENTS.md](AGENTS.md). The
+generated [API reference](REFERENCE.md) lists every export and prop for search.
 
 ## Development
 

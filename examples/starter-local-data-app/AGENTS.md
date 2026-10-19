@@ -16,7 +16,7 @@ See [README.md](README.md) for setup and checks.
 ## Focused guidance
 
 Read the installed package's `AGENTS.md` and `docs/app-authoring.md` before
-changing the app. Follow their task routes for views, variables, widgets, evidence,
+changing the app. Search its `REFERENCE.md` for props and signatures. Follow their task routes for views, variables, widgets, evidence,
 and stories/export. Prefer generated controls and bound readings; keep static
 context visible during requests. Update this app's instructions when a reusable
 app-specific convention changes. Package internals remain dependencies.

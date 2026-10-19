@@ -76,6 +76,7 @@ refresh, and failure.
 | Export displayed data as CSV                     | [CSV export](stories-and-export.md#export-displayed-data-as-csv)  |
 | Render widgets and custom visuals                | [Widgets](widgets.md)                                             |
 | Bind definitions and source evidence             | [Data context](data-context.md#bind-evidence)                     |
+| Look up props, signatures, and types             | [API reference](../REFERENCE.md)                                  |
 
 Declare reusable [datasets and metrics](widgets.md#declare-datasets-and-metrics)
 on the view so tables, exports, and stories share values and evidence.
