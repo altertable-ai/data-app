@@ -1,6 +1,9 @@
 # Local data app starter
 
-Use this starter with the [local authoring guide](https://github.com/altertable-ai/data-app/blob/main/docs/local-data-apps.md).
+After `bun install`, use the installed local authoring guide at
+`node_modules/@altertable/data-app/docs/local-data-apps.md` for this app's SDK version.
+Browse the latest [local authoring guide](https://github.com/altertable-ai/data-app/blob/main/docs/local-data-apps.md)
+on GitHub.
 See [AGENTS.md](AGENTS.md) for app-owned files.
 
 A Bun and React starter for Altertable data apps using the published packages.

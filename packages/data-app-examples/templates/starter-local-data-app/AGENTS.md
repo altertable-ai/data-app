@@ -1,6 +1,9 @@
 # Build this local data app
 
-Read [AGENTS.md](https://github.com/altertable-ai/data-app/blob/main/AGENTS.md) first, then use the app files below.
+After `bun install`, read `node_modules/@altertable/data-app/AGENTS.md` first,
+then use the app files below. Installed guidance matches this app's SDK version.
+Browse the latest [SDK instructions](https://github.com/altertable-ai/data-app/blob/main/AGENTS.md)
+on GitHub.
 
 | Task                                     | App-owned files                                          |
 | ---------------------------------------- | -------------------------------------------------------- |
