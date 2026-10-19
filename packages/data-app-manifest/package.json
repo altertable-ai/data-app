@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-manifest",
-  "version": "0.71.0",
+  "version": "0.72.0",
   "description": "Static source-only manifest extraction for Altertable data app tooling.",
   "keywords": [
     "altertable",
