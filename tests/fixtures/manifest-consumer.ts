@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { extractDataAppManifest } from '@altertable/data-app-manifest';
+import {
+  extractDataAppManifest,
+  overrideDataAppManifest,
+} from '@altertable/data-app-manifest';
 
 const importLine = "import { defineDataApp } from '@altertable/data-app';";
 const declaration = `${importLine}\nconst app = defineDataApp({});`;
@@ -37,6 +40,13 @@ throw new Error('Must not execute');
 //# sourceMappingURL=file:///manifest-must-not-read.map`;
     assert.deepEqual(extractDataAppManifest(inert), {
       manifest: {},
+      diagnostics: [],
+    });
+    assert.deepEqual(overrideDataAppManifest(inert, { title: 'Sales' }), {
+      source: inert.replace(
+        'defineDataApp({})',
+        "defineDataApp({ title: 'Sales' })"
+      ),
       diagnostics: [],
     });
     assert.equal(

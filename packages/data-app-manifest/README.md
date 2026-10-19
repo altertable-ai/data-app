@@ -1,6 +1,6 @@
 # @altertable/data-app-manifest
 
-Static manifest extraction for Node.js and Bun tooling.
+Static manifest extraction and rewriting for Node.js and Bun tooling.
 
 ## Installation
 
@@ -28,6 +28,25 @@ if (result.manifest) {
 
 Returns literal data or diagnostics synchronously. It does not execute app code
 or validate configuration shape.
+
+Pass the complete new manifest to rewrite the declaration:
+
+```ts
+import { overrideDataAppManifest } from '@altertable/data-app-manifest';
+
+const result = overrideDataAppManifest(source, {
+  ...manifest,
+  title: 'Revenue',
+});
+if (result.source !== null) {
+  console.log(result.source);
+} else {
+  console.error(result.diagnostics);
+}
+```
+
+It accepts the same sources and rewrites only the values that change; the rest
+of the source, including comments and formatting, stays as authored.
 
 ## Documentation
 
