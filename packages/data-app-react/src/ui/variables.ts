@@ -14,7 +14,6 @@ import {
 } from '@altertable/data-app/internal';
 import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 export {
-  defineAppVariables,
   searchVariable,
   choiceVariable,
   multiChoiceVariable,

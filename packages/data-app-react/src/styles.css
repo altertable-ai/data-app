@@ -28,7 +28,6 @@
 @import './ui/AppLayout.css' layer(atbl.components);
 @import './ui/AppScope.css' layer(atbl.components);
 @import './ui/LiveControl.css' layer(atbl.components);
-@import './ui/ThemeSelector.css' layer(atbl.components);
 @import './ui/PresentStory.css' layer(atbl.components);
 @import './ui/RefreshControl.css' layer(atbl.components);
 @import './ui/AppToolbar.css' layer(atbl.components);

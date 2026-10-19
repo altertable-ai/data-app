@@ -125,7 +125,6 @@ export type OrderDay = OrderOverview['days'][number];
 export type OrderBand = OrderOverview['bands'][number];
 export type Order = OrderOverview['orders'][number];
 export type OrderItem = OrderOverview['items'][number];
-export type OrderTotals = NonNullable<OrderOverview['previous']>;
 
 function sum<Row>(rows: readonly Row[], value: (row: Row) => number) {
   return rows.reduce((total, row) => total + value(row), 0);

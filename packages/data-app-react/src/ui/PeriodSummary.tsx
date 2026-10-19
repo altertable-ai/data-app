@@ -52,7 +52,7 @@ function comparisonLabel(
     : 'Previous period';
 }
 
-export function reportingPeriodText(
+function reportingPeriodText(
   period: ReportingPeriod,
   options: DateTimeFormatOptions = {}
 ): string {

@@ -46,7 +46,7 @@ export type AboutEmpty = {
   queries: { title: string; description?: string };
 };
 
-export const defaultAboutEmpty: AboutEmpty = {
+const defaultAboutEmpty: AboutEmpty = {
   glossary: { title: 'No glossary terms for this view' },
   queries: { title: 'SQL is not available for this view' },
 };

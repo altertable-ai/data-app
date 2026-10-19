@@ -104,6 +104,7 @@ checks. Install dependencies separately before verification. Build before runnin
 | `bun run check:styles`         | Validate authored styling hooks                    |
 | `bun run test:watch`           | Watch tests during development                     |
 | `bun run typecheck`            | Check source, tests, and scripts                   |
+| `bun run knip`                 | Find unused code and dependencies                  |
 | `bun run lint`                 | Run type-aware lint checks                         |
 | `bun run lint:md`              | Check Markdown structure and syntax                |
 | `bun run check:links`          | Validate local files, images, and heading links    |

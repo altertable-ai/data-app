@@ -20,7 +20,7 @@ export type QueryListProps = {
 const KEYWORD =
   /\b(WITH|SELECT|FROM|WHERE|AND|OR|NOT|IN|AS|ON|JOIN|LEFT|RIGHT|INNER|FULL|OUTER|CROSS|GROUP BY|ORDER BY|HAVING|LIMIT|UNION|ALL|DISTINCT|CASE|WHEN|THEN|ELSE|END|NULL|TRUE|FALSE|BETWEEN|LIKE|ILIKE|EXISTS|VALUES|CAST|COUNT|SUM|AVG|MIN|MAX|QUALIFY|WINDOW|OVER|PARTITION|BY)\b/gi;
 
-export function formatSql(statement: string): string {
+function formatSql(statement: string): string {
   return statement.trim();
 }
 

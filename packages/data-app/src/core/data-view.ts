@@ -19,7 +19,7 @@ export type DataView<T, Input = unknown> =
       message: string;
     };
 
-export type DataSnapshot<Data, Input> = { data: Data; input: Input };
+type DataSnapshot<Data, Input> = { data: Data; input: Input };
 export type DisplayedSnapshot<Data, Input> = DataSnapshot<Data, Input> & {
   state: 'ready' | 'updating' | 'stale-error';
 };

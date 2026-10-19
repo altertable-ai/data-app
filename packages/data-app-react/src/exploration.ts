@@ -54,7 +54,7 @@ export function createBreakdownTarget<Value extends string>(
   targets.set(target, definition);
   return target;
 }
-export function breakdownDefinition(target: BreakdownTarget<any>) {
+function breakdownDefinition(target: BreakdownTarget<any>) {
   const definition = targets.get(target);
   invariant(definition, 'Invalid breakdown target.');
   return definition;

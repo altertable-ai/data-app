@@ -20,7 +20,7 @@ export type DataContext = {
   queryNames?: Readonly<Record<string, string>>;
 };
 
-export type MetricDeclaration = {
+type MetricDeclaration = {
   id: string;
   glossaryId: string;
   label?: string;

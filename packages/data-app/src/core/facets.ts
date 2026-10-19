@@ -6,7 +6,7 @@ import type {
 
 /** Executable facet sources are attached only by the typed hooks factory. */
 export const facetSource = Symbol('data-app.facetSource');
-export type FacetSourceDefinition<
+type FacetSourceDefinition<
   Context extends VariableCollection = VariableCollection,
   Name extends string = string,
   Input = unknown,

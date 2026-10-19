@@ -19,7 +19,7 @@ import { GradientScroll } from './GradientScroll.tsx';
 import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 import { isEditingTarget, shortcuts, useShortcut } from './shortcuts.ts';
 import { Tooltip } from './Tooltip.tsx';
-import { ThemeToggle } from './ThemeSelector.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
 import { storySteps, type StoryFinding } from './story.ts';
 import { InspectionVisual } from './InspectionProvider.tsx';
 

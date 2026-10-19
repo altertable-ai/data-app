@@ -24,7 +24,7 @@ type ScrollMetrics = Pick<
 >;
 
 /** The visible edges that still have content beyond them. */
-export function scrollFadeEdges(
+function scrollFadeEdges(
   metrics: ScrollMetrics,
   axis: 'vertical' | 'horizontal'
 ) {

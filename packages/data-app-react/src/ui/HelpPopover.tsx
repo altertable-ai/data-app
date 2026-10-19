@@ -24,12 +24,12 @@ import {
 import { type DataAppStyleHooks } from '../style-contract.ts';
 import { classNames } from './classNames.ts';
 
-export type HelpPopoverTriggerProps = Omit<
+type HelpPopoverTriggerProps = Omit<
   ComponentPropsWithRef<'button'>,
   'children' | 'type'
 > &
   DataAppStyleHooks;
-export type HelpPopoverPanelProps = Omit<
+type HelpPopoverPanelProps = Omit<
   ComponentPropsWithRef<'section'>,
   'children' | 'role'
 >;
