@@ -7,7 +7,7 @@ import {
 } from '@/scripts/dev-resolve';
 
 const usage =
-  'Usage: bun run dev:file <path>\nThe file must be a single-file data app such as examples/starter-data-app/index.tsx. Use `bun run dev:dir <path>` for a local app directory.';
+  'Usage: bun run dev:file <path>\nThe file must be a single-file data app such as packages/data-app-examples/templates/starter-data-app/index.tsx. Use `bun run dev:dir <path>` for a local app directory.';
 const argument = process.argv[2];
 if (!argument) {
   console.error(usage);

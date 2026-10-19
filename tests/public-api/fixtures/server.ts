@@ -1,8 +1,8 @@
 import exploration from '@/tests/public-api/fixtures/exploration.html';
 import { Database } from 'bun:sqlite';
 import { serveLocalApp } from '@altertable/data-app-bun';
-import starterPage from '@/examples/starter-local-data-app/src/index.html';
-import { operations } from '@/examples/starter-local-data-app/src/operations';
+import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
+import { operations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
 import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
 import bridgeHost from '@/tests/public-api/fixtures/bridge-host.html';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
@@ -38,7 +38,7 @@ async function bundle(entry: string) {
 }
 const [app, starter, frame, annotations, annotationState] = await Promise.all([
   bundle('tests/public-api/fixtures/bundle-app.tsx'),
-  bundle('examples/starter-data-app/index.tsx'),
+  bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
   bundle('tests/public-api/fixtures/bridge-frame.ts'),
   bundle('tests/public-api/fixtures/annotations-app.tsx'),
   bundle('tests/public-api/fixtures/annotation-state-app.tsx'),

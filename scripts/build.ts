@@ -38,7 +38,6 @@ for (const { directory, manifest } of packages) {
   if (!incremental && manifest.name === '@altertable/data-app') {
     for (const name of [
       'docs',
-      'examples',
       'AGENTS.md',
       'CONTRIBUTING.md',
       'REFERENCE.md',
@@ -98,7 +97,12 @@ for (const { directory, manifest } of packages) {
     entrypoints,
     root: `${directory}/src`,
     outdir,
-    target: manifest.name === '@altertable/data-app-bun' ? 'bun' : 'browser',
+    target:
+      manifest.name === '@altertable/data-app-bun'
+        ? 'bun'
+        : manifest.name === '@altertable/data-app-examples'
+          ? 'node'
+          : 'browser',
     jsx: { runtime: 'automatic', development: false },
     format: 'esm',
     splitting: manifest.name !== '@altertable/data-app-worker',

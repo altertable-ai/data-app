@@ -36,17 +36,17 @@
         },
         {
           "type": "json",
-          "path": "examples/starter-local-data-app/package.json",
+          "path": "packages/data-app-examples/templates/starter-local-data-app/package.json",
           "jsonpath": "$.dependencies['@altertable/data-app']"
         },
         {
           "type": "json",
-          "path": "examples/starter-local-data-app/package.json",
+          "path": "packages/data-app-examples/templates/starter-local-data-app/package.json",
           "jsonpath": "$.dependencies['@altertable/data-app-react']"
         },
         {
           "type": "json",
-          "path": "examples/starter-local-data-app/package.json",
+          "path": "packages/data-app-examples/templates/starter-local-data-app/package.json",
           "jsonpath": "$.dependencies['@altertable/data-app-bun']"
         },
         {
@@ -98,6 +98,16 @@
           "type": "json",
           "path": "packages/data-app-react/package.json",
           "jsonpath": "$.dependencies['@altertable/data-app']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-examples/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-examples']"
         }
       ]
     }

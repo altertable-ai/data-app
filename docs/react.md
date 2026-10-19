@@ -37,4 +37,4 @@ Use `@altertable/data-app-react` for declared views, bound widgets, and layouts.
 | Host an iframe from React                                | [React embed](react-embed.md)                             |
 
 Start with [app authoring](app-authoring.md) and the
-[single-file starter](../examples/starter-data-app/index.tsx).
+[single-file starter](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx).

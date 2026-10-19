@@ -28,6 +28,6 @@
     "tests",
     "scripts",
     "dev",
-    "examples/starter-data-app/index.tsx"
+    "packages/data-app-examples/templates/starter-data-app/index.tsx"
   ]
 }

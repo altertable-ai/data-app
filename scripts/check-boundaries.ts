@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { builtinModules } from 'node:module';
 import { relative, resolve } from 'node:path';
 import workspace from '@/package.json';
-import starter from '@/examples/starter-local-data-app/package.json';
+import starter from '@/packages/data-app-examples/templates/starter-local-data-app/package.json';
 import release from '@/release-please-config.json';
 import released from '@/.release-please-manifest.json';
 import { packages } from '@/scripts/packages';
@@ -30,7 +30,10 @@ for (const { directory } of packages)
   releaseVersion(`${directory}/package.json`, '$.version');
 for (const [path, manifest] of [
   ['package.json', workspace],
-  ['examples/starter-local-data-app/package.json', starter],
+  [
+    'packages/data-app-examples/templates/starter-local-data-app/package.json',
+    starter,
+  ],
   ...packages.map(
     pkg => [`${pkg.directory}/package.json`, pkg.manifest] as const
   ),

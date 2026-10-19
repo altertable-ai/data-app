@@ -1,7 +1,7 @@
 # Local Bun server
 
 Use this Bun server for local data apps. Start from the CLI scaffold or
-[local data app starter](https://github.com/altertable-ai/data-app/tree/main/examples/starter-local-data-app).
+[local data app starter](https://github.com/altertable-ai/data-app/tree/main/packages/data-app-examples/templates/starter-local-data-app).
 
 Import `serveLocalApp()` and `localLakehouse()` from
 `@altertable/data-app-bun`. This entry requires Bun; install `@types/bun`

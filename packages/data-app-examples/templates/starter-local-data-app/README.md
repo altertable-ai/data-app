@@ -9,15 +9,12 @@ operations and views built from inspected data before sharing an analysis.
 
 ## Usage
 
-### Run from this repository
+### Run your app
 
-Use the Bun and Node versions in `.bun-version` and `.node-version`.
-From the repository root:
+From the copied starter directory:
 
 ```fish
-bun install --frozen-lockfile
-bun run build
-cd examples/starter-local-data-app
+bun install
 bun run dev
 ```
 
@@ -37,9 +34,7 @@ on the server. This local adapter does not authorize hosted viewers.
 
 ### Make it your app
 
-This starter declares the published base, React, and Bun packages. Inside this
-repository, Bun links their workspace builds. When copying the starter elsewhere,
-run `bun install` to install those packages from npm.
+This starter declares the published base, React, and Bun packages. Run `bun install` to install those packages from npm.
 
 ```fish
 bun run check
@@ -53,4 +48,4 @@ still needs an authorized `/api/data` backend when hosted.
 
 ## License
 
-[MIT](../../LICENSE)
+[MIT](LICENSE)
