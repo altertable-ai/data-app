@@ -4,10 +4,10 @@
     "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true,
-    "declarationDir": "dist/types",
     "rootDir": "src",
     "rewriteRelativeImportExtensions": true,
-    "types": []
+    "types": [],
+    "outDir": "dist"
   },
   "include": ["src"],
   "exclude": []

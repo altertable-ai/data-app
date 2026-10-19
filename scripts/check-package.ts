@@ -72,28 +72,33 @@ function excludes(names: Set<string>, forbidden: string[]) {
 
 async function typecheck(directory: string, source: string) {
   await writeFile(join(directory, 'consumer.ts'), source);
-  await writeFile(
-    join(directory, 'tsconfig.json'),
-    JSON.stringify({
-      compilerOptions: {
-        target: 'ESNext',
-        module: 'Preserve',
-        moduleResolution: 'bundler',
-        strict: true,
-        noEmit: true,
-        types: [],
-      },
-      include: ['consumer.ts'],
-    })
-  );
-  await run(
-    [
-      join(root, 'node_modules/.bin/tsc'),
-      '-p',
+  for (const [module, moduleResolution] of [
+    ['Preserve', 'bundler'],
+    ['NodeNext', 'NodeNext'],
+  ]) {
+    await writeFile(
       join(directory, 'tsconfig.json'),
-    ],
-    directory
-  );
+      JSON.stringify({
+        compilerOptions: {
+          target: 'ESNext',
+          module,
+          moduleResolution,
+          strict: true,
+          noEmit: true,
+          types: [],
+        },
+        include: ['consumer.ts'],
+      })
+    );
+    await run(
+      [
+        join(root, 'node_modules/.bin/tsc'),
+        '-p',
+        join(directory, 'tsconfig.json'),
+      ],
+      directory
+    );
+  }
 }
 
 try {

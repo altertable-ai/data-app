@@ -329,7 +329,7 @@ ComposedChart.XAxis: <Row = unknown, Value = string | number | Date>(props: Comp
 ComposedChart.YAxis: <Row = unknown, Value = number>(props: ComponentProps<typeof YAxis<Row, Value>>)
 ComposedChart.ZAxis: <DataPointType = any, DataValueType = any>(outsideProps: Props<DataPointType, DataValueType>)
 ComposedChart.CartesianGrid: (props: ComponentProps<typeof CartesianGrid>)
-ComposedChart.Tooltip: (props: ComponentProps<typeof Tooltip>)
+ComposedChart.Tooltip: (props: ComponentProps<typeof Tooltip$1>)
 ComposedChart.Legend: (props: ComposedChartLegendProps)
 ComposedChart.ReferenceLine: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
 ComposedChart.ReferenceArea: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
@@ -573,7 +573,7 @@ DataQueryBody.queries?: DisclosedQuery[]
 DataQueryInput (type, @altertable/data-app/contract): <Operations> = { [Name in keyof Operations & string]: { operation: Name; input: InputOf<Operations[Name]>; }; }[keyof Operations & string]
 DataQueryRoute (type, @altertable/data-app/contract): <Operations>
 DataQueryRoute.input: (value: unknown) => DataQueryInput<Operations>
-DataQueryRoute.output: (value: unknown, input: DataQueryInput<Operations>) => TransportResponse
+DataQueryRoute.output: (value: unknown, input: DataQueryInput<Operations>) => TransportResponse<unknown>
 DataQueryRoute.operations: Operations | undefined
 DataReading (type, @altertable/data-app-react/ui): <Value>
 DataReading.loading: true [variant 1 of 2]
@@ -798,7 +798,7 @@ defineDataApp.config.description: string — Explain what the app helps readers 
 defineDataApp.config.appearance?: AppearanceOptions — Omit to use the standard appearance.
 defineDataApp.config.dateFormatting?: { locale?: string | undefined; timeZone?: string | undefined; } — Shared date display defaults. Reporting views and individual fields may override the time zone.
 defineDataApp.config.queries: Queries & KnownRecord<Queries> & ('' extends keyof Queries ? never : unknown) & { [Name in keyof Queries]: KnownRecord<Queries[Name]> & { ...; }; } — Named SQL statements with typed parameters and result projections.
-defineDataIdentifiers (function, @altertable/data-app-react): <const Tables extends Record<string, TableIdentifier>, const Columns extends Record<string, ColumnIdentifier<Extract<keyof Tables, string>>>>(options: {…}): { definitions: Readonly<Record<IdentifierId<Tables, Columns>, DataIdentifierDefinition>>; DataIdentifier: ({ id, display, }: { ...; }) => Elem… — Register exact source names once; returned JSX IDs are checked against this registry.
+defineDataIdentifiers (function, @altertable/data-app-react): <const Tables extends Record<string, TableIdentifier>, const Columns extends Record<string, ColumnIdentifier<Extract<keyof Tables, string>>>>(options: {…}): { definitions: Readonly<Record<IdentifierId<Tables, Columns>, DataIdentifierDefinition>>; DataIdentifier: ({ id, display }: { ...; }) => Eleme… — Register exact source names once; returned JSX IDs are checked against this registry.
 defineDataIdentifiers.options.tables: Tables
 defineDataIdentifiers.options.columns: Columns
 defineDataQueryRoute (function, @altertable/data-app/contract): <Operations extends OperationContracts = OperationContracts>(operations: Operations): DataQueryRoute<Operations> — Omit contracts only in generic hosts such as the CLI shell, where Bun validates operations.
@@ -1116,7 +1116,7 @@ localLakehouse (function, @altertable/data-app-bun): (environment: Record<string
 matchSearchText (function, @altertable/data-app-react/ui): (text: string, query: string): SearchMatchValue — Highlight literal query terms in supplied text without filtering or reordering results.
 Menu (component, @altertable/data-app-react/ui): <T extends object>(props: MenuProps<T>) — Actions by default; single selection creates radio items, multiple creates checkbox items.
 Menu.…: plus props inherited from @react-types/shared, react-aria, react-aria-components
-MenuButton (component, @altertable/data-app-react/ui): (props: Omit<ComponentPropsWithRef<typeof AriaButton>, 'className'> & Pick<ButtonProps, 'variant' | 'size'> & { className?: string; }) — React Aria trigger behavior with the same presentation as the native Button.
+MenuButton (component, @altertable/data-app-react/ui): (props: Omit<ComponentPropsWithRef<typeof Button>, 'className'> & Pick<ButtonProps, 'variant' | 'size'> & { className?: string; }) — React Aria trigger behavior with the same presentation as the native Button.
 MenuButton.variant?: 'elevated' | 'ghost' | 'inline' | 'outline' | 'primary' — Inline actions retain button semantics without a padded control surface.
 MenuButton.size?: 'compact' | 'default' | 'icon' | 'icon-compact'
 MenuButton.className?: string
@@ -1411,7 +1411,7 @@ PresentStory.headerActions?: ReactNode
 PresentStory.footer?: ReactNode
 PresentStory.…: plus props inherited from React
 PresentStoryProps (type, @altertable/data-app-react/ui): = props listed as PresentStory.*
-previousDateRange (function, @altertable/data-app/contract): (options: DateRangeInput): DateRange — The immediately preceding, equally long set of calendar days.
+previousDateRange (function, @altertable/data-app/contract): (options: DateRange): DateRange — The immediately preceding, equally long set of calendar days.
 previousDateRange.options.start: string
 previousDateRange.options.end: string
 QueryDefinitions (type, @altertable/data-app, @altertable/data-app/contract, @altertable/data-app/config): <Record<string, QueryDefinition>> = { readonly [x: string]: QueryDefinition; }
@@ -1461,7 +1461,7 @@ RankingItem.label: ReactNode
 RankingItem.value: number
 RankingItem.detail?: ReactNode
 RankingProps (type, @altertable/data-app-react): = props listed as Ranking.*
-RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined, options?: { ..…
+RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>, NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined,…
 ReportingPeriod (type, @altertable/data-app/contract, @altertable/data-app-react)
 ReportingPeriod.kind: 'rolling' [variant 1 of 2]
 ReportingPeriod.amount: number [variant 1 of 2]
@@ -1649,9 +1649,9 @@ SqlQueryInput (type, @altertable/data-app/contract)
 SqlQueryInput.statement: string
 SqlQueryInput.limit: number
 SqlQueryInput.params?: Readonly<Record<string, QueryParameterValue>>
-sqlQueryRoute (const, @altertable/data-app/contract): MessageRoute<SqlQueryInput, QueryResult> — SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits.
+sqlQueryRoute (const, @altertable/data-app/contract): MessageRoute<SqlQueryInput, QueryResult<unknown[]>> — SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits.
 sqlQueryRoute.input: (value: unknown) => SqlQueryInput
-sqlQueryRoute.output: (value: unknown, input: SqlQueryInput) => QueryResult
+sqlQueryRoute.output: (value: unknown, input: SqlQueryInput) => QueryResult<unknown[]>
 Stack (component, @altertable/data-app-react): (props: StackProps) — Vertical layout for peer sections or request boundaries, with the page's section gap.
 Stack.children: ReactNode
 Stack.gap?: 'lg' | 'md' | 'sm'
@@ -1667,7 +1667,7 @@ StoryFinding.context?: string
 StoryFinding.visual: ReactNode
 StoryFinding.visualKind?: 'chart' | 'metric'
 StoryFinding.evidence: MetricDefinition | WidgetEvidence
-Tab (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof AriaTab>)
+Tab (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof Tab$1>)
 Tab.…: plus props inherited from @react-types/shared, React, react-aria-components
 TableIdentifier (type, @altertable/data-app-react)
 TableIdentifier.catalog: string
@@ -1734,11 +1734,11 @@ TableWidgetSearch.mode?: 'fuzzy' | 'literal' — Literal filtering preserves sou
 TableWidgetSearch.fuzzyThreshold?: number
 TabList (component, @altertable/data-app-react/ui): <T>(props: TabListProps<T> & RefAttributes<HTMLDivElement>)
 TabList.…: plus props inherited from @react-types/shared, React, react-aria-components
-TabPanel (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof AriaTabPanel>)
+TabPanel (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof TabPanel$1>)
 TabPanel.…: plus props inherited from @react-types/shared, React, react-aria, react-aria-components
 TabPanels (function, @altertable/data-app-react/ui): <T>(props: TabPanelsProps<T> & React.RefAttributes<HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>> | null — Groups multiple `<TabPanel>` elements, and provides CSS variables for animated transitions.
 TabPanels.props.…: plus props inherited from @react-types/shared, React, react-aria-components
-Tabs (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof AriaTabs>)
+Tabs (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof Tabs$1>)
 Tabs.…: plus props inherited from @react-types/shared, React, react-aria, react-aria-components, react-stately
 TextContent (component, @altertable/data-app-react): (props: TextContentProps) — Prose typography for page introductions, widget bodies, and inspection content.
 TextContent.…: plus props inherited from React

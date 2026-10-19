@@ -48,7 +48,10 @@ The root is private. Publishable packages live in `packages/`; the local starter
 `packages/data-app-examples/templates` and ship only in `@altertable/data-app-examples`. `scripts/packages.ts` lists packages in publication order.
 Run `bun run build` from the root to build JavaScript, declarations, explicit
 styles, the embed bootstrap, the bundled preview host, and the standalone Worker.
-Bun schedules package builds in dependency order. Package-level builds require
+Bun schedules package builds in dependency order. tsdown builds library JavaScript
+and bundled declarations with the root TypeScript 7 compiler. Bun builds the
+Bun adapter, self-contained Worker, and injected CSS, bootstrap, and preview
+assets. Package-level builds require
 their dependencies to have been built first.
 Scaffolding tools consume the examples package catalog and `copyExample()`;
 template selection and destination handling belong to the caller.
