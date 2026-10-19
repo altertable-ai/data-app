@@ -11,6 +11,28 @@ const selected = process.argv
 if (selected && !packages.some(pkg => pkg.directory === `packages/${selected}`))
   throw new Error(`Unknown package: ${selected}`);
 const incremental = process.argv.includes('--incremental');
+async function markReady() {
+  await mkdir('node_modules/.cache', { recursive: true });
+  await writeFile(
+    'node_modules/.cache/data-app-build-ready',
+    crypto.randomUUID()
+  );
+}
+
+if (!selected && !incremental) {
+  const build = Bun.spawn(
+    ['bun', 'run', '--filter', '@altertable/*', 'build'],
+    {
+      cwd: root,
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }
+  );
+  if ((await build.exited) !== 0) throw new Error('Workspace build failed.');
+  await markReady();
+  process.exit(0);
+}
+
 const buildTargets = new Map<string, 'bun' | 'node'>([
   ['@altertable/data-app-bun', 'bun'],
   ['@altertable/data-app-examples', 'node'],
@@ -144,8 +166,4 @@ for (const { directory, manifest } of packages) {
     }
   }
 }
-await mkdir('node_modules/.cache', { recursive: true });
-await writeFile(
-  'node_modules/.cache/data-app-build-ready',
-  crypto.randomUUID()
-);
+if (!selected) await markReady();

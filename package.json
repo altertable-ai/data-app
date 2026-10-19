@@ -12,7 +12,7 @@
     "dev": "bun run scripts/dev.ts",
     "dev:file": "bun run scripts/dev-file.ts",
     "dev:dir": "bun run scripts/dev-dir.ts",
-    "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "lint": "oxlint --type-aware packages/*/src packages/data-app-examples/templates/starter-data-app tests scripts dev vitest.config.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
@@ -27,7 +27,8 @@
     "check:links:external": "remark . --ext md --rc-path .remarkrc-external.json --frail --no-stdout",
     "check:styles": "bun run scripts/check-app-styles.ts",
     "check:boundaries": "bun run scripts/check-boundaries.ts",
-    "check:reference": "bun run scripts/build-reference.ts --check"
+    "check:reference": "bun run scripts/build-reference.ts --check",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@altertable/data-app": "0.72.0",
@@ -44,8 +45,8 @@
     "get-tsconfig": "4.14.3",
     "lucide-react": "1.48.0",
     "markdownlint-cli2": "0.23.3",
-    "oxfmt": "0.70.0",
-    "oxlint": "1.85.0",
+    "oxfmt": "0.71.0",
+    "oxlint": "1.86.0",
     "oxlint-tsgolint": "7.0.2003",
     "playwright": "1.63.0",
     "react": "19.3.0",

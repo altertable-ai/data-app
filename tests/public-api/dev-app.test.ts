@@ -641,8 +641,8 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
     await writeFile(
       path,
       (await readFile(path, 'utf8')).replaceAll(
-        '"#config"',
-        file === 'src/server.ts' ? '"app-config"' : '"app/app"'
+        "'#config'",
+        file === 'src/server.ts' ? "'app-config'" : "'app/app'"
       )
     );
   }
@@ -676,8 +676,8 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
   await writeFile(
     join(directory, 'app.ts'),
     (await readFile(join(directory, 'app.ts'), 'utf8')).replace(
-      'title: "Getting started"',
-      'title: "Hot reloaded"'
+      "title: 'Getting started'",
+      "title: 'Hot reloaded'"
     )
   );
   const [, reloadedUrl] = await waitForOutput(

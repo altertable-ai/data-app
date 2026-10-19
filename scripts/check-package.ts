@@ -161,6 +161,7 @@ try {
         'templates/starter-local-data-app/_gitignore',
         'templates/starter-local-data-app/.node-version',
         'templates/starter-local-data-app/.oxlintrc.json',
+        'templates/starter-local-data-app/.oxfmtrc.json',
         'templates/starter-local-data-app/AGENTS.md',
         'templates/starter-local-data-app/src/server.ts',
       ])

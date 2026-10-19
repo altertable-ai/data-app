@@ -45,10 +45,11 @@ fallbacks minimal.
 ## Workspace packages
 
 The root is private. Publishable packages live in `packages/`; the local starter remains a private workspace. Canonical templates live in
-`packages/data-app-examples/templates` and ship only in `@altertable/data-app-examples`. `scripts/packages.ts` lists packages in dependency order.
+`packages/data-app-examples/templates` and ship only in `@altertable/data-app-examples`. `scripts/packages.ts` lists packages in publication order.
 Run `bun run build` from the root to build JavaScript, declarations, explicit
 styles, the embed bootstrap, the bundled preview host, and the standalone Worker.
-Package-level builds require their dependencies to have been built first.
+Bun schedules package builds in dependency order. Package-level builds require
+their dependencies to have been built first.
 Scaffolding tools consume the examples package catalog and `copyExample()`;
 template selection and destination handling belong to the caller.
 
@@ -91,13 +92,14 @@ explanations in the code. App instructions belong in the consuming app's
 and [hosted authoring](docs/hosted-apps.md).
 
 `bun run check` builds first and runs all required source, Markdown, local link, package, and starter
-checks. Build before running consumer tests individually.
+checks. Install dependencies separately before verification. Build before running consumer tests individually.
 
 | Command                        | Purpose                                            |
 | ------------------------------ | -------------------------------------------------- |
 | `bun run build`                | Build JavaScript, declarations, styles, reference  |
 | `bun run check:reference`      | Verify the staged `REFERENCE.md` is current        |
 | `bun run check:styles`         | Validate authored styling hooks                    |
+| `bun run test:watch`           | Watch tests during development                     |
 | `bun run typecheck`            | Check source, tests, and scripts                   |
 | `bun run lint`                 | Run type-aware lint checks                         |
 | `bun run lint:md`              | Check Markdown structure and syntax                |
