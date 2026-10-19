@@ -13,8 +13,21 @@ import {
   type Symbol,
   type Type,
 } from 'typescript/unstable/async';
+import { TokenFlags, type Node } from 'typescript/unstable/ast';
 import {
+  createIdentifier,
+  createImportTypeNode,
+  createLiteralTypeNode,
+  createStringLiteral,
+} from 'typescript/unstable/ast/factory';
+import { visitEachChild } from 'typescript/unstable/ast/visitor';
+import {
+  isIdentifier,
+  isImportDeclaration,
+  isNamedImports,
   isParameterDeclaration,
+  isStringLiteral,
+  isTypeQueryNode,
   isTypeParameterDeclaration,
 } from 'typescript/unstable/ast/is';
 import { packages } from '@/scripts/packages';
@@ -109,6 +122,11 @@ function isSymbolKeyed(symbol: Symbol) {
 
 class Reference {
   private readonly owners = new Map<number, string>();
+
+  private readonly imports = new Map<
+    string,
+    Map<string, { module: string; exported: string }>
+  >();
 
   private readonly checker: Checker;
 
@@ -260,18 +278,62 @@ class Reference {
     return kind === 'component' ? 'props' : 'options';
   }
 
-  /** Authored syntax keeps exported alias names that the checker would expand. */
+  private async externalImports(path: string) {
+    const cached = this.imports.get(path);
+    if (cached) return cached;
+    const imports = new Map<string, { module: string; exported: string }>();
+    const source = await this.project.program.getSourceFile(path);
+    for (const statement of source?.statements ?? []) {
+      if (
+        !isImportDeclaration(statement) ||
+        !isStringLiteral(statement.moduleSpecifier) ||
+        statement.moduleSpecifier.text.startsWith('.')
+      )
+        continue;
+      const bindings = statement.importClause?.namedBindings;
+      if (!bindings || !isNamedImports(bindings)) continue;
+      for (const binding of bindings.elements)
+        imports.set(binding.name.text, {
+          module: statement.moduleSpecifier.text,
+          exported: binding.propertyName?.text ?? binding.name.text,
+        });
+    }
+    this.imports.set(path, imports);
+    return imports;
+  }
+
+  /** Keep declared types, qualifying imported values whose local aliases are opaque. */
   private async declared(symbol: Symbol | undefined) {
-    const node = await symbol?.declarations[0]?.resolve(this.project);
-    if (!node) return undefined;
-    if (isTypeParameterDeclaration(node))
-      return (await this.project.emitter.printNode(node)).replace(/\s+/g, ' ');
-    if (isParameterDeclaration(node) && node.type)
-      return (await this.project.emitter.printNode(node.type)).replace(
-        /\s+/g,
-        ' '
-      );
-    return undefined;
+    const declaration = symbol?.declarations[0];
+    const node = await declaration?.resolve(this.project);
+    if (!node || !declaration) return undefined;
+    const type = isTypeParameterDeclaration(node)
+      ? node
+      : isParameterDeclaration(node)
+        ? node.type
+        : undefined;
+    if (!type) return undefined;
+    const imports = await this.externalImports(declaration.path);
+    function qualify(node: Node): Node {
+      if (isTypeQueryNode(node) && isIdentifier(node.exprName)) {
+        const imported = imports.get(node.exprName.text);
+        if (imported)
+          return createImportTypeNode(
+            true,
+            createLiteralTypeNode(
+              createStringLiteral(imported.module, TokenFlags.SingleQuote)
+            ),
+            undefined,
+            createIdentifier(imported.exported),
+            node.typeArguments
+          );
+      }
+      return visitEachChild(node, qualify);
+    }
+    return (await this.project.emitter.printNode(qualify(type))).replace(
+      /\s+/g,
+      ' '
+    );
   }
 
   private async signature(signature: Signature, kind: string) {
@@ -616,6 +678,10 @@ ${body.join('\n')}
 }
 
 const reference = render(await generate());
+for (const alias of new Set(reference.match(/\b[A-Za-z_$][\w$]*\$\d+\b/g)))
+  failures.push(
+    `Bundler alias ${alias} has no standalone meaning in the reference.`
+  );
 if (failures.length)
   throw new Error(
     `REFERENCE.md generation failed:\n${failures.map(failure => `- ${failure}`).join('\n')}`

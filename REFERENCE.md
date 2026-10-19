@@ -324,12 +324,12 @@ ComposedChart.Dot: (props: DotProps & { active?: boolean; })
 ComposedChart.Area: <Row = unknown, Value = number | null>(props: AreaProps<Row, Value>)
 ComposedChart.Bar: <Row = unknown, Value = number | null>(props: BarProps<Row, Value>)
 ComposedChart.Line: <Row = unknown, Value = number | null>(props: LineProps<Row, Value>)
-ComposedChart.Scatter: <Row = unknown, Value = number>(props: ComponentProps<typeof Scatter<Row, Value>>)
-ComposedChart.XAxis: <Row = unknown, Value = string | number | Date>(props: ComponentProps<typeof XAxis<Row, Value>>)
-ComposedChart.YAxis: <Row = unknown, Value = number>(props: ComponentProps<typeof YAxis<Row, Value>>)
+ComposedChart.Scatter: <Row = unknown, Value = number>(props: ComponentProps<typeof import('recharts').Scatter<Row, Value>>)
+ComposedChart.XAxis: <Row = unknown, Value = string | number | Date>(props: ComponentProps<typeof import('recharts').XAxis<Row, Value>>)
+ComposedChart.YAxis: <Row = unknown, Value = number>(props: ComponentProps<typeof import('recharts').YAxis<Row, Value>>)
 ComposedChart.ZAxis: <DataPointType = any, DataValueType = any>(outsideProps: Props<DataPointType, DataValueType>)
-ComposedChart.CartesianGrid: (props: ComponentProps<typeof CartesianGrid>)
-ComposedChart.Tooltip: (props: ComponentProps<typeof Tooltip$1>)
+ComposedChart.CartesianGrid: (props: ComponentProps<typeof import('recharts').CartesianGrid>)
+ComposedChart.Tooltip: (props: ComponentProps<typeof import('recharts').Tooltip>)
 ComposedChart.Legend: (props: ComposedChartLegendProps)
 ComposedChart.ReferenceLine: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
 ComposedChart.ReferenceArea: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
@@ -1116,7 +1116,7 @@ localLakehouse (function, @altertable/data-app-bun): (environment: Record<string
 matchSearchText (function, @altertable/data-app-react/ui): (text: string, query: string): SearchMatchValue — Highlight literal query terms in supplied text without filtering or reordering results.
 Menu (component, @altertable/data-app-react/ui): <T extends object>(props: MenuProps<T>) — Actions by default; single selection creates radio items, multiple creates checkbox items.
 Menu.…: plus props inherited from @react-types/shared, react-aria, react-aria-components
-MenuButton (component, @altertable/data-app-react/ui): (props: Omit<ComponentPropsWithRef<typeof Button>, 'className'> & Pick<ButtonProps, 'variant' | 'size'> & { className?: string; }) — React Aria trigger behavior with the same presentation as the native Button.
+MenuButton (component, @altertable/data-app-react/ui): (props: Omit<ComponentPropsWithRef<typeof import('react-aria-components').Button>, 'className'> & Pick<ButtonProps, 'variant' | 'size'> & { className?: string; }) — React Aria trigger behavior with the same presentation as the native Button.
 MenuButton.variant?: 'elevated' | 'ghost' | 'inline' | 'outline' | 'primary' — Inline actions retain button semantics without a padded control surface.
 MenuButton.size?: 'compact' | 'default' | 'icon' | 'icon-compact'
 MenuButton.className?: string
@@ -1131,7 +1131,7 @@ MenuPopoverProps.…: plus props inherited from @react-types/shared, React, reac
 MenuProps (type, @altertable/data-app-react/ui): <T> = props listed as Menu.*
 MenuSection (function, @altertable/data-app-react/ui): <T>(props: MenuSectionProps<T> & React.RefAttributes<HTMLElement>): ReactElement<unknown, string | JSXElementConstructor<any>> | null — A MenuSection represents a section within a Menu.
 MenuSection.props.…: plus props inherited from @react-types/shared, React, react-aria-components
-MenuSeparator (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof Separator>)
+MenuSeparator (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof import('react-aria-components').Separator>)
 MenuSeparator.…: plus props inherited from @react-types/shared, React, react-aria, react-aria-components
 MenuTrigger (component, @altertable/data-app-react/ui): (props: MenuTriggerProps)
 MenuTrigger.…: plus props inherited from react-aria-components, react-stately
@@ -1667,7 +1667,7 @@ StoryFinding.context?: string
 StoryFinding.visual: ReactNode
 StoryFinding.visualKind?: 'chart' | 'metric'
 StoryFinding.evidence: MetricDefinition | WidgetEvidence
-Tab (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof Tab$1>)
+Tab (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof import('react-aria-components/Tabs').Tab>)
 Tab.…: plus props inherited from @react-types/shared, React, react-aria-components
 TableIdentifier (type, @altertable/data-app-react)
 TableIdentifier.catalog: string
@@ -1734,11 +1734,11 @@ TableWidgetSearch.mode?: 'fuzzy' | 'literal' — Literal filtering preserves sou
 TableWidgetSearch.fuzzyThreshold?: number
 TabList (component, @altertable/data-app-react/ui): <T>(props: TabListProps<T> & RefAttributes<HTMLDivElement>)
 TabList.…: plus props inherited from @react-types/shared, React, react-aria-components
-TabPanel (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof TabPanel$1>)
+TabPanel (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof import('react-aria-components/Tabs').TabPanel>)
 TabPanel.…: plus props inherited from @react-types/shared, React, react-aria, react-aria-components
 TabPanels (function, @altertable/data-app-react/ui): <T>(props: TabPanelsProps<T> & React.RefAttributes<HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>> | null — Groups multiple `<TabPanel>` elements, and provides CSS variables for animated transitions.
 TabPanels.props.…: plus props inherited from @react-types/shared, React, react-aria-components
-Tabs (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof Tabs$1>)
+Tabs (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof import('react-aria-components/Tabs').Tabs>)
 Tabs.…: plus props inherited from @react-types/shared, React, react-aria, react-aria-components, react-stately
 TextContent (component, @altertable/data-app-react): (props: TextContentProps) — Prose typography for page introductions, widget bodies, and inspection content.
 TextContent.…: plus props inherited from React
