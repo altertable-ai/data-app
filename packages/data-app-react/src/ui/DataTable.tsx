@@ -1,7 +1,8 @@
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
-import { classNames } from './classNames.ts';
 import { formatDateTime, parseDateTime } from '@altertable/data-app/format';
+import { type ComponentPropsWithRef, type ReactNode } from 'react';
+
 import { useDateFormatting } from '../date-formatting.ts';
+import { classNames } from './classNames.ts';
 import { DateTimeTooltip } from './DateTimeTooltip.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { type EmptyContent } from './presentation.ts';

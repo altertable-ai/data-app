@@ -1,8 +1,10 @@
-import { afterEach, expect, test } from 'vitest';
+import { spawn } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { spawn } from 'node:child_process';
+
+import { afterEach, expect, test } from 'vitest';
+
 import { packages } from '@/scripts/packages';
 
 const temporary: string[] = [];

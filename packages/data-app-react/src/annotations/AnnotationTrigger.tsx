@@ -1,9 +1,10 @@
 import { type ComponentRef, type Ref } from 'react';
-import { AppIcon } from '../ui/icons.ts';
+
 import { Button } from '../ui/Button.tsx';
+import { AppIcon } from '../ui/icons.ts';
 import { Kbd } from '../ui/Kbd.tsx';
-import { AnnotationTooltip } from './AnnotationTooltip.tsx';
 import { shortcuts, ariaKeyShortcuts } from '../ui/shortcuts.ts';
+import { AnnotationTooltip } from './AnnotationTooltip.tsx';
 
 type AnnotationTriggerProps = {
   buttonRef: Ref<ComponentRef<'button'>>;

@@ -1,6 +1,8 @@
-import { StrictMode, useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { downloadBlob } from '@altertable/data-app/internal';
+import {
+  createNavigationHandler,
+  createSqlQueryHandler,
+  type DataAppStatus,
+} from '@altertable/data-app-embed';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
   DataSourceError,
@@ -9,11 +11,9 @@ import {
   navigationUpdateRoute,
   sqlQueryRoute,
 } from '@altertable/data-app/contract';
-import {
-  createNavigationHandler,
-  createSqlQueryHandler,
-  type DataAppStatus,
-} from '@altertable/data-app-embed';
+import { downloadBlob } from '@altertable/data-app/internal';
+import { StrictMode, useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 
 const fileExportRoute = defineMessageRoute({
   input(value: unknown): { filename: string; blob: Blob } {

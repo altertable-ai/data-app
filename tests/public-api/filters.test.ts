@@ -1,7 +1,3 @@
-import { expect, test } from 'vitest';
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { useAppVariables } from '@altertable/data-app-react/ui';
 import {
   searchVariable,
   choiceVariable,
@@ -9,6 +5,7 @@ import {
   dateRangeVariable,
   type VariablePresentation,
 } from '@altertable/data-app-react';
+import { useAppVariables } from '@altertable/data-app-react/ui';
 import {
   numberFilter,
   booleanFilter,
@@ -18,6 +15,9 @@ import {
   dimensionPredicate,
   defineDateRangeContract,
 } from '@altertable/data-app/contract';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { expect, test } from 'vitest';
 
 const options = [
   { id: 'a', label: 'Alpha' },

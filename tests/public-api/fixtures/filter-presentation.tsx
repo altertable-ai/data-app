@@ -1,15 +1,4 @@
-import { useState } from 'react';
-import { Sheet, useAppVariables } from '@altertable/data-app-react/ui';
 import { defineDataApp } from '@altertable/data-app';
-import { createDataClient } from '@altertable/data-app/client';
-import {
-  booleanFilter,
-  dimensionFilter,
-  numberFilter,
-  parseBooleanSelection,
-  parseDimensionSelection,
-  parseNumberSelection,
-} from '@altertable/data-app/contract';
 import {
   choiceVariable,
   searchVariable,
@@ -23,6 +12,17 @@ import {
   mountDataApp,
   type AppVariableValues,
 } from '@altertable/data-app-react';
+import { Sheet, useAppVariables } from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  booleanFilter,
+  dimensionFilter,
+  numberFilter,
+  parseBooleanSelection,
+  parseDimensionSelection,
+  parseNumberSelection,
+} from '@altertable/data-app/contract';
+import { useState } from 'react';
 
 const dataApp = defineDataApp({
   title: 'Customer explorer',

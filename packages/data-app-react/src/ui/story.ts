@@ -1,12 +1,13 @@
-import { type ReactNode } from 'react';
 import {
   type DisplayedSnapshot,
   invariant,
 } from '@altertable/data-app/internal';
+import { type ReactNode } from 'react';
+
+import { type DataContext } from './data-context.ts';
 import { type MetricDefinition } from './metric.ts';
 import { type StoryStep } from './PresentStory.tsx';
 import { type WidgetEvidence } from './WidgetEvidence.ts';
-import { type DataContext } from './data-context.ts';
 
 /** One consequential, inspectable finding from the displayed result. */
 export type StoryFinding = {

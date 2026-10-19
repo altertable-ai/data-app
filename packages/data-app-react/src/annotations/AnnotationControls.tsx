@@ -1,4 +1,20 @@
+import {
+  DataAppError,
+  getDataAppNavigation,
+} from '@altertable/data-app/client';
+import {
+  MessageRoutingError,
+  type DataAppAnnotationDraft,
+  type DataAppAnnotationPresentation,
+} from '@altertable/data-app/contract';
 import { randomUuid } from '@altertable/data-app/internal';
+import {
+  autoUpdate,
+  flip,
+  offset,
+  shift,
+  useFloating,
+} from '@floating-ui/react';
 import {
   useEffect,
   useEffectEvent,
@@ -9,23 +25,13 @@ import {
   type RefObject,
 } from 'react';
 import { createPortal } from 'react-dom';
+
+import { shortcuts, useShortcut } from '../ui/shortcuts.ts';
 import {
-  autoUpdate,
-  flip,
-  offset,
-  shift,
-  useFloating,
-} from '@floating-ui/react';
-import {
-  MessageRoutingError,
-  type DataAppAnnotationDraft,
-  type DataAppAnnotationPresentation,
-} from '@altertable/data-app/contract';
-import {
-  DataAppError,
-  getDataAppNavigation,
-} from '@altertable/data-app/client';
-import { useDataAppAnnotations } from './useDataAppAnnotations.ts';
+  annotationControlsReducer,
+  createAnnotationControlsState,
+} from './annotation-editor-state.ts';
+import { captureAnnotationScreenshot } from './annotation-screenshot.ts';
 import {
   findAnnotationTarget,
   normalizeAnnotationRect,
@@ -36,20 +42,15 @@ import {
   type AnnotationTargetElement,
   type AnnotationPoint,
 } from './annotation-targets.ts';
-import { captureAnnotationScreenshot } from './annotation-screenshot.ts';
-import { AnnotationSelectionLayer } from './AnnotationSelectionLayer.tsx';
-import { AnnotationTrigger } from './AnnotationTrigger.tsx';
 import { AnnotationEditor } from './AnnotationEditor.tsx';
 import { AnnotationMarkers } from './AnnotationMarkers.tsx';
+import { AnnotationSelectionLayer } from './AnnotationSelectionLayer.tsx';
+import { AnnotationTrigger } from './AnnotationTrigger.tsx';
 import {
   useAnnotationTargets,
   useAnnotationGeometry,
 } from './useAnnotationGeometry.ts';
-import {
-  annotationControlsReducer,
-  createAnnotationControlsState,
-} from './annotation-editor-state.ts';
-import { shortcuts, useShortcut } from '../ui/shortcuts.ts';
+import { useDataAppAnnotations } from './useDataAppAnnotations.ts';
 
 type AnnotationControlsProps = {
   rootRef: RefObject<ComponentRef<'div'> | null>;

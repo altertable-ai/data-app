@@ -1,6 +1,7 @@
 import { type ComponentPropsWithRef } from 'react';
-import { type SkeletonContent } from './presentation.ts';
+
 import { classNames } from './classNames.ts';
+import { type SkeletonContent } from './presentation.ts';
 import { Skeleton } from './Skeleton.tsx';
 
 export type ContentSkeletonProps = SkeletonContent &

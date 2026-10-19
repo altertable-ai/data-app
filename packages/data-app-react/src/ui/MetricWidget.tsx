@@ -1,19 +1,20 @@
-import type { InspectionRecords } from './AboutData.tsx';
-import { useDateFormatting } from '../date-formatting.ts';
+import { formatMetric, type MetricFormat } from '@altertable/data-app/format';
+import type { MetricReading } from '@altertable/data-app/internal';
 import type { ComponentPropsWithRef, ReactNode } from 'react';
-import type { WidgetStatus } from './RequestHint.tsx';
-import { VisualizationWidget } from './VisualizationWidget.tsx';
-import type { WidgetEvidence } from './WidgetEvidence.ts';
+
+import { useDateFormatting } from '../date-formatting.ts';
+import type { InspectionRecords } from './AboutData.tsx';
+import { classNames } from './classNames.ts';
 import { AppIcon } from './icons.ts';
 import {
   comparisonChange,
   type MetricComparison,
 } from './metric-comparison.ts';
-import { classNames } from './classNames.ts';
-import { formatMetric, type MetricFormat } from '@altertable/data-app/format';
-import { Skeleton } from './Skeleton.tsx';
-import type { MetricReading } from '@altertable/data-app/internal';
 import { metricComparison, type MetricDefinition } from './metric.ts';
+import type { WidgetStatus } from './RequestHint.tsx';
+import { Skeleton } from './Skeleton.tsx';
+import { VisualizationWidget } from './VisualizationWidget.tsx';
+import type { WidgetEvidence } from './WidgetEvidence.ts';
 
 type MetricWidgetBaseProps = {
   label: string;

@@ -1,9 +1,5 @@
-import { PopoverSurface } from './PopoverSurface.tsx';
-import {
-  PickerField,
-  PickerTriggerContent,
-  type ControlLabelPlacement,
-} from './PickerField.tsx';
+import { invariant } from '@altertable/data-app/internal';
+import type { ChoiceOption } from '@altertable/data-app/internal';
 import { useEffect, useId, useRef, useState, type ComponentRef } from 'react';
 import {
   Dialog,
@@ -12,17 +8,21 @@ import {
   ListBoxItem,
   type Selection,
 } from 'react-aria-components';
-import { invariant } from '@altertable/data-app/internal';
+
 import { PressButton as Button } from './Button.tsx';
-import { Skeleton } from './Skeleton.tsx';
+import { GradientScroll } from './GradientScroll.tsx';
+import {
+  PickerField,
+  PickerTriggerContent,
+  type ControlLabelPlacement,
+} from './PickerField.tsx';
+import { PopoverSurface } from './PopoverSurface.tsx';
 import { RequestHint } from './RequestHint.tsx';
 import { SearchInput } from './SearchInput.tsx';
-import { GradientScroll } from './GradientScroll.tsx';
-import { SelectionMark } from './SelectionMark.tsx';
-import { SearchMatch } from './SearchMatch.tsx';
 import { searchItems } from './searchItems.ts';
-
-import type { ChoiceOption } from '@altertable/data-app/internal';
+import { SearchMatch } from './SearchMatch.tsx';
+import { SelectionMark } from './SelectionMark.tsx';
+import { Skeleton } from './Skeleton.tsx';
 export type { ChoiceOption } from '@altertable/data-app/internal';
 
 type SharedProps = {

@@ -1,7 +1,7 @@
-import { expect, test } from 'vitest';
+import { localLakehouse } from '@altertable/data-app-bun';
 import { defineOperation } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
-import { localLakehouse } from '@altertable/data-app-bun';
+import { expect, test } from 'vitest';
 const totalsOperation = defineOperation({
   checks: [1],
   queries: {

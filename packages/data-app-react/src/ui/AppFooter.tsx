@@ -1,4 +1,5 @@
 import { type ComponentPropsWithRef, type ReactNode } from 'react';
+
 import { AltertableLogo } from './AltertableLogo.tsx';
 import { classNames } from './classNames.ts';
 

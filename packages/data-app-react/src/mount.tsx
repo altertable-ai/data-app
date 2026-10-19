@@ -1,19 +1,20 @@
-import { I18nProvider } from 'react-aria-components';
-import { useState, type ComponentType, type ReactNode } from 'react';
-import { DataAppContext } from './app-context.ts';
-import { InspectionProvider } from './ui/InspectionProvider.tsx';
 import {
   getDataAppTransport,
   getDataAppNavigation,
 } from '@altertable/data-app/client';
-import { createRoot } from 'react-dom/client';
-import { invariant } from '@altertable/data-app/internal';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   dataAppTitle,
   type DataAppDefinition,
   type QueryDefinitions,
 } from '@altertable/data-app/config';
+import { invariant } from '@altertable/data-app/internal';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState, type ComponentType, type ReactNode } from 'react';
+import { I18nProvider } from 'react-aria-components';
+import { createRoot } from 'react-dom/client';
+
+import { DataAppContext } from './app-context.ts';
+import { InspectionProvider } from './ui/InspectionProvider.tsx';
 
 /** Mount once per document; installs document identity and the shared request provider. */
 export function mountDataApp<const Queries extends QueryDefinitions>({

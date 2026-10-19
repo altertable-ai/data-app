@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+
 import { copyExample } from '@altertable/data-app-examples';
 
 const root = resolve(import.meta.dir, '..');

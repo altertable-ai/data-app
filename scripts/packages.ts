@@ -1,10 +1,10 @@
-import manifest from '@/packages/data-app-manifest/package.json';
-import core from '@/packages/data-app/package.json';
-import embed from '@/packages/data-app-embed/package.json';
-import react from '@/packages/data-app-react/package.json';
 import bun from '@/packages/data-app-bun/package.json';
+import embed from '@/packages/data-app-embed/package.json';
 import examples from '@/packages/data-app-examples/package.json';
+import manifest from '@/packages/data-app-manifest/package.json';
+import react from '@/packages/data-app-react/package.json';
 import worker from '@/packages/data-app-worker/package.json';
+import core from '@/packages/data-app/package.json';
 
 /** Dependency order defines pack and publication order. */
 export const packages = [

@@ -1,35 +1,17 @@
-import type { CheckedVariableDeclarations } from '@altertable/data-app/internal';
-import type { IsUnion } from '@altertable/data-app/internal';
-import { facetSource, type FacetVariable } from '@altertable/data-app/internal';
-import {
-  createFilterTarget,
-  createBreakdownTarget,
-  type FilterTarget,
-  type BreakdownTarget,
-  type FilterPatch,
-} from './exploration.ts';
-import type { ChoiceVariable } from '@altertable/data-app/internal';
-import { randomUuid } from '@altertable/data-app/internal';
-import { DeclaredView } from './view-runtime.tsx';
-import {
-  bindDataset,
-  bindMetric,
-  displayedScope,
-  type DatasetDefinition,
-  type Dataset,
-  type Metric,
-} from './bindings.ts';
-import type { AuthoringDataContext } from './ui/data-context.ts';
-import type { MetricValues } from '@altertable/data-app/internal';
-import type { DisplayedSnapshot } from '@altertable/data-app/internal';
-import { useState, type ReactNode } from 'react';
-import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { DataClient } from '@altertable/data-app/client';
+import type { InputOf, OutputOf } from '@altertable/data-app/client';
 import type {
   DataOperations,
   DateRangeRequest,
 } from '@altertable/data-app/contract';
-import type { DataClient } from '@altertable/data-app/client';
-import type { InputOf, OutputOf } from '@altertable/data-app/client';
+import { type DimensionOption } from '@altertable/data-app/contract';
+import type { CheckedVariableDeclarations } from '@altertable/data-app/internal';
+import type { IsUnion } from '@altertable/data-app/internal';
+import { facetSource, type FacetVariable } from '@altertable/data-app/internal';
+import type { ChoiceVariable } from '@altertable/data-app/internal';
+import { randomUuid } from '@altertable/data-app/internal';
+import type { MetricValues } from '@altertable/data-app/internal';
+import type { DisplayedSnapshot } from '@altertable/data-app/internal';
 import {
   displayedSnapshot,
   resolveDataView,
@@ -40,18 +22,39 @@ import {
   type CheckedFacetContexts,
 } from '@altertable/data-app/internal';
 import {
-  dateRangeVariable,
-  type DateRangeVariable,
-  type DateRangeVariableOptions,
-} from './ui/variables.ts';
-import {
   createDimensionFilter,
   type DimensionFilterSettings,
   type DimensionValue,
 } from '@altertable/data-app/internal';
-import { type DimensionOption } from '@altertable/data-app/contract';
-import type { EmptyContent } from './ui/presentation.ts';
+import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, type ReactNode } from 'react';
+
+import {
+  bindDataset,
+  bindMetric,
+  displayedScope,
+  type DatasetDefinition,
+  type Dataset,
+  type Metric,
+} from './bindings.ts';
 import { ViewContent, type DataContentState } from './content.ts';
+import { DetailView, type DetailViewDefinition } from './details.tsx';
+import {
+  createFilterTarget,
+  createBreakdownTarget,
+  type FilterTarget,
+  type BreakdownTarget,
+  type FilterPatch,
+} from './exploration.ts';
+import type { AuthoringDataContext } from './ui/data-context.ts';
+import type { EmptyContent } from './ui/presentation.ts';
+import {
+  dateRangeVariable,
+  type DateRangeVariable,
+  type DateRangeVariableOptions,
+} from './ui/variables.ts';
+import { useViewVariables } from './view-controls.tsx';
+import { DeclaredView } from './view-runtime.tsx';
 import {
   describeViewInput,
   resolveViewInput,
@@ -61,8 +64,6 @@ import {
   type ViewBindingOptions,
   type ViewDate,
 } from './view.ts';
-import { useViewVariables } from './view-controls.tsx';
-import { DetailView, type DetailViewDefinition } from './details.tsx';
 
 const clientScopes = new WeakMap<object, string>();
 

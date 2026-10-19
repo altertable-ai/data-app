@@ -1,8 +1,9 @@
-import { AppIcon } from './icons.ts';
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
 import { type DisclosedQuery } from '@altertable/data-app/contract';
-import { type DataContext, type GlossaryEntry } from './data-context.ts';
+import { type ComponentPropsWithRef, type ReactNode } from 'react';
+
 import { AboutData, type AboutEmpty } from './AboutData.tsx';
+import { type DataContext, type GlossaryEntry } from './data-context.ts';
+import { AppIcon } from './icons.ts';
 
 export type GlossaryExplanationProps = {
   entry: GlossaryEntry;

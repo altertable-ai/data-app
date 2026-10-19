@@ -1,12 +1,4 @@
-import { Button } from './Button.tsx';
-import {
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuPopover,
-  MenuTrigger,
-  MenuSeparator,
-} from './Menu.tsx';
+import { useMergeRefs } from '@floating-ui/react';
 import {
   useRef,
   useContext,
@@ -18,10 +10,19 @@ import {
   type Ref,
   type KeyboardEvent,
 } from 'react';
-import { useMergeRefs } from '@floating-ui/react';
-import { AppIcon } from './icons.ts';
-import { classNames } from './classNames.ts';
 import { RootMenuTriggerStateContext } from 'react-aria-components';
+
+import { Button } from './Button.tsx';
+import { classNames } from './classNames.ts';
+import { AppIcon } from './icons.ts';
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuPopover,
+  MenuTrigger,
+  MenuSeparator,
+} from './Menu.tsx';
 
 const contextPoints = new WeakMap<
   HTMLButtonElement,

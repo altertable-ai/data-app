@@ -1,29 +1,30 @@
-import { AnnotationControls } from '../annotations/AnnotationControls.tsx';
-import { useDataAppPresentation } from './useDataAppPresentation.ts';
-import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
-import { useAppAppearance } from './useAppAppearance.ts';
 import { type DisclosedQuery } from '@altertable/data-app/contract';
-import { useDataApp } from '../app-context.ts';
-import { type CsvExport } from './csv-export.ts';
 import {
   displayedSnapshot,
   type DisplayedSnapshot,
 } from '@altertable/data-app/internal';
+import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
+
+import { AnnotationControls } from '../annotations/AnnotationControls.tsx';
+import { useDataApp } from '../app-context.ts';
 import { AboutData } from './AboutData.tsx';
 import { AppHeader } from './AppHeader.tsx';
 import { AppLayout } from './AppLayout.tsx';
 import { AppScope } from './AppScope.tsx';
 import { AppToolbar } from './AppToolbar.tsx';
+import { type CsvExport } from './csv-export.ts';
 import { type DataContext } from './data-context.ts';
-import { type BoundStory } from './story.ts';
-import { ThemeToggle } from './ThemeToggle.tsx';
-import { VariableBar } from './VariableBar.tsx';
-import { TextContent } from './TextContent.tsx';
-import { Stack } from './Stack.tsx';
-import { DataViewToast } from './DataViewToast.tsx';
-import { InspectionProvider } from './InspectionProvider.tsx';
-import { InspectionContext } from './InspectionContext.tsx';
 import { type SectionResult } from './DataSectionBoundary.tsx';
+import { DataViewToast } from './DataViewToast.tsx';
+import { InspectionContext } from './InspectionContext.tsx';
+import { InspectionProvider } from './InspectionProvider.tsx';
+import { Stack } from './Stack.tsx';
+import { type BoundStory } from './story.ts';
+import { TextContent } from './TextContent.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
+import { useAppAppearance } from './useAppAppearance.ts';
+import { useDataAppPresentation } from './useDataAppPresentation.ts';
+import { VariableBar } from './VariableBar.tsx';
 
 export type DataAppBaseProps = {
   children: ReactNode;

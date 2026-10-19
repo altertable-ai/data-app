@@ -1,10 +1,11 @@
-import { type DataContext } from './ui/data-context.ts';
-import { createContext, type ReactNode } from 'react';
+import { type DisclosedQuery } from '@altertable/data-app/contract';
 import {
   type DataView,
   type DisplayedSnapshot,
 } from '@altertable/data-app/internal';
-import { type DisclosedQuery } from '@altertable/data-app/contract';
+import { createContext, type ReactNode } from 'react';
+
+import { type DataContext } from './ui/data-context.ts';
 import { type EmptyContent } from './ui/presentation.ts';
 
 export type ViewResult<Data, Input> = {

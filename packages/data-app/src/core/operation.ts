@@ -1,5 +1,5 @@
-import { DimensionMembershipError } from './dimension-source.ts';
 import { DataSourceError } from './contract.ts';
+import { DimensionMembershipError } from './dimension-source.ts';
 import type {
   DataOperations,
   DisclosedQuery,

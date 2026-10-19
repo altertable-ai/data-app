@@ -1,5 +1,6 @@
-import { type ReactNode } from 'react';
 import { type Theme } from '@altertable/data-app/appearance';
+import { type ReactNode } from 'react';
+
 import { Tooltip } from '../ui/Tooltip.tsx';
 
 type AnnotationTooltipProps = {

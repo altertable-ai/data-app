@@ -1,12 +1,13 @@
-import { classNames } from './classNames.ts';
-import { type ComponentPropsWithRef } from 'react';
 import {
   formatDate,
   formatDateTime,
   parseDateTime,
   type DateFormat,
 } from '@altertable/data-app/format';
+import { type ComponentPropsWithRef } from 'react';
+
 import { useDateFormatting } from '../date-formatting.ts';
+import { classNames } from './classNames.ts';
 import { DateTimeTooltip } from './DateTimeTooltip.tsx';
 
 export type DateDisplayProps = {

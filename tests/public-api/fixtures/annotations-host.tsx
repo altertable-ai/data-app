@@ -1,11 +1,9 @@
-import { useEffectEvent, useRef, useState } from 'react';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
   AnnotationBar,
   injectDataAppAnnotationStyles,
   type AnnotationBarHandle,
 } from '@altertable/data-app-react';
-import { createRoot } from 'react-dom/client';
-import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
   createMessageRouter,
   annotationDraftRoute,
@@ -16,6 +14,8 @@ import {
   MessageRoutingError,
   type DataAppAnnotationDraft,
 } from '@altertable/data-app/contract';
+import { useEffectEvent, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 const params = new URLSearchParams(location.search);
 injectDataAppAnnotationStyles();
 const javascript = await fetch(

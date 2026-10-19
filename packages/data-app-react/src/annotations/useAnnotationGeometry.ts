@@ -1,5 +1,6 @@
-import { useEffect, useState, type ComponentRef, type RefObject } from 'react';
 import { type DataAppAnnotationPresentation } from '@altertable/data-app/contract';
+import { useEffect, useState, type ComponentRef, type RefObject } from 'react';
+
 import {
   annotationGeometry,
   discoverAnnotationTargets,

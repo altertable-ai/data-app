@@ -1,7 +1,8 @@
 import { useState, type ComponentPropsWithRef, type ReactNode } from 'react';
+
+import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { DataWidget, type DataWidgetProps } from './DataWidget.tsx';
 import { type BoundWidgetReading } from './presentation.ts';
-import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { validateWidgetViews } from './widget-views.ts';
 import { WidgetViewTabs } from './WidgetViewTabs.tsx';
 

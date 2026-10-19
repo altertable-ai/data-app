@@ -1,5 +1,5 @@
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
 import { type DataReading } from '@altertable/data-app/internal';
+import { type ComponentPropsWithRef, type ReactNode } from 'react';
 
 export type DataValueProps<Value> = {
   reading: DataReading<Value>;

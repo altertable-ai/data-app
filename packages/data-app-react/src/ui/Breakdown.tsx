@@ -1,12 +1,13 @@
+import { formatCount, formatPercent } from '@altertable/data-app/format';
+import { invariant } from '@altertable/data-app/internal';
 import {
   type ComponentPropsWithRef,
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { formatCount, formatPercent } from '@altertable/data-app/format';
-import { invariant } from '@altertable/data-app/internal';
-import { classNames } from './classNames.ts';
+
 import { chartColor } from './chartColor.ts';
+import { classNames } from './classNames.ts';
 
 export type BreakdownItem = { id: string; label: ReactNode; value: number };
 export type BreakdownProps = {

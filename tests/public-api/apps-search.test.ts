@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 const url = '/filter-presentation?spend=all&typeahead';

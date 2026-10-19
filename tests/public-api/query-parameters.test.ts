@@ -1,10 +1,10 @@
-import { expect, test } from 'vitest';
 import { defineDataApp } from '@altertable/data-app';
 import {
   parseEmptyInput,
   type QueryParameters,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
+import { expect, test } from 'vitest';
 
 const app = defineDataApp({
   title: 'Parameters',

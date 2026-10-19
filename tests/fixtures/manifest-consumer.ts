@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+
 import { extractDataAppManifest } from '@altertable/data-app-manifest';
 
 const importLine = "import { defineDataApp } from '@altertable/data-app';";

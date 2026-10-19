@@ -1,10 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
-  createDataClient,
-  createHttpTransport,
-} from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
-import {
   createDataHooks,
   createDataContext,
   DataApp,
@@ -18,6 +13,11 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
+import {
+  createDataClient,
+  createHttpTransport,
+} from '@altertable/data-app/client';
+import type { DataOperation } from '@altertable/data-app/contract';
 const dataApp = defineDataApp({
   title: 'Responsive report',
   description: 'Explore the report across screen sizes.',

@@ -1,7 +1,3 @@
-import { createRoot } from 'react-dom/client';
-import { useState } from 'react';
-import { applyAppearance } from '@altertable/data-app/appearance';
-import { numberFilter } from '@altertable/data-app/contract';
 import {
   Button,
   Comparison,
@@ -18,6 +14,10 @@ import {
   SearchField,
   Sheet,
 } from '@altertable/data-app-react/ui';
+import { applyAppearance } from '@altertable/data-app/appearance';
+import { numberFilter } from '@altertable/data-app/contract';
+import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
 let cleanup: (() => void) | undefined;
 const actionStyle: DataAppStyle = {
   '--atbl-control-height': '60px',

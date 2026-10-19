@@ -1,32 +1,33 @@
+import type { DateRangeRequest } from '@altertable/data-app/contract';
+import type { DateFormat } from '@altertable/data-app/format';
+import { formatMetric } from '@altertable/data-app/format';
+import type { MetricFormat } from '@altertable/data-app/format';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { parseDetailInput, type DetailNavigation } from './details.tsx';
+import type {
+  DataView,
+  DisplayedSnapshot,
+} from '@altertable/data-app/internal';
+import type { DataReading, MetricValues } from '@altertable/data-app/internal';
+import { invariant } from '@altertable/data-app/internal';
+import { createElement, type ReactNode } from 'react';
+
 import {
   defineActions,
   type ActionBuilder,
   type ExplorationActions,
   type ActionDeclaration,
 } from './actions.ts';
+import { parseDetailInput, type DetailNavigation } from './details.tsx';
+import { DetailRecords, DetailView } from './details.tsx';
 import { assertSourceOwner } from './source-owner.ts';
-import type { EvidenceDeclaration } from './ui/data-context.ts';
-import type { SearchSuggestion } from './ui/SearchTypeahead.tsx';
-import { createElement, type ReactNode } from 'react';
-import { DateDisplay } from './ui/DateDisplay.tsx';
-import type { DateFormat } from '@altertable/data-app/format';
-import type { DateRangeRequest } from '@altertable/data-app/contract';
-import type {
-  DataView,
-  DisplayedSnapshot,
-} from '@altertable/data-app/internal';
-import { formatMetric } from '@altertable/data-app/format';
-import type { MetricFormat } from '@altertable/data-app/format';
-import type { DataReading, MetricValues } from '@altertable/data-app/internal';
-import { invariant } from '@altertable/data-app/internal';
 import type { CsvCell, CsvTable, CsvExport } from './ui/csv-export.ts';
+import type { EvidenceDeclaration } from './ui/data-context.ts';
+import { DateDisplay } from './ui/DateDisplay.tsx';
 import type { MetricDefinition } from './ui/metric.ts';
 import type { EmptyContent } from './ui/presentation.ts';
+import type { SearchSuggestion } from './ui/SearchTypeahead.tsx';
 import type { TableWidgetColumn } from './ui/TableWidget.tsx';
 import type { WidgetEvidence } from './ui/WidgetEvidence.ts';
-import { DetailRecords, DetailView } from './details.tsx';
 
 /** Displayed data, or an initial loading reading. Pending filter values are never a source. */
 export type ViewSource<Data, Input> =

@@ -1,9 +1,10 @@
-import { type ComponentRef, useLayoutEffect, useRef, useState } from 'react';
-import { invariant } from '@altertable/data-app/internal';
-import { Button } from './Button.tsx';
-import { classNames } from './classNames.ts';
-import type { CountChartProps } from './chart-data.ts';
 import { formatNumber, formatPercent } from '@altertable/data-app/format';
+import { invariant } from '@altertable/data-app/internal';
+import { type ComponentRef, useLayoutEffect, useRef, useState } from 'react';
+
+import { Button } from './Button.tsx';
+import type { CountChartProps } from './chart-data.ts';
+import { classNames } from './classNames.ts';
 import {
   buildJourneyFlow,
   limitJourneyFlow,

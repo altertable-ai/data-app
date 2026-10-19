@@ -1,6 +1,8 @@
-import { AppIcon } from './icons.ts';
+import { useRef, useState, type ComponentRef, type RefObject } from 'react';
+
+import type { ChartItem, ValueChartProps } from './chart-data.ts';
+import { validateValueChartItems } from './chart-data.ts';
 import { ChartLegend } from './ChartLegend.tsx';
-import { Tooltip } from './Tooltip.tsx';
 import {
   ExplorationActionControl,
   useChartActions,
@@ -8,10 +10,9 @@ import {
   ExplorationActionMenu,
   getPrimaryExplorationAction,
 } from './ExplorationActionControl.tsx';
+import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
-import { useRef, useState, type ComponentRef, type RefObject } from 'react';
-import type { ChartItem, ValueChartProps } from './chart-data.ts';
-import { validateValueChartItems } from './chart-data.ts';
+import { Tooltip } from './Tooltip.tsx';
 
 export type PieChartItem = ChartItem;
 export type PieChartProps<Row extends PieChartItem = PieChartItem> =

@@ -1,8 +1,4 @@
-import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { defineDataApp } from '@altertable/data-app';
-import { useState } from 'react';
-import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
 import {
   createDataHooks,
   createDataContext,
@@ -12,7 +8,11 @@ import {
   VisualizationWidget,
   searchVariable,
 } from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
+import type { DataOperation } from '@altertable/data-app/contract';
 import type { TransportResponse } from '@altertable/data-app/contract';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { useState } from 'react';
 
 const pending = new Map<string, (response: TransportResponse) => void>();
 const client = createDataClient<{

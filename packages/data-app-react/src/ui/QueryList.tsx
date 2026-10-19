@@ -1,10 +1,11 @@
+import { type DisclosedQuery } from '@altertable/data-app/contract';
 import {
   useEffect,
   useState,
   type ComponentPropsWithRef,
   type ReactNode,
 } from 'react';
-import { type DisclosedQuery } from '@altertable/data-app/contract';
+
 import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import { AppIcon } from './icons.ts';

@@ -1,5 +1,6 @@
 import { globSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+
 import type { KnipConfig } from 'knip';
 
 // Bun loads these modules through HTML rather than TypeScript imports.

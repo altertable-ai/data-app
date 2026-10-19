@@ -8,13 +8,14 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { searchParams, subscribeSearch, writeSearch } from './search.ts';
+
 import {
   InspectionSheet,
   resolveAboutTab,
   type AboutDataProps,
   type AboutTab,
 } from './AboutData.tsx';
+import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 
 type Inspection = {
   key: string;

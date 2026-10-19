@@ -1,4 +1,10 @@
 import {
+  choiceVariable,
+  multiChoiceVariable,
+  searchVariable,
+  type VariablePresentation,
+} from '@altertable/data-app-react';
+import {
   ChoicePicker,
   RadioGroup,
   Radio,
@@ -11,12 +17,6 @@ import {
   SegmentedControl,
   FilterActions,
 } from '@altertable/data-app-react/ui';
-import {
-  choiceVariable,
-  multiChoiceVariable,
-  searchVariable,
-  type VariablePresentation,
-} from '@altertable/data-app-react';
 import { numberFilter, booleanFilter } from '@altertable/data-app/contract';
 const options = [{ id: 'a', label: 'Alpha' }];
 const presentation: VariablePresentation = {

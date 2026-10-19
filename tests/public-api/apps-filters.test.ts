@@ -1,5 +1,6 @@
-import { expect } from 'vitest';
 import type { Page, Locator } from 'playwright';
+import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
 

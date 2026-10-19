@@ -1,5 +1,6 @@
-import { type ReactNode } from 'react';
 import { type DataReading } from '@altertable/data-app/internal';
+import { type ReactNode } from 'react';
+
 import { type WidgetEvidence } from './WidgetEvidence.ts';
 
 export type EmptyContent = {

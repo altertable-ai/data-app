@@ -1,12 +1,13 @@
-import { createDataContext as registerContext } from './data-context.ts';
-import { useDeclaredResult } from '../view-runtime.tsx';
 import { createDataClient } from '@altertable/data-app/client';
 import type { ConnectionOperation } from '@altertable/data-app/contract';
+
 import { createDataHooks } from '../hooks.ts';
-import { AppIcon } from './icons.ts';
+import { useDeclaredResult } from '../view-runtime.tsx';
 import { Button } from './Button.tsx';
-import { DataApp } from './StaticDataApp.tsx';
+import { createDataContext as registerContext } from './data-context.ts';
 import type { DataContext } from './data-context.ts';
+import { AppIcon } from './icons.ts';
+import { DataApp } from './StaticDataApp.tsx';
 
 const connectionContext = registerContext({})({
   description: 'Connection setup',

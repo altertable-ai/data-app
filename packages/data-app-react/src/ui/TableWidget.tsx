@@ -1,3 +1,6 @@
+import { formatCount, pluralize } from '@altertable/data-app/format';
+import { invariant, type DataReading } from '@altertable/data-app/internal';
+import { useMergeRefs } from '@floating-ui/react';
 import {
   useRef,
   useState,
@@ -5,28 +8,26 @@ import {
   type ComponentPropsWithRef,
   type ReactNode,
 } from 'react';
-import { useMergeRefs } from '@floating-ui/react';
-import { invariant, type DataReading } from '@altertable/data-app/internal';
-import { type WidgetEvidence } from './WidgetEvidence.ts';
-import { type WidgetStatus } from './RequestHint.tsx';
-import { VisualizationWidget } from './VisualizationWidget.tsx';
+
+import { Button } from './Button.tsx';
+import { classNames } from './classNames.ts';
 import {
   DataTable,
   DataTableEmptyRow,
   type DataTableSearch,
 } from './DataTable.tsx';
+import { AppIcon } from './icons.ts';
 import { type EmptyContent } from './presentation.ts';
+import { type WidgetStatus } from './RequestHint.tsx';
 import {
   searchItems,
   type SearchHit,
   type SearchItemsOptions,
 } from './searchItems.ts';
-import { formatCount, pluralize } from '@altertable/data-app/format';
 import { Skeleton } from './Skeleton.tsx';
-import { AppIcon } from './icons.ts';
-import { Button } from './Button.tsx';
-import { classNames } from './classNames.ts';
 import { Tooltip } from './Tooltip.tsx';
+import { VisualizationWidget } from './VisualizationWidget.tsx';
+import { type WidgetEvidence } from './WidgetEvidence.ts';
 
 export type TableWidgetColumn<Row> = {
   /** Stable, nonempty identity; unique within this table. */

@@ -1,12 +1,4 @@
 import {
-  useId,
-  useCallback,
-  useState,
-  useContext,
-  useEffect,
-  type ComponentRef,
-} from 'react';
-import {
   autoUpdate,
   flip,
   FloatingPortal,
@@ -17,10 +9,19 @@ import {
   useMergeRefs,
   type VirtualElement,
 } from '@floating-ui/react';
-import { SearchField, type SearchFieldProps } from './SearchField.tsx';
+import {
+  useId,
+  useCallback,
+  useState,
+  useContext,
+  useEffect,
+  type ComponentRef,
+} from 'react';
+
 import { PopoverContainerContext } from './PopoverSurface.tsx';
-import { SearchMatch } from './SearchMatch.tsx';
+import { SearchField, type SearchFieldProps } from './SearchField.tsx';
 import { matchSearchText } from './searchItems.ts';
+import { SearchMatch } from './SearchMatch.tsx';
 
 export type SearchSuggestion = {
   id: string;

@@ -1,9 +1,9 @@
 import { defineDataApp } from '@altertable/data-app';
+import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
   parseEmptyInput,
 } from '@altertable/data-app/contract';
-import { createDataClient } from '@altertable/data-app/client';
 
 const definition = {
   queries: {},

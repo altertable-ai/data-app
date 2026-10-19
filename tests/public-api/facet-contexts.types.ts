@@ -1,3 +1,10 @@
+import {
+  createDataContext,
+  createDataHooks,
+  dateRangeVariable,
+  searchVariable,
+  choiceVariable,
+} from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   dimensionFilter,
@@ -7,13 +14,6 @@ import {
   type DimensionOption,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
-import {
-  createDataContext,
-  createDataHooks,
-  dateRangeVariable,
-  searchVariable,
-  choiceVariable,
-} from '@altertable/data-app-react';
 
 type Operations = {
   strings: DataOperation<

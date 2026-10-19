@@ -11,5 +11,7 @@
     "CHANGELOG.md",
     "**/REFERENCE.md"
   ],
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "sortImports": true,
+  "sortPackageJson": false
 }

@@ -1,8 +1,9 @@
 import { defineQueryNames } from '@altertable/data-app/contract';
+import { type MetricFormat } from '@altertable/data-app/format';
 import { invariant } from '@altertable/data-app/internal';
 import { type ReactNode } from 'react';
+
 import { type DataIdentifierDefinition } from './data-identifiers.tsx';
-import { type MetricFormat } from '@altertable/data-app/format';
 import { type MetricDefinition } from './metric.ts';
 import { type StoryFinding } from './story.ts';
 import { type WidgetEvidence } from './WidgetEvidence.ts';

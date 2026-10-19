@@ -1,8 +1,9 @@
 import { type ComponentPropsWithRef, type ReactNode } from 'react';
-import { Tab, TabList, TabPanel, TabPanels, Tabs } from './Tabs.tsx';
+
+import { classNames } from './classNames.ts';
 import { EmptyState } from './EmptyState.tsx';
 import { type EmptyContent } from './presentation.ts';
-import { classNames } from './classNames.ts';
+import { Tab, TabList, TabPanel, TabPanels, Tabs } from './Tabs.tsx';
 import { validateWidgetViews } from './widget-views.ts';
 
 export type WidgetView = {

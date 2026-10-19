@@ -1,12 +1,13 @@
 import { useEffect, useId, useRef, useState, type ComponentRef } from 'react';
+
+import { Kbd } from '../ui/Kbd.tsx';
+import { isPlainKeyEvent } from '../ui/keyboard.ts';
 import {
   annotationRoot,
   type AnnotationTargetElement,
   type AnnotationPoint,
   type AnnotationRect,
 } from './annotation-targets.ts';
-import { Kbd } from '../ui/Kbd.tsx';
-import { isPlainKeyEvent } from '../ui/keyboard.ts';
 
 type AnnotationSelectionLayerProps = {
   scope: HTMLElement;

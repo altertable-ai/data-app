@@ -1,4 +1,5 @@
 import { type DataAppAnnotationDraft } from '@altertable/data-app/contract';
+
 import { type AnnotationTargetElement } from './annotation-targets.ts';
 
 export type AnnotationEditorState = {

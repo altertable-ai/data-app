@@ -1,6 +1,24 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+
+import { TokenFlags, type Node } from 'typescript/unstable/ast';
+import {
+  createIdentifier,
+  createImportTypeNode,
+  createLiteralTypeNode,
+  createStringLiteral,
+} from 'typescript/unstable/ast/factory';
+import {
+  isIdentifier,
+  isImportDeclaration,
+  isNamedImports,
+  isParameterDeclaration,
+  isStringLiteral,
+  isTypeQueryNode,
+  isTypeParameterDeclaration,
+} from 'typescript/unstable/ast/is';
+import { visitEachChild } from 'typescript/unstable/ast/visitor';
 import {
   API,
   NodeBuilderFlags,
@@ -13,23 +31,7 @@ import {
   type Symbol,
   type Type,
 } from 'typescript/unstable/async';
-import { TokenFlags, type Node } from 'typescript/unstable/ast';
-import {
-  createIdentifier,
-  createImportTypeNode,
-  createLiteralTypeNode,
-  createStringLiteral,
-} from 'typescript/unstable/ast/factory';
-import { visitEachChild } from 'typescript/unstable/ast/visitor';
-import {
-  isIdentifier,
-  isImportDeclaration,
-  isNamedImports,
-  isParameterDeclaration,
-  isStringLiteral,
-  isTypeQueryNode,
-  isTypeParameterDeclaration,
-} from 'typescript/unstable/ast/is';
+
 import { packages } from '@/scripts/packages';
 
 // Generates REFERENCE.md from the emitted declarations: one line per public

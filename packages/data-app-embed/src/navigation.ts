@@ -1,5 +1,5 @@
-import { PARENT_PARAM } from '@altertable/data-app/internal';
 import { type NavigationUpdate } from '@altertable/data-app/contract';
+import { PARENT_PARAM } from '@altertable/data-app/internal';
 
 /** Override this handler for framework routers. Reserved host parameters survive app navigation. */
 export function createNavigationHandler({

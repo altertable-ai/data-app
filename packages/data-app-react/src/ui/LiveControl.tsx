@@ -1,5 +1,5 @@
-import { type ComponentPropsWithRef } from 'react';
 import { invariant } from '@altertable/data-app/internal';
+import { type ComponentPropsWithRef } from 'react';
 import {
   Button as AriaButton,
   ListBox,
@@ -8,9 +8,10 @@ import {
   Select,
   SelectValue,
 } from 'react-aria-components';
+
+import { classNames } from './classNames.ts';
 import { IconButton } from './IconButton.tsx';
 import { AppIcon } from './icons.ts';
-import { classNames } from './classNames.ts';
 
 export type LiveIntervalSeconds = 30 | 60 | 300;
 

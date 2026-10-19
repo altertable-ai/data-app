@@ -1,9 +1,10 @@
-import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 import {
   createMessageClient,
   createIframeTransport,
   createDataAppNavigation,
 } from '@altertable/data-app/client';
+
+import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const bridge = createIframeTransport({
   timeoutMs: new URLSearchParams(window.location.search).has('timeout')
     ? 1000

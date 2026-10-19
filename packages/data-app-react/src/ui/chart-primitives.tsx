@@ -1,13 +1,7 @@
 import { useDateAxisLabel } from './chart-date-axis.tsx';
 export { ChartXAxis } from './chart-date-axis.tsx';
-import { useContext, useLayoutEffect, type ComponentProps } from 'react';
 import { formatNumber } from '@altertable/data-app/format';
-import {
-  ChartInteractionContext,
-  ChartSeries,
-  useChartSeries,
-  isChartSeriesActive,
-} from './chart-interaction.tsx';
+import { useContext, useLayoutEffect, type ComponentProps } from 'react';
 import {
   Area,
   Dot,
@@ -23,10 +17,16 @@ import {
   type LineProps,
   type AreaProps,
 } from 'recharts';
+
+import {
+  ChartInteractionContext,
+  ChartSeries,
+  useChartSeries,
+  isChartSeriesActive,
+} from './chart-interaction.tsx';
+import { chartBarFill } from './chartColor.ts';
 import { ChartLegend } from './ChartLegend.tsx';
 import { TooltipSurface } from './TooltipSurface.tsx';
-
-import { chartBarFill } from './chartColor.ts';
 const seriesColor = 'var(--atbl-chart-1)';
 /** Hollow sample marker shared by standalone and composed series. */
 export function ChartDot({

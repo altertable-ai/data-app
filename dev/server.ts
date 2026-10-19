@@ -1,27 +1,29 @@
-import { createReloadChannel } from '@altertable/data-app-bun/reload';
-import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
-import { localLakehouse, serveLocalApp } from '@altertable/data-app-bun';
-import { operations as starterOperations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
-import { dataApp as starterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
+
+import { localLakehouse, serveLocalApp } from '@altertable/data-app-bun';
+import { createReloadChannel } from '@altertable/data-app-bun/reload';
 import {
   DataSourceError,
   parseDataAppAnnotationDraft,
   type QueryParameters,
 } from '@altertable/data-app/contract';
+
+import appearance from '@/dev/fixtures/appearance.html';
+import bridgeFrame from '@/dev/fixtures/bridge-frame.html';
+import bridgeHost from '@/dev/fixtures/bridge-host.html';
+import bundleHost from '@/dev/fixtures/bundle-host.html';
+import chartLegends from '@/dev/fixtures/chart-legends.html';
+import gallery from '@/dev/fixtures/gallery.html';
 import hooksApp from '@/dev/fixtures/hooks-app.html';
 import inspectionApp from '@/dev/fixtures/inspection-app.html';
-import gallery from '@/dev/fixtures/gallery.html';
-import chartLegends from '@/dev/fixtures/chart-legends.html';
-import styles from '@/dev/fixtures/styles.html';
-import appearance from '@/dev/fixtures/appearance.html';
-import styleStress from '@/dev/fixtures/style-stress.html';
-import layout from '@/dev/fixtures/layout.html';
 import layoutHost from '@/dev/fixtures/layout-host.html';
-import bundleHost from '@/dev/fixtures/bundle-host.html';
-import bridgeHost from '@/dev/fixtures/bridge-host.html';
-import bridgeFrame from '@/dev/fixtures/bridge-frame.html';
+import layout from '@/dev/fixtures/layout.html';
+import styleStress from '@/dev/fixtures/style-stress.html';
+import styles from '@/dev/fixtures/styles.html';
+import { dataApp as starterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
+import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
+import { operations as starterOperations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
 
 async function bundle(entry: string) {
   const result = await Bun.build({

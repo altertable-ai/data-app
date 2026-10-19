@@ -1,6 +1,6 @@
-import { strToU8, zipSync } from 'fflate';
 import { getDataAppTransport } from '@altertable/data-app/client';
 import { downloadBlob } from '@altertable/data-app/internal';
+import { strToU8, zipSync } from 'fflate';
 
 export type CsvCell = string | number | boolean | null | undefined;
 

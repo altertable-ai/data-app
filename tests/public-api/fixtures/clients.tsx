@@ -1,14 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { useState } from 'react';
-import {
-  createDataClient,
-  type DataTransport,
-} from '@altertable/data-app/client';
-import {
-  type DataOperation,
-  type DimensionOption,
-  type DimensionSelection,
-} from '@altertable/data-app/contract';
 import {
   createDataHooks,
   searchVariable,
@@ -19,6 +9,16 @@ import {
   mountDataApp,
   injectDataAppStyles,
 } from '@altertable/data-app-react';
+import {
+  createDataClient,
+  type DataTransport,
+} from '@altertable/data-app/client';
+import {
+  type DataOperation,
+  type DimensionOption,
+  type DimensionSelection,
+} from '@altertable/data-app/contract';
+import { useState } from 'react';
 
 type Operations = {
   count: DataOperation<

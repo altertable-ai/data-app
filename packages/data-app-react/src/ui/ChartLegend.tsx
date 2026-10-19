@@ -8,8 +8,9 @@ import {
   type ComponentPropsWithRef,
   type ReactNode,
 } from 'react';
-import { classNames } from './classNames.ts';
+
 import { chartBarFill } from './chartColor.ts';
+import { classNames } from './classNames.ts';
 
 export type ChartLegendProps = {
   children: ReactNode;

@@ -1,4 +1,5 @@
 import { type ComponentPropsWithRef } from 'react';
+
 import { classNames } from './classNames.ts';
 import { shortcutLabel, type Shortcut } from './shortcuts.ts';
 

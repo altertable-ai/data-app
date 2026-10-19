@@ -1,7 +1,8 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { join, posix, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, posix, resolve } from 'node:path';
+
 import workspace from '@/package.json';
 import { packages } from '@/scripts/packages';
 

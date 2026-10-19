@@ -9,9 +9,10 @@ import {
   type MenuItemProps,
   type MenuTriggerProps,
 } from 'react-aria-components';
-import { SelectionMark } from './SelectionMark.tsx';
+
 import { classNames } from './classNames.ts';
 import { PopoverSurface } from './PopoverSurface.tsx';
+import { SelectionMark } from './SelectionMark.tsx';
 
 export { MenuTrigger, MenuSection };
 export { PressButton as MenuButton } from './Button.tsx';

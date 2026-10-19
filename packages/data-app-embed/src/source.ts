@@ -1,11 +1,12 @@
 import { randomUuid, PARENT_PARAM } from '@altertable/data-app/internal';
-import { runtimeHtml } from './runtime-html.ts';
+
 import {
   attachDataAppConnection,
   type DataAppStatus,
   type DataAppHost,
   type DataAppHostOptions,
 } from './host.ts';
+import { runtimeHtml } from './runtime-html.ts';
 
 export type DataAppSource =
   | { type: 'url'; url: string }

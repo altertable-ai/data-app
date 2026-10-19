@@ -1,24 +1,25 @@
-import { PopoverSurface } from './PopoverSurface.tsx';
-import {
-  PickerField,
-  PickerTriggerContent,
-  type ControlLabelPlacement,
-} from './PickerField.tsx';
-import { useState } from 'react';
-import { DialogTrigger, Dialog } from 'react-aria-components';
-import { PressButton } from './Button.tsx';
-import { Select } from './Select.tsx';
-import {
-  NumberField,
-  NumberRangeField,
-  type NumberRange,
-} from './NumberField.tsx';
-import { numberOperatorLabels } from '@altertable/data-app/internal';
 import {
   type NumberFilter,
   type NumberOperator,
   type NumberSelection,
 } from '@altertable/data-app/contract';
+import { numberOperatorLabels } from '@altertable/data-app/internal';
+import { useState } from 'react';
+import { DialogTrigger, Dialog } from 'react-aria-components';
+
+import { PressButton } from './Button.tsx';
+import {
+  NumberField,
+  NumberRangeField,
+  type NumberRange,
+} from './NumberField.tsx';
+import {
+  PickerField,
+  PickerTriggerContent,
+  type ControlLabelPlacement,
+} from './PickerField.tsx';
+import { PopoverSurface } from './PopoverSurface.tsx';
+import { Select } from './Select.tsx';
 
 export type NumberFilterPickerProps = {
   filter: NumberFilter;

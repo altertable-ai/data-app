@@ -1,4 +1,5 @@
 import { PAGE_CSP, runtimeHtml } from '@altertable/data-app-embed/runtime';
+
 import { trustedParent } from './trusted-parent.ts';
 
 interface WorkerBindings {

@@ -1,8 +1,8 @@
-import type { VariableCollection } from './variables.ts';
 import type {
   DimensionSelectionVariable,
   DimensionValue,
 } from './dimension.ts';
+import type { VariableCollection } from './variables.ts';
 
 /** Executable facet sources are attached only by the typed hooks factory. */
 export const facetSource = Symbol('data-app.facetSource');

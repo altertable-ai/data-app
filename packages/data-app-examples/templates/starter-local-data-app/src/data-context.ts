@@ -1,4 +1,5 @@
 import { createDataContext } from '@altertable/data-app-react';
+
 import { dataApp } from '#config';
 
 const connectionQueryNames = { connection: 'connection' } satisfies Record<

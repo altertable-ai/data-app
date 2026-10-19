@@ -1,5 +1,6 @@
-import { useCallback, useSyncExternalStore, type RefObject } from 'react';
 import { type ThemeController } from '@altertable/data-app/appearance';
+import { useCallback, useSyncExternalStore, type RefObject } from 'react';
+
 import { IconButton } from './IconButton.tsx';
 
 function useResolvedTheme(theme: ThemeController) {

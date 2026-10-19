@@ -1,10 +1,9 @@
-import { expect, test } from 'vitest';
-import { createDataClient } from '@altertable/data-app/client';
 import {
   createDataHooks,
   createDataContext,
   searchVariable,
 } from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
   defineDateRangeContract,
@@ -15,6 +14,7 @@ import {
   type DateRangeRequest,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
+import { expect, test } from 'vitest';
 
 test('a calendar and dimension declaration validates and escapes the input used by an operation', async () => {
   const calendar = defineDateRangeContract({

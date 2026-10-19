@@ -1,21 +1,23 @@
+import { existsSync, statSync, watch, type FSWatcher } from 'node:fs';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
+
+import {
+  DataSourceError,
+  sqlQueryRoute,
+  type Lakehouse,
+} from '@altertable/data-app/contract';
 import {
   readRequestBody,
   RequestBodyTooLargeError,
 } from '@altertable/data-app/internal';
-import { createReloadChannel } from '../reload-channel.ts';
-import { existsSync, statSync, watch, type FSWatcher } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { type BunPlugin } from 'bun';
 import {
   getTsconfig,
   createPathsMatcher,
   type PathsMatcher,
 } from 'get-tsconfig';
-import {
-  DataSourceError,
-  sqlQueryRoute,
-  type Lakehouse,
-} from '@altertable/data-app/contract';
+
+import { createReloadChannel } from '../reload-channel.ts';
 
 declare const DATA_APP_PREVIEW_HTML: string;
 

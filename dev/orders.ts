@@ -1,4 +1,3 @@
-import { dataApp } from '@/dev/app';
 import type { OutputOf } from '@altertable/data-app/client';
 import {
   dimensionFilter,
@@ -9,6 +8,8 @@ import {
   type QueryRow,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
+
+import { dataApp } from '@/dev/app';
 import { calendar, countries } from '@/dev/commerce';
 
 export const countryFilter = dimensionFilter({

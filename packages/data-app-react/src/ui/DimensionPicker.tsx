@@ -1,4 +1,3 @@
-import type { ControlLabelPlacement } from './PickerField.tsx';
 import type {
   DimensionMember,
   DimensionOption,
@@ -10,9 +9,11 @@ import type {
 } from '@altertable/data-app/internal';
 import { dimensionMemberKey } from '@altertable/data-app/internal';
 import { invariant } from '@altertable/data-app/internal';
+
 import { ChoicePicker, type ChoiceOption } from './ChoicePicker.tsx';
-import { Select } from './Select.tsx';
 import { FilterBar } from './FilterBar.tsx';
+import type { ControlLabelPlacement } from './PickerField.tsx';
+import { Select } from './Select.tsx';
 
 const allKey = 'all';
 

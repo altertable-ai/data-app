@@ -1,10 +1,4 @@
 import {
-  useState,
-  type ComponentPropsWithRef,
-  type ReactNode,
-  type RefObject,
-} from 'react';
-import {
   autoUpdate,
   flip,
   FloatingFocusManager,
@@ -21,6 +15,13 @@ import {
   useRole,
   type Placement,
 } from '@floating-ui/react';
+import {
+  useState,
+  type ComponentPropsWithRef,
+  type ReactNode,
+  type RefObject,
+} from 'react';
+
 import { type DataAppStyleHooks } from '../style-contract.ts';
 import { classNames } from './classNames.ts';
 

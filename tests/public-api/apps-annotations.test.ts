@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 test('a host without annotation capability preserves the normal reader toolbar', async ({

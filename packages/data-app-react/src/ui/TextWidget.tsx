@@ -1,7 +1,8 @@
-import { type ReactNode } from 'react';
 import { type DataReading } from '@altertable/data-app/internal';
-import { DataWidget, type DataWidgetProps } from './DataWidget.tsx';
+import { type ReactNode } from 'react';
+
 import { classNames } from './classNames.ts';
+import { DataWidget, type DataWidgetProps } from './DataWidget.tsx';
 import { Skeleton } from './Skeleton.tsx';
 import { TextContent } from './TextContent.tsx';
 import { type WidgetEvidence } from './WidgetEvidence.ts';

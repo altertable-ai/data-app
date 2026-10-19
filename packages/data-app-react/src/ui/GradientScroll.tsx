@@ -1,10 +1,11 @@
+import { useMergeRefs } from '@floating-ui/react';
 import {
   useCallback,
   useEffect,
   useState,
   type ComponentPropsWithRef,
 } from 'react';
-import { useMergeRefs } from '@floating-ui/react';
+
 import { classNames } from './classNames.ts';
 
 export type GradientScrollProps = ComponentPropsWithRef<'div'> & {

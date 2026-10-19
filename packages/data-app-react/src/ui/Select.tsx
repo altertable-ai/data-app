@@ -1,5 +1,8 @@
-import { PopoverSurface } from './PopoverSurface.tsx';
-import { Tooltip } from './Tooltip.tsx';
+import {
+  validateChoiceOptions,
+  type ChoiceOption,
+} from '@altertable/data-app/internal';
+import { invariant } from '@altertable/data-app/internal';
 import {
   Select as AriaSelect,
   Label,
@@ -7,19 +10,17 @@ import {
   ListBox,
   ListBoxItem,
 } from 'react-aria-components';
+
+import { PressButton } from './Button.tsx';
+import { classNames } from './classNames.ts';
+import type { AppIconName } from './icons.ts';
 import {
   PickerTriggerContent,
   type ControlLabelPlacement,
 } from './PickerField.tsx';
-import { PressButton } from './Button.tsx';
+import { PopoverSurface } from './PopoverSurface.tsx';
 import { SelectionMark } from './SelectionMark.tsx';
-import {
-  validateChoiceOptions,
-  type ChoiceOption,
-} from '@altertable/data-app/internal';
-import { invariant } from '@altertable/data-app/internal';
-import { classNames } from './classNames.ts';
-import type { AppIconName } from './icons.ts';
+import { Tooltip } from './Tooltip.tsx';
 
 export type SelectProps = {
   label: string;

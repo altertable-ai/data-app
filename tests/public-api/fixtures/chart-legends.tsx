@@ -1,7 +1,3 @@
-import { useState, type ReactNode } from 'react';
-import { Line as NativeLine } from 'recharts';
-import { createRoot } from 'react-dom/client';
-import { applyAppearance } from '@altertable/data-app/appearance';
 import { Button, Grid, GridItem, Stack } from '@altertable/data-app-react';
 import {
   ChartLegend,
@@ -16,6 +12,10 @@ import {
   VisualizationWidget,
   injectDataAppStyles,
 } from '@altertable/data-app-react/ui';
+import { applyAppearance } from '@altertable/data-app/appearance';
+import { useState, type ReactNode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { Line as NativeLine } from 'recharts';
 
 injectDataAppStyles();
 applyAppearance(

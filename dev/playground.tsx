@@ -1,13 +1,3 @@
-import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { useMemo, useState } from 'react';
-import { createDataClient } from '@altertable/data-app/client';
-import { dataApp } from '@/dev/app';
-import {
-  formatCount,
-  formatMetric,
-  formatPercent,
-  type MetricFormat,
-} from '@altertable/data-app/format';
 import {
   createDataContext,
   defineDataIdentifiers,
@@ -27,7 +17,23 @@ import {
   type DatasetDefinition,
 } from '@altertable/data-app-react';
 import { Sheet } from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  formatCount,
+  formatMetric,
+  formatPercent,
+  type MetricFormat,
+} from '@altertable/data-app/format';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { useMemo, useState } from 'react';
+
+import { dataApp } from '@/dev/app';
 import { calendar } from '@/dev/commerce';
+import {
+  CountryRanking,
+  DailyLineChart,
+  OrderValuePieChart,
+} from '@/dev/order-charts';
 import {
   operations,
   queryNames,
@@ -39,11 +45,6 @@ import {
   type Order,
   type OrderItem,
 } from '@/dev/orders';
-import {
-  CountryRanking,
-  DailyLineChart,
-  OrderValuePieChart,
-} from '@/dev/order-charts';
 
 const currency: MetricFormat = { kind: 'currency', currency: 'USD' };
 const identifiers = defineDataIdentifiers({

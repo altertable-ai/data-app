@@ -1,12 +1,13 @@
-import { useState, type ComponentProps } from 'react';
-import { createRoot } from 'react-dom/client';
-import { applyAppearance } from '@altertable/data-app/appearance';
 import { Button, Stack } from '@altertable/data-app-react';
 import {
   ComposedChart,
   VisualizationWidget,
   injectDataAppStyles,
 } from '@altertable/data-app-react/ui';
+import { applyAppearance } from '@altertable/data-app/appearance';
+import { useState, type ComponentProps } from 'react';
+import { createRoot } from 'react-dom/client';
+
 import '@/tests/public-api/fixtures/date-axes.css';
 
 injectDataAppStyles();

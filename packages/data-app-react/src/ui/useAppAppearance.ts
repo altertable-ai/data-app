@@ -1,4 +1,3 @@
-import { useLayoutEffect, useState, useSyncExternalStore } from 'react';
 import {
   applyAppearance,
   createThemeController,
@@ -6,6 +5,7 @@ import {
   type Theme,
   type AppearanceOptions,
 } from '@altertable/data-app/appearance';
+import { useLayoutEffect, useState, useSyncExternalStore } from 'react';
 
 /** The parent theme takes precedence; only standalone viewers receive controls. */
 export function useAppAppearance(

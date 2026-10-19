@@ -6,6 +6,7 @@ import {
   type ComponentRef,
   type ComponentPropsWithoutRef,
 } from 'react';
+
 import { attachDataAppBridge, type DataAppBridgeOptions } from '../bridge.ts';
 import { type DataAppConnection, type DataAppHost } from '../host.ts';
 import { type DataAppSource } from '../source.ts';

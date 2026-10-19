@@ -12,8 +12,9 @@ import { createServer, request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, expect, test, vi } from 'vitest';
+
 import { chromium } from 'playwright';
+import { afterEach, expect, test, vi } from 'vitest';
 
 const children: ChildProcess[] = [];
 const cleanups: (() => Promise<void>)[] = [];

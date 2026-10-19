@@ -1,13 +1,13 @@
 import {
-  randomUuid,
-  toDataOperationFailure,
-} from '@altertable/data-app/internal';
-import {
   type Lakehouse,
   MessageRoutingError,
   type MessageContext,
   type SqlQueryInput,
 } from '@altertable/data-app/contract';
+import {
+  randomUuid,
+  toDataOperationFailure,
+} from '@altertable/data-app/internal';
 
 /** Authorize every SQL request and supply a backend that independently enforces access and query limits. */
 export function createSqlQueryHandler(

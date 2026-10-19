@@ -1,5 +1,5 @@
-import { expect } from 'vitest';
 import type { Page } from 'playwright';
+import { expect } from 'vitest';
 
 /** Use a scrollable viewport to exercise the floating summary rather than toolbar chips. */
 export async function scrollPastToolbar(page: Page) {

@@ -1,9 +1,10 @@
-import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
 import {
   createMessageClient,
   createIframeTransport,
   createDataAppNavigation,
 } from '@altertable/data-app/client';
+
+import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
 const bridge = createIframeTransport({
   parentOrigin:
     document.documentElement.dataset.parentOrigin ?? window.location.origin,

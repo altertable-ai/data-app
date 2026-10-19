@@ -1,8 +1,6 @@
-import { Tooltip } from './Tooltip.tsx';
-
 import { validateScatterChartItems } from './chart-data.ts';
-
 import type { ScatterChartItem } from './chart-data.ts';
+import { Tooltip } from './Tooltip.tsx';
 export type { ScatterChartItem } from './chart-data.ts';
 export type ScatterChartProps = {
   items: readonly ScatterChartItem[];

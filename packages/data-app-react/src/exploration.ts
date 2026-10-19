@@ -6,8 +6,9 @@ import type {
 } from '@altertable/data-app/internal';
 import type { ChoiceVariable } from '@altertable/data-app/internal';
 import { invariant } from '@altertable/data-app/internal';
-import { resolveViewInput, type ViewBindings } from './view.ts';
+
 import { searchParams, writeSearch } from './ui/search.ts';
+import { resolveViewInput, type ViewBindings } from './view.ts';
 
 declare const filterPatch: unique symbol;
 declare const breakdownValue: unique symbol;

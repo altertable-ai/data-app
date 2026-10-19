@@ -1,11 +1,11 @@
 import { defineDataApp } from '@altertable/data-app';
+import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient, type OutputOf } from '@altertable/data-app/client';
 import {
   defineOperation,
   parseEmptyInput,
   type QueryRow,
 } from '@altertable/data-app/contract';
-import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 
 const app = defineDataApp({
   title: 'Column types',

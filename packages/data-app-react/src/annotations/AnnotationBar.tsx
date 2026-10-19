@@ -1,14 +1,8 @@
+import { type Theme } from '@altertable/data-app/appearance';
 import {
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useReducer,
-  useImperativeHandle,
-  type Ref,
-  type ComponentRef,
-  type CSSProperties,
-} from 'react';
-import { createPortal } from 'react-dom';
+  parseDataAppAnnotationDraft,
+  type DataAppAnnotationDraft,
+} from '@altertable/data-app/contract';
 import {
   autoUpdate,
   flip,
@@ -26,17 +20,24 @@ import {
   Minus,
   LoaderCircle,
 } from 'lucide-react';
-import { type Theme } from '@altertable/data-app/appearance';
 import {
-  parseDataAppAnnotationDraft,
-  type DataAppAnnotationDraft,
-} from '@altertable/data-app/contract';
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useReducer,
+  useImperativeHandle,
+  type Ref,
+  type ComponentRef,
+  type CSSProperties,
+} from 'react';
+import { createPortal } from 'react-dom';
+
 import { Button } from '../ui/Button.tsx';
+import { Kbd } from '../ui/Kbd.tsx';
+import { Sheet } from '../ui/Sheet.tsx';
+import { shortcuts } from '../ui/shortcuts.ts';
 import { TooltipProvider } from '../ui/Tooltip.tsx';
 import { AnnotationTooltip } from './AnnotationTooltip.tsx';
-import { Sheet } from '../ui/Sheet.tsx';
-import { Kbd } from '../ui/Kbd.tsx';
-import { shortcuts } from '../ui/shortcuts.ts';
 
 export type AnnotationBarHandle = {
   /** Submit through the same guards, pending state, and retry feedback as the Send button. */
