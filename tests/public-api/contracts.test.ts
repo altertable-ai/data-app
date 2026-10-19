@@ -4,7 +4,7 @@ import {
   createDataHooks,
   createDataContext,
   searchVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import {
   defineOperation,
   defineDateRangeContract,

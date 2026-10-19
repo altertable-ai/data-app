@@ -45,6 +45,8 @@ jobs:
         run: bun run build
       - name: Verify generated API reference is committed
         run: bun run check:reference
+      - name: Verify package boundaries
+        run: bun run check:boundaries
       - name: Typecheck
         run: bun run typecheck
       - name: Lint

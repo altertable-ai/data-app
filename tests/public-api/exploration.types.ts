@@ -11,7 +11,7 @@ import {
   TableWidget,
   VisualizationWidget,
   type AppVariableValues,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 const region = dimensionFilter<string>({
   key: 'region',
   label: 'Region',

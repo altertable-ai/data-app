@@ -32,6 +32,22 @@
   },
   "overrides": [
     {
+      "files": ["packages/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/packages/**"],
+                "message": "Use relative imports within a package and package exports across packages."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["tests/**"],
       "rules": {
         "no-restricted-imports": [
@@ -48,7 +64,9 @@
                   "@/src/**",
                   "@/dev/**",
                   "**/dist/**",
-                  "@altertable/data-app/dist/**"
+                  "@altertable/data-app/dist/**",
+                  "@/packages/**",
+                  "@altertable/data-app*/internal"
                 ],
                 "message": "Test consumer workflows through @altertable/data-app/<entry>, not private implementation modules."
               }

@@ -1,6 +1,6 @@
-import { KEY_SEPARATOR } from '@/src/core/keys';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { useRef, useState } from 'react';
-import { injectDataAppAnnotationStyles } from '@altertable/data-app/react';
+import { injectDataAppAnnotationStyles } from '@altertable/data-app-react';
 import { useAnnotationDrafts } from '@/dev/fixtures/useAnnotationDrafts';
 import {
   MessageRoutingError,

@@ -7,7 +7,99 @@
       "bump-minor-pre-major": true,
       "package-name": "@altertable/data-app",
       "include-component-in-tag": false,
-      "include-v-in-tag": true
+      "include-v-in-tag": true,
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app']"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-react']"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-embed']"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-bun']"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-worker']"
+        },
+        {
+          "type": "json",
+          "path": "examples/starter-local-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app']"
+        },
+        {
+          "type": "json",
+          "path": "examples/starter-local-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app-react']"
+        },
+        {
+          "type": "json",
+          "path": "examples/starter-local-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app-bun']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-worker/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-worker/package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-embed']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-embed/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-embed/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-bun/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-bun/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-bun/package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-embed']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-react/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-react/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app']"
+        }
+      ]
     }
   }
 }

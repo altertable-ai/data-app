@@ -1,4 +1,4 @@
-import { KEY_SEPARATOR } from '@/src/core/keys';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { defineDataApp } from '@altertable/data-app';
 import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
@@ -11,8 +11,8 @@ import {
   TextWidget,
   VisualizationWidget,
   searchVariable,
-} from '@altertable/data-app/react';
-import type { TransportResponse } from '@/src/core/bridge';
+} from '@altertable/data-app-react';
+import type { TransportResponse } from '@altertable/data-app/contract';
 
 const pending = new Map<string, (response: TransportResponse) => void>();
 const client = createDataClient<{

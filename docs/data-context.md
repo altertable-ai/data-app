@@ -12,12 +12,12 @@ to their execution evidence. Keep all three explicit.
 
 ## Register source identifiers
 
-Use `defineDataIdentifiers()` from `/react` to register exact catalog, schema,
+Use `defineDataIdentifiers()` from `@altertable/data-app-react` to register exact catalog, schema,
 table, and field names. Use `<DataIdentifier>` in descriptions and glossary
 entries to render those source references consistently.
 
 ```tsx
-import { defineDataIdentifiers } from '@altertable/data-app/react';
+import { defineDataIdentifiers } from '@altertable/data-app-react';
 
 const identifiers = defineDataIdentifiers({
   tables: {
@@ -85,7 +85,7 @@ const finding = context.finding({
 
 Query inspection shows the executed SQL and resolved parameters; copy actions include both.
 
-Import context and identifier factories from `/react`. Use the operation’s derived `queryNames` for evidence.
+Import context and identifier factories from `@altertable/data-app-react`. Use the operation’s derived `queryNames` for evidence.
 
 Use `view.metric(definition, select)` to register and bind a metric in one call.
 Declare dataset evidence references inside `view.dataset()`; the view registers

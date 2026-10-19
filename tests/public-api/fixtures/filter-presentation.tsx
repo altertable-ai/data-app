@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sheet, useAppVariables } from '@altertable/data-app/react/ui';
+import { Sheet, useAppVariables } from '@altertable/data-app-react/ui';
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -22,7 +22,7 @@ import {
   injectDataAppStyles,
   mountDataApp,
   type AppVariableValues,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 const dataApp = defineDataApp({
   title: 'Customer explorer',

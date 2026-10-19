@@ -13,15 +13,28 @@ narrative, then let users present findings and export results.
 
 ## Install
 
+Choose the packages for your runtime:
+
+| Package                       | Use                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------- |
+| `@altertable/data-app`        | Definitions, contracts, formatting, browser clients, portable server handlers |
+| `@altertable/data-app-react`  | React app authoring and `/ui` components                                      |
+| `@altertable/data-app-embed`  | Framework-neutral iframe hosting and `/react` host adapter                    |
+| `@altertable/data-app-bun`    | Bun local serving and `/preview` tooling                                      |
+| `@altertable/data-app-worker` | Self-contained sandbox Worker deployment                                      |
+
 ```fish
-npm install @altertable/data-app
-# or
-pnpm add @altertable/data-app
-# or
-bun add @altertable/data-app
+bun add @altertable/data-app @altertable/data-app-react react react-dom
+# Local apps also use the Bun adapter:
+bun add @altertable/data-app-bun
 ```
 
-## Build an app
+Install only the base package for portable clients and servers. Framework-neutral
+hosts use the embed package; React hosts add React and import
+`@altertable/data-app-embed/react`. Neither requires the app UI stack.
+All packages share a coordinated release version.
+
+## Usage
 
 Apps can be embedded in Altertable, ChatGPT, Claude, and other hosts that support
 MCP Apps through a host integration, or run locally in a browser.
@@ -32,7 +45,7 @@ MCP Apps through a host integration, or run locally in a browser.
 | Local data app  | [Local guide](docs/local-data-apps.md) | [Local project](examples/starter-local-data-app/README.md) |
 
 For agent-assisted work, direct your agent to [AGENTS.md](AGENTS.md). The
-generated [API reference](REFERENCE.md) lists every export and prop for search.
+generated [API reference](REFERENCE.md) lists public exports and props for search.
 
 ## Development
 

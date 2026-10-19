@@ -1,14 +1,14 @@
-import { KEY_SEPARATOR } from '@/src/core/keys';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { applyAppearance } from '@altertable/data-app/appearance';
-import { Button, Grid, GridItem, Stack } from '@altertable/data-app/react';
+import { Button, Grid, GridItem, Stack } from '@altertable/data-app-react';
 import {
   ChartLegend,
   ComposedChart,
   VisualizationWidget,
   injectDataAppStyles,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 
 injectDataAppStyles();
 applyAppearance({ theme: 'light' });

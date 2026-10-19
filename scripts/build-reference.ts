@@ -17,7 +17,7 @@ import {
   isParameterDeclaration,
   isTypeParameterDeclaration,
 } from 'typescript/unstable/ast/is';
-import manifest from '@/package.json';
+import { packages } from '@/scripts/packages';
 
 // Generates REFERENCE.md from the emitted declarations: one line per public
 // export and one per prop or option, resolved by the TypeScript checker.
@@ -35,16 +35,24 @@ const typeFlags =
   NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope;
 const absent = TypeFlags.Never | TypeFlags.Undefined;
 
-const entryPoints = Object.entries(manifest.exports).flatMap(
-  ([subpath, target]) =>
-    'types' in target
-      ? [
+const undocumented = new Set([
+  '@altertable/data-app/internal',
+  '@altertable/data-app-bun/reload',
+  '@altertable/data-app-embed/runtime',
+]);
+const entryPoints = packages.flatMap(({ directory, manifest }) =>
+  Object.entries(manifest.exports).flatMap(([subpath, target]) => {
+    const specifier =
+      subpath === '.' ? manifest.name : manifest.name + subpath.slice(1);
+    return undocumented.has(specifier)
+      ? []
+      : [
           {
-            specifier: join(manifest.name, subpath).replace(/\/$/, ''),
-            file: resolve(root, target.types),
+            specifier,
+            file: resolve(root, directory, target.types),
           },
-        ]
-      : []
+        ];
+  })
 );
 
 type Export = { name: string; symbol: Symbol; specifiers: string[] };
@@ -581,7 +589,7 @@ name:
 
 - \`rg '^LineChart\\b' REFERENCE.md\` prints \`LineChart\` and its props.
 - \`rg '^LineChart' REFERENCE.md\` adds \`LineChartItem\` and \`LineChartProps\`.
-- \`rg '@altertable/data-app/react/ui[,)]' REFERENCE.md\` lists one entry point.
+- \`rg '@altertable/data-app-react/ui[,)]' REFERENCE.md\` lists one entry point.
 
 Line shapes:
 
@@ -594,7 +602,7 @@ Line shapes:
 - \`= props listed as Name.*\` points from a props type to its component.
 
 Hosted apps must pass the required \`defineDataApp.config.scope\`,
-\`DataApp.story\`, and \`DataApp.datasets\` from \`@altertable/data-app/react\`.
+\`DataApp.story\`, and \`DataApp.datasets\` from \`@altertable/data-app-react\`.
 `;
   for (const [, example] of header.matchAll(/`([A-Za-z]+(?:\.[a-z]+)+)`/g))
     if (!body.some(line => line.startsWith(`${example}:`)))
@@ -619,4 +627,7 @@ if (check) {
     throw new Error(
       'REFERENCE.md is stale. Run `bun run build` and commit REFERENCE.md.'
     );
-} else await writeFile(output, reference);
+} else {
+  await writeFile(output, reference);
+  await writeFile(join(root, 'packages/data-app/REFERENCE.md'), reference);
+}

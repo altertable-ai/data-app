@@ -24,7 +24,7 @@
   },
   "include": [
     "vitest.config.ts",
-    "src",
+    "packages/*/src",
     "tests",
     "scripts",
     "dev",

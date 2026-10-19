@@ -1,4 +1,4 @@
-import { injectDataAppStyles } from '@altertable/data-app/react';
+import { injectDataAppStyles } from '@altertable/data-app-react';
 import { defineDataApp } from '@altertable/data-app';
 import {
   connectionCheck,
@@ -12,8 +12,8 @@ import {
   getDataAppNavigation,
   DataAppError,
 } from '@altertable/data-app/client';
-import { DataApp, useAppVariables } from '@altertable/data-app/react/ui';
-import { mountDataApp, searchVariable } from '@altertable/data-app/react';
+import { DataApp, useAppVariables } from '@altertable/data-app-react/ui';
+import { mountDataApp, searchVariable } from '@altertable/data-app-react';
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const dataApp = defineDataApp({
   title: 'Embedded report',

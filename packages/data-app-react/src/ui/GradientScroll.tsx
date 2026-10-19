@@ -1,0 +1,110 @@
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type ComponentPropsWithRef,
+} from 'react';
+import { useMergeRefs } from '@floating-ui/react';
+import { classNames } from './classNames.ts';
+
+export type GradientScrollProps = ComponentPropsWithRef<'div'> & {
+  axis?: 'vertical' | 'horizontal';
+  /** Disable the start fade when sticky controls share the scrollport. */
+  fadeStart?: boolean;
+};
+
+type ScrollMetrics = Pick<
+  HTMLElement,
+  | 'scrollTop'
+  | 'scrollHeight'
+  | 'clientHeight'
+  | 'scrollLeft'
+  | 'scrollWidth'
+  | 'clientWidth'
+>;
+
+/** The visible edges that still have content beyond them. */
+export function scrollFadeEdges(
+  metrics: ScrollMetrics,
+  axis: 'vertical' | 'horizontal'
+) {
+  const position = axis === 'vertical' ? metrics.scrollTop : metrics.scrollLeft;
+  const viewport =
+    axis === 'vertical' ? metrics.clientHeight : metrics.clientWidth;
+  const content =
+    axis === 'vertical' ? metrics.scrollHeight : metrics.scrollWidth;
+
+  return { start: position > 0, end: position + viewport < content - 1 };
+}
+
+/** Track overflow on the element that owns scrolling. */
+export function useScrollFade(axis: 'vertical' | 'horizontal') {
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+  const [edges, setEdges] = useState({ start: false, end: false });
+
+  const measure = useCallback(() => {
+    if (!element) return;
+    const next = scrollFadeEdges(element, axis);
+    setEdges(current =>
+      current.start === next.start && current.end === next.end ? current : next
+    );
+  }, [element, axis]);
+
+  useEffect(() => {
+    if (!element) return;
+    const scrollElement = element;
+    const observer = new ResizeObserver(measure);
+
+    function observeChildren() {
+      for (const child of scrollElement.children) observer.observe(child);
+    }
+    observer.observe(element);
+    observeChildren();
+    const mutations = new MutationObserver(() => {
+      observeChildren();
+      measure();
+    });
+    mutations.observe(element, { childList: true });
+    element.addEventListener('scroll', measure, { passive: true });
+    window.addEventListener('resize', measure);
+    const frame = requestAnimationFrame(measure);
+    const delayed = window.setTimeout(measure, 100);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(delayed);
+      mutations.disconnect();
+      observer.disconnect();
+      element.removeEventListener('scroll', measure);
+      window.removeEventListener('resize', measure);
+    };
+  }, [element, measure]);
+
+  return { ref: setElement, edges };
+}
+
+/** Fades only scrollable edges; content, size, and scroll changes update the mask. */
+export function GradientScroll({
+  axis = 'vertical',
+  fadeStart = true,
+  className,
+  children,
+  ref,
+  ...props
+}: GradientScrollProps) {
+  const scroll = useScrollFade(axis);
+  const mergedRef = useMergeRefs([scroll.ref, ref]);
+
+  return (
+    <div
+      {...props}
+      ref={mergedRef}
+      className={classNames('altertable-gradient-scroll', className)}
+      data-axis={axis}
+      data-fade-start={fadeStart && scroll.edges.start ? '' : undefined}
+      data-fade-end={scroll.edges.end ? '' : undefined}
+    >
+      {children}
+    </div>
+  );
+}

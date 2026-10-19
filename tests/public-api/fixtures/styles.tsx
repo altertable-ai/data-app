@@ -3,8 +3,8 @@ import {
   Grid,
   GridItem,
   injectDataAppStyles,
-} from '@altertable/data-app/react';
-import { VisualizationWidget } from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react';
+import { VisualizationWidget } from '@altertable/data-app-react/ui';
 function Report() {
   return (
     <>

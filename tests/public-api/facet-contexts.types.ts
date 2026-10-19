@@ -13,7 +13,7 @@ import {
   dateRangeVariable,
   searchVariable,
   choiceVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 type Operations = {
   strings: DataOperation<

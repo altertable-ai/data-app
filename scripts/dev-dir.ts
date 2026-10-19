@@ -1,4 +1,10 @@
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import {
@@ -6,7 +12,7 @@ import {
   createPathsMatcher,
   type TsConfigJson,
 } from 'get-tsconfig';
-import manifest from '@/package.json';
+import { packages } from '@/scripts/packages';
 import {
   previewLakehouseEnvironment,
   ensurePackageBuild,
@@ -32,7 +38,7 @@ await ensurePackageBuild();
 
 const { environment, target } = previewLakehouseEnvironment();
 const { validateLakehouseCredentials } =
-  await import('@altertable/data-app/server/bun');
+  await import('@altertable/data-app-bun');
 validateLakehouseCredentials(environment);
 
 const appConfig = readAppImportPaths(directory);
@@ -46,13 +52,47 @@ const previewConfig = {
 
 const configDirectory = mkdtempSync(join(tmpdir(), 'data-app-dev-dir-'));
 const tsconfig = join(configDirectory, 'tsconfig.json');
+
 writeFileSync(tsconfig, JSON.stringify(previewConfig));
+// Bun's HTML dev server resolves frontend packages separately from the runtime's
+// tsconfig override. Supply the same checkout resolution through its build hook.
+const plugin = join(configDirectory, 'checkout-plugin.ts');
+writeFileSync(
+  plugin,
+  `export default {
+  name: 'data-app-checkout',
+  setup(build) {
+    build.onResolve({ filter: /^(?:@altertable\\/data-app(?:-react|-embed|-bun|-worker)?|react|react-dom)(?:\\/.*)?$/ },
+      ({ path }) => ({ path: Bun.resolveSync(path, ${JSON.stringify(checkoutRoot)}) }));
+  },
+};`
+);
+const appBunfig = join(directory, 'bunfig.toml');
+const config = (
+  existsSync(appBunfig) ? Bun.TOML.parse(readFileSync(appBunfig, 'utf8')) : {}
+) as {
+  preload?: string[];
+  serve?: { static?: { plugins?: string[] } };
+};
+if (config.preload)
+  config.preload = config.preload.map(path => Bun.resolveSync(path, directory));
+config.serve ??= {};
+config.serve.static ??= {};
+config.serve.static.plugins = [
+  ...(config.serve.static.plugins ?? []).map(path =>
+    Bun.resolveSync(path, directory)
+  ),
+  plugin,
+];
+const bunfig = join(configDirectory, 'bunfig.toml');
+writeFileSync(bunfig, Bun.TOML.stringify(config)!);
 
 console.log(target);
 const child = Bun.spawn(
   [
     process.execPath,
     `--tsconfig-override=${tsconfig}`,
+    `--config=${bunfig}`,
     '--watch',
     '--no-clear-screen',
     'src/server.ts',
@@ -91,11 +131,13 @@ function readAppImportPaths(directory: string): {
 
 function checkoutImportPaths(): ImportPaths {
   const paths: ImportPaths = {};
-  for (const [entry, target] of Object.entries(manifest.exports)) {
-    const subpath = entry === '.' ? '' : entry.slice(1);
-    const specifier = `@altertable/data-app${subpath}`;
-    const javascript = 'import' in target ? target.import : target.default;
-    paths[specifier] = [resolve(checkoutRoot, javascript)];
+  for (const { directory, manifest } of packages) {
+    for (const [entry, target] of Object.entries(manifest.exports)) {
+      const subpath = entry === '.' ? '' : entry.slice(1);
+      paths[`${manifest.name}${subpath}`] = [
+        resolve(checkoutRoot, directory, target.import),
+      ];
+    }
   }
   for (const name of ['react', 'react-dom']) {
     const entry = Bun.resolveSync(name, checkoutRoot);

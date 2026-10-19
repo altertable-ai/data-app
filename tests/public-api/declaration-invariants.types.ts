@@ -15,7 +15,7 @@ import {
   createDataHooks,
   dateRangeVariable,
   multiChoiceVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 const operation = {
   queries: {},

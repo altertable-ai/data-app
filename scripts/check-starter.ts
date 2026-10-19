@@ -2,8 +2,7 @@ import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dir, '..');
 
-// Bun snapshots file dependencies on install. Refresh after the package build
-// so a fresh checkout's starter resolves the generated public exports.
+// Verify the starter against the built workspace packages.
 for (const [command, cwd] of [
   [['bun', 'install', '--frozen-lockfile'], root],
   [['bun', 'run', 'check'], resolve(root, 'examples/starter-local-data-app')],

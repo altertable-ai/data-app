@@ -13,6 +13,10 @@ export default defineConfig({
       },
       {
         extends: true,
+        test: { name: 'release', include: ['tests/release/**/*.test.ts'] },
+      },
+      {
+        extends: true,
         test: {
           name: 'time-interval',
           include: ['tests/vendor/d3-time/**/*.test.{js,ts}'],

@@ -5,7 +5,7 @@ import {
   type DataOperation,
   type DimensionOption,
 } from '@altertable/data-app/contract';
-import { createDataHooks, searchVariable } from '@altertable/data-app/react';
+import { createDataHooks, searchVariable } from '@altertable/data-app-react';
 
 type Operations = {
   options: DataOperation<{ search: string }, DimensionOption<number>[]>;

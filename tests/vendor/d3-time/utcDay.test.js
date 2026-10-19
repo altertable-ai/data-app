@@ -1,6 +1,9 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { utcDay, utcDays } from '@/src/core/time-interval';
+import {
+  utcDay,
+  utcDays,
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { utc } from '@/tests/vendor/d3-time/date.js';
 
 it('utcDays in an alias for utcDay.range', () => {

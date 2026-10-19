@@ -212,6 +212,65 @@ test.each(['external', 'checkout'])(
   }
 );
 
+test('dev:file uses checkout packages while published previews use the app installation', async () => {
+  const directory = await temporaryDirectory();
+  const entry = join(directory, 'index.tsx');
+  for (const [name, exports] of [
+    ['@altertable/data-app', ['defineDataApp']],
+    ['@altertable/data-app-react', ['Grid']],
+    ['react', ['version']],
+    ['react-dom', ['createRoot']],
+  ] as const) {
+    const target = join(directory, 'node_modules', name);
+    await mkdir(target, { recursive: true });
+    await writeFile(
+      join(target, 'package.json'),
+      JSON.stringify({
+        name,
+        version: '99.0.0',
+        type: 'module',
+        exports: { '.': './index.js', './*': './index.js' },
+      })
+    );
+    await writeFile(
+      join(target, 'index.js'),
+      exports
+        .map(name => `export const ${name} = 'Conflicting installed package';`)
+        .join('\n')
+    );
+  }
+  await writeFile(
+    entry,
+    `import { defineDataApp } from '@altertable/data-app';
+import { Grid } from '@altertable/data-app-react';
+import { version } from 'react';
+import { createRoot } from 'react-dom/client';
+console.log('Checkout resolution regression', defineDataApp, Grid, version, createRoot);`
+  );
+  const checkout = await startFile(entry);
+  const checkoutBundle = await (
+    await fetch(new URL('/bundle.js', checkout.url))
+  ).text();
+  expect(checkoutBundle).toContain('Checkout resolution regression');
+  expect(checkoutBundle).not.toContain('Conflicting installed package');
+
+  const published = run([
+    '-e',
+    `import { serveAppFile } from '@altertable/data-app-bun/preview';
+const preview = await serveAppFile({file:${JSON.stringify(entry)},port:0,
+lakehouse:{async queryAll(){return {columns:[],rows:[]};}}});
+console.log('Published preview',preview.url.href);`,
+  ]);
+  const [, url] = await waitForOutput(
+    published,
+    /Published preview (http:\/\/127\.0\.0\.1:\d+\/)/
+  );
+  const installedBundle = await (
+    await fetch(new URL('/bundle.js', url))
+  ).text();
+  expect(installedBundle).toContain('Conflicting installed package');
+});
+
 test('dev:file reports unresolved imports and recovers when the missing file is created', async () => {
   const directory = await temporaryDirectory();
   const entry = join(directory, 'index.tsx');
@@ -339,7 +398,7 @@ test('dev:file catches up after an edit missed during a reload disconnection', a
   function appSource(label: string) {
     return `
 import { defineDataApp } from '@altertable/data-app';
-import { mountDataApp } from '@altertable/data-app/react';
+import { mountDataApp } from '@altertable/data-app-react';
 const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'test', environment: 'test' }, queries: {} });
 function App() { return <h1>${label}</h1>; }
 mountDataApp({ app, component: App });
@@ -398,11 +457,12 @@ mountDataApp({ app, component: App });
     for (const response of reloadConnections) response.destroy();
     await connectionFailed;
     await writeFile(entry, appSource('Edited while disconnected'));
-    await vi.waitFor(async () =>
-      expect(
-        await (await fetch(new URL('/bundle.js', server.url))).text()
-      ).toContain('Edited while disconnected')
-    );
+    await expect
+      .poll(async () => {
+        const bundle = await fetch(new URL('/bundle.js', server.url));
+        return (await bundle.text()).includes('Edited while disconnected');
+      })
+      .toBe(true);
     expect(
       await app.getByRole('heading', { name: 'Before disconnect' }).isVisible()
     ).toBe(true);
@@ -426,7 +486,7 @@ test('dev:file handles SQL body-limit responses and downloads exported blobs thr
     entry,
     `
 import { defineDataApp } from '@altertable/data-app';
-import { mountDataApp } from '@altertable/data-app/react';
+import { mountDataApp } from '@altertable/data-app-react';
 import { getDataAppTransport } from '@altertable/data-app/client';
 const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'test', environment: 'test' }, queries: {} });
 function App() {
@@ -606,7 +666,7 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
 
   expect(command.output()).toContain('App preload preserved');
   const page = await fetch(firstUrl!);
-  expect(page.status).toBe(200);
+  expect(page.status, command.output()).toBe(200);
   const script = (await page.text()).match(/src="([^"]+\.js)"/)?.[1];
   expect(script).toBeDefined();
   const client = await fetch(new URL(script!, firstUrl));
@@ -646,7 +706,7 @@ test('dev:file replaces the rendered iframe and preserves URL filters after edit
     entry,
     `
 import { defineDataApp } from '@altertable/data-app';
-import { mountDataApp } from '@altertable/data-app/react';
+import { mountDataApp } from '@altertable/data-app-react';
 import { getDataAppNavigation } from '@altertable/data-app/client';
 import { label } from './label';
 import './style.css';
@@ -708,7 +768,7 @@ test('the public Bun preview serves injected data and rejects foreign requests',
   const command = run([
     '--eval',
     `
-import { serveAppFile } from '@altertable/data-app/server/bun/preview';
+import { serveAppFile } from '@altertable/data-app-bun/preview';
 const preview = await serveAppFile({
   file: ${JSON.stringify(file)},
   port: 0,
@@ -827,7 +887,7 @@ test('the public Bun preview keeps remaining reload clients working and releases
   const command = run([
     '--eval',
     `
-import { serveAppFile } from '@altertable/data-app/server/bun/preview';
+import { serveAppFile } from '@altertable/data-app-bun/preview';
 const options = {
   file: ${JSON.stringify(file)},
   port: 0,

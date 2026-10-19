@@ -1,8 +1,9 @@
 # React embedding
 
-Import `<DataAppBridge>` from `@altertable/data-app/react/embed`. This entry depends
+Import `<DataAppBridge>` from `@altertable/data-app-embed/react`. This entry depends
 on React and the embedding engine, and does not load the app's widgets, React
-Query, or CSS.
+Query, or CSS. `@altertable/data-app-react` builds the UI inside the iframe;
+neither package imports the other. Both use the base package's contracts.
 
 The bridge owns iframe setup and `postMessage()` communication. The consuming
 frontend or CLI owns its shell: fetching a bundle, subscriptions, layout, loading
@@ -16,8 +17,8 @@ only the iframe; it adds no loading, error, or retry UI and does not hide the fr
 
 ```tsx
 import { useReducer, useState } from 'react';
-import { DataAppBridge } from '@altertable/data-app/react/embed';
-import type { DataAppStatus } from '@altertable/data-app/embed';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
+import type { DataAppStatus } from '@altertable/data-app-embed';
 
 function Shell() {
   const [status, setStatus] = useState<DataAppStatus>('connecting');
@@ -69,7 +70,7 @@ owns a loaded iframe and its security policy:
 
 ```tsx
 import { useState, type ComponentRef } from 'react';
-import { DataAppBridge } from '@altertable/data-app/react/embed';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
 
 function Host() {
   const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
@@ -95,7 +96,7 @@ are mutually exclusive.
 ## Loading an embedded app
 
 The host owns loading and generation UI while an app starts. Use a neutral
-status that does not imply a particular app layout. `/react/embed` remains
+status that does not imply a particular app layout. `@altertable/data-app-embed/react` remains
 independent of UI components and styles. Once the app loads, its query and
 widget loading states describe the content they replace.
 

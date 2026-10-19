@@ -1,5 +1,5 @@
 import { createDataClient } from '@altertable/data-app/client';
-import { createDataHooks, createDataContext } from '@altertable/data-app/react';
+import { createDataHooks, createDataContext } from '@altertable/data-app-react';
 import type {
   DataOperation,
   DimensionSelection,

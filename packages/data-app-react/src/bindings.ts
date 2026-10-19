@@ -1,0 +1,451 @@
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { parseDetailInput, type DetailNavigation } from './details.tsx';
+import {
+  defineActions,
+  type ActionBuilder,
+  type ExplorationActions,
+  type ActionDeclaration,
+} from './actions.ts';
+import { assertSourceOwner } from './source-owner.ts';
+import type { EvidenceDeclaration } from './ui/data-context.ts';
+import type { SearchSuggestion } from './ui/SearchTypeahead.tsx';
+import { createElement, type ReactNode } from 'react';
+import { DateDisplay } from './ui/DateDisplay.tsx';
+import type { DateFormat } from '@altertable/data-app/format';
+import type { DateRangeRequest } from '@altertable/data-app/contract';
+import type {
+  DataView,
+  DisplayedSnapshot,
+} from '@altertable/data-app/internal';
+import { formatMetric } from '@altertable/data-app/format';
+import type { MetricFormat } from '@altertable/data-app/format';
+import type { DataReading, MetricValues } from '@altertable/data-app/internal';
+import { invariant } from '@altertable/data-app/internal';
+import type { CsvCell, CsvTable, CsvExport } from './ui/csv-export.ts';
+import type { MetricDefinition } from './ui/metric.ts';
+import type { EmptyContent } from './ui/presentation.ts';
+import type { TableWidgetColumn } from './ui/TableWidget.tsx';
+import type { WidgetEvidence } from './ui/WidgetEvidence.ts';
+import { DetailRecords, DetailView } from './details.tsx';
+
+/** Displayed data, or an initial loading reading. Pending filter values are never a source. */
+export type ViewSource<Data, Input> =
+  | { loading: true }
+  | { loading?: false; data: Data; input: Input };
+type SourceReading<Source, Value> = Source extends { loading: true }
+  ? { loading: true }
+  : { loading: false; value: Value };
+
+function readSource<Data, Input, Value, Source extends ViewSource<Data, Input>>(
+  source: Source,
+  select: (data: Data, input: Input) => Value
+): SourceReading<Source, Value> {
+  // The generic return preserves a ready snapshot's value for story authors.
+  return (
+    source.loading
+      ? { loading: true }
+      : { loading: false, value: select(source.data, source.input) }
+  ) as SourceReading<Source, Value>;
+}
+
+/** Keys supply IDs; accessors supply raw CSV values. Formats affect display only. */
+export type DatasetColumn<Row> = { label?: string } & (
+  | { value: (row: Row) => CsvCell; format?: (row: Row) => ReactNode }
+  | { value: (row: Row) => number | null | undefined; format: MetricFormat }
+  | {
+      value: (row: Row) => string | number | null | undefined;
+      format: Extract<DateFormat, { kind: 'dateTime' }>;
+    }
+  | {
+      value: (row: Row) => string | null | undefined;
+      format: Extract<DateFormat, { kind: 'date' }>;
+    }
+);
+
+export type DatasetDefinition<Data, Input, Row, Evidence = WidgetEvidence> = {
+  name: string;
+  select: (data: Data, input: Input) => readonly Row[];
+  columns: Record<string, DatasetColumn<NoInfer<Row>>>;
+  rowKey: (row: NoInfer<Row>) => string | number;
+  evidence: Evidence;
+  emptyFallback?: EmptyContent;
+  /** Declare for records whose titles are useful query completions; omit for aggregate rows. */
+  suggestions?: DatasetSuggestionOptions<Row>;
+};
+
+export type DatasetSuggestionOptions<Row> = {
+  title: (row: Row) => string;
+  description?: (row: Row) => string;
+  /** Override query completion with an app action. */
+  onSelect?: (row: Row) => void;
+};
+
+/** Authoring references are registered by the owning view. */
+export type DatasetDeclaration<Data, Input, Row> = DatasetDefinition<
+  Data,
+  Input,
+  Row,
+  EvidenceDeclaration
+>;
+
+/** Real view ownership and registered references, shared by metrics and datasets. */
+export class RegisteredBinding {
+  #owner?: object;
+  #evidence?: WidgetEvidence;
+  constructor(owner?: object, evidence?: WidgetEvidence) {
+    this.#owner = owner;
+    this.#evidence = evidence;
+  }
+  /** @internal */
+  static owner(binding: RegisteredBinding): object | undefined {
+    return binding.#owner;
+  }
+  protected assertSource(source: object) {
+    if (this.#owner) assertSourceOwner(this.#owner, source);
+  }
+  static evidence(binding: RegisteredBinding, owner: object): WidgetEvidence {
+    invariant(
+      binding instanceof RegisteredBinding,
+      'Story evidence must be a registered metric or dataset binding.'
+    );
+    invariant(
+      binding.#owner === owner,
+      'Story evidence must belong to the story view.'
+    );
+    invariant(
+      binding.#evidence,
+      'Story evidence must have registered references.'
+    );
+    return binding.#evidence;
+  }
+}
+export function registeredEvidence(
+  binding: RegisteredBinding,
+  owner: object
+): WidgetEvidence {
+  return RegisteredBinding.evidence(binding, owner);
+}
+
+export class ExportDataset<Data, Input> extends RegisteredBinding {
+  /** @internal Undefined means this dataset declares no record suggestions. */
+  readSearchSuggestions(
+    _source: ViewSource<Data, Input>
+  ): DataReading<readonly SearchSuggestion[]> | undefined {
+    return undefined;
+  }
+  #csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable;
+  constructor(
+    readonly name: string,
+    csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable,
+    owner?: object,
+    evidence?: WidgetEvidence
+  ) {
+    super(owner, evidence);
+    this.#csv = csv;
+  }
+  static csv<Data, Input>(
+    dataset: ExportDataset<Data, Input>,
+    snapshot: DisplayedSnapshot<Data, Input>
+  ) {
+    dataset.assertSource(snapshot);
+    return dataset.#csv(snapshot);
+  }
+}
+
+export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
+  readonly evidence: WidgetEvidence;
+  #suggestions?: DatasetSuggestionOptions<Row>;
+  #select: (data: Data, input: Input) => readonly Row[];
+  #table: {
+    title: string;
+    columns: [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
+    rowKey: (row: Row) => string | number;
+    evidence: WidgetEvidence;
+    emptyFallback: EmptyContent;
+  };
+  constructor(
+    definition: DatasetDefinition<Data, Input, Row>,
+    owner?: object,
+    timeZone?: string
+  ) {
+    invariant(!!definition.name.trim(), 'A dataset needs a name.');
+    const ids = Object.keys(definition.columns);
+    invariant(
+      ids.length > 0 && ids.every(id => !!id.trim()),
+      'A dataset needs nonempty column IDs.'
+    );
+    const { select, rowKey } = definition;
+    const fields = Object.entries(definition.columns).map(([id, column]) => ({
+      ...column,
+      id,
+      label:
+        column.label?.trim() ||
+        id
+          .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+          .replace(/[_-]+/g, ' ')
+          .trim()
+          .toLowerCase()
+          .replace(/^./u, letter => letter.toUpperCase()) ||
+        id,
+    }));
+    const columns = fields.map(column => ({
+      id: column.id,
+      header: column.label,
+      type:
+        column.format && typeof column.format !== 'function'
+          ? column.format.kind === 'date' || column.format.kind === 'dateTime'
+            ? ('datetime' as const)
+            : ('number' as const)
+          : undefined,
+      cell(row: Row): ReactNode {
+        if (typeof column.format === 'function') return column.format(row);
+        const value = column.value(row);
+        if (
+          column.format &&
+          typeof column.format !== 'function' &&
+          (column.format.kind === 'date' || column.format.kind === 'dateTime')
+        ) {
+          const format =
+            column.format.kind === 'dateTime'
+              ? {
+                  ...column.format,
+                  timeZone: column.format.timeZone ?? timeZone,
+                }
+              : column.format;
+          return createElement(DateDisplay, {
+            value: value as string | number | null | undefined,
+            format,
+          });
+        }
+        if (value === null || value === undefined) return '—';
+        return column.format
+          ? formatMetric(value as number, column.format)
+          : String(value);
+      },
+    })) as [TableWidgetColumn<Row>, ...TableWidgetColumn<Row>[]];
+
+    super(
+      definition.name,
+      snapshot => ({
+        name: definition.name,
+        columns: fields.map(column => column.label),
+        rows: select(snapshot.data, snapshot.input).map(row =>
+          fields.map(column => column.value(row))
+        ),
+      }),
+      owner,
+      definition.evidence
+    );
+    this.evidence = definition.evidence;
+    this.#select = select;
+    this.#table = {
+      title: definition.name,
+      columns,
+      rowKey,
+      evidence: definition.evidence,
+      emptyFallback: definition.emptyFallback ?? { title: 'No results' },
+    };
+    this.#suggestions = definition.suggestions;
+  }
+  actions<const Actions extends Record<string, ActionDeclaration<Row, Input>>>(
+    build: (action: ActionBuilder<Row, Input>) => Actions,
+    options?: { primary?: keyof Actions & string }
+  ): ExplorationActions<Row, Input> {
+    return defineActions(this, build, options);
+  }
+  override readSearchSuggestions(
+    source: ViewSource<Data, Input>
+  ): DataReading<readonly SearchSuggestion[]> | undefined {
+    const suggestions = this.#suggestions;
+    if (!suggestions) return undefined;
+    const { onSelect } = suggestions;
+    const reading = this.read(source);
+    if (reading.loading) return reading;
+    const items = reading.value.map(row => {
+      const key = this.#table.rowKey(row);
+      invariant(
+        typeof key === 'string'
+          ? !!key
+          : typeof key === 'number' && Number.isFinite(key),
+        'Suggestion row keys must be nonempty strings or finite numbers.'
+      );
+      const title = suggestions.title(row);
+      invariant(!!title.trim(), 'Search suggestions need a nonempty title.');
+      return {
+        id: [typeof key, key].join(KEY_SEPARATOR),
+        title,
+        description: suggestions.description?.(row),
+        onSelect: onSelect ? () => onSelect(row) : undefined,
+      };
+    });
+    invariant(
+      new Set(items.map(item => item.id)).size === items.length,
+      'Search suggestion row keys must be unique.'
+    );
+    return { loading: false, value: items };
+  }
+  read = <Source extends ViewSource<Data, Input>>(source: Source) => {
+    this.assertSource(source);
+    return readSource<Data, Input, readonly Row[], Source>(
+      source,
+      this.#select
+    );
+  };
+  static table<Data, Input, Row>(
+    dataset: Dataset<Data, Input, Row>,
+    source: ViewSource<Data, Input>
+  ) {
+    return { ...dataset.#table, reading: dataset.read(source) };
+  }
+}
+
+export function bindDataset<Data, Input, Row>(
+  definition: DatasetDefinition<Data, Input, Row>,
+  owner?: object,
+  timeZone?: string
+) {
+  return new Dataset(definition, owner, timeZone);
+}
+
+export function datasetTable<Data, Input, Row>(
+  dataset: Dataset<Data, Input, Row>,
+  source: ViewSource<Data, Input>
+) {
+  return Dataset.table(dataset, source);
+}
+export function datasetCsv<Data, Input>(
+  dataset: ExportDataset<Data, Input>,
+  snapshot: DisplayedSnapshot<Data, Input>
+) {
+  return ExportDataset.csv(dataset, snapshot);
+}
+
+export class Metric<Data, Input> extends RegisteredBinding {
+  #select: (data: Data, input: Input) => MetricValues;
+  #date?: (input: Input) => DateRangeRequest;
+  constructor(
+    readonly definition: MetricDefinition,
+    select: (data: Data, input: Input) => MetricValues,
+    date?: (input: Input) => DateRangeRequest,
+    owner?: object
+  ) {
+    super(owner, definition.evidence);
+    this.#select = select;
+    this.#date = date;
+  }
+  read = <Source extends ViewSource<Data, Input>>(source: Source) => {
+    this.assertSource(source);
+    return readSource<
+      Data,
+      Input,
+      MetricValues & { period?: DateRangeRequest },
+      Source
+    >(source, (data, input) => {
+      const values = this.#select(data, input);
+      invariant(
+        values.previous === undefined || this.#date,
+        'Metric comparisons require a view date binding.'
+      );
+      return { ...values, period: this.#date?.(input) };
+    });
+  };
+  records<DetailData, DetailInput>(options: {
+    target: DetailView<DetailData, DetailInput>;
+    input: (displayedInput: Input) => DetailInput;
+  }) {
+    return new MetricRecords(this, options.target, options.input);
+  }
+  actions<const Actions extends Record<string, ActionDeclaration<void, Input>>>(
+    build: (action: ActionBuilder<void, Input>) => Actions,
+    options?: { primary?: keyof Actions & string }
+  ): ExplorationActions<void, Input> {
+    return defineActions(this, build, options);
+  }
+}
+
+/** A metric-owned record destination. It can only render from that metric's displayed source. */
+export class MetricRecords<Data, Input, DetailData, DetailInput> {
+  #metric: Metric<Data, Input>;
+  #target: DetailView<DetailData, DetailInput>;
+  #input: (displayedInput: Input) => DetailInput;
+  constructor(
+    metric: Metric<Data, Input>,
+    target: DetailView<DetailData, DetailInput>,
+    input: (displayedInput: Input) => DetailInput
+  ) {
+    this.#metric = metric;
+    this.#target = target;
+    this.#input = input;
+  }
+  render(source: ViewSource<Data, Input>, navigation?: DetailNavigation) {
+    this.#metric.read(source);
+    if (source.loading) return undefined;
+    const input = parseDetailInput(this.#target, this.#input(source.input));
+    return {
+      scope: this.#target.definition.describeInput(input),
+      content: createElement(DetailRecords, {
+        content: DetailView.content(this.#target),
+        input,
+        navigation,
+      }),
+    };
+  }
+  static render<Data, Input, DetailData, DetailInput>(
+    records: MetricRecords<Data, Input, DetailData, DetailInput>,
+    metric: Metric<Data, Input>,
+    source: ViewSource<Data, Input>,
+    navigation?: DetailNavigation
+  ) {
+    invariant(
+      records.#metric === metric,
+      'Metric records must belong to the metric rendered by this widget.'
+    );
+    return records.render(source, navigation);
+  }
+}
+export function bindMetric<Data, Input>(
+  definition: MetricDefinition,
+  select: (data: Data, input: Input) => MetricValues,
+  date?: (input: Input) => DateRangeRequest,
+  owner?: object
+) {
+  return new Metric(definition, select, date, owner);
+}
+
+export function displayedScope<Data, Input>(
+  view: DataView<Data, Input>,
+  describeInput: (input: Input) => string
+): DataReading<string> {
+  if (view.kind === 'loading' || view.kind === 'error')
+    return { loading: true };
+  const input =
+    view.kind === 'updating' || view.kind === 'stale-error'
+      ? view.displayedInput
+      : view.input;
+  return { loading: false, value: describeInput(input) };
+}
+
+export function exportDatasets<Data, Input>(
+  datasets: readonly [
+    ExportDataset<Data, Input>,
+    ...ExportDataset<Data, Input>[],
+  ],
+  snapshot: DisplayedSnapshot<Data, Input>,
+  scope: string,
+  appTitle: string
+): CsvExport {
+  const name = datasets.length === 1 ? datasets[0].name : appTitle;
+  const filename =
+    `${name}-${scope}`
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 200) || 'data';
+  return {
+    filename,
+    tables: datasets.map(dataset => datasetCsv(dataset, snapshot)) as [
+      CsvTable,
+      ...CsvTable[],
+    ],
+  };
+}

@@ -2,7 +2,7 @@
 
 Use components and typed props first: `<Stack>` for sections, `<Grid>` for peers,
 and `<TextContent>` for prose. Standard widgets use [views and bindings](widgets.md);
-custom controls and direct widget shells use [`/react/ui`](ui.md).
+custom controls and direct widget shells use [`@altertable/data-app-react/ui`](ui.md).
 
 Configure theme, palette, accent, typography, density, radius, and elevation through
 `app.appearance`; see [appearance](formatting-and-appearance.md). Call
@@ -12,7 +12,7 @@ Configure theme, palette, accent, typography, density, radius, and elevation thr
 
 Add app-owned classes through `className`. Render package components rather than copying their classes onto markup;
 private descendants are not customization hooks. Public names and stable roots
-are listed in the [typed contract](https://github.com/altertable-ai/data-app/blob/main/src/react/style-contract.ts).
+are listed in the [typed contract](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-react/src/style-contract.ts).
 
 ```css
 .app-action {

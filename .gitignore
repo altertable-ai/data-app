@@ -3,3 +3,10 @@ dist/
 .package-check-*/
 test-results/
 playwright-report/
+
+# Generated npm authoring material; canonical files live at the repository root.
+packages/data-app/docs/
+packages/data-app/examples/
+packages/data-app/AGENTS.md
+packages/data-app/CONTRIBUTING.md
+packages/data-app/REFERENCE.md

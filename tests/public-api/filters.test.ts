@@ -1,14 +1,14 @@
 import { expect, test } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { useAppVariables } from '@altertable/data-app/react/ui';
+import { useAppVariables } from '@altertable/data-app-react/ui';
 import {
   searchVariable,
   choiceVariable,
   multiChoiceVariable,
   dateRangeVariable,
   type VariablePresentation,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import {
   numberFilter,
   booleanFilter,

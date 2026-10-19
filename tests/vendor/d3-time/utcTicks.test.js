@@ -1,6 +1,9 @@
 import { it } from 'vitest';
 import assert from 'assert';
-import { utcMinute, utcTicks } from '@/src/core/time-interval';
+import {
+  utcMinute,
+  utcTicks,
+} from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { utc } from '@/tests/vendor/d3-time/date.js';
 
 it('utcTicks(start, stop, interval) respects the specified interval', () => {

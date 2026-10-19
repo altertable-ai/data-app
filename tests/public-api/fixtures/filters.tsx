@@ -22,7 +22,7 @@ import {
   searchVariable,
   choiceVariable,
   multiChoiceVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 const dataApp = defineDataApp({
   title: 'Filter workflows',
   description: 'Explore how filters change displayed results.',

@@ -1,4 +1,4 @@
-import { KEY_SEPARATOR } from '@/src/core/keys';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { useMemo, useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import { dataApp } from '@/dev/app';
@@ -25,8 +25,8 @@ import {
   Button,
   VisualizationWidget,
   type DatasetDefinition,
-} from '@altertable/data-app/react';
-import { Sheet } from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react';
+import { Sheet } from '@altertable/data-app-react/ui';
 import { calendar } from '@/dev/commerce';
 import {
   operations,

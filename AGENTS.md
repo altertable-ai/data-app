@@ -50,7 +50,7 @@ Read the matching guide before generating an app. Package contributors follow
 | Format values and appearance           | [Formatting and appearance](docs/formatting-and-appearance.md) |
 | Look up props, signatures, and types   | [API reference](REFERENCE.md)                                  |
 
-Use `/react` with declared views and bound widgets. `/react/ui` is for setup,
+Use `@altertable/data-app-react` with declared views and bound widgets. `@altertable/data-app-react/ui` is for setup,
 static displays, and deliberately custom UI; see [direct composition](docs/ui.md).
 Prefer derivation over repeated configuration. Keep static context outside loading boundaries. Derive labels, findings, and
 exports from the displayed result and its input. Edit app-owned files; installed

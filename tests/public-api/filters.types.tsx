@@ -10,13 +10,13 @@ import {
   Select,
   SegmentedControl,
   FilterActions,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 import {
   choiceVariable,
   multiChoiceVariable,
   searchVariable,
   type VariablePresentation,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import { numberFilter, booleanFilter } from '@altertable/data-app/contract';
 const options = [{ id: 'a', label: 'Alpha' }];
 const presentation: VariablePresentation = {

@@ -1,8 +1,8 @@
 # Direct UI composition
 
-Import from `@altertable/data-app/react/ui` for setup/static screens, custom
+Import from `@altertable/data-app-react/ui` for setup/static screens, custom
 controls, or a deliberately custom shell. Standard data apps use declared views
-and bound widgets from `/react`.
+and bound widgets from `@altertable/data-app-react`.
 
 `<DataApp>` here renders a static screen and accepts optional direct CSV data.
 Direct widget forms accept local values or rows. `<DataWidget>` supplies a generic
@@ -30,7 +30,7 @@ styles.
 
 ## Keyboard actions
 
-Use `isPlainKeyEvent()` from `/react/ui` in custom key handlers so local actions
+Use `isPlainKeyEvent()` from `@altertable/data-app-react/ui` in custom key handlers so local actions
 leave shortcut modifiers and IME composition untouched:
 
 ```tsx
@@ -91,7 +91,7 @@ markup to single-choice items.
 
 Choose a chart using the [visualization guide](widgets.md#choose-a-visualization).
 Import `<BarChart>`, `<LineChart>`, `<AreaChart>`, `<PieChart>`, or `<ScatterChart>` from
-`/react/ui`; `<ComposedChart>` exposes the series primitives for custom plots.
+`@altertable/data-app-react/ui`; `<ComposedChart>` exposes the series primitives for custom plots.
 Compose the visual inside `<VisualizationWidget dataset={dataset} source={result}>`
 so rows, loading state, evidence, and inspection come from that dataset.
 Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
@@ -108,7 +108,7 @@ Use `useSvgId()` for stable IDs when composing custom SVG definitions.
 
 ### Product analytics charts
 
-Use `<FunnelChart>`, `<RetentionChart>`, and `<JourneyChart>` from `/react/ui`
+Use `<FunnelChart>`, `<RetentionChart>`, and `<JourneyChart>` from `@altertable/data-app-react/ui`
 inside `<VisualizationWidget>`. Derive inputs from the displayed rows; the
 binding owns loading, evidence, CSV, and story content. The query owns counting,
 conversion windows, and cohort definitions; these components visualize results.
@@ -127,7 +127,7 @@ constraints before adapting displayed rows.
 
 ### Composed charts
 
-Use `<ComposedChart>` from `/react/ui` for multiple series or mixed marks inside
+Use `<ComposedChart>` from `@altertable/data-app-react/ui` for multiple series or mixed marks inside
 `<VisualizationWidget>`. Pass the displayed rows and select fields with `dataKey`.
 `<ComposedChart.Bar>`, `<ComposedChart.Line>`, and `<ComposedChart.Area>` share the
 standalone charts' themed series primitives; axes, scatter, tooltip, and reference

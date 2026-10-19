@@ -16,7 +16,7 @@ import {
   useDetailNavigation,
   searchVariable,
   choiceVariable,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import {
   BarChart,
   LineChart,
@@ -24,7 +24,7 @@ import {
   PieChart,
   ExplorationActionControl,
   type ItemActions,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 
 const app = defineDataApp({
   title: 'Exploration',

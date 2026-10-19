@@ -17,7 +17,7 @@ import {
   DataValue,
   injectDataAppStyles,
   mountDataApp,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 const calendar = defineDateRangeContract({
   minDate: '2026-02-01',

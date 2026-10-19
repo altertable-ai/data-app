@@ -10,7 +10,7 @@ import {
   DataApp as StaticDataApp,
   LineChart,
   DataTableTimestamp,
-} from '@altertable/data-app/react/ui';
+} from '@altertable/data-app-react/ui';
 import {
   createDataHooks,
   createDataContext,
@@ -28,7 +28,7 @@ import {
   useDateFormatting,
   injectDataAppStyles,
   mountDataApp,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 
 const records = [
   {

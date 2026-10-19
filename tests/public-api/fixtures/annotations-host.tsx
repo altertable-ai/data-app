@@ -3,9 +3,9 @@ import {
   AnnotationBar,
   injectDataAppAnnotationStyles,
   type AnnotationBarHandle,
-} from '@altertable/data-app/react';
+} from '@altertable/data-app-react';
 import { createRoot } from 'react-dom/client';
-import { DataAppBridge } from '@altertable/data-app/react/embed';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
   createMessageRouter,
   annotationDraftRoute,

@@ -2,7 +2,7 @@ import {
   type DeclaredView,
   type ViewResult,
   useDeclaredResult,
-} from '@/src/react/view-runtime';
+} from '@/packages/data-app-react/src/view-runtime.tsx';
 
 type Alpha = { kind: 'alpha'; count: number };
 type Beta = { kind: 'beta'; label: string };

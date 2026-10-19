@@ -1,0 +1,65 @@
+{
+  "name": "@altertable/data-app-embed",
+  "version": "0.70.0",
+  "description": "Iframe hosting, sandbox bootstrap, and React host bindings for Altertable data apps.",
+  "keywords": [
+    "altertable",
+    "analytics",
+    "data-app",
+    "react",
+    "typescript"
+  ],
+  "homepage": "https://github.com/altertable-ai/data-app",
+  "bugs": {
+    "url": "https://github.com/altertable-ai/data-app/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Altertable",
+    "url": "https://altertable.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altertable-ai/data-app.git",
+    "directory": "packages/data-app-embed"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/types/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/types/runtime-html.d.ts",
+      "import": "./dist/runtime-html.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts data-app-embed"
+  },
+  "dependencies": {
+    "@altertable/data-app": "0.70.0"
+  },
+  "peerDependencies": {
+    "react": ">=19.2.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  }
+}

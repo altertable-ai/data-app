@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 // Execute the built deployment artifact, without rebundling package source.
 const { default: worker } = await import(
-  import.meta.resolve('@altertable/data-app/worker')
+  import.meta.resolve('@altertable/data-app-worker')
 );
 const bindings = {
   DOMAIN_NAME: 'altertableusercontent.dev',

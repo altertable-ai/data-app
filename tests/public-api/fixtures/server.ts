@@ -1,6 +1,6 @@
 import exploration from '@/tests/public-api/fixtures/exploration.html';
 import { Database } from 'bun:sqlite';
-import { serveLocalApp } from '@altertable/data-app/server/bun';
+import { serveLocalApp } from '@altertable/data-app-bun';
 import starterPage from '@/examples/starter-local-data-app/src/index.html';
 import { operations } from '@/examples/starter-local-data-app/src/operations';
 import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
@@ -44,7 +44,7 @@ const [app, starter, frame, annotations, annotationState] = await Promise.all([
   bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
 ]);
 const { default: worker } = await import(
-  import.meta.resolve('@altertable/data-app/worker')
+  import.meta.resolve('@altertable/data-app-worker')
 );
 const database = new Database(':memory:');
 

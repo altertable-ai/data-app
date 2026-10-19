@@ -4,11 +4,11 @@ Use this Bun server for local data apps. Start from the CLI scaffold or
 [local data app starter](https://github.com/altertable-ai/data-app/tree/main/examples/starter-local-data-app).
 
 Import `serveLocalApp()` and `localLakehouse()` from
-`@altertable/data-app/server/bun`. This entry requires Bun; install `@types/bun`
+`@altertable/data-app-bun`. This entry requires Bun; install `@types/bun`
 when typechecking a Bun app.
 
 ```ts
-import { serveLocalApp } from '@altertable/data-app/server/bun';
+import { serveLocalApp } from '@altertable/data-app-bun';
 import page from './index.html';
 import { operations } from './operations';
 
@@ -30,13 +30,13 @@ hosting an app for other people.
 
 ## Preview a single-file app
 
-Import `serveAppFile()` from `@altertable/data-app/server/bun/preview` to preview
+Import `serveAppFile()` from `@altertable/data-app-bun/preview` to preview
 an app in the hosted sandbox. The caller supplies the server-only lakehouse.
 The runtime owns bundling, imported-file watching, reloads, navigation, and exports.
 
 ```ts
-import { serveAppFile } from '@altertable/data-app/server/bun/preview';
-import { localLakehouse } from '@altertable/data-app/server/bun';
+import { serveAppFile } from '@altertable/data-app-bun/preview';
+import { localLakehouse } from '@altertable/data-app-bun';
 
 const preview = await serveAppFile({
   file: '/absolute/path/index.tsx',

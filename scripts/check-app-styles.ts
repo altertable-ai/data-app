@@ -1,5 +1,5 @@
 import { Glob } from 'bun';
-import { validateAuthoredStyles } from '@/src/react/style-validation';
+import { validateAuthoredStyles } from '@/packages/data-app-react/src/style-validation.ts';
 
 await import('@/scripts/check-style-integrity');
 
