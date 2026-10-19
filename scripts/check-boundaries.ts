@@ -47,10 +47,16 @@ for (const filename of ['AGENTS.md', 'README.md']) {
       workspace.version,
       `${path}: guidance version differs`
     );
-  assert(
-    source.includes('<!-- x-release-please-version -->'),
-    `${path}: missing release annotation`
-  );
+  const annotatedLines = source
+    .split('\n')
+    .filter(line => line.includes('<!-- x-release-please-version -->'));
+  assert(annotatedLines.length > 0, `${path}: missing release annotation`);
+  for (const line of annotatedLines)
+    assert.equal(
+      [...line.matchAll(/\d+\.\d+\.\d+/g)].length,
+      1,
+      `${path}: release annotations must contain exactly one version`
+    );
 }
 for (const { directory } of packages)
   releaseVersion(`${directory}/package.json`, '$.version');
