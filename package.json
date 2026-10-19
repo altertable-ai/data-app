@@ -1,6 +1,6 @@
 {
   "name": "data-app-workspace",
-  "version": "0.70.0",
+  "version": "0.71.0",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -30,11 +30,11 @@
     "check:reference": "bun run scripts/build-reference.ts --check"
   },
   "devDependencies": {
-    "@altertable/data-app": "0.70.0",
-    "@altertable/data-app-bun": "0.70.0",
-    "@altertable/data-app-embed": "0.70.0",
-    "@altertable/data-app-react": "0.70.0",
-    "@altertable/data-app-worker": "0.70.0",
+    "@altertable/data-app": "0.71.0",
+    "@altertable/data-app-bun": "0.71.0",
+    "@altertable/data-app-embed": "0.71.0",
+    "@altertable/data-app-react": "0.71.0",
+    "@altertable/data-app-worker": "0.71.0",
     "@types/bun": "1.4.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
