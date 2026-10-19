@@ -102,16 +102,22 @@ test('publishes every missing package in dependency order with provenance', asyn
 });
 
 test('retries a partial release by skipping completed package versions', async () => {
+  const failureIndex = packages.findIndex(
+    pkg => pkg.directory === 'packages/data-app-embed'
+  );
+  const completed = packages.slice(0, failureIndex);
   const failed = await publication({
     failPackage: './packages/data-app-embed',
   });
   expect(failed.code).not.toBe(0);
-  expect(failed.calls).toEqual(expectedCalls.slice(0, 2));
+  expect(failed.calls).toEqual(expectedCalls.slice(0, failureIndex + 1));
   const retried = await publication({
-    statuses: { '@altertable/data-app': 200 },
+    statuses: Object.fromEntries(
+      completed.map(pkg => [pkg.manifest.name, 200])
+    ),
   });
   expect(retried.code, retried.output).toBe(0);
-  expect(retried.calls).toEqual(expectedCalls.slice(1));
+  expect(retried.calls).toEqual(expectedCalls.slice(failureIndex));
 });
 
 test('a fully published release is an idempotent no-op', async () => {
@@ -124,7 +130,7 @@ test('a fully published release is an idempotent no-op', async () => {
 
 test('registry failures stop publication instead of authorizing a publish', async () => {
   const result = await publication({
-    statuses: { '@altertable/data-app': 503 },
+    statuses: { [packages[0]!.manifest.name]: 503 },
   });
   expect(result.code).not.toBe(0);
   expect(result.output).toContain('HTTP 503');
@@ -133,7 +139,7 @@ test('registry failures stop publication instead of authorizing a publish', asyn
 
 test('existing registry metadata must match the requested version', async () => {
   const result = await publication({
-    statuses: { '@altertable/data-app': 200 },
+    statuses: { [packages[0]!.manifest.name]: 200 },
     registryVersion: '0.0.0',
   });
   expect(result.code).not.toBe(0);

@@ -34,6 +34,7 @@
     "@altertable/data-app-bun": "0.71.0",
     "@altertable/data-app-embed": "0.71.0",
     "@altertable/data-app-examples": "0.71.0",
+    "@altertable/data-app-manifest": "0.71.0",
     "@altertable/data-app-react": "0.71.0",
     "@altertable/data-app-worker": "0.71.0",
     "@types/bun": "1.4.2",

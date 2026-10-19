@@ -14,6 +14,7 @@ const incremental = process.argv.includes('--incremental');
 const buildTargets = new Map<string, 'bun' | 'node'>([
   ['@altertable/data-app-bun', 'bun'],
   ['@altertable/data-app-examples', 'node'],
+  ['@altertable/data-app-manifest', 'node'],
 ]);
 
 async function bundle(options: Parameters<typeof Bun.build>[0]) {

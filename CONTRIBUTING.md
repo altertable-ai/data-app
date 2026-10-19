@@ -12,6 +12,7 @@ bun run check
 
 | Task                                    | Location                                                    |
 | --------------------------------------- | ----------------------------------------------------------- |
+| Static source manifest tooling          | `packages/data-app-manifest`                                |
 | Operations, validation, and data state  | `packages/data-app/src/core`                                |
 | Browser clients and navigation          | `packages/data-app/src/client`                              |
 | Request authorization and local serving | `packages/data-app/src/server`, `packages/data-app-bun/src` |
@@ -50,6 +51,10 @@ styles, the embed bootstrap, the bundled preview host, and the standalone Worker
 Package-level builds require their dependencies to have been built first.
 Scaffolding tools consume the examples package catalog and `copyExample()`;
 template selection and destination handling belong to the caller.
+
+`@altertable/data-app-manifest` owns TypeScript 5 for static source extraction.
+Keep compiler dependencies in this tooling package; runtime packages must not
+depend on it. Root tooling and declaration builds use TypeScript 7.
 
 Every package declares its own runtime dependencies and peers. Cross-package
 builds externalize dependencies to preserve shared module identity. The Worker,

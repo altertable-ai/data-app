@@ -116,6 +116,16 @@
         {
           "type": "generic",
           "path": "packages/data-app-examples/templates/starter-local-data-app/README.md"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-manifest']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-manifest/package.json",
+          "jsonpath": "$.version"
         }
       ]
     }

@@ -9,6 +9,7 @@
         "@altertable/data-app-bun": "0.71.0",
         "@altertable/data-app-embed": "0.71.0",
         "@altertable/data-app-examples": "0.71.0",
+        "@altertable/data-app-manifest": "0.71.0",
         "@altertable/data-app-react": "0.71.0",
         "@altertable/data-app-worker": "0.71.0",
         "@types/bun": "1.4.2",
@@ -91,6 +92,13 @@
         "typescript": "7.0.2",
       },
     },
+    "packages/data-app-manifest": {
+      "name": "@altertable/data-app-manifest",
+      "version": "0.71.0",
+      "dependencies": {
+        "typescript": "5.9.3",
+      },
+    },
     "packages/data-app-react": {
       "name": "@altertable/data-app-react",
       "version": "0.71.0",
@@ -127,6 +135,8 @@
     "@altertable/data-app-embed": ["@altertable/data-app-embed@workspace:packages/data-app-embed"],
 
     "@altertable/data-app-examples": ["@altertable/data-app-examples@workspace:packages/data-app-examples"],
+
+    "@altertable/data-app-manifest": ["@altertable/data-app-manifest@workspace:packages/data-app-manifest"],
 
     "@altertable/data-app-react": ["@altertable/data-app-react@workspace:packages/data-app-react"],
 
@@ -1363,6 +1373,8 @@
     "zip-stream": ["zip-stream@6.0.1", "", { "dependencies": { "archiver-utils": "^5.0.0", "compress-commons": "^6.0.2", "readable-stream": "^4.0.0" } }, "sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA=="],
 
     "zwitch": ["zwitch@2.0.4", "", {}, "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A=="],
+
+    "@altertable/data-app-manifest/typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "@grpc/grpc-js/@grpc/proto-loader": ["@grpc/proto-loader@0.8.1", "", { "dependencies": { "lodash.camelcase": "^4.3.0", "long": "^5.0.0", "protobufjs": "^7.5.5", "yargs": "^17.7.2" }, "bin": { "proto-loader-gen-types": "build/bin/proto-loader-gen-types.js" } }, "sha512-wtF6h+DY6M3YaDBPAmvuuA6jV8Sif9MjtOI5euKFWRgCDl5PeDpPsHR9u2l6St5ceY8AZgoNDww5+HvEsXFsGg=="],
 

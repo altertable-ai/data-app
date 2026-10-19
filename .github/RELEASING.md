@@ -1,11 +1,12 @@
 # Releasing
 
-This repository releases these npm packages together: `@altertable/data-app`,
+This repository releases its npm packages together: `@altertable/data-app`,
 `@altertable/data-app-embed`, `@altertable/data-app-react`,
-`@altertable/data-app-bun`, `@altertable/data-app-worker`, and `@altertable/data-app-examples`.
+`@altertable/data-app-bun`, `@altertable/data-app-worker`,
+`@altertable/data-app-manifest`, and `@altertable/data-app-examples`.
 They share one version, one release PR, one `v<version>` tag, and one changelog.
 The private root's `package.json` is the release version source. Release Please
-automatically updates all package versions and internal dependency pins
+automatically updates package versions and internal dependency pins
 through its configured JSON extra-file updates. The root is never published.
 
 ## Repository setup
@@ -58,8 +59,9 @@ option when preparing the first stable `1.0.0` release.
    GitHub release.
 4. The workflow resolves the tag to a commit SHA and runs the same source,
    package, and workflow checks against that revision. The publish job checks out
-   that SHA, confirms the tag has not moved, builds, and publishes packages to npm in dependency order: base, embed,
-   React, Bun, Worker, Examples. npm publication is not atomic across packages.
+   that SHA, confirms the tag has not moved, builds, and publishes packages to npm
+   in the dependency order defined in `scripts/packages.ts`. npm publication is
+   not atomic across packages.
 
 GitHub release creation precedes the publication checks. A failed check blocks
 npm publication and leaves the GitHub release available for a retry.

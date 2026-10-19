@@ -39,6 +39,7 @@ const undocumented = new Set([
   '@altertable/data-app/internal',
   '@altertable/data-app-bun/reload',
   '@altertable/data-app-embed/runtime',
+  '@altertable/data-app-manifest',
 ]);
 const entryPoints = packages.flatMap(({ directory, manifest }) =>
   Object.entries(manifest.exports).flatMap(([subpath, target]) => {
