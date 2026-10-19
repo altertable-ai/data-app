@@ -41,7 +41,7 @@ to derive their bindings. Other input shapes require typed
 inside the operation rather than replacing the selections in the view input.
 The operation and `ActivityWidgets` are app-owned. The bound widgets derive
 loading content from their source; see [widgets](widgets.md) and the
-[complete starter](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx). Define
+[complete starter](app-authoring.md#use-release-matched-starters). Define
 [filters](variables.md), [context and evidence](data-context.md), and
 [story and datasets](stories-and-export.md) for the app's question.
 

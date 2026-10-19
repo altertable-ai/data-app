@@ -51,8 +51,9 @@ package manages its host iframe.
 ## Documentation
 
 See the [React guide](https://github.com/altertable-ai/data-app/blob/main/docs/react.md)
-and [single-file starter](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx)
 for apps with queries, filters, and bound widgets.
+Use the hosted template from `@altertable/data-app-examples` at the same version as
+`@altertable/data-app`. Browse the latest [single-file starter](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx).
 
 ## License
 

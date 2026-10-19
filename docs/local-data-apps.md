@@ -1,6 +1,6 @@
 # Author a local data app
 
-Start from the CLI scaffold or the [local starter](https://github.com/altertable-ai/data-app/tree/main/packages/data-app-examples/templates/starter-local-data-app).
+Start from the CLI scaffold or the [local starter](app-authoring.md#use-release-matched-starters).
 Use the starter's README for setup and its AGENTS.md to find app-owned files.
 Replace the connectivity screen with the exploration, CSV export, and story from the
 [shared authoring flow](app-authoring.md).

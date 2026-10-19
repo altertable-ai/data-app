@@ -1,6 +1,6 @@
 # Author a data app
 
-Follow the [shared authoring flow](app-authoring.md) using [index.tsx](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx) for a hosted / remote / cloud data app. Keep the app in
+Follow the [shared authoring flow](app-authoring.md) using [index.tsx](app-authoring.md#use-release-matched-starters) for a hosted / remote / cloud data app. Keep the app in
 one file with public package imports; omit server files, HTML, credentials, and
 relative or app-alias imports.
 
@@ -25,7 +25,7 @@ For execution details, see [browser-owned operations](client.md#browser-owned-op
 
 1. Combine the app's operations and parsers, data context, views, story,
    CSV export, app declaration, and browser entry into one `index.tsx`, following the
-   [single-file starter](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx).
+   [single-file starter](app-authoring.md#use-release-matched-starters).
 2. Replace the HTTP client with `createDataClient({ operations })`, using the
    operation registry as a value. See [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps)
    for execution through the host.
