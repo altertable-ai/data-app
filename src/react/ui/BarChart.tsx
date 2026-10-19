@@ -1,3 +1,4 @@
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import { AppIcon } from '@/src/react/ui/icons';
 import { formatNumber } from '@/src/core/format';
 import { chartBarFill } from '@/src/react/ui/chartColor';
@@ -20,7 +21,8 @@ import {
 } from 'react';
 
 import {
-  validateValueChartItems,
+  chartIdProblem,
+  valueChartProblem,
   type ChartItem,
   type ValueChartProps,
 } from '@/src/react/ui/chart-data';
@@ -46,11 +48,18 @@ export function BarChart<Row extends BarChartItem>({
   formatValue = formatNumber,
   itemActions,
 }: BarChartProps<Row>) {
-  validateValueChartItems('bar', items);
+  const problem =
+    chartIdProblem('bar', items) ?? valueChartProblem('bar', items);
   const chartActions = useChartActions();
   const [activeId, setActiveId] = useState<string>();
   const scrollport = useChartScrollToEnd(items);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
+  if (problem)
+    return (
+      <section aria-label={ariaLabel}>
+        <DataProblem problem={problem} />
+      </section>
+    );
 
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 1);
 

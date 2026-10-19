@@ -23,6 +23,7 @@ export function mountDataApp<const Queries extends QueryDefinitions>({
   component: ComponentType;
   root?: HTMLElement | null;
 }): void {
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- The host page supplies the root.
   invariant(root, 'Data app root element is missing.');
   document.documentElement.lang = navigator.language;
   document.title = dataAppTitle(app);

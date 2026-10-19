@@ -1,6 +1,5 @@
 import { useEffect, useReducer, useSyncExternalStore } from 'react';
 import { today } from '@internationalized/date';
-import { invariant } from '@/src/core/invariant';
 import {
   searchParams,
   subscribeSearch,
@@ -160,7 +159,8 @@ export function useAppVariables<const Variables extends VariableCollection>(
         AppVariableValues<Variables>[typeof name]
       >;
       const value = next[name]!;
-      invariant(variable.valid(value), `Invalid value for variable ${name}.`);
+      // Values are checked against runtime option sets; an invalid one leaves its variable as is.
+      if (!variable.valid(value)) continue;
       Object.assign(changes, variable.write(value));
       if (!history && variable.history === 'push') mode = 'push';
     }

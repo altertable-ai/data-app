@@ -43,36 +43,6 @@ export type AuthoringDataContext = DataContext & {
   evidence(definition: EvidenceDeclaration): WidgetEvidence;
 };
 
-function evidenceFor<
-  const Context extends DataContext,
-  const Names extends Record<string, string> = Record<string, string>,
->(context: Context, names?: Names) {
-  function validateEvidence(evidence: {
-    id: string;
-    glossaryIds?: readonly (keyof Context['glossary'] & string)[];
-    queryNames?: readonly Names[keyof Names][];
-  }) {
-    for (const id of evidence.glossaryIds ?? []) {
-      invariant(context.glossary[id], `Unknown glossary entry: ${id}.`);
-    }
-    if (names)
-      for (const name of evidence.queryNames ?? []) {
-        invariant(
-          Object.values(names).includes(name),
-          `Unknown query name: ${name}.`
-        );
-      }
-
-    return {
-      id: evidence.id,
-      glossaryIds: evidence.glossaryIds ? [...evidence.glossaryIds] : undefined,
-      queryNames: evidence.queryNames ? [...evidence.queryNames] : undefined,
-    };
-  }
-
-  return validateEvidence;
-}
-
 /** Bind glossary query references and card evidence to the same registry. */
 export function createDataContext<const Names extends Record<string, string>>(
   queryNames: Names
@@ -89,16 +59,6 @@ export function createDataContext<const Names extends Record<string, string>>(
       >;
     },
   >(context: Context) {
-    const known = new Set(Object.values(queryNames));
-    for (const [id, entry] of Object.entries(context.glossary)) {
-      for (const query of entry.queryNames ?? []) {
-        invariant(
-          known.has(query),
-          `Unknown query ${query} for glossary entry ${id}.`
-        );
-      }
-    }
-    const references = evidenceFor(context, queryNames);
     type GlossaryId = keyof Context['glossary'] & string;
     type QueryName = Names[keyof Names];
 
@@ -114,12 +74,13 @@ export function createDataContext<const Names extends Record<string, string>>(
           }
       )
     ): WidgetEvidence {
+      // oxlint-disable-next-line data-app/no-runtime-assertion -- Evidence IDs are an authoring contract.
       invariant(!!input.id.trim(), 'Evidence needs a nonempty ID.');
-      invariant(
-        !!input.glossaryIds?.length || !!input.queryNames?.length,
-        `Evidence ${input.id} needs a glossary entry or query name.`
-      );
-      const validated = references(input);
+      const validated = {
+        id: input.id,
+        glossaryIds: input.glossaryIds && [...input.glossaryIds],
+        queryNames: input.queryNames && [...input.queryNames],
+      };
       if (validated.glossaryIds?.length)
         return {
           ...validated,

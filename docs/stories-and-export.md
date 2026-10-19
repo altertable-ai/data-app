@@ -10,7 +10,7 @@ or pass a direct `CsvExport` object.
 Set `story` on `<DataApp>` to enable **Present story** in the toolbar.
 For custom shells, `/react/ui` provides `<PresentStory>`; see [direct UI composition](ui.md). Start from the [data app starter](../examples/starter-data-app/index.tsx).
 
-Return one to four findings with a headline, a visual, and registered source
+Return up to four findings with a headline, a visual, and registered source
 evidence. Set `evidence` to the registered dataset or metric binding. The app
 validates that every finding belongs to its view.
 

@@ -88,8 +88,8 @@ export type DatasetDeclaration<Data, Input, Row> = DatasetDefinition<
 /** Real view ownership and registered references, shared by metrics and datasets. */
 export class RegisteredBinding {
   #owner?: object;
-  #evidence?: WidgetEvidence;
-  constructor(owner?: object, evidence?: WidgetEvidence) {
+  #evidence: WidgetEvidence;
+  constructor(owner: object | undefined, evidence: WidgetEvidence) {
     this.#owner = owner;
     this.#evidence = evidence;
   }
@@ -98,20 +98,14 @@ export class RegisteredBinding {
     return binding.#owner;
   }
   protected assertSource(source: object) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
     if (this.#owner) assertSourceOwner(this.#owner, source);
   }
   static evidence(binding: RegisteredBinding, owner: object): WidgetEvidence {
-    invariant(
-      binding instanceof RegisteredBinding,
-      'Story evidence must be a registered metric or dataset binding.'
-    );
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
     invariant(
       binding.#owner === owner,
       'Story evidence must belong to the story view.'
-    );
-    invariant(
-      binding.#evidence,
-      'Story evidence must have registered references.'
     );
     return binding.#evidence;
   }
@@ -134,8 +128,8 @@ export class ExportDataset<Data, Input> extends RegisteredBinding {
   constructor(
     readonly name: string,
     csv: (snapshot: DisplayedSnapshot<Data, Input>) => CsvTable,
-    owner?: object,
-    evidence?: WidgetEvidence
+    owner: object | undefined,
+    evidence: WidgetEvidence
   ) {
     super(owner, evidence);
     this.#csv = csv;
@@ -165,10 +159,11 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     owner?: object,
     timeZone?: string
   ) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Dataset names are authored copy.
     invariant(!!definition.name.trim(), 'A dataset needs a name.');
-    const ids = Object.keys(definition.columns);
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Column IDs are an authoring contract.
     invariant(
-      ids.length > 0 && ids.every(id => !!id.trim()),
+      Object.keys(definition.columns).every(id => !!id.trim()),
       'A dataset needs nonempty column IDs.'
     );
     const { select, rowKey } = definition;
@@ -258,28 +253,26 @@ export class Dataset<Data, Input, Row> extends ExportDataset<Data, Input> {
     const { onSelect } = suggestions;
     const reading = this.read(source);
     if (reading.loading) return reading;
-    const items = reading.value.map(row => {
+    // Suggestions are auxiliary: skip rows without a usable key or title.
+    const items = new Map<string, SearchSuggestion>();
+    for (const row of reading.value) {
       const key = this.#table.rowKey(row);
-      invariant(
-        typeof key === 'string'
-          ? !!key
-          : typeof key === 'number' && Number.isFinite(key),
-        'Suggestion row keys must be nonempty strings or finite numbers.'
-      );
       const title = suggestions.title(row);
-      invariant(!!title.trim(), 'Search suggestions need a nonempty title.');
-      return {
-        id: [typeof key, key].join(KEY_SEPARATOR),
+      const id = [typeof key, key].join(KEY_SEPARATOR);
+      if (
+        (typeof key === 'string' ? !key : !Number.isFinite(key)) ||
+        !title.trim() ||
+        items.has(id)
+      )
+        continue;
+      items.set(id, {
+        id,
         title,
         description: suggestions.description?.(row),
         onSelect: onSelect ? () => onSelect(row) : undefined,
-      };
-    });
-    invariant(
-      new Set(items.map(item => item.id)).size === items.length,
-      'Search suggestion row keys must be unique.'
-    );
-    return { loading: false, value: items };
+      });
+    }
+    return { loading: false, value: [...items.values()] };
   }
   read = <Source extends ViewSource<Data, Input>>(source: Source) => {
     this.assertSource(source);
@@ -337,14 +330,10 @@ export class Metric<Data, Input> extends RegisteredBinding {
       Input,
       MetricValues & { period?: DateRangeRequest },
       Source
-    >(source, (data, input) => {
-      const values = this.#select(data, input);
-      invariant(
-        values.previous === undefined || this.#date,
-        'Metric comparisons require a view date binding.'
-      );
-      return { ...values, period: this.#date?.(input) };
-    });
+    >(source, (data, input) => ({
+      ...this.#select(data, input),
+      period: this.#date?.(input),
+    }));
   };
   records<DetailData, DetailInput>(options: {
     target: DetailView<DetailData, DetailInput>;
@@ -377,7 +366,10 @@ export class MetricRecords<Data, Input, DetailData, DetailInput> {
   render(source: ViewSource<Data, Input>, navigation?: DetailNavigation) {
     this.#metric.read(source);
     if (source.loading) return undefined;
-    const input = parseDetailInput(this.#target, this.#input(source.input));
+    const parsed = parseDetailInput(this.#target, this.#input(source.input));
+    // Records are only offered for a usable detail input.
+    if (!parsed) return undefined;
+    const { input } = parsed;
     return {
       scope: this.#target.definition.describeInput(input),
       content: createElement(DetailRecords, {
@@ -393,6 +385,7 @@ export class MetricRecords<Data, Input, DetailData, DetailInput> {
     source: ViewSource<Data, Input>,
     navigation?: DetailNavigation
   ) {
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Ownership is object identity; same-shaped views share a type.
     invariant(
       records.#metric === metric,
       'Metric records must belong to the metric rendered by this widget.'

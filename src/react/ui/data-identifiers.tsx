@@ -1,5 +1,3 @@
-import { invariant } from '@/src/core/invariant';
-
 export type TableIdentifier = { catalog: string; schema: string; name: string };
 export type ColumnIdentifier<TableId extends string = string> = {
   table: TableId;
@@ -36,9 +34,14 @@ function qualifiedName(definition: DataIdentifierDefinition): string {
   return definition.kind === 'column' ? `${path}.${definition.name}` : path;
 }
 
-function assertAlias(id: string) {
-  invariant(!!id && !id.includes('.'), `Invalid data identifier alias ${id}.`);
-}
+/** Aliases are nonempty and dot-free so qualified IDs stay unambiguous. */
+type CheckedAliases<Aliases extends object> = {
+  [
+    Alias in keyof Aliases as Alias extends '' | `${string}.${string}`
+      ? Alias
+      : never
+  ]: never;
+};
 
 /** Register exact source names once; returned JSX IDs are checked against this registry. */
 export function defineDataIdentifiers<
@@ -47,19 +50,21 @@ export function defineDataIdentifiers<
     string,
     ColumnIdentifier<Extract<keyof Tables, string>>
   >,
->({ tables, columns }: { tables: Tables; columns: Columns }) {
+>({
+  tables,
+  columns,
+}: {
+  tables: Tables & CheckedAliases<Tables>;
+  columns: Columns & CheckedAliases<Columns>;
+}) {
   type Id = IdentifierId<Tables, Columns>;
   const definitions: Record<string, DataIdentifierDefinition> =
     Object.create(null);
 
-  for (const [id, table] of Object.entries(tables)) {
-    assertAlias(id);
+  for (const [id, table] of Object.entries(tables))
     definitions[`tables.${id}`] = { kind: 'table', ...table };
-  }
   for (const [id, column] of Object.entries(columns)) {
-    assertAlias(id);
     const table = tables[column.table];
-    invariant(table, `Unknown table ${column.table} for column ${id}.`);
     definitions[`columns.${column.table}.${id}`] = {
       kind: 'column',
       tableId: `tables.${column.table}`,
@@ -68,6 +73,9 @@ export function defineDataIdentifiers<
     };
   }
 
+  // Every Id names a definition registered above.
+  const registered: Record<Id, DataIdentifierDefinition> = definitions;
+
   function DataIdentifier({
     id,
     display,
@@ -75,8 +83,7 @@ export function defineDataIdentifiers<
     id: Id;
     display?: 'short' | 'qualified';
   }) {
-    const definition = definitions[id];
-    invariant(definition, `Unknown data identifier ${id}.`);
+    const definition: DataIdentifierDefinition = registered[id];
     const qualified = qualifiedName(definition);
     const shown =
       display ?? (definition.kind === 'table' ? 'qualified' : 'short');
@@ -110,7 +117,7 @@ export function defineDataIdentifiers<
   }
 
   return {
-    definitions: definitions as Readonly<Record<Id, DataIdentifierDefinition>>,
+    definitions: registered as Readonly<typeof registered>,
     DataIdentifier,
   };
 }

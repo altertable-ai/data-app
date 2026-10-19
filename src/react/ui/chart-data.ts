@@ -1,4 +1,3 @@
-import { invariant } from '@/src/core/invariant';
 import type { ItemActions } from '@/src/react/ui/ExplorationActionControl';
 
 /** Ordered category or time-series sample. IDs are unique and nonblank; values are finite. */
@@ -32,46 +31,43 @@ export type ScatterChartItem = {
 };
 type ValueChartKind = 'bar' | 'line' | 'area' | 'pie';
 
-function validateChartIds(kind: string, items: readonly { id: string }[]) {
+/** Describe the first blank or duplicate item ID; IDs key rows, legends, and actions. */
+export function chartIdProblem(
+  kind: string,
+  items: readonly { id: string }[]
+): string | undefined {
   const ids = new Set<string>();
   for (const item of items) {
-    invariant(
-      item.id.trim().length > 0,
-      `${kind} chart IDs must be nonempty and unique: blank ID.`
-    );
-    invariant(
-      !ids.has(item.id),
-      `${kind} chart IDs must be nonempty and unique: duplicate "${item.id}".`
-    );
+    if (!item.id.trim())
+      return `${kind} chart IDs must be nonempty and unique: blank ID.`;
+    if (ids.has(item.id))
+      return `${kind} chart IDs must be nonempty and unique: duplicate "${item.id}".`;
     ids.add(item.id);
   }
+  return undefined;
 }
 
-export function validateValueChartItems(
+/** Describe the first displayed value a chart cannot plot. */
+export function valueChartProblem(
   kind: ValueChartKind,
   items: readonly ChartItem[]
-): void {
-  validateChartIds(kind, items);
+): string | undefined {
   for (const item of items) {
-    invariant(
-      Number.isFinite(item.value),
-      `${kind} chart "${item.id}" requires finite values.`
-    );
-    invariant(
-      (kind !== 'bar' && kind !== 'pie') || item.value >= 0,
-      `${kind} chart "${item.id}" requires nonnegative values.`
-    );
+    if (!Number.isFinite(item.value))
+      return `${kind} chart "${item.id}" requires finite values.`;
+    if ((kind === 'bar' || kind === 'pie') && item.value < 0)
+      return `${kind} chart "${item.id}" requires nonnegative values.`;
   }
+  return undefined;
 }
 
-export function validateScatterChartItems(
+export function scatterChartProblem(
   items: readonly ScatterChartItem[]
-): void {
-  validateChartIds('scatter', items);
-  for (const item of items) {
-    invariant(
-      Number.isFinite(item.x) && Number.isFinite(item.y),
-      `scatter chart "${item.id}" requires finite values for x and y.`
-    );
-  }
+): string | undefined {
+  const item = items.find(
+    item => !Number.isFinite(item.x) || !Number.isFinite(item.y)
+  );
+  return (
+    item && `scatter chart "${item.id}" requires finite values for x and y.`
+  );
 }

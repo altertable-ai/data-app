@@ -21,11 +21,11 @@ export type ViewResult<Data, Input> = {
 
 /** The executor is private; declarations expose data composition, not subscription hooks. */
 export class DeclaredView<Data, Input, Definition = unknown> {
-  #definition: Definition | undefined;
+  #definition: Definition;
   #useResult: () => ViewResult<Data, Input>;
   constructor(
     useResult: () => ViewResult<Data, Input>,
-    definition?: Definition
+    definition: Definition
   ) {
     this.#definition = definition;
     this.#useResult = useResult;
@@ -33,8 +33,6 @@ export class DeclaredView<Data, Input, Definition = unknown> {
   static definition<Data, Input, Definition>(
     view: DeclaredView<Data, Input, Definition>
   ): Definition {
-    if (view.#definition === undefined)
-      throw new Error('Missing view definition.');
     return view.#definition;
   }
   static useResult<View extends DeclaredView<unknown, unknown>>(

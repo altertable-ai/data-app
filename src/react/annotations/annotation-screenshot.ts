@@ -19,6 +19,7 @@ export async function captureAnnotationScreenshot(
       region ? region.y + region.height : rect.bottom
     ) - top;
   if (width <= 0 || height <= 0)
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Layout is measured in the DOM.
     throw new Error('The annotation area is not visible.');
   const scale = Math.min(1, 1024 / width, 1024 / height);
   const source = await toCanvas(element, {
@@ -65,5 +66,6 @@ export async function captureAnnotationScreenshot(
       };
     outputScale *= 0.75;
   }
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- Encoded image size is measured at runtime.
   throw new Error('The annotation image is too large.');
 }

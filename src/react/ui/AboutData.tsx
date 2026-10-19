@@ -104,6 +104,7 @@ function namedGlossaryEntries(
 ): GlossaryEntry[] {
   return ids.map(id => {
     const entry = dataContext?.glossary[id];
+    // oxlint-disable-next-line data-app/no-runtime-assertion -- Direct inspection references the context at runtime.
     invariant(entry, `Unknown glossary entry: ${id}.`);
 
     return entry;
@@ -197,6 +198,7 @@ export function InspectionSheet({
   const names = glossaryQueries(subject);
   if (names && resolvedQueries?.length) {
     for (const name of names) {
+      // oxlint-disable-next-line data-app/no-runtime-assertion -- Direct inspection references the context at runtime.
       invariant(
         resolvedQueries.some(query => query.name === name),
         `Unknown query name: ${name}.`
@@ -284,6 +286,7 @@ export function AboutData(props: AboutDataProps) {
     return (
       <span className={props.className}>{props.children ?? props.title}</span>
     );
+  // oxlint-disable-next-line data-app/no-runtime-assertion -- React context is resolved at render.
   invariant(owner, 'Inspection requires DataApp or DataAppProvider.');
   return <InspectionTrigger {...props} />;
 }

@@ -1,10 +1,13 @@
 import { Fragment } from 'react';
-import { invariant } from '@/src/core/invariant';
 import { ComposedChart } from '@/src/react/ui/ComposedChart';
 import { ChartLegend } from '@/src/react/ui/ChartLegend';
 import { TooltipSurface } from '@/src/react/ui/TooltipSurface';
 import { classNames } from '@/src/react/ui/classNames';
-import type { CountChartProps } from '@/src/react/ui/chart-data';
+import {
+  chartIdProblem,
+  type CountChartProps,
+} from '@/src/react/ui/chart-data';
+import { DataProblem } from '@/src/react/ui/DataProblem';
 import { formatNumber, formatPercent } from '@/src/core/format';
 
 export type RetentionChartPoint = {
@@ -43,59 +46,60 @@ type RetentionRow = {
   readings: Map<string, RetentionReading>;
 };
 
+/** Describe the first displayed point a retention chart cannot plot. */
+function retentionProblem(
+  series: readonly RetentionChartSeries[]
+): string | undefined {
+  const labels = new Map<number, string>();
+  for (const item of series) {
+    if (!Number.isFinite(item.cohortSize) || item.cohortSize < 0)
+      return 'retention chart counts must be finite and nonnegative.';
+    const offsets = new Set<number>();
+    for (const point of item.points) {
+      if (
+        !Number.isSafeInteger(point.offset) ||
+        point.offset < 0 ||
+        offsets.has(point.offset)
+      )
+        return 'retention chart offsets must be unique nonnegative integers within each series.';
+      offsets.add(point.offset);
+      if (
+        point.rate !== null &&
+        !(Number.isFinite(point.rate) && point.rate >= 0 && point.rate <= 1)
+      )
+        return 'retention chart rates must be finite fractions between 0 and 1, or null.';
+      if ((point.rate === null) !== (point.retainedCount === null))
+        return 'retention chart unobserved rates and counts must both be null.';
+      if (
+        point.retainedCount !== null &&
+        !(
+          Number.isFinite(point.retainedCount) &&
+          point.retainedCount >= 0 &&
+          point.retainedCount <= item.cohortSize
+        )
+      )
+        return 'retention chart retained counts must be finite, nonnegative, and within the cohort size.';
+      const label = labels.get(point.offset);
+      if (label !== undefined && label !== point.label)
+        return 'retention chart labels must agree for the same offset.';
+      labels.set(point.offset, point.label);
+    }
+  }
+  return undefined;
+}
+
 function createRetentionModel(
   series: readonly RetentionChartSeries[],
   unit: string,
   formatValue: (value: number) => string
 ) {
-  const ids = new Set<string>();
   const rowsByOffset = new Map<number, RetentionRow>();
   const cohorts = series.map((item, index) => {
-    invariant(
-      item.id.trim().length > 0 && !ids.has(item.id),
-      'retention series chart IDs must be nonblank and unique.'
-    );
-    ids.add(item.id);
-    invariant(
-      Number.isFinite(item.cohortSize) && item.cohortSize >= 0,
-      'retention chart counts must be finite and nonnegative.'
-    );
-    const seen = new Set<number>();
     let previous: RetentionReading | undefined;
     const readings = [...item.points]
       .sort((a, b) => a.offset - b.offset)
       .map(point => {
-        invariant(
-          Number.isSafeInteger(point.offset) &&
-            point.offset >= 0 &&
-            !seen.has(point.offset),
-          'retention chart offsets must be unique nonnegative integers within each series.'
-        );
-        seen.add(point.offset);
-        invariant(
-          point.rate === null ||
-            (Number.isFinite(point.rate) && point.rate >= 0 && point.rate <= 1),
-          'retention chart rates must be finite fractions between 0 and 1, or null.'
-        );
-        invariant(
-          (point.rate === null) === (point.retainedCount === null),
-          'retention chart unobserved rates and counts must both be null.'
-        );
-        if (point.retainedCount !== null) {
-          invariant(
-            Number.isFinite(point.retainedCount) && point.retainedCount >= 0,
-            'retention chart counts must be finite and nonnegative.'
-          );
-          invariant(
-            point.retainedCount <= item.cohortSize,
-            'retention chart retained counts cannot exceed cohort size.'
-          );
-        }
         let row = rowsByOffset.get(point.offset);
-        invariant(
-          !row || row.label === point.label,
-          'retention chart labels must agree for the same offset.'
-        );
         if (!row) {
           row = {
             offset: point.offset,
@@ -143,6 +147,14 @@ export function RetentionChart({
   className,
   formatValue = formatNumber,
 }: RetentionChartProps) {
+  const problem =
+    chartIdProblem('retention series', series) ?? retentionProblem(series);
+  if (problem)
+    return (
+      <section className={className} aria-label={ariaLabel}>
+        <DataProblem problem={problem} />
+      </section>
+    );
   const { rows, rowsByOffset, cohorts } = createRetentionModel(
     series,
     unit,
