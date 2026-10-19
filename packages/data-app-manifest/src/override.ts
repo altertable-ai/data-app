@@ -25,7 +25,6 @@ type Member = {
   comma: boolean;
   /** Comments that follow the property or its comma on the same line. */
   trailing: string;
-  /** Whether `trailing` ends with a line comment, which runs to the line break. */
   lineComment: boolean;
 };
 
@@ -65,10 +64,6 @@ export function overrideDataAppManifest(
   };
 }
 
-/**
- * The declaration node's text once its manifest changes from `current` to `next`:
- * unchanged values keep their authored text.
- */
 function applyManifestChanges(
   declaration: ts.ObjectLiteralExpression,
   root: ts.SourceFile,
@@ -76,7 +71,6 @@ function applyManifestChanges(
   next: DataAppManifest
 ): string {
   const text = root.text;
-  // New strings follow the declaration's quotes, else the package's formatting.
   const authoredString = firstStringLiteral(declaration);
   const singleQuote = authoredString
     ? text[authoredString.getStart(root)] === "'"
@@ -114,7 +108,6 @@ function applyManifestChanges(
   ): string {
     const keys = Object.keys(after);
     if (!keys.length) return '{}';
-    // Without authored properties, there is no layout to follow.
     if (!node.properties.length) return print(after, path);
 
     const members: Member[] = [];
@@ -176,7 +169,6 @@ function applyManifestChanges(
               text.slice(property.initializer.getEnd(), property.getEnd()),
             beforeComma,
             trailing,
-            // Text after a line comment resumes at the property's indentation.
             resume: lineComment ? indentAt(property.getStart(root)) : undefined,
           })
         ),
@@ -190,9 +182,7 @@ function applyManifestChanges(
         })),
     ];
 
-    // A removed property can take the line break that ends the previous line
-    // comment, and an appended one can follow it on the same line, so text that
-    // would continue a line comment moves to a new line.
+    // Text that would continue a line comment moves to a new line.
     let object = '{';
     let resume: string | undefined;
     function append(chunk: string) {
