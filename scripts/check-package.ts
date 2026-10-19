@@ -138,12 +138,18 @@ try {
     if (manifest.name === '@altertable/data-app') {
       for (const path of [
         'AGENTS.md',
+        'REFERENCE.md',
         'CONTRIBUTING.md',
         'docs/app-authoring.md',
         'examples/starter-data-app/index.tsx',
         'examples/starter-local-data-app/package.json',
       ])
         assert(paths.has(path), `Missing authoring material: ${path}`);
+      assert.equal(
+        await readFile(join(unpacked, 'REFERENCE.md'), 'utf8'),
+        await readFile(join(root, 'REFERENCE.md'), 'utf8'),
+        'Packed API reference differs from the canonical reference'
+      );
     }
     for (const path of paths) {
       if (path.endsWith('.md')) {

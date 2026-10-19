@@ -4,5 +4,11 @@
   "trailingComma": "es5",
   "arrowParens": "avoid",
   "printWidth": 80,
-  "ignorePatterns": ["dist/**", "bun.lock", "node_modules/**", "CHANGELOG.md"]
+  "ignorePatterns": [
+    "dist/**",
+    "bun.lock",
+    "node_modules/**",
+    "CHANGELOG.md",
+    "**/REFERENCE.md"
+  ]
 }

@@ -36,7 +36,13 @@ for (const { directory, manifest } of packages) {
   const outdir = `${directory}/dist`;
   if (!incremental) await rm(outdir, { recursive: true, force: true });
   if (!incremental && manifest.name === '@altertable/data-app') {
-    for (const name of ['docs', 'examples', 'AGENTS.md', 'CONTRIBUTING.md']) {
+    for (const name of [
+      'docs',
+      'examples',
+      'AGENTS.md',
+      'CONTRIBUTING.md',
+      'REFERENCE.md',
+    ]) {
       await rm(`${directory}/${name}`, { recursive: true, force: true });
       await cp(name, `${directory}/${name}`, {
         recursive: true,

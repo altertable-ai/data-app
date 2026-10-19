@@ -8,7 +8,7 @@
   ],
   "type": "module",
   "scripts": {
-    "build": "bun run scripts/build.ts",
+    "build": "bun run scripts/build.ts && bun run scripts/build-reference.ts",
     "dev": "bun run scripts/dev.ts",
     "dev:file": "bun run scripts/dev-file.ts",
     "dev:dir": "bun run scripts/dev-dir.ts",
@@ -17,7 +17,7 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "vitest run",
-    "check": "bun run build && bun run check:boundaries && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:package && bun run check:starter",
+    "check": "bun run build && bun run check:boundaries && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:reference && bun run check:package && bun run check:starter",
     "check:package": "bun run scripts/check-package.ts",
     "check:workflows": "bash scripts/check-workflows.sh",
     "lint:fix": "oxlint --type-aware --fix packages tests scripts dev vitest.config.ts",
@@ -26,7 +26,8 @@
     "check:links": "remark . --ext md --rc-path .remarkrc.json --frail --no-stdout",
     "check:links:external": "remark . --ext md --rc-path .remarkrc-external.json --frail --no-stdout",
     "check:styles": "bun run scripts/check-app-styles.ts",
-    "check:boundaries": "bun run scripts/check-boundaries.ts"
+    "check:boundaries": "bun run scripts/check-boundaries.ts",
+    "check:reference": "bun run scripts/build-reference.ts --check"
   },
   "devDependencies": {
     "@altertable/data-app": "0.70.0",

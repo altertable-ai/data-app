@@ -30,7 +30,8 @@
     "docs",
     "examples",
     "AGENTS.md",
-    "CONTRIBUTING.md"
+    "CONTRIBUTING.md",
+    "REFERENCE.md"
   ],
   "type": "module",
   "sideEffects": false,

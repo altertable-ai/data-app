@@ -15,6 +15,10 @@ Replace the sample app declaration, operations, filters, data context, CSV expor
 an exploration of the source data you inspected. The starter uses two SQL
 `VALUES` rows, so it needs no production table.
 
+`defineDataApp()` requires `scope`, and `<DataApp>` from `/react` requires
+`story` and `datasets`; the [API reference](../REFERENCE.md) marks every
+optional prop with `?`.
+
 For execution details, see [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps).
 
 ## Convert a local data app

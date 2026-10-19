@@ -457,11 +457,12 @@ mountDataApp({ app, component: App });
     for (const response of reloadConnections) response.destroy();
     await connectionFailed;
     await writeFile(entry, appSource('Edited while disconnected'));
-    await vi.waitFor(async () =>
-      expect(
-        await (await fetch(new URL('/bundle.js', server.url))).text()
-      ).toContain('Edited while disconnected')
-    );
+    await expect
+      .poll(async () => {
+        const bundle = await fetch(new URL('/bundle.js', server.url));
+        return (await bundle.text()).includes('Edited while disconnected');
+      })
+      .toBe(true);
     expect(
       await app.getByRole('heading', { name: 'Before disconnect' }).isVisible()
     ).toBe(true);
