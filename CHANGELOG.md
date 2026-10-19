@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.71.0](https://github.com/altertable-ai/data-app/compare/v0.70.0...v0.71.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **packages:** create a modular monorepo for Altertable data apps ([#89](https://github.com/altertable-ai/data-app/issues/89))
+
+### Features
+
+* **packages:** create a modular monorepo for Altertable data apps ([#89](https://github.com/altertable-ai/data-app/issues/89)) ([b36c7ea](https://github.com/altertable-ai/data-app/commit/b36c7eaaf6eecaa5fb0ab3c1ae736a7b21639ddf))
+* ship a generated, grep-friendly API reference ([#91](https://github.com/altertable-ai/data-app/issues/91)) ([492eac9](https://github.com/altertable-ai/data-app/commit/492eac91cce969b9a086022722106df2cdc32421))
+
 ## [0.70.0](https://github.com/altertable-ai/data-app/compare/v0.69.0...v0.70.0) (2026-10-16)
 
 

@@ -5,11 +5,11 @@
     "": {
       "name": "data-app-workspace",
       "devDependencies": {
-        "@altertable/data-app": "0.70.0",
-        "@altertable/data-app-bun": "0.70.0",
-        "@altertable/data-app-embed": "0.70.0",
-        "@altertable/data-app-react": "0.70.0",
-        "@altertable/data-app-worker": "0.70.0",
+        "@altertable/data-app": "0.71.0",
+        "@altertable/data-app-bun": "0.71.0",
+        "@altertable/data-app-embed": "0.71.0",
+        "@altertable/data-app-react": "0.71.0",
+        "@altertable/data-app-worker": "0.71.0",
         "@types/bun": "1.4.2",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
@@ -54,14 +54,14 @@
     },
     "packages/data-app": {
       "name": "@altertable/data-app",
-      "version": "0.70.0",
+      "version": "0.71.0",
       "dependencies": {
         "@internationalized/date": "3.12.4",
       },
     },
     "packages/data-app-bun": {
       "name": "@altertable/data-app-bun",
-      "version": "0.70.0",
+      "version": "0.71.0",
       "dependencies": {
         "@altertable/data-app": "0.70.0",
         "@altertable/lakehouse": "0.4.1",
@@ -75,7 +75,7 @@
     },
     "packages/data-app-embed": {
       "name": "@altertable/data-app-embed",
-      "version": "0.70.0",
+      "version": "0.71.0",
       "dependencies": {
         "@altertable/data-app": "0.70.0",
       },
@@ -88,7 +88,7 @@
     },
     "packages/data-app-react": {
       "name": "@altertable/data-app-react",
-      "version": "0.70.0",
+      "version": "0.71.0",
       "dependencies": {
         "@altertable/data-app": "0.70.0",
         "@floating-ui/react": "0.27.20",
@@ -108,7 +108,7 @@
     },
     "packages/data-app-worker": {
       "name": "@altertable/data-app-worker",
-      "version": "0.70.0",
+      "version": "0.71.0",
       "devDependencies": {
         "@altertable/data-app-embed": "0.70.0",
       },

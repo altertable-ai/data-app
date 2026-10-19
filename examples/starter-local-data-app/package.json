@@ -16,9 +16,9 @@
     "check": "bun run lint && bun run format:check && bun run build"
   },
   "dependencies": {
-    "@altertable/data-app": "0.70.0",
-    "@altertable/data-app-bun": "0.70.0",
-    "@altertable/data-app-react": "0.70.0",
+    "@altertable/data-app": "0.71.0",
+    "@altertable/data-app-bun": "0.71.0",
+    "@altertable/data-app-react": "0.71.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },

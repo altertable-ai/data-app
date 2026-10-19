@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-bun",
-  "version": "0.70.0",
+  "version": "0.71.0",
   "description": "Local Bun servers, lakehouse access, and development previews for Altertable data apps.",
   "keywords": [
     "altertable",
@@ -52,12 +52,12 @@
     "build": "bun ../../scripts/build.ts data-app-bun"
   },
   "dependencies": {
-    "@altertable/data-app": "0.70.0",
+    "@altertable/data-app": "0.71.0",
     "@altertable/lakehouse": "0.4.1",
     "get-tsconfig": "4.14.3"
   },
   "devDependencies": {
-    "@altertable/data-app-embed": "0.70.0",
+    "@altertable/data-app-embed": "0.71.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   }

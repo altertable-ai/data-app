@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-worker",
-  "version": "0.70.0",
+  "version": "0.71.0",
   "description": "Self-contained sandbox Worker for serving Altertable data apps.",
   "keywords": [
     "altertable",
@@ -45,6 +45,6 @@
     "build": "bun ../../scripts/build.ts data-app-worker"
   },
   "devDependencies": {
-    "@altertable/data-app-embed": "0.70.0"
+    "@altertable/data-app-embed": "0.71.0"
   }
 }
