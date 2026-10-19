@@ -1,0 +1,49 @@
+{
+  "name": "@altertable/data-app-manifest",
+  "version": "0.71.0",
+  "description": "Static source-only manifest extraction for Altertable data app tooling.",
+  "keywords": [
+    "altertable",
+    "analytics",
+    "data-app",
+    "typescript"
+  ],
+  "homepage": "https://github.com/altertable-ai/data-app",
+  "bugs": {
+    "url": "https://github.com/altertable-ai/data-app/issues"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Altertable",
+    "url": "https://altertable.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altertable-ai/data-app.git",
+    "directory": "packages/data-app-manifest"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts data-app-manifest"
+  },
+  "dependencies": {
+    "typescript": "5.9.3"
+  }
+}

@@ -11,6 +11,10 @@ const selected = process.argv
 if (selected && !packages.some(pkg => pkg.directory === `packages/${selected}`))
   throw new Error(`Unknown package: ${selected}`);
 const incremental = process.argv.includes('--incremental');
+const targets: Record<string, Bun.Target> = {
+  '@altertable/data-app-bun': 'bun',
+  '@altertable/data-app-manifest': 'node',
+};
 
 async function bundle(options: Parameters<typeof Bun.build>[0]) {
   const result = await Bun.build(options);
@@ -98,7 +102,7 @@ for (const { directory, manifest } of packages) {
     entrypoints,
     root: `${directory}/src`,
     outdir,
-    target: manifest.name === '@altertable/data-app-bun' ? 'bun' : 'browser',
+    target: targets[manifest.name] ?? 'browser',
     jsx: { runtime: 'automatic', development: false },
     format: 'esm',
     splitting: manifest.name !== '@altertable/data-app-worker',

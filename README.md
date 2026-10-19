@@ -13,15 +13,16 @@ narrative, then let users present findings and export results.
 
 ## Install
 
-Choose the packages for your runtime:
+Choose the packages for your runtime or tooling:
 
-| Package                       | Use                                                                           |
-| ----------------------------- | ----------------------------------------------------------------------------- |
-| `@altertable/data-app`        | Definitions, contracts, formatting, browser clients, portable server handlers |
-| `@altertable/data-app-react`  | React app authoring and `/ui` components                                      |
-| `@altertable/data-app-embed`  | Framework-neutral iframe hosting and `/react` host adapter                    |
-| `@altertable/data-app-bun`    | Bun local serving and `/preview` tooling                                      |
-| `@altertable/data-app-worker` | Self-contained sandbox Worker deployment                                      |
+| Package                         | Use                                                                           |
+| ------------------------------- | ----------------------------------------------------------------------------- |
+| `@altertable/data-app`          | Definitions, contracts, formatting, browser clients, portable server handlers |
+| `@altertable/data-app-react`    | React app authoring and `/ui` components                                      |
+| `@altertable/data-app-embed`    | Framework-neutral iframe hosting and `/react` host adapter                    |
+| `@altertable/data-app-bun`      | Bun local serving and `/preview` tooling                                      |
+| `@altertable/data-app-worker`   | Self-contained sandbox Worker deployment                                      |
+| `@altertable/data-app-manifest` | Static source manifest extraction for Node.js and Bun tooling                 |
 
 ```fish
 bun add @altertable/data-app @altertable/data-app-react react react-dom

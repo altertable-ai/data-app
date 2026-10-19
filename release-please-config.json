@@ -98,6 +98,16 @@
           "type": "json",
           "path": "packages/data-app-react/package.json",
           "jsonpath": "$.dependencies['@altertable/data-app']"
+        },
+        {
+          "type": "json",
+          "path": "package.json",
+          "jsonpath": "$.devDependencies['@altertable/data-app-manifest']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-manifest/package.json",
+          "jsonpath": "$.version"
         }
       ]
     }

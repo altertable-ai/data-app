@@ -62,7 +62,11 @@ async function install(directory: string, dependencies: string[]) {
 }
 
 function excludes(names: Set<string>, forbidden: string[]) {
-  for (const name of forbidden)
+  for (const name of [
+    ...forbidden,
+    'typescript',
+    '@altertable/data-app-manifest',
+  ])
     assert(!names.has(name), `Unexpected installed dependency: ${name}`);
 }
 
@@ -201,6 +205,89 @@ try {
     'html-to-image',
     'get-tsconfig',
   ];
+  const manifestOnly = join(temporary, 'manifest-only');
+  const manifestNames = await install(manifestOnly, [archive('-manifest')]);
+  assert.deepEqual([...manifestNames].sort(), [
+    '@altertable/data-app-manifest',
+    'typescript',
+  ]);
+  await typecheck(
+    manifestOnly,
+    `
+import { extractDataAppManifest, type DataAppManifest, type DataAppLiteralValue } from '@altertable/data-app-manifest';
+const result = extractDataAppManifest('');
+if (result.manifest) {
+  const manifest: DataAppManifest = result.manifest;
+  const value: DataAppLiteralValue = manifest.title;
+  const diagnostics: [] = result.diagnostics;
+  void [value, diagnostics];
+}
+// @ts-expect-error The API accepts only the source string.
+extractDataAppManifest('', 'app.tsx');
+`
+  );
+  await run(
+    [
+      'node',
+      join(manifestOnly, 'node_modules/typescript/bin/tsc'),
+      '-p',
+      join(manifestOnly, 'tsconfig.json'),
+    ],
+    manifestOnly
+  );
+  await writeFile(
+    join(manifestOnly, 'manifest-consumer.ts'),
+    await readFile(join(root, 'tests/fixtures/manifest-consumer.ts'), 'utf8')
+  );
+  await writeFile(
+    join(manifestOnly, 'verify.mjs'),
+    `
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { verifyManifestConsumer } from './manifest-consumer.ts';
+const require = createRequire(import.meta.resolve('@altertable/data-app-manifest'));
+assert.equal(require('typescript/package.json').version, '5.9.3');
+verifyManifestConsumer();
+`
+  );
+  for (const runtime of ['node', 'bun'])
+    await run([runtime, join(manifestOnly, 'verify.mjs')], manifestOnly);
+  const manifestBundle = join(manifestOnly, 'verify-bundle.js');
+  await run(
+    [
+      'bun',
+      'build',
+      join(manifestOnly, 'verify.mjs'),
+      '--target=node',
+      '--outfile',
+      manifestBundle,
+    ],
+    manifestOnly
+  );
+  for (const runtime of ['node', 'bun'])
+    await run([runtime, manifestBundle], manifestOnly);
+  // Hoisting must preserve the root compiler while the extractor owns TS5.
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const root = createRequire(${JSON.stringify(join(root, 'package.json'))});
+assert.equal(root('typescript/package.json').version, ${JSON.stringify(workspace.devDependencies.typescript)});
+for (const name of ['data-app', 'data-app-react', 'data-app-bun', 'data-app-embed', 'data-app-worker', 'data-app-manifest']) {
+  const local = createRequire(import.meta.resolve('@altertable/' + name));
+  assert.equal(local('typescript/package.json').version, name === 'data-app-manifest' ? '5.9.3' : ${JSON.stringify(workspace.devDependencies.typescript)});
+}
+`,
+    ],
+    root
+  );
+  console.log(
+    'Manifest-only archive: TypeScript 5, portable types, Node and Bun scope/literal contract; no runtime/UI dependencies.'
+  );
   const base = join(temporary, 'base');
   const baseNames = await install(base, [archive('')]);
   excludes(baseNames, [...uiDependencies, 'react', 'react-dom', '@types/bun']);
@@ -457,7 +544,11 @@ try {
   );
   if (/^import\s|\bimport\s*\(/m.test(workerAsset))
     throw new Error('Worker must have no runtime imports.');
-  if (/react-query|react-dom|Bun\.|process\./.test(workerAsset))
+  if (
+    /react-query|react-dom|Bun\.|process\.|createSourceFile|typescript/.test(
+      workerAsset
+    )
+  )
     throw new Error('Worker contains unsupported runtime dependencies.');
   await run(
     [
@@ -576,6 +667,12 @@ export { Grid };
     )
       throw new Error('Bun preview runtime leaked into a browser entry.');
   }
+  if (
+    javascript.some(source =>
+      /typescript|createSourceFile|extractDataAppManifest/.test(source)
+    )
+  )
+    throw new Error('Manifest compiler tooling leaked into the browser build.');
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
   await writeFile(
