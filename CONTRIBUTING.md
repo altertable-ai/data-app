@@ -58,7 +58,9 @@ template selection and destination handling belong to the caller.
 
 `@altertable/data-app-manifest` owns TypeScript 5 for static source extraction.
 Keep compiler dependencies in this tooling package; runtime packages must not
-depend on it. Root tooling and declaration builds use TypeScript 7.
+depend on it. Root tooling and declaration builds use TypeScript 7. `bun run typecheck` checks
+the root and each package build configuration with that compiler, preserving
+portable packages’ exclusion of Bun globals.
 
 Every package declares its own runtime dependencies and peers. Cross-package
 builds externalize dependencies to preserve shared module identity. The Worker,

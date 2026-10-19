@@ -46,7 +46,8 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "bun ../../scripts/build.ts data-app-react"
+    "build": "bun ../../scripts/build.ts data-app-react",
+    "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
   },
   "dependencies": {
     "@altertable/data-app": "0.72.0",
