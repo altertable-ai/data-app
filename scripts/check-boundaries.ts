@@ -16,14 +16,40 @@ assert.equal(
   'Release manifest and workspace versions differ'
 );
 const updates = new Set(
-  release.packages['.']['extra-files'].map(
-    update => `${update.path}:${update.jsonpath}`
-  )
+  release.packages['.']['extra-files']
+    .filter(update => update.type === 'json')
+    .map(update => `${update.path}:${update.jsonpath}`)
 );
 function releaseVersion(path: string, field: string) {
   assert(
     updates.has(`${path}:${field}`),
     `Release Please does not update ${path}:${field}`
+  );
+}
+for (const filename of ['AGENTS.md', 'README.md']) {
+  const path = `packages/data-app-examples/templates/starter-local-data-app/${filename}`;
+  assert(
+    release.packages['.']['extra-files'].some(
+      update => update.type === 'generic' && update.path === path
+    ),
+    `Release Please does not update starter guidance: ${path}`
+  );
+  const source = await Bun.file(path).text();
+  const taggedLinks = [
+    ...source.matchAll(
+      /github\.com\/altertable-ai\/data-app\/blob\/v([^/]+)\//g
+    ),
+  ];
+  assert(taggedLinks.length > 0, `Missing release-matched guidance: ${path}`);
+  for (const match of taggedLinks)
+    assert.equal(
+      match[1],
+      workspace.version,
+      `${path}: guidance version differs`
+    );
+  assert(
+    source.includes('<!-- x-release-please-version -->'),
+    `${path}: missing release annotation`
   );
 }
 for (const { directory } of packages)

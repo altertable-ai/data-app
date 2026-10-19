@@ -1,7 +1,8 @@
 # Local data app starter
 
-After `bun install`, use the installed local authoring guide at
+If dependencies are installed, use
 `node_modules/@altertable/data-app/docs/local-data-apps.md` for this app's SDK version.
+Otherwise, read the [local authoring guide for v0.71.0](https://github.com/altertable-ai/data-app/blob/v0.71.0/docs/local-data-apps.md). <!-- x-release-please-version -->
 Browse the latest [local authoring guide](https://github.com/altertable-ai/data-app/blob/main/docs/local-data-apps.md)
 on GitHub.
 See [AGENTS.md](AGENTS.md) for app-owned files.

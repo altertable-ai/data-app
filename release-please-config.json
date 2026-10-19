@@ -108,6 +108,14 @@
           "type": "json",
           "path": "package.json",
           "jsonpath": "$.devDependencies['@altertable/data-app-examples']"
+        },
+        {
+          "type": "generic",
+          "path": "packages/data-app-examples/templates/starter-local-data-app/AGENTS.md"
+        },
+        {
+          "type": "generic",
+          "path": "packages/data-app-examples/templates/starter-local-data-app/README.md"
         }
       ]
     }
