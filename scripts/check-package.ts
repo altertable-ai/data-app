@@ -268,6 +268,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { copyExample } from '@altertable/data-app-examples';
+await copyExample('starter-data-app', process.argv[1] + '-hosted');
+assert((await readFile(join(process.argv[1] + '-hosted', 'index.tsx'), 'utf8')).length > 0);
 await copyExample('starter-local-data-app', process.argv[1]);
 assert.equal(await readFile(join(process.argv[1], '.gitignore'), 'utf8'), 'node_modules/\\ndist/\\n.env*\\n');
 await assert.rejects(copyExample('starter-local-data-app', process.argv[1]), /exist/i);

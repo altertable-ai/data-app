@@ -7,14 +7,14 @@ source files. This package has no runtime dependencies.
 ## Use from scaffolding tools
 
 ```ts
-import { dataAppExamples, copyExample } from '@altertable/data-app-examples';
+import { copyExample } from '@altertable/data-app-examples';
 
-const example = dataAppExamples.find(example => example.mode === 'local');
-if (!example) throw new Error('Local starter unavailable');
-await copyExample(example.id, destination);
+await copyExample('starter-local-data-app', destination);
 ```
 
-The catalog supplies stable IDs, titles, descriptions, and execution modes.
+`dataAppExamples` supplies stable IDs, titles, descriptions, and execution modes
+for tools that present a starter picker. Use the ID directly when the starter is
+already known.
 `copyExample()` copies the starter and restores `_gitignore` to `.gitignore`
 (npm excludes `.gitignore` from published archives). The destination must not
 exist. Keep project naming, destination checks, and dependency installation

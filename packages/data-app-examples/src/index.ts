@@ -1,6 +1,8 @@
-import { cp, mkdir, rename } from 'node:fs/promises';
+import { cp, mkdir, readdir, rename } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+const templateFileRenames = new Map([['_gitignore', '.gitignore']]);
 
 /** Canonical starters available to scaffolding tools. IDs are stable across releases. */
 export const dataAppExamples = [
@@ -47,9 +49,9 @@ export async function copyExample(
             !part.startsWith('.env')
         ),
   });
-  if (id === 'starter-local-data-app')
-    await rename(
-      join(destination, '_gitignore'),
-      join(destination, '.gitignore')
-    );
+  for (const filename of await readdir(destination)) {
+    const target = templateFileRenames.get(filename);
+    if (target)
+      await rename(join(destination, filename), join(destination, target));
+  }
 }

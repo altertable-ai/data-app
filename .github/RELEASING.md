@@ -1,11 +1,11 @@
 # Releasing
 
-This repository releases six npm packages together: `@altertable/data-app`,
+This repository releases these npm packages together: `@altertable/data-app`,
 `@altertable/data-app-embed`, `@altertable/data-app-react`,
 `@altertable/data-app-bun`, `@altertable/data-app-worker`, and `@altertable/data-app-examples`.
 They share one version, one release PR, one `v<version>` tag, and one changelog.
 The private root's `package.json` is the release version source. Release Please
-automatically updates all six package versions and internal dependency pins
+automatically updates all package versions and internal dependency pins
 through its configured JSON extra-file updates. The root is never published.
 
 ## Repository setup
@@ -17,7 +17,7 @@ workflow falls back to `GITHUB_TOKEN`, but PRs created or updated with that toke
 do not trigger subsequent GitHub Actions workflows. Use the dedicated token
 when requiring CI checks on release PRs.
 
-Configure an npm trusted publisher for each of the six package names:
+Configure an npm trusted publisher for each package:
 
 | Setting           | Value                                               |
 | ----------------- | --------------------------------------------------- |
