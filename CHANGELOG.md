@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.72.0](https://github.com/altertable-ai/data-app/compare/v0.71.0...v0.72.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* **examples:** publish data app starters for CLI scaffolding ([#94](https://github.com/altertable-ai/data-app/issues/94))
+
+### Features
+
+* **examples:** publish data app starters for CLI scaffolding ([#94](https://github.com/altertable-ai/data-app/issues/94)) ([9cbe184](https://github.com/altertable-ai/data-app/commit/9cbe1841849b012c7d63053ae111551d33c05362))
+* **manifest:** add static data app manifest extraction ([#93](https://github.com/altertable-ai/data-app/issues/93)) ([8a4ac3a](https://github.com/altertable-ai/data-app/commit/8a4ac3ac5e5cf576c898b1dc6953739da8360d83))
+
 ## [0.71.0](https://github.com/altertable-ai/data-app/compare/v0.70.0...v0.71.0) (2026-10-19)
 
 
