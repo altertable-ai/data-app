@@ -8,6 +8,7 @@
         "@altertable/data-app": "0.71.0",
         "@altertable/data-app-bun": "0.71.0",
         "@altertable/data-app-embed": "0.71.0",
+        "@altertable/data-app-examples": "0.71.0",
         "@altertable/data-app-manifest": "0.71.0",
         "@altertable/data-app-react": "0.71.0",
         "@altertable/data-app-worker": "0.71.0",
@@ -32,25 +33,6 @@
         "testcontainers": "12.2.0",
         "typescript": "7.0.2",
         "vitest": "4.1.11",
-      },
-    },
-    "examples/starter-local-data-app": {
-      "name": "data-app-starter",
-      "dependencies": {
-        "@altertable/data-app": "0.71.0",
-        "@altertable/data-app-bun": "0.71.0",
-        "@altertable/data-app-react": "0.71.0",
-        "react": "19.3.0",
-        "react-dom": "19.3.0",
-      },
-      "devDependencies": {
-        "@types/bun": "1.4.2",
-        "@types/react": "19.3.0",
-        "@types/react-dom": "19.3.0",
-        "oxfmt": "0.70.0",
-        "oxlint": "1.85.0",
-        "oxlint-tsgolint": "7.0.2003",
-        "typescript": "7.0.2",
       },
     },
     "packages/data-app": {
@@ -86,6 +68,29 @@
       "optionalPeers": [
         "react",
       ],
+    },
+    "packages/data-app-examples": {
+      "name": "@altertable/data-app-examples",
+      "version": "0.71.0",
+    },
+    "packages/data-app-examples/templates/starter-local-data-app": {
+      "name": "data-app-starter",
+      "dependencies": {
+        "@altertable/data-app": "0.71.0",
+        "@altertable/data-app-bun": "0.71.0",
+        "@altertable/data-app-react": "0.71.0",
+        "react": "19.3.0",
+        "react-dom": "19.3.0",
+      },
+      "devDependencies": {
+        "@types/bun": "1.4.2",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "oxfmt": "0.70.0",
+        "oxlint": "1.85.0",
+        "oxlint-tsgolint": "7.0.2003",
+        "typescript": "7.0.2",
+      },
     },
     "packages/data-app-manifest": {
       "name": "@altertable/data-app-manifest",
@@ -128,6 +133,8 @@
     "@altertable/data-app-bun": ["@altertable/data-app-bun@workspace:packages/data-app-bun"],
 
     "@altertable/data-app-embed": ["@altertable/data-app-embed@workspace:packages/data-app-embed"],
+
+    "@altertable/data-app-examples": ["@altertable/data-app-examples@workspace:packages/data-app-examples"],
 
     "@altertable/data-app-manifest": ["@altertable/data-app-manifest@workspace:packages/data-app-manifest"],
 
@@ -631,7 +638,7 @@
 
     "d3-timer": ["d3-timer@3.0.1", "", {}, "sha512-ndfJ/JxxMd3nw31uyKoY2naivF+r29V+Lc0svZxe1JvvIRmi8hUsrMvdOwgS1o6uBHmiz91geQ0ylPP0aj1VUA=="],
 
-    "data-app-starter": ["data-app-starter@workspace:examples/starter-local-data-app"],
+    "data-app-starter": ["data-app-starter@workspace:packages/data-app-examples/templates/starter-local-data-app"],
 
     "dead-or-alive": ["dead-or-alive@1.0.5", "", { "dependencies": { "@types/hast": "^3.0.0", "fast-content-type-parse": "^3.0.0", "hast-util-from-html-isomorphic": "^2.0.0", "hast-util-is-element": "^3.0.0", "hast-util-select": "^6.0.0", "html-url-attributes": "^3.0.0", "levenshtein-edit-distance": "^3.0.0", "undici": "^8.0.0", "unist-util-visit": "^5.0.0", "vfile-message": "^4.0.0" } }, "sha512-WTw0SWjsRlwhEK34dQgiXCwfoVH7C4DcViKYT/K43ShApOsMiQDryup3SJ/Fp7fVsDA/NqeW810oUnuICYYzNA=="],
 

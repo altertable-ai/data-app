@@ -4,7 +4,7 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "examples/starter-local-data-app"
+    "packages/data-app-examples/templates/starter-local-data-app"
   ],
   "type": "module",
   "scripts": {
@@ -13,14 +13,14 @@
     "dev:file": "bun run scripts/dev-file.ts",
     "dev:dir": "bun run scripts/dev-dir.ts",
     "typecheck": "bun install --frozen-lockfile && tsc --noEmit",
-    "lint": "oxlint --type-aware packages tests scripts dev examples/starter-data-app vitest.config.ts",
+    "lint": "oxlint --type-aware packages/*/src packages/data-app-examples/templates/starter-data-app tests scripts dev vitest.config.ts",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "test": "vitest run",
     "check": "bun run build && bun run check:boundaries && bun run typecheck && bun run lint && bun run check:styles && bun run lint:md && bun run check:links && bun run format:check && bun run test && bun run check:reference && bun run check:package && bun run check:starter",
     "check:package": "bun run scripts/check-package.ts",
     "check:workflows": "bash scripts/check-workflows.sh",
-    "lint:fix": "oxlint --type-aware --fix packages tests scripts dev vitest.config.ts",
+    "lint:fix": "oxlint --type-aware --fix packages/*/src packages/data-app-examples/templates/starter-data-app tests scripts dev vitest.config.ts",
     "check:starter": "bun run scripts/check-starter.ts",
     "lint:md": "markdownlint-cli2",
     "check:links": "remark . --ext md --rc-path .remarkrc.json --frail --no-stdout",
@@ -33,6 +33,7 @@
     "@altertable/data-app": "0.71.0",
     "@altertable/data-app-bun": "0.71.0",
     "@altertable/data-app-embed": "0.71.0",
+    "@altertable/data-app-examples": "0.71.0",
     "@altertable/data-app-manifest": "0.71.0",
     "@altertable/data-app-react": "0.71.0",
     "@altertable/data-app-worker": "0.71.0",

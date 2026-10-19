@@ -300,7 +300,10 @@ test('preserves the shared Node and Bun archive consumer contract', async () => 
 
 test('extracts the documented hosted starter declaration', async () => {
   const text = await readFile(
-    new URL('../../examples/starter-data-app/index.tsx', import.meta.url),
+    new URL(
+      '../../packages/data-app-examples/templates/starter-data-app/index.tsx',
+      import.meta.url
+    ),
     'utf8'
   );
   const result = extractDataAppManifest(text);

@@ -2,8 +2,8 @@
 
 This repository releases its npm packages together: `@altertable/data-app`,
 `@altertable/data-app-embed`, `@altertable/data-app-react`,
-`@altertable/data-app-bun`, `@altertable/data-app-worker`, and
-`@altertable/data-app-manifest`.
+`@altertable/data-app-bun`, `@altertable/data-app-worker`,
+`@altertable/data-app-manifest`, and `@altertable/data-app-examples`.
 They share one version, one release PR, one `v<version>` tag, and one changelog.
 The private root's `package.json` is the release version source. Release Please
 automatically updates package versions and internal dependency pins

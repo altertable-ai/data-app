@@ -8,7 +8,7 @@ or pass a direct `CsvExport` object.
 ## Present data with stories
 
 Set `story` on `<DataApp>` to enable **Present story** in the toolbar.
-For custom shells, `@altertable/data-app-react/ui` provides `<PresentStory>`; see [direct UI composition](ui.md). Start from the [data app starter](../examples/starter-data-app/index.tsx).
+For custom shells, `@altertable/data-app-react/ui` provides `<PresentStory>`; see [direct UI composition](ui.md). Start from the [data app starter](app-authoring.md#use-release-matched-starters).
 
 Return one to four findings with a headline, a visual, and registered source
 evidence. Set `evidence` to the registered dataset or metric binding. The app

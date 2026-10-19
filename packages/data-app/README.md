@@ -30,7 +30,8 @@ UI or `@altertable/data-app-embed` to host an app. This package requires no Reac
 
 ## Documentation
 
-Start with [app authoring](docs/app-authoring.md). Guides, starters, and
+Start with [app authoring](docs/app-authoring.md). Use the installed,
+[release-matched starters](docs/app-authoring.md#use-release-matched-starters). Guides and
 [agent instructions](AGENTS.md) ship with this package.
 
 ## License

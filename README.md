@@ -21,8 +21,9 @@ Choose the packages for your runtime or tooling:
 | `@altertable/data-app-react`    | React app authoring and `/ui` components                                      |
 | `@altertable/data-app-embed`    | Framework-neutral iframe hosting and `/react` host adapter                    |
 | `@altertable/data-app-bun`      | Bun local serving and `/preview` tooling                                      |
-| `@altertable/data-app-worker`   | Self-contained sandbox Worker deployment                                      |
 | `@altertable/data-app-manifest` | Static source manifest extraction for Node.js and Bun tooling                 |
+| `@altertable/data-app-examples` | Canonical starter templates for CLI scaffolding                               |
+| `@altertable/data-app-worker`   | Self-contained sandbox Worker deployment                                      |
 
 ```fish
 bun add @altertable/data-app @altertable/data-app-react react react-dom
@@ -40,10 +41,10 @@ All packages share a coordinated release version.
 Apps can be embedded in Altertable, ChatGPT, Claude, and other hosts that support
 MCP Apps through a host integration, or run locally in a browser.
 
-| App             | Guide                                  | Starter                                                    |
-| --------------- | -------------------------------------- | ---------------------------------------------------------- |
-| Remote data app | [Remote guide](docs/hosted-apps.md)    | [Single file](examples/starter-data-app/index.tsx)         |
-| Local data app  | [Local guide](docs/local-data-apps.md) | [Local project](examples/starter-local-data-app/README.md) |
+| App             | Guide                                  | Starter                                                                                |
+| --------------- | -------------------------------------- | -------------------------------------------------------------------------------------- |
+| Remote data app | [Remote guide](docs/hosted-apps.md)    | [Single file](packages/data-app-examples/templates/starter-data-app/index.tsx)         |
+| Local data app  | [Local guide](docs/local-data-apps.md) | [Local project](packages/data-app-examples/templates/starter-local-data-app/README.md) |
 
 For agent-assisted work, direct your agent to [AGENTS.md](AGENTS.md). The
 generated [API reference](REFERENCE.md) lists public exports and props for search.

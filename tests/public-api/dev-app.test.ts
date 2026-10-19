@@ -619,7 +619,7 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
   const directory = await temporaryDirectory();
   for (const path of ['src', 'app.ts', 'package.json', 'tsconfig.json'])
     await cp(
-      join('examples/starter-local-data-app', path),
+      join('packages/data-app-examples/templates/starter-local-data-app', path),
       join(directory, path),
       { recursive: true }
     );

@@ -42,6 +42,22 @@ Choose the execution path:
 | Data app (hosted / remote / cloud) | [Single-file authoring](hosted-apps.md) |
 | Local data app                     | [Local authoring](local-data-apps.md)   |
 
+### Use release-matched starters
+
+Install `@altertable/data-app-examples` at the same exact version as
+`@altertable/data-app`. Use its installed templates when authoring an app:
+
+- Hosted app: `node_modules/@altertable/data-app-examples/templates/starter-data-app/index.tsx`.
+- Local app: `node_modules/@altertable/data-app-examples/templates/starter-local-data-app`.
+  Use `copyExample()` from the examples package to copy the local starter and
+  restore its `.gitignore`; see the installed examples package's README.
+
+Browse the latest [hosted starter](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx)
+and [local starter](https://github.com/altertable-ai/data-app/tree/main/packages/data-app-examples/templates/starter-local-data-app)
+on GitHub. These browsing links track `main`; the installed templates match your SDK release.
+
+### Compose the app
+
 Lead with a supported finding and expose the relevant fields as filter variables. Use a date filter for questions worth exploring over time,
 or a fixed period snapshot for a deliberate historical analysis.
 
