@@ -4,6 +4,9 @@ dist/
 test-results/
 playwright-report/
 
+# The packaged starter uses _gitignore; protect workspace credentials too.
+/packages/data-app-examples/templates/**/.env*
+
 # Generated npm authoring material; canonical files live at the repository root.
 packages/data-app/docs/
 packages/data-app/AGENTS.md
