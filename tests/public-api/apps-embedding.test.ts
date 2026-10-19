@@ -597,3 +597,99 @@ for (const source of ['bundle', 'packaged', 'url']) {
       .toContain('"version":2');
   });
 }
+
+test('a content-sized frame follows its app height and keeps sheets in the visible page', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1');
+  const frame = page.getByTitle('Sandbox app', { exact: true });
+  const app = page.frameLocator('iframe');
+  const main = app.getByRole('main');
+  await expect.poll(() => main.isVisible()).toBe(true);
+  const root = app.locator(':root');
+  function frameHeight() {
+    return frame.evaluate(element => element.getBoundingClientRect().height);
+  }
+  function overflow() {
+    return root.evaluate(
+      element => element.scrollHeight - element.clientHeight
+    );
+  }
+  await expect
+    .poll(async () =>
+      Math.floor(
+        (await frameHeight()) -
+          (await root.evaluate(
+            element => element.getBoundingClientRect().height
+          ))
+      )
+    )
+    .toBe(0);
+  const initial = await frameHeight();
+  await app
+    .getByRole('button', { name: 'Show long content', exact: true })
+    .click();
+  await expect.poll(frameHeight).toBeGreaterThanOrEqual(initial + 2000);
+  expect(await overflow()).toBe(0);
+
+  await app.getByRole('button', { name: 'Explore data', exact: true }).click();
+  const sheet = app.getByRole('dialog');
+  const { height: viewport } = page.viewportSize()!;
+  async function fitsViewport() {
+    const box = await sheet.boundingBox();
+    return (
+      !!box &&
+      box.height > 200 &&
+      box.y >= -1 &&
+      box.y + box.height <= viewport + 1
+    );
+  }
+  await expect.poll(fitsViewport).toBe(true);
+  await page.evaluate(() => scrollBy(0, 600));
+  expect(
+    await frame.evaluate(element => element.getBoundingClientRect().top)
+  ).toBeLessThan(0);
+  await expect.poll(fitsViewport).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => sheet.count()).toBe(0);
+
+  await app
+    .getByRole('button', { name: 'Show short content', exact: true })
+    .click();
+  await expect
+    .poll(async () => Math.round(await frameHeight()))
+    .toBe(Math.round(initial));
+  await page
+    .getByRole('button', { name: 'Toggle content sizing', exact: true })
+    .click();
+  await expect
+    .poll(async () => Math.round(await frameHeight()))
+    .toBe(Math.round(viewport * 0.8));
+});
+
+test('a content-sized frame stops following growth that tracks its own height', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1');
+  const frame = page.getByTitle('Sandbox app', { exact: true });
+  const app = page.frameLocator('iframe');
+  await expect.poll(() => app.getByRole('main').isVisible()).toBe(true);
+  function frameHeight() {
+    return frame.evaluate(element =>
+      Math.round(element.getBoundingClientRect().height)
+    );
+  }
+  await app
+    .getByRole('button', { name: 'Show viewport-height content', exact: true })
+    .click();
+  let previous = -1;
+  await expect
+    .poll(async () => {
+      const height = await frameHeight();
+      const settled = height === previous;
+      previous = height;
+      return settled;
+    })
+    .toBe(true);
+  expect(previous).toBeLessThan(page.viewportSize()!.height * 4);
+});

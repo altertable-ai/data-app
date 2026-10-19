@@ -10,10 +10,10 @@
 }
 .altertable-present-dialog {
   position: fixed;
-  inset: 0;
+  inset: var(--atbl-frame-inset-top, 0px) 0 auto;
   width: 100vw;
   max-width: none;
-  height: 100dvh;
+  height: var(--atbl-frame-visible-height);
   max-height: none;
   margin: 0;
   padding: 0;

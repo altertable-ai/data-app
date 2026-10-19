@@ -18,37 +18,59 @@ function presentationFromBridgeState(state: unknown) {
   return isDataAppPresentation(presentation) ? presentation : undefined;
 }
 
-/** Local preview verifies its parent before accepting presentation context. */
+/** Local preview verifies its parent before the UI attaches to its bridge. */
+function attachDataAppTransport(
+  attach: (bridge: IframeTransport) => () => void
+) {
+  let disposed = false;
+  let detach: (() => void) | undefined;
+
+  function connect(bridge: IframeTransport) {
+    if (!disposed) detach = attach(bridge);
+  }
+
+  const bridge = getDataAppTransport();
+  if (bridge) connect(bridge);
+  else
+    void localFrameBridge()
+      ?.connect?.()
+      .then(connect)
+      .catch(() => {});
+
+  return () => {
+    disposed = true;
+    detach?.();
+  };
+}
+
 export function useDataAppPresentation() {
   const [presentation, setPresentation] = useState<
     DataAppPresentation | undefined
   >(() => presentationFromBridgeState(getDataAppTransport()?.snapshot()));
 
-  useEffect(() => {
-    let disposed = false;
-    let unsubscribe: (() => void) | undefined;
-
-    function attach(bridge: IframeTransport) {
-      if (disposed) return;
-      unsubscribe = bridge.subscribe(state =>
-        setPresentation(presentationFromBridgeState(state))
-      );
-      setPresentation(presentationFromBridgeState(bridge.snapshot()));
-    }
-
-    const bridge = getDataAppTransport();
-    if (bridge) attach(bridge);
-    else
-      void localFrameBridge()
-        ?.connect?.()
-        .then(attach)
-        .catch(() => {});
-
-    return () => {
-      disposed = true;
-      unsubscribe?.();
-    };
-  }, []);
+  useEffect(
+    () =>
+      attachDataAppTransport(bridge => {
+        const unsubscribe = bridge.subscribe(state =>
+          setPresentation(presentationFromBridgeState(state))
+        );
+        setPresentation(presentationFromBridgeState(bridge.snapshot()));
+        return unsubscribe;
+      }),
+    []
+  );
 
   return presentation;
+}
+
+/** The package styles keep layout and overlays within a content-sized frame. */
+export function useContentSizingSupport() {
+  useEffect(
+    () =>
+      attachDataAppTransport(
+        // Bootstraps that predate content sizing cannot apply it.
+        bridge => bridge.supportContentSizing?.() ?? (() => {})
+      ),
+    []
+  );
 }

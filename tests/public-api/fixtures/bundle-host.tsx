@@ -51,6 +51,9 @@ function Host() {
   const [cancelledRequests, setCancelledRequests] = useState(0);
 
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [contentSizing, setContentSizing] = useState(
+    params.has('content-sizing')
+  );
   const [status, setStatus] = useState<DataAppStatus>('connecting');
   const [attempt, retry] = useReducer(value => value + 1, 0);
   const [version, changeHandler] = useReducer(value => value + 1, 1);
@@ -158,6 +161,9 @@ function Host() {
       >
         Change theme
       </button>
+      <button onClick={() => setContentSizing(value => !value)}>
+        Toggle content sizing
+      </button>
       <button
         onClick={() => {
           setBroken(false);
@@ -183,7 +189,11 @@ function Host() {
           allowFullScreen: true,
           style: { width: '100%', height: '80vh', border: 0 },
         }}
-        presentation={{ theme, surface: 'embedded' }}
+        presentation={{
+          theme,
+          surface: 'embedded',
+          ...(contentSizing ? { sizing: 'content' } : {}),
+        }}
         source={
           params.has('url')
             ? {

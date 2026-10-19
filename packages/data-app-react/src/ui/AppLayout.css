@@ -3,6 +3,10 @@
   flex-direction: column;
   min-height: 100dvh;
 }
+/* The frame follows the layout's height, so a viewport minimum would never shrink. */
+:root[data-atbl-frame-sizing='content'] .altertable-app-layout {
+  min-height: 0;
+}
 .altertable-app-main {
   display: grid;
   align-content: start;

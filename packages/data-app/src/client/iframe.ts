@@ -13,6 +13,7 @@ import {
   type RoutedMessage,
 } from '../core/messages.ts';
 import { type Lakehouse } from '../core/contract.ts';
+import { createFrameSizing } from './frame-sizing.ts';
 import { createMessageClient } from './messages.ts';
 import { DataAppError } from './transport.ts';
 import {
@@ -99,13 +100,16 @@ export function createIframeTransport({
         }
         const first = !sessionId;
         sessionId = message.sessionId;
-        receiveState(message.state);
+        receiveState(message.state, 'new');
         if (first) for (const entry of pending.values()) entry.start();
         if (disposed) return;
         if (mode === 'url') send('runtimeReady', {});
       },
       stateUpdate(message) {
-        receiveState(message.state);
+        receiveState(message.state, 'current');
+      },
+      viewportUpdate(message) {
+        frameSizing.viewport(message.top, message.bottom);
       },
       scriptLoad(message) {
         if (mode === 'bundle') loadScript?.(message.javascript);
@@ -128,9 +132,13 @@ export function createIframeTransport({
   });
   const send = endpoint.send;
   const receive = endpoint.receive;
+  const frameSizing = createFrameSizing(frame.document, height => {
+    if (!disposed && sessionId) send('runtimeResize', { height });
+  });
 
-  function receiveState(state: unknown) {
+  function receiveState(state: unknown, session: 'new' | 'current') {
     hostState = state;
+    frameSizing.update(state, session);
     for (const listener of stateListeners) listener(state);
   }
 
@@ -252,6 +260,7 @@ export function createIframeTransport({
     disconnect();
     disposed = true;
     endpoint.dispose();
+    frameSizing.dispose();
     frame.removeEventListener('message', receive);
     frame.removeEventListener('pagehide', disconnect);
     frame.removeEventListener('pageshow', resume);
@@ -291,6 +300,11 @@ export function createIframeTransport({
     },
     ready() {
       if (!disposed && sessionId) send('runtimeReady', {});
+    },
+    /** The UI owner calls this once its styles support content sizing; the parent's
+     * `sizing: 'content'` presentation then applies until the returned release runs. */
+    supportContentSizing() {
+      return frameSizing.support();
     },
     /** Reports a fatal app failure; the cause reaches the host logger only. */
     fail(cause?: unknown) {

@@ -130,7 +130,8 @@
   position: fixed;
   z-index: 40;
   inset-block-start: calc(
-    100dvh - var(--atbl-space-md) - env(safe-area-inset-bottom, 0px)
+    100dvh - var(--atbl-frame-inset-bottom, 0px) - var(--atbl-space-md) -
+      env(safe-area-inset-bottom, 0px)
   );
   inset-inline-start: 50vw;
   transform: translate(-50%, -100%);

@@ -14,6 +14,7 @@ import {
   type MessageDispatcher,
 } from '@altertable/data-app/contract';
 import { type DataAppLogger } from '@altertable/data-app/client';
+import { createContentSizing } from './content-sizing.ts';
 
 export type DataAppConnection =
   | { type: 'origin'; origin: string }
@@ -143,6 +144,7 @@ export function attachDataAppConnection({
       identity === undefined
         ? undefined
         : (JSON.parse(identity) as DataAppPresentation);
+    contentSizing.setEnabled(currentPresentation?.sizing === 'content');
     publishState();
   }
 
@@ -177,6 +179,7 @@ export function attachDataAppConnection({
         if (disposed) return;
         send('initialize', { state: hostState() });
         if (disposed) return;
+        contentSizing.connected();
         if (javascript !== undefined) send('scriptLoad', { javascript });
       },
       runtimeLog({ payload }) {
@@ -191,6 +194,9 @@ export function attachDataAppConnection({
       },
       runtimeError() {
         onStatusChange?.('failed');
+      },
+      runtimeResize({ height }) {
+        contentSizing.resize(height);
       },
       request(message) {
         void request(message);
@@ -209,6 +215,13 @@ export function attachDataAppConnection({
   });
   const send = endpoint.send;
   const receive = endpoint.receive;
+  const contentSizing = createContentSizing({
+    iframe,
+    window: host,
+    publish(insets) {
+      if (!disposed && sessionId) send('viewportUpdate', insets);
+    },
+  });
 
   function error(
     id: string,
@@ -304,6 +317,7 @@ export function attachDataAppConnection({
   function dispose() {
     disposed = true;
     endpoint.dispose();
+    contentSizing.dispose();
     cancelAll();
     iframe.removeEventListener('load', load);
     host.removeEventListener('message', receive);

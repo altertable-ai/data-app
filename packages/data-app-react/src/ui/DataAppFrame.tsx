@@ -1,5 +1,8 @@
 import { AnnotationControls } from '../annotations/AnnotationControls.tsx';
-import { useDataAppPresentation } from './useDataAppPresentation.ts';
+import {
+  useContentSizingSupport,
+  useDataAppPresentation,
+} from './useDataAppPresentation.ts';
 import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
 import { useAppAppearance } from './useAppAppearance.ts';
 import { type DisclosedQuery } from '@altertable/data-app/contract';
@@ -88,6 +91,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   } = props;
   const app = useDataApp();
   const presentation = useDataAppPresentation();
+  useContentSizingSupport();
   const isEmbedded = presentation?.surface === 'embedded';
   const themeController = useAppAppearance(app.appearance, presentation?.theme);
   const bodyRef = useRef<ComponentRef<'div'>>(null);

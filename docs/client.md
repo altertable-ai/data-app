@@ -114,6 +114,9 @@ The app supplies shared `routes` and optional `signal`. Both client and host
 validate messages. The bridge retains opaque host state through `snapshot()` and
 `subscribe(listener)`; only authenticated, current-session state reaches subscribers.
 It never changes browser history or interprets the host state.
+A framework-neutral UI whose layout follows its content calls
+`bridge.supportContentSizing()` so a parent can [size the iframe to it](embed.md#content-sizing);
+the returned function withdraws that support.
 
 ## App navigation
 

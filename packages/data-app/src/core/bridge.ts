@@ -47,6 +47,13 @@ function string(fields: Fields, key: string) {
   return value;
 }
 
+function length(fields: Fields, key: string) {
+  const value = fields[key];
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0)
+    throw new Error(`Invalid ${key}.`);
+  return value;
+}
+
 function empty() {
   return {};
 }
@@ -159,6 +166,23 @@ export const bridgeProtocol = {
       from: 'app',
       session: 'current',
       parse: empty,
+    }),
+    /** Content height in CSS pixels; hosts apply it only to content-sized frames. */
+    runtimeResize: event({
+      wire: 'runtime:resize',
+      from: 'app',
+      session: 'current',
+      parse: fields => ({ height: length(fields, 'height') }),
+    }),
+    /** CSS pixels of a content-sized frame hidden above and below the parent's visible area. */
+    viewportUpdate: event({
+      wire: 'viewport:update',
+      from: 'host',
+      session: 'current',
+      parse: fields => ({
+        top: length(fields, 'top'),
+        bottom: length(fields, 'bottom'),
+      }),
     }),
   },
 } as const;

@@ -188,3 +188,31 @@ An embedded surface renders toolbar actions without the page header or footer.
 Both surfaces follow the parent's theme, including presentation mode, without
 changing saved viewer preferences. Omitting presentation preserves standalone behavior;
 `host.setPresentation(undefined)` restores it.
+
+### Content sizing
+
+By default the parent sizes the iframe and the app scrolls inside it. Set
+`sizing: 'content'` when the parent page should scroll instead, as in a details
+panel that stacks the app with other content:
+
+```ts
+host.setPresentation({
+  surface: 'embedded',
+  theme: 'light',
+  sizing: 'content',
+});
+```
+
+Apps whose UI supports content sizing opt in: React `<DataApp>` does so
+automatically, and framework-neutral apps call `bridge.supportContentSizing()`.
+Other apps keep the iframe's authored height. The app reports its document height
+in `runtime:resize` messages and the bridge sets the iframe's inline `height`;
+leave the iframe out of flex or grid stretching and `max-height` limits so that
+height applies. When reported heights keep growing with each applied height, as
+content sized in viewport units does, the bridge stops at the height where that
+growth began. While the iframe is content-sized, the bridge sends
+`viewport:update` messages describing which part of it the parent page shows, and
+sheets, toasts, and presentation mode stay within that part. Scrolling containers
+and the parent viewport bound it. Switching back to `'frame'` or disposing the
+bridge restores the iframe's authored height. Apps keep the document element and
+body heights automatic; viewport units resolve against the content-sized frame.
