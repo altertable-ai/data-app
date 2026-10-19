@@ -265,14 +265,36 @@ console.log(JSON.stringify(dataAppExamples.map(example => ({...example, director
       '-e',
       `
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { copyExample } from '@altertable/data-app-examples';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { copyExample, getExampleDirectory } from '@altertable/data-app-examples';
+const destination = process.argv[1];
+const source = resolve(getExampleDirectory('starter-local-data-app'));
+// A missing packaged source fails during copying, after destination creation.
+await rename(source, source + '-missing');
+try {
+  await assert.rejects(copyExample('starter-local-data-app', destination), {code: 'ENOENT'});
+  assert(!existsSync(destination), 'Failed copying left its destination behind');
+} finally {
+  await rename(source + '-missing', source);
+}
+// A filename collision fails during restoration after the source has been copied.
+await mkdir(join(source, '.gitignore'));
+await writeFile(join(source, '.gitignore', 'sentinel'), 'collision');
+try {
+  await assert.rejects(copyExample('starter-local-data-app', destination));
+  assert(!existsSync(destination), 'Failed renaming left its destination behind');
+} finally {
+  await rm(join(source, '.gitignore'), {recursive: true, force: true});
+}
 await copyExample('starter-data-app', process.argv[1] + '-hosted');
 assert((await readFile(join(process.argv[1] + '-hosted', 'index.tsx'), 'utf8')).length > 0);
 await copyExample('starter-local-data-app', process.argv[1]);
 assert.equal(await readFile(join(process.argv[1], '.gitignore'), 'utf8'), 'node_modules/\\ndist/\\n.env*\\n');
-await assert.rejects(copyExample('starter-local-data-app', process.argv[1]), /exist/i);
+await writeFile(join(destination, 'sentinel'), 'keep me');
+await assert.rejects(copyExample('starter-local-data-app', destination), /exist/i);
+assert.equal(await readFile(join(destination, 'sentinel'), 'utf8'), 'keep me');
 await assert.rejects(copyExample('../escape', process.argv[1]), /Unknown data app example/);
 `,
       local,

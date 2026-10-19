@@ -1,4 +1,4 @@
-import { cp, mkdir, readdir, rename } from 'node:fs/promises';
+import { cp, mkdir, readdir, rename, rm } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -37,21 +37,26 @@ export async function copyExample(
 ): Promise<void> {
   const source = getExampleDirectory(id);
   await mkdir(destination);
-  await cp(source, destination, {
-    recursive: true,
-    filter: path =>
-      relative(source, path)
-        .split(sep)
-        .every(
-          part =>
-            part !== 'node_modules' &&
-            part !== 'dist' &&
-            !part.startsWith('.env')
-        ),
-  });
-  for (const filename of await readdir(destination)) {
-    const target = templateFileRenames.get(filename);
-    if (target)
-      await rename(join(destination, filename), join(destination, target));
+  try {
+    await cp(source, destination, {
+      recursive: true,
+      filter: path =>
+        relative(source, path)
+          .split(sep)
+          .every(
+            part =>
+              part !== 'node_modules' &&
+              part !== 'dist' &&
+              !part.startsWith('.env')
+          ),
+    });
+    for (const filename of await readdir(destination)) {
+      const target = templateFileRenames.get(filename);
+      if (target)
+        await rename(join(destination, filename), join(destination, target));
+    }
+  } catch (error) {
+    await rm(destination, { recursive: true, force: true });
+    throw error;
   }
 }
