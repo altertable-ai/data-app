@@ -1,7 +1,7 @@
 # @altertable/data-app API reference
 
 Generated from the published type declarations by `bun run build`; do not
-edit. Each of the 417 public exports has one heading line, then
+edit. Each of the 421 public exports has one heading line, then
 one line per prop, option, or field, so one search returns everything about a
 name:
 
@@ -351,6 +351,7 @@ ConnectionOperation.run: (context: OperationContext, input: Record<string, never
 ConnectionOperation.checks: readonly [Record<string, never>, ...Record<string, never>[]]
 ConnectionOperation.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
 ConnectionOperation.queryNames: { readonly connection: 'connection'; }
+copyExample (function, @altertable/data-app-examples): (id: DataAppExampleId, destination: string): Promise<void> — Copy a starter into a new directory; reject existing destinations.
 createAnnotationClient (function, @altertable/data-app/client): (transport: MessageTransport): { requestSendAnnotations(options?: { signal?: AbortSignal | undefined; } | undefined): Promise<null>; reportAnnotationEditorState(state: { hasUnsavedChanges: boolean; }, options?: { ...; } | undefined): Promise<...>; addAnnotation(draft: DataAppAnnotationDraft, option… — Deliver annotations to the authenticated host. Acknowledgement means retained, not sent to an agent.
 createDataAppNavigation (function, @altertable/data-app/client): (options: {…}): DataAppNavigation — Attach app URL behavior to an already authenticated bridge.
 createDataAppNavigation.options.bridge: { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 6 more ...; fail(cause?: unknown): void; }
@@ -480,6 +481,8 @@ DataAppError (class, @altertable/data-app/client)
 DataAppError.code: string
 DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
+DataAppExampleId (type, @altertable/data-app-examples): = 'starter-data-app' | 'starter-local-data-app' — Stable identifier for a canonical starter.
+dataAppExamples (const, @altertable/data-app-examples): readonly [{ readonly id: 'starter-data-app'; readonly title: 'Hosted data app'; readonly description: 'A single-file React app for hosted execution.'; readonly mode: 'hosted'; }, { readonly id: 'starter-local-data-app'; readonly title: 'Local data app'; readonly description: 'A Bun and React projec… — Canonical starters available to scaffolding tools. IDs are stable across releases.
 DataAppHost (type, @altertable/data-app-embed)
 DataAppHost.dispose: () => void
 DataAppHost.setPresentation: (presentation?: DataAppPresentation | undefined) => void
@@ -978,6 +981,7 @@ getDataAppNavigation (function, @altertable/data-app/client): (frame: Window): D
 getDataAppNavigation.frame.…: plus props inherited from built-in
 getDataAppTransport (function, @altertable/data-app/client): (frame: Window): { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 6 more ...; fail(cause?: unknown): void; } | undefined — The bootstrap installs this before executing app code. URL apps can install an explicit connection.
 getDataAppTransport.frame.…: plus props inherited from built-in
+getExampleDirectory (function, @altertable/data-app-examples): (id: DataAppExampleId): string — Absolute source directory. Use copyExample() to restore npm-excluded filenames.
 GettingStarted (component, @altertable/data-app-react/ui): (props: {…}) — Query-backed connection state and next steps for a newly created app. Mount within `DataAppProvider` and register `connection: connectionCheck(app.queries)` on the server.
 GettingStarted.dataContext: DataContext
 GlossaryDefinition (component, @altertable/data-app-react/ui): (props: GlossaryDefinitionProps)

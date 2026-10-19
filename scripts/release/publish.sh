@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Keep dependency order aligned with scripts/packages.ts.
-for directory in packages/data-app packages/data-app-embed packages/data-app-react packages/data-app-bun packages/data-app-worker; do
+for directory in packages/data-app packages/data-app-embed packages/data-app-react packages/data-app-bun packages/data-app-worker packages/data-app-examples; do
   package_name="$(node --print "require('./$directory/package.json').name")"
   package_version="$(node --print "require('./$directory/package.json').version")"
   registry_name="$(node --print "encodeURIComponent(require('./$directory/package.json').name)")"

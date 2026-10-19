@@ -1,11 +1,11 @@
 # Releasing
 
-This repository releases five npm packages together: `@altertable/data-app`,
+This repository releases these npm packages together: `@altertable/data-app`,
 `@altertable/data-app-embed`, `@altertable/data-app-react`,
-`@altertable/data-app-bun`, and `@altertable/data-app-worker`.
+`@altertable/data-app-bun`, `@altertable/data-app-worker`, and `@altertable/data-app-examples`.
 They share one version, one release PR, one `v<version>` tag, and one changelog.
 The private root's `package.json` is the release version source. Release Please
-automatically updates all five package versions and internal dependency pins
+automatically updates all package versions and internal dependency pins
 through its configured JSON extra-file updates. The root is never published.
 
 ## Repository setup
@@ -17,7 +17,7 @@ workflow falls back to `GITHUB_TOKEN`, but PRs created or updated with that toke
 do not trigger subsequent GitHub Actions workflows. Use the dedicated token
 when requiring CI checks on release PRs.
 
-Configure an npm trusted publisher for each of the five package names:
+Configure an npm trusted publisher for each package:
 
 | Setting           | Value                                               |
 | ----------------- | --------------------------------------------------- |
@@ -59,7 +59,7 @@ option when preparing the first stable `1.0.0` release.
 4. The workflow resolves the tag to a commit SHA and runs the same source,
    package, and workflow checks against that revision. The publish job checks out
    that SHA, confirms the tag has not moved, builds, and publishes packages to npm in dependency order: base, embed,
-   React, Bun, Worker. npm publication is not atomic across packages.
+   React, Bun, Worker, Examples. npm publication is not atomic across packages.
 
 GitHub release creation precedes the publication checks. A failed check blocks
 npm publication and leaves the GitHub release available for a retry.

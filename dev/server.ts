@@ -1,8 +1,8 @@
 import { createReloadChannel } from '@altertable/data-app-bun/reload';
-import starterPage from '@/examples/starter-local-data-app/src/index.html';
+import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { localLakehouse, serveLocalApp } from '@altertable/data-app-bun';
-import { operations as starterOperations } from '@/examples/starter-local-data-app/src/operations';
-import { dataApp as starterApp } from '@/examples/starter-local-data-app/app';
+import { operations as starterOperations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
+import { dataApp as starterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import { Database } from 'bun:sqlite';
 import { watch } from 'node:fs';
 import {
@@ -87,7 +87,7 @@ const hostedApps = {
   development: { path: '/playground', entry: '../dev/playground.tsx' },
   test: {
     path: '/starter-data-app',
-    entry: '../examples/starter-data-app/index.tsx',
+    entry: '../packages/data-app-examples/templates/starter-data-app/index.tsx',
   },
 };
 const hostedApp = hostedApps[isDevelopment ? 'development' : 'test'];
