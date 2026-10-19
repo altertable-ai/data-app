@@ -32,8 +32,7 @@ or validate configuration shape.
 ## Documentation
 
 See the [declaration conventions](https://github.com/altertable-ai/data-app/blob/main/docs/hosted-apps.md)
-and [API reference](https://github.com/altertable-ai/data-app/blob/main/REFERENCE.md)
-for source requirements, return types, and diagnostics.
+for supported app source.
 
 ## License
 

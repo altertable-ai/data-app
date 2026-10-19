@@ -1,7 +1,7 @@
 # @altertable/data-app API reference
 
 Generated from the published type declarations by `bun run build`; do not
-edit. Each of the 427 public exports has one heading line, then
+edit. Each of the 421 public exports has one heading line, then
 one line per prop, option, or field, so one search returns everything about a
 name:
 
@@ -487,7 +487,6 @@ DataAppHost (type, @altertable/data-app-embed)
 DataAppHost.dispose: () => void
 DataAppHost.setPresentation: (presentation?: DataAppPresentation | undefined) => void
 DataAppHost.setLogger: (logger?: DataAppLogger | undefined) => void
-DataAppLiteralValue (type, @altertable/data-app-manifest): = string | number | boolean | DataAppLiteralValue[] | DataAppManifest | null — Values decoded from the static declaration, without configuration schema validation.
 DataAppLocation (type, @altertable/data-app/client)
 DataAppLocation.snapshot: () => AppLocation
 DataAppLocation.subscribe: (listener: () => void) => () => void
@@ -497,18 +496,6 @@ DataAppLogger.log: (...args: unknown[]) => void
 DataAppLogger.info: (...args: unknown[]) => void
 DataAppLogger.warn: (...args: unknown[]) => void
 DataAppLogger.error: (...args: unknown[]) => void
-DataAppManifest (type, @altertable/data-app-manifest): = { [key: string]: DataAppLiteralValue; } — Authored properties are preserved; this does not assert a valid DataAppConfig.
-DataAppManifestDiagnostic (type, @altertable/data-app-manifest)
-DataAppManifestDiagnostic.code: 'declaration' | 'literal' | 'syntax'
-DataAppManifestDiagnostic.message: string
-DataAppManifestDiagnostic.start: DataAppSourcePosition
-DataAppManifestDiagnostic.end: DataAppSourcePosition
-DataAppManifestDiagnostic.path?: (string | number)[]
-DataAppManifestExtraction (type, @altertable/data-app-manifest)
-DataAppManifestExtraction.manifest: DataAppManifest [variant 1 of 2]
-DataAppManifestExtraction.diagnostics: [] [variant 1 of 2]
-DataAppManifestExtraction.manifest: null [variant 2 of 2]
-DataAppManifestExtraction.diagnostics: DataAppManifestDiagnostic[] [variant 2 of 2]
 DataAppNavigation (type, @altertable/data-app/client)
 DataAppNavigation.snapshot: () => AppLocation
 DataAppNavigation.subscribe: (listener: () => void) => () => void
@@ -541,10 +528,6 @@ DataAppSource.url: string [variant 1 of 2]
 DataAppSource.type: 'bundle' [variant 2 of 2]
 DataAppSource.bootstrapUrl?: string [variant 2 of 2] — Omit to use the packaged, network-isolated data document.
 DataAppSource.javascript: string [variant 2 of 2]
-DataAppSourcePosition (type, @altertable/data-app-manifest): Offsets are UTF-16 code units; lines and columns are one-based. End is exclusive.
-DataAppSourcePosition.offset: number
-DataAppSourcePosition.line: number
-DataAppSourcePosition.column: number
 DataAppStatus (type, @altertable/data-app-embed): = 'connected' | 'connecting' | 'disconnected' | 'failed' | 'ready'
 DataAppStyle (type, @altertable/data-app-react, @altertable/data-app-react/ui): React style properties with checked public Altertable custom properties.
 DataAppStyle.{--atbl-accent, --atbl-accent-subtle, --atbl-annotation-accent, --atbl-annotation-accent-hover, --atbl-annotation-highlight, --atbl-annotation-on-accent, --atbl-backdrop, --atbl-background, --atbl-border, --atbl-chart-1, --atbl-chart-2, --atbl-chart-3, --atbl-chart-4, --atbl-chart-5, --atbl-chart-6, --atbl-chart-7, --atbl-chart-8, --atbl-chart-fill, --atbl-code-keyword, --atbl-code-surface, --atbl-code-text, --atbl-content-width, --atbl-control-compact-height, --atbl-control-disabled-opacity, --atbl-control-gap, --atbl-control-height, --atbl-control-hover-border, --atbl-control-hover-surface, --atbl-control-icon-size, --atbl-control-open-border, --atbl-control-open-surface, --atbl-control-padding-block, --atbl-control-padding-inline, --atbl-control-pressed-surface, --atbl-control-selected-surface, --atbl-control-selected-text, --atbl-control-text-size, --atbl-cursor-action, --atbl-cursor-busy, --atbl-cursor-disabled, --atbl-cursor-help, --atbl-danger, --atbl-danger-subtle, --atbl-dropdown-item-gap, --atbl-dropdown-item-padding-block, --atbl-dropdown-item-padding-inline, --atbl-dropdown-padding, --atbl-duration-fast, --atbl-duration-normal, --atbl-duration-slow, --atbl-ease-enter, --atbl-ease-standard, --atbl-focus-color, --atbl-focus-outline, --atbl-focus-ring-inset, --atbl-focus-ring-offset, --atbl-font, --atbl-font-heading, --atbl-layout-gap, --atbl-mono-font, --atbl-muted, --atbl-negative, --atbl-on-accent, --atbl-positive, --atbl-radius-control, --atbl-radius-overlay, --atbl-radius-surface, --atbl-shadow-control, --atbl-shadow-overlay, --atbl-shadow-surface, --atbl-space-lg, --atbl-space-md, --atbl-space-sm, --atbl-space-xl, --atbl-space-xs, --atbl-subtle, --atbl-surface, --atbl-surface-padding, --atbl-text, --atbl-text-measure, --atbl-type-body-leading, --atbl-type-body-size, --atbl-type-emphasis-weight, --atbl-type-heading-leading, --atbl-type-heading-weight, --atbl-type-label-leading, --atbl-type-label-size, --atbl-type-label-weight, --atbl-type-meta-size, --atbl-type-meta-weight, --atbl-type-metric-leading, --atbl-type-metric-size, --atbl-type-page-size, --atbl-type-section-size, --atbl-type-widget-size}?: string | number
@@ -932,7 +915,6 @@ ExplorationActionControl.indicator?: 'chevron' | 'ellipsis' — Chart labels use
 ExplorationActionControl.ref?: Ref<HTMLButtonElement> — Shares this menu trigger with an item's context and keyboard actions.
 ExplorationActionControl.className?: string
 ExplorationActionControlProps (type, @altertable/data-app-react/ui): = props listed as ExplorationActionControl.*
-extractDataAppManifest (function, @altertable/data-app-manifest): (source: string): DataAppManifestExtraction — Read one imported defineDataApp declaration from TS/TSX without executing source, resolving imports, reading files, or invoking callbacks. Any diagnostic prevents a manifest from being returned.
 FilterActions (component, @altertable/data-app-react/ui): (props: FilterActionsProps)
 FilterActions.onClear?: (() => void)
 FilterActions.onApply: () => void [variant 1 of 2]
