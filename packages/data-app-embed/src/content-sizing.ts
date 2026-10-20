@@ -1,4 +1,4 @@
-export type FrameInsets = { top: number; bottom: number };
+type FrameInsets = { top: number; bottom: number };
 
 /** Consecutive reports exceeding the applied height by the same amount that mark a feedback loop. */
 const FEEDBACK_REPORTS = 20;
@@ -17,13 +17,12 @@ export function createContentSizing({
   let observer: ResizeObserver | undefined;
   let authoredHeight = '';
   let scheduled: number | undefined;
-  let published: string | undefined;
-  // Content sized in viewport units grows with each applied height by a constant excess.
-  let applied: number | undefined;
-  let excess: number | undefined;
-  let repeats = 0;
-  let loopBase: number | undefined;
-  let stalled = false;
+  let published: FrameInsets | undefined;
+  // A 100vh section plus other content adds the same excess after every resize.
+  let appliedHeight: number | undefined;
+  let previousGrowth: number | undefined;
+  let growthReports = 0;
+  let growthStartHeight: number | undefined;
 
   function insets(): FrameInsets {
     if (host.document.fullscreenElement === iframe)
@@ -57,9 +56,8 @@ export function createContentSizing({
     scheduled = undefined;
     if (!observer) return;
     const next = insets();
-    const identity = `${next.top}:${next.bottom}`;
-    if (identity === published) return;
-    published = identity;
+    if (next.top === published?.top && next.bottom === published.bottom) return;
+    published = next;
     publish(next);
   }
 
@@ -96,29 +94,31 @@ export function createContentSizing({
   }
 
   function resetGrowth() {
-    applied = undefined;
-    excess = undefined;
-    repeats = 0;
-    loopBase = undefined;
-    stalled = false;
+    appliedHeight = undefined;
+    previousGrowth = undefined;
+    growthReports = 0;
+    growthStartHeight = undefined;
   }
 
   /** The height to apply, or undefined while following growth would feed a loop. */
   function follow(height: number) {
-    if (stalled) {
-      if (applied !== undefined && height > applied) return;
-      stalled = false;
-    }
-    const next = applied === undefined ? undefined : height - applied;
-    if (next !== undefined && next > 0 && next === excess) repeats++;
+    if (
+      growthReports >= FEEDBACK_REPORTS &&
+      appliedHeight !== undefined &&
+      height > appliedHeight
+    )
+      return;
+    const next =
+      appliedHeight === undefined ? undefined : height - appliedHeight;
+    if (next !== undefined && next > 0 && next === previousGrowth)
+      growthReports++;
     else {
-      repeats = 0;
-      loopBase = applied;
+      growthReports = 0;
+      growthStartHeight = appliedHeight;
     }
-    excess = next;
-    if (repeats < FEEDBACK_REPORTS) return height;
-    stalled = true;
-    return loopBase ?? height;
+    previousGrowth = next;
+    if (growthReports < FEEDBACK_REPORTS) return height;
+    return growthStartHeight ?? height;
   }
 
   return {
@@ -138,7 +138,7 @@ export function createContentSizing({
       if (!observer) return;
       const height = follow(reported);
       if (height === undefined) return;
-      applied = height;
+      appliedHeight = height;
       const style = host.getComputedStyle(iframe);
       const edges =
         style.boxSizing === 'border-box'

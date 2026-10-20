@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+import { readFile } from 'node:fs/promises';
 import type { DataAppDiagnostic } from '@altertable/data-app-embed';
 import { test } from '@/tests/public-api/browser';
 
@@ -598,7 +599,7 @@ for (const source of ['bundle', 'packaged', 'url']) {
   });
 }
 
-test('a content-sized frame follows its app height, omits the toolbar, and keeps sheets in the visible page', async ({
+test('a content-sized frame follows its app height and keeps its toolbar and sheets usable', async ({
   page,
 }) => {
   await page.goto('/bundle-host?content-sizing=1');
@@ -610,7 +611,17 @@ test('a content-sized frame follows its app height, omits the toolbar, and keeps
     name: 'Custom toolbar action',
     exact: true,
   });
-  expect(await toolbarAction.count()).toBe(0);
+  await expect.poll(() => toolbarAction.isVisible()).toBe(true);
+  await app.getByRole('button', { name: 'Export', exact: true }).click();
+  const downloaded = page.waitForEvent('download');
+  await app
+    .getByRole('menuitem', { name: 'Export Summary CSV', exact: true })
+    .click();
+  const download = await downloaded;
+  expect(download.suggestedFilename()).toBe('Summary.csv');
+  expect(await readFile((await download.path())!, 'utf8')).toBe(
+    '\uFEFFTotal\r\n0\r\n'
+  );
   const root = app.locator(':root');
   function frameHeight() {
     return frame.evaluate(element => element.getBoundingClientRect().height);
@@ -637,9 +648,7 @@ test('a content-sized frame follows its app height, omits the toolbar, and keeps
   await expect.poll(frameHeight).toBeGreaterThanOrEqual(initial + 2000);
   expect(await overflow()).toBe(0);
 
-  await app
-    .getByRole('button', { name: 'Inspect report', exact: true })
-    .click();
+  await app.getByRole('button', { name: 'Explore data', exact: true }).click();
   const sheet = app.getByRole('dialog');
   const { height: viewport } = page.viewportSize()!;
   async function fitsViewport() {
@@ -673,6 +682,12 @@ test('a content-sized frame follows its app height, omits the toolbar, and keeps
     .poll(async () => Math.round(await frameHeight()))
     .toBe(Math.round(viewport * 0.8));
   await expect.poll(() => toolbarAction.isVisible()).toBe(true);
+  await page
+    .getByRole('button', { name: 'Toggle content sizing', exact: true })
+    .click();
+  await expect
+    .poll(async () => Math.round(await frameHeight()))
+    .toBe(Math.round(initial));
 });
 
 test('a content-sized frame stops following growth that tracks its own height', async ({
@@ -687,17 +702,45 @@ test('a content-sized frame stops following growth that tracks its own height', 
       Math.round(element.getBoundingClientRect().height)
     );
   }
+  await expect
+    .poll(
+      async () =>
+        (await frameHeight()) -
+        (await app
+          .locator(':root')
+          .evaluate(element =>
+            Math.round(element.getBoundingClientRect().height)
+          ))
+    )
+    .toBe(0);
+  const initial = await frameHeight();
   await app
     .getByRole('button', { name: 'Show viewport-height content', exact: true })
     .click();
-  let previous = -1;
   await expect
-    .poll(async () => {
-      const height = await frameHeight();
-      const settled = height === previous;
-      previous = height;
-      return settled;
-    })
+    .poll(() =>
+      frame.evaluate(async element => {
+        const height = Math.round(element.getBoundingClientRect().height);
+        // Observe several rendered frames so a pause between resize messages
+        // cannot make a growing frame appear settled.
+        for (let index = 0; index < 5; index++) {
+          await new Promise<void>(resolve =>
+            requestAnimationFrame(() => resolve())
+          );
+          if (Math.round(element.getBoundingClientRect().height) !== height)
+            return false;
+        }
+        return true;
+      })
+    )
     .toBe(true);
-  expect(previous).toBeLessThan(page.viewportSize()!.height * 4);
+  expect(await frameHeight()).toBeLessThan(page.viewportSize()!.height * 4);
+  await app
+    .getByRole('button', { name: 'Show short content', exact: true })
+    .click();
+  await expect.poll(frameHeight).toBe(initial);
+  await app
+    .getByRole('button', { name: 'Show long content', exact: true })
+    .click();
+  await expect.poll(frameHeight).toBeGreaterThanOrEqual(initial + 2000);
 });

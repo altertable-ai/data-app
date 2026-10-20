@@ -1,8 +1,5 @@
 import { AnnotationControls } from '../annotations/AnnotationControls.tsx';
-import {
-  useContentSizingSupport,
-  useDataAppPresentation,
-} from './useDataAppPresentation.ts';
+import { useDataAppPresentation } from './useDataAppPresentation.ts';
 import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
 import { useAppAppearance } from './useAppAppearance.ts';
 import { type DisclosedQuery } from '@altertable/data-app/contract';
@@ -91,10 +88,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   } = props;
   const app = useDataApp();
   const presentation = useDataAppPresentation();
-  useContentSizingSupport();
   const isEmbedded = presentation?.surface === 'embedded';
-  // A content-sized app reads as part of the parent page, which owns page actions.
-  const showToolbar = presentation?.sizing !== 'content';
   const themeController = useAppAppearance(app.appearance, presentation?.theme);
   const bodyRef = useRef<ComponentRef<'div'>>(null);
   useEffect(() => {
@@ -105,8 +99,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   });
 
   const snapshot = request && displayedSnapshot(request.view);
-  const findings =
-    showToolbar && request && snapshot ? props.story(snapshot) : undefined;
+  const findings = request && snapshot ? props.story(snapshot) : undefined;
   const story = findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
@@ -114,7 +107,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
       environment={app.scope.environment}
     />
   );
-  const toolbar = showToolbar && (
+  const toolbar = (
     <AppToolbar
       csvExport={
         request
