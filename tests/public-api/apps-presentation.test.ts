@@ -76,7 +76,7 @@ describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
       .toBe(true);
     await expect.poll(() => app.locator(':fullscreen').count()).toBe(0);
     await expect.poll(() => page.locator(':fullscreen').count()).toBe(0);
-    await page.keyboard.press('Escape');
+    await app.getByRole('dialog').press('Escape');
     await expect.poll(() => app.getByRole('dialog').count()).toBe(0);
     await expect.poll(() => page.url()).not.toMatch(/present=1/);
   });

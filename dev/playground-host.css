@@ -202,3 +202,68 @@ body:has(.playground-host) #root {
 .playground-controls .playground-annotate:focus-visible {
   outline-color: var(--atbl-annotation-accent);
 }
+
+.playground-stage[data-sizing='content'] {
+  overflow: auto;
+}
+
+.playground-embed-panel {
+  min-width: 0;
+  height: 100%;
+}
+
+.playground-stage[data-sizing='content'] .playground-embed-panel {
+  height: auto;
+}
+
+.playground-stage[data-sizing='content'] .playground-embed-panel[data-compact] {
+  height: 420px;
+  min-height: 240px;
+  overflow: auto;
+  resize: vertical;
+  border-block: 1px solid var(--host-border);
+}
+
+.playground-context {
+  padding: 24px;
+  color: var(--host-muted);
+}
+
+.playground-context h1 {
+  margin: 0 0 8px;
+  color: var(--host-text);
+  font-size: 20px;
+}
+
+.playground-context p {
+  max-width: 70ch;
+  margin: 0 0 12px;
+}
+
+.playground-controls .playground-sizing-control {
+  width: auto;
+  padding-inline: 8px;
+}
+
+.playground-navbar:has(.playground-sizing-control) {
+  height: auto;
+  min-height: 44px;
+  padding-block: 6px;
+  flex-wrap: wrap;
+}
+
+.playground-navbar:has(.playground-sizing-control) .playground-controls {
+  flex-wrap: wrap;
+}
+
+.playground-stage[data-sizing='frame']:has(.playground-context) {
+  display: flex;
+  flex-direction: column;
+}
+
+.playground-stage[data-sizing='frame']:has(.playground-context)
+  .playground-embed-panel {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}

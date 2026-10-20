@@ -10,6 +10,7 @@ document.body.style.margin = '0';
 
 function App() {
   const [rows, setRows] = useState(25);
+  const [streaming, setStreaming] = useState(false);
   const [sizing, setSizing] = useState(true);
   const [inspecting, setInspecting] = useState(false);
   useEffect(
@@ -17,9 +18,24 @@ function App() {
     [sizing]
   );
 
+  useEffect(() => {
+    if (!streaming) return undefined;
+    let remaining = 30;
+    let scheduled = requestAnimationFrame(append);
+    function append() {
+      setRows(value => value + 1);
+      if (--remaining) scheduled = requestAnimationFrame(append);
+      else setStreaming(false);
+    }
+    return () => cancelAnimationFrame(scheduled);
+  }, [streaming]);
+
   return (
     <main>
       <button onClick={() => setRows(value => value + 1)}>Load more</button>
+      <button disabled={streaming} onClick={() => setStreaming(true)}>
+        Stream rows
+      </button>
       <button onClick={() => setSizing(value => !value)}>
         {sizing ? 'Pause sizing' : 'Resume sizing'}
       </button>

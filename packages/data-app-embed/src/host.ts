@@ -74,6 +74,7 @@ export function attachDataAppConnection({
   const targetOrigin = connection.type === 'opaque' ? '*' : frameOrigin;
   let currentPresentation: DataAppPresentation | undefined;
   let presentationIdentity: string | undefined;
+  let contentSizingFailed = false;
   let annotationDismissal: DataAppAnnotationPresentation['dismissal'];
   let disposed = false;
   let documentId: string | undefined;
@@ -111,7 +112,7 @@ export function attachDataAppConnection({
   }
 
   function hostState() {
-    const presentation =
+    let presentation =
       currentPresentation?.annotations && annotationDismissal
         ? {
             ...currentPresentation,
@@ -121,6 +122,8 @@ export function attachDataAppConnection({
             },
           }
         : currentPresentation;
+    if (presentation && contentSizingFailed)
+      presentation = { ...presentation, sizing: 'frame' };
     return {
       search: host.location.search,
       hash: host.location.hash,
@@ -141,11 +144,16 @@ export function attachDataAppConnection({
     const identity = JSON.stringify(value);
     if (identity === presentationIdentity) return;
     presentationIdentity = identity;
+    const previousSizing = currentPresentation?.sizing;
     currentPresentation =
       identity === undefined
         ? undefined
         : (JSON.parse(identity) as DataAppPresentation);
-    contentSizing.setEnabled(currentPresentation?.sizing === 'content');
+    if (previousSizing !== currentPresentation?.sizing)
+      contentSizingFailed = false;
+    contentSizing.setEnabled(
+      currentPresentation?.sizing === 'content' && !contentSizingFailed
+    );
     publishState();
   }
 
@@ -175,6 +183,8 @@ export function attachDataAppConnection({
           cancelAll();
           documentId = message.documentId;
           sessionId = randomUuid();
+          contentSizingFailed = false;
+          contentSizing.setEnabled(currentPresentation?.sizing === 'content');
         }
         onStatusChange?.('connected');
         if (disposed) return;
@@ -221,6 +231,11 @@ export function attachDataAppConnection({
     window: host,
     publish(insets) {
       if (!disposed && sessionId) send('viewportUpdate', insets);
+    },
+    fallback() {
+      contentSizingFailed = true;
+      contentSizing.setEnabled(false);
+      publishState();
     },
   });
 

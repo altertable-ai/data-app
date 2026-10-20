@@ -43,9 +43,9 @@ function App() {
   const state = useAppVariables(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
-  const [content, setContent] = useState<'short' | 'long' | 'viewport'>(
-    'short'
-  );
+  const [content, setContent] = useState<
+    'short' | 'long' | 'viewport' | 'scaled' | 'oscillating'
+  >('short');
   if (crashed) throw new Error('Uncaught render failure');
 
   return (
@@ -134,9 +134,24 @@ function App() {
       <button onClick={() => setContent('viewport')}>
         Show viewport-height content
       </button>
+      <button onClick={() => setContent('scaled')}>
+        Show proportional viewport content
+      </button>
+      <button onClick={() => setContent('oscillating')}>
+        Show oscillating viewport content
+      </button>
       {content !== 'short' && (
         <div
-          style={{ height: content === 'long' ? '2000px' : '100dvh' }}
+          style={{
+            height:
+              content === 'long'
+                ? '2000px'
+                : content === 'scaled'
+                  ? '120dvh'
+                  : content === 'oscillating'
+                    ? 'calc(1600px - 100dvh)'
+                    : '100dvh',
+          }}
           aria-hidden
         />
       )}

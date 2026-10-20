@@ -1,3 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-bunx --no-install playwright install --with-deps chromium
+if [ "$#" -eq 0 ]; then
+  set -- chromium
+fi
+bunx --no-install playwright install --with-deps "$@"

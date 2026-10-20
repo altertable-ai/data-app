@@ -158,6 +158,18 @@ Unlike `bun run dev`, neither uses the mocked API: set `ALTERTABLE_USERNAME` and
 with `ALTERTABLE_API_BASE`. A CLI proxy (`ALTERTABLE_DATA_PROXY_URL`) takes precedence.
 Each command prints the lakehouse it targets on startup.
 
+The browser suite defaults to Chromium. Install additional engines with
+`bash scripts/install-test-browser.sh firefox webkit`, then run focused workflows:
+
+```fish
+DATA_APP_TEST_BROWSER=webkit bun run test tests/public-api/apps-embedding.test.ts tests/public-api/apps-presentation.test.ts
+DATA_APP_TEST_BROWSER=firefox bun run test tests/public-api/apps-embedding.test.ts tests/public-api/apps-presentation.test.ts
+```
+
+Open `/content-sizing` to compare frame and content sizing with the same app.
+Toggle **Content height** and **Compact panel**, resize the panel from its bottom
+edge, and open the app inspector, story, and annotations while scrolling.
+
 Open the **Widgets** tab (`/gallery?view=widgets`) for one ready example of each
 composable data display inside `<VisualizationWidget>`. The other tabs cover
 composed apps, variants, and request states.

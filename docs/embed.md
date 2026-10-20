@@ -208,8 +208,10 @@ automatically, and framework-neutral apps call `bridge.supportContentSizing()`.
 Other apps keep the iframe's authored height. The app reports its document height
 in `runtime:resize` messages and the bridge sets the iframe's inline `height`;
 leave the iframe out of flex or grid stretching and `max-height` limits so that
-height applies. When successive reports grow by the same amount, as content
-sized with `100vh` does, the bridge stops at the height where that growth began.
+height applies. If height reports do not converge after 20 resize attempts,
+the bridge restores the authored frame height and switches the app to frame
+scrolling so its content remains accessible. Toggle sizing off and on, or reload
+the app, to retry content sizing.
 While the iframe is content-sized, the bridge sends
 `viewport:update` messages describing which part of it the parent page shows, and
 sheets and toasts stay within that part. Scrolling containers

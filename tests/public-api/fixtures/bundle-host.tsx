@@ -60,6 +60,7 @@ function Host() {
     params.has('content-sizing')
   );
   const [panelHeight, setPanelHeight] = useState(600);
+  const [panelOffset, setPanelOffset] = useState(0);
   const [status, setStatus] = useState<DataAppStatus>('connecting');
   const [attempt, retry] = useReducer(value => value + 1, 0);
   const [version, changeHandler] = useReducer(value => value + 1, 1);
@@ -197,6 +198,11 @@ function Host() {
           Resize embed panel
         </button>
       )}
+      {params.has('panel') && (
+        <button onClick={() => setPanelOffset(value => (value ? 0 : 96))}>
+          Move embedded report
+        </button>
+      )}
       <section
         aria-label="Embed panel"
         style={
@@ -205,6 +211,7 @@ function Host() {
             : undefined
         }
       >
+        <div style={{ height: panelOffset }} />
         <DataAppBridge
           key={attempt}
           title="Sandbox app"
