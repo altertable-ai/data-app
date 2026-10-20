@@ -6,6 +6,7 @@ import {
 } from '../core/navigation.ts';
 export { type AppLocation } from '../core/navigation.ts';
 
+/** @ignore */
 export type DataAppLocation = {
   snapshot(): AppLocation;
   subscribe(listener: () => void): () => void;

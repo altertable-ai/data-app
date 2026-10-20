@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+
 import { type GlossaryEntry } from './data-context.ts';
 import { HelpPopover } from './HelpPopover.tsx';
 

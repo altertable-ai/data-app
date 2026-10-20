@@ -1,21 +1,20 @@
-import type { IsUnion } from './queries.ts';
-import { facetSource, type FacetVariable } from './facets.ts';
-import type { SourceDimensionVariable } from './dimension-source.ts';
+import type { DateRangeContract, DateRangeRequest } from './contract.ts';
 import {
   availableDatePresets,
   type DatePresetId,
   type DateRange,
 } from './date-range.ts';
-import type { DateRangeContract, DateRangeRequest } from './contract.ts';
+import type { SourceDimensionVariable } from './dimension-source.ts';
 import type {
   DimensionSelection,
   DimensionVariable,
   DimensionSelectionVariable,
 } from './dimension.ts';
+import { facetSource, type FacetVariable } from './facets.ts';
 import type { NumberFilter, BooleanFilter } from './filters.ts';
 import { invariant } from './invariant.ts';
-
 import type { HistoryMode } from './navigation.ts';
+import type { IsUnion } from './queries.ts';
 export type { HistoryMode } from './navigation.ts';
 
 export type VariablePresentation = {

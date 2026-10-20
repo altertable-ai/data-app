@@ -1,5 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react';
 import { type DataView } from '@altertable/data-app/internal';
+import { useEffect, useState, type ReactNode } from 'react';
+
 import { Toast } from './Toast.tsx';
 
 export type DataViewToastProps<Data, Input> = {

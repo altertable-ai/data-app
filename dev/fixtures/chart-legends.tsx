@@ -1,7 +1,3 @@
-import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { type ReactNode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { applyAppearance } from '@altertable/data-app/appearance';
 import { Button, Grid, GridItem, Stack } from '@altertable/data-app-react';
 import {
   ChartLegend,
@@ -9,6 +5,10 @@ import {
   VisualizationWidget,
   injectDataAppStyles,
 } from '@altertable/data-app-react/ui';
+import { applyAppearance } from '@altertable/data-app/appearance';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { type ReactNode } from 'react';
+import { createRoot } from 'react-dom/client';
 
 injectDataAppStyles();
 applyAppearance({ theme: 'light' });

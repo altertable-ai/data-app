@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+
 import { Glob } from 'bun';
+
 import {
   dataAppStyleClasses,
   dataAppStyleTokens,

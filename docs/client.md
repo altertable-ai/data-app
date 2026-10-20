@@ -37,7 +37,7 @@ See [contracts](contract.md), [server handlers](server.md), and
 
 ## Browser-owned operations for bundle apps
 
-Start with the complete [single-file example](../examples/starter-data-app/index.tsx)
+Start with the complete [single-file example](app-authoring.md#use-release-matched-starters)
 and [data app authoring guide](hosted-apps.md).
 Bundle apps pass their operation registry as a value:
 

@@ -1,11 +1,11 @@
 import { defineDataApp } from '@altertable/data-app';
+import type { OutputOf } from '@altertable/data-app/client';
 import {
   defineOperation,
   parseEmptyInput,
   connectionCheck,
   type QueryDefinitions,
 } from '@altertable/data-app/contract';
-import type { OutputOf } from '@altertable/data-app/client';
 
 const dataApp = defineDataApp({
   title: 'Typed queries',

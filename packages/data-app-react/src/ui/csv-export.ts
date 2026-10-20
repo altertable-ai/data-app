@@ -1,6 +1,6 @@
-import { strToU8, zipSync } from 'fflate';
 import { getDataAppTransport } from '@altertable/data-app/client';
 import { downloadBlob } from '@altertable/data-app/internal';
+import { strToU8, zipSync } from 'fflate';
 
 export type CsvCell = string | number | boolean | null | undefined;
 
@@ -17,7 +17,7 @@ export type CsvExport = {
   tables: readonly [CsvTable, ...CsvTable[]];
 };
 
-export function formatCsv({
+function formatCsv({
   columns,
   rows,
 }: Pick<CsvTable, 'columns' | 'rows'>): string {
@@ -45,7 +45,7 @@ function filenameWithExtension(name: string, extension: 'csv' | 'zip'): string {
   return filename;
 }
 
-export function createCsvDownload(
+function createCsvDownload(
   data: CsvExport,
   selectedTable?: CsvTable
 ): { filename: string; blob: Blob; route: 'export:csv' | 'export:zip' } {

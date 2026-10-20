@@ -1,5 +1,3 @@
-import { expect, test } from 'vitest';
-import { renderToStaticMarkup } from 'react-dom/server';
 import {
   LineChart,
   BarChart,
@@ -8,6 +6,8 @@ import {
   ScatterChart,
   type ScatterChartItem,
 } from '@altertable/data-app-react/ui';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { expect, test } from 'vitest';
 
 test('standalone charts preserve their item validation and empty-result contract', () => {
   for (const Chart of [BarChart, LineChart, AreaChart, PieChart]) {

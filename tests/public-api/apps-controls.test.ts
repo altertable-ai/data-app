@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 test('single and multiple searchable values preserve their selection behavior', async ({

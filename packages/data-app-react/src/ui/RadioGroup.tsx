@@ -1,14 +1,15 @@
+import {
+  validateChoiceOptions,
+  type ChoiceOption,
+} from '@altertable/data-app/internal';
 import { type ComponentPropsWithRef, type ReactNode } from 'react';
 import {
   RadioGroup as AriaRadioGroup,
   Radio as AriaRadio,
   Label,
 } from 'react-aria-components';
+
 import { classNames } from './classNames.ts';
-import {
-  validateChoiceOptions,
-  type ChoiceOption,
-} from '@altertable/data-app/internal';
 
 export type RadioGroupProps = Omit<
   ComponentPropsWithRef<typeof AriaRadioGroup>,

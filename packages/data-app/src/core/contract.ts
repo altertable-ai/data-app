@@ -1,13 +1,14 @@
-import {
-  attachDimensionSelectors,
-  validateVariableInput,
-} from './dimension-source.ts';
 /**
  * Shared operation contracts and input validation for browser and server.
  * @module @altertable/data-app/contract
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/contract.md
  */
 import { parseDate, today } from '@internationalized/date';
+
+import {
+  attachDimensionSelectors,
+  validateVariableInput,
+} from './dimension-source.ts';
 import { formatDateRange } from './format.ts';
 import { invariant } from './invariant.ts';
 import {

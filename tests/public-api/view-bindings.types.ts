@@ -1,3 +1,10 @@
+import {
+  choiceVariable,
+  searchVariable,
+  multiChoiceVariable,
+  createDataContext,
+  createDataHooks,
+} from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   booleanFilter,
@@ -10,13 +17,6 @@ import {
   type DimensionSelection,
   type NumberSelection,
 } from '@altertable/data-app/contract';
-import {
-  choiceVariable,
-  searchVariable,
-  multiChoiceVariable,
-  createDataContext,
-  createDataHooks,
-} from '@altertable/data-app-react';
 
 const context = createDataContext({ usage: 'usage' })({
   description: 'Usage with preserved filter selections.',

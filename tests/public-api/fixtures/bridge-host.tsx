@@ -1,4 +1,12 @@
 import {
+  createNavigationHandler,
+  type DataAppDiagnostic,
+  type DataAppLogger,
+} from '@altertable/data-app-embed';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
+import { createHttpTransport } from '@altertable/data-app/client';
+import { createMessageRouter } from '@altertable/data-app/contract';
+import {
   StrictMode,
   useRef,
   useReducer,
@@ -6,15 +14,8 @@ import {
   type ComponentRef,
 } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createMessageRouter } from '@altertable/data-app/contract';
-import { createHttpTransport } from '@altertable/data-app/client';
-import {
-  createNavigationHandler,
-  type DataAppDiagnostic,
-  type DataAppLogger,
-} from '@altertable/data-app-embed';
+
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
-import { DataAppBridge } from '@altertable/data-app-embed/react';
 
 function Host() {
   const [echoRequests, setEchoRequests] = useState(0);

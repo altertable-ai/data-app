@@ -1,3 +1,9 @@
+import { type DataAppLogger } from '@altertable/data-app/client';
+import {
+  type DataAppAnnotationPresentation,
+  MessageRoutingError,
+  type MessageDispatcher,
+} from '@altertable/data-app/contract';
 import {
   randomUuid,
   createBridgeEndpoint,
@@ -8,12 +14,7 @@ import {
   type BridgeDiagnostic,
   type BridgeEventMessage,
 } from '@altertable/data-app/internal';
-import {
-  type DataAppAnnotationPresentation,
-  MessageRoutingError,
-  type MessageDispatcher,
-} from '@altertable/data-app/contract';
-import { type DataAppLogger } from '@altertable/data-app/client';
+
 import { createContentSizing } from './content-sizing.ts';
 
 export type DataAppConnection =

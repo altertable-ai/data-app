@@ -1,5 +1,8 @@
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+
+import { build } from 'tsdown';
+
 import { packages } from '@/scripts/packages';
 
 // Package scripts can also invoke this runner from their own directory.
@@ -11,6 +14,33 @@ const selected = process.argv
 if (selected && !packages.some(pkg => pkg.directory === `packages/${selected}`))
   throw new Error(`Unknown package: ${selected}`);
 const incremental = process.argv.includes('--incremental');
+async function markReady() {
+  await mkdir('node_modules/.cache', { recursive: true });
+  await writeFile(
+    'node_modules/.cache/data-app-build-ready',
+    crypto.randomUUID()
+  );
+}
+
+if (!selected && !incremental) {
+  const build = Bun.spawn(
+    ['bun', 'run', '--filter', '@altertable/*', 'build'],
+    {
+      cwd: root,
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }
+  );
+  if ((await build.exited) !== 0) throw new Error('Workspace build failed.');
+  await markReady();
+  process.exit(0);
+}
+
+const buildTargets = new Map<string, 'bun' | 'node'>([
+  ['@altertable/data-app-bun', 'bun'],
+  ['@altertable/data-app-examples', 'node'],
+  ['@altertable/data-app-manifest', 'node'],
+]);
 
 async function bundle(options: Parameters<typeof Bun.build>[0]) {
   const result = await Bun.build(options);
@@ -38,7 +68,6 @@ for (const { directory, manifest } of packages) {
   if (!incremental && manifest.name === '@altertable/data-app') {
     for (const name of [
       'docs',
-      'examples',
       'AGENTS.md',
       'CONTRIBUTING.md',
       'REFERENCE.md',
@@ -90,58 +119,64 @@ for (const { directory, manifest } of packages) {
     );
     define.DATA_APP_PREVIEW_HTML = JSON.stringify(html);
   }
-  const entrypoints = Object.values(manifest.exports).map(
-    target =>
-      `${directory}/src/${target.import.slice('./dist/'.length).replace(/\.js$/, '.ts')}`
+  const entry = Object.fromEntries(
+    Object.values(manifest.exports).map(target => {
+      const name = target.import.slice('./dist/'.length).replace(/\.js$/, '');
+      return [name, resolve(directory, 'src', `${name}.ts`)];
+    })
   );
-  await bundle({
-    entrypoints,
-    root: `${directory}/src`,
-    outdir,
-    target: manifest.name === '@altertable/data-app-bun' ? 'bun' : 'browser',
-    jsx: { runtime: 'automatic', development: false },
-    format: 'esm',
-    splitting: manifest.name !== '@altertable/data-app-worker',
-    external,
-    define,
-    naming: {
-      entry: '[dir]/[name].[ext]',
-      chunk: 'chunks/[name]-[hash].[ext]',
-    },
-    sourcemap: 'external',
-  });
-  if (!incremental) {
-    const tsc = Bun.spawn(
-      [
-        'bun',
-        'x',
-        '--no-install',
-        'tsc',
-        '-p',
-        `${directory}/tsconfig.build.json`,
-      ],
-      {
-        stdout: 'inherit',
-        stderr: 'inherit',
-      }
-    );
-    if ((await tsc.exited) !== 0)
-      throw new Error(`Declarations failed: ${manifest.name}`);
-    const declarations = `${directory}/dist/types`;
-    for await (const file of new Bun.Glob('**/*.d.ts').scan(declarations)) {
-      const path = `${declarations}/${file}`;
-      const source = await Bun.file(path).text();
-      await Bun.write(
-        path,
-        source
-          .replace(/^import\s+['"][^'"]+\.css['"];\s*$/gm, '')
-          .replace(/(['"])(\.[^'"]+)\.tsx?\1/g, '$1$2.js$1')
-      );
-    }
+  const specialized =
+    manifest.name === '@altertable/data-app-bun' ||
+    manifest.name === '@altertable/data-app-worker';
+  if (specialized) {
+    await bundle({
+      entrypoints: Object.values(entry),
+      root: `${directory}/src`,
+      outdir,
+      target: buildTargets.get(manifest.name) ?? 'browser',
+      jsx: { runtime: 'automatic', development: false },
+      format: 'esm',
+      splitting: manifest.name !== '@altertable/data-app-worker',
+      external,
+      define,
+      naming: {
+        entry: '[dir]/[name].[ext]',
+        chunk: 'chunks/[name]-[hash].[ext]',
+      },
+      sourcemap: 'external',
+    });
+  }
+  if (!specialized || !incremental) {
+    await build({
+      config: false,
+      cwd: resolve(directory),
+      entry,
+      outDir: resolve(outdir),
+      tsconfig: 'tsconfig.build.json',
+      platform: buildTargets.has(manifest.name) ? 'node' : 'browser',
+      target: false,
+      fixedExtension: false,
+      format: 'esm',
+      clean: false,
+      deps: { neverBundle: true },
+      define,
+      dts: incremental
+        ? false
+        : {
+            generator: 'tsgo',
+            tsgo: { path: resolve('node_modules/.bin/tsc') },
+            emitDtsOnly: specialized,
+          },
+      sourcemap: true,
+      outputOptions: {
+        entryFileNames: chunk =>
+          chunk.name.endsWith('.d') ? 'types/[name].ts' : '[name].js',
+        chunkFileNames: chunk =>
+          chunk.name.endsWith('.d')
+            ? 'types/chunks/[name].ts'
+            : 'chunks/[name]-[hash].js',
+      },
+    });
   }
 }
-await mkdir('node_modules/.cache', { recursive: true });
-await writeFile(
-  'node_modules/.cache/data-app-build-ready',
-  crypto.randomUUID()
-);
+if (!selected) await markReady();

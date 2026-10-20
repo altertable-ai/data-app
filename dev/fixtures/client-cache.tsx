@@ -1,9 +1,3 @@
-import { createDataContext as registerContext } from '@/packages/data-app-react/src/ui/data-context.ts';
-import {
-  useDeclaredResult,
-  getViewDefinition,
-} from '@/packages/data-app-react/src/view-runtime.tsx';
-import { useState } from 'react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
@@ -11,8 +5,15 @@ import {
   type DimensionSelection,
   type DimensionOption,
 } from '@altertable/data-app/contract';
-import { createDataHooks } from '@/packages/data-app-react/src/hooks.ts';
 import type { TransportResponse } from '@altertable/data-app/contract';
+import { useState } from 'react';
+
+import { createDataHooks } from '@/packages/data-app-react/src/hooks.ts';
+import { createDataContext as registerContext } from '@/packages/data-app-react/src/ui/data-context.ts';
+import {
+  useDeclaredResult,
+  getViewDefinition,
+} from '@/packages/data-app-react/src/view-runtime.tsx';
 
 const context = registerContext({})({
   description: 'Fixture context',

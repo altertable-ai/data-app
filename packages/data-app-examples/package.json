@@ -1,0 +1,34 @@
+{
+  "name": "@altertable/data-app-examples",
+  "version": "0.72.0",
+  "description": "Canonical starter templates for Altertable data apps.",
+  "license": "MIT",
+  "author": "Altertable",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/altertable-ai/data-app.git",
+    "directory": "packages/data-app-examples"
+  },
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "build": "bun ../../scripts/build.ts data-app-examples",
+    "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
+  }
+}

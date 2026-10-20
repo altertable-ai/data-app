@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-worker",
-  "version": "0.71.0",
+  "version": "0.72.0",
   "description": "Self-contained sandbox Worker for serving Altertable data apps.",
   "keywords": [
     "altertable",
@@ -42,9 +42,10 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "bun ../../scripts/build.ts data-app-worker"
+    "build": "bun ../../scripts/build.ts data-app-worker",
+    "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
   },
   "devDependencies": {
-    "@altertable/data-app-embed": "0.71.0"
+    "@altertable/data-app-embed": "0.72.0"
   }
 }

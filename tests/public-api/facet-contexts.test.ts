@@ -1,11 +1,11 @@
-import { expect, test } from 'vitest';
+import { createDataHooks, searchVariable } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   parseFacetOptions,
   type DataOperation,
   type DimensionOption,
 } from '@altertable/data-app/contract';
-import { createDataHooks, searchVariable } from '@altertable/data-app-react';
+import { expect, test } from 'vitest';
 
 type Operations = {
   options: DataOperation<{ search: string }, DimensionOption<number>[]>;

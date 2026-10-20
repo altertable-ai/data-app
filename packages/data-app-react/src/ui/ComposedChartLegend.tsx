@@ -1,6 +1,7 @@
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { useState, type ComponentProps } from 'react';
 import { Legend, type LegendPayload } from 'recharts';
+
 import { ChartLegend, type ChartLegendMarkerKind } from './ChartLegend.tsx';
 
 export type ComposedChartLegendProps = ComponentProps<typeof Legend> & {

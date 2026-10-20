@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app",
-  "version": "0.71.0",
+  "version": "0.72.0",
   "description": "Portable definitions, contracts, formatting, browser clients, and request handlers for Altertable data apps.",
   "keywords": [
     "altertable",
@@ -28,7 +28,6 @@
     "README.md",
     "LICENSE",
     "docs",
-    "examples",
     "AGENTS.md",
     "CONTRIBUTING.md",
     "REFERENCE.md"
@@ -74,7 +73,8 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "bun ../../scripts/build.ts data-app"
+    "build": "bun ../../scripts/build.ts data-app",
+    "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
   },
   "dependencies": {
     "@internationalized/date": "3.12.4"

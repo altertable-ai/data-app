@@ -1,15 +1,15 @@
+import type { AppearanceOptions } from './appearance.ts';
+/**
+ * App configuration shared by browser and server.
+ * @module @altertable/data-app
+ */
+import { defineOperation, type OperationDefinition } from './contract.ts';
 import {
   bindDimensionSource,
   type DimensionSourceConfig,
   type DimensionSourceQueryName,
   type SourceDimensionVariable,
 } from './dimension-source.ts';
-/**
- * App configuration shared by browser and server.
- * @module @altertable/data-app
- */
-import { defineOperation, type OperationDefinition } from './contract.ts';
-import type { AppearanceOptions } from './appearance.ts';
 import {
   snapshotQueries,
   type QueryDefinitions,
@@ -63,15 +63,14 @@ export type DataAppDefinition<
  * The app owns an immutable snapshot of its registry; later input mutations do not change it.
  * This declaration does not execute queries or mount UI. Static apps use `queries: {}`.
  *
- * Declare exactly one module-level const initialized with `defineDataApp({ ... })` in the app's
- * declaration source. For the future backend extractor, the argument is read before bundling
- * by resolving the named `defineDataApp` import from `@altertable/data-app`, including aliases.
- * Variable name is arbitrary;
- * export only for imports by other modules. The argument must be a direct object literal
- * containing schema-valid objects, arrays, strings (including templates without interpolation),
- * finite signed numbers, booleans, and null. No spreads, computed keys, references, calls,
- * or callbacks inside it. Extraction must validate data without evaluating app code.
- * TypeScript checks the shape, not AST syntax. Keep executable composition outside the call.
+ * Declare the app once at module scope using the named import from `@altertable/data-app`.
+ * Import aliases are allowed. Prefer a `const` initializer; top-level variable
+ * initializers, default exports, and standalone calls are supported.
+ * Use literal objects, arrays, strings (including templates without interpolation),
+ * finite signed numbers, booleans, and null. Parentheses, `as`, and `satisfies` are
+ * allowed. Keep executable composition outside the call; omit spreads, computed keys,
+ * references, and callbacks. Extraction reads literals without executing app code.
+ * TypeScript and runtime query rules own configuration validation.
  *
  * SQL passes unchanged to the backend, which interprets placeholders such as `$orgId`.
  * Declare each parameter's type and optional defaultValue.

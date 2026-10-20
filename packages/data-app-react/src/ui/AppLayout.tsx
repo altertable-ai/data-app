@@ -1,6 +1,7 @@
 import { type ComponentPropsWithRef, type ReactNode } from 'react';
-import { classNames } from './classNames.ts';
+
 import { AppFooter } from './AppFooter.tsx';
+import { classNames } from './classNames.ts';
 import { TooltipProvider } from './Tooltip.tsx';
 
 export type AppLayoutProps = {

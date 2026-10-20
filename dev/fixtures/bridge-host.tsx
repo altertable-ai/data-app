@@ -1,13 +1,14 @@
-import { StrictMode, useReducer, useState, type ComponentRef } from 'react';
-import { createRoot } from 'react-dom/client';
-import { createMessageRouter } from '@altertable/data-app/contract';
-import { createHttpTransport } from '@altertable/data-app/client';
 import {
   createNavigationHandler,
   type DataAppLogger,
 } from '@altertable/data-app-embed';
-import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
+import { createHttpTransport } from '@altertable/data-app/client';
+import { createMessageRouter } from '@altertable/data-app/contract';
+import { StrictMode, useReducer, useState, type ComponentRef } from 'react';
+import { createRoot } from 'react-dom/client';
+
+import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
 import '@/dev/fixtures/dev-reload';
 
 function trackNavigation(

@@ -1,16 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { createDataClient } from '@altertable/data-app/client';
-import {
-  defineDateRangeContract,
-  type DataOperation,
-  type DateRangeRequest,
-} from '@altertable/data-app/contract';
-import { formatTime } from '@altertable/data-app/format';
-import {
-  DataApp as StaticDataApp,
-  LineChart,
-  DataTableTimestamp,
-} from '@altertable/data-app-react/ui';
 import {
   createDataHooks,
   createDataContext,
@@ -29,6 +17,18 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
+import {
+  DataApp as StaticDataApp,
+  LineChart,
+  DataTableTimestamp,
+} from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  defineDateRangeContract,
+  type DataOperation,
+  type DateRangeRequest,
+} from '@altertable/data-app/contract';
+import { formatTime } from '@altertable/data-app/format';
 
 const records = [
   {

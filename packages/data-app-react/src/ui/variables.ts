@@ -1,5 +1,3 @@
-import { useEffect, useReducer, useSyncExternalStore } from 'react';
-import { today } from '@internationalized/date';
 import {
   invariant,
   type DatePresetId,
@@ -12,9 +10,11 @@ import {
   type HistoryMode,
   type VariableCollection,
 } from '@altertable/data-app/internal';
+import { today } from '@internationalized/date';
+import { useEffect, useReducer, useSyncExternalStore } from 'react';
+
 import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 export {
-  defineAppVariables,
   searchVariable,
   choiceVariable,
   multiChoiceVariable,

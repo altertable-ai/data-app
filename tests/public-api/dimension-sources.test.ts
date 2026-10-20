@@ -1,8 +1,8 @@
-import { expect, test } from 'vitest';
 import { defineDataApp } from '@altertable/data-app';
-import { variableInput, type Lakehouse } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
+import { variableInput, type Lakehouse } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
+import { expect, test } from 'vitest';
 
 function sourceApp(mode: 'single' | 'multiple' = 'single') {
   const app = defineDataApp({

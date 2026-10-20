@@ -1,10 +1,10 @@
-import { AppFooter } from '@/packages/data-app-react/src/ui/AppFooter.tsx';
-import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
-import { AppHeader } from '@/packages/data-app-react/src/ui/AppHeader.tsx';
-import { AppLayout } from '@/packages/data-app-react/src/ui/AppLayout.tsx';
-import { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { applyAppearance } from '@altertable/data-app/appearance';
+import {
+  injectDataAppStyles,
+  Button,
+  Grid,
+  Comparison,
+  TextContent,
+} from '@altertable/data-app-react';
 import {
   ChoicePicker,
   DateRangePicker,
@@ -14,13 +14,14 @@ import {
   DataWidget,
   DataTable,
 } from '@altertable/data-app-react/ui';
-import {
-  injectDataAppStyles,
-  Button,
-  Grid,
-  Comparison,
-  TextContent,
-} from '@altertable/data-app-react';
+import { applyAppearance } from '@altertable/data-app/appearance';
+import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
+import { AppFooter } from '@/packages/data-app-react/src/ui/AppFooter.tsx';
+import { AppHeader } from '@/packages/data-app-react/src/ui/AppHeader.tsx';
+import { AppLayout } from '@/packages/data-app-react/src/ui/AppLayout.tsx';
+import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
 
 injectDataAppStyles();
 const params = new URLSearchParams(location.search);

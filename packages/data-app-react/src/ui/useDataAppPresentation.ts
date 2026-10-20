@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import {
   getDataAppTransport,
   type IframeTransport,
@@ -8,6 +7,7 @@ import {
   isDataAppPresentation,
   type DataAppPresentation,
 } from '@altertable/data-app/internal';
+import { useEffect, useState } from 'react';
 
 function presentationFromBridgeState(state: unknown) {
   const presentation =

@@ -1,4 +1,3 @@
-import { randomUuid } from '../core/uuid.ts';
 import { createBridgeEndpoint } from '../core/bridge-endpoint.ts';
 import {
   PARENT_PARAM,
@@ -6,21 +5,22 @@ import {
   REQUEST_TIMEOUT_MS,
   type TransportResponse,
 } from '../core/bridge.ts';
+import { type Lakehouse } from '../core/contract.ts';
 import {
   defineDataQueryRoute,
   sqlQueryRoute,
   MessageRoutingError,
   type RoutedMessage,
 } from '../core/messages.ts';
-import { type Lakehouse } from '../core/contract.ts';
+import { randomUuid } from '../core/uuid.ts';
 import { createFrameSizing } from './frame-sizing.ts';
-import { createMessageClient } from './messages.ts';
-import { DataAppError } from './transport.ts';
 import {
   createBridgeLogger,
   describeError,
   logBridgeDiagnostic,
 } from './logger.ts';
+import { createMessageClient } from './messages.ts';
+import { DataAppError } from './transport.ts';
 
 type Pending = {
   start: () => void;
@@ -35,7 +35,10 @@ function rethrowDataMessageError(error: unknown): never {
   throw error;
 }
 
-/** One bridge per document, shared by all clients and retained across module hot replacement. */
+/**
+ * One bridge per document, shared by all clients and retained across module hot replacement.
+ * @ignore
+ */
 export function createIframeTransport({
   parentOrigin,
   window: frame = window,
@@ -316,6 +319,7 @@ export function createIframeTransport({
   };
 }
 
+/** @ignore */
 export type IframeTransport = ReturnType<typeof createIframeTransport>;
 
 const bridgeKey = Symbol.for('altertable.localFrameBridge');
@@ -426,7 +430,10 @@ export function localFrameBridge(window?: Window): LocalBridge | undefined {
   return proxy;
 }
 
-/** Install an explicitly trusted transport for hosted apps and their URL-backed controls. */
+/**
+ * Install an explicitly trusted transport for hosted apps and their URL-backed controls.
+ * @ignore
+ */
 export function installDataAppTransport(
   bridge: ReturnType<typeof createIframeTransport>,
   frame: Window = window
@@ -444,7 +451,10 @@ export function installDataAppTransport(
   };
 }
 
-/** The bootstrap installs this before executing app code. URL apps can install an explicit connection. */
+/**
+ * The bootstrap installs this before executing app code. URL apps can install an explicit connection.
+ * @ignore
+ */
 export function getDataAppTransport(frame: Window = window) {
   return (frame as FrameWindow)[installedKey];
 }

@@ -1,10 +1,11 @@
+import { Ranking } from '@altertable/data-app-react';
+import { LineChart, PieChart } from '@altertable/data-app-react/ui';
 import {
   formatCount,
   formatMetric,
   pluralize,
 } from '@altertable/data-app/format';
-import { Ranking } from '@altertable/data-app-react';
-import { LineChart, PieChart } from '@altertable/data-app-react/ui';
+
 import type { CountryRevenue, OrderDay, OrderBand } from '@/dev/orders';
 
 const dayLabel = new Intl.DateTimeFormat('en-US', {

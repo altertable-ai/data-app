@@ -41,32 +41,10 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Build package
-        run: bun run build
-      - name: Verify generated API reference is committed
-        run: bun run check:reference
-      - name: Verify package boundaries
-        run: bun run check:boundaries
-      - name: Typecheck
-        run: bun run typecheck
-      - name: Lint
-        run: bun run lint
-      - name: Check authored styles
-        run: bun run check:styles
-      - name: Lint Markdown
-        run: bun run lint:md
-      - name: Check local Markdown links
-        run: bun run check:links
-      - name: Check formatting
-        run: bun run format:check
-      - name: Verify packed consumer
-        run: bun run check:package
-      - name: Verify starter integration
-        run: bun run check:starter
       - name: Install browser
         run: bash scripts/install-test-browser.sh
-      - name: Test
-        run: bun run test
+      - name: Verify repository
+        run: bun run check
       - name: Verify lockfile is unchanged
         run: git diff --exit-code -- bun.lock
 

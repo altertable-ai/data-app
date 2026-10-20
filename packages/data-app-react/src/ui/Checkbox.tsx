@@ -1,7 +1,8 @@
-import { createContext, useContext, useId, type ReactNode } from 'react';
 import { invariant } from '@altertable/data-app/internal';
-import { SelectionMark } from './SelectionMark.tsx';
+import { createContext, useContext, useId, type ReactNode } from 'react';
+
 import { classNames } from './classNames.ts';
+import { SelectionMark } from './SelectionMark.tsx';
 
 export const CheckboxGroupContext = createContext<{
   values: readonly string[];

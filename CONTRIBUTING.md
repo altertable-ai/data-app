@@ -10,16 +10,17 @@ bun run check
 
 ## Find the code
 
-| Task                                    | Location                                                       |
-| --------------------------------------- | -------------------------------------------------------------- |
-| Operations, validation, and data state  | `packages/data-app/src/core`                                   |
-| Browser clients and navigation          | `packages/data-app/src/client`                                 |
-| Request authorization and local serving | `packages/data-app/src/server`, `packages/data-app-bun/src`    |
-| Iframe hosting and bootstrap            | `packages/data-app-embed`, `packages/data-app-worker`          |
-| React bindings and UI                   | `packages/data-app-react/src`                                  |
-| Consumer examples                       | `examples/starter-local-data-app`, `examples/starter-data-app` |
-| Public guides                           | `docs`                                                         |
-| Build, package checks, and releases     | `scripts`                                                      |
+| Task                                    | Location                                                    |
+| --------------------------------------- | ----------------------------------------------------------- |
+| Static source manifest tooling          | `packages/data-app-manifest`                                |
+| Operations, validation, and data state  | `packages/data-app/src/core`                                |
+| Browser clients and navigation          | `packages/data-app/src/client`                              |
+| Request authorization and local serving | `packages/data-app/src/server`, `packages/data-app-bun/src` |
+| Iframe hosting and bootstrap            | `packages/data-app-embed`, `packages/data-app-worker`       |
+| React bindings and UI                   | `packages/data-app-react/src`                               |
+| Consumer examples                       | `packages/data-app-examples/templates`                      |
+| Public guides                           | `docs`                                                      |
+| Build, package checks, and releases     | `scripts`                                                   |
 
 Keep browser entries free of server implementations and credentials. Core,
 client, server, and embed remain independent of React. Implementations import
@@ -43,11 +44,24 @@ fallbacks minimal.
 
 ## Workspace packages
 
-The root is private. Publishable packages live in `packages/`; examples remain
-private workspaces. `scripts/packages.ts` lists packages in dependency order.
+The root is private. Publishable packages live in `packages/`; the local starter remains a private workspace. Canonical templates live in
+`packages/data-app-examples/templates` and ship only in `@altertable/data-app-examples`. `scripts/packages.ts` lists packages in publication order.
 Run `bun run build` from the root to build JavaScript, declarations, explicit
 styles, the embed bootstrap, the bundled preview host, and the standalone Worker.
-Package-level builds require their dependencies to have been built first.
+Bun schedules package builds in dependency order. tsdown builds library JavaScript
+and bundled declarations with the root TypeScript 7 compiler. Bun builds the
+Bun adapter, self-contained Worker, and injected CSS, bootstrap, and preview
+assets. Package-level builds require
+their dependencies to have been built first.
+Scaffolding tools consume the examples package catalog and `copyExample()`;
+template selection and destination handling belong to the caller.
+
+`@altertable/data-app-manifest` owns TypeScript 5 for static source extraction
+and rewriting.
+Keep compiler dependencies in this tooling package; runtime packages must not
+depend on it. Root tooling and declaration builds use TypeScript 7. `bun run typecheck` checks
+the root and each package build configuration with that compiler, preserving
+portable packages’ exclusion of Bun globals.
 
 Every package declares its own runtime dependencies and peers. Cross-package
 builds externalize dependencies to preserve shared module identity. The Worker,
@@ -80,18 +94,20 @@ Update the relevant guide when changing public behavior. In documentation prose,
 write functions as `functionName()` and components as `<ComponentName>`. Keep JSDoc for
 constraints, ownership, units, and runtime boundaries; leave implementation
 explanations in the code. App instructions belong in the consuming app's
-`AGENTS.md`; see the [local starter](https://github.com/altertable-ai/data-app/tree/main/examples/starter-local-data-app)
+`AGENTS.md`; see the [local starter](https://github.com/altertable-ai/data-app/tree/main/packages/data-app-examples/templates/starter-local-data-app)
 and [hosted authoring](docs/hosted-apps.md).
 
 `bun run check` builds first and runs all required source, Markdown, local link, package, and starter
-checks. Build before running consumer tests individually.
+checks. Install dependencies separately before verification. Build before running consumer tests individually.
 
 | Command                        | Purpose                                            |
 | ------------------------------ | -------------------------------------------------- |
 | `bun run build`                | Build JavaScript, declarations, styles, reference  |
 | `bun run check:reference`      | Verify the staged `REFERENCE.md` is current        |
 | `bun run check:styles`         | Validate authored styling hooks                    |
+| `bun run test:watch`           | Watch tests during development                     |
 | `bun run typecheck`            | Check source, tests, and scripts                   |
+| `bun run knip`                 | Find unused code and dependencies                  |
 | `bun run lint`                 | Run type-aware lint checks                         |
 | `bun run lint:md`              | Check Markdown structure and syntax                |
 | `bun run check:links`          | Validate local files, images, and heading links    |
@@ -105,7 +121,8 @@ checks. Build before running consumer tests individually.
 `scripts/build-reference.ts` generates `REFERENCE.md` from the emitted
 declarations with the TypeScript checker, covering app-authoring APIs from
 workspace package entry points. Embedding infrastructure, host annotation controls,
-and undocumented implementation entries remain excluded. The base
+and undocumented implementation entries remain excluded. Mark integration exports
+in shared entry points with JSDoc `@ignore` to omit them from this reference. The base
 package ships a generated copy alongside its guides. Commit the root reference
 when a build changes it. Generation fails when an export or prop type does not
 resolve, and `bun run check:reference` fails when the staged file differs from
@@ -133,7 +150,7 @@ against a mocked Altertable API
 started with Testcontainers and stopped on exit. Public API tests use their own deterministic consumer fixtures.
 
 Run `bun run dev:file <path>` to preview a single-file data app such as
-`examples/starter-data-app/index.tsx` from anywhere on disk, or `bun run dev:dir <path>`
+`packages/data-app-examples/templates/starter-data-app/index.tsx` from anywhere on disk, or `bun run dev:dir <path>`
 for a local data app directory with `src/server.ts`. Both resolve `@altertable/data-app`
 and React from this checkout's package builds, so the app needs no install. Run `bun run build`
 after package changes. File previews replace the app iframe on edits and preserve

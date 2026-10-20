@@ -1,4 +1,5 @@
 import { describe, expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 describe.each(['frame', 'content'])('present (%s sizing)', sizing => {

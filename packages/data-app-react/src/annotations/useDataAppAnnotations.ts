@@ -1,9 +1,9 @@
-import { useState } from 'react';
 import {
   createAnnotationClient,
   getDataAppTransport,
 } from '@altertable/data-app/client';
 import { MessageRoutingError } from '@altertable/data-app/contract';
+import { useState } from 'react';
 
 /** Bind annotation delivery to this app's current iframe bridge. The host owns storage and submission. */
 export function useDataAppAnnotations() {

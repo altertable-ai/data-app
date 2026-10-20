@@ -1,6 +1,6 @@
-import type { AppearanceOptions } from '@altertable/data-app/appearance';
 import { defineDataApp } from '@altertable/data-app';
 import type { TableWidgetProps } from '@altertable/data-app-react/ui';
+import type { AppearanceOptions } from '@altertable/data-app/appearance';
 
 // Compile-only assertions; the hosted endpoint can enforce these through TypeScript.
 const dataApp = defineDataApp({

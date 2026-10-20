@@ -9,7 +9,10 @@ import {
 import { type MessageTransport } from '../core/messages.ts';
 import { createMessageClient } from './messages.ts';
 
-/** Deliver annotations to the authenticated host. Acknowledgement means retained, not sent to an agent. */
+/**
+ * Deliver annotations to the authenticated host. Acknowledgement means retained, not sent to an agent.
+ * @ignore
+ */
 export function createAnnotationClient(transport: MessageTransport) {
   const client = createMessageClient(
     {

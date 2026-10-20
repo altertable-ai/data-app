@@ -23,11 +23,12 @@
     "noUnusedParameters": true
   },
   "include": [
+    "knip.ts",
     "vitest.config.ts",
     "packages/*/src",
     "tests",
     "scripts",
     "dev",
-    "examples/starter-data-app/index.tsx"
+    "packages/data-app-examples/templates/starter-data-app/index.tsx"
   ]
 }

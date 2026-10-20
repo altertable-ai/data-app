@@ -1,6 +1,7 @@
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
 import { formatCount } from '@altertable/data-app/format';
 import { invariant } from '@altertable/data-app/internal';
+import { type ComponentPropsWithRef, type ReactNode } from 'react';
+
 import { classNames } from './classNames.ts';
 
 export type RankingItem = {

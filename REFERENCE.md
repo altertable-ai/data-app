@@ -1,7 +1,7 @@
 # @altertable/data-app API reference
 
 Generated from the published type declarations by `bun run build`; do not
-edit. Embedding APIs are excluded. Each of the 361 app-authoring
+edit. Embedding APIs are excluded. Each of the 365 app-authoring
 exports has one heading line, then one line per prop, option, or field, so one
 search returns everything about a name:
 
@@ -273,12 +273,12 @@ ComposedChart.Dot: (props: DotProps & { active?: boolean; })
 ComposedChart.Area: <Row = unknown, Value = number | null>(props: AreaProps<Row, Value>)
 ComposedChart.Bar: <Row = unknown, Value = number | null>(props: BarProps<Row, Value>)
 ComposedChart.Line: <Row = unknown, Value = number | null>(props: LineProps<Row, Value>)
-ComposedChart.Scatter: <Row = unknown, Value = number>(props: ComponentProps<typeof Scatter<Row, Value>>)
-ComposedChart.XAxis: <Row = unknown, Value = string | number | Date>(props: ComponentProps<typeof XAxis<Row, Value>>)
-ComposedChart.YAxis: <Row = unknown, Value = number>(props: ComponentProps<typeof YAxis<Row, Value>>)
+ComposedChart.Scatter: <Row = unknown, Value = number>(props: ComponentProps<typeof import('recharts').Scatter<Row, Value>>)
+ComposedChart.XAxis: <Row = unknown, Value = string | number | Date>(props: ComponentProps<typeof import('recharts').XAxis<Row, Value>>)
+ComposedChart.YAxis: <Row = unknown, Value = number>(props: ComponentProps<typeof import('recharts').YAxis<Row, Value>>)
 ComposedChart.ZAxis: <DataPointType = any, DataValueType = any>(outsideProps: Props<DataPointType, DataValueType>)
-ComposedChart.CartesianGrid: (props: ComponentProps<typeof CartesianGrid>)
-ComposedChart.Tooltip: (props: ComponentProps<typeof Tooltip>)
+ComposedChart.CartesianGrid: (props: ComponentProps<typeof import('recharts').CartesianGrid>)
+ComposedChart.Tooltip: (props: ComponentProps<typeof import('recharts').Tooltip>)
 ComposedChart.Legend: (props: ComposedChartLegendProps)
 ComposedChart.ReferenceLine: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
 ComposedChart.ReferenceArea: <XValueType extends ReferenceCoordinateValue = any, YValueType extends ReferenceCoordinateValue = any>(outsideProps: Props<XValueType, YValueType>)
@@ -300,6 +300,7 @@ ConnectionOperation.run: (context: OperationContext, input: Record<string, never
 ConnectionOperation.checks: readonly [Record<string, never>, ...Record<string, never>[]]
 ConnectionOperation.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
 ConnectionOperation.queryNames: { readonly connection: 'connection'; }
+copyExample (function, @altertable/data-app-examples): (id: DataAppExampleId, destination: string): Promise<void> — Copy a starter into a new directory; reject existing destinations.
 createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations>; <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : [ ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations> — Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. Named clients derive data from the declared operations' run return types.
 createDataClient.options.transport?: DataTransport [variant 1 of 2]
 createDataClient.options.endpoint?: string [variant 1 of 2]
@@ -367,6 +368,8 @@ DataAppError (class, @altertable/data-app/client)
 DataAppError.code: string
 DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
+DataAppExampleId (type, @altertable/data-app-examples): = 'starter-data-app' | 'starter-local-data-app' — Stable identifier for a canonical starter.
+dataAppExamples (const, @altertable/data-app-examples): readonly [{ readonly id: 'starter-data-app'; readonly title: 'Hosted data app'; readonly description: 'A single-file React app for hosted execution.'; readonly mode: 'hosted'; }, { readonly id: 'starter-local-data-app'; readonly title: 'Local data app'; readonly description: 'A Bun and React projec… — Canonical starters available to scaffolding tools. IDs are stable across releases.
 DataAppProps (type, @altertable/data-app-react): <Data, Input> = props listed as DataApp.*
 DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode
@@ -645,7 +648,7 @@ defineDataApp.config.description: string — Explain what the app helps readers 
 defineDataApp.config.appearance?: AppearanceOptions — Omit to use the standard appearance.
 defineDataApp.config.dateFormatting?: { locale?: string | undefined; timeZone?: string | undefined; } — Shared date display defaults. Reporting views and individual fields may override the time zone.
 defineDataApp.config.queries: Queries & KnownRecord<Queries> & ('' extends keyof Queries ? never : unknown) & { [Name in keyof Queries]: KnownRecord<Queries[Name]> & { ...; }; } — Named SQL statements with typed parameters and result projections.
-defineDataIdentifiers (function, @altertable/data-app-react): <const Tables extends Record<string, TableIdentifier>, const Columns extends Record<string, ColumnIdentifier<Extract<keyof Tables, string>>>>(options: {…}): { definitions: Readonly<Record<IdentifierId<Tables, Columns>, DataIdentifierDefinition>>; DataIdentifier: ({ id, display, }: { ...; }) => Elem… — Register exact source names once; returned JSX IDs are checked against this registry.
+defineDataIdentifiers (function, @altertable/data-app-react): <const Tables extends Record<string, TableIdentifier>, const Columns extends Record<string, ColumnIdentifier<Extract<keyof Tables, string>>>>(options: {…}): { definitions: Readonly<Record<IdentifierId<Tables, Columns>, DataIdentifierDefinition>>; DataIdentifier: ({ id, display }: { ...; }) => Eleme… — Register exact source names once; returned JSX IDs are checked against this registry.
 defineDataIdentifiers.options.tables: Tables
 defineDataIdentifiers.options.columns: Columns
 defineDateRangeContract (function, @altertable/data-app/contract): (options: DateRangeContractOptions): { request: (value: unknown, compare?: boolean | undefined) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { .… — One source policy for the server parser, URL variable, and displayed reporting period.
@@ -820,6 +823,7 @@ FunnelChartSeries.values: readonly number[] — Finite, nonnegative counts align
 FunnelChartStep (type, @altertable/data-app-react/ui): Ordered step with a unique, nonblank ID.
 FunnelChartStep.id: string
 FunnelChartStep.label: string
+getExampleDirectory (function, @altertable/data-app-examples): (id: DataAppExampleId): string — Absolute source directory. Use copyExample() to restore npm-excluded filenames.
 GettingStarted (component, @altertable/data-app-react/ui): (props: {…}) — Query-backed connection state and next steps for a newly created app. Mount within `DataAppProvider` and register `connection: connectionCheck(app.queries)` on the server.
 GettingStarted.dataContext: DataContext
 GlossaryDefinition (component, @altertable/data-app-react/ui): (props: GlossaryDefinitionProps)
@@ -928,7 +932,7 @@ localLakehouse (function, @altertable/data-app-bun): (environment: Record<string
 matchSearchText (function, @altertable/data-app-react/ui): (text: string, query: string): SearchMatchValue — Highlight literal query terms in supplied text without filtering or reordering results.
 Menu (component, @altertable/data-app-react/ui): <T extends object>(props: MenuProps<T>) — Actions by default; single selection creates radio items, multiple creates checkbox items.
 Menu.…: plus props inherited from @react-types/shared, react-aria, react-aria-components
-MenuButton (component, @altertable/data-app-react/ui): (props: Omit<ComponentPropsWithRef<typeof AriaButton>, 'className'> & Pick<ButtonProps, 'variant' | 'size'> & { className?: string; }) — React Aria trigger behavior with the same presentation as the native Button.
+MenuButton (component, @altertable/data-app-react/ui): (props: Omit<ComponentPropsWithRef<typeof import('react-aria-components').Button>, 'className'> & Pick<ButtonProps, 'variant' | 'size'> & { className?: string; }) — React Aria trigger behavior with the same presentation as the native Button.
 MenuButton.variant?: 'elevated' | 'ghost' | 'inline' | 'outline' | 'primary' — Inline actions retain button semantics without a padded control surface.
 MenuButton.size?: 'compact' | 'default' | 'icon' | 'icon-compact'
 MenuButton.className?: string
@@ -943,7 +947,7 @@ MenuPopoverProps.…: plus props inherited from @react-types/shared, React, reac
 MenuProps (type, @altertable/data-app-react/ui): <T> = props listed as Menu.*
 MenuSection (function, @altertable/data-app-react/ui): <T>(props: MenuSectionProps<T> & React.RefAttributes<HTMLElement>): ReactElement<unknown, string | JSXElementConstructor<any>> | null — A MenuSection represents a section within a Menu.
 MenuSection.props.…: plus props inherited from @react-types/shared, React, react-aria-components
-MenuSeparator (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof Separator>)
+MenuSeparator (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof import('react-aria-components').Separator>)
 MenuSeparator.…: plus props inherited from @react-types/shared, React, react-aria, react-aria-components
 MenuTrigger (component, @altertable/data-app-react/ui): (props: MenuTriggerProps)
 MenuTrigger.…: plus props inherited from react-aria-components, react-stately
@@ -1201,7 +1205,7 @@ PresentStory.headerActions?: ReactNode
 PresentStory.footer?: ReactNode
 PresentStory.…: plus props inherited from React
 PresentStoryProps (type, @altertable/data-app-react/ui): = props listed as PresentStory.*
-previousDateRange (function, @altertable/data-app/contract): (options: DateRangeInput): DateRange — The immediately preceding, equally long set of calendar days.
+previousDateRange (function, @altertable/data-app/contract): (options: DateRange): DateRange — The immediately preceding, equally long set of calendar days.
 previousDateRange.options.start: string
 previousDateRange.options.end: string
 QueryDefinitions (type, @altertable/data-app, @altertable/data-app/contract, @altertable/data-app/config): <Record<string, QueryDefinition>> = { readonly [x: string]: QueryDefinition; }
@@ -1251,7 +1255,7 @@ RankingItem.label: ReactNode
 RankingItem.value: number
 RankingItem.detail?: ReactNode
 RankingProps (type, @altertable/data-app-react): = props listed as Ranking.*
-RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined, options?: { ..…
+RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>, NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined,…
 ReportingPeriod (type, @altertable/data-app/contract, @altertable/data-app-react)
 ReportingPeriod.kind: 'rolling' [variant 1 of 2]
 ReportingPeriod.amount: number [variant 1 of 2]
@@ -1444,7 +1448,7 @@ StoryFinding.context?: string
 StoryFinding.visual: ReactNode
 StoryFinding.visualKind?: 'chart' | 'metric'
 StoryFinding.evidence: MetricDefinition | WidgetEvidence
-Tab (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof AriaTab>)
+Tab (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof import('react-aria-components/Tabs').Tab>)
 Tab.…: plus props inherited from @react-types/shared, React, react-aria-components
 TableIdentifier (type, @altertable/data-app-react)
 TableIdentifier.catalog: string
@@ -1511,11 +1515,11 @@ TableWidgetSearch.mode?: 'fuzzy' | 'literal' — Literal filtering preserves sou
 TableWidgetSearch.fuzzyThreshold?: number
 TabList (component, @altertable/data-app-react/ui): <T>(props: TabListProps<T> & RefAttributes<HTMLDivElement>)
 TabList.…: plus props inherited from @react-types/shared, React, react-aria-components
-TabPanel (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof AriaTabPanel>)
+TabPanel (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof import('react-aria-components/Tabs').TabPanel>)
 TabPanel.…: plus props inherited from @react-types/shared, React, react-aria, react-aria-components
 TabPanels (function, @altertable/data-app-react/ui): <T>(props: TabPanelsProps<T> & React.RefAttributes<HTMLDivElement>): ReactElement<unknown, string | JSXElementConstructor<any>> | null — Groups multiple `<TabPanel>` elements, and provides CSS variables for animated transitions.
 TabPanels.props.…: plus props inherited from @react-types/shared, React, react-aria-components
-Tabs (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof AriaTabs>)
+Tabs (component, @altertable/data-app-react/ui): (props: ComponentPropsWithRef<typeof import('react-aria-components/Tabs').Tabs>)
 Tabs.…: plus props inherited from @react-types/shared, React, react-aria, react-aria-components, react-stately
 TextContent (component, @altertable/data-app-react): (props: TextContentProps) — Prose typography for page introductions, widget bodies, and inspection content.
 TextContent.…: plus props inherited from React

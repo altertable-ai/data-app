@@ -10,5 +10,8 @@
     "node_modules/**",
     "CHANGELOG.md",
     "**/REFERENCE.md"
-  ]
+  ],
+  "endOfLine": "lf",
+  "sortImports": true,
+  "sortPackageJson": false
 }

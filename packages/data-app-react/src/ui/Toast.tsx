@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
-import { AppIcon } from './icons.ts';
+
 import { Button } from './Button.tsx';
+import { AppIcon } from './icons.ts';
 
 /** Shared page-level feedback for requests and toolbar actions. */
 export function Toast({

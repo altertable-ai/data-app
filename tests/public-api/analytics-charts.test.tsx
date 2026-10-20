@@ -1,5 +1,3 @@
-import { expect, test } from 'vitest';
-import { renderToStaticMarkup } from 'react-dom/server';
 import {
   useSvgId,
   FunnelChart,
@@ -9,6 +7,8 @@ import {
   type RetentionChartProps,
   type JourneyChartProps,
 } from '@altertable/data-app-react/ui';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { expect, test } from 'vitest';
 
 const shared = {
   ariaLabel: 'Product analytics',

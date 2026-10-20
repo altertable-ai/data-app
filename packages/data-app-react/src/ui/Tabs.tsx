@@ -1,3 +1,4 @@
+import { useMergeRefs } from '@floating-ui/react';
 import {
   useCallback,
   useEffect,
@@ -5,9 +6,6 @@ import {
   type ComponentPropsWithRef,
   type RefAttributes,
 } from 'react';
-import { useMergeRefs } from '@floating-ui/react';
-import { classNames } from './classNames.ts';
-import { useScrollFade } from './GradientScroll.tsx';
 import {
   Tabs as AriaTabs,
   TabList as AriaTabList,
@@ -16,6 +14,9 @@ import {
   TabPanels,
   TabPanel as AriaTabPanel,
 } from 'react-aria-components/Tabs';
+
+import { classNames } from './classNames.ts';
+import { useScrollFade } from './GradientScroll.tsx';
 import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 
 /** React Aria tabs with keyboard and ARIA behavior; pair each Tab and TabPanel by stable id. */

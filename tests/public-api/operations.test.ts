@@ -1,4 +1,3 @@
-import { expect, test, vi } from 'vitest';
 import { createDataClient, DataAppError } from '@altertable/data-app/client';
 import {
   defineOperation,
@@ -7,6 +6,7 @@ import {
   type Lakehouse,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
+import { expect, test, vi } from 'vitest';
 
 function operation() {
   return defineOperation({

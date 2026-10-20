@@ -1,4 +1,7 @@
-/** Host-owned log sink; compatible with console and frontend createLogger(). */
+/**
+ * Host-owned log sink; compatible with console and frontend createLogger().
+ * @ignore
+ */
 export type DataAppLogger = {
   log: (...args: unknown[]) => void;
   info: (...args: unknown[]) => void;

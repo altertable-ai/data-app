@@ -1,5 +1,4 @@
-import type { DataContext } from './ui/data-context.ts';
-import type { EmptyContent } from './ui/presentation.ts';
+import type { DateRangeRequest } from '@altertable/data-app/contract';
 import type {
   AppVariable,
   AppVariableValues,
@@ -7,8 +6,10 @@ import type {
   VariableCollection,
   CheckedFacetContexts,
 } from '@altertable/data-app/internal';
-import type { DateRangeRequest } from '@altertable/data-app/contract';
 import { invariant } from '@altertable/data-app/internal';
+
+import type { DataContext } from './ui/data-context.ts';
+import type { EmptyContent } from './ui/presentation.ts';
 
 type ResolvedVariable<Variable> = Variable extends DateRangeVariable
   ? DateRangeRequest

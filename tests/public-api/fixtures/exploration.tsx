@@ -1,7 +1,4 @@
-import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
 import { defineDataApp } from '@altertable/data-app';
-import { createDataClient } from '@altertable/data-app/client';
-import { Component, useState, type ReactNode } from 'react';
 import {
   createDataHooks,
   createDataContext,
@@ -25,6 +22,9 @@ import {
   ExplorationActionControl,
   type ItemActions,
 } from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
+import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
+import { Component, useState, type ReactNode } from 'react';
 
 const app = defineDataApp({
   title: 'Exploration',

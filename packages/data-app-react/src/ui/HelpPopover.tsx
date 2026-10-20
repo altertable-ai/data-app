@@ -1,10 +1,4 @@
 import {
-  useState,
-  type ComponentPropsWithRef,
-  type ReactNode,
-  type RefObject,
-} from 'react';
-import {
   autoUpdate,
   flip,
   FloatingFocusManager,
@@ -21,15 +15,22 @@ import {
   useRole,
   type Placement,
 } from '@floating-ui/react';
+import {
+  useState,
+  type ComponentPropsWithRef,
+  type ReactNode,
+  type RefObject,
+} from 'react';
+
 import { type DataAppStyleHooks } from '../style-contract.ts';
 import { classNames } from './classNames.ts';
 
-export type HelpPopoverTriggerProps = Omit<
+type HelpPopoverTriggerProps = Omit<
   ComponentPropsWithRef<'button'>,
   'children' | 'type'
 > &
   DataAppStyleHooks;
-export type HelpPopoverPanelProps = Omit<
+type HelpPopoverPanelProps = Omit<
   ComponentPropsWithRef<'section'>,
   'children' | 'role'
 >;

@@ -1,5 +1,7 @@
-import { it } from 'vitest';
 import assert from 'assert';
+
+import { it } from 'vitest';
+
 import {
   timeDay,
   timeDays,

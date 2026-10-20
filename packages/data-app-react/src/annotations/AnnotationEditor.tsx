@@ -1,6 +1,6 @@
-import { type ComponentRef, type CSSProperties, type Ref } from 'react';
 import { ArrowUp } from 'lucide-react';
-import { type AnnotationEditorState } from './annotation-editor-state.ts';
+import { type ComponentRef, type CSSProperties, type Ref } from 'react';
+
 import { Button } from '../ui/Button.tsx';
 import { Kbd } from '../ui/Kbd.tsx';
 import { isPlainKeyEvent } from '../ui/keyboard.ts';
@@ -9,6 +9,7 @@ import {
   matchesShortcut,
   shortcuts,
 } from '../ui/shortcuts.ts';
+import { type AnnotationEditorState } from './annotation-editor-state.ts';
 import { AnnotationTooltip } from './AnnotationTooltip.tsx';
 
 type AnnotationEditorProps = {

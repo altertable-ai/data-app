@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { getDataAppTransport } from '@altertable/data-app/client';
 import { injectDataAppStyles } from '@altertable/data-app-react';
 import { Sheet } from '@altertable/data-app-react/ui';
+import { getDataAppTransport } from '@altertable/data-app/client';
+import { useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 
 const bridge = getDataAppTransport()!;
 injectDataAppStyles();

@@ -12,8 +12,9 @@ import { createServer, request as httpRequest } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, expect, test, vi } from 'vitest';
+
 import { chromium } from 'playwright';
+import { afterEach, expect, test, vi } from 'vitest';
 
 const children: ChildProcess[] = [];
 const cleanups: (() => Promise<void>)[] = [];
@@ -619,7 +620,7 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
   const directory = await temporaryDirectory();
   for (const path of ['src', 'app.ts', 'package.json', 'tsconfig.json'])
     await cp(
-      join('examples/starter-local-data-app', path),
+      join('packages/data-app-examples/templates/starter-local-data-app', path),
       join(directory, path),
       { recursive: true }
     );
@@ -641,8 +642,8 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
     await writeFile(
       path,
       (await readFile(path, 'utf8')).replaceAll(
-        '"#config"',
-        file === 'src/server.ts' ? '"app-config"' : '"app/app"'
+        "'#config'",
+        file === 'src/server.ts' ? "'app-config'" : "'app/app'"
       )
     );
   }
@@ -676,8 +677,8 @@ test('dev:dir serves an uninstalled local app with this checkout and restarts it
   await writeFile(
     join(directory, 'app.ts'),
     (await readFile(join(directory, 'app.ts'), 'utf8')).replace(
-      'title: "Getting started"',
-      'title: "Hot reloaded"'
+      "title: 'Getting started'",
+      "title: 'Hot reloaded'"
     )
   );
   const [, reloadedUrl] = await waitForOutput(

@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 test('time axes adapt date and time labels, retain context, and leave categories intact', async ({

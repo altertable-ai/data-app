@@ -1,12 +1,13 @@
-import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { useRef, useState } from 'react';
 import { injectDataAppAnnotationStyles } from '@altertable/data-app-react';
-import { useAnnotationDrafts } from '@/dev/fixtures/useAnnotationDrafts';
 import {
   MessageRoutingError,
   type DataAppAnnotationDraft,
   type DataAppAnnotationPresentation,
 } from '@altertable/data-app/contract';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { useRef, useState } from 'react';
+
+import { useAnnotationDrafts } from '@/dev/fixtures/useAnnotationDrafts';
 
 if (typeof document !== 'undefined') injectDataAppAnnotationStyles();
 

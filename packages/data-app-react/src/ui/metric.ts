@@ -2,9 +2,10 @@ import {
   type MetricFormat,
   type DateFormatOptions,
 } from '@altertable/data-app/format';
-import { type WidgetEvidence } from './WidgetEvidence.ts';
 import { type MetricReading } from '@altertable/data-app/internal';
+
 import { calendarMetricComparison } from './metric-comparison.ts';
+import { type WidgetEvidence } from './WidgetEvidence.ts';
 
 export type MetricDefinition = {
   id: string;

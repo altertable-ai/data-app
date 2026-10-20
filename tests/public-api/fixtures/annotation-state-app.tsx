@@ -1,10 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { useEffect } from 'react';
-import {
-  createDataClient,
-  getDataAppNavigation,
-} from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
 import {
   DataApp,
   DataSection,
@@ -15,6 +9,12 @@ import {
   mountDataApp,
   searchVariable,
 } from '@altertable/data-app-react';
+import {
+  createDataClient,
+  getDataAppNavigation,
+} from '@altertable/data-app/client';
+import type { DataOperation } from '@altertable/data-app/contract';
+import { useEffect } from 'react';
 
 type PeriodInput = { period: string };
 

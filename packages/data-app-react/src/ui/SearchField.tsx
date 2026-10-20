@@ -7,10 +7,11 @@ import {
   type ComponentPropsWithRef,
   type ReactNode,
 } from 'react';
-import { classNames } from './classNames.ts';
-import { SearchInput } from './SearchInput.tsx';
+
 import { Button } from './Button.tsx';
+import { classNames } from './classNames.ts';
 import { AppIcon } from './icons.ts';
+import { SearchInput } from './SearchInput.tsx';
 
 export type SearchFieldProps = {
   label: string;

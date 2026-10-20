@@ -1,6 +1,7 @@
-import { toCanvas } from 'html-to-image';
-import { type AnnotationRect } from './annotation-targets.ts';
 import { type DataAppAnnotationDraft } from '@altertable/data-app/contract';
+import { toCanvas } from 'html-to-image';
+
+import { type AnnotationRect } from './annotation-targets.ts';
 
 /** Capture the visible target at selection time; never include annotation controls. */
 export async function captureAnnotationScreenshot(

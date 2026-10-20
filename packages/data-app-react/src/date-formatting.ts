@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+
 import { DataAppContext } from './app-context.ts';
 
 /** The reporting zone belongs to the displayed view, not the browser. */

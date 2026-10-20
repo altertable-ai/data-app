@@ -1,4 +1,5 @@
 import { createContext } from 'react';
+
 import { matchSearchText } from './ui/searchItems.ts';
 import { type SearchSuggestion } from './ui/SearchTypeahead.tsx';
 

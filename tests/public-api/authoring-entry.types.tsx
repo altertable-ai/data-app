@@ -14,8 +14,6 @@ import {
   type DataSectionProps,
   type TableWidgetProps,
 } from '@altertable/data-app-react';
-import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
 import {
   DataAppProvider,
   DataApp as StaticApp,
@@ -24,6 +22,8 @@ import {
   PresentStory,
   AboutData,
 } from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
+import type { DataOperation } from '@altertable/data-app/contract';
 
 const context = registerContext({ count: 'count' })({
   description: 'Fixture context',

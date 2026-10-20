@@ -1,27 +1,28 @@
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { DateFormattingContext } from '../date-formatting.ts';
-import { SearchSuggestionsContext } from '../search-suggestions.ts';
+import type { DisplayedSnapshot } from '@altertable/data-app/internal';
+
 import { useDataApp } from '../app-context.ts';
-import { ownedSource } from '../source-owner.ts';
 import {
   registeredEvidence,
   exportDatasets,
   type ExportDataset,
   type RegisteredBinding,
 } from '../bindings.ts';
-import type { DisplayedSnapshot } from '@altertable/data-app/internal';
-import type { StoryFinding } from './story.ts';
-import {
-  DataAppFrame,
-  type DataAppBaseProps,
-  type DataAppControlProps,
-} from './DataAppFrame.tsx';
+import { DateFormattingContext } from '../date-formatting.ts';
+import { DetailRoutes, type DetailContent } from '../details.tsx';
+import { SearchSuggestionsContext } from '../search-suggestions.ts';
+import { ownedSource } from '../source-owner.ts';
 import {
   PrimaryViewContext,
   type DeclaredView,
   useDeclaredResult,
 } from '../view-runtime.tsx';
-import { DetailRoutes, type DetailContent } from '../details.tsx';
+import {
+  DataAppFrame,
+  type DataAppBaseProps,
+  type DataAppControlProps,
+} from './DataAppFrame.tsx';
+import type { StoryFinding } from './story.ts';
 
 export type DataAppProps<Data, Input = unknown> = Omit<
   DataAppBaseProps,

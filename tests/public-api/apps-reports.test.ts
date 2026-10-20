@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 test('grid items stretch widgets within a row and keep natural heights when stacked', async ({

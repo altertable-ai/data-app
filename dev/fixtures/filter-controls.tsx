@@ -1,13 +1,4 @@
-import { useState } from 'react';
 import { Stack } from '@altertable/data-app-react';
-import {
-  dimensionFilter,
-  numberFilter,
-  booleanFilter,
-  type NumberSelection,
-  type BooleanSelection,
-  type DimensionSelection,
-} from '@altertable/data-app/contract';
 import {
   Checkbox,
   CheckboxGroup,
@@ -28,6 +19,15 @@ import {
   SegmentedControl,
   Select,
 } from '@altertable/data-app-react/ui';
+import {
+  dimensionFilter,
+  numberFilter,
+  booleanFilter,
+  type NumberSelection,
+  type BooleanSelection,
+  type DimensionSelection,
+} from '@altertable/data-app/contract';
+import { useState } from 'react';
 
 const options = [
   { id: 'orders', label: 'Orders' },

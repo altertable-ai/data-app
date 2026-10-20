@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-embed",
-  "version": "0.71.0",
+  "version": "0.72.0",
   "description": "Iframe hosting, sandbox bootstrap, and React host bindings for Altertable data apps.",
   "keywords": [
     "altertable",
@@ -49,10 +49,11 @@
     "registry": "https://registry.npmjs.org"
   },
   "scripts": {
-    "build": "bun ../../scripts/build.ts data-app-embed"
+    "build": "bun ../../scripts/build.ts data-app-embed",
+    "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
   },
   "dependencies": {
-    "@altertable/data-app": "0.71.0"
+    "@altertable/data-app": "0.72.0"
   },
   "peerDependencies": {
     "react": ">=19.2.0"

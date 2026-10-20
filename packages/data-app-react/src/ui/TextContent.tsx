@@ -1,4 +1,5 @@
 import { type ComponentPropsWithRef } from 'react';
+
 import { classNames } from './classNames.ts';
 
 export type TextContentProps = ComponentPropsWithRef<'div'>;

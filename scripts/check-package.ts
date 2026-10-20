@@ -1,7 +1,8 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { join, posix, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, posix, resolve } from 'node:path';
+
 import workspace from '@/package.json';
 import { packages } from '@/scripts/packages';
 
@@ -62,34 +63,43 @@ async function install(directory: string, dependencies: string[]) {
 }
 
 function excludes(names: Set<string>, forbidden: string[]) {
-  for (const name of forbidden)
+  for (const name of [
+    ...forbidden,
+    'typescript',
+    '@altertable/data-app-manifest',
+  ])
     assert(!names.has(name), `Unexpected installed dependency: ${name}`);
 }
 
 async function typecheck(directory: string, source: string) {
   await writeFile(join(directory, 'consumer.ts'), source);
-  await writeFile(
-    join(directory, 'tsconfig.json'),
-    JSON.stringify({
-      compilerOptions: {
-        target: 'ESNext',
-        module: 'Preserve',
-        moduleResolution: 'bundler',
-        strict: true,
-        noEmit: true,
-        types: [],
-      },
-      include: ['consumer.ts'],
-    })
-  );
-  await run(
-    [
-      join(root, 'node_modules/.bin/tsc'),
-      '-p',
+  for (const [module, moduleResolution] of [
+    ['Preserve', 'bundler'],
+    ['NodeNext', 'NodeNext'],
+  ]) {
+    await writeFile(
       join(directory, 'tsconfig.json'),
-    ],
-    directory
-  );
+      JSON.stringify({
+        compilerOptions: {
+          target: 'ESNext',
+          module,
+          moduleResolution,
+          strict: true,
+          noEmit: true,
+          types: [],
+        },
+        include: ['consumer.ts'],
+      })
+    );
+    await run(
+      [
+        join(root, 'node_modules/.bin/tsc'),
+        '-p',
+        join(directory, 'tsconfig.json'),
+      ],
+      directory
+    );
+  }
 }
 
 try {
@@ -141,8 +151,6 @@ try {
         'REFERENCE.md',
         'CONTRIBUTING.md',
         'docs/app-authoring.md',
-        'examples/starter-data-app/index.tsx',
-        'examples/starter-local-data-app/package.json',
       ])
         assert(paths.has(path), `Missing authoring material: ${path}`);
       assert.equal(
@@ -151,6 +159,33 @@ try {
         'Packed API reference differs from the canonical reference'
       );
     }
+    if (manifest.name === '@altertable/data-app-examples') {
+      for (const path of [
+        'templates/starter-data-app/index.tsx',
+        'templates/starter-local-data-app/package.json',
+        'templates/starter-local-data-app/.bun-version',
+        'templates/starter-local-data-app/_gitignore',
+        'templates/starter-local-data-app/.node-version',
+        'templates/starter-local-data-app/.oxlintrc.json',
+        'templates/starter-local-data-app/.oxfmtrc.json',
+        'templates/starter-local-data-app/AGENTS.md',
+        'templates/starter-local-data-app/src/server.ts',
+      ])
+        assert(paths.has(path), `Missing starter file: ${path}`);
+      assert(
+        ![...paths].some(
+          path =>
+            /(?:^|\/)(?:node_modules|dist|\.env[^/]*)(?:\/|$)/.test(path) &&
+            path.startsWith('templates/')
+        ),
+        'Build artifacts leaked into templates'
+      );
+    }
+    if (manifest.name === '@altertable/data-app')
+      assert(
+        ![...paths].some(path => path.startsWith('examples/')),
+        'Starters belong in the examples package'
+      );
     for (const path of paths) {
       if (path.endsWith('.md')) {
         const markdown = await readFile(join(unpacked, path), 'utf8');
@@ -201,6 +236,188 @@ try {
     'html-to-image',
     'get-tsconfig',
   ];
+  const manifestOnly = join(temporary, 'manifest-only');
+  const manifestNames = await install(manifestOnly, [archive('-manifest')]);
+  assert.deepEqual([...manifestNames].sort(), [
+    '@altertable/data-app-manifest',
+    'typescript',
+  ]);
+  await typecheck(
+    manifestOnly,
+    `
+import { extractDataAppManifest, overrideDataAppManifest, type DataAppManifest, type DataAppLiteralValue } from '@altertable/data-app-manifest';
+const result = extractDataAppManifest('');
+if (result.manifest) {
+  const manifest: DataAppManifest = result.manifest;
+  const value: DataAppLiteralValue = manifest.title;
+  const diagnostics: [] = result.diagnostics;
+  void [value, diagnostics];
+}
+const override = overrideDataAppManifest('', { title: 'Sales' });
+if (override.source !== null) {
+  const source: string = override.source;
+  const diagnostics: [] = override.diagnostics;
+  void [source, diagnostics];
+}
+// @ts-expect-error The API accepts only the source string.
+extractDataAppManifest('', 'app.tsx');
+`
+  );
+  await run(
+    [
+      'node',
+      join(manifestOnly, 'node_modules/typescript/bin/tsc'),
+      '-p',
+      join(manifestOnly, 'tsconfig.json'),
+    ],
+    manifestOnly
+  );
+  await writeFile(
+    join(manifestOnly, 'manifest-consumer.ts'),
+    await readFile(join(root, 'tests/fixtures/manifest-consumer.ts'), 'utf8')
+  );
+  await writeFile(
+    join(manifestOnly, 'verify.mjs'),
+    `
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { verifyManifestConsumer } from './manifest-consumer.ts';
+const require = createRequire(import.meta.resolve('@altertable/data-app-manifest'));
+assert.equal(require('typescript/package.json').version, '5.9.3');
+verifyManifestConsumer();
+`
+  );
+  for (const runtime of ['node', 'bun'])
+    await run([runtime, join(manifestOnly, 'verify.mjs')], manifestOnly);
+  const manifestBundle = join(manifestOnly, 'verify-bundle.js');
+  await run(
+    [
+      'bun',
+      'build',
+      join(manifestOnly, 'verify.mjs'),
+      '--target=node',
+      '--outfile',
+      manifestBundle,
+    ],
+    manifestOnly
+  );
+  for (const runtime of ['node', 'bun'])
+    await run([runtime, manifestBundle], manifestOnly);
+  // Hoisting must preserve the root compiler while the extractor owns TS5.
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const root = createRequire(${JSON.stringify(join(root, 'package.json'))});
+assert.equal(root('typescript/package.json').version, ${JSON.stringify(workspace.devDependencies.typescript)});
+for (const name of ['data-app', 'data-app-react', 'data-app-bun', 'data-app-embed', 'data-app-worker', 'data-app-examples', 'data-app-manifest']) {
+  const local = createRequire(import.meta.resolve('@altertable/' + name));
+  assert.equal(local('typescript/package.json').version, name === 'data-app-manifest' ? '5.9.3' : ${JSON.stringify(workspace.devDependencies.typescript)});
+}
+`,
+    ],
+    root
+  );
+  console.log(
+    'Manifest-only archive: TypeScript 5, portable types, Node and Bun scope/literal contract; no runtime/UI dependencies.'
+  );
+  const examples = join(temporary, 'examples');
+  const exampleNames = await install(examples, [archive('-examples')]);
+  assert.deepEqual([...exampleNames], ['@altertable/data-app-examples']);
+  await typecheck(
+    examples,
+    `export { dataAppExamples, getExampleDirectory, copyExample, type DataAppExampleId } from '@altertable/data-app-examples';`
+  );
+  const catalog = JSON.parse(
+    await run(
+      [
+        'node',
+        '--input-type=module',
+        '-e',
+        `
+import assert from 'node:assert/strict';
+import { dataAppExamples, getExampleDirectory } from '@altertable/data-app-examples';
+assert.throws(() => getExampleDirectory('../escape'), /Unknown data app example/);
+console.log(JSON.stringify(dataAppExamples.map(example => ({...example, directory: getExampleDirectory(example.id)}))));
+`,
+      ],
+      examples
+    )
+  ) as { id: string; mode: string; directory: string }[];
+  assert.deepEqual(
+    catalog.map(({ id, mode }) => ({ id, mode })),
+    [
+      { id: 'starter-data-app', mode: 'hosted' },
+      { id: 'starter-local-data-app', mode: 'local' },
+    ]
+  );
+  const localExample = catalog.find(example => example.mode === 'local');
+  assert(localExample);
+  const local = join(temporary, 'local-starter');
+  await run(
+    [
+      'node',
+      '--input-type=module',
+      '-e',
+      `
+import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { copyExample, getExampleDirectory } from '@altertable/data-app-examples';
+const destination = process.argv[1];
+const source = resolve(getExampleDirectory('starter-local-data-app'));
+// A missing packaged source fails during copying, after destination creation.
+await rename(source, source + '-missing');
+try {
+  await assert.rejects(copyExample('starter-local-data-app', destination), {code: 'ENOENT'});
+  assert(!existsSync(destination), 'Failed copying left its destination behind');
+} finally {
+  await rename(source + '-missing', source);
+}
+// A filename collision fails during restoration after the source has been copied.
+await mkdir(join(source, '.gitignore'));
+await writeFile(join(source, '.gitignore', 'sentinel'), 'collision');
+try {
+  await assert.rejects(copyExample('starter-local-data-app', destination));
+  assert(!existsSync(destination), 'Failed renaming left its destination behind');
+} finally {
+  await rm(join(source, '.gitignore'), {recursive: true, force: true});
+}
+await copyExample('starter-data-app', process.argv[1] + '-hosted');
+assert((await readFile(join(process.argv[1] + '-hosted', 'index.tsx'), 'utf8')).length > 0);
+await copyExample('starter-local-data-app', process.argv[1]);
+assert.equal(await readFile(join(process.argv[1], '.gitignore'), 'utf8'), 'node_modules/\\ndist/\\n.env*\\n');
+await writeFile(join(destination, 'sentinel'), 'keep me');
+await assert.rejects(copyExample('starter-local-data-app', destination), /exist/i);
+assert.equal(await readFile(join(destination, 'sentinel'), 'utf8'), 'keep me');
+await assert.rejects(copyExample('../escape', process.argv[1]), /Unknown data app example/);
+`,
+      local,
+    ],
+    examples
+  );
+  // Exercise a copied project against this release's tarballs, outside workspace hoisting.
+  await run(
+    [
+      'npm',
+      'install',
+      '--ignore-scripts',
+      '--no-audit',
+      '--no-fund',
+      '--package-lock=false',
+      '--no-save',
+      archive(''),
+      archive('-react'),
+      archive('-bun'),
+    ],
+    local
+  );
+  await run(['bun', 'run', 'check'], local);
   const base = join(temporary, 'base');
   const baseNames = await install(base, [archive('')]);
   excludes(baseNames, [...uiDependencies, 'react', 'react-dom', '@types/bun']);
@@ -342,17 +559,13 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
     'react-dom@19.2.0',
     '@types/react@19.3.0',
     '@types/react-dom@19.3.0',
-    '@types/bun@1.4.2',
+    `@types/bun@${workspace.devDependencies['@types/bun']}`,
   ]);
+  const hostedExample = catalog.find(example => example.mode === 'hosted');
+  assert(hostedExample);
   await writeFile(
     join(temporary, 'hosted.tsx'),
-    await readFile(
-      join(
-        temporary,
-        'node_modules/@altertable/data-app/examples/starter-data-app/index.tsx'
-      ),
-      'utf8'
-    )
+    await readFile(join(hostedExample.directory, 'index.tsx'), 'utf8')
   );
   await writeFile(
     join(temporary, 'browser.tsx'),
@@ -457,7 +670,11 @@ try {
   );
   if (/^import\s|\bimport\s*\(/m.test(workerAsset))
     throw new Error('Worker must have no runtime imports.');
-  if (/react-query|react-dom|Bun\.|process\./.test(workerAsset))
+  if (
+    /react-query|react-dom|Bun\.|process\.|createSourceFile|typescript/.test(
+      workerAsset
+    )
+  )
     throw new Error('Worker contains unsupported runtime dependencies.');
   await run(
     [
@@ -576,6 +793,12 @@ export { Grid };
     )
       throw new Error('Bun preview runtime leaked into a browser entry.');
   }
+  if (
+    javascript.some(source =>
+      /typescript|createSourceFile|extractDataAppManifest/.test(source)
+    )
+  )
+    throw new Error('Manifest compiler tooling leaked into the browser build.');
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
   await writeFile(

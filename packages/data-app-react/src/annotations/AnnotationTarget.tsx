@@ -1,4 +1,5 @@
 import { type ComponentPropsWithRef } from 'react';
+
 import { type WidgetEvidence } from '../ui/WidgetEvidence.ts';
 import { getAnnotationProps } from './getAnnotationProps.ts';
 

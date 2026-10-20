@@ -1,13 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { createDataClient } from '@altertable/data-app/client';
-import {
-  defineDateRangeContract,
-  defineOperation,
-  dimensionFilter,
-  parseDimensionSelection,
-  type DateRangeRequest,
-  type DimensionSelection,
-} from '@altertable/data-app/contract';
 import {
   createDataHooks,
   createDataContext,
@@ -18,6 +9,15 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  defineDateRangeContract,
+  defineOperation,
+  dimensionFilter,
+  parseDimensionSelection,
+  type DateRangeRequest,
+  type DimensionSelection,
+} from '@altertable/data-app/contract';
 
 const calendar = defineDateRangeContract({
   minDate: '2026-02-01',

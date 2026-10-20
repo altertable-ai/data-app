@@ -1,10 +1,10 @@
+import { createMessageClient } from '@altertable/data-app/client';
 import {
   createMessageRouter,
   defineMessageRoute,
   defineDataQueryRoute,
   navigationUpdateRoute,
 } from '@altertable/data-app/contract';
-import { createMessageClient } from '@altertable/data-app/client';
 
 const operations = {
   activity: {

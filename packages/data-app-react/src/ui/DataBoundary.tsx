@@ -1,7 +1,8 @@
+import { type DataView } from '@altertable/data-app/internal';
 import { type ComponentPropsWithRef, type ReactNode } from 'react';
+
 import { classNames } from './classNames.ts';
 import { AppIcon } from './icons.ts';
-import { type DataView } from '@altertable/data-app/internal';
 
 export type DataBoundaryProps<T, Input = unknown> = {
   view: DataView<T, Input>;

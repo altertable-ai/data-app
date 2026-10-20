@@ -1,6 +1,10 @@
 # Local data app starter
 
-Use this starter with the [local authoring guide](https://github.com/altertable-ai/data-app/blob/main/docs/local-data-apps.md).
+If dependencies are installed, use
+`node_modules/@altertable/data-app/docs/local-data-apps.md` for this app's SDK version.
+Otherwise, read the [version-matched local authoring guide](https://github.com/altertable-ai/data-app/blob/v0.72.0/docs/local-data-apps.md). <!-- x-release-please-version -->
+Browse the latest [local authoring guide](https://github.com/altertable-ai/data-app/blob/main/docs/local-data-apps.md)
+on GitHub.
 See [AGENTS.md](AGENTS.md) for app-owned files.
 
 A Bun and React starter for Altertable data apps using the published packages.
@@ -9,15 +13,12 @@ operations and views built from inspected data before sharing an analysis.
 
 ## Usage
 
-### Run from this repository
+### Run your app
 
-Use the Bun and Node versions in `.bun-version` and `.node-version`.
-From the repository root:
+From the copied starter directory:
 
 ```fish
-bun install --frozen-lockfile
-bun run build
-cd examples/starter-local-data-app
+bun install
 bun run dev
 ```
 
@@ -37,9 +38,7 @@ on the server. This local adapter does not authorize hosted viewers.
 
 ### Make it your app
 
-This starter declares the published base, React, and Bun packages. Inside this
-repository, Bun links their workspace builds. When copying the starter elsewhere,
-run `bun install` to install those packages from npm.
+This starter declares the published base, React, and Bun packages. Run `bun install` to install those packages from npm.
 
 ```fish
 bun run check
@@ -53,4 +52,4 @@ still needs an authorized `/api/data` backend when hosted.
 
 ## License
 
-[MIT](../../LICENSE)
+[MIT](LICENSE)

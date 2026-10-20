@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
+
+import { createAnnotationDraftStore } from '@/dev/fixtures/annotation-drafts';
 import {
   loadAnnotationDrafts,
   saveAnnotationDrafts,
 } from '@/dev/fixtures/annotation-storage';
-import { createAnnotationDraftStore } from '@/dev/fixtures/annotation-drafts';
 
 /** Host collection is independent of agent submission. Supply an account/app-scoped key for recovery. */
 type AnnotationDraftsOptions = {

@@ -1,5 +1,4 @@
-import type { InspectionRecords } from './AboutData.tsx';
-import { getAnnotationProps } from '../annotations/getAnnotationProps.ts';
+import { formatCount } from '@altertable/data-app/format';
 import {
   useId,
   useContext,
@@ -7,15 +6,17 @@ import {
   type ElementType,
   type ReactNode,
 } from 'react';
-import { formatCount } from '@altertable/data-app/format';
+
+import { getAnnotationProps } from '../annotations/getAnnotationProps.ts';
+import type { InspectionRecords } from './AboutData.tsx';
 import { AboutData } from './AboutData.tsx';
-import { InspectionVisual } from './InspectionProvider.tsx';
-import { AppIcon } from './icons.ts';
-import { WidgetStatusControl, type WidgetStatus } from './RequestHint.tsx';
 import { classNames } from './classNames.ts';
 import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { EmptyState } from './EmptyState.tsx';
+import { AppIcon } from './icons.ts';
+import { InspectionVisual } from './InspectionProvider.tsx';
 import type { EmptyContent, BoundWidgetReading } from './presentation.ts';
+import { WidgetStatusControl, type WidgetStatus } from './RequestHint.tsx';
 import type { WidgetEvidence } from './WidgetEvidence.ts';
 
 type DataWidgetBaseProps = {

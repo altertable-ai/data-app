@@ -1,11 +1,12 @@
 import { invariant } from '@altertable/data-app/internal';
+
+import type { DetailView } from './details.tsx';
 import {
   FilterTarget,
   BreakdownTarget,
   targetAvailable,
   applyFilter,
 } from './exploration.ts';
-import type { DetailView } from './details.tsx';
 import type {
   ExplorationAction,
   ItemActions,

@@ -1,5 +1,4 @@
 import { createAnnotationClient } from '@altertable/data-app/client';
-import { expect, test } from 'vitest';
 import {
   annotationDraftRoute,
   annotationModeRoute,
@@ -10,6 +9,7 @@ import {
   MessageRoutingError,
   type DataAppAnnotationDraft,
 } from '@altertable/data-app/contract';
+import { expect, test } from 'vitest';
 const draft: DataAppAnnotationDraft = {
   id: 'feedback-1',
   target: {

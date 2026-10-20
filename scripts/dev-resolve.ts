@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+
 import { packages } from '@/scripts/packages';
 
 export const checkoutRoot = resolve(import.meta.dir, '..');

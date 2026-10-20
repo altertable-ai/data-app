@@ -3,6 +3,7 @@ import {
   parseDataAppAnnotationDraft,
   type DataAppAnnotationDraft,
 } from '@altertable/data-app/contract';
+
 import type { AnnotationDraftSnapshot } from '@/dev/fixtures/annotation-storage';
 
 export function createAnnotationDraftStore(

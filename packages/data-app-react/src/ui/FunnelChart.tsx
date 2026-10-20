@@ -1,13 +1,14 @@
-import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { Fragment, useEffect, useRef, useState } from 'react';
-import { invariant } from '@altertable/data-app/internal';
-import { useSvgId } from './useSvgId.ts';
-import { ChartLegend } from './ChartLegend.tsx';
-import { ComposedChart } from './ComposedChart.tsx';
-import { ChartTooltipContent } from './chart-primitives.tsx';
-import { classNames } from './classNames.ts';
-import { type CountChartProps } from './chart-data.ts';
 import { formatNumber, formatPercent } from '@altertable/data-app/format';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { invariant } from '@altertable/data-app/internal';
+import { Fragment, useEffect, useRef, useState } from 'react';
+
+import { type CountChartProps } from './chart-data.ts';
+import { ChartTooltipContent } from './chart-primitives.tsx';
+import { ChartLegend } from './ChartLegend.tsx';
+import { classNames } from './classNames.ts';
+import { ComposedChart } from './ComposedChart.tsx';
+import { useSvgId } from './useSvgId.ts';
 
 /** Ordered step with a unique, nonblank ID. */
 export type FunnelChartStep = { id: string; label: string };

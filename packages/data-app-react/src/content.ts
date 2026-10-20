@@ -1,7 +1,8 @@
+import { type DataReading } from '@altertable/data-app/internal';
+import { type ReactNode } from 'react';
+
 import { ownedSource } from './source-owner.ts';
 import { type DeclaredView } from './view-runtime.tsx';
-import { type ReactNode } from 'react';
-import { type DataReading } from '@altertable/data-app/internal';
 
 export type DataContentState<Data, Input> = { scope: DataReading<string> } & (
   | { loading: true; data?: never; input?: never }
