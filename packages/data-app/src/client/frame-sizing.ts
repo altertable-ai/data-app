@@ -9,14 +9,19 @@ export function createFrameSizing(
   report: (height: number) => void
 ) {
   const root = document.documentElement;
+  const frame = document.defaultView;
   let observer: ResizeObserver | undefined;
   let reported: number | undefined;
   let requested = false;
   let owners = 0;
+  let viewport: { top: number; bottom: number } | undefined;
 
   function measure() {
     const height = Math.ceil(root.getBoundingClientRect().height);
-    if (height === reported) return;
+    // A matching viewport acknowledges convergence after the parent resized us.
+    // Resend it even if the content did not change, so independent updates do
+    // not accumulate as one feedback loop in the host.
+    if (height === reported && height !== frame?.innerHeight) return;
     reported = height;
     report(height);
   }
@@ -24,10 +29,17 @@ export function createFrameSizing(
   function stop() {
     observer?.disconnect();
     observer = undefined;
+    frame?.removeEventListener('resize', measure);
     reported = undefined;
     delete root.dataset.atblFrameSizing;
     root.style.removeProperty('--atbl-frame-inset-top');
     root.style.removeProperty('--atbl-frame-inset-bottom');
+  }
+
+  function applyViewport() {
+    if (!observer || !viewport) return;
+    root.style.setProperty('--atbl-frame-inset-top', `${viewport.top}px`);
+    root.style.setProperty('--atbl-frame-inset-bottom', `${viewport.bottom}px`);
   }
 
   function sync() {
@@ -36,6 +48,8 @@ export function createFrameSizing(
     root.dataset.atblFrameSizing = 'content';
     observer = new (document.defaultView ?? globalThis).ResizeObserver(measure);
     observer.observe(root);
+    frame?.addEventListener('resize', measure);
+    applyViewport();
   }
 
   return {
@@ -48,6 +62,7 @@ export function createFrameSizing(
       requested =
         isDataAppPresentation(presentation) &&
         presentation.sizing === 'content';
+      if (!requested) viewport = undefined;
       if (session === 'new') reported = undefined;
       if (observer && requested) measure();
       sync();
@@ -65,12 +80,13 @@ export function createFrameSizing(
       };
     },
     viewport(top: number, bottom: number) {
-      if (!observer) return;
-      root.style.setProperty('--atbl-frame-inset-top', `${top}px`);
-      root.style.setProperty('--atbl-frame-inset-bottom', `${bottom}px`);
+      if (!requested) return;
+      viewport = { top, bottom };
+      applyViewport();
     },
     dispose() {
       requested = false;
+      viewport = undefined;
       owners = 0;
       stop();
     },

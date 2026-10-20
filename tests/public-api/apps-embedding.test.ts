@@ -744,3 +744,93 @@ test('a content-sized frame stops following growth that tracks its own height', 
     .click();
   await expect.poll(frameHeight).toBeGreaterThanOrEqual(initial + 2000);
 });
+
+test('independent equal-sized content updates keep expanding the iframe', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1&manual-sizing=1');
+  const frame = page.getByTitle('Sandbox app', { exact: true });
+  const app = page.frameLocator('iframe');
+  await expect.poll(() => app.getByRole('listitem').count()).toBe(25);
+  await expect
+    .poll(
+      async () =>
+        (await frame.evaluate(element =>
+          Math.round(element.getBoundingClientRect().height)
+        )) -
+        (await app
+          .getByRole('main')
+          .evaluate(element =>
+            Math.ceil(element.getBoundingClientRect().height)
+          ))
+    )
+    .toBe(0);
+  const initial = await frame.evaluate(
+    element => element.getBoundingClientRect().height
+  );
+  for (let index = 1; index <= 25; index++) {
+    await app.getByRole('button', { name: 'Load more', exact: true }).click();
+    await expect
+      .poll(() =>
+        frame.evaluate(element => element.getBoundingClientRect().height)
+      )
+      .toBe(initial + index * 80);
+    // Let the applied frame size settle before the next independent interaction.
+    await page.evaluate(
+      () =>
+        new Promise<void>(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
+    );
+  }
+});
+
+test('sheets follow a resized clipping panel without a window resize or scroll', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1&manual-sizing=1&panel=1');
+  const app = page.frameLocator('iframe');
+  const panel = page.getByRole('region', { name: 'Embed panel', exact: true });
+  await app
+    .getByRole('button', { name: 'Inspect report', exact: true })
+    .click();
+  const sheet = app.getByRole('dialog', {
+    name: 'Report details',
+    exact: true,
+  });
+  async function sheetHeight() {
+    return (await sheet.boundingBox())?.height;
+  }
+  await expect.poll(sheetHeight).toBe(600);
+  await page
+    .getByRole('button', { name: 'Resize embed panel', exact: true })
+    .click();
+  expect((await panel.boundingBox())?.height).toBe(300);
+  await expect.poll(sheetHeight).toBe(300);
+});
+
+test('restoring sizing support restores the visible viewport without changing frame height', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1&manual-sizing=1&panel=1');
+  const app = page.frameLocator('iframe');
+  const frame = page.getByTitle('Sandbox app', { exact: true });
+  await app
+    .getByRole('button', { name: 'Inspect report', exact: true })
+    .click();
+  const sheet = app.getByRole('dialog', {
+    name: 'Report details',
+    exact: true,
+  });
+  await expect.poll(async () => (await sheet.boundingBox())?.height).toBe(600);
+  const initial = await frame.boundingBox();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => sheet.count()).toBe(0);
+  await app.getByRole('button', { name: 'Pause sizing', exact: true }).click();
+  await app.getByRole('button', { name: 'Resume sizing', exact: true }).click();
+  await app
+    .getByRole('button', { name: 'Inspect report', exact: true })
+    .click();
+  await expect.poll(async () => (await sheet.boundingBox())?.height).toBe(600);
+  expect((await frame.boundingBox())?.height).toBe(initial?.height);
+});

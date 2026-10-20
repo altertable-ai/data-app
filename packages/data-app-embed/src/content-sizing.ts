@@ -1,6 +1,6 @@
 type FrameInsets = { top: number; bottom: number };
 
-/** Consecutive reports exceeding the applied height by the same amount that mark a feedback loop. */
+/** Consecutive unconverged reports with equal growth that mark a feedback loop. */
 const FEEDBACK_REPORTS = 20;
 
 /** Applies app-reported heights to a content-sized iframe and publishes the part of it the parent shows.
@@ -72,8 +72,13 @@ export function createContentSizing({
     observer = new (host.document.defaultView ?? globalThis).ResizeObserver(
       schedule
     );
-    observer.observe(iframe);
-    observer.observe(host.document.documentElement);
+    // Insets depend on the clipping ancestors as well as the frame itself.
+    for (
+      let element: Element | null = iframe;
+      element;
+      element = element.parentElement
+    )
+      observer.observe(element);
     host.addEventListener('scroll', schedule, { capture: true, passive: true });
     host.addEventListener('resize', schedule);
     host.document.addEventListener('fullscreenchange', schedule);

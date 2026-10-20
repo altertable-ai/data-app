@@ -20,11 +20,15 @@ import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const { frameURL } = await fetch('/__test/config').then(response =>
   response.json()
 );
+const params = new URLSearchParams(location.search);
 const starter = location.pathname === '/starter-data-app';
 const javascript = await fetch(
-  starter ? '/__test/starter-data-app' : '/__test/bundle'
+  starter
+    ? '/__test/starter-data-app'
+    : params.has('manual-sizing')
+      ? '/__test/content-sizing'
+      : '/__test/bundle'
 ).then(response => response.text());
-const params = new URLSearchParams(location.search);
 const fileRoute = defineMessageRoute({
   input(value: unknown) {
     const file = value as { filename: string; blob: Blob };
@@ -54,6 +58,7 @@ function Host() {
   const [contentSizing, setContentSizing] = useState(
     params.has('content-sizing')
   );
+  const [panelHeight, setPanelHeight] = useState(600);
   const [status, setStatus] = useState<DataAppStatus>('connecting');
   const [attempt, retry] = useReducer(value => value + 1, 0);
   const [version, changeHandler] = useReducer(value => value + 1, 1);
@@ -144,7 +149,13 @@ function Host() {
     }
   );
   return (
-    <>
+    <div
+      style={
+        params.has('panel')
+          ? { height: '100vh', overflow: 'hidden' }
+          : undefined
+      }
+    >
       <output aria-label="Echo requests">{echoRequests}</output>
       <output aria-label="Pending requests">{pendingRequests}</output>
       <output aria-label="Cancelled requests">{cancelledRequests}</output>
@@ -178,50 +189,66 @@ function Host() {
           Could not load the data app. <button onClick={retry}>Retry</button>
         </div>
       )}
-      <DataAppBridge
-        key={attempt}
-        title="Sandbox app"
-        iframeProps={{
-          hidden: status !== 'ready',
-          allow: params.has('no-fullscreen')
-            ? "fullscreen 'none'"
-            : 'fullscreen *',
-          allowFullScreen: true,
-          style: { width: '100%', height: '80vh', border: 0 },
-        }}
-        presentation={{
-          theme,
-          surface: 'embedded',
-          ...(contentSizing ? { sizing: 'content' } : {}),
-        }}
-        source={
-          params.has('url')
-            ? {
-                type: 'url',
-                url: new URL('/report', frameURL).href,
-              }
-            : {
-                type: 'bundle',
-                bootstrapUrl: params.has('packaged')
-                  ? undefined
-                  : `/__test/${params.has('timeout') ? 'silent' : 'runtime'}`,
-                javascript: broken
-                  ? params.has('syntax')
-                    ? 'const ='
-                    : 'throw new Error("Broken app")'
-                  : javascript,
-              }
+      {params.has('panel') && (
+        <button
+          onClick={() => setPanelHeight(value => (value === 600 ? 300 : 600))}
+        >
+          Resize embed panel
+        </button>
+      )}
+      <section
+        aria-label="Embed panel"
+        style={
+          params.has('panel')
+            ? { height: panelHeight, overflow: 'hidden' }
+            : undefined
         }
-        startupTimeoutMs={params.has('timeout') ? 200 : 10000}
-        onStatusChange={setStatus}
-        onMessage={router.dispatch}
-        logger={logger}
-        onDiagnostic={event => {
-          if (event.type !== 'runtime:log')
-            setDiagnostics(previous => [...previous, event]);
-        }}
-      />
-    </>
+      >
+        <DataAppBridge
+          key={attempt}
+          title="Sandbox app"
+          iframeProps={{
+            hidden: status !== 'ready',
+            allow: params.has('no-fullscreen')
+              ? "fullscreen 'none'"
+              : 'fullscreen *',
+            allowFullScreen: true,
+            style: { width: '100%', height: '80vh', border: 0 },
+          }}
+          presentation={{
+            theme,
+            surface: 'embedded',
+            ...(contentSizing ? { sizing: 'content' } : {}),
+          }}
+          source={
+            params.has('url')
+              ? {
+                  type: 'url',
+                  url: new URL('/report', frameURL).href,
+                }
+              : {
+                  type: 'bundle',
+                  bootstrapUrl: params.has('packaged')
+                    ? undefined
+                    : `/__test/${params.has('timeout') ? 'silent' : 'runtime'}`,
+                  javascript: broken
+                    ? params.has('syntax')
+                      ? 'const ='
+                      : 'throw new Error("Broken app")'
+                    : javascript,
+                }
+          }
+          startupTimeoutMs={params.has('timeout') ? 200 : 10000}
+          onStatusChange={setStatus}
+          onMessage={router.dispatch}
+          logger={logger}
+          onDiagnostic={event => {
+            if (event.type !== 'runtime:log')
+              setDiagnostics(previous => [...previous, event]);
+          }}
+        />
+      </section>
+    </div>
   );
 }
 createRoot(document.getElementById('root')!).render(<Host />);
