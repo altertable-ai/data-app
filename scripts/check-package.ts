@@ -553,6 +553,7 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
     'react-dom@19.2.0',
     '@types/react@19.3.0',
     '@types/react-dom@19.3.0',
+    // Keep the previous Bun typings as a packed-consumer compatibility check.
     '@types/bun@1.4.2',
   ]);
   const hostedExample = catalog.find(example => example.mode === 'hosted');
