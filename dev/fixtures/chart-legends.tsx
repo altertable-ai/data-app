@@ -77,29 +77,51 @@ createRoot(document.getElementById('root')!).render(
       Switch to dark theme
     </Button>
     <Grid columns={2} minItemWidth="wide">
-      <Example
-        name="Long currency labels"
-        description="Axis labels reserve space for the complete formatted value."
-      >
-        <ComposedChart
-          data={[
-            { label: 'One', value: -100000 },
-            { label: 'Two', value: 200000 },
-          ]}
-          ariaLabel="Long currency labels"
+      {(['compact', 'full'] as const).map(format => (
+        <Example
+          key={format}
+          name={
+            format === 'compact'
+              ? 'Revenue — compact axis'
+              : 'Revenue — full axis'
+          }
+          description="The same revenue data. Hover or use the arrow keys for exact amounts."
         >
-          <ComposedChart.XAxis dataKey="label" />
-          <ComposedChart.YAxis
-            tickFormatter={value =>
-              new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'EUR',
-              }).format(Number(value))
-            }
-          />
-          <ComposedChart.Bar dataKey="value" />
-        </ComposedChart>
-      </Example>
+          <ComposedChart
+            data={[
+              { label: 'Sep 8', value: 183456.78 },
+              { label: 'Sep 9', value: 112345.67 },
+              { label: 'Sep 10', value: 76432.1 },
+              { label: 'Sep 11', value: -52345.89 },
+              { label: 'Sep 12', value: 34210.56 },
+            ]}
+            ariaLabel={`Revenue with ${format} currency ticks`}
+          >
+            <ComposedChart.XAxis dataKey="label" />
+            <ComposedChart.YAxis
+              domain={[-100000, 200000]}
+              ticks={[-100000, 0, 100000, 200000]}
+              tickFormatter={value =>
+                format === 'compact'
+                  ? `${Number(value) < 0 ? '−' : ''}€${Math.abs(Number(value)) / 1000}${Number(value) === 0 ? '' : 'k'}`
+                  : new Intl.NumberFormat('en-US', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    }).format(Number(value))
+              }
+            />
+            <ComposedChart.Tooltip
+              formatter={value =>
+                new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'EUR',
+                }).format(Number(value))
+              }
+            />
+            <ComposedChart.Bar dataKey="value" name="Revenue" />
+          </ComposedChart>
+        </Example>
+      ))}
       <Example
         name="LineChart — many series"
         description="Twelve services with an automatic legend. Inspect aligned columns and the overflow control."
