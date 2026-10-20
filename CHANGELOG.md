@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.73.0](https://github.com/altertable-ai/data-app/compare/v0.72.0...v0.73.0) (2026-10-20)
+
+
+### Features
+
+* **bun:** add a reusable single-file preview runner ([#104](https://github.com/altertable-ai/data-app/issues/104)) ([c6e0093](https://github.com/altertable-ai/data-app/commit/c6e009361a6381daac4a6bd2d3a11310eae8be32))
+* **embed:** support content-sized iframes ([#95](https://github.com/altertable-ai/data-app/issues/95)) ([a93d562](https://github.com/altertable-ai/data-app/commit/a93d5628446c833957f38cb38e29e68383f6e1db))
+* **manifest:** add overrideDataAppManifest() to rewrite declarations in source ([#98](https://github.com/altertable-ai/data-app/issues/98)) ([2a00687](https://github.com/altertable-ai/data-app/commit/2a00687d79e502c10782f4ba8e25fd1f6565759e))
+
 ## [0.72.0](https://github.com/altertable-ai/data-app/compare/v0.71.0...v0.72.0) (2026-10-19)
 
 

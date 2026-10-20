@@ -17,9 +17,9 @@
     "lint:fix": "oxlint --type-aware --fix src"
   },
   "dependencies": {
-    "@altertable/data-app": "0.72.0",
-    "@altertable/data-app-bun": "0.72.0",
-    "@altertable/data-app-react": "0.72.0",
+    "@altertable/data-app": "0.73.0",
+    "@altertable/data-app-bun": "0.73.0",
+    "@altertable/data-app-react": "0.73.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },

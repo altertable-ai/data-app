@@ -621,6 +621,8 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
         react: '19.2.0',
         'react-dom': '19.2.0',
       },
+      // Resolve internal dependencies from this release before it is published.
+      overrides: { '@altertable/data-app': archive('') },
     })
   );
   await rm(join(previewRuntime, 'node_modules'), { recursive: true });

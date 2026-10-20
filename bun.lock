@@ -5,13 +5,13 @@
     "": {
       "name": "data-app-workspace",
       "devDependencies": {
-        "@altertable/data-app": "0.72.0",
-        "@altertable/data-app-bun": "0.72.0",
-        "@altertable/data-app-embed": "0.72.0",
-        "@altertable/data-app-examples": "0.72.0",
-        "@altertable/data-app-manifest": "0.72.0",
-        "@altertable/data-app-react": "0.72.0",
-        "@altertable/data-app-worker": "0.72.0",
+        "@altertable/data-app": "0.73.0",
+        "@altertable/data-app-bun": "0.73.0",
+        "@altertable/data-app-embed": "0.73.0",
+        "@altertable/data-app-examples": "0.73.0",
+        "@altertable/data-app-manifest": "0.73.0",
+        "@altertable/data-app-react": "0.73.0",
+        "@altertable/data-app-worker": "0.73.0",
         "@types/bun": "1.4.3",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
@@ -39,14 +39,14 @@
     },
     "packages/data-app": {
       "name": "@altertable/data-app",
-      "version": "0.72.0",
+      "version": "0.73.0",
       "dependencies": {
         "@internationalized/date": "3.12.4",
       },
     },
     "packages/data-app-bun": {
       "name": "@altertable/data-app-bun",
-      "version": "0.72.0",
+      "version": "0.73.0",
       "dependencies": {
         "@altertable/data-app": "0.72.0",
         "@altertable/lakehouse": "0.4.1",
@@ -60,7 +60,7 @@
     },
     "packages/data-app-embed": {
       "name": "@altertable/data-app-embed",
-      "version": "0.72.0",
+      "version": "0.73.0",
       "dependencies": {
         "@altertable/data-app": "0.72.0",
       },
@@ -73,7 +73,7 @@
     },
     "packages/data-app-examples": {
       "name": "@altertable/data-app-examples",
-      "version": "0.72.0",
+      "version": "0.73.0",
     },
     "packages/data-app-examples/templates/starter-local-data-app": {
       "name": "data-app-starter",
@@ -96,14 +96,14 @@
     },
     "packages/data-app-manifest": {
       "name": "@altertable/data-app-manifest",
-      "version": "0.72.0",
+      "version": "0.73.0",
       "dependencies": {
         "typescript": "5.9.3",
       },
     },
     "packages/data-app-react": {
       "name": "@altertable/data-app-react",
-      "version": "0.72.0",
+      "version": "0.73.0",
       "dependencies": {
         "@altertable/data-app": "0.72.0",
         "@floating-ui/react": "0.27.20",
@@ -123,7 +123,7 @@
     },
     "packages/data-app-worker": {
       "name": "@altertable/data-app-worker",
-      "version": "0.72.0",
+      "version": "0.73.0",
       "devDependencies": {
         "@altertable/data-app-embed": "0.72.0",
       },
