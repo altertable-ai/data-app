@@ -484,7 +484,7 @@ export {
   dataAppRoutes,
   navigationUpdateRoute,
   sqlQueryRoute,
-} from './messages.ts';
+} from '../embed/core/messages.ts';
 export type {
   MessageContext,
   RoutedMessage,
@@ -501,8 +501,8 @@ export type {
   DataQueryRoute,
   NavigationUpdate,
   SqlQueryInput,
-} from './messages.ts';
-export type { TransportResponse } from './bridge.ts';
+} from '../embed/core/messages.ts';
+export type { TransportResponse } from './operation-types.ts';
 
 export {
   annotationDraftRoute,
@@ -511,11 +511,11 @@ export {
   annotationSendRoute,
   annotationUpdateRoute,
   parseDataAppAnnotationDraft,
-} from './annotations.ts';
+} from '../embed/core/annotations.ts';
 export type {
   DataAppAnnotationDraft,
   DataAppAnnotationPresentation,
-} from './annotations.ts';
+} from '../embed/core/annotations.ts';
 
 export {
   numberFilter,

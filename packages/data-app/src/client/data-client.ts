@@ -1,6 +1,5 @@
 import type { DataOperations, Lakehouse } from '../core/contract.ts';
 import { withDimensionSelectors } from '../core/dimension-source.ts';
-import { defineDataQueryRoute, MessageRoutingError } from '../core/messages.ts';
 import type {
   DataQueryBody,
   InputOf,
@@ -12,7 +11,14 @@ import {
 } from '../core/operation.ts';
 import type { IsUnion, KnownRecord } from '../core/queries.ts';
 import { randomUuid } from '../core/uuid.ts';
-import { getDataAppTransport, localFrameBridge } from './iframe.ts';
+import {
+  getDataAppTransport,
+  localFrameBridge,
+} from '../embed/client/iframe.ts';
+import {
+  defineDataQueryRoute,
+  MessageRoutingError,
+} from '../embed/core/messages.ts';
 import { createHttpTransport, DataAppError } from './transport.ts';
 import type { DataTransport } from './transport.ts';
 export type { InputOf, OutputOf } from '../core/operation-types.ts';

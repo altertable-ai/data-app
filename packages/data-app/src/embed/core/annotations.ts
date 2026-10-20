@@ -1,6 +1,5 @@
 import { defineMessageRoute } from './messages.ts';
 
-/** @ignore */
 export type DataAppAnnotationDraft = {
   id: string;
   target: {
@@ -33,7 +32,6 @@ export type DataAppAnnotationDraft = {
   comment: string;
 };
 
-/** @ignore */
 export type DataAppAnnotationPresentation = {
   enabled: boolean;
   /** When provided, the host owns the mode and renders the annotation trigger. */
@@ -86,10 +84,7 @@ function number(value: unknown, positive = false): number {
   return value;
 }
 
-/**
- * Reconstruct at the boundary; discard extra fields and bound the entire JSON payload.
- * @ignore
- */
+/** Reconstruct at the boundary; discard extra fields and bound the entire JSON payload. */
 export function parseDataAppAnnotationDraft(
   value: unknown
 ): DataAppAnnotationDraft {
@@ -218,7 +213,6 @@ export function parseDataAppAnnotationDraft(
   return JSON.parse(JSON.stringify(draft)) as DataAppAnnotationDraft;
 }
 
-/** @ignore */
 export const annotationDraftRoute = /* @__PURE__ */ defineMessageRoute({
   input: parseDataAppAnnotationDraft,
   output(value: unknown): null {
@@ -227,7 +221,6 @@ export const annotationDraftRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 
-/** @ignore */
 export const annotationEditorStateRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): { hasUnsavedChanges: boolean } {
     const input = object(value);
@@ -241,10 +234,7 @@ export const annotationEditorStateRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 
-/**
- * Request host-owned batch submission without transferring ownership of drafts.
- * @ignore
- */
+/** Request host-owned batch submission without transferring ownership of drafts. */
 export const annotationSendRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): null {
     if (value !== null) throw new Error('Invalid annotation send request.');
@@ -256,7 +246,6 @@ export const annotationSendRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 
-/** @ignore */
 export const annotationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): { id: string; comment: string } {
     const input = object(value);
@@ -271,10 +260,7 @@ export const annotationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
   },
 });
 
-/**
- * A controlled shell acknowledges local exits (for example Escape).
- * @ignore
- */
+/** A controlled shell acknowledges local exits (for example Escape). */
 export const annotationModeRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): { active: boolean } {
     const input = object(value);

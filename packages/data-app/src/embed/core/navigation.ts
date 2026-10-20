@@ -1,10 +1,10 @@
-/**
- * App-owned URL state shared by controls, frame adapters, and host navigation.
- * @ignore
- */
+import type { HistoryMode } from '../../core/variables.ts';
+
+export type { HistoryMode } from '../../core/variables.ts';
+
+/** App-owned URL state shared by controls, frame adapters, and host navigation. */
 export type AppLocation = { search: string; hash: string };
-export type HistoryMode = 'push' | 'replace';
-/** @ignore */
+
 export type NavigationUpdate = AppLocation & {
   mode: HistoryMode;
   title?: string;

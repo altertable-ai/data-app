@@ -15,17 +15,13 @@ import {
 import { createAppLocation, type DataAppLocation } from './location.ts';
 import { createMessageClient } from './messages.ts';
 
-/** @ignore */
 export type DataAppNavigation = DataAppLocation & {
   /** Publish URL changes made outside the adapter, including the document title. */
   publish(mode?: HistoryMode): void;
   dispose(): void;
 };
 
-/**
- * Attach app URL behavior to an already authenticated bridge.
- * @ignore
- */
+/** Attach app URL behavior to an already authenticated bridge. */
 export function createDataAppNavigation({
   bridge,
   window: frame = window,
@@ -117,10 +113,7 @@ type NavigationWindow = Window & {
   };
 };
 
-/**
- * URL controls attach navigation on demand; bootstrap and data-only clients do not.
- * @ignore
- */
+/** URL controls attach navigation on demand; bootstrap and data-only clients do not. */
 export function getDataAppNavigation(
   frame: Window = window
 ): DataAppNavigation | undefined {

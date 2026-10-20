@@ -1,6 +1,6 @@
 # @altertable/data-app API reference
 
-Generated from the published type declarations by `bun run build`; do not
+Generated from public source entry points by `bun run build`; do not
 edit. Embedding APIs are excluded. Each of the 365 app-authoring
 exports has one heading line, then one line per prop, option, or field, so one
 search returns everything about a name:
@@ -70,16 +70,7 @@ AnnotationTarget.label: string
 AnnotationTarget.evidence?: WidgetEvidence
 AnnotationTarget.…: plus props inherited from React
 AnnotationTargetProps (type, @altertable/data-app-react): = props listed as AnnotationTarget.*
-AppearanceOptions (type, @altertable/data-app/appearance): App-authored overrides; omitted fields use the package defaults.
-AppearanceOptions.theme?: ThemePreference
-AppearanceOptions.baseColor?: 'neutral' | 'slate' | 'warm' — Palette for surfaces, text, and borders; independent of the accent.
-AppearanceOptions.accentColor?: string — Emphasis color for checked controls and selected dates; options use the base palette.
-AppearanceOptions.darkAccentColor?: string
-AppearanceOptions.chartColors?: string[]
-AppearanceOptions.density?: 'comfortable' | 'compact' | 'spacious'
-AppearanceOptions.cornerRadius?: 'large' | 'medium' | 'none' | 'small'
-AppearanceOptions.elevation?: 'flat' | 'raised' | 'subtle'
-AppearanceOptions.typography?: Partial<{ body: string; heading: string; }>
+AppearanceOptions (type, @altertable/data-app/appearance): = props listed as normalizeAppearance.value.* — App-authored overrides; omitted fields use the package defaults.
 AppearanceSettings (type, @altertable/data-app/appearance)
 AppearanceSettings.theme: ThemePreference
 AppearanceSettings.baseColor: 'neutral' | 'slate' | 'warm' — Palette for surfaces, text, and borders; independent of the accent.
@@ -389,9 +380,7 @@ DataAppStyle.…: plus props inherited from csstype
 DataAppStyleHooks (type, @altertable/data-app-react, @altertable/data-app-react/ui)
 DataAppStyleHooks.data-atbl-focus?: 'group' | 'inset' | 'ring'
 DataAppStyleHooks.data-atbl-control?: 'action' | 'default' | 'help' | 'text'
-DataAppStylesOptions (type, @altertable/data-app-react)
-DataAppStylesOptions.document?: Document — Defaults to the current browser document.
-DataAppStylesOptions.nonce?: string — Nonce permitted by the document's style-src CSP.
+DataAppStylesOptions (type, @altertable/data-app-react): = props listed as injectDataAppStyles.options.*
 DataAppStyleToken (type, @altertable/data-app-react, @altertable/data-app-react/ui): = '--atbl-accent' | '--atbl-accent-subtle' | '--atbl-annotation-accent' | '--atbl-annotation-accent-hover' | '--atbl-annotation-highlight' | '--atbl-annotation-on-accent' | ... 88 more ... | '--atbl-type-widget-size'
 dataAppTitle (function, @altertable/data-app, @altertable/data-app/config): (config: Pick<DataAppConfig, 'title' | 'scope'>): string
 dataAppTitle.config.title: string
@@ -466,9 +455,9 @@ DatasetSuggestionOptions.title: (row: Row) => string
 DatasetSuggestionOptions.description?: ((row: Row) => string)
 DatasetSuggestionOptions.onSelect?: ((row: Row) => void) — Override query completion with an app action.
 DataSourceError (class, @altertable/data-app/contract)
+DataSourceError.queryName?: string
 DataSourceError.reason: 'forbidden' | 'query_rejected' | 'rate_limited' | 'unauthorized' | 'unavailable'
 DataSourceError.status?: number
-DataSourceError.queryName?: string
 DataSourceError.…: plus props inherited from built-in
 DataTable (component, @altertable/data-app-react/ui): (props: DataTableProps) — Scrollable native table. Mark quantitative th/td cells with data-type="number"; the runtime aligns them to the end and uses tabular digits.
 DataTable.searchable?: DataTableSearch
@@ -548,13 +537,11 @@ DateFormat.missing?: string
 DateFormat.kind: 'dateTime' [variant 2 of 2]
 DateFormat.timeZone?: string [variant 2 of 2]
 DateFormat.precision?: 'minute' | 'second' [variant 2 of 2]
-DateFormatOptions (type, @altertable/data-app/format): Formatting for calendar dates and instants without implicit time-zone parsing.
-DateFormatOptions.locale?: string
-DateFormatOptions.missing?: string
+DateFormatOptions (type, @altertable/data-app/format): = props listed as formatDate.options.* — Formatting for calendar dates and instants without implicit time-zone parsing.
 DatePresetId (type, @altertable/data-app-react/ui): = 'day' | 'last-14' | 'last-3' | 'last-30' | 'last-7' | 'last-90' | 'previous-month' | 'previous-week' | 'this-month' | 'this-week'
 DateRange (type, @altertable/data-app-react/ui): = props listed as previousDateRange.options.* — ISO calendar dates; the app operation defines timezone and inclusive bounds.
 DateRangeContract (type, @altertable/data-app/contract)
-DateRangeContract.request: (value: unknown, compare?: boolean | undefined) => DateRangeRequest
+DateRangeContract.request: (value: unknown, compare?: boolean) => DateRangeRequest
 DateRangeContract.parseRequest: (value: unknown) => DateRangeRequest
 DateRangeContract.bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }
 DateRangeContract.parse: (value: unknown) => DateRange
@@ -596,7 +583,7 @@ dateRangeVariable (function, @altertable/data-app-react): (options: DateRangeVar
 dateRangeVariable.options.label?: string
 dateRangeVariable.options.key: string — URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields.
 dateRangeVariable.options.defaultValue: DateRangeSelection & { comparison?: undefined; }
-dateRangeVariable.options.contract: { request: (value: unknown, compare?: boolean | undefined) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { ...; }; }
+dateRangeVariable.options.contract: { request: (value: unknown, compare?: boolean) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { ...; }; }
 dateRangeVariable.options.history?: HistoryMode
 dateRangeVariable.options.comparison?: boolean — Opt into a URL-backed comparison with the preceding equal-length range.
 dateRangeVariable.options.presentation?: VariablePresentation
@@ -621,11 +608,7 @@ DateRangeVariable.resolve: (selection: DateRangeSelection) => DateRange
 DateRangeVariable.previous: (selection: DateRangeSelection) => DateRange | null
 DateRangeVariable.comparisonRange: (selection: DateRangeSelection) => DateRange | null
 DateRangeVariableOptions (type, @altertable/data-app-react): = props listed as dateRangeVariable.options.*
-DateTimeFormatOptions (type, @altertable/data-app/format)
-DateTimeFormatOptions.locale?: string
-DateTimeFormatOptions.missing?: string
-DateTimeFormatOptions.timeZone?: string
-DateTimeFormatOptions.precision?: 'minute' | 'second'
+DateTimeFormatOptions (type, @altertable/data-app/format): = props listed as formatDateTime.options.*
 DateTimeTooltip (component, @altertable/data-app-react): (props: DateTimeTooltipProps) — Exact-time disclosure uses the same reporting zone and locale as other date displays.
 DateTimeTooltip.date: Date
 DateTimeTooltip.timeZone?: string
@@ -648,10 +631,10 @@ defineDataApp.config.description: string — Explain what the app helps readers 
 defineDataApp.config.appearance?: AppearanceOptions — Omit to use the standard appearance.
 defineDataApp.config.dateFormatting?: { locale?: string | undefined; timeZone?: string | undefined; } — Shared date display defaults. Reporting views and individual fields may override the time zone.
 defineDataApp.config.queries: Queries & KnownRecord<Queries> & ('' extends keyof Queries ? never : unknown) & { [Name in keyof Queries]: KnownRecord<Queries[Name]> & { ...; }; } — Named SQL statements with typed parameters and result projections.
-defineDataIdentifiers (function, @altertable/data-app-react): <const Tables extends Record<string, TableIdentifier>, const Columns extends Record<string, ColumnIdentifier<Extract<keyof Tables, string>>>>(options: {…}): { definitions: Readonly<Record<IdentifierId<Tables, Columns>, DataIdentifierDefinition>>; DataIdentifier: ({ id, display }: { ...; }) => Eleme… — Register exact source names once; returned JSX IDs are checked against this registry.
+defineDataIdentifiers (function, @altertable/data-app-react): <const Tables extends Record<string, TableIdentifier>, const Columns extends Record<string, ColumnIdentifier<Extract<keyof Tables, string>>>>(options: {…}): { definitions: Readonly<Record<IdentifierId<Tables, Columns>, DataIdentifierDefinition>>; DataIdentifier: ({ id, display, }: { ...; }) => Elem… — Register exact source names once; returned JSX IDs are checked against this registry.
 defineDataIdentifiers.options.tables: Tables
 defineDataIdentifiers.options.columns: Columns
-defineDateRangeContract (function, @altertable/data-app/contract): (options: DateRangeContractOptions): { request: (value: unknown, compare?: boolean | undefined) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { .… — One source policy for the server parser, URL variable, and displayed reporting period.
+defineDateRangeContract (function, @altertable/data-app/contract): (options: DateRangeContractOptions): { request: (value: unknown, compare?: boolean) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { ...; }; } — One source policy for the server parser, URL variable, and displayed reporting period.
 defineDateRangeContract.options.minDate?: string
 defineDateRangeContract.options.maxDate?: string | (() => string)
 defineDateRangeContract.options.maxRangeDays: number
@@ -1205,7 +1188,7 @@ PresentStory.headerActions?: ReactNode
 PresentStory.footer?: ReactNode
 PresentStory.…: plus props inherited from React
 PresentStoryProps (type, @altertable/data-app-react/ui): = props listed as PresentStory.*
-previousDateRange (function, @altertable/data-app/contract): (options: DateRange): DateRange — The immediately preceding, equally long set of calendar days.
+previousDateRange (function, @altertable/data-app/contract): (options: DateRangeInput): DateRange — The immediately preceding, equally long set of calendar days.
 previousDateRange.options.start: string
 previousDateRange.options.end: string
 QueryDefinitions (type, @altertable/data-app, @altertable/data-app/contract, @altertable/data-app/config): <Record<string, QueryDefinition>> = { readonly [x: string]: QueryDefinition; }
@@ -1255,7 +1238,7 @@ RankingItem.label: ReactNode
 RankingItem.value: number
 RankingItem.detail?: ReactNode
 RankingProps (type, @altertable/data-app-react): = props listed as Ranking.*
-RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>, NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined,…
+RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined, options?: { ..…
 ReportingPeriod (type, @altertable/data-app/contract, @altertable/data-app-react)
 ReportingPeriod.kind: 'rolling' [variant 1 of 2]
 ReportingPeriod.amount: number [variant 1 of 2]

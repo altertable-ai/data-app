@@ -103,13 +103,13 @@ export type { AnnotationTargetProps } from './annotations/AnnotationTarget.tsx';
 
 export { useDataAppAnnotations } from './annotations/useDataAppAnnotations.ts';
 
-export { AnnotationBar } from './annotations/AnnotationBar.tsx';
+export { AnnotationBar } from './embed/AnnotationBar.tsx';
 export type {
   AnnotationBarHandle,
   AnnotationBarProps,
-} from './annotations/AnnotationBar.tsx';
+} from './embed/AnnotationBar.tsx';
 
-export { injectDataAppAnnotationStyles } from './annotations/styles.ts';
+export { injectDataAppAnnotationStyles } from './embed/styles.ts';
 
 export { SectionHeading } from './ui/SectionHeading.tsx';
 export type { SectionHeadingProps } from './ui/SectionHeading.tsx';

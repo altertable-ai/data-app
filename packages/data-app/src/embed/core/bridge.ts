@@ -7,7 +7,7 @@ export const PARENT_PARAM = '__altertable_parent';
  * The host enforces its own limit because frames can send messages directly. */
 export const MAX_PENDING = 128;
 export const REQUEST_TIMEOUT_MS = 60_000;
-export { type TransportResponse } from './operation-types.ts';
+export { type TransportResponse } from '../../core/operation-types.ts';
 
 export function validId(value: unknown): value is string {
   return typeof value === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(value);

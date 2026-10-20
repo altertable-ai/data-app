@@ -6,10 +6,7 @@ import {
   type MessageTransport,
 } from '../core/messages.ts';
 
-/**
- * Both ends validate using the same contracts; the transport owns delivery and cancellation.
- * @ignore
- */
+/** Both ends validate using the same contracts; the transport owns delivery and cancellation. */
 export function createMessageClient<const Routes extends MessageRoutes>(
   routes: Routes,
   transport: MessageTransport

@@ -1,8 +1,8 @@
+import { type Theme } from '../../core/appearance.ts';
 import {
   isAnnotationPresentation,
   type DataAppAnnotationPresentation,
 } from './annotations.ts';
-import { type Theme } from './appearance.ts';
 
 /** Presentation owned by the parent shell, delivered only over a trusted bridge. */
 export type DataAppPresentation = {

@@ -11,12 +11,15 @@ export {
   type DataClient,
   type DataClientOptions,
 } from './data-client.ts';
-export { type DataAppLocation, type AppLocation } from './location.ts';
+export {
+  type DataAppLocation,
+  type AppLocation,
+} from '../embed/client/location.ts';
 export {
   createDataAppNavigation,
   getDataAppNavigation,
   type DataAppNavigation,
-} from './navigation.ts';
+} from '../embed/client/navigation.ts';
 export {
   createHttpTransport,
   DataAppError,
@@ -27,7 +30,7 @@ export {
   installDataAppTransport,
   getDataAppTransport,
   type IframeTransport,
-} from './iframe.ts';
-export { createMessageClient } from './messages.ts';
-export { type DataAppLogger } from '../core/logger.ts';
-export { createAnnotationClient } from './annotations.ts';
+} from '../embed/client/iframe.ts';
+export { createMessageClient } from '../embed/client/messages.ts';
+export { type DataAppLogger } from '../embed/core/logger.ts';
+export { createAnnotationClient } from '../embed/client/annotations.ts';

@@ -13,9 +13,8 @@ import type {
 import { facetSource, type FacetVariable } from './facets.ts';
 import type { NumberFilter, BooleanFilter } from './filters.ts';
 import { invariant } from './invariant.ts';
-import type { HistoryMode } from './navigation.ts';
 import type { IsUnion } from './queries.ts';
-export type { HistoryMode } from './navigation.ts';
+export type HistoryMode = 'push' | 'replace';
 
 export type VariablePresentation = {
   /** Scope changes the included data; display changes its presentation. Defaults to scope. */

@@ -32,20 +32,18 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { AnnotationTooltip } from '../annotations/AnnotationTooltip.tsx';
 import { Button } from '../ui/Button.tsx';
 import { Kbd } from '../ui/Kbd.tsx';
 import { Sheet } from '../ui/Sheet.tsx';
 import { shortcuts } from '../ui/shortcuts.ts';
 import { TooltipProvider } from '../ui/Tooltip.tsx';
-import { AnnotationTooltip } from './AnnotationTooltip.tsx';
 
-/** @ignore */
 export type AnnotationBarHandle = {
   /** Submit through the same guards, pending state, and retry feedback as the Send button. */
   send: () => Promise<void>;
 };
 
-/** @ignore */
 export type AnnotationBarProps = {
   ref?: Ref<AnnotationBarHandle>;
   annotations: readonly DataAppAnnotationDraft[];
@@ -130,10 +128,7 @@ function annotationBarReducer(
   }
 }
 
-/**
- * Host-owned batch controls. Collection changes and agent submission stay with the outer app.
- * @ignore
- */
+/** Host-owned batch controls. Collection changes and agent submission stay with the outer app. */
 export function AnnotationBar({
   ref,
   annotations,

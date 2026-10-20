@@ -5,36 +5,30 @@ import {
   type DataQueryInput,
   type DataQueryBody,
   type OutputOf,
-} from './operation-types.ts';
-import { isQueryParameters, type QueryParameters } from './queries.ts';
+} from '../../core/operation-types.ts';
+import { isQueryParameters, type QueryParameters } from '../../core/queries.ts';
 export {
   type OperationContracts,
   type DataQueryInput,
   type DataQueryBody,
-} from './operation-types.ts';
+} from '../../core/operation-types.ts';
 import { validLocation, type NavigationUpdate } from './navigation.ts';
 export { type NavigationUpdate } from './navigation.ts';
 
-/** @ignore */
 export type MessageContext = { signal: AbortSignal };
-/** @ignore */
 export type RoutedMessage = { route: string; payload: unknown };
-/** @ignore */
 export type MessageDispatcher = (
   message: unknown,
   context: MessageContext
 ) => Promise<unknown>;
-/** @ignore */
 export type MessageTransport = (
   message: RoutedMessage,
   signal?: AbortSignal
 ) => Promise<unknown>;
-/** @ignore */
 export type MessageRoute<Input, Output> = {
   input: (value: unknown) => Input;
   output: (value: unknown, input: Input) => Output;
 };
-/** @ignore */
 export type MessageRoutes = Record<
   string,
   {
@@ -42,11 +36,9 @@ export type MessageRoutes = Record<
     output: (value: unknown, input: never) => unknown;
   }
 >;
-/** @ignore */
 export type MessageInput<Route extends MessageRoutes[string]> = ReturnType<
   Route['input']
 >;
-/** @ignore */
 export type MessageHandlers<Routes extends MessageRoutes> = {
   [Name in keyof Routes]: (
     payload: MessageInput<Routes[Name]>,
@@ -59,10 +51,7 @@ export type MessageHandlers<Routes extends MessageRoutes> = {
 // A bootstrap and its app may bundle independent copies in the same window.
 const errorBrand = Symbol.for('@altertable/data-app/MessageRoutingError');
 
-/**
- * Only these deliberate, public failures cross the message boundary. Other errors stay private.
- * @ignore
- */
+/** Only these deliberate, public failures cross the message boundary. Other errors stay private. */
 export class MessageRoutingError extends Error {
   readonly [errorBrand] = true;
 
@@ -85,17 +74,13 @@ export class MessageRoutingError extends Error {
   }
 }
 
-/** @ignore */
 export function defineMessageRoute<Input, Output>(
   route: MessageRoute<Input, Output>
 ): MessageRoute<Input, Output> {
   return route;
 }
 
-/**
- * Contracts are shared; handlers are supplied by the host and never belong in the app bundle.
- * @ignore
- */
+/** Contracts are shared; handlers are supplied by the host and never belong in the app bundle. */
 export function createMessageRouter<const Routes extends MessageRoutes>(
   routes: Routes,
   handlers: MessageHandlers<NoInfer<Routes>>
@@ -165,12 +150,10 @@ export function createMessageRouter<const Routes extends MessageRoutes>(
   return { dispatch };
 }
 
-/** @ignore */
 export type DataQueryRoute<Operations extends OperationContracts> =
   MessageRoute<DataQueryInput<Operations>, TransportResponse> & {
     operations: Operations | undefined;
   };
-/** @ignore */
 export type MessageOutput<Route extends MessageRoutes[string], Input> =
   Route extends DataQueryRoute<infer Operations>
     ? Input extends { operation: infer Name extends keyof Operations }
@@ -178,10 +161,7 @@ export type MessageOutput<Route extends MessageRoutes[string], Input> =
       : never
     : ReturnType<Route['output']>;
 
-/**
- * Omit contracts only in generic hosts such as the CLI shell, where Bun validates operations.
- * @ignore
- */
+/** Omit contracts only in generic hosts such as the CLI shell, where Bun validates operations. */
 export function defineDataQueryRoute<
   Operations extends OperationContracts = OperationContracts,
 >(operations?: Operations): DataQueryRoute<Operations> {
@@ -262,7 +242,6 @@ export function defineDataQueryRoute<
   };
 }
 
-/** @ignore */
 export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
   input(value: unknown): NavigationUpdate {
     if (!value || typeof value !== 'object')
@@ -289,17 +268,13 @@ export const navigationUpdateRoute = /* @__PURE__ */ defineMessageRoute({
     return null;
   },
 });
-/** @ignore */
 export type SqlQueryInput = {
   statement: string;
   limit: number;
   params?: QueryParameters;
 };
 
-/**
- * SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits.
- * @ignore
- */
+/** SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits. */
 export const sqlQueryRoute = defineMessageRoute({
   input(value: unknown): SqlQueryInput {
     if (!value || typeof value !== 'object')
@@ -356,7 +331,6 @@ export const sqlQueryRoute = defineMessageRoute({
   },
 });
 
-/** @ignore */
 export const dataAppRoutes = {
   'data:query': /* @__PURE__ */ defineDataQueryRoute(),
   'navigation:update': navigationUpdateRoute,
