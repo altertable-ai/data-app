@@ -26,15 +26,13 @@ serveLocalApp({ page, operations, title: 'Activity' });
 The app supplies `index.html` and `operations.ts`. Use `localLakehouse()` inside
 server operations for lakehouse access. Keep credentials on the server.
 
-For single-file previews, use `serveAppFile()` from
-`@altertable/data-app-bun/preview`. Its host is bundled; consumers need no React
-peers. Local serving does not authenticate hosted viewers; use
+Local serving does not authenticate hosted viewers; use
 `@altertable/data-app/server` with per-request authorization for hosted apps.
 
 ## Preview a single-file app
 
-Call `runAppFilePreview()` from `@altertable/data-app-bun/preview` to run a
-CLI preview using the launch environment:
+`runAppFilePreview()` launches a preview from the CLI environment. Run it from the
+project containing the installed, version-matched data-app and React dependencies:
 
 ```fish
 cd /absolute/path/to/installed-preview-project
@@ -45,36 +43,20 @@ set -lx ALTERTABLE_DATA_PROXY_TOKEN your-loopback-proxy-token
 bun -e 'import { runAppFilePreview } from "@altertable/data-app-bun/preview"; await runAppFilePreview()'
 ```
 
-Importing the package has no effect. `runAppFilePreview()` returns the same
-`{ url, stop }` handle as `serveAppFile()`. It prints the URL and source path,
-and stops on SIGINT or SIGTERM. Calling `stop()` closes the preview and removes
-its signal handlers. The runner never calls `process.exit()`; the process can
-exit naturally once its resources are closed.
+The source path must be absolute. `PORT` defaults to 25837; use `0` for an available
+port. The runner resolves data-app and React imports from the working directory,
+prints the preview URL, and stops on SIGINT or SIGTERM. The CLI owns dependency
+installation, profile and scope checks, and the lakehouse proxy.
 
-For explicit options, an injected lakehouse, or caller-owned signal handling,
-use `serveAppFile()` directly.
-
-The process working directory must be the installed preview project. Data-app and
-React imports resolve there, even when the external source file has conflicting
-ancestor `node_modules`.
-
-The preview project needs `@altertable/data-app-bun`, `@altertable/data-app`, `@altertable/data-app-react`,
-`react`, and `react-dom`; use matching exact data-app package versions and the
-starter's lockfile. The examples package is only needed to obtain templates.
-
-`ALTERTABLE_APP_FILE` must be an absolute source file path. `PORT` defaults to
-25837; use `0` for an available port. Stopping releases reload connections and file watchers.
-
-The consuming CLI owns manifest extraction, profile selection and scope checks,
-dependency installation, and the loopback lakehouse proxy. Pass only its proxy URL
-and token to the launcher; profile credentials stay in the CLI. The launcher
-passes the environment to `localLakehouse()` and uses the existing Bun preview
-server for bundling, reload, and query forwarding.
+For explicit options and caller-owned credentials and signal handling, use
+`serveAppFile()` from the same entrypoint. Both functions return `{ url, stop }`.
+Calling `stop()` releases preview resources and any signal handlers the runner
+installed.
 
 ## Documentation
 
 See the [Bun guide](https://github.com/altertable-ai/data-app/blob/main/docs/server-bun.md)
-for operations, credentials, and previews.
+for operations and credentials.
 Use the local template from `@altertable/data-app-examples` at the same version as
 `@altertable/data-app`. Browse the latest [local starter](https://github.com/altertable-ai/data-app/tree/main/packages/data-app-examples/templates/starter-local-data-app).
 
