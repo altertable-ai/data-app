@@ -33,8 +33,8 @@ peers. Local serving does not authenticate hosted viewers; use
 
 ## Preview a single-file app
 
-The Bun-only `@altertable/data-app-bun/preview/cli` entry starts
-`serveAppFile()` from `@altertable/data-app-bun/preview`:
+Call `runAppFilePreview()` from `@altertable/data-app-bun/preview` to run a
+CLI preview using the launch environment:
 
 ```fish
 cd /absolute/path/to/installed-preview-project
@@ -42,23 +42,28 @@ set -lx ALTERTABLE_APP_FILE /absolute/path/to/app.tsx
 set -lx PORT 25837
 set -lx ALTERTABLE_DATA_PROXY_URL http://127.0.0.1:12345
 set -lx ALTERTABLE_DATA_PROXY_TOKEN your-loopback-proxy-token
-bun -e 'await import("@altertable/data-app-bun/preview/cli")'
+bun -e 'import { runAppFilePreview } from "@altertable/data-app-bun/preview"; await runAppFilePreview()'
 ```
+
+Importing the package has no effect. `runAppFilePreview()` returns the same
+`{ url, stop }` handle as `serveAppFile()`. It prints the URL and source path,
+and stops on SIGINT or SIGTERM. Calling `stop()` closes the preview and removes
+its signal handlers. The runner never calls `process.exit()`; the process can
+exit naturally once its resources are closed.
+
+For explicit options, an injected lakehouse, or caller-owned signal handling,
+use `serveAppFile()` directly.
 
 The process working directory must be the installed preview project. Data-app and
 React imports resolve there, even when the external source file has conflicting
-ancestor `node_modules`. Do not use this package's `dist` directory as the
-resolution base: Bun's isolated installs can place it away from the project's
-runtime dependencies.
+ancestor `node_modules`.
 
 The preview project needs `@altertable/data-app-bun`, `@altertable/data-app`, `@altertable/data-app-react`,
 `react`, and `react-dom`; use matching exact data-app package versions and the
 starter's lockfile. The examples package is only needed to obtain templates.
 
 `ALTERTABLE_APP_FILE` must be an absolute source file path. `PORT` defaults to
-25837; use `0` for an available port. Startup prints the preview URL and source
-path. SIGINT and SIGTERM stop the preview and release its reload connections and
-file watchers before exiting.
+25837; use `0` for an available port. Stopping releases reload connections and file watchers.
 
 The consuming CLI owns manifest extraction, profile selection and scope checks,
 dependency installation, and the loopback lakehouse proxy. Pass only its proxy URL

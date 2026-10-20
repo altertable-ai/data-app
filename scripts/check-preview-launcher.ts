@@ -8,10 +8,12 @@ import { chromium } from 'playwright';
 export async function checkPreviewLauncher(runtimeDirectory: string) {
   const sourceDirectory = await mkdtemp(join(tmpdir(), 'data-app-source-'));
   const file = join(sourceDirectory, 'app.tsx');
+  const importRunner =
+    'import { runAppFilePreview } from "@altertable/data-app-bun/preview";';
   const command = [
     process.execPath,
     '-e',
-    'await import("@altertable/data-app-bun/preview/cli")',
+    `${importRunner} await runAppFilePreview();`,
   ];
   let proxied: unknown;
   const proxy = Bun.serve({
@@ -39,6 +41,26 @@ export async function checkPreviewLauncher(runtimeDirectory: string) {
   };
   const browser = await chromium.launch();
   try {
+    const imported = Bun.spawn(
+      [
+        process.execPath,
+        '-e',
+        `${importRunner} if (typeof runAppFilePreview !== 'function') throw new Error('Missing runner');`,
+      ],
+      {
+        cwd: runtimeDirectory,
+        env: {
+          ...environment,
+          ALTERTABLE_APP_FILE: undefined,
+          ALTERTABLE_DATA_PROXY_TOKEN: undefined,
+        },
+        stdout: 'pipe',
+        stderr: 'pipe',
+      }
+    );
+    assert.equal(await imported.exited, 0);
+    assert.equal(await new Response(imported.stdout).text(), '');
+    assert.equal(await new Response(imported.stderr).text(), '');
     // Source-adjacent installations must never override the pinned runtime.
     for (const name of [
       '@altertable/data-app',
@@ -151,6 +173,33 @@ mountDataApp({ app, component: () => <h1>${title}</h1> });`;
         assert.equal(stderr, '', stderr);
       }
     }
+    // A library caller can stop explicitly and retain its own process lifecycle.
+    const stopped = Bun.spawn(
+      [
+        process.execPath,
+        '-e',
+        `${importRunner}
+import assert from 'node:assert/strict';
+const before = ['SIGINT', 'SIGTERM'].map(signal => process.listenerCount(signal));
+const preview = await runAppFilePreview();
+assert(preview.url instanceof URL);
+await preview.stop();
+await preview.stop();
+assert.deepEqual(['SIGINT', 'SIGTERM'].map(signal => process.listenerCount(signal)), before);
+console.log('Caller retained control');
+`,
+      ],
+      {
+        cwd: runtimeDirectory,
+        env: environment,
+        stdout: 'pipe',
+        stderr: 'pipe',
+      }
+    );
+    const stoppedOutput = await new Response(stopped.stdout).text();
+    const stoppedErrors = await new Response(stopped.stderr).text();
+    assert.equal(await stopped.exited, 0, stoppedErrors);
+    assert(stoppedOutput.includes('Caller retained control'));
     for (const [path, message] of [
       [undefined, 'Missing ALTERTABLE_APP_FILE'],
       ['relative.tsx', 'Use an absolute file path'],
@@ -167,7 +216,7 @@ mountDataApp({ app, component: () => <h1>${title}</h1> });`;
       assert(stderr.includes(message), stderr);
     }
     console.log(
-      'Packed preview launcher: rendered external TSX, pinned resolution, proxy SQL, reload, SIGINT/SIGTERM cleanup verified.'
+      'Packed preview launcher: rendered external TSX, pinned resolution, proxy SQL, reload, explicit stop, and SIGINT/SIGTERM cleanup verified.'
     );
   } finally {
     await browser.close();

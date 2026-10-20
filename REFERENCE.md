@@ -1,7 +1,7 @@
 # @altertable/data-app API reference
 
 Generated from the published type declarations by `bun run build`; do not
-edit. Each of the 421 public exports has one heading line, then
+edit. Each of the 422 public exports has one heading line, then
 one line per prop, option, or field, so one search returns everything about a
 name:
 
@@ -1494,6 +1494,7 @@ RetentionChartSeries.points: readonly RetentionChartPoint[]
 RoutedMessage (type, @altertable/data-app/contract)
 RoutedMessage.route: string
 RoutedMessage.payload: unknown
+runAppFilePreview (function, @altertable/data-app-bun/preview): (): Promise<AppFilePreview> — Run a CLI preview using ALTERTABLE_APP_FILE, PORT, and localLakehouse() credentials. Launch from the installed runtime project. stop() also removes signal handlers.
 ScatterChart (component, @altertable/data-app-react/ui): (props: ScatterChartProps) — Independent finite X/Y observations on linear axes that include zero. Negative and constant coordinates are supported.
 ScatterChart.items: readonly ScatterChartItem[]
 ScatterChart.xLabel: string

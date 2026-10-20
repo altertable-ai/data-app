@@ -634,7 +634,9 @@ console.log(MetricWidget, DataAppBridge);\n`
     `import { defineDataApp } from "@altertable/data-app";
 import { createDataHandler } from "@altertable/data-app/server";
 import { localLakehouse } from "@altertable/data-app-bun";
-import { serveAppFile } from "@altertable/data-app-bun/preview";
+import { serveAppFile, runAppFilePreview, type AppFilePreview } from "@altertable/data-app-bun/preview";
+const runner: () => Promise<AppFilePreview> = runAppFilePreview;
+if (typeof runner !== "function") throw new Error("Preview runner is unavailable");
 if (typeof serveAppFile !== "function") throw new Error("Preview export is unavailable");
 if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
