@@ -1,4 +1,4 @@
-import { useDateAxisLabel } from './chart-date-axis.tsx';
+import { useDateAxisLabel, useDateAxisBar } from './chart-date-axis.tsx';
 export { ChartXAxis } from './chart-date-axis.tsx';
 import { formatMetric, formatNumber } from '@altertable/data-app/format';
 import { useContext, useLayoutEffect, type ComponentProps } from 'react';
@@ -69,6 +69,7 @@ function NearestChartDot({
 export function ChartBar<Row = unknown, Value = number | null>(
   props: BarProps<Row, Value>
 ) {
+  useDateAxisBar(props.xAxisId);
   const series = useChartSeries(props.id);
   return (
     <ChartSeries id={series.id}>

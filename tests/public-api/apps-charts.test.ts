@@ -3,6 +3,44 @@ import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 import { readChartImage } from '@/tests/public-api/chart-image';
 
+test('weekly date bars stay clear of Y labels and inside both plot edges', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const plot = page.getByRole('application', {
+    name: 'Weekly cohort bar plot',
+    exact: true,
+  });
+  for (const theme of ['light', 'dark']) {
+    if (theme === 'dark')
+      await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect
+        .poll(async () => {
+          const label = await plot
+            .getByText('3.2k', { exact: true })
+            .boundingBox();
+          const bounds = await plot.boundingBox();
+          const image = await readChartImage(plot);
+          const columns = image.pixels.flatMap((color, index) =>
+            color === 0x8040c0 || color === 0x208040
+              ? [index % image.width]
+              : []
+          );
+          if (!label || !bounds || !columns.length) return false;
+          const scale = image.width / bounds.width;
+          return (
+            Math.min(...columns) / scale >
+              label.x + label.width - bounds.x + 2 &&
+            Math.max(...columns) < image.width - 2
+          );
+        })
+        .toBe(true);
+    }
+  }
+});
+
 test('shared currency semantics produce compact ticks and precise keyboard readings', async ({
   page,
 }) => {

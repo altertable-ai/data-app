@@ -164,6 +164,8 @@ For irregular time intervals, use `<ComposedChart.XAxis>` with ISO dates, zoned
 ISO timestamps, or `Date` values; spacing follows elapsed time. Use `scale="utc"`
 for epoch milliseconds, or `type="category"` to keep date-like labels categorical.
 On UTC axes, supplied `ticks` and `tickFormatter` take precedence over automatic labels.
+Axes with `<ComposedChart.Bar>` reserve half the smallest date interval at both ends
+to keep edge bars inside the plot. An explicit `domain` overrides this spacing.
 Preserve missing measures as `null` and choose `connectNulls` deliberately; do not
 replace missing observations with zero.
 

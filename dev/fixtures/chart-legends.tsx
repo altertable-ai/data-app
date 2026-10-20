@@ -77,6 +77,33 @@ createRoot(document.getElementById('root')!).render(
       Switch to dark theme
     </Button>
     <Grid columns={2} minItemWidth="wide">
+      <Example
+        name="Weekly cohort bars"
+        description="Date bars reserve space at both ends of the time axis."
+      >
+        <ComposedChart
+          ariaLabel="Weekly cohort bar plot"
+          data={[
+            { date: '2026-09-07', returning: 2000, fresh: 1200 },
+            { date: '2026-09-14', returning: 1200, fresh: 1600 },
+            { date: '2026-09-21', returning: 900, fresh: 800 },
+            { date: '2026-09-28', returning: 400, fresh: 700 },
+            { date: '2026-10-05', returning: 500, fresh: 600 },
+            { date: '2026-10-12', returning: 200, fresh: 600 },
+          ]}
+        >
+          <ComposedChart.XAxis dataKey="date" />
+          <ComposedChart.YAxis ticks={[0, 800, 1600, 2400, 3200]} />
+          <ComposedChart.Bar
+            dataKey="returning"
+            stackId="cohort"
+            fill="#8040c0"
+          />
+          <ComposedChart.Bar dataKey="fresh" stackId="cohort" fill="#208040" />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      </Example>
+
       {(['compact', 'full'] as const).map(format => (
         <Example
           key={format}

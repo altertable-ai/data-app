@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useLayoutEffect,
   useState,
   type ComponentProps,
   type ReactNode,
@@ -16,6 +17,8 @@ import { chartTimestamp, timeModel, timeTicks } from './chart-time.ts';
 type LabelFormatter = (value: unknown) => string;
 type ChartDateAxesApi = {
   data: readonly unknown[];
+  barAxes: ReadonlyMap<string | number, number>;
+  registerBar: (id: string | number) => () => void;
   formatters: ReadonlyMap<string | number, LabelFormatter>;
   register: (id: string | number, formatter: LabelFormatter) => () => void;
 };
@@ -43,11 +46,31 @@ export function ChartDateAxes({
     },
     []
   );
+  const [barAxes, setBarAxes] = useState<ReadonlyMap<string | number, number>>(
+    () => new Map()
+  );
+  const registerBar = useCallback((id: string | number) => {
+    setBarAxes(current => new Map(current).set(id, (current.get(id) ?? 0) + 1));
+    return () =>
+      setBarAxes(current => {
+        const next = new Map(current);
+        const count = (next.get(id) ?? 1) - 1;
+        if (count) next.set(id, count);
+        else next.delete(id);
+        return next;
+      });
+  }, []);
   return (
-    <ChartDateAxesContext.Provider value={{ data, formatters, register }}>
+    <ChartDateAxesContext.Provider
+      value={{ data, formatters, register, barAxes, registerBar }}
+    >
       {children}
     </ChartDateAxesContext.Provider>
   );
+}
+export function useDateAxisBar(id: string | number = 0) {
+  const registerBar = useContext(ChartDateAxesContext)?.registerBar;
+  useLayoutEffect(() => registerBar?.(id), [registerBar, id]);
 }
 export function useDateAxisLabel(id: string | number = 0) {
   return useContext(ChartDateAxesContext)?.formatters.get(id);
@@ -125,7 +148,7 @@ export function ChartXAxis<Row = unknown, Value = string | number | Date>(
       {...xAxisDefaults}
       scale="utc"
       domain={
-        model.start === model.end
+        model.start === model.end || context?.barAxes.has(id)
           ? [
               model.start - model.minimumInterval / 2,
               model.end + model.minimumInterval / 2,
