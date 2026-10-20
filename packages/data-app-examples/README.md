@@ -1,8 +1,6 @@
 # @altertable/data-app-examples
 
-Canonical starter templates for Altertable data apps, shared by the CLI and
-app authors. Templates use the published runtime packages and ship as editable
-source files. This package has no runtime dependencies.
+Editable starter templates for app authors and scaffolding tools.
 
 ## Use from scaffolding tools
 
@@ -12,16 +10,10 @@ import { copyExample } from '@altertable/data-app-examples';
 await copyExample('starter-local-data-app', destination);
 ```
 
-`dataAppExamples` supplies stable IDs, titles, descriptions, and execution modes
-for tools that present a starter picker. Use the ID directly when the starter is
-already known.
-`copyExample()` copies the starter and restores `_gitignore` to `.gitignore`
-(npm excludes `.gitignore` from published archives). The destination must not
-exist. Keep project naming, destination checks, and dependency installation
-in the consuming tool. Generated apps do not depend on this package.
-
-`getExampleDirectory()` returns an absolute source path for tools that need to
-inspect templates. Both functions reject unknown IDs.
+Use `dataAppExamples` for a starter picker and `getExampleDirectory()` to inspect
+a template. `copyExample()` requires a new destination and restores `.gitignore`.
+The caller owns naming and dependency installation; generated apps do not depend
+on this package.
 
 ## Starters
 
@@ -30,9 +22,8 @@ inspect templates. Both functions reject unknown IDs.
 | `starter-data-app`       | [Hosted single-file app](templates/starter-data-app/index.tsx)            |
 | `starter-local-data-app` | [Local Bun and React project](templates/starter-local-data-app/README.md) |
 
-Pin this package to an exact version in the CLI. Its version follows the runtime
-packages, and the local starter pins compatible dependencies to the same release.
-The SDK authoring guides and API reference ship in `@altertable/data-app`.
+Pin to the same exact version as `@altertable/data-app`. Authoring guides and
+API reference ship in that base package.
 
 ## License
 

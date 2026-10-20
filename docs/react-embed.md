@@ -1,13 +1,8 @@
 # React embedding
 
-Import `<DataAppBridge>` from `@altertable/data-app-embed/react`. This entry depends
-on React and the embedding engine, and does not load the app's widgets, React
-Query, or CSS. `@altertable/data-app-react` builds the UI inside the iframe;
-neither package imports the other. Both use the base package's contracts.
-
-The bridge owns iframe setup and `postMessage()` communication. The consuming
-frontend or CLI owns its shell: fetching a bundle, subscriptions, layout, loading
-and error UI, and retry controls. Both hosts use the same bridge and transport.
+Import `<DataAppBridge>` from `@altertable/data-app-embed/react`.
+The bridge owns iframe setup and communication. The host owns bundle fetching,
+layout, loading/error UI, and retry controls.
 
 ## Source-managed iframe
 
@@ -58,10 +53,8 @@ bridge's React `key` to retry with a fresh frame. Handler changes use the latest
 callbacks without resetting the session. `startupTimeoutMs`, `onStatusChange`, and
 `onDiagnostic` have the same meaning as in the framework-neutral API.
 
-`iframeProps` forwards presentation and accessibility attributes to the iframe,
-including `className`, `style`, and `hidden`. The bridge controls `src`, `srcDoc`,
-`sandbox`, `referrerPolicy`, `loading`, and the callback ref. Loading is always
-`eager` so an iframe hidden until ready can start. Supply `title` directly.
+Use `iframeProps` for styling, visibility, and accessibility attributes; supply
+`title` directly. The bridge owns source, sandbox, loading, and ref attributes.
 
 ## Host-owned iframe
 
@@ -87,18 +80,8 @@ function Host() {
 }
 ```
 
-The app supplies `appUrl` and `router`. A callback ref lets the bridge observe late
-mounting and replacement; listeners attach to the iframe's owner document. This
-mode renders nothing and handles delivery only. Use source mode for bundle
-loading, sandbox policy, token rotation, and startup timeout. The two prop modes
-are mutually exclusive.
-
-## Loading an embedded app
-
-The host owns loading and generation UI while an app starts. Use a neutral
-status that does not imply a particular app layout. `@altertable/data-app-embed/react` remains
-independent of UI components and styles. Once the app loads, its query and
-widget loading states describe the content they replace.
+Supply `appUrl` and `router`. A callback ref tracks iframe mounting and
+replacement. This mode renders nothing; the host owns loading and security policy.
 
 ## Parent-owned presentation
 

@@ -4,24 +4,16 @@ Follow the [shared authoring flow](app-authoring.md) using [index.tsx](app-autho
 one file with public package imports; omit server files, HTML, credentials, and
 relative or app-alias imports.
 
-Declare the app once at module scope with the named `defineDataApp` import from
-`@altertable/data-app`. Prefer `const app = defineDataApp({ ... })`; import aliases
-and any variable name are allowed. Export only for other modules.
+Declare `const app = defineDataApp({ ... })` once at module scope using the
+named import from `@altertable/data-app`.
 
 Keep the argument literal: objects, arrays, strings (including templates without
 interpolation), finite signed numbers, booleans, and null. Parentheses, `as`, and
 `satisfies` are allowed. Keep executable composition outside the call; omit spreads,
 computed keys, references, and callbacks. Static apps use `queries: {}`.
-TypeScript checks configuration shape. Static extraction reads the literal data
-without executing app code or interpreting SQL.
 
-Replace the sample app declaration, operations, filters, data context, CSV export, and story with
-an exploration of the source data you inspected. The starter uses two SQL
-`VALUES` rows, so it needs no production table.
-
-`defineDataApp()` requires `scope`, and `<DataApp>` from `/react` requires
-`story` and `datasets`; the [API reference](../REFERENCE.md) marks every
-optional prop with `?`.
+Replace sample queries and bindings with inspected source data. Supply `scope`
+in `defineDataApp()` and `story` and `datasets` on `<DataApp>`.
 
 For execution details, see [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps).
 

@@ -2,8 +2,6 @@
 
 If dependencies are installed, read `node_modules/@altertable/data-app/AGENTS.md`
 first. Otherwise, read the [version-matched SDK instructions](https://github.com/altertable-ai/data-app/blob/v0.72.0/AGENTS.md). <!-- x-release-please-version -->
-Then use the app files below. Browse the latest
-[SDK instructions](https://github.com/altertable-ai/data-app/blob/main/AGENTS.md) on GitHub.
 
 | Task                                     | App-owned files                                          |
 | ---------------------------------------- | -------------------------------------------------------- |
@@ -16,11 +14,7 @@ Then use the app files below. Browse the latest
 
 See [README.md](README.md) for setup and checks.
 
-## Focused guidance
-
-Read the SDK's `docs/app-authoring.md` before changing the app, and search its
-`REFERENCE.md` for props and signatures. Use the installed package when available;
-otherwise follow these files in the same version tag as the instructions above. Follow their task routes for views, variables, widgets, evidence,
-and stories/export. Prefer generated controls and bound readings; keep static
-context visible during requests. Update this app's instructions when a reusable
-app-specific convention changes. Package internals remain dependencies.
+Read the SDK's `docs/app-authoring.md` and follow its task routes. Search
+`REFERENCE.md` for props and signatures. Use installed guides when available;
+otherwise use the version tag linked above. Keep this file for reusable app-specific
+conventions.

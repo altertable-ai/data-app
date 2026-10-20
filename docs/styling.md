@@ -1,18 +1,14 @@
 # Styling
 
-Use components and typed props first: `<Stack>` for sections, `<Grid>` for peers,
-and `<TextContent>` for prose. Standard widgets use [views and bindings](widgets.md);
-custom controls and direct widget shells use [`@altertable/data-app-react/ui`](ui.md).
-
-Configure theme, palette, accent, typography, density, radius, and elevation through
-`app.appearance`; see [appearance](formatting-and-appearance.md). Call
-`injectDataAppStyles()` before mounting. Use one `<DataApp>` per document.
+Use components and typed props first. Configure appearance once through
+`app.appearance`; see [formatting and appearance](formatting-and-appearance.md).
+Call `injectDataAppStyles()` before mounting and use one `<DataApp>` per document.
 
 ## Customize
 
-Add app-owned classes through `className`. Render package components rather than copying their classes onto markup;
-private descendants are not customization hooks. Public names and stable roots
-are listed in the [typed contract](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-react/src/style-contract.ts).
+Add app-owned classes through `className` and override public tokens. Render
+package components; do not copy their classes or select private descendants.
+Public hooks are listed in the [style contract](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-react/src/style-contract.ts).
 
 ```css
 .app-action {
@@ -21,18 +17,14 @@ are listed in the [typed contract](https://github.com/altertable-ai/data-app/blo
 }
 ```
 
-Type inline token overrides with `DataAppStyle`. Give optional tokens a `var()`
-fallback in app CSS. Use `:root` for shared theme overrides, including menus and overlays.
-Prefer `app.appearance` for brand and chart colors. When overriding accent tokens,
-choose a contrasting foreground too. Keep text inputs at least 16px on mobile.
-
-Menus and selection dropdowns share `--atbl-dropdown-padding`,
-`--atbl-dropdown-item-padding-block`, `--atbl-dropdown-item-padding-inline`, and
-`--atbl-dropdown-item-gap`. Their default padding follows the control density.
+Type inline overrides with `DataAppStyle`. Give optional tokens a `var()` fallback.
+Use `:root` for overrides shared with menus and overlays. Prefer `app.appearance`
+for brand and chart colors; pair accent overrides with a contrasting foreground.
+Keep text inputs at least 16px on mobile.
 
 ## Native controls
 
-Use package controls when possible. For a custom native control:
+Prefer package controls. For a custom native control:
 
 ```tsx
 <button type="button" data-atbl-control="action" data-atbl-focus="ring">
@@ -40,6 +32,5 @@ Use package controls when possible. For a custom native control:
 </button>
 ```
 
-These hooks provide cursor and focus styling; keep accessible names, disabled
-state, and keyboard behavior. See
-[UI quality](ui-quality.md) for rendered verification.
+These hooks style cursor and focus. Supply accessible names, disabled state, and
+keyboard behavior, then verify [UI quality](ui-quality.md).

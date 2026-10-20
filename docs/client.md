@@ -23,14 +23,9 @@ The default endpoint is `/api/data`. Override it with
 implementation. Calls POST JSON to `/api/data/:operation`; the client sends
 operation inputs rather than SQL or credentials.
 
-`DataResponse` contains `data`, the exact request `input`, `requestId`,
-`queriedAt`, `queryIds`, and executed `queries`. Use the returned input when labeling stale data during a refresh.
-HTTP and iframe delivery validate the success envelope: data, request ID,
-query timestamp, query IDs, and optional query evidence. Malformed responses
-reject with `invalid_response`.
-
-`DataAppError` exposes a `code` and optional `requestId`; cancellation follows
-the supplied abort signal.
+Use response `data` for results and `input` for their scope, including during
+refresh. `DataAppError` exposes a public `code` and optional `requestId`.
+Pass an abort signal for cancellation.
 
 See [contracts](contract.md), [server handlers](server.md), and
 [React bindings](react.md).
@@ -52,22 +47,13 @@ const client = createDataClient({
 const response = await client.query('connection', {});
 ```
 
-The client runs input parsing and operation logic in the browser.
-Operation policy bounds rows, duration, and response size and records query evidence. Each query sends `{ statement, limit, params? }`
-to the installed iframe bridge's `data:sql` route; the host needs no operation
-registry. Results include query evidence. Credentials remain backend-owned.
+Operations run in the browser and query through the host's `data:sql` route.
+The trusted bootstrap installs the bridge before app execution. A custom runtime
+must install it first or supply an authorized `lakehouse` adapter.
 
-The trusted bootstrap installs the bridge for bundle apps. A custom runtime must
-install it before querying. An explicit `lakehouse` can supply another authorized
-adapter, including `bridge.lakehouse` or a local server adapter. `operations` cannot
-be combined with `transport`, `endpoint`, or `fetch`; a `lakehouse` requires
-`operations`. The exported `DataClientOptions` union rejects mixed configurations
-at compile time. Omitting `operations` preserves named HTTP/iframe operation delivery.
-
-The host must implement and authorize the [SQL route](embed.md#sql-query-route).
-Browser policies improve app behavior; backend access and resource limits must be
-enforced independently because a frame can forge requests. Cancellation reaches
-the host through the existing bridge cancellation protocol.
+Do not combine `operations` with `transport`, `endpoint`, or `fetch`. Browser
+policy bounds app requests; the [host SQL handler](embed.md#sql-query-route)
+must independently enforce access and resource limits.
 
 ## Iframe transport
 
@@ -110,13 +96,9 @@ const messages = createMessageClient(routes, bridge.request);
 const result = await messages.request('demo:echo', 'hello', { signal });
 ```
 
-The app supplies shared `routes` and optional `signal`. Both client and host
-validate messages. The bridge retains opaque host state through `snapshot()` and
-`subscribe(listener)`; only authenticated, current-session state reaches subscribers.
-It never changes browser history or interprets the host state.
-A framework-neutral UI whose layout follows its content calls
-`bridge.supportContentSizing()` so a parent can [size the iframe to it](embed.md#content-sizing);
-the returned function withdraws that support.
+The app supplies shared `routes` and optional `signal`. For a framework-neutral
+UI that supports [content sizing](embed.md#content-sizing), call
+`bridge.supportContentSizing()` and use its returned cleanup function.
 
 ## App navigation
 
@@ -134,25 +116,7 @@ navigation.publish('replace');
 navigation.dispose();
 ```
 
-The adapter provides `snapshot()`, `subscribe()`, and `update()`. Opaque sandboxes keep
-search/hash in memory; URL frames preserve their URL and local-preview parent
-marker. Host Back/Forward state is applied without publishing it back.
-
-`getDataAppNavigation()` discovers an installed or verified local-preview bridge
-and shares one adapter per document. React mounting and URL-backed controls call
-it automatically. Apps that only use data delivery do not attach navigation.
-
-## Pending request limits
-
-Each iframe bridge accepts at most 128 unresolved requests, including requests
-waiting for the connection handshake. Further calls reject with `bridge_busy`
-until a pending call completes, is cancelled, or times out. This bounds the
-client's promises, timers, and queued messages.
-
-Hosts enforce their own request limits independently of the client.
-
-A failed local-preview verification can be retried by the next explicit data
-request. Concurrent callers share the current verification attempt; aborting
-one caller does not cancel the others. Retrying does not automatically repeat
-a data operation or bypass the configured parent-origin check, and verification
-failure never falls back to untrusted iframe or HTTP delivery.
+The adapter owns search/hash synchronization with host Back/Forward navigation.
+Opaque frames keep location in memory. `getDataAppNavigation()` discovers and
+shares the installed adapter; React mounting and URL-backed controls attach it
+automatically. Dispose a manually created adapter before removing its transport.

@@ -1,36 +1,14 @@
 # Stories and CSV export
 
-Every `<DataApp>` from `@altertable/data-app-react` supplies both `story` and `datasets`, derived from
-the displayed snapshot. Story and export selectors do not run before a result is available.
-Setup and static screens use `<DataApp>` from `@altertable/data-app-react/ui`; they may omit both
-or pass a direct `CsvExport` object.
+Supply `story` and `datasets` on `<DataApp>` from `@altertable/data-app-react`.
+Both use the displayed snapshot, including during refresh or failure. Before a
+result is available, the toolbar actions stay visible and disabled.
+Setup and static screens use `<DataApp>` from `/ui` and may omit both.
 
 ## Present data with stories
 
-Set `story` on `<DataApp>` to enable **Present story** in the toolbar.
-For custom shells, `@altertable/data-app-react/ui` provides `<PresentStory>`; see [direct UI composition](ui.md). Start from the [data app starter](app-authoring.md#use-release-matched-starters).
-
-Return one to four findings with a headline, a visual, and registered source
-evidence. Set `evidence` to the registered dataset or metric binding. The app
-validates that every finding belongs to its view.
-
-The callback receives the displayed source and its original input, including
-during refresh or failure. Derive the story from that snapshot so it agrees with
-the visible exploration. Initial loading, empty results, and initial errors have
-no story to present; the toolbar keeps its story action visible and disabled.
-
-## Export displayed data as CSV
-
-Select all distinct named datasets from the displayed snapshot. One dataset downloads directly as CSV. Multiple
-datasets offer individual CSV downloads and **Export all** as a ZIP archive.
-While no displayed snapshot is available, the export action stays visible and disabled.
-
-Declare [datasets](widgets.md#declare-datasets-and-metrics) once and pass
-`datasets={[countries, otherDataset]}` to `<DataApp>`. The toolbar
-exports those datasets with raw values and a safe filename derived from the
-displayed scope. List every distinct dataset the app shows.
-
-Reuse bound metrics in story visuals:
+Return one to four findings with a headline, visual, and registered dataset or
+metric as `evidence`. Reuse bindings and derive scope from the snapshot:
 
 ```tsx
 story={snapshot => {
@@ -45,8 +23,16 @@ story={snapshot => {
 }}
 ```
 
-Use the [format helpers](formatting-and-appearance.md) for story prose.
+Use the [format helpers](formatting-and-appearance.md) in prose. Custom shells
+can use `<PresentStory>` from `/ui`; see [direct composition](ui.md).
 
-Dataset accessors return raw values; do not preformat numbers as display
-labels. Null and undefined become empty cells, while measured zero stays zero.
-The helpers handle quoting and spreadsheet formula protection.
+## Export displayed data as CSV
+
+Declare [datasets](widgets.md#declare-datasets-and-metrics) once and pass
+`datasets={[countries, otherDataset]}`. Include every distinct displayed dataset
+at its displayed grain; reuse a dataset for visuals sharing the same rows.
+
+One dataset downloads as CSV; multiple datasets offer individual downloads and
+**Export all** as ZIP. Filenames use the displayed scope. Accessors must return
+raw values: null and undefined export as empty cells, and measured zero stays
+zero. Export handles quoting and spreadsheet formula protection.

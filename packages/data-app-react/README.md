@@ -44,16 +44,12 @@ Use the main entry for declared views, bound widgets, and layouts; `/ui` support
 setup screens, static content, and custom composition. Install styles explicitly
 with `injectDataAppStyles()`.
 
-To embed an app in a React host, use `@altertable/data-app-embed/react`. These
-packages do not depend on each other: this package builds the app UI; the embed
-package manages its host iframe.
+To host an app iframe, use `@altertable/data-app-embed/react`.
 
 ## Documentation
 
 See the [React guide](https://github.com/altertable-ai/data-app/blob/main/docs/react.md)
 for apps with queries, filters, and bound widgets.
-Use the hosted template from `@altertable/data-app-examples` at the same version as
-`@altertable/data-app`. Browse the latest [single-file starter](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx).
 
 ## License
 

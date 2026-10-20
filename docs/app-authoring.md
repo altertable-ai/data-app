@@ -1,143 +1,65 @@
 # Author a data app
 
-Build an exploration that answers the user's question and a story that presents
-its strongest findings. Include CSV export so users can take the displayed
-results into their own tools. Exploration, export, and story use the same
-queries, definitions, and evidence.
+Build an exploration that answers the user's question, a story of its strongest
+findings, and CSV export of its displayed datasets.
 
 ## Inspect the data
 
-Declare the query source of truth with `defineDataApp()`. Generate
-operations with `dataApp.defineOperation()` and execute queries by
-name with parameter values. When a query registry is supplied, use only its queries
-and preserve its SQL. Otherwise, inspect the data and declare the queries the app needs.
-Declare inspected result aliases in `projections` and derive displays, exports,
-and findings from the typed rows. See [named queries](contract.md#execute-named-queries).
+Inspect relevant tables, fields, time coverage, and definitions. Establish the
+population, grain, units, ordering, and missing or incomplete observations.
+When supplied a query registry, use its queries and preserve its SQL. Otherwise,
+declare the queries the app needs with `defineDataApp()`. Declare typed `params`
+and `projections`, then derive operations from `query()` rows; see
+[contracts](contract.md).
 
-Inspect the relevant catalogs, tables, and fields, their time coverage, and
-existing definitions. Choose a question the available data can answer.
+## Plan the exploration
 
-## Compose the exploration
+Choose the analytical sequence before the widgets. Lead with a supported finding
+and visible scope. Give every chart, table, filter, and explanation a purpose;
+see [composition](composition.md) and [visualization selection](widgets.md#choose-a-visualization).
 
-Plan the question, analytical sequence, and role of each display before choosing
-components. Follow [Compose an exploration](composition.md) to connect filters,
-widgets, layout, and narrative into a coherent investigation, then distill its
-supported findings into a story.
+## Use release-matched starters
 
-## Choose the visualizations
+Install `@altertable/data-app-examples` at the same exact version as
+`@altertable/data-app` and use its installed templates:
 
-Before implementing queries and rendering, identify the question each visual
-answers, [choose its component](widgets.md#choose-a-visualization), and establish
-the required result shape: population, grain, units, ordering, and observation
-status. Prefer a specialized chart when its semantics fit. Check the component's
-input contract before reducing results to generic labels and values; preserve
-supplied query definitions when adapting their results.
+| App                     | Template in `node_modules/@altertable/data-app-examples/templates/` | Guide                                   |
+| ----------------------- | ------------------------------------------------------------------- | --------------------------------------- |
+| Hosted / remote / cloud | `starter-data-app/index.tsx`                                        | [Single-file authoring](hosted-apps.md) |
+| Local                   | `starter-local-data-app`                                            | [Local authoring](local-data-apps.md)   |
+
+Copy the local starter with `copyExample()` to restore its `.gitignore`; see the
+examples package README. Replace sample queries and connectivity screens with
+an exploration of inspected data.
 
 ## Build the exploration
 
-Choose the execution path:
+1. Define operations, a [view](views.md), and reusable [datasets and metrics](widgets.md#declare-datasets-and-metrics).
+2. Expose useful query parameters as [filters](variables.md). Use a date filter
+   for time exploration or a fixed period for a historical snapshot. Keep protected
+   parameters such as `orgId` in the host/backend.
+3. Register [sources, definitions, and evidence](data-context.md).
+4. Compose bound widgets with the [standard layout](layout.md). Render the title,
+   instructions, and static explanations immediately; load only dynamic content.
+5. Supply [story and CSV export](stories-and-export.md) through the built-in
+   toolbar. Reuse datasets when several visuals show the same rows.
+6. Apply [formatting](formatting-and-appearance.md) and [styling](styling.md)
+   through public APIs.
 
-| App                                | Guide                                   |
-| ---------------------------------- | --------------------------------------- |
-| Data app (hosted / remote / cloud) | [Single-file authoring](hosted-apps.md) |
-| Local data app                     | [Local authoring](local-data-apps.md)   |
+Use sections for related questions, app tabs for distinct analytical questions,
+and widget `views` for alternate representations of one dataset. Keep related
+results in one declared view; use independent views and `<DataSection>` boundaries
+only for separate requests. Keep each filter's scope clear across tabs.
 
-### Use release-matched starters
-
-Install `@altertable/data-app-examples` at the same exact version as
-`@altertable/data-app`. Use its installed templates when authoring an app:
-
-- Hosted app: `node_modules/@altertable/data-app-examples/templates/starter-data-app/index.tsx`.
-- Local app: `node_modules/@altertable/data-app-examples/templates/starter-local-data-app`.
-  Use `copyExample()` from the examples package to copy the local starter and
-  restore its `.gitignore`; see the installed examples package's README.
-
-Browse the latest [hosted starter](https://github.com/altertable-ai/data-app/blob/main/packages/data-app-examples/templates/starter-data-app/index.tsx)
-and [local starter](https://github.com/altertable-ai/data-app/tree/main/packages/data-app-examples/templates/starter-local-data-app)
-on GitHub. These browsing links track `main`; the installed templates match your SDK release.
-
-### Compose the app
-
-Lead with a supported finding and expose the relevant fields as filter variables. Use a date filter for questions worth exploring over time,
-or a fixed period snapshot for a deliberate historical analysis.
-
-Use relevant user-controlled query parameters as app filters. Map filter values to
-declared parameters through operation inputs, and reuse query defaults when they
-match the initial selection. One filter may supply several parameters, such as a
-date range supplying `start` and `end`. Keep protected parameters, such as `orgId`,
-and internal execution settings out of filter controls.
-
-Register inspected tables and fields with `defineDataIdentifiers()` and use
-`<DataIdentifier>` when naming sources. Register terms and query evidence so
-users can inspect the source of each claim.
-
-Connect visualizations with introductions and explanations. Use `<TextWidget>`
-for a narrative panel with the standard widget frame, or `<TextContent>` for
-borderless prose. Render the app title, description, and instructions immediately. Use metric and dataset
-bindings for dynamic values and `<DataValue>` for values within static prose.
-Skeletonize only the content that needs data. Reuse bindings and the displayed
-source in narrative so values, formatting, and evidence follow filter changes,
-refresh, and failure.
-
-| Task                                             | Documentation                                                     |
-| ------------------------------------------------ | ----------------------------------------------------------------- |
-| Choose components, CSS tokens, and styling hooks | [Styling](styling.md)                                             |
-| Define queries, inputs, and typed results        | [Operations](contract.md)                                         |
-| Build views, filters, and request states         | [Views](views.md)                                                 |
-| Introduce and explain visualizations             | [Narrative text](widgets.md#narrative-text)                       |
-| Find formatters and presentation helpers         | [App helpers](formatting-and-appearance.md)                       |
-| Register source names                            | [Source identifiers](data-context.md#register-source-identifiers) |
-| Choose date and field filters                    | [Filter variables](variables.md)                                  |
-| Handle refresh and stale results                 | [Displayed results](views.md#preserve-displayed-results)          |
-| Export displayed data as CSV                     | [CSV export](stories-and-export.md#export-displayed-data-as-csv)  |
-| Render widgets and custom visuals                | [Widgets](widgets.md)                                             |
-| Bind definitions and source evidence             | [Data context](data-context.md#bind-evidence)                     |
-| Look up props, signatures, and types             | [API reference](../REFERENCE.md)                                  |
-
-Declare reusable [datasets and metrics](widgets.md#declare-datasets-and-metrics)
-on the view so tables, exports, and stories share values and evidence.
-
-Every data app supplies a [story and CSV export](stories-and-export.md)
-from the displayed result. Export all distinct datasets at their displayed grain;
-reuse a dataset when several visuals derive from the same rows. Present the
-findings that answer the user's question, rather than every row or chart.
-Use the [standard layout](layout.md) and built-in toolbar actions.
-
-### Organize the exploration
-
-Use sections for a focused question and for findings users should compare
-side by side. Add app-level `<Tabs>` from `@altertable/data-app-react/ui` when the exploration has
-distinct analytical questions, such as Overview, Retention, and Segments, each
-with its own context and group of widgets. Lead with the most useful overview
-and label tabs by the question or subject they explore.
-
-Use `<VisualizationWidget>`'s `views` for alternate representations of the same
-dataset, such as a chart and its rows. Keep these choices within the widget;
-use filter variables when the user is changing the data scope.
-
-Navigation tabs, widget views, and declared data views have different roles.
-A declared view owns inputs, requests, and displayed results; a tab does not
-require a separate data view. Keep related datasets in one view for a coherent
-snapshot. Use independent views and `<DataSection>` boundaries when content
-needs separate requests. Keep filter placement consistent across tabs and make
-each filter's scope clear. Derive findings, story, and export from the displayed
-results and their inputs.
+Keep credentials, authorization, and enforced query limits in the host/backend.
+Edit app-owned files; installed packages are dependencies.
 
 ## Verify the app
 
-Follow the [UI quality contract](ui-quality.md) for hierarchy, responsive
-composition, typography, and control states.
-
-Verify that each visual answers its intended question and preserves the source
-population, units, ordering, and missing or incomplete observations. Check
-findings against the source and the user's question. Distinguish measured
-zero, unavailable values, and empty results. Check filters, refresh, loading,
-empty, error, and stale states, then present the story. Download CSV from the
-standalone and embedded toolbar and verify its filename, columns, raw values,
-and filter scope against the displayed result. Export and Present story must be
-available once results are shown; initial loading, empty, and initial
-errors keep both actions visible and disabled. Inspect both experiences
-at phone and desktop widths in light and dark themes.
-
-Keep credentials, authorization, and enforced query limits in the host/backend.
-Edit app-owned files; installed package files are dependencies.
+- Check findings and visuals against the source population, units, ordering,
+  coverage, and user question. Distinguish zero, missing values, and empty results.
+- Exercise filters, refresh, loading, empty, error, and stale states. Scope labels,
+  story, and export must agree with the displayed result.
+- Download CSV and present the story in standalone and embedded use. Check CSV
+  columns, raw values, filename, and filter scope.
+- Check phone and desktop widths in both themes; follow [UI quality](ui-quality.md).

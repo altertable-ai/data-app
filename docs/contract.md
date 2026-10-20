@@ -65,11 +65,8 @@ with `"unitPrice"` above.
 Determine nullability from the schema and SQL, even when sampled rows contain no
 nulls. Update projections when changing SQL.
 
-`query()` converts result cells to the declared types before `run()` uses them.
-Numbers that cannot be converted become `"##ERROR##"`; booleans use JavaScript
-truthiness. Nulls pass through unless `nullable: false`. Parameters are validated
-without conversion. For exact numeric precision, return SQL text
-and declare `string`.
+`query()` converts cells to declared types. For exact numeric precision, return
+SQL text and declare `string`.
 
 Results include query evidence; use `products.queryNames` with `createDataContext()`
 to bind it. The host/backend enforces data access and limits; see
@@ -125,15 +122,10 @@ const router = createMessageRouter(routes, {
 });
 ```
 
-The app defines `parseString()` to validate unknown values. `router.dispatch()` checks
-registered routes, input, output, and cancellation. `MessageRoutingError` exposes
-an intentional public code, message, and optional request ID; other handler
-errors are replaced with a generic failure.
+The app supplies `parseString()` to validate unknown values.
+`router.dispatch()` validates route input and output. Use `MessageRoutingError`
+for intentional public failures; other handler errors are hidden.
 
-`defineDataQueryRoute(operationContracts)` validates the selected operation's
-input and preserves its response evidence. It infers the result type from the
-selected operation's `run` when used with `createMessageClient()`. Share input
-parsers and operation types, not operation implementations containing SQL or credentials.
-`dataAppRoutes` supplies generic `data:query` and `navigation:update` contracts;
-generic hosts must delegate operation validation and authorization to their
-server. Request handlers receive `{ signal }` for cancellation.
+Use `defineDataQueryRoute(operationContracts)` for typed named operations or
+`dataAppRoutes` for generic operation and navigation routes. Handlers must
+validate operations and authorize data access; see [embedding](embed.md).

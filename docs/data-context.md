@@ -1,14 +1,9 @@
 # Data context and evidence
 
-Set `dataContext: context` in each view for source descriptions, glossary, and
-permitted query evidence. App inspection and the view's sections use that context.
-Keep glossary query references scoped to that view's executed queries. Detail
-views declare their own context when their queries differ.
-Render registered identifiers where `<DataIdentifier>` is used.
-
-Physical source identifiers name inspected tables and columns. Glossary entries
-explain business meaning. Query names link those definitions and displayed claims
-to their execution evidence. Keep all three explicit.
+Set `dataContext` on each view. Register physical sources with identifiers,
+business meaning with glossary entries, and query evidence with bindings.
+Evidence may reference only queries executed by that view; detail views need
+their own context when their queries differ.
 
 ## Register source identifiers
 
@@ -61,11 +56,6 @@ const context = createDataContext(queries)({
     },
   },
 });
-const evidence = context.evidence({
-  id: 'identities',
-  glossaryIds: ['identities'],
-  queryNames: [queries.activity],
-});
 // activityView is declared with dataContext: context.
 const trackedIdentities = activityView.metric(
   {
@@ -75,19 +65,9 @@ const trackedIdentities = activityView.metric(
   },
   data => ({ current: data.count })
 );
-const finding = context.finding({
-  id: 'activity',
-  headline: 'What people do',
-  visual: <ActivityChart />,
-  evidence: { id: 'activity-evidence', queryNames: [queries.activity] },
-});
 ```
 
-Query inspection shows the executed SQL and resolved parameters; copy actions include both.
-
-Import context and identifier factories from `@altertable/data-app-react`. Use the operation’s derived `queryNames` for evidence.
-
-Use `view.metric(definition, select)` to register and bind a metric in one call.
-Declare dataset evidence references inside `view.dataset()`; the view registers
-and validates them too.
-Widgets and stories share its values and evidence; see [datasets and metrics](widgets.md#declare-datasets-and-metrics).
+Import `createDataContext()` from `@altertable/data-app-react` and use the
+operation's derived `queryNames`. Register metrics with `view.metric()` and
+dataset evidence in `view.dataset()`; reuse those bindings in widgets and stories.
+See [datasets and metrics](widgets.md#declare-datasets-and-metrics).

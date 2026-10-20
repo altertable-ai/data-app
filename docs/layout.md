@@ -1,13 +1,8 @@
-# Layout contract
+# Layout
 
-The shell owns page width, outer gutters, and header/body spacing. Use `<Stack>`
-for sections, `<Grid>` for peer widgets, and `<GridItem>` for spans. Use
-`<SectionHeading>` to name widget groups and `<TextContent>` for prose. Widgets own their internal padding; their parents own
-external spacing. Keep widget customization inside the widget so its parent can maintain consistent
-spacing between sections and cards.
-
-Configure density once in `app.appearance`. `<Grid>` wraps to fit its container;
-spans collapse when there is not enough space.
+Use `<Stack>` for reading order, `<Grid>` for peer widgets, and `<GridItem>` for
+spans. The shell owns page width and gutters; parents own spacing and widgets
+own internal padding. Configure density once in `app.appearance`.
 
 ```tsx
 <Stack>
@@ -22,35 +17,15 @@ spans collapse when there is not enough space.
 </Stack>
 ```
 
-Set widget `headingLevel={3}` beneath a section heading; visual styling stays
-consistent across widget types.
+Grids wrap to fit their container and spans collapse when needed. Set widget
+`headingLevel={3}` beneath a section heading.
 
-Use `<DataApp footer={...}>` for an optional source, coverage, or methodology
-note below the app content. The footer provides muted body text across the content
-width and top spacing. Compose paragraphs, links, lists, and inline components such
-as `<DataIdentifier>` or `<DateDisplay>` directly; no `<TextContent>` wrapper is
-needed. Keep headings and data widgets in the body, and app controls in
-`footerActions`. Keep static notes outside loading sections.
-
-```tsx
-<DataApp
-  {...appProps}
-  footer={
-    <>
-      <p>
-        <strong>Coverage.</strong> Records include the last 90 days.
-      </p>
-      <p>Counts reflect current inventory, not an activity log.</p>
-    </>
-  }
->
-  <DataSection content={content} />
-</DataApp>
-```
+Use `<DataApp footer={...}>` for static source, coverage, or methodology notes.
+Compose paragraphs, links, and inline components directly; no `<TextContent>`
+wrapper is needed. Keep headings and widgets in the body and controls in
+`footerActions`.
 
 ## Verify rendered layouts
 
-Check spacing, alignment, outer gutters, and
-horizontal overflow at phone and desktop iframe widths. Check loading, empty,
-error, ready, and stale states. Loading placeholders should use the same grid as
-the ready content.
+Check spacing, alignment, and overflow at phone and desktop iframe widths.
+Keep the same grid during loading and ready states; see [UI quality](ui-quality.md).
