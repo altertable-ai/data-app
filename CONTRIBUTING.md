@@ -103,8 +103,9 @@ checks. Build before running consumer tests individually.
 | `bun run check:workflows`      | Validate workflows and shell scripts               |
 
 `scripts/build-reference.ts` generates `REFERENCE.md` from the emitted
-declarations with the TypeScript checker, covering documented workspace package
-entry points. Undocumented implementation entries remain excluded. The base
+declarations with the TypeScript checker, covering app-authoring APIs from
+workspace package entry points. Embedding infrastructure, host annotation controls,
+and undocumented implementation entries remain excluded. The base
 package ships a generated copy alongside its guides. Commit the root reference
 when a build changes it. Generation fails when an export or prop type does not
 resolve, and `bun run check:reference` fails when the staged file differs from

@@ -19,7 +19,7 @@ import {
 } from 'typescript/unstable/ast/is';
 import { packages } from '@/scripts/packages';
 
-// Generates REFERENCE.md from the emitted declarations: one line per public
+// Generates REFERENCE.md from the emitted declarations: one line per app-authoring
 // export and one per prop or option, resolved by the TypeScript checker.
 // Runs in `bun run build` after declarations; `--check` compares the staged
 // file without writing.
@@ -38,22 +38,40 @@ const absent = TypeFlags.Never | TypeFlags.Undefined;
 const undocumented = new Set([
   '@altertable/data-app/internal',
   '@altertable/data-app-bun/reload',
-  '@altertable/data-app-embed/runtime',
 ]);
-const entryPoints = packages.flatMap(({ directory, manifest }) =>
-  Object.entries(manifest.exports).flatMap(([subpath, target]) => {
-    const specifier =
-      subpath === '.' ? manifest.name : manifest.name + subpath.slice(1);
-    return undocumented.has(specifier)
-      ? []
-      : [
-          {
-            specifier,
-            file: resolve(root, directory, target.types),
-          },
-        ];
-  })
+// Shared entry points also expose embedding infrastructure. Exclude its defining
+// modules so re-exports and future exports from those modules stay out as well.
+const embeddingModules = new Set(
+  [
+    'packages/data-app/dist/types/client/annotations.d.ts',
+    'packages/data-app/dist/types/client/iframe.d.ts',
+    'packages/data-app/dist/types/client/location.d.ts',
+    'packages/data-app/dist/types/client/messages.d.ts',
+    'packages/data-app/dist/types/client/navigation.d.ts',
+    'packages/data-app/dist/types/core/annotations.d.ts',
+    'packages/data-app/dist/types/core/logger.d.ts',
+    'packages/data-app/dist/types/core/messages.d.ts',
+    'packages/data-app/dist/types/core/navigation.d.ts',
+    'packages/data-app-react/dist/types/annotations/AnnotationBar.d.ts',
+    'packages/data-app-react/dist/types/annotations/styles.d.ts',
+  ].map(path => resolve(root, path).toLowerCase())
 );
+const entryPoints = packages
+  .filter(({ manifest }) => manifest.name !== '@altertable/data-app-embed')
+  .flatMap(({ directory, manifest }) =>
+    Object.entries(manifest.exports).flatMap(([subpath, target]) => {
+      const specifier =
+        subpath === '.' ? manifest.name : manifest.name + subpath.slice(1);
+      return undocumented.has(specifier)
+        ? []
+        : [
+            {
+              specifier,
+              file: resolve(root, directory, target.types),
+            },
+          ];
+    })
+  );
 
 type Export = { name: string; symbol: Symbol; specifiers: string[] };
 type Entry = Export & { kind: string; lines: string[] };
@@ -501,6 +519,12 @@ async function collect({ checker, program }: Project) {
         );
         continue;
       }
+      if (
+        symbol.declarations.every(declaration =>
+          embeddingModules.has(declaration.path.toLowerCase())
+        )
+      )
+        continue;
       const key = `${exported.name}\0${symbol.id}`;
       const existing = exports.get(key);
       if (existing) existing.specifiers.push(specifier);
@@ -583,9 +607,9 @@ function render(entries: Entry[]) {
   const header = `# @altertable/data-app API reference
 
 Generated from the published type declarations by \`bun run build\`; do not
-edit. Each of the ${entries.length} public exports has one heading line, then
-one line per prop, option, or field, so one search returns everything about a
-name:
+edit. Embedding APIs are excluded. Each of the ${entries.length} app-authoring
+exports has one heading line, then one line per prop, option, or field, so one
+search returns everything about a name:
 
 - \`rg '^LineChart\\b' REFERENCE.md\` prints \`LineChart\` and its props.
 - \`rg '^LineChart' REFERENCE.md\` adds \`LineChartItem\` and \`LineChartProps\`.
