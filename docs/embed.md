@@ -208,9 +208,9 @@ automatically, and framework-neutral apps call `bridge.supportContentSizing()`.
 Other apps keep the iframe's authored height. The app reports its document height
 in `runtime:resize` messages and the bridge sets the iframe's inline `height`;
 leave the iframe out of flex or grid stretching and `max-height` limits so that
-height applies. If height reports do not converge after 20 resize attempts,
-the bridge restores the authored frame height and switches the app to frame
-scrolling so its content remains accessible. Toggle sizing off and on, or reload
+height applies. If content sizing does not settle, the bridge restores the
+authored frame height and the app scrolls inside it so all content remains
+accessible. Toggle sizing off and on, or reload
 the app, to retry content sizing.
 While the iframe is content-sized, the bridge sends
 `viewport:update` messages describing which part of it the parent page shows, and

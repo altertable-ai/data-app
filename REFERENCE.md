@@ -1,7 +1,7 @@
 # @altertable/data-app API reference
 
 Generated from the published type declarations by `bun run build`; do not
-edit. Each of the 421 public exports has one heading line, then
+edit. Each of the 415 public exports has one heading line, then
 one line per prop, option, or field, so one search returns everything about a
 name:
 
@@ -126,10 +126,6 @@ AppearanceSettings.density: 'comfortable' | 'compact' | 'spacious'
 AppearanceSettings.cornerRadius: 'large' | 'medium' | 'none' | 'small'
 AppearanceSettings.elevation: 'flat' | 'raised' | 'subtle'
 AppearanceSettings.typography: { body: string; heading: string; }
-AppFilePreview (type, @altertable/data-app-bun/preview)
-AppFilePreview.url: URL
-AppFilePreview.stop: () => Promise<void> — Stop serving, close reload connections, and release all file watchers.
-AppFilePreviewOptions (type, @altertable/data-app-bun/preview): = props listed as serveAppFile.options.*
 AppIcon (function, @altertable/data-app-react/ui): (options: AppIconProps): FunctionComponentElement<Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>>
 AppIcon.options.name: 'annotate' | 'breakdown' | 'calendar' | 'cancel' | 'check' | 'clearFilters' | 'clock' | 'close' | 'copy' | 'darkTheme' | 'disclosure' | 'displayOptions' | 'error' | 'explore' | ... 22 more ... | 'wrap'
 AppIcon.options.size?: string | number
@@ -1115,7 +1111,6 @@ LiveControl.onIntervalChange: (seconds: LiveIntervalSeconds) => void
 LiveControl.…: plus props inherited from React
 LiveControlProps (type, @altertable/data-app-react/ui): = props listed as LiveControl.*
 LiveIntervalSeconds (type, @altertable/data-app-react/ui): = 30 | 60 | 300
-localLakehouse (function, @altertable/data-app-bun): (environment: Record<string, string | undefined>, request: typeof fetch): Lakehouse — Server-only SDK adapter. Local development uses the selected CLI profile's proxy.
 matchSearchText (function, @altertable/data-app-react/ui): (text: string, query: string): SearchMatchValue — Highlight literal query terms in supplied text without filtering or reordering results.
 Menu (component, @altertable/data-app-react/ui): <T extends object>(props: MenuProps<T>) — Actions by default; single selection creates radio items, multiple creates checkbox items.
 Menu.…: plus props inherited from @react-types/shared, react-aria, react-aria-components
@@ -1620,16 +1615,6 @@ Select.id?: string
 Select.className?: string
 Select.align?: 'end' | 'start' — Align the popup with the selection button. Defaults to start.
 SelectProps (type, @altertable/data-app-react/ui): = props listed as Select.*
-serveAppFile (function, @altertable/data-app-bun/preview): (options: AppFilePreviewOptions): Promise<AppFilePreview> — Preview a single-file app in the hosted sandbox. Requires the Bun runtime.
-serveAppFile.options.file: string — Absolute path to the app source.
-serveAppFile.options.port?: number — Localhost port. Use 0 to select an available port. Defaults to 25837.
-serveAppFile.options.lakehouse: Lakehouse — Server-only query backend; the caller owns credentials and profile selection.
-serveAppFile.options.resolveDependency?: ((specifier: string) => string) — Override data-app and React import resolution, such as for checkout development.
-serveLocalApp (function, @altertable/data-app-bun): (options: {…}): Server<undefined> — Serve one app on localhost through the CLI's lakehouse proxy during development. Hosted servers must authorize every viewer and must use `createDataHandler` directly.
-serveLocalApp.options.page: HTMLBundle
-serveLocalApp.options.operations: DataOperations
-serveLocalApp.options.title: string
-serveLocalApp.options.port?: number
 Sheet (component, @altertable/data-app-react/ui): (props: SheetProps) — Uses the native dialog top layer and focus trap. Closing keeps the modal mounted until its exit transition completes.
 Sheet.open: boolean
 Sheet.onOpenChange: (open: boolean) => void
@@ -1827,7 +1812,6 @@ useDateFormatting.options.timeZone?: string
 useDetailNavigation (hook, @altertable/data-app-react): (): DetailNavigation — Resolve a detail target from an interaction. The destination validates input before fetching.
 useSvgId (hook, @altertable/data-app-react/ui): (): string — Stable React ID for SVG definitions and their URL references; safe with identifier prefixes.
 useViewTab (hook, @altertable/data-app-react/ui): <View extends string>(views: readonly View[], fallback: View): [View, (key: string | number) => void] — Keep a page-level tab in `?view=`; reserve `?tab=` for the inspect sheet.
-validateLakehouseCredentials (function, @altertable/data-app-bun): (environment: Record<string, string | undefined>): void — Throw an actionable startup error when the selected lakehouse credentials are missing.
 VariableBar (component, @altertable/data-app-react/ui): (props: VariableBarProps) — User-controlled inputs below the page header.
 VariableBar.children: ReactNode
 VariableBar.…: plus props inherited from React

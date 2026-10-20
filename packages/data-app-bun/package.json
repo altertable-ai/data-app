@@ -23,8 +23,12 @@
     "url": "git+https://github.com/altertable-ai/data-app.git",
     "directory": "packages/data-app-bun"
   },
+  "bin": {
+    "data-app-preview": "./bin/preview.js"
+  },
   "files": [
     "dist",
+    "bin",
     "README.md",
     "LICENSE"
   ],
@@ -59,7 +63,7 @@
   },
   "devDependencies": {
     "@altertable/data-app-embed": "0.72.0",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   }
 }
