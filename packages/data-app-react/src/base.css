@@ -17,6 +17,19 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
+/* A content-sized frame is as tall as its document, so the parent page scrolls instead. */
+:root[data-atbl-frame-sizing='content'] {
+  overflow: hidden;
+  scrollbar-gutter: auto;
+}
+/* Fixed overlays stay within the part of the frame the parent shows. The bridge
+ * sets the insets for content-sized frames; other frames show their whole viewport. */
+:root {
+  --atbl-frame-visible-height: calc(
+    100dvh - var(--atbl-frame-inset-top, 0px) -
+      var(--atbl-frame-inset-bottom, 0px)
+  );
+}
 :root[data-atbl-theme='light'] {
   color-scheme: light;
 }

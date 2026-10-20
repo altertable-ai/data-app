@@ -9,6 +9,9 @@ export type DataAppPresentation = {
   surface: 'embedded' | 'standalone';
   theme: Theme;
   annotations?: DataAppAnnotationPresentation;
+  /** `frame` (default): the parent sizes the iframe and the app scrolls inside it.
+   * `content`: the iframe follows the app's content height and the parent page scrolls. */
+  sizing?: 'frame' | 'content';
 };
 
 export function isDataAppPresentation(
@@ -22,6 +25,9 @@ export function isDataAppPresentation(
       presentation.surface === 'standalone') &&
     (presentation.theme === 'light' || presentation.theme === 'dark') &&
     (presentation.annotations === undefined ||
-      isAnnotationPresentation(presentation.annotations))
+      isAnnotationPresentation(presentation.annotations)) &&
+    (presentation.sizing === undefined ||
+      presentation.sizing === 'frame' ||
+      presentation.sizing === 'content')
   );
 }

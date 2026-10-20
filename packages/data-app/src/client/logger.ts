@@ -42,7 +42,13 @@ export function logBridgeDiagnostic(
   logger: DataAppLogger,
   { direction, ...metadata }: BridgeDiagnostic
 ) {
-  if (metadata.type === 'runtime:log') return;
+  // Log delivery and per-frame sizing messages would flood the host logger.
+  if (
+    metadata.type === 'runtime:log' ||
+    metadata.type === 'runtime:resize' ||
+    metadata.type === 'viewport:update'
+  )
+    return;
   logger.log(diagnosticLabels[direction], metadata);
 }
 

@@ -350,7 +350,7 @@ ConnectionOperation.queryNames: { readonly connection: 'connection'; }
 copyExample (function, @altertable/data-app-examples): (id: DataAppExampleId, destination: string): Promise<void> — Copy a starter into a new directory; reject existing destinations.
 createAnnotationClient (function, @altertable/data-app/client): (transport: MessageTransport): { requestSendAnnotations(options?: { signal?: AbortSignal | undefined; } | undefined): Promise<null>; reportAnnotationEditorState(state: { hasUnsavedChanges: boolean; }, options?: { ...; } | undefined): Promise<...>; addAnnotation(draft: DataAppAnnotationDraft, option… — Deliver annotations to the authenticated host. Acknowledgement means retained, not sent to an agent.
 createDataAppNavigation (function, @altertable/data-app/client): (options: {…}): DataAppNavigation — Attach app URL behavior to an already authenticated bridge.
-createDataAppNavigation.options.bridge: { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 6 more ...; fail(cause?: unknown): void; }
+createDataAppNavigation.options.bridge: { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 7 more ...; fail(cause?: unknown): void; }
 createDataAppNavigation.options.window?: Window
 createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations>; <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : [ ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations> — Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. Named clients derive data from the declared operations' run return types.
 createDataClient.options.transport?: DataTransport [variant 1 of 2]
@@ -368,7 +368,7 @@ createDataHooks.client.query: <Name extends keyof Operations & string>(this: voi
 createHttpTransport (function, @altertable/data-app/client): (options: {…}): DataTransport
 createHttpTransport.options.endpoint?: string
 createHttpTransport.options.fetch?: typeof fetch
-createIframeTransport (function, @altertable/data-app/client): (options: {…}): { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 6 more ...; fail(cause?: unknown): void; } — One bridge per document, shared by all clients and retained across module hot replacement.
+createIframeTransport (function, @altertable/data-app/client): (options: {…}): { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 7 more ...; fail(cause?: unknown): void; } — One bridge per document, shared by all clients and retained across module hot replacement.
 createIframeTransport.options.parentOrigin: string
 createIframeTransport.options.window?: Window
 createIframeTransport.options.timeoutMs?: number
@@ -468,7 +468,7 @@ DataAppDiagnostic.type?: string [variant 1 of 2]
 DataAppDiagnostic.reason: BridgeDropReason [variant 1 of 2]
 DataAppDiagnostic.durationMs?: number
 DataAppDiagnostic.direction: 'receive' | 'send' [variant 2 of 2]
-DataAppDiagnostic.type: 'bridge:cancel' | 'bridge:connect' | 'bridge:disconnect' | 'bridge:error' | 'bridge:initialize' | 'bridge:ready' | 'bridge:request' | 'bridge:result' | 'runtime:error' | 'runtime:log' | 'runtime:ready' | 'script:load' | 'state:update' [variant 2 of 2]
+DataAppDiagnostic.type: 'bridge:cancel' | 'bridge:connect' | 'bridge:disconnect' | 'bridge:error' | 'bridge:initialize' | 'bridge:ready' | 'bridge:request' | 'bridge:result' | 'runtime:error' | ... 5 more ... | 'viewport:update' [variant 2 of 2]
 DataAppDiagnostic.id?: string [variant 2 of 2]
 DataAppDiagnostic.route?: string [variant 2 of 2]
 DataAppDiagnostic.operation?: string [variant 2 of 2]
@@ -502,6 +502,7 @@ DataAppPresentation (type, @altertable/data-app-embed): Presentation owned by th
 DataAppPresentation.surface: 'embedded' | 'standalone'
 DataAppPresentation.theme: Theme
 DataAppPresentation.annotations?: DataAppAnnotationPresentation
+DataAppPresentation.sizing?: 'content' | 'frame' — `frame` (default): the parent sizes the iframe and the app scrolls inside it. `content`: the iframe follows the app's content height and the parent page scrolls.
 DataAppProps (type, @altertable/data-app-react): <Data, Input> = props listed as DataApp.*
 DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode
@@ -975,7 +976,7 @@ FunnelChartStep.id: string
 FunnelChartStep.label: string
 getDataAppNavigation (function, @altertable/data-app/client): (frame: Window): DataAppNavigation | undefined — URL controls attach navigation on demand; bootstrap and data-only clients do not.
 getDataAppNavigation.frame.…: plus props inherited from built-in
-getDataAppTransport (function, @altertable/data-app/client): (frame: Window): { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 6 more ...; fail(cause?: unknown): void; } | undefined — The bootstrap installs this before executing app code. URL apps can install an explicit connection.
+getDataAppTransport (function, @altertable/data-app/client): (frame: Window): { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 7 more ...; fail(cause?: unknown): void; } | undefined — The bootstrap installs this before executing app code. URL apps can install an explicit connection.
 getDataAppTransport.frame.…: plus props inherited from built-in
 getExampleDirectory (function, @altertable/data-app-examples): (id: DataAppExampleId): string — Absolute source directory. Use copyExample() to restore npm-excluded filenames.
 GettingStarted (component, @altertable/data-app-react/ui): (props: {…}) — Query-backed connection state and next steps for a newly created app. Mount within `DataAppProvider` and register `connection: connectionCheck(app.queries)` on the server.
@@ -1050,6 +1051,7 @@ IframeTransport.mode: 'bundle' | 'url'
 IframeTransport.snapshot: () => unknown
 IframeTransport.subscribe: (listener: (state: unknown) => void) => () => void
 IframeTransport.ready: () => void
+IframeTransport.supportContentSizing: () => () => void — The UI owner calls this once its styles support content sizing; the parent's `sizing: 'content'` presentation then applies until the returned release runs.
 IframeTransport.fail: (cause?: unknown) => void — Reports a fatal app failure; the cause reaches the host logger only.
 injectDataAppAnnotationStyles (function, @altertable/data-app-react): (options: DataAppStylesOptions): HTMLStyleElement — Install only the outer-frame annotation controls; leave host page typography and layout intact.
 injectDataAppAnnotationStyles.options.document?: Document — Defaults to the current browser document.
@@ -1068,6 +1070,7 @@ installDataAppTransport.bridge.mode: 'bundle' | 'url'
 installDataAppTransport.bridge.snapshot: () => unknown
 installDataAppTransport.bridge.subscribe: (listener: (state: unknown) => void) => () => void
 installDataAppTransport.bridge.ready: () => void
+installDataAppTransport.bridge.supportContentSizing: () => () => void — The UI owner calls this once its styles support content sizing; the parent's `sizing: 'content'` presentation then applies until the returned release runs.
 installDataAppTransport.bridge.fail: (cause?: unknown) => void — Reports a fatal app failure; the cause reaches the host logger only.
 installDataAppTransport.frame.…: plus props inherited from built-in
 isPlainKeyEvent (function, @altertable/data-app-react/ui): (event: KeyEvent, options: {…}): boolean — Keep local key actions separate from shortcuts and IME composition. Pass React's nativeEvent.

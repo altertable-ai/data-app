@@ -43,6 +43,9 @@ function App() {
   const state = useAppVariables(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
+  const [content, setContent] = useState<
+    'short' | 'long' | 'viewport' | 'scaled' | 'oscillating'
+  >('short');
   if (crashed) throw new Error('Uncaught render failure');
 
   return (
@@ -126,6 +129,32 @@ function App() {
       >
         Denied query
       </button>
+      <button onClick={() => setContent('long')}>Show long content</button>
+      <button onClick={() => setContent('short')}>Show short content</button>
+      <button onClick={() => setContent('viewport')}>
+        Show viewport-height content
+      </button>
+      <button onClick={() => setContent('scaled')}>
+        Show proportional viewport content
+      </button>
+      <button onClick={() => setContent('oscillating')}>
+        Show oscillating viewport content
+      </button>
+      {content !== 'short' && (
+        <div
+          style={{
+            height:
+              content === 'long'
+                ? '2000px'
+                : content === 'scaled'
+                  ? '120dvh'
+                  : content === 'oscillating'
+                    ? 'calc(1600px - 100dvh)'
+                    : '100dvh',
+          }}
+          aria-hidden
+        />
+      )}
       <button onClick={() => state.set('period', '')}>Clear filter</button>
       <button onClick={() => state.set('period', 'last-7')}>Last 7 days</button>
     </DataApp>

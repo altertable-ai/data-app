@@ -151,6 +151,7 @@ Bun.serve({
     '/bridge-frame': bridgeFrame,
     '/bundle-host': bundleHost,
     '/playground': bundleHost,
+    '/content-sizing': bundleHost,
     [hostedApp.path]: bundleHost,
   },
   async fetch(request, server) {
@@ -201,6 +202,8 @@ Bun.serve({
       server.timeout(request, 0);
       return serveReloadEvents(request);
     }
+    if (path === '/__test/content-sizing')
+      return new Response(await loadHostedAppBundle());
     if (path === '/__test/playground')
       return new Response(await loadPlaygroundBundle());
     if (path === `/__test${hostedApp.path}`)
