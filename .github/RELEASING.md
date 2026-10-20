@@ -6,8 +6,15 @@ changelog. The private root `package.json` supplies the version.
 ## Repository setup
 
 1. Enable GitHub Actions and allow it to create pull requests.
-2. Set `RELEASE_PLEASE_TOKEN` to a fine-grained PAT with contents and pull-request
-   write access. The `GITHUB_TOKEN` fallback cannot trigger CI on its release PRs.
+2. Install the organization's `altertable-release` GitHub App on this repository
+   with contents, issues, and pull-request write permissions. Webhooks and user
+   authorization are not needed. Set the Actions variable
+   `RELEASE_PLEASE_APP_CLIENT_ID` to its client ID and the Actions secret
+   `RELEASE_PLEASE_APP_PRIVATE_KEY` to its private key. Organization-level values
+   must allow this repository access. The workflow creates a short-lived token
+   scoped to this repository for Release Please and lockfile pushes, so release
+   PRs use the app's bot identity and trigger CI. Missing app credentials fail the
+   release job instead of falling back to a personal token or `GITHUB_TOKEN`.
 3. Create each npm package and configure its trusted publisher:
 
 | Setting      | Value                |
