@@ -43,13 +43,17 @@ Declare date meaning on dataset columns so tables use readable values and CSV
 keeps the originals:
 
 ```ts
-columns: {
-  day: { value: row => row.day, format: { kind: 'date' } },
-  observed: {
-    value: row => row.observed,
-    format: { kind: 'dateTime', precision: 'second' },
+// ... dailyCountsView with day and observed result fields
+const dailyCounts = dailyCountsView.dataset({
+  // ... name, select, rowKey, and evidence
+  columns: {
+    day: { value: row => row.day, format: { kind: 'date' } },
+    observed: {
+      value: row => row.observed,
+      format: { kind: 'dateTime', precision: 'second' },
+    },
   },
-}
+});
 ```
 
 Calendar dates use `YYYY-MM-DD`. Instants accept epoch milliseconds or timestamp

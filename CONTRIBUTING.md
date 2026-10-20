@@ -60,6 +60,8 @@ workflows self-contained in `apps-*.test.ts`.
 
 Update the relevant guide and starter. Keep app authoring in `docs/`; document
 current usage with one focused example, `<Component>` and `functionName()` notation.
+Show complete enclosing calls and components; use `// ...` for unrelated setup.
+Name the app declaration `dataApp`; keep the API's `app` prop name.
 Leave prop inventories to TypeScript and JSDoc. Generate `REFERENCE.md` with
 `bun run build` and stage it before `bun run check:reference`; improve entries
 through types and JSDoc, never generated output.
@@ -72,6 +74,9 @@ through types and JSDoc, never generated output.
 - Compose existing primitives. Let components own loading, keyboard behavior,
   focus recovery, sizing, and responsive layout.
 - Verify loading, empty, updating, and ready behavior through public APIs.
+- Own standard theme, responsive, and containment behavior in SDK tests, plus
+  keyboard/focus behavior for controls. Exercise both themes and narrow/wide
+  widths, including long labels.
 
 For CSS changes, keep defaults in `tokens.css` and `appearance.css`, with optional
 native `var()` fallbacks. Reuse focus/state rules and keep geometry local. Add

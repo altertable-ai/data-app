@@ -10,10 +10,10 @@ React and React DOM 19.2 or newer are required. Start with
 import { injectDataAppStyles, mountDataApp } from '@altertable/data-app-react';
 
 injectDataAppStyles();
-mountDataApp({ app, component: App });
+mountDataApp({ app: dataApp, component: App });
 ```
 
-The app supplies `app`, `App`, and a `#root` element.
+The app supplies `dataApp`, `App`, and a `#root` element.
 
 Keep the starter's mounting and client wiring. Use declared views and bound
 widgets for exploration. Use `/ui` for setup/static screens or a custom component

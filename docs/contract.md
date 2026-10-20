@@ -9,23 +9,26 @@ named SQL queries with typed `params` and `projections`; execute them through
 This is the hosted starter's query contract inside `defineDataApp()`:
 
 ```ts
-queries: {
-  sampleCountsByGroup: {
-    statement: `
+const dataApp = defineDataApp({
+  // ... title, description, and scope
+  queries: {
+    sampleCountsByGroup: {
+      statement: `
 WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
 SELECT group_name, sample_count FROM sample_counts
 WHERE $groupName = '' OR group_name = $groupName
 ORDER BY group_name LIMIT $limit`,
-    params: {
-      groupName: { type: 'string', defaultValue: '' },
-      limit: { type: 'number', defaultValue: 10 },
-    },
-    projections: {
-      group_name: { type: 'string' },
-      sample_count: { type: 'number' },
+      params: {
+        groupName: { type: 'string', defaultValue: '' },
+        limit: { type: 'number', defaultValue: 10 },
+      },
+      projections: {
+        group_name: { type: 'string' },
+        sample_count: { type: 'number' },
+      },
     },
   },
-}
+});
 ```
 
 Replace fixture SQL with inspected data. Preserve supplied registry SQL. Keep

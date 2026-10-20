@@ -2,7 +2,7 @@
 
 Keep default appearance unless customization is requested. Use components and
 typed props first. Configure appearance once through
-`app.appearance`; see [formatting and appearance](formatting-and-appearance.md).
+`dataApp.appearance`; see [formatting and appearance](formatting-and-appearance.md).
 Call `injectDataAppStyles()` before mounting and use one `<DataApp>` per document.
 
 ## Customize
@@ -19,7 +19,7 @@ Public hooks are listed in the [style contract](https://github.com/altertable-ai
 ```
 
 Type inline overrides with `DataAppStyle`. Give optional tokens a `var()` fallback.
-Use `:root` for overrides shared with menus and overlays. Prefer `app.appearance`
+Use `:root` for overrides shared with menus and overlays. Prefer `dataApp.appearance`
 for brand and chart colors; pair accent overrides with a contrasting foreground.
 Keep text inputs at least 16px on mobile.
 

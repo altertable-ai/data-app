@@ -587,7 +587,7 @@ DateTimeTooltip.panelProps?: HelpPopoverPanelProps
 DateTimeTooltip.open?: boolean
 DateTimeTooltip.onOpenChange?: ((open: boolean) => void)
 DateTimeTooltipProps (type, @altertable/data-app-react): = props listed as DateTimeTooltip.*
-defineDataApp (function, @altertable/data-app, @altertable/data-app/config): <const Queries extends QueryDefinitions>(config: DataAppConfig<Queries> & { queries: CheckedQueries<Queries>; }): DataAppDefinition<Queries> — Define the app's query source of truth while preserving exact query and parameter names. Use `app.defineOperation()` to bind operations to these queries.
+defineDataApp (function, @altertable/data-app, @altertable/data-app/config): <const Queries extends QueryDefinitions>(config: DataAppConfig<Queries> & { queries: CheckedQueries<Queries>; }): DataAppDefinition<Queries> — Define the app's query source of truth while preserving exact query and parameter names. Use `dataApp.defineOperation()` to bind operations to these queries.
 defineDataApp.config.title: string
 defineDataApp.config.scope: { organization: string; environment: string; } — Display labels; scope does not grant data access.
 defineDataApp.config.description: string — Explain what the app helps readers explore.

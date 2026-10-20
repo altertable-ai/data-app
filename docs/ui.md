@@ -19,7 +19,7 @@ custom inspection and presentation. Supply registered context and evidence, and
 derive findings from the displayed data. Standard widgets and `<DataApp>`
 already own these experiences.
 
-For framework mounting, `<DataAppProvider app={app}>` supplies app identity, shared requests and one inspection sheet. Wrap custom shells in it; app components inherit identity and appearance.
+For framework mounting, `<DataAppProvider app={dataApp}>` supplies app identity, shared requests and one inspection sheet. Wrap custom shells in it; app components inherit identity and appearance.
 Call `injectDataAppStyles()` before mounting either entry; imports do not install
 styles.
 
@@ -29,12 +29,20 @@ Use `isPlainKeyEvent()` from `@altertable/data-app-react/ui` in custom key handl
 leave shortcut modifiers and IME composition untouched:
 
 ```tsx
-onKeyDown={event => {
-  if (event.key === 'Enter' && isPlainKeyEvent(event.nativeEvent)) {
-    event.preventDefault();
-    submit();
-  }
-}}
+function SearchInput() {
+  // ... submit handler
+  return (
+    <input
+      aria-label="Search"
+      onKeyDown={event => {
+        if (event.key === 'Enter' && isPlainKeyEvent(event.nativeEvent)) {
+          event.preventDefault();
+          submit();
+        }
+      }}
+    />
+  );
+}
 ```
 
 Pass `{ allowShift: true }` when the handler also supports Shift gestures.
@@ -180,15 +188,22 @@ filter declarations own URL state, validation, and operation meaning.
 | `<DimensionPicker>`                | Typed categorical predicates with fixed or facet options          |
 
 ```tsx
-<RadioGroup label="Metric" value={metric} onChange={setMetric}>
-  <Radio value="orders">Orders</Radio>
-  <Radio value="revenue">Revenue</Radio>
-</RadioGroup>
+function FilterChoices() {
+  // ... metric, statuses, and their change handlers
+  return (
+    <>
+      <RadioGroup label="Metric" value={metric} onChange={setMetric}>
+        <Radio value="orders">Orders</Radio>
+        <Radio value="revenue">Revenue</Radio>
+      </RadioGroup>
 
-<CheckboxGroup label="Statuses" values={statuses} onChange={setStatuses}>
-  <Checkbox value="paid" label="Paid" />
-  <Checkbox value="pending" label="Pending" />
-</CheckboxGroup>
+      <CheckboxGroup label="Statuses" values={statuses} onChange={setStatuses}>
+        <Checkbox value="paid" label="Paid" />
+        <Checkbox value="pending" label="Pending" />
+      </CheckboxGroup>
+    </>
+  );
+}
 ```
 
 A standalone `<Checkbox>` uses `checked` and `onChange`; group items use `value`.

@@ -61,7 +61,9 @@ Run the authoring workflow's validation, then inspect the app:
 - Change filters and exercise loading, empty, error, refresh, and stale states.
   Narrative, scope, story, and export must agree with the displayed result.
 - Present the story and check exported columns, raw values, filename, and scope.
-- Check phone and desktop widths, both themes, keyboard use, and overflow.
+- Review app-owned content for clipping and readability at its intended width.
+  Check custom layout or CSS at narrow and wide widths; check custom colors in
+  both themes.
 
 ## Look up only what is missing
 

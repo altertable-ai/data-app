@@ -16,7 +16,7 @@ Declare an app's identity and query registry:
 ```ts
 import { defineDataApp } from '@altertable/data-app';
 
-const app = defineDataApp({
+const dataApp = defineDataApp({
   title: 'Activity',
   description: 'Explore activity across your organization.',
   scope: { organization: 'demo', environment: 'production' },

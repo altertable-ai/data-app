@@ -46,9 +46,17 @@ const identifiers = defineDataIdentifiers({
 });
 const { DataIdentifier } = identifiers;
 
-<DataIdentifier id="tables.events" />;
-<DataIdentifier id="columns.events.identity" />;
+// ... queryNames for the inspected source
+const eventDataContext = createDataContext(queryNames)({
+  identifiers: identifiers.definitions,
+  description: (
+    <>
+      Distinct <DataIdentifier id="columns.events.identity" /> values in{' '}
+      <DataIdentifier id="tables.events" />.
+    </>
+  ),
+  glossary: {
+    // ... business definitions
+  },
+});
 ```
-
-Pass `identifiers.definitions` to `createDataContext()` to reuse the source
-registry.

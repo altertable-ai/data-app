@@ -5,20 +5,23 @@ spans. The shell owns page width and gutters; parents own spacing and widgets
 own internal padding. Keep default density unless customization is requested.
 
 ```tsx
-<Stack>
-  <SectionHeading>Sample counts</SectionHeading>
-  <TextContent>
-    <p>Explore the sources behind this finding.</p>
-  </TextContent>
-  <Grid columns={3}>
-    <GridItem span={2}>
-      <TableWidget dataset={sampleCounts} source={result} />
-    </GridItem>
-    <GridItem>
-      <MetricWidget metric={totalSamples} source={result} />
-    </GridItem>
-  </Grid>
-</Stack>
+// ... sampleCountsView, sampleCounts, and totalSamples
+const sampleContent = sampleCountsView.content(result => (
+  <Stack>
+    <SectionHeading>Sample counts</SectionHeading>
+    <TextContent>
+      <p>Explore the sources behind this finding.</p>
+    </TextContent>
+    <Grid columns={3}>
+      <GridItem span={2}>
+        <TableWidget dataset={sampleCounts} source={result} />
+      </GridItem>
+      <GridItem>
+        <MetricWidget metric={totalSamples} source={result} />
+      </GridItem>
+    </Grid>
+  </Stack>
+));
 ```
 
 Grids wrap to fit their container and spans collapse when needed. Set widget
@@ -31,5 +34,6 @@ wrapper is needed. Keep headings and widgets in the body and controls in
 
 ## Verify rendered layouts
 
-Check spacing, alignment, and overflow at phone and desktop iframe widths.
-Keep the same grid during loading and ready states; see [UI quality](ui-quality.md).
+Review authored composition with realistic labels and values. For custom layout
+or sizing, check spacing and overflow at narrow and wide iframe widths. Keep
+the same grid during loading and ready states.

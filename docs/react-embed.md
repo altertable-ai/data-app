@@ -41,7 +41,16 @@ The local URL must have a different origin from its shell. For hosted bundles,
 replace `source` with:
 
 ```tsx
-source={{ type: 'bundle', javascript }}
+function Shell() {
+  // ... javascript bundle and router
+  return (
+    <DataAppBridge
+      title="Activity report"
+      source={{ type: 'bundle', javascript }}
+      onMessage={router.dispatch}
+    />
+  );
+}
 ```
 
 The host supplies the JavaScript bundle. Omit `bootstrapUrl` for the packaged

@@ -10,6 +10,9 @@ The starter's operation accepts `{ groupName: string }`, so it needs no `input`
 mapper or explicit `bindings`:
 
 ```ts
+// ... client and sampleDataContext
+const { defineDataView } = createDataHooks(client);
+
 const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
@@ -36,6 +39,7 @@ supplied rows only.
 For source-backed categorical members, use `dataApp.defineDimension()`:
 
 ```ts
+// ... dataApp with its registered groups query
 const group = dataApp.defineDimension({
   key: 'group',
   label: 'Group',
@@ -109,6 +113,9 @@ const group = dimensionFilter({
 Use `defineFacetFilter()` only when options must depend on other selections:
 
 ```ts
+// ... client and period variable
+const { defineFacetFilter } = createDataHooks(client);
+
 const group = defineFacetFilter({
   key: 'group',
   label: 'Group',
@@ -122,8 +129,7 @@ const group = defineFacetFilter({
 });
 ```
 
-Obtain `defineFacetFilter()` from the existing hooks factory. Declare `period`
-with `dateRangeVariable()`, include it alongside `group` in the view's variables,
+Declare `period` with `dateRangeVariable()`, include it alongside `group` in the view's variables,
 and return parsed dimension options from the `groups` operation. Validate facet
 selections with `parseDimensionSelection(value, group)` from `/contract`.
 
@@ -140,6 +146,9 @@ After adapting the operation to accept `{ period, groupName }`, the view can sta
 flat:
 
 ```ts
+// ... client, dailyCountsContext, and calendar contract
+const { defineTimeView } = createDataHooks(client);
+
 const dailyCountsView = defineTimeView({
   dataContext: dailyCountsContext,
   operation: 'dailyCountsByGroup',
@@ -179,11 +188,19 @@ Add a mapper and bindings only when an existing operation requires nested or
 differently named inputs. Preserve selected values unchanged in both directions:
 
 ```ts
-input: values => ({ filters: { period: values.period, groupName: values.groupName } }),
-bindings: {
-  period: input => input.filters.period,
-  groupName: input => input.filters.groupName,
-},
+// ... client; operation input is { filters: { period, groupName } }
+const { defineTimeView } = createDataHooks(client);
+
+const dailyCountsView = defineTimeView({
+  // ... operation, dataContext, time, variables, isEmpty, and emptyFallback
+  input: values => ({
+    filters: { period: values.period, groupName: values.groupName },
+  }),
+  bindings: {
+    period: input => input.filters.period,
+    groupName: input => input.filters.groupName,
+  },
+});
 ```
 
 Custom control ownership is needed only when generated controls cannot express

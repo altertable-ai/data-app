@@ -12,16 +12,29 @@ headline, visual, and registered dataset or
 metric as `evidence`. Reuse bindings and derive scope from the snapshot:
 
 ```tsx
-story={snapshot => {
-  const total = totalSamples.read(snapshot);
-  return [{
-    id: 'total-samples',
-    headline: `Total samples: ${formatMetric(total.value.current, totalSamples.definition.format)}`,
-    context: sampleCountsView.scope(snapshot),
-    visual: <MetricWidget metric={totalSamples} source={snapshot} />,
-    evidence: totalSamples,
-  }];
-}}
+// ... sampleCountsView, sampleCounts, totalSamples, and sampleContent
+function App() {
+  return (
+    <DataApp
+      view={sampleCountsView}
+      datasets={[sampleCounts]}
+      story={snapshot => {
+        const total = totalSamples.read(snapshot);
+        return [
+          {
+            id: 'total-samples',
+            headline: `Total samples: ${formatMetric(total.value.current, totalSamples.definition.format)}`,
+            context: sampleCountsView.scope(snapshot),
+            visual: <MetricWidget metric={totalSamples} source={snapshot} />,
+            evidence: totalSamples,
+          },
+        ];
+      }}
+    >
+      <DataSection content={sampleContent} />
+    </DataApp>
+  );
+}
 ```
 
 Keep the starter's `formatMetric()` import for formatted headlines.

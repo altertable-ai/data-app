@@ -57,6 +57,7 @@ Declare at least one dataset column. Metric selectors may return `previous`
 only for views with a date binding, including `defineTimeView()`.
 
 ```tsx
+// ... sampleCountsView and imports
 const sampleCounts = sampleCountsView.dataset({
   name: 'Sample counts',
   select: rows => rows,
@@ -148,6 +149,7 @@ Both `children` and alternate-view `render` callbacks receive the displayed rows
 and the same action resolver.
 
 ```tsx
+// ... sampleCountsView, sampleCounts, and groupView
 const groupActions = sampleCounts.actions(
   action => ({
     group: action.detail({
@@ -159,25 +161,27 @@ const groupActions = sampleCounts.actions(
   { primary: 'group' }
 );
 
-<VisualizationWidget
-  dataset={sampleCounts}
-  source={result}
-  actions={groupActions}
->
-  {(rows, actions) => (
-    <BarChart
-      ariaLabel="Sample counts by group"
-      unit="samples"
-      items={rows.map(row => ({
-        ...row,
-        id: row.groupName,
-        label: row.groupName,
-        value: row.sampleCount,
-      }))}
-      itemActions={actions}
-    />
-  )}
-</VisualizationWidget>;
+const sampleContent = sampleCountsView.content(result => (
+  <VisualizationWidget
+    dataset={sampleCounts}
+    source={result}
+    actions={groupActions}
+  >
+    {(rows, actions) => (
+      <BarChart
+        ariaLabel="Sample counts by group"
+        unit="samples"
+        items={rows.map(row => ({
+          ...row,
+          id: row.groupName,
+          label: row.groupName,
+          value: row.sampleCount,
+        }))}
+        itemActions={actions}
+      />
+    )}
+  </VisualizationWidget>
+));
 ```
 
 `groupView` is the destination from the detail-view example.

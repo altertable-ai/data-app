@@ -7,6 +7,17 @@ starter's `sampleCountsByGroup` operation and `sampleDataContext`.
 ## Bind a view
 
 ```tsx
+import {
+  createDataHooks,
+  DataApp,
+  DataSection,
+  searchVariable,
+  TableWidget,
+} from '@altertable/data-app-react';
+
+// ... client, operations, and sampleDataContext
+const { defineDataView } = createDataHooks(client);
+
 const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
@@ -22,16 +33,20 @@ const sampleCountsView = defineDataView({
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
 });
+// ... sampleCounts dataset and story callback
 const sampleContent = sampleCountsView.content(result => (
   <TableWidget dataset={sampleCounts} source={result} />
 ));
 
-<DataApp view={sampleCountsView} story={story} datasets={[sampleCounts]}>
-  <DataSection content={sampleContent} />
-</DataApp>;
+function App() {
+  return (
+    <DataApp view={sampleCountsView} story={story} datasets={[sampleCounts]}>
+      <DataSection content={sampleContent} />
+    </DataApp>
+  );
+}
 ```
 
-`sampleCounts` is the starter's dataset; `story` is its displayed-snapshot callback.
 Keep operation input flat and named like the variables. Omit `input` and
 `bindings` when those shapes match. Use `defineTimeView()` for period-driven
 analysis and `defineDataView()` otherwise. Adapt an existing nested input only
@@ -55,6 +70,9 @@ The destination owns its input parser, operation, datasets, context, and content
 Pass its content to `<DataApp details={[groupDetail]}>`:
 
 ```tsx
+// ... client, operations, sampleDataContext, main view, datasets, and story
+const { defineDetailView } = createDataHooks(client);
+
 const groupView = defineDetailView({
   id: 'group',
   title: 'Group counts',
@@ -78,10 +96,22 @@ const groupCounts = groupView.dataset({
 const groupDetail = groupView.content(result => (
   <TableWidget dataset={groupCounts} source={result} />
 ));
+
+function App() {
+  return (
+    <DataApp
+      view={sampleCountsView}
+      datasets={[sampleCounts]}
+      story={story}
+      details={[groupDetail]}
+    >
+      <DataSection content={sampleContent} />
+    </DataApp>
+  );
+}
 ```
 
-Obtain `defineDetailView` from the starter's hooks factory. Pass serializable
-scope and IDs, not records or credentials. Validate dimension selections with
+Pass serializable scope and IDs, not records or credentials. Validate dimension selections with
 the dashboard's `variableInput()` parser. The main app owns stories and exports.
 
 ### Contributing metric records

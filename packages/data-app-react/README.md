@@ -19,7 +19,7 @@ import { defineDataApp } from '@altertable/data-app';
 import { injectDataAppStyles, mountDataApp } from '@altertable/data-app-react';
 import { MetricWidget } from '@altertable/data-app-react/ui';
 
-const app = defineDataApp({
+const dataApp = defineDataApp({
   title: 'Activity',
   description: 'A snapshot of activity.',
   scope: { organization: 'demo', environment: 'production' },
@@ -37,7 +37,7 @@ function App() {
 }
 
 injectDataAppStyles();
-mountDataApp({ app, component: App });
+mountDataApp({ app: dataApp, component: App });
 ```
 
 Use the main entry for declared views, bound widgets, and layouts; `/ui` supports
