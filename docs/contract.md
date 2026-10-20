@@ -9,6 +9,8 @@ named SQL queries with typed `params` and `projections`; execute them through
 This is the hosted starter's query contract inside `defineDataApp()`:
 
 ```ts
+import { defineDataApp } from '@altertable/data-app';
+
 const dataApp = defineDataApp({
   // ... title, description, and scope
   queries: {
@@ -35,6 +37,9 @@ Replace fixture SQL with inspected data. Preserve supplied registry SQL. Keep
 operation inputs flat; derive SQL parameters inside `run()`:
 
 ```ts
+import { parseCount } from '@altertable/data-app/contract';
+
+// ... dataApp and parseSampleCountFilter
 const operations = {
   sampleCountsByGroup: dataApp.defineOperation({
     input: parseSampleCountFilter,
@@ -81,6 +86,8 @@ For period-driven analysis, declare `defineDateRangeContract()` from
 and `defineTimeView()`:
 
 ```ts
+import { defineDateRangeContract } from '@altertable/data-app/contract';
+
 const calendar = defineDateRangeContract({
   minDate: '2026-01-01',
   maxRangeDays: 90,

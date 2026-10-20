@@ -129,22 +129,28 @@ standalone charts' themed series primitives; axes, scatter, tooltip, and referen
 primitives are also available.
 
 ```tsx
-<VisualizationWidget dataset={revenue} source={result}>
-  {rows => (
-    <ComposedChart data={rows} ariaLabel="Monthly revenue and target in euros">
-      <ComposedChart.XAxis dataKey="month" />
-      <ComposedChart.YAxis />
-      <ComposedChart.Tooltip />
-      <ComposedChart.Legend />
-      <ComposedChart.Bar dataKey="revenue" name="Revenue (€)" />
-      <ComposedChart.Line
-        dataKey="target"
-        name="Target (€)"
-        stroke="var(--atbl-chart-2)"
-      />
-    </ComposedChart>
-  )}
-</VisualizationWidget>
+// ... revenueView and its revenue dataset
+const revenueContent = revenueView.content(result => (
+  <VisualizationWidget dataset={revenue} source={result}>
+    {rows => (
+      <ComposedChart
+        data={rows}
+        ariaLabel="Monthly revenue and target in euros"
+      >
+        <ComposedChart.XAxis dataKey="month" />
+        <ComposedChart.YAxis />
+        <ComposedChart.Tooltip />
+        <ComposedChart.Legend />
+        <ComposedChart.Bar dataKey="revenue" name="Revenue (€)" />
+        <ComposedChart.Line
+          dataKey="target"
+          name="Target (€)"
+          stroke="var(--atbl-chart-2)"
+        />
+      </ComposedChart>
+    )}
+  </VisualizationWidget>
+));
 ```
 
 For irregular time intervals, use `<ComposedChart.XAxis>` with ISO dates, zoned

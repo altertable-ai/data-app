@@ -1,12 +1,14 @@
 # Data context and evidence
 
 Continue the starter's operation and context. Use its derived `queryNames` for
-business definitions and evidence. A view's context may reference only queries
-executed by that view.
+business definitions and evidence. Reference only queries the view executes.
 
 ## Bind evidence
 
 ```tsx
+import { createDataContext } from '@altertable/data-app-react';
+
+// ... operations
 const queryNames = operations.sampleCountsByGroup.queryNames;
 const sampleDataContext = createDataContext(queryNames)({
   description: 'Sample counts for the selected groups.',
@@ -32,7 +34,10 @@ table, and field names. Use `<DataIdentifier>` in descriptions and glossary
 entries to render those source references consistently.
 
 ```tsx
-import { defineDataIdentifiers } from '@altertable/data-app-react';
+import {
+  createDataContext,
+  defineDataIdentifiers,
+} from '@altertable/data-app-react';
 
 const identifiers = defineDataIdentifiers({
   tables: {

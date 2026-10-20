@@ -10,7 +10,7 @@ when typechecking a Bun app.
 ```ts
 import { serveLocalApp } from '@altertable/data-app-bun';
 import page from './index.html';
-import { operations } from './operations';
+import { operations } from './operations.ts';
 
 serveLocalApp({ page, operations, title: 'Activity' });
 ```

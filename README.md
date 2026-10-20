@@ -16,8 +16,9 @@ Local apps also install `@altertable/data-app-bun`.
 
 ## Build an app
 
-Start with [app authoring](docs/app-authoring.md). Agents follow [AGENTS.md](AGENTS.md);
-search [REFERENCE.md](REFERENCE.md) for exports and props.
+Start with [app authoring](docs/app-authoring.md); search
+[REFERENCE.md](REFERENCE.md) for exports and props. Read runtime details only when
+changing execution mode or converting an app:
 
 | App                     | Guide                                        |
 | ----------------------- | -------------------------------------------- |

@@ -50,4 +50,4 @@ Use one view for these related datasets. Let dates select funnel entry dates and
 channel filters affect every section. Reuse datasets for charts and tables.
 Select one to four supported findings for the [story](stories-and-export.md).
 Verify that changing a filter updates every claim and preserves a useful reading
-order on phones.
+order.

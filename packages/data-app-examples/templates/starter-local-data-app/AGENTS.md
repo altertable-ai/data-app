@@ -1,7 +1,8 @@
 # Build this local data app
 
-If dependencies are installed, read `node_modules/@altertable/data-app/AGENTS.md`
-first. Otherwise, read the [version-matched SDK instructions](https://github.com/altertable-ai/data-app/blob/v0.72.0/AGENTS.md). <!-- x-release-please-version -->
+Read `node_modules/@altertable/data-app/docs/app-authoring.md` and use this project
+as the selected scaffold. If dependencies are unavailable, read the
+[version-matched recipe](https://github.com/altertable-ai/data-app/blob/v0.72.0/docs/app-authoring.md). <!-- x-release-please-version -->
 
 | Task                                     | App-owned files                                          |
 | ---------------------------------------- | -------------------------------------------------------- |
@@ -14,7 +15,4 @@ first. Otherwise, read the [version-matched SDK instructions](https://github.com
 
 See [README.md](README.md) for setup and checks.
 
-Read the SDK's `docs/app-authoring.md` and follow its task routes. Search
-`REFERENCE.md` for props and signatures. Use installed guides when available;
-otherwise use the version tag linked above. Keep this file for reusable app-specific
-conventions.
+Keep reusable app-specific conventions here.

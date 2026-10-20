@@ -15,6 +15,7 @@ import { useReducer, useState } from 'react';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
 import type { DataAppStatus } from '@altertable/data-app-embed';
 
+// ... authorized router
 function Shell() {
   const [status, setStatus] = useState<DataAppStatus>('connecting');
   const [attempt, retry] = useReducer(value => value + 1, 0);
@@ -74,6 +75,7 @@ owns a loaded iframe and its security policy:
 import { useState, type ComponentRef } from 'react';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
 
+// ... appUrl and authorized router
 function Host() {
   const [iframe, setIframe] = useState<ComponentRef<'iframe'> | null>(null);
   return (

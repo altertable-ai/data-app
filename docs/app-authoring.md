@@ -1,12 +1,12 @@
 # Author a data app
 
 Build an exploration that answers the user's question and a story of its strongest
-findings. Follow this recipe with the selected starter; keep its runtime wiring.
+findings.
 
 ## Use release-matched starters
 
-Resolve the runtime from the task or existing app once. Use the starter supplied
-by the authoring workflow, matched to the app's SDK version.
+For an existing app, keep its runtime and structure; apply only the steps needed
+for the requested change. For a new app, use the starter supplied by the authoring workflow, matched to the app's SDK version.
 `@altertable/data-app-examples` ships these templates:
 
 | Runtime                 | Template in `node_modules/@altertable/data-app-examples/templates/` |

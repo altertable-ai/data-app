@@ -1,7 +1,7 @@
 # Local data app starter
 
-Use `node_modules/@altertable/data-app/docs/local-data-apps.md` for this SDK version.
-Otherwise, read the [version-matched local authoring guide](https://github.com/altertable-ai/data-app/blob/v0.72.0/docs/local-data-apps.md). <!-- x-release-please-version -->
+Use `node_modules/@altertable/data-app/docs/app-authoring.md` for this SDK version.
+Otherwise, read the [version-matched authoring recipe](https://github.com/altertable-ai/data-app/blob/v0.72.0/docs/app-authoring.md). <!-- x-release-please-version -->
 See [AGENTS.md](AGENTS.md) for app-owned files.
 
 ## Run the app
@@ -28,10 +28,9 @@ story. Change identity, appearance, and queries in `app.ts`.
 
 ```fish
 bun run check
-bun run build
 ```
 
-The build writes browser assets to `dist/`. Hosting them requires an authorized
+`bun run check` includes the build, which writes browser assets to `dist/`. Hosting them requires an authorized
 `/api/data` backend; the local adapter does not authenticate hosted viewers.
 
 ## License

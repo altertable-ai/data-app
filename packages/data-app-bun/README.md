@@ -23,8 +23,9 @@ import { operations } from './operations.ts';
 serveLocalApp({ page, operations, title: 'Activity' });
 ```
 
-The app supplies `index.html` and `operations.ts`. Use `localLakehouse()` inside
-server operations for lakehouse access. Keep credentials on the server.
+The app supplies `index.html` and `operations.ts`. `serveLocalApp()` configures
+lakehouse access from server-only credentials; operations use their `query()`
+helper.
 
 Local serving does not authenticate hosted viewers; use
 `@altertable/data-app/server` with per-request authorization for hosted apps.

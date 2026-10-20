@@ -6,7 +6,7 @@ Import `createDataHandler()` and the `RequestAccess` type from
 
 ```ts
 import { createDataHandler } from '@altertable/data-app/server';
-import { operations } from './operations';
+import { operations } from './operations.ts';
 
 export const handleDataRequest = createDataHandler(
   operations,

@@ -12,6 +12,7 @@ message delivery. The host supplies an iframe and a validated message dispatcher
 ```ts
 import { attachDataAppBridge } from '@altertable/data-app-embed';
 
+// ... iframe and authorized router
 const host = attachDataAppBridge({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
@@ -22,7 +23,7 @@ const host = attachDataAppBridge({
 The host defines `iframe` and `router`; see [message contracts](#message-routes).
 Call `host.dispose()` before replacing the source or retrying. A URL source requires HTTP(S)
 and a different origin from its host. The source bridge adds `__altertable_parent` to the
-app URL. A hosted app must explicitly install a transport to its configured,
+app URL. An app loaded by URL must install a transport to its configured,
 trusted parent origin using the [client API](client.md#iframe-transport).
 The query parameter alone does not establish trust.
 
@@ -176,6 +177,7 @@ For server-owned named operations, use `dataAppRoutes` and `data:query` instead.
 The parent declares where the iframe is mounted and owns its resolved theme:
 
 ```ts
+// ... iframe and authorized router
 const host = attachDataAppBridge({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },

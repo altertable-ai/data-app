@@ -1,8 +1,7 @@
 # Stories and CSV export
 
 Supply `story` and `datasets` on `<DataApp>` from `@altertable/data-app-react`.
-Both use the displayed snapshot, including during refresh or failure. Before a
-result is available, the toolbar actions stay visible and disabled.
+Both use the displayed snapshot, including during refresh or failure.
 Setup and static screens use `<DataApp>` from `/ui` and may omit both.
 
 ## Present data with stories

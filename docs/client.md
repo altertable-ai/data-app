@@ -1,20 +1,23 @@
 # Client
 
-Import `createDataClient()` from
-`@altertable/data-app/client`. The client uses Fetch APIs and has no React or
-server dependency.
+Use this guide when customizing client delivery. Standard apps keep the
+starter's client. Import `createDataClient()` from `@altertable/data-app/client`.
 
 ## HTTP operations
 
 ```ts
 import { createDataClient } from '@altertable/data-app/client';
-import type { operations } from './operations';
+import type { operations } from './operations.ts';
 
 const client = createDataClient<typeof operations>();
-const response = await client.query('activity', input, { signal });
+const response = await client.query(
+  'sampleCountsByGroup',
+  { groupName: '' },
+  { signal }
+);
 ```
 
-The app defines `operations`, `input`, and an optional cancellation `signal`.
+The app supplies `operations` and an optional cancellation `signal`.
 Inputs and data are inferred from the operation map and `run()`. Keep the import
 type-only so operation implementations stay on the server.
 
@@ -25,27 +28,22 @@ operation inputs rather than SQL or credentials.
 
 For direct client calls, render `response.data` and label it with `response.input`
 so retained results keep their original scope during refresh. React views handle
-this automatically. Use `DataAppError` for public error codes and request IDs in
-custom error handling; pass an abort signal to cancel a request.
+this automatically. For custom error handling, import `DataAppError` from the same
+entry for public codes and request IDs. Pass an abort signal to cancel a request.
 
 See [contracts](contract.md), [server handlers](server.md), and
 [React bindings](react.md).
 
 ## Browser-owned operations for bundle apps
 
-Start with the complete [single-file example](app-authoring.md#use-release-matched-starters)
-and [data app authoring guide](hosted-apps.md).
 Bundle apps pass their operation registry as a value:
 
 ```ts
-import { connectionCheck } from '@altertable/data-app/contract';
 import { createDataClient } from '@altertable/data-app/client';
 
-// dataApp declares a connection query.
-const client = createDataClient({
-  operations: { connection: connectionCheck(dataApp.queries) },
-});
-const response = await client.query('connection', {});
+// ... operations declared with dataApp.defineOperation()
+const client = createDataClient({ operations });
+const response = await client.query('sampleCountsByGroup', { groupName: '' });
 ```
 
 Operations run in the browser and query through the host's `data:sql` route.
