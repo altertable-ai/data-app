@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   extractDataAppManifest,
+  overrideDataAppManifest,
   type DataAppLiteralValue,
   type DataAppManifest,
 } from '@altertable/data-app-manifest';
@@ -324,5 +325,275 @@ test('extracts the documented hosted starter declaration', async () => {
         },
       },
     },
+  });
+});
+
+describe('manifest override', () => {
+  // Also checks the rewritten declaration extracts as the given manifest.
+  function overridden(text: string, manifest: DataAppManifest) {
+    const result = overrideDataAppManifest(text, manifest);
+    expect(result.diagnostics).toEqual([]);
+    expect(extractDataAppManifest(result.source ?? '')).toEqual({
+      manifest,
+      diagnostics: [],
+    });
+    return result.source;
+  }
+  function changed(text: string, change: (manifest: DataAppManifest) => void) {
+    const manifest = extractDataAppManifest(text).manifest!;
+    change(manifest);
+    return overridden(text, manifest);
+  }
+
+  test('exposes the rewritten source narrowed by its presence', () => {
+    const result = overrideDataAppManifest(source(), {});
+    if (result.source !== null) {
+      expectTypeOf(result.source).toEqualTypeOf<string>();
+      expectTypeOf(result.diagnostics).toEqualTypeOf<[]>();
+    }
+  });
+
+  test('rewrites only the changed values of the hosted starter', async () => {
+    const text = await readFile(
+      new URL(
+        '../../packages/data-app-examples/templates/starter-data-app/index.tsx',
+        import.meta.url
+      ),
+      'utf8'
+    );
+    expect(
+      changed(text, manifest => {
+        manifest.title = 'Renamed';
+        // @ts-expect-error Literal values are not narrowed to the config shape.
+        manifest.queries.sampleCountsByGroup.params.limit.defaultValue = 25;
+      })
+    ).toBe(
+      text
+        .replace("title: 'Sample counts'", "title: 'Renamed'")
+        .replace('defaultValue: 10', 'defaultValue: 25')
+    );
+  });
+
+  test('returns the source as authored for an equal manifest, in any key order', () => {
+    const text = source(`{
+  // Shown in lists.
+  description: 'Explore sales', title: "Sales",
+  scope: { environment: 'test', organization: 'demo' },
+  queries: { q: { statement: \`SELECT 1\`, params: { p: { defaultValue: -0 } } } },
+}`);
+    const manifest = extractDataAppManifest(text).manifest!;
+    const reordered = Object.fromEntries(Object.entries(manifest).reverse());
+    expect(overrideDataAppManifest(text, reordered).source).toBe(text);
+  });
+
+  test('keeps comments, wrappers, and quotes around changed values', () => {
+    expect(
+      changed(
+        source(`{
+  // Shown in lists.
+  title: "Sales" /* short */,
+  description: ('Explore sales' as const),
+  scope: { organization: 'demo', environment: 'test' } satisfies object,
+  queries: {},
+}`),
+        manifest => {
+          manifest.title = 'Revenue';
+          manifest.description = 'Explore revenue';
+          manifest.scope = { organization: 'demo', environment: 'prod' };
+        }
+      )
+    ).toBe(
+      source(`{
+  // Shown in lists.
+  title: "Revenue" /* short */,
+  description: ('Explore revenue' as const),
+  scope: { organization: 'demo', environment: 'prod' } satisfies object,
+  queries: {},
+}`)
+    );
+  });
+
+  test.each([
+    ['{ a: 1, b: 2, c: 3 }', ['a'], '{ b: 2, c: 3 }'],
+    ['{ a: 1, b: 2, c: 3 }', ['b'], '{ a: 1, c: 3 }'],
+    ['{ a: 1, b: 2, c: 3 }', ['c'], '{ a: 1, b: 2 }'],
+    ['{ a: 1 /* Keep a. */, b: 2 }', ['b'], '{ a: 1 /* Keep a. */ }'],
+    ['{ a: 1, b: 2, c: 3 }', ['a', 'b', 'c'], '{}'],
+    [
+      '{\n  // About a.\n  a: 1,\n  b: 2, // About b.\n  c: 3,\n}',
+      ['a'],
+      '{\n  b: 2, // About b.\n  c: 3,\n}',
+    ],
+    [
+      '{\n  // About a.\n  a: 1,\n  b: 2, // About b.\n  c: 3,\n}',
+      ['b'],
+      '{\n  // About a.\n  a: 1,\n  c: 3,\n}',
+    ],
+    [
+      '{\n  // About a.\n  a: 1,\n  b: 2, // About b.\n  c: 3,\n}',
+      ['c'],
+      '{\n  // About a.\n  a: 1,\n  b: 2, // About b.\n}',
+    ],
+    ['{\n  a: 1,\n  b: 2 // About b.\n}', ['b'], '{\n  a: 1\n}'],
+  ])(
+    'removes properties with their comments and commas: %s',
+    (before, removed, after) => {
+      expect(
+        changed(source(before), manifest => {
+          for (const key of removed) delete manifest[key];
+        })
+      ).toBe(source(after));
+    }
+  );
+
+  test.each([
+    ['{ a: 1 }', { b: 'x' }, "{ a: 1, b: 'x' }"],
+    ['{\r\n  a: 1,\r\n}', { b: 2 }, '{\r\n  a: 1,\r\n  b: 2,\r\n}'],
+    ['{ a: 1, // Keep a.\r\n}', { b: 2 }, '{ a: 1, // Keep a.\r\nb: 2,\r\n}'],
+    ['{ a: 1, }', { b: 2 }, '{ a: 1, b: 2, }'],
+    [
+      '{}',
+      { a: 1, b: { c: [true, null] } },
+      '{ a: 1, b: { c: [true, null] } }',
+    ],
+    [
+      '{\n  queries: {\n    a: { statement: "SELECT 1" },\n  },\n}',
+      {
+        queries: { a: { statement: 'SELECT 1' }, b: { statement: 'SELECT 2' } },
+      },
+      '{\n  queries: {\n    a: { statement: "SELECT 1" },\n    b: { statement: "SELECT 2" },\n  },\n}',
+    ],
+    ['{\n  a: 1 // About a.\n}', { b: 2 }, '{\n  a: 1, // About a.\n  b: 2\n}'],
+    [
+      '{ a: 1 }',
+      { 'last-sign-ups': 1, '1': 2, région: 3, $x: 4, default: 5 },
+      "{ a: 1, '1': 2, 'last-sign-ups': 1, région: 3, $x: 4, default: 5 }",
+    ],
+  ])(
+    'appends new properties in the layout of the object: %s',
+    (before, added, after) => {
+      expect(
+        changed(source(before), manifest => Object.assign(manifest, added))
+      ).toBe(source(after));
+    }
+  );
+
+  test.each([
+    [
+      "{ title: 'Sales', // Shown in lists.\n}",
+      (manifest: DataAppManifest) => {
+        manifest.description = 'Explore sales';
+      },
+      "{ title: 'Sales', // Shown in lists.\ndescription: 'Explore sales',\n}",
+    ],
+    [
+      '{\n  a: 1, // About a.\n  b: 2, c: 3\n}',
+      (manifest: DataAppManifest) => {
+        delete manifest.b;
+      },
+      '{\n  a: 1, // About a.\n  c: 3\n}',
+    ],
+    [
+      "{\n  scope: { organization: 'demo', // About demo.\n    environment: 'test' },\n}",
+      (manifest: DataAppManifest) => {
+        delete (manifest.scope as DataAppManifest).environment;
+      },
+      "{\n  scope: { organization: 'demo' // About demo.\n  },\n}",
+    ],
+  ])(
+    'moves text that would follow a line comment to a new line: %s',
+    (before, change, after) => {
+      expect(changed(source(before), change)).toBe(source(after));
+    }
+  );
+
+  test('replaces, removes, and appends in one override', () => {
+    expect(overridden(source('{ a: 1, b: 2 }'), { b: 3, c: 4 })).toBe(
+      source('{ b: 3, c: 4 }')
+    );
+  });
+
+  test('writes values of another type and any finite number in place', () => {
+    expect(
+      overridden(source("{ a: 'x', b: { c: 1 }, d: [1, 2], e: 1 }"), {
+        a: { y: true },
+        b: [null],
+        d: [1, 2, 3],
+        e: -0,
+      })
+    ).toBe(source('{ a: { y: true }, b: [null], d: [1, 2, 3], e: -0 }'));
+    overridden(source('{ n: 0 }'), { n: -1.5 });
+    overridden(source('{ n: 0 }'), { n: 1e21 });
+    overridden(source('{ n: 0 }'), { n: Number.MIN_VALUE });
+  });
+
+  test('writes strings that read back exactly, multiline ones as templates', () => {
+    for (const value of [
+      `it's "quoted" \\ path`,
+      'tab\tand separators\u0085',
+      'back`tick ${x} \\${y}',
+      'Windows\r\nline\rendings',
+    ])
+      overridden(source('{ text: \'x\', other: "x" }'), {
+        text: value,
+        other: value,
+      });
+    expect(
+      overridden(source("{ statement: 'SELECT 1' }"), {
+        statement: 'SELECT 1\nFROM t',
+      })
+    ).toBe(source('{ statement: `SELECT 1\nFROM t` }'));
+    expect(
+      overridden(source('{ statement: `SELECT 1` }'), {
+        statement: 'SELECT 2',
+      })
+    ).toBe(source('{ statement: `SELECT 2` }'));
+    expect(
+      overridden(source("{ title: 'Sales' }"), { title: 'Par région' })
+    ).toBe(source("{ title: 'Par région' }"));
+  });
+
+  test('quotes new strings like the declaration', () => {
+    expect(overridden(source('{ title: "A" }'), { title: 'A', b: 'B' })).toBe(
+      source('{ title: "A", b: "B" }')
+    );
+    expect(overridden(source('{ count: 1 }'), { count: 1, b: 'B' })).toBe(
+      source("{ count: 1, b: 'B' }")
+    );
+  });
+
+  test('returns extraction diagnostics for sources it cannot rewrite', () => {
+    for (const text of [
+      'export default function App() { return null; }',
+      source(argumentWith('description: getDescription()')),
+    ]) {
+      const result = overrideDataAppManifest(text, { title: 'Sales' });
+      expect(result.source).toBeNull();
+      expect(result.diagnostics).not.toEqual([]);
+      expect(result.diagnostics).toEqual(
+        extractDataAppManifest(text).diagnostics
+      );
+    }
+  });
+
+  test.each([
+    ['NaN', { n: NaN }],
+    ['Infinity', { n: -Infinity }],
+    ['undefined', { n: undefined }],
+    ['a function', { n: () => 1 }],
+    ['a bigint', { n: 1n }],
+    ['a class instance', { n: new Date(0) }],
+    ['an array hole', { n: Object.assign([], { length: 1 }) }],
+    ['a __proto__ key', JSON.parse('{ "__proto__": { "polluted": true } }')],
+    [
+      'a nested __proto__ key',
+      JSON.parse('{ "queries": { "__proto__": {} } }'),
+    ],
+    ['an array manifest', []],
+  ])('throws a TypeError for %s', (_, manifest) => {
+    expect(() =>
+      overrideDataAppManifest(source(), manifest as unknown as DataAppManifest)
+    ).toThrow(TypeError);
+    expect(Object.hasOwn(Object.prototype, 'polluted')).toBe(false);
   });
 });

@@ -245,13 +245,19 @@ try {
   await typecheck(
     manifestOnly,
     `
-import { extractDataAppManifest, type DataAppManifest, type DataAppLiteralValue } from '@altertable/data-app-manifest';
+import { extractDataAppManifest, overrideDataAppManifest, type DataAppManifest, type DataAppLiteralValue } from '@altertable/data-app-manifest';
 const result = extractDataAppManifest('');
 if (result.manifest) {
   const manifest: DataAppManifest = result.manifest;
   const value: DataAppLiteralValue = manifest.title;
   const diagnostics: [] = result.diagnostics;
   void [value, diagnostics];
+}
+const override = overrideDataAppManifest('', { title: 'Sales' });
+if (override.source !== null) {
+  const source: string = override.source;
+  const diagnostics: [] = override.diagnostics;
+  void [source, diagnostics];
 }
 // @ts-expect-error The API accepts only the source string.
 extractDataAppManifest('', 'app.tsx');

@@ -56,7 +56,8 @@ their dependencies to have been built first.
 Scaffolding tools consume the examples package catalog and `copyExample()`;
 template selection and destination handling belong to the caller.
 
-`@altertable/data-app-manifest` owns TypeScript 5 for static source extraction.
+`@altertable/data-app-manifest` owns TypeScript 5 for static source extraction
+and rewriting.
 Keep compiler dependencies in this tooling package; runtime packages must not
 depend on it. Root tooling and declaration builds use TypeScript 7. `bun run typecheck` checks
 the root and each package build configuration with that compiler, preserving
