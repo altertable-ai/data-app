@@ -1,40 +1,23 @@
 # React
 
-Import hooks, components, and UI helpers from `@altertable/data-app-react`.
-React 19.2 or newer and React DOM 19.2 or newer are peer dependencies.
+Import views, bound widgets, and layouts from `@altertable/data-app-react`.
+React and React DOM 19.2 or newer are required. Start with
+[app authoring](app-authoring.md).
 
 ## Mount the app
-
-Use `mountDataApp({ app, component })` to mount into `#root`. When mounting
-through another framework, wrap the root in `<DataAppProvider app={app}>` from `@altertable/data-app-react/ui`.
-`<DataApp>` inherits identity and appearance from that root.
 
 ```tsx
 import { injectDataAppStyles, mountDataApp } from '@altertable/data-app-react';
 
 injectDataAppStyles();
-mountDataApp({ app, component: App });
+mountDataApp({ app: dataApp, component: App });
 ```
 
-Call `injectDataAppStyles()` before mounting; no separate stylesheet is needed.
-For a restrictive CSP, pass the permitted nonce on the first call.
-See [Styling](styling.md) for appearance, CSS tokens, and overrides.
+The app supplies `dataApp`, `App`, and a `#root` element.
 
-Use `@altertable/data-app-react` for declared views, bound widgets, and layouts. Use
-[`@altertable/data-app-react/ui`](ui.md) for setup/static screens and direct UI composition.
+Keep the starter's mounting and client wiring. Use declared views and bound
+widgets for exploration. Use `/ui` for setup/static screens or a custom component
+only when bound components cannot express the requirement.
 
-## Choose a task
-
-| Task                                                     | Guide                                                     |
-| -------------------------------------------------------- | --------------------------------------------------------- |
-| Declare a view and handle loading, refresh, and failures | [Views](views.md)                                         |
-| Configure date, text, select, and dimension controls     | [Variables](variables.md)                                 |
-| Render metrics, charts, tables, and narrative            | [Widgets](widgets.md)                                     |
-| Compose sections and responsive grids                    | [Layout](layout.md)                                       |
-| Register sources, definitions, metrics, and evidence     | [Data context](data-context.md)                           |
-| Present findings and export displayed data               | [Stories and export](stories-and-export.md)               |
-| Format values and configure appearance                   | [Formatting and appearance](formatting-and-appearance.md) |
-| Host an iframe from React                                | [React embed](react-embed.md)                             |
-
-Start with [app authoring](app-authoring.md) and the
-[single-file starter](app-authoring.md#use-release-matched-starters).
+Hosts embedding an app use the separate `@altertable/data-app-embed` package;
+that integration is outside ordinary app authoring.

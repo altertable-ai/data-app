@@ -12,6 +12,7 @@ message delivery. The host supplies an iframe and a validated message dispatcher
 ```ts
 import { attachDataAppBridge } from '@altertable/data-app-embed';
 
+// ... iframe and authorized router
 const host = attachDataAppBridge({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
@@ -19,10 +20,10 @@ const host = attachDataAppBridge({
 });
 ```
 
-The host defines `iframe` and `router`; see [message contracts](contract.md#message-routes).
+The host defines `iframe` and `router`; see [message contracts](#message-routes).
 Call `host.dispose()` before replacing the source or retrying. A URL source requires HTTP(S)
 and a different origin from its host. The source bridge adds `__altertable_parent` to the
-app URL. A hosted app must explicitly install a transport to its configured,
+app URL. An app loaded by URL must install a transport to its configured,
 trusted parent origin using the [client API](client.md#iframe-transport).
 The query parameter alone does not establish trust.
 
@@ -43,11 +44,8 @@ direct network access. Data requests go through the host's dispatcher.
 Supply an HTTP(S) `bootstrapUrl` to use an externally served trusted bootstrap,
 such as the [Worker asset](worker.md).
 
-The host provides a self-contained JavaScript bundle. React bridges replace the
-iframe whenever its JavaScript content changes. Serve the bootstrap page with a CSP compatible with the bundle.
-Bundle mode uses `sandbox="allow-scripts"` and an opaque origin; it cannot read
-the host document or use same-origin privileges. Both modes use
-`referrerPolicy="no-referrer"`.
+Supply a self-contained JavaScript bundle. Bundle mode uses an opaque
+`sandbox="allow-scripts"` frame; both modes use `referrerPolicy="no-referrer"`.
 
 ## Trusted bootstrap
 
@@ -71,19 +69,15 @@ session token. Its hosting service must enforce its CSP. The bridge cannot impos
 CSP on a remote response. A starting policy for self-contained scripts and styles
 is `default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';
 img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'`.
-The initializer installs a shared transport before evaluating the app script;
-data clients discover it even when independently bundled. The bootstrap contains
-no app navigation adapter. React mounting or URL controls attach navigation in the
-app bundle; non-React apps use `createDataAppNavigation()` from `/client`.
+The initializer installs the transport before evaluating app code. Non-React
+apps attach [navigation](client.md#app-navigation) separately.
 
 ## Delivery and navigation
 
-`attachDataAppBridge()` also supports connection mode for a host-owned iframe. Supply
-`connection: { type: 'origin', origin }` or `{ type: 'opaque', token }`, and an
-`onMessage` dispatcher. Both modes use the same transport. It returns `dispose()`, `setPresentation()`, and `setLogger()` methods and owns source/origin checks, request
-correlation, cancellation, bounded pending requests, and reconnection. Use source mode for bundle loading and token rotation. The opaque destination requires
-wildcard delivery, but incoming messages still require the exact iframe window,
-null origin, token, document, and session to match.
+For an already loaded, host-owned iframe, supply
+`connection: { type: 'origin', origin }` or `{ type: 'opaque', token }` with
+`onMessage`. The host then owns loading and sandbox policy. Use source mode for
+bundle loading and session setup.
 
 `createNavigationHandler({ window, reservedSearchParams })` handles the shared
 `navigation:update` route using browser history. Reserved host query parameters
@@ -100,17 +94,47 @@ client acknowledged initialization or a bundle script finished evaluation. It
 does not mean asynchronous data queries finished. Script errors report `failed`.
 The source bridge's `startupTimeoutMs` defaults to 30 seconds.
 
-`onDiagnostic` receives delivery metadata, never tokens or payloads: `direction`
-(`send`, `receive`, or `drop`), message `type`, and, when present, the request
-`id`, `route`, query `operation`, and error `code`, `message`, and `requestId`.
-Results and errors include `durationMs`, the host handling time. `drop` events
-report why a message from the connected iframe was ignored, such as a stale
-session or token; messages from other windows are not reported.
+Use `onDiagnostic` or `logger` to inspect delivery and failures. Diagnostics omit
+tokens and payloads. Handlers must authorize every data request; message
+validation and iframe isolation do not grant data access.
 
-When a `logger` is set, the iframe also forwards its view of the bridge: messages
-it sends, receives, and ignores, local timeouts, reconnect resets, and the cause
-of a `failed` status. Routed handlers must authorize every data request. Message
-validation and iframe isolation do not grant access to data or execute SQL.
+## Message routes
+
+Message contracts describe the payloads allowed between an embedded app and its
+host. Share these contracts with the app; keep handlers and authorization in the
+host/server.
+
+Name routes `{scope}:{action}`, for example `data:query` or `navigation:update`.
+
+```ts
+import {
+  createMessageRouter,
+  defineMessageRoute,
+  navigationUpdateRoute,
+} from '@altertable/data-app/contract';
+import { createNavigationHandler } from '@altertable/data-app-embed';
+
+function parseString(value: unknown) {
+  if (typeof value !== 'string') throw new Error('Expected a string.');
+  return value;
+}
+
+const routes = {
+  'demo:echo': defineMessageRoute({ input: parseString, output: parseString }),
+  'navigation:update': navigationUpdateRoute,
+};
+const router = createMessageRouter(routes, {
+  'demo:echo': value => value,
+  'navigation:update': createNavigationHandler(),
+});
+```
+
+`router.dispatch()` validates route input and output. Use `MessageRoutingError`
+for intentional public failures; other handler errors are hidden.
+
+Use `defineDataQueryRoute(operationContracts)` for typed named operations or
+`dataAppRoutes` for generic operation and navigation routes. Handlers must
+validate operations, authorize data access, and enforce backend query limits.
 
 ## SQL query route
 
@@ -143,25 +167,17 @@ as public `source_*` errors with request IDs. Authorization failures return
 `forbidden`; unknown query errors are hidden. Custom handlers can return deliberate
 public failures with `MessageRoutingError`.
 
-`SqlQueryInput` (exported from `/contract`) carries
-`{ statement: string, limit: number, params?: QueryParameters }`; the backend
-interprets the unchanged statement and parameter values. Responses are
-`{ columns: { name: string, type?: string }[], rows: unknown[][], queryId?: string }`.
-The route rejects empty statements, unsafe or nonpositive limits, malformed
-results, and results exceeding the requested limit. The bridge's existing payload
-and pending-call limits apply, and cancellation reaches the handler's signal.
-Operation names and inputs stay in the app; query evidence is assembled there.
-
-`dataAppRoutes` retains named `data:query` and navigation routes for existing
-server-backed hosts. SQL hosts opt into `data:sql`; they need no named-operation
-handler unless they also serve HTTP-style apps. Update the host before switching
-an app to browser-owned operations. Older hosts reject `data:sql` as unknown.
+The SQL route carries `{ statement, limit, params? }` and returns column
+metadata and row arrays; see `SqlQueryInput` and `QueryResult` in the
+[API reference](../REFERENCE.md). Keep SQL and parameters unchanged.
+For server-owned named operations, use `dataAppRoutes` and `data:query` instead.
 
 ## Parent presentation
 
 The parent declares where the iframe is mounted and owns its resolved theme:
 
 ```ts
+// ... iframe and authorized router
 const host = attachDataAppBridge({
   iframe,
   source: { type: 'url', url: 'https://apps.example.com/report' },
@@ -173,21 +189,11 @@ const host = attachDataAppBridge({
 host.setPresentation({ surface: 'embedded', theme: 'light' });
 ```
 
-Both source and connection modes support the `presentation` option and
-`host.setPresentation(presentation)` method. `DataAppPresentation` is exported from
-`/embed`. Use `surface: 'embedded'` when the parent provides page chrome, as in the
-Altertable frontend, and `'standalone'` when the app provides its own header and
-footer. `theme` must be resolved to `'light'` or
-`'dark'`; the parent decides how its system preference is resolved.
-
-Presentation travels over `postMessage()` in the authenticated `bridge:initialize` and
-`state:update` messages, alongside `search` and `hash`. Framework-neutral apps
-can narrow the unknown state returned by `bridge.snapshot()` to read its
-`presentation` field, and subscribe through `bridge.subscribe()`. React `<DataApp>` consumes it automatically.
-An embedded surface renders toolbar actions without the page header or footer.
-Both surfaces follow the parent's theme, including presentation mode, without
-changing saved viewer preferences. Omitting presentation preserves standalone behavior;
-`host.setPresentation(undefined)` restores it.
+Use `surface: 'embedded'` when the parent supplies page chrome and
+`'standalone'` when the app supplies it. Resolve the parent theme to `'light'` or
+`'dark'`. React `<DataApp>` applies presentation automatically: embedded surfaces
+keep toolbar actions and hide header/footer. Updates do not reload the iframe.
+Call `host.setPresentation(undefined)` to restore standalone defaults.
 
 ### Content sizing
 
@@ -203,18 +209,10 @@ host.setPresentation({
 });
 ```
 
-Apps whose UI supports content sizing opt in: React `<DataApp>` does so
-automatically, and framework-neutral apps call `bridge.supportContentSizing()`.
-Other apps keep the iframe's authored height. The app reports its document height
-in `runtime:resize` messages and the bridge sets the iframe's inline `height`;
-leave the iframe out of flex or grid stretching and `max-height` limits so that
-height applies. If content sizing does not settle, the bridge restores the
-authored frame height and the app scrolls inside it so all content remains
-accessible. Toggle sizing off and on, or reload
-the app, to retry content sizing.
-While the iframe is content-sized, the bridge sends
-`viewport:update` messages describing which part of it the parent page shows, and
-sheets and toasts stay within that part. Scrolling containers
-and the parent viewport bound it. Switching back to `'frame'` or disposing the
-bridge restores the iframe's authored height. Apps keep the document element and
-body heights automatic; viewport units resolve against the content-sized frame.
+React `<DataApp>` supports content sizing automatically; framework-neutral apps
+call `bridge.supportContentSizing()`. Keep iframe flex/grid stretching and
+`max-height` constraints off so the reported height can apply. Keep app document
+and body heights automatic.
+
+If sizing fails to settle, the bridge restores frame scrolling. Toggle sizing or
+reload to retry. Switching to `'frame'` or disposing restores the authored height.

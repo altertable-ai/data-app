@@ -10,21 +10,16 @@ frame for deliberately custom content. Use `<GettingStarted>` for
 connection setup. Fetched data belongs to a declared view; avoid inventing
 request states to populate a shell.
 
-Widget titles use the available header width and wrap when needed. Supplying
-`status` reserves space for refresh and retry feedback, including while idle.
-
-Direct `<DateRangePicker>`, `<DimensionPicker>`, and `useAppVariables()` support
-custom control ownership. The caller supplies values and change handlers.
-Custom tables use `<DataTable>` and its cell helpers; controls and overlays
-include `<SearchField>`, `<ChoicePicker>`, `<Tabs>`, `<Sheet>`, and `<HelpPopover>`.
-Horizontal `<TabList>` content scrolls with gradient cues at overflowing edges.
+Custom controls own values and change handlers; use `useAppVariables()` for
+custom URL state. Use `<DataTable>` for custom tables and `<Tabs>`, `<Sheet>`,
+and `<HelpPopover>` for navigation and overlays.
 
 Standalone `<AboutData>`, glossary components, and `<PresentStory>` support
 custom inspection and presentation. Supply registered context and evidence, and
 derive findings from the displayed data. Standard widgets and `<DataApp>`
 already own these experiences.
 
-For framework mounting, `<DataAppProvider app={app}>` supplies app identity, shared requests and one inspection sheet. Wrap custom shells in it; app components inherit identity and appearance.
+For framework mounting, `<DataAppProvider app={dataApp}>` supplies app identity, shared requests and one inspection sheet. Wrap custom shells in it; app components inherit identity and appearance.
 Call `injectDataAppStyles()` before mounting either entry; imports do not install
 styles.
 
@@ -34,12 +29,20 @@ Use `isPlainKeyEvent()` from `@altertable/data-app-react/ui` in custom key handl
 leave shortcut modifiers and IME composition untouched:
 
 ```tsx
-onKeyDown={event => {
-  if (event.key === 'Enter' && isPlainKeyEvent(event.nativeEvent)) {
-    event.preventDefault();
-    submit();
-  }
-}}
+function SearchInput() {
+  // ... submit handler
+  return (
+    <input
+      aria-label="Search"
+      onKeyDown={event => {
+        if (event.key === 'Enter' && isPlainKeyEvent(event.nativeEvent)) {
+          event.preventDefault();
+          submit();
+        }
+      }}
+    />
+  );
+}
 ```
 
 Pass `{ allowShift: true }` when the handler also supports Shift gestures.
@@ -47,17 +50,13 @@ Pass `{ allowShift: true }` when the handler also supports Shift gestures.
 ## Choose a selection control
 
 Use `<DimensionPicker>` for typed field filters and `<ChoicePicker>` for searchable
-values. A single value uses a checkmark and closes after selection; multiple
-values use checkbox indicators and keep the popup open. These pickers expose
-listbox options, including search and loading feedback.
+values.
 
 Use `<MenuTrigger>`, `<MenuButton>`, `<MenuPopover>`, `<Menu>`, and `<MenuItem>`
 for commands or short choice menus
 such as sort order or display mode. Actions use `onAction`. Set
 `selectionMode="single"` for mutually exclusive choices (radio menu items), or
-`selectionMode="multiple"` for independent toggles (checkbox menu items). Menus
-support arrow keys, typeahead, Escape, and focus return to their trigger. Keep
-search fields and other form inputs outside menus.
+`selectionMode="multiple"` for independent toggles (checkbox menu items). Keep search fields and form inputs outside menus.
 
 ```tsx
 <MenuTrigger>
@@ -81,11 +80,8 @@ search fields and other form inputs outside menus.
 `<MenuButton>` accepts text or icons; give icon-only buttons an accessible name.
 `<MenuPopover>` owns placement and popup styling.
 
-Use `<MenuSection>` to group choices with their own selection state and
-`<MenuSeparator>` between groups or commands. Menu selection closes the popup
-by default; set `shouldCloseOnSelect={false}` for repeated toggles. Selection
-indicators derive from the menu or section's selection mode; do not add checkbox
-markup to single-choice items.
+Use `<MenuSection>` for grouped choices and `<MenuSeparator>` between groups.
+Selection indicators derive from `selectionMode`; do not add checkbox markup.
 
 ## Charts
 
@@ -97,10 +93,9 @@ so rows, loading state, evidence, and inspection come from that dataset.
 Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
 values must be nonnegative. Use `formatValue` for domain formatting.
 
-Line and area charts show equally spaced samples; include missing periods in the
-input. These charts space items evenly, so they do not represent irregular time
-intervals. Distinguish a missing observation from measured zero when preparing
-the samples. Pie slices represent mutually exclusive parts of one total; shares
+Line and area charts space samples equally; include missing periods and use
+composed charts for irregular intervals. Distinguish missing observations from zero.
+Pie slices represent mutually exclusive parts of one total; shares
 use the sum of supplied items, so include Other when showing a subset of the
 whole. Scatter points represent independent X/Y observations.
 
@@ -134,22 +129,28 @@ standalone charts' themed series primitives; axes, scatter, tooltip, and referen
 primitives are also available.
 
 ```tsx
-<VisualizationWidget dataset={revenue} source={result}>
-  {rows => (
-    <ComposedChart data={rows} ariaLabel="Monthly revenue and target in euros">
-      <ComposedChart.XAxis dataKey="month" />
-      <ComposedChart.YAxis />
-      <ComposedChart.Tooltip />
-      <ComposedChart.Legend />
-      <ComposedChart.Bar dataKey="revenue" name="Revenue (€)" />
-      <ComposedChart.Line
-        dataKey="target"
-        name="Target (€)"
-        stroke="var(--atbl-chart-2)"
-      />
-    </ComposedChart>
-  )}
-</VisualizationWidget>
+// ... revenueView and its revenue dataset
+const revenueContent = revenueView.content(result => (
+  <VisualizationWidget dataset={revenue} source={result}>
+    {rows => (
+      <ComposedChart
+        data={rows}
+        ariaLabel="Monthly revenue and target in euros"
+      >
+        <ComposedChart.XAxis dataKey="month" />
+        <ComposedChart.YAxis />
+        <ComposedChart.Tooltip />
+        <ComposedChart.Legend />
+        <ComposedChart.Bar dataKey="revenue" name="Revenue (€)" />
+        <ComposedChart.Line
+          dataKey="target"
+          name="Target (€)"
+          stroke="var(--atbl-chart-2)"
+        />
+      </ComposedChart>
+    )}
+  </VisualizationWidget>
+));
 ```
 
 For irregular time intervals, use `<ComposedChart.XAxis>` with ISO dates, zoned
@@ -169,10 +170,7 @@ its columns aligned with the displayed measures.
 Include `<ComposedChart.Legend />` to derive labels and colored square markers from the series;
 omit it when no legend is needed. For any chart, compose `<ChartLegend>` with
 `<ChartLegend.Item>`, `<ChartLegend.Marker>`, and `<ChartLegend.Label>` using the
-same names and colors as the plot. Square markers are
-shared with chart tooltips and funnel summaries. Pass `kind="square"` explicitly
-when composing a marker.
-`<PieChart>` includes a legend by default; `showLegend={false}` omits it.
+same names and colors as the plot. `<PieChart>` includes a legend by default; `showLegend={false}` omits it.
 
 Legends describe series; authored toggles or a composed legend's `onClick`
 leave series visibility to the app.
@@ -196,33 +194,33 @@ filter declarations own URL state, validation, and operation meaning.
 | `<DimensionPicker>`                | Typed categorical predicates with fixed or facet options          |
 
 ```tsx
-<RadioGroup label="Metric" value={metric} onChange={setMetric}>
-  <Radio value="orders">Orders</Radio>
-  <Radio value="revenue">Revenue</Radio>
-</RadioGroup>
+function FilterChoices() {
+  // ... metric, statuses, and their change handlers
+  return (
+    <>
+      <RadioGroup label="Metric" value={metric} onChange={setMetric}>
+        <Radio value="orders">Orders</Radio>
+        <Radio value="revenue">Revenue</Radio>
+      </RadioGroup>
 
-<CheckboxGroup label="Statuses" values={statuses} onChange={setStatuses}>
-  <Checkbox value="paid" label="Paid" />
-  <Checkbox value="pending" label="Pending" />
-</CheckboxGroup>
+      <CheckboxGroup label="Statuses" values={statuses} onChange={setStatuses}>
+        <Checkbox value="paid" label="Paid" />
+        <Checkbox value="pending" label="Pending" />
+      </CheckboxGroup>
+    </>
+  );
+}
 ```
 
-A standalone `<Checkbox>` uses `checked` and `onChange`; a group item supplies
-`value`. `<SegmentedControl>` accepts the same labeled options as `<Select>` and
-keeps radio-group semantics. Numeric range controls retain invalid draft bounds
-and emit only valid intervals. Numeric input and compact selects respect the
-shared mobile text-size minimum.
+A standalone `<Checkbox>` uses `checked` and `onChange`; group items use `value`.
 
 Use `<FilterBar>` to arrange predicates and `<VariableBar>` for mixed app
 parameters. Use `<FilterActions>` for Clear or paired Apply/Cancel actions on
 app-owned drafts; provide the handlers for your applied state.
 
-`<NumberFilterPicker>` composes numeric fields inside a dedicated popover. Edits
-remain local until Apply; Cancel and dismissal discard them. Use `<NumberField>`
-and `<NumberRangeField>` as inline input primitives when composing forms.
+Use `<NumberFilterPicker>` for a numeric predicate popover or numeric fields
+for inline forms.
 
 Use `<Button variant="primary">` for the main committing action, such as Apply.
 Use outline and ghost buttons for secondary actions.
-Use `<Button variant="inline">` for actions within text or table cells. It has no
-control padding or background and underlines on hover. Keep button semantics for
-opening a sheet; use links for navigation to a URL.
+Use `<Button variant="inline">` for actions within text or table cells. Use buttons for opening sheets and links for URL navigation.

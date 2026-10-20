@@ -35,10 +35,7 @@ formatCount(2_200_000); // "2,200,000"
 For signed or fractional measures, use `formatNumber()` with
 `notation: 'compact'` and preserve the measure's units.
 
-Import `chartColor()` from `@altertable/data-app-react` to select colors from the configured palette.
-`<PeriodSummary>` describes reporting periods; `<UpdatedAt>` and
-`<DateTimeTooltip>` expose readable timestamps with exact-date details.
-`<DataTableTimestamp>` and `<DataTableShare>` format custom table cells.
+Use `chartColor()` from `@altertable/data-app-react` for palette colors.
 
 ## Display dates consistently
 
@@ -46,13 +43,17 @@ Declare date meaning on dataset columns so tables use readable values and CSV
 keeps the originals:
 
 ```ts
-columns: {
-  day: { value: row => row.day, format: { kind: 'date' } },
-  observed: {
-    value: row => row.observed,
-    format: { kind: 'dateTime', precision: 'second' },
+// ... dailyCountsView with day and observed result fields
+const dailyCounts = dailyCountsView.dataset({
+  // ... name, select, rowKey, and evidence
+  columns: {
+    day: { value: row => row.day, format: { kind: 'date' } },
+    observed: {
+      value: row => row.observed,
+      format: { kind: 'dateTime', precision: 'second' },
+    },
   },
-}
+});
 ```
 
 Calendar dates use `YYYY-MM-DD`. Instants accept epoch milliseconds or timestamp
@@ -68,32 +69,10 @@ ordering matters; exact-time details remain available on timestamps.
 
 ## Configure identity and appearance
 
-```ts
-import { defineDataApp } from '@altertable/data-app';
+Set `title`, `description`, and connection `scope` in `defineDataApp()`. Scope
+labels describe the connection; they do not grant access.
 
-const dataApp = defineDataApp({
-  title: 'Product activity',
-  description: 'Explore product usage and trends.',
-  scope: { organization: 'Acme', environment: 'Production' },
-  appearance: {
-    theme: 'system',
-    baseColor: 'neutral',
-    density: 'comfortable',
-  },
-  queries: {},
-});
-```
-
-Scope labels describe the configured connection; they do not grant access.
-
-Title and description explain the app and can be revised when regenerating it.
-Omit appearance to use the standard defaults.
-
-The default UI is neutral in light and dark themes. Use `baseColor` for the base
-palette and `accentColor` with optional `darkAccentColor` for brand emphasis.
-Configure chart colors separately with `chartColors`; preserve semantic status
-colors for favorable and unfavorable outcomes.
-
-Configure appearance once for the app. Theme preference is user-owned in standalone apps. A trusted parent's
-resolved theme takes precedence and hides local theme controls; see
-[parent presentation](embed.md#parent-presentation).
+Keep default appearance. Customize only when requested, configuring it once: `baseColor` for
+the base palette, `accentColor` and optional `darkAccentColor` for emphasis,
+and `chartColors` for charts. Preserve semantic favorable/unfavorable colors.
+Embedded apps follow the parent's resolved theme.

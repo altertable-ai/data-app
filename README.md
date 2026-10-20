@@ -2,56 +2,38 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
-**Build data apps powered by Altertable.**
-
-A TypeScript and React toolkit with APIs, components, and authoring guides for
-developers and AI agents to build data apps powered by Altertable.
-
-A data app combines interactive exploration with explanations and findings,
-helping users answer questions with data. Compose filters, charts, tables, and
-narrative, then let users present findings and export results.
+Build interactive data explorations with TypeScript, React, and Altertable.
+Compose filters, charts, tables, and narrative with built-in stories and CSV export.
+Run in Altertable, MCP Apps hosts, or a local browser.
 
 ## Install
 
-Choose the packages for your runtime or tooling:
-
-| Package                         | Use                                                                           |
-| ------------------------------- | ----------------------------------------------------------------------------- |
-| `@altertable/data-app`          | Definitions, contracts, formatting, browser clients, portable server handlers |
-| `@altertable/data-app-react`    | React app authoring and `/ui` components                                      |
-| `@altertable/data-app-embed`    | Framework-neutral iframe hosting and `/react` host adapter                    |
-| `@altertable/data-app-bun`      | Bun local serving and `/preview` tooling                                      |
-| `@altertable/data-app-manifest` | Static source manifest extraction and rewriting for Node.js and Bun tooling   |
-| `@altertable/data-app-examples` | Canonical starter templates for CLI scaffolding                               |
-| `@altertable/data-app-worker`   | Self-contained sandbox Worker deployment                                      |
-
 ```fish
 bun add @altertable/data-app @altertable/data-app-react react react-dom
-# Local apps also use the Bun adapter:
-bun add @altertable/data-app-bun
 ```
 
-Install only the base package for portable clients and servers. Framework-neutral
-hosts use the embed package; React hosts add React and import
-`@altertable/data-app-embed/react`. Neither requires the app UI stack.
-All packages share a coordinated release version.
+Local apps also install `@altertable/data-app-bun`.
 
-## Usage
+## Build an app
 
-Apps can be embedded in Altertable, ChatGPT, Claude, and other hosts that support
-MCP Apps through a host integration, or run locally in a browser.
+Start with [app authoring](docs/app-authoring.md); search
+[REFERENCE.md](REFERENCE.md) for exports and props. Read runtime details only when
+changing execution mode or converting an app:
 
-| App             | Guide                                  | Starter                                                                                |
-| --------------- | -------------------------------------- | -------------------------------------------------------------------------------------- |
-| Remote data app | [Remote guide](docs/hosted-apps.md)    | [Single file](packages/data-app-examples/templates/starter-data-app/index.tsx)         |
-| Local data app  | [Local guide](docs/local-data-apps.md) | [Local project](packages/data-app-examples/templates/starter-local-data-app/README.md) |
+| App                     | Guide                                        |
+| ----------------------- | -------------------------------------------- |
+| Hosted / remote / cloud | [Single-file authoring](docs/hosted-apps.md) |
+| Local Bun project       | [Local authoring](docs/local-data-apps.md)   |
 
-For agent-assisted work, direct your agent to [AGENTS.md](AGENTS.md). The
-generated [API reference](REFERENCE.md) lists public exports and props for search.
+For host integrations, use [embedding](docs/embed.md) or
+[React embedding](docs/react-embed.md). Tooling packages provide
+[manifest extraction](packages/data-app-manifest/README.md),
+[starter templates](packages/data-app-examples/README.md), and a
+[Worker asset](docs/worker.md). Packages share one release version.
 
 ## Development
 
-See [Contributing](CONTRIBUTING.md) to develop and test the package.
+See [Contributing](CONTRIBUTING.md) for setup and verification.
 
 ## License
 

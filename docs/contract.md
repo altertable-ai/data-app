@@ -1,139 +1,99 @@
-# Contracts
+# Queries and operations
 
-Import operation definitions, parsers, and shared types from
-`@altertable/data-app/contract`. This entry is safe to import in browser and server
-modules. The app declaration is browser-safe and includes its SQL registry. For HTTP apps,
-keep operation implementations, credentials, and authorization on the server; browser modules
-import operation types using `import type`.
+Keep the starter's `defineDataApp()` declaration and operation registry. Declare
+named SQL queries with typed `params` and `projections`; execute them through
+`dataApp.defineOperation()`. Use descriptive `lowerCamelCase` query names.
 
 ## Execute named queries
 
-Declare queries with `defineDataApp()` and operations with `dataApp.defineOperation()`.
-Use descriptive `lowerCamelCase` query names. Declare parameter types in `params`
-(use `{}` for none) and returned aliases in `projections`.
+This is the hosted starter's query contract inside `defineDataApp()`:
 
 ```ts
 import { defineDataApp } from '@altertable/data-app';
 
 const dataApp = defineDataApp({
-  title: 'Products',
-  description: 'Explore products for the selected organization.',
-  scope: { organization: 'demo', environment: 'production' },
-  appearance: { theme: 'system' },
+  // ... title, description, and scope
   queries: {
-    products: {
-      statement:
-        'SELECT name, unit_price AS "unitPrice" FROM products WHERE org_id = $orgId LIMIT $limit',
+    sampleCountsByGroup: {
+      statement: `
+WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
+SELECT group_name, sample_count FROM sample_counts
+WHERE $groupName = '' OR group_name = $groupName
+ORDER BY group_name LIMIT $limit`,
       params: {
-        orgId: { type: 'string' },
+        groupName: { type: 'string', defaultValue: '' },
         limit: { type: 'number', defaultValue: 10 },
       },
       projections: {
-        name: { type: 'string' },
-        unitPrice: { type: 'number', nullable: true },
+        group_name: { type: 'string' },
+        sample_count: { type: 'number' },
       },
     },
   },
 });
-
-const products = dataApp.defineOperation({
-  input: parseProductInput,
-  checks: [{}],
-  policy: { maxQueryRows: 100, maxDurationMs: 15000 },
-  async run({ query }, input) {
-    const result = await query('products', input);
-    return result.rows;
-  },
-});
 ```
 
-`parseProductInput()` is app-owned. Validate inputs there and business rules in
-`run()`. Derive operation data from `query()` rows; clients and views infer the
-returned type. Handle empty results. HTTP results must be JSON-serializable.
-Include representative valid inputs in `checks`.
+Replace fixture SQL with inspected data. Preserve supplied registry SQL. Keep
+operation inputs flat; derive SQL parameters inside `run()`:
 
-Host `queryParams` supplies protected parameters; callers cannot override them.
-Other values come from `query()` arguments or `defaultValue`. Missing values are
-checked before execution. `query(name, params, { limit })` inherits the operation's
-row limit and cancellation signal.
+```ts
+import { parseCount } from '@altertable/data-app/contract';
+
+// ... dataApp and parseSampleCountFilter
+const operations = {
+  sampleCountsByGroup: dataApp.defineOperation({
+    input: parseSampleCountFilter,
+    checks: [
+      { groupName: '' },
+      { groupName: 'Alpha' },
+      { groupName: 'missing' },
+    ],
+    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
+    async run({ query }, { groupName }) {
+      const result = await query('sampleCountsByGroup', { groupName });
+      return result.rows.map(row => ({
+        groupName: row.group_name,
+        sampleCount: parseCount(row.sample_count),
+      }));
+    },
+  }),
+};
+```
+
+The starter supplies `parseSampleCountFilter()` and `parseCount()`. Validate
+unknown input in the parser and business rules in `run()`. Include representative
+valid inputs in `checks`. Derive results from `query()` rows without duplicate
+schemas or type assertions; clients and views infer the returned type.
+HTTP results must be JSON-serializable.
+
+Host `queryParams` supplies protected parameters that callers cannot override.
+Other values come from `query()` arguments or defaults. The host/backend enforces
+data access and limits.
 
 ### Declare query projections
 
-Inspect each query and declare every returned alias with `{ type, nullable? }`.
-Result keys keep the exact SQL names; alias columns in SQL to change casing, as
-with `"unitPrice"` above.
-Determine nullability from the schema and SQL, even when sampled rows contain no
-nulls. Update projections when changing SQL.
+Declare every returned SQL alias with `{ type, nullable? }` and keep its exact
+casing. Infer nullability from the schema and SQL, not sampled rows. Update
+projections when changing SQL. `query()` converts cells to declared types;
+return SQL text and declare `string` when exact numeric precision matters.
 
-`query()` converts result cells to the declared types before `run()` uses them.
-Numbers that cannot be converted become `"##ERROR##"`; booleans use JavaScript
-truthiness. Nulls pass through unless `nullable: false`. Parameters are validated
-without conversion. For exact numeric precision, return SQL text
-and declare `string`.
-
-Results include query evidence; use `products.queryNames` with `createDataContext()`
-to bind it. The host/backend enforces data access and limits; see
-[server authorization](server.md).
+Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 
 ## Shared date ranges
 
-Use `defineDateRangeContract()` in a browser-safe module to share source coverage,
-time zone, maximum range, and comparison rules between the server parser and
-React variables. The server uses `calendar.parseRequest()`; React uses the same
-contract with `dateRangeVariable()`.
+For period-driven analysis, declare `defineDateRangeContract()` from
+`@altertable/data-app/contract` once and share it between the operation's parser
+and `defineTimeView()`:
 
 ```ts
 import { defineDateRangeContract } from '@altertable/data-app/contract';
 
-export const calendar = defineDateRangeContract({
+const calendar = defineDateRangeContract({
   minDate: '2026-01-01',
   maxRangeDays: 90,
   timeZone: 'UTC',
 });
 ```
 
-`parseEmptyInput()`, `parseCount()`, and `parseDateRangeInput()` validate common inputs
-and query values. `connectionCheck(dataApp.queries)` runs the registered `connection` query. A successful connectivity check confirms access; it is not an
-analysis result.
-
-See [server authorization](server.md) and [React views](react.md) for the two
-sides of an operation.
-
-## Message routes
-
-Message contracts describe the payloads allowed between an embedded app and its
-host. Share these contracts with the app; keep handlers and authorization in the
-host/server.
-
-Name routes `{scope}:{action}`, for example `data:query` or `navigation:update`.
-
-```ts
-import {
-  createMessageRouter,
-  defineMessageRoute,
-  navigationUpdateRoute,
-} from '@altertable/data-app/contract';
-import { createNavigationHandler } from '@altertable/data-app-embed';
-
-const routes = {
-  'demo:echo': defineMessageRoute({ input: parseString, output: parseString }),
-  'navigation:update': navigationUpdateRoute,
-};
-const router = createMessageRouter(routes, {
-  'demo:echo': value => value,
-  'navigation:update': createNavigationHandler(),
-});
-```
-
-The app defines `parseString()` to validate unknown values. `router.dispatch()` checks
-registered routes, input, output, and cancellation. `MessageRoutingError` exposes
-an intentional public code, message, and optional request ID; other handler
-errors are replaced with a generic failure.
-
-`defineDataQueryRoute(operationContracts)` validates the selected operation's
-input and preserves its response evidence. It infers the result type from the
-selected operation's `run` when used with `createMessageClient()`. Share input
-parsers and operation types, not operation implementations containing SQL or credentials.
-`dataAppRoutes` supplies generic `data:query` and `navigation:update` contracts;
-generic hosts must delegate operation validation and authorization to their
-server. Request handlers receive `{ signal }` for cancellation.
+Use `calendar.parseRequest()` to validate periods. The contract owns source
+coverage, time zone, maximum range, and comparison rules.

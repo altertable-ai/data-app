@@ -1,154 +1,123 @@
 # Views and displayed results
 
+Keep the starter's client and hooks. Use one view for related results; split only
+when sections need independent requests. The examples continue the hosted
+starter's `sampleCountsByGroup` operation and `sampleDataContext`.
+
 ## Bind a view
 
 ```tsx
-import { createDataClient } from '@altertable/data-app/client';
 import {
   createDataHooks,
   DataApp,
   DataSection,
+  searchVariable,
+  TableWidget,
 } from '@altertable/data-app-react';
-import type { operations } from '#app/operations.ts';
 
-const client = createDataClient<typeof operations>();
+// ... client, operations, and sampleDataContext
 const { defineDataView } = createDataHooks(client);
-const activityView = defineDataView({
-  dataContext,
-  operation: 'activity',
-  describeInput: () => 'all activity',
-  isEmpty: data => data.rows.length === 0,
-  emptyFallback: { title: 'No activity' },
+
+const sampleCountsView = defineDataView({
+  dataContext: sampleDataContext,
+  operation: 'sampleCountsByGroup',
+  variables: {
+    groupName: searchVariable({
+      key: 'group',
+      label: 'Group',
+      defaultValue: '',
+    }),
+  },
+  describeInput: ({ groupName }) =>
+    groupName ? `group ${groupName}` : 'all groups',
+  isEmpty: rows => rows.length === 0,
+  emptyFallback: { title: 'No matching groups' },
 });
-const content = activityView.content(result => (
-  <ActivityWidgets source={result} />
+// ... sampleCounts dataset and story callback
+const sampleContent = sampleCountsView.content(result => (
+  <TableWidget dataset={sampleCounts} source={result} />
 ));
 
 function App() {
   return (
-    <DataApp view={activityView} story={story} datasets={[activityDataset]}>
-      <DataSection content={content} />
+    <DataApp view={sampleCountsView} story={story} datasets={[sampleCounts]}>
+      <DataSection content={sampleContent} />
     </DataApp>
   );
 }
 ```
 
-Omit `variables` when there are no controls. Omit `input` when the resolved
-variables match the operation input; nested or different inputs need a mapper.
-Keep scope variable values in required operation input fields with the same names
-to derive their bindings. Other input shapes require typed
-`bindings` that read each selection back unchanged. Derive scalar SQL parameters
-inside the operation rather than replacing the selections in the view input.
-The operation and `ActivityWidgets` are app-owned. The bound widgets derive
-loading content from their source; see [widgets](widgets.md) and the
-[complete starter](app-authoring.md#use-release-matched-starters). Define
-[filters](variables.md), [context and evidence](data-context.md), and
-[story and datasets](stories-and-export.md) for the app's question.
-
-Render static text immediately; skeletonize only dynamic content. Keep section
-introductions outside request boundaries so they remain visible on empty and
-error states.
-
-Use `<DataSection>` for each independently fetched subtree and `view.content()`
-to share its loading and ready layout. Refreshes retain displayed content.
-
-Use `<DataValue>` for a dynamic value within static prose:
-
-```tsx
-<p>
-  Orders in the last 7 days: <DataValue metric={weeklyOrders} source={result} />
-</p>
-```
-
-Bind the whole sentence with `<TextWidget>` when its wording depends on the result.
-Use `<DataValue scope={result.scope} />` for the displayed scope label.
-
-Use the same [date range contract](contract.md#shared-date-ranges) for the
-operation and its view. For nested inputs in `defineTimeView()`, use
-`bindings.period` to extract the selected period; see the
-[time-view example](variables.md#declare-controls-once).
-
-Use `result.scope` inside `view.content()` to show scope text. In stories and exports,
-`view.scope(snapshot)` returns the same label from the displayed input, using
-`describeInput` or the view's date label.
-
-Declare standard controls in the view's [variables](variables.md). Keep
-local-only filters out of the operation's `input`.
-
-For large tables, use query-backed pagination with a stable sort and total
-count. Client pagination and search cover only the rows already returned.
-
-Declare evidence references on `view.dataset()` for charts and tables. `<MetricWidget>` uses
-its metric definition for the label, format, and evidence; keep view-specific
-descriptions on the widget.
-
-`<MetricWidget>` and `<Comparison>` share a metric result. Comparisons
-follow the displayed result's range.
-
-Use the [format helpers](formatting-and-appearance.md) for metric formats and values in tables,
-charts, and custom views.
+Keep operation input flat and named like the variables. Omit `input` and
+`bindings` when those shapes match. Use `defineTimeView()` for period-driven
+analysis and `defineDataView()` otherwise. Adapt an existing nested input only
+when required; see [input mapping](variables.md#adapt-existing-input-shapes).
 
 ## Preserve displayed results
 
-Bind widgets to the source supplied by `view.content()`. Derive scope labels,
-stories, and exports from its displayed input, including during refreshes.
-Keep related datasets in one view so their results stay consistent; use
-`<DataSection>` for independently queried content. Let the view handle loading,
-errors, and refreshes instead of duplicating request state in app code.
+Use the source from `view.content()` for every widget. Derive narrative, story,
+export, and scope from that source and its displayed input, including during
+refresh or failure. Use `result.scope` in content and `view.scope(snapshot)` in
+stories. Let the view own request state; keep static introductions outside
+loading boundaries.
 
-A measured zero is valid data. Define `isEmpty` for the analysis and provide
-useful `emptyFallback` copy.
+A measured zero is valid data. Set `isEmpty` for the analysis and provide useful
+`emptyFallback` copy.
 
 ## Detail destinations
 
-Use `createDataHooks(client).defineDetailView()` for a scoped population or entity.
-The destination owns its input parser, operation, datasets, evidence, and content.
-Pass its content to `<DataApp details={[ordersDetail]}>`:
+Add `defineDetailView()` only when readers need a scoped population or entity.
+The destination owns its input parser, operation, datasets, context, and content.
+Pass its content to `<DataApp details={[groupDetail]}>`:
 
 ```tsx
-const ordersView = defineDetailView({
-  id: 'orders',
-  title: 'Contributing orders',
-  operation: 'orders',
-  dataContext,
-  parseInput: operations.orders.input,
-  describeInput: describeOrderScope,
-  isEmpty: data => data.rows.length === 0,
-  emptyFallback: { title: 'No contributing orders' },
+// ... client, operations, sampleDataContext, main view, datasets, and story
+const { defineDetailView } = createDataHooks(client);
+
+const groupView = defineDetailView({
+  id: 'group',
+  title: 'Group counts',
+  operation: 'sampleCountsByGroup',
+  dataContext: sampleDataContext,
+  parseInput: operations.sampleCountsByGroup.input,
+  describeInput: ({ groupName }) => `group ${groupName}`,
+  isEmpty: rows => rows.length === 0,
+  emptyFallback: { title: 'No matching group' },
 });
-const ordersDetail = ordersView.content(source => (
-  <TableWidget dataset={orders} source={source} />
+const groupCounts = groupView.dataset({
+  name: 'Group counts',
+  select: rows => rows,
+  rowKey: row => row.groupName,
+  columns: {
+    groupName: { value: row => row.groupName },
+    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+  },
+  evidence: { id: 'group-counts', glossaryIds: ['sampleCount'] },
+});
+const groupDetail = groupView.content(result => (
+  <TableWidget dataset={groupCounts} source={result} />
 ));
+
+function App() {
+  return (
+    <DataApp
+      view={sampleCountsView}
+      datasets={[sampleCounts]}
+      story={story}
+      details={[groupDetail]}
+    >
+      <DataSection content={sampleContent} />
+    </DataApp>
+  );
+}
 ```
 
-Declare `orders` with `ordersView.dataset()`. Detail inputs contain serializable
-scope and IDs; exclude entire records, credentials, and protected server values.
-Validate selected members through the same `variableInput()` parser used by the dashboard.
-Shared links validate before execution. Nested destinations replace the single
-detail sheet; the main app retains ownership of exports and stories.
-The complete route supports up to 20 destinations and 16,384 serialized characters;
-navigation rejects overflow before changing history.
+Pass serializable scope and IDs, not records or credentials. Validate dimension selections with
+the dashboard's `variableInput()` parser. The main app owns stories and exports.
 
 ### Contributing metric records
 
-Attach a destination to a metric and supply it to the existing inspection trigger:
-
-```tsx
-const contributingOrders = orderCount.records({
-  target: ordersView,
-  input: displayedInput => displayedInput,
-});
-
-<MetricWidget
-  metric={orderCount}
-  source={source}
-  records={contributingOrders}
-/>;
-```
-
-Inspection tabs become Records, Glossary, Queries. Records load when their tab
-is shown; the destination's `describeInput()` supplies their scope. Source context
-belongs in Glossary. Match record inclusion to the metric and explain non-additive
-metrics. State completeness limits visibly in destination content. Local pagination
-covers only supplied rows; larger populations need explicit server paging or a
-visible limit.
+Use `metric.records()` when a detail shows the records behind that metric, then
+pass it to `<MetricWidget records={...}>`. Match record inclusion to the metric
+and explain non-additive measures or completeness limits. Query matching records
+rather than filtering a capped dashboard preview; use server pagination for
+larger populations.

@@ -16,7 +16,7 @@ Declare an app's identity and query registry:
 ```ts
 import { defineDataApp } from '@altertable/data-app';
 
-const app = defineDataApp({
+const dataApp = defineDataApp({
   title: 'Activity',
   description: 'Explore activity across your organization.',
   scope: { organization: 'demo', environment: 'production' },
@@ -30,9 +30,8 @@ UI or `@altertable/data-app-embed` to host an app. This package requires no Reac
 
 ## Documentation
 
-Start with [app authoring](docs/app-authoring.md). Use the installed,
-[release-matched starters](docs/app-authoring.md#use-release-matched-starters). Guides and
-[agent instructions](AGENTS.md) ship with this package.
+Start with [app authoring](docs/app-authoring.md). Guides, [agent instructions](AGENTS.md),
+and the [API reference](REFERENCE.md) ship with this package.
 
 ## License
 
