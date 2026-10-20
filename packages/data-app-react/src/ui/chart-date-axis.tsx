@@ -68,6 +68,7 @@ function field(row: unknown, key: string | number): unknown {
 }
 
 const xAxisDefaults = {
+  interval: 'preserveStartEnd' as const,
   stroke: 'var(--atbl-muted)',
   tickFormatter: (value: unknown) =>
     typeof value === 'number' ? formatNumber(value) : String(value),

@@ -190,6 +190,7 @@ export function ChartYAxis<Row = unknown, Value = number>(
 ) {
   return (
     <YAxis<Row, Value>
+      width="auto"
       stroke="var(--atbl-muted)"
       tickFormatter={value =>
         typeof value === 'number' ? formatNumber(value) : String(value)

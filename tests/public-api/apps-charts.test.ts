@@ -3,6 +3,44 @@ import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 import { readChartImage } from '@/tests/public-api/chart-image';
 
+test('long currency axis labels fit inside the plot at desktop and phone widths', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Long currency labels basic example',
+    exact: true,
+  });
+  for (const theme of ['light', 'dark']) {
+    if (theme === 'dark') {
+      await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    }
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect
+        .poll(() =>
+          chart.evaluate(element => {
+            const svg = element.querySelector('svg[role="application"]');
+            if (!svg) return false;
+            const bounds = svg.getBoundingClientRect();
+            const labels = Array.from(svg.querySelectorAll('text')).filter(
+              label => label.textContent?.includes('€')
+            );
+            return (
+              labels.some(label => label.textContent === '-€100,000.00') &&
+              labels.some(label => label.textContent === '€200,000.00') &&
+              labels.every(label => {
+                const box = label.getBoundingClientRect();
+                return box.left >= bounds.left && box.right <= bounds.right;
+              })
+            );
+          })
+        )
+        .toBe(true);
+    }
+  }
+});
+
 test('standalone series use the configured chart palette independently of brand accent', async ({
   page,
 }) => {
