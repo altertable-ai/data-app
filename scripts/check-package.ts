@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, posix, resolve } from 'node:path';
 
 import workspace from '@/package.json';
+import { checkPreviewLauncher } from '@/scripts/check-preview-launcher';
 import { packages } from '@/scripts/packages';
 
 const root = process.cwd();
@@ -561,6 +562,41 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
     '@types/react-dom@19.3.0',
     `@types/bun@${workspace.devDependencies['@types/bun']}`,
   ]);
+  const previewRuntime = join(temporary, 'preview-runtime');
+  await install(previewRuntime, [
+    archive(''),
+    archive('-react'),
+    archive('-bun'),
+    archive('-examples'),
+    'react@19.2.0',
+    'react-dom@19.2.0',
+  ]);
+  await checkPreviewLauncher(previewRuntime);
+  // Bun's isolated linker places the examples entry away from root runtime
+  // dependencies; the launcher's resolution base must still be this project.
+  // Use absolute archive references so Bun does not encode npm's relative
+  // tarball paths as `..` segments in its isolated package store.
+  await writeFile(
+    join(previewRuntime, 'package.json'),
+    JSON.stringify({
+      private: true,
+      type: 'module',
+      dependencies: {
+        '@altertable/data-app': archive(''),
+        '@altertable/data-app-react': archive('-react'),
+        '@altertable/data-app-bun': archive('-bun'),
+        '@altertable/data-app-examples': archive('-examples'),
+        react: '19.2.0',
+        'react-dom': '19.2.0',
+      },
+    })
+  );
+  await rm(join(previewRuntime, 'node_modules'), { recursive: true });
+  await run(
+    ['bun', 'install', '--ignore-scripts', '--linker=isolated'],
+    previewRuntime
+  );
+  await checkPreviewLauncher(previewRuntime);
   const hostedExample = catalog.find(example => example.mode === 'hosted');
   assert(hostedExample);
   await writeFile(

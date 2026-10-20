@@ -21,6 +21,10 @@
     ".": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./preview": {
+      "types": "./dist/types/preview.d.ts",
+      "import": "./dist/preview.js"
     }
   },
   "publishConfig": {
@@ -30,5 +34,13 @@
   "scripts": {
     "build": "bun ../../scripts/build.ts data-app-examples",
     "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
+  },
+  "peerDependencies": {
+    "@altertable/data-app-bun": "0.72.0"
+  },
+  "peerDependenciesMeta": {
+    "@altertable/data-app-bun": {
+      "optional": true
+    }
   }
 }

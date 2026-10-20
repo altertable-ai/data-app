@@ -74,6 +74,12 @@
     "packages/data-app-examples": {
       "name": "@altertable/data-app-examples",
       "version": "0.72.0",
+      "peerDependencies": {
+        "@altertable/data-app-bun": "0.72.0",
+      },
+      "optionalPeers": [
+        "@altertable/data-app-bun",
+      ],
     },
     "packages/data-app-examples/templates/starter-local-data-app": {
       "name": "data-app-starter",
