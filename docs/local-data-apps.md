@@ -1,6 +1,8 @@
 # Author a local data app
 
 Start from the CLI scaffold or the [local starter](app-authoring.md#use-release-matched-starters).
+For Node.js or Bun scaffolding, use `copyExample()` from
+`@altertable/data-app-examples` to copy the starter and restore its `.gitignore`.
 Use the starter's README for setup and its AGENTS.md to find app-owned files.
 Replace the connectivity screen with the exploration, CSV export, and story from the
 [shared authoring flow](app-authoring.md).

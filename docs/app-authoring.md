@@ -30,9 +30,8 @@ Install `@altertable/data-app-examples` at the same exact version as
 | Hosted / remote / cloud | `starter-data-app/index.tsx`                                        | [Single-file authoring](hosted-apps.md) |
 | Local                   | `starter-local-data-app`                                            | [Local authoring](local-data-apps.md)   |
 
-For local scaffolding in Node.js or Bun, use `copyExample()` from
-`@altertable/data-app-examples` to restore the starter's `.gitignore`. Replace sample queries and connectivity screens with
-an exploration of inspected data.
+Replace sample queries and connectivity screens with an exploration of inspected
+data.
 
 ## Build the exploration
 

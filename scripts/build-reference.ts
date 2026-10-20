@@ -669,34 +669,18 @@ function render(entries: Entry[]) {
     const head = `${name} (${kind}, ${specifiers.join(', ')})`;
     return [first ? `${head}: ${first}` : head, ...rest];
   });
-  const header = `# @altertable/data-app API reference
+  const header = `# Data app API reference
 
-Generated from the published type declarations by \`bun run build\`; do not
-edit. Covers APIs used to build data apps; host integration and package tooling
-are excluded. Each of the ${entries.length} authoring exports has one heading line, then
-one line per prop, option, or field, so one search returns everything about a
-name:
+Search an export to find its import paths, signature, and props:
 
-- \`rg '^LineChart\\b' REFERENCE.md\` prints \`LineChart\` and its props.
-- \`rg '^LineChart' REFERENCE.md\` adds \`LineChartItem\` and \`LineChartProps\`.
-- \`rg '@altertable/data-app-react/ui[,)]' REFERENCE.md\` lists one entry point.
+\`\`\`fish
+rg '^LineChart\\b' REFERENCE.md
+\`\`\`
 
-Line shapes:
-
-- \`Name (kind, import specifiers): signature or type — JSDoc summary\`. A name
-  exported by two entry points as different values, such as \`DataApp\`, has
-  one heading per entry point.
-- \`Name.prop: Type\` is required; \`Name.prop?: Type\` is optional. Component
-  props follow the component name. Other functions add the parameter name.
-- \`[variant 2 of 3]\` marks a prop that only some branches of a union accept.
-- \`= props listed as Name.*\` points from a props type to its component.
-
-Hosted apps must pass the required \`defineDataApp.config.scope\`,
-\`DataApp.story\`, and \`DataApp.datasets\` from \`@altertable/data-app-react\`.
+Each export and field has its own line. \`?\` marks optional fields;
+\`[variant 2 of 3]\` identifies union-specific fields.
+\`= props listed as Name.*\` points to a component's prop definitions.
 `;
-  for (const [, example] of header.matchAll(/`([A-Za-z]+(?:\.[a-z]+)+)`/g))
-    if (!body.some(line => line.startsWith(`${example}:`)))
-      failures.push(`Header example ${example} is not a required prop.`);
   return `${header}
 \`\`\`text
 ${body.join('\n')}
