@@ -277,6 +277,75 @@ createRoot(document.getElementById('root')!).render(
         </ComposedChart>
       </Example>
       <Example
+        name="Automatic currency"
+        description="Measure semantics own presentation."
+      >
+        <ComposedChart
+          ariaLabel="Automatic currency plot"
+          valueFormat={{ kind: 'currency', currency: 'EUR' }}
+          data={[
+            { label: 'One', value: -52345.89 },
+            { label: 'Two', value: 183456.78 },
+          ]}
+        >
+          <ComposedChart.XAxis dataKey="label" />
+          <ComposedChart.YAxis
+            domain={[-100000, 200000]}
+            ticks={[-100000, 0, 100000, 200000]}
+          />
+          <ComposedChart.Bar dataKey="value" name="Revenue" />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      </Example>
+      {[
+        {
+          name: 'Close large ticks',
+          ticks: [1000000, 1000100, 1000200],
+          format: undefined,
+        },
+        {
+          name: 'Small ratios',
+          ticks: [0, 0.0001, 0.0002],
+          format: { kind: 'ratio' as const },
+        },
+        {
+          name: 'Fractional ticks',
+          ticks: [0, 0.0001, 0.0002],
+          format: undefined,
+        },
+        {
+          name: 'German currency',
+          ticks: [0, 1500, 3000],
+          format: {
+            kind: 'currency' as const,
+            currency: 'EUR',
+            locale: 'de-DE',
+          },
+        },
+      ].map(({ name, ticks, format }) => (
+        <Example
+          key={name}
+          name={name}
+          description="Automatic numeric tick formatting"
+        >
+          <ComposedChart
+            ariaLabel={`${name} plot`}
+            valueFormat={format}
+            data={ticks.map((value, index) => ({
+              label: `Sample ${index + 1}`,
+              value,
+            }))}
+          >
+            <ComposedChart.XAxis dataKey="label" />
+            <ComposedChart.YAxis
+              ticks={ticks}
+              domain={[ticks[0]!, ticks[ticks.length - 1]!]}
+            />
+            <ComposedChart.Line dataKey="value" />
+          </ComposedChart>
+        </Example>
+      ))}
+      <Example
         name="Recent samples"
         description="Latest displayed samples remain visible after updates."
       >

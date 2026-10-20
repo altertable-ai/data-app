@@ -96,28 +96,23 @@ createRoot(document.getElementById('root')!).render(
               { label: 'Sep 12', value: 34210.56 },
             ]}
             ariaLabel={`Revenue with ${format} currency ticks`}
+            valueFormat={{ kind: 'currency', currency: 'EUR' }}
           >
             <ComposedChart.XAxis dataKey="label" />
             <ComposedChart.YAxis
               domain={[-100000, 200000]}
               ticks={[-100000, 0, 100000, 200000]}
-              tickFormatter={value =>
-                format === 'compact'
-                  ? `${Number(value) < 0 ? '−' : ''}€${Math.abs(Number(value)) / 1000}${Number(value) === 0 ? '' : 'k'}`
-                  : new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'EUR',
-                    }).format(Number(value))
-              }
+              {...(format === 'full'
+                ? {
+                    tickFormatter: (value: unknown) =>
+                      new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      }).format(Number(value)),
+                  }
+                : {})}
             />
-            <ComposedChart.Tooltip
-              formatter={value =>
-                new Intl.NumberFormat('en-US', {
-                  style: 'currency',
-                  currency: 'EUR',
-                }).format(Number(value))
-              }
-            />
+            <ComposedChart.Tooltip />
             <ComposedChart.Bar dataKey="value" name="Revenue" />
           </ComposedChart>
         </Example>

@@ -1,3 +1,4 @@
+import { type MetricFormat } from '@altertable/data-app/format';
 import {
   useState,
   useCallback,
@@ -33,6 +34,7 @@ import {
   ChartGrid as CartesianGrid,
   ChartTooltip as Tooltip,
 } from './chart-primitives.tsx';
+import { ChartValueFormat } from './chart-value-format.ts';
 import { classNames } from './classNames.ts';
 import { ComposedChartLegend as Legend } from './ComposedChartLegend.tsx';
 
@@ -64,6 +66,9 @@ export type ComposedChartProps<Row = unknown> = Omit<
   data: readonly Row[];
   /** Describes the measures and scope for assistive technology. */
   ariaLabel: string;
+  /** Shared measure semantics: compact numeric axes and precise tooltips.
+   * For mixed units, use explicit axis tickFormatter and series/tooltip formatters. */
+  valueFormat?: MetricFormat;
 };
 
 /** Compose Cartesian series inside VisualizationWidget. Defaults to responsive
@@ -76,6 +81,7 @@ export type ComposedChartProps<Row = unknown> = Omit<
 function ComposedChartRoot<Row>({
   data,
   ariaLabel,
+  valueFormat,
   width = '100%',
   height = 300,
   responsive = true,
@@ -185,17 +191,19 @@ function ComposedChartRoot<Row>({
           }
         }}
       >
-        <ChartDateAxes data={data}>
-          <RechartsComposedChart
-            data-atbl-focus="inset"
-            {...props}
-            data={data}
-            width={width}
-            height={height}
-            responsive={responsive}
-            aria-label={ariaLabel}
-          />
-        </ChartDateAxes>
+        <ChartValueFormat.Provider value={valueFormat}>
+          <ChartDateAxes data={data}>
+            <RechartsComposedChart
+              data-atbl-focus="inset"
+              {...props}
+              data={data}
+              width={width}
+              height={height}
+              responsive={responsive}
+              aria-label={ariaLabel}
+            />
+          </ChartDateAxes>
+        </ChartValueFormat.Provider>
       </section>
     </ChartInteractionContext.Provider>
   );
