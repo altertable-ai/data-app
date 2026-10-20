@@ -7,29 +7,29 @@ Setup and static screens use `<DataApp>` from `/ui` and may omit both.
 
 ## Present data with stories
 
-Return one to four findings with a headline, visual, and registered dataset or
+Continue the starter's `totalSamples` binding. Return one to four findings with a
+headline, visual, and registered dataset or
 metric as `evidence`. Reuse bindings and derive scope from the snapshot:
 
 ```tsx
 story={snapshot => {
-  const totalReading = total.read(snapshot);
+  const total = totalSamples.read(snapshot);
   return [{
-    id: 'total',
-    headline: `Tracked identities: ${formatMetric(totalReading.value.current, total.definition.format)}`,
-    context: activityView.scope(snapshot),
-    visual: <MetricWidget metric={total} source={snapshot} />,
-    evidence: total,
+    id: 'total-samples',
+    headline: `Total samples: ${formatMetric(total.value.current, totalSamples.definition.format)}`,
+    context: sampleCountsView.scope(snapshot),
+    visual: <MetricWidget metric={totalSamples} source={snapshot} />,
+    evidence: totalSamples,
   }];
 }}
 ```
 
-Use the [format helpers](formatting-and-appearance.md) in prose. Custom shells
-can use `<PresentStory>` from `/ui`; see [direct composition](ui.md).
+Keep the starter's `formatMetric()` import for formatted headlines.
 
 ## Export displayed data as CSV
 
 Declare [datasets](widgets.md#declare-datasets-and-metrics) once and pass
-`datasets={[countries, otherDataset]}`. Include every distinct displayed dataset
+`datasets={[sampleCounts]}`. Include every distinct displayed dataset
 at its displayed grain; reuse a dataset for visuals sharing the same rows.
 
 One dataset downloads as CSV; multiple datasets offer individual downloads and

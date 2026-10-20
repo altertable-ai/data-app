@@ -15,7 +15,9 @@ mountDataApp({ app, component: App });
 
 The app supplies `app`, `App`, and a `#root` element.
 
-Use [views](views.md) for requests, [variables](variables.md) for filters,
-and [widgets](widgets.md) for displays. Use [direct UI composition](ui.md) for
-setup, static screens, and custom controls. Hosts embedding an app use the
-separate [React embed package](react-embed.md).
+Keep the starter's mounting and client wiring. Use declared views and bound
+widgets for exploration. Use `/ui` for setup/static screens or a custom component
+only when bound components cannot express the requirement.
+
+Hosts embedding an app use the separate `@altertable/data-app-embed` package;
+that integration is outside ordinary app authoring.

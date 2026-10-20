@@ -15,7 +15,8 @@ Manage requests in [views](views.md).
 | Borderless explanatory prose                     | `<TextContent>`         |
 | One data-dependent phrase within static prose    | `<DataValue>`           |
 
-Use [layout](layout.md) for `<Stack>`, `<Grid>`, and responsive `<GridItem>` spans.
+Use `<Stack>` for reading order and `<Grid>` for peers. Read [layout](layout.md)
+only when changing spans or shell composition.
 `<Skeleton>` supports custom fallback content.
 
 ## Choose a visualization
@@ -47,6 +48,8 @@ values available in a table when they matter.
 
 ## Declare datasets and metrics
 
+Continue the starter's `sampleCountsView`. Use `<BarChart>` from
+`@altertable/data-app-react/ui`.
 Bind reusable selections to the view. Declare evidence references directly;
 the view validates them against its own context. A dataset's columns supply both formatted
 table cells and raw CSV values. Widgets derive their readings, evidence, and empty fallback from the binding.
@@ -54,33 +57,42 @@ Declare at least one dataset column. Metric selectors may return `previous`
 only for views with a date binding, including `defineTimeView()`.
 
 ```tsx
-const countries = activityView.dataset({
-  name: 'Countries',
-  select: data => data.countries,
-  rowKey: row => row.country,
-  evidence: { id: 'countries', glossaryIds: ['identities'] },
+const sampleCounts = sampleCountsView.dataset({
+  name: 'Sample counts',
+  select: rows => rows,
+  rowKey: row => row.groupName,
+  evidence: { id: 'counts-by-group', glossaryIds: ['sampleCount'] },
   columns: {
-    country: { value: row => row.country },
-    count: { value: row => row.count, format: { kind: 'count' } },
+    groupName: { label: 'Group', value: row => row.groupName },
+    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
   },
 });
-const total = activityView.metric(
+const totalSamples = sampleCountsView.metric(
   {
-    id: 'tracked-identities',
-    glossaryId: 'identities',
+    id: 'total-samples',
+    glossaryId: 'sampleCount',
+    label: 'Total samples',
     format: { kind: 'count', compact: true },
   },
-  data => ({
-    current: data.count,
-    previous: data.previousCount,
-  })
+  rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
 );
-const content = activityView.content(result => (
+const sampleContent = sampleCountsView.content(result => (
   <Grid columns={2}>
-    <MetricWidget metric={total} source={result} />
-    <TableWidget dataset={countries} source={result} />
-    <VisualizationWidget dataset={countries} source={result}>
-      {rows => <CountryChart rows={rows} />}
+    <MetricWidget metric={totalSamples} source={result} />
+    <TableWidget dataset={sampleCounts} source={result} />
+    <VisualizationWidget dataset={sampleCounts} source={result}>
+      {rows => (
+        <BarChart
+          ariaLabel="Sample counts by group"
+          unit="samples"
+          items={rows.map(row => ({
+            ...row,
+            id: row.groupName,
+            label: row.groupName,
+            value: row.sampleCount,
+          }))}
+        />
+      )}
     </VisualizationWidget>
   </Grid>
 ));
@@ -110,7 +122,7 @@ It derives its title and evidence. A metric formats its current value by default
 use a child renderer for authored prose. Dataset renderers receive displayed rows,
 including an empty selection, so they can explain zero activity.
 
-Use `<DataValue metric={total} source={result} />` for a formatted value inside
+Use `<DataValue metric={totalSamples} source={result} />` for a formatted value inside
 static prose, or pass a dataset and row renderer. Its default loading fallback is
 an inline skeleton. Use `<DataValue scope={result.scope} />` for a scope label.
 Use `<TextContent>` for static instructions; local filters should feed the same
@@ -125,7 +137,8 @@ The dataset owns evidence and empty copy; an empty row selection shows that fall
 alternate-view selection shared with its inspection sheet. Give views stable IDs
 and keep interactive state above the widget, since inspection may render it again.
 
-For custom controls, tables, and overlays, see [direct UI composition](ui.md).
+Use custom controls, tables, or overlays only when bound components cannot
+express the requirement; see [direct UI composition](ui.md).
 
 ## Exploration actions
 
@@ -135,45 +148,39 @@ Both `children` and alternate-view `render` callbacks receive the displayed rows
 and the same action resolver.
 
 ```tsx
-const placeActions = places.actions(
+const groupActions = sampleCounts.actions(
   action => ({
-    orders: action.detail({
-      label: 'View orders',
-      target: ordersView,
-      input: (row, displayedInput) => ({ ...displayedInput, placeId: row.id }),
-    }),
-    filter: action.filter({
-      label: 'Filter to this region',
-      when: row => row.dimension === 'region',
-      target: salesView.filter(),
-      values: row => ({
-        region: {
-          kind: 'include',
-          members: [{ kind: 'value', value: row.id }],
-        },
-      }),
+    group: action.detail({
+      label: 'View group',
+      target: groupView,
+      input: row => ({ groupName: row.groupName }),
     }),
   }),
-  { primary: 'orders' }
+  { primary: 'group' }
 );
 
 <VisualizationWidget
-  dataset={places}
-  source={source}
-  actions={placeActions}
-  breakdown={salesView.breakdown('revenueBy')}
+  dataset={sampleCounts}
+  source={result}
+  actions={groupActions}
 >
   {(rows, actions) => (
     <BarChart
-      ariaLabel="Revenue by place"
-      unit="USD"
-      items={rows.map(row => ({ ...row, value: row.revenue }))}
+      ariaLabel="Sample counts by group"
+      unit="samples"
+      items={rows.map(row => ({
+        ...row,
+        id: row.groupName,
+        label: row.groupName,
+        value: row.sampleCount,
+      }))}
       itemActions={actions}
     />
   )}
 </VisualizationWidget>;
 ```
 
+`groupView` is the destination from the detail-view example.
 Keep domain fields when adapting chart items so action mappings retain IDs and
 scope. Pass dataset actions to `<TableWidget>` or `<VisualizationWidget>`;
 metric actions use `metric.actions()` and `<MetricWidget>`. Actions must belong

@@ -1,13 +1,33 @@
 # Data context and evidence
 
-Set `dataContext` on each view. Register physical sources with identifiers,
-business meaning with glossary entries, and query evidence with bindings.
-Evidence may reference only queries executed by that view; detail views need
-their own context when their queries differ.
+Continue the starter's operation and context. Use its derived `queryNames` for
+business definitions and evidence. A view's context may reference only queries
+executed by that view.
+
+## Bind evidence
+
+```tsx
+const queryNames = operations.sampleCountsByGroup.queryNames;
+const sampleDataContext = createDataContext(queryNames)({
+  description: 'Sample counts for the selected groups.',
+  glossary: {
+    sampleCount: {
+      term: 'Sample count',
+      definition: 'The number of samples in each group.',
+      queryNames: [queryNames.sampleCountsByGroup],
+    },
+  },
+});
+```
+
+Import `createDataContext()` from `@altertable/data-app-react`. Supply
+`dataContext: sampleDataContext` on `sampleCountsView`, then use its glossary IDs
+in `view.metric()` and `view.dataset()`. Reuse those bindings in widgets and stories.
+Detail views need their own context when their queries differ.
 
 ## Register source identifiers
 
-Use `defineDataIdentifiers()` from `@altertable/data-app-react` to register exact catalog, schema,
+Once the queries use inspected physical sources, use `defineDataIdentifiers()` from `@altertable/data-app-react` to register exact catalog, schema,
 table, and field names. Use `<DataIdentifier>` in descriptions and glossary
 entries to render those source references consistently.
 
@@ -32,42 +52,3 @@ const { DataIdentifier } = identifiers;
 
 Pass `identifiers.definitions` to `createDataContext()` to reuse the source
 registry.
-
-## Bind evidence
-
-```tsx
-const queries = activity.queryNames;
-const context = createDataContext(queries)({
-  identifiers: identifiers.definitions,
-  description: (
-    <>
-      Explore activity in <DataIdentifier id="tables.events" />.
-    </>
-  ),
-  glossary: {
-    identities: {
-      term: 'Tracked identities',
-      definition: (
-        <>
-          Distinct <DataIdentifier id="columns.events.identity" /> values.
-        </>
-      ),
-      queryNames: [queries.activity],
-    },
-  },
-});
-// activityView is declared with dataContext: context.
-const trackedIdentities = activityView.metric(
-  {
-    id: 'identities',
-    glossaryId: 'identities',
-    format: { kind: 'count', compact: true },
-  },
-  data => ({ current: data.count })
-);
-```
-
-Import `createDataContext()` from `@altertable/data-app-react` and use the
-operation's derived `queryNames`. Register metrics with `view.metric()` and
-dataset evidence in `view.dataset()`; reuse those bindings in widgets and stories.
-See [datasets and metrics](widgets.md#declare-datasets-and-metrics).

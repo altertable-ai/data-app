@@ -1,10 +1,10 @@
 # Author a data app
 
-Follow the [shared authoring flow](app-authoring.md) using [index.tsx](app-authoring.md#use-release-matched-starters) for a hosted / remote / cloud data app. Keep the app in
+Follow the [shared authoring flow](app-authoring.md) with the version-matched `starter-data-app/index.tsx` for a hosted / remote / cloud data app. Keep the app in
 one file with public package imports; omit server files, HTML, credentials, and
 relative or app-alias imports.
 
-Declare `const app = defineDataApp({ ... })` once at module scope using the
+Declare `const dataApp = defineDataApp({ ... })` once at module scope using the
 named import from `@altertable/data-app`.
 
 Keep the argument literal: objects, arrays, strings (including templates without
@@ -15,7 +15,8 @@ computed keys, references, and callbacks. Static apps use `queries: {}`.
 Replace sample queries and bindings with inspected source data. Supply `scope`
 in `defineDataApp()` and `story` and `datasets` on `<DataApp>`.
 
-For execution details, see [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps).
+Keep the starter's client, style injection, and mounting code. The host supplies
+the transport; no bootstrap or message routes are needed in app code.
 
 ## Convert a local data app
 

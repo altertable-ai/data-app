@@ -19,7 +19,7 @@ const host = attachDataAppBridge({
 });
 ```
 
-The host defines `iframe` and `router`; see [message contracts](contract.md#message-routes).
+The host defines `iframe` and `router`; see [message contracts](#message-routes).
 Call `host.dispose()` before replacing the source or retrying. A URL source requires HTTP(S)
 and a different origin from its host. The source bridge adds `__altertable_parent` to the
 app URL. A hosted app must explicitly install a transport to its configured,
@@ -96,6 +96,44 @@ The source bridge's `startupTimeoutMs` defaults to 30 seconds.
 Use `onDiagnostic` or `logger` to inspect delivery and failures. Diagnostics omit
 tokens and payloads. Handlers must authorize every data request; message
 validation and iframe isolation do not grant data access.
+
+## Message routes
+
+Message contracts describe the payloads allowed between an embedded app and its
+host. Share these contracts with the app; keep handlers and authorization in the
+host/server.
+
+Name routes `{scope}:{action}`, for example `data:query` or `navigation:update`.
+
+```ts
+import {
+  createMessageRouter,
+  defineMessageRoute,
+  navigationUpdateRoute,
+} from '@altertable/data-app/contract';
+import { createNavigationHandler } from '@altertable/data-app-embed';
+
+function parseString(value: unknown) {
+  if (typeof value !== 'string') throw new Error('Expected a string.');
+  return value;
+}
+
+const routes = {
+  'demo:echo': defineMessageRoute({ input: parseString, output: parseString }),
+  'navigation:update': navigationUpdateRoute,
+};
+const router = createMessageRouter(routes, {
+  'demo:echo': value => value,
+  'navigation:update': createNavigationHandler(),
+});
+```
+
+`router.dispatch()` validates route input and output. Use `MessageRoutingError`
+for intentional public failures; other handler errors are hidden.
+
+Use `defineDataQueryRoute(operationContracts)` for typed named operations or
+`dataAppRoutes` for generic operation and navigation routes. Handlers must
+validate operations, authorize data access, and enforce backend query limits.
 
 ## SQL query route
 

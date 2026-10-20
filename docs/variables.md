@@ -1,186 +1,191 @@
 # Variables and filters
 
-Declare controls once in a view's `variables`. `<DataApp view={view}>` renders
-them and keeps values in the URL. Expose useful scope choices, not every field.
-Keep local search out of operation input when it only filters loaded rows.
-
-| Need                                               | Declaration                                            |
-| -------------------------------------------------- | ------------------------------------------------------ |
-| Search text                                        | `searchVariable()`                                     |
-| Display choice, such as sort or metric             | `choiceVariable()` or `multiChoiceVariable()`          |
-| Reporting period                                   | `defineTimeView()` or `dateRangeVariable()`            |
-| Fixed categorical options                          | `dimensionFilter()` from `/contract`                   |
-| Options dependent on other variables               | `defineFacetFilter()` from the hooks factory           |
-| Independent source options and exact member lookup | `app.defineDimension()`                                |
-| Numeric or boolean predicate                       | `numberFilter()` or `booleanFilter()` from `/contract` |
+Declare controls once in the view's `variables`; `<DataApp view={view}>` renders
+them and owns URL state. Use flat operation inputs matching variable names and
+resolved types. Derive SQL parameters inside the operation.
 
 ## Declare controls once
 
-Use `defineTimeView()` when the primary input is a reporting period. Share the
-[date contract](contract.md#shared-date-ranges) with the operation parser.
-Its default input is the calendar request, or `{ period, ...variables }` when
-additional variables exist. Use `defineDataView()` for other input shapes.
-
-For nested inputs, map selections into operation input and extract them unchanged
-with `bindings`:
+The starter's operation accepts `{ groupName: string }`, so it needs no `input`
+mapper or explicit `bindings`:
 
 ```ts
-const activity = defineTimeView({
-  dataContext,
-  operation: 'activity',
-  time: { contract: calendar, defaultValue: { kind: 'preset', id: 'last-7' } },
-  variables: { region: searchVariable({ key: 'region' }) },
-  input: values => ({
-    filters: { period: values.period, region: values.region },
-  }),
-  bindings: {
-    period: input => input.filters.period,
-    region: input => input.filters.region,
+const sampleCountsView = defineDataView({
+  dataContext: sampleDataContext,
+  operation: 'sampleCountsByGroup',
+  variables: {
+    groupName: searchVariable({
+      key: 'group',
+      label: 'Group',
+      defaultValue: '',
+    }),
   },
-  isEmpty: data => data.rows.length === 0,
-  emptyFallback: { title: 'No activity' },
+  describeInput: ({ groupName }) =>
+    groupName ? `group ${groupName}` : 'all groups',
+  isEmpty: rows => rows.length === 0,
+  emptyFallback: { title: 'No matching groups' },
 });
 ```
 
-Derive SQL parameters inside the operation. Keep the selected values intact in
-operation input so the view can describe the displayed scope.
+Keep search local only when it filters already loaded rows. Add dataset
+`suggestions` when record names make useful query completions; suggestions cover
+supplied rows only.
 
-### Organize controls by intent
+## Independent filters and chart breakdowns
 
-Declare controls in priority order. Use `presentation.prominence: 'secondary'`
-for less frequent scope filters and `presentation.group: 'display'` for ordering
-or presentation choices. Give fixed choices labeled options and a valid default:
+For source-backed categorical members, use `dataApp.defineDimension()`:
 
 ```ts
-const revenueBy = choiceVariable({
-  key: 'revenue-by',
-  label: 'Revenue breakdown',
-  defaultValue: 'region',
+const group = dataApp.defineDimension({
+  key: 'group',
+  label: 'Group',
+  valueType: 'string',
+  selectionMode: 'multiple',
+  source: { query: 'groups' },
+});
+const parseInput = variableInput(parseEmptyInput, { group });
+```
+
+Import `variableInput()` and `parseEmptyInput()` from `/contract`. Use `parseInput`
+on the operation and declare the same `group` in the view's `variables`. Use an
+app-owned base parser instead of `parseEmptyInput()` for other input fields.
+
+Declare the source query in `defineDataApp()` with a nullable `member` parameter
+matching `valueType`. Its nonnullable projections are `value` (same type),
+`label` (string), and optional `count` (number). Null requests options; a selected
+member requests exact lookup. Other parameters need defaults or trusted values:
+
+```sql
+SELECT DISTINCT group_name AS value, group_name AS label
+FROM sample_counts
+WHERE ($member IS NULL OR group_name = $member)
+ORDER BY label
+```
+
+Here `sample_counts` is the inspected table replacing the starter's fixture.
+Validate these variables in every consuming operation, including details. Map
+parsed predicates to declared query parameters; never interpolate filter values
+into SQL. Each dimension is independent: changing one preserves other selections,
+even when their combination returns no rows. No selection means all members.
+
+### Chart breakdowns
+
+Use `choiceVariable()` for a display choice, separately from population filters:
+
+```ts
+const countsBy = choiceVariable({
+  key: 'counts-by',
+  label: 'Counts breakdown',
+  defaultValue: 'group',
   options: [
-    { id: 'region', label: 'Region' },
+    { id: 'group', label: 'Group' },
     { id: 'country', label: 'Country' },
   ],
   presentation: { group: 'display', control: 'widget' },
 });
 ```
 
-Pass `view.breakdown('revenueBy')` to `<VisualizationWidget breakdown={...}>`.
-`control: 'widget'` places the choice in that widget. Declare separate choices
-when charts should be controlled independently.
-
-### Search suggestions
-
-Declare `suggestions: { title: row => row.name, description: row => row.country }`
-on a dataset when record names make useful search completions. The primary
-search uses supplied datasets; capped or paginated sources suggest only supplied
-rows. Set `suggestions.onSelect` for an app action instead of query completion.
+Pass `view.breakdown('countsBy')` to `<VisualizationWidget breakdown={...}>`.
+Declare a separate choice for each independently controlled chart.
+Use `presentation.prominence: 'secondary'` for less frequent scope filters.
 
 ## Fixed options and query-backed facets
 
-Use `dimensionFilter()` for fixed options:
+Use `dimensionFilter()` from `/contract` when options are known constants:
 
 ```ts
-const region = dimensionFilter({
-  key: 'region',
-  label: 'Region',
+const group = dimensionFilter({
+  key: 'group',
+  label: 'Group',
   valueType: 'string',
   selectionMode: 'multiple',
-  options: [{ value: 'Europe', label: 'Europe' }],
+  options: [
+    { value: 'Alpha', label: 'Alpha' },
+    { value: 'Beta', label: 'Beta' },
+  ],
 });
 ```
 
-Use `defineFacetFilter()` when options depend on current variables:
+Use `defineFacetFilter()` only when options must depend on other selections:
 
 ```ts
-const { defineFacetFilter } = createDataHooks(client);
-const period = dateRangeVariable({
-  key: 'period',
-  contract: calendar,
-  defaultValue: { kind: 'preset', id: 'last-7' },
-});
-const region = defineFacetFilter({
-  key: 'region',
-  label: 'Region',
+const group = defineFacetFilter({
+  key: 'group',
+  label: 'Group',
   valueType: 'string',
   selectionMode: 'multiple',
   facet: {
     context: { period },
-    operation: 'regions',
+    operation: 'groups',
     input: values => ({ period: values.period }),
   },
 });
 ```
 
-The facet operation returns parsed dimension options matching `valueType`.
-Declare mapper dependencies in `facet.context` (`{}` for none), then include them
-alongside the facet in the view's `variables`. Validate operation input with
-`parseDimensionSelection(value, region)`.
+Obtain `defineFacetFilter()` from the existing hooks factory. Declare `period`
+with `dateRangeVariable()`, include it alongside `group` in the view's variables,
+and return parsed dimension options from the `groups` operation. Validate facet
+selections with `parseDimensionSelection(value, group)` from `/contract`.
 
-A dimension with no selection means all members. Use `single` for a replacement
-choice and `multiple` for independent values. Fixed `multiChoiceVariable()`
-selections differ: an empty collection means no choices.
+Use `single` for a replacement choice and `multiple` for independent members.
 Enable `allowExclusion` only when the query supports exclusion and its intended
-missing-value behavior. Map predicates to declared query parameters; never build
-SQL from filter values.
+missing-value behavior. Use `multiChoiceVariable()` for fixed multiselect
+choices; empty means no choices, unlike an unrestricted dimension.
 
-## Independent filters and chart breakdowns
+## Reporting periods
 
-Use `app.defineDimension()` for source-backed options independent of other filters:
+Use `defineTimeView()` when the analysis is period-driven. Obtain it from the
+existing hooks factory and share a `defineDateRangeContract()` with the parser.
+After adapting the operation to accept `{ period, groupName }`, the view can stay
+flat:
 
 ```ts
-const country = app.defineDimension({
-  key: 'country',
-  label: 'Country',
-  valueType: 'string',
-  selectionMode: 'single',
-  source: { query: 'countries' },
+const dailyCountsView = defineTimeView({
+  dataContext: dailyCountsContext,
+  operation: 'dailyCountsByGroup',
+  time: { contract: calendar, defaultValue: { kind: 'preset', id: 'last-7' } },
+  variables: {
+    groupName: searchVariable({
+      key: 'group',
+      label: 'Group',
+      defaultValue: '',
+    }),
+  },
+  isEmpty: rows => rows.length === 0,
+  emptyFallback: { title: 'No matching groups' },
 });
-const parseInput = variableInput(parsePeriodInput, { country, revenueBy });
 ```
 
-Import `variableInput()` from `/contract` and use it on every operation consuming
-these variables, including details. Declare the same variables on the view.
-
-The source query needs a nullable `member` parameter matching `valueType` and
-nonnullable projections for `value` (same type), `label` (string), and optional
-`count` (number). Null requests options; a selected value requests exact lookup.
-Other parameters need defaults or trusted server values:
-
-```sql
-SELECT code AS value, name AS label
-FROM countries
-WHERE ($member IS NULL OR code = $member)
-ORDER BY name
-```
-
-Keep SQL and parameter declarations literal in `defineDataApp()`. Picker search
-covers supplied options only. Filters combine independently: changing Region
-preserves Country, even if the combination returns no rows. Breakdown choices
-change the displayed grouping separately from population filters.
+The operation's parser validates `period` with `calendar.parseRequest()`.
+Without additional variables, the default input is the calendar request itself.
+Use `defineDataView()` for fixed snapshots or analysis without a reporting period.
 
 ## Numeric and boolean predicates
 
-Put `numberFilter()` and `booleanFilter()` in the view's `variables` and validate
-input with `parseNumberSelection()` and `parseBooleanSelection()` using the same
-declarations. Both support `{ kind: 'all' }`. Numeric filters support comparisons
-and inclusive open-ended ranges; booleans distinguish Any, true, and false.
-
-```ts
-const amount = numberFilter({ key: 'amount', label: 'Amount', min: 0 });
-const active = booleanFilter({ key: 'active', label: 'Active' });
-```
-
-Preserve predicates in input mappings and bindings. Offer only operators the
-registered query supports.
+Use `numberFilter()` or `booleanFilter()` from `/contract` for field predicates.
+Declare them in `variables` and validate input with `parseNumberSelection()` or
+`parseBooleanSelection()` using the same declarations. Both support
+`{ kind: 'all' }`. Offer only predicates the registered query supports.
 
 ## Exclusion, clear, and reset
 
 Clear removes scope predicates and returns dates to defaults, preserving search
-and display choices. `resetAll()` restores all variable defaults. Filters apply
-immediately; use app-owned drafts only when the task needs Apply/Cancel.
+and display choices. `resetAll()` restores all defaults. Filters apply immediately;
+use app-owned drafts only when the task needs Apply/Cancel.
 
-## URL state and custom controls
+## Adapt existing input shapes
 
-Use generated controls for standard apps. Invalid URL values fall back to
-validated defaults; do not reuse reserved inspection, presentation, or navigation
-keys. For custom ownership, see [direct UI composition](ui.md).
+Add a mapper and bindings only when an existing operation requires nested or
+differently named inputs. Preserve selected values unchanged in both directions:
+
+```ts
+input: values => ({ filters: { period: values.period, groupName: values.groupName } }),
+bindings: {
+  period: input => input.filters.period,
+  groupName: input => input.filters.groupName,
+},
+```
+
+Custom control ownership is needed only when generated controls cannot express
+the requirement; use `/ui` for that case. Do not reuse reserved inspection,
+presentation, or navigation URL keys.

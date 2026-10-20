@@ -2,17 +2,21 @@
 
 Use `<Stack>` for reading order, `<Grid>` for peer widgets, and `<GridItem>` for
 spans. The shell owns page width and gutters; parents own spacing and widgets
-own internal padding. Configure density once in `app.appearance`.
+own internal padding. Keep default density unless customization is requested.
 
 ```tsx
 <Stack>
-  <SectionHeading>Activity</SectionHeading>
+  <SectionHeading>Sample counts</SectionHeading>
   <TextContent>
     <p>Explore the sources behind this finding.</p>
   </TextContent>
   <Grid columns={3}>
-    <GridItem span={2}>{activityChart}</GridItem>
-    <GridItem>{activityMetric}</GridItem>
+    <GridItem span={2}>
+      <TableWidget dataset={sampleCounts} source={result} />
+    </GridItem>
+    <GridItem>
+      <MetricWidget metric={totalSamples} source={result} />
+    </GridItem>
   </Grid>
 </Stack>
 ```

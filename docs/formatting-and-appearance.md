@@ -68,7 +68,7 @@ ordering matters; exact-time details remain available on timestamps.
 Set `title`, `description`, and connection `scope` in `defineDataApp()`. Scope
 labels describe the connection; they do not grant access.
 
-Omit `appearance` for defaults. Configure it once when needed: `baseColor` for
+Keep default appearance. Customize only when requested, configuring it once: `baseColor` for
 the base palette, `accentColor` and optional `darkAccentColor` for emphasis,
 and `chartColors` for charts. Preserve semantic favorable/unfavorable colors.
-Embedded apps follow the [parent's resolved theme](embed.md#parent-presentation).
+Embedded apps follow the parent's resolved theme.

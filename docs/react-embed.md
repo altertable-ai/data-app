@@ -36,7 +36,7 @@ function Shell() {
 }
 ```
 
-The host supplies `router` using [message contracts](contract.md#message-routes).
+The host supplies `router` using [message contracts](embed.md#message-routes).
 The local URL must have a different origin from its shell. For hosted bundles,
 replace `source` with:
 

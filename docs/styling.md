@@ -1,6 +1,7 @@
 # Styling
 
-Use components and typed props first. Configure appearance once through
+Keep default appearance unless customization is requested. Use components and
+typed props first. Configure appearance once through
 `app.appearance`; see [formatting and appearance](formatting-and-appearance.md).
 Call `injectDataAppStyles()` before mounting and use one `<DataApp>` per document.
 

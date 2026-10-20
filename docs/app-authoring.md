@@ -1,66 +1,85 @@
 # Author a data app
 
 Build an exploration that answers the user's question and a story of its strongest
-findings.
-
-Search the [API reference](../REFERENCE.md) for exports, props, and signatures.
-
-## Inspect the data
-
-Inspect relevant tables, fields, time coverage, and definitions. Establish the
-population, grain, units, ordering, and missing or incomplete observations.
-When supplied a query registry, use its queries and preserve its SQL. Otherwise,
-declare the queries the app needs with `defineDataApp()`. Declare typed `params`
-and `projections`, then derive operations from `query()` rows; see
-[contracts](contract.md).
-
-## Plan the exploration
-
-Choose the analytical sequence before the widgets. Lead with a supported finding
-and visible scope. Give every chart, table, filter, and explanation a purpose;
-see [composition](composition.md) and [visualization selection](widgets.md#choose-a-visualization).
+findings. Follow this recipe with the selected starter; keep its runtime wiring.
 
 ## Use release-matched starters
 
-Use the starter supplied by your authoring workflow, matched to the app's SDK
-version. `@altertable/data-app-examples` ships these templates:
+Resolve the runtime from the task or existing app once. Use the starter supplied
+by the authoring workflow, matched to the app's SDK version.
+`@altertable/data-app-examples` ships these templates:
 
-| App                     | Template in `node_modules/@altertable/data-app-examples/templates/` | Guide                                   |
-| ----------------------- | ------------------------------------------------------------------- | --------------------------------------- |
-| Hosted / remote / cloud | `starter-data-app/index.tsx`                                        | [Single-file authoring](hosted-apps.md) |
-| Local                   | `starter-local-data-app`                                            | [Local authoring](local-data-apps.md)   |
+| Runtime                 | Template in `node_modules/@altertable/data-app-examples/templates/` |
+| ----------------------- | ------------------------------------------------------------------- |
+| Hosted / remote / cloud | `starter-data-app/index.tsx`                                        |
+| Local                   | `starter-local-data-app`                                            |
 
-Replace sample queries and connectivity screens with an exploration of inspected
-data.
+The hosted starter is the canonical query → operation → context → view → dataset
+→ widget → story example. Hosted apps stay in one file with public package imports
+and a literal `defineDataApp()` declaration. Local apps use the same composition
+with their existing server/client wiring. Replace fixture data and connectivity screens; edit
+app-owned files, not installed packages.
 
 ## Build the exploration
 
-1. Define operations, a [view](views.md), and reusable [datasets and metrics](widgets.md#declare-datasets-and-metrics).
-2. Expose useful query parameters as [filters](variables.md). Use a date filter
-   for time exploration or a fixed period for a historical snapshot. Keep protected
-   parameters such as `orgId` in the host/backend.
-3. Register [sources, definitions, and evidence](data-context.md).
-4. Compose bound widgets with the [standard layout](layout.md). Render the title,
-   instructions, and static explanations immediately; load only dynamic content.
-5. Supply [story and CSV export](stories-and-export.md) through the built-in
-   toolbar. Reuse datasets when several visuals show the same rows.
-6. Apply [formatting](formatting-and-appearance.md) and [styling](styling.md)
-   through public APIs.
-
-Use sections for related questions, app tabs for distinct analytical questions,
-and widget `views` for alternate representations of one dataset. Keep related
-results in one declared view; use independent views and `<DataSection>` boundaries
-only for separate requests. Keep each filter's scope clear across tabs.
+1. **Define the question and scope.** Inspect relevant fields, definitions, time
+   coverage, and missing or incomplete observations. Establish the population,
+   grain, measures, and comparison. Choose a chart that answers the question.
+2. **Replace the starter queries and operation.** Keep supplied registry SQL
+   unchanged; otherwise write queries against inspected data. Declare `params`
+   and result aliases in `projections`. Validate flat operation inputs, execute
+   named queries with `query()`, and derive results from its typed rows.
+3. **Update context and bindings.** Describe definitions and coverage in the data
+   context, using the operation's `queryNames` for evidence. Declare each dataset
+   and metric once, with stable row keys, raw column values, and shared formats.
+4. **Adapt the view.** Keep related results in one view. Use flat input fields
+   matching variable names so `input` and `bindings` can be omitted. Declare
+   useful filters in `variables`; `<DataApp>` renders them. Use `defineTimeView()`
+   for period-driven analysis and `defineDataView()` otherwise. Split views only
+   for independent requests. Keep protected values such as `orgId` backend-owned.
+5. **Compose the exploration.** Lead with the strongest supported finding and
+   visible scope. Use `<Stack>` for sections, `<Grid>` for peers, and bound widgets
+   from `@altertable/data-app-react`. Keep static explanations outside loading
+   boundaries. Use app tabs only for distinct questions and widget `views` only
+   for alternate representations of one dataset. Keep default appearance;
+   customize when requested. Use custom UI only when bound components cannot
+   express the requirement.
+6. **Adapt the story.** Return one to four supported findings using the same
+   bindings and displayed input as the exploration. Supply every distinct
+   displayed dataset to `<DataApp datasets={...}>` for CSV export.
 
 Keep credentials, authorization, and enforced query limits in the host/backend.
-Edit app-owned files; installed packages are dependencies.
+The starter supplies transport and mounting; change them only for an explicit
+integration task.
 
 ## Verify the app
 
-- Check findings and visuals against the source population, units, ordering,
-  coverage, and user question. Distinguish zero, missing values, and empty results.
-- Exercise filters, refresh, loading, empty, error, and stale states. Scope labels,
-  story, and export must agree with the displayed result.
-- Download CSV and present the story in standalone and embedded use. Check CSV
-  columns, raw values, filename, and filter scope.
-- Check phone and desktop widths in both themes; follow [UI quality](ui-quality.md).
+Run the authoring workflow's validation, then inspect the app:
+
+- Check findings against the source population, units, ordering, and coverage.
+  Distinguish measured zero, missing values, and empty results.
+- Change filters and exercise loading, empty, error, refresh, and stale states.
+  Narrative, scope, story, and export must agree with the displayed result.
+- Present the story and check exported columns, raw values, filename, and scope.
+- Check phone and desktop widths, both themes, keyboard use, and overflow.
+
+## Look up only what is missing
+
+Search [REFERENCE.md](../REFERENCE.md) for the exact symbol first:
+
+```sh
+rg '^LineChart\b' REFERENCE.md
+```
+
+Open only the section needed for a requirement the starter does not cover:
+
+| When                                         | Read                                                              |
+| -------------------------------------------- | ----------------------------------------------------------------- |
+| Adding categorical, numeric, or time filters | [Variables](variables.md)                                         |
+| Adding a chart or narrative binding          | [Widgets](widgets.md)                                             |
+| Adding a detail destination                  | [Detail views](views.md#detail-destinations)                      |
+| Registering physical sources                 | [Source identifiers](data-context.md#register-source-identifiers) |
+| Customizing appearance or CSS                | [Formatting](formatting-and-appearance.md), [styling](styling.md) |
+
+Keep the starter's working pattern when it meets the requirement. Host integration
+guides apply only when building or changing a host.
