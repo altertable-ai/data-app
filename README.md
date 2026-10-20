@@ -21,7 +21,7 @@ Choose the packages for your runtime or tooling:
 | `@altertable/data-app-react`    | React app authoring and `/ui` components                                      |
 | `@altertable/data-app-embed`    | Framework-neutral iframe hosting and `/react` host adapter                    |
 | `@altertable/data-app-bun`      | Bun local serving and `/preview` tooling                                      |
-| `@altertable/data-app-manifest` | Static source manifest extraction for Node.js and Bun tooling                 |
+| `@altertable/data-app-manifest` | Static source manifest extraction and rewriting for Node.js and Bun tooling   |
 | `@altertable/data-app-examples` | Canonical starter templates for CLI scaffolding                               |
 | `@altertable/data-app-worker`   | Self-contained sandbox Worker deployment                                      |
 
