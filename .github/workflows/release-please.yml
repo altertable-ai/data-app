@@ -40,7 +40,7 @@ jobs:
         if: steps.release.outputs.pr != ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          ref: ${{ fromJSON(steps.release.outputs.pr || '{}').headBranchName }}
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Set up Bun for release PR
         if: steps.release.outputs.pr != ''
@@ -50,7 +50,8 @@ jobs:
       - name: Synchronize release PR lockfile
         if: steps.release.outputs.pr != ''
         env:
-          RELEASE_PR_BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          # Step env can be evaluated even when the step is skipped.
+          RELEASE_PR_BRANCH: ${{ fromJSON(steps.release.outputs.pr || '{}').headBranchName }}
         run: bash scripts/release/refresh-lockfile.sh
 
   context:
