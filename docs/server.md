@@ -2,12 +2,11 @@
 
 Import `createDataHandler()` and the `RequestAccess` type from
 `@altertable/data-app/server`. The handler accepts a Web `Request` and returns a
-`Promise<Response>`. This entry can be imported in Node and Bun without loading
-React or the Bun local-development adapter.
+`Promise<Response>` in Node or Bun.
 
 ```ts
 import { createDataHandler } from '@altertable/data-app/server';
-import { operations } from './operations';
+import { operations } from './operations.ts';
 
 export const handleDataRequest = createDataHandler(
   operations,
@@ -36,12 +35,7 @@ See [operation contracts](contract.md), the [client](client.md), and the
 
 ## Request input limits
 
-JSON request bodies are limited to **16,384 encoded bytes**, including multibyte
-UTF-8 content. The handler counts bytes as it reads and cancels remaining
-consumption on overflow; it does not rely on `Content-Length`. Authorization
-runs before reading. Request cancellation interrupts waiting reads. Invalid or
-interrupted bodies return `400/invalid_input`; oversized bodies return
-`413/input_too_large`.
-
-`maxDurationMs` bounds execution after input parsing. It does not add a separate
-body-read deadline. The hosting runtime controls the size of individual chunks.
+JSON request bodies are limited to 16,384 encoded bytes. Oversized bodies return
+`413/input_too_large`; invalid or interrupted bodies return `400/invalid_input`.
+`maxDurationMs` bounds execution after parsing; configure body-read deadlines in
+the hosting runtime.

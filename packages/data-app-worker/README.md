@@ -25,8 +25,7 @@ Upload `workerScript` as the deployment's main module. Configure the string
 bindings `DOMAIN_NAME` (runtime domain) and `PARENT_ORIGINS` (trusted host origins),
 plus your deployment's domains and routes.
 
-The published JavaScript includes the bootstrap and HTML with no runtime imports.
-The deployed Worker requires no React or Bun. Data queries go through the host's
+The asset includes its bootstrap and HTML. Data queries go through the host's
 authorized message router.
 
 ## Documentation

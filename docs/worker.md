@@ -27,30 +27,18 @@ and these string bindings:
 | `DOMAIN_NAME`    | Runtime domain without scheme, port, or trailing dot                       | `apps.example.net`                                      |
 | `PARENT_ORIGINS` | Space-separated trusted HTTP(S) origins; first exact origin is the default | `https://app.example.com https://*.preview.example.com` |
 
-The Worker serves only `/` on a single preview label under `DOMAIN_NAME` matching
-`/^(?=.{1,63}$)[a-z0-9]+(?:-+[a-z0-9]+)+$/`
-(any hyphenated lowercase DNS label; the host keeps each app's label unique). Other hosts and paths
-return 404. GET returns HTML; HEAD returns the same headers with no body. Other
-methods return 405 with `Allow: GET, HEAD`.
+Serve `/` on unique hyphenated lowercase preview labels under `DOMAIN_NAME`,
+such as `report-123.apps.example.net`. Other hosts and paths return 404.
 
-`__altertable_parent` selects an **exact** parent origin only after validation
-against `PARENT_ORIGINS`. It cannot add trust. HTTPS wildcard entries allow one
-subdomain label, without a port, for staging previews. Their apex and deeper
-subdomains are rejected. Exact origins cannot contain paths, trailing slashes,
-credentials, queries, or fragments. Invalid, duplicate, or unapproved selections
-return 403. Missing or invalid origin configuration returns 503; an absent
-selection requires an exact default origin. Referrers and messages never supply
-trust.
+`__altertable_parent` selects an exact trusted origin from `PARENT_ORIGINS`; it
+cannot add trust. Wildcards allow one HTTPS subdomain label without a port.
+Exact entries must be bare HTTP(S) origins. Keep an exact origin first for the
+default parent.
 
-The Worker enforces a restrictive CSP with configured `frame-ancestors`,
-`no-referrer`, and `nosniff`. App scripts load through the authenticated bridge. Apps own styling and
-navigation. Bundle apps execute their operation registry in the browser and send
-SQL through the [host query route](embed.md#sql-query-route); the Worker does not
-resolve operation names or execute queries. Data requests require backend authorization.
+The Worker sets CSP and trusted frame ancestors. Data queries use the
+[host's authorized SQL route](embed.md#sql-query-route); the Worker does not
+execute queries.
 
-If Terraform reads a file, copy the resolved `@altertable/data-app-worker` asset unchanged to that
-file during deployment preparation. Configure `DOMAIN_NAME`, `PARENT_ORIGINS`,
-domains, routes, and deployment settings in Terraform. Upgrade the host package
-and Worker together for protocol changes.
-Custom hosts that bundle their own bootstrap can use `startDataAppBootstrap()` from
-[the embed package](embed.md#trusted-bootstrap).
+For file-based deployment tools such as Terraform, copy the resolved asset
+unchanged. Upgrade the host package and Worker together for protocol changes.
+Custom bootstrap hosts use [startDataAppBootstrap()](embed.md#trusted-bootstrap).

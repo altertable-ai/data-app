@@ -1,23 +1,43 @@
 # Data context and evidence
 
-Set `dataContext: context` in each view for source descriptions, glossary, and
-permitted query evidence. App inspection and the view's sections use that context.
-Keep glossary query references scoped to that view's executed queries. Detail
-views declare their own context when their queries differ.
-Render registered identifiers where `<DataIdentifier>` is used.
+Continue the starter's operation and context. Use its derived `queryNames` for
+business definitions and evidence. Reference only queries the view executes.
 
-Physical source identifiers name inspected tables and columns. Glossary entries
-explain business meaning. Query names link those definitions and displayed claims
-to their execution evidence. Keep all three explicit.
+## Bind evidence
+
+```tsx
+import { createDataContext } from '@altertable/data-app-react';
+
+// ... operations
+const queryNames = operations.sampleCountsByGroup.queryNames;
+const sampleDataContext = createDataContext(queryNames)({
+  description: 'Sample counts for the selected groups.',
+  glossary: {
+    sampleCount: {
+      term: 'Sample count',
+      definition: 'The number of samples in each group.',
+      queryNames: [queryNames.sampleCountsByGroup],
+    },
+  },
+});
+```
+
+Import `createDataContext()` from `@altertable/data-app-react`. Supply
+`dataContext: sampleDataContext` on `sampleCountsView`, then use its glossary IDs
+in `view.metric()` and `view.dataset()`. Reuse those bindings in widgets and stories.
+Detail views need their own context when their queries differ.
 
 ## Register source identifiers
 
-Use `defineDataIdentifiers()` from `@altertable/data-app-react` to register exact catalog, schema,
+Once the queries use inspected physical sources, use `defineDataIdentifiers()` from `@altertable/data-app-react` to register exact catalog, schema,
 table, and field names. Use `<DataIdentifier>` in descriptions and glossary
 entries to render those source references consistently.
 
 ```tsx
-import { defineDataIdentifiers } from '@altertable/data-app-react';
+import {
+  createDataContext,
+  defineDataIdentifiers,
+} from '@altertable/data-app-react';
 
 const identifiers = defineDataIdentifiers({
   tables: {
@@ -31,63 +51,17 @@ const identifiers = defineDataIdentifiers({
 });
 const { DataIdentifier } = identifiers;
 
-<DataIdentifier id="tables.events" />;
-<DataIdentifier id="columns.events.identity" />;
-```
-
-Pass `identifiers.definitions` to `createDataContext()` to reuse the source
-registry.
-
-## Bind evidence
-
-```tsx
-const queries = activity.queryNames;
-const context = createDataContext(queries)({
+// ... queryNames for the inspected source
+const eventDataContext = createDataContext(queryNames)({
   identifiers: identifiers.definitions,
   description: (
     <>
-      Explore activity in <DataIdentifier id="tables.events" />.
+      Distinct <DataIdentifier id="columns.events.identity" /> values in{' '}
+      <DataIdentifier id="tables.events" />.
     </>
   ),
   glossary: {
-    identities: {
-      term: 'Tracked identities',
-      definition: (
-        <>
-          Distinct <DataIdentifier id="columns.events.identity" /> values.
-        </>
-      ),
-      queryNames: [queries.activity],
-    },
+    // ... business definitions
   },
-});
-const evidence = context.evidence({
-  id: 'identities',
-  glossaryIds: ['identities'],
-  queryNames: [queries.activity],
-});
-// activityView is declared with dataContext: context.
-const trackedIdentities = activityView.metric(
-  {
-    id: 'identities',
-    glossaryId: 'identities',
-    format: { kind: 'count', compact: true },
-  },
-  data => ({ current: data.count })
-);
-const finding = context.finding({
-  id: 'activity',
-  headline: 'What people do',
-  visual: <ActivityChart />,
-  evidence: { id: 'activity-evidence', queryNames: [queries.activity] },
 });
 ```
-
-Query inspection shows the executed SQL and resolved parameters; copy actions include both.
-
-Import context and identifier factories from `@altertable/data-app-react`. Use the operation’s derived `queryNames` for evidence.
-
-Use `view.metric(definition, select)` to register and bind a metric in one call.
-Declare dataset evidence references inside `view.dataset()`; the view registers
-and validates them too.
-Widgets and stories share its values and evidence; see [datasets and metrics](widgets.md#declare-datasets-and-metrics).

@@ -8,8 +8,7 @@ Static manifest extraction and rewriting for Node.js and Bun tooling.
 bun add @altertable/data-app-manifest
 ```
 
-Requires Node.js or Bun and includes TypeScript 5. Install it in tooling,
-separately from app runtime and UI packages.
+Install in Node.js or Bun tooling, separately from app runtime packages.
 
 ## Usage
 
@@ -26,8 +25,7 @@ if (result.manifest) {
 }
 ```
 
-Returns literal data or diagnostics synchronously. It does not execute app code
-or validate configuration shape.
+Reads literal data without executing app code; validate configuration shape separately.
 
 Pass the complete new manifest to rewrite the declaration:
 
@@ -45,8 +43,7 @@ if (result.source !== null) {
 }
 ```
 
-It accepts the same sources and rewrites only the values that change; the rest
-of the source, including comments and formatting, stays as authored.
+Rewrites changed values while preserving the rest of the source.
 
 ## Documentation
 

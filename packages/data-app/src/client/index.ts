@@ -10,18 +10,15 @@ export {
   type DataResponse,
   type DataClient,
   type DataClientOptions,
-} from './data-client.ts';
+  DataAppError,
+} from '../authoring/client.ts';
+export { createHttpTransport, type DataTransport } from './transport.ts';
 export { type DataAppLocation, type AppLocation } from './location.ts';
 export {
   createDataAppNavigation,
   getDataAppNavigation,
   type DataAppNavigation,
 } from './navigation.ts';
-export {
-  createHttpTransport,
-  DataAppError,
-  type DataTransport,
-} from './transport.ts';
 export {
   createIframeTransport,
   installDataAppTransport,

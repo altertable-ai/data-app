@@ -46,9 +46,7 @@ import { DataAppBridge } from '@altertable/data-app-embed/react';
 />;
 ```
 
-The `/react` entry wraps the embedding engine with React lifecycle handling. It
-requires no React DOM or `@altertable/data-app-react`. That separate package builds
-the app UI inside the iframe. Neither package imports the other.
+Use `@altertable/data-app-react` for the UI inside the iframe.
 
 ## Documentation
 

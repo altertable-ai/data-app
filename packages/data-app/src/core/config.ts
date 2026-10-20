@@ -1,9 +1,12 @@
-import type { AppearanceOptions } from './appearance.ts';
 /**
  * App configuration shared by browser and server.
  * @module @altertable/data-app
  */
-import { defineOperation, type OperationDefinition } from './contract.ts';
+import {
+  defineOperation,
+  type OperationDefinition,
+} from '../authoring/contract.ts';
+import type { AppearanceOptions } from './appearance.ts';
 import {
   bindDimensionSource,
   type DimensionSourceConfig,
@@ -58,8 +61,8 @@ export type DataAppDefinition<
 
 /**
  * Define the app's query source of truth while preserving exact query and parameter names.
- * Use `app.defineOperation()` to bind operations to these queries. Pass the app once
- * to `mountDataApp({ app, component })` or `<DataAppProvider app={app}>`.
+ * Use `dataApp.defineOperation()` to bind operations to these queries. Pass the app once
+ * to `mountDataApp({ app: dataApp, component })` or `<DataAppProvider app={dataApp}>`.
  * The app owns an immutable snapshot of its registry; later input mutations do not change it.
  * This declaration does not execute queries or mount UI. Static apps use `queries: {}`.
  *

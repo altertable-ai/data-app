@@ -13,8 +13,8 @@ Keep static context visible during loading. Skeletonize only dynamic content;
 refresh, errors, and retry retain the displayed result and scope. Loading
 geometry should match ready content.
 
-Verify a real app at phone and desktop widths, including 320px, in both themes
-and with enlarged text. Exercise long labels, localized values, many filters,
-and loading, empty, refresh, and error states. Check containment, contrast,
-keyboard focus, date/menu navigation, modal dismissal, and reduced motion.
-Inspect rendered screenshots as well as computed styles.
+The SDK owns standard theme handling, responsive components, and keyboard/focus
+behavior for its controls. Review app-owned content at its intended width with realistic labels
+and values. When adding custom layout or CSS, check narrow and wide widths for
+clipping and overflow; check custom colors in both themes and custom controls
+with the keyboard.
