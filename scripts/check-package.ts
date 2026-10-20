@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, posix, resolve } from 'node:path';
 
 import workspace from '@/package.json';
+import { checkPreviewLauncher } from '@/scripts/check-preview-launcher';
 import { packages } from '@/scripts/packages';
 
 const root = process.cwd();
@@ -117,6 +118,12 @@ try {
       for (const path of Object.values(target))
         assert(paths.has(path.slice(2)), `${manifest.name}: missing ${path}`);
     }
+    if ('bin' in manifest)
+      for (const path of Object.values(manifest.bin))
+        assert(
+          paths.has(path.replace(/^\.\//, '')),
+          `${manifest.name}: missing bin ${path}`
+        );
     for (const path of ['README.md', 'LICENSE'])
       assert(paths.has(path), `${manifest.name}: missing ${path}`);
     assert.equal(
@@ -561,6 +568,40 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
     '@types/react-dom@19.3.0',
     `@types/bun@${workspace.devDependencies['@types/bun']}`,
   ]);
+  const previewRuntime = join(temporary, 'preview-runtime');
+  const previewNames = await install(previewRuntime, [
+    archive(''),
+    archive('-react'),
+    archive('-bun'),
+    'react@19.2.0',
+    'react-dom@19.2.0',
+  ]);
+  assert(!previewNames.has('@altertable/data-app-examples'));
+  await checkPreviewLauncher(previewRuntime);
+  // Bun's isolated linker places the launcher away from root runtime
+  // dependencies; the launcher's resolution base must still be this project.
+  // Use absolute archive references so Bun does not encode npm's relative
+  // tarball paths as `..` segments in its isolated package store.
+  await writeFile(
+    join(previewRuntime, 'package.json'),
+    JSON.stringify({
+      private: true,
+      type: 'module',
+      dependencies: {
+        '@altertable/data-app': archive(''),
+        '@altertable/data-app-react': archive('-react'),
+        '@altertable/data-app-bun': archive('-bun'),
+        react: '19.2.0',
+        'react-dom': '19.2.0',
+      },
+    })
+  );
+  await rm(join(previewRuntime, 'node_modules'), { recursive: true });
+  await run(
+    ['bun', 'install', '--ignore-scripts', '--linker=isolated'],
+    previewRuntime
+  );
+  await checkPreviewLauncher(previewRuntime);
   const hostedExample = catalog.find(example => example.mode === 'hosted');
   assert(hostedExample);
   await writeFile(
@@ -599,7 +640,9 @@ console.log(MetricWidget, DataAppBridge);\n`
     `import { defineDataApp } from "@altertable/data-app";
 import { createDataHandler } from "@altertable/data-app/server";
 import { localLakehouse } from "@altertable/data-app-bun";
-import { serveAppFile } from "@altertable/data-app-bun/preview";
+import { serveAppFile, runAppFilePreview, type AppFilePreview } from "@altertable/data-app-bun/preview";
+const runner: () => Promise<AppFilePreview> = runAppFilePreview;
+if (typeof runner !== "function") throw new Error("Preview runner is unavailable");
 if (typeof serveAppFile !== "function") throw new Error("Preview export is unavailable");
 if (typeof createDataHandler !== "function" || typeof localLakehouse !== "function")
   throw new Error("Server exports are unavailable");
