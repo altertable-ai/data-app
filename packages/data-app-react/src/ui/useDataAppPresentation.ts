@@ -18,7 +18,7 @@ function presentationFromBridgeState(state: unknown) {
   return isDataAppPresentation(presentation) ? presentation : undefined;
 }
 
-/** Local preview verifies its parent before accepting presentation context. */
+/** The frame UI shares one bridge connection for presentation and content sizing. */
 export function useDataAppPresentation() {
   const [presentation, setPresentation] = useState<
     DataAppPresentation | undefined
@@ -26,14 +26,20 @@ export function useDataAppPresentation() {
 
   useEffect(() => {
     let disposed = false;
-    let unsubscribe: (() => void) | undefined;
+    let detach: (() => void) | undefined;
 
     function attach(bridge: IframeTransport) {
       if (disposed) return;
-      unsubscribe = bridge.subscribe(state =>
+      const unsubscribe = bridge.subscribe(state =>
         setPresentation(presentationFromBridgeState(state))
       );
+      // Bootstraps that predate content sizing cannot apply it.
+      const releaseSizing = bridge.supportContentSizing?.();
       setPresentation(presentationFromBridgeState(bridge.snapshot()));
+      detach = () => {
+        unsubscribe();
+        releaseSizing?.();
+      };
     }
 
     const bridge = getDataAppTransport();
@@ -46,7 +52,7 @@ export function useDataAppPresentation() {
 
     return () => {
       disposed = true;
-      unsubscribe?.();
+      detach?.();
     };
   }, []);
 

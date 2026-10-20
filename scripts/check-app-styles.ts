@@ -16,6 +16,8 @@ for (const pattern of paths) {
   let matched = false;
   for await (const path of new Glob(pattern).scan('.')) {
     matched = true;
+    // Host shells style the parent page, not an app.
+    if (!requested.length && /-host\.\w+$/.test(path)) continue;
     const diagnostics = validateAuthoredStyles(
       await Bun.file(path).text(),
       path.endsWith('.css') ? 'css' : 'markup'

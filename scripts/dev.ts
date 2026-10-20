@@ -102,6 +102,7 @@ const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
 console.log(`Mocked Altertable API: ${mockApiUrl}`);
 console.log(`Gallery: http://127.0.0.1:${port}/gallery`);
 console.log(`Playground: http://127.0.0.1:${port}/playground`);
+console.log(`Content sizing: http://127.0.0.1:${port}/content-sizing`);
 let isBuilding = false;
 let rebuildQueued = false;
 let rebuildTimer: ReturnType<typeof setTimeout> | undefined;

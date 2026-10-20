@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 
-import { chromium, type Browser, type Page } from 'playwright';
+import { chromium, firefox, webkit, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, vi, test as vitestTest } from 'vitest';
 
 let browser: Browser;
@@ -27,7 +27,12 @@ beforeAll(async () => {
     },
     { timeout: 30000 }
   );
-  browser = await chromium.launch();
+  const name = process.env.DATA_APP_TEST_BROWSER ?? 'chromium';
+  const engine = [chromium, firefox, webkit].find(
+    engine => engine.name() === name
+  );
+  if (!engine) throw new Error(`Unsupported test browser: ${name}`);
+  browser = await engine.launch();
 }, 30000);
 
 afterAll(async () => {

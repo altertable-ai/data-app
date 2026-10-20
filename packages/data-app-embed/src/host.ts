@@ -15,6 +15,8 @@ import {
   type BridgeEventMessage,
 } from '@altertable/data-app/internal';
 
+import { createContentSizing } from './content-sizing.ts';
+
 export type DataAppConnection =
   | { type: 'origin'; origin: string }
   | { type: 'opaque'; token: string };
@@ -72,6 +74,7 @@ export function attachDataAppConnection({
   const targetOrigin = connection.type === 'opaque' ? '*' : frameOrigin;
   let currentPresentation: DataAppPresentation | undefined;
   let presentationIdentity: string | undefined;
+  let contentSizingFailed = false;
   let annotationDismissal: DataAppAnnotationPresentation['dismissal'];
   let disposed = false;
   let documentId: string | undefined;
@@ -109,7 +112,7 @@ export function attachDataAppConnection({
   }
 
   function hostState() {
-    const presentation =
+    let presentation =
       currentPresentation?.annotations && annotationDismissal
         ? {
             ...currentPresentation,
@@ -119,6 +122,8 @@ export function attachDataAppConnection({
             },
           }
         : currentPresentation;
+    if (presentation && contentSizingFailed)
+      presentation = { ...presentation, sizing: 'frame' };
     return {
       search: host.location.search,
       hash: host.location.hash,
@@ -139,10 +144,16 @@ export function attachDataAppConnection({
     const identity = JSON.stringify(value);
     if (identity === presentationIdentity) return;
     presentationIdentity = identity;
+    const previousSizing = currentPresentation?.sizing;
     currentPresentation =
       identity === undefined
         ? undefined
         : (JSON.parse(identity) as DataAppPresentation);
+    if (previousSizing !== currentPresentation?.sizing)
+      contentSizingFailed = false;
+    contentSizing.setEnabled(
+      currentPresentation?.sizing === 'content' && !contentSizingFailed
+    );
     publishState();
   }
 
@@ -172,11 +183,14 @@ export function attachDataAppConnection({
           cancelAll();
           documentId = message.documentId;
           sessionId = randomUuid();
+          contentSizingFailed = false;
+          contentSizing.setEnabled(currentPresentation?.sizing === 'content');
         }
         onStatusChange?.('connected');
         if (disposed) return;
         send('initialize', { state: hostState() });
         if (disposed) return;
+        contentSizing.connected();
         if (javascript !== undefined) send('scriptLoad', { javascript });
       },
       runtimeLog({ payload }) {
@@ -191,6 +205,9 @@ export function attachDataAppConnection({
       },
       runtimeError() {
         onStatusChange?.('failed');
+      },
+      runtimeResize({ height }) {
+        contentSizing.resize(height);
       },
       request(message) {
         void request(message);
@@ -209,6 +226,18 @@ export function attachDataAppConnection({
   });
   const send = endpoint.send;
   const receive = endpoint.receive;
+  const contentSizing = createContentSizing({
+    iframe,
+    window: host,
+    publish(insets) {
+      if (!disposed && sessionId) send('viewportUpdate', insets);
+    },
+    fallback() {
+      contentSizingFailed = true;
+      contentSizing.setEnabled(false);
+      publishState();
+    },
+  });
 
   function error(
     id: string,
@@ -304,6 +333,7 @@ export function attachDataAppConnection({
   function dispose() {
     disposed = true;
     endpoint.dispose();
+    contentSizing.dispose();
     cancelAll();
     iframe.removeEventListener('load', load);
     host.removeEventListener('message', receive);

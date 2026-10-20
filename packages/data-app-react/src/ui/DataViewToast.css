@@ -2,13 +2,17 @@
   position: fixed;
   z-index: 100;
   inset-inline: 16px;
-  bottom: max(20px, env(safe-area-inset-bottom));
+  bottom: calc(
+    var(--atbl-frame-inset-bottom, 0px) + max(20px, env(safe-area-inset-bottom))
+  );
   display: flex;
   justify-content: center;
   pointer-events: none;
 }
 .altertable-data-view-toast-region[data-position='top'] {
-  top: max(20px, env(safe-area-inset-top));
+  top: calc(
+    var(--atbl-frame-inset-top, 0px) + max(20px, env(safe-area-inset-top))
+  );
   bottom: auto;
 }
 .altertable-data-view-toast {

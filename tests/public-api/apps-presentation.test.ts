@@ -2,11 +2,12 @@ import { describe, expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
-describe('present', () => {
+describe.each(['frame', 'content'])('present (%s sizing)', sizing => {
+  const search = sizing === 'content' ? 'content-sizing=1&' : '';
   test('a hosted story enters fullscreen and restores the exploration on close', async ({
     page,
   }) => {
-    await page.goto('/starter-data-app');
+    await page.goto(`/starter-data-app?${search}`);
     const app = page.frameLocator('iframe');
     const launch = app.getByRole('button', {
       name: 'Present story',
@@ -61,7 +62,9 @@ describe('present', () => {
   test('a saved presentation opens without fullscreen or a user gesture', async ({
     page,
   }) => {
-    await page.goto('/starter-data-app?present=1&step=counts-by-group');
+    await page.goto(
+      `/starter-data-app?${search}present=1&step=counts-by-group`
+    );
     const app = page.frameLocator('iframe');
     await expect
       .poll(() =>
@@ -73,7 +76,7 @@ describe('present', () => {
       .toBe(true);
     await expect.poll(() => app.locator(':fullscreen').count()).toBe(0);
     await expect.poll(() => page.locator(':fullscreen').count()).toBe(0);
-    await page.keyboard.press('Escape');
+    await app.getByRole('dialog').press('Escape');
     await expect.poll(() => app.getByRole('dialog').count()).toBe(0);
     await expect.poll(() => page.url()).not.toMatch(/present=1/);
   });
@@ -81,7 +84,7 @@ describe('present', () => {
   test('a host denying fullscreen still allows the story to open and close', async ({
     page,
   }) => {
-    await page.goto('/starter-data-app?no-fullscreen=1');
+    await page.goto(`/starter-data-app?${search}no-fullscreen=1`);
     const app = page.frameLocator('iframe');
     await app
       .getByRole('button', { name: 'Present story', exact: true })

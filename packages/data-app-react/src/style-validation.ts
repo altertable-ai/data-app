@@ -80,6 +80,15 @@ export function validateAuthoredStyles(
         );
     }
   }
+  // A parent can size the iframe to its content, so viewport heights feed back into it.
+  const viewportHeights =
+    kind === 'css'
+      ? /(?:^|[;{])\s*(?:min-)?(?:height|block-size)\s*:[^;{}]*\d[dsl]?vh\b/im
+      : /\b(?:min)?(?:height|Height|blockSize|BlockSize)\s*:\s*['"`][^'"`]*\d[dsl]?vh\b/;
+  if (viewportHeights.test(source))
+    diagnostics.add(
+      'Size page content without viewport-height units such as vh and dvh; a content-sized frame grows with them.'
+    );
   const literalColors =
     kind === 'css'
       ? /(?:^|[;{])\s*(?:color|background(?:-color)?|border(?:-[\w-]+)?|fill|stroke|box-shadow)\s*:[^;{}]*(?:#[\da-f]{3,8}\b|(?:rgb|hsl|oklch)\()/gim

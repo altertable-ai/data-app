@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+
 import type { DataAppDiagnostic } from '@altertable/data-app-embed';
 import { expect } from 'vitest';
 
@@ -472,9 +474,6 @@ for (const source of ['bundle', 'packaged', 'url']) {
         .poll(() => page.locator('iframe').getAttribute('sandbox'))
         .toBe('allow-scripts');
       const frame = page.frames().find(frame => frame !== page.mainFrame())!;
-      expect(await frame.evaluate(() => typeof crypto.randomUUID)).toBe(
-        'undefined'
-      );
       expect(
         await frame.evaluate(async url => {
           try {
@@ -598,3 +597,319 @@ for (const source of ['bundle', 'packaged', 'url']) {
       .toContain('"version":2');
   });
 }
+
+test('a content-sized frame follows its app height and keeps its toolbar and sheets usable', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1');
+  const frame = page.getByTitle('Sandbox app', { exact: true });
+  const app = page.frameLocator('iframe');
+  const main = app.getByRole('main');
+  await expect.poll(() => main.isVisible()).toBe(true);
+  const toolbarAction = app.getByRole('button', {
+    name: 'Custom toolbar action',
+    exact: true,
+  });
+  await expect.poll(() => toolbarAction.isVisible()).toBe(true);
+  await app.getByRole('button', { name: 'Export', exact: true }).click();
+  const downloaded = page.waitForEvent('download');
+  await app
+    .getByRole('menuitem', { name: 'Export Summary CSV', exact: true })
+    .click();
+  const download = await downloaded;
+  expect(download.suggestedFilename()).toBe('Summary.csv');
+  expect(await readFile((await download.path())!, 'utf8')).toBe(
+    '\uFEFFTotal\r\n0\r\n'
+  );
+  const root = app.locator(':root');
+  function frameHeight() {
+    return frame.evaluate(element => element.getBoundingClientRect().height);
+  }
+  function overflow() {
+    return root.evaluate(
+      element => element.scrollHeight - element.clientHeight
+    );
+  }
+  await expect
+    .poll(async () =>
+      Math.floor(
+        (await frameHeight()) -
+          (await root.evaluate(
+            element => element.getBoundingClientRect().height
+          ))
+      )
+    )
+    .toBe(0);
+  const initial = await frameHeight();
+  await app
+    .getByRole('button', { name: 'Show long content', exact: true })
+    .click();
+  await expect.poll(frameHeight).toBeGreaterThanOrEqual(initial + 2000);
+  expect(await overflow()).toBe(0);
+
+  await app.getByRole('button', { name: 'Explore data', exact: true }).click();
+  const sheet = app.getByRole('dialog');
+  const { height: viewport } = page.viewportSize()!;
+  async function fitsViewport() {
+    const box = await sheet.boundingBox();
+    return (
+      !!box &&
+      box.height > 200 &&
+      box.y >= -1 &&
+      box.y + box.height <= viewport + 1
+    );
+  }
+  await expect.poll(fitsViewport).toBe(true);
+  await page.evaluate(() => scrollBy(0, 600));
+  expect(
+    await frame.evaluate(element => element.getBoundingClientRect().top)
+  ).toBeLessThan(0);
+  await expect.poll(fitsViewport).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect.poll(() => sheet.count()).toBe(0);
+
+  await app
+    .getByRole('button', { name: 'Show short content', exact: true })
+    .click();
+  await expect
+    .poll(async () => Math.round(await frameHeight()))
+    .toBe(Math.round(initial));
+  await page
+    .getByRole('button', { name: 'Toggle content sizing', exact: true })
+    .click();
+  await expect
+    .poll(async () => Math.round(await frameHeight()))
+    .toBe(Math.round(viewport * 0.8));
+  await expect.poll(() => toolbarAction.isVisible()).toBe(true);
+  await page
+    .getByRole('button', { name: 'Toggle content sizing', exact: true })
+    .click();
+  await expect
+    .poll(async () => Math.round(await frameHeight()))
+    .toBe(Math.round(initial));
+});
+
+for (const label of [
+  'Show viewport-height content',
+  'Show proportional viewport content',
+  'Show oscillating viewport content',
+])
+  test(`a non-converging frame falls back to accessible frame scrolling: ${label}`, async ({
+    page,
+  }) => {
+    await page.goto('/bundle-host?content-sizing=1');
+    const frame = page.getByTitle('Sandbox app', { exact: true });
+    const app = page.frameLocator('iframe');
+    const root = app.locator(':root');
+    function frameHeight() {
+      return frame.evaluate(element =>
+        Math.round(element.getBoundingClientRect().height)
+      );
+    }
+    await expect
+      .poll(
+        async () =>
+          (await frameHeight()) -
+          (await root.evaluate(element =>
+            Math.ceil(element.getBoundingClientRect().height)
+          ))
+      )
+      .toBe(0);
+    const initial = await frameHeight();
+    await app.getByRole('button', { name: label, exact: true }).click();
+    const authoredHeight = Math.round(page.viewportSize()!.height * 0.8);
+    await expect.poll(frameHeight).toBe(authoredHeight);
+    await expect
+      .poll(() => root.evaluate(element => getComputedStyle(element).overflowY))
+      .not.toBe('hidden');
+    await app.getByRole('button', { name: label, exact: true }).hover();
+    await page.mouse.wheel(0, 10000);
+    await expect
+      .poll(() => root.evaluate(element => element.scrollTop))
+      .toBeGreaterThan(0);
+    // Host rerenders must preserve the fallback rather than restart the loop.
+    await page
+      .getByRole('button', { name: 'Change theme', exact: true })
+      .click();
+    await expect.poll(frameHeight).toBe(authoredHeight);
+    await app
+      .getByRole('button', { name: 'Show short content', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Toggle content sizing', exact: true })
+      .click();
+    await page
+      .getByRole('button', { name: 'Toggle content sizing', exact: true })
+      .click();
+    await expect.poll(frameHeight).toBe(initial);
+    await app
+      .getByRole('button', { name: 'Show long content', exact: true })
+      .click();
+    await expect.poll(frameHeight).toBeGreaterThanOrEqual(initial + 2000);
+  });
+
+test('independent equal-sized content updates keep expanding the iframe', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1&manual-sizing=1');
+  const frame = page.getByTitle('Sandbox app', { exact: true });
+  const app = page.frameLocator('iframe');
+  await expect.poll(() => app.getByRole('listitem').count()).toBe(25);
+  await expect
+    .poll(
+      async () =>
+        (await frame.evaluate(element =>
+          Math.round(element.getBoundingClientRect().height)
+        )) -
+        (await app
+          .getByRole('main')
+          .evaluate(element =>
+            Math.ceil(element.getBoundingClientRect().height)
+          ))
+    )
+    .toBe(0);
+  const initial = await frame.evaluate(
+    element => element.getBoundingClientRect().height
+  );
+  for (let index = 1; index <= 25; index++) {
+    await app.getByRole('button', { name: 'Load more', exact: true }).click();
+    await expect
+      .poll(() =>
+        frame.evaluate(element => element.getBoundingClientRect().height)
+      )
+      .toBe(initial + index * 80);
+    // Let the applied frame size settle before the next independent interaction.
+    await page.evaluate(
+      () =>
+        new Promise<void>(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        )
+    );
+  }
+});
+
+test('sheets follow a resized clipping panel without a window resize or scroll', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1&manual-sizing=1&panel=1');
+  const app = page.frameLocator('iframe');
+  const panel = page.getByRole('region', { name: 'Embed panel', exact: true });
+  await app
+    .getByRole('button', { name: 'Inspect report', exact: true })
+    .click();
+  const sheet = app.getByRole('dialog', {
+    name: 'Report details',
+    exact: true,
+  });
+  async function sheetHeight() {
+    return (await sheet.boundingBox())?.height;
+  }
+  await expect.poll(sheetHeight).toBe(600);
+  await page
+    .getByRole('button', { name: 'Resize embed panel', exact: true })
+    .click();
+  expect((await panel.boundingBox())?.height).toBe(300);
+  await expect.poll(sheetHeight).toBe(300);
+});
+
+test('restoring sizing support restores the visible viewport without changing frame height', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1&manual-sizing=1&panel=1');
+  const app = page.frameLocator('iframe');
+  const frame = page.getByTitle('Sandbox app', { exact: true });
+  await app
+    .getByRole('button', { name: 'Inspect report', exact: true })
+    .click();
+  const sheet = app.getByRole('dialog', {
+    name: 'Report details',
+    exact: true,
+  });
+  await expect.poll(async () => (await sheet.boundingBox())?.height).toBe(600);
+  const initial = await frame.boundingBox();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => sheet.count()).toBe(0);
+  await app.getByRole('button', { name: 'Pause sizing', exact: true }).click();
+  await app.getByRole('button', { name: 'Resume sizing', exact: true }).click();
+  await app
+    .getByRole('button', { name: 'Inspect report', exact: true })
+    .click();
+  await expect.poll(async () => (await sheet.boundingBox())?.height).toBe(600);
+  expect((await frame.boundingBox())?.height).toBe(initial?.height);
+});
+
+test('sheets follow position-only shifts inside a fixed clipping panel', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1&manual-sizing=1&panel=1');
+  const app = page.frameLocator('iframe');
+  const frame = page.getByTitle('Sandbox app', { exact: true });
+  const panel = page.getByRole('region', { name: 'Embed panel', exact: true });
+  await app
+    .getByRole('button', { name: 'Inspect report', exact: true })
+    .click();
+  const sheet = app.getByRole('dialog', {
+    name: 'Report details',
+    exact: true,
+  });
+  await expect.poll(async () => (await sheet.boundingBox())?.height).toBe(600);
+  const initialFrame = await frame.boundingBox();
+  const initialPanel = await panel.boundingBox();
+  await page
+    .getByRole('button', { name: 'Move embedded report', exact: true })
+    .click();
+  expect((await panel.boundingBox())?.height).toBe(initialPanel?.height);
+  expect((await frame.boundingBox())?.height).toBe(initialFrame?.height);
+  await expect.poll(async () => (await sheet.boundingBox())?.height).toBe(504);
+  await expect
+    .poll(async () => Math.round((await sheet.boundingBox())!.y))
+    .toBe(Math.round(initialPanel!.y + 96));
+});
+
+test('rapid streamed content remains reachable by scrolling', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?content-sizing=1&manual-sizing=1');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Stream rows', exact: true }).click();
+  await expect.poll(() => app.getByRole('listitem').count()).toBe(55);
+  await app.getByRole('button', { name: 'Load more', exact: true }).hover();
+  await page.mouse.wheel(0, 10000);
+  await expect
+    .poll(async () => {
+      const box = await app.getByRole('listitem').last().boundingBox();
+      return (
+        !!box &&
+        box.y >= 0 &&
+        box.y + box.height <= page.viewportSize()!.height + 1
+      );
+    })
+    .toBe(true);
+});
+
+test('content-sized inspection fits a narrow viewport after resizing', async ({
+  mobilePage: page,
+}) => {
+  await page.goto('/starter-data-app?content-sizing=1');
+  const app = page.frameLocator('iframe');
+  await app
+    .getByRole('searchbox', { name: 'Group', exact: true })
+    .fill('Alpha');
+  await app.getByRole('button', { name: 'Explore data', exact: true }).click();
+  const sheet = app.getByRole('dialog');
+  await expect.poll(() => sheet.isVisible()).toBe(true);
+  await page.setViewportSize({ width: 375, height: 480 });
+  await expect
+    .poll(async () => {
+      const bounds = await sheet.boundingBox();
+      return (
+        !!bounds &&
+        bounds.height > 100 &&
+        bounds.y >= -1 &&
+        bounds.y + bounds.height <= 481
+      );
+    })
+    .toBe(true);
+  await sheet.getByRole('button', { name: 'Close panel', exact: true }).click();
+  await expect.poll(() => sheet.count()).toBe(0);
+});

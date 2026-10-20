@@ -38,13 +38,15 @@ async function bundle(entry: string) {
     throw new Error(result.logs.map(log => log.message).join('\n'));
   return result.outputs[0]!.text();
 }
-const [app, starter, frame, annotations, annotationState] = await Promise.all([
-  bundle('tests/public-api/fixtures/bundle-app.tsx'),
-  bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
-  bundle('tests/public-api/fixtures/bridge-frame.ts'),
-  bundle('tests/public-api/fixtures/annotations-app.tsx'),
-  bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
-]);
+const [app, starter, frame, annotations, annotationState, contentSizing] =
+  await Promise.all([
+    bundle('tests/public-api/fixtures/bundle-app.tsx'),
+    bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
+    bundle('tests/public-api/fixtures/bridge-frame.ts'),
+    bundle('tests/public-api/fixtures/annotations-app.tsx'),
+    bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
+    bundle('tests/public-api/fixtures/content-sizing-app.tsx'),
+  ]);
 const { default: worker } = await import(
   import.meta.resolve('@altertable/data-app-worker')
 );
@@ -102,6 +104,8 @@ const server = Bun.serve({
     if (url.pathname === '/__test/annotation-state')
       return new Response(annotationState);
     if (url.pathname === '/__test/bundle') return new Response(app);
+    if (url.pathname === '/__test/content-sizing')
+      return new Response(contentSizing);
     if (url.pathname === '/__test/starter-data-app')
       return new Response(starter);
     if (url.pathname === '/__test/silent')

@@ -62,11 +62,16 @@ const iframeLogger: DataAppLogger = {
   warn: (...args) => console.warn('[DataApps:Iframe]', ...args),
   error: (...args) => console.error('[DataApps:Iframe]', ...args),
 };
-const isPlayground = location.pathname === '/playground';
-if (isPlayground) document.title = 'Playground · Altertable';
-const appPreview = ['/starter-data-app', '/playground'].includes(
-  location.pathname
-);
+const isContentSizing = location.pathname === '/content-sizing';
+const isPlayground = location.pathname === '/playground' || isContentSizing;
+const showSizingControls = isContentSizing || hostOptions.has('content-sizing');
+if (isPlayground)
+  document.title = `${isContentSizing ? 'Content sizing' : 'Playground'} · Altertable`;
+const appPreview = [
+  '/starter-data-app',
+  '/playground',
+  '/content-sizing',
+].includes(location.pathname);
 const response = await fetch(
   appPreview
     ? `/__test${location.pathname}`
@@ -107,6 +112,9 @@ function Host() {
   const [theme, setTheme] = useState<Theme>('dark');
   const [parentPresentation, setParentPresentation] = useState(true);
   const [embedded, setEmbedded] = useState(true);
+  const [contentSizing, setContentSizing] = useState(showSizingControls);
+  const [compactPanel, setCompactPanel] = useState(false);
+  const sizesToContent = contentSizing && embedded;
   const [status, setStatus] = useState<DataAppStatus>('connecting');
   const [attempt, bumpAttempt] = useReducer(value => value + 1, 0);
   const [version, bumpVersion] = useReducer(value => value + 1, 1);
@@ -160,6 +168,7 @@ function Host() {
     ? ({
         surface,
         theme,
+        sizing: sizesToContent ? 'content' : 'frame',
         ...(isPlayground || hostOptions.has('annotations')
           ? {
               annotations: {
@@ -348,7 +357,9 @@ function Host() {
     >
       {isPlayground ? (
         <header className="playground-navbar">
-          <strong className="playground-title">Playground</strong>
+          <strong className="playground-title">
+            {isContentSizing ? 'Content sizing' : 'Playground'}
+          </strong>
           <output
             className="playground-connection"
             data-status={status}
@@ -360,6 +371,26 @@ function Host() {
               aria-label="Playground controls"
               className="playground-controls"
             >
+              {showSizingControls && (
+                <>
+                  <button
+                    className="playground-sizing-control"
+                    aria-pressed={contentSizing}
+                    disabled={!embedded}
+                    onClick={() => setContentSizing(value => !value)}
+                  >
+                    Content height
+                  </button>
+                  <button
+                    className="playground-sizing-control"
+                    aria-pressed={compactPanel}
+                    disabled={!sizesToContent}
+                    onClick={() => setCompactPanel(value => !value)}
+                  >
+                    Compact panel
+                  </button>
+                </>
+              )}
               <Tooltip
                 content={
                   <>
@@ -484,59 +515,94 @@ function Host() {
           you send your annotations.
         </output>
       )}
-      <main className={isPlayground ? 'playground-stage' : undefined}>
-        {status === 'failed' && (
-          <div
-            role="alert"
-            className={isPlayground ? 'playground-error' : undefined}
+      <main
+        className={isPlayground ? 'playground-stage' : undefined}
+        data-sizing={sizesToContent ? 'content' : 'frame'}
+      >
+        {showSizingControls && (
+          <section
+            className="playground-context"
+            aria-label="Embedding example"
           >
-            Could not load the data app.{' '}
-            <button onClick={bumpAttempt}>Retry</button>
-          </div>
+            <h1>An app inside a page</h1>
+            <p>
+              Scroll the report, open its data inspector or story, and resize
+              the compact panel. The app toolbar stays available in both modes.
+            </p>
+            <output aria-label="Scroll owner">
+              {sizesToContent
+                ? 'The parent page scrolls.'
+                : 'The app scrolls inside its frame.'}
+            </output>
+          </section>
         )}
-        <DataAppBridge
-          key={attempt}
-          onStatusChange={nextStatus => {
-            setStatus(nextStatus);
-            if (nextStatus === 'failed' || nextStatus === 'disconnected')
-              setHasUnsavedChanges(false);
-          }}
-          iframeProps={iframeProps}
-          title={isPlayground ? 'Orders preview' : 'Sandbox app'}
-          presentation={presentation}
-          source={
-            urlMode
-              ? {
-                  type: 'url',
-                  url: `http://127.0.0.1:${Number(location.port) + 1}/report`,
-                }
-              : {
-                  type: 'bundle',
-                  bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
-                  javascript: broken
-                    ? hostOptions.has('syntax')
-                      ? 'const ='
-                      : 'throw new Error("Broken app")'
-                    : `${javascript}\ndocument.body.dataset.bundleVersion = "${bundleVersion}";`,
-                }
-          }
-          startupTimeoutMs={timeout ? 200 : 10_000}
-          logger={iframeLogger}
-          onMessage={async (message, context) => {
-            try {
-              return await router.dispatch(message, context);
-            } catch (error) {
-              if (!context.signal.aborted)
-                console.error('[DataApps:Host] Request failed', message, error);
-              throw error;
+        <section
+          className={isPlayground ? 'playground-embed-panel' : undefined}
+          aria-label="Embedded report"
+          data-compact={sizesToContent && compactPanel ? '' : undefined}
+        >
+          {status === 'failed' && (
+            <div
+              role="alert"
+              className={isPlayground ? 'playground-error' : undefined}
+            >
+              Could not load the data app.{' '}
+              <button onClick={bumpAttempt}>Retry</button>
+            </div>
+          )}
+          <DataAppBridge
+            key={attempt}
+            onStatusChange={nextStatus => {
+              setStatus(nextStatus);
+              if (nextStatus === 'failed' || nextStatus === 'disconnected')
+                setHasUnsavedChanges(false);
+            }}
+            iframeProps={iframeProps}
+            title={isPlayground ? 'Orders preview' : 'Sandbox app'}
+            presentation={presentation}
+            source={
+              urlMode
+                ? {
+                    type: 'url',
+                    url: `http://127.0.0.1:${Number(location.port) + 1}/report`,
+                  }
+                : {
+                    type: 'bundle',
+                    bootstrapUrl: `/__test/${timeout ? 'silent' : 'runtime'}`,
+                    javascript: broken
+                      ? hostOptions.has('syntax')
+                        ? 'const ='
+                        : 'throw new Error("Broken app")'
+                      : `${javascript}\ndocument.body.dataset.bundleVersion = "${bundleVersion}";`,
+                  }
             }
-          }}
-          onDiagnostic={event => {
-            document.body.dataset.diagnostic = JSON.stringify(event);
-            if (event.type !== 'runtime:log')
-              console.debug('[DataApps:Host]', event);
-          }}
-        />
+            startupTimeoutMs={timeout ? 200 : 10_000}
+            logger={iframeLogger}
+            onMessage={async (message, context) => {
+              try {
+                return await router.dispatch(message, context);
+              } catch (error) {
+                if (!context.signal.aborted)
+                  console.error(
+                    '[DataApps:Host] Request failed',
+                    message,
+                    error
+                  );
+                throw error;
+              }
+            }}
+            onDiagnostic={event => {
+              document.body.dataset.diagnostic = JSON.stringify(event);
+              if (event.type !== 'runtime:log')
+                console.debug('[DataApps:Host]', event);
+            }}
+          />
+        </section>
+        {showSizingControls && sizesToContent && (
+          <footer className="playground-context">
+            This is parent-page content after the app.
+          </footer>
+        )}
       </main>
     </div>
   );

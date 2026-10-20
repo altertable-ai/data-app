@@ -87,7 +87,7 @@
   position: fixed;
   z-index: 1102;
   left: 50%;
-  bottom: 16px;
+  bottom: calc(var(--atbl-frame-inset-bottom, 0px) + 16px);
   transform: translateX(-50%);
   max-width: calc(100vw - 24px);
   box-sizing: border-box;

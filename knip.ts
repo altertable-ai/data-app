@@ -47,7 +47,7 @@ export default {
         // Built through Bun.build() calls with runtime-generated options.
         'dev/fixtures/{bundle-app,annotation-state-app}.tsx',
         'dev/fixtures/bridge-frame.ts',
-        'tests/public-api/fixtures/{bundle-app,annotations-app,annotation-state-app}.tsx',
+        'tests/public-api/fixtures/{bundle-app,annotations-app,annotation-state-app,content-sizing-app}.tsx',
         'tests/public-api/fixtures/bridge-frame.ts',
         ...browserEntries,
       ],
