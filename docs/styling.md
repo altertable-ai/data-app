@@ -25,9 +25,6 @@ Type inline token overrides with `DataAppStyle`. Give optional tokens a `var()`
 fallback in app CSS. Use `:root` for shared theme overrides, including menus and overlays.
 Prefer `app.appearance` for brand and chart colors. When overriding accent tokens,
 choose a contrasting foreground too. Keep text inputs at least 16px on mobile.
-Size page content without viewport-height units such as `vh` and `dvh`; a parent
-can size the iframe to its content, so those units grow with the content. Use
-`<Sheet>` for fixed panels; it stays within the part of the frame the parent shows.
 
 Menus and selection dropdowns share `--atbl-dropdown-padding`,
 `--atbl-dropdown-item-padding-block`, `--atbl-dropdown-item-padding-inline`, and
