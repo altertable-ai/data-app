@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+
 import { chromium } from 'playwright';
 
 /** Exercise the launcher from a packed runtime installation, outside the checkout. */
@@ -10,11 +11,7 @@ export async function checkPreviewLauncher(runtimeDirectory: string) {
   const file = join(sourceDirectory, 'app.tsx');
   const importRunner =
     'import { runAppFilePreview } from "@altertable/data-app-bun/preview";';
-  const command = [
-    process.execPath,
-    '-e',
-    `${importRunner} await runAppFilePreview();`,
-  ];
+  const command = [process.execPath, 'run', 'data-app-preview'];
   let proxied: unknown;
   const proxy = Bun.serve({
     hostname: '127.0.0.1',

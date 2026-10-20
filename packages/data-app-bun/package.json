@@ -23,8 +23,12 @@
     "url": "git+https://github.com/altertable-ai/data-app.git",
     "directory": "packages/data-app-bun"
   },
+  "bin": {
+    "data-app-preview": "./bin/preview.js"
+  },
   "files": [
     "dist",
+    "bin",
     "README.md",
     "LICENSE"
   ],

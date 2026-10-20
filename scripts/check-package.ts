@@ -118,6 +118,12 @@ try {
       for (const path of Object.values(target))
         assert(paths.has(path.slice(2)), `${manifest.name}: missing ${path}`);
     }
+    if ('bin' in manifest)
+      for (const path of Object.values(manifest.bin))
+        assert(
+          paths.has(path.replace(/^\.\//, '')),
+          `${manifest.name}: missing bin ${path}`
+        );
     for (const path of ['README.md', 'LICENSE'])
       assert(paths.has(path), `${manifest.name}: missing ${path}`);
     assert.equal(
