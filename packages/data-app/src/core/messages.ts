@@ -5,13 +5,13 @@ import {
   type DataQueryInput,
   type DataQueryBody,
   type OutputOf,
-} from '../../core/operation-types.ts';
-import { isQueryParameters, type QueryParameters } from '../../core/queries.ts';
+} from './operation-types.ts';
+import { isQueryParameters, type QueryParameters } from './queries.ts';
 export {
   type OperationContracts,
   type DataQueryInput,
   type DataQueryBody,
-} from '../../core/operation-types.ts';
+} from './operation-types.ts';
 import { validLocation, type NavigationUpdate } from './navigation.ts';
 export { type NavigationUpdate } from './navigation.ts';
 

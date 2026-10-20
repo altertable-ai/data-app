@@ -93,7 +93,7 @@ for (const { directory, manifest } of packages) {
   if (manifest.name === '@altertable/data-app-react') {
     for (const [constant, entry] of Object.entries({
       DATA_APP_STYLES: 'styles.css',
-      ANNOTATION_STYLES: 'embed/styles.css',
+      ANNOTATION_STYLES: 'annotations/styles.css',
     })) {
       const styles = await bundle({
         entrypoints: [`${directory}/src/${entry}`],

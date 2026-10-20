@@ -1,4 +1,4 @@
-import { type TransportResponse } from '../core/operation-types.ts';
+import { type TransportResponse } from '../core/bridge.ts';
 
 export type DataTransport = (
   operation: string,

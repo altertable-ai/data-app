@@ -118,11 +118,9 @@ checks. Install dependencies separately before verification. Build before runnin
 | `bun run check:starter`        | Typecheck, lint, and build the starter             |
 | `bun run check:workflows`      | Validate workflows and shell scripts               |
 
-`scripts/build-reference.ts` generates `REFERENCE.md` from public source entry
-points with the TypeScript checker. Embedding infrastructure belongs in each
-package's `src/embed/` folder; those declarations and the embedding package stay
-out of the app-authoring reference, including re-exports through shared entry
-points. Public import paths stay defined by the package barrels. The base
+`scripts/build-reference.ts` generates `REFERENCE.md` from the emitted
+declarations with the TypeScript checker, covering documented workspace package
+entry points. Undocumented implementation entries remain excluded. The base
 package ships a generated copy alongside its guides. Commit the root reference
 when a build changes it. Generation fails when an export or prop type does not
 resolve, and `bun run check:reference` fails when the staged file differs from

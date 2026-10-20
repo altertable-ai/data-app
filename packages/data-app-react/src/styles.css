@@ -62,7 +62,7 @@
 @import './ui/ComposedChart.css' layer(atbl.components);
 @import './ui/AnalyticsCharts.css' layer(atbl.components);
 @import './annotations/colors.css' layer(atbl.components);
-@import './embed/AnnotationBar.css' layer(atbl.components);
+@import './annotations/AnnotationBar.css' layer(atbl.components);
 @import './annotations/AnnotationControls.css' layer(atbl.components);
 @import './ui/Focus.css' layer(atbl.interaction);
 @import './interaction.css' layer(atbl.interaction);

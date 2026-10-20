@@ -1,9 +1,9 @@
 # @altertable/data-app API reference
 
-Generated from public source entry points by `bun run build`; do not
-edit. Embedding APIs are excluded. Each of the 365 app-authoring
-exports has one heading line, then one line per prop, option, or field, so one
-search returns everything about a name:
+Generated from the published type declarations by `bun run build`; do not
+edit. Each of the 421 public exports has one heading line, then
+one line per prop, option, or field, so one search returns everything about a
+name:
 
 - `rg '^LineChart\b' REFERENCE.md` prints `LineChart` and its props.
 - `rg '^LineChart' REFERENCE.md` adds `LineChartItem` and `LineChartProps`.
@@ -64,13 +64,58 @@ AboutSubject.references?: { kind: 'ids'; glossaryIds?: readonly string[] | undef
 AboutSubject.queries?: DisclosedQuery[]
 AboutSubject.records?: InspectionRecords
 AboutTab (type, @altertable/data-app-react/ui): = 'glossary' | 'queries' | 'records'
+AnnotationBar (component, @altertable/data-app-react): (props: AnnotationBarProps) — Host-owned batch controls. Collection changes and agent submission stay with the outer app.
+AnnotationBar.ref?: Ref<AnnotationBarHandle>
+AnnotationBar.annotations: readonly DataAppAnnotationDraft[]
+AnnotationBar.active?: boolean
+AnnotationBar.theme?: Theme
+AnnotationBar.disabled?: boolean
+AnnotationBar.deletedAnnotationId?: string
+AnnotationBar.onUndoDelete?: ((id: string) => void)
+AnnotationBar.onDismissUndo?: (() => void)
+AnnotationBar.hasUnsavedChanges?: boolean
+AnnotationBar.pinsVisible: boolean
+AnnotationBar.onPinsVisibleChange: (visible: boolean) => void
+AnnotationBar.onSelect: (id: string) => void
+AnnotationBar.onDelete: (id: string) => void
+AnnotationBar.onClear: () => void
+AnnotationBar.requestDiscard?: ((discard: () => void) => void) — Let host apps use their existing confirmation dialog.
+AnnotationBar.onSend: (annotations: readonly DataAppAnnotationDraft[]) => Promise<void> — Resolve only after the outer application's agent API accepts this snapshot.
+AnnotationBar.onClose: () => void
+AnnotationBarHandle (type, @altertable/data-app-react)
+AnnotationBarHandle.send: () => Promise<void> — Submit through the same guards, pending state, and retry feedback as the Send button.
+AnnotationBarProps (type, @altertable/data-app-react): = props listed as AnnotationBar.*
+annotationDraftRoute (const, @altertable/data-app/contract): MessageRoute<DataAppAnnotationDraft, null>
+annotationDraftRoute.input: (value: unknown) => DataAppAnnotationDraft
+annotationDraftRoute.output: (value: unknown, input: DataAppAnnotationDraft) => null
+annotationEditorStateRoute (const, @altertable/data-app/contract): MessageRoute<{ hasUnsavedChanges: boolean; }, null>
+annotationEditorStateRoute.input: (value: unknown) => { hasUnsavedChanges: boolean; }
+annotationEditorStateRoute.output: (value: unknown, input: { hasUnsavedChanges: boolean; }) => null
+annotationModeRoute (const, @altertable/data-app/contract): MessageRoute<{ active: boolean; }, null> — A controlled shell acknowledges local exits (for example Escape).
+annotationModeRoute.input: (value: unknown) => { active: boolean; }
+annotationModeRoute.output: (value: unknown, input: { active: boolean; }) => null
+annotationSendRoute (const, @altertable/data-app/contract): MessageRoute<null, null> — Request host-owned batch submission without transferring ownership of drafts.
+annotationSendRoute.input: (value: unknown) => null
+annotationSendRoute.output: (value: unknown, input: null) => null
 AnnotationTarget (component, @altertable/data-app-react): (props: AnnotationTargetProps) — A stable feedback target for app-owned content outside the built-in widgets.
 AnnotationTarget.annotationId: string
 AnnotationTarget.label: string
 AnnotationTarget.evidence?: WidgetEvidence
 AnnotationTarget.…: plus props inherited from React
 AnnotationTargetProps (type, @altertable/data-app-react): = props listed as AnnotationTarget.*
-AppearanceOptions (type, @altertable/data-app/appearance): = props listed as normalizeAppearance.value.* — App-authored overrides; omitted fields use the package defaults.
+annotationUpdateRoute (const, @altertable/data-app/contract): MessageRoute<{ id: string; comment: string; }, null>
+annotationUpdateRoute.input: (value: unknown) => { id: string; comment: string; }
+annotationUpdateRoute.output: (value: unknown, input: { id: string; comment: string; }) => null
+AppearanceOptions (type, @altertable/data-app/appearance): App-authored overrides; omitted fields use the package defaults.
+AppearanceOptions.theme?: ThemePreference
+AppearanceOptions.baseColor?: 'neutral' | 'slate' | 'warm' — Palette for surfaces, text, and borders; independent of the accent.
+AppearanceOptions.accentColor?: string — Emphasis color for checked controls and selected dates; options use the base palette.
+AppearanceOptions.darkAccentColor?: string
+AppearanceOptions.chartColors?: string[]
+AppearanceOptions.density?: 'comfortable' | 'compact' | 'spacious'
+AppearanceOptions.cornerRadius?: 'large' | 'medium' | 'none' | 'small'
+AppearanceOptions.elevation?: 'flat' | 'raised' | 'subtle'
+AppearanceOptions.typography?: Partial<{ body: string; heading: string; }>
 AppearanceSettings (type, @altertable/data-app/appearance)
 AppearanceSettings.theme: ThemePreference
 AppearanceSettings.baseColor: 'neutral' | 'slate' | 'warm' — Palette for surfaces, text, and borders; independent of the accent.
@@ -91,6 +136,9 @@ AppIcon.options.size?: string | number
 AppIcon.options.…: plus props inherited from lucide-react, React
 AppIconName (type, @altertable/data-app-react/ui): = 'annotate' | 'breakdown' | 'calendar' | 'cancel' | 'check' | 'clearFilters' | 'clock' | 'close' | 'copy' | 'darkTheme' | 'disclosure' | 'displayOptions' | 'error' | 'explore' | ... 22 more ... | 'wrap'
 AppIconProps (type, @altertable/data-app-react/ui): = props listed as AppIcon.options.*
+AppLocation (type, @altertable/data-app/client): App-owned URL state shared by controls, frame adapters, and host navigation.
+AppLocation.search: string
+AppLocation.hash: string
 applyAppearance (function, @altertable/data-app/appearance): (value: AppearanceOptions): () => void — Select document-owned appearance presets and brand inputs. Public CSS tokens remain overridable in stylesheets. Cleanup restores the previous document appearance.
 applyAppearance.value.theme?: ThemePreference
 applyAppearance.value.baseColor?: 'neutral' | 'slate' | 'warm' — Palette for surfaces, text, and borders; independent of the accent.
@@ -126,6 +174,18 @@ AreaChartItem.id: string
 AreaChartItem.label: string
 AreaChartItem.value: number
 AreaChartProps (type, @altertable/data-app-react/ui): <Row> = props listed as AreaChart.*
+attachDataAppBridge (function, @altertable/data-app-embed): (options: DataAppBridgeOptions): DataAppHost — Source mode configures and loads the iframe; connection mode attaches to a host-owned document.
+attachDataAppBridge.options.iframe: HTMLIFrameElement
+attachDataAppBridge.options.presentation?: DataAppPresentation
+attachDataAppBridge.options.logger?: DataAppLogger
+attachDataAppBridge.options.onStatusChange?: ((status: DataAppStatus) => void)
+attachDataAppBridge.options.onDiagnostic?: ((event: DataAppDiagnostic) => void)
+attachDataAppBridge.options.onMessage: MessageDispatcher
+attachDataAppBridge.options.connection: DataAppConnection [variant 1 of 2]
+attachDataAppBridge.options.javascript?: string [variant 1 of 2]
+attachDataAppBridge.options.window?: Window [variant 1 of 2]
+attachDataAppBridge.options.source: DataAppSource [variant 2 of 2]
+attachDataAppBridge.options.startupTimeoutMs?: number [variant 2 of 2]
 BarChart (component, @altertable/data-app-react/ui): <Row extends BarChartItem>(props: BarChartProps<Row>) — Nonnegative category values. Compose inside VisualizationWidget for a titled panel. Owns hover/touch tooltips; no selection state or keyboard navigation.
 BarChart.items: readonly Row[] — Ordered samples; the chart validates IDs and values when rendering.
 BarChart.itemActions?: ItemActions<Row> — Actions available for each displayed item. Domain fields remain available to this callback.
@@ -292,6 +352,10 @@ ConnectionOperation.checks: readonly [Record<string, never>, ...Record<string, n
 ConnectionOperation.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
 ConnectionOperation.queryNames: { readonly connection: 'connection'; }
 copyExample (function, @altertable/data-app-examples): (id: DataAppExampleId, destination: string): Promise<void> — Copy a starter into a new directory; reject existing destinations.
+createAnnotationClient (function, @altertable/data-app/client): (transport: MessageTransport): { requestSendAnnotations(options?: { signal?: AbortSignal | undefined; } | undefined): Promise<null>; reportAnnotationEditorState(state: { hasUnsavedChanges: boolean; }, options?: { ...; } | undefined): Promise<...>; addAnnotation(draft: DataAppAnnotationDraft, option… — Deliver annotations to the authenticated host. Acknowledgement means retained, not sent to an agent.
+createDataAppNavigation (function, @altertable/data-app/client): (options: {…}): DataAppNavigation — Attach app URL behavior to an already authenticated bridge.
+createDataAppNavigation.options.bridge: { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 7 more ...; fail(cause?: unknown): void; }
+createDataAppNavigation.options.window?: Window
 createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations>; <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : [ ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations> — Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. Named clients derive data from the declared operations' run return types.
 createDataClient.options.transport?: DataTransport [variant 1 of 2]
 createDataClient.options.endpoint?: string [variant 1 of 2]
@@ -308,6 +372,18 @@ createDataHooks.client.query: <Name extends keyof Operations & string>(this: voi
 createHttpTransport (function, @altertable/data-app/client): (options: {…}): DataTransport
 createHttpTransport.options.endpoint?: string
 createHttpTransport.options.fetch?: typeof fetch
+createIframeTransport (function, @altertable/data-app/client): (options: {…}): { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 7 more ...; fail(cause?: unknown): void; } — One bridge per document, shared by all clients and retained across module hot replacement.
+createIframeTransport.options.parentOrigin: string
+createIframeTransport.options.window?: Window
+createIframeTransport.options.timeoutMs?: number
+createIframeTransport.options.mode?: 'bundle' | 'url'
+createIframeTransport.options.loadScript?: ((javascript: string) => void)
+createMessageClient (function, @altertable/data-app/client): <const Routes extends MessageRoutes>(routes: Routes, transport: MessageTransport): { request<Name extends keyof Routes & string, const Input extends MessageInput<NoInfer<Routes[Name]>>>(route: Name, payload: Input, { signal }?: { signal?: AbortSignal | undefined; } | undefined): Promise<...>; } — Both ends validate using the same contracts; the transport owns delivery and cancellation.
+createMessageRouter (function, @altertable/data-app/contract): <const Routes extends MessageRoutes>(routes: Routes, handlers: MessageHandlers<NoInfer<Routes>>): { dispatch: (value: unknown, context: MessageContext) => Promise<unknown>; } — Contracts are shared; handlers are supplied by the host and never belong in the app bundle.
+createNavigationHandler (function, @altertable/data-app-embed): (options: {…}): (input: NavigationUpdate) => null — Override this handler for framework routers. Reserved host parameters survive app navigation.
+createNavigationHandler.options.window?: Window
+createNavigationHandler.options.reservedSearchParams?: readonly string[]
+createSqlQueryHandler (function, @altertable/data-app-embed): (authorize: (query: SqlQueryInput, context: MessageContext) => Promise<Lakehouse>): (input: SqlQueryInput, context: MessageContext) => Promise<QueryResult<unknown[]>> — Authorize every SQL request and supply a backend that independently enforces access and query limits.
 createThemeController (function, @altertable/data-app/appearance): (initialTheme: ThemePreference): ThemeController — Persist a viewer theme preference. Applying appearance belongs to the UI owner.
 CsvCell (type, @altertable/data-app-react): = string | number | boolean | null | undefined
 CsvExport (type, @altertable/data-app-react/ui): All distinct datasets in the displayed result; filename names the download.
@@ -339,6 +415,36 @@ DataApp.footerActions?: ReactNode
 DataApp.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
 DataApp.csvExport?: CsvExport
 DataApp.queries?: DisclosedQuery[]
+DataAppAnnotationDraft (type, @altertable/data-app/contract)
+DataAppAnnotationDraft.id: string
+DataAppAnnotationDraft.target: { id: string; label: string; kind: 'app' | 'element' | 'widget'; text: string; queryNames: string[]; glossaryIds: string[]; }
+DataAppAnnotationDraft.context: { search: string; hash: string; displayedInput?: unknown; anchor?: { x: number; y: number; } | undefined; cursor?: { x: number; y: number; } | undefined; region?: { x: number; y: number; width: number; height: number; } | undefined; screenshot?: { ...; } | undefined; view?: string | undefined; view…
+DataAppAnnotationDraft.comment: string
+DataAppAnnotationPresentation (type, @altertable/data-app/contract)
+DataAppAnnotationPresentation.enabled: boolean
+DataAppAnnotationPresentation.active?: boolean — When provided, the host owns the mode and renders the annotation trigger.
+DataAppAnnotationPresentation.pinsVisible?: boolean
+DataAppAnnotationPresentation.showHint?: boolean
+DataAppAnnotationPresentation.readOnly?: boolean
+DataAppAnnotationPresentation.targets?: { id: string; targetId: string; number: number; comment?: string | undefined; anchor?: { x: number; y: number; } | undefined; region?: { x: number; y: number; width: number; height: number; } | undefined; }[]
+DataAppAnnotationPresentation.selectedAnnotationId?: string
+DataAppAnnotationPresentation.selectedTargetId?: string
+DataAppAnnotationPresentation.selectionId?: string
+DataAppAnnotationPresentation.dismissal?: { id: string; occurredAt: number; } — Confirmed host click outside the iframe; occurredAt is epoch milliseconds.
+DataAppBridge (component, @altertable/data-app-embed/react): (props: DataAppBridgeProps) — Owns iframe setup and delivery. The consuming shell owns loading, error UI, and retries.
+DataAppBridge.presentation?: DataAppPresentation
+DataAppBridge.logger?: DataAppLogger
+DataAppBridge.onStatusChange?: ((status: DataAppStatus) => void)
+DataAppBridge.onDiagnostic?: ((event: DataAppDiagnostic) => void)
+DataAppBridge.onMessage: MessageDispatcher
+DataAppBridge.source: DataAppSource [variant 1 of 2]
+DataAppBridge.title: string [variant 1 of 2]
+DataAppBridge.startupTimeoutMs?: number [variant 1 of 2]
+DataAppBridge.iframeProps?: Omit<Omit<DetailedHTMLProps<IframeHTMLAttributes<HTMLIFrameElement>, HTMLIFrameElement>, 'ref'>, 'children' | ... 5 more ... | 'title'> [variant 1 of 2]
+DataAppBridge.iframe: HTMLIFrameElement | null [variant 2 of 2]
+DataAppBridge.connection: DataAppConnection [variant 2 of 2]
+DataAppBridgeOptions (type, @altertable/data-app-embed): = props listed as attachDataAppBridge.options.*
+DataAppBridgeProps (type, @altertable/data-app-embed/react): = props listed as DataAppBridge.*
 DataAppConfig (type, @altertable/data-app, @altertable/data-app/config): <Queries>
 DataAppConfig.title: string
 DataAppConfig.scope: { organization: string; environment: string; } — Display labels; scope does not grant data access.
@@ -346,6 +452,11 @@ DataAppConfig.description: string — Explain what the app helps readers explore
 DataAppConfig.appearance?: AppearanceOptions — Omit to use the standard appearance.
 DataAppConfig.dateFormatting?: { locale?: string | undefined; timeZone?: string | undefined; } — Shared date display defaults. Reporting views and individual fields may override the time zone.
 DataAppConfig.queries: Queries — Named SQL statements with typed parameters and result projections.
+DataAppConnection (type, @altertable/data-app-embed)
+DataAppConnection.type: 'origin' [variant 1 of 2]
+DataAppConnection.origin: string [variant 1 of 2]
+DataAppConnection.type: 'opaque' [variant 2 of 2]
+DataAppConnection.token: string [variant 2 of 2]
 DataAppDefinition (type, @altertable/data-app, @altertable/data-app/config): <Queries> — An app declaration with operations bound to its query registry.
 DataAppDefinition.title: string
 DataAppDefinition.scope: { organization: string; environment: string; } — Display labels; scope does not grant data access.
@@ -355,12 +466,47 @@ DataAppDefinition.dateFormatting?: { locale?: string | undefined; timeZone?: str
 DataAppDefinition.queries: QuerySnapshot<Queries>
 DataAppDefinition.defineDimension: <const Type extends 'string' | 'number'>(config: DimensionSourceConfig<Type> & { source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>>; }; }) => SourceDimensionVariable<...>
 DataAppDefinition.defineOperation: <Input, Output>(operation: OperationDefinition<Input, Output, Queries>) => Omit<DataOperation<Input, Output>, 'queryNames'> & { ...; }
+DataAppDiagnostic (type, @altertable/data-app-embed): Delivery metadata only; never tokens or payloads. `durationMs` measures host handling of a request, reported on its result or error.
+DataAppDiagnostic.direction: 'drop' [variant 1 of 2]
+DataAppDiagnostic.type?: string [variant 1 of 2]
+DataAppDiagnostic.reason: BridgeDropReason [variant 1 of 2]
+DataAppDiagnostic.durationMs?: number
+DataAppDiagnostic.direction: 'receive' | 'send' [variant 2 of 2]
+DataAppDiagnostic.type: 'bridge:cancel' | 'bridge:connect' | 'bridge:disconnect' | 'bridge:error' | 'bridge:initialize' | 'bridge:ready' | 'bridge:request' | 'bridge:result' | 'runtime:error' | ... 5 more ... | 'viewport:update' [variant 2 of 2]
+DataAppDiagnostic.id?: string [variant 2 of 2]
+DataAppDiagnostic.route?: string [variant 2 of 2]
+DataAppDiagnostic.operation?: string [variant 2 of 2]
+DataAppDiagnostic.error?: { code: string; message: string; requestId?: string | undefined; } [variant 2 of 2]
 DataAppError (class, @altertable/data-app/client)
 DataAppError.code: string
 DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
 DataAppExampleId (type, @altertable/data-app-examples): = 'starter-data-app' | 'starter-local-data-app' — Stable identifier for a canonical starter.
 dataAppExamples (const, @altertable/data-app-examples): readonly [{ readonly id: 'starter-data-app'; readonly title: 'Hosted data app'; readonly description: 'A single-file React app for hosted execution.'; readonly mode: 'hosted'; }, { readonly id: 'starter-local-data-app'; readonly title: 'Local data app'; readonly description: 'A Bun and React projec… — Canonical starters available to scaffolding tools. IDs are stable across releases.
+DataAppHost (type, @altertable/data-app-embed)
+DataAppHost.dispose: () => void
+DataAppHost.setPresentation: (presentation?: DataAppPresentation | undefined) => void
+DataAppHost.setLogger: (logger?: DataAppLogger | undefined) => void
+DataAppLocation (type, @altertable/data-app/client)
+DataAppLocation.snapshot: () => AppLocation
+DataAppLocation.subscribe: (listener: () => void) => () => void
+DataAppLocation.update: (location: AppLocation, mode?: HistoryMode | undefined) => void
+DataAppLogger (type, @altertable/data-app/client, @altertable/data-app-embed): Host-owned log sink; compatible with console and frontend createLogger().
+DataAppLogger.log: (...args: unknown[]) => void
+DataAppLogger.info: (...args: unknown[]) => void
+DataAppLogger.warn: (...args: unknown[]) => void
+DataAppLogger.error: (...args: unknown[]) => void
+DataAppNavigation (type, @altertable/data-app/client)
+DataAppNavigation.snapshot: () => AppLocation
+DataAppNavigation.subscribe: (listener: () => void) => () => void
+DataAppNavigation.update: (location: AppLocation, mode?: HistoryMode | undefined) => void
+DataAppNavigation.publish: (mode?: HistoryMode | undefined) => void — Publish URL changes made outside the adapter, including the document title.
+DataAppNavigation.dispose: () => void
+DataAppPresentation (type, @altertable/data-app-embed): Presentation owned by the parent shell, delivered only over a trusted bridge.
+DataAppPresentation.surface: 'embedded' | 'standalone'
+DataAppPresentation.theme: Theme
+DataAppPresentation.annotations?: DataAppAnnotationPresentation
+DataAppPresentation.sizing?: 'content' | 'frame' — `frame` (default): the parent sizes the iframe and the app scrolls inside it. `content`: the iframe follows the app's content height and the parent page scrolls.
 DataAppProps (type, @altertable/data-app-react): <Data, Input> = props listed as DataApp.*
 DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode
@@ -374,13 +520,25 @@ DataAppProps.queries?: DisclosedQuery[]
 DataAppProvider (component, @altertable/data-app-react/ui): <const Queries extends QueryDefinitions>(props: {…}) — Provide one app identity and shared requests to a custom React root.
 DataAppProvider.app: DataAppDefinition<Queries>
 DataAppProvider.children: ReactNode
+dataAppRoutes (const, @altertable/data-app/contract)
+dataAppRoutes.data:query: DataQueryRoute<OperationContracts>
+dataAppRoutes.navigation:update: MessageRoute<NavigationUpdate, null>
+DataAppSource (type, @altertable/data-app-embed)
+DataAppSource.type: 'url' [variant 1 of 2]
+DataAppSource.url: string [variant 1 of 2]
+DataAppSource.type: 'bundle' [variant 2 of 2]
+DataAppSource.bootstrapUrl?: string [variant 2 of 2] — Omit to use the packaged, network-isolated data document.
+DataAppSource.javascript: string [variant 2 of 2]
+DataAppStatus (type, @altertable/data-app-embed): = 'connected' | 'connecting' | 'disconnected' | 'failed' | 'ready'
 DataAppStyle (type, @altertable/data-app-react, @altertable/data-app-react/ui): React style properties with checked public Altertable custom properties.
 DataAppStyle.{--atbl-accent, --atbl-accent-subtle, --atbl-annotation-accent, --atbl-annotation-accent-hover, --atbl-annotation-highlight, --atbl-annotation-on-accent, --atbl-backdrop, --atbl-background, --atbl-border, --atbl-chart-1, --atbl-chart-2, --atbl-chart-3, --atbl-chart-4, --atbl-chart-5, --atbl-chart-6, --atbl-chart-7, --atbl-chart-8, --atbl-chart-fill, --atbl-code-keyword, --atbl-code-surface, --atbl-code-text, --atbl-content-width, --atbl-control-compact-height, --atbl-control-disabled-opacity, --atbl-control-gap, --atbl-control-height, --atbl-control-hover-border, --atbl-control-hover-surface, --atbl-control-icon-size, --atbl-control-open-border, --atbl-control-open-surface, --atbl-control-padding-block, --atbl-control-padding-inline, --atbl-control-pressed-surface, --atbl-control-selected-surface, --atbl-control-selected-text, --atbl-control-text-size, --atbl-cursor-action, --atbl-cursor-busy, --atbl-cursor-disabled, --atbl-cursor-help, --atbl-danger, --atbl-danger-subtle, --atbl-dropdown-item-gap, --atbl-dropdown-item-padding-block, --atbl-dropdown-item-padding-inline, --atbl-dropdown-padding, --atbl-duration-fast, --atbl-duration-normal, --atbl-duration-slow, --atbl-ease-enter, --atbl-ease-standard, --atbl-focus-color, --atbl-focus-outline, --atbl-focus-ring-inset, --atbl-focus-ring-offset, --atbl-font, --atbl-font-heading, --atbl-layout-gap, --atbl-mono-font, --atbl-muted, --atbl-negative, --atbl-on-accent, --atbl-positive, --atbl-radius-control, --atbl-radius-overlay, --atbl-radius-surface, --atbl-shadow-control, --atbl-shadow-overlay, --atbl-shadow-surface, --atbl-space-lg, --atbl-space-md, --atbl-space-sm, --atbl-space-xl, --atbl-space-xs, --atbl-subtle, --atbl-surface, --atbl-surface-padding, --atbl-text, --atbl-text-measure, --atbl-type-body-leading, --atbl-type-body-size, --atbl-type-emphasis-weight, --atbl-type-heading-leading, --atbl-type-heading-weight, --atbl-type-label-leading, --atbl-type-label-size, --atbl-type-label-weight, --atbl-type-meta-size, --atbl-type-meta-weight, --atbl-type-metric-leading, --atbl-type-metric-size, --atbl-type-page-size, --atbl-type-section-size, --atbl-type-widget-size}?: string | number
 DataAppStyle.…: plus props inherited from csstype
 DataAppStyleHooks (type, @altertable/data-app-react, @altertable/data-app-react/ui)
 DataAppStyleHooks.data-atbl-focus?: 'group' | 'inset' | 'ring'
 DataAppStyleHooks.data-atbl-control?: 'action' | 'default' | 'help' | 'text'
-DataAppStylesOptions (type, @altertable/data-app-react): = props listed as injectDataAppStyles.options.*
+DataAppStylesOptions (type, @altertable/data-app-react)
+DataAppStylesOptions.document?: Document — Defaults to the current browser document.
+DataAppStylesOptions.nonce?: string — Nonce permitted by the document's style-src CSP.
 DataAppStyleToken (type, @altertable/data-app-react, @altertable/data-app-react/ui): = '--atbl-accent' | '--atbl-accent-subtle' | '--atbl-annotation-accent' | '--atbl-annotation-accent-hover' | '--atbl-annotation-highlight' | '--atbl-annotation-on-accent' | ... 88 more ... | '--atbl-type-widget-size'
 dataAppTitle (function, @altertable/data-app, @altertable/data-app/config): (config: Pick<DataAppConfig, 'title' | 'scope'>): string
 dataAppTitle.config.title: string
@@ -414,6 +572,10 @@ DataQueryBody.queriedAt: string
 DataQueryBody.queryIds: string[]
 DataQueryBody.queries?: DisclosedQuery[]
 DataQueryInput (type, @altertable/data-app/contract): <Operations> = { [Name in keyof Operations & string]: { operation: Name; input: InputOf<Operations[Name]>; }; }[keyof Operations & string]
+DataQueryRoute (type, @altertable/data-app/contract): <Operations>
+DataQueryRoute.input: (value: unknown) => DataQueryInput<Operations>
+DataQueryRoute.output: (value: unknown, input: DataQueryInput<Operations>) => TransportResponse<unknown>
+DataQueryRoute.operations: Operations | undefined
 DataReading (type, @altertable/data-app-react/ui): <Value>
 DataReading.loading: true [variant 1 of 2]
 DataReading.loading: false [variant 2 of 2]
@@ -455,9 +617,9 @@ DatasetSuggestionOptions.title: (row: Row) => string
 DatasetSuggestionOptions.description?: ((row: Row) => string)
 DatasetSuggestionOptions.onSelect?: ((row: Row) => void) — Override query completion with an app action.
 DataSourceError (class, @altertable/data-app/contract)
-DataSourceError.queryName?: string
 DataSourceError.reason: 'forbidden' | 'query_rejected' | 'rate_limited' | 'unauthorized' | 'unavailable'
 DataSourceError.status?: number
+DataSourceError.queryName?: string
 DataSourceError.…: plus props inherited from built-in
 DataTable (component, @altertable/data-app-react/ui): (props: DataTableProps) — Scrollable native table. Mark quantitative th/td cells with data-type="number"; the runtime aligns them to the end and uses tabular digits.
 DataTable.searchable?: DataTableSearch
@@ -537,11 +699,13 @@ DateFormat.missing?: string
 DateFormat.kind: 'dateTime' [variant 2 of 2]
 DateFormat.timeZone?: string [variant 2 of 2]
 DateFormat.precision?: 'minute' | 'second' [variant 2 of 2]
-DateFormatOptions (type, @altertable/data-app/format): = props listed as formatDate.options.* — Formatting for calendar dates and instants without implicit time-zone parsing.
+DateFormatOptions (type, @altertable/data-app/format): Formatting for calendar dates and instants without implicit time-zone parsing.
+DateFormatOptions.locale?: string
+DateFormatOptions.missing?: string
 DatePresetId (type, @altertable/data-app-react/ui): = 'day' | 'last-14' | 'last-3' | 'last-30' | 'last-7' | 'last-90' | 'previous-month' | 'previous-week' | 'this-month' | 'this-week'
 DateRange (type, @altertable/data-app-react/ui): = props listed as previousDateRange.options.* — ISO calendar dates; the app operation defines timezone and inclusive bounds.
 DateRangeContract (type, @altertable/data-app/contract)
-DateRangeContract.request: (value: unknown, compare?: boolean) => DateRangeRequest
+DateRangeContract.request: (value: unknown, compare?: boolean | undefined) => DateRangeRequest
 DateRangeContract.parseRequest: (value: unknown) => DateRangeRequest
 DateRangeContract.bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }
 DateRangeContract.parse: (value: unknown) => DateRange
@@ -583,7 +747,7 @@ dateRangeVariable (function, @altertable/data-app-react): (options: DateRangeVar
 dateRangeVariable.options.label?: string
 dateRangeVariable.options.key: string — URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields.
 dateRangeVariable.options.defaultValue: DateRangeSelection & { comparison?: undefined; }
-dateRangeVariable.options.contract: { request: (value: unknown, compare?: boolean) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { ...; }; }
+dateRangeVariable.options.contract: { request: (value: unknown, compare?: boolean | undefined) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { ...; }; }
 dateRangeVariable.options.history?: HistoryMode
 dateRangeVariable.options.comparison?: boolean — Opt into a URL-backed comparison with the preceding equal-length range.
 dateRangeVariable.options.presentation?: VariablePresentation
@@ -608,7 +772,11 @@ DateRangeVariable.resolve: (selection: DateRangeSelection) => DateRange
 DateRangeVariable.previous: (selection: DateRangeSelection) => DateRange | null
 DateRangeVariable.comparisonRange: (selection: DateRangeSelection) => DateRange | null
 DateRangeVariableOptions (type, @altertable/data-app-react): = props listed as dateRangeVariable.options.*
-DateTimeFormatOptions (type, @altertable/data-app/format): = props listed as formatDateTime.options.*
+DateTimeFormatOptions (type, @altertable/data-app/format)
+DateTimeFormatOptions.locale?: string
+DateTimeFormatOptions.missing?: string
+DateTimeFormatOptions.timeZone?: string
+DateTimeFormatOptions.precision?: 'minute' | 'second'
 DateTimeTooltip (component, @altertable/data-app-react): (props: DateTimeTooltipProps) — Exact-time disclosure uses the same reporting zone and locale as other date displays.
 DateTimeTooltip.date: Date
 DateTimeTooltip.timeZone?: string
@@ -631,15 +799,19 @@ defineDataApp.config.description: string — Explain what the app helps readers 
 defineDataApp.config.appearance?: AppearanceOptions — Omit to use the standard appearance.
 defineDataApp.config.dateFormatting?: { locale?: string | undefined; timeZone?: string | undefined; } — Shared date display defaults. Reporting views and individual fields may override the time zone.
 defineDataApp.config.queries: Queries & KnownRecord<Queries> & ('' extends keyof Queries ? never : unknown) & { [Name in keyof Queries]: KnownRecord<Queries[Name]> & { ...; }; } — Named SQL statements with typed parameters and result projections.
-defineDataIdentifiers (function, @altertable/data-app-react): <const Tables extends Record<string, TableIdentifier>, const Columns extends Record<string, ColumnIdentifier<Extract<keyof Tables, string>>>>(options: {…}): { definitions: Readonly<Record<IdentifierId<Tables, Columns>, DataIdentifierDefinition>>; DataIdentifier: ({ id, display, }: { ...; }) => Elem… — Register exact source names once; returned JSX IDs are checked against this registry.
+defineDataIdentifiers (function, @altertable/data-app-react): <const Tables extends Record<string, TableIdentifier>, const Columns extends Record<string, ColumnIdentifier<Extract<keyof Tables, string>>>>(options: {…}): { definitions: Readonly<Record<IdentifierId<Tables, Columns>, DataIdentifierDefinition>>; DataIdentifier: ({ id, display }: { ...; }) => Eleme… — Register exact source names once; returned JSX IDs are checked against this registry.
 defineDataIdentifiers.options.tables: Tables
 defineDataIdentifiers.options.columns: Columns
-defineDateRangeContract (function, @altertable/data-app/contract): (options: DateRangeContractOptions): { request: (value: unknown, compare?: boolean) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { ...; }; } — One source policy for the server parser, URL variable, and displayed reporting period.
+defineDataQueryRoute (function, @altertable/data-app/contract): <Operations extends OperationContracts = OperationContracts>(operations: Operations): DataQueryRoute<Operations> — Omit contracts only in generic hosts such as the CLI shell, where Bun validates operations.
+defineDateRangeContract (function, @altertable/data-app/contract): (options: DateRangeContractOptions): { request: (value: unknown, compare?: boolean | undefined) => DateRangeRequest; parseRequest: (value: unknown) => DateRangeRequest; bounds: () => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; ... 4 more ...; view: { .… — One source policy for the server parser, URL variable, and displayed reporting period.
 defineDateRangeContract.options.minDate?: string
 defineDateRangeContract.options.maxDate?: string | (() => string)
 defineDateRangeContract.options.maxRangeDays: number
 defineDateRangeContract.options.timeZone: string
 defineDateRangeContract.options.completeDays?: boolean
+defineMessageRoute (function, @altertable/data-app/contract): <Input, Output>(route: MessageRoute<Input, Output>): MessageRoute<Input, Output>
+defineMessageRoute.route.input: (value: unknown) => Input
+defineMessageRoute.route.output: (value: unknown, input: Input) => Output
 defineOperation (function, @altertable/data-app/contract): <Input, Output, const Queries extends QueryDefinitions>(operation: OperationDefinition<Input, Output, Queries> & { queries: CheckedQueries<Queries>; }): Omit<DataOperation<Input, Output>, 'queryNames'> & { queryNames: { readonly [Name in keyof Queries & string]: Name; }; }
 defineOperation.operation.input: (value: unknown) => Input
 defineOperation.operation.checks: readonly [Input, ...Input[]]
@@ -806,6 +978,10 @@ FunnelChartSeries.values: readonly number[] — Finite, nonnegative counts align
 FunnelChartStep (type, @altertable/data-app-react/ui): Ordered step with a unique, nonblank ID.
 FunnelChartStep.id: string
 FunnelChartStep.label: string
+getDataAppNavigation (function, @altertable/data-app/client): (frame: Window): DataAppNavigation | undefined — URL controls attach navigation on demand; bootstrap and data-only clients do not.
+getDataAppNavigation.frame.…: plus props inherited from built-in
+getDataAppTransport (function, @altertable/data-app/client): (frame: Window): { logger: DataAppLogger; request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>; transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<...>; ... 7 more ...; fail(cause?: unknown): void; } | undefined — The bootstrap installs this before executing app code. URL apps can install an explicit connection.
+getDataAppTransport.frame.…: plus props inherited from built-in
 getExampleDirectory (function, @altertable/data-app-examples): (id: DataAppExampleId): string — Absolute source directory. Use copyExample() to restore npm-excluded filenames.
 GettingStarted (component, @altertable/data-app-react/ui): (props: {…}) — Query-backed connection state and next steps for a newly created app. Mount within `DataAppProvider` and register `connection: connectionCheck(app.queries)` on the server.
 GettingStarted.dataContext: DataContext
@@ -869,10 +1045,38 @@ IconButton.tooltipAlign?: 'center' | 'end' | 'start'
 IconButton.children?: ReactNode
 IconButton.…: plus props inherited from React
 IconButtonProps (type, @altertable/data-app-react): = props listed as IconButton.*
+IframeTransport (type, @altertable/data-app/client)
+IframeTransport.logger: DataAppLogger
+IframeTransport.request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>
+IframeTransport.transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<TransportResponse>
+IframeTransport.lakehouse: { queryAll(statement: string, { limit, signal, params }: { limit: number; signal: AbortSignal; name?: string | undefined; params?: Readonly<Record<string, QueryParameterValue>> | undefined; }): Promise<...>; }
+IframeTransport.dispose: () => void
+IframeTransport.mode: 'bundle' | 'url'
+IframeTransport.snapshot: () => unknown
+IframeTransport.subscribe: (listener: (state: unknown) => void) => () => void
+IframeTransport.ready: () => void
+IframeTransport.supportContentSizing: () => () => void — The UI owner calls this once its styles support content sizing; the parent's `sizing: 'content'` presentation then applies until the returned release runs.
+IframeTransport.fail: (cause?: unknown) => void — Reports a fatal app failure; the cause reaches the host logger only.
+injectDataAppAnnotationStyles (function, @altertable/data-app-react): (options: DataAppStylesOptions): HTMLStyleElement — Install only the outer-frame annotation controls; leave host page typography and layout intact.
+injectDataAppAnnotationStyles.options.document?: Document — Defaults to the current browser document.
+injectDataAppAnnotationStyles.options.nonce?: string — Nonce permitted by the document's style-src CSP.
 injectDataAppStyles (function, @altertable/data-app-react, @altertable/data-app-react/ui): (options: DataAppStylesOptions): HTMLStyleElement — Install the complete UI stylesheet once per document, before mounting.
 injectDataAppStyles.options.document?: Document — Defaults to the current browser document.
 injectDataAppStyles.options.nonce?: string — Nonce permitted by the document's style-src CSP.
 InputOf (type, @altertable/data-app/client): <T> = T extends { input: (value: unknown) => infer Input; } ? Input : never
+installDataAppTransport (function, @altertable/data-app/client): (bridge: ReturnType<typeof createIframeTransport>, frame: Window): () => void — Install an explicitly trusted transport for hosted apps and their URL-backed controls.
+installDataAppTransport.bridge.logger: DataAppLogger
+installDataAppTransport.bridge.request: (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>
+installDataAppTransport.bridge.transport: (operation: string, input: unknown, signal?: AbortSignal | undefined) => Promise<TransportResponse>
+installDataAppTransport.bridge.lakehouse: { queryAll(statement: string, { limit, signal, params }: { limit: number; signal: AbortSignal; name?: string | undefined; params?: Readonly<Record<string, QueryParameterValue>> | undefined; }): Promise<...>; }
+installDataAppTransport.bridge.dispose: () => void
+installDataAppTransport.bridge.mode: 'bundle' | 'url'
+installDataAppTransport.bridge.snapshot: () => unknown
+installDataAppTransport.bridge.subscribe: (listener: (state: unknown) => void) => () => void
+installDataAppTransport.bridge.ready: () => void
+installDataAppTransport.bridge.supportContentSizing: () => () => void — The UI owner calls this once its styles support content sizing; the parent's `sizing: 'content'` presentation then applies until the returned release runs.
+installDataAppTransport.bridge.fail: (cause?: unknown) => void — Reports a fatal app failure; the cause reaches the host logger only.
+installDataAppTransport.frame.…: plus props inherited from built-in
 isPlainKeyEvent (function, @altertable/data-app-react/ui): (event: KeyEvent, options: {…}): boolean — Keep local key actions separate from shortcuts and IME composition. Pass React's nativeEvent.
 isPlainKeyEvent.event.…: plus props inherited from built-in
 isPlainKeyEvent.options.allowShift?: boolean
@@ -935,6 +1139,19 @@ MenuSeparator.…: plus props inherited from @react-types/shared, React, react-a
 MenuTrigger (component, @altertable/data-app-react/ui): (props: MenuTriggerProps)
 MenuTrigger.…: plus props inherited from react-aria-components, react-stately
 MenuTriggerProps (type, @altertable/data-app-react/ui): = props listed as MenuTrigger.*
+MessageContext (type, @altertable/data-app/contract)
+MessageContext.signal: AbortSignal
+MessageDispatcher (type, @altertable/data-app/contract): = (message: unknown, context: MessageContext) => Promise<unknown>
+MessageHandlers (type, @altertable/data-app/contract): <Routes> = { [Name in keyof Routes]: (payload: ReturnType<Routes[Name]['input']>, context: MessageContext) => Promise<ReturnType<Routes[Name]['output']>> | ReturnType<...>; }
+MessageInput (type, @altertable/data-app/contract): <Route> = Route['input'] extends (...args: any) => infer R ? R : any
+MessageOutput (type, @altertable/data-app/contract): <Route, Input> = Route extends DataQueryRoute<infer Operations extends OperationContracts> ? Input extends { operation: infer Name extends keyof Operations; } ? TransportResponse<...> : never : ReturnType<...>
+MessageRoute (type, @altertable/data-app/contract): <Input, Output> = props listed as defineMessageRoute.route.*
+MessageRoutes (type, @altertable/data-app/contract): = { [x: string]: { input: (value: unknown) => unknown; output: (value: unknown, input: never) => unknown; }; }
+MessageRoutingError (class, @altertable/data-app/contract): Only these deliberate, public failures cross the message boundary. Other errors stay private.
+MessageRoutingError.code: string
+MessageRoutingError.requestId?: string
+MessageRoutingError.…: plus props inherited from built-in
+MessageTransport (type, @altertable/data-app/contract): = (message: RoutedMessage, signal?: AbortSignal | undefined) => Promise<unknown>
 MetricDefinition (type, @altertable/data-app-react)
 MetricDefinition.id: string
 MetricDefinition.label: string
@@ -1011,6 +1228,14 @@ MultiChoiceVariable.valid: (value: readonly string[]) => boolean
 MultiChoiceVariable.same: (left: readonly string[], right: readonly string[]) => boolean
 MultiChoiceVariable.options: readonly ChoiceOption[]
 MultiChoiceVariable.maxSelected: number
+NavigationUpdate (type, @altertable/data-app/contract)
+NavigationUpdate.search: string
+NavigationUpdate.hash: string
+NavigationUpdate.mode: HistoryMode
+NavigationUpdate.title?: string
+navigationUpdateRoute (const, @altertable/data-app/contract): MessageRoute<NavigationUpdate, null>
+navigationUpdateRoute.input: (value: unknown) => NavigationUpdate
+navigationUpdateRoute.output: (value: unknown, input: NavigationUpdate) => null
 normalizeAppearance (function, @altertable/data-app/appearance): (value: AppearanceOptions): AppearanceSettings — Resolve typed app settings without repeating authoring checks at runtime.
 normalizeAppearance.value.theme?: ThemePreference
 normalizeAppearance.value.baseColor?: 'neutral' | 'slate' | 'warm' — Palette for surfaces, text, and borders; independent of the accent.
@@ -1092,6 +1317,7 @@ parseBooleanSelection.filter.write: (value: BooleanSelection) => Record<string, 
 parseBooleanSelection.filter.valid: (value: BooleanSelection) => boolean
 parseBooleanSelection.filter.same: (left: BooleanSelection, right: BooleanSelection) => boolean
 parseCount (function, @altertable/data-app/contract): (value: unknown): number — Accepts numeric strings from DuckDB; rejects negative, fractional, and unsafe integers.
+parseDataAppAnnotationDraft (function, @altertable/data-app/contract): (value: unknown): DataAppAnnotationDraft — Reconstruct at the boundary; discard extra fields and bound the entire JSON payload.
 parseDateRangeInput (function, @altertable/data-app/contract): (value: unknown, options: {…}): DateRange — Validate calendar dates and a bounded inclusive range on the server.
 parseDateRangeInput.options.minDate?: string
 parseDateRangeInput.options.maxDate?: string
@@ -1188,7 +1414,7 @@ PresentStory.headerActions?: ReactNode
 PresentStory.footer?: ReactNode
 PresentStory.…: plus props inherited from React
 PresentStoryProps (type, @altertable/data-app-react/ui): = props listed as PresentStory.*
-previousDateRange (function, @altertable/data-app/contract): (options: DateRangeInput): DateRange — The immediately preceding, equally long set of calendar days.
+previousDateRange (function, @altertable/data-app/contract): (options: DateRange): DateRange — The immediately preceding, equally long set of calendar days.
 previousDateRange.options.start: string
 previousDateRange.options.end: string
 QueryDefinitions (type, @altertable/data-app, @altertable/data-app/contract, @altertable/data-app/config): <Record<string, QueryDefinition>> = { readonly [x: string]: QueryDefinition; }
@@ -1238,7 +1464,7 @@ RankingItem.label: ReactNode
 RankingItem.value: number
 RankingItem.detail?: ReactNode
 RankingProps (type, @altertable/data-app-react): = props listed as Ranking.*
-RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined, options?: { ..…
+RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>, NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined,…
 ReportingPeriod (type, @altertable/data-app/contract, @altertable/data-app-react)
 ReportingPeriod.kind: 'rolling' [variant 1 of 2]
 ReportingPeriod.amount: number [variant 1 of 2]
@@ -1268,6 +1494,9 @@ RetentionChartSeries.id: string — Unique, nonblank cohort or segment ID.
 RetentionChartSeries.label: string
 RetentionChartSeries.cohortSize: number — Finite, nonnegative starting population.
 RetentionChartSeries.points: readonly RetentionChartPoint[]
+RoutedMessage (type, @altertable/data-app/contract)
+RoutedMessage.route: string
+RoutedMessage.payload: unknown
 ScatterChart (component, @altertable/data-app-react/ui): (props: ScatterChartProps) — Independent finite X/Y observations on linear axes that include zero. Negative and constant coordinates are supported.
 ScatterChart.items: readonly ScatterChartItem[]
 ScatterChart.xLabel: string
@@ -1419,11 +1648,21 @@ Skeleton (component, @altertable/data-app-react): (props: SkeletonProps) — Dec
 Skeleton.inline?: boolean — Align a text-sized placeholder with surrounding prose.
 Skeleton.…: plus props inherited from React
 SkeletonProps (type, @altertable/data-app-react): = props listed as Skeleton.*
+SqlQueryInput (type, @altertable/data-app/contract)
+SqlQueryInput.statement: string
+SqlQueryInput.limit: number
+SqlQueryInput.params?: Readonly<Record<string, QueryParameterValue>>
+sqlQueryRoute (const, @altertable/data-app/contract): MessageRoute<SqlQueryInput, QueryResult<unknown[]>> — SQL delivery for browser-owned operations. Hosts must enforce backend access and resource limits.
+sqlQueryRoute.input: (value: unknown) => SqlQueryInput
+sqlQueryRoute.output: (value: unknown, input: SqlQueryInput) => QueryResult<unknown[]>
 Stack (component, @altertable/data-app-react): (props: StackProps) — Vertical layout for peer sections or request boundaries, with the page's section gap.
 Stack.children: ReactNode
 Stack.gap?: 'lg' | 'md' | 'sm'
 Stack.…: plus props inherited from React
 StackProps (type, @altertable/data-app-react): = props listed as Stack.*
+startDataAppBootstrap (function, @altertable/data-app-embed): (options: {…}): () => void — Run from a trusted bootstrap page in an allow-scripts-only iframe. CSP can prohibit network access.
+startDataAppBootstrap.options.parentOrigin: string
+startDataAppBootstrap.options.window?: Window
 StoryFinding (type, @altertable/data-app-react/ui): One consequential, inspectable finding from the displayed result.
 StoryFinding.id: string
 StoryFinding.headline: string

@@ -1,6 +1,3 @@
-import { DataAppError } from '../../client/transport.ts';
-import { type Lakehouse } from '../../core/contract.ts';
-import { randomUuid } from '../../core/uuid.ts';
 import { createBridgeEndpoint } from '../core/bridge-endpoint.ts';
 import {
   PARENT_PARAM,
@@ -8,12 +5,14 @@ import {
   REQUEST_TIMEOUT_MS,
   type TransportResponse,
 } from '../core/bridge.ts';
+import { type Lakehouse } from '../core/contract.ts';
 import {
   defineDataQueryRoute,
   sqlQueryRoute,
   MessageRoutingError,
   type RoutedMessage,
 } from '../core/messages.ts';
+import { randomUuid } from '../core/uuid.ts';
 import { createFrameSizing } from './frame-sizing.ts';
 import {
   createBridgeLogger,
@@ -21,6 +20,7 @@ import {
   logBridgeDiagnostic,
 } from './logger.ts';
 import { createMessageClient } from './messages.ts';
+import { DataAppError } from './transport.ts';
 
 type Pending = {
   start: () => void;

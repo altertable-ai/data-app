@@ -3,7 +3,7 @@
 @import '../tokens.css' layer(atbl.tokens);
 @import '../appearance.css' layer(atbl.tokens);
 @import '../base.css' layer(atbl.base);
-@import '../annotations/colors.css' layer(atbl.components);
+@import './colors.css' layer(atbl.components);
 @import '../ui/Button.css' layer(atbl.components);
 @import '../ui/Tooltip.css' layer(atbl.components);
 @import '../ui/Kbd.css' layer(atbl.components);

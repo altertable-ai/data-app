@@ -34,7 +34,7 @@ import {
 
 import { packages } from '@/scripts/packages';
 
-// Generates REFERENCE.md from public source entry points: one line per app-authoring
+// Generates REFERENCE.md from the emitted declarations: one line per public
 // export and one per prop or option, resolved by the TypeScript checker.
 // Runs in `bun run build` after declarations; `--check` compares the staged
 // file without writing.
@@ -50,28 +50,25 @@ const typeFlags =
   NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope;
 const absent = TypeFlags.Never | TypeFlags.Undefined;
 
-const excludedEntries = [
+const undocumented = new Set([
   '@altertable/data-app/internal',
   '@altertable/data-app-bun/reload',
+  '@altertable/data-app-embed/runtime',
   '@altertable/data-app-manifest',
-  '@altertable/data-app-embed',
-];
-const packageEntryPoints = packages.flatMap(({ directory, manifest }) =>
-  Object.entries(manifest.exports).map(([subpath, target]) => ({
-    specifier:
-      subpath === '.' ? manifest.name : manifest.name + subpath.slice(1),
-    file: resolve(
-      directory,
-      'src',
-      target.import.slice('./dist/'.length).replace(/\.js$/, '.ts')
-    ),
-  }))
-);
-const entryPoints = packageEntryPoints.filter(
-  ({ specifier }) =>
-    !excludedEntries.some(
-      entry => specifier === entry || specifier.startsWith(`${entry}/`)
-    )
+]);
+const entryPoints = packages.flatMap(({ directory, manifest }) =>
+  Object.entries(manifest.exports).flatMap(([subpath, target]) => {
+    const specifier =
+      subpath === '.' ? manifest.name : manifest.name + subpath.slice(1);
+    return undocumented.has(specifier)
+      ? []
+      : [
+          {
+            specifier,
+            file: resolve(root, directory, target.types),
+          },
+        ];
+  })
 );
 
 type Export = { name: string; symbol: Symbol; specifiers: string[] };
@@ -552,7 +549,7 @@ async function collect({ checker, program }: Project) {
     const source = await program.getSourceFile(file);
     const module = source && (await checker.getSymbolAtLocation(source));
     if (!module) {
-      failures.push(`${specifier}: cannot load ${file}.`);
+      failures.push(`${specifier}: cannot load ${file}; build first.`);
       continue;
     }
     for (const exported of await checker.getExportsOfModule(module)) {
@@ -569,12 +566,6 @@ async function collect({ checker, program }: Project) {
         );
         continue;
       }
-      if (
-        symbol.declarations.every(declaration =>
-          declaration.path.includes('/src/embed/')
-        )
-      )
-        continue;
       const key = `${exported.name}\0${symbol.id}`;
       const existing = exports.get(key);
       if (existing) existing.specifiers.push(specifier);
@@ -599,10 +590,6 @@ async function generate() {
         target: 'ESNext',
         module: 'Preserve',
         moduleResolution: 'bundler',
-        allowImportingTsExtensions: true,
-        paths: Object.fromEntries(
-          packageEntryPoints.map(({ specifier, file }) => [specifier, [file]])
-        ),
         jsx: 'react-jsx',
         strict: true,
         noEmit: true,
@@ -616,8 +603,7 @@ async function generate() {
   try {
     const snapshot = await api.updateSnapshot({ openProjects: [config] });
     const project = snapshot.getProjects()[0];
-    if (!project)
-      throw new Error('TypeScript did not load the source entry points.');
+    if (!project) throw new Error('TypeScript did not load the declarations.');
     const exports = await collect(project);
     const reference = new Reference(project);
     const entries: Entry[] = [];
@@ -661,10 +647,10 @@ function render(entries: Entry[]) {
   });
   const header = `# @altertable/data-app API reference
 
-Generated from public source entry points by \`bun run build\`; do not
-edit. Embedding APIs are excluded. Each of the ${entries.length} app-authoring
-exports has one heading line, then one line per prop, option, or field, so one
-search returns everything about a name:
+Generated from the published type declarations by \`bun run build\`; do not
+edit. Each of the ${entries.length} public exports has one heading line, then
+one line per prop, option, or field, so one search returns everything about a
+name:
 
 - \`rg '^LineChart\\b' REFERENCE.md\` prints \`LineChart\` and its props.
 - \`rg '^LineChart' REFERENCE.md\` adds \`LineChartItem\` and \`LineChartProps\`.

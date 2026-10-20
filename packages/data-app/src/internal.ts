@@ -1,7 +1,7 @@
 /** Shared implementation for the coordinated data-app packages; not an app authoring API. */
 export { downloadBlob } from './client/download.ts';
-export { localFrameBridge } from './embed/client/iframe.ts';
-export { createBridgeEndpoint } from './embed/core/bridge-endpoint.ts';
+export { localFrameBridge } from './client/iframe.ts';
+export { createBridgeEndpoint } from './core/bridge-endpoint.ts';
 export {
   type BridgeDiagnostic,
   type BridgeEventMessage,
@@ -9,7 +9,7 @@ export {
   PARENT_PARAM,
   REQUEST_TIMEOUT_MS,
   validId,
-} from './embed/core/bridge.ts';
+} from './core/bridge.ts';
 export {
   type DataView,
   type DisplayedSnapshot,
@@ -35,7 +35,7 @@ export { toDataOperationFailure } from './core/operation.ts';
 export {
   type DataAppPresentation,
   isDataAppPresentation,
-} from './embed/core/presentation.ts';
+} from './core/presentation.ts';
 export {
   type DataReading,
   type MetricReading,
