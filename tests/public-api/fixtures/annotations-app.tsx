@@ -1,10 +1,14 @@
-import { injectDataAppStyles } from '@altertable/data-app-react';
 import { defineDataApp } from '@altertable/data-app';
+import { injectDataAppStyles } from '@altertable/data-app-react';
+import { AnnotationTarget } from '@altertable/data-app-react';
+import { mountDataApp, searchVariable } from '@altertable/data-app-react';
 import {
-  connectionCheck,
-  type ConnectionOperation,
-} from '@altertable/data-app/contract';
-import { useState } from 'react';
+  DataApp,
+  DataWidget,
+  MetricWidget,
+  TextWidget,
+  useAppVariables,
+} from '@altertable/data-app-react/ui';
 import {
   createMessageClient,
   createDataClient,
@@ -13,14 +17,11 @@ import {
   DataAppError,
 } from '@altertable/data-app/client';
 import {
-  DataApp,
-  DataWidget,
-  MetricWidget,
-  TextWidget,
-  useAppVariables,
-} from '@altertable/data-app-react/ui';
-import { AnnotationTarget } from '@altertable/data-app-react';
-import { mountDataApp, searchVariable } from '@altertable/data-app-react';
+  connectionCheck,
+  type ConnectionOperation,
+} from '@altertable/data-app/contract';
+import { useState } from 'react';
+
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const dataApp = defineDataApp({
   title: 'Embedded report',

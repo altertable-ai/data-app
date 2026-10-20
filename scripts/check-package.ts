@@ -1,7 +1,8 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { join, posix, resolve } from 'node:path';
-import { tmpdir } from 'node:os';
 import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, posix, resolve } from 'node:path';
+
 import workspace from '@/package.json';
 import { packages } from '@/scripts/packages';
 
@@ -72,28 +73,33 @@ function excludes(names: Set<string>, forbidden: string[]) {
 
 async function typecheck(directory: string, source: string) {
   await writeFile(join(directory, 'consumer.ts'), source);
-  await writeFile(
-    join(directory, 'tsconfig.json'),
-    JSON.stringify({
-      compilerOptions: {
-        target: 'ESNext',
-        module: 'Preserve',
-        moduleResolution: 'bundler',
-        strict: true,
-        noEmit: true,
-        types: [],
-      },
-      include: ['consumer.ts'],
-    })
-  );
-  await run(
-    [
-      join(root, 'node_modules/.bin/tsc'),
-      '-p',
+  for (const [module, moduleResolution] of [
+    ['Preserve', 'bundler'],
+    ['NodeNext', 'NodeNext'],
+  ]) {
+    await writeFile(
       join(directory, 'tsconfig.json'),
-    ],
-    directory
-  );
+      JSON.stringify({
+        compilerOptions: {
+          target: 'ESNext',
+          module,
+          moduleResolution,
+          strict: true,
+          noEmit: true,
+          types: [],
+        },
+        include: ['consumer.ts'],
+      })
+    );
+    await run(
+      [
+        join(root, 'node_modules/.bin/tsc'),
+        '-p',
+        join(directory, 'tsconfig.json'),
+      ],
+      directory
+    );
+  }
 }
 
 try {
@@ -161,6 +167,7 @@ try {
         'templates/starter-local-data-app/_gitignore',
         'templates/starter-local-data-app/.node-version',
         'templates/starter-local-data-app/.oxlintrc.json',
+        'templates/starter-local-data-app/.oxfmtrc.json',
         'templates/starter-local-data-app/AGENTS.md',
         'templates/starter-local-data-app/src/server.ts',
       ])
@@ -552,7 +559,7 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
     'react-dom@19.2.0',
     '@types/react@19.3.0',
     '@types/react-dom@19.3.0',
-    '@types/bun@1.4.2',
+    `@types/bun@${workspace.devDependencies['@types/bun']}`,
   ]);
   const hostedExample = catalog.find(example => example.mode === 'hosted');
   assert(hostedExample);

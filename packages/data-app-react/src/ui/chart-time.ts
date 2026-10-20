@@ -1,9 +1,10 @@
-import { utcTicks } from './time-interval.ts';
 import {
   formatDate,
   formatDateTime,
   parseDateTime,
 } from '@altertable/data-app/format';
+
+import { utcTicks } from './time-interval.ts';
 
 const day = 86_400_000;
 const calendarDatePattern = /^\d{4}-\d{2}-\d{2}$/;

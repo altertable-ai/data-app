@@ -1,3 +1,4 @@
+import { useMergeRefs } from '@floating-ui/react';
 import {
   type ComponentRef,
   useEffect,
@@ -8,12 +9,12 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { PopoverContainerContext } from './PopoverSurface.tsx';
-import { useMergeRefs } from '@floating-ui/react';
-import { classNames } from './classNames.ts';
+
 import { Button } from './Button.tsx';
-import { AppIcon } from './icons.ts';
+import { classNames } from './classNames.ts';
 import { GradientScroll } from './GradientScroll.tsx';
+import { AppIcon } from './icons.ts';
+import { PopoverContainerContext } from './PopoverSurface.tsx';
 
 export type SheetDialogProps = Omit<
   ComponentPropsWithRef<'dialog'>,

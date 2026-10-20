@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 import { readChartImage } from '@/tests/public-api/chart-image';
 

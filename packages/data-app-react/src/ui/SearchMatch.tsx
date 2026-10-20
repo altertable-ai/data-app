@@ -1,5 +1,6 @@
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import type { ComponentPropsWithRef } from 'react';
+
 import { classNames } from './classNames.ts';
 import type { SearchMatchValue } from './searchItems.ts';
 

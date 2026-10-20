@@ -1,14 +1,5 @@
-import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { createDataContext as registerContext } from '@/packages/data-app-react/src/ui/data-context.ts';
-import { useDeclaredResult } from '@/packages/data-app-react/src/view-runtime.tsx';
-import { DeclaredApp, dataApp } from '@/dev/fixtures/declared-app';
-import { DataSectionBoundary as DataSection } from '@/packages/data-app-react/src/ui/DataSectionBoundary.tsx';
-import { bindDataset } from '@/packages/data-app-react/src/bindings.ts';
-import { defineDataContent } from '@/packages/data-app-react/src/content.ts';
-import { ClientCacheApp } from '@/dev/fixtures/client-cache';
-import { useState } from 'react';
-import { createRoot } from 'react-dom/client';
 import { injectDataAppStyles } from '@altertable/data-app-react';
+import { DataAppProvider, TextWidget } from '@altertable/data-app-react/ui';
 import {
   createDataClient,
   type InputOf,
@@ -16,8 +7,18 @@ import {
 } from '@altertable/data-app/client';
 import { defineOperation } from '@altertable/data-app/contract';
 import type { TransportResponse } from '@altertable/data-app/contract';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
+import { ClientCacheApp } from '@/dev/fixtures/client-cache';
+import { DeclaredApp, dataApp } from '@/dev/fixtures/declared-app';
+import { bindDataset } from '@/packages/data-app-react/src/bindings.ts';
+import { defineDataContent } from '@/packages/data-app-react/src/content.ts';
 import { createDataHooks } from '@/packages/data-app-react/src/hooks.ts';
-import { DataAppProvider, TextWidget } from '@altertable/data-app-react/ui';
+import { createDataContext as registerContext } from '@/packages/data-app-react/src/ui/data-context.ts';
+import { DataSectionBoundary as DataSection } from '@/packages/data-app-react/src/ui/DataSectionBoundary.tsx';
+import { useDeclaredResult } from '@/packages/data-app-react/src/view-runtime.tsx';
 
 injectDataAppStyles();
 

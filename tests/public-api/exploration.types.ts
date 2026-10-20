@@ -1,8 +1,3 @@
-import { createDataClient } from '@altertable/data-app/client';
-import {
-  dimensionFilter,
-  type DataOperation,
-} from '@altertable/data-app/contract';
 import {
   createDataHooks,
   createDataContext,
@@ -12,6 +7,11 @@ import {
   VisualizationWidget,
   type AppVariableValues,
 } from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  dimensionFilter,
+  type DataOperation,
+} from '@altertable/data-app/contract';
 const region = dimensionFilter<string>({
   key: 'region',
   label: 'Region',

@@ -1,13 +1,4 @@
 import { invariant } from '@altertable/data-app/internal';
-import { ownedSource } from './source-owner.ts';
-import { DataSectionBoundary } from './ui/DataSectionBoundary.tsx';
-import { InspectionContext } from './ui/InspectionContext.tsx';
-import {
-  InspectionOwner,
-  InspectionProvider,
-} from './ui/InspectionProvider.tsx';
-import { Sheet } from './ui/Sheet.tsx';
-import { searchParams, subscribeSearch, writeSearch } from './ui/search.ts';
 import {
   createContext,
   useContext,
@@ -18,8 +9,18 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import type { EmptyContent } from './ui/presentation.ts';
+
 import type { ViewSource } from './bindings.ts';
+import { ownedSource } from './source-owner.ts';
+import { DataSectionBoundary } from './ui/DataSectionBoundary.tsx';
+import { InspectionContext } from './ui/InspectionContext.tsx';
+import {
+  InspectionOwner,
+  InspectionProvider,
+} from './ui/InspectionProvider.tsx';
+import type { EmptyContent } from './ui/presentation.ts';
+import { searchParams, subscribeSearch, writeSearch } from './ui/search.ts';
+import { Sheet } from './ui/Sheet.tsx';
 import type { ViewResult } from './view-runtime.tsx';
 
 export type DetailViewDefinition<Data, Input> = {

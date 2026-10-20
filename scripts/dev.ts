@@ -1,6 +1,8 @@
 import { watch } from 'node:fs';
 import { resolve } from 'node:path';
+
 import { GenericContainer, Wait } from 'testcontainers';
+
 import { seedStatements } from '@/dev/seed';
 import { packages } from '@/scripts/packages';
 

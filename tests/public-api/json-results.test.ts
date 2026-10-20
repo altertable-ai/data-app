@@ -1,4 +1,3 @@
-import { expect, test } from 'vitest';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
@@ -6,6 +5,7 @@ import {
   type Lakehouse,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
+import { expect, test } from 'vitest';
 
 const definition = {
   queries: {},

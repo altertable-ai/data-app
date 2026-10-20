@@ -1,11 +1,11 @@
-import { KEY_SEPARATOR } from './keys.ts';
 import { facetSource } from './facets.ts';
+import { invariant } from './invariant.ts';
+import { KEY_SEPARATOR } from './keys.ts';
 import type {
   AppVariable,
   HistoryMode,
   VariablePresentation,
 } from './variables.ts';
-import { invariant } from './invariant.ts';
 
 export type DimensionValue = string | number;
 export type DimensionMember<T extends DimensionValue = DimensionValue> =

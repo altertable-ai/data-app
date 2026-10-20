@@ -1,4 +1,5 @@
 import { type ComponentPropsWithRef } from 'react';
+
 import { classNames } from './classNames.ts';
 
 /** Shared surface for floating hints and chart value inspection. */

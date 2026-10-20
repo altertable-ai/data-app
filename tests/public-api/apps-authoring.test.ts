@@ -1,4 +1,5 @@
 import { describe, expect } from 'vitest';
+
 import { test, localURL } from '@/tests/public-api/browser';
 
 describe('authoring', () => {

@@ -1,6 +1,12 @@
-import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { type ReactNode } from 'react';
 import { Comparison } from '@altertable/data-app-react';
+import {
+  Breakdown,
+  Grid,
+  GridItem,
+  Ranking,
+  Stack,
+  TextContent,
+} from '@altertable/data-app-react';
 import {
   BarChart,
   AreaChart,
@@ -12,14 +18,8 @@ import {
   ComposedChart,
 } from '@altertable/data-app-react/ui';
 import { DataTable, VisualizationWidget } from '@altertable/data-app-react/ui';
-import {
-  Breakdown,
-  Grid,
-  GridItem,
-  Ranking,
-  Stack,
-  TextContent,
-} from '@altertable/data-app-react';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+import { type ReactNode } from 'react';
 
 const segments = [
   { id: 'product', label: 'Product', value: 45 },

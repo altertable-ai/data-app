@@ -1,48 +1,49 @@
+import { formatMetric } from '@altertable/data-app/format';
+import type { MetricValues } from '@altertable/data-app/internal';
+import type { DataReading } from '@altertable/data-app/internal';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
+import type { ReactNode } from 'react';
+
 import { resolveActions, type ExplorationActions } from './actions.ts';
 import { RegisteredBinding } from './bindings.ts';
-import { useDetailNavigation } from './details.tsx';
-import { breakdownState, type BreakdownTarget } from './exploration.ts';
-import { Select } from './ui/Select.tsx';
-import {
-  ExplorationActionControl,
-  type ItemActions,
-} from './ui/ExplorationActionControl.tsx';
 import {
   datasetTable,
   type Dataset,
   type Metric,
   type ViewSource,
 } from './bindings.ts';
+import { MetricRecords } from './bindings.ts';
+import { useDetailNavigation } from './details.tsx';
+import { breakdownState, type BreakdownTarget } from './exploration.ts';
+import {
+  DataValue as DisplayValue,
+  type DataValueProps as DisplayValueProps,
+} from './ui/DataValue.tsx';
+import {
+  ExplorationActionControl,
+  type ItemActions,
+} from './ui/ExplorationActionControl.tsx';
+import type { MetricDefinition } from './ui/metric.ts';
 import {
   MetricWidget as DisplayMetric,
   type MetricWidgetProps as DisplayMetricProps,
 } from './ui/MetricWidget.tsx';
+import { Select } from './ui/Select.tsx';
+import { Skeleton } from './ui/Skeleton.tsx';
 import {
   TableWidget as DisplayTable,
   type TableWidgetProps as DisplayTableProps,
   type TableDisplayMode,
 } from './ui/TableWidget.tsx';
 import {
+  TextWidget as DisplayText,
+  type TextWidgetProps as DisplayTextProps,
+} from './ui/TextWidget.tsx';
+import {
   VisualizationWidget as DisplayVisual,
   type VisualizationWidgetProps as DisplayVisualProps,
   type VisualizationWidgetView as DisplayVisualizationView,
 } from './ui/VisualizationWidget.tsx';
-import {
-  TextWidget as DisplayText,
-  type TextWidgetProps as DisplayTextProps,
-} from './ui/TextWidget.tsx';
-import { formatMetric } from '@altertable/data-app/format';
-import {
-  DataValue as DisplayValue,
-  type DataValueProps as DisplayValueProps,
-} from './ui/DataValue.tsx';
-import { Skeleton } from './ui/Skeleton.tsx';
-import type { MetricValues } from '@altertable/data-app/internal';
-import type { MetricDefinition } from './ui/metric.ts';
-import type { ReactNode } from 'react';
-import type { DataReading } from '@altertable/data-app/internal';
-import { MetricRecords } from './bindings.ts';
 
 export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
   Extract<DisplayMetricProps, { metric: MetricDefinition }>,

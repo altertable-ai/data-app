@@ -32,7 +32,7 @@ const journeyOutcomeLabels = {
   end: 'End of path',
 } as const;
 
-export function journeyNodes(
+function journeyNodes(
   path: JourneyChartPath
 ): Omit<JourneyNode, 'count' | 'pathKeys'>[] {
   const nodes: Omit<JourneyNode, 'count' | 'pathKeys'>[] = path.steps.map(

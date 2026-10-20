@@ -183,8 +183,6 @@ millisecond.every = k => {
   );
 };
 
-const milliseconds = millisecond.range;
-
 const second = timeInterval(
   date => {
     date.setTime(+date - date.getMilliseconds());
@@ -199,8 +197,6 @@ const second = timeInterval(
     return date.getUTCSeconds();
   }
 );
-
-const seconds = second.range;
 
 export const timeMinute = timeInterval(
   date => {
@@ -219,8 +215,6 @@ export const timeMinute = timeInterval(
   }
 );
 
-export const timeMinutes = timeMinute.range;
-
 export const utcMinute = timeInterval(
   date => {
     date.setUTCSeconds(0, 0);
@@ -235,8 +229,6 @@ export const utcMinute = timeInterval(
     return date.getUTCMinutes();
   }
 );
-
-export const utcMinutes = utcMinute.range;
 
 export const timeHour = timeInterval(
   date => {
@@ -258,8 +250,6 @@ export const timeHour = timeInterval(
   }
 );
 
-export const timeHours = timeHour.range;
-
 export const utcHour = timeInterval(
   date => {
     date.setUTCMinutes(0, 0, 0);
@@ -274,8 +264,6 @@ export const utcHour = timeInterval(
     return date.getUTCHours();
   }
 );
-
-export const utcHours = utcHour.range;
 
 export const timeDay = timeInterval(
   date => date.setHours(0, 0, 0, 0),
@@ -468,8 +456,6 @@ timeYear.every = k => {
       );
 };
 
-export const timeYears = timeYear.range;
-
 export const utcYear = timeInterval(
   date => {
     date.setUTCMonth(0, 1);
@@ -502,7 +488,6 @@ utcYear.every = k => {
       );
 };
 
-export const utcYears = utcYear.range;
 const e10 = Math.sqrt(50),
   e5 = Math.sqrt(10),
   e2 = Math.sqrt(2);
@@ -622,7 +607,7 @@ function ticker(
   return [ticks, tickInterval] as const;
 }
 
-const [utcTicks, utcTickInterval] = ticker(
+const [utcTicks] = ticker(
   utcYear,
   utcMonth,
   utcSunday,
@@ -630,7 +615,7 @@ const [utcTicks, utcTickInterval] = ticker(
   utcHour,
   utcMinute
 );
-const [timeTicks, timeTickInterval] = ticker(
+const [timeTicks] = ticker(
   timeYear,
   timeMonth,
   timeSunday,
@@ -639,18 +624,12 @@ const [timeTicks, timeTickInterval] = ticker(
   timeMinute
 );
 
-export { utcTicks, utcTickInterval, timeTicks, timeTickInterval };
+export { utcTicks, timeTicks };
 export {
   millisecond as timeMillisecond,
   millisecond as utcMillisecond,
-  milliseconds as timeMilliseconds,
-  milliseconds as utcMilliseconds,
   second as timeSecond,
   second as utcSecond,
-  seconds as timeSeconds,
-  seconds as utcSeconds,
   timeSunday as timeWeek,
-  timeSundays as timeWeeks,
   utcSunday as utcWeek,
-  utcSundays as utcWeeks,
 };

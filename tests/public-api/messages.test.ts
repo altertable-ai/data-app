@@ -1,4 +1,8 @@
-import { expect, test } from 'vitest';
+import {
+  createNavigationHandler,
+  createSqlQueryHandler,
+} from '@altertable/data-app-embed';
+import { createMessageClient } from '@altertable/data-app/client';
 import {
   createMessageRouter,
   defineMessageRoute,
@@ -8,11 +12,7 @@ import {
   sqlQueryRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
-import { createMessageClient } from '@altertable/data-app/client';
-import {
-  createNavigationHandler,
-  createSqlQueryHandler,
-} from '@altertable/data-app-embed';
+import { expect, test } from 'vitest';
 
 function number(value: unknown): number {
   if (typeof value !== 'number' || !Number.isFinite(value))

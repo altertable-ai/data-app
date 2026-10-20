@@ -1,6 +1,7 @@
+import { type DisclosedQuery } from '@altertable/data-app/contract';
 import { type DataView } from '@altertable/data-app/internal';
 import { createContext, useContext } from 'react';
-import { type DisclosedQuery } from '@altertable/data-app/contract';
+
 import { type AboutEmpty } from './AboutData.tsx';
 import { type DataContext } from './data-context.ts';
 

@@ -1,6 +1,3 @@
-import { GradientScroll } from './ui/GradientScroll.tsx';
-import { ControlLabelValue } from './ui/PickerField.tsx';
-import { PopoverSurface } from './ui/PopoverSurface.tsx';
 import {
   Children,
   useEffect,
@@ -11,12 +8,16 @@ import {
   type ReactNode,
 } from 'react';
 import { Dialog, DialogTrigger } from 'react-aria-components';
+
 import { Button, PressButton } from './ui/Button.tsx';
-import { AppIcon } from './ui/icons.ts';
 import { FilterActions } from './ui/FilterActions.tsx';
-import { VariableBar } from './ui/VariableBar.tsx';
+import { GradientScroll } from './ui/GradientScroll.tsx';
+import { AppIcon } from './ui/icons.ts';
+import { ControlLabelValue } from './ui/PickerField.tsx';
+import { PopoverSurface } from './ui/PopoverSurface.tsx';
 import { Sheet } from './ui/Sheet.tsx';
 import { Tooltip } from './ui/Tooltip.tsx';
+import { VariableBar } from './ui/VariableBar.tsx';
 
 export type ActiveFilterControl = {
   id: string;

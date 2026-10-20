@@ -3,6 +3,7 @@ import {
   type ElementType,
   type ReactNode,
 } from 'react';
+
 import { classNames } from './classNames.ts';
 
 export type SectionHeadingProps = {

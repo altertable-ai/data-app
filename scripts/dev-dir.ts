@@ -7,17 +7,19 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
+
 import {
   getTsconfig,
   createPathsMatcher,
   type TsConfigJson,
 } from 'get-tsconfig';
-import { packages } from '@/scripts/packages';
+
 import {
   previewLakehouseEnvironment,
   ensurePackageBuild,
   checkoutRoot,
 } from '@/scripts/dev-resolve';
+import { packages } from '@/scripts/packages';
 
 type ImportPaths = Record<string, string[]>;
 

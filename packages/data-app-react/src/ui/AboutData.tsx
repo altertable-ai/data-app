@@ -1,4 +1,6 @@
-import { DateFormattingContext } from '../date-formatting.ts';
+import { type DisclosedQuery } from '@altertable/data-app/contract';
+import { invariant } from '@altertable/data-app/internal';
+import { useMergeRefs } from '@floating-ui/react';
 import {
   useEffect,
   useEffectEvent,
@@ -11,22 +13,21 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { invariant } from '@altertable/data-app/internal';
-import { useMergeRefs } from '@floating-ui/react';
-import { AppIcon } from './icons.ts';
-import { type DisclosedQuery } from '@altertable/data-app/contract';
-import { type DataContext, type GlossaryEntry } from './data-context.ts';
+
+import { DateFormattingContext } from '../date-formatting.ts';
 import { Button, type ButtonProps } from './Button.tsx';
+import { type DataContext, type GlossaryEntry } from './data-context.ts';
 import { EmptyState } from './EmptyState.tsx';
+import { AppIcon } from './icons.ts';
+import { useInspectionDefaults } from './InspectionContext.tsx';
+import { InspectionOwner, InspectionVisual } from './InspectionProvider.tsx';
 import { Kbd } from './Kbd.tsx';
 import { QueryList } from './QueryList.tsx';
 import { slug } from './search.ts';
 import { Sheet, type SheetDialogProps } from './Sheet.tsx';
-import { Tabs, TabList, Tab, TabPanels, TabPanel } from './Tabs.tsx';
 import { ariaKeyShortcuts, shortcuts, useShortcut } from './shortcuts.ts';
+import { Tabs, TabList, Tab, TabPanels, TabPanel } from './Tabs.tsx';
 import { Tooltip } from './Tooltip.tsx';
-import { InspectionOwner, InspectionVisual } from './InspectionProvider.tsx';
-import { useInspectionDefaults } from './InspectionContext.tsx';
 
 export type InspectionRecords = { scope: string; content: ReactNode };
 
@@ -46,7 +47,7 @@ export type AboutEmpty = {
   queries: { title: string; description?: string };
 };
 
-export const defaultAboutEmpty: AboutEmpty = {
+const defaultAboutEmpty: AboutEmpty = {
   glossary: { title: 'No glossary terms for this view' },
   queries: { title: 'SQL is not available for this view' },
 };

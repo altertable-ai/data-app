@@ -1,7 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
-import { BarChart } from '@altertable/data-app-react/ui';
 import {
   createDataHooks,
   createDataContext,
@@ -17,6 +14,9 @@ import {
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
+import { BarChart } from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
+import type { DataOperation } from '@altertable/data-app/contract';
 
 const catalog = {
   people: [

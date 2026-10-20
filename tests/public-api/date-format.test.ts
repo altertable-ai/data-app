@@ -1,4 +1,3 @@
-import { expect, test } from 'vitest';
 import {
   formatDate,
   formatDateTime,
@@ -6,6 +5,7 @@ import {
   formatDateRange,
   parseDateTime,
 } from '@altertable/data-app/format';
+import { expect, test } from 'vitest';
 
 test('calendar dates stay calendar dates and reject impossible days', () => {
   expect(formatDate('2026-09-24', { locale: 'en-GB' })).toBe('24 Sept 2026');

@@ -1,6 +1,6 @@
-import { expect, test } from 'vitest';
 import { localLakehouse } from '@altertable/data-app-bun';
 import { DataSourceError } from '@altertable/data-app/contract';
+import { expect, test } from 'vitest';
 
 test.each([
   {},

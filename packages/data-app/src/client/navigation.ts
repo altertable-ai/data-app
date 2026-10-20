@@ -1,19 +1,19 @@
 import {
+  navigationUpdateRoute,
+  type NavigationUpdate,
+} from '../core/messages.ts';
+import {
   type AppLocation,
   type HistoryMode,
   validLocation,
 } from '../core/navigation.ts';
-import { createAppLocation, type DataAppLocation } from './location.ts';
-import {
-  navigationUpdateRoute,
-  type NavigationUpdate,
-} from '../core/messages.ts';
-import { createMessageClient } from './messages.ts';
 import {
   getDataAppTransport,
   localFrameBridge,
   type IframeTransport,
 } from './iframe.ts';
+import { createAppLocation, type DataAppLocation } from './location.ts';
+import { createMessageClient } from './messages.ts';
 
 export type DataAppNavigation = DataAppLocation & {
   /** Publish URL changes made outside the adapter, including the document title. */

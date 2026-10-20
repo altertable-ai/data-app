@@ -1,3 +1,4 @@
+import { formatNumber } from '@altertable/data-app/format';
 import {
   createContext,
   useCallback,
@@ -9,8 +10,8 @@ import {
   type ReactNode,
 } from 'react';
 import { XAxis, usePlotArea, type XAxisTickContentProps } from 'recharts';
+
 import { chartTimestamp, timeModel, timeTicks } from './chart-time.ts';
-import { formatNumber } from '@altertable/data-app/format';
 
 type LabelFormatter = (value: unknown) => string;
 type ChartDateAxesApi = {

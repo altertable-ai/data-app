@@ -1,4 +1,13 @@
 import {
+  autoUpdate,
+  flip,
+  FloatingPortal,
+  offset,
+  shift,
+  useFloating,
+  useMergeRefs,
+} from '@floating-ui/react';
+import {
   createContext,
   useId,
   Children,
@@ -14,17 +23,9 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import {
-  autoUpdate,
-  flip,
-  FloatingPortal,
-  offset,
-  shift,
-  useFloating,
-  useMergeRefs,
-} from '@floating-ui/react';
-import { TooltipSurface } from './TooltipSurface.tsx';
+
 import { classNames } from './classNames.ts';
+import { TooltipSurface } from './TooltipSurface.tsx';
 
 const chartPointerPositions = new WeakMap<Document, { x: number; y: number }>();
 

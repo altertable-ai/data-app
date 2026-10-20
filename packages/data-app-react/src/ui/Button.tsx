@@ -1,5 +1,6 @@
 import { type ComponentPropsWithRef } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
+
 import { classNames } from './classNames.ts';
 
 export type ButtonProps = ComponentPropsWithRef<'button'> & {

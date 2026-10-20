@@ -23,6 +23,7 @@
     "noUnusedParameters": true
   },
   "include": [
+    "knip.ts",
     "vitest.config.ts",
     "packages/*/src",
     "tests",

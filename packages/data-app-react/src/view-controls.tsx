@@ -1,37 +1,34 @@
-import { facetSource, type FacetVariable } from '@altertable/data-app/internal';
-import {
-  dimensionSource,
-  type SourceDimensionVariable,
-} from '@altertable/data-app/internal';
-import { useContext, type ReactNode } from 'react';
-import { SearchTypeahead } from './ui/SearchTypeahead.tsx';
-import {
-  SearchSuggestionsContext,
-  balanceSearchSuggestions,
-} from './search-suggestions.ts';
-import type { ControlLabelPlacement } from './ui/PickerField.tsx';
-import { useQueries } from '@tanstack/react-query';
-import { Select } from './ui/Select.tsx';
-import {
-  ViewControlBar,
-  type ActiveFilterControl,
-} from './view-control-bar.tsx';
-import { NumberFilterPicker } from './ui/NumberFilterPicker.tsx';
 import type {
   NumberFilter,
   NumberSelection,
   BooleanSelection,
 } from '@altertable/data-app/contract';
-import type { AppVariable } from '@altertable/data-app/internal';
-import { SearchField, type SearchFieldProps } from './ui/SearchField.tsx';
-import { ChoicePicker } from './ui/ChoicePicker.tsx';
-import { DateRangePicker } from './ui/DateRangePicker.tsx';
-import { DimensionPicker } from './ui/DimensionPicker.tsx';
 import {
   parseFacetOptions,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
+import { facetSource, type FacetVariable } from '@altertable/data-app/internal';
+import {
+  dimensionSource,
+  type SourceDimensionVariable,
+} from '@altertable/data-app/internal';
+import type { AppVariable } from '@altertable/data-app/internal';
 import { type DimensionSelectionVariable } from '@altertable/data-app/internal';
+import { useQueries } from '@tanstack/react-query';
+import { useContext, type ReactNode } from 'react';
+
+import {
+  SearchSuggestionsContext,
+  balanceSearchSuggestions,
+} from './search-suggestions.ts';
+import { ChoicePicker } from './ui/ChoicePicker.tsx';
+import { DateRangePicker } from './ui/DateRangePicker.tsx';
+import { DimensionPicker } from './ui/DimensionPicker.tsx';
+import { NumberFilterPicker } from './ui/NumberFilterPicker.tsx';
+import type { ControlLabelPlacement } from './ui/PickerField.tsx';
+import { SearchField, type SearchFieldProps } from './ui/SearchField.tsx';
+import { SearchTypeahead } from './ui/SearchTypeahead.tsx';
+import { Select } from './ui/Select.tsx';
 import {
   dateRangeControl,
   useAppVariables,
@@ -39,6 +36,10 @@ import {
   type VariableCollection,
   type DateRangeSelection,
 } from './ui/variables.ts';
+import {
+  ViewControlBar,
+  type ActiveFilterControl,
+} from './view-control-bar.tsx';
 import type { ResolvedVariables } from './view.ts';
 
 /** URL values resolve before facets; facet keys include their dependent inputs for cached, bounded loading. */

@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises';
+
 import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 test('widget headings share muted typography and preserve section hierarchy', async ({

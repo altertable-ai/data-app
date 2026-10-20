@@ -1,6 +1,8 @@
-import { describe, expect } from 'vitest';
 import { readFile } from 'node:fs/promises';
+
 import { unzipSync, strFromU8 } from 'fflate';
+import { describe, expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 describe('export', () => {

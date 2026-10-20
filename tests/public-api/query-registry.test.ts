@@ -1,4 +1,3 @@
-import { expect, test } from 'vitest';
 import { defineDataApp, type DataAppConfig } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -9,6 +8,7 @@ import {
   type QueryParameters,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
+import { expect, test } from 'vitest';
 
 const dataApp = defineDataApp({
   title: 'Products',

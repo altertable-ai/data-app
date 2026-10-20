@@ -1,5 +1,6 @@
-import { type ComponentPropsWithRef } from 'react';
 import { invariant } from '@altertable/data-app/internal';
+import { type ComponentPropsWithRef } from 'react';
+
 import { CheckboxGroupContext } from './Checkbox.tsx';
 import { classNames } from './classNames.ts';
 

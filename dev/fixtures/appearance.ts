@@ -1,8 +1,8 @@
+import { injectDataAppStyles } from '@altertable/data-app-react';
 import {
   applyAppearance,
   type AppearanceOptions,
 } from '@altertable/data-app/appearance';
-import { injectDataAppStyles } from '@altertable/data-app-react';
 
 injectDataAppStyles();
 let cleanup: (() => void) | undefined;

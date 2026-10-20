@@ -1,16 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { createDataClient } from '@altertable/data-app/client';
-import {
-  numberFilter,
-  booleanFilter,
-  dimensionFilter,
-  parseNumberSelection,
-  parseBooleanSelection,
-  parseDimensionSelection,
-  type NumberSelection,
-  type BooleanSelection,
-  type DimensionSelection,
-} from '@altertable/data-app/contract';
 import {
   createDataHooks,
   createDataContext,
@@ -23,6 +11,18 @@ import {
   choiceVariable,
   multiChoiceVariable,
 } from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  numberFilter,
+  booleanFilter,
+  dimensionFilter,
+  parseNumberSelection,
+  parseBooleanSelection,
+  parseDimensionSelection,
+  type NumberSelection,
+  type BooleanSelection,
+  type DimensionSelection,
+} from '@altertable/data-app/contract';
 const dataApp = defineDataApp({
   title: 'Filter workflows',
   description: 'Explore how filters change displayed results.',

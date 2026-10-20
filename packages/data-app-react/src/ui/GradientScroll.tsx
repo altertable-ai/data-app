@@ -1,10 +1,11 @@
+import { useMergeRefs } from '@floating-ui/react';
 import {
   useCallback,
   useEffect,
   useState,
   type ComponentPropsWithRef,
 } from 'react';
-import { useMergeRefs } from '@floating-ui/react';
+
 import { classNames } from './classNames.ts';
 
 export type GradientScrollProps = ComponentPropsWithRef<'div'> & {
@@ -24,7 +25,7 @@ type ScrollMetrics = Pick<
 >;
 
 /** The visible edges that still have content beyond them. */
-export function scrollFadeEdges(
+function scrollFadeEdges(
   metrics: ScrollMetrics,
   axis: 'vertical' | 'horizontal'
 ) {

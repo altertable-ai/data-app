@@ -1,8 +1,8 @@
+import { Kbd } from '../ui/Kbd.tsx';
 import {
   type AnnotationPoint,
   type AnnotationRect,
 } from './annotation-targets.ts';
-import { Kbd } from '../ui/Kbd.tsx';
 
 export type AnnotationPin = {
   id: string;

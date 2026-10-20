@@ -1,5 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { useState } from 'react';
 import { mountDataApp, injectDataAppStyles } from '@altertable/data-app-react';
 import {
   ChoicePicker,
@@ -21,6 +20,7 @@ import {
   MenuSeparator,
   type DataAppStyle,
 } from '@altertable/data-app-react/ui';
+import { useState } from 'react';
 
 const dataApp = defineDataApp({
   title: 'Controls',

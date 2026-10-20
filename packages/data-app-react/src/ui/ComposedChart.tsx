@@ -1,16 +1,9 @@
-import { classNames } from './classNames.ts';
-import { ChartDateAxes } from './chart-date-axis.tsx';
 import {
   useState,
   useCallback,
   type PointerEvent,
   type ComponentProps,
 } from 'react';
-import {
-  ChartInteractionContext,
-  type ChartPoint,
-} from './chart-interaction.tsx';
-import { ComposedChartLegend as Legend } from './ComposedChartLegend.tsx';
 import {
   ComposedChart as RechartsComposedChart,
   ZAxis,
@@ -24,6 +17,11 @@ import {
   ErrorBar,
 } from 'recharts';
 
+import { ChartDateAxes } from './chart-date-axis.tsx';
+import {
+  ChartInteractionContext,
+  type ChartPoint,
+} from './chart-interaction.tsx';
 import {
   ChartBar as Bar,
   ChartDot as Dot,
@@ -35,6 +33,8 @@ import {
   ChartGrid as CartesianGrid,
   ChartTooltip as Tooltip,
 } from './chart-primitives.tsx';
+import { classNames } from './classNames.ts';
+import { ComposedChartLegend as Legend } from './ComposedChartLegend.tsx';
 
 function findNearestSeriesId(
   hoveredSeriesId: string | null,

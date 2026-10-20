@@ -1,3 +1,5 @@
+import type { ThemeController } from '@altertable/data-app/appearance';
+import { useMergeRefs } from '@floating-ui/react';
 import {
   type ComponentRef,
   useEffect,
@@ -9,19 +11,18 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
-import { useMergeRefs } from '@floating-ui/react';
-import type { ThemeController } from '@altertable/data-app/appearance';
+
 import { AboutData, type AboutEmpty } from './AboutData.tsx';
 import type { DataContext } from './data-context.ts';
-import { AppIcon } from './icons.ts';
-import { IconButton } from './IconButton.tsx';
 import { GradientScroll } from './GradientScroll.tsx';
+import { IconButton } from './IconButton.tsx';
+import { AppIcon } from './icons.ts';
+import { InspectionVisual } from './InspectionProvider.tsx';
 import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 import { isEditingTarget, shortcuts, useShortcut } from './shortcuts.ts';
-import { Tooltip } from './Tooltip.tsx';
-import { ThemeToggle } from './ThemeSelector.tsx';
 import { storySteps, type StoryFinding } from './story.ts';
-import { InspectionVisual } from './InspectionProvider.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
+import { Tooltip } from './Tooltip.tsx';
 
 export type StoryStep = {
   id: string;

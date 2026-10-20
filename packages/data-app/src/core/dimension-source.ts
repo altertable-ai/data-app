@@ -6,19 +6,19 @@ import {
   type DimensionValue,
   type DimensionSelection,
 } from './dimension.ts';
-import type { AppVariableValues, VariableCollection } from './variables.ts';
 import { invariant } from './invariant.ts';
+import type {
+  DataOperation,
+  DataOperations,
+  QueryResult,
+} from './operation-types.ts';
 import {
   decodeQueryResult,
   resolveQueryParameters,
   type QueryDefinitions,
   type QueryParameters,
 } from './queries.ts';
-import type {
-  DataOperation,
-  DataOperations,
-  QueryResult,
-} from './operation-types.ts';
+import type { AppVariableValues, VariableCollection } from './variables.ts';
 
 type Source = { query: string; queries: QueryDefinitions };
 export const dimensionSource = Symbol('data-app.dimensionSource');

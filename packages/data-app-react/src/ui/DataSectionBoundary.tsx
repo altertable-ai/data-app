@@ -1,10 +1,11 @@
-import { type ComponentPropsWithRef, type ReactNode } from 'react';
 import { DataAppError } from '@altertable/data-app/client';
-import { Button } from './Button.tsx';
-import { useInspectionDefaults } from './InspectionContext.tsx';
-import { DataBoundary } from './DataBoundary.tsx';
 import { type DataView, invariant } from '@altertable/data-app/internal';
+import { type ComponentPropsWithRef, type ReactNode } from 'react';
+
+import { Button } from './Button.tsx';
+import { DataBoundary } from './DataBoundary.tsx';
 import { EmptyState } from './EmptyState.tsx';
+import { useInspectionDefaults } from './InspectionContext.tsx';
 import { type EmptyContent } from './presentation.ts';
 import { StatusPanel } from './StatusPanel.tsx';
 

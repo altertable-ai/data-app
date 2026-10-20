@@ -1,4 +1,11 @@
 import { defineDataApp } from '@altertable/data-app';
+import {
+  choiceVariable,
+  createDataContext,
+  createDataHooks,
+  dateRangeVariable,
+  multiChoiceVariable,
+} from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineDateRangeContract,
@@ -9,13 +16,6 @@ import {
   type DateRangeRequest,
   type DimensionOption,
 } from '@altertable/data-app/contract';
-import {
-  choiceVariable,
-  createDataContext,
-  createDataHooks,
-  dateRangeVariable,
-  multiChoiceVariable,
-} from '@altertable/data-app-react';
 
 const operation = {
   queries: {},

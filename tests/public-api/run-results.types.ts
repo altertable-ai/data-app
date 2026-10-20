@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
+import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import { parseEmptyInput } from '@altertable/data-app/contract';
-import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 
 const app = defineDataApp({
   title: 'Run results',

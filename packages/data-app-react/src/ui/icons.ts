@@ -1,4 +1,3 @@
-import { createElement, type CSSProperties } from 'react';
 import {
   ArrowDownRight,
   ArrowLeft,
@@ -35,6 +34,7 @@ import {
   X,
   type LucideProps,
 } from 'lucide-react';
+import { createElement, type CSSProperties } from 'react';
 
 /** Use semantic names to keep icon meaning and optical size consistent across controls. */
 const brandedIcons = {

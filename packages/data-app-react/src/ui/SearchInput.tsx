@@ -1,6 +1,7 @@
 import { type ComponentPropsWithRef, type ReactNode } from 'react';
-import { AppIcon } from './icons.ts';
+
 import { classNames } from './classNames.ts';
+import { AppIcon } from './icons.ts';
 
 /** One search control surface for picker search and table/page search. */
 export function SearchInput({

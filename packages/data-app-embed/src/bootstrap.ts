@@ -1,8 +1,8 @@
-import { randomUuid } from '@altertable/data-app/internal';
 import {
   createIframeTransport,
   installDataAppTransport,
 } from '@altertable/data-app/client';
+import { randomUuid } from '@altertable/data-app/internal';
 
 /** Run from a trusted bootstrap page in an allow-scripts-only iframe. CSP can prohibit network access. */
 export function startDataAppBootstrap({

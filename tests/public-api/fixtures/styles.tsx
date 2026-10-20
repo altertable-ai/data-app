@@ -1,10 +1,10 @@
-import { createRoot } from 'react-dom/client';
 import {
   Grid,
   GridItem,
   injectDataAppStyles,
 } from '@altertable/data-app-react';
 import { VisualizationWidget } from '@altertable/data-app-react/ui';
+import { createRoot } from 'react-dom/client';
 function Report() {
   return (
     <>

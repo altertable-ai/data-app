@@ -1,4 +1,5 @@
 import { invariant } from '@altertable/data-app/internal';
+
 import type { ItemActions } from './ExplorationActionControl.tsx';
 
 /** Ordered category or time-series sample. IDs are unique and nonblank; values are finite. */

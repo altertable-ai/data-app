@@ -1,4 +1,3 @@
-import { dataApp } from '@/dev/app';
 import type { OutputOf } from '@altertable/data-app/client';
 import {
   dimensionFilter,
@@ -9,6 +8,8 @@ import {
   type QueryRow,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
+
+import { dataApp } from '@/dev/app';
 import { calendar, countries } from '@/dev/commerce';
 
 export const countryFilter = dimensionFilter({
@@ -125,7 +126,6 @@ export type OrderDay = OrderOverview['days'][number];
 export type OrderBand = OrderOverview['bands'][number];
 export type Order = OrderOverview['orders'][number];
 export type OrderItem = OrderOverview['items'][number];
-export type OrderTotals = NonNullable<OrderOverview['previous']>;
 
 function sum<Row>(rows: readonly Row[], value: (row: Row) => number) {
   return rows.reduce((total, row) => total + value(row), 0);

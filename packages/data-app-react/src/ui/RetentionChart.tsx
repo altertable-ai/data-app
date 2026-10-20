@@ -1,11 +1,12 @@
-import { Fragment } from 'react';
-import { invariant } from '@altertable/data-app/internal';
-import { ComposedChart } from './ComposedChart.tsx';
-import { ChartLegend } from './ChartLegend.tsx';
-import { TooltipSurface } from './TooltipSurface.tsx';
-import { classNames } from './classNames.ts';
-import { type CountChartProps } from './chart-data.ts';
 import { formatNumber, formatPercent } from '@altertable/data-app/format';
+import { invariant } from '@altertable/data-app/internal';
+import { Fragment } from 'react';
+
+import { type CountChartProps } from './chart-data.ts';
+import { ChartLegend } from './ChartLegend.tsx';
+import { classNames } from './classNames.ts';
+import { ComposedChart } from './ComposedChart.tsx';
+import { TooltipSurface } from './TooltipSurface.tsx';
 
 export type RetentionChartPoint = {
   /** Nonnegative integer, unique per series; uneven offsets retain their distance. */

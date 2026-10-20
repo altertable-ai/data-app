@@ -1,16 +1,4 @@
-import { AppIcon } from './icons.ts';
 import { formatNumber } from '@altertable/data-app/format';
-import { chartBarFill } from './chartColor.ts';
-import { Tooltip } from './Tooltip.tsx';
-import { useChartScrollToEnd } from './use-chart-scroll-to-end.ts';
-import {
-  openExplorationMenu,
-  useChartActions,
-  explorationMenuEvents,
-  ExplorationActionMenu,
-  getPrimaryExplorationAction,
-} from './ExplorationActionControl.tsx';
-import { MenuButton, MenuTrigger } from './Menu.tsx';
 import {
   Fragment,
   useRef,
@@ -18,15 +6,26 @@ import {
   type ComponentRef,
   type RefObject,
 } from 'react';
+import { BarChart as RechartsBarChart, Cell } from 'recharts';
 
 import {
   validateValueChartItems,
   type ChartItem,
   type ValueChartProps,
 } from './chart-data.ts';
-
-import { BarChart as RechartsBarChart, Cell } from 'recharts';
 import { ChartBar, ChartXAxis, ChartYAxis } from './chart-primitives.tsx';
+import { chartBarFill } from './chartColor.ts';
+import {
+  openExplorationMenu,
+  useChartActions,
+  explorationMenuEvents,
+  ExplorationActionMenu,
+  getPrimaryExplorationAction,
+} from './ExplorationActionControl.tsx';
+import { AppIcon } from './icons.ts';
+import { MenuButton, MenuTrigger } from './Menu.tsx';
+import { Tooltip } from './Tooltip.tsx';
+import { useChartScrollToEnd } from './use-chart-scroll-to-end.ts';
 
 export type BarChartItem = ChartItem;
 

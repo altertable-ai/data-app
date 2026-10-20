@@ -1,16 +1,17 @@
-import { DateFormattingContext } from '../date-formatting.ts';
-import { sectionContent, type ViewContent } from '../content.ts';
 import { useContext, type ComponentPropsWithRef, type ReactNode } from 'react';
-import { DataSectionBoundary } from './DataSectionBoundary.tsx';
-import {
-  InspectionContext,
-  useInspectionDefaults,
-} from './InspectionContext.tsx';
+
+import { sectionContent, type ViewContent } from '../content.ts';
+import { DateFormattingContext } from '../date-formatting.ts';
 import {
   PrimaryViewContext,
   type ViewResult,
   useDeclaredResult,
 } from '../view-runtime.tsx';
+import { DataSectionBoundary } from './DataSectionBoundary.tsx';
+import {
+  InspectionContext,
+  useInspectionDefaults,
+} from './InspectionContext.tsx';
 import { type EmptyContent } from './presentation.ts';
 
 export type DataSectionProps<Data, Input = unknown> = {

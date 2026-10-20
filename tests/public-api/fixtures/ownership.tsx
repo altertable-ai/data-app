@@ -1,7 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { Component, type ReactNode } from 'react';
-import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
 import {
   createDataHooks,
   searchVariable,
@@ -13,6 +10,9 @@ import {
   mountDataApp,
   injectDataAppStyles,
 } from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
+import type { DataOperation } from '@altertable/data-app/contract';
+import { Component, type ReactNode } from 'react';
 const dataApp = defineDataApp({
   title: 'Binding ownership',
   description: 'Verify that displayed bindings follow their owning view.',

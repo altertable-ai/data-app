@@ -1,5 +1,10 @@
-import { useReducer, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import {
+  createNavigationHandler,
+  createSqlQueryHandler,
+  type DataAppDiagnostic,
+  type DataAppLogger,
+  type DataAppStatus,
+} from '@altertable/data-app-embed';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
@@ -8,13 +13,9 @@ import {
   sqlQueryRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
-import {
-  createNavigationHandler,
-  createSqlQueryHandler,
-  type DataAppDiagnostic,
-  type DataAppLogger,
-  type DataAppStatus,
-} from '@altertable/data-app-embed';
+import { useReducer, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 
 const { frameURL } = await fetch('/__test/config').then(response =>

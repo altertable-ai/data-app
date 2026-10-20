@@ -1,14 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import {
-  formatPercent,
-  formatNumber,
-  formatCount,
-  formatMetric,
-  formatDateRange,
-  pluralize,
-} from '@altertable/data-app/format';
 import { mountDataApp, injectDataAppStyles } from '@altertable/data-app-react';
 import {
   DataApp,
@@ -18,6 +8,16 @@ import {
   LineChart,
   PieChart,
 } from '@altertable/data-app-react/ui';
+import {
+  formatPercent,
+  formatNumber,
+  formatCount,
+  formatMetric,
+  formatDateRange,
+  pluralize,
+} from '@altertable/data-app/format';
+import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
 const dataApp = defineDataApp({
   title: 'Activity report',
   description: 'Explore activity across groups.',

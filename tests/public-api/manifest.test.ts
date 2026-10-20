@@ -1,11 +1,12 @@
 import { readFile } from 'node:fs/promises';
-import { describe, expect, expectTypeOf, test } from 'vitest';
+
 import {
   extractDataAppManifest,
   overrideDataAppManifest,
   type DataAppLiteralValue,
   type DataAppManifest,
 } from '@altertable/data-app-manifest';
+import { describe, expect, expectTypeOf, test } from 'vitest';
 
 const fields = `title: 'Sales', description: 'Explore sales', scope: { organization: 'demo', environment: 'test' }, queries: {}`;
 function argumentWith(field: string) {

@@ -1,12 +1,15 @@
-import { GalleryBasics } from '@/dev/fixtures/gallery-basics';
-import { GalleryCases } from '@/dev/fixtures/gallery-cases';
-import {
-  galleryCategories,
-  gallerySections,
-} from '@/dev/fixtures/gallery-catalog';
-import { useEffect, useState } from 'react';
 import { defineDataApp } from '@altertable/data-app';
-import { getDataAppNavigation } from '@altertable/data-app/client';
+import {
+  PeriodSummary,
+  Breakdown,
+  Ranking,
+  Button,
+  Grid,
+  Stack,
+  Tooltip,
+  TextContent,
+} from '@altertable/data-app-react';
+import { type WidgetEvidence, mountDataApp } from '@altertable/data-app-react';
 import {
   DataApp,
   HelpPopover,
@@ -26,24 +29,22 @@ import {
   useViewTab,
 } from '@altertable/data-app-react/ui';
 import { injectDataAppStyles } from '@altertable/data-app-react/ui';
-import {
-  PeriodSummary,
-  Breakdown,
-  Ranking,
-  Button,
-  Grid,
-  Stack,
-  Tooltip,
-  TextContent,
-} from '@altertable/data-app-react';
-import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
-import { type WidgetEvidence, mountDataApp } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
+import { getDataAppNavigation } from '@altertable/data-app/client';
+import { resolveDataView } from '@altertable/data-app/internal';
+import { useEffect, useState } from 'react';
+
+import { GalleryBasics } from '@/dev/fixtures/gallery-basics';
+import { GalleryCases } from '@/dev/fixtures/gallery-cases';
+import {
+  galleryCategories,
+  gallerySections,
+} from '@/dev/fixtures/gallery-catalog';
 import { bindDataset } from '@/packages/data-app-react/src/bindings.ts';
 import { defineDataContent } from '@/packages/data-app-react/src/content.ts';
 import { DataBoundary } from '@/packages/data-app-react/src/ui/DataBoundary.tsx';
-import { resolveDataView } from '@altertable/data-app/internal';
 import { writeSearch } from '@/packages/data-app-react/src/ui/search.ts';
+import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
 
 const options = [
   { id: 'http', label: 'HTTP' },

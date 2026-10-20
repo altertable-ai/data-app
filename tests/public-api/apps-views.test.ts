@@ -1,4 +1,5 @@
 import { expect } from 'vitest';
+
 import { test } from '@/tests/public-api/browser';
 
 test('primary and independent sections retain their own displayed input and inspection evidence', async ({

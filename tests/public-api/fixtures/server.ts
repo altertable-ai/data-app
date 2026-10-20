@@ -1,28 +1,30 @@
-import exploration from '@/tests/public-api/fixtures/exploration.html';
 import { Database } from 'bun:sqlite';
+
 import { serveLocalApp } from '@altertable/data-app-bun';
+
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { operations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
-import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
-import bridgeHost from '@/tests/public-api/fixtures/bridge-host.html';
-import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
-import inspectionApp from '@/tests/public-api/fixtures/inspection-app.html';
-import timeApp from '@/tests/public-api/fixtures/time-app.html';
-import clients from '@/tests/public-api/fixtures/clients.html';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
-import datePresentation from '@/tests/public-api/fixtures/date-presentation.html';
 import appearance from '@/tests/public-api/fixtures/appearance.html';
-import ownership from '@/tests/public-api/fixtures/ownership.html';
-import layout from '@/tests/public-api/fixtures/layout.html';
-import styles from '@/tests/public-api/fixtures/styles.html';
-import dateAxes from '@/tests/public-api/fixtures/date-axes.html';
+import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
+import bridgeHost from '@/tests/public-api/fixtures/bridge-host.html';
+import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
 import chartLegends from '@/tests/public-api/fixtures/chart-legends.html';
-import staticApp from '@/tests/public-api/fixtures/static.html';
-import declaredApp from '@/tests/public-api/fixtures/declared-app.html';
-import filters from '@/tests/public-api/fixtures/filters.html';
+import clients from '@/tests/public-api/fixtures/clients.html';
 import controls from '@/tests/public-api/fixtures/controls.html';
+import dateAxes from '@/tests/public-api/fixtures/date-axes.html';
+import datePresentation from '@/tests/public-api/fixtures/date-presentation.html';
+import declaredApp from '@/tests/public-api/fixtures/declared-app.html';
+import exploration from '@/tests/public-api/fixtures/exploration.html';
 import filterPresentation from '@/tests/public-api/fixtures/filter-presentation.html';
+import filters from '@/tests/public-api/fixtures/filters.html';
+import inspectionApp from '@/tests/public-api/fixtures/inspection-app.html';
+import layout from '@/tests/public-api/fixtures/layout.html';
+import ownership from '@/tests/public-api/fixtures/ownership.html';
 import searchCatalog from '@/tests/public-api/fixtures/search-catalog.html';
+import staticApp from '@/tests/public-api/fixtures/static.html';
+import styles from '@/tests/public-api/fixtures/styles.html';
+import timeApp from '@/tests/public-api/fixtures/time-app.html';
 
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
 async function bundle(entry: string) {

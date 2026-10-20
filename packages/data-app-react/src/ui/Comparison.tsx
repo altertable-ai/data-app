@@ -1,12 +1,13 @@
+import { type MetricReading } from '@altertable/data-app/internal';
+
 import { useDateFormatting } from '../date-formatting.ts';
+import { ContentSkeleton } from './ContentSkeleton.tsx';
 import { AppIcon } from './icons.ts';
 import {
   comparisonChange,
   type MetricComparison,
 } from './metric-comparison.ts';
 import { type MetricDefinition, metricComparison } from './metric.ts';
-import { type MetricReading } from '@altertable/data-app/internal';
-import { ContentSkeleton } from './ContentSkeleton.tsx';
 
 type UnboundComparisonProps = MetricComparison & {
   label: string;

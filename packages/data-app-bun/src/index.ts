@@ -9,6 +9,7 @@ import {
   type QueryResult,
   type DataOperations,
 } from '@altertable/data-app/contract';
+import { createDataHandler } from '@altertable/data-app/server';
 import {
   AltertableLakehouseClient,
   AltertableLakehouseError,
@@ -16,7 +17,6 @@ import {
   TimeoutError,
   QueryError,
 } from '@altertable/lakehouse';
-import { createDataHandler } from '@altertable/data-app/server';
 
 /** Serve one app on localhost through the CLI's lakehouse proxy during development.
  * Hosted servers must authorize every viewer and must use `createDataHandler` directly. */

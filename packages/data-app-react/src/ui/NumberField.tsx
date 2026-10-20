@@ -5,6 +5,7 @@ import {
   Input,
   Group,
 } from 'react-aria-components';
+
 import { classNames } from './classNames.ts';
 
 export type NumberFieldProps = Omit<

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import { builtinModules } from 'node:module';
 import { relative, resolve } from 'node:path';
+
+import released from '@/.release-please-manifest.json';
 import workspace from '@/package.json';
 import starter from '@/packages/data-app-examples/templates/starter-local-data-app/package.json';
 import release from '@/release-please-config.json';
-import released from '@/.release-please-manifest.json';
 import { packages } from '@/scripts/packages';
 
 const builtins = new Set([...builtinModules, 'bun', 'bun:sqlite']);

@@ -1,15 +1,15 @@
+import type { AppearanceOptions } from './appearance.ts';
+/**
+ * App configuration shared by browser and server.
+ * @module @altertable/data-app
+ */
+import { defineOperation, type OperationDefinition } from './contract.ts';
 import {
   bindDimensionSource,
   type DimensionSourceConfig,
   type DimensionSourceQueryName,
   type SourceDimensionVariable,
 } from './dimension-source.ts';
-/**
- * App configuration shared by browser and server.
- * @module @altertable/data-app
- */
-import { defineOperation, type OperationDefinition } from './contract.ts';
-import type { AppearanceOptions } from './appearance.ts';
 import {
   snapshotQueries,
   type QueryDefinitions,

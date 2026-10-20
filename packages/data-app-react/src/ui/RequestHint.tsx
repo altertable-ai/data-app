@@ -1,6 +1,6 @@
+import { Button } from './Button.tsx';
 import { AppIcon } from './icons.ts';
 import { Tooltip } from './Tooltip.tsx';
-import { Button } from './Button.tsx';
 
 /** Idle keeps the same reserved space as refresh and failure. Initial loading belongs to skeletons. */
 export type WidgetStatus =

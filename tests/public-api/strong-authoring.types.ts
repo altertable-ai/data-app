@@ -2,6 +2,12 @@ import { useAppVariables } from '@altertable/data-app-react/ui';
 type VariableCollection = Parameters<typeof useAppVariables>[0];
 import { defineDataApp } from '@altertable/data-app';
 import {
+  createDataHooks,
+  createDataContext,
+  searchVariable,
+} from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
+import {
   parseEmptyInput,
   type QueryDefinitions,
   type QueryParameter,
@@ -10,12 +16,6 @@ import {
   type DataOperation,
   type DimensionOption,
 } from '@altertable/data-app/contract';
-import { createDataClient } from '@altertable/data-app/client';
-import {
-  createDataHooks,
-  createDataContext,
-  searchVariable,
-} from '@altertable/data-app-react';
 
 const header = {
   title: 'Contracts',

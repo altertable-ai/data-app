@@ -1,10 +1,10 @@
-import { createDataClient } from '@altertable/data-app/client';
+import { defineDataApp } from '@altertable/data-app';
 import { createDataHooks, createDataContext } from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
 import type {
   DataOperation,
   DimensionSelection,
 } from '@altertable/data-app/contract';
-import { defineDataApp } from '@altertable/data-app';
 import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
 const app = defineDataApp({
   title: 'Example',

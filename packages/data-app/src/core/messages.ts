@@ -1,4 +1,3 @@
-import { isQueryParameters, type QueryParameters } from './queries.ts';
 import {
   type TransportResponse,
   type QueryResult,
@@ -7,6 +6,7 @@ import {
   type DataQueryBody,
   type OutputOf,
 } from './operation-types.ts';
+import { isQueryParameters, type QueryParameters } from './queries.ts';
 export {
   type OperationContracts,
   type DataQueryInput,

@@ -1,17 +1,10 @@
-import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { AppIcon } from '@altertable/data-app-react/ui';
-import { Kbd } from '@/packages/data-app-react/src/ui/Kbd.tsx';
-import { useAnnotationHost } from '@/dev/fixtures/use-annotation-host';
-import type { Theme } from '@altertable/data-app/appearance';
 import {
-  StrictMode,
-  useEffectEvent,
-  useReducer,
-  useRef,
-  useState,
-  type ComponentRef,
-} from 'react';
-import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';
+  type DataAppLogger,
+  type DataAppStatus,
+  createNavigationHandler,
+  createSqlQueryHandler,
+} from '@altertable/data-app-embed';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
   AnnotationBar,
   type AnnotationBarHandle,
@@ -19,16 +12,9 @@ import {
   Tooltip,
   TooltipProvider,
 } from '@altertable/data-app-react';
-import '@/packages/data-app-react/src/ui/Tooltip.css';
-import '@/packages/data-app-react/src/ui/Kbd.css';
-
-import {
-  shortcuts,
-  useShortcut,
-  ariaKeyShortcuts,
-} from '@/packages/data-app-react/src/ui/shortcuts.ts';
-import { createRoot } from 'react-dom/client';
-import { DataAppBridge } from '@altertable/data-app-embed/react';
+import { AppIcon } from '@altertable/data-app-react/ui';
+import type { Theme } from '@altertable/data-app/appearance';
+import { createHttpTransport } from '@altertable/data-app/client';
 import {
   MessageRoutingError,
   annotationDraftRoute,
@@ -41,15 +27,32 @@ import {
   sqlQueryRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
-import { createHttpTransport } from '@altertable/data-app/client';
+import { KEY_SEPARATOR } from '@altertable/data-app/internal';
+
+import '@/packages/data-app-react/src/ui/Tooltip.css';
+import '@/packages/data-app-react/src/ui/Kbd.css';
+
+import { Moon, Sun, PanelsTopLeft, AppWindow } from 'lucide-react';
 import {
-  type DataAppLogger,
-  type DataAppStatus,
-  createNavigationHandler,
-  createSqlQueryHandler,
-} from '@altertable/data-app-embed';
+  StrictMode,
+  useEffectEvent,
+  useReducer,
+  useRef,
+  useState,
+  type ComponentRef,
+} from 'react';
+import { createRoot } from 'react-dom/client';
+
 import { bridgeRoutes } from '@/dev/fixtures/bridge-routes';
+import { useAnnotationHost } from '@/dev/fixtures/use-annotation-host';
+import { Kbd } from '@/packages/data-app-react/src/ui/Kbd.tsx';
+import {
+  shortcuts,
+  useShortcut,
+  ariaKeyShortcuts,
+} from '@/packages/data-app-react/src/ui/shortcuts.ts';
 import '@/dev/fixtures/dev-reload';
+
 import '@/dev/playground-host.css';
 injectDataAppAnnotationStyles();
 const hostOptions = new URLSearchParams(location.search);

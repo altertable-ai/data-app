@@ -1,5 +1,5 @@
-import { type EmptyContent } from './presentation.ts';
 import { classNames } from './classNames.ts';
+import { type EmptyContent } from './presentation.ts';
 
 export type EmptyStateProps = EmptyContent & {
   variant?: 'visual' | 'table';

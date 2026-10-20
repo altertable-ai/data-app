@@ -1,7 +1,4 @@
-import { formatMetric } from '@altertable/data-app/format';
-import { createDataClient } from '@altertable/data-app/client';
 import { defineDataApp } from '@altertable/data-app';
-import { parseCount } from '@altertable/data-app/contract';
 import {
   createDataContext,
   createDataHooks,
@@ -17,6 +14,9 @@ import {
   MetricWidget,
   searchVariable,
 } from '@altertable/data-app-react';
+import { createDataClient } from '@altertable/data-app/client';
+import { parseCount } from '@altertable/data-app/contract';
+import { formatMetric } from '@altertable/data-app/format';
 
 const dataApp = defineDataApp({
   title: 'Sample counts',

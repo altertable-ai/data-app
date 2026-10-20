@@ -1,5 +1,7 @@
-import { it } from 'vitest';
 import assert from 'assert';
+
+import { it } from 'vitest';
+
 import { timeMillisecond } from '@/packages/data-app-react/src/ui/time-interval.ts';
 import { local, utc } from '@/tests/vendor/d3-time/date.js';
 

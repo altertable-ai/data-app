@@ -1,14 +1,4 @@
 import { formatNumber } from '@altertable/data-app/format';
-import { Tooltip } from './Tooltip.tsx';
-import { useChartScrollToEnd } from './use-chart-scroll-to-end.ts';
-import {
-  ExplorationActionControl,
-  useChartActions,
-  explorationMenuEvents,
-  ExplorationActionMenu,
-  getPrimaryExplorationAction,
-} from './ExplorationActionControl.tsx';
-import { MenuButton, MenuTrigger } from './Menu.tsx';
 import {
   Fragment,
   useRef,
@@ -21,6 +11,9 @@ import {
   LineChart as RechartsLineChart,
   ReferenceLine,
 } from 'recharts';
+
+import type { ChartItem, ValueChartProps } from './chart-data.ts';
+import { validateValueChartItems } from './chart-data.ts';
 import {
   ChartArea,
   ChartLine,
@@ -28,8 +21,16 @@ import {
   ChartXAxis,
   ChartYAxis,
 } from './chart-primitives.tsx';
-import type { ChartItem, ValueChartProps } from './chart-data.ts';
-import { validateValueChartItems } from './chart-data.ts';
+import {
+  ExplorationActionControl,
+  useChartActions,
+  explorationMenuEvents,
+  ExplorationActionMenu,
+  getPrimaryExplorationAction,
+} from './ExplorationActionControl.tsx';
+import { MenuButton, MenuTrigger } from './Menu.tsx';
+import { Tooltip } from './Tooltip.tsx';
+import { useChartScrollToEnd } from './use-chart-scroll-to-end.ts';
 
 /** Ordered, equally spaced samples; negative values share an explicit zero baseline. */
 export function TrendChart<Row extends ChartItem>({

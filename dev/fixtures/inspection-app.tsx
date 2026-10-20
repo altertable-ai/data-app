@@ -1,5 +1,4 @@
 import { defineDataApp } from '@altertable/data-app';
-import { useState } from 'react';
 import {
   mountDataApp,
   injectDataAppStyles,
@@ -11,6 +10,7 @@ import {
   MetricWidget,
   AboutData,
 } from '@altertable/data-app-react/ui';
+import { useState } from 'react';
 const dataApp = defineDataApp({
   title: 'Inspection ownership',
   description: 'Inspect query evidence for displayed results.',
