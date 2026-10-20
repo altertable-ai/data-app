@@ -1,9 +1,12 @@
-import type { AppearanceOptions } from './appearance.ts';
 /**
  * App configuration shared by browser and server.
  * @module @altertable/data-app
  */
-import { defineOperation, type OperationDefinition } from './contract.ts';
+import {
+  defineOperation,
+  type OperationDefinition,
+} from '../authoring/contract.ts';
+import type { AppearanceOptions } from './appearance.ts';
 import {
   bindDimensionSource,
   type DimensionSourceConfig,

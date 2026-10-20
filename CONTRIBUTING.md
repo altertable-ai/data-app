@@ -119,8 +119,14 @@ checks. Install dependencies separately before verification. Build before runnin
 | `bun run check:workflows`      | Validate workflows and shell scripts               |
 
 `scripts/build-reference.ts` generates `REFERENCE.md` from the emitted
-declarations with the TypeScript checker, covering documented workspace package
-entry points. Undocumented implementation entries remain excluded. The base
+declarations with the TypeScript checker. Source modules in
+`packages/data-app/src/authoring`, `packages/data-app-react/src/authoring`, and
+`packages/data-app-react/src/ui` define the app-authoring surface, alongside the
+formatting helpers. Existing public entry points re-export these APIs. Host
+integration exports stay outside authoring modules and the reference; React host
+controls live in `packages/data-app-react/src/host`. The generator selects exports
+through these source boundaries and renders their published declarations with
+public import paths. Keep authoring types beside their APIs. The base
 package ships a generated copy alongside its guides. Commit the root reference
 when a build changes it. Generation fails when an export or prop type does not
 resolve, and `bun run check:reference` fails when the staged file differs from
