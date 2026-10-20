@@ -1,6 +1,7 @@
 import ts from 'typescript';
 import {
   findManifestDeclarationNode,
+  isLiteralPropertyAssignment,
   nodeToManifest,
   unwrapExpression,
   type DataAppLiteralValue,
@@ -119,9 +120,8 @@ function applyManifestChanges(
     for (const [index, property] of children.entries()) {
       // Skips commas: extraction accepted the object, so every property is a
       // literal-named assignment.
-      if (!ts.isPropertyAssignment(property)) continue;
-      const key = literalName(property.name);
-      if (key === undefined) continue;
+      if (!isLiteralPropertyAssignment(property)) continue;
+      const key = property.name.text;
       const sibling = children[index + 1];
       const comma =
         sibling?.kind === ts.SyntaxKind.CommaToken ? sibling : undefined;
@@ -146,11 +146,12 @@ function applyManifestChanges(
 
     // New properties follow the indentation and trailing comma of the last one.
     const last = members.at(-1)!;
+    const lineEnding = /\r\n|\n/.exec(node.getText(root))?.[0] ?? '\n';
     const newline = last.leading.lastIndexOf('\n');
     const separator =
       newline < 0
         ? ' '
-        : '\n' + /^[ \t]*/.exec(last.leading.slice(newline + 1))![0];
+        : lineEnding + /^[ \t]*/.exec(last.leading.slice(newline + 1))![0];
     const parts = [
       ...members
         .filter(member => Object.hasOwn(after, member.key))
@@ -189,12 +190,13 @@ function applyManifestChanges(
       object +=
         resume === undefined || /^[ \t]*[\r\n\u2028\u2029]/.test(chunk)
           ? chunk
-          : chunk.replace(/^[ \t]*/, '\n' + resume);
+          : chunk.replace(/^[ \t]*/, lineEnding + resume);
     }
     for (const [index, part] of parts.entries()) {
       append(part.body);
       object +=
-        (index < parts.length - 1 || last.comma ? part.beforeComma + ',' : '') +
+        part.beforeComma +
+        (index < parts.length - 1 || last.comma ? ',' : '') +
         part.trailing;
       resume = part.resume;
     }
@@ -299,14 +301,6 @@ function isObject(value: unknown): value is DataAppManifest {
     return false;
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
-}
-
-function literalName(name: ts.PropertyName): string | undefined {
-  return ts.isIdentifier(name) ||
-    ts.isStringLiteral(name) ||
-    ts.isNumericLiteral(name)
-    ? name.text
-    : undefined;
 }
 
 function firstStringLiteral(node: ts.Node): ts.StringLiteral | undefined {

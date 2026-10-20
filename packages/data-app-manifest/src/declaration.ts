@@ -300,14 +300,7 @@ export function nodeToManifest(
     const entries: [string, DataAppLiteralValue][] = [];
     const keys = new Set<string>();
     for (const property of node.properties) {
-      if (
-        !ts.isPropertyAssignment(property) ||
-        !(
-          ts.isIdentifier(property.name) ||
-          ts.isStringLiteral(property.name) ||
-          ts.isNumericLiteral(property.name)
-        )
-      ) {
+      if (!isLiteralPropertyAssignment(property)) {
         report(
           'literal',
           'Use explicit literal properties without spreads, computed keys, shorthand, methods, or accessors.',
@@ -381,4 +374,17 @@ function isExpressionWrapper(
 export function unwrapExpression(node: ts.Expression): ts.Expression {
   while (isExpressionWrapper(node)) node = node.expression;
   return node;
+}
+
+export function isLiteralPropertyAssignment(
+  node: ts.Node
+): node is ts.PropertyAssignment & {
+  name: ts.Identifier | ts.StringLiteral | ts.NumericLiteral;
+} {
+  return (
+    ts.isPropertyAssignment(node) &&
+    (ts.isIdentifier(node.name) ||
+      ts.isStringLiteral(node.name) ||
+      ts.isNumericLiteral(node.name))
+  );
 }
