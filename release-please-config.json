@@ -126,11 +126,6 @@
           "type": "json",
           "path": "packages/data-app-manifest/package.json",
           "jsonpath": "$.version"
-        },
-        {
-          "type": "json",
-          "path": "packages/data-app-examples/package.json",
-          "jsonpath": "$.peerDependencies['@altertable/data-app-bun']"
         }
       ]
     }

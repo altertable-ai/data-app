@@ -29,7 +29,9 @@
     "LICENSE"
   ],
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/preview/cli.js"
+  ],
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
@@ -42,6 +44,10 @@
     "./reload": {
       "types": "./dist/types/reload-channel.d.ts",
       "import": "./dist/reload-channel.js"
+    },
+    "./preview/cli": {
+      "types": "./dist/types/preview/cli.d.ts",
+      "import": "./dist/preview/cli.js"
     }
   },
   "publishConfig": {

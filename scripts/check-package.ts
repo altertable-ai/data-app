@@ -563,16 +563,16 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
     `@types/bun@${workspace.devDependencies['@types/bun']}`,
   ]);
   const previewRuntime = join(temporary, 'preview-runtime');
-  await install(previewRuntime, [
+  const previewNames = await install(previewRuntime, [
     archive(''),
     archive('-react'),
     archive('-bun'),
-    archive('-examples'),
     'react@19.2.0',
     'react-dom@19.2.0',
   ]);
+  assert(!previewNames.has('@altertable/data-app-examples'));
   await checkPreviewLauncher(previewRuntime);
-  // Bun's isolated linker places the examples entry away from root runtime
+  // Bun's isolated linker places the launcher away from root runtime
   // dependencies; the launcher's resolution base must still be this project.
   // Use absolute archive references so Bun does not encode npm's relative
   // tarball paths as `..` segments in its isolated package store.
@@ -585,7 +585,6 @@ if (typeof localLakehouse !== 'function' || typeof serveAppFile !== 'function') 
         '@altertable/data-app': archive(''),
         '@altertable/data-app-react': archive('-react'),
         '@altertable/data-app-bun': archive('-bun'),
-        '@altertable/data-app-examples': archive('-examples'),
         react: '19.2.0',
         'react-dom': '19.2.0',
       },

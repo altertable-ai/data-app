@@ -11,7 +11,7 @@ export async function checkPreviewLauncher(runtimeDirectory: string) {
   const command = [
     process.execPath,
     '-e',
-    'await import("@altertable/data-app-examples/preview")',
+    'await import("@altertable/data-app-bun/preview/cli")',
   ];
   let proxied: unknown;
   const proxy = Bun.serve({

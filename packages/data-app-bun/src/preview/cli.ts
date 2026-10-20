@@ -1,5 +1,5 @@
-import { localLakehouse } from '@altertable/data-app-bun';
-import { serveAppFile } from '@altertable/data-app-bun/preview';
+import { localLakehouse } from '../index.ts';
+import { serveAppFile } from './index.ts';
 
 const file = process.env.ALTERTABLE_APP_FILE;
 if (!file)
