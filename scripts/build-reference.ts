@@ -35,7 +35,7 @@ import {
 import { packages } from '@/scripts/packages';
 
 // Generates REFERENCE.md from the emitted declarations: one line per public
-// export and one per prop or option, resolved by the TypeScript checker.
+// authoring export and one per prop or option, resolved by the TypeScript checker.
 // Runs in `bun run build` after declarations; `--check` compares the staged
 // file without writing.
 
@@ -50,26 +50,32 @@ const typeFlags =
   NodeBuilderFlags.UseAliasDefinedOutsideCurrentScope;
 const absent = TypeFlags.Never | TypeFlags.Undefined;
 
-const undocumented = new Set([
-  '@altertable/data-app/internal',
-  '@altertable/data-app-bun',
-  '@altertable/data-app-embed/runtime',
-  '@altertable/data-app-manifest',
-]);
-const entryPoints = packages.flatMap(({ directory, manifest }) =>
-  Object.entries(manifest.exports).flatMap(([subpath, target]) => {
-    const specifier =
-      subpath === '.' ? manifest.name : manifest.name + subpath.slice(1);
-    return undocumented.has(manifest.name) || undocumented.has(specifier)
-      ? []
-      : [
-          {
-            specifier,
-            file: resolve(root, directory, target.types),
-          },
-        ];
-  })
-);
+// Source modules own the authoring boundary. Published declarations own the
+// signatures and import paths; host and tooling entry points stay out.
+const authoring = [
+  ['@altertable/data-app', 'authoring/index.ts'],
+  ['@altertable/data-app/config', 'authoring/index.ts'],
+  ['@altertable/data-app/contract', 'authoring/contract.ts'],
+  ['@altertable/data-app/client', 'authoring/client.ts'],
+  ['@altertable/data-app/appearance', 'authoring/appearance.ts'],
+  ['@altertable/data-app/format', 'core/format.ts'],
+  ['@altertable/data-app-react', 'authoring/index.ts'],
+  ['@altertable/data-app-react/ui', 'ui/index.ts'],
+] as const;
+const entryPoints = authoring.map(([specifier, source]) => {
+  for (const { directory, manifest } of packages)
+    for (const [subpath, target] of Object.entries(manifest.exports)) {
+      const name =
+        subpath === '.' ? manifest.name : manifest.name + subpath.slice(1);
+      if (name === specifier)
+        return {
+          specifier,
+          file: resolve(root, directory, target.types),
+          source: resolve(root, directory, 'src', source),
+        };
+    }
+  throw new Error(`Unknown authoring entry point: ${specifier}`);
+});
 
 type Export = { name: string; symbol: Symbol; specifiers: string[] };
 type Entry = Export & { kind: string; lines: string[] };
@@ -545,7 +551,21 @@ function collapse(prefix: string, properties: Property[]) {
 
 async function collect({ checker, program }: Project) {
   const exports = new Map<string, Export>();
-  for (const { specifier, file } of entryPoints) {
+  for (const { specifier, file, source: boundary } of entryPoints) {
+    const authoringSource = await program.getSourceFile(boundary);
+    const authoringModule =
+      authoringSource && (await checker.getSymbolAtLocation(authoringSource));
+    if (!authoringModule) {
+      failures.push(
+        `${specifier}: cannot load authoring boundary ${boundary}.`
+      );
+      continue;
+    }
+    const selected = new Set(
+      (await checker.getExportsOfModule(authoringModule)).map(
+        symbol => symbol.name
+      )
+    );
     const source = await program.getSourceFile(file);
     const module = source && (await checker.getSymbolAtLocation(source));
     if (!module) {
@@ -553,6 +573,7 @@ async function collect({ checker, program }: Project) {
       continue;
     }
     for (const exported of await checker.getExportsOfModule(module)) {
+      if (!selected.delete(exported.name)) continue;
       const symbol =
         exported.flags & SymbolFlags.Alias
           ? await checker.getAliasedSymbol(exported)
@@ -576,6 +597,8 @@ async function collect({ checker, program }: Project) {
           specifiers: [specifier],
         });
     }
+    for (const name of selected)
+      failures.push(`${specifier}: authoring export ${name} is not published.`);
   }
   return [...exports.values()];
 }
@@ -593,10 +616,11 @@ async function generate() {
         jsx: 'react-jsx',
         strict: true,
         noEmit: true,
+        allowImportingTsExtensions: true,
         typeRoots: [join(root, 'node_modules/@types')],
         types: ['bun'],
       },
-      files: entryPoints.map(entry => entry.file),
+      files: entryPoints.flatMap(entry => [entry.file, entry.source]),
     })
   );
   const api = new API({ cwd: root });
@@ -648,7 +672,8 @@ function render(entries: Entry[]) {
   const header = `# @altertable/data-app API reference
 
 Generated from the published type declarations by \`bun run build\`; do not
-edit. Each of the ${entries.length} public exports has one heading line, then
+edit. Covers APIs used to build data apps; host integration and package tooling
+are excluded. Each of the ${entries.length} authoring exports has one heading line, then
 one line per prop, option, or field, so one search returns everything about a
 name:
 

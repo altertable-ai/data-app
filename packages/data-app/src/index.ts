@@ -1,5 +1,4 @@
-/** Portable data app declarations; safe in browser and server modules. */
-export { defineDataApp, dataAppTitle } from './core/config.ts';
+export { defineDataApp } from './authoring/index.ts';
 export type {
   DataAppConfig,
   DataAppDefinition,
@@ -10,4 +9,5 @@ export type {
   QueryField,
   QueryProjections,
   QueryRow,
-} from './core/config.ts';
+} from './authoring/index.ts';
+export { dataAppTitle } from './core/config.ts';

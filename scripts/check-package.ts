@@ -160,11 +160,38 @@ try {
         'docs/app-authoring.md',
       ])
         assert(paths.has(path), `Missing authoring material: ${path}`);
+      const reference = await readFile(join(unpacked, 'REFERENCE.md'), 'utf8');
       assert.equal(
-        await readFile(join(unpacked, 'REFERENCE.md'), 'utf8'),
+        reference,
         await readFile(join(root, 'REFERENCE.md'), 'utf8'),
         'Packed API reference differs from the canonical reference'
       );
+      for (const name of [
+        'defineDataApp',
+        'defineOperation',
+        'connectionCheck',
+        'createDataClient',
+        'createDataHooks',
+        'DataApp',
+        'LineChart',
+        'AnnotationTarget',
+      ])
+        assert(
+          reference.includes(`\n${name} (`),
+          `Missing authoring API: ${name}`
+        );
+      for (const name of [
+        'createDataHandler',
+        'createIframeTransport',
+        'createMessageRouter',
+        'sqlQueryRoute',
+        'AnnotationBar',
+        'startDataAppBootstrap',
+      ])
+        assert(
+          !reference.includes(`\n${name} (`),
+          `Host API in authoring reference: ${name}`
+        );
     }
     if (manifest.name === '@altertable/data-app-examples') {
       for (const path of [
