@@ -2,7 +2,7 @@
 
 Search an export to find its import paths, signature, and props:
 
-```fish
+```sh
 rg '^LineChart\b' REFERENCE.md
 ```
 

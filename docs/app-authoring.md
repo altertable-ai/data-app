@@ -22,8 +22,8 @@ see [composition](composition.md) and [visualization selection](widgets.md#choos
 
 ## Use release-matched starters
 
-Install `@altertable/data-app-examples` at the same exact version as
-`@altertable/data-app` and use its installed templates:
+Use the starter supplied by your authoring workflow, matched to the app's SDK
+version. `@altertable/data-app-examples` ships these templates:
 
 | App                     | Template in `node_modules/@altertable/data-app-examples/templates/` | Guide                                   |
 | ----------------------- | ------------------------------------------------------------------- | --------------------------------------- |

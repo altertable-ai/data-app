@@ -1,16 +1,14 @@
 # Author a local data app
 
-Start from the CLI scaffold or the [local starter](app-authoring.md#use-release-matched-starters).
-For Node.js or Bun scaffolding, use `copyExample()` from
-`@altertable/data-app-examples` to copy the starter and restore its `.gitignore`.
-Use the starter's README for setup and its AGENTS.md to find app-owned files.
+Use the local scaffold supplied by your authoring workflow. Its README covers
+setup and its AGENTS.md identifies app-owned files.
 Replace the connectivity screen with the exploration, CSV export, and story from the
 [shared authoring flow](app-authoring.md).
 
-| Task                                    | Documentation                            |
-| --------------------------------------- | ---------------------------------------- |
-| Serve locally with Bun                  | [Bun server](server-bun.md)              |
-| Execute and authorize server operations | [Server](server.md)                      |
-| Call operations from the browser        | [HTTP client](client.md#http-operations) |
+| Task                         | Documentation                            |
+| ---------------------------- | ---------------------------------------- |
+| Customize local serving      | [Bun server](server-bun.md)              |
+| Authorize hosted viewers     | [Server](server.md)                      |
+| Customize the browser client | [HTTP client](client.md#http-operations) |
 
 You can also [convert the local app to a hosted data app](hosted-apps.md#convert-a-local-data-app).
