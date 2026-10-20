@@ -1,7 +1,7 @@
 # Build this local data app
 
 If dependencies are installed, read `node_modules/@altertable/data-app/AGENTS.md`
-first. Otherwise, read the [version-matched SDK instructions](https://github.com/altertable-ai/data-app/blob/v0.72.0/AGENTS.md). <!-- x-release-please-version -->
+first. Otherwise, read the [version-matched SDK instructions](https://github.com/altertable-ai/data-app/blob/v0.73.0/AGENTS.md). <!-- x-release-please-version -->
 Then use the app files below. Browse the latest
 [SDK instructions](https://github.com/altertable-ai/data-app/blob/main/AGENTS.md) on GitHub.
 
