@@ -1,7 +1,9 @@
 # Author a data app
 
-Build an exploration that answers the user's question, a story of its strongest
-findings, and CSV export of its displayed datasets.
+Build an exploration that answers the user's question and a story of its strongest
+findings.
+
+Search the [API reference](../REFERENCE.md) for exports, props, and signatures.
 
 ## Inspect the data
 
@@ -28,8 +30,8 @@ Install `@altertable/data-app-examples` at the same exact version as
 | Hosted / remote / cloud | `starter-data-app/index.tsx`                                        | [Single-file authoring](hosted-apps.md) |
 | Local                   | `starter-local-data-app`                                            | [Local authoring](local-data-apps.md)   |
 
-Copy the local starter with `copyExample()` to restore its `.gitignore`; see the
-examples package README. Replace sample queries and connectivity screens with
+For local scaffolding in Node.js or Bun, use `copyExample()` from
+`@altertable/data-app-examples` to restore the starter's `.gitignore`. Replace sample queries and connectivity screens with
 an exploration of inspected data.
 
 ## Build the exploration

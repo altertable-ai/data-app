@@ -39,7 +39,7 @@ Keep scope variable values in required operation input fields with the same name
 to derive their bindings. Other input shapes require typed
 `bindings` that read each selection back unchanged. Derive scalar SQL parameters
 inside the operation rather than replacing the selections in the view input.
-The operation and `ActivityWidgets` are app-owned. Define [filters](variables.md),
+The operation and `<ActivityWidgets>` are app-owned. Define [filters](variables.md),
 [bindings](widgets.md#declare-datasets-and-metrics), and [evidence](data-context.md)
 for the app's question. Use the same [date contract](contract.md#shared-date-ranges)
 for the operation and time view.

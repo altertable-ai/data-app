@@ -1,6 +1,6 @@
 # Client
 
-Import `createDataClient()` and `DataAppError` from
+Import `createDataClient()` from
 `@altertable/data-app/client`. The client uses Fetch APIs and has no React or
 server dependency.
 
@@ -23,9 +23,10 @@ The default endpoint is `/api/data`. Override it with
 implementation. Calls POST JSON to `/api/data/:operation`; the client sends
 operation inputs rather than SQL or credentials.
 
-Use response `data` for results and `input` for their scope, including during
-refresh. `DataAppError` exposes a public `code` and optional `requestId`.
-Pass an abort signal for cancellation.
+For direct client calls, render `response.data` and label it with `response.input`
+so retained results keep their original scope during refresh. React views handle
+this automatically. Use `DataAppError` for public error codes and request IDs in
+custom error handling; pass an abort signal to cancel a request.
 
 See [contracts](contract.md), [server handlers](server.md), and
 [React bindings](react.md).

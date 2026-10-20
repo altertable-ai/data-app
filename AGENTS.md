@@ -4,18 +4,6 @@ Start with [app authoring](docs/app-authoring.md). Use the installed,
 release-matched starter and search [REFERENCE.md](REFERENCE.md) for exports and
 props: `rg '^LineChart\b' REFERENCE.md`.
 
-- Use declared views and bound widgets from `@altertable/data-app-react`.
-  Use `/ui` for setup, static screens, and custom composition.
-- Declare typed query `params` and `projections`; derive operation data from
-  `query()` rows without duplicate schemas or type assertions.
-- Derive labels, findings, stories, and CSV exports from the displayed result and
-  its input. Explorations supply a story and export every displayed dataset;
-  setup and static screens may omit them.
-- Keep static context outside loading boundaries.
-- Use components and typed props first. Customize through app-owned `className`
-  and public tokens; do not copy package classes or select private descendants.
-- Edit app-owned files; installed packages are dependencies.
-
 | Task                                | Guide                                                                       |
 | ----------------------------------- | --------------------------------------------------------------------------- |
 | Plan the exploration                | [Composition](docs/composition.md)                                          |

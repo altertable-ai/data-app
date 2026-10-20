@@ -13,10 +13,7 @@ injectDataAppStyles();
 mountDataApp({ app, component: App });
 ```
 
-The app supplies `app`, `App`, and a `#root` element. For a restrictive CSP, pass
-the permitted nonce to the first `injectDataAppStyles()` call. When mounting
-through another framework, wrap the root in `<DataAppProvider app={app}>` from
-`@altertable/data-app-react/ui`.
+The app supplies `app`, `App`, and a `#root` element.
 
 Use [views](views.md) for requests, [variables](variables.md) for filters,
 and [widgets](widgets.md) for displays. Use [direct UI composition](ui.md) for

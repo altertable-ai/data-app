@@ -48,8 +48,8 @@ const products = dataApp.defineOperation({
 ```
 
 `parseProductInput()` is app-owned. Validate inputs there and business rules in
-`run()`. Derive operation data from `query()` rows; clients and views infer the
-returned type. Handle empty results. HTTP results must be JSON-serializable.
+`run()`. Derive operation data from `query()` rows without duplicate schemas or
+type assertions; clients and views infer the returned type. Handle empty results. HTTP results must be JSON-serializable.
 Include representative valid inputs in `checks`.
 
 Host `queryParams` supplies protected parameters; callers cannot override them.
