@@ -78,6 +78,29 @@ createRoot(document.getElementById('root')!).render(
     </Button>
     <Grid columns={2} minItemWidth="wide">
       <Example
+        name="Long currency labels"
+        description="Axis labels reserve space for the complete formatted value."
+      >
+        <ComposedChart
+          data={[
+            { label: 'One', value: -100000 },
+            { label: 'Two', value: 200000 },
+          ]}
+          ariaLabel="Long currency labels"
+        >
+          <ComposedChart.XAxis dataKey="label" />
+          <ComposedChart.YAxis
+            tickFormatter={value =>
+              new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'EUR',
+              }).format(Number(value))
+            }
+          />
+          <ComposedChart.Bar dataKey="value" />
+        </ComposedChart>
+      </Example>
+      <Example
         name="LineChart — many series"
         description="Twelve services with an automatic legend. Inspect aligned columns and the overflow control."
       >
