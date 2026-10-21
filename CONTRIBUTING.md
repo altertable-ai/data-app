@@ -83,9 +83,66 @@ native `var()` fallbacks. Reuse focus/state rules and keep geometry local. Add
 styles through `styles.css` with explicit injection; imports must not modify the
 DOM. Update `style-contract.ts` for public hooks.
 
+## Develop linked packages
+
+```fish
+bun install --frozen-lockfile
+bun run dev
+```
+
+`dev` builds every package, including declarations, before reporting readiness.
+It polls build inputs every 300 ms: package source (including CSS and HTML),
+package manifests, build TypeScript configuration, the lockfile, and build
+scripts. Saves are debounced;
+builds run one at a time, with another build queued for edits during a build.
+Errors keep the previous output and watching continues. Stop with Ctrl-C.
+Only run one package watcher per checkout; stop it before production builds or
+package checks.
+
+Link every consumed `@altertable` workspace package to this checkout's matching
+`packages/<name>` directory, using your consumer's package manager. For example,
+from a Bun consumer (replace the checkout path):
+
+```fish
+set data_app_checkout /absolute/path/to/data-app
+bun link --cwd "$data_app_checkout/packages/data-app"
+bun link --cwd "$data_app_checkout/packages/data-app-react"
+bun link --no-save @altertable/data-app @altertable/data-app-react
+```
+
+Link transitive workspace packages too if your consumer uses embed, Bun, worker,
+or example packages. Keep React supplied by the consumer to avoid duplicate
+React instances. Start or restart the consumer only after a successful `ready`
+signal; configure its bundler to watch linked output and invalidate dependency
+caches when rebuilding.
+
+The watcher writes machine-readable lines to stdout, mixed with build logs:
+
+```text
+DATA_APP_DEV {"event":"building","generation":0}
+DATA_APP_DEV {"event":"ready","generation":1}
+```
+
+Supervisors should match `DATA_APP_DEV` followed by a space and parse the
+remaining JSON.
+`generation` starts at zero for each process and increases only on successful
+publication. `building` starts an attempt, `ready` means all JavaScript and
+current declarations are published, `error` means an attempt failed, and
+`stopped` acknowledges SIGINT/SIGTERM shutdown. Wait for the first `ready` before
+starting a consumer; use each later `ready` to invalidate or restart it. A failed
+initial build keeps watching and does not emit `ready`. Process exit means the
+watcher is unavailable; never infer readiness from a previous process's output.
+
+Development builds stage all packages before publication, atomically replace
+individual files, publish chunks before entries, and retain old files so requests
+using earlier hashed chunks can finish. Publication across files is not atomic;
+consumer rebuilds must wait for `ready`. Old chunks accumulate while developing;
+a production `bun run build` cleans them after the watcher is stopped. Production
+exports, embedded styles, bootstrap, and worker build behavior are unchanged.
+
 ## Preview UI changes
 
-Use `bun run dev` for the gallery at `http://127.0.0.1:27418/gallery` and
+Use `bun run dev:gallery` for the gallery at `http://127.0.0.1:27418/gallery` and
 `/playground`; it requires Docker. Package and fixture edits reload. Restart after
 changing `dev/server.ts`; add `?delay=2000` to inspect loading states.
 

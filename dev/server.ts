@@ -83,7 +83,7 @@ const loadFixtureBundle = await createBundleLoader('./fixtures/bundle-app.tsx');
 const loadAnnotationStateBundle = await createBundleLoader(
   './fixtures/annotation-state-app.tsx'
 );
-// Tests exercise the hosted starter; `bun run dev` serves the playground, which
+// Tests exercise the hosted starter; `bun run dev:gallery` serves the playground, which
 // queries the demo tables it seeds into the mocked API.
 const hostedApps = {
   development: { path: '/playground', entry: '../dev/playground.tsx' },
@@ -106,7 +106,7 @@ const serveReloadEvents =
   ]);
 const fixtureDatabase = new Database(':memory:');
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
-// `bun run dev` provides a mocked Altertable API; tests keep deterministic fixtures.
+// `bun run dev:gallery` provides a mocked Altertable API; tests keep deterministic fixtures.
 const lakehouse =
   isDevelopment && process.env.ALTERTABLE_API_BASE ? localLakehouse() : null;
 if (!lakehouse) {

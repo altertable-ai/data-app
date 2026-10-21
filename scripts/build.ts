@@ -1,4 +1,4 @@
-import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { build } from 'tsdown';
@@ -14,6 +14,13 @@ const selected = process.argv
 if (selected && !packages.some(pkg => pkg.directory === `packages/${selected}`))
   throw new Error(`Unknown package: ${selected}`);
 const incremental = process.argv.includes('--incremental');
+const development = process.argv.includes('--development');
+function staging(directory: string) {
+  return resolve(directory, '.dev-build');
+}
+if (development)
+  for (const { directory } of packages)
+    await rm(staging(directory), { recursive: true, force: true });
 async function markReady() {
   await mkdir('node_modules/.cache', { recursive: true });
   await writeFile(
@@ -22,7 +29,7 @@ async function markReady() {
   );
 }
 
-if (!selected && !incremental) {
+if (!selected && !incremental && !development) {
   const build = Bun.spawn(
     ['bun', 'run', '--filter', '@altertable/*', 'build'],
     {
@@ -42,8 +49,32 @@ const buildTargets = new Map<string, 'bun' | 'node'>([
   ['@altertable/data-app-manifest', 'node'],
 ]);
 
+const aliases: Record<string, string> = {};
+const declarationPaths: Record<string, string[]> = {};
+
 async function bundle(options: Parameters<typeof Bun.build>[0]) {
-  const result = await Bun.build(options);
+  const result = await Bun.build({
+    ...options,
+    plugins: development
+      ? [
+          {
+            name: 'staged-workspace',
+            setup(builder) {
+              builder.onResolve({ filter: /^@altertable\// }, ({ path }) => {
+                if (
+                  options.external?.some(
+                    name => path === name || path.startsWith(`${name}/`)
+                  )
+                )
+                  return { path, external: true };
+                if (aliases[path]) return { path: aliases[path] };
+                return undefined;
+              });
+            },
+          },
+        ]
+      : [],
+  });
   if (!result.success)
     throw new Error(result.logs.map(log => log.message).join('\n'));
   return result;
@@ -63,9 +94,24 @@ async function inline(entrypoint: string) {
 
 for (const { directory, manifest } of packages) {
   if (selected && directory !== `packages/${selected}`) continue;
-  const outdir = `${directory}/dist`;
+  const outdir = development
+    ? resolve(staging(directory), 'dist')
+    : `${directory}/dist`;
+  if (development) {
+    // Matching package exports let TypeScript name inferred types from staged
+    // dependencies without leaking temporary paths into public declarations.
+    await mkdir(staging(directory), { recursive: true });
+    await cp(
+      resolve(directory, 'package.json'),
+      resolve(staging(directory), 'package.json')
+    );
+  }
   if (!incremental) await rm(outdir, { recursive: true, force: true });
-  if (!incremental && manifest.name === '@altertable/data-app') {
+  if (
+    !incremental &&
+    !development &&
+    manifest.name === '@altertable/data-app'
+  ) {
     for (const name of [
       'docs',
       'AGENTS.md',
@@ -146,13 +192,28 @@ for (const { directory, manifest } of packages) {
       sourcemap: 'external',
     });
   }
+  let tsconfig = 'tsconfig.build.json';
+  if (development) {
+    tsconfig = resolve(directory, '.tsconfig.dev.json');
+    await mkdir(staging(directory), { recursive: true });
+    await writeFile(
+      tsconfig,
+      JSON.stringify({
+        extends: resolve(directory, 'tsconfig.build.json'),
+        compilerOptions: {
+          rootDir: resolve(directory, 'src'),
+          paths: { '@/*': [resolve(root, '*')], ...declarationPaths },
+        },
+      })
+    );
+  }
   if (!specialized || !incremental) {
     await build({
       config: false,
       cwd: resolve(directory),
       entry,
       outDir: resolve(outdir),
-      tsconfig: 'tsconfig.build.json',
+      tsconfig,
       platform: buildTargets.has(manifest.name) ? 'node' : 'browser',
       target: false,
       fixedExtension: false,
@@ -178,5 +239,49 @@ for (const { directory, manifest } of packages) {
       },
     });
   }
+  if (development) {
+    await rm(tsconfig);
+    for (const [subpath, target] of Object.entries(manifest.exports)) {
+      const name = manifest.name + (subpath === '.' ? '' : subpath.slice(1));
+      aliases[name] = resolve(outdir, target.import.slice('./dist/'.length));
+      declarationPaths[name] = [
+        resolve(outdir, target.types.slice('./dist/'.length)),
+      ];
+    }
+  }
+}
+if (development) {
+  // Publish dependencies before entries, retaining old hashed chunks for in-flight
+  // consumers. Rename each file so readers never see partially written output.
+  const pending: { source: string; target: string; entry: boolean }[] = [];
+  for (const { directory, manifest } of packages) {
+    const source = resolve(staging(directory), 'dist');
+    const entries = new Set(
+      Object.values(manifest.exports).map(target =>
+        target.import.slice('./dist/'.length)
+      )
+    );
+    for (const file of await readdir(source, {
+      recursive: true,
+      withFileTypes: true,
+    })) {
+      if (!file.isFile()) continue;
+      const relative = resolve(file.parentPath, file.name).slice(
+        source.length + 1
+      );
+      pending.push({
+        source: resolve(source, relative),
+        target: resolve(directory, 'dist', relative),
+        entry: entries.has(relative),
+      });
+    }
+  }
+  pending.sort((a, b) => Number(a.entry) - Number(b.entry));
+  for (const { source, target } of pending) {
+    await mkdir(resolve(target, '..'), { recursive: true });
+    await rename(source, target);
+  }
+  for (const { directory } of packages)
+    await rm(staging(directory), { recursive: true, force: true });
 }
 if (!selected) await markReady();

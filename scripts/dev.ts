@@ -1,165 +1,125 @@
-import { watch } from 'node:fs';
+import { readdir, rm, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { GenericContainer, Wait } from 'testcontainers';
-
-import { seedStatements } from '@/dev/seed';
 import { packages } from '@/scripts/packages';
 
 const root = resolve(import.meta.dir, '..');
-const mockApiPort = 15000;
-
-async function seedMockApi(apiUrl: string) {
-  for (const statement of seedStatements) {
-    const response = await fetch(`${apiUrl}/query`, {
-      method: 'POST',
-      headers: {
-        authorization: `Basic ${btoa('dev:dev')}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ statement }),
-    });
-    const body = await response.text();
-    // The mock reports SQL errors as an NDJSON line in a successful response.
-    if (!response.ok || body.includes('\n{"error":'))
-      throw new Error(`Seeding failed for ${statement}: ${body}`);
-  }
-}
-
-async function startMockApi() {
-  try {
-    const container = await new GenericContainer(
-      'ghcr.io/altertable-ai/altertable-mock:latest'
-    )
-      .withEnvironment({ ALTERTABLE_MOCK_USERS: 'dev:dev' })
-      .withExposedPorts(mockApiPort)
-      .withWaitStrategy(Wait.forListeningPorts())
-      .start();
-    const apiUrl = `http://${container.getHost()}:${container.getMappedPort(mockApiPort)}`;
-    await seedMockApi(apiUrl).catch(async error => {
-      await container.stop();
-      throw error;
-    });
-    return { container, apiUrl };
-  } catch (error) {
-    console.error(
-      'Could not start the mocked Altertable API. Is Docker running?\n',
-      error
-    );
-    process.exit(1);
-  }
-}
-
-async function runBun(args: string[]) {
-  const child = Bun.spawn([process.execPath, ...args], {
-    cwd: root,
-    stdout: 'inherit',
-    stderr: 'inherit',
-  });
-  return (await child.exited) === 0;
-}
-
-// Declarations are only built once; editors keep them while JavaScript rebuilds.
-const [initialBuildSucceeded, { container: mockApi, apiUrl: mockApiUrl }] =
-  await Promise.all([runBun(['run', 'build']), startMockApi()]);
-if (!initialBuildSucceeded) {
-  await mockApi.stop();
-  process.exit(1);
-}
-
-function startServer() {
-  return Bun.spawn([process.execPath, 'dev/server.ts'], {
-    cwd: root,
-    env: {
-      ...process.env,
-      DATA_APP_DEV: '1',
-      ALTERTABLE_API_BASE: mockApiUrl,
-      ALTERTABLE_LAKEHOUSE_USERNAME: 'dev',
-      ALTERTABLE_LAKEHOUSE_PASSWORD: 'dev',
-    },
-    stdout: 'inherit',
-    stderr: 'inherit',
-  });
-}
-let server = startServer();
-let restartRequested = false;
-let wakeForBuild: (() => void) | undefined;
+let child: ReturnType<typeof Bun.spawn> | undefined;
+let timer: ReturnType<typeof setTimeout> | undefined;
+let building = false;
+let queued = false;
 let stopping = false;
-let restartTimer: ReturnType<typeof setTimeout> | undefined;
-const readyWatcher = watch(
-  resolve(root, 'node_modules/.cache'),
-  (_, filename) => {
-    if (filename !== 'data-app-build-ready') return;
-    clearTimeout(restartTimer);
-    restartTimer = setTimeout(() => {
-      restartRequested = true;
-      server.kill();
-      wakeForBuild?.();
-    }, 50);
+let generation = 0;
+
+function report(event: 'building' | 'ready' | 'error' | 'stopped') {
+  console.log(`DATA_APP_DEV ${JSON.stringify({ event, generation })}`);
+}
+
+// Poll only build inputs: reliable for linked checkouts, atomic editor saves,
+// and filesystems where native recursive watch events are unavailable.
+async function snapshot() {
+  const files = [
+    'package.json',
+    'bun.lock',
+    'tsconfig.json',
+    'scripts/build.ts',
+    'scripts/packages.ts',
+  ];
+  for (const { directory } of packages) {
+    files.push(`${directory}/package.json`, `${directory}/tsconfig.build.json`);
+    const source = resolve(root, directory, 'src');
+    try {
+      for (const file of await readdir(source, {
+        recursive: true,
+        withFileTypes: true,
+      }))
+        if (file.isFile()) files.push(resolve(file.parentPath, file.name));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
   }
-);
-const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
-console.log(`Mocked Altertable API: ${mockApiUrl}`);
-console.log(`Gallery: http://127.0.0.1:${port}/gallery`);
-console.log(`Playground: http://127.0.0.1:${port}/playground`);
-console.log(`Content sizing: http://127.0.0.1:${port}/content-sizing`);
-let isBuilding = false;
-let rebuildQueued = false;
-let rebuildTimer: ReturnType<typeof setTimeout> | undefined;
+  const versions = await Promise.all(
+    files.sort().map(async file => {
+      try {
+        const info = await stat(resolve(root, file), { bigint: true });
+        return `${file}:${info.mtimeNs}:${info.ctimeNs}:${info.size}`;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        return `${file}:missing`;
+      }
+    })
+  );
+  return versions.join('\n');
+}
+let previous = await snapshot();
+let polling = false;
+const poller = setInterval(() => {
+  if (polling || stopping) return;
+  polling = true;
+  void snapshot()
+    .then(current => {
+      if (stopping || current === previous) return;
+      previous = current;
+      queued = true;
+      clearTimeout(timer);
+      timer = setTimeout(() => void rebuild(), 100);
+    })
+    .catch(error => {
+      console.error('Could not watch package inputs:', error);
+      process.exitCode = 1;
+      void stop();
+    })
+    .finally(() => {
+      polling = false;
+    });
+}, 300);
 
 async function rebuild() {
-  if (isBuilding) {
-    rebuildQueued = true;
-    return;
-  }
-  isBuilding = true;
-  const started = performance.now();
-  const ok = await runBun(['run', 'scripts/build.ts', '--incremental']);
-  console.log(
-    ok
-      ? `Rebuilt in ${Math.round(performance.now() - started)}ms`
-      : 'Build failed; open pages keep the last successful build.'
-  );
-  isBuilding = false;
-  if (rebuildQueued) {
-    rebuildQueued = false;
-    void rebuild();
-  }
-}
-
-const sourceWatchers = packages.map(({ directory }) =>
-  watch(resolve(root, directory, 'src'), { recursive: true }, () => {
-    clearTimeout(rebuildTimer);
-    rebuildTimer = setTimeout(() => void rebuild(), 50);
-  })
-);
-
-for (const signal of ['SIGINT', 'SIGTERM'] as const)
-  process.on(signal, async () => {
-    stopping = true;
-    readyWatcher.close();
-    for (const watcher of sourceWatchers) watcher.close();
-    clearTimeout(restartTimer);
-    server.kill();
-    wakeForBuild?.();
-    await mockApi.stop();
-    process.exit(0);
+  if (stopping || building) return;
+  building = true;
+  queued = false;
+  report('building');
+  child = Bun.spawn([process.execPath, 'scripts/build.ts', '--development'], {
+    cwd: root,
+    stdout: 'inherit',
+    stderr: 'inherit',
   });
-while (true) {
-  await server.exited;
-  if (stopping) break;
-  if (!restartRequested) {
+  const code = await child.exited;
+  child = undefined;
+  building = false;
+  if (stopping) return;
+  if (code === 0) {
+    generation++;
+    report('ready');
+  } else {
+    report('error');
     console.error(
-      'Preview server stopped; waiting for a successful package build.'
+      'Build failed; fix the source to retry. Previous output is retained.'
     );
-    await new Promise<void>(resolve => {
-      wakeForBuild = resolve;
-    });
   }
-  if (stopping) break;
-  wakeForBuild = undefined;
-  restartRequested = false;
-  server = startServer();
+  if (queued) {
+    clearTimeout(timer);
+    timer = setTimeout(() => void rebuild(), 100);
+  }
 }
-readyWatcher.close();
-if (!stopping) await mockApi.stop();
+
+async function stop() {
+  if (stopping) return;
+  stopping = true;
+  clearInterval(poller);
+  clearTimeout(timer);
+  child?.kill('SIGTERM');
+  await child?.exited;
+  for (const { directory } of packages) {
+    await rm(resolve(root, directory, '.dev-build'), {
+      recursive: true,
+      force: true,
+    });
+    await rm(resolve(root, directory, '.tsconfig.dev.json'), { force: true });
+  }
+  report('stopped');
+}
+for (const signal of ['SIGINT', 'SIGTERM'] as const)
+  process.on(signal, () => void stop());
+
+await rebuild();
