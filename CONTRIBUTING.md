@@ -2,7 +2,7 @@
 
 Use the versions in `.bun-version` and `.node-version`.
 
-```fish
+```sh
 bun install --frozen-lockfile
 bash scripts/install-test-browser.sh
 ```
@@ -85,77 +85,45 @@ DOM. Update `style-contract.ts` for public hooks.
 
 ## Develop linked packages
 
-```fish
+From this checkout:
+
+```sh
 bun install --frozen-lockfile
 bun run dev
 ```
 
-`dev` builds every package, including declarations, before reporting readiness.
-It polls build inputs every 300 ms: package source (including CSS and HTML),
-package manifests, build TypeScript configuration, the lockfile, and build
-scripts. Saves are debounced;
-builds run one at a time, with another build queued for edits during a build.
-Errors keep the previous output and watching continues. Stop with Ctrl-C.
-Concurrent `dev` commands share one watcher for the same canonical checkout.
-Each command subscribes to its output; Ctrl-C detaches only that subscriber. The
-watcher stops after the final subscriber exits, including abrupt termination.
-The owner runs separately from launcher process groups, using a loopback-only
-connection rather than persistent locks. Stop all subscribers before production
-builds, the gallery, or package checks.
+`dev` builds and watches every package, including declarations and embedded CSS.
+Failed builds retain the last successful output. Consumers share one watcher per
+checkout; Ctrl-C detaches a consumer and the last consumer stops the watcher.
+Stop all consumers before production builds, the gallery, or package checks.
 
-Link every consumed `@altertable` workspace package to this checkout's matching
-`packages/<name>` directory, using your consumer's package manager. For example,
-from a Bun consumer (replace the checkout path):
+Prefer the consuming project's local SDK launcher when available. For manual Bun
+linking, run this from the consumer, replacing the checkout path:
 
-```fish
-set data_app_checkout /absolute/path/to/data-app
+```sh
+data_app_checkout=/absolute/path/to/data-app
 bun link --cwd "$data_app_checkout/packages/data-app"
 bun link --cwd "$data_app_checkout/packages/data-app-react"
 bun link --no-save @altertable/data-app @altertable/data-app-react
 ```
 
-Link transitive workspace packages too if your consumer uses embed, Bun, worker,
-or example packages. Keep React supplied by the consumer to avoid duplicate
-React instances. Start or restart the consumer only after a successful `ready`
-signal; configure its bundler to watch linked output and invalidate dependency
-caches when rebuilding.
+Link any transitive workspace packages too. Keep one React instance supplied by
+the consumer, and configure its bundler to refresh linked output after builds.
 
-The watcher writes machine-readable lines to stdout, mixed with build logs:
-
-```text
-DATA_APP_DEV {"event":"building","generation":0}
-DATA_APP_DEV {"event":"ready","generation":1}
-```
-
-Supervisors should match `DATA_APP_DEV` followed by a space and parse the
-remaining JSON.
-`generation` starts at zero for each shared owner and increases only on successful
-publication. `building` starts an attempt, `ready` means all JavaScript and
-current declarations are published, `error` means an attempt failed, and
-`stopped` acknowledges SIGINT/SIGTERM detachment. Wait for the first `ready` before
-starting a consumer; use each later `ready` to invalidate or restart it. A failed
-initial build keeps watching and does not emit `ready`. Process exit means the
-subscription is unavailable; never infer readiness from a previous owner's
-output. An unexpected owner or worker exit closes subscriptions with a nonzero
-exit code; rerun the command to create a fresh owner.
-
-A late subscriber receives the current event immediately. If it is `ready`, the
-existing build can be used without rebuilding. If it is `building` or `error`,
-wait for the next `ready`, even when `generation` is greater than zero. Existing
-subscribers can keep using their last successful output after an error.
-
-Development builds stage all packages before publication, atomically replace
-individual files, publish chunks before entries, and retain old files so requests
-using earlier hashed chunks can finish. Publication across files is not atomic;
-consumer rebuilds must wait for `ready`. Old chunks accumulate while developing;
-a production `bun run build` cleans them after the watcher is stopped. Production
-exports, embedded styles, bootstrap, and worker build behavior are unchanged.
+Launchers parse stdout lines prefixed with `DATA_APP_DEV` and a space. The JSON
+payload looks like `{"event":"ready","generation":1}`. Events are `building`, `ready`, `error`, and
+`stopped`; generation increases only after successful publication. Start or refresh
+consumers after `ready`. New subscribers receive the current event and must wait
+for the next `ready` if a build is in progress or failed. Existing subscribers may
+resume their last successful build after `error`. Unexpected watcher exits return
+a nonzero status; rerun the command to reconnect.
 
 ## Preview UI changes
 
-Use `bun run dev:gallery` for the gallery at `http://127.0.0.1:27418/gallery` and
-`/playground`; it requires Docker. Package and fixture edits reload. Restart after
-changing `dev/server.ts`; add `?delay=2000` to inspect loading states.
+For SDK UI work, `bun run dev:gallery` starts the example gallery at
+`http://127.0.0.1:27418/gallery`, `/playground`, and a Docker-backed mock API.
+Package and fixture edits reload. Restart after changing `dev/server.ts`; add
+`?delay=2000` to inspect loading states.
 
 Use `bun run dev:file <path>` for a single-file app or `bun run dev:dir <path>`
 for an app directory with `src/server.ts`. These previews use built packages and
