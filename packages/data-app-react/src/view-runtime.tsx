@@ -16,6 +16,8 @@ export type ViewResult<Data, Input> = {
   refetch: () => unknown;
   cancel: () => unknown;
   refreshing: boolean;
+  progress?: number;
+  queryProgress?: Readonly<Record<string, number>>;
   queries?: DisclosedQuery[];
   searchControls?: ReactNode;
   filterControls?: ReactNode;

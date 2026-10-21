@@ -331,6 +331,40 @@ export const sqlQueryRoute = defineMessageRoute({
   },
 });
 
+export type SqlProgressInput = {
+  statement: string;
+  params?: QueryParameters;
+};
+
+/** Hosts answer null while no estimate is known. */
+export const sqlProgressRoute = defineMessageRoute({
+  input(value: unknown): SqlProgressInput {
+    if (!value || typeof value !== 'object')
+      throw new Error('Invalid progress request.');
+    const query = value as { statement?: unknown; params?: unknown };
+    if (
+      typeof query.statement !== 'string' ||
+      !query.statement.trim() ||
+      (query.params !== undefined && !isQueryParameters(query.params))
+    )
+      throw new Error('Invalid progress request.');
+
+    return {
+      statement: query.statement,
+      ...(query.params === undefined
+        ? {}
+        : { params: query.params as QueryParameters }),
+    };
+  },
+  output(value: unknown): number | null {
+    if (value === null) return null;
+    if (typeof value !== 'number' || !Number.isFinite(value))
+      throw new Error('Invalid progress response.');
+
+    return Math.min(100, Math.max(0, value));
+  },
+});
+
 export const dataAppRoutes = {
   'data:query': /* @__PURE__ */ defineDataQueryRoute(),
   'navigation:update': navigationUpdateRoute,

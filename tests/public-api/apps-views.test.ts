@@ -582,3 +582,81 @@ test('facet contexts resolve declared variables and refresh options when depende
     )
     .toBe(true);
 });
+
+test('running queries show reported completion in the toolbar and on each loading widget', async ({
+  page,
+}) => {
+  await page.goto('/progress');
+  const toolbar = page.getByRole('group', {
+    name: 'Page actions',
+    exact: true,
+  });
+  const independent = page.getByRole('region', {
+    name: 'Independent section',
+    exact: true,
+  });
+  function widgetProgress(title: string) {
+    return independent.getByRole('progressbar', {
+      name: `Loading ${title}`,
+      exact: true,
+    });
+  }
+  function report(name: string) {
+    return page
+      .getByRole('button', { name: `Report ${name}`, exact: true })
+      .click();
+  }
+  await report('primary count 40%');
+  await expect.poll(() => toolbar.getByText('40%').isVisible()).toBe(true);
+  await report('secondary count 40%');
+  await expect
+    .poll(() => widgetProgress('Secondary results').getAttribute('value'))
+    .toBe('40');
+  expect(await widgetProgress('Secondary totals').count()).toBe(0);
+  await report('secondary total 70%');
+  await expect
+    .poll(() => widgetProgress('Secondary totals').getAttribute('value'))
+    .toBe('70');
+  expect(await widgetProgress('Secondary results').getAttribute('value')).toBe(
+    '40'
+  );
+  await page
+    .getByRole('button', { name: 'Resolve primary', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Resolve secondary', exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      independent
+        .getByRole('status', { name: 'secondary count', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
+  expect(await toolbar.getByText('%').count()).toBe(0);
+  expect(await independent.getByRole('progressbar').count()).toBe(0);
+
+  await page.getByRole('searchbox', { name: 'Search', exact: true }).fill('a');
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('search'))
+    .toBe('a');
+  await expect
+    .poll(() => toolbar.getByText('Updating data').isVisible())
+    .toBe(true);
+  expect(await toolbar.getByText('%').count()).toBe(0);
+  await report('secondary count 70%');
+  await report('secondary total 70%');
+  await expect.poll(() => independent.getByText('70%').isVisible()).toBe(true);
+  expect(await independent.getByRole('progressbar').count()).toBe(0);
+  expect(await toolbar.getByText('%').count()).toBe(0);
+  await report('primary count 70%');
+  await expect.poll(() => toolbar.getByText('70%').isVisible()).toBe(true);
+  await page
+    .getByRole('button', { name: 'Resolve secondary', exact: true })
+    .click();
+  await expect.poll(() => independent.getByText('70%').count()).toBe(0);
+  await page
+    .getByRole('button', { name: 'Resolve primary', exact: true })
+    .click();
+  await expect.poll(() => toolbar.getByText('70%').count()).toBe(0);
+});

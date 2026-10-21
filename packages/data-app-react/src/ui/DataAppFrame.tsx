@@ -43,6 +43,7 @@ type DataAppRequest<Data, Input> = SectionResult<Data, Input> & {
   queries?: DisclosedQuery[];
   /** Actual request activity, including retries with retained data. */
   refreshing?: boolean;
+  progress?: number;
   cancel?: () => unknown;
   searchControls?: ReactNode;
   filterControls?: ReactNode;
@@ -125,6 +126,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
                 request.refreshing ??
                 (request.view.kind === 'loading' ||
                   request.view.kind === 'updating'),
+              progress: request.progress,
               onRefresh: () => void request.refetch(),
               onCancel: request.cancel
                 ? () => void request.cancel?.()

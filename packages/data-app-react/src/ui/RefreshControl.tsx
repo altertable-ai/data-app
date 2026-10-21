@@ -6,9 +6,11 @@ import {
 } from 'react';
 
 import { classNames } from './classNames.ts';
+import { ProgressPercentage } from './ProgressPercentage.tsx';
 
 export type RefreshControlProps = {
   refreshing: boolean;
+  progress?: number;
   children: ReactNode;
   label?: string;
   status?: ReactNode;
@@ -17,6 +19,7 @@ export type RefreshControlProps = {
 /** Show refresh progress just before its action after a short delay. */
 export function RefreshControl({
   refreshing,
+  progress,
   children,
   label = 'Refreshing data',
   status,
@@ -56,6 +59,9 @@ export function RefreshControl({
       >
         {showProgress ? (status ?? label) : null}
       </div>
+      {showProgress && progress !== undefined && (
+        <ProgressPercentage progress={progress} />
+      )}
       {children}
     </div>
   );

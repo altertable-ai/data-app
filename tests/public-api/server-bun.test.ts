@@ -298,3 +298,71 @@ test('local lakehouse maps SDK HTTP errors without retrying queries', async () =
     expect(requests).toBe(1);
   }
 });
+
+test('local lakehouse reports query log progress while a query runs', async () => {
+  let queryId: string | undefined;
+  const percentages = [-1, 30, 70];
+  const source = localLakehouse(
+    {
+      ALTERTABLE_LAKEHOUSE_USERNAME: 'user',
+      ALTERTABLE_LAKEHOUSE_PASSWORD: 'secret',
+    },
+    Object.assign(
+      async (url: RequestInfo | URL, options?: RequestInit) => {
+        const path = new URL(url instanceof Request ? url.url : url).pathname;
+        if (path === '/query') {
+          queryId = JSON.parse(options!.body as string).query_id;
+          await new Promise(resolve => setTimeout(resolve, 1800));
+          return new Response(
+            `{"query_id":"${queryId}"}\n[{"name":"value","type":"INTEGER"}]\n[1]\n`
+          );
+        }
+        expect(path).toBe(`/query/${queryId}`);
+        return Response.json({ percentage: percentages.shift() ?? 70 });
+      },
+      { preconnect() {} }
+    )
+  );
+  const progress: number[] = [];
+  expect(
+    await source.queryAll('SELECT 1 AS value', {
+      limit: 1,
+      signal: new AbortController().signal,
+      onProgress: percentage => progress.push(percentage),
+    })
+  ).toMatchObject({ rows: [[1]], queryId });
+  expect(queryId).toMatch(/^[0-9a-f-]{36}$/);
+  expect(progress.slice(0, 2)).toEqual([30, 70]);
+});
+
+test('local lakehouse stops reading progress when the query log is unavailable', async () => {
+  let lookups = 0;
+  const source = localLakehouse(
+    {
+      ALTERTABLE_DATA_PROXY_URL: 'http://proxy',
+      ALTERTABLE_DATA_PROXY_TOKEN: 't',
+    },
+    Object.assign(
+      async (url: RequestInfo | URL) => {
+        const path = new URL(url instanceof Request ? url.url : url).pathname;
+        if (path === '/query') {
+          await new Promise(resolve => setTimeout(resolve, 12_000));
+          return new Response('{}\n[{"name":"value","type":"INTEGER"}]\n[1]\n');
+        }
+        lookups++;
+        return new Response('Not found', { status: 404 });
+      },
+      { preconnect() {} }
+    )
+  );
+  const progress: number[] = [];
+  await source.queryAll('SELECT 1 AS value', {
+    limit: 1,
+    signal: new AbortController().signal,
+    onProgress: percentage => progress.push(percentage),
+  });
+  expect(progress).toEqual([]);
+  // About ten seconds of half-second lookups, not one per poll for the whole query.
+  expect(lookups).toBeGreaterThan(10);
+  expect(lookups).toBeLessThanOrEqual(21);
+}, 20_000);

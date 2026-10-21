@@ -21,6 +21,7 @@ import filters from '@/tests/public-api/fixtures/filters.html';
 import inspectionApp from '@/tests/public-api/fixtures/inspection-app.html';
 import layout from '@/tests/public-api/fixtures/layout.html';
 import ownership from '@/tests/public-api/fixtures/ownership.html';
+import progress from '@/tests/public-api/fixtures/progress.html';
 import searchCatalog from '@/tests/public-api/fixtures/search-catalog.html';
 import staticApp from '@/tests/public-api/fixtures/static.html';
 import styles from '@/tests/public-api/fixtures/styles.html';
@@ -90,6 +91,7 @@ const server = Bun.serve({
     '/chart-legends': chartLegends,
     '/time-app': timeApp,
     '/clients': clients,
+    '/progress': progress,
   },
   async fetch(request): Promise<Response> {
     const url = new URL(request.url);

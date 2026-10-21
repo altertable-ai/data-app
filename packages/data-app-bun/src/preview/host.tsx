@@ -10,6 +10,7 @@ import {
   defineMessageRoute,
   navigationUpdateRoute,
   sqlQueryRoute,
+  sqlProgressRoute,
 } from '@altertable/data-app/contract';
 import { downloadBlob } from '@altertable/data-app/internal';
 import { StrictMode, useEffect, useState } from 'react';
@@ -36,6 +37,7 @@ function download({ filename, blob }: { filename: string; blob: Blob }) {
 const router = createMessageRouter(
   {
     'data:sql': sqlQueryRoute,
+    'data:progress': sqlProgressRoute,
     'navigation:update': navigationUpdateRoute,
     'export:csv': fileExportRoute,
     'export:zip': fileExportRoute,
@@ -58,6 +60,19 @@ const router = createMessageRouter(
         return body;
       },
     })),
+    async 'data:progress'(query, { signal }) {
+      const response = await fetch('/api/progress', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(query),
+        signal,
+      });
+      if (!response.ok) return null;
+      const { percentage } = (await response.json()) as {
+        percentage: number | null;
+      };
+      return percentage;
+    },
     'navigation:update': createNavigationHandler(),
     'export:csv': download,
     'export:zip': download,

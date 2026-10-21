@@ -27,7 +27,7 @@ import {
   type DimensionValue,
 } from '@altertable/data-app/internal';
 import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useState, useSyncExternalStore, type ReactNode } from 'react';
 
 import {
   bindDataset,
@@ -75,6 +75,56 @@ function getClientScope(client: object): string {
   }
 
   return scope;
+}
+
+type RequestProgress = {
+  percentage: number;
+  queries: Readonly<Record<string, number>>;
+};
+
+function createProgressStore() {
+  const entries = new Map<
+    string,
+    { fetch: object; progress?: RequestProgress }
+  >();
+  const listeners = new Set<() => void>();
+
+  function notify() {
+    for (const listener of listeners) listener();
+  }
+
+  return {
+    track(key: string) {
+      const fetch = {};
+      entries.set(key, { fetch });
+      notify();
+      return {
+        report(
+          this: void,
+          percentage: number,
+          queries: Readonly<Record<string, number>>
+        ) {
+          if (entries.get(key)?.fetch !== fetch) return;
+          entries.set(key, { fetch, progress: { percentage, queries } });
+          notify();
+        },
+        release(this: void) {
+          if (entries.get(key)?.fetch !== fetch) return;
+          entries.delete(key);
+          notify();
+        },
+      };
+    },
+    get(key: string) {
+      return entries.get(key)?.progress;
+    },
+    subscribe(this: void, listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
 }
 
 type TimeVariables<Additional extends VariableCollection> = {
@@ -238,6 +288,7 @@ export function createDataHooks<Operations extends DataOperations>(
   client: DataClient<Operations>
 ) {
   const clientScope = getClientScope(client);
+  const progress = createProgressStore();
 
   function useDataQuery<Name extends keyof Operations & string>(
     name: Name,
@@ -245,10 +296,19 @@ export function createDataHooks<Operations extends DataOperations>(
   ) {
     const queryClient = useQueryClient();
     const queryKey = ['data-operation', clientScope, name, input] as const;
+    const progressKey = hashKey(queryKey);
     const query = useQuery({
       queryKey,
-      queryFn({ signal }) {
-        return client.query(name as never, input, { signal });
+      async queryFn({ signal }) {
+        const tracked = progress.track(progressKey);
+        try {
+          return await client.query(name as never, input, {
+            signal,
+            onProgress: tracked.report,
+          });
+        } finally {
+          tracked.release();
+        }
       },
       placeholderData(previousData, previousQuery) {
         return previousQuery?.queryKey[1] === clientScope &&
@@ -258,8 +318,17 @@ export function createDataHooks<Operations extends DataOperations>(
       },
     });
 
+    const reported = useSyncExternalStore(
+      progress.subscribe,
+      () => progress.get(progressKey),
+      () => undefined
+    );
+    const running = query.isFetching ? reported : undefined;
+
     return {
       ...query,
+      progress: running?.percentage,
+      queryProgress: running?.queries,
       /** Abort the current request and restore its prior query state. */
       cancel(this: void) {
         return queryClient.cancelQueries({ queryKey, exact: true });
@@ -568,6 +637,8 @@ export function createDataHooks<Operations extends DataOperations>(
         },
         cancel: request.cancel,
         refreshing: request.refreshing,
+        progress: request.progress,
+        queryProgress: request.queryProgress,
         queries: request.queries,
         emptyFallback: definition.emptyFallback,
       };
@@ -779,6 +850,8 @@ export function createDataHooks<Operations extends DataOperations>(
       },
       cancel: request.cancel,
       refreshing: request.refreshing,
+      progress: request.progress,
+      queryProgress: request.queryProgress,
       queries: request.queries,
       emptyFallback: definition.emptyFallback,
       timeZone:

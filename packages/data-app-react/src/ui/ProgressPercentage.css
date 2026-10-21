@@ -1,0 +1,7 @@
+.altertable-progress-percentage {
+  flex: none;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

@@ -1,4 +1,8 @@
-import type { DataOperations, Lakehouse } from '../core/contract.ts';
+import type {
+  DataOperations,
+  Lakehouse,
+  OperationProgressListener,
+} from '../core/contract.ts';
 import { withDimensionSelectors } from '../core/dimension-source.ts';
 import { defineDataQueryRoute, MessageRoutingError } from '../core/messages.ts';
 import type {
@@ -33,7 +37,11 @@ export type DataClient<Operations extends DataOperations> = {
     this: void,
     name: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown),
     input: InputOf<Operations[NoInfer<Name>]>,
-    options?: { signal?: AbortSignal }
+    options?: {
+      signal?: AbortSignal;
+      /** Named HTTP operations do not report progress. */
+      onProgress?: OperationProgressListener;
+    }
   ): Promise<
     DataResponse<OutputOf<Operations[Name]>, InputOf<Operations[Name]>>
   >;
@@ -131,7 +139,7 @@ function createOperationClient<Operations extends DataOperations>(options: {
 }): DataClient<Operations> {
   const operations = Object.freeze({ ...options.operations });
   return typedClient<Operations>({
-    async query(name, input, { signal } = {}) {
+    async query(name, input, { signal, onProgress } = {}) {
       signal?.throwIfAborted();
       const requestId = randomUuid();
       if (!Object.hasOwn(operations, name))
@@ -158,6 +166,7 @@ function createOperationClient<Operations extends DataOperations>(options: {
           signal: signal ?? new AbortController().signal,
           requestId,
           operationName: name,
+          ...(onProgress ? { onProgress } : {}),
         });
 
         return { ...body, input } as DataResponse<

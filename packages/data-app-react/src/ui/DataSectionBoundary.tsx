@@ -62,6 +62,8 @@ function errorPresentation(cause: Error) {
 export type SectionResult<Data, Input> = {
   view: DataView<Data, Input>;
   refetch: () => unknown;
+  progress?: number;
+  queryProgress?: Readonly<Record<string, number>>;
 };
 
 export type DataSectionProps<Data, Input = unknown> = {
@@ -106,6 +108,8 @@ export function DataSectionBoundary<Data, Input>({
     <DataBoundary
       {...props}
       view={result.view}
+      progress={result.progress}
+      queryProgress={result.queryProgress}
       role={label ? 'region' : undefined}
       aria-label={label}
       notice={notice}

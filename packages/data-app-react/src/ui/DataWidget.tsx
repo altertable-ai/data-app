@@ -15,6 +15,7 @@ import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { AppIcon } from './icons.ts';
 import { InspectionVisual } from './InspectionProvider.tsx';
+import { LoadingProgress, useWidgetProgress } from './LoadingProgress.tsx';
 import type { EmptyContent, BoundWidgetReading } from './presentation.ts';
 import { WidgetStatusControl, type WidgetStatus } from './RequestHint.tsx';
 import type { WidgetEvidence } from './WidgetEvidence.ts';
@@ -103,7 +104,18 @@ function DataWidgetContent({
   const titleId = useId();
   const inspectionVisual = useContext(InspectionVisual);
   const Heading = `h${headingLevel}` as ElementType;
-  const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
+  const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
+  const progress = useWidgetProgress(busy ? evidence : undefined);
+  const content = emptyFallback ? (
+    <EmptyState {...emptyFallback} />
+  ) : progress === undefined ? (
+    children
+  ) : (
+    <LoadingProgress
+      progress={progress}
+      label={typeof title === 'string' ? `Loading ${title}` : 'Loading data'}
+    />
+  );
   const visual = (
     <WidgetContent
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
@@ -114,7 +126,6 @@ function DataWidgetContent({
     </WidgetContent>
   );
   const explicitAnnotationId = annotationId ?? props.id;
-  const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
   const help =
     evidence && !busy ? (
       <AboutData

@@ -54,6 +54,7 @@ export type {
 export type {
   Lakehouse,
   OperationContext,
+  OperationProgressListener,
   DataOperations,
 } from './operation-types.ts';
 
@@ -94,6 +95,7 @@ export {
   dataAppRoutes,
   navigationUpdateRoute,
   sqlQueryRoute,
+  sqlProgressRoute,
 } from './messages.ts';
 export type {
   MessageContext,
@@ -111,6 +113,7 @@ export type {
   DataQueryRoute,
   NavigationUpdate,
   SqlQueryInput,
+  SqlProgressInput,
 } from './messages.ts';
 export type { TransportResponse } from './bridge.ts';
 

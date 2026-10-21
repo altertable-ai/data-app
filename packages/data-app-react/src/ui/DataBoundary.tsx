@@ -3,9 +3,13 @@ import { type ComponentPropsWithRef, type ReactNode } from 'react';
 
 import { classNames } from './classNames.ts';
 import { AppIcon } from './icons.ts';
+import { QueryProgressContext } from './LoadingProgress.tsx';
+import { ProgressPercentage } from './ProgressPercentage.tsx';
 
 export type DataBoundaryProps<T, Input = unknown> = {
   view: DataView<T, Input>;
+  progress?: number;
+  queryProgress?: Readonly<Record<string, number>>;
   loadingFallback: ReactNode;
   emptyFallback: ReactNode;
   error: (error: Error) => ReactNode;
@@ -18,6 +22,8 @@ export type DataBoundaryProps<T, Input = unknown> = {
  * Feedback ownership is supplied by the containing section. */
 export function DataBoundary<T, Input>({
   view,
+  progress,
+  queryProgress,
   loadingFallback,
   emptyFallback,
   error,
@@ -33,11 +39,15 @@ export function DataBoundary<T, Input>({
         {...props}
         className={classNames('altertable-data-boundary', className)}
       >
-        {view.kind === 'loading'
-          ? loadingFallback
-          : view.kind === 'empty'
-            ? emptyFallback
-            : error(view.error)}
+        {view.kind === 'loading' ? (
+          <QueryProgressContext value={queryProgress}>
+            {loadingFallback}
+          </QueryProgressContext>
+        ) : view.kind === 'empty' ? (
+          emptyFallback
+        ) : (
+          error(view.error)
+        )}
       </div>
     );
 
@@ -67,6 +77,9 @@ export function DataBoundary<T, Input>({
           <span className="altertable-data-boundary-message">
             {view.message}
           </span>
+          {updating && progress !== undefined && (
+            <ProgressPercentage progress={progress} />
+          )}
           {staleError && view.kind === 'stale-error' && (
             <span className="altertable-data-boundary-action">
               {staleError(view.error)}

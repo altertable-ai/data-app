@@ -169,6 +169,7 @@ console.log(dataApp.title);
     statement: 'SELECT $ready AS ready',
     limit: 1,
     params: { ready: 1 },
+    query_id: expect.stringMatching(/^[0-9a-f-]{36}$/),
   });
 });
 
@@ -574,6 +575,67 @@ test('dev:file queries the lakehouse with CLI credential names and reports its t
   expect(server.output()).not.toContain('secret');
   expect(server.output()).not.toContain('analyst');
   expect(server.output()).not.toContain(apiBase);
+});
+
+test('dev:file relays lakehouse query progress to the app', async () => {
+  const directory = await temporaryDirectory();
+  const entry = join(directory, 'index.tsx');
+  await writeFile(
+    entry,
+    `
+import { defineDataApp } from '@altertable/data-app';
+import { mountDataApp } from '@altertable/data-app-react';
+import { getDataAppTransport } from '@altertable/data-app/client';
+const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'test', environment: 'test' }, queries: {} });
+function App() {
+  return <>
+    <button onClick={async () => {
+      const progress = [];
+      await getDataAppTransport().lakehouse.queryAll('SELECT 1 AS ready', {
+        limit: 1,
+        signal: new AbortController().signal,
+        onProgress: value => { progress.push(value); document.querySelector('output').textContent = progress.join(','); },
+      });
+      document.querySelector('output').dataset.done = 'true';
+    }}>Run query</button>
+    <output aria-label="Query progress" />
+  </>;
+}
+mountDataApp({ app, component: App });
+`
+  );
+  const api = createServer(async (request, response) => {
+    for await (const _chunk of request);
+    if (request.method === 'GET') {
+      response.setHeader('content-type', 'application/json');
+      response.end(JSON.stringify({ percentage: 55 }));
+      return;
+    }
+    await new Promise(done => setTimeout(done, 2500));
+    response.end(
+      '{"query_id":"api-query"}\n[{"name":"ready","type":"INTEGER"}]\n[1]\n'
+    );
+  });
+  await new Promise<void>(done => api.listen(0, '127.0.0.1', done));
+  cleanups.push(() => new Promise<void>(done => api.close(() => done())));
+  const server = await startFile(entry, {
+    ALTERTABLE_API_BASE: `http://127.0.0.1:${(api.address() as AddressInfo).port}`,
+  });
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    await page.goto(server.url);
+    const app = page.frameLocator('iframe');
+    await app.getByRole('button', { name: 'Run query' }).click();
+    const output = app.getByRole('status', { name: 'Query progress' });
+    await vi.waitFor(
+      () => expect(output.getAttribute('data-done')).resolves.toBe('true'),
+      { timeout: 10_000 }
+    );
+    expect(await output.textContent()).toBe('55');
+  } finally {
+    await browser.close();
+  }
 });
 
 test.each(['dev:file', 'dev:dir'])(

@@ -4,6 +4,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import {
   DataSourceError,
   sqlQueryRoute,
+  sqlProgressRoute,
   type Lakehouse,
 } from '@altertable/data-app/contract';
 import {
@@ -251,6 +252,32 @@ export async function serveAppFile({
     query_rejected: 400,
     unavailable: 502,
   } as const;
+  const progress = new Map<string, { percentage?: number }>();
+
+  function progressKey(statement: string, params: unknown) {
+    return JSON.stringify([statement, params ?? null]);
+  }
+
+  async function buildLakehouseApiRequest<Query>(
+    request: Request,
+    hosts: string[],
+    parse: (value: unknown) => Query
+  ): Promise<Query | Response> {
+    const origin = request.headers.get('origin');
+    const site = request.headers.get('sec-fetch-site');
+    if (
+      !hosts.some(host => origin === `http://${host}`) ||
+      (site !== null && site !== 'same-origin')
+    )
+      return new Response('Forbidden', { status: 403 });
+    try {
+      return parse(JSON.parse(await readRequestBody(request, 100_000)));
+    } catch (error) {
+      if (error instanceof RequestBodyTooLargeError)
+        return Response.json({ reason: 'query_rejected' }, { status: 413 });
+      return Response.json({ reason: 'query_rejected' }, { status: 400 });
+    }
+  }
 
   const server = Bun.serve({
     hostname: '127.0.0.1',
@@ -276,28 +303,24 @@ export async function serveAppFile({
         return reload.connect(request);
       }
       if (path === '/api/sql' && request.method === 'POST') {
-        const origin = request.headers.get('origin');
-        const site = request.headers.get('sec-fetch-site');
-        if (
-          !hosts.some(host => origin === `http://${host}`) ||
-          (site !== null && site !== 'same-origin')
-        )
-          return new Response('Forbidden', { status: 403 });
-        let query;
-        try {
-          const body = await readRequestBody(request, 100_000);
-          query = sqlQueryRoute.input(JSON.parse(body));
-        } catch (error) {
-          if (error instanceof RequestBodyTooLargeError)
-            return Response.json({ reason: 'query_rejected' }, { status: 413 });
-          return Response.json({ reason: 'query_rejected' }, { status: 400 });
-        }
+        const query = await buildLakehouseApiRequest(
+          request,
+          hosts,
+          sqlQueryRoute.input
+        );
+        if (query instanceof Response) return query;
+        const key = progressKey(query.statement, query.params);
+        const entry: { percentage?: number } = {};
+        progress.set(key, entry);
         try {
           return Response.json(
             await lakehouse.queryAll(query.statement, {
               limit: query.limit,
               params: query.params,
               signal: request.signal,
+              onProgress(percentage) {
+                entry.percentage = percentage;
+              },
             })
           );
         } catch (error) {
@@ -308,7 +331,22 @@ export async function serveAppFile({
             );
           console.error(error);
           return Response.json({ reason: 'unavailable' }, { status: 502 });
+        } finally {
+          if (progress.get(key) === entry) progress.delete(key);
         }
+      }
+      if (path === '/api/progress' && request.method === 'POST') {
+        const query = await buildLakehouseApiRequest(
+          request,
+          hosts,
+          sqlProgressRoute.input
+        );
+        if (query instanceof Response) return query;
+        return Response.json({
+          percentage:
+            progress.get(progressKey(query.statement, query.params))
+              ?.percentage ?? null,
+        });
       }
       return new Response('Not found', { status: 404 });
     },

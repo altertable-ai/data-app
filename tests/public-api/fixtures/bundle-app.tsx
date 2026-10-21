@@ -43,6 +43,7 @@ function App() {
   const state = useAppVariables(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
+  const [progress, setProgress] = useState<number[]>([]);
   const [content, setContent] = useState<
     'short' | 'long' | 'viewport' | 'scaled' | 'oscillating'
   >('short');
@@ -110,6 +111,21 @@ function App() {
         }}
       >
         Data query
+      </button>
+      <output aria-label="Query progress">{progress.join(',')}</output>
+      <button
+        onClick={() => {
+          setProgress([]);
+          void data
+            .query(
+              'connection',
+              {},
+              { onProgress: value => setProgress(seen => [...seen, value]) }
+            )
+            .then(value => setResult(JSON.stringify(value)));
+        }}
+      >
+        Progress query
       </button>
       <button
         onClick={() => {

@@ -32,6 +32,11 @@ export type DisclosedQuery = {
 };
 
 /** Query interface supplied by a server adapter or an authorized iframe bridge. */
+export type OperationProgressListener = (
+  percentage: number,
+  queries: Readonly<Record<string, number>>
+) => void;
+
 export type Lakehouse = {
   queryAll(
     statement: string,
@@ -40,6 +45,7 @@ export type Lakehouse = {
       signal: AbortSignal;
       name?: string;
       params?: QueryParameters;
+      onProgress?: (percentage: number) => void;
     }
   ): Promise<QueryResult>;
 };

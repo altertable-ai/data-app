@@ -22,6 +22,7 @@ export type AppToolbarProps = {
   requestState?: DataView<unknown, unknown>['kind'];
   refresh?: {
     refreshing: boolean;
+    progress?: number;
     onRefresh: () => void;
     onCancel?: () => void;
     label?: string;
@@ -92,6 +93,7 @@ export function AppToolbar({
         {refresh && (
           <RefreshControl
             refreshing={refresh.refreshing}
+            progress={refresh.progress}
             label={
               requestState === 'loading'
                 ? 'Loading data'

@@ -10,6 +10,7 @@ import {
   navigationUpdateRoute,
   MessageRoutingError,
   sqlQueryRoute,
+  sqlProgressRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
 import { expect, test } from 'vitest';
@@ -245,6 +246,41 @@ test('a SQL message client rejects malformed requests and malformed upstream res
     await expect(client.request('data:sql', input)).rejects.toMatchObject({
       code: 'invalid_response',
     });
+  }
+});
+
+test('a SQL progress client sends the query identity and receives a bounded percentage', async () => {
+  let response: unknown = 42.5;
+  const router = createMessageRouter(
+    { 'data:progress': sqlProgressRoute },
+    { 'data:progress': () => response as number | null }
+  );
+  const client = createMessageClient(
+    { 'data:progress': sqlProgressRoute },
+    message => router.dispatch(message, context())
+  );
+  const input = { statement: 'SELECT $value', params: { value: 1 } };
+  await expect(client.request('data:progress', input)).resolves.toBe(42.5);
+  response = null;
+  await expect(client.request('data:progress', input)).resolves.toBeNull();
+  response = 140;
+  await expect(client.request('data:progress', input)).resolves.toBe(100);
+  response = -5;
+  await expect(client.request('data:progress', input)).resolves.toBe(0);
+  for (const body of ['42', Number.NaN, undefined]) {
+    response = body;
+    await expect(client.request('data:progress', input)).rejects.toMatchObject({
+      code: 'invalid_response',
+    });
+  }
+  for (const payload of [
+    null,
+    { statement: '' },
+    { statement: 'SELECT $value', params: null },
+  ]) {
+    await expect(
+      router.dispatch({ route: 'data:progress', payload }, context())
+    ).rejects.toMatchObject({ code: 'invalid_payload' });
   }
 });
 
