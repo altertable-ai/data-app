@@ -14,5 +14,5 @@ packages/data-app/CONTRIBUTING.md
 packages/data-app/REFERENCE.md
 
 # Temporary declaration configuration for staged development builds.
-packages/*/.tsconfig.dev.json
+packages/*/.tsconfig.dev*.json
 packages/*/.dev-build/

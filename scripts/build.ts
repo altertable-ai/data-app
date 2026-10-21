@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import { build } from 'tsdown';
 
+import { staging, declarationConfig, cleanStaging } from '@/scripts/dev-paths';
 import { packages } from '@/scripts/packages';
 
 // Package scripts can also invoke this runner from their own directory.
@@ -15,12 +16,8 @@ if (selected && !packages.some(pkg => pkg.directory === `packages/${selected}`))
   throw new Error(`Unknown package: ${selected}`);
 const incremental = process.argv.includes('--incremental');
 const development = process.argv.includes('--development');
-function staging(directory: string) {
-  return resolve(directory, '.dev-build');
-}
 if (development)
-  for (const { directory } of packages)
-    await rm(staging(directory), { recursive: true, force: true });
+  for (const { directory } of packages) await cleanStaging(directory);
 async function markReady() {
   await mkdir('node_modules/.cache', { recursive: true });
   await writeFile(
@@ -194,7 +191,7 @@ for (const { directory, manifest } of packages) {
   }
   let tsconfig = 'tsconfig.build.json';
   if (development) {
-    tsconfig = resolve(directory, '.tsconfig.dev.json');
+    tsconfig = declarationConfig(directory);
     await mkdir(staging(directory), { recursive: true });
     await writeFile(
       tsconfig,
@@ -281,7 +278,6 @@ if (development) {
     await mkdir(resolve(target, '..'), { recursive: true });
     await rename(source, target);
   }
-  for (const { directory } of packages)
-    await rm(staging(directory), { recursive: true, force: true });
+  for (const { directory } of packages) await cleanStaging(directory);
 }
 if (!selected) await markReady();

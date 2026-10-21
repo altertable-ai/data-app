@@ -38,6 +38,8 @@ export default {
   workspaces: {
     '.': {
       entry: [
+        // Spawned by the shared watcher owner rather than imported.
+        'scripts/dev-watch.ts',
         'dev/server.ts',
         'dev/playground.tsx',
         'dev/fixtures/view-result.types.ts',

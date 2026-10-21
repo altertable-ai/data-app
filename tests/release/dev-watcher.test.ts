@@ -1,16 +1,19 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import {
   cp,
   mkdir,
   mkdtemp,
   readFile,
+  realpath,
   readdir,
   rm,
   symlink,
   writeFile,
 } from 'node:fs/promises';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -18,28 +21,32 @@ import { expect, test } from 'vitest';
 
 import { packages } from '@/scripts/packages';
 
+async function checkout() {
+  const root = resolve('.');
+  const temporary = await mkdtemp(join(tmpdir(), 'data-app-watcher-'));
+  for (const name of ['package.json', 'tsconfig.json', 'scripts'])
+    await cp(join(root, name), join(temporary, name), { recursive: true });
+  await symlink(join(root, 'node_modules'), join(temporary, 'node_modules'));
+  for (const { directory } of packages) {
+    for (const name of ['src', 'package.json', 'tsconfig.build.json'])
+      await cp(join(root, directory, name), join(temporary, directory, name), {
+        recursive: true,
+      });
+    await symlink(
+      join(root, directory, 'node_modules'),
+      join(temporary, directory, 'node_modules')
+    );
+  }
+  return temporary;
+}
+
 // Real builds in an isolated checkout: failures and saves never edit user source.
 test('package watcher publishes current linked output, retains chunks, recovers, and stops', async () => {
   const root = resolve('.');
-  const temporary = await mkdtemp(join(tmpdir(), 'data-app-watcher-'));
+  const temporary = await checkout();
   let watcher: ReturnType<typeof spawn> | undefined;
   let log = '';
   try {
-    for (const name of ['package.json', 'tsconfig.json', 'scripts'])
-      await cp(join(root, name), join(temporary, name), { recursive: true });
-    await symlink(join(root, 'node_modules'), join(temporary, 'node_modules'));
-    for (const { directory } of packages) {
-      for (const name of ['src', 'package.json', 'tsconfig.build.json'])
-        await cp(
-          join(root, directory, name),
-          join(temporary, directory, name),
-          { recursive: true }
-        );
-      await symlink(
-        join(root, directory, 'node_modules'),
-        join(temporary, directory, 'node_modules')
-      );
-    }
     const core = 'packages/data-app/src/index.ts';
     const css = 'packages/data-app-react/src/styles.css';
     await writeFile(join(temporary, core), 'export const broken = ;');
@@ -214,6 +221,151 @@ test('package watcher publishes current linked output, retains chunks, recovers,
       const exited = once(watcher, 'exit');
       watcher.kill('SIGTERM');
       await exited;
+    }
+    await rm(temporary, { recursive: true, force: true });
+  }
+}, 120000);
+
+test('concurrent clients share one watcher and release it without stopping peers', async () => {
+  const temporary = await checkout();
+  const gatePort =
+    30001 +
+    (createHash('sha256')
+      .update(await realpath(temporary))
+      .digest()
+      .readUInt32BE(0) %
+      25000);
+  const collision = createServer(socket =>
+    socket.end('unrelated local service\n')
+  );
+  await new Promise<void>(done =>
+    collision.listen(gatePort, '127.0.0.1', done)
+  );
+  const workerSource = join(temporary, 'scripts/dev-watch.ts');
+  await writeFile(
+    workerSource,
+    (await readFile(workerSource, 'utf8')).replace(
+      "report('building');",
+      "process.stderr.write('partial diagnostic'); setTimeout(() => process.stderr.write(' end\\n'), 500); report('building');"
+    )
+  );
+  const clients: ReturnType<typeof start>[] = [];
+  let pausedWorker: number | undefined;
+  function start() {
+    let output = '';
+    const child = spawn('bun', ['run', 'dev'], { cwd: temporary });
+    const exited = once(child, 'exit');
+    child.stdout.on('data', data => {
+      output += String(data);
+    });
+    child.stderr.on('data', data => {
+      output += String(data);
+    });
+    const client = {
+      child,
+      exited,
+      output: () => output,
+      owner: () => output.match(/Shared watcher PID (\d+)/)?.[1],
+      async wait(event: string, generation: number) {
+        await expect
+          .poll(
+            () =>
+              output.includes(
+                `DATA_APP_DEV ${JSON.stringify({ event, generation })}`
+              ),
+            { timeout: 30000 }
+          )
+          .toBe(true);
+      },
+      async stop(signal: NodeJS.Signals = 'SIGTERM') {
+        child.kill(signal);
+        return (await exited)[0];
+      },
+    };
+    return client;
+  }
+  try {
+    const first = start();
+    clients.push(first);
+    const second = start();
+    clients.push(second);
+    await Promise.all([first.wait('ready', 1), second.wait('ready', 1)]);
+    expect(first.owner()).toBe(second.owner());
+    expect(
+      [first, second].some(client =>
+        client
+          .output()
+          .split('\n')
+          .includes('DATA_APP_DEV {"event":"building","generation":0}')
+      )
+    ).toBe(true);
+
+    expect(await first.stop()).toBe(0);
+    const input = join(temporary, 'packages/data-app/src/index.ts');
+    const original = await readFile(input, 'utf8');
+    await writeFile(
+      input,
+      `${original}\nexport const sharedProbe = 'second';\n`
+    );
+    await second.wait('ready', 2);
+    const late = start();
+    clients.push(late);
+    await late.wait('ready', 2);
+    expect(late.owner()).toBe(second.owner());
+    expect(late.output()).not.toContain('"event":"building"');
+    await second.stop('SIGKILL');
+    await writeFile(input, `${original}\nexport const sharedProbe = ;\n`);
+    await late.wait('error', 2);
+    const failed = start();
+    clients.push(failed);
+    await failed.wait('error', 2);
+    expect(failed.output()).not.toContain('"event":"ready"');
+    expect(failed.owner()).toBe(late.owner());
+    await late.stop('SIGKILL');
+    await writeFile(input, original);
+    await failed.wait('ready', 3);
+    // Losing the owner closes its stdin pipe, which also cleans up the worker.
+    const worker = Number(first.output().match(/Build worker PID (\d+)/)?.[1]);
+    expect(worker).toBeGreaterThan(0);
+    pausedWorker = worker;
+    process.kill(worker, 'SIGSTOP');
+    process.kill(Number(failed.owner()), 'SIGKILL');
+    expect((await failed.exited)[0]).toBe(1);
+    const restarted = start();
+    clients.push(restarted);
+    await expect.poll(() => restarted.owner()).toBeTruthy();
+    // The dead owner's worker cannot read EOF while paused. Its kernel gate must
+    // keep the replacement from building until that worker finishes cleanup.
+    await new Promise(done => setTimeout(done, 300));
+    expect(restarted.output()).not.toContain('"event":"building"');
+    process.kill(worker, 'SIGCONT');
+    pausedWorker = undefined;
+    await restarted.wait('ready', 1);
+    expect(restarted.owner()).not.toBe(failed.owner());
+    const finalWorker = Number(
+      restarted.output().match(/Build worker PID (\d+)/)?.[1]
+    );
+    process.kill(finalWorker, 'SIGTERM');
+    expect((await restarted.exited)[0]).toBe(1);
+    const clean = start();
+    clients.push(clean);
+    await clean.wait('ready', 1);
+    expect(await clean.stop()).toBe(0);
+    for (const { directory } of packages)
+      await expect(
+        readdir(join(temporary, directory, '.dev-build'))
+      ).rejects.toMatchObject({ code: 'ENOENT' });
+  } catch (error) {
+    throw new Error(
+      clients.map(client => client.output()).join('\n--- client ---\n'),
+      { cause: error }
+    );
+  } finally {
+    collision.close();
+    if (pausedWorker) process.kill(pausedWorker, 'SIGCONT');
+    for (const client of clients) {
+      if (client.child.exitCode === null && client.child.signalCode === null)
+        await client.stop();
     }
     await rm(temporary, { recursive: true, force: true });
   }

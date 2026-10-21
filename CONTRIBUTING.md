@@ -96,8 +96,12 @@ package manifests, build TypeScript configuration, the lockfile, and build
 scripts. Saves are debounced;
 builds run one at a time, with another build queued for edits during a build.
 Errors keep the previous output and watching continues. Stop with Ctrl-C.
-Only run one package watcher per checkout; stop it before production builds or
-package checks.
+Concurrent `dev` commands share one watcher for the same canonical checkout.
+Each command subscribes to its output; Ctrl-C detaches only that subscriber. The
+watcher stops after the final subscriber exits, including abrupt termination.
+The owner runs separately from launcher process groups, using a loopback-only
+connection rather than persistent locks. Stop all subscribers before production
+builds, the gallery, or package checks.
 
 Link every consumed `@altertable` workspace package to this checkout's matching
 `packages/<name>` directory, using your consumer's package manager. For example,
@@ -125,13 +129,20 @@ DATA_APP_DEV {"event":"ready","generation":1}
 
 Supervisors should match `DATA_APP_DEV` followed by a space and parse the
 remaining JSON.
-`generation` starts at zero for each process and increases only on successful
+`generation` starts at zero for each shared owner and increases only on successful
 publication. `building` starts an attempt, `ready` means all JavaScript and
 current declarations are published, `error` means an attempt failed, and
-`stopped` acknowledges SIGINT/SIGTERM shutdown. Wait for the first `ready` before
+`stopped` acknowledges SIGINT/SIGTERM detachment. Wait for the first `ready` before
 starting a consumer; use each later `ready` to invalidate or restart it. A failed
 initial build keeps watching and does not emit `ready`. Process exit means the
-watcher is unavailable; never infer readiness from a previous process's output.
+subscription is unavailable; never infer readiness from a previous owner's
+output. An unexpected owner or worker exit closes subscriptions with a nonzero
+exit code; rerun the command to create a fresh owner.
+
+A late subscriber receives the current event immediately. If it is `ready`, the
+existing build can be used without rebuilding. If it is `building` or `error`,
+wait for the next `ready`, even when `generation` is greater than zero. Existing
+subscribers can keep using their last successful output after an error.
 
 Development builds stage all packages before publication, atomically replace
 individual files, publish chunks before entries, and retain old files so requests
