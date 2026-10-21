@@ -1,165 +1,249 @@
-import { watch } from 'node:fs';
+import { spawn, type ChildProcess } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { realpath } from 'node:fs/promises';
+import { createServer, type Socket } from 'node:net';
 import { resolve } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 
-import { GenericContainer, Wait } from 'testcontainers';
+import { open, protocol } from '@/scripts/dev-connection';
 
-import { seedStatements } from '@/dev/seed';
-import { packages } from '@/scripts/packages';
+const root = await realpath(resolve(import.meta.dir, '..'));
 
-const root = resolve(import.meta.dir, '..');
-const mockApiPort = 15000;
+const firstPort =
+  30000 + (createHash('sha256').update(root).digest().readUInt32BE(0) % 25000);
+const ports = Array.from({ length: 16 }, (_, index) => firstPort + index * 2);
 
-async function seedMockApi(apiUrl: string) {
-  for (const statement of seedStatements) {
-    const response = await fetch(`${apiUrl}/query`, {
-      method: 'POST',
-      headers: {
-        authorization: `Basic ${btoa('dev:dev')}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ statement }),
-    });
-    const body = await response.text();
-    // The mock reports SQL errors as an NDJSON line in a successful response.
-    if (!response.ok || body.includes('\n{"error":'))
-      throw new Error(`Seeding failed for ${statement}: ${body}`);
+// Kernel-owned listeners and connections replace persistent locks/PID leases.
+// The handshake distinguishes another checkout or an unrelated local service.
+async function serve() {
+  const clients = new Set<Socket>();
+  const connections = new Set<Socket>();
+  let worker: ChildProcess | undefined;
+  let workerExited: Promise<void> | undefined;
+  let stopping = false;
+  let current = '';
+  let startup: ReturnType<typeof setTimeout> | undefined;
+  let gatePort = 0;
+
+  function relay(status: boolean) {
+    let output = '';
+    return (chunk: Buffer) => {
+      output += chunk.toString();
+      let end: number;
+      while ((end = output.indexOf('\n')) >= 0) {
+        const line = output.slice(0, end + 1);
+        output = output.slice(end + 1);
+        if (status && line.startsWith('DATA_APP_DEV ')) current = line;
+        for (const socket of clients) socket.write(line);
+      }
+    };
   }
-}
-
-async function startMockApi() {
-  try {
-    const container = await new GenericContainer(
-      'ghcr.io/altertable-ai/altertable-mock:latest'
-    )
-      .withEnvironment({ ALTERTABLE_MOCK_USERS: 'dev:dev' })
-      .withExposedPorts(mockApiPort)
-      .withWaitStrategy(Wait.forListeningPorts())
-      .start();
-    const apiUrl = `http://${container.getHost()}:${container.getMappedPort(mockApiPort)}`;
-    await seedMockApi(apiUrl).catch(async error => {
-      await container.stop();
-      throw error;
-    });
-    return { container, apiUrl };
-  } catch (error) {
-    console.error(
-      'Could not start the mocked Altertable API. Is Docker running?\n',
-      error
-    );
-    process.exit(1);
-  }
-}
-
-async function runBun(args: string[]) {
-  const child = Bun.spawn([process.execPath, ...args], {
-    cwd: root,
-    stdout: 'inherit',
-    stderr: 'inherit',
-  });
-  return (await child.exited) === 0;
-}
-
-// Declarations are only built once; editors keep them while JavaScript rebuilds.
-const [initialBuildSucceeded, { container: mockApi, apiUrl: mockApiUrl }] =
-  await Promise.all([runBun(['run', 'build']), startMockApi()]);
-if (!initialBuildSucceeded) {
-  await mockApi.stop();
-  process.exit(1);
-}
-
-function startServer() {
-  return Bun.spawn([process.execPath, 'dev/server.ts'], {
-    cwd: root,
-    env: {
-      ...process.env,
-      DATA_APP_DEV: '1',
-      ALTERTABLE_API_BASE: mockApiUrl,
-      ALTERTABLE_LAKEHOUSE_USERNAME: 'dev',
-      ALTERTABLE_LAKEHOUSE_PASSWORD: 'dev',
-    },
-    stdout: 'inherit',
-    stderr: 'inherit',
-  });
-}
-let server = startServer();
-let restartRequested = false;
-let wakeForBuild: (() => void) | undefined;
-let stopping = false;
-let restartTimer: ReturnType<typeof setTimeout> | undefined;
-const readyWatcher = watch(
-  resolve(root, 'node_modules/.cache'),
-  (_, filename) => {
-    if (filename !== 'data-app-build-ready') return;
-    clearTimeout(restartTimer);
-    restartTimer = setTimeout(() => {
-      restartRequested = true;
-      server.kill();
-      wakeForBuild?.();
-    }, 50);
-  }
-);
-const port = Number(process.env.DATA_APP_TEST_PORT ?? 27418);
-console.log(`Mocked Altertable API: ${mockApiUrl}`);
-console.log(`Gallery: http://127.0.0.1:${port}/gallery`);
-console.log(`Playground: http://127.0.0.1:${port}/playground`);
-console.log(`Content sizing: http://127.0.0.1:${port}/content-sizing`);
-let isBuilding = false;
-let rebuildQueued = false;
-let rebuildTimer: ReturnType<typeof setTimeout> | undefined;
-
-async function rebuild() {
-  if (isBuilding) {
-    rebuildQueued = true;
-    return;
-  }
-  isBuilding = true;
-  const started = performance.now();
-  const ok = await runBun(['run', 'scripts/build.ts', '--incremental']);
-  console.log(
-    ok
-      ? `Rebuilt in ${Math.round(performance.now() - started)}ms`
-      : 'Build failed; open pages keep the last successful build.'
-  );
-  isBuilding = false;
-  if (rebuildQueued) {
-    rebuildQueued = false;
-    void rebuild();
-  }
-}
-
-const sourceWatchers = packages.map(({ directory }) =>
-  watch(resolve(root, directory, 'src'), { recursive: true }, () => {
-    clearTimeout(rebuildTimer);
-    rebuildTimer = setTimeout(() => void rebuild(), 50);
-  })
-);
-
-for (const signal of ['SIGINT', 'SIGTERM'] as const)
-  process.on(signal, async () => {
+  const stdout = relay(true);
+  const stderr = relay(false);
+  async function stop() {
+    if (stopping) return;
     stopping = true;
-    readyWatcher.close();
-    for (const watcher of sourceWatchers) watcher.close();
-    clearTimeout(restartTimer);
-    server.kill();
-    wakeForBuild?.();
-    await mockApi.stop();
-    process.exit(0);
-  });
-while (true) {
-  await server.exited;
-  if (stopping) break;
-  if (!restartRequested) {
-    console.error(
-      'Preview server stopped; waiting for a successful package build.'
-    );
-    await new Promise<void>(resolve => {
-      wakeForBuild = resolve;
-    });
+    clearTimeout(startup);
+    // EOF also reaches the worker after an owner crash, without PID signalling.
+    worker?.stdin?.end();
+    await workerExited;
+    for (const socket of connections) socket.end();
+    server.close();
   }
-  if (stopping) break;
-  wakeForBuild = undefined;
-  restartRequested = false;
-  server = startServer();
+  function leave(socket: Socket) {
+    const subscribed = clients.delete(socket);
+    if (subscribed && clients.size === 0) void stop();
+  }
+  const server = createServer(socket => {
+    connections.add(socket);
+    socket.on('error', () => socket.destroy());
+    socket.once('close', () => {
+      connections.delete(socket);
+      leave(socket);
+    });
+    socket.write(
+      `${JSON.stringify({ protocol, role: 'owner', root, pid: process.pid, stopping })}\n`
+    );
+    let input = '';
+    socket.on('data', chunk => {
+      input += chunk.toString();
+      if (input.length > 128) {
+        socket.destroy();
+        return;
+      }
+      let end: number;
+      while ((end = input.indexOf('\n')) >= 0) {
+        const command = input.slice(0, end);
+        input = input.slice(end + 1);
+        if (command === 'subscribe' && !stopping && !clients.has(socket)) {
+          clearTimeout(startup);
+          clients.add(socket);
+          if (current) socket.write(current);
+          if (!worker) {
+            worker = spawn(process.execPath, ['scripts/dev-watch.ts'], {
+              cwd: root,
+              env: {
+                ...process.env,
+                DATA_APP_DEV_MANAGED: '1',
+                DATA_APP_DEV_SESSION: crypto.randomUUID(),
+                DATA_APP_DEV_GATE_PORT: String(gatePort),
+              },
+              stdio: ['pipe', 'pipe', 'pipe'],
+            });
+            worker.stdout!.on('data', stdout);
+            worker.stderr!.on('data', stderr);
+            workerExited = new Promise(done => {
+              worker!.once('exit', () => {
+                if (!stopping)
+                  for (const client of clients)
+                    client.write('DATA_APP_DEV_OWNER_FAILED\n');
+                done();
+                void stop();
+              });
+              worker!.once('error', error => {
+                stderr(Buffer.from(`${error.message}\n`));
+                if (!stopping)
+                  for (const client of clients)
+                    client.write('DATA_APP_DEV_OWNER_FAILED\n');
+                done();
+                void stop();
+              });
+            });
+          }
+        } else if (command === 'detach') {
+          const last = clients.size === 1 && clients.has(socket);
+          leave(socket);
+          if (!last) socket.end();
+        } else if (command === 'subscribe' && stopping) socket.end();
+      }
+    });
+  });
+
+  for (const port of ports) {
+    const held = await open(port + 1);
+    held?.socket.destroy();
+    // A suspended old worker cannot answer: an ambiguous occupied gate must
+    // still block replacement, rather than being mistaken for another service.
+    if (
+      held &&
+      !held.ambiguous &&
+      (held.owner?.root !== root || held.owner.role !== 'worker')
+    )
+      continue;
+    gatePort = port + 1;
+    try {
+      await new Promise<void>((done, reject) => {
+        server.once('error', reject);
+        server.listen(port, '127.0.0.1', () => {
+          server.removeListener('error', reject);
+          done();
+        });
+      });
+      // No client may arrive if its launcher was killed during startup.
+      startup = setTimeout(() => void stop(), 5000);
+      for (const signal of ['SIGINT', 'SIGTERM'] as const)
+        process.on(signal, () => void stop());
+      return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw error;
+      const existing = await open(port);
+      existing?.socket.destroy();
+      if (existing?.owner?.root === root && existing.owner.role === 'owner')
+        return;
+    }
+  }
+  throw new Error(
+    'No free local watcher port. Stop unused local development services and retry.'
+  );
 }
-readyWatcher.close();
-if (!stopping) await mockApi.stop();
+
+async function attach() {
+  let socket: Socket | undefined;
+  let stopping = false;
+  let generation = 0;
+  let stopped = false;
+  let failed = false;
+  function detach() {
+    if (stopping) return;
+    stopping = true;
+    if (socket) socket.write('detach\n');
+  }
+  for (const signal of ['SIGINT', 'SIGTERM'] as const)
+    process.on(signal, detach);
+  let launchAt = 0;
+  const deadline = Date.now() + 15000;
+  while (!socket && !stopping && Date.now() < deadline) {
+    for (const port of ports) {
+      const found = await open(port);
+      if (
+        found?.owner?.root === root &&
+        found.owner.role === 'owner' &&
+        !found.owner.stopping &&
+        !stopping
+      ) {
+        socket = found.socket;
+        console.log(
+          `[data-app] Shared watcher PID ${found.owner.pid} for ${root}`
+        );
+        break;
+      }
+      found?.socket.destroy();
+    }
+    if (!socket && !stopping) {
+      if (Date.now() >= launchAt) {
+        spawn(process.execPath, [import.meta.filename, '--owner'], {
+          cwd: root,
+          detached: true,
+          stdio: 'ignore',
+        }).unref();
+        launchAt = Date.now() + 1000;
+      }
+      await delay(100);
+    }
+  }
+  if (!socket) {
+    if (stopping) return;
+    throw new Error(
+      'Could not attach to the package watcher within 15 seconds. Check local network permissions and retry.'
+    );
+  }
+  let output = '';
+  const ended = new Promise<void>(done => socket!.once('close', () => done()));
+  socket.on('data', chunk => {
+    output += chunk.toString();
+    let end: number;
+    while ((end = output.indexOf('\n')) >= 0) {
+      const line = output.slice(0, end);
+      output = output.slice(end + 1);
+      if (line === 'DATA_APP_DEV_OWNER_FAILED') {
+        failed = true;
+        continue;
+      }
+      process.stdout.write(`${line}\n`);
+      if (line.startsWith('DATA_APP_DEV ')) {
+        const status = JSON.parse(line.slice('DATA_APP_DEV '.length));
+        generation = status.generation;
+        if (status.event === 'stopped') stopped = true;
+      }
+    }
+  });
+  socket.write('subscribe\n');
+  await ended;
+  if (stopping) {
+    if (!stopped)
+      console.log(
+        `DATA_APP_DEV ${JSON.stringify({ event: 'stopped', generation })}`
+      );
+  } else if (failed || !stopped)
+    throw new Error(
+      'Shared package watcher exited unexpectedly. Rerun bun run dev.'
+    );
+}
+
+try {
+  if (process.argv.includes('--owner')) await serve();
+  else await attach();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  process.exitCode = 1;
+}

@@ -2,7 +2,7 @@
 
 Use the versions in `.bun-version` and `.node-version`.
 
-```fish
+```sh
 bun install --frozen-lockfile
 bash scripts/install-test-browser.sh
 ```
@@ -83,11 +83,47 @@ native `var()` fallbacks. Reuse focus/state rules and keep geometry local. Add
 styles through `styles.css` with explicit injection; imports must not modify the
 DOM. Update `style-contract.ts` for public hooks.
 
+## Develop linked packages
+
+From this checkout:
+
+```sh
+bun install --frozen-lockfile
+bun run dev
+```
+
+`dev` builds and watches every package, including declarations and embedded CSS.
+Failed builds retain the last successful output. Consumers share one watcher per
+checkout; Ctrl-C detaches a consumer and the last consumer stops the watcher.
+Stop all consumers before production builds, the gallery, or package checks.
+
+Prefer the consuming project's local SDK launcher when available. For manual Bun
+linking, run this from the consumer, replacing the checkout path:
+
+```sh
+data_app_checkout=/absolute/path/to/data-app
+bun link --cwd "$data_app_checkout/packages/data-app"
+bun link --cwd "$data_app_checkout/packages/data-app-react"
+bun link --no-save @altertable/data-app @altertable/data-app-react
+```
+
+Link any transitive workspace packages too. Keep one React instance supplied by
+the consumer, and configure its bundler to refresh linked output after builds.
+
+Launchers parse stdout lines prefixed with `DATA_APP_DEV` and a space. The JSON
+payload looks like `{"event":"ready","generation":1}`. Events are `building`, `ready`, `error`, and
+`stopped`; generation increases only after successful publication. Start or refresh
+consumers after `ready`. New subscribers receive the current event and must wait
+for the next `ready` if a build is in progress or failed. Existing subscribers may
+resume their last successful build after `error`. Unexpected watcher exits return
+a nonzero status; rerun the command to reconnect.
+
 ## Preview UI changes
 
-Use `bun run dev` for the gallery at `http://127.0.0.1:27418/gallery` and
-`/playground`; it requires Docker. Package and fixture edits reload. Restart after
-changing `dev/server.ts`; add `?delay=2000` to inspect loading states.
+For SDK UI work, `bun run dev:gallery` starts the example gallery at
+`http://127.0.0.1:27418/gallery`, `/playground`, and a Docker-backed mock API.
+Package and fixture edits reload. Restart after changing `dev/server.ts`; add
+`?delay=2000` to inspect loading states.
 
 Use `bun run dev:file <path>` for a single-file app or `bun run dev:dir <path>`
 for an app directory with `src/server.ts`. These previews use built packages and
