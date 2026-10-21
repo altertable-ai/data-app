@@ -123,8 +123,8 @@ export function parseDataAppAnnotationDraft(
     if (
       encoded.length % 4 !== 0 ||
       (encoded.length / 4) * 3 -
-        (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0) >
-        262_144
+      (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0) >
+      262_144
     )
       throw new Error('Screenshot is too large.');
     const header = atob(encoded.slice(0, 44));
