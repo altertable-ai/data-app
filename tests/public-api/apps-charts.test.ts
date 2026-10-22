@@ -3,6 +3,131 @@ import { expect } from 'vitest';
 import { test } from '@/tests/public-api/browser';
 import { readChartImage } from '@/tests/public-api/chart-image';
 
+test('weekly date bars stay clear of Y labels and inside both plot edges', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const plot = page.getByRole('application', {
+    name: 'Weekly cohort bar plot',
+    exact: true,
+  });
+  for (const theme of ['light', 'dark']) {
+    if (theme === 'dark')
+      await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect
+        .poll(async () => {
+          const label = await plot
+            .getByText('3.2k', { exact: true })
+            .boundingBox();
+          const bounds = await plot.boundingBox();
+          const image = await readChartImage(plot);
+          const columns = image.pixels.flatMap((color, index) =>
+            color === 0x8040c0 || color === 0x208040
+              ? [index % image.width]
+              : []
+          );
+          if (!label || !bounds || !columns.length) return false;
+          const scale = image.width / bounds.width;
+          return (
+            Math.min(...columns) / scale >
+              label.x + label.width - bounds.x + 2 &&
+            Math.max(...columns) < image.width - 2
+          );
+        })
+        .toBe(true);
+    }
+  }
+});
+
+test('shared currency semantics produce compact ticks and precise keyboard readings', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Automatic currency plot',
+    exact: true,
+  });
+  const plot = chart.getByRole('application');
+  for (const width of [1280, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const label of ['-€100k', '€0', '€100k', '€200k']) {
+      await expect
+        .poll(() => plot.getByText(label, { exact: true }).isVisible())
+        .toBe(true);
+    }
+  }
+  await plot.focus();
+  await expect
+    .poll(() => chart.getByRole('tooltip').textContent())
+    .toContain('-€52,345.89');
+  await page.keyboard.press('ArrowRight');
+  await expect
+    .poll(() => chart.getByRole('tooltip').textContent())
+    .toContain('€183,456.78');
+});
+
+test('automatic axis precision distinguishes close, fractional, and localized ticks', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const [name, labels] of [
+    ['Close large ticks', ['1M', '1.0001M', '1.0002M']],
+    ['Small ratios', ['0%', '0.01%', '0.02%']],
+    ['Fractional ticks', ['0', '0.0001', '0.0002']],
+    ['German currency', ['0 €', '1,5k €', '3k €']],
+  ] as const) {
+    const plot = page.getByRole('application', {
+      name: `${name} plot`,
+      exact: true,
+    });
+    for (const label of labels) {
+      await expect
+        .poll(() => plot.getByText(label, { exact: true }).isVisible())
+        .toBe(true);
+    }
+  }
+});
+
+test('long currency axis labels fit inside the plot at desktop and phone widths', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Long currency labels basic example',
+    exact: true,
+  });
+  for (const theme of ['light', 'dark']) {
+    if (theme === 'dark') {
+      await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    }
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect
+        .poll(() =>
+          chart.evaluate(element => {
+            const svg = element.querySelector('svg[role="application"]');
+            if (!svg) return false;
+            const bounds = svg.getBoundingClientRect();
+            const labels = Array.from(svg.querySelectorAll('text')).filter(
+              label => label.textContent?.includes('€')
+            );
+            return (
+              labels.some(label => label.textContent === '-€100,000.00') &&
+              labels.some(label => label.textContent === '€200,000.00') &&
+              labels.every(label => {
+                const box = label.getBoundingClientRect();
+                return box.left >= bounds.left && box.right <= bounds.right;
+              })
+            );
+          })
+        )
+        .toBe(true);
+    }
+  }
+});
+
 test('standalone series use the configured chart palette independently of brand accent', async ({
   page,
 }) => {

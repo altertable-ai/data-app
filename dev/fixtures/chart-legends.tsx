@@ -78,6 +78,73 @@ createRoot(document.getElementById('root')!).render(
     </Button>
     <Grid columns={2} minItemWidth="wide">
       <Example
+        name="Weekly cohort bars"
+        description="Date bars reserve space at both ends of the time axis."
+      >
+        <ComposedChart
+          ariaLabel="Weekly cohort bar plot"
+          data={[
+            { date: '2026-09-07', returning: 2000, fresh: 1200 },
+            { date: '2026-09-14', returning: 1200, fresh: 1600 },
+            { date: '2026-09-21', returning: 900, fresh: 800 },
+            { date: '2026-09-28', returning: 400, fresh: 700 },
+            { date: '2026-10-05', returning: 500, fresh: 600 },
+            { date: '2026-10-12', returning: 200, fresh: 600 },
+          ]}
+        >
+          <ComposedChart.XAxis dataKey="date" />
+          <ComposedChart.YAxis ticks={[0, 800, 1600, 2400, 3200]} />
+          <ComposedChart.Bar
+            dataKey="returning"
+            stackId="cohort"
+            fill="#8040c0"
+          />
+          <ComposedChart.Bar dataKey="fresh" stackId="cohort" fill="#208040" />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      </Example>
+
+      {(['compact', 'full'] as const).map(format => (
+        <Example
+          key={format}
+          name={
+            format === 'compact'
+              ? 'Revenue — compact axis'
+              : 'Revenue — full axis'
+          }
+          description="The same revenue data. Hover or use the arrow keys for exact amounts."
+        >
+          <ComposedChart
+            data={[
+              { label: 'Sep 8', value: 183456.78 },
+              { label: 'Sep 9', value: 112345.67 },
+              { label: 'Sep 10', value: 76432.1 },
+              { label: 'Sep 11', value: -52345.89 },
+              { label: 'Sep 12', value: 34210.56 },
+            ]}
+            ariaLabel={`Revenue with ${format} currency ticks`}
+            valueFormat={{ kind: 'currency', currency: 'EUR' }}
+          >
+            <ComposedChart.XAxis dataKey="label" />
+            <ComposedChart.YAxis
+              domain={[-100000, 200000]}
+              ticks={[-100000, 0, 100000, 200000]}
+              {...(format === 'full'
+                ? {
+                    tickFormatter: (value: unknown) =>
+                      new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'EUR',
+                      }).format(Number(value)),
+                  }
+                : {})}
+            />
+            <ComposedChart.Tooltip />
+            <ComposedChart.Bar dataKey="value" name="Revenue" />
+          </ComposedChart>
+        </Example>
+      ))}
+      <Example
         name="LineChart — many series"
         description="Twelve services with an automatic legend. Inspect aligned columns and the overflow control."
       >

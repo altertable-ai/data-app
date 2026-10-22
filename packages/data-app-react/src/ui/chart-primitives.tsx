@@ -1,6 +1,6 @@
-import { useDateAxisLabel } from './chart-date-axis.tsx';
+import { useDateAxisLabel, useDateAxisBar } from './chart-date-axis.tsx';
 export { ChartXAxis } from './chart-date-axis.tsx';
-import { formatNumber } from '@altertable/data-app/format';
+import { formatMetric, formatNumber } from '@altertable/data-app/format';
 import { useContext, useLayoutEffect, type ComponentProps } from 'react';
 import {
   Area,
@@ -10,6 +10,7 @@ import {
   Line,
   Scatter,
   YAxis,
+  useYAxisTicks,
   CartesianGrid,
   Tooltip,
   DefaultTooltipContent,
@@ -24,6 +25,7 @@ import {
   useChartSeries,
   isChartSeriesActive,
 } from './chart-interaction.tsx';
+import { ChartValueFormat, axisValueFormatter } from './chart-value-format.ts';
 import { chartBarFill } from './chartColor.ts';
 import { ChartLegend } from './ChartLegend.tsx';
 import { TooltipSurface } from './TooltipSurface.tsx';
@@ -67,6 +69,7 @@ function NearestChartDot({
 export function ChartBar<Row = unknown, Value = number | null>(
   props: BarProps<Row, Value>
 ) {
+  useDateAxisBar(props.xAxisId);
   const series = useChartSeries(props.id);
   return (
     <ChartSeries id={series.id}>
@@ -188,12 +191,19 @@ export function ChartScatter<Row = unknown, Value = number>(
 export function ChartYAxis<Row = unknown, Value = number>(
   props: ComponentProps<typeof YAxis<Row, Value>>
 ) {
+  const format = useContext(ChartValueFormat);
+  const ticks = useYAxisTicks(props.yAxisId);
+  const formatter = axisValueFormatter(
+    (ticks ?? [])
+      .map(tick => tick.value)
+      .filter((value): value is number => typeof value === 'number'),
+    format
+  );
   return (
     <YAxis<Row, Value>
+      width="auto"
       stroke="var(--atbl-muted)"
-      tickFormatter={value =>
-        typeof value === 'number' ? formatNumber(value) : String(value)
-      }
+      tickFormatter={formatter}
       tickLine={false}
       axisLine={false}
       tick={{ fontSize: 'var(--atbl-type-meta-size)' }}
@@ -211,6 +221,10 @@ export function ChartGrid(props: ComponentProps<typeof CartesianGrid>) {
 export function ChartTooltipContent(
   props: ComponentProps<typeof DefaultTooltipContent> & { active?: boolean }
 ) {
+  const valueFormat = useContext(ChartValueFormat);
+  function formatValue(value: number) {
+    return valueFormat ? formatMetric(value, valueFormat) : formatNumber(value);
+  }
   if (!props.active || !props.payload?.length) return null;
   return (
     <TooltipSurface data-variant="chart" role="tooltip">
@@ -227,11 +241,11 @@ export function ChartTooltipContent(
               : Array.isArray(value)
                 ? value
                     .map(item =>
-                      typeof item === 'number' ? formatNumber(item) : item
+                      typeof item === 'number' ? formatValue(item) : item
                     )
                     .join(' ~ ')
                 : typeof value === 'number'
-                  ? formatNumber(value)
+                  ? formatValue(value)
                   : value;
             if (formatted == null) return null;
             const [displayValue, displayName] = Array.isArray(formatted)

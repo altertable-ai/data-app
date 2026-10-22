@@ -128,6 +128,12 @@ Use `<ComposedChart>` from `@altertable/data-app-react/ui` for multiple series o
 standalone charts' themed series primitives; axes, scatter, tooltip, and reference
 primitives are also available.
 
+Declare shared measure semantics with `valueFormat` (currency, count, or ratio).
+Numeric Y axes automatically use a common k/M/B/T scale and precision derived from
+visible ticks; tooltips retain the measure format. Ratios use percentages without
+compact scaling. Set an axis `tickFormatter` or tooltip `formatter` to override
+presentation, including when different axes represent different units.
+
 ```tsx
 // ... revenueView and its revenue dataset
 const revenueContent = revenueView.content(result => (
@@ -136,6 +142,7 @@ const revenueContent = revenueView.content(result => (
       <ComposedChart
         data={rows}
         ariaLabel="Monthly revenue and target in euros"
+        valueFormat={{ kind: 'currency', currency: 'EUR' }}
       >
         <ComposedChart.XAxis dataKey="month" />
         <ComposedChart.YAxis />
@@ -157,6 +164,8 @@ For irregular time intervals, use `<ComposedChart.XAxis>` with ISO dates, zoned
 ISO timestamps, or `Date` values; spacing follows elapsed time. Use `scale="utc"`
 for epoch milliseconds, or `type="category"` to keep date-like labels categorical.
 On UTC axes, supplied `ticks` and `tickFormatter` take precedence over automatic labels.
+Axes with `<ComposedChart.Bar>` reserve half the smallest date interval at both ends
+to keep edge bars inside the plot. An explicit `domain` overrides this spacing.
 Preserve missing measures as `null` and choose `connectNulls` deliberately; do not
 replace missing observations with zero.
 

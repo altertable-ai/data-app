@@ -254,6 +254,125 @@ createRoot(document.getElementById('root')!).render(
     </Button>
     <Grid columns={2} minItemWidth="wide">
       <Example
+        name="Weekly cohort bars"
+        description="Date bars reserve space at both ends of the time axis."
+      >
+        <ComposedChart
+          ariaLabel="Weekly cohort bar plot"
+          data={[
+            { date: '2026-09-07', returning: 2000, fresh: 1200 },
+            { date: '2026-09-14', returning: 1200, fresh: 1600 },
+            { date: '2026-09-21', returning: 900, fresh: 800 },
+            { date: '2026-09-28', returning: 400, fresh: 700 },
+            { date: '2026-10-05', returning: 500, fresh: 600 },
+            { date: '2026-10-12', returning: 200, fresh: 600 },
+          ]}
+        >
+          <ComposedChart.XAxis dataKey="date" />
+          <ComposedChart.YAxis ticks={[0, 800, 1600, 2400, 3200]} />
+          <ComposedChart.Bar
+            dataKey="returning"
+            stackId="cohort"
+            fill="#8040c0"
+          />
+          <ComposedChart.Bar dataKey="fresh" stackId="cohort" fill="#208040" />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      </Example>
+
+      <Example
+        name="Long currency labels"
+        description="Axis labels reserve space for the complete formatted value."
+      >
+        <ComposedChart
+          data={[
+            { label: 'One', value: -100000 },
+            { label: 'Two', value: 200000 },
+          ]}
+          ariaLabel="Long currency labels"
+        >
+          <ComposedChart.XAxis dataKey="label" />
+          <ComposedChart.YAxis
+            tickFormatter={value =>
+              new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'EUR',
+              }).format(Number(value))
+            }
+          />
+          <ComposedChart.Bar dataKey="value" />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Automatic currency"
+        description="Measure semantics own presentation."
+      >
+        <ComposedChart
+          ariaLabel="Automatic currency plot"
+          valueFormat={{ kind: 'currency', currency: 'EUR' }}
+          data={[
+            { label: 'One', value: -52345.89 },
+            { label: 'Two', value: 183456.78 },
+          ]}
+        >
+          <ComposedChart.XAxis dataKey="label" />
+          <ComposedChart.YAxis
+            domain={[-100000, 200000]}
+            ticks={[-100000, 0, 100000, 200000]}
+          />
+          <ComposedChart.Bar dataKey="value" name="Revenue" />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      </Example>
+      {[
+        {
+          name: 'Close large ticks',
+          ticks: [1000000, 1000100, 1000200],
+          format: undefined,
+        },
+        {
+          name: 'Small ratios',
+          ticks: [0, 0.0001, 0.0002],
+          format: { kind: 'ratio' as const },
+        },
+        {
+          name: 'Fractional ticks',
+          ticks: [0, 0.0001, 0.0002],
+          format: undefined,
+        },
+        {
+          name: 'German currency',
+          ticks: [0, 1500, 3000],
+          format: {
+            kind: 'currency' as const,
+            currency: 'EUR',
+            locale: 'de-DE',
+          },
+        },
+      ].map(({ name, ticks, format }) => (
+        <Example
+          key={name}
+          name={name}
+          description="Automatic numeric tick formatting"
+        >
+          <ComposedChart
+            ariaLabel={`${name} plot`}
+            valueFormat={format}
+            data={ticks.map((value, index) => ({
+              label: `Sample ${index + 1}`,
+              value,
+            }))}
+          >
+            <ComposedChart.XAxis dataKey="label" />
+            <ComposedChart.YAxis
+              ticks={ticks}
+              domain={[ticks[0]!, ticks[ticks.length - 1]!]}
+            />
+            <ComposedChart.Line dataKey="value" />
+          </ComposedChart>
+        </Example>
+      ))}
+      <Example
         name="Recent samples"
         description="Latest displayed samples remain visible after updates."
       >

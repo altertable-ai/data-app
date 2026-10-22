@@ -242,6 +242,7 @@ ComparisonProps (type, @altertable/data-app-react): = props listed as Comparison
 ComposedChart (component, @altertable/data-app-react/ui): <Row>(props: ComposedChartProps<Row>) — Shared themed series and controls; other children retain native Recharts defaults.
 ComposedChart.data: readonly Row[] — Displayed rows; series and axes select fields with Recharts dataKey props.
 ComposedChart.ariaLabel: string — Describes the measures and scope for assistive technology.
+ComposedChart.valueFormat?: MetricFormat — Shared measure semantics: compact numeric axes and precise tooltips. For mixed units, use explicit axis tickFormatter and series/tooltip formatters.
 ComposedChart.…: plus props inherited from recharts
 ComposedChart.Dot: (props: DotProps & { active?: boolean; })
 ComposedChart.Area: <Row = unknown, Value = number | null>(props: AreaProps<Row, Value>)
