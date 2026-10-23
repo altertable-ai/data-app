@@ -5,7 +5,6 @@ import type {
   DisclosedQuery,
   Lakehouse,
   OperationContext,
-  OperationProgressListener,
   DataQueryBody,
 } from './operation-types.ts';
 
@@ -16,7 +15,6 @@ type OperationExecutionOptions = {
   signal: AbortSignal;
   requestId: string;
   queryParams?: OperationContext['queryParams'];
-  onProgress?: OperationProgressListener;
 };
 
 /** Shared operation execution. Adapters own authorization, delivery, and public errors. */
@@ -29,7 +27,6 @@ export async function executeDataOperation(
     signal: requestSignal,
     requestId,
     queryParams,
-    onProgress,
   }: OperationExecutionOptions
 ) {
   requestSignal.throwIfAborted();
@@ -48,8 +45,7 @@ export async function executeDataOperation(
     operation,
     lakehouse,
     signal,
-    operationName,
-    onProgress
+    operationName
   );
   try {
     const output = await runOperation(operation, input, {
@@ -82,12 +78,10 @@ function createOperationLakehouse(
   operation: Operation,
   source: Lakehouse,
   signal: AbortSignal,
-  operationName: string,
-  onProgress?: OperationProgressListener
+  operationName: string
 ) {
   const queryIds: string[] = [];
   const queries: DisclosedQuery[] = [];
-  const progress = onProgress && createOperationProgress(onProgress);
   const lakehouse: Lakehouse = {
     async queryAll(statement, options) {
       signal.throwIfAborted();
@@ -107,29 +101,17 @@ function createOperationLakehouse(
       };
       queries.push(query);
       const limit = Math.min(options.limit, operation.policy.maxQueryRows);
-      const tracked = progress?.track(query.name);
       let result;
       try {
         result = await source.queryAll(statement, {
           limit,
           ...(options.params === undefined ? {} : { params: options.params }),
           signal: AbortSignal.any([signal, options.signal]),
-          ...(tracked
-            ? {
-                onProgress(percentage: number) {
-                  tracked.update(percentage);
-                  options.onProgress?.(percentage);
-                },
-              }
-            : options.onProgress
-              ? { onProgress: options.onProgress }
-              : {}),
         });
       } catch (error) {
         if (error instanceof DataSourceError) error.queryName = query.name;
         throw error;
       }
-      tracked?.complete();
       if (result.rows.length > limit)
         throw new Error('Result exceeds row limit.');
       if (result.queryId) {
@@ -142,56 +124,6 @@ function createOperationLakehouse(
   };
 
   return { lakehouse, queries, queryIds };
-}
-
-function createOperationProgress(onProgress: OperationProgressListener) {
-  const tracked: { name: string; percentage: number; known: boolean }[] = [];
-  let reported = -1;
-  let reportedQueries = '';
-
-  function report() {
-    const total = tracked.reduce((sum, entry) => sum + entry.percentage, 0);
-    const percentage = Math.max(reported, total / tracked.length);
-    const byName = new Map<string, { total: number; runs: number }>();
-    const known = new Set<string>();
-    for (const { name, percentage, known: isKnown } of tracked) {
-      const entry = byName.get(name) ?? { total: 0, runs: 0 };
-      byName.set(name, {
-        total: entry.total + percentage,
-        runs: entry.runs + 1,
-      });
-      if (isKnown) known.add(name);
-    }
-    const queries: Record<string, number> = {};
-    for (const name of known) {
-      const { total: sum, runs } = byName.get(name)!;
-      queries[name] = sum / runs;
-    }
-    const queriesKey = JSON.stringify(queries);
-    if (percentage === reported && queriesKey === reportedQueries) return;
-    reported = percentage;
-    reportedQueries = queriesKey;
-    onProgress(percentage, queries);
-  }
-
-  return {
-    track(name: string) {
-      const entry = { name, percentage: 0, known: false };
-      tracked.push(entry);
-      return {
-        update(percentage: number) {
-          entry.percentage = Math.max(entry.percentage, percentage);
-          entry.known = true;
-          report();
-        },
-        // Not emitted, so a sequential operation does not claim 100% between queries.
-        complete() {
-          entry.percentage = 100;
-          entry.known = true;
-        },
-      };
-    },
-  };
 }
 
 /** Settle cancellation even when operation code or its lakehouse ignores the signal. */

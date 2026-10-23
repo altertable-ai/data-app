@@ -57,8 +57,8 @@ when required; see [input mapping](variables.md#adapt-existing-input-shapes).
 Use the source from `view.content()` for every widget. Derive narrative, story,
 export, and scope from that source and its displayed input, including during
 refresh or failure. Use `result.scope` in content and `view.scope(snapshot)` in
-stories. Let the view own request state; keep static introductions outside
-loading boundaries.
+stories. Let views and bound widgets own request state and loading feedback.
+Keep static introductions outside loading boundaries.
 
 A measured zero is valid data. Set `isEmpty` for the analysis and provide useful
 `emptyFallback` copy.

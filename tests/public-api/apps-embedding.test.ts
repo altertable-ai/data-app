@@ -913,28 +913,3 @@ test('content-sized inspection fits a narrow viewport after resizing', async ({
   await sheet.getByRole('button', { name: 'Close panel', exact: true }).click();
   await expect.poll(() => sheet.count()).toBe(0);
 });
-
-test('an embedded app follows host query progress and still queries hosts without it', async ({
-  page,
-}) => {
-  const app = page.frameLocator('iframe');
-  const result = app.getByRole('status', { name: 'Query result', exact: true });
-  const progress = app.getByRole('status', {
-    name: 'Query progress',
-    exact: true,
-  });
-
-  await page.goto('/bundle-host?progress');
-  await app
-    .getByRole('button', { name: 'Progress query', exact: true })
-    .click();
-  await expect.poll(() => progress.textContent()).toBe('60');
-  await expect.poll(() => result.textContent()).toContain('sql-query');
-
-  await page.goto('/bundle-host');
-  await app
-    .getByRole('button', { name: 'Progress query', exact: true })
-    .click();
-  await expect.poll(() => result.textContent()).toContain('sql-query');
-  expect(await progress.textContent()).toBe('');
-});

@@ -50,10 +50,6 @@ Operations run in the browser and query through the host's `data:sql` route.
 The trusted bootstrap installs the bridge before app execution. A custom runtime
 must install it first or supply an authorized `lakehouse` adapter.
 
-Pass `onProgress` to `client.query()` to receive the operation's completion
-percentage, and each query's percentage by query name once it reports, while
-the host reports query progress.
-
 Do not combine `operations` with `transport`, `endpoint`, or `fetch`. Browser
 policy bounds app requests; the [host SQL handler](embed.md#sql-query-route)
 must independently enforce access and resource limits.

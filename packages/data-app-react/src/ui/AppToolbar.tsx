@@ -14,6 +14,7 @@ import { LiveControl, type LiveControlProps } from './LiveControl.tsx';
 import { PresentStory } from './PresentStory.tsx';
 import { RefreshControl } from './RefreshControl.tsx';
 import { shortcuts, useShortcut } from './shortcuts.ts';
+import { useDelayedLoading } from './useDelayedLoading.ts';
 
 export type AppToolbarProps = {
   children?: ReactNode;
@@ -22,7 +23,6 @@ export type AppToolbarProps = {
   requestState?: DataView<unknown, unknown>['kind'];
   refresh?: {
     refreshing: boolean;
-    progress?: number;
     onRefresh: () => void;
     onCancel?: () => void;
     label?: string;
@@ -56,11 +56,12 @@ export function AppToolbar({
   'aria-label': ariaLabel = 'Page actions',
   ...props
 }: AppToolbarProps) {
+  const showLoading = useDelayedLoading(requestState === 'loading');
   const observation =
     requestState === 'loading' ? (
-      refresh ? null : (
-        <output>Loading data</output>
-      )
+      <output style={{ visibility: showLoading ? 'visible' : 'hidden' }}>
+        Loading data
+      </output>
     ) : (
       updatedAt
     );
@@ -87,13 +88,13 @@ export function AppToolbar({
     >
       <div className="altertable-app-toolbar-actions">
         {children}
-        {observation && (
+        {!refresh && observation && (
           <span className="altertable-app-toolbar-updated">{observation}</span>
         )}
         {refresh && (
           <RefreshControl
             refreshing={refresh.refreshing}
-            progress={refresh.progress}
+            status={requestState === 'loading' ? undefined : updatedAt}
             label={
               requestState === 'loading'
                 ? 'Loading data'

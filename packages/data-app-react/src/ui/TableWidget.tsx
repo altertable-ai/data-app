@@ -145,7 +145,7 @@ function TableWidgetContent<Row>({
   emptyFallback,
   noMatchesFallback,
   loading = false,
-  skeletonRows = 5,
+  skeletonRows,
   ...props
 }: TableWidgetBaseProps<Row> & {
   rows: readonly Row[];
@@ -266,7 +266,12 @@ function TableWidgetContent<Row>({
             noMatchesFallback={noMatchesFallback}
             onClearFilters={onClearFilters}
             loading={loading}
-            skeletonRows={skeletonRows}
+            skeletonRows={
+              skeletonRows ??
+              limit ??
+              (pagination ? pagination.pageSize : undefined) ??
+              5
+            }
           />
         </div>
       }
@@ -375,7 +380,7 @@ function TableWidgetTable<Row>({
               <tr key={row}>
                 {columns.map(column => (
                   <td key={column.id} data-type={column.type}>
-                    <Skeleton style={{ width: '70%', height: '1em' }} />
+                    <Skeleton style={{ width: '70%', height: '1lh' }} />
                   </td>
                 ))}
               </tr>

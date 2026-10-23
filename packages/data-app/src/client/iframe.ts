@@ -9,10 +9,8 @@ import { type Lakehouse } from '../core/contract.ts';
 import {
   defineDataQueryRoute,
   sqlQueryRoute,
-  sqlProgressRoute,
   MessageRoutingError,
   type RoutedMessage,
-  type SqlProgressInput,
 } from '../core/messages.ts';
 import { randomUuid } from '../core/uuid.ts';
 import { createFrameSizing } from './frame-sizing.ts';
@@ -23,8 +21,6 @@ import {
 } from './logger.ts';
 import { createMessageClient } from './messages.ts';
 import { DataAppError } from './transport.ts';
-
-const PROGRESS_POLL_MS = 200;
 
 type Pending = {
   start: () => void;
@@ -232,52 +228,9 @@ export function createIframeTransport({
   }
 
   const messages = createMessageClient(
-    {
-      'data:query': defineDataQueryRoute(),
-      'data:sql': sqlQueryRoute,
-      'data:progress': sqlProgressRoute,
-    },
+    { 'data:query': defineDataQueryRoute(), 'data:sql': sqlQueryRoute },
     requestMessage
   );
-  let progressSupported = true;
-
-  async function pollProgress(
-    query: SqlProgressInput,
-    signal: AbortSignal,
-    onProgress: (percentage: number) => void
-  ) {
-    let reported: number | null = null;
-    while (progressSupported) {
-      await new Promise<void>(resolve => {
-        function wake() {
-          clearTimeout(timer);
-          signal.removeEventListener('abort', wake);
-          resolve();
-        }
-
-        const timer = setTimeout(wake, PROGRESS_POLL_MS);
-        signal.addEventListener('abort', wake, { once: true });
-      });
-      if (signal.aborted) return;
-      let percentage: number | null;
-      try {
-        percentage = await messages.request('data:progress', query, {
-          signal,
-        });
-      } catch (error) {
-        if (
-          error instanceof MessageRoutingError &&
-          error.code === 'unknown_route'
-        )
-          progressSupported = false;
-        return;
-      }
-      if (signal.aborted) return;
-      if (percentage === null || percentage === reported) continue;
-      reported = percentage;
-      onProgress(percentage);
-    }
-  }
 
   function queryOperation(
     operation: string,
@@ -323,25 +276,14 @@ export function createIframeTransport({
     request: requestMessage,
     transport: queryOperation,
     lakehouse: {
-      async queryAll(statement, { limit, signal, params, onProgress }) {
-        const settled = new AbortController();
-        if (onProgress)
-          void pollProgress(
-            { statement, ...(params === undefined ? {} : { params }) },
-            AbortSignal.any([signal, settled.signal]),
-            onProgress
-          );
-        try {
-          return await messages.request(
+      queryAll(statement, { limit, signal, params }) {
+        return messages
+          .request(
             'data:sql',
             { statement, limit, ...(params === undefined ? {} : { params }) },
             { signal }
-          );
-        } catch (error) {
-          return rethrowDataMessageError(error);
-        } finally {
-          settled.abort();
-        }
+          )
+          .catch(rethrowDataMessageError);
       },
     } satisfies Lakehouse,
     dispose,

@@ -32,17 +32,3 @@
 .altertable-data-boundary-action button {
   min-height: 32px;
 }
-.altertable-data-boundary-spinner {
-  flex: none;
-  animation: altertable-data-boundary-spin 1s linear infinite;
-}
-@keyframes altertable-data-boundary-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .altertable-data-boundary-spinner {
-    animation: none;
-  }
-}

@@ -11,7 +11,6 @@ import {
   createMessageRouter,
   defineMessageRoute,
   sqlQueryRoute,
-  sqlProgressRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
 import { useReducer, useState } from 'react';
@@ -110,8 +109,6 @@ function Host() {
     {
       ...bridgeRoutes,
       'data:sql': sqlQueryRoute,
-      // Omitted by default to exercise hosts that predate progress reporting.
-      ...(params.has('progress') ? { 'data:progress': sqlProgressRoute } : {}),
       'export:csv': fileRoute,
       'export:zip': fileRoute,
     },
@@ -137,15 +134,12 @@ function Host() {
       'data:query': ({ operation, input }, { signal }) =>
         forward(operation, input, signal),
       'navigation:update': createNavigationHandler(),
-      'data:progress': () => 60,
       'data:sql': createSqlQueryHandler(async () => ({
-        async queryAll(statement, { limit, signal, params: query }) {
-          if (params.has('progress'))
-            await new Promise(resolve => setTimeout(resolve, 1200));
+        async queryAll(statement, { limit, signal, params }) {
           const response = await fetch('/api/sql', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ statement, limit, params: query }),
+            body: JSON.stringify({ statement, limit, params }),
             signal,
           });
           if (!response.ok) throw new DataSourceError('unavailable');

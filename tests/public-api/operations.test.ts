@@ -102,55 +102,6 @@ test('browser and HTTP operations share parsing, bounds, and query evidence', as
   });
 });
 
-test('browser operations report overall and per-query progress without moving backwards', async () => {
-  const operation = defineOperation({
-    input: parseCount,
-    checks: [1],
-    queries: {
-      first: {
-        projections: { n: { type: 'number' } } as const,
-        statement: 'SELECT 1 AS n',
-        params: {},
-      },
-      second: {
-        projections: { n: { type: 'number' } } as const,
-        statement: 'SELECT 2 AS n',
-        params: {},
-      },
-    },
-    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
-    async run({ query }) {
-      await query('first', {}, { limit: 1 });
-      await query('second', {}, { limit: 1 });
-      return 0;
-    },
-  });
-  const reports: Record<string, number[]> = {
-    'SELECT 1 AS n': [50, 40, 90],
-    'SELECT 2 AS n': [20, 95],
-  };
-  const client = createDataClient({
-    operations: { count: operation },
-    lakehouse: {
-      async queryAll(statement, { onProgress }) {
-        for (const percentage of reports[statement]!) onProgress?.(percentage);
-        return { columns: [{ name: 'n' }], rows: [[0]] };
-      },
-    },
-  });
-  const progress: [number, Readonly<Record<string, number>>][] = [];
-  await client.query('count', 1, {
-    onProgress: (percentage, queries) => progress.push([percentage, queries]),
-  });
-  // The finished first query counts as complete; the average holds at 90 until it passes it.
-  expect(progress).toEqual([
-    [50, { first: 50 }],
-    [90, { first: 90 }],
-    [90, { first: 100, second: 20 }],
-    [97.5, { first: 100, second: 95 }],
-  ]);
-});
-
 test('browser operations reject malformed inputs, unknown operations, and private execution failures', async () => {
   let calls = 0;
   const source: Lakehouse = {

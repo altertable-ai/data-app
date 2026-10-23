@@ -1345,6 +1345,10 @@ Sheet.side?: 'left' | 'right' — Edge for side placement. Defaults to right; sm
 Sheet.returnFocus?: RefObject<HTMLElement | SVGElement | null>
 Sheet.…: plus props inherited from React
 SheetProps (type, @altertable/data-app-react/ui): = props listed as Sheet.*
+ShimmerText (component, @altertable/data-app-react/ui): (props: ShimmerTextProps) — Animated text for custom activity labels. Wrap in `<output>` to announce updates. Respects reduced motion.
+ShimmerText.children: string
+ShimmerText.…: plus props inherited from React
+ShimmerTextProps (type, @altertable/data-app-react/ui): = props listed as ShimmerText.*
 Skeleton (component, @altertable/data-app-react): (props: SkeletonProps) — Decorative loading placeholder that fades in only when loading takes a moment. Put the accessible status on its container.
 Skeleton.inline?: boolean — Align a text-sized placeholder with surrounding prose.
 Skeleton.…: plus props inherited from React

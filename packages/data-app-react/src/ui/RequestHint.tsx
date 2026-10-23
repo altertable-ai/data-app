@@ -1,5 +1,8 @@
+import { createContext } from 'react';
+
 import { Button } from './Button.tsx';
 import { AppIcon } from './icons.ts';
+import { ShimmerText } from './ShimmerText.tsx';
 import { Tooltip } from './Tooltip.tsx';
 
 /** Idle keeps the same reserved space as refresh and failure. Initial loading belongs to skeletons. */
@@ -7,6 +10,11 @@ export type WidgetStatus =
   | { kind: 'idle' }
   | { kind: 'updating'; message?: string }
   | { kind: 'error'; message?: string; onRetry?: () => void };
+
+/** Independent sections share their activity through the existing widget header slots. */
+export const WidgetStatusContext = createContext<WidgetStatus | undefined>(
+  undefined
+);
 
 /** Fixed-height feedback keeps data in place; the retry belongs beside its failure message. */
 export function RequestHint({
@@ -72,14 +80,7 @@ export function WidgetStatusControl({ status }: { status?: WidgetStatus }) {
       role={kind === 'error' ? 'alert' : 'status'}
       aria-atomic="true"
     >
-      {kind === 'updating' && (
-        <span className="altertable-widget-status-shimmer">
-          <span className="altertable-widget-status-base">Refreshing</span>
-          <span className="altertable-widget-status-sweep" aria-hidden="true">
-            <span data-text="Refreshing" />
-          </span>
-        </span>
-      )}
+      {kind === 'updating' && <ShimmerText>Refreshing</ShimmerText>}
       {status?.kind === 'error' && (
         <>
           <span className="altertable-widget-status-announcement">

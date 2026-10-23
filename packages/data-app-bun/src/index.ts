@@ -76,7 +76,7 @@ export function localLakehouse(
   const username = environment.ALTERTABLE_LAKEHOUSE_USERNAME;
   const password = environment.ALTERTABLE_LAKEHOUSE_PASSWORD;
   return {
-    async queryAll(statement, { limit, signal, params, onProgress }) {
+    async queryAll(statement, { limit, signal, params }) {
       signal.throwIfAborted();
       const cancellation = new AbortController();
       const client = new AltertableLakehouseClient({
@@ -104,21 +104,8 @@ export function localLakehouse(
           { preconnect() {} }
         ),
       });
-      const queryId = onProgress ? crypto.randomUUID() : undefined;
-      if (queryId && onProgress)
-        void pollQueryProgress(
-          client,
-          queryId,
-          cancellation.signal,
-          onProgress
-        );
       try {
-        const result = await client.query({
-          statement,
-          limit,
-          params,
-          ...(queryId ? { query_id: queryId } : {}),
-        });
+        const result = await client.query({ statement, limit, params });
         const { columns, metadata } = result;
         if (
           !metadata ||
@@ -174,54 +161,6 @@ export function localLakehouse(
       }
     },
   };
-}
-
-const PROGRESS_POLL_MS = 500;
-const PROGRESS_LOG_WAIT_MS = 10_000;
-
-async function pollQueryProgress(
-  client: AltertableLakehouseClient,
-  queryId: string,
-  signal: AbortSignal,
-  onProgress: (percentage: number) => void
-) {
-  const logDeadline = Date.now() + PROGRESS_LOG_WAIT_MS;
-  let logFound = false;
-  while (!signal.aborted) {
-    await new Promise<void>(resolve => {
-      function wake() {
-        clearTimeout(timer);
-        signal.removeEventListener('abort', wake);
-        resolve();
-      }
-
-      const timer = setTimeout(wake, PROGRESS_POLL_MS);
-      signal.addEventListener('abort', wake, { once: true });
-    });
-    if (signal.aborted) return;
-    let percentage: unknown;
-    try {
-      ({ percentage } = await client.getQuery(queryId));
-      logFound = true;
-    } catch (error) {
-      if (
-        signal.aborted ||
-        !(error instanceof AltertableLakehouseError) ||
-        [401, 403, 405].includes(error.statusCode ?? 0) ||
-        (!logFound && Date.now() >= logDeadline)
-      )
-        return;
-      continue;
-    }
-    // Negative percentages mean the engine has no estimate yet.
-    if (
-      !signal.aborted &&
-      typeof percentage === 'number' &&
-      Number.isFinite(percentage) &&
-      percentage >= 0
-    )
-      onProgress(Math.min(100, percentage));
-  }
 }
 
 /** Limit upstream bytes while the SDK owns NDJSON decoding and parsing. */

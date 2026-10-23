@@ -6,9 +6,11 @@ import {
   DataApp,
   DataSection,
   TextWidget,
+  TableWidget,
   mountDataApp,
   injectDataAppStyles,
 } from '@altertable/data-app-react';
+import { ShimmerText } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
@@ -16,7 +18,6 @@ import {
 } from '@altertable/data-app/contract';
 
 type Pending = {
-  report: (percentage: number) => void;
   resolve: (result: QueryResult) => void;
 };
 const pending = new Map<string, Pending>();
@@ -76,10 +77,10 @@ function pendingKey(statement: string) {
 const client = createDataClient({
   operations: { primary, secondary },
   lakehouse: {
-    queryAll(statement, { signal, onProgress }) {
+    queryAll(statement, { signal }) {
       const key = pendingKey(statement);
       return new Promise((resolve, reject) => {
-        pending.set(key, { report: value => onProgress?.(value), resolve });
+        pending.set(key, { resolve });
         signal.addEventListener(
           'abort',
           () => {
@@ -158,6 +159,13 @@ const secondaryContent = secondaryView.content(source => (
         <output aria-label="secondary count">secondary: {rows[0]}</output>
       )}
     </TextWidget>
+    <TableWidget
+      title="Secondary table"
+      dataset={secondaryDataset}
+      source={source}
+      limit={1}
+      showCount={false}
+    />
     <TextWidget
       title="Secondary totals"
       dataset={totalsDataset}
@@ -168,44 +176,35 @@ const secondaryContent = secondaryView.content(source => (
   </>
 ));
 const dataApp = defineDataApp({
-  title: 'Query progress',
-  description: 'Follow long-running query progress.',
+  title: 'Loading feedback',
+  description: 'Loading and refresh feedback for independent widgets.',
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });
 function Controls({ name, queries }: { name: string; queries: string[] }) {
   return (
-    <>
-      {queries.flatMap(query =>
-        [40, 70].map(percentage => (
-          <button
-            key={`${query}-${percentage}`}
-            onClick={() => pending.get(`${name}:${query}`)?.report(percentage)}
-          >
-            Report {name} {query} {percentage}%
-          </button>
-        ))
-      )}
-      <button
-        onClick={() => {
-          for (const query of queries)
-            pending
-              .get(`${name}:${query}`)
-              ?.resolve(
-                query === 'total'
-                  ? { columns: [{ name: 'total' }], rows: [[9]] }
-                  : { columns: [{ name: 'count' }], rows: [[7]] }
-              );
-        }}
-      >
-        Resolve {name}
-      </button>
-    </>
+    <button
+      onClick={() => {
+        for (const query of queries)
+          pending
+            .get(`${name}:${query}`)
+            ?.resolve(
+              query === 'total'
+                ? { columns: [{ name: 'total' }], rows: [[9]] }
+                : { columns: [{ name: 'count' }], rows: [[7]] }
+            );
+      }}
+    >
+      Resolve {name}
+    </button>
   );
 }
 function App() {
   return (
     <DataApp view={primaryView} datasets={[primaryDataset]} story={() => []}>
+      <output aria-label="Shimmer preview">
+        <ShimmerText>Preparing results</ShimmerText>
+      </output>
       <Controls name="primary" queries={['count']} />
       <Controls name="secondary" queries={['count', 'total']} />
       <section aria-label="Primary section">
