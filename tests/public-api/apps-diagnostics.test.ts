@@ -172,6 +172,15 @@ test('independent widget and operation failures share latest repair report and p
     .toBe(true);
   await page.getByText('View diagnostics').click();
   const banner = page.getByRole('region', { name: 'App errors' });
+  await expect
+    .poll(() =>
+      banner
+        .getByRole('status', { name: 'Repair request status' })
+        .textContent()
+    )
+    .toBe('Fix requested');
+  expect(await banner.textContent()).toContain('Some parts of this app failed');
+  expect(await banner.textContent()).not.toContain('Repair request accepted');
   await expect.poll(() => banner.textContent()).toContain('revenue');
   await expect.poll(() => banner.textContent()).toContain('retention');
   await expect.poll(() => banner.textContent()).toContain('render: Revenue');

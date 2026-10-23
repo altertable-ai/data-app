@@ -8,32 +8,27 @@ import {
 
 const messages: Record<
   DataAppRepairStatus | 'limited',
-  { title: string; description: string }
+  { status?: string; description?: string }
 > = {
   idle: {
-    title: 'Some parts of this app failed',
     description:
       'Other content is still available. Send the diagnostics to your agent.',
   },
   pending: {
-    title: 'Requesting a fix…',
-    description: 'Sending the latest diagnostics to your agent.',
+    status: 'Requesting a fix…',
   },
   accepted: {
-    title: 'Fix requested',
-    description: 'Repair request accepted.',
+    status: 'Fix requested',
   },
   failed: {
-    title: 'Couldn’t request a fix',
+    status: 'Couldn’t request a fix',
     description: 'Request could not be saved or delivered. Try again manually.',
   },
   unsupported: {
-    title: 'Some parts of this app failed',
     description:
       'Copy the diagnostics below into your agent and ask it to fix all errors.',
   },
   limited: {
-    title: 'Some parts of this app failed',
     description: `Automatic repair limit reached after ${AUTOMATIC_REPAIR_LIMIT} attempts. You can request another fix.`,
   },
 };
@@ -48,6 +43,8 @@ const styles = `
   -webkit-font-smoothing: antialiased;
 }
 .atbl-repair-banner > svg { align-self: start; margin-top: 3px; }
+.atbl-repair-banner-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; }
+.atbl-repair-banner-actions output { margin: 0; }
 .atbl-repair-banner-copy { min-width: 0; overflow-wrap: anywhere; }
 .atbl-repair-banner-title { font-weight: 600; }
 .atbl-repair-banner-count { margin-inline-start: 8px; font-size: 12px; font-weight: 400; color: light-dark(#796343, #c2ae8f); white-space: nowrap; }
@@ -67,6 +64,7 @@ const styles = `
 .atbl-repair-banner-copy-action output { margin: 0; }
 @media (hover: hover) { .atbl-repair-banner button:hover:not(:disabled) { background: light-dark(#f6eddd, #443825); } }
 @media (pointer: coarse) { .atbl-repair-banner button { min-height: 44px; } }
+@media (max-width: 600px) { .atbl-repair-banner-copy, .atbl-repair-banner-actions { grid-column: 2 / -1; } }
 @media (max-width: 420px) { .atbl-repair-banner { padding: 12px; gap: 8px 10px; align-items: start; } .atbl-repair-banner-count { display: block; margin-inline-start: 0; margin-top: 2px; } }
 `;
 
@@ -91,7 +89,7 @@ export function DataAppRepairBanner({
     status === 'idle' && automaticRequests >= AUTOMATIC_REPAIR_LIMIT
       ? 'limited'
       : status;
-  const { title, description } = messages[message];
+  const feedback = messages[message];
 
   return (
     <>
@@ -116,20 +114,27 @@ export function DataAppRepairBanner({
           aria-live="polite"
           aria-atomic="true"
         >
-          <span className="atbl-repair-banner-title">{title}</span>
+          <span className="atbl-repair-banner-title">
+            Some parts of this app failed
+          </span>
           <span className="atbl-repair-banner-count">
             {report.failures.length} app{' '}
             {report.failures.length === 1 ? 'error' : 'errors'}
           </span>
-          <output>{description}</output>
+          {feedback.description && <output>{feedback.description}</output>}
         </div>
-        <button
-          type="button"
-          disabled={status === 'pending' || status === 'unsupported'}
-          onClick={() => void session.request()}
-        >
-          Fix errors
-        </button>
+        <div className="atbl-repair-banner-actions">
+          <output aria-label="Repair request status" aria-live="polite">
+            {feedback.status}
+          </output>
+          <button
+            type="button"
+            disabled={status === 'pending' || status === 'unsupported'}
+            onClick={() => void session.request()}
+          >
+            Fix errors
+          </button>
+        </div>
         <details>
           <summary>View diagnostics</summary>
           <ul>
