@@ -283,3 +283,34 @@ test('same-label failure identities stay distinct and can be cleared independent
   ).toHaveLength(1);
   appDiagnostics.clear('render', 'Revenue', 'widget-two');
 });
+
+test('live diagnostics tolerate large malformed stacks and retain normal frame locations', () => {
+  const malformed = new Error('Broken chart');
+  malformed.stack = `Error: Broken chart\n    at ${'!'.repeat(100_000)}`;
+  const located = new Error('Broken chart');
+  located.stack =
+    'Error: Broken chart\n    at render (https://example.test/private/chart.js:42:7)';
+  try {
+    appDiagnostics.record('render', 'Malformed stack', malformed);
+    appDiagnostics.record('render', 'Located stack', located);
+    const failures = appDiagnostics.snapshot().failures;
+    expect(
+      failures.find(failure => failure.name === 'Malformed stack')
+    ).toMatchObject({
+      message: 'Broken chart',
+    });
+    expect(
+      failures.find(failure => failure.name === 'Malformed stack')!.source
+    ).toBeUndefined();
+    expect(
+      failures.find(failure => failure.name === 'Located stack')!.source
+    ).toEqual({
+      file: 'chart.js',
+      line: 42,
+      column: 7,
+    });
+  } finally {
+    appDiagnostics.clear('render', 'Malformed stack');
+    appDiagnostics.clear('render', 'Located stack');
+  }
+});

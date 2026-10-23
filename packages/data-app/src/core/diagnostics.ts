@@ -51,32 +51,50 @@ export function appFailure(
   name: string,
   error: unknown
 ): AppFailure {
+  const source =
+    error instanceof Error ? sourceLocation(error.stack) : undefined;
+
   return {
     kind,
     name: diagnosticText(name, 120),
     message: diagnosticText(
       error instanceof Error ? error.message : 'Unknown failure'
     ),
-    ...(error instanceof Error && sourceLocation(error.stack)
-      ? { source: sourceLocation(error.stack)! }
-      : {}),
+    ...(source ? { source } : {}),
   };
 }
 
+const MAX_STACK_LENGTH = 16_384;
+
 /** Extract one location, excluding stack text, URL parameters and local directory paths. */
 function sourceLocation(stack?: string): AppFailure['source'] {
-  const match = stack
-    ?.split('\n')
-    .slice(1)
-    .join('\n')
-    .match(/([^\s()]+):(\d+):(\d+)/);
-  if (!match) return undefined;
-  const file = match[1]!.split(/[/\\]/).at(-1)!;
-  return {
-    file: diagnosticText(file, 200),
-    line: Number(match[2]),
-    column: Number(match[3]),
-  };
+  // Inspect a bounded stack prefix; malformed frame tokens must not cause backtracking.
+  const frames = stack?.slice(0, MAX_STACK_LENGTH).split('\n').slice(1) ?? [];
+  if (stack && stack.length > MAX_STACK_LENGTH) frames.pop();
+  for (const frame of frames) {
+    for (const token of frame.split(/[\s()]+/)) {
+      const columnSeparator = token.lastIndexOf(':');
+      const lineSeparator = token.lastIndexOf(':', columnSeparator - 1);
+      if (lineSeparator < 1 || columnSeparator <= lineSeparator) continue;
+      const lineText = token.slice(lineSeparator + 1, columnSeparator);
+      const columnText = token.slice(columnSeparator + 1);
+      if (!/^\d+$/.test(lineText) || !/^\d+$/.test(columnText)) continue;
+      const line = Number(lineText);
+      const column = Number(columnText);
+      if (
+        !Number.isSafeInteger(line) ||
+        line < 1 ||
+        !Number.isSafeInteger(column) ||
+        column < 1
+      )
+        continue;
+      const file = token.slice(0, lineSeparator).split(/[/\\]/).at(-1)!;
+
+      return { file: diagnosticText(file, 200), line, column };
+    }
+  }
+
+  return undefined;
 }
 function parseSource(value: unknown): AppFailure['source'] {
   if (!value || typeof value !== 'object')
