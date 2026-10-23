@@ -2,7 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 
 import { createDataAppRepairSession } from '@altertable/data-app-embed';
-import { appDiagnostics } from '@altertable/data-app/client';
+import { appDiagnostics, createDataClient } from '@altertable/data-app/client';
+import { type DataOperations } from '@altertable/data-app/contract';
 import { validateDataApp } from '@altertable/data-app/validation';
 import { describe, expect, test } from 'vitest';
 
@@ -67,11 +68,16 @@ describe('shared repair sessions', () => {
     lease.report({ ...report(), pending: 1 });
     expect(sent).toEqual([]);
     lease.report(report('first'));
-    lease.report(report('latest'));
+    lease.report({ ...report('still running'), pending: 1 });
     await Promise.all([session.request(), lease.request(), session.request()]);
     release();
     await tick();
+    expect(sent).toEqual([]);
+    expect(state.automaticRequests).toBe(1);
+    lease.report(report('latest'));
+    await tick();
     expect(sent).toEqual(['latest']);
+    expect(state.automaticRequests).toBe(1);
     expect(session.snapshot().status).toBe('accepted');
   });
   test.each(['save', 'delivery'])('failed %s cannot loop', async failure => {
@@ -99,25 +105,38 @@ describe('shared repair sessions', () => {
     expect(attempts).toBe(failure === 'save' ? 1 : 2);
     expect(state.automaticRequests).toBe(1);
   });
-  test('superseded session cannot deliver after delayed state saving', async () => {
-    let release!: () => void;
-    let delivered = 0;
-    const session = createDataAppRepairSession({
-      state: { automaticRequests: 0, attemptedRevisions: [] },
-      saveState: () =>
-        new Promise<void>(resolve => {
-          release = resolve;
-        }),
-      requestRepair: async () => {
-        delivered++;
-      },
-    });
-    session.connect('old').report(report());
-    session.connect('replacement');
-    release();
-    await tick();
-    expect(delivered).toBe(0);
-  });
+  test.each(['saving', 'settling'])(
+    'superseded session cannot deliver while %s',
+    async phase => {
+      let release!: () => void;
+      let saves = 0;
+      const delivered: string[] = [];
+      const session = createDataAppRepairSession({
+        state: { automaticRequests: 0, attemptedRevisions: [] },
+        saveState: () => {
+          if (++saves > 1) return;
+          return new Promise<void>(resolve => {
+            release = resolve;
+          });
+        },
+        requestRepair: async (_, context) => {
+          delivered.push(context.revision);
+        },
+      });
+      const old = session.connect('old');
+      old.report(report());
+      if (phase === 'settling') {
+        old.report({ ...report(), pending: 1 });
+        release();
+        await tick();
+      }
+      session.connect('replacement').report(report());
+      if (phase === 'saving') release();
+      old.report(report('stale'));
+      await tick();
+      expect(delivered).toEqual(['replacement']);
+    }
+  );
 });
 
 test('Node validation settles independent checks, bounds diagnostics and excludes input values', async () => {
@@ -179,14 +198,31 @@ test('validation runs in a real Node process with Bun absent from PATH', () => {
       '-e',
       `
     import assert from 'node:assert/strict';
-    import { appDiagnostics } from '@altertable/data-app/client';
-import { validateDataApp } from '@altertable/data-app/validation';
+    import { validateDataApp } from '@altertable/data-app/validation';
     assert.equal(globalThis.Bun, undefined);
+    const headers = [
+      'Authorization: Bearer synthetic-credential',
+      'Authorization: Basic synthetic-credential==',
+      'Authorization=Bearer synthetic-credential',
+      'Proxy-Authorization: Bearer "synthetic-credential"',
+      'Authorization: "Bearer synthetic-credential"',
+      'X-Api-Key: synthetic-credential',
+      'Api-Key=synthetic-credential',
+      'Cookie: session=synthetic-credential; csrf=synthetic-credential',
+      'Set-Cookie: session=synthetic-credential; Path=/'
+    ];
     const report = await validateDataApp({ checks: [
-      { name: 'one', kind: 'query', run() { throw new Error('Query failed'); } },
-      { name: 'two', kind: 'operation', run() { throw new Error('Operation failed'); } }
+      ...headers.map((header, index) => ({
+        name: 'query-' + index, kind: 'query',
+        source: { file: '/Users/example/private/app.tsx?token=synthetic-credential', line: 42, column: 7 },
+        run() { throw new Error(header); }
+      })),
+      { name: 'operation', kind: 'operation', run() { throw new Error('Operation failed'); } }
     ] });
-    assert.equal(report.failures.length, 2);
+    assert.equal(report.failures.length, headers.length + 1);
+    assert(!JSON.stringify(report).includes('synthetic-credential'));
+    assert(!JSON.stringify(report).includes('/Users/example'));
+    assert.deepEqual(report.failures[0].source, { file: 'app.tsx', line: 42, column: 7 });
     console.log('node-validation-ok');
   `,
     ],
@@ -195,6 +231,68 @@ import { validateDataApp } from '@altertable/data-app/validation';
   expect(result.stderr).toBe('');
   expect(result.status).toBe(0);
   expect(result.stdout).toContain('node-validation-ok');
+});
+
+test('caller cancellation leaves no query diagnostics or automatic repair request', async () => {
+  let started!: () => void;
+  const ready = new Promise<void>(resolve => {
+    started = resolve;
+  });
+  const controller = new AbortController();
+  const sent: unknown[] = [];
+  const session = createDataAppRepairSession({
+    state: { automaticRequests: 0, attemptedRevisions: [] },
+    saveState() {},
+    requestRepair: async report => {
+      sent.push(report);
+    },
+  });
+  const lease = session.connect('cancelled');
+  const unsubscribe = appDiagnostics.subscribe(() =>
+    lease.report(appDiagnostics.snapshot())
+  );
+  try {
+    const operations = {
+      cancelled: {
+        input: () => ({}),
+        checks: [{}] as const,
+        policy: { maxQueryRows: 10, maxDurationMs: 1000 },
+        run: ({ lakehouse, signal }) =>
+          lakehouse.queryAll('SELECT 1', {
+            name: 'cancelled query',
+            limit: 1,
+            signal,
+          }),
+      },
+    } satisfies DataOperations;
+    const client = createDataClient({
+      operations,
+      lakehouse: {
+        queryAll: (_statement, { signal }) =>
+          new Promise<never>((_resolve, reject) => {
+            started();
+            signal.addEventListener('abort', () => reject(signal.reason), {
+              once: true,
+            });
+          }),
+      },
+    });
+    const request = client.query(
+      'cancelled',
+      {},
+      { signal: controller.signal }
+    );
+    await ready;
+    controller.abort(new DOMException('User cancelled', 'AbortError'));
+    await expect(request).rejects.toThrow('User cancelled');
+    await tick();
+    expect(appDiagnostics.snapshot().failures).toEqual([]);
+    expect(appDiagnostics.snapshot().pending).toBe(0);
+    expect(sent).toEqual([]);
+  } finally {
+    unsubscribe();
+    lease.dispose();
+  }
 });
 
 test('validation reports unfinished work when a check ignores cancellation', async () => {

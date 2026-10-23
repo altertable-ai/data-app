@@ -25,12 +25,20 @@ function diagnosticText(value: string, limit = 800) {
         return '[url]';
       }
     })
-    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email]')
-    .replace(/\b[\w.-]+\s*=\s*[^\s,;]+/g, '[parameter]')
     .replace(
-      /\b(bearer\s+|(?:password|token|secret|authorization)\s*[:=]\s*)[^\s,;]+/gi,
+      /\b((?:set-cookie|cookie|(?:x-)?api[-_]?key)\s*[:=]\s*)[^\r\n]*/gi,
       '$1[redacted]'
     )
+    .replace(
+      /\b((?:proxy-)?authorization\s*[:=]\s*)(?:(?:bearer|basic)\s+)?(?:"[^"\n]*"|'[^'\n]*'|[^\s,;]+)/gi,
+      '$1[redacted]'
+    )
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email]')
+    .replace(
+      /\b(bearer\s+|(?:password|token|secret)\s*[:=]\s*)(?:"[^"\n]*"|'[^'\n]*'|[^\s,;]+)/gi,
+      '$1[redacted]'
+    )
+    .replace(/\b[\w.-]+\s*=\s*[^\s,;]+/g, '[parameter]')
     .replace(/(['"`])[^\n]*?\1/g, '[value]');
   return text.length > limit ? `${text.slice(0, limit)}… [truncated]` : text;
 }
@@ -80,7 +88,10 @@ function parseSource(value: unknown): AppFailure['source'] {
   )
     throw new Error('Invalid source location');
   return {
-    file: diagnosticText(source.file.split(/[/\\]/).at(-1)!, 200),
+    file: diagnosticText(
+      source.file.split(/[?#]/, 1)[0]!.split(/[/\\]/).at(-1)!,
+      200
+    ),
     line: source.line,
     column: source.column,
   };

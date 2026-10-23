@@ -47,12 +47,16 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
     : 'unsupported';
   let savingFailed = false;
   let busy = false;
+  let reportChanged: (() => void) | undefined;
   let snapshot: {
     report: AppDiagnosticReport | undefined;
     status: DataAppRepairStatus;
     automaticRequests: number;
   } = { report, status, automaticRequests: state.automaticRequests };
   function publish() {
+    const resume = reportChanged;
+    reportChanged = undefined;
+    resume?.();
     snapshot = { report, status, automaticRequests: state.automaticRequests };
     for (const listener of listeners) listener();
   }
@@ -91,6 +95,17 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
           throw error;
         }
       }
+      // New work may have started while persistence was in flight. Keep this
+      // reservation and serialization lock until the latest report settles.
+      while (
+        automatic &&
+        owner === active &&
+        report?.pending &&
+        report.failures.length
+      )
+        await new Promise<void>(resolve => {
+          reportChanged = resolve;
+        });
       if (owner !== active) return;
       if (!report?.failures.length) {
         status = 'idle';

@@ -8,7 +8,6 @@ import { getDataAppTransport } from './iframe.ts';
 const listeners = new Set<() => void>();
 const failures = new Map<string, AppFailure>();
 let pending = 0;
-let truncated = 0;
 function publish() {
   for (const listener of listeners) listener();
 }
@@ -36,10 +35,15 @@ function installed(): Diagnostics | undefined {
 export const appDiagnostics: Diagnostics = {
   snapshot(): AppDiagnosticReport {
     if (installed()) return installed()!.snapshot();
+    const observed: AppFailure[] = [];
+    for (const failure of failures.values()) {
+      observed.push(failure);
+      if (observed.length === 30) break;
+    }
     return {
-      failures: [...failures.values()],
+      failures: observed,
       pending,
-      truncated,
+      truncated: Math.max(0, failures.size - 30),
       coverage: [
         'Live SDK operations and mounted widget renders only. Unvisited views, interactions and independent query validation are not covered.',
       ],
@@ -62,8 +66,8 @@ export const appDiagnostics: Diagnostics = {
     const failure = appFailure(kind, name, error);
     if (identity) failure.id = identity;
     const key = `${kind}:${identity ?? name}`;
-    if (failures.has(key) || failures.size < 30) failures.set(key, failure);
-    else truncated++;
+    // Retain active failures until cleared; bound messages and outgoing reports.
+    failures.set(key, failure);
     publish();
   },
   clear(kind: AppFailure['kind'], name: string, identity?: string) {

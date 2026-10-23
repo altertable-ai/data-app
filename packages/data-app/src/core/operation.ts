@@ -105,15 +105,16 @@ function createOperationLakehouse(
       };
       queries.push(query);
       const limit = Math.min(options.limit, operation.policy.maxQueryRows);
+      const querySignal = AbortSignal.any([signal, options.signal]);
       let result;
       try {
         result = await source.queryAll(statement, {
           limit,
           ...(options.params === undefined ? {} : { params: options.params }),
-          signal: AbortSignal.any([signal, options.signal]),
+          signal: querySignal,
         });
       } catch (error) {
-        onQuery?.(query.name, error);
+        if (!querySignal.aborted) onQuery?.(query.name, error);
         if (error instanceof DataSourceError) error.queryName = query.name;
         throw error;
       }

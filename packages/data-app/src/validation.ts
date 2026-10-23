@@ -1,5 +1,6 @@
 import {
   appFailure,
+  parseAppDiagnosticReport,
   type AppDiagnosticReport,
   type AppFailure,
 } from './core/diagnostics.ts';
@@ -81,7 +82,7 @@ export async function validateDataApp({
     if (check.source) failure.source = { ...check.source };
     return [failure];
   });
-  return {
+  return parseAppDiagnosticReport({
     failures: failures.slice(0, 30),
     pending: finished.filter(done => !done).length,
     truncated: Math.max(0, failures.length - 30),
@@ -89,7 +90,7 @@ export async function validateDataApp({
       `${checks.length} declared checks observed: ${results.filter(result => result.status === 'fulfilled').length} passed, ${failures.length} failed or cancelled.`,
       'Only the declared checks were exercised. Unvisited views, queries and interactions are not covered.',
     ],
-  };
+  });
 }
 
 /** Validate each operation's representative inputs independently. Supply separately declared query/render checks for additional coverage. */
