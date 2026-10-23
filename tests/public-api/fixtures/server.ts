@@ -15,6 +15,7 @@ import controls from '@/tests/public-api/fixtures/controls.html';
 import dateAxes from '@/tests/public-api/fixtures/date-axes.html';
 import datePresentation from '@/tests/public-api/fixtures/date-presentation.html';
 import declaredApp from '@/tests/public-api/fixtures/declared-app.html';
+import diagnosticsHost from '@/tests/public-api/fixtures/diagnostics-host.html';
 import exploration from '@/tests/public-api/fixtures/exploration.html';
 import filterPresentation from '@/tests/public-api/fixtures/filter-presentation.html';
 import filters from '@/tests/public-api/fixtures/filters.html';
@@ -38,15 +39,23 @@ async function bundle(entry: string) {
     throw new Error(result.logs.map(log => log.message).join('\n'));
   return result.outputs[0]!.text();
 }
-const [app, starter, frame, annotations, annotationState, contentSizing] =
-  await Promise.all([
-    bundle('tests/public-api/fixtures/bundle-app.tsx'),
-    bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
-    bundle('tests/public-api/fixtures/bridge-frame.ts'),
-    bundle('tests/public-api/fixtures/annotations-app.tsx'),
-    bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
-    bundle('tests/public-api/fixtures/content-sizing-app.tsx'),
-  ]);
+const [
+  app,
+  starter,
+  frame,
+  annotations,
+  annotationState,
+  contentSizing,
+  diagnostics,
+] = await Promise.all([
+  bundle('tests/public-api/fixtures/bundle-app.tsx'),
+  bundle('packages/data-app-examples/templates/starter-data-app/index.tsx'),
+  bundle('tests/public-api/fixtures/bridge-frame.ts'),
+  bundle('tests/public-api/fixtures/annotations-app.tsx'),
+  bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
+  bundle('tests/public-api/fixtures/content-sizing-app.tsx'),
+  bundle('tests/public-api/fixtures/diagnostics-app.tsx'),
+]);
 const { default: worker } = await import(
   import.meta.resolve('@altertable/data-app-worker')
 );
@@ -90,6 +99,7 @@ const server = Bun.serve({
     '/chart-legends': chartLegends,
     '/time-app': timeApp,
     '/clients': clients,
+    '/diagnostics': diagnosticsHost,
   },
   async fetch(request): Promise<Response> {
     const url = new URL(request.url);
@@ -103,6 +113,8 @@ const server = Bun.serve({
       return new Response(annotations);
     if (url.pathname === '/__test/annotation-state')
       return new Response(annotationState);
+    if (url.pathname === '/__test/diagnostics')
+      return new Response(diagnostics);
     if (url.pathname === '/__test/bundle') return new Response(app);
     if (url.pathname === '/__test/content-sizing')
       return new Response(contentSizing);

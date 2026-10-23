@@ -66,6 +66,10 @@
     "./internal": {
       "types": "./dist/types/internal.d.ts",
       "import": "./dist/internal.js"
+    },
+    "./validation": {
+      "types": "./dist/types/validation.d.ts",
+      "import": "./dist/validation.js"
     }
   },
   "publishConfig": {

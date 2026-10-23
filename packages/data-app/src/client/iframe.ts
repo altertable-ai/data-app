@@ -13,6 +13,7 @@ import {
   type RoutedMessage,
 } from '../core/messages.ts';
 import { randomUuid } from '../core/uuid.ts';
+import { appDiagnostics } from './diagnostics.ts';
 import { createFrameSizing } from './frame-sizing.ts';
 import {
   createBridgeLogger,
@@ -57,6 +58,31 @@ export function createIframeTransport({
   let disposed = false;
   const pending = new Map<string, Pending>();
   let hostState: unknown;
+  let diagnosticsWaiting = false;
+  let diagnosticTimer: ReturnType<typeof setTimeout> | undefined;
+  const unsubscribeDiagnostics = appDiagnostics.subscribe(scheduleDiagnostics);
+  function scheduleDiagnostics() {
+    clearTimeout(diagnosticTimer);
+    diagnosticTimer = setTimeout(() => {
+      if (
+        !hostState ||
+        typeof hostState !== 'object' ||
+        !('repair' in hostState) ||
+        typeof hostState.repair !== 'string'
+      )
+        return;
+      if (pending.size >= MAX_PENDING) {
+        diagnosticsWaiting = true;
+        return;
+      }
+      diagnosticsWaiting = false;
+      if (!disposed && sessionId)
+        void requestMessage({
+          route: 'diagnostics:report',
+          payload: appDiagnostics.snapshot(),
+        }).catch(() => {});
+    }, 150);
+  }
   const stateListeners = new Set<(state: unknown) => void>();
   const logger = createBridgeLogger(
     () =>
@@ -137,6 +163,7 @@ export function createIframeTransport({
   });
 
   function receiveState(state: unknown, session: 'new' | 'current') {
+    if (session === 'new') scheduleDiagnostics();
     hostState = state;
     frameSizing.update(state, session);
     for (const listener of stateListeners) listener(state);
@@ -165,6 +192,7 @@ export function createIframeTransport({
         clearTimeout(timer);
         signal?.removeEventListener('abort', abort);
         pending.delete(id);
+        if (diagnosticsWaiting) scheduleDiagnostics();
       }
 
       function abort() {
@@ -259,6 +287,8 @@ export function createIframeTransport({
     if (disposed) return;
     disconnect();
     disposed = true;
+    clearTimeout(diagnosticTimer);
+    unsubscribeDiagnostics();
     endpoint.dispose();
     frameSizing.dispose();
     frame.removeEventListener('message', receive);
@@ -272,6 +302,7 @@ export function createIframeTransport({
   if (mode === 'url') send('ready', {});
 
   return {
+    diagnostics: appDiagnostics,
     logger,
     request: requestMessage,
     transport: queryOperation,
@@ -309,6 +340,7 @@ export function createIframeTransport({
     /** Reports a fatal app failure; the cause reaches the host logger only. */
     fail(cause?: unknown) {
       if (disposed || !sessionId) return;
+      appDiagnostics.record('render', 'App startup', cause);
       if (cause !== undefined)
         logger.error(() => ['Data app failed', describeError(cause)]);
       send('runtimeError', {});

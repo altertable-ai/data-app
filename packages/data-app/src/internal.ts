@@ -87,3 +87,4 @@ export {
   dimensionSource,
   type SourceDimensionVariable,
 } from './core/dimension-source.ts';
+export { parseAppDiagnosticReport } from './core/diagnostics.ts';

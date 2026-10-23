@@ -16,6 +16,7 @@ import {
 } from '@altertable/data-app/internal';
 
 import { createContentSizing } from './content-sizing.ts';
+import { type DataAppRepairSession } from './repair.ts';
 
 export type DataAppConnection =
   | { type: 'origin'; origin: string }
@@ -37,6 +38,7 @@ export type DataAppHost = {
 
 export type DataAppHostOptions = {
   iframe: HTMLIFrameElement;
+  repair?: { session: DataAppRepairSession; revision: string };
   presentation?: DataAppPresentation;
   logger?: DataAppLogger;
   onStatusChange?: (status: DataAppStatus) => void;
@@ -60,6 +62,7 @@ export function attachDataAppConnection({
   onStatusChange,
   onDiagnostic,
   onMessage,
+  repair,
   window: host = window,
 }: DataAppConnectionOptions): DataAppHost {
   const frameOrigin = connection.type === 'origin' ? connection.origin : 'null';
@@ -79,6 +82,8 @@ export function attachDataAppConnection({
   let disposed = false;
   let documentId: string | undefined;
   let sessionId: string | undefined;
+  let repairLease = repair?.session.connect(repair.revision);
+  const unsubscribeRepair = repair?.session.subscribe(() => publishState());
   const pending = new Map<string, AbortController>();
   const requestStartedAt = new Map<string, number>();
 
@@ -129,6 +134,7 @@ export function attachDataAppConnection({
       hash: host.location.hash,
       ...(presentation ? { presentation } : {}),
       logging: logger !== undefined,
+      repair: repair?.session.snapshot().status,
     };
   }
 
@@ -181,6 +187,8 @@ export function attachDataAppConnection({
       ready(message) {
         if (message.documentId !== documentId) {
           cancelAll();
+          if (documentId)
+            repairLease = repair?.session.connect(repair.revision);
           documentId = message.documentId;
           sessionId = randomUuid();
           contentSizingFailed = false;
@@ -256,7 +264,13 @@ export function attachDataAppConnection({
     try {
       const body = JSON.stringify(message.payload);
       // PNG annotation captures have a separate validated 256 KiB image budget.
-      const limit = message.route === 'annotation:draft' ? 384_000 : 16_384;
+      const limit =
+        message.route === 'annotation:draft'
+          ? 384_000
+          : message.route === 'diagnostics:report' ||
+              message.route === 'diagnostics:repair'
+            ? 64_000
+            : 16_384;
       if (
         message.payload !== undefined &&
         (typeof body !== 'string' || body.length > limit)
@@ -281,10 +295,17 @@ export function attachDataAppConnection({
       once: true,
     });
     try {
-      const response = await onMessage(
-        { route: message.route, payload: message.payload },
-        { signal: controller.signal }
-      );
+      const response =
+        message.route === 'diagnostics:report'
+          ? (repairLease?.report(message.payload), null)
+          : message.route === 'diagnostics:repair'
+            ? (repairLease?.report(message.payload, false),
+              await repairLease?.request(),
+              null)
+            : await onMessage(
+                { route: message.route, payload: message.payload },
+                { signal: controller.signal }
+              );
       if (pending.get(id) === controller) send('result', { id, response });
     } catch (failure) {
       if (pending.get(id) === controller) {
@@ -324,6 +345,7 @@ export function attachDataAppConnection({
   function load() {
     if (connection.type === 'opaque') token = randomUuid();
     cancelAll();
+    repairLease = repair?.session.connect(repair.revision);
     documentId = undefined;
     sessionId = undefined;
     onStatusChange?.('connecting');
@@ -332,6 +354,8 @@ export function attachDataAppConnection({
 
   function dispose() {
     disposed = true;
+    unsubscribeRepair?.();
+    repairLease?.dispose();
     endpoint.dispose();
     contentSizing.dispose();
     cancelAll();

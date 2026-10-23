@@ -129,6 +129,8 @@ export const dataAppStyleClasses = {
     component: 'Tabs',
     kind: 'root',
   },
+  'altertable-widget-boundary': { component: 'DataWidget', kind: 'root' },
+  'altertable-widget-error': { component: 'DataWidget', kind: 'root' },
   'altertable-data-widget': {
     component: 'DataWidget',
     kind: 'root',

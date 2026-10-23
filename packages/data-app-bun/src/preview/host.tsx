@@ -1,9 +1,13 @@
 import {
+  createDataAppRepairSession,
   createNavigationHandler,
   createSqlQueryHandler,
   type DataAppStatus,
 } from '@altertable/data-app-embed';
-import { DataAppBridge } from '@altertable/data-app-embed/react';
+import {
+  DataAppBridge,
+  DataAppRepairBanner,
+} from '@altertable/data-app-embed/react';
 import {
   DataSourceError,
   createMessageRouter,
@@ -64,6 +68,12 @@ const router = createMessageRouter(
   }
 );
 
+// The preview has no agent invocation facility; keep the report visible for manual recovery.
+const repair = createDataAppRepairSession({
+  state: { automaticRequests: 0, attemptedRevisions: [] },
+  saveState() {},
+});
+
 type Bundle = { javascript: string } | { error: string };
 
 async function loadBundle(): Promise<Bundle> {
@@ -120,7 +130,9 @@ function DevFileHost() {
           The data app failed to start. Check the browser console.
         </p>
       )}
+      <DataAppRepairBanner session={repair} />
       <DataAppBridge
+        repair={{ session: repair, revision: 'local-preview' }}
         source={{ type: 'bundle', javascript: bundle.javascript }}
         title="Data app"
         onMessage={router.dispatch}

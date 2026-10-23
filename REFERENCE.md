@@ -1182,7 +1182,7 @@ RankingItem.label: ReactNode
 RankingItem.value: number
 RankingItem.detail?: ReactNode
 RankingProps (type, @altertable/data-app-react): = props listed as Ranking.*
-RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>, NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined,…
+RegisteredQuery (type, @altertable/data-app/contract): <Queries> = <Name extends keyof Queries & string, const Params extends object = {}, const Limit extends number = number>(name: Name & (true extends IsUnion<NoInfer<Name>> ? [ParameterNames<Queries, Name>] extends [...] ? unknown : never : unknown), params?: ExactQueryParameters<...> | undefined, options?: { ..…
 ReportingPeriod (type, @altertable/data-app/contract, @altertable/data-app-react)
 ReportingPeriod.kind: 'rolling' [variant 1 of 2]
 ReportingPeriod.amount: number [variant 1 of 2]

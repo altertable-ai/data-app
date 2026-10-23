@@ -866,11 +866,15 @@ export { Grid };
       throw new Error('Bun preview runtime leaked into a browser entry.');
   }
   if (
-    javascript.some(source =>
-      /typescript|createSourceFile|extractDataAppManifest/.test(source)
+    [...javascript, hostSource, bootstrapSource].some(source =>
+      /typescript|createSourceFile|extractDataAppManifest|validateDataApp|operationValidationChecks|Validation timed out/.test(
+        source
+      )
     )
   )
-    throw new Error('Manifest compiler tooling leaked into the browser build.');
+    throw new Error(
+      'Manifest or proactive validation tooling leaked into the browser build.'
+    );
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
   await writeFile(

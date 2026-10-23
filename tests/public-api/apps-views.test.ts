@@ -323,12 +323,12 @@ for (const binding of [
       await page
         .getByRole('button', { name: 'Present story', exact: true })
         .count()
-    ).toBe(0);
+    ).toBe(binding === 'dataset' || binding === 'metric' ? 1 : 0);
     expect(
       await page
         .getByRole('button', { name: 'Export CSV', exact: true })
         .count()
-    ).toBe(0);
+    ).toBe(binding === 'dataset' || binding === 'metric' ? 1 : 0);
   });
 }
 

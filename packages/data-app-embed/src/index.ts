@@ -16,3 +16,10 @@ export { createNavigationHandler } from './navigation.ts';
 export { createSqlQueryHandler } from './sql.ts';
 export { type DataAppPresentation } from '@altertable/data-app/internal';
 export { type DataAppLogger } from '@altertable/data-app/client';
+export {
+  createDataAppRepairSession,
+  type DataAppRepairSession,
+  type DataAppRepairState,
+  type DataAppRepairOptions,
+  type DataAppRepairStatus,
+} from './repair.ts';

@@ -1,6 +1,15 @@
+import {
+  appDiagnostics,
+  getDataAppTransport,
+} from '@altertable/data-app/client';
 import { formatCount } from '@altertable/data-app/format';
 import {
   useId,
+  Component,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
   useContext,
   type ComponentPropsWithRef,
   type ElementType,
@@ -10,6 +19,7 @@ import {
 import { getAnnotationProps } from '../annotations/getAnnotationProps.ts';
 import type { InspectionRecords } from './AboutData.tsx';
 import { AboutData } from './AboutData.tsx';
+import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { EmptyState } from './EmptyState.tsx';
@@ -55,7 +65,7 @@ export type DataWidgetProps<Data = unknown> = DataWidgetBaseProps &
       }
   );
 
-export function DataWidget<Data>(props: DataWidgetProps<Data>) {
+function DataWidgetInner<Data>(props: DataWidgetProps<Data>) {
   if (props.reading) {
     const { reading, isEmpty, emptyFallback, skeleton, children, ...shell } =
       props;
@@ -217,4 +227,142 @@ function WidgetContent({
       )}
     </>
   );
+}
+
+export const DataWidget = withWidgetBoundary(DataWidgetInner);
+
+function RepairButton() {
+  const bridge = getDataAppTransport();
+  const [state, setState] = useState(bridge?.snapshot());
+  const [pending, setPending] = useState(false);
+  useEffect(() => bridge?.subscribe(setState), [bridge]);
+  const status =
+    state && typeof state === 'object' && 'repair' in state
+      ? state.repair
+      : undefined;
+  return (
+    <Button
+      size="compact"
+      variant="outline"
+      disabled={
+        pending || status === 'pending' || !status || status === 'unsupported'
+      }
+      onClick={() => {
+        if (!bridge || pending) return;
+        setPending(true);
+        // Send the report and manual intent atomically through the shared controller.
+        void bridge
+          .request({
+            route: 'diagnostics:repair',
+            payload: appDiagnostics.snapshot(),
+          })
+          .catch(() => {})
+          .finally(() => setPending(false));
+      }}
+    >
+      Fix all errors
+    </Button>
+  );
+}
+
+class RenderBoundary extends Component<
+  { name: string; identity: string; children: ReactNode; height: () => number },
+  { failed: boolean; message?: string }
+> {
+  override state: { failed: boolean; message?: string } = { failed: false };
+  static getDerivedStateFromError(error: unknown) {
+    return {
+      failed: true,
+      message:
+        error instanceof Error
+          ? error.message.slice(0, 240)
+          : 'An unexpected render error occurred.',
+    };
+  }
+  override componentDidCatch(error: unknown) {
+    appDiagnostics.record(
+      'render',
+      this.props.name,
+      error,
+      this.props.identity
+    );
+  }
+  override componentWillUnmount() {
+    appDiagnostics.clear('render', this.props.name, this.props.identity);
+  }
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <section
+        className="altertable-widget-error"
+        aria-label={`${this.props.name} error`}
+        style={{
+          height: this.props.height() || undefined,
+          minHeight: this.props.height() ? 0 : undefined,
+        }}
+      >
+        <div role="alert">
+          <strong>This widget couldn’t render</strong>
+          <p>{this.state.message || 'Other content is still available.'}</p>
+        </div>
+        <RepairButton />
+      </section>
+    );
+  }
+}
+
+function WidgetBoundary({
+  name,
+  children,
+}: {
+  name: string;
+  children: ReactNode;
+}) {
+  const identity = useId();
+  const ref = useRef<HTMLDivElement>(null);
+  const height = useRef(0);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    function measure() {
+      if (!element!.querySelector('.altertable-widget-error'))
+        height.current = element!.getBoundingClientRect().height;
+    }
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div ref={ref} className="altertable-widget-boundary">
+      <RenderBoundary
+        name={name}
+        identity={identity}
+        height={() => height.current}
+      >
+        {children}
+      </RenderBoundary>
+    </div>
+  );
+}
+
+/** Keep generic widget props intact while isolating selectors and render callbacks. */
+export function withWidgetBoundary<Widget extends (props: any) => ReactNode>(
+  Widget: Widget
+): Widget {
+  return ((props: Parameters<Widget>[0]) => (
+    <WidgetBoundary
+      name={
+        typeof props.title === 'string'
+          ? props.title
+          : typeof props.label === 'string'
+            ? props.label
+            : (props.metric?.definition?.label ??
+              props.dataset?.definition?.label ??
+              'Widget')
+      }
+    >
+      <Widget {...props} />
+    </WidgetBoundary>
+  )) as Widget;
 }
