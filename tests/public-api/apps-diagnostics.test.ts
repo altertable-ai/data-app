@@ -7,6 +7,122 @@ import { test } from '@/tests/public-api/browser';
 const screenshotRoot =
   process.env.DATA_APP_SCREENSHOT_DIR ?? '/tmp/data-app-diagnostics';
 
+test('public widget renderers isolate early failures without changing healthy grid and inline layout', async ({
+  page,
+}) => {
+  await page.goto('/diagnostics?scenario=boundaries');
+  const frame = page.frameLocator('iframe');
+  const grid = frame.getByLabel('Widget grid');
+  const widget = frame.getByRole('region', {
+    name: 'Spanning widget',
+    exact: true,
+  });
+  await expect
+    .poll(() => frame.getByText('Narrative ready').isVisible())
+    .toBe(true);
+  const gridBounds = (await grid.boundingBox())!;
+  const widgetBounds = (await widget.boundingBox())!;
+  expect(widgetBounds.width).toBeCloseTo(gridBounds.width, 0);
+  const one = (await frame
+    .getByText('Inline one', { exact: true })
+    .boundingBox())!;
+  const two = (await frame
+    .getByText('Inline two', { exact: true })
+    .boundingBox())!;
+  expect(one.y).toBeCloseTo(two.y, 0);
+  expect(two.x).toBeGreaterThan(one.x);
+  await page.setViewportSize({ width: 900, height: 900 });
+  const wrapping = frame.getByLabel('Wrapping grid');
+  const last = frame.getByRole('region', {
+    name: 'Wrapped three',
+    exact: true,
+  });
+  await expect
+    .poll(
+      async () =>
+        (await last.boundingBox())!.width /
+        (await wrapping.boundingBox())!.width
+    )
+    .toBeCloseTo(1, 2);
+  const headingBounds = (await frame
+    .getByRole('region', { name: 'Custom heading', exact: true })
+    .boundingBox())!;
+  await frame.getByRole('button', { name: 'Break renderers' }).click();
+  await expect
+    .poll(() => frame.getByText('This widget couldn’t render').count())
+    .toBe(3);
+  const failedHeading = (await frame
+    .getByRole('region', { name: 'Widget error', exact: true })
+    .boundingBox())!;
+  expect(failedHeading.width).toBeCloseTo(headingBounds.width, 0);
+  expect(failedHeading.height).toBeCloseTo(headingBounds.height, 0);
+  expect(
+    await frame
+      .getByRole('heading', { name: 'Narrative', exact: true })
+      .isVisible()
+  ).toBe(true);
+  expect(
+    await frame.getByText('Static narrative description').isVisible()
+  ).toBe(true);
+  expect(await frame.getByText('Static narrative footer').isVisible()).toBe(
+    true
+  );
+  await frame.getByRole('button', { name: 'Healthy action 0' }).click();
+  expect(
+    await frame.getByRole('button', { name: 'Healthy action 1' }).isVisible()
+  ).toBe(true);
+  await expect
+    .poll(() => page.getByLabel('Repair requests').textContent())
+    .toBe('1');
+  const sent = await page.evaluate(() =>
+    JSON.parse(sessionStorage.getItem('requests')!)
+  );
+  expect(
+    sent[0].report.failures
+      .map((failure: { name: string }) => failure.name)
+      .sort()
+  ).toEqual(['Alternate views', 'Narrative', 'Widget']);
+});
+
+test('overflow failures remain visible and repairable after earlier widgets are removed', async ({
+  page,
+}) => {
+  await page.goto('/diagnostics?scenario=overflow');
+  const frame = page.frameLocator('iframe');
+  await frame.getByRole('button', { name: 'Break all widgets' }).click();
+  await expect
+    .poll(() => page.getByLabel('Repair requests').textContent())
+    .toBe('1');
+  const first = await page.evaluate(
+    () => JSON.parse(sessionStorage.getItem('requests')!)[0].report
+  );
+  expect(first.failures).toHaveLength(30);
+  expect(first.truncated).toBe(1);
+  await expect
+    .poll(() =>
+      page.getByRole('button', { name: 'Fix all errors' }).isEnabled()
+    )
+    .toBe(true);
+  await frame.getByRole('button', { name: 'Hide first 30 widgets' }).click();
+  const banner = page.getByRole('region', { name: 'App errors' });
+  await expect.poll(() => banner.textContent()).toContain('1 app error');
+  await page.getByText('View diagnostics').click();
+  expect(await banner.textContent()).toContain('Overflow 31');
+  await frame.getByRole('button', { name: 'Fix error' }).click();
+  await expect
+    .poll(() => page.getByLabel('Repair requests').textContent())
+    .toBe('2');
+  const latest = await page.evaluate(
+    () => JSON.parse(sessionStorage.getItem('requests')!).at(-1).report
+  );
+  expect(latest.failures).toHaveLength(1);
+  expect(latest.failures[0].name).toBe('Overflow 31');
+  expect(latest.failures[0].message).toContain(
+    'Series requires a numeric value'
+  );
+  expect(latest.truncated).toBe(0);
+});
+
 test('independent widget and operation failures share latest repair report and preserve layout', async ({
   page,
 }) => {

@@ -103,10 +103,11 @@
 }
 
 .altertable-widget-boundary {
-  min-width: 0;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: contents;
+}
+/* Carry Grid's placement through transparent wrappers without overriding widget styles. */
+:where(.altertable-widget-boundary) > * {
+  grid-column: inherit;
 }
 .altertable-widget-error {
   box-sizing: border-box;
@@ -147,9 +148,4 @@
   flex: 1;
   min-height: 0;
   display: grid;
-}
-.altertable-widget-error-frame
-  > .altertable-data-widget-body
-  > .altertable-widget-boundary {
-  min-height: 0;
 }

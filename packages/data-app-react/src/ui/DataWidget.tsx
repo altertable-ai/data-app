@@ -281,6 +281,7 @@ class RenderBoundary extends Component<
     height: () => number;
     width: () => number;
     body?: boolean;
+    fallback?: boolean;
     shell?: DataWidgetBaseProps;
   },
   { failed: boolean; message?: string }
@@ -310,13 +311,19 @@ class RenderBoundary extends Component<
     if (!this.state.failed) return this.props.children;
     const error = (
       <section
-        className="altertable-widget-error"
+        className={classNames(
+          'altertable-widget-error',
+          this.props.fallback && 'altertable-data-widget'
+        )}
         aria-label={`${this.props.name} error`}
         style={
-          this.props.body
+          this.props.body || this.props.fallback
             ? {
                 height: this.props.height() || undefined,
                 minHeight: this.props.height() ? 0 : undefined,
+                ...(this.props.fallback
+                  ? { width: this.props.width() || undefined, maxWidth: '100%' }
+                  : {}),
               }
             : undefined
         }
@@ -328,25 +335,27 @@ class RenderBoundary extends Component<
         <RepairButton />
       </section>
     );
-    if (this.props.body) return error;
+    if (this.props.body || this.props.fallback) return error;
     return (
-      <DataWidgetContent
-        {...this.props.shell}
-        title={this.props.shell?.title ?? this.props.name}
-        className={classNames(
-          this.props.shell?.className,
-          'altertable-widget-error-frame'
-        )}
-        style={{
-          ...this.props.shell?.style,
-          height: this.props.height() || undefined,
-          width: this.props.width() || undefined,
-          maxWidth: '100%',
-          minHeight: this.props.height() ? 0 : undefined,
-        }}
-      >
-        {error}
-      </DataWidgetContent>
+      <RenderBoundary {...this.props} fallback>
+        <DataWidgetContent
+          {...this.props.shell}
+          title={this.props.shell?.title ?? this.props.name}
+          className={classNames(
+            this.props.shell?.className,
+            'altertable-widget-error-frame'
+          )}
+          style={{
+            ...this.props.shell?.style,
+            height: this.props.height() || undefined,
+            width: this.props.width() || undefined,
+            maxWidth: '100%',
+            minHeight: this.props.height() ? 0 : undefined,
+          }}
+        >
+          {error}
+        </DataWidgetContent>
+      </RenderBoundary>
     );
   }
 }
@@ -369,21 +378,25 @@ function WidgetBoundary({
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
+    const frame = body
+      ? element.parentElement!
+      : (element.querySelector('.altertable-data-widget') ?? element);
     function measure() {
       if (element!.querySelector('.altertable-widget-error')) return;
-      const frame =
-        element!.querySelector('.altertable-data-widget') ?? element!;
       const bounds = frame.getBoundingClientRect();
-      height.current = bounds.height;
+      const style = getComputedStyle(frame);
+      height.current = body
+        ? bounds.height -
+          parseFloat(style.paddingTop) -
+          parseFloat(style.paddingBottom)
+        : bounds.height;
       width.current = bounds.width;
     }
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    const frame = element.querySelector('.altertable-data-widget');
-    if (frame) observer.observe(frame);
+    observer.observe(frame);
     return () => observer.disconnect();
-  }, []);
+  }, [body]);
   return (
     <div ref={ref} className="altertable-widget-boundary">
       <RenderBoundary
@@ -411,6 +424,7 @@ export function withWidgetBoundary<Widget extends (props: any) => ReactNode>(
           props.title ??
           props.label ??
           props.metric?.definition?.label ??
+          props.metric?.label ??
           props.dataset?.name ??
           'Widget',
         headingLevel: props.headingLevel,
@@ -426,6 +440,7 @@ export function withWidgetBoundary<Widget extends (props: any) => ReactNode>(
           : typeof props.label === 'string'
             ? props.label
             : (props.metric?.definition?.label ??
+              props.metric?.label ??
               props.dataset?.name ??
               'Widget')
       }
