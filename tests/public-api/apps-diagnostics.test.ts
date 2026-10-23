@@ -184,6 +184,11 @@ test('independent widget and operation failures share latest repair report and p
   await expect.poll(() => banner.textContent()).toContain('revenue');
   await expect.poll(() => banner.textContent()).toContain('retention');
   await expect.poll(() => banner.textContent()).toContain('render: Revenue');
+  await mkdir(screenshotRoot, { recursive: true });
+  await banner.screenshot({
+    path: `${screenshotRoot}/diagnostics-banner-expanded.png`,
+    animations: 'disabled',
+  });
   // Keyboard activation of the widget uses the same whole-report request.
   const repair = frame.getByRole('button', { name: 'Fix error' }).first();
   await repair.focus();
@@ -218,6 +223,10 @@ test('independent widget and operation failures share latest repair report and p
   await expect.poll(() => repair.isEnabled()).toBe(true);
   await page.getByText('View diagnostics').click();
   await mkdir(screenshotRoot, { recursive: true });
+  await banner.screenshot({
+    path: `${screenshotRoot}/diagnostics-banner-light.png`,
+    animations: 'disabled',
+  });
   await page.locator('.diagnostics-preview').screenshot({
     path: `${screenshotRoot}/diagnostics-light.png`,
     animations: 'disabled',
@@ -227,6 +236,10 @@ test('independent widget and operation failures share latest repair report and p
   await expect
     .poll(() => frame.locator('html').getAttribute('data-atbl-theme'))
     .toBe('dark');
+  await banner.screenshot({
+    path: `${screenshotRoot}/diagnostics-banner-dark-narrow.png`,
+    animations: 'disabled',
+  });
   await page.locator('.diagnostics-preview').screenshot({
     path: `${screenshotRoot}/diagnostics-dark-narrow.png`,
     animations: 'disabled',

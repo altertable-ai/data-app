@@ -35,17 +35,17 @@ const messages: Record<
 
 const styles = `
 .atbl-repair-banner {
-  display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center;
-  gap: 10px 12px; padding: 12px 16px; box-sizing: border-box; width: 100%;
+  display: grid; grid-template-columns: 18px minmax(0, 1fr) auto;
+  grid-template-areas: "icon copy actions" ". details actions"; align-items: start;
+  gap: 4px 12px; padding: 12px 16px; box-sizing: border-box; width: 100%;
   color: light-dark(#654315, #f0d8b2); background: light-dark(#fff9ef, #2b251c);
   border-bottom: 1px solid light-dark(#eddbc0, #56452d);
   font: 13px/1.45 var(--atbl-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
   -webkit-font-smoothing: antialiased;
 }
-.atbl-repair-banner > svg { align-self: start; margin-top: 3px; }
-.atbl-repair-banner-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; }
-.atbl-repair-banner-actions output { margin: 0; }
-.atbl-repair-banner-copy { min-width: 0; overflow-wrap: anywhere; }
+.atbl-repair-banner > svg { grid-area: icon; margin-top: 1px; }
+.atbl-repair-banner-actions { grid-area: actions; padding-top: 4px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px 12px; }
+.atbl-repair-banner-copy { grid-area: copy; min-width: 0; overflow-wrap: anywhere; }
 .atbl-repair-banner-title { font-weight: 600; }
 .atbl-repair-banner-count { margin-inline-start: 8px; font-size: 12px; font-weight: 400; color: light-dark(#796343, #c2ae8f); white-space: nowrap; }
 .atbl-repair-banner output { display: block; margin-top: 2px; color: light-dark(#796343, #c2ae8f); font-size: 12px; line-height: 1.5; }
@@ -53,19 +53,19 @@ const styles = `
 .atbl-repair-banner button:disabled { opacity: .6; }
 .atbl-repair-banner button:active:not(:disabled) { transform: scale(.97); }
 .atbl-repair-banner :is(button, summary):focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-.atbl-repair-banner details { grid-column: 2 / -1; min-width: 0; color: light-dark(#796343, #c2ae8f); font-size: 12px; }
-.atbl-repair-banner summary { width: fit-content; cursor: default; }
+.atbl-repair-banner details { grid-area: details; min-width: 0; color: light-dark(#796343, #c2ae8f); font-size: 12px; }
+.atbl-repair-banner summary { width: fit-content; min-height: 20px; line-height: 20px; cursor: default; }
 .atbl-repair-banner details[open] { padding-top: 10px; border-top: 1px solid light-dark(#eddbc0, #56452d); }
 .atbl-repair-banner ul { padding-inline-start: 18px; margin: 10px 0; }
 .atbl-repair-banner li + li { margin-top: 8px; }
 .atbl-repair-banner code { font: 11px/1.5 var(--atbl-mono-font, ui-monospace, monospace); overflow-wrap: anywhere; }
 .atbl-repair-banner p { margin: 10px 0 0; }
 .atbl-repair-banner-copy-action { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.atbl-repair-banner-copy-action output { margin: 0; }
+.atbl-repair-banner-copy-action output, .atbl-repair-banner-actions output { margin: 0; }
 @media (hover: hover) { .atbl-repair-banner button:hover:not(:disabled) { background: light-dark(#f6eddd, #443825); } }
 @media (pointer: coarse) { .atbl-repair-banner button { min-height: 44px; } }
-@media (max-width: 600px) { .atbl-repair-banner-copy, .atbl-repair-banner-actions { grid-column: 2 / -1; } }
-@media (max-width: 420px) { .atbl-repair-banner { padding: 12px; gap: 8px 10px; align-items: start; } .atbl-repair-banner-count { display: block; margin-inline-start: 0; margin-top: 2px; } }
+@media (max-width: 600px) { .atbl-repair-banner { grid-template-columns: 18px minmax(0, 1fr); grid-template-areas: "icon copy" ". details" ". actions"; } .atbl-repair-banner-actions { padding-top: 4px; } }
+@media (max-width: 420px) { .atbl-repair-banner { padding: 12px; gap: 4px 10px; align-items: start; } .atbl-repair-banner-count { display: block; margin-inline-start: 0; margin-top: 2px; } }
 `;
 
 /** Shared in-flow host banner. Mount above the app iframe with the same repair session. */
