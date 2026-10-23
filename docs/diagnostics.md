@@ -4,14 +4,15 @@ Live SDK capture collects failed operations, named queries and mounted widget
 renders. Healthy widgets stay interactive. A render failure keeps its last
 measured frame dimensions and static header, description, and footer. A broken
 shell uses a plain error frame; an initially broken widget uses a compact fallback.
-Widget buttons say “Fix error”; the banner
-says “Fix all errors”. Both send the complete observed report through the same action.
+Widget buttons say “Fix error”; the banner says “Fix all errors”. Both send the
+complete observed report through the same action.
 Reports include failure names and source locations, exercised coverage,
 unfinished checks and an omitted-diagnostic count. They do not prove unvisited
 views or interactions work. Reports include at most 30 failures; remaining active
 failures become visible as earlier failures clear. Bundle viewers resolve source
-locations using the bundle's inline base64 JSON source map. Missing, invalid or unmapped locations
-retain the generated file and position. URL viewers retain generated locations.
+locations using the bundle's inline base64 JSON source map. Missing, invalid or
+unmapped locations retain the generated file and position. URL viewers retain
+generated locations.
 Mapping runs in the viewer; it never fetches maps or includes source content in
 reports. File paths remain reduced to their basename.
 
@@ -62,8 +63,9 @@ At most three automatic requests are reserved per session, once per revision.
 Manual requests and healthy reports never replenish the allowance. All CTAs use
 the same controller and latest report. Requests are serialized. Failed saves stop
 automatic requests for the controller; failed delivery consumes the reservation.
-Neither retries automatically. A replaced bridge cannot submit reports or deliver
-a request still waiting to save.
+Neither retries automatically. Automatic delivery waits for observed checks to
+finish, including checks started during state saving. A replaced bridge cannot
+submit reports or deliver a request still waiting to save or settle.
 
 `requestRepair(report, { revision, automatic })` resolves when the host accepts the
 request. This does not establish agent execution: the banner says “Repair request
@@ -103,8 +105,10 @@ const report = await validateDataApp({
 });
 ```
 
-Every declared check is observed independently. Validation stops waiting after
-30 seconds (override with `timeoutMs`), reports unfinished checks, and signals
+Every declared check is observed independently. A check must throw or reject to
+report failure; returned values, including `false`, do not indicate failure.
+Validation stops waiting after 30 seconds (override with `timeoutMs`), reports
+unfinished checks, and signals
 cancellation. Checks should honor that signal. Operation checks exercise the declared
 representative inputs. Queries after an early return or failure require separate
 checks. Render and browser interactions require caller-supplied checks; this API

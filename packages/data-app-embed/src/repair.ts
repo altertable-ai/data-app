@@ -1,6 +1,8 @@
 import { type AppDiagnosticReport } from '@altertable/data-app/client';
 import { parseAppDiagnosticReport } from '@altertable/data-app/internal';
 
+export const AUTOMATIC_REPAIR_LIMIT = 3;
+
 /** Host-retained state for one app repair session. Never reset for revisions, healthy reports or manual requests. */
 export type DataAppRepairState = {
   automaticRequests: number;
@@ -29,12 +31,12 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
   const listeners = new Set<() => void>();
   let state: DataAppRepairState = {
     automaticRequests: Math.min(
-      3,
+      AUTOMATIC_REPAIR_LIMIT,
       Math.max(
         0,
         Number.isSafeInteger(options.state.automaticRequests)
           ? options.state.automaticRequests
-          : 3
+          : AUTOMATIC_REPAIR_LIMIT
       )
     ),
     attemptedRevisions: [...options.state.attemptedRevisions],
@@ -66,7 +68,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
     if (
       automatic &&
       (savingFailed ||
-        state.automaticRequests >= 3 ||
+        state.automaticRequests >= AUTOMATIC_REPAIR_LIMIT ||
         state.attemptedRevisions.includes(revision) ||
         report.pending > 0)
     )
@@ -109,6 +111,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
       if (owner !== active) return;
       if (!report?.failures.length) {
         status = 'idle';
+
         return;
       }
       await options.requestRepair(report!, {
@@ -125,10 +128,12 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
       if (owner !== active) void request(true);
     }
   }
+
   return {
     snapshot: () => snapshot,
     subscribe(listener: () => void) {
       listeners.add(listener);
+
       return () => {
         listeners.delete(listener);
       };
@@ -148,6 +153,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
             ? 'idle'
             : 'unsupported';
       publish();
+
       return {
         report(value: unknown, automatic = true) {
           if (owner !== active) return;

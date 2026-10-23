@@ -1,6 +1,42 @@
 import { useState, useSyncExternalStore } from 'react';
 
-import { type DataAppRepairSession } from '../repair.ts';
+import {
+  AUTOMATIC_REPAIR_LIMIT,
+  type DataAppRepairSession,
+  type DataAppRepairStatus,
+} from '../repair.ts';
+
+const messages: Record<
+  DataAppRepairStatus | 'limited',
+  { title: string; description: string }
+> = {
+  idle: {
+    title: 'Some parts of this app failed',
+    description:
+      'Other content is still available. Send the diagnostics to your agent.',
+  },
+  pending: {
+    title: 'Requesting a fix…',
+    description: 'Sending the latest diagnostics to your agent.',
+  },
+  accepted: {
+    title: 'Fix requested',
+    description: 'Repair request accepted.',
+  },
+  failed: {
+    title: 'Couldn’t request a fix',
+    description: 'Request could not be saved or delivered. Try again manually.',
+  },
+  unsupported: {
+    title: 'Some parts of this app failed',
+    description:
+      'Copy the diagnostics below into your agent and ask it to fix all errors.',
+  },
+  limited: {
+    title: 'Some parts of this app failed',
+    description: `Automatic repair limit reached after ${AUTOMATIC_REPAIR_LIMIT} attempts. You can request another fix.`,
+  },
+};
 
 const styles = `
 .atbl-repair-banner {
@@ -49,27 +85,14 @@ export function DataAppRepairBanner({
     session.snapshot,
     session.snapshot
   );
+
   if (!report?.failures.length) return null;
-  const title =
-    status === 'pending'
-      ? 'Requesting a fix…'
-      : status === 'accepted'
-        ? 'Fix requested'
-        : status === 'failed'
-          ? 'Couldn’t request a fix'
-          : 'Some parts of this app failed';
-  const description =
-    status === 'pending'
-      ? 'Sending the latest diagnostics to your agent.'
-      : status === 'accepted'
-        ? 'Repair request accepted.'
-        : status === 'failed'
-          ? 'Request could not be saved or delivered. Try again manually.'
-          : status === 'unsupported'
-            ? 'Copy the diagnostics below into your agent and ask it to fix all errors.'
-            : automaticRequests >= 3
-              ? 'Automatic repair limit reached after 3 attempts. You can request another fix.'
-              : 'Other content is still available. Send the diagnostics to your agent.';
+  const message =
+    status === 'idle' && automaticRequests >= AUTOMATIC_REPAIR_LIMIT
+      ? 'limited'
+      : status;
+  const { title, description } = messages[message];
+
   return (
     <>
       <style>{styles}</style>

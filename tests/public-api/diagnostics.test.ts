@@ -47,7 +47,7 @@ describe('shared repair sessions', () => {
     expect(delivered).toEqual(['rev-1', 'rev-2', 'rev-3', 'rev-4', 'rev-4']);
     expect(state.automaticRequests).toBe(3);
   });
-  test('serializes all buttons and delivers latest report after saving', async () => {
+  test('serializes repair requests and waits for the latest settled report', async () => {
     let release!: () => void;
     const state = { automaticRequests: 0, attemptedRevisions: [] as string[] };
     const sent: string[] = [];
@@ -331,7 +331,7 @@ test('manual report submission does not consume an automatic reservation', async
   expect(state.automaticRequests).toBe(0);
 });
 
-test('same-label widget failures remain distinct and unmounted widgets leave the report', () => {
+test('same-label failure identities stay distinct and can be cleared independently', () => {
   appDiagnostics.record(
     'render',
     'Revenue',

@@ -122,7 +122,10 @@ function DataWidgetContent({
       footer={emptyFallback ? undefined : footer}
       status={status}
     >
-      <WidgetBoundary name={typeof title === 'string' ? title : 'Widget'} body>
+      <WidgetBoundary
+        name={typeof title === 'string' ? title : 'Widget'}
+        mode="body"
+      >
         {content}
       </WidgetBoundary>
     </WidgetContent>
@@ -278,10 +281,8 @@ class RenderBoundary extends Component<
     name: string;
     identity: string;
     children: ReactNode;
-    height: () => number;
-    width: () => number;
-    body?: boolean;
-    fallback?: boolean;
+    getDimensions: () => { height: number; width: number };
+    mode: 'widget' | 'body' | 'plain';
     shell?: DataWidgetBaseProps;
   },
   { failed: boolean; message?: string }
@@ -309,20 +310,21 @@ class RenderBoundary extends Component<
   }
   override render() {
     if (!this.state.failed) return this.props.children;
+    const { height, width } = this.props.getDimensions();
     const error = (
       <section
         className={classNames(
           'altertable-widget-error',
-          this.props.fallback && 'altertable-data-widget'
+          this.props.mode === 'plain' && 'altertable-data-widget'
         )}
         aria-label={`${this.props.name} error`}
         style={
-          this.props.body || this.props.fallback
+          this.props.mode !== 'widget'
             ? {
-                height: this.props.height() || undefined,
-                minHeight: this.props.height() ? 0 : undefined,
-                ...(this.props.fallback
-                  ? { width: this.props.width() || undefined, maxWidth: '100%' }
+                height: height || undefined,
+                minHeight: height ? 0 : undefined,
+                ...(this.props.mode === 'plain'
+                  ? { width: width || undefined, maxWidth: '100%' }
                   : {}),
               }
             : undefined
@@ -335,9 +337,10 @@ class RenderBoundary extends Component<
         <RepairButton />
       </section>
     );
-    if (this.props.body || this.props.fallback) return error;
+    if (this.props.mode !== 'widget') return error;
+
     return (
-      <RenderBoundary {...this.props} fallback>
+      <RenderBoundary {...this.props} mode="plain">
         <DataWidgetContent
           {...this.props.shell}
           title={this.props.shell?.title ?? this.props.name}
@@ -347,10 +350,10 @@ class RenderBoundary extends Component<
           )}
           style={{
             ...this.props.shell?.style,
-            height: this.props.height() || undefined,
-            width: this.props.width() || undefined,
+            height: height || undefined,
+            width: width || undefined,
             maxWidth: '100%',
-            minHeight: this.props.height() ? 0 : undefined,
+            minHeight: height ? 0 : undefined,
           }}
         >
           {error}
@@ -363,48 +366,49 @@ class RenderBoundary extends Component<
 function WidgetBoundary({
   name,
   children,
-  body,
+  mode = 'widget',
   shell,
 }: {
   name: string;
   children: ReactNode;
-  body?: boolean;
+  mode?: 'widget' | 'body';
   shell?: DataWidgetBaseProps;
 }) {
   const identity = useId();
   const ref = useRef<HTMLDivElement>(null);
-  const height = useRef(0);
-  const width = useRef(0);
+  const dimensions = useRef({ height: 0, width: 0 });
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
-    const frame = body
-      ? element.parentElement!
-      : (element.querySelector('.altertable-data-widget') ?? element);
+    const frame =
+      mode === 'body'
+        ? element.parentElement!
+        : (element.querySelector('.altertable-data-widget') ?? element);
     function measure() {
       if (element!.querySelector('.altertable-widget-error')) return;
       const bounds = frame.getBoundingClientRect();
       const style = getComputedStyle(frame);
-      height.current = body
-        ? bounds.height -
-          parseFloat(style.paddingTop) -
-          parseFloat(style.paddingBottom)
-        : bounds.height;
-      width.current = bounds.width;
+      dimensions.current.height =
+        mode === 'body'
+          ? bounds.height -
+            parseFloat(style.paddingTop) -
+            parseFloat(style.paddingBottom)
+          : bounds.height;
+      dimensions.current.width = bounds.width;
     }
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(frame);
     return () => observer.disconnect();
-  }, [body]);
+  }, [mode]);
+
   return (
     <div ref={ref} className="altertable-widget-boundary">
       <RenderBoundary
         name={name}
         identity={identity}
-        height={() => height.current}
-        width={() => width.current}
-        body={body}
+        getDimensions={() => dimensions.current}
+        mode={mode}
         shell={shell}
       >
         {children}
@@ -417,35 +421,30 @@ function WidgetBoundary({
 export function withWidgetBoundary<Widget extends (props: any) => ReactNode>(
   Widget: Widget
 ): Widget {
-  return ((props: Parameters<Widget>[0]) => (
-    <WidgetBoundary
-      shell={{
-        title:
-          props.title ??
-          props.label ??
-          props.metric?.definition?.label ??
-          props.metric?.label ??
-          props.dataset?.name ??
-          'Widget',
-        headingLevel: props.headingLevel,
-        description: props.description,
-        footer: props.footer,
-        action: props.action,
-        className: props.className,
-        style: props.style,
-      }}
-      name={
-        typeof props.title === 'string'
-          ? props.title
-          : typeof props.label === 'string'
-            ? props.label
-            : (props.metric?.definition?.label ??
-              props.metric?.label ??
-              props.dataset?.name ??
-              'Widget')
-      }
-    >
-      <Widget {...props} />
-    </WidgetBoundary>
-  )) as Widget;
+  return ((props: Parameters<Widget>[0]) => {
+    const label =
+      props.label ??
+      props.metric?.definition?.label ??
+      props.metric?.label ??
+      props.dataset?.name ??
+      'Widget';
+    const title = props.title ?? label;
+
+    return (
+      <WidgetBoundary
+        shell={{
+          title,
+          headingLevel: props.headingLevel,
+          description: props.description,
+          footer: props.footer,
+          action: props.action,
+          className: props.className,
+          style: props.style,
+        }}
+        name={typeof title === 'string' ? title : label}
+      >
+        <Widget {...props} />
+      </WidgetBoundary>
+    );
+  }) as Widget;
 }

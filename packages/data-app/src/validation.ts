@@ -16,6 +16,7 @@ export type AppValidationCheck = {
   kind: AppFailure['kind'];
   name: string;
   source?: AppFailure['source'];
+  /** Honor cancellation and throw to report failure. Successful return values are discarded. */
   run: (signal: AbortSignal) => unknown;
 };
 

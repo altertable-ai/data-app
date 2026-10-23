@@ -5,12 +5,17 @@ export type AppFailure = {
   kind: 'query' | 'operation' | 'render';
   name: string;
   message: string;
+  /** Sanitized filename and one-based line/column. Source contents are never included. */
   source?: { file: string; line: number; column: number };
 };
 export type AppDiagnosticReport = {
+  /** Current observed failures, limited to 30 entries. */
   failures: AppFailure[];
+  /** Checks exercised and coverage gaps; a failure-free report does not establish unvisited coverage. */
   coverage: string[];
+  /** Observed checks that have not finished. */
   pending: number;
+  /** Failures omitted from this report's bounded failure list. */
   truncated: number;
 };
 
