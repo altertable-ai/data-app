@@ -15,6 +15,10 @@ test('independent widget and operation failures share latest repair report and p
   await expect.poll(() => frame.getByText('Chart ready').count()).toBe(2);
   const widget = frame.locator('.altertable-data-widget').first();
   const dimensions = await widget.boundingBox();
+  const heading = await frame
+    .getByRole('heading', { name: 'Revenue', exact: true })
+    .elementHandle();
+  const footer = await frame.getByText('USD · Updated today').elementHandle();
   const neighbor = await frame
     .getByText('Neighbor below the widgets')
     .boundingBox();
@@ -25,15 +29,26 @@ test('independent widget and operation failures share latest repair report and p
   await expect
     .poll(() => page.getByLabel('Repair requests').textContent())
     .toBe('1');
-  const error = await frame
-    .getByRole('region', { name: 'Revenue error' })
-    .boundingBox();
+  const error = await widget.boundingBox();
+  expect(await heading!.evaluate(node => node.isConnected)).toBe(true);
+  expect(await footer!.evaluate(node => node.isConnected)).toBe(true);
   const after = await frame
     .getByText('Neighbor below the widgets')
     .boundingBox();
   expect(error!.height).toBeCloseTo(dimensions!.height, 0);
   expect(error!.width).toBeCloseTo(dimensions!.width, 0);
   expect(after!.y - error!.y).toBeCloseTo(neighbor!.y - dimensions!.y, 0);
+  await expect
+    .poll(() =>
+      frame.getByRole('heading', { name: 'Revenue', exact: true }).isVisible()
+    )
+    .toBe(true);
+  await expect
+    .poll(() => frame.getByText('Monthly revenue by channel').isVisible())
+    .toBe(true);
+  await expect
+    .poll(() => frame.getByText('USD · Updated today').isVisible())
+    .toBe(true);
   await frame.getByRole('button', { name: 'Healthy clicks 0' }).click();
   await expect
     .poll(() => frame.getByRole('button', { name: 'Healthy clicks 1' }).count())
@@ -49,7 +64,7 @@ test('independent widget and operation failures share latest repair report and p
   await expect.poll(() => banner.textContent()).toContain('retention');
   await expect.poll(() => banner.textContent()).toContain('render: Revenue');
   // Keyboard activation of the widget uses the same whole-report request.
-  const repair = frame.getByRole('button', { name: 'Fix all errors' }).first();
+  const repair = frame.getByRole('button', { name: 'Fix error' }).first();
   await repair.focus();
   await page.keyboard.press('Enter');
   await expect
@@ -71,9 +86,8 @@ test('independent widget and operation failures share latest repair report and p
   await expect.poll(() => repair.isEnabled()).toBe(true);
   await page.getByText('View diagnostics').click();
   await mkdir(screenshotRoot, { recursive: true });
-  await page.screenshot({
+  await page.locator('.diagnostics-preview').screenshot({
     path: `${screenshotRoot}/diagnostics-light.png`,
-    fullPage: true,
     animations: 'disabled',
   });
   await page.getByRole('button', { name: 'Change theme' }).click();
@@ -81,9 +95,8 @@ test('independent widget and operation failures share latest repair report and p
   await expect
     .poll(() => frame.locator('html').getAttribute('data-atbl-theme'))
     .toBe('dark');
-  await page.screenshot({
+  await page.locator('.diagnostics-preview').screenshot({
     path: `${screenshotRoot}/diagnostics-dark-narrow.png`,
-    fullPage: true,
     animations: 'disabled',
   });
   expect(
@@ -137,9 +150,8 @@ test('fourth failing revision and recreated/reloaded viewers keep automatic allo
     .toContain('Automatic repair limit reached');
   expect(await page.getByLabel('Repair requests').textContent()).toBe('3');
   await mkdir(screenshotRoot, { recursive: true });
-  await page.screenshot({
+  await page.locator('.diagnostics-preview').screenshot({
     path: `${screenshotRoot}/diagnostics-limit.png`,
-    fullPage: true,
     animations: 'disabled',
   });
   await page.getByRole('button', { name: 'Recreate viewer' }).click();
@@ -156,7 +168,7 @@ test('fourth failing revision and recreated/reloaded viewers keep automatic allo
     .toBe('4');
   await expect
     .poll(() =>
-      frame.getByRole('button', { name: 'Fix all errors' }).first().isDisabled()
+      frame.getByRole('button', { name: 'Fix error' }).first().isDisabled()
     )
     .toBe(true);
 });
@@ -210,11 +222,11 @@ test('multiple banner and widget buttons cannot bypass shared serialization', as
   await Promise.all([
     page.getByRole('button', { name: 'Fix all errors' }).click({ force: true }),
     frame
-      .getByRole('button', { name: 'Fix all errors' })
+      .getByRole('button', { name: 'Fix error' })
       .first()
       .click({ force: true }),
     frame
-      .getByRole('button', { name: 'Fix all errors' })
+      .getByRole('button', { name: 'Fix error' })
       .last()
       .click({ force: true }),
   ]);
@@ -244,10 +256,7 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
     await page.getByRole('button', { name: 'Fix all errors' }).isDisabled()
   ).toBe(true);
   expect(
-    await frame
-      .getByRole('button', { name: 'Fix all errors' })
-      .first()
-      .isDisabled()
+    await frame.getByRole('button', { name: 'Fix error' }).first().isDisabled()
   ).toBe(true);
   expect(await page.getByLabel('Repair requests').textContent()).toBe('0');
 });
@@ -267,7 +276,10 @@ test('explicit widget widths remain stable when rendering fails at wide and narr
     await frame.getByRole('button', { name: 'Break widgets' }).click();
     const error = frame.getByRole('region', { name: 'Revenue error' });
     await expect.poll(() => error.isVisible()).toBe(true);
-    const after = await error.boundingBox();
+    const after = await frame
+      .locator('.altertable-data-widget')
+      .first()
+      .boundingBox();
     expect(before!.width).toBe(260);
     expect(after!.width).toBeCloseTo(before!.width, 0);
     expect(after!.height).toBeCloseTo(before!.height, 0);

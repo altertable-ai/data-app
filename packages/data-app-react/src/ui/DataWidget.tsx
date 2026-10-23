@@ -82,7 +82,9 @@ function DataWidgetInner<Data>(props: DataWidgetProps<Data>) {
         {...shell}
         emptyFallback={noData ? emptyFallback : undefined}
       >
-        {noData ? null : children(reading.value)}
+        {noData ? null : (
+          <WidgetRender render={() => children(reading.value)} />
+        )}
       </DataWidgetContent>
     );
   }
@@ -120,7 +122,9 @@ function DataWidgetContent({
       footer={emptyFallback ? undefined : footer}
       status={status}
     >
-      {content}
+      <WidgetBoundary name={typeof title === 'string' ? title : 'Widget'} body>
+        {content}
+      </WidgetBoundary>
     </WidgetContent>
   );
   const explicitAnnotationId = annotationId ?? props.id;
@@ -229,6 +233,10 @@ function WidgetContent({
   );
 }
 
+function WidgetRender({ render }: { render: () => ReactNode }) {
+  return render();
+}
+
 export const DataWidget = withWidgetBoundary(DataWidgetInner);
 
 function RepairButton() {
@@ -260,7 +268,7 @@ function RepairButton() {
           .finally(() => setPending(false));
       }}
     >
-      Fix all errors
+      Fix error
     </Button>
   );
 }
@@ -272,6 +280,8 @@ class RenderBoundary extends Component<
     children: ReactNode;
     height: () => number;
     width: () => number;
+    body?: boolean;
+    shell?: DataWidgetBaseProps;
   },
   { failed: boolean; message?: string }
 > {
@@ -298,23 +308,46 @@ class RenderBoundary extends Component<
   }
   override render() {
     if (!this.state.failed) return this.props.children;
-    return (
+    const error = (
       <section
         className="altertable-widget-error"
         aria-label={`${this.props.name} error`}
+        style={
+          this.props.body
+            ? {
+                height: this.props.height() || undefined,
+                minHeight: this.props.height() ? 0 : undefined,
+              }
+            : undefined
+        }
+      >
+        <AppIcon name="error" size={16} />
+        <div className="altertable-widget-error-copy" role="alert">
+          <strong>This widget couldn’t render</strong>
+          <p>{this.state.message || 'Other content is still available.'}</p>
+          <RepairButton />
+        </div>
+      </section>
+    );
+    if (this.props.body) return error;
+    return (
+      <DataWidgetContent
+        {...this.props.shell}
+        title={this.props.shell?.title ?? this.props.name}
+        className={classNames(
+          this.props.shell?.className,
+          'altertable-widget-error-frame'
+        )}
         style={{
+          ...this.props.shell?.style,
           height: this.props.height() || undefined,
           width: this.props.width() || undefined,
           maxWidth: '100%',
           minHeight: this.props.height() ? 0 : undefined,
         }}
       >
-        <div role="alert">
-          <strong>This widget couldn’t render</strong>
-          <p>{this.state.message || 'Other content is still available.'}</p>
-        </div>
-        <RepairButton />
-      </section>
+        {error}
+      </DataWidgetContent>
     );
   }
 }
@@ -322,9 +355,13 @@ class RenderBoundary extends Component<
 function WidgetBoundary({
   name,
   children,
+  body,
+  shell,
 }: {
   name: string;
   children: ReactNode;
+  body?: boolean;
+  shell?: DataWidgetBaseProps;
 }) {
   const identity = useId();
   const ref = useRef<HTMLDivElement>(null);
@@ -355,6 +392,8 @@ function WidgetBoundary({
         identity={identity}
         height={() => height.current}
         width={() => width.current}
+        body={body}
+        shell={shell}
       >
         {children}
       </RenderBoundary>
@@ -368,13 +407,27 @@ export function withWidgetBoundary<Widget extends (props: any) => ReactNode>(
 ): Widget {
   return ((props: Parameters<Widget>[0]) => (
     <WidgetBoundary
+      shell={{
+        title:
+          props.title ??
+          props.label ??
+          props.metric?.definition?.label ??
+          props.dataset?.name ??
+          'Widget',
+        headingLevel: props.headingLevel,
+        description: props.description,
+        footer: props.footer,
+        action: props.action,
+        className: props.className,
+        style: props.style,
+      }}
       name={
         typeof props.title === 'string'
           ? props.title
           : typeof props.label === 'string'
             ? props.label
             : (props.metric?.definition?.label ??
-              props.dataset?.definition?.label ??
+              props.dataset?.name ??
               'Widget')
       }
     >

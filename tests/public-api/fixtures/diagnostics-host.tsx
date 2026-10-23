@@ -80,16 +80,33 @@ function Host() {
         Change theme
       </button>
       <output aria-label="Repair requests">{count}</output>
-      <DataAppRepairBanner session={session} />
-      <DataAppBridge
-        key={`${revision}-${mount}`}
-        source={{ type: 'bundle', javascript }}
-        title="Diagnostic app"
-        repair={{ session, revision: `${revision}` }}
-        onMessage={async () => null}
-        presentation={{ surface: 'embedded', theme, sizing: 'content' }}
-        iframeProps={{ style: { width: '100%', minHeight: 200, border: 0 } }}
-      />
+      <div
+        className="diagnostics-preview"
+        style={{
+          marginTop: 12,
+          border: '1px solid light-dark(#e3e6e8, #3b4248)',
+          borderRadius: 12,
+          overflow: 'hidden',
+        }}
+      >
+        <DataAppRepairBanner session={session} />
+        <DataAppBridge
+          key={`${revision}-${mount}`}
+          source={{ type: 'bundle', javascript }}
+          title="Diagnostic app"
+          repair={{ session, revision: `${revision}` }}
+          onMessage={async () => null}
+          presentation={{ surface: 'embedded', theme, sizing: 'content' }}
+          iframeProps={{
+            style: {
+              width: '100%',
+              minHeight: 200,
+              border: 0,
+              display: 'block',
+            },
+          }}
+        />
+      </div>
     </div>
   );
 }

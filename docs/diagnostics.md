@@ -2,7 +2,9 @@
 
 Live SDK capture collects failed operations, named queries and mounted widget
 renders. Healthy widgets stay interactive. A render failure keeps its last
-measured frame dimensions; an initially broken widget uses a compact fallback.
+measured frame dimensions and static header, description, and footer. An initially
+broken widget uses a compact fallback. Widget buttons say “Fix error”; the banner
+says “Fix all errors”. Both send the complete observed report through the same action.
 Reports include failure names and source locations, exercised coverage,
 unfinished checks and an omitted-diagnostic count. They do not prove unvisited
 views or interactions work. Source locations refer to the executed bundle; use the

@@ -32,7 +32,28 @@ function App() {
   const [showFailed, setShowFailed] = useState(true);
   const [count, setCount] = useState(0);
   return (
-    <main style={{ padding: 16 }}>
+    <main style={{ padding: 24 }}>
+      <header style={{ marginBottom: 24 }}>
+        <h1
+          style={{
+            margin: 0,
+            fontSize: 24,
+            fontWeight: 650,
+            letterSpacing: '-.035em',
+          }}
+        >
+          Revenue overview
+        </h1>
+        <p
+          style={{
+            margin: '6px 0 0',
+            color: 'var(--atbl-muted)',
+            fontSize: 13,
+          }}
+        >
+          October 2026 · All regions
+        </p>
+      </header>
       <Button
         onClick={() => {
           function operation(name: string) {
@@ -77,11 +98,18 @@ function App() {
             {' '}
             <VisualizationWidget
               title="Revenue"
+              description="Monthly revenue by channel"
+              footer={
+                <span style={{ fontSize: 12, color: 'var(--atbl-muted)' }}>
+                  USD · Updated today
+                </span>
+              }
               style={fixedWidth ? { width: 260, maxWidth: '100%' } : undefined}
               visual={<BadChart broken={broken} />}
             />
             <VisualizationWidget
               title="Retention"
+              description="Returning customer cohorts"
               visual={<BadChart broken={broken} />}
             />
           </>

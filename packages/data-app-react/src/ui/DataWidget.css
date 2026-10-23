@@ -111,20 +111,48 @@
 .altertable-widget-error {
   box-sizing: border-box;
   min-height: 140px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--atbl-border);
-  border-radius: 8px;
-  text-align: center;
-  background: var(--atbl-surface);
-  color: var(--atbl-text);
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  align-content: center;
+  align-items: start;
+  column-gap: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+  color: var(--atbl-muted);
   font-family: var(--atbl-font);
+  font-size: var(--atbl-type-meta-size);
+  line-height: 1.5;
   overflow: auto;
+  overflow-wrap: anywhere;
+}
+.altertable-widget-error > svg {
+  margin-top: 2px;
+  color: var(--atbl-danger);
+}
+.altertable-widget-error-copy {
+  min-width: 0;
+}
+.altertable-widget-error strong {
+  color: var(--atbl-text);
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
 }
 .altertable-widget-error p {
-  margin: 4px 0 0;
+  margin: 6px 0 14px;
+}
+.altertable-widget-error-frame {
+  display: flex;
+  flex-direction: column;
+}
+.altertable-widget-error-frame > .altertable-data-widget-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+}
+.altertable-widget-error-frame
+  > .altertable-data-widget-body
+  > .altertable-widget-boundary {
+  min-height: 0;
 }
