@@ -2,7 +2,7 @@
 
 Live capture reports observed query, operation, and widget failures together.
 Repair actions send the complete observed report. Unvisited views and interactions
-remain unverified; coverage, unfinished checks, and omitted counts describe limits.
+remain unverified. Reports include unfinished checks and omitted failure counts.
 
 ## Host integration
 
@@ -42,22 +42,3 @@ reset the allowance. Callback resolution means acceptance, not agent execution.
 Omit `requestRepair` when delivery or reliable state retention is unavailable;
 the banner offers diagnostics to copy instead. Avoid sensitive values in errors.
 Source locations use generated filenames and positions.
-
-## Node validation
-
-Use the optional entry with authorized inputs; Bun and browser tooling are not required.
-
-```ts
-import {
-  operationValidationChecks,
-  validateDataApp,
-} from '@altertable/data-app/validation';
-
-const report = await validateDataApp({
-  checks: operationValidationChecks({ operations, lakehouse, queryParams }),
-});
-```
-
-Add independent checks for otherwise hidden failures. Checks must throw or reject
-to report failure and should honor cancellation. Validation covers supplied checks
-only; it does not launch a browser.

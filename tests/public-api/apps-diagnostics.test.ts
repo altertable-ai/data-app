@@ -383,11 +383,10 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
   await page.keyboard.press('Enter');
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toContain('"coverage":');
+    .toContain('"failures":');
   const copied = await page.evaluate(() => navigator.clipboard.readText());
   const report = JSON.parse(copied);
   expect(report.failures).toHaveLength(6);
-  expect(report.coverage.join(' ')).toContain('Unvisited');
   expect(report.pending).toBe(0);
   expect(report.truncated).toBe(0);
   expect(JSON.stringify(report)).not.toContain('sourcesContent');
@@ -448,7 +447,6 @@ test('clipboard rejection keeps a selectable complete report for manual recovery
     (await page.locator('.atbl-repair-banner pre').textContent())!
   );
   expect(report.failures).toHaveLength(6);
-  expect(report.coverage.length).toBeGreaterThan(0);
   expect(report.pending).toBe(0);
   expect(report.truncated).toBe(0);
 });

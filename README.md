@@ -26,8 +26,8 @@ changing execution mode or converting an app:
 | Local Bun project       | [Local authoring](docs/local-data-apps.md)   |
 
 For host integrations, use [embedding](docs/embed.md) or
-[React embedding](docs/react-embed.md), with [diagnostics and Node validation](docs/diagnostics.md)
-for shared repair and independent checks. Tooling packages provide
+[React embedding](docs/react-embed.md), with [diagnostics and repair](docs/diagnostics.md)
+for shared repair. Tooling packages provide
 [manifest extraction](packages/data-app-manifest/README.md),
 [starter templates](packages/data-app-examples/README.md), and a
 [Worker asset](docs/worker.md). Packages share one release version.

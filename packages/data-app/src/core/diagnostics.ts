@@ -11,8 +11,6 @@ export type AppFailure = {
 export type AppDiagnosticReport = {
   /** Current observed failures, limited to 30 entries. */
   failures: AppFailure[];
-  /** Checks exercised and coverage gaps; a failure-free report does not establish unvisited coverage. */
-  coverage: string[];
   /** Observed checks that have not finished. */
   pending: number;
   /** Failures omitted from this report's bounded failure list. */
@@ -110,8 +108,6 @@ export function parseAppDiagnosticReport(value: unknown): AppDiagnosticReport {
   if (
     !Array.isArray(report.failures) ||
     report.failures.length > 30 ||
-    !Array.isArray(report.coverage) ||
-    report.coverage.length > 30 ||
     !Number.isSafeInteger(report.pending) ||
     report.pending < 0 ||
     !Number.isSafeInteger(report.truncated) ||
@@ -136,11 +132,6 @@ export function parseAppDiagnosticReport(value: unknown): AppDiagnosticReport {
         message: diagnosticText(failure.message),
         ...(failure.source ? { source: parseSource(failure.source) } : {}),
       };
-    }),
-    coverage: report.coverage.map(item => {
-      if (typeof item !== 'string')
-        throw new Error('Invalid diagnostic coverage');
-      return diagnosticText(item, 200);
     }),
     pending: report.pending,
     truncated: report.truncated,

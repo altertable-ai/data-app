@@ -68,7 +68,7 @@ Run the authoring workflow's validation, then inspect the app:
 When an app fails, use the host's repair or copy action to send observed diagnostics
 together. Repair requests preserve the existing authorization boundary and cover
 only exercised checks and interactions. See [diagnostics and repair](diagnostics.md)
-for host integration and independent Node validation.
+for host integration.
 
 ## Look up only what is missing
 

@@ -1,10 +1,6 @@
-import { spawnSync } from 'node:child_process';
-import { realpathSync } from 'node:fs';
-
 import { createDataAppRepairSession } from '@altertable/data-app-embed';
 import { appDiagnostics, createDataClient } from '@altertable/data-app/client';
 import { type DataOperations } from '@altertable/data-app/contract';
-import { validateDataApp } from '@altertable/data-app/validation';
 import { describe, expect, test } from 'vitest';
 
 function report(name = 'broken') {
@@ -12,7 +8,6 @@ function report(name = 'broken') {
     failures: [{ kind: 'render' as const, name, message: 'Invalid series' }],
     pending: 0,
     truncated: 0,
-    coverage: ['Mounted widgets only'],
   };
 }
 function tick() {
@@ -139,98 +134,44 @@ describe('shared repair sessions', () => {
   );
 });
 
-test('Node validation settles independent checks, bounds diagnostics and excludes input values', async () => {
-  let healthy = false;
-  const result = await validateDataApp({
-    checks: [
-      {
-        name: 'bad query',
-        kind: 'query',
-        run: () => {
-          throw new Error('Unknown column "private-value" token=secret-value');
-        },
-      },
-      {
-        name: 'healthy',
-        kind: 'operation',
-        run: () => {
-          healthy = true;
-        },
-      },
-      {
-        name: 'bad widget',
-        kind: 'render',
-        run: () => {
-          throw new Error('Missing series');
-        },
-      },
-    ],
+test('repair reports redact credentials and sanitize source locations', () => {
+  const session = createDataAppRepairSession({
+    state: { automaticRequests: 0, attemptedRevisions: [] },
+    saveState() {},
   });
-  expect(healthy).toBe(true);
-  expect(result.failures.map(failure => failure.kind)).toEqual([
-    'query',
-    'render',
-  ]);
-  expect(JSON.stringify(result)).not.toContain('private-value');
-  expect(JSON.stringify(result)).not.toContain('secret-value');
-  expect(result.coverage[0]).toContain('3 declared checks observed');
-  const truncated = await validateDataApp({
-    checks: Array.from({ length: 35 }, (_, index) => ({
-      name: `${index}`,
-      kind: 'render',
-      run: () => {
-        throw new Error('Invalid');
+  const headers = [
+    'Authorization: Bearer synthetic-credential',
+    'Authorization: Basic synthetic-credential==',
+    'Authorization=Bearer synthetic-credential',
+    'Proxy-Authorization: Bearer "synthetic-credential"',
+    'Authorization: "Bearer synthetic-credential"',
+    'X-Api-Key: synthetic-credential',
+    'Api-Key=synthetic-credential',
+    'Cookie: session=synthetic-credential; csrf=synthetic-credential',
+    'Set-Cookie: session=synthetic-credential; Path=/',
+  ];
+  session.connect('one').report({
+    ...report(),
+    failures: headers.map((message, index) => ({
+      kind: 'query',
+      name: `query-${index}`,
+      message,
+      source: {
+        file: '/Users/example/private/app.tsx?token=synthetic-credential',
+        line: 42,
+        column: 7,
       },
     })),
   });
-  expect(truncated.failures).toHaveLength(30);
-  expect(truncated.truncated).toBe(5);
-});
-
-test('validation runs in a real Node process with Bun absent from PATH', () => {
-  const node = realpathSync(
-    spawnSync('which', ['node'], { encoding: 'utf8' }).stdout.trim()
-  );
-  const result = spawnSync(
-    node,
-    [
-      '--input-type=module',
-      '-e',
-      `
-    import assert from 'node:assert/strict';
-    import { validateDataApp } from '@altertable/data-app/validation';
-    assert.equal(globalThis.Bun, undefined);
-    const headers = [
-      'Authorization: Bearer synthetic-credential',
-      'Authorization: Basic synthetic-credential==',
-      'Authorization=Bearer synthetic-credential',
-      'Proxy-Authorization: Bearer "synthetic-credential"',
-      'Authorization: "Bearer synthetic-credential"',
-      'X-Api-Key: synthetic-credential',
-      'Api-Key=synthetic-credential',
-      'Cookie: session=synthetic-credential; csrf=synthetic-credential',
-      'Set-Cookie: session=synthetic-credential; Path=/'
-    ];
-    const report = await validateDataApp({ checks: [
-      ...headers.map((header, index) => ({
-        name: 'query-' + index, kind: 'query',
-        source: { file: '/Users/example/private/app.tsx?token=synthetic-credential', line: 42, column: 7 },
-        run() { throw new Error(header); }
-      })),
-      { name: 'operation', kind: 'operation', run() { throw new Error('Operation failed'); } }
-    ] });
-    assert.equal(report.failures.length, headers.length + 1);
-    assert(!JSON.stringify(report).includes('synthetic-credential'));
-    assert(!JSON.stringify(report).includes('/Users/example'));
-    assert.deepEqual(report.failures[0].source, { file: 'app.tsx', line: 42, column: 7 });
-    console.log('node-validation-ok');
-  `,
-    ],
-    { env: { ...process.env, PATH: '/nonexistent' }, encoding: 'utf8' }
-  );
-  expect(result.stderr).toBe('');
-  expect(result.status).toBe(0);
-  expect(result.stdout).toContain('node-validation-ok');
+  const sanitized = session.snapshot().report!;
+  expect(sanitized.failures).toHaveLength(headers.length);
+  expect(JSON.stringify(sanitized)).not.toContain('synthetic-credential');
+  expect(JSON.stringify(sanitized)).not.toContain('/Users/example');
+  expect(sanitized.failures[0]!.source).toEqual({
+    file: 'app.tsx',
+    line: 42,
+    column: 7,
+  });
 });
 
 test('caller cancellation leaves no query diagnostics or automatic repair request', async () => {
@@ -293,25 +234,6 @@ test('caller cancellation leaves no query diagnostics or automatic repair reques
     unsubscribe();
     lease.dispose();
   }
-});
-
-test('validation reports unfinished work when a check ignores cancellation', async () => {
-  const report = await validateDataApp({
-    timeoutMs: 10,
-    checks: [
-      { kind: 'query', name: 'hung', run: () => new Promise(() => {}) },
-      {
-        kind: 'render',
-        name: 'bad render',
-        run: () => {
-          throw new Error('Bad series');
-        },
-      },
-    ],
-  });
-  expect(report.pending).toBe(1);
-  expect(report.failures).toHaveLength(2);
-  expect(report.failures[0]!.message).toContain('unfinished');
 });
 
 test('manual report submission does not consume an automatic reservation', async () => {

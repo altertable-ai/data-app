@@ -44,9 +44,6 @@ export const appDiagnostics: Diagnostics = {
       failures: observed,
       pending,
       truncated: Math.max(0, failures.size - 30),
-      coverage: [
-        'Live SDK operations and mounted widget renders only. Unvisited views, interactions and independent query validation are not covered.',
-      ],
     };
   },
   subscribe(listener: () => void) {
