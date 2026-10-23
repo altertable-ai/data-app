@@ -8,10 +8,19 @@ import {
 } from '@altertable/data-app-embed/react';
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-const javascript = await fetch('/__test/diagnostics').then(response =>
+const params = new URLSearchParams(location.search);
+let javascript = await fetch('/__test/diagnostics').then(response =>
   response.text()
 );
-const params = new URLSearchParams(location.search);
+if (params.has('map'))
+  javascript = javascript.replace(
+    /^\/\/# sourceMappingURL=.*$/m,
+    params.get('map') === 'invalid'
+      ? '//# sourceMappingURL=data:application/json;base64,not-a-map'
+      : params.get('map') === 'unmapped'
+        ? `//# sourceMappingURL=data:application/json;base64,${btoa(JSON.stringify({ version: 3, sources: [], names: [], mappings: '' }))}`
+        : ''
+  );
 const state: DataAppRepairState = JSON.parse(
   sessionStorage.getItem('repair') ??
     '{"automaticRequests":0,"attemptedRevisions":[]}'

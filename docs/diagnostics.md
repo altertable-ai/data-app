@@ -7,8 +7,11 @@ broken widget uses a compact fallback. Widget buttons say “Fix error”; the b
 says “Fix all errors”. Both send the complete observed report through the same action.
 Reports include failure names and source locations, exercised coverage,
 unfinished checks and an omitted-diagnostic count. They do not prove unvisited
-views or interactions work. Source locations refer to the executed bundle; use the
-host's source map to locate authored code.
+views or interactions work. Bundle viewers resolve generated locations using the
+bundle's inline base64 JSON source map. Missing, invalid or unmapped locations
+retain the generated file and position. URL viewers retain generated locations.
+Mapping runs in the viewer; it never fetches maps or includes source content in
+reports. File paths remain reduced to their basename.
 
 ## Embed a repair session
 
@@ -63,7 +66,10 @@ a request still waiting to save.
 `requestRepair(report, { revision, automatic })` resolves when the host accepts the
 request. This does not establish agent execution: the banner says “Repair request
 accepted.” Omit this callback in unsupported hosts; the banner exposes diagnostics
-and instructions to copy them into an agent. Local preview uses this fallback.
+and a “Copy diagnostics” action. This copies the complete sanitized report,
+including coverage, unfinished checks and omitted counts. If clipboard access
+fails, selectable report text remains available. Copying does not request repair
+or consume an automatic attempt. Local preview uses this fallback.
 
 Treat reports as untrusted app content. Diagnostic text is bounded and redacts
 common credential forms, quoted values and URL parameters. Do not put credentials,

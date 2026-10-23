@@ -1,4 +1,4 @@
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 
 import { expect } from 'vitest';
 
@@ -75,6 +75,27 @@ test('independent widget and operation failures share latest repair report and p
   );
   expect(sent[1].report.failures).toHaveLength(6);
   expect(sent[1].context.automatic).toBe(false);
+  const source = await readFile(
+    new URL('./fixtures/diagnostics-app.tsx', import.meta.url),
+    'utf8'
+  );
+  const throwLine =
+    source
+      .split('\n')
+      .findIndex(line =>
+        line.includes("throw new Error('Series requires a numeric value')")
+      ) + 1;
+  for (const request of sent) {
+    const renders = request.report.failures.filter(
+      (failure: { kind: string }) => failure.kind === 'render'
+    );
+    expect(renders).toHaveLength(2);
+    for (const failure of renders) {
+      expect(failure.source.file).toBe('diagnostics-app.tsx');
+      expect(failure.source.line).toBe(throwLine);
+      expect(failure.source.column).toBeGreaterThan(0);
+    }
+  }
   expect(
     sent[1].report.failures.every(
       (failure: { source?: { file: string; line: number; column: number } }) =>
@@ -259,6 +280,115 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
     await frame.getByRole('button', { name: 'Fix error' }).first().isDisabled()
   ).toBe(true);
   expect(await page.getByLabel('Repair requests').textContent()).toBe('0');
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.getByText('View diagnostics').click();
+  const copy = page.getByRole('button', { name: 'Copy diagnostics' });
+  await copy.focus();
+  await page.keyboard.press('Enter');
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Diagnostic clipboard status' })
+        .textContent()
+    )
+    .toBe('Diagnostics copied.');
+  const report = JSON.parse(
+    await page.evaluate(() => navigator.clipboard.readText())
+  );
+  expect(report.failures).toHaveLength(6);
+  expect(report.coverage.join(' ')).toContain('Unvisited');
+  expect(report.pending).toBe(0);
+  expect(report.truncated).toBe(0);
+  expect(JSON.stringify(report)).not.toContain('sourcesContent');
+  await mkdir(screenshotRoot, { recursive: true });
+  await page.locator('.diagnostics-preview').screenshot({
+    path: `${screenshotRoot}/diagnostics-copy-light.png`,
+    animations: 'disabled',
+  });
+  await page.getByRole('button', { name: 'Change theme' }).click();
+  await page.setViewportSize({ width: 375, height: 1100 });
+  await expect
+    .poll(() => frame.locator('html').getAttribute('data-atbl-theme'))
+    .toBe('dark');
+  await page.locator('.diagnostics-preview').screenshot({
+    path: `${screenshotRoot}/diagnostics-copy-dark-narrow.png`,
+    animations: 'disabled',
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth
+    )
+  ).toBe(true);
+  await frame.getByRole('button', { name: 'Hide failed widgets' }).click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Diagnostic clipboard status' })
+        .textContent()
+    )
+    .toBe('');
+  await copy.click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Diagnostic clipboard status' })
+        .textContent()
+    )
+    .toBe('Diagnostics copied.');
+  const latest = JSON.parse(
+    await page.evaluate(() => navigator.clipboard.readText())
+  );
+  expect(latest.failures).toHaveLength(4);
+  expect(await page.getByLabel('Repair requests').textContent()).toBe('0');
+});
+
+for (const map of ['missing', 'invalid', 'unmapped']) {
+  test(`repair preserves generated locations when the source map is ${map}`, async ({
+    page,
+  }) => {
+    await page.goto(`/diagnostics?map=${map}`);
+    const frame = page.frameLocator('iframe');
+    await frame.getByRole('button', { name: 'Break widgets' }).click();
+    await expect
+      .poll(() => page.getByLabel('Repair requests').textContent())
+      .toBe('1');
+    const sent = await page.evaluate(() =>
+      JSON.parse(sessionStorage.getItem('requests')!)
+    );
+    const renders = sent[0].report.failures.filter(
+      (failure: { kind: string }) => failure.kind === 'render'
+    );
+    expect(renders).toHaveLength(2);
+    for (const failure of renders)
+      expect(failure.source.file).toMatch(/^altertable-data-app-.*\.js$/);
+  });
+}
+
+test('clipboard rejection keeps a selectable complete report for manual recovery', async ({
+  page,
+}) => {
+  await page.goto('/diagnostics?unsupported');
+  await page
+    .frameLocator('iframe')
+    .getByRole('button', { name: 'Break widgets' })
+    .click();
+  await page.getByText('View diagnostics').click();
+  await page.context().grantPermissions([]);
+  await page.getByRole('button', { name: 'Copy diagnostics' }).click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('status', { name: 'Diagnostic clipboard status' })
+        .textContent()
+    )
+    .toContain('Couldn’t copy.');
+  const report = JSON.parse(
+    (await page.locator('.atbl-repair-banner pre').textContent())!
+  );
+  expect(report.failures).toHaveLength(6);
+  expect(report.coverage.length).toBeGreaterThan(0);
+  expect(report.pending).toBe(0);
+  expect(report.truncated).toBe(0);
 });
 
 test('explicit widget widths remain stable when rendering fails at wide and narrow widths', async ({

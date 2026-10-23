@@ -28,11 +28,12 @@ import styles from '@/tests/public-api/fixtures/styles.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
 
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
-async function bundle(entry: string) {
+async function bundle(entry: string, sourcemap = false) {
   const result = await Bun.build({
     entrypoints: [entry],
     target: 'browser',
     format: 'iife',
+    sourcemap: sourcemap ? 'inline' : 'none',
     define: { 'import.meta.env': '{}' },
   });
   if (!result.success)
@@ -54,7 +55,7 @@ const [
   bundle('tests/public-api/fixtures/annotations-app.tsx'),
   bundle('tests/public-api/fixtures/annotation-state-app.tsx'),
   bundle('tests/public-api/fixtures/content-sizing-app.tsx'),
-  bundle('tests/public-api/fixtures/diagnostics-app.tsx'),
+  bundle('tests/public-api/fixtures/diagnostics-app.tsx', true),
 ]);
 const { default: worker } = await import(
   import.meta.resolve('@altertable/data-app-worker')

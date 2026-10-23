@@ -16,6 +16,7 @@ import {
 } from '@altertable/data-app/internal';
 
 import { createContentSizing } from './content-sizing.ts';
+import { createDiagnosticSourceMapper } from './diagnostic-sources.ts';
 import { type DataAppRepairSession } from './repair.ts';
 
 export type DataAppConnection =
@@ -83,6 +84,7 @@ export function attachDataAppConnection({
   let documentId: string | undefined;
   let sessionId: string | undefined;
   let repairLease = repair?.session.connect(repair.revision);
+  const mapDiagnosticSources = createDiagnosticSourceMapper(javascript);
   const unsubscribeRepair = repair?.session.subscribe(() => publishState());
   const pending = new Map<string, AbortController>();
   const requestStartedAt = new Map<string, number>();
@@ -297,9 +299,12 @@ export function attachDataAppConnection({
     try {
       const response =
         message.route === 'diagnostics:report'
-          ? (repairLease?.report(message.payload), null)
+          ? (repairLease?.report(mapDiagnosticSources(message.payload)), null)
           : message.route === 'diagnostics:repair'
-            ? (repairLease?.report(message.payload, false),
+            ? (repairLease?.report(
+                mapDiagnosticSources(message.payload),
+                false
+              ),
               await repairLease?.request(),
               null)
             : await onMessage(

@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
 import { type DataAppRepairSession } from '../repair.ts';
 
@@ -27,6 +27,8 @@ const styles = `
 .atbl-repair-banner li + li { margin-top: 8px; }
 .atbl-repair-banner code { font: 11px/1.5 var(--atbl-mono-font, ui-monospace, monospace); overflow-wrap: anywhere; }
 .atbl-repair-banner p { margin: 10px 0 0; }
+.atbl-repair-banner-copy-action { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.atbl-repair-banner-copy-action output { margin: 0; }
 @media (hover: hover) { .atbl-repair-banner button:hover:not(:disabled) { background: light-dark(#f6eddd, #443825); } }
 @media (pointer: coarse) { .atbl-repair-banner button { min-height: 44px; } }
 @media (max-width: 420px) { .atbl-repair-banner { padding: 12px; gap: 8px 10px; align-items: start; } .atbl-repair-banner-count { display: block; margin-inline-start: 0; margin-top: 2px; } }
@@ -38,6 +40,10 @@ export function DataAppRepairBanner({
 }: {
   session: DataAppRepairSession;
 }) {
+  const [copy, setCopy] = useState<{
+    report: unknown;
+    status: 'pending' | 'copied' | 'failed';
+  }>();
   const { report, status, automaticRequests } = useSyncExternalStore(
     listener => session.subscribe(listener),
     session.snapshot,
@@ -124,6 +130,40 @@ export function DataAppRepairBanner({
             {report.truncated > 0 &&
               `${report.truncated} additional diagnostics omitted.`}
           </p>
+          <div className="atbl-repair-banner-copy-action">
+            <button
+              type="button"
+              disabled={copy?.status === 'pending'}
+              onClick={() => {
+                setCopy({ report, status: 'pending' });
+                void Promise.resolve()
+                  .then(() =>
+                    navigator.clipboard.writeText(
+                      JSON.stringify(report, null, 2)
+                    )
+                  )
+                  .then(
+                    () => setCopy({ report, status: 'copied' }),
+                    () => setCopy({ report, status: 'failed' })
+                  );
+              }}
+            >
+              Copy diagnostics
+            </button>
+            <output aria-label="Diagnostic clipboard status">
+              {copy?.report === report &&
+                (copy.status === 'copied'
+                  ? 'Diagnostics copied.'
+                  : copy.status === 'failed'
+                    ? 'Couldn’t copy. Select and copy the diagnostics below.'
+                    : 'Copying…')}
+            </output>
+          </div>
+          {copy?.report === report && copy.status === 'failed' && (
+            <pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+              {JSON.stringify(report, null, 2)}
+            </pre>
+          )}
         </details>
       </section>
     </>
