@@ -42,7 +42,7 @@ export function DataAppRepairBanner({
 }) {
   const [copy, setCopy] = useState<{
     report: unknown;
-    status: 'pending' | 'copied' | 'failed';
+    status: 'pending' | 'failed';
   }>();
   const { report, status, automaticRequests } = useSyncExternalStore(
     listener => session.subscribe(listener),
@@ -124,12 +124,13 @@ export function DataAppRepairBanner({
               </li>
             ))}
           </ul>
-          <p>
-            {report.coverage.join(' ')}{' '}
-            {report.pending > 0 && `${report.pending} checks unfinished.`}{' '}
-            {report.truncated > 0 &&
-              `${report.truncated} additional diagnostics omitted.`}
-          </p>
+          {(report.pending > 0 || report.truncated > 0) && (
+            <p>
+              {report.pending > 0 && `${report.pending} checks unfinished.`}{' '}
+              {report.truncated > 0 &&
+                `${report.truncated} additional diagnostics omitted.`}
+            </p>
+          )}
           <div className="atbl-repair-banner-copy-action">
             <button
               type="button"
@@ -143,7 +144,7 @@ export function DataAppRepairBanner({
                     )
                   )
                   .then(
-                    () => setCopy({ report, status: 'copied' }),
+                    () => setCopy(undefined),
                     () => setCopy({ report, status: 'failed' })
                   );
               }}
@@ -152,11 +153,9 @@ export function DataAppRepairBanner({
             </button>
             <output aria-label="Diagnostic clipboard status">
               {copy?.report === report &&
-                (copy.status === 'copied'
-                  ? 'Diagnostics copied.'
-                  : copy.status === 'failed'
-                    ? 'Couldn’t copy. Select and copy the diagnostics below.'
-                    : 'Copying…')}
+                (copy.status === 'failed'
+                  ? 'Couldn’t copy. Select and copy the diagnostics below.'
+                  : 'Copying…')}
             </output>
           </div>
           {copy?.report === report && copy.status === 'failed' && (

@@ -286,20 +286,18 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
   await copy.focus();
   await page.keyboard.press('Enter');
   await expect
-    .poll(() =>
-      page
-        .getByRole('status', { name: 'Diagnostic clipboard status' })
-        .textContent()
-    )
-    .toBe('Diagnostics copied.');
-  const report = JSON.parse(
-    await page.evaluate(() => navigator.clipboard.readText())
-  );
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toContain('"coverage":');
+  const copied = await page.evaluate(() => navigator.clipboard.readText());
+  const report = JSON.parse(copied);
   expect(report.failures).toHaveLength(6);
   expect(report.coverage.join(' ')).toContain('Unvisited');
   expect(report.pending).toBe(0);
   expect(report.truncated).toBe(0);
   expect(JSON.stringify(report)).not.toContain('sourcesContent');
+  const banner = page.getByRole('region', { name: 'App errors' });
+  expect(await banner.textContent()).not.toContain('Live SDK operations');
+  expect(await banner.textContent()).not.toContain('Diagnostics copied.');
   await mkdir(screenshotRoot, { recursive: true });
   await page.locator('.diagnostics-preview').screenshot({
     path: `${screenshotRoot}/diagnostics-copy-light.png`,
@@ -320,21 +318,11 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
     )
   ).toBe(true);
   await frame.getByRole('button', { name: 'Hide failed widgets' }).click();
-  await expect
-    .poll(() =>
-      page
-        .getByRole('status', { name: 'Diagnostic clipboard status' })
-        .textContent()
-    )
-    .toBe('');
+  await expect.poll(() => banner.textContent()).toContain('4 app errors');
   await copy.click();
   await expect
-    .poll(() =>
-      page
-        .getByRole('status', { name: 'Diagnostic clipboard status' })
-        .textContent()
-    )
-    .toBe('Diagnostics copied.');
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .not.toBe(copied);
   const latest = JSON.parse(
     await page.evaluate(() => navigator.clipboard.readText())
   );
