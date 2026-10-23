@@ -69,6 +69,7 @@
   line-height: 1.45;
 }
 .altertable-data-widget-body {
+  position: relative;
   min-width: 0;
   padding: var(--atbl-space-md)
     var(

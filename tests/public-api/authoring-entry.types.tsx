@@ -21,6 +21,7 @@ import {
   useAppVariables,
   PresentStory,
   AboutData,
+  ShimmerText as DirectShimmerText,
 } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
@@ -367,3 +368,13 @@ const invalidCalendarFormat: import('@altertable/data-app/format').DateFormat =
     timeZone: 'UTC',
   };
 void invalidCalendarFormat;
+
+<DirectShimmerText title="Activity">Loading results</DirectShimmerText>;
+<DirectShimmerText>Refreshing</DirectShimmerText>;
+// @ts-expect-error ShimmerText requires plain text for its decorative copy.
+<DirectShimmerText>
+  <strong>Loading</strong>
+</DirectShimmerText>;
+
+// @ts-expect-error Custom activity labels belong to the direct UI entry.
+void authoring.ShimmerText;

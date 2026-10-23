@@ -1,0 +1,28 @@
+.altertable-loading-status {
+  position: absolute;
+  inset: var(--atbl-space-md) 0
+    var(
+      --atbl-surface-padding,
+      clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
+    );
+  display: grid;
+  place-items: center;
+  padding-inline: var(--atbl-space-md);
+  pointer-events: none;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+}
+.altertable-loading-status:empty {
+  visibility: hidden;
+}
+/* The text carries activity once visible; keep the underlying shapes quiet. */
+.altertable-data-widget-body:has(.altertable-loading-status[data-visible])
+  .altertable-skeleton {
+  animation: none;
+  opacity: 0.35;
+}
+
+.altertable-data-widget-body[data-padding='flush'] > .altertable-loading-status,
+.altertable-metric-widget .altertable-loading-status {
+  inset-block-start: 0;
+}

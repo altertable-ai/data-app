@@ -31,9 +31,11 @@
   color: var(--atbl-muted);
   font-size: var(--atbl-type-meta-size);
   white-space: nowrap;
+  display: grid;
+  text-align: end;
 }
-.altertable-refresh-status:empty {
-  display: none;
+.altertable-refresh-status > span {
+  grid-area: 1 / 1;
 }
 @keyframes altertable-refresh-spin {
   to {

@@ -15,8 +15,13 @@ import { ContentSkeletonBody } from './ContentSkeleton.tsx';
 import { EmptyState } from './EmptyState.tsx';
 import { AppIcon } from './icons.ts';
 import { InspectionVisual } from './InspectionProvider.tsx';
+import { LoadingStatus } from './LoadingStatus.tsx';
 import type { EmptyContent, BoundWidgetReading } from './presentation.ts';
-import { WidgetStatusControl, type WidgetStatus } from './RequestHint.tsx';
+import {
+  WidgetStatusControl,
+  WidgetStatusContext,
+  type WidgetStatus,
+} from './RequestHint.tsx';
 import type { WidgetEvidence } from './WidgetEvidence.ts';
 
 type DataWidgetBaseProps = {
@@ -89,7 +94,7 @@ function DataWidgetContent({
   evidence,
   records,
   action,
-  status,
+  status: suppliedStatus,
   footer,
   emptyFallback,
   bodyPadding = 'inset',
@@ -101,20 +106,29 @@ function DataWidgetContent({
   children: ReactNode;
 }) {
   const titleId = useId();
+  const sectionStatus = useContext(WidgetStatusContext);
+  const status = suppliedStatus ?? sectionStatus;
   const inspectionVisual = useContext(InspectionVisual);
   const Heading = `h${headingLevel}` as ElementType;
+  const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
   const content = emptyFallback ? <EmptyState {...emptyFallback} /> : children;
   const visual = (
     <WidgetContent
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
       footer={emptyFallback ? undefined : footer}
+      loadingLabel={
+        busy
+          ? typeof title === 'string'
+            ? `Loading ${title}`
+            : 'Loading data'
+          : undefined
+      }
       status={status}
     >
       {content}
     </WidgetContent>
   );
   const explicitAnnotationId = annotationId ?? props.id;
-  const busy = props['aria-busy'] === true || props['aria-busy'] === 'true';
   const help =
     evidence && !busy ? (
       <AboutData
@@ -196,11 +210,13 @@ function WidgetContent({
   bodyPadding,
   footer,
   status,
+  loadingLabel,
   children,
 }: {
   bodyPadding: 'inset' | 'flush';
   footer?: ReactNode;
   status?: WidgetStatus;
+  loadingLabel?: string;
   children: ReactNode;
 }) {
   return (
@@ -211,6 +227,7 @@ function WidgetContent({
         aria-busy={status?.kind === 'updating' || undefined}
       >
         {children}
+        {loadingLabel && <LoadingStatus label={loadingLabel} />}
       </div>
       {footer && (
         <footer className="altertable-data-widget-footer">{footer}</footer>

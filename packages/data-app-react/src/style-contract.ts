@@ -129,6 +129,7 @@ export const dataAppStyleClasses = {
     component: 'Tabs',
     kind: 'root',
   },
+  'altertable-shimmer-text': { component: 'ShimmerText', kind: 'root' },
   'altertable-data-widget': {
     component: 'DataWidget',
     kind: 'root',

@@ -10,8 +10,7 @@ export type DataViewToastProps<Data, Input> = {
   onRetry?: () => void;
 };
 
-/** One page-level refresh status. Updating waits briefly; a failed refresh waits
- * long enough to avoid interrupting the displayed result before showing retry. */
+/** Page-level failures and notices. Routine activity belongs to the toolbar. */
 export function DataViewToast<Data, Input>({
   view,
   message,
@@ -22,39 +21,29 @@ export function DataViewToast<Data, Input>({
   if (delay.kind !== view.kind) setDelay({ kind: view.kind, elapsed: false });
 
   useEffect(() => {
-    if (view.kind !== 'updating' && view.kind !== 'stale-error') return;
+    if (view.kind !== 'stale-error') return;
     const kind = view.kind;
     const timer = window.setTimeout(
       () => setDelay({ kind, elapsed: true }),
-      kind === 'stale-error' ? 3_000 : 450
+      3_000
     );
 
     return () => window.clearTimeout(timer);
   }, [view.kind]);
 
-  const showUpdating =
-    view.kind === 'updating' && delay.kind === 'updating' && delay.elapsed;
   const showStaleError =
     view.kind === 'stale-error' &&
     delay.kind === 'stale-error' &&
     delay.elapsed;
 
-  if (!showStaleError && !showUpdating && !notice) return null;
+  if (!showStaleError && !notice) return null;
   const failed = showStaleError;
-  const showingUpdate = view.kind === 'updating' && showUpdating;
-  const detail =
-    view.kind === 'stale-error' || view.kind === 'updating'
-      ? view.message
-      : undefined;
-  const state = failed ? 'error' : showingUpdate ? 'updating' : 'notice';
+  const detail = view.kind === 'stale-error' ? view.message : undefined;
+  const state = failed ? 'error' : 'notice';
 
   return (
     <Toast state={state} onRetry={onRetry}>
-      {failed
-        ? (message ?? detail)
-        : showingUpdate
-          ? (message ?? 'Updating…')
-          : notice}
+      {failed ? (message ?? detail) : notice}
     </Toast>
   );
 }
