@@ -130,7 +130,7 @@ export function DataAppRepairBanner({
           <button
             type="button"
             disabled={status === 'pending' || status === 'unsupported'}
-            onClick={() => void session.request()}
+            onClick={() => void session.requestRepair()}
           >
             Fix errors
           </button>

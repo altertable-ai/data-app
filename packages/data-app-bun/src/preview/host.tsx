@@ -71,7 +71,7 @@ const router = createMessageRouter(
 // The preview has no agent invocation facility; keep the report visible for manual recovery.
 const repair = createDataAppRepairSession({
   state: { automaticRequests: 0, attemptedRevisions: [] },
-  saveState() {},
+  onStateChange() {},
 });
 
 type Bundle = { javascript: string } | { error: string };

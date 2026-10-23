@@ -22,11 +22,11 @@ const requests: unknown[] = JSON.parse(
 function makeSession() {
   return createDataAppRepairSession({
     state,
-    saveState(next) {
+    onStateChange(next) {
       sessionStorage.setItem('repair', JSON.stringify(next));
       if (params.has('save-failure')) throw new Error();
     },
-    requestRepair: params.has('unsupported')
+    onRepairRequest: params.has('unsupported')
       ? undefined
       : async (report, context) => {
           requests.push({ report, context });

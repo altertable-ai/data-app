@@ -300,7 +300,7 @@ export function attachDataAppConnection({
           ? (repairLease?.report(message.payload), null)
           : message.route === 'diagnostics:repair'
             ? (repairLease?.report(message.payload, false),
-              await repairLease?.request(),
+              await repairLease?.requestRepair(),
               null)
             : await onMessage(
                 { route: message.route, payload: message.payload },

@@ -15,12 +15,12 @@ export type DataAppRepairStatus =
   | 'failed'
   | 'unsupported';
 export type DataAppRepairOptions = {
-  /** Restore before creating the viewer; retain outside its mount lifecycle. */
+  /** Host-retained mutable state. Reservations update it before onStateChange; retain across viewer recreation even if persistence fails. */
   state: DataAppRepairState;
-  /** Persist the reservation before delivery. Rejection disables automatic delivery for this controller. */
-  saveState: (state: DataAppRepairState) => void | Promise<void>;
-  /** Acceptance means delivery only, not that an agent has started execution. */
-  requestRepair?: (
+  /** Retain each changed session state. Awaited before automatic delivery; rejection disables automatic delivery for this controller. */
+  onStateChange: (state: DataAppRepairState) => void | Promise<void>;
+  /** Deliver the latest report. Resolution means acceptance, not that an agent has started execution. */
+  onRepairRequest?: (
     report: AppDiagnosticReport,
     context: { revision: string; automatic: boolean }
   ) => Promise<void>;
@@ -44,7 +44,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
   let active: object | undefined;
   let revision = '';
   let report: AppDiagnosticReport | undefined;
-  let status: DataAppRepairStatus = options.requestRepair
+  let status: DataAppRepairStatus = options.onRepairRequest
     ? 'idle'
     : 'unsupported';
   let savingFailed = false;
@@ -63,7 +63,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
     for (const listener of listeners) listener();
   }
   async function request(automatic = false) {
-    if (busy || !report?.failures.length || !options.requestRepair || !active)
+    if (busy || !report?.failures.length || !options.onRepairRequest || !active)
       return;
     if (
       automatic &&
@@ -88,7 +88,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
       // Save before sending. A failed delivery consumes its reservation and never retries automatically.
       if (automatic) {
         try {
-          await options.saveState({
+          await options.onStateChange({
             ...state,
             attemptedRevisions: [...state.attemptedRevisions],
           });
@@ -114,7 +114,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
 
         return;
       }
-      await options.requestRepair(report!, {
+      await options.onRepairRequest(report!, {
         revision: currentRevision,
         automatic,
       });
@@ -138,7 +138,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
         listeners.delete(listener);
       };
     },
-    request: () => request(false),
+    requestRepair: () => request(false),
     /** A bridge owns this lease. Reports from an old iframe/bridge are ignored. */
     connect(appRevision: string) {
       const owner = {};
@@ -149,7 +149,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
         ? 'pending'
         : savingFailed
           ? 'failed'
-          : options.requestRepair
+          : options.onRepairRequest
             ? 'idle'
             : 'unsupported';
       publish();
@@ -161,7 +161,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
           publish();
           if (automatic) void request(true);
         },
-        request() {
+        requestRepair() {
           return owner === active ? request(false) : Promise.resolve();
         },
         dispose() {

@@ -19,8 +19,8 @@ describe('shared repair sessions', () => {
     const delivered: string[] = [];
     const options = {
       state,
-      saveState: () => {},
-      requestRepair: async (_: unknown, context: { revision: string }) => {
+      onStateChange: () => {},
+      onRepairRequest: async (_: unknown, context: { revision: string }) => {
         delivered.push(context.revision);
       },
     };
@@ -37,8 +37,8 @@ describe('shared repair sessions', () => {
     }
     expect(delivered).toEqual(['rev-1', 'rev-2', 'rev-3']);
     expect(state.automaticRequests).toBe(3);
-    await session.request();
-    await session.request();
+    await session.requestRepair();
+    await session.requestRepair();
     expect(delivered).toEqual(['rev-1', 'rev-2', 'rev-3', 'rev-4', 'rev-4']);
     expect(state.automaticRequests).toBe(3);
   });
@@ -48,11 +48,11 @@ describe('shared repair sessions', () => {
     const sent: string[] = [];
     const session = createDataAppRepairSession({
       state,
-      saveState: () =>
+      onStateChange: () =>
         new Promise<void>(resolve => {
           release = resolve;
         }),
-      requestRepair: async report => {
+      onRepairRequest: async report => {
         sent.push(report.failures.map(failure => failure.name).join(','));
       },
     });
@@ -64,7 +64,11 @@ describe('shared repair sessions', () => {
     expect(sent).toEqual([]);
     lease.report(report('first'));
     lease.report({ ...report('still running'), pending: 1 });
-    await Promise.all([session.request(), lease.request(), session.request()]);
+    await Promise.all([
+      session.requestRepair(),
+      lease.requestRepair(),
+      session.requestRepair(),
+    ]);
     release();
     await tick();
     expect(sent).toEqual([]);
@@ -80,10 +84,10 @@ describe('shared repair sessions', () => {
     let attempts = 0;
     const session = createDataAppRepairSession({
       state,
-      saveState: () => {
+      onStateChange: () => {
         if (failure === 'save') throw new Error();
       },
-      requestRepair: async () => {
+      onRepairRequest: async () => {
         attempts++;
         throw new Error();
       },
@@ -96,7 +100,7 @@ describe('shared repair sessions', () => {
     expect(attempts).toBe(failure === 'save' ? 0 : 1);
     expect(session.snapshot().status).toBe('failed');
     expect(state.automaticRequests).toBe(1);
-    await session.request();
+    await session.requestRepair();
     expect(attempts).toBe(failure === 'save' ? 1 : 2);
     expect(state.automaticRequests).toBe(1);
   });
@@ -108,13 +112,13 @@ describe('shared repair sessions', () => {
       const delivered: string[] = [];
       const session = createDataAppRepairSession({
         state: { automaticRequests: 0, attemptedRevisions: [] },
-        saveState: () => {
+        onStateChange: () => {
           if (++saves > 1) return;
           return new Promise<void>(resolve => {
             release = resolve;
           });
         },
-        requestRepair: async (_, context) => {
+        onRepairRequest: async (_, context) => {
           delivered.push(context.revision);
         },
       });
@@ -137,7 +141,7 @@ describe('shared repair sessions', () => {
 test('repair reports redact credentials and sanitize source locations', () => {
   const session = createDataAppRepairSession({
     state: { automaticRequests: 0, attemptedRevisions: [] },
-    saveState() {},
+    onStateChange() {},
   });
   const headers = [
     'Authorization: Bearer synthetic-credential',
@@ -183,8 +187,8 @@ test('caller cancellation leaves no query diagnostics or automatic repair reques
   const sent: unknown[] = [];
   const session = createDataAppRepairSession({
     state: { automaticRequests: 0, attemptedRevisions: [] },
-    saveState() {},
-    requestRepair: async report => {
+    onStateChange() {},
+    onRepairRequest: async report => {
       sent.push(report);
     },
   });
@@ -241,14 +245,14 @@ test('manual report submission does not consume an automatic reservation', async
   const sent: boolean[] = [];
   const session = createDataAppRepairSession({
     state,
-    saveState() {},
-    requestRepair: async (_, context) => {
+    onStateChange() {},
+    onRepairRequest: async (_, context) => {
       sent.push(context.automatic);
     },
   });
   const lease = session.connect('one');
   lease.report(report(), false);
-  await lease.request();
+  await lease.requestRepair();
   expect(sent).toEqual([false]);
   expect(state.automaticRequests).toBe(0);
 });

@@ -19,8 +19,8 @@ import {
 
 const session = createDataAppRepairSession({
   state: restoredState, // New app: { automaticRequests: 0, attemptedRevisions: [] }
-  saveState,
-  requestRepair: requestAgentRepair,
+  onStateChange: saveRepairState,
+  onRepairRequest: requestAgentRepair,
 });
 
 const viewer = (
@@ -36,9 +36,10 @@ const viewer = (
 );
 ```
 
-The host owns authorization, delivery, and state retention. Three automatic
+The host owns authorization, delivery, and state retention. `onStateChange` is
+awaited before automatic delivery; reject if state cannot be retained. Three automatic
 requests are allowed per session; manual requests and healthy revisions do not
 reset the allowance. Callback resolution means acceptance, not agent execution.
-Omit `requestRepair` when delivery or reliable state retention is unavailable;
+Omit `onRepairRequest` when delivery or reliable state retention is unavailable;
 the banner offers diagnostics to copy instead. Avoid sensitive values in errors.
 Source locations use generated filenames and positions.
