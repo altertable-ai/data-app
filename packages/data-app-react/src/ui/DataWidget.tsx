@@ -321,12 +321,11 @@ class RenderBoundary extends Component<
             : undefined
         }
       >
-        <AppIcon name="error" size={16} />
         <div className="altertable-widget-error-copy" role="alert">
           <strong>This widget couldn’t render</strong>
           <p>{this.state.message || 'Other content is still available.'}</p>
-          <RepairButton />
         </div>
+        <RepairButton />
       </section>
     );
     if (this.props.body) return error;
