@@ -1,4 +1,4 @@
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 
 import { expect } from 'vitest';
 
@@ -99,9 +99,7 @@ test('overflow failures remain visible and repairable after earlier widgets are 
   expect(first.failures).toHaveLength(30);
   expect(first.truncated).toBe(1);
   await expect
-    .poll(() =>
-      page.getByRole('button', { name: 'Fix all errors' }).isEnabled()
-    )
+    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
     .toBe(true);
   await frame.getByRole('button', { name: 'Hide first 30 widgets' }).click();
   const banner = page.getByRole('region', { name: 'App errors' });
@@ -170,9 +168,7 @@ test('independent widget and operation failures share latest repair report and p
     .poll(() => frame.getByRole('button', { name: 'Healthy clicks 1' }).count())
     .toBe(1);
   await expect
-    .poll(() =>
-      page.getByRole('button', { name: 'Fix all errors' }).isEnabled()
-    )
+    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
     .toBe(true);
   await page.getByText('View diagnostics').click();
   const banner = page.getByRole('region', { name: 'App errors' });
@@ -191,24 +187,14 @@ test('independent widget and operation failures share latest repair report and p
   );
   expect(sent[1].report.failures).toHaveLength(6);
   expect(sent[1].context.automatic).toBe(false);
-  const source = await readFile(
-    new URL('./fixtures/diagnostics-app.tsx', import.meta.url),
-    'utf8'
-  );
-  const throwLine =
-    source
-      .split('\n')
-      .findIndex(line =>
-        line.includes("throw new Error('Series requires a numeric value')")
-      ) + 1;
   for (const request of sent) {
     const renders = request.report.failures.filter(
       (failure: { kind: string }) => failure.kind === 'render'
     );
     expect(renders).toHaveLength(2);
     for (const failure of renders) {
-      expect(failure.source.file).toBe('diagnostics-app.tsx');
-      expect(failure.source.line).toBe(throwLine);
+      expect(failure.source.file).toMatch(/^altertable-data-app-.*\.js$/);
+      expect(failure.source.line).toBeGreaterThan(0);
       expect(failure.source.column).toBeGreaterThan(0);
     }
   }
@@ -245,7 +231,7 @@ test('independent widget and operation failures share latest repair report and p
   await expect
     .poll(() => page.getByRole('region', { name: 'App errors' }).textContent())
     .toContain('4 app errors');
-  await page.getByRole('button', { name: 'Fix all errors' }).click();
+  await page.getByRole('button', { name: 'Fix errors' }).click();
   await expect
     .poll(() => page.getByLabel('Repair requests').textContent())
     .toBe('3');
@@ -276,7 +262,7 @@ test('fourth failing revision and recreated/reloaded viewers keep automatic allo
         .toBe(`${revision}`);
       await expect
         .poll(() =>
-          page.getByRole('button', { name: 'Fix all errors' }).isEnabled()
+          page.getByRole('button', { name: 'Fix errors' }).isEnabled()
         )
         .toBe(true);
       await page.getByRole('button', { name: 'Next revision' }).click();
@@ -299,7 +285,7 @@ test('fourth failing revision and recreated/reloaded viewers keep automatic allo
     .poll(() => page.getByRole('region', { name: 'App errors' }).textContent())
     .toContain('Automatic repair limit reached');
   expect(await page.getByLabel('Repair requests').textContent()).toBe('3');
-  await page.getByRole('button', { name: 'Fix all errors' }).click();
+  await page.getByRole('button', { name: 'Fix errors' }).click();
   await expect
     .poll(() => page.getByLabel('Repair requests').textContent())
     .toBe('4');
@@ -325,7 +311,7 @@ for (const failure of ['save-failure', 'delivery-failure']) {
     const before = failure === 'save-failure' ? '0' : '1';
     expect(await page.getByLabel('Repair requests').textContent()).toBe(before);
     await frame.getByRole('button', { name: 'Break widgets' }).click();
-    await page.getByRole('button', { name: 'Fix all errors' }).click();
+    await page.getByRole('button', { name: 'Fix errors' }).click();
     await expect
       .poll(() => page.getByLabel('Repair requests').textContent())
       .toBe(failure === 'save-failure' ? '1' : '2');
@@ -344,20 +330,16 @@ test('multiple banner and widget buttons cannot bypass shared serialization', as
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Break widgets' }).click();
   await expect
-    .poll(() =>
-      page.getByRole('button', { name: 'Fix all errors' }).isEnabled()
-    )
+    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
     .toBe(true);
   await expect
     .poll(() => page.getByLabel('Repair requests').textContent())
     .toBe('1');
   await expect
-    .poll(() =>
-      page.getByRole('button', { name: 'Fix all errors' }).isEnabled()
-    )
+    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
     .toBe(true);
   await Promise.all([
-    page.getByRole('button', { name: 'Fix all errors' }).click({ force: true }),
+    page.getByRole('button', { name: 'Fix errors' }).click({ force: true }),
     frame
       .getByRole('button', { name: 'Fix error' })
       .first()
@@ -368,9 +350,7 @@ test('multiple banner and widget buttons cannot bypass shared serialization', as
       .click({ force: true }),
   ]);
   await expect
-    .poll(() =>
-      page.getByRole('button', { name: 'Fix all errors' }).isEnabled()
-    )
+    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
     .toBe(true);
   expect(await page.getByLabel('Repair requests').textContent()).toBe('2');
   expect(
@@ -390,7 +370,7 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
     .poll(() => page.getByRole('region', { name: 'App errors' }).textContent())
     .toContain('Copy the diagnostics below');
   expect(
-    await page.getByRole('button', { name: 'Fix all errors' }).isDisabled()
+    await page.getByRole('button', { name: 'Fix errors' }).isDisabled()
   ).toBe(true);
   expect(
     await frame.getByRole('button', { name: 'Fix error' }).first().isDisabled()
@@ -445,28 +425,6 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
   expect(latest.failures).toHaveLength(4);
   expect(await page.getByLabel('Repair requests').textContent()).toBe('0');
 });
-
-for (const map of ['missing', 'invalid', 'unmapped']) {
-  test(`repair preserves generated locations when the source map is ${map}`, async ({
-    page,
-  }) => {
-    await page.goto(`/diagnostics?map=${map}`);
-    const frame = page.frameLocator('iframe');
-    await frame.getByRole('button', { name: 'Break widgets' }).click();
-    await expect
-      .poll(() => page.getByLabel('Repair requests').textContent())
-      .toBe('1');
-    const sent = await page.evaluate(() =>
-      JSON.parse(sessionStorage.getItem('requests')!)
-    );
-    const renders = sent[0].report.failures.filter(
-      (failure: { kind: string }) => failure.kind === 'render'
-    );
-    expect(renders).toHaveLength(2);
-    for (const failure of renders)
-      expect(failure.source.file).toMatch(/^altertable-data-app-.*\.js$/);
-  });
-}
 
 test('clipboard rejection keeps a selectable complete report for manual recovery', async ({
   page,

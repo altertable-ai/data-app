@@ -1,27 +1,14 @@
 # App diagnostics and repair
 
-Live SDK capture collects failed operations, named queries and mounted widget
-renders. Healthy widgets stay interactive. A render failure keeps its last
-measured frame dimensions and static header, description, and footer. A broken
-shell uses a plain error frame; an initially broken widget uses a compact fallback.
-Widget buttons say “Fix error”; the banner says “Fix all errors”. Both send the
-complete observed report through the same action.
-Reports include failure names and source locations, exercised coverage,
-unfinished checks and an omitted-diagnostic count. They do not prove unvisited
-views or interactions work. Reports include at most 30 failures; remaining active
-failures become visible as earlier failures clear. Bundle viewers resolve source
-locations using the bundle's inline base64 JSON source map. Missing, invalid or
-unmapped locations retain the generated file and position. URL viewers retain
-generated locations.
-Mapping runs in the viewer; it never fetches maps or includes source content in
-reports. File paths remain reduced to their basename.
+Live capture reports observed query, operation, and widget failures together.
+Repair actions send the complete observed report. Unvisited views and interactions
+remain unverified; coverage, unfinished checks, and omitted counts describe limits.
 
-## Embed a repair session
+## Host integration
 
-Create one controller per app repair session, outside the viewer's mount lifecycle.
-Restore its state **before** creating a viewer. Retain the controller and its state
-object across app revisions, iframe reloads and viewer recreation. Start a new
-session only for a different app or an explicit user reset.
+Create one session outside the viewer lifecycle. Restore and retain its updated
+state across revisions, reloads, and viewer recreation, even if saving fails.
+Change the revision identifier when app source changes.
 
 ```tsx
 import { createDataAppRepairSession } from '@altertable/data-app-embed';
@@ -30,61 +17,35 @@ import {
   DataAppRepairBanner,
 } from '@altertable/data-app-embed/react';
 
-// The host supplies restoredState, saveState and requestAgentRepair.
 const session = createDataAppRepairSession({
   state: restoredState, // New app: { automaticRequests: 0, attemptedRevisions: [] }
   saveState,
   requestRepair: requestAgentRepair,
 });
 
-function Viewer({ javascript, revision, onMessage }) {
-  return (
-    <>
-      <DataAppRepairBanner session={session} />
-      <DataAppBridge
-        source={{ type: 'bundle', javascript }}
-        title="Data app"
-        repair={{ session, revision }}
-        onMessage={onMessage}
-      />
-    </>
-  );
-}
+const viewer = (
+  <>
+    <DataAppRepairBanner session={session} />
+    <DataAppBridge
+      source={{ type: 'bundle', javascript }}
+      title="Data app"
+      repair={{ session, revision }}
+      onMessage={onMessage}
+    />
+  </>
+);
 ```
 
-Use a stable revision identifier, changing it when app source changes. The host
-owns agent authorization and retention using its session facilities. The SDK adds
-no server persistence. Reservations update the supplied state object synchronously
-and save before automatic delivery. Retain that updated object even when saving
-fails; do not recreate from an older saved snapshot. Hosts unable to guarantee
-state retention must omit `requestRepair` and offer manual recovery.
+The host owns authorization, delivery, and state retention. Three automatic
+requests are allowed per session; manual requests and healthy revisions do not
+reset the allowance. Callback resolution means acceptance, not agent execution.
+Omit `requestRepair` when delivery or reliable state retention is unavailable;
+the banner offers diagnostics to copy instead. Avoid sensitive values in errors.
+Source locations use generated filenames and positions.
 
-At most three automatic requests are reserved per session, once per revision.
-Manual requests and healthy reports never replenish the allowance. All CTAs use
-the same controller and latest report. Requests are serialized. Failed saves stop
-automatic requests for the controller; failed delivery consumes the reservation.
-Neither retries automatically. Automatic delivery waits for observed checks to
-finish, including checks started during state saving. A replaced bridge cannot
-submit reports or deliver a request still waiting to save or settle.
+## Node validation
 
-`requestRepair(report, { revision, automatic })` resolves when the host accepts the
-request. This does not establish agent execution: the banner says “Repair request
-accepted.” Omit this callback in unsupported hosts; the banner exposes diagnostics
-and a “Copy diagnostics” action. This copies the complete sanitized report,
-including coverage, unfinished checks and omitted counts. If clipboard access
-fails, selectable report text remains available. Copying does not request repair
-or consume an automatic attempt. Local preview uses this fallback.
-
-Treat reports as untrusted app content. Diagnostic text is bounded and redacts
-common credential forms, quoted values and URL parameters. Do not put credentials,
-query parameters, result rows or other sensitive values in errors. The host must
-keep its normal authorization checks; diagnostics grant no additional data access.
-
-## Validate from Node
-
-The separate validation entry has no Bun or browser dependency. Supply independent
-checks for queries or interactions that a failed operation would otherwise hide.
-Use the backend's existing authorized lakehouse and enforced parameters.
+Use the optional entry with authorized inputs; Bun and browser tooling are not required.
 
 ```ts
 import {
@@ -93,24 +54,10 @@ import {
 } from '@altertable/data-app/validation';
 
 const report = await validateDataApp({
-  checks: [
-    ...operationValidationChecks({ operations, lakehouse, queryParams }),
-    {
-      kind: 'query',
-      name: 'revenue',
-      source: { file: 'app.tsx', line: 42, column: 1 },
-      run: signal => checkRevenueQuery(signal),
-    },
-  ],
+  checks: operationValidationChecks({ operations, lakehouse, queryParams }),
 });
 ```
 
-Every declared check is observed independently. A check must throw or reject to
-report failure; returned values, including `false`, do not indicate failure.
-Validation stops waiting after 30 seconds (override with `timeoutMs`), reports
-unfinished checks, and signals
-cancellation. Checks should honor that signal. Operation checks exercise the declared
-representative inputs. Queries after an early return or failure require separate
-checks. Render and browser interactions require caller-supplied checks; this API
-does not launch a browser. Validation is opt-in and is excluded from normal app
-entries and production preview bundles.
+Add independent checks for otherwise hidden failures. Checks must throw or reject
+to report failure and should honor cancellation. Validation covers supplied checks
+only; it does not launch a browser.

@@ -128,7 +128,7 @@ export function DataAppRepairBanner({
           disabled={status === 'pending' || status === 'unsupported'}
           onClick={() => void session.request()}
         >
-          Fix all errors
+          Fix errors
         </button>
         <details>
           <summary>View diagnostics</summary>
