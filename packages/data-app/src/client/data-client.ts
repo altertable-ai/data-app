@@ -12,6 +12,7 @@ import {
 } from '../core/operation.ts';
 import type { IsUnion, KnownRecord } from '../core/queries.ts';
 import { randomUuid } from '../core/uuid.ts';
+import { appDiagnostics } from './diagnostics.ts';
 import { getDataAppTransport, localFrameBridge } from './iframe.ts';
 import { createHttpTransport, DataAppError } from './transport.ts';
 import type { DataTransport } from './transport.ts';
@@ -43,6 +44,27 @@ export type DataClient<Operations extends DataOperations> = {
 function typedClient<Operations extends DataOperations>(
   implementation: Pick<DataClient<Operations>, 'query'>
 ): DataClient<Operations> {
+  const query = implementation.query;
+  implementation.query = async (name, input, options) => {
+    const end = appDiagnostics.begin();
+    try {
+      const result = await query(name, input, options);
+      appDiagnostics.clear('operation', name);
+      return result;
+    } catch (error) {
+      if (!options?.signal?.aborted)
+        appDiagnostics.record(
+          'operation',
+          name,
+          error instanceof Error && error.cause instanceof Error
+            ? error.cause
+            : error
+        );
+      throw error;
+    } finally {
+      end();
+    }
+  };
   return implementation as DataClient<Operations>;
 }
 
@@ -158,6 +180,11 @@ function createOperationClient<Operations extends DataOperations>(options: {
           signal: signal ?? new AbortController().signal,
           requestId,
           operationName: name,
+          onQuery(queryName, error) {
+            if (error === undefined)
+              appDiagnostics.clear('query', `${name}: ${queryName}`);
+            else appDiagnostics.record('query', `${name}: ${queryName}`, error);
+          },
         });
 
         return { ...body, input } as DataResponse<
@@ -168,7 +195,13 @@ function createOperationClient<Operations extends DataOperations>(options: {
         if (signal?.aborted) throw signal.reason;
         if (error instanceof DataAppError) throw error;
         const failure = toDataOperationFailure(error);
-        throw new DataAppError(failure.message, failure.code, requestId);
+        const publicError = new DataAppError(
+          failure.message,
+          failure.code,
+          requestId
+        );
+        publicError.cause = error;
+        throw publicError;
       }
     },
   });

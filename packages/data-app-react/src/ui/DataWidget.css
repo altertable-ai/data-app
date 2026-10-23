@@ -102,3 +102,51 @@
 .altertable-widget-heading-trigger .altertable-data-widget-count {
   margin-inline-start: 0;
 }
+
+.altertable-widget-boundary {
+  display: contents;
+}
+/* Carry Grid's placement through transparent wrappers without overriding widget styles. */
+:where(.altertable-widget-boundary) > * {
+  grid-column: inherit;
+}
+.altertable-widget-error {
+  box-sizing: border-box;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  width: 100%;
+  max-width: 520px;
+  margin-inline: auto;
+  text-align: center;
+  color: var(--atbl-muted);
+  font-family: var(--atbl-font);
+  font-size: var(--atbl-type-meta-size);
+  line-height: 1.5;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.altertable-widget-error-copy {
+  min-width: 0;
+}
+.altertable-widget-error strong {
+  color: var(--atbl-text);
+  font-size: var(--atbl-type-label-size);
+  font-weight: var(--atbl-type-label-weight);
+}
+.altertable-widget-error p {
+  margin: 4px 0 0;
+}
+.altertable-widget-error-frame {
+  display: flex;
+  flex-direction: column;
+}
+.altertable-widget-error-frame > .altertable-data-widget-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+}

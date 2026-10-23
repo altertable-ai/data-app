@@ -1,15 +1,24 @@
 /** Direct UI composition and static screens. Requests use declared views from /react. */
+import { withWidgetBoundary } from './DataWidget.tsx';
+import { MetricWidget as MetricWidgetContent } from './MetricWidget.tsx';
+import { TableWidget as TableWidgetContent } from './TableWidget.tsx';
+import { TextWidget as TextWidgetContent } from './TextWidget.tsx';
+import { VisualizationWidget as VisualizationWidgetContent } from './VisualizationWidget.tsx';
+
 export { DataAppProvider } from '../mount.tsx';
 export { isPlainKeyEvent } from './keyboard.ts';
 export { GettingStarted } from './GettingStarted.tsx';
 export { DataWidget } from './DataWidget.tsx';
 export type { WidgetStatus } from './RequestHint.tsx';
 export type { DataWidgetProps } from './DataWidget.tsx';
-export { TextWidget } from './TextWidget.tsx';
+export const TextWidget = withWidgetBoundary(TextWidgetContent);
 export type { TextWidgetProps } from './TextWidget.tsx';
-export { VisualizationWidget } from './VisualizationWidget.tsx';
+/** Compose an unframed visual with the shared heading and inspection. */
+export const VisualizationWidget = withWidgetBoundary(
+  VisualizationWidgetContent
+);
 export type { VisualizationWidgetProps } from './VisualizationWidget.tsx';
-export { TableWidget } from './TableWidget.tsx';
+export const TableWidget = withWidgetBoundary(TableWidgetContent);
 export type { TableWidgetProps } from './TableWidget.tsx';
 export {
   DataTable,
@@ -23,7 +32,7 @@ export type {
   DataTableEmptyRowProps,
   DataTableTimestampProps,
 } from './DataTable.tsx';
-export { MetricWidget } from './MetricWidget.tsx';
+export const MetricWidget = withWidgetBoundary(MetricWidgetContent);
 export type { MetricWidgetProps } from './MetricWidget.tsx';
 export { DimensionPicker } from './DimensionPicker.tsx';
 export { LiveControl } from './LiveControl.tsx';

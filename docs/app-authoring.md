@@ -65,6 +65,11 @@ Run the authoring workflow's validation, then inspect the app:
   Check custom layout or CSS at narrow and wide widths; check custom colors in
   both themes.
 
+When an app fails, use the host's repair or copy action to send observed diagnostics
+together. Repair requests preserve the existing authorization boundary and cover
+only exercised checks and interactions. See [diagnostics and repair](diagnostics.md)
+for host integration.
+
 ## Look up only what is missing
 
 Search [REFERENCE.md](../REFERENCE.md) for the exact symbol first:

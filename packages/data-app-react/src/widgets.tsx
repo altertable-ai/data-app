@@ -19,6 +19,7 @@ import {
   DataValue as DisplayValue,
   type DataValueProps as DisplayValueProps,
 } from './ui/DataValue.tsx';
+import { withWidgetBoundary } from './ui/DataWidget.tsx';
 import {
   ExplorationActionControl,
   type ItemActions,
@@ -54,7 +55,7 @@ export type MetricWidgetProps<Data = unknown, Input = unknown> = Omit<
   records?: MetricRecords<Data, Input, any, any>;
   actions?: ExplorationActions<void, NoInfer<Input>>;
 };
-export function MetricWidget<Data, Input>({
+function MetricWidgetContent<Data, Input>({
   metric,
   source,
   records,
@@ -125,7 +126,7 @@ export type TableWidgetProps<Row, Data = unknown, Input = unknown> = Omit<
     title?: ReactNode;
     actions?: ExplorationActions<NoInfer<Row>, NoInfer<Input>>;
   };
-export function TableWidget<Row, Data, Input>({
+function TableWidgetContent<Row, Data, Input>({
   dataset,
   source,
   title,
@@ -216,7 +217,7 @@ export type VisualizationWidgetProps<
     actions?: ExplorationActions<NoInfer<Row>, NoInfer<Input>>;
     breakdown?: BreakdownTarget<any>;
   };
-export function VisualizationWidget<Row, Data, Input>({
+function VisualizationWidgetContent<Row, Data, Input>({
   dataset,
   source,
   title,
@@ -323,7 +324,7 @@ export type TextWidgetProps<
   'reading' | 'evidence' | 'children' | 'title' | 'emptyFallback'
 > &
   NarrativeBinding<Data, Input, Row> & { title?: ReactNode };
-export function TextWidget<Data, Input, Row>(
+function TextWidgetContent<Data, Input, Row>(
   props: TextWidgetProps<Data, Input, Row>
 ) {
   if (props.metric) {
@@ -428,3 +429,13 @@ export function DataValue<Data, Input, Row>(
     </DisplayValue>
   );
 }
+
+export const MetricWidget = withWidgetBoundary(MetricWidgetContent);
+
+export const TableWidget = withWidgetBoundary(TableWidgetContent);
+
+export const VisualizationWidget = withWidgetBoundary(
+  VisualizationWidgetContent
+);
+
+export const TextWidget = withWidgetBoundary(TextWidgetContent);

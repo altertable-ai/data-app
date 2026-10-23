@@ -866,13 +866,23 @@ export { Grid };
       throw new Error('Bun preview runtime leaked into a browser entry.');
   }
   if (
-    javascript.some(source =>
+    [...javascript, hostSource, bootstrapSource].some(source =>
       /typescript|createSourceFile|extractDataAppManifest/.test(source)
     )
   )
-    throw new Error('Manifest compiler tooling leaked into the browser build.');
+    throw new Error('Manifest tooling leaked into the browser build.');
   if (javascript.some(source => source.includes('ALTERTABLE_DATA_PROXY_TOKEN')))
     throw new Error('Server credentials leaked into the browser build.');
+  if (
+    [await hosted.outputs[0]!.text(), bootstrapSource].some(source =>
+      /TraceMap|originalPositionFor|sourceMappingURL=data:application/.test(
+        source
+      )
+    )
+  )
+    throw new Error(
+      'Host source mapping leaked into an app or bootstrap bundle.'
+    );
   await writeFile(
     join(temporary, 'minimum.jsx'),
     `

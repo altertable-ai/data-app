@@ -13,7 +13,12 @@ import { type DataAppSource } from '../source.ts';
 
 export type DataAppBridgeProps = Pick<
   DataAppBridgeOptions,
-  'onMessage' | 'onStatusChange' | 'onDiagnostic' | 'presentation' | 'logger'
+  | 'onMessage'
+  | 'onStatusChange'
+  | 'onDiagnostic'
+  | 'presentation'
+  | 'logger'
+  | 'repair'
 > &
   (
     | {
@@ -103,6 +108,7 @@ function SourceBridge(props: SourceBridgeProps) {
               javascript: javascript!,
             },
       startupTimeoutMs,
+      repair: handlers.current.repair,
       presentation: handlers.current.presentation,
       logger: handlers.current.logger,
       onMessage(request, context) {
@@ -121,7 +127,17 @@ function SourceBridge(props: SourceBridgeProps) {
       hostRef.current = undefined;
       bridge.dispose();
     };
-  }, [iframe, type, url, javascript, startupTimeoutMs, hostRef, handlers]);
+  }, [
+    iframe,
+    type,
+    url,
+    javascript,
+    startupTimeoutMs,
+    hostRef,
+    handlers,
+    props.repair?.session,
+    props.repair?.revision,
+  ]);
 
   return (
     <iframe {...iframeProps} loading="eager" ref={setIframe} title={title} />
@@ -146,6 +162,7 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
           ? { type, origin: identity }
           : { type, token: identity },
       window: host,
+      repair: handlers.current.repair,
       presentation: handlers.current.presentation,
       logger: handlers.current.logger,
       onMessage(request, context) {
@@ -164,7 +181,15 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
       hostRef.current = undefined;
       bridge.dispose();
     };
-  }, [iframe, type, identity, hostRef, handlers]);
+  }, [
+    iframe,
+    type,
+    identity,
+    hostRef,
+    handlers,
+    props.repair?.session,
+    props.repair?.revision,
+  ]);
 
   return null;
 }

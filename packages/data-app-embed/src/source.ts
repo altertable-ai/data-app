@@ -30,6 +30,7 @@ export function attachDataAppSource({
   onMessage,
   onStatusChange,
   onDiagnostic,
+  repair,
   startupTimeoutMs = 30_000,
 }: DataAppSourceOptions): DataAppHost {
   const host = iframe.ownerDocument.defaultView;
@@ -70,10 +71,7 @@ export function attachDataAppSource({
         bridge.dispose();
         onStatusChange?.('failed');
       }, startupTimeoutMs);
-    if (value === 'failed') {
-      failed = true;
-      bridge.dispose();
-    }
+    if (value === 'failed') failed = true;
     onStatusChange?.(value);
   }
 
@@ -88,6 +86,7 @@ export function attachDataAppSource({
     onMessage,
     onStatusChange: status,
     onDiagnostic,
+    repair,
     window: host,
   });
 

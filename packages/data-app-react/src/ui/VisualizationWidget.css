@@ -10,7 +10,8 @@
       clamp(var(--atbl-space-md), 2.5vw, var(--atbl-space-lg))
     );
 }
-:where(.altertable-data-widget-body)
+:where(.altertable-data-widget-body) > .altertable-visualization-widget-content,
+:where(.altertable-data-widget-body > .altertable-widget-boundary)
   > .altertable-visualization-widget-content {
   padding: 0;
 }

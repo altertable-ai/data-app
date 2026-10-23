@@ -4,3 +4,4 @@
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/react-embed.md
  */
 export { DataAppBridge, type DataAppBridgeProps } from './bridge.tsx';
+export { DataAppRepairBanner } from './repair-banner.tsx';

@@ -15,6 +15,7 @@ type OperationExecutionOptions = {
   signal: AbortSignal;
   requestId: string;
   queryParams?: OperationContext['queryParams'];
+  onQuery?: (name: string, error?: unknown) => void;
 };
 
 /** Shared operation execution. Adapters own authorization, delivery, and public errors. */
@@ -27,6 +28,7 @@ export async function executeDataOperation(
     signal: requestSignal,
     requestId,
     queryParams,
+    onQuery,
   }: OperationExecutionOptions
 ) {
   requestSignal.throwIfAborted();
@@ -45,7 +47,8 @@ export async function executeDataOperation(
     operation,
     lakehouse,
     signal,
-    operationName
+    operationName,
+    onQuery
   );
   try {
     const output = await runOperation(operation, input, {
@@ -78,7 +81,8 @@ function createOperationLakehouse(
   operation: Operation,
   source: Lakehouse,
   signal: AbortSignal,
-  operationName: string
+  operationName: string,
+  onQuery?: (name: string, error?: unknown) => void
 ) {
   const queryIds: string[] = [];
   const queries: DisclosedQuery[] = [];
@@ -101,17 +105,20 @@ function createOperationLakehouse(
       };
       queries.push(query);
       const limit = Math.min(options.limit, operation.policy.maxQueryRows);
+      const querySignal = AbortSignal.any([signal, options.signal]);
       let result;
       try {
         result = await source.queryAll(statement, {
           limit,
           ...(options.params === undefined ? {} : { params: options.params }),
-          signal: AbortSignal.any([signal, options.signal]),
+          signal: querySignal,
         });
       } catch (error) {
+        if (!querySignal.aborted) onQuery?.(query.name, error);
         if (error instanceof DataSourceError) error.queryName = query.name;
         throw error;
       }
+      onQuery?.(query.name);
       if (result.rows.length > limit)
         throw new Error('Result exceeds row limit.');
       if (result.queryId) {

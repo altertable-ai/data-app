@@ -216,3 +216,6 @@ and body heights automatic.
 
 If sizing fails to settle, the bridge restores frame scrolling. Toggle sizing or
 reload to retry. Switching to `'frame'` or disposing restores the authored height.
+
+For shared diagnostic reports, bounded agent repair and the in-flow banner, see
+[App diagnostics and repair](diagnostics.md).

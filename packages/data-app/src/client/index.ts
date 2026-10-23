@@ -28,3 +28,8 @@ export {
 export { createMessageClient } from './messages.ts';
 export { type DataAppLogger } from '../core/logger.ts';
 export { createAnnotationClient } from './annotations.ts';
+export { appDiagnostics } from './diagnostics.ts';
+export {
+  type AppFailure,
+  type AppDiagnosticReport,
+} from '../core/diagnostics.ts';
