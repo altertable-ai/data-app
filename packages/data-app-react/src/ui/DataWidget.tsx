@@ -266,7 +266,13 @@ function RepairButton() {
 }
 
 class RenderBoundary extends Component<
-  { name: string; identity: string; children: ReactNode; height: () => number },
+  {
+    name: string;
+    identity: string;
+    children: ReactNode;
+    height: () => number;
+    width: () => number;
+  },
   { failed: boolean; message?: string }
 > {
   override state: { failed: boolean; message?: string } = { failed: false };
@@ -298,6 +304,8 @@ class RenderBoundary extends Component<
         aria-label={`${this.props.name} error`}
         style={{
           height: this.props.height() || undefined,
+          width: this.props.width() || undefined,
+          maxWidth: '100%',
           minHeight: this.props.height() ? 0 : undefined,
         }}
       >
@@ -321,16 +329,23 @@ function WidgetBoundary({
   const identity = useId();
   const ref = useRef<HTMLDivElement>(null);
   const height = useRef(0);
+  const width = useRef(0);
   useLayoutEffect(() => {
     const element = ref.current;
     if (!element) return;
     function measure() {
-      if (!element!.querySelector('.altertable-widget-error'))
-        height.current = element!.getBoundingClientRect().height;
+      if (element!.querySelector('.altertable-widget-error')) return;
+      const frame =
+        element!.querySelector('.altertable-data-widget') ?? element!;
+      const bounds = frame.getBoundingClientRect();
+      height.current = bounds.height;
+      width.current = bounds.width;
     }
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
+    const frame = element.querySelector('.altertable-data-widget');
+    if (frame) observer.observe(frame);
     return () => observer.disconnect();
   }, []);
   return (
@@ -339,6 +354,7 @@ function WidgetBoundary({
         name={name}
         identity={identity}
         height={() => height.current}
+        width={() => width.current}
       >
         {children}
       </RenderBoundary>

@@ -6,7 +6,10 @@ import {
 } from '@altertable/data-app-react';
 import { VisualizationWidget } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
-import { getDataAppTransport } from '@altertable/data-app/client';
+import {
+  getDataAppTransport,
+  getDataAppNavigation,
+} from '@altertable/data-app/client';
 import {
   DataSourceError,
   type DataOperations,
@@ -22,6 +25,9 @@ function BadChart({ broken }: { broken: boolean }) {
   return <div style={{ height: 220 }}>Chart ready</div>;
 }
 function App() {
+  const fixedWidth = new URLSearchParams(
+    getDataAppNavigation()!.snapshot().search
+  ).has('fixed-width');
   const [broken, setBroken] = useState(false);
   const [showFailed, setShowFailed] = useState(true);
   const [count, setCount] = useState(0);
@@ -71,6 +77,7 @@ function App() {
             {' '}
             <VisualizationWidget
               title="Revenue"
+              style={fixedWidth ? { width: 260, maxWidth: '100%' } : undefined}
               visual={<BadChart broken={broken} />}
             />
             <VisualizationWidget

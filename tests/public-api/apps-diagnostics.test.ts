@@ -251,3 +251,25 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
   ).toBe(true);
   expect(await page.getByLabel('Repair requests').textContent()).toBe('0');
 });
+
+test('explicit widget widths remain stable when rendering fails at wide and narrow widths', async ({
+  page,
+}) => {
+  for (const width of [1280, 375]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/diagnostics?fixed-width');
+    const frame = page.frameLocator('iframe');
+    await expect.poll(() => frame.getByText('Chart ready').count()).toBe(2);
+    const before = await frame
+      .locator('.altertable-data-widget')
+      .first()
+      .boundingBox();
+    await frame.getByRole('button', { name: 'Break widgets' }).click();
+    const error = frame.getByRole('region', { name: 'Revenue error' });
+    await expect.poll(() => error.isVisible()).toBe(true);
+    const after = await error.boundingBox();
+    expect(before!.width).toBe(260);
+    expect(after!.width).toBeCloseTo(before!.width, 0);
+    expect(after!.height).toBeCloseTo(before!.height, 0);
+  }
+});
