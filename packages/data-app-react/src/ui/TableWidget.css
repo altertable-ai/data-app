@@ -29,3 +29,8 @@
 .altertable-table-widget .altertable-data-widget-body {
   padding-block-start: var(--atbl-space-sm);
 }
+
+.altertable-table-widget .altertable-loading-status {
+  /* Center over the placeholder rows, below the single-line heading and its 9px cell padding. */
+  inset-block-start: calc(var(--atbl-space-sm) + 1lh + 19px);
+}

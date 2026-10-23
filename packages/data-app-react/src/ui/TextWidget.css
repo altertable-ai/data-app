@@ -1,3 +1,7 @@
+.altertable-text-widget .altertable-text-content {
+  /* Match the initial three-line placeholder so short results do not shrink the card. */
+  min-block-size: calc(3em + 2 * var(--atbl-space-sm));
+}
 .altertable-text-widget-skeleton {
   display: grid;
   gap: var(--atbl-space-sm);
@@ -5,7 +9,7 @@
 }
 .altertable-text-widget-skeleton > .altertable-skeleton {
   width: 100%;
-  height: 14px;
+  height: 1em;
 }
 .altertable-text-widget-skeleton > :last-child {
   width: 65%;

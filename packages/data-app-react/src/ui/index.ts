@@ -56,6 +56,8 @@ export type {
 } from './searchItems.ts';
 export { SearchMatch } from './SearchMatch.tsx';
 export type { SearchMatchProps } from './SearchMatch.tsx';
+export { ShimmerText } from './ShimmerText.tsx';
+export type { ShimmerTextProps } from './ShimmerText.tsx';
 export { ChoicePicker } from './ChoicePicker.tsx';
 export type { ChoiceOption, ChoicePickerProps } from './ChoicePicker.tsx';
 export {

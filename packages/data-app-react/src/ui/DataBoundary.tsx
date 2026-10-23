@@ -3,6 +3,8 @@ import { type ComponentPropsWithRef, type ReactNode } from 'react';
 
 import { classNames } from './classNames.ts';
 import { AppIcon } from './icons.ts';
+import { WidgetStatusContext } from './RequestHint.tsx';
+import { useDelayedLoading } from './useDelayedLoading.ts';
 
 export type DataBoundaryProps<T, Input = unknown> = {
   view: DataView<T, Input>;
@@ -27,21 +29,8 @@ export function DataBoundary<T, Input>({
   className,
   ...props
 }: DataBoundaryProps<T, Input>) {
-  if (view.kind === 'loading' || view.kind === 'empty' || view.kind === 'error')
-    return (
-      <div
-        {...props}
-        className={classNames('altertable-data-boundary', className)}
-      >
-        {view.kind === 'loading'
-          ? loadingFallback
-          : view.kind === 'empty'
-            ? emptyFallback
-            : error(view.error)}
-      </div>
-    );
-
   const updating = view.kind === 'updating';
+  const showUpdating = useDelayedLoading(updating);
   const hasStaleError = view.kind === 'stale-error';
 
   return (
@@ -49,37 +38,43 @@ export function DataBoundary<T, Input>({
       {...props}
       className={classNames('altertable-data-boundary', className)}
     >
-      {notice === 'inline' && (updating || hasStaleError) && (
+      {notice === 'inline' && hasStaleError && (
         <div
           className="altertable-data-boundary-notice"
           data-state={view.kind}
-          role={hasStaleError ? 'alert' : 'status'}
+          role="alert"
         >
-          {updating ? (
-            <AppIcon
-              name="loading"
-              size={16}
-              className="altertable-data-boundary-spinner"
-            />
-          ) : (
-            <AppIcon name="error" size={16} />
-          )}
+          <AppIcon name="error" size={16} />
           <span className="altertable-data-boundary-message">
             {view.message}
           </span>
-          {staleError && view.kind === 'stale-error' && (
+          {staleError && (
             <span className="altertable-data-boundary-action">
               {staleError(view.error)}
             </span>
           )}
         </div>
       )}
-      <div className="altertable-data-boundary-content" aria-busy={updating}>
-        {children(
-          view.data,
-          view.kind === 'ready' ? view.input : view.displayedInput
-        )}
-      </div>
+      <WidgetStatusContext
+        value={
+          notice === 'inline'
+            ? { kind: showUpdating ? 'updating' : 'idle' }
+            : undefined
+        }
+      >
+        <div className="altertable-data-boundary-content" aria-busy={updating}>
+          {view.kind === 'loading'
+            ? loadingFallback
+            : view.kind === 'empty'
+              ? emptyFallback
+              : view.kind === 'error'
+                ? error(view.error)
+                : children(
+                    view.data,
+                    view.kind === 'ready' ? view.input : view.displayedInput
+                  )}
+        </div>
+      </WidgetStatusContext>
     </div>
   );
 }

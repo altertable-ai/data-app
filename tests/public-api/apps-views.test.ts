@@ -582,3 +582,171 @@ test('facet contexts resolve declared variables and refresh options when depende
     )
     .toBe(true);
 });
+
+test('loading labels wait for long requests and preserve widget and action positions', async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.clock.pauseAt(new Date());
+  await page.goto('/loading');
+  const toolbar = page.getByRole('group', {
+    name: 'Page actions',
+    exact: true,
+  });
+  const independent = page.getByRole('region', {
+    name: 'Independent section',
+    exact: true,
+  });
+  const widget = independent.getByRole('region', {
+    name: 'Secondary results',
+    exact: true,
+  });
+  const label = widget.getByText('Loading Secondary results', { exact: true });
+  const refresh = toolbar.getByRole('button', {
+    name: 'Cancel refresh',
+    exact: true,
+  });
+  await expect.poll(() => refresh.isVisible()).toBe(true);
+  const initialWidget = await widget.boundingBox();
+  const table = independent.getByRole('region', {
+    name: 'Secondary table',
+    exact: true,
+  });
+  const initialTable = await table.boundingBox();
+  expect(await table.getByRole('row', { includeHidden: true }).count()).toBe(2);
+  const totals = independent.getByRole('region', {
+    name: 'Secondary totals',
+    exact: true,
+  });
+  const initialTotals = await totals.boundingBox();
+  const initialRefresh = await refresh.boundingBox();
+  await page.clock.runFor(1999);
+  expect(await label.count()).toBe(0);
+  expect(
+    await toolbar.getByText('Loading data', { exact: true }).isVisible()
+  ).toBe(false);
+  expect(await widget.boundingBox()).toEqual(initialWidget);
+  await page.clock.runFor(1);
+  await expect.poll(() => label.isVisible()).toBe(true);
+  expect(
+    await toolbar.getByText('Loading data', { exact: true }).isVisible()
+  ).toBe(true);
+  expect(await widget.boundingBox()).toEqual(initialWidget);
+  expect(await refresh.boundingBox()).toEqual(initialRefresh);
+  const tableLabel = await table
+    .getByText('Loading Secondary table', { exact: true })
+    .boundingBox();
+  const placeholderRow = await table
+    .getByRole('row', { includeHidden: true })
+    .last()
+    .boundingBox();
+  expect(
+    Math.abs(
+      tableLabel!.y +
+        tableLabel!.height / 2 -
+        placeholderRow!.y -
+        placeholderRow!.height / 2
+    )
+  ).toBeLessThan(1);
+
+  expect(await independent.getByRole('progressbar').count()).toBe(0);
+  expect(await toolbar.getByText(/\d+%/).count()).toBe(0);
+  await page
+    .getByRole('button', { name: 'Resolve primary', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Resolve secondary', exact: true })
+    .click();
+  await page.clock.runFor(50);
+  const result = independent.getByRole('status', {
+    name: 'secondary count',
+    exact: true,
+  });
+  await expect.poll(() => result.isVisible()).toBe(true);
+  expect(await label.count()).toBe(0);
+  expect(await widget.boundingBox()).toEqual(initialWidget);
+  expect(await totals.boundingBox()).toEqual(initialTotals);
+  expect(await table.boundingBox()).toEqual(initialTable);
+  const readyPosition = await result.boundingBox();
+  const readyRefresh = await toolbar
+    .getByRole('button', { name: 'Refresh data', exact: true })
+    .boundingBox();
+
+  await page.getByRole('searchbox', { name: 'Search', exact: true }).fill('a');
+  await page.clock.runFor(500);
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('search'))
+    .toBe('a');
+  expect(
+    await toolbar.getByText('Updating data', { exact: true }).isVisible()
+  ).toBe(false);
+  await page.clock.runFor(2000);
+  await expect
+    .poll(() => toolbar.getByText('Updating data', { exact: true }).isVisible())
+    .toBe(true);
+  expect(await result.boundingBox()).toEqual(readyPosition);
+  expect(await totals.boundingBox()).toEqual(initialTotals);
+  expect(await table.boundingBox()).toEqual(initialTable);
+  expect(await refresh.boundingBox()).toEqual(readyRefresh);
+  expect(await independent.getByText(/\d+%/).count()).toBe(0);
+  expect(
+    await independent.getByText('Refreshing', { exact: true }).count()
+  ).toBe(3);
+  expect(await page.getByText('Updating…', { exact: true }).count()).toBe(0);
+  await page
+    .getByRole('button', { name: 'Resolve secondary', exact: true })
+    .click();
+  await page
+    .getByRole('button', { name: 'Resolve primary', exact: true })
+    .click();
+  await page.clock.runFor(50);
+  await expect
+    .poll(() => toolbar.getByText('Updating data', { exact: true }).isVisible())
+    .toBe(false);
+  expect(await result.boundingBox()).toEqual(readyPosition);
+  expect(await totals.boundingBox()).toEqual(initialTotals);
+  expect(await table.boundingBox()).toEqual(initialTable);
+
+  // A new short request must not inherit the preceding request's elapsed delay.
+  await toolbar
+    .getByRole('button', { name: 'Refresh data', exact: true })
+    .click();
+  await page.clock.runFor(500);
+  expect(
+    await toolbar.getByText('Updating data', { exact: true }).isVisible()
+  ).toBe(false);
+  await page
+    .getByRole('button', { name: 'Resolve primary', exact: true })
+    .click();
+  await page.clock.runFor(2000);
+  expect(
+    await toolbar.getByText('Updating data', { exact: true }).isVisible()
+  ).toBe(false);
+});
+
+test('public shimmer text exposes one readable copy and respects reduced motion', async ({
+  page,
+}) => {
+  await page.goto('/loading');
+  const preview = page.getByRole('status', {
+    name: 'Shimmer preview',
+    exact: true,
+  });
+  await expect.poll(() => preview.textContent()).toBe('Preparing results');
+  await expect
+    .poll(() =>
+      preview.evaluate(
+        element => element.getAnimations({ subtree: true }).length
+      )
+    )
+    .toBeGreaterThan(0);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await expect
+    .poll(() =>
+      preview.evaluate(
+        element => element.getAnimations({ subtree: true }).length
+      )
+    )
+    .toBe(0);
+  expect(await preview.textContent()).toBe('Preparing results');
+});

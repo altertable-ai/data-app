@@ -46,6 +46,7 @@
   text-wrap: pretty;
 }
 .altertable-app-header-toolbar {
+  max-width: 100%;
   flex: none;
   align-self: center;
   margin-inline-start: auto;
@@ -60,9 +61,6 @@
   .altertable-app-header-context {
     flex: 1 1 160px;
     min-width: min(100%, 160px);
-  }
-  .altertable-app-header-toolbar {
-    flex: none;
   }
   .altertable-app-header-heading > p {
     margin-top: 8px;

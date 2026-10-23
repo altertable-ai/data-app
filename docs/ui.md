@@ -23,6 +23,22 @@ For framework mounting, `<DataAppProvider app={dataApp}>` supplies app identity,
 Call `injectDataAppStyles()` before mounting either entry; imports do not install
 styles.
 
+## Custom activity labels
+
+For a custom activity label, wrap `<ShimmerText>` in `<output>`:
+
+```tsx
+import { ShimmerText } from '@altertable/data-app-react/ui';
+
+function LoadingLabel() {
+  return (
+    <output>
+      <ShimmerText>Loading results</ShimmerText>
+    </output>
+  );
+}
+```
+
 ## Keyboard actions
 
 Use `isPlainKeyEvent()` from `@altertable/data-app-react/ui` in custom key handlers so local actions
