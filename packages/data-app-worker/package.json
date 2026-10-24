@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-worker",
-  "version": "0.73.0",
+  "version": "0.74.0",
   "description": "Self-contained sandbox Worker for serving Altertable data apps.",
   "keywords": [
     "altertable",
@@ -46,6 +46,6 @@
     "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
   },
   "devDependencies": {
-    "@altertable/data-app-embed": "0.73.0"
+    "@altertable/data-app-embed": "0.74.0"
   }
 }
