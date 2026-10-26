@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.74.0](https://github.com/altertable-ai/data-app/compare/v0.73.0...v0.74.0) (2026-10-24)
+
+
+### Features
+
+* **diagnostics:** report app failures for automatic agent repair ([#115](https://github.com/altertable-ai/data-app/issues/115)) ([c1b13fd](https://github.com/altertable-ai/data-app/commit/c1b13fd969fe436024f86306c230874b68f5e8d7))
+
+
+### Bug Fixes
+
+* prevent chart axis label clipping and date bar overlap ([#114](https://github.com/altertable-ai/data-app/issues/114)) ([1e4dbc1](https://github.com/altertable-ai/data-app/commit/1e4dbc16b3d2c29f60a07f05f3061657e80dc629))
+* **react:** stabilize loading feedback with delayed shimmer labels ([#113](https://github.com/altertable-ai/data-app/issues/113)) ([1877cf5](https://github.com/altertable-ai/data-app/commit/1877cf5f7784959c48521d623013880ee364a8ca))
+* **release:** open release PRs as altertable-release[bot] ([#109](https://github.com/altertable-ai/data-app/issues/109)) ([e5fe94b](https://github.com/altertable-ai/data-app/commit/e5fe94bd9525a890deda3a17d6bb9f9637034497))
+* **release:** tolerate missing release PR output ([#107](https://github.com/altertable-ai/data-app/issues/107)) ([77e5788](https://github.com/altertable-ai/data-app/commit/77e57889fc101095e9c106e8fe434b01eb00d639))
+
 ## [0.73.0](https://github.com/altertable-ai/data-app/compare/v0.72.0...v0.73.0) (2026-10-20)
 
 

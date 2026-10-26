@@ -1,7 +1,7 @@
 # Local data app starter
 
 Use `node_modules/@altertable/data-app/docs/app-authoring.md` for this SDK version.
-Otherwise, read the [version-matched authoring recipe](https://github.com/altertable-ai/data-app/blob/v0.73.0/docs/app-authoring.md). <!-- x-release-please-version -->
+Otherwise, read the [version-matched authoring recipe](https://github.com/altertable-ai/data-app/blob/v0.74.0/docs/app-authoring.md). <!-- x-release-please-version -->
 See [AGENTS.md](AGENTS.md) for app-owned files.
 
 ## Run the app
