@@ -43,3 +43,40 @@ reset the allowance. Callback resolution means acceptance, not agent execution.
 Omit `onRepairRequest` when delivery or reliable state retention is unavailable;
 the banner offers diagnostics to copy instead. Avoid sensitive values in errors.
 Source locations use generated filenames and positions.
+
+## Custom banners
+
+Use `session.snapshot()` to read diagnostics, delivery status, the automatic
+request count, and the latest request's start time. Subscribe with
+`session.subscribe()` and request a fix with `session.requestRepair()`. These APIs
+work without React or the default banner.
+
+In React, pass the snapshot to your own banner:
+
+```tsx
+import type { DataAppRepairSession } from '@altertable/data-app-embed';
+import { useSyncExternalStore } from 'react';
+
+import { RepairBanner } from './RepairBanner';
+
+function AppRepair({ session }: { session: DataAppRepairSession }) {
+  const repair = useSyncExternalStore(
+    listener => session.subscribe(listener),
+    session.snapshot,
+    session.snapshot
+  );
+
+  return (
+    <RepairBanner
+      repair={repair}
+      onRequestRepair={() => void session.requestRepair()}
+    />
+  );
+}
+```
+
+The host owns agent activity and revision loading. Request acceptance does not
+mean the agent has started or finished. Clear the previous attempt's activity
+when requesting another fix, and clear progress when the updated revision's
+diagnostics settle. Custom banners choose their own presentation; the default
+`<DataAppRepairBanner>` accepts observed host activity through `progress`.
