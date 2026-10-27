@@ -99,13 +99,14 @@ test('overflow failures remain visible and repairable after earlier widgets are 
   expect(first.failures).toHaveLength(30);
   expect(first.truncated).toBe(1);
   await expect
-    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
-    .toBe(true);
+    .poll(() => page.getByLabel('Repair delivery status').textContent())
+    .toBe('accepted');
   await frame.getByRole('button', { name: 'Hide first 30 widgets' }).click();
+  await expect
+    .poll(() => page.getByLabel('Observed app errors').textContent())
+    .toBe('1');
   const banner = page.getByRole('region', { name: 'App errors' });
-  await expect.poll(() => banner.textContent()).toContain('1 app error');
-  await page.getByText('View diagnostics').click();
-  expect(await banner.textContent()).toContain('Overflow 31');
+  await expect.poll(() => banner.isVisible()).toBe(true);
   await frame.getByRole('button', { name: 'Fix error' }).click();
   await expect
     .poll(() => page.getByLabel('Repair requests').textContent())
@@ -124,7 +125,7 @@ test('overflow failures remain visible and repairable after earlier widgets are 
 test('independent widget and operation failures share latest repair report and preserve layout', async ({
   page,
 }) => {
-  await page.goto('/diagnostics');
+  await page.goto('/diagnostics?progress');
   const frame = page.frameLocator('iframe');
   await expect.poll(() => frame.getByText('Chart ready').count()).toBe(2);
   const widget = frame.locator('.altertable-data-widget').first();
@@ -168,27 +169,29 @@ test('independent widget and operation failures share latest repair report and p
     .poll(() => frame.getByRole('button', { name: 'Healthy clicks 1' }).count())
     .toBe(1);
   await expect
-    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
-    .toBe(true);
-  await page.getByText('View diagnostics').click();
+    .poll(() => page.getByLabel('Repair delivery status').textContent())
+    .toBe('accepted');
   const banner = page.getByRole('region', { name: 'App errors' });
+  const copyBounds = (await banner
+    .getByRole('button', { name: 'Copy diagnostics', exact: true })
+    .boundingBox())!;
+  const fixBounds = (await banner
+    .getByRole('button', { name: 'Fix errors', exact: true })
+    .boundingBox())!;
+  expect(fixBounds.x).toBeGreaterThanOrEqual(copyBounds.x + copyBounds.width);
+  expect(fixBounds.y).toBe(copyBounds.y);
   await expect
     .poll(() =>
       banner
         .getByRole('status', { name: 'Repair request status' })
         .textContent()
     )
-    .toBe('Fix requested');
-  expect(await banner.textContent()).toContain('Some parts of this app failed');
+    .toContain('Preparing a fix');
+  expect(await banner.textContent()).toContain(
+    'You can keep using the rest of the app.'
+  );
   expect(await banner.textContent()).not.toContain('Repair request accepted');
-  await expect.poll(() => banner.textContent()).toContain('revenue');
-  await expect.poll(() => banner.textContent()).toContain('retention');
-  await expect.poll(() => banner.textContent()).toContain('render: Revenue');
-  await mkdir(screenshotRoot, { recursive: true });
-  await banner.screenshot({
-    path: `${screenshotRoot}/diagnostics-banner-expanded.png`,
-    animations: 'disabled',
-  });
+  expect(await banner.getByText('View diagnostics').count()).toBe(0);
   // Keyboard activation of the widget uses the same whole-report request.
   const repair = frame.getByRole('button', { name: 'Fix error' }).first();
   await repair.focus();
@@ -221,7 +224,6 @@ test('independent widget and operation failures share latest repair report and p
     )
   ).toBe(true);
   await expect.poll(() => repair.isEnabled()).toBe(true);
-  await page.getByText('View diagnostics').click();
   await mkdir(screenshotRoot, { recursive: true });
   await banner.screenshot({
     path: `${screenshotRoot}/diagnostics-banner-light.png`,
@@ -231,8 +233,15 @@ test('independent widget and operation failures share latest repair report and p
     path: `${screenshotRoot}/diagnostics-light.png`,
     animations: 'disabled',
   });
+  await page.getByRole('button', { name: 'working', exact: true }).click();
   await page.getByRole('button', { name: 'Change theme' }).click();
   await page.setViewportSize({ width: 375, height: 1100 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  expect(
+    await banner
+      .getByRole('progressbar', { name: 'Repair in progress' })
+      .evaluate(node => getComputedStyle(node).animationName)
+  ).toBe('none');
   await expect
     .poll(() => frame.locator('html').getAttribute('data-atbl-theme'))
     .toBe('dark');
@@ -251,8 +260,12 @@ test('independent widget and operation failures share latest repair report and p
   ).toBe(true);
   await frame.getByRole('button', { name: 'Hide failed widgets' }).click();
   await expect
-    .poll(() => page.getByRole('region', { name: 'App errors' }).textContent())
-    .toContain('4 app errors');
+    .poll(() => page.getByLabel('Observed app errors').textContent())
+    .toBe('4');
+  await expect
+    .poll(() => page.getByRole('region', { name: 'App errors' }).isVisible())
+    .toBe(true);
+  await page.getByRole('button', { name: 'review', exact: true }).click();
   await page.getByRole('button', { name: 'Fix errors' }).click();
   await expect
     .poll(() => page.getByLabel('Repair requests').textContent())
@@ -283,16 +296,14 @@ test('fourth failing revision and recreated/reloaded viewers keep automatic allo
         .poll(() => page.getByLabel('Repair requests').textContent())
         .toBe(`${revision}`);
       await expect
-        .poll(() =>
-          page.getByRole('button', { name: 'Fix errors' }).isEnabled()
-        )
-        .toBe(true);
+        .poll(() => page.getByLabel('Repair delivery status').textContent())
+        .toBe('accepted');
       await page.getByRole('button', { name: 'Next revision' }).click();
     }
   }
   await expect
     .poll(() => page.getByRole('region', { name: 'App errors' }).textContent())
-    .toContain('Automatic repair limit reached');
+    .toContain('Automatic fixes are paused');
   expect(await page.getByLabel('Repair requests').textContent()).toBe('3');
   await mkdir(screenshotRoot, { recursive: true });
   await page.locator('.diagnostics-preview').screenshot({
@@ -305,7 +316,7 @@ test('fourth failing revision and recreated/reloaded viewers keep automatic allo
   await frame.getByRole('button', { name: 'Break widgets' }).click();
   await expect
     .poll(() => page.getByRole('region', { name: 'App errors' }).textContent())
-    .toContain('Automatic repair limit reached');
+    .toContain('Automatic fixes are paused');
   expect(await page.getByLabel('Repair requests').textContent()).toBe('3');
   await page.getByRole('button', { name: 'Fix errors' }).click();
   await expect
@@ -348,18 +359,16 @@ for (const failure of ['save-failure', 'delivery-failure']) {
 test('multiple banner and widget buttons cannot bypass shared serialization', async ({
   page,
 }) => {
-  await page.goto('/diagnostics');
+  await page.goto('/diagnostics?progress');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', { name: 'Break widgets' }).click();
-  await expect
-    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
-    .toBe(true);
   await expect
     .poll(() => page.getByLabel('Repair requests').textContent())
     .toBe('1');
   await expect
-    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
-    .toBe(true);
+    .poll(() => page.getByLabel('Repair delivery status').textContent())
+    .toBe('accepted');
+  await page.getByRole('button', { name: 'review', exact: true }).click();
   await Promise.all([
     page.getByRole('button', { name: 'Fix errors' }).click({ force: true }),
     frame
@@ -372,8 +381,8 @@ test('multiple banner and widget buttons cannot bypass shared serialization', as
       .click({ force: true }),
   ]);
   await expect
-    .poll(() => page.getByRole('button', { name: 'Fix errors' }).isEnabled())
-    .toBe(true);
+    .poll(() => page.getByLabel('Repair delivery status').textContent())
+    .toBe('accepted');
   expect(await page.getByLabel('Repair requests').textContent()).toBe('2');
   expect(
     await page.evaluate(
@@ -390,7 +399,7 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
   await frame.getByRole('button', { name: 'Break widgets' }).click();
   await expect
     .poll(() => page.getByRole('region', { name: 'App errors' }).textContent())
-    .toContain('Copy the diagnostics below');
+    .toContain('Copy the diagnostics into your agent');
   expect(
     await page.getByRole('button', { name: 'Fix errors' }).isDisabled()
   ).toBe(true);
@@ -399,7 +408,6 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
   ).toBe(true);
   expect(await page.getByLabel('Repair requests').textContent()).toBe('0');
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.getByText('View diagnostics').click();
   const copy = page.getByRole('button', { name: 'Copy diagnostics' });
   await copy.focus();
   await page.keyboard.press('Enter');
@@ -435,7 +443,10 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
     )
   ).toBe(true);
   await frame.getByRole('button', { name: 'Hide failed widgets' }).click();
-  await expect.poll(() => banner.textContent()).toContain('4 app errors');
+  await expect
+    .poll(() => page.getByLabel('Observed app errors').textContent())
+    .toBe('4');
+
   await copy.click();
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
@@ -455,7 +466,6 @@ test('clipboard rejection keeps a selectable complete report for manual recovery
     .frameLocator('iframe')
     .getByRole('button', { name: 'Break widgets' })
     .click();
-  await page.getByText('View diagnostics').click();
   await page.context().grantPermissions([]);
   await page.getByRole('button', { name: 'Copy diagnostics' }).click();
   await expect
@@ -496,4 +506,182 @@ test('explicit widget widths remain stable when rendering fails at wide and narr
     expect(after!.width).toBeCloseTo(before!.width, 0);
     expect(after!.height).toBeCloseTo(before!.height, 0);
   }
+});
+
+test('preparation stays loading after acceptance and transitions to activity, review and completion', async ({
+  page,
+}) => {
+  await page.goto('/diagnostics?progress&controlled-delivery');
+  const frame = page.frameLocator('iframe');
+  const banner = page.getByRole('region', { name: 'App errors' });
+  const status = banner.getByLabel('Repair request status');
+  const loading = banner.getByRole('progressbar', {
+    name: 'Repair in progress',
+  });
+  const fix = banner.getByRole('button', { name: 'Fix errors', exact: true });
+  await frame.getByRole('button', { name: 'Break widgets' }).click();
+  await expect
+    .poll(() => page.getByLabel('Repair delivery status').textContent())
+    .toBe('pending');
+  expect(await status.textContent()).toContain('Preparing a fix');
+  expect(await loading.isVisible()).toBe(true);
+  expect(await fix.isDisabled()).toBe(true);
+  await page
+    .getByRole('button', { name: 'Accept repair request', exact: true })
+    .click();
+  await expect
+    .poll(() => page.getByLabel('Repair delivery status').textContent())
+    .toBe('accepted');
+  expect(await status.textContent()).toContain('Preparing a fix');
+  expect(await loading.isVisible()).toBe(true);
+  expect(await fix.isDisabled()).toBe(true);
+  expect(
+    await banner
+      .getByRole('button', { name: 'Copy diagnostics', exact: true })
+      .isEnabled()
+  ).toBe(true);
+  // Native disabled controls cannot issue another request, including forced clicks.
+  await fix.click({ force: true });
+  expect(await page.getByLabel('Repair requests').textContent()).toBe('1');
+  await page.getByRole('button', { name: 'working', exact: true }).click();
+  await expect.poll(() => status.textContent()).toContain('Updating your app');
+  expect(await loading.isVisible()).toBe(true);
+  expect(await fix.isDisabled()).toBe(true);
+  await page.getByRole('button', { name: 'review', exact: true }).click();
+  await expect
+    .poll(() => status.textContent())
+    .toContain('The app still needs attention');
+  expect(await loading.count()).toBe(0);
+  expect(await fix.isEnabled()).toBe(true);
+  await fix.click();
+  expect(await fix.isDisabled()).toBe(true);
+  await fix.click({ force: true });
+  expect(await page.getByLabel('Repair requests').textContent()).toBe('2');
+  await expect.poll(() => status.textContent()).toContain('Preparing a fix');
+  expect(await loading.isVisible()).toBe(true);
+  await page.getByRole('button', { name: 'loading', exact: true }).click();
+  expect(await status.textContent()).toContain('Preparing a fix');
+  expect(await fix.isDisabled()).toBe(true);
+  await page
+    .getByRole('button', { name: 'Reject repair request', exact: true })
+    .click();
+  await expect
+    .poll(() => status.textContent())
+    .toContain('Couldn’t request a fix');
+  expect(await loading.count()).toBe(0);
+  expect(await fix.isEnabled()).toBe(true);
+  await fix.click();
+  await expect.poll(() => status.textContent()).toContain('Preparing a fix');
+  expect(await loading.isVisible()).toBe(true);
+  await page
+    .getByRole('button', { name: 'Accept repair request', exact: true })
+    .click();
+  await expect
+    .poll(() => page.getByLabel('Repair delivery status').textContent())
+    .toBe('accepted');
+  expect(await status.textContent()).toContain('Preparing a fix');
+  expect(await loading.isVisible()).toBe(true);
+  await page.getByRole('button', { name: 'working', exact: true }).click();
+  await expect.poll(() => status.textContent()).toContain('Updating your app');
+  expect(await loading.isVisible()).toBe(true);
+  await frame.getByRole('button', { name: 'Healthy clicks 0' }).click();
+  expect(
+    await frame.getByRole('button', { name: 'Healthy clicks 1' }).isVisible()
+  ).toBe(true);
+  await page
+    .getByRole('button', { name: 'Finish update', exact: true })
+    .click();
+  await expect.poll(() => banner.count()).toBe(0);
+});
+
+test('elapsed time starts with preparation, continues through activity and revisions, and resets for a retry', async ({
+  page,
+}) => {
+  await page.goto('/diagnostics?progress&controlled-delivery&automatic-limit');
+  const frame = page.frameLocator('iframe');
+  await expect.poll(() => frame.getByText('Chart ready').count()).toBe(2);
+  await frame.getByRole('button', { name: 'Break widgets' }).click();
+  await expect
+    .poll(() =>
+      page.getByRole('button', { name: 'Fix errors', exact: true }).isEnabled()
+    )
+    .toBe(true);
+  const now = new Date('2026-10-27T10:00:00Z');
+  await page.clock.install({ time: now });
+  await page.clock.pauseAt(now);
+  const banner = page.getByRole('region', { name: 'App errors' });
+  const status = banner.getByLabel('Repair request status');
+  const fix = banner.getByRole('button', { name: 'Fix errors', exact: true });
+  const accept = page.getByRole('button', {
+    name: 'Accept repair request',
+    exact: true,
+  });
+  await fix.click();
+  await expect.poll(() => status.textContent()).toContain('Preparing a fix');
+  expect(await banner.getByText(/\d+s elapsed/).count()).toBe(0);
+  await page.clock.runFor(999);
+  expect(await banner.getByText(/\d+s elapsed/).count()).toBe(0);
+  await page.clock.runFor(1);
+  expect(
+    await banner.getByText('1s elapsed', { exact: true }).isVisible()
+  ).toBe(true);
+  await accept.click();
+  await expect
+    .poll(() => page.getByLabel('Repair delivery status').textContent())
+    .toBe('accepted');
+  await page.clock.runFor(2000);
+  expect(await status.textContent()).toContain('Preparing a fix');
+  expect(
+    await banner.getByText('3s elapsed', { exact: true }).isVisible()
+  ).toBe(true);
+  await page.getByRole('button', { name: 'working', exact: true }).click();
+  expect(
+    await banner.getByText('3s elapsed', { exact: true }).isVisible()
+  ).toBe(true);
+  await page.clock.runFor(1000);
+  expect(
+    await banner.getByText('4s elapsed', { exact: true }).isVisible()
+  ).toBe(true);
+  await page.getByRole('button', { name: 'review', exact: true }).click();
+  expect(await banner.getByText(/\d+s elapsed/).count()).toBe(0);
+  await fix.click();
+  await expect.poll(() => status.textContent()).toContain('Preparing a fix');
+  expect(await banner.getByText(/\d+s elapsed/).count()).toBe(0);
+  await page.clock.runFor(999);
+  expect(await banner.getByText(/\d+s elapsed/).count()).toBe(0);
+  await page.clock.runFor(1);
+  expect(
+    await banner.getByText('1s elapsed', { exact: true }).isVisible()
+  ).toBe(true);
+  await accept.click();
+  await page.getByRole('button', { name: 'building', exact: true }).click();
+  expect(await fix.isDisabled()).toBe(true);
+  expect(
+    await banner.getByText('1s elapsed', { exact: true }).isVisible()
+  ).toBe(true);
+  await page
+    .getByRole('button', { name: 'Next revision', exact: true })
+    .click();
+  await expect.poll(() => frame.getByText('Chart ready').count()).toBe(2);
+  await page.getByRole('button', { name: 'loading', exact: true }).click();
+  expect(await fix.isDisabled()).toBe(true);
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await banner
+    .getByRole('button', { name: 'Copy diagnostics', exact: true })
+    .click();
+  await expect
+    .poll(
+      async () =>
+        JSON.parse(await page.evaluate(() => navigator.clipboard.readText()))
+          .failures.length
+    )
+    .toBe(6);
+  expect(
+    await banner.getByText('1s elapsed', { exact: true }).isVisible()
+  ).toBe(true);
+  expect(await banner.textContent()).not.toContain('0s elapsed');
+  await page
+    .getByRole('button', { name: 'Finish update', exact: true })
+    .click();
+  await expect.poll(() => banner.count()).toBe(0);
 });

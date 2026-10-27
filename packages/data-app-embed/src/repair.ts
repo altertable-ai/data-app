@@ -47,6 +47,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
   let status: DataAppRepairStatus = options.onRepairRequest
     ? 'idle'
     : 'unsupported';
+  let startedAt: number | undefined;
   let savingFailed = false;
   let busy = false;
   let reportChanged: (() => void) | undefined;
@@ -54,12 +55,19 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
     report: AppDiagnosticReport | undefined;
     status: DataAppRepairStatus;
     automaticRequests: number;
-  } = { report, status, automaticRequests: state.automaticRequests };
+    /** Start of the latest repair request, retained through acceptance and revision changes. */
+    startedAt: number | undefined;
+  } = { report, status, automaticRequests: state.automaticRequests, startedAt };
   function publish() {
     const resume = reportChanged;
     reportChanged = undefined;
     resume?.();
-    snapshot = { report, status, automaticRequests: state.automaticRequests };
+    snapshot = {
+      report,
+      status,
+      automaticRequests: state.automaticRequests,
+      startedAt,
+    };
     for (const listener of listeners) listener();
   }
   async function request(automatic = false) {
@@ -75,6 +83,7 @@ export function createDataAppRepairSession(options: DataAppRepairOptions) {
       return;
     busy = true;
     status = 'pending';
+    startedAt = Date.now();
     const owner = active;
     const currentRevision = revision;
     if (automatic)
