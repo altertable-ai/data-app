@@ -601,7 +601,7 @@ test('loading labels wait for long requests and preserve widget and action posit
     name: 'Secondary results',
     exact: true,
   });
-  const label = widget.getByText('Loading Secondary results', { exact: true });
+  const label = widget.getByText('Loading widget', { exact: true });
   const refresh = toolbar.getByRole('button', {
     name: 'Cancel refresh',
     exact: true,
@@ -634,7 +634,7 @@ test('loading labels wait for long requests and preserve widget and action posit
   expect(await widget.boundingBox()).toEqual(initialWidget);
   expect(await refresh.boundingBox()).toEqual(initialRefresh);
   const tableLabel = await table
-    .getByText('Loading Secondary table', { exact: true })
+    .getByText('Loading widget', { exact: true })
     .boundingBox();
   const placeholderRow = await table
     .getByRole('row', { includeHidden: true })

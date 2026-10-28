@@ -128,13 +128,7 @@ function DataWidgetContent({
     <WidgetContent
       bodyPadding={emptyFallback ? 'flush' : bodyPadding}
       footer={emptyFallback ? undefined : footer}
-      loadingLabel={
-        busy
-          ? typeof title === 'string'
-            ? `Loading ${title}`
-            : 'Loading data'
-          : undefined
-      }
+      loadingLabel={busy ? 'Loading widget' : undefined}
       status={status}
     >
       <WidgetBoundary
