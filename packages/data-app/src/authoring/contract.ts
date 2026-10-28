@@ -12,6 +12,7 @@ import {
 import { formatDateRange } from '../core/format.ts';
 import { invariant } from '../core/invariant.ts';
 import {
+  MAX_QUERY_ROWS,
   snapshotQueries,
   resolveQueryParameters,
   decodeQueryResult,
@@ -352,12 +353,13 @@ export function defineOperation<
       operation.checks.length > 0 &&
       Number.isInteger(operation.policy.maxQueryRows) &&
       operation.policy.maxQueryRows > 0 &&
+      operation.policy.maxQueryRows <= MAX_QUERY_ROWS &&
       Number.isInteger(operation.policy.maxDurationMs) &&
       operation.policy.maxDurationMs > 0 &&
       (operation.policy.maxResponseBytes === undefined ||
         (Number.isInteger(operation.policy.maxResponseBytes) &&
           operation.policy.maxResponseBytes > 0)),
-    'Each data operation needs check inputs and positive row and duration limits.'
+    `Each data operation needs check inputs and positive row and duration limits, with at most ${MAX_QUERY_ROWS.toLocaleString('en-US')} rows.`
   );
   const queries = snapshotQueries(operation.queries);
   const queryNames = Object.fromEntries(

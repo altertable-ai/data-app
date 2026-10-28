@@ -117,7 +117,8 @@ export function createMessageRouter<const Routes extends MessageRoutes>(
     let payload: unknown;
     try {
       payload = entry.contract.input(message.payload);
-    } catch {
+    } catch (error) {
+      if (error instanceof MessageRoutingError) throw error;
       throw new MessageRoutingError(
         'invalid_payload',
         'Invalid message payload.'
