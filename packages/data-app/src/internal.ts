@@ -74,7 +74,7 @@ export {
   type CheckedVariableDeclarations,
 } from './core/variables.ts';
 
-export { type IsUnion } from './core/queries.ts';
+export { MAX_QUERY_ROWS, type IsUnion } from './core/queries.ts';
 
 export { facetSource, type FacetVariable } from './core/facets.ts';
 

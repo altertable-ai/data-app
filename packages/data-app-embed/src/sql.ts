@@ -5,6 +5,7 @@ import {
   type SqlQueryInput,
 } from '@altertable/data-app/contract';
 import {
+  MAX_QUERY_ROWS,
   randomUuid,
   toDataOperationFailure,
 } from '@altertable/data-app/internal';
@@ -19,6 +20,12 @@ export function createSqlQueryHandler(
   async function handleSqlQuery(input: SqlQueryInput, context: MessageContext) {
     const requestId = randomUuid();
     context.signal.throwIfAborted();
+    if (input.limit > MAX_QUERY_ROWS)
+      throw new MessageRoutingError(
+        'query_rejected',
+        `SQL queries cannot request more than ${MAX_QUERY_ROWS.toLocaleString('en-US')} rows.`,
+        requestId
+      );
     let lakehouse: Lakehouse;
     try {
       lakehouse = await authorize(input, context);

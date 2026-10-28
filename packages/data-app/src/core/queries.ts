@@ -1,6 +1,8 @@
 import { invariant } from './invariant.ts';
 import type { QueryResult } from './operation-types.ts';
 
+export const MAX_QUERY_ROWS = 10_000;
+
 const QUERY_CAST_ERROR = '##ERROR##';
 
 type QueryValues = {

@@ -68,7 +68,9 @@ HTTP results must be JSON-serializable.
 
 Host `queryParams` supplies protected parameters that callers cannot override.
 Other values come from `query()` arguments or defaults. The host/backend enforces
-data access and limits.
+data access and limits. Operation policies must set `maxQueryRows` to a positive
+integer no greater than 10,000. The shared SQL host handler also rejects requests
+for more than 10,000 rows.
 
 ### Declare query projections
 
