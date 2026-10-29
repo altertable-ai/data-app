@@ -59,7 +59,7 @@ accessible role/name or label queries scoped to the relevant region. Keep browse
 workflows self-contained in `apps-*.test.ts`.
 
 Update the relevant guide and starter. Keep SDK mechanics and shared component
-guidance in `docs/`; use-case composition belongs to the authoring skill and
+guidance in `docs/`; use-case composition belongs to the app brief and
 selected starter. Document current usage with one focused example, `<Component>`
 and `functionName()` notation.
 Show complete enclosing calls and components; use `// ...` for unrelated setup.

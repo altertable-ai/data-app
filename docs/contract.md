@@ -34,7 +34,7 @@ ORDER BY group_name LIMIT $limit`,
 ```
 
 Replace fixture SQL with inspected data. Keep query declarations and projections
-in sync when adapting SQL to the app's inputs. Preserve semantic metric definitions.
+in sync when adapting SQL to the app's inputs. Preserve metric definitions.
 Keep operation inputs flat; derive SQL parameters inside `run()`:
 
 ```ts

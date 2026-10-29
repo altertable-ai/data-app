@@ -1,8 +1,6 @@
 # Author a data app
 
-Use the SDK to connect queries, operations, views, and widgets. The authoring
-skill or app brief determines the content structure for metric illustrations,
-Finding documents, and standalone apps. Component examples do not prescribe
+Use the SDK to connect queries, operations, views, and widgets. The app brief determines the content structure for metric illustrations. Component examples do not prescribe
 which sections or features every app must contain.
 
 ## Use release-matched starters
@@ -51,9 +49,9 @@ app-owned files, not installed packages.
    customize when requested. Use custom UI only when bound components cannot
    express the requirement.
 6. **Connect shell features.** See [stories and export](stories-and-export.md)
-   for the current `DataApp` requirements and how to bind these features to the
+   for the current `<DataApp>` requirements and how to bind these features to the
    displayed result. The app brief determines presentation content and export
-   coverage; [embedding](embed.md#parent-presentation) describes host-owned framing.
+   coverage.
 
 Keep credentials, authorization, and enforced query limits in the host/backend.
 The starter supplies transport and mounting; change them only for an explicit
