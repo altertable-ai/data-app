@@ -2,8 +2,8 @@
 
 The current bound `<DataApp>` from `@altertable/data-app-react` requires a `story`
 callback and a nonempty `datasets` list. Both use the displayed snapshot, including
-during refresh or failure. An empty story callback leaves a disabled presentation
-action; it does not hide the toolbar. Setup and static screens can use `<DataApp>`
+during refresh or failure. A story callback returning `[]` leaves a disabled
+presentation action; it does not hide the toolbar. Setup and static screens can use `<DataApp>`
 from `/ui`, which may omit both.
 
 These are component contracts. The authoring skill or app brief determines the
