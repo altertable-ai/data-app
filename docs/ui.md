@@ -23,6 +23,50 @@ For framework mounting, `<DataAppProvider app={dataApp}>` supplies app identity,
 Call `injectDataAppStyles()` before mounting either entry; imports do not install
 styles.
 
+## Tooltips and explanations
+
+Use `<Tooltip>` for a short, supplemental description of an already labeled
+control. Pass one child that forwards `aria-describedby` to its focusable DOM
+element. Keep the accessible name on the control itself. `<IconButton>` already
+includes a tooltip; use its `tooltip` prop to customize the hint.
+
+```tsx
+import { Button } from '@altertable/data-app-react';
+import { Tooltip, TooltipProvider } from '@altertable/data-app-react/ui';
+
+function ExportActions({ exportRows }: { exportRows: () => void }) {
+  return (
+    <TooltipProvider>
+      <Tooltip content="Download the rows in the current view">
+        <Button onClick={exportRows}>Export CSV</Button>
+      </Tooltip>
+      <Tooltip
+        content="Available after data loads"
+        tabIndex={0}
+        role="group"
+        aria-label="Export all rows unavailable"
+      >
+        <Button disabled>Export all rows</Button>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+```
+
+`<AppLayout>` already provides shared timing. A standalone `<Tooltip>` works
+without a provider; wrap adjacent custom controls in `<TooltipProvider>` to share
+the first-hover delay and open subsequent hints immediately. Keyboard focus opens
+hints immediately. The pointer can move onto the hint to keep it visible; Escape
+or pressing the control dismisses it. Existing descriptions, child handlers, and
+refs are preserved. Native span props and `ref` target the wrapper; make that
+wrapper focusable for disabled controls or plain text.
+
+Keep tooltip content non-interactive. Use `<HelpPopover>` for links, actions,
+longer explanations, or information users must be able to open on touch devices.
+Use `content={null}` to suppress an unavailable hint. Portals escape clipping
+containers and stay inside a surrounding native dialog automatically; use
+`portalRoot` only when a custom overlay needs a specific destination.
+
 ## Custom activity labels
 
 For a custom activity label, wrap `<ShimmerText>` in `<output>`:

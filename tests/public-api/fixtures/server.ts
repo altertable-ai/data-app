@@ -27,6 +27,7 @@ import searchCatalog from '@/tests/public-api/fixtures/search-catalog.html';
 import staticApp from '@/tests/public-api/fixtures/static.html';
 import styles from '@/tests/public-api/fixtures/styles.html';
 import timeApp from '@/tests/public-api/fixtures/time-app.html';
+import tooltips from '@/tests/public-api/fixtures/tooltips.html';
 
 const port = Number(process.env.DATA_APP_TEST_PORT ?? 0);
 async function bundle(entry: string, sourcemap = false) {
@@ -88,6 +89,7 @@ const server = Bun.serve({
     '/inspection-app': inspectionApp,
     '/declared-app': declaredApp,
     '/controls': controls,
+    '/tooltips': tooltips,
     '/filters': filters,
     '/filter-presentation': filterPresentation,
     '/search-catalog': searchCatalog,

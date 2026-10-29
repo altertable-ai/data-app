@@ -84,6 +84,7 @@ Open only the section needed for a requirement the starter does not cover:
 | -------------------------------------------- | ----------------------------------------------------------------- |
 | Adding categorical, numeric, or time filters | [Variables](variables.md)                                         |
 | Adding a chart or narrative binding          | [Widgets](widgets.md)                                             |
+| Adding supplemental control hints            | [Tooltips](ui.md#tooltips-and-explanations)                       |
 | Adding a detail destination                  | [Detail views](views.md#detail-destinations)                      |
 | Registering physical sources                 | [Source identifiers](data-context.md#register-source-identifiers) |
 | Customizing appearance or CSS                | [Formatting](formatting-and-appearance.md), [styling](styling.md) |
