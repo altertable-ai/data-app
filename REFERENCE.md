@@ -1480,7 +1480,7 @@ TextWidgetProps (type, @altertable/data-app-react): <Data, Input, Row> = props l
 TextWidgetProps (type, @altertable/data-app-react/ui): <Data> = props listed as TextWidget.* — Narrative sibling of VisualizationWidget, composing DataWidget with TextContent. Use TextContent directly for borderless prose. Bind claims and scope to the same displayed reading.
 Theme (type, @altertable/data-app/appearance): = 'dark' | 'light' — Appearance configured by app authors.
 ThemePreference (type, @altertable/data-app/appearance): = 'system' | Theme
-Tooltip (component, @altertable/data-app-react, @altertable/data-app-react/ui): (props: TooltipProps) — Short visual hint for an already labeled control. variant="chart" follows the cursor on hover and toggles on tap so a bar or point can show the period and value.
+Tooltip (component, @altertable/data-app-react, @altertable/data-app-react/ui): (props: TooltipProps) — Supplemental, non-interactive description for one already labeled control. Supply a single child that forwards aria-describedby to its focusable DOM element.
 Tooltip.content: ReactNode
 Tooltip.children: ReactNode
 Tooltip.variant?: 'chart' | 'hint'

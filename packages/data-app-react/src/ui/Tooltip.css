@@ -22,8 +22,15 @@
   font: var(--atbl-type-meta-weight)
     var(--atbl-type-meta-size)/var(--atbl-type-label-leading) var(--atbl-font);
   white-space: normal;
+  overflow-wrap: anywhere;
   pointer-events: none;
   animation: altertable-tooltip-in var(--atbl-duration-fast) ease-out;
+}
+.altertable-tooltip-content[data-variant='hint'] {
+  pointer-events: auto;
+}
+.altertable-tooltip-content[data-instant] {
+  animation: none;
 }
 .altertable-tooltip-content[data-variant='chart'] {
   display: grid;
