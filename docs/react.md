@@ -15,7 +15,7 @@ mountDataApp({ app: dataApp, component: App });
 
 The app supplies `dataApp`, `App`, and a `#root` element.
 
-Keep the selected starter's mounting and client wiring. The 
+Keep the selected starter's mounting and client wiring. The
 app brief selects the starter and content structure; the available runtime
 starters are listed in [app authoring](app-authoring.md#use-release-matched-starters).
 Use declared views and bound widgets for data-backed content. Use `/ui` for

@@ -1,6 +1,6 @@
 # Author a data app
 
-Use the SDK to connect queries, operations, views, and widgets. The app brief determines the content structure for metric illustrations. Component examples do not prescribe
+Use the SDK to connect queries, operations, views, and widgets. The app brief determines the content structure. Component examples do not prescribe
 which sections or features every app must contain.
 
 ## Use release-matched starters
@@ -28,9 +28,8 @@ app-owned files, not installed packages.
 1. **Define the question and scope.** Inspect relevant fields, definitions, time
    coverage, and missing or incomplete observations. Establish the population,
    grain, measures, and comparison. Choose a chart that answers the question.
-2. **Replace the starter queries and operation.** Preserve semantic metric
-   definitions when extending queries with supported dimensions and filters;
-   write other queries against inspected data. Declare `params`
+2. **Replace the starter queries and operation.** Write queries
+   against inspected data and preserve supplied metric definitions. Declare `params`
    and result aliases in `projections`. Validate flat operation inputs, execute
    named queries with `query()`, and derive results from its typed rows.
 3. **Update context and bindings.** Describe definitions and coverage in the data
