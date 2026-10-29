@@ -6,7 +6,7 @@ during refresh or failure. A story callback returning `[]` leaves a disabled
 presentation action; it does not hide the toolbar. Setup and static screens can use `<DataApp>`
 from `/ui`, which may omit both.
 
-These are component contracts. The authoring skill or app brief determines the
+These are component contracts. The app brief determines the
 intended presentation and export coverage. A presentation story is distinct from
 explanatory prose in the app body.
 

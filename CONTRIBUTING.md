@@ -61,7 +61,7 @@ workflows self-contained in `apps-*.test.ts`.
 
 When a change requires new app code or an authoring decision, update the relevant
 guide and starter. Keep SDK mechanics and shared component guidance in `docs/`;
-use-case composition belongs to the authoring skill and selected starter.
+use-case composition belongs to the app brief and selected starter.
 Document current usage with one focused example, `<Component>` and
 `functionName()` notation.
 Show complete enclosing calls and components; use `// ...` for unrelated setup.

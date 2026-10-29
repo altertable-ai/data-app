@@ -17,8 +17,7 @@ Local apps also install `@altertable/data-app-bun`.
 ## Build an app
 
 Use [app authoring](docs/app-authoring.md) for technical integration and available
-starters. The authoring skill or app brief defines the content for a metric
-illustration, Finding document, or standalone app. Search
+starters. The app brief defines the content for the kind of data app. Search
 [REFERENCE.md](REFERENCE.md) for exports and props. Read runtime details only when
 changing execution mode or converting an app:
 

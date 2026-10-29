@@ -5,7 +5,7 @@ widgets. A focused answer may need only a chart and a paragraph.
 
 ## Choose components
 
-The authoring skill or app brief determines the content and section order.
+The app brief determines the content and section order.
 Choose components for the information each section needs to convey:
 
 | Element   | Purpose                                                |
