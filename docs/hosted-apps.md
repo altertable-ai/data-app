@@ -1,6 +1,8 @@
 # Author a data app
 
-Follow the [shared authoring flow](app-authoring.md) with the version-matched `starter-data-app/index.tsx` for a hosted / remote / cloud data app. Keep the app in
+Follow the [SDK integration guide](app-authoring.md) with a version-matched hosted
+starter selected by the authoring workflow. The currently shipped shared starter
+is `starter-data-app/index.tsx`; its sample content is replaceable. Keep the app in
 one file with public package imports; omit server files, HTML, credentials, and
 relative or app-alias imports.
 
@@ -13,15 +15,16 @@ interpolation), finite signed numbers, booleans, and null. Parentheses, `as`, an
 computed keys, references, and callbacks. Static apps use `queries: {}`.
 
 Replace sample queries and bindings with inspected source data. Supply `scope`
-in `defineDataApp()` and `story` and `datasets` on `<DataApp>`.
+in `defineDataApp()`. When using bound `<DataApp>`, follow its current
+[story and dataset requirements](stories-and-export.md).
 
 Keep the starter's client, style injection, and mounting code. The host supplies
 the transport; no bootstrap or message routes are needed in app code.
 
 ## Convert a local data app
 
-1. Combine the app's operations and parsers, data context, views, story,
-   CSV export, app declaration, and browser entry into one `index.tsx`, following the
+1. Combine the app's operations and parsers, data context, views, any presentation
+   and export features, app declaration, and browser entry into one `index.tsx`, following the
    [single-file starter](app-authoring.md#use-release-matched-starters).
 2. Replace the HTTP client with `createDataClient({ operations })`, using the
    operation registry as a value. See [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps)

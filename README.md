@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
 Build interactive data explorations with TypeScript, React, and Altertable.
-Compose filters, charts, tables, and narrative with built-in stories and CSV export.
+Compose filters, charts, tables, and narrative, with APIs for stories and CSV export.
 Run in Altertable, MCP Apps hosts, or a local browser.
 
 ## Install
@@ -16,7 +16,9 @@ Local apps also install `@altertable/data-app-bun`.
 
 ## Build an app
 
-Start with [app authoring](docs/app-authoring.md); search
+Use [app authoring](docs/app-authoring.md) for technical integration and available
+starters. The authoring skill or app brief defines the content for a metric
+illustration, Finding document, or standalone app. Search
 [REFERENCE.md](REFERENCE.md) for exports and props. Read runtime details only when
 changing execution mode or converting an app:
 
