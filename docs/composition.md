@@ -1,13 +1,12 @@
-# Compose an exploration
+# Compose data components
 
 Define the question, population, period, measures, and comparison before choosing
 widgets. A focused answer may need only a chart and a paragraph.
 
-## Build a sequence of questions
+## Choose components
 
-Lead with the strongest supported result and visible scope. Give each section a
-question: what happened, when, where it differs, or what supports the finding.
-Omit sections that add no evidence.
+The authoring skill or app brief determines the content and section order.
+Choose components for the information each section needs to convey:
 
 | Element   | Purpose                                                |
 | --------- | ------------------------------------------------------ |
@@ -33,21 +32,3 @@ averaging subgroup rates.
 Derive claims from the [displayed result and its input](views.md#preserve-displayed-results).
 A claim about all channels may stop being valid after selecting one. Observed
 differences support investigation; they do not establish a cause.
-
-## Example: where are we losing signups?
-
-Define funnel entry, completion window, and channel attribution. Compare
-populations with equal opportunity to complete and identify incomplete periods.
-
-| Question                              | Display                                                  |
-| ------------------------------------- | -------------------------------------------------------- |
-| How many starters complete?           | Conversion versus a comparable prior period, with counts |
-| When does conversion change?          | Trend with incomplete periods identified                 |
-| At which step and for which channels? | Funnel and channel comparisons with counts and rates     |
-| What supports the comparison?         | Table of counts, denominators, and rates                 |
-
-Use one view for these related datasets. Let dates select funnel entry dates and
-channel filters affect every section. Reuse datasets for charts and tables.
-Select one to four supported findings for the [story](stories-and-export.md).
-Verify that changing a filter updates every claim and preserves a useful reading
-order.

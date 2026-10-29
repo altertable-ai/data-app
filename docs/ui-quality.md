@@ -1,6 +1,7 @@
 # UI quality
 
-Lead with a supported finding and visible scope. Explain each chart's purpose,
+Make the displayed data and its scope understandable, using context supplied by
+the host where available instead of repeating it. Explain each chart's purpose,
 measures, units, and source evidence. Use package typography and formatters;
 keep primary values prominent and preserve exact values in records and exports.
 

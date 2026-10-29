@@ -2,8 +2,9 @@
 
 Use the local scaffold supplied by your authoring workflow. Its README covers
 setup and its AGENTS.md identifies app-owned files.
-Replace the connectivity screen with the exploration, CSV export, and story from the
-[shared authoring flow](app-authoring.md).
+Replace the connectivity screen with the content specified by the app brief or
+authoring skill, using the [shared SDK patterns](app-authoring.md). Local execution
+does not require a particular content structure or presentation story.
 
 | Task                         | Documentation                            |
 | ---------------------------- | ---------------------------------------- |
