@@ -2,6 +2,7 @@ import { FloatingDelayGroup } from '@floating-ui/react';
 import {
   createContext,
   useContext,
+  useMemo,
   type ComponentPropsWithRef,
   type ReactNode,
   type RefObject,
@@ -10,7 +11,11 @@ import {
 import { ChartTooltip } from './ChartTooltip.tsx';
 import { HintTooltip } from './HintTooltip.tsx';
 
-const TooltipContext = /* @__PURE__ */ createContext(false);
+export type TooltipTiming = { delay: number; skipDelayDuration: number };
+const defaultTiming: TooltipTiming = { delay: 500, skipDelayDuration: 300 };
+const TooltipContext = /* @__PURE__ */ createContext<TooltipTiming | null>(
+  null
+);
 
 export type TooltipProviderProps = {
   children: ReactNode;
@@ -22,11 +27,15 @@ export type TooltipProviderProps = {
  * Keyboard focus always opens immediately. AppLayout provides this by default. */
 export function TooltipProvider({
   children,
-  delay = 500,
-  skipDelayDuration = 300,
+  delay = defaultTiming.delay,
+  skipDelayDuration = defaultTiming.skipDelayDuration,
 }: TooltipProviderProps) {
+  const timing = useMemo(
+    () => ({ delay, skipDelayDuration }),
+    [delay, skipDelayDuration]
+  );
   return (
-    <TooltipContext.Provider value={true}>
+    <TooltipContext.Provider value={timing}>
       <FloatingDelayGroup delay={delay} timeoutMs={skipDelayDuration}>
         {children}
       </FloatingDelayGroup>
@@ -53,13 +62,13 @@ export type TooltipProps = {
  * variant="chart" follows the cursor and toggles on tap; it dismisses on scroll
  * and does not open on keyboard focus. Native span props and ref target the wrapper. */
 export function Tooltip(props: TooltipProps) {
-  const hasProvider = useContext(TooltipContext);
+  const timing = useContext(TooltipContext);
   if (props.variant === 'chart') return <ChartTooltip {...props} />;
-  return hasProvider ? (
-    <HintTooltip {...props} />
+  return timing ? (
+    <HintTooltip {...props} timing={timing} />
   ) : (
     <TooltipProvider>
-      <HintTooltip {...props} />
+      <HintTooltip {...props} timing={defaultTiming} />
     </TooltipProvider>
   );
 }

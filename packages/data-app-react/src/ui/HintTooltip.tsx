@@ -20,18 +20,21 @@ import {
   useEffect,
   useEffectEvent,
   useId,
+  useLayoutEffect,
   useState,
   type FocusEvent,
+  type MouseEvent,
 } from 'react';
 
 import { classNames } from './classNames.ts';
-import { type TooltipProps } from './Tooltip.tsx';
+import { type TooltipProps, type TooltipTiming } from './Tooltip.tsx';
 import { TooltipSurface } from './TooltipSurface.tsx';
 
 /** Hint interactions are independent from chart cursor/tap inspection. */
 export function HintTooltip({
   children,
   content,
+  timing,
   onOpenChange,
   variant = 'hint',
   align = 'center',
@@ -40,7 +43,7 @@ export function HintTooltip({
   className,
   ref,
   ...props
-}: TooltipProps) {
+}: TooltipProps & { timing: TooltipTiming }) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const [dialogRoot, setDialogRoot] = useState<HTMLDialogElement | null>(null);
@@ -59,6 +62,12 @@ export function HintTooltip({
     onOpenChange(value, event, reason) {
       // Native dialogs handle Escape as a default action, independent of propagation.
       if (reason === 'escape-key') event?.preventDefault();
+      if (!value && (reason === 'hover' || reason === 'safe-polygon')) {
+        const reference = refs.domReference.current;
+        const focused = reference?.ownerDocument.activeElement;
+        if (focused?.matches(':focus-visible') && reference?.contains(focused))
+          return;
+      }
       setOpen(value);
     },
     placement: align === 'center' ? placement : `${placement}-${align}`,
@@ -67,7 +76,23 @@ export function HintTooltip({
     middleware: [offset(8), flip({ padding: 12 }), shift({ padding: 12 })],
   });
   const group = useDelayGroup(context, { id });
-  const { delay, isInstantPhase } = group;
+  const {
+    delay,
+    isInstantPhase,
+    initialDelay,
+    timeoutMs,
+    currentId,
+    setState,
+  } = group;
+  useLayoutEffect(() => {
+    if (initialDelay === timing.delay && timeoutMs === timing.skipDelayDuration)
+      return;
+    setState({
+      initialDelay: timing.delay,
+      delay: currentId ? { open: 1, close: 0 } : timing.delay,
+      timeoutMs: timing.skipDelayDuration,
+    });
+  }, [initialDelay, timeoutMs, currentId, setState, timing]);
   const releaseGroup = useEffectEvent(() => {
     // Floating UI's delay group otherwise retains an unmounted open trigger.
     if (group.currentId === id) {
@@ -158,7 +183,13 @@ export function HintTooltip({
           preserveTabOrder={false}
         >
           <TooltipSurface
-            {...getFloatingProps()}
+            {...getFloatingProps({
+              tabIndex: undefined,
+              onMouseDown(event: MouseEvent<HTMLSpanElement>) {
+                // Passive hints must not move focus or the keyboard navigation start point.
+                event.preventDefault();
+              },
+            })}
             ref={setFloating}
             id={id}
             role="tooltip"

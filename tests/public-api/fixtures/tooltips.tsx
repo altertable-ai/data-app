@@ -13,9 +13,10 @@ function App() {
   const [content, setContent] = useState(true);
   const [mounted, setMounted] = useState(true);
   const [pressed, setPressed] = useState(0);
+  const [timing, setTiming] = useState({ delay: 500, skipDelayDuration: 300 });
   return (
     <main style={{ padding: 24, display: 'grid', gap: 24 }}>
-      <TooltipProvider delay={500} skipDelayDuration={300}>
+      <TooltipProvider {...timing}>
         <section aria-label="Toolbar" style={{ display: 'flex', gap: 24 }}>
           <Tooltip content="First hint">
             <Button
@@ -90,6 +91,11 @@ function App() {
             <Button>Edge</Button>
           </Tooltip>
         </div>
+        <Button
+          onClick={() => setTiming({ delay: 100, skipDelayDuration: 1000 })}
+        >
+          Use quick hints
+        </Button>
       </TooltipProvider>
       <Tooltip content="Standalone hint">
         <Button>Standalone</Button>

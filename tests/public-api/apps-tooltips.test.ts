@@ -101,8 +101,16 @@ test('keyboard focus keeps a hint open when the pointer leaves', async ({
   await expect
     .poll(() => page.getByRole('tooltip').textContent())
     .toBe('First hint');
+  await page.clock.install();
   await first.hover();
+  await page.clock.runFor(600);
   await page.mouse.move(1, 1, { steps: 10 });
+  await page.clock.runFor(200);
+  expect(await page.getByRole('tooltip').count()).toBe(1);
+  await page.getByRole('tooltip').hover();
+  await page.mouse.move(1, 1, { steps: 10 });
+  await page.clock.runFor(200);
+  expect(await page.getByRole('tooltip').count()).toBe(1);
   await expect
     .poll(() => page.getByRole('tooltip').textContent())
     .toBe('First hint');
@@ -110,6 +118,67 @@ test('keyboard focus keeps a hint open when the pointer leaves', async ({
   await expect
     .poll(() => page.getByRole('tooltip').textContent())
     .toBe('Second hint');
+});
+
+test('clicking passive hint content preserves trigger focus and tab order', async ({
+  page,
+}) => {
+  await page.goto('/tooltips');
+  const first = page.getByRole('button', { name: 'First', exact: true });
+  const tooltip = page.getByRole('tooltip');
+  await first.focus();
+  await expect.poll(() => tooltip.textContent()).toBe('First hint');
+  await tooltip.click();
+  expect(
+    await first.evaluate(element => element === document.activeElement)
+  ).toBe(true);
+  await page.keyboard.press('Tab');
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'Second', exact: true })
+        .evaluate(element => element === document.activeElement)
+    )
+    .toBe(true);
+  await expect.poll(() => tooltip.textContent()).toBe('Second hint');
+});
+
+test('provider timing updates affect hover delay and skip duration without remounting controls', async ({
+  page,
+}) => {
+  await page.goto('/tooltips');
+  await page.clock.install();
+  const first = page.getByRole('button', { name: 'First', exact: true });
+  const tooltip = page.getByRole('tooltip');
+  await first.focus();
+  await expect.poll(() => tooltip.textContent()).toBe('First hint');
+  await page.clock.pauseAt(new Date(Date.now() + 1000));
+  const original = await first.elementHandle();
+  await page
+    .getByRole('button', { name: 'Use quick hints' })
+    .evaluate(element => (element as HTMLButtonElement).click());
+  await page.clock.runFor(20);
+  expect(
+    await original!.evaluate(
+      element => element.isConnected && element === document.activeElement
+    )
+  ).toBe(true);
+  await page.keyboard.press('Escape');
+  await page.mouse.move(1, 1);
+  await page.clock.runFor(400);
+  await page.getByRole('button', { name: 'Second', exact: true }).hover();
+  await page.clock.runFor(20);
+  expect(await tooltip.count()).toBe(1);
+  expect(await tooltip.textContent()).toBe('Second hint');
+  await page.keyboard.press('Escape');
+  await page.mouse.move(1, 1);
+  await page.clock.runFor(1100);
+  await first.hover();
+  await page.clock.runFor(50);
+  expect(await tooltip.count()).toBe(0);
+  await page.clock.runFor(100);
+  expect(await tooltip.count()).toBe(1);
+  expect(await tooltip.textContent()).toBe('First hint');
 });
 
 test('text and disabled controls use a focusable wrapper and standalone tooltips need no setup', async ({
