@@ -1,5 +1,11 @@
 import { type DataAppAnnotationPresentation } from '@altertable/data-app/contract';
-import { useEffect, useState, type ComponentRef, type RefObject } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  type ComponentRef,
+  type RefObject,
+} from 'react';
 
 import {
   annotationGeometry,
@@ -20,7 +26,8 @@ export function useAnnotationTargets(
   const [discovery, setDiscovery] = useState<
     ReturnType<typeof discoverAnnotationTargets> & { scope?: HTMLElement }
   >({ targets: [], hasDuplicateIds: false });
-  useEffect(() => {
+  // Make selection ready before the next pointer event after mode activation.
+  useLayoutEffect(() => {
     if (!active) return;
     const root = rootRef.current;
     function discover() {
