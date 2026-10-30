@@ -1,7 +1,7 @@
 # Author a data app
 
-Build an exploration that answers the user's question and a story of its strongest
-findings.
+Use the SDK to connect queries, operations, views, and widgets. The app brief determines the content structure. Component examples do not prescribe
+which sections or features every app must contain.
 
 ## Use release-matched starters
 
@@ -14,19 +14,22 @@ for the requested change. For a new app, use the starter supplied by the authori
 | Hosted / remote / cloud | `starter-data-app/index.tsx`                                        |
 | Local                   | `starter-local-data-app`                                            |
 
-The hosted starter is the canonical query → operation → context → view → dataset
-→ widget → story example. Hosted apps stay in one file with public package imports
+These are the currently shipped runtime starters. Select a use-case starter when
+one is supplied by the authoring workflow; otherwise adapt the shared starter's
+sample content to the app brief. The hosted starter demonstrates query → operation
+→ context → view → dataset → widget composition, including a story example.
+Hosted apps stay in one file with public package imports
 and a literal `defineDataApp()` declaration. Local apps use the same composition
 with their existing server/client wiring. Replace fixture data and connectivity screens; edit
 app-owned files, not installed packages.
 
-## Build the exploration
+## Connect data and components
 
 1. **Define the question and scope.** Inspect relevant fields, definitions, time
    coverage, and missing or incomplete observations. Establish the population,
    grain, measures, and comparison. Choose a chart that answers the question.
-2. **Replace the starter queries and operation.** Keep supplied registry SQL
-   unchanged; otherwise write queries against inspected data. Declare `params`
+2. **Replace the starter queries and operation.** Write queries
+   against inspected data and preserve supplied metric definitions. Declare `params`
    and result aliases in `projections`. Validate flat operation inputs, execute
    named queries with `query()`, and derive results from its typed rows.
 3. **Update context and bindings.** Describe definitions and coverage in the data
@@ -37,16 +40,17 @@ app-owned files, not installed packages.
    useful filters in `variables`; `<DataApp>` renders them. Use `defineTimeView()`
    for period-driven analysis and `defineDataView()` otherwise. Split views only
    for independent requests. Keep protected values such as `orgId` backend-owned.
-5. **Compose the exploration.** Lead with the strongest supported finding and
-   visible scope. Use `<Stack>` for sections, `<Grid>` for peers, and bound widgets
+5. **Compose the content.** Follow the app brief for section order and narrative.
+   Use `<Stack>` for sections, `<Grid>` for peers, and bound widgets
    from `@altertable/data-app-react`. Keep static explanations outside loading
    boundaries. Use app tabs only for distinct questions and widget `views` only
    for alternate representations of one dataset. Keep default appearance;
    customize when requested. Use custom UI only when bound components cannot
    express the requirement.
-6. **Adapt the story.** Return one to four supported findings using the same
-   bindings and displayed input as the exploration. Supply every distinct
-   displayed dataset to `<DataApp datasets={...}>` for CSV export.
+6. **Connect shell features.** See [stories and export](stories-and-export.md)
+   for the current `<DataApp>` requirements and how to bind these features to the
+   displayed result. The app brief determines presentation content and export
+   coverage.
 
 Keep credentials, authorization, and enforced query limits in the host/backend.
 The starter supplies transport and mounting; change them only for an explicit
@@ -60,7 +64,8 @@ Run the authoring workflow's validation, then inspect the app:
   Distinguish measured zero, missing values, and empty results.
 - Change filters and exercise loading, empty, error, refresh, and stale states.
   Narrative, scope, story, and export must agree with the displayed result.
-- Present the story and check exported columns, raw values, filename, and scope.
+- For exposed presentation and export features, check the story, exported
+  columns, raw values, filename, and scope.
 - Review app-owned content for clipping and readability at its intended width.
   Check custom layout or CSS at narrow and wide widths; check custom colors in
   both themes.

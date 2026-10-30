@@ -15,9 +15,12 @@ mountDataApp({ app: dataApp, component: App });
 
 The app supplies `dataApp`, `App`, and a `#root` element.
 
-Keep the starter's mounting and client wiring. Use declared views and bound
-widgets for exploration. Use `/ui` for setup/static screens or a custom component
-only when bound components cannot express the requirement.
+Keep the selected starter's mounting and client wiring. The
+app brief selects the starter and content structure; the available runtime
+starters are listed in [app authoring](app-authoring.md#use-release-matched-starters).
+Use declared views and bound widgets for data-backed content. Use `/ui` for
+setup/static screens or a custom component only when bound components cannot
+express the requirement.
 
 Hosts embedding an app use the separate `@altertable/data-app-embed` package;
 that integration is outside ordinary app authoring.
