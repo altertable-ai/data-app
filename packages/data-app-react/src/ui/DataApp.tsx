@@ -34,13 +34,15 @@ export type DataAppProps<Data, Input = unknown> = Omit<
     };
     /** Show supplied datasets’ record suggestions on the first declared search. Defaults to true. */
     showSearchSuggestions?: boolean;
-    story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
+    /** Omit to leave presentation out of the toolbar. */
+    story?: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<
       StoryFinding,
       'evidence'
     > & {
       evidence: RegisteredBinding;
     })[];
-    datasets: readonly [
+    /** Omit to leave CSV export out of the toolbar. */
+    datasets?: readonly [
       ExportDataset<Data, Input>,
       ...ExportDataset<Data, Input>[],
     ];
@@ -67,7 +69,7 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
   );
   const suggestionGroups =
     showSearchSuggestions && frame.showSearch !== false && result.searchControls
-      ? datasets.flatMap((dataset, index) => {
+      ? (datasets ?? []).flatMap((dataset, index) => {
           const reading = dataset.readSearchSuggestions(source);
           if (!reading) return [];
           return [
@@ -98,19 +100,25 @@ export function DataApp<Data, Input>(props: DataAppProps<Data, Input>) {
               {...frame}
               request={result}
               dataContext={result.dataContext}
-              story={snapshot =>
-                story(ownedSource(view, snapshot)).map(finding => ({
-                  ...finding,
-                  evidence: registeredEvidence(finding.evidence, view),
-                }))
+              story={
+                story
+                  ? snapshot =>
+                      story(ownedSource(view, snapshot)).map(finding => ({
+                        ...finding,
+                        evidence: registeredEvidence(finding.evidence, view),
+                      }))
+                  : undefined
               }
-              csvExport={(snapshot: DisplayedSnapshot<Data, Input>) =>
-                exportDatasets(
-                  datasets,
-                  ownedSource(view, snapshot),
-                  view.scope(snapshot),
-                  app.title
-                )
+              csvExport={
+                datasets
+                  ? (snapshot: DisplayedSnapshot<Data, Input>) =>
+                      exportDatasets(
+                        datasets,
+                        ownedSource(view, snapshot),
+                        view.scope(snapshot),
+                        app.title
+                      )
+                  : undefined
               }
             >
               {children}

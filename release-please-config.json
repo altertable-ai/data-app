@@ -126,6 +126,52 @@
           "type": "json",
           "path": "packages/data-app-manifest/package.json",
           "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-examples/templates/starter-local-metric-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-examples/templates/starter-local-metric-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app-react']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-examples/templates/starter-local-metric-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app-bun']"
+        },
+        {
+          "type": "generic",
+          "path": "packages/data-app-examples/templates/starter-local-metric-data-app/AGENTS.md"
+        },
+        {
+          "type": "generic",
+          "path": "packages/data-app-examples/templates/starter-local-metric-data-app/README.md"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-examples/templates/starter-local-finding-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-examples/templates/starter-local-finding-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app-react']"
+        },
+        {
+          "type": "json",
+          "path": "packages/data-app-examples/templates/starter-local-finding-data-app/package.json",
+          "jsonpath": "$.dependencies['@altertable/data-app-bun']"
+        },
+        {
+          "type": "generic",
+          "path": "packages/data-app-examples/templates/starter-local-finding-data-app/AGENTS.md"
+        },
+        {
+          "type": "generic",
+          "path": "packages/data-app-examples/templates/starter-local-finding-data-app/README.md"
         }
       ]
     }

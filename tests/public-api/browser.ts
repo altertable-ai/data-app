@@ -6,6 +6,8 @@ import { afterAll, beforeAll, vi, test as vitestTest } from 'vitest';
 let browser: Browser;
 let baseURL: string;
 export let localURL: string;
+export let metricLocalURL: string;
+export let findingLocalURL: string;
 let server: ReturnType<typeof spawn>;
 let output = '';
 beforeAll(async () => {
@@ -23,7 +25,9 @@ beforeAll(async () => {
       if (server.exitCode !== null) throw new Error(output);
       const ready = output.match(/DATA_APP_TEST_SERVER (.*)/);
       if (!ready) throw new Error(`Browser fixture is not ready: ${output}`);
-      ({ baseURL, localURL } = JSON.parse(ready[1]!));
+      ({ baseURL, localURL, metricLocalURL, findingLocalURL } = JSON.parse(
+        ready[1]!
+      ));
     },
     { timeout: 30000 }
   );

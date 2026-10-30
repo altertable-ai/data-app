@@ -5,6 +5,8 @@ import { relative, resolve } from 'node:path';
 import released from '@/.release-please-manifest.json';
 import workspace from '@/package.json';
 import starter from '@/packages/data-app-examples/templates/starter-local-data-app/package.json';
+import findingStarter from '@/packages/data-app-examples/templates/starter-local-finding-data-app/package.json';
+import metricStarter from '@/packages/data-app-examples/templates/starter-local-metric-data-app/package.json';
 import release from '@/release-please-config.json';
 import { packages } from '@/scripts/packages';
 
@@ -27,37 +29,43 @@ function releaseVersion(path: string, field: string) {
     `Release Please does not update ${path}:${field}`
   );
 }
-for (const filename of ['AGENTS.md', 'README.md']) {
-  const path = `packages/data-app-examples/templates/starter-local-data-app/${filename}`;
-  assert(
-    release.packages['.']['extra-files'].some(
-      update => update.type === 'generic' && update.path === path
-    ),
-    `Release Please does not update starter guidance: ${path}`
-  );
-  const source = await Bun.file(path).text();
-  const taggedLinks = [
-    ...source.matchAll(
-      /github\.com\/altertable-ai\/data-app\/blob\/v([^/]+)\//g
-    ),
-  ];
-  assert(taggedLinks.length > 0, `Missing release-matched guidance: ${path}`);
-  for (const match of taggedLinks)
-    assert.equal(
-      match[1],
-      workspace.version,
-      `${path}: guidance version differs`
+for (const id of [
+  'starter-local-data-app',
+  'starter-local-metric-data-app',
+  'starter-local-finding-data-app',
+]) {
+  for (const filename of ['AGENTS.md', 'README.md']) {
+    const path = `packages/data-app-examples/templates/${id}/${filename}`;
+    assert(
+      release.packages['.']['extra-files'].some(
+        update => update.type === 'generic' && update.path === path
+      ),
+      `Release Please does not update starter guidance: ${path}`
     );
-  const annotatedLines = source
-    .split('\n')
-    .filter(line => line.includes('<!-- x-release-please-version -->'));
-  assert(annotatedLines.length > 0, `${path}: missing release annotation`);
-  for (const line of annotatedLines)
-    assert.equal(
-      [...line.matchAll(/\d+\.\d+\.\d+/g)].length,
-      1,
-      `${path}: release annotations must contain exactly one version`
-    );
+    const source = await Bun.file(path).text();
+    const taggedLinks = [
+      ...source.matchAll(
+        /github\.com\/altertable-ai\/data-app\/blob\/v([^/]+)\//g
+      ),
+    ];
+    assert(taggedLinks.length > 0, `Missing release-matched guidance: ${path}`);
+    for (const match of taggedLinks)
+      assert.equal(
+        match[1],
+        workspace.version,
+        `${path}: guidance version differs`
+      );
+    const annotatedLines = source
+      .split('\n')
+      .filter(line => line.includes('<!-- x-release-please-version -->'));
+    assert(annotatedLines.length > 0, `${path}: missing release annotation`);
+    for (const line of annotatedLines)
+      assert.equal(
+        [...line.matchAll(/\d+\.\d+\.\d+/g)].length,
+        1,
+        `${path}: release annotations must contain exactly one version`
+      );
+  }
 }
 for (const { directory } of packages)
   releaseVersion(`${directory}/package.json`, '$.version');
@@ -66,6 +74,14 @@ for (const [path, manifest] of [
   [
     'packages/data-app-examples/templates/starter-local-data-app/package.json',
     starter,
+  ],
+  [
+    'packages/data-app-examples/templates/starter-local-metric-data-app/package.json',
+    metricStarter,
+  ],
+  [
+    'packages/data-app-examples/templates/starter-local-finding-data-app/package.json',
+    findingStarter,
   ],
   ...packages.map(
     pkg => [`${pkg.directory}/package.json`, pkg.manifest] as const

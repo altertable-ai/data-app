@@ -1,0 +1,83 @@
+import {
+  createDataHooks,
+  DataApp,
+  DataSection,
+  VisualizationWidget,
+  Stack,
+  TextContent,
+} from '@altertable/data-app-react';
+import { BarChart } from '@altertable/data-app-react/ui';
+import { createDataClient } from '@altertable/data-app/client';
+
+import { sampleDataContext } from '#app/data-context.ts';
+import type { operations } from '#app/operations.ts';
+const { defineDataView } =
+  createDataHooks(createDataClient<typeof operations>());
+const sampleCountsView = defineDataView({
+  dataContext: sampleDataContext,
+  operation: 'sampleCountsByGroup',
+  describeInput: () => 'fixture groups',
+  isEmpty: sampleCounts => sampleCounts.length === 0,
+  emptyFallback: {
+    title: 'No matching groups',
+    description: 'No observations are available for this query.',
+  },
+});
+const sampleCounts = sampleCountsView.dataset({
+  name: 'Sample counts',
+  select: rows => rows,
+  rowKey: row => row.groupName,
+  columns: {
+    groupName: { label: 'Group', value: row => row.groupName },
+    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
+  },
+  evidence: {
+    id: 'counts-by-group',
+    glossaryIds: ['sampleCount'],
+  },
+});
+const sampleContent = sampleCountsView.content(result => (
+  <Stack>
+    <TextContent>
+      <h2>Supporting evidence</h2>
+      <p>
+        These fixture rows demonstrate how a Finding can include a small
+        supporting visual. Replace this section with the Finding's own argument
+        and evidence.
+      </p>
+    </TextContent>
+    <VisualizationWidget
+      dataset={sampleCounts}
+      source={result}
+      title="Sample count"
+      description="Fixture values, not a published metric."
+    >
+      {(rows, actions) => (
+        <BarChart
+          ariaLabel="Sample counts by group"
+          unit="samples"
+          items={rows.map(row => ({
+            ...row,
+            id: row.groupName,
+            label: row.groupName,
+            value: row.sampleCount,
+          }))}
+          itemActions={actions}
+        />
+      )}
+    </VisualizationWidget>
+    <TextContent>
+      <h2>Limitations</h2>
+      <p>
+        SQL VALUES are demonstration data and support no business conclusion.
+      </p>
+    </TextContent>
+  </Stack>
+));
+export function App() {
+  return (
+    <DataApp view={sampleCountsView} showToolbar={false}>
+      <DataSection content={sampleContent} />
+    </DataApp>
+  );
+}

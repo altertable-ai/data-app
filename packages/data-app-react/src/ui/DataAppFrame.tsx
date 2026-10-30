@@ -31,6 +31,8 @@ export type DataAppBaseProps = {
   dataContext: DataContext;
   /** Override the declared subtitle; null hides it. */
   description?: ReactNode;
+  /** Show page actions. Defaults to true; does not hide filters or data states. */
+  showToolbar?: boolean;
   toolbarActions?: ReactNode;
   footerActions?: ReactNode;
   /** Optional source, coverage, or methodology note below the app content.
@@ -65,9 +67,9 @@ export type DataAppProps<Data = unknown, Input = unknown> =
       DataAppControlProps & {
         request: DataAppRequest<Data, Input>;
         /** Findings are always derived from the result currently visible to the user. */
-        story: BoundStory<Data, Input>;
+        story?: BoundStory<Data, Input>;
         /** Export every distinct dataset in the displayed result. */
-        csvExport: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
+        csvExport?: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
         queries?: never;
       })
   | (StaticDataAppProps & {
@@ -100,7 +102,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   });
 
   const snapshot = request && displayedSnapshot(request.view);
-  const findings = request && snapshot ? props.story(snapshot) : undefined;
+  const findings = request && snapshot ? props.story?.(snapshot) : undefined;
   const story = findings?.length ? { findings } : undefined;
   const scope = (
     <AppScope
@@ -108,65 +110,68 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
       environment={app.scope.environment}
     />
   );
-  const toolbar = (
-    <AppToolbar
-      csvExport={
-        request
-          ? snapshot
-            ? props.csvExport(snapshot)
-            : null
-          : props.csvExport
-      }
-      requestState={request?.view.kind}
-      refresh={
-        request
-          ? {
-              refreshing:
-                request.refreshing ??
-                (request.view.kind === 'loading' ||
-                  request.view.kind === 'updating'),
-              onRefresh: () => void request.refetch(),
-              onCancel: request.cancel
-                ? () => void request.cancel?.()
-                : undefined,
-            }
-          : undefined
-      }
-      story={
-        story
-          ? {
-              ...story,
-              title: app.title,
-              scope,
-              dataContext,
-              theme: themeController,
-            }
-          : request
-            ? null
+  const toolbar =
+    props.showToolbar === false ? null : (
+      <AppToolbar
+        csvExport={
+          request
+            ? snapshot
+              ? props.csvExport?.(snapshot)
+              : props.csvExport
+                ? null
+                : undefined
+            : props.csvExport
+        }
+        requestState={request?.view.kind}
+        refresh={
+          request
+            ? {
+                refreshing:
+                  request.refreshing ??
+                  (request.view.kind === 'loading' ||
+                    request.view.kind === 'updating'),
+                onRefresh: () => void request.refetch(),
+                onCancel: request.cancel
+                  ? () => void request.cancel?.()
+                  : undefined,
+              }
             : undefined
-      }
-      aboutData={
-        <AboutData
-          id="data"
-          shortcut
-          dataContext={dataContext}
-          queries={request?.queries ?? queries}
-          iconOnly
-          variant="elevated"
-        />
-      }
-    >
-      {presentation?.annotations?.enabled && (
-        <AnnotationControls
-          rootRef={bodyRef}
-          presentation={presentation.annotations}
-          displayedInput={snapshot?.input}
-          view={snapshot?.state}
-        />
-      )}
-      {toolbarActions}
-    </AppToolbar>
-  );
+        }
+        story={
+          story
+            ? {
+                ...story,
+                title: app.title,
+                scope,
+                dataContext,
+                theme: themeController,
+              }
+            : request && props.story
+              ? null
+              : undefined
+        }
+        aboutData={
+          <AboutData
+            id="data"
+            shortcut
+            dataContext={dataContext}
+            queries={request?.queries ?? queries}
+            iconOnly
+            variant="elevated"
+          />
+        }
+      >
+        {presentation?.annotations?.enabled && (
+          <AnnotationControls
+            rootRef={bodyRef}
+            presentation={presentation.annotations}
+            displayedInput={snapshot?.input}
+            view={snapshot?.state}
+          />
+        )}
+        {toolbarActions}
+      </AppToolbar>
+    );
 
   const searchRegion =
     request?.searchControls && props.showSearch !== false ? (

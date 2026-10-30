@@ -85,10 +85,10 @@ export default {
     },
     'packages/data-app-examples': {
       ...packages['packages/data-app-examples'],
-      entry: ['src/index.ts', 'templates/starter-data-app/index.tsx'],
-      project: ['src/**/*.ts', 'templates/starter-data-app/*.tsx'],
+      entry: ['src/index.ts', 'templates/starter-*/index.tsx'],
+      project: ['src/**/*.ts', 'templates/starter-*/*.tsx'],
     },
-    'packages/data-app-examples/templates/starter-local-data-app': {
+    'packages/data-app-examples/templates/starter-local-*': {
       entry: ['src/server.ts', 'src/main.tsx'],
       project: ['src/**/*.{ts,tsx}'],
     },

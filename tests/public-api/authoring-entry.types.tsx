@@ -274,12 +274,12 @@ view.dataset<number>({
 />;
 <DataApp
   {...app}
+  // @ts-expect-error Story evidence must be the registered binding, not raw metadata.
   story={() => [
     {
       id: 'raw',
       headline: 'Raw',
       visual: null,
-      // @ts-expect-error Story evidence must be the registered binding, not raw metadata.
       evidence: boundMetric.definition,
     },
   ]}

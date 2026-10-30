@@ -2,8 +2,8 @@
 
 Use the local scaffold supplied by your authoring workflow. Its README covers
 setup and its AGENTS.md identifies app-owned files.
-Replace the connectivity screen with the content specified by the app brief or
-authoring skill, using the [shared SDK patterns](app-authoring.md). Local execution
+Replace the connectivity screen or fixture examples with the content specified by
+the app brief, using the [shared SDK patterns](app-authoring.md). Local execution
 does not require a particular content structure or presentation story.
 
 | Task                         | Documentation                            |

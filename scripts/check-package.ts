@@ -196,6 +196,10 @@ try {
     if (manifest.name === '@altertable/data-app-examples') {
       for (const path of [
         'templates/starter-data-app/index.tsx',
+        'templates/starter-metric-data-app/index.tsx',
+        'templates/starter-finding-data-app/index.tsx',
+        'templates/starter-local-metric-data-app/src/App.tsx',
+        'templates/starter-local-finding-data-app/src/App.tsx',
         'templates/starter-local-data-app/package.json',
         'templates/starter-local-data-app/.bun-version',
         'templates/starter-local-data-app/_gitignore',
@@ -387,6 +391,10 @@ console.log(JSON.stringify(dataAppExamples.map(example => ({...example, director
     [
       { id: 'starter-data-app', mode: 'hosted' },
       { id: 'starter-local-data-app', mode: 'local' },
+      { id: 'starter-metric-data-app', mode: 'hosted' },
+      { id: 'starter-finding-data-app', mode: 'hosted' },
+      { id: 'starter-local-metric-data-app', mode: 'local' },
+      { id: 'starter-local-finding-data-app', mode: 'local' },
     ]
   );
   const localExample = catalog.find(example => example.mode === 'local');
