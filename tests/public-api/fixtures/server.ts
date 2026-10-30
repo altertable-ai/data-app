@@ -159,10 +159,40 @@ const server = Bun.serve({
     if (url.pathname === '/proxy/query') {
       if (request.headers.get('authorization') !== 'Bearer fixture-token')
         return new Response('Denied', { status: 403 });
-      if ((await request.text()).includes('sample_counts'))
-        return new Response(
-          '{"query_id":"sample-query"}\n[{"name":"group_name","type":"VARCHAR"},{"name":"sample_count","type":"INTEGER"}]\n["Alpha",2200000]\n["Beta",0]\n'
+      const { statement, params } = (await request.json()) as {
+        statement: string;
+        params?: Record<string, string | number>;
+      };
+      if (
+        statement.includes('sample_counts') ||
+        statement.includes('sample_segments')
+      ) {
+        const query = database.query(statement);
+        const rows = query.values(
+          Object.fromEntries(
+            Object.entries(params ?? {}).map(([key, value]) => [
+              `$${key}`,
+              value,
+            ])
+          )
         );
+        const columns = [
+          {
+            name: statement.includes('sample_segments')
+              ? 'segment_name'
+              : 'group_name',
+            type: 'VARCHAR',
+          },
+          { name: 'sample_count', type: 'INTEGER' },
+        ];
+        return new Response(
+          [
+            JSON.stringify({ query_id: 'sample-query' }),
+            JSON.stringify(columns),
+            ...rows.map(row => JSON.stringify(row)),
+          ].join('\n') + '\n'
+        );
+      }
       return new Response(
         '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
       );
@@ -173,9 +203,20 @@ const server = Bun.serve({
         limit: number;
         params?: Record<string, string | number>;
       };
-      if (statement.trim().startsWith('WITH sample_counts(') && limit === 10)
+      if (
+        (statement.trim().startsWith('WITH sample_counts(') ||
+          statement.trim().startsWith('WITH sample_segments(')) &&
+        limit === 10
+      )
         return Response.json({
-          columns: [{ name: 'group_name' }, { name: 'sample_count' }],
+          columns: [
+            {
+              name: statement.includes('sample_segments')
+                ? 'segment_name'
+                : 'group_name',
+            },
+            { name: 'sample_count' },
+          ],
           rows: database
             .query(statement)
             .values(

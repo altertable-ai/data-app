@@ -66,12 +66,6 @@ const sampleContent = sampleCountsView.content(result => (
         />
       )}
     </VisualizationWidget>
-    <TextContent>
-      <h2>Limitations</h2>
-      <p>
-        SQL VALUES are demonstration data and support no business conclusion.
-      </p>
-    </TextContent>
   </Stack>
 ));
 export function App() {

@@ -41,6 +41,49 @@ for (const kind of ['metric', 'finding'] as const) {
       expect(
         await app.getByRole('heading', { name: 'Supporting evidence' }).count()
       ).toBe(kind === 'finding' ? 1 : 0);
+      expect(
+        await app
+          .getByRole('heading', { name: 'Limitations', exact: true })
+          .count()
+      ).toBe(0);
+      if (kind === 'metric') {
+        const main = app.getByRole('region', {
+          name: 'Sample count',
+          exact: true,
+        });
+        const secondary = app.getByRole('region', {
+          name: 'Samples by segment',
+          exact: true,
+        });
+        await expect
+          .poll(() =>
+            secondary.getByText('Retail', { exact: true }).isVisible()
+          )
+          .toBe(true);
+        await main
+          .getByRole('button', { name: /^Beta:.*Drill into group/ })
+          .click();
+        await expect
+          .poll(() => main.getByText('Alpha', { exact: true }).count())
+          .toBe(0);
+        await expect
+          .poll(() => secondary.getByText('Retail', { exact: true }).count())
+          .toBe(0);
+        await app
+          .getByRole('button', { name: 'Beta Group', exact: true })
+          .click();
+        await app
+          .getByRole('option', { name: 'All groups', exact: true })
+          .click();
+        await expect
+          .poll(() => main.getByText('Alpha', { exact: true }).isVisible())
+          .toBe(true);
+        await expect
+          .poll(() =>
+            secondary.getByText('Retail', { exact: true }).isVisible()
+          )
+          .toBe(true);
+      }
       expect(errors).toEqual([]);
     });
   }
