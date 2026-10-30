@@ -13,7 +13,8 @@ bash scripts/install-test-browser.sh
    for the kind of change being made.
 2. **Change source and consumers.** Keep the public API focused on concrete app
    needs. Preserve package boundaries and explicit exports. Update affected
-   callers, starters, and guides with public behavior changes.
+   callers when public behavior changes. Update starters and guides only when
+   app authoring must change; apply the documentation boundary below.
 3. **Run focused checks.** Build with `bun run build` before consumer tests.
    Select the test file or `-t "workflow name"` matching the change. For example,
    CSV export changes use `bun run test tests/public-api/apps-export.test.ts`.
@@ -58,13 +59,21 @@ imports, fabricated internal state, and implementation assertions. Prefer
 accessible role/name or label queries scoped to the relevant region. Keep browser
 workflows self-contained in `apps-*.test.ts`.
 
-Update the relevant guide and starter. Keep app authoring in `docs/`; document
-current usage with one focused example, `<Component>` and `functionName()` notation.
+When a change requires new app code or an authoring decision, update the relevant
+guide and starter. Keep app authoring in `docs/`; document current usage with one
+focused example, `<Component>` and `functionName()` notation.
 Show complete enclosing calls and components; use `// ...` for unrelated setup.
 Name the app declaration `dataApp`; keep the API's `app` prop name.
 Leave prop inventories to TypeScript and JSDoc. Generate `REFERENCE.md` with
 `bun run build` and stage it before `bun run check:reference`; improve entries
 through types and JSDoc, never generated output.
+
+## Documentation boundary
+
+App authoring guides teach agents what to decide, supply, or change in app code.
+Keep automatic behavior and reusable patterns in components, defaults, types,
+and regression tests. Do not document them as authoring steps or end-user
+instructions.
 
 ## UI platform principles
 
