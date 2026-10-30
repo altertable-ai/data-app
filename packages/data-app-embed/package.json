@@ -1,6 +1,6 @@
 {
   "name": "@altertable/data-app-embed",
-  "version": "0.74.0",
+  "version": "0.75.0",
   "description": "Iframe hosting, sandbox bootstrap, and React host bindings for Altertable data apps.",
   "keywords": [
     "altertable",
@@ -53,7 +53,7 @@
     "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
   },
   "dependencies": {
-    "@altertable/data-app": "0.74.0"
+    "@altertable/data-app": "0.75.0"
   },
   "peerDependencies": {
     "react": ">=19.2.0"
