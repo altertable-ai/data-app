@@ -52,6 +52,24 @@ Keep credentials, authorization, and enforced query limits in the host/backend.
 The starter supplies transport and mounting; change them only for an explicit
 integration task.
 
+## Link to external pages
+
+Use `<ExternalLink>` for HTTPS destinations in widget content:
+
+```tsx
+import { ExternalLink } from '@altertable/data-app-react';
+
+function ReportLink() {
+  return (
+    <ExternalLink href="https://example.com/report">
+      View full report
+    </ExternalLink>
+  );
+}
+```
+
+Embedded hosts must enable the [external link route](embed.md#external-links).
+
 ## Verify the app
 
 Run the authoring workflow's validation, then inspect the app:

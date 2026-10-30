@@ -1,6 +1,7 @@
 import {
   createDataAppRepairSession,
   createNavigationHandler,
+  createExternalLinkHandler,
   createSqlQueryHandler,
   type DataAppStatus,
 } from '@altertable/data-app-embed';
@@ -11,6 +12,7 @@ import {
 import {
   DataSourceError,
   createMessageRouter,
+  openExternalLinkRoute,
   defineMessageRoute,
   navigationUpdateRoute,
   sqlQueryRoute,
@@ -18,6 +20,8 @@ import {
 import { downloadBlob } from '@altertable/data-app/internal';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+
+const openExternalLink = createExternalLinkHandler();
 
 const fileExportRoute = defineMessageRoute({
   input(value: unknown): { filename: string; blob: Blob } {
@@ -41,6 +45,7 @@ const router = createMessageRouter(
   {
     'data:sql': sqlQueryRoute,
     'navigation:update': navigationUpdateRoute,
+    'navigation:openExternal': openExternalLinkRoute,
     'export:csv': fileExportRoute,
     'export:zip': fileExportRoute,
   },
@@ -63,6 +68,7 @@ const router = createMessageRouter(
       },
     })),
     'navigation:update': createNavigationHandler(),
+    'navigation:openExternal': openExternalLink,
     'export:csv': download,
     'export:zip': download,
   }

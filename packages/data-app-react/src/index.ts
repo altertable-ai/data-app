@@ -108,3 +108,5 @@ export {
   injectDataAppAnnotationStyles,
 } from './host/index.ts';
 export type { AnnotationBarHandle, AnnotationBarProps } from './host/index.ts';
+
+export { ExternalLink, type ExternalLinkProps } from './authoring/index.ts';

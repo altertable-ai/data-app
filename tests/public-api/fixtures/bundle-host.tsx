@@ -1,5 +1,6 @@
 import {
   createNavigationHandler,
+  createExternalLinkHandler,
   createSqlQueryHandler,
   type DataAppDiagnostic,
   type DataAppLogger,
@@ -9,6 +10,7 @@ import { DataAppBridge } from '@altertable/data-app-embed/react';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
   createMessageRouter,
+  openExternalLinkRoute,
   defineMessageRoute,
   sqlQueryRoute,
   DataSourceError,
@@ -30,6 +32,9 @@ const javascript = await fetch(
       ? '/__test/content-sizing'
       : '/__test/bundle'
 ).then(response => response.text());
+const openExternalLink = createExternalLinkHandler({
+  allowedOrigins: ['https://example.com'],
+});
 const fileRoute = defineMessageRoute({
   input(value: unknown) {
     const file = value as { filename: string; blob: Blob };
@@ -109,6 +114,7 @@ function Host() {
     {
       ...bridgeRoutes,
       'data:sql': sqlQueryRoute,
+      'navigation:openExternal': openExternalLinkRoute,
       'export:csv': fileRoute,
       'export:zip': fileRoute,
     },
@@ -146,6 +152,7 @@ function Host() {
           return response.json();
         },
       })),
+      'navigation:openExternal': openExternalLink,
       'export:csv': download,
       'export:zip': download,
     }

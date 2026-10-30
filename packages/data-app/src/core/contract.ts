@@ -126,3 +126,10 @@ export type {
   DataAppAnnotationDraft,
   DataAppAnnotationPresentation,
 } from './annotations.ts';
+
+export {
+  parseExternalUrl,
+  openExternalLinkRoute,
+  type OpenExternalLink,
+  type ExternalLinkResult,
+} from './external-link.ts';

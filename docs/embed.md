@@ -86,6 +86,37 @@ Host Back/Forward events publish opaque host state through the bridge. The app's
 optional navigation adapter interprets search/hash and synchronizes controls;
 opaque apps keep that state in memory rather than modifying their document URL.
 
+## External links
+
+Register the external link route to let apps request HTTPS navigation without
+relaxing the iframe sandbox:
+
+```ts
+import {
+  createMessageRouter,
+  openExternalLinkRoute,
+} from '@altertable/data-app/contract';
+import { createExternalLinkHandler } from '@altertable/data-app-embed';
+
+const router = createMessageRouter(
+  { 'navigation:openExternal': openExternalLinkRoute },
+  {
+    'navigation:openExternal': createExternalLinkHandler({
+      allowedOrigins: ['https://example.com'],
+    }),
+  }
+);
+// Pass router.dispatch as the bridge's onMessage handler.
+```
+
+The handler shows the destination in a host-owned dialog. The user opens a new tab
+or cancels; the link uses `noopener noreferrer`. Omit `allowedOrigins` to accept
+any HTTPS destination after confirmation, or pass an empty list to deny all.
+The initial origin check does not constrain redirects at the destination.
+URLs can carry app data, so choose permitted origins according to the host's data
+policy. Custom handlers must enforce their own policy and user interaction.
+Unregistered hosts reject the request; the component displays an error.
+
 ## Status and diagnostics
 
 `onStatusChange` receives `connecting`, `connected`, `ready`, `failed`, or

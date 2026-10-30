@@ -1,5 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
-import { injectDataAppStyles } from '@altertable/data-app-react';
+import { ExternalLink, injectDataAppStyles } from '@altertable/data-app-react';
 import { mountDataApp, searchVariable } from '@altertable/data-app-react';
 import { DataApp, useAppVariables } from '@altertable/data-app-react/ui';
 import {
@@ -69,6 +69,13 @@ function App() {
       toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}
     >
+      <ExternalLink href="https://example.com/report?source=widget">
+        View full report
+      </ExternalLink>
+      <ExternalLink href="https://denied.example/report">
+        Denied report
+      </ExternalLink>
+      <ExternalLink href="javascript:alert(1)">Unsafe report</ExternalLink>
       <button onClick={() => setCrashed(true)}>Crash render</button>
       <button
         onClick={() =>
