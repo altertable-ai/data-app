@@ -109,13 +109,8 @@ const router = createMessageRouter(
 // Pass router.dispatch as the bridge's onMessage handler.
 ```
 
-The handler shows the destination in a host-owned dialog. The user opens a new tab
-or cancels; the link uses `noopener noreferrer`. Omit `allowedOrigins` to accept
-any HTTPS destination after confirmation, or pass an empty list to deny all.
-The initial origin check does not constrain redirects at the destination.
-URLs can carry app data, so choose permitted origins according to the host's data
-policy. Custom handlers must enforce their own policy and user interaction.
-Unregistered hosts reject the request; the component displays an error.
+Choose permitted origins according to the host's data policy: URLs can carry app
+data, and the initial origin check does not constrain redirects at the destination.
 
 ## Status and diagnostics
 
