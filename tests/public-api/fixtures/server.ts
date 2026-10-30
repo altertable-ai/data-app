@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite';
 
-import { serveLocalApp } from '@altertable/data-app-bun';
+import { localLakehouse, serveLocalApp } from '@altertable/data-app-bun';
 
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { operations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
@@ -72,6 +72,14 @@ const findingStarter = await bundle(
   'packages/data-app-examples/templates/starter-finding-data-app/index.tsx'
 );
 const database = new Database(':memory:');
+const starterMockUrl = process.env.STARTER_MOCK_URL;
+const starterLakehouse = starterMockUrl
+  ? localLakehouse({
+      ALTERTABLE_API_BASE: starterMockUrl,
+      ALTERTABLE_LAKEHOUSE_USERNAME: 'dev',
+      ALTERTABLE_LAKEHOUSE_PASSWORD: 'dev',
+    })
+  : undefined;
 
 process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'fixture-token';
 process.env.NODE_ENV = 'production';
@@ -159,6 +167,15 @@ const server = Bun.serve({
     if (url.pathname === '/proxy/query') {
       if (request.headers.get('authorization') !== 'Bearer fixture-token')
         return new Response('Denied', { status: 403 });
+      if (starterMockUrl)
+        return fetch(`${starterMockUrl}/query`, {
+          method: 'POST',
+          headers: {
+            authorization: `Basic ${btoa('dev:dev')}`,
+            'content-type': 'application/json',
+          },
+          body: await request.text(),
+        });
       const { statement, params } = (await request.json()) as {
         statement: string;
         params?: Record<string, string | number>;
@@ -203,6 +220,14 @@ const server = Bun.serve({
         limit: number;
         params?: Record<string, string | number>;
       };
+      if (starterLakehouse)
+        return Response.json(
+          await starterLakehouse.queryAll(statement, {
+            params,
+            limit,
+            signal: request.signal,
+          })
+        );
       if (
         (statement.trim().startsWith('WITH sample_counts(') ||
           statement.trim().startsWith('WITH sample_segments(')) &&

@@ -9,10 +9,12 @@ import {
   DataApp,
   DataSection,
   VisualizationWidget,
+  DataValue,
+  TableWidget,
+  Ranking,
   Stack,
   TextContent,
 } from '@altertable/data-app-react';
-import { BarChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import { parseCount } from '@altertable/data-app/contract';
 const dataApp = defineDataApp({
@@ -28,10 +30,10 @@ const dataApp = defineDataApp({
         sample_count: { type: 'number' },
       },
       statement: `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
-SELECT group_name, sample_count FROM sample_counts
+SELECT group_name, SUM(sample_count) AS sample_count
+FROM starter_demo.sample_counts
 WHERE $groupName = '' OR group_name = $groupName
-ORDER BY group_name LIMIT $limit`,
+GROUP BY group_name ORDER BY sample_count DESC LIMIT $limit`,
       params: {
         groupName: { type: 'string', defaultValue: '' },
         limit: { type: 'number', defaultValue: 10 },
@@ -56,12 +58,11 @@ const operations = {
 const queryNames = operations.sampleCountsByGroup.queryNames;
 const sampleDataContext = createDataContext(queryNames)({
   description:
-    'Two SQL VALUES rows demonstrate the host query path. Replace them with inspected source data before publishing findings.',
+    'Fictional sample volumes grouped from starter_demo.sample_counts. Replace this evidence with the actual Finding queries.',
   glossary: {
     sampleCount: {
       term: 'Sample count',
-      definition:
-        'A fixture value: Alpha is 2,200,000 and Beta is a measured zero.',
+      definition: 'A fixture value: Alpha is 2,200,000 and Beta is 600,000.',
       queryNames: [queryNames.sampleCountsByGroup],
     },
   },
@@ -90,36 +91,79 @@ const sampleCounts = sampleCountsView.dataset({
     glossaryIds: ['sampleCount'],
   },
 });
+const totalSamples = sampleCountsView.metric(
+  {
+    id: 'total-samples',
+    label: 'Total samples',
+    glossaryId: 'sampleCount',
+    format: { kind: 'count' },
+  },
+  rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
+);
+const alphaSamples = sampleCountsView.metric(
+  {
+    id: 'alpha-samples',
+    label: 'Alpha samples',
+    glossaryId: 'sampleCount',
+    format: { kind: 'count' },
+  },
+  rows => {
+    const alpha = rows.find(row => row.groupName === 'Alpha');
+    if (!alpha)
+      throw new Error('The sample Finding requires evidence for Alpha.');
+    return { current: alpha.sampleCount };
+  }
+);
+// This fictional Finding demonstrates prose, inline evidence, and a Markdown-table equivalent.
+// Preserve each real Finding's own headings and argument instead of reusing these sections.
 const sampleContent = sampleCountsView.content(result => (
   <Stack>
     <TextContent>
-      <h2>Supporting evidence</h2>
+      <h2>Contribution by group</h2>
       <p>
-        These fixture rows demonstrate how a Finding can include a small
-        supporting visual. Replace this section with the Finding's own argument
-        and evidence.
+        <strong>Alpha</strong> contributed{' '}
+        <DataValue metric={alphaSamples} source={result} /> of the{' '}
+        <DataValue metric={totalSamples} source={result} /> recorded samples.
+        The group comparison below supports that concentration; it does not
+        explain its cause.
       </p>
     </TextContent>
     <VisualizationWidget
       dataset={sampleCounts}
       source={result}
       title="Sample count"
-      description="Fixture values, not a published metric."
     >
-      {(rows, actions) => (
-        <BarChart
-          ariaLabel="Sample counts by group"
-          unit="samples"
+      {rows => (
+        <Ranking
+          aria-label="Samples by group"
           items={rows.map(row => ({
-            ...row,
             id: row.groupName,
             label: row.groupName,
             value: row.sampleCount,
           }))}
-          itemActions={actions}
         />
       )}
     </VisualizationWidget>
+    <TextContent>
+      <h2>Supporting evidence</h2>
+      <p>
+        The source rows are grouped by <code>group_name</code> and summed using{' '}
+        <code>sample_count</code>. The table retains the exact values behind the
+        comparison.
+      </p>
+      <ul>
+        <li>Compare the groups within the same sample population.</li>
+        <li>
+          <em>Volume alone does not establish performance or causality.</em>
+        </li>
+      </ul>
+    </TextContent>
+    <TableWidget
+      dataset={sampleCounts}
+      source={result}
+      title="Counts by group"
+      pagination={false}
+    />
   </Stack>
 ));
 function App() {

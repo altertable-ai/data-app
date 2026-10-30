@@ -5,7 +5,7 @@ const queryNames = {
 } as const;
 export const sampleDataContext = createDataContext(queryNames)({
   description:
-    'SQL VALUES demonstrate group and segment breakdowns. Replace them with inspected source data before publishing findings.',
+    'The starter_sample_counts semantic view measures fictional samples by group and segment. Replace it with the requested semantic metric before publishing.',
   glossary: {
     sampleCount: {
       term: 'Sample count',

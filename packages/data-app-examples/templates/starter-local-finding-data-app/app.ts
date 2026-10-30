@@ -12,10 +12,10 @@ export const dataApp = defineDataApp({
         sample_count: { type: 'number' },
       },
       statement: `
-WITH sample_counts(group_name, sample_count) AS (VALUES ('Alpha', 2200000), ('Beta', 0))
-SELECT group_name, sample_count FROM sample_counts
+SELECT group_name, SUM(sample_count) AS sample_count
+FROM starter_demo.sample_counts
 WHERE $groupName = '' OR group_name = $groupName
-ORDER BY group_name LIMIT $limit`,
+GROUP BY group_name ORDER BY sample_count DESC LIMIT $limit`,
       params: {
         groupName: { type: 'string', defaultValue: '' },
         limit: { type: 'number', defaultValue: 10 },

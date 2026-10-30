@@ -8,11 +8,16 @@ import {
 
 for (const kind of ['metric', 'finding'] as const) {
   for (const mode of ['hosted', 'local'] as const) {
-    test(`${mode} ${kind} starter renders fixture evidence without dashboard actions`, async ({
+    test(`${mode} ${kind} starter queries the mock and renders evidence without dashboard actions`, async ({
       page,
     }) => {
       const errors: string[] = [];
       page.on('pageerror', error => errors.push(error.message));
+      const statements: string[] = [];
+      page.on('request', request => {
+        if (request.url().endsWith('/api/sql'))
+          statements.push(request.postDataJSON().statement);
+      });
       await page.goto(
         mode === 'hosted'
           ? `/starter-${kind}-data-app`
@@ -69,6 +74,16 @@ for (const kind of ['metric', 'finding'] as const) {
         await expect
           .poll(() => secondary.getByText('Retail', { exact: true }).count())
           .toBe(0);
+        await expect
+          .poll(() =>
+            secondary
+              .getByRole('button', {
+                name: 'Partner: 600,000 samples',
+                exact: true,
+              })
+              .isVisible()
+          )
+          .toBe(true);
         await app
           .getByRole('button', { name: 'Beta Group', exact: true })
           .click();
@@ -83,6 +98,35 @@ for (const kind of ['metric', 'finding'] as const) {
             secondary.getByText('Retail', { exact: true }).isVisible()
           )
           .toBe(true);
+      }
+      if (kind === 'metric' && mode === 'hosted') {
+        expect(
+          statements.some(
+            statement =>
+              statement.includes('SEMANTIC_VIEW(') &&
+              statement.includes('DIMENSIONS samples.group_name')
+          )
+        ).toBe(true);
+        expect(
+          statements.some(
+            statement =>
+              statement.includes('SEMANTIC_VIEW(') &&
+              statement.includes('DIMENSIONS samples.segment_name')
+          )
+        ).toBe(true);
+      }
+      if (kind === 'finding') {
+        const narrative = app
+          .locator('p')
+          .filter({ hasText: 'recorded samples' });
+        await expect.poll(() => narrative.textContent()).toContain('2,200,000');
+        expect(await narrative.textContent()).toContain('2,800,000');
+        expect(
+          await app
+            .getByRole('region', { name: 'Counts by group', exact: true })
+            .getByRole('table')
+            .isVisible()
+        ).toBe(true);
       }
       expect(errors).toEqual([]);
     });
