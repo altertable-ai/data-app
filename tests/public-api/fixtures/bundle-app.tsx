@@ -13,7 +13,7 @@ import {
   connectionCheck,
   type ConnectionOperation,
 } from '@altertable/data-app/contract';
-import { useState } from 'react';
+import { Activity, useState } from 'react';
 
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const dataApp = defineDataApp({
@@ -40,6 +40,7 @@ const variables = {
 
 function App() {
   const [crashed, setCrashed] = useState(false);
+  const [reportVisible, setReportVisible] = useState(true);
   const state = useAppVariables(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
@@ -69,9 +70,14 @@ function App() {
       toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}
     >
-      <ExternalLink href="https://example.com/report?source=widget">
-        View full report
-      </ExternalLink>
+      <button onClick={() => setReportVisible(value => !value)}>
+        {reportVisible ? 'Hide report link' : 'Show report link'}
+      </button>
+      <Activity mode={reportVisible ? 'visible' : 'hidden'}>
+        <ExternalLink href="https://example.com/report?source=widget">
+          View full report
+        </ExternalLink>
+      </Activity>
       <ExternalLink href="https://denied.example/report">
         Denied report
       </ExternalLink>

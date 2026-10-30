@@ -54,8 +54,9 @@ export function ExternalLink({
         if (!controller.signal.aborted) setError(true);
       })
       .finally(() => {
+        if (request.current !== controller) return;
         request.current = undefined;
-        if (!controller.signal.aborted) setPending(false);
+        setPending(false);
       });
   }
   return (

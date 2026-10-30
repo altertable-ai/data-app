@@ -72,3 +72,27 @@ test('iframe reload dismisses a pending host confirmation and permits another re
   await expect.poll(() => dialog.count()).toBe(0);
   expect(page.context().pages()).toHaveLength(1);
 });
+
+test('an Activity-hidden link cancels confirmation and works again when restored', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host');
+  const app = page.frameLocator('iframe');
+  const link = app.getByRole('link', { name: 'View full report' });
+  const dialog = page.getByRole('dialog', { name: 'Open external link' });
+  await link.click();
+  await expect.poll(() => dialog.isVisible()).toBe(true);
+  // Simulate a background visibility change while the host modal makes the app inert.
+  await app
+    .getByRole('button', { name: 'Hide report link' })
+    .evaluate(button => (button as HTMLButtonElement).click());
+  await expect.poll(() => dialog.count()).toBe(0);
+  await app.getByRole('button', { name: 'Show report link' }).click();
+  await expect.poll(() => link.getAttribute('aria-disabled')).toBe('false');
+  expect(await link.getAttribute('aria-busy')).toBeNull();
+  await link.click();
+  await expect.poll(() => dialog.isVisible()).toBe(true);
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect.poll(() => link.getAttribute('aria-disabled')).toBe('false');
+  expect(page.context().pages()).toHaveLength(1);
+});
