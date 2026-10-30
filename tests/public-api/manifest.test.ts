@@ -300,10 +300,14 @@ test('preserves the shared Node and Bun archive consumer contract', async () => 
   verifyManifestConsumer();
 });
 
-test('extracts the documented hosted starter declaration', async () => {
+test.each([
+  ['starter-data-app', 'Sample counts'],
+  ['starter-metric-data-app', 'Sample metric'],
+  ['starter-finding-data-app', 'Sample finding'],
+])('extracts the %s declaration', async (starter, title) => {
   const text = await readFile(
     new URL(
-      '../../packages/data-app-examples/templates/starter-data-app/index.tsx',
+      `../../packages/data-app-examples/templates/${starter}/index.tsx`,
       import.meta.url
     ),
     'utf8'
@@ -311,7 +315,7 @@ test('extracts the documented hosted starter declaration', async () => {
   const result = extractDataAppManifest(text);
   expect(result.diagnostics).toEqual([]);
   expect(result.manifest).toMatchObject({
-    title: 'Sample counts',
+    title,
     scope: { organization: 'demo', environment: 'sample' },
     queries: {
       sampleCountsByGroup: {

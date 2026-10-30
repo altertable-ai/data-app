@@ -4,13 +4,14 @@ import { resolve } from 'node:path';
 import { GenericContainer, Wait } from 'testcontainers';
 
 import { seedStatements } from '@/dev/seed';
+import { starterMockImage, starterSeedStatements } from '@/dev/starter-mock';
 import { packages } from '@/scripts/packages';
 
 const root = resolve(import.meta.dir, '..');
 const mockApiPort = 15000;
 
 async function seedMockApi(apiUrl: string) {
-  for (const statement of seedStatements) {
+  for (const statement of [...seedStatements, ...starterSeedStatements]) {
     const response = await fetch(`${apiUrl}/query`, {
       method: 'POST',
       headers: {
@@ -28,9 +29,7 @@ async function seedMockApi(apiUrl: string) {
 
 async function startMockApi() {
   try {
-    const container = await new GenericContainer(
-      'ghcr.io/altertable-ai/altertable-mock:latest'
-    )
+    const container = await new GenericContainer(starterMockImage)
       .withEnvironment({ ALTERTABLE_MOCK_USERS: 'dev:dev' })
       .withExposedPorts(mockApiPort)
       .withWaitStrategy(Wait.forListeningPorts())

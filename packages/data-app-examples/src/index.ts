@@ -18,6 +18,30 @@ export const dataAppExamples = [
     description: 'A Bun and React project with server-side lakehouse access.',
     mode: 'local',
   },
+  {
+    id: 'starter-metric-data-app',
+    title: 'Hosted metric illustration',
+    description: 'A focused metric app for hosted execution.',
+    mode: 'hosted',
+  },
+  {
+    id: 'starter-finding-data-app',
+    title: 'Hosted Finding document',
+    description: 'A focused finding app for hosted execution.',
+    mode: 'hosted',
+  },
+  {
+    id: 'starter-local-metric-data-app',
+    title: 'Local metric illustration',
+    description: 'A focused metric app for local execution.',
+    mode: 'local',
+  },
+  {
+    id: 'starter-local-finding-data-app',
+    title: 'Local Finding document',
+    description: 'A focused finding app for local execution.',
+    mode: 'local',
+  },
 ] as const;
 
 /** Stable identifier for a canonical starter. */
