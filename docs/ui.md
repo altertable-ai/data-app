@@ -152,6 +152,8 @@ Compose the visual inside `<VisualizationWidget dataset={dataset} source={result
 so rows, loading state, evidence, and inspection come from that dataset.
 Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
 values must be nonnegative. Use `formatValue` for domain formatting.
+Bar category labels truncate to fit their columns; hover a bar to read its full
+category name and value.
 
 Line and area charts space samples equally; include missing periods and use
 composed charts for irregular intervals. Distinguish missing observations from zero.
