@@ -4,11 +4,8 @@ import { resolve } from 'node:path';
 import { GenericContainer, Wait } from 'testcontainers';
 
 import { seedStatements } from '@/dev/seed';
+import { starterMockImage, starterSeedStatements } from '@/dev/starter-mock';
 import { packages } from '@/scripts/packages';
-import {
-  starterMockImage,
-  starterSeedStatements,
-} from '@/tests/fixtures/starter-mock';
 
 const root = resolve(import.meta.dir, '..');
 const mockApiPort = 15000;

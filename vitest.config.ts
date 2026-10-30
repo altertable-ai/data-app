@@ -9,15 +9,6 @@ export default defineConfig({
         test: {
           name: 'public-api',
           include: ['tests/public-api/**/*.test.{ts,tsx}'],
-          exclude: ['tests/public-api/apps-starters.test.ts'],
-        },
-      },
-      {
-        extends: true,
-        test: {
-          name: 'starters',
-          include: ['tests/public-api/apps-starters.test.ts'],
-          env: { DATA_APP_STARTER_MOCK: '1' },
         },
       },
       {

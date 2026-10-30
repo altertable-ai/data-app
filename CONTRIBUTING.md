@@ -7,11 +7,6 @@ bun install --frozen-lockfile
 bash scripts/install-test-browser.sh
 ```
 
-Start a Docker-compatible container runtime before `bun run test` or
-`bun run check`. The starter tests launch a mock API container and seed its sample
-data. To run only the public API tests that do not need Docker, use
-`bun run test --project public-api`; this excludes the mock-backed starter tests.
-
 ## Workflow
 
 1. **Locate the owner.** Use the code map below. Read additional guidance only

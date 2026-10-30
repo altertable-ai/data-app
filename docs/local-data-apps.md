@@ -34,6 +34,4 @@ Finding structure.
 
 Copied starters use the normal query connection. Replace their example queries
 with verified sources in the target lakehouse; the mock and seed belong only to
-development and tests. Never create demo objects in a user's lakehouse.
-Run `bun run test --project starters` to verify both runtimes against a fresh,
-seeded mock, including semantic queries, drill-down, reset, and displayed evidence.
+local development. Never create demo objects in a user's lakehouse.

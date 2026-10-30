@@ -1,13 +1,9 @@
 import { Database } from 'bun:sqlite';
 
-import { localLakehouse, serveLocalApp } from '@altertable/data-app-bun';
+import { serveLocalApp } from '@altertable/data-app-bun';
 
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { operations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
-import findingPage from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/index.html';
-import { operations as findingOperations } from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/operations';
-import metricPage from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
-import { operations as metricOperations } from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/operations';
 import annotationsHost from '@/tests/public-api/fixtures/annotations-host.html';
 import appearance from '@/tests/public-api/fixtures/appearance.html';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
@@ -65,21 +61,7 @@ const [
 const { default: worker } = await import(
   import.meta.resolve('@altertable/data-app-worker')
 );
-const metricStarter = await bundle(
-  'packages/data-app-examples/templates/starter-metric-data-app/index.tsx'
-);
-const findingStarter = await bundle(
-  'packages/data-app-examples/templates/starter-finding-data-app/index.tsx'
-);
 const database = new Database(':memory:');
-const starterMockUrl = process.env.STARTER_MOCK_URL;
-const starterLakehouse = starterMockUrl
-  ? localLakehouse({
-      ALTERTABLE_API_BASE: starterMockUrl,
-      ALTERTABLE_LAKEHOUSE_USERNAME: 'dev',
-      ALTERTABLE_LAKEHOUSE_PASSWORD: 'dev',
-    })
-  : undefined;
 
 process.env.ALTERTABLE_DATA_PROXY_TOKEN = 'fixture-token';
 process.env.NODE_ENV = 'production';
@@ -101,8 +83,6 @@ const server = Bun.serve({
     '/date-axes': dateAxes,
     '/bundle-host': bundleHost,
     '/starter-data-app': bundleHost,
-    '/starter-finding-data-app': bundleHost,
-    '/starter-metric-data-app': bundleHost,
     '/bridge-host': bridgeHost,
     '/bridge-frame': bridgeFrame,
     '/inspection-app': inspectionApp,
@@ -131,8 +111,6 @@ const server = Bun.serve({
       return Response.json({
         frameURL: frameServer.url.href,
         localURL: local.url.href,
-        metricLocalURL: metricLocal.url.href,
-        findingLocalURL: findingLocal.url.href,
       });
     if (url.pathname === '/__test/annotations')
       return new Response(annotations);
@@ -143,10 +121,6 @@ const server = Bun.serve({
     if (url.pathname === '/__test/bundle') return new Response(app);
     if (url.pathname === '/__test/content-sizing')
       return new Response(contentSizing);
-    if (url.pathname === '/__test/starter-metric-data-app')
-      return new Response(metricStarter);
-    if (url.pathname === '/__test/starter-finding-data-app')
-      return new Response(findingStarter);
     if (url.pathname === '/__test/starter-data-app')
       return new Response(starter);
     if (url.pathname === '/__test/silent')
@@ -167,49 +141,6 @@ const server = Bun.serve({
     if (url.pathname === '/proxy/query') {
       if (request.headers.get('authorization') !== 'Bearer fixture-token')
         return new Response('Denied', { status: 403 });
-      if (starterMockUrl)
-        return fetch(`${starterMockUrl}/query`, {
-          method: 'POST',
-          headers: {
-            authorization: `Basic ${btoa('dev:dev')}`,
-            'content-type': 'application/json',
-          },
-          body: await request.text(),
-        });
-      const { statement, params } = (await request.json()) as {
-        statement: string;
-        params?: Record<string, string | number>;
-      };
-      if (
-        statement.includes('sample_counts') ||
-        statement.includes('sample_segments')
-      ) {
-        const query = database.query(statement);
-        const rows = query.values(
-          Object.fromEntries(
-            Object.entries(params ?? {}).map(([key, value]) => [
-              `$${key}`,
-              value,
-            ])
-          )
-        );
-        const columns = [
-          {
-            name: statement.includes('sample_segments')
-              ? 'segment_name'
-              : 'group_name',
-            type: 'VARCHAR',
-          },
-          { name: 'sample_count', type: 'INTEGER' },
-        ];
-        return new Response(
-          [
-            JSON.stringify({ query_id: 'sample-query' }),
-            JSON.stringify(columns),
-            ...rows.map(row => JSON.stringify(row)),
-          ].join('\n') + '\n'
-        );
-      }
       return new Response(
         '{"query_id":"starter-query"}\n[{"name":"connection_check","type":"INTEGER"}]\n[1]\n'
       );
@@ -220,28 +151,9 @@ const server = Bun.serve({
         limit: number;
         params?: Record<string, string | number>;
       };
-      if (starterLakehouse)
-        return Response.json(
-          await starterLakehouse.queryAll(statement, {
-            params,
-            limit,
-            signal: request.signal,
-          })
-        );
-      if (
-        (statement.trim().startsWith('WITH sample_counts(') ||
-          statement.trim().startsWith('WITH sample_segments(')) &&
-        limit === 10
-      )
+      if (statement.trim().startsWith('WITH sample_counts(') && limit === 10)
         return Response.json({
-          columns: [
-            {
-              name: statement.includes('sample_segments')
-                ? 'segment_name'
-                : 'group_name',
-            },
-            { name: 'sample_count' },
-          ],
+          columns: [{ name: 'group_name' }, { name: 'sample_count' }],
           rows: database
             .query(statement)
             .values(
@@ -278,24 +190,7 @@ const local = serveLocalApp({
   title: 'Local starter',
   port: 0,
 });
-const metricLocal = serveLocalApp({
-  page: metricPage,
-  operations: metricOperations,
-  title: 'Local metric',
-  port: 0,
-});
-const findingLocal = serveLocalApp({
-  page: findingPage,
-  operations: findingOperations,
-  title: 'Local finding',
-  port: 0,
-});
 console.log(
   'DATA_APP_TEST_SERVER ' +
-    JSON.stringify({
-      baseURL: server.url.href,
-      localURL: local.url.href,
-      metricLocalURL: metricLocal.url.href,
-      findingLocalURL: findingLocal.url.href,
-    })
+    JSON.stringify({ baseURL: server.url.href, localURL: local.url.href })
 );

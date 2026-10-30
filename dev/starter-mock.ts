@@ -12,19 +12,3 @@ export const starterSeedStatements = [
    DIMENSIONS (samples.group_name AS group_name, samples.segment_name AS segment_name)
    METRICS (samples.sample_count AS SUM(samples.sample_count))`,
 ];
-
-export async function seedStarterMock(apiUrl: string) {
-  for (const statement of starterSeedStatements) {
-    const response = await fetch(`${apiUrl}/query`, {
-      method: 'POST',
-      headers: {
-        authorization: `Basic ${btoa('dev:dev')}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ statement }),
-    });
-    const body = await response.text();
-    if (!response.ok || body.includes('\n{"error":'))
-      throw new Error(`Starter seed failed: ${body}`);
-  }
-}

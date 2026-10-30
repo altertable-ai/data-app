@@ -22,14 +22,10 @@ const { frameURL } = await fetch('/__test/config').then(response =>
   response.json()
 );
 const params = new URLSearchParams(location.search);
-const starter = [
-  '/starter-data-app',
-  '/starter-metric-data-app',
-  '/starter-finding-data-app',
-].includes(location.pathname);
+const starter = location.pathname === '/starter-data-app';
 const javascript = await fetch(
   starter
-    ? `/__test${location.pathname}`
+    ? '/__test/starter-data-app'
     : params.has('manual-sizing')
       ? '/__test/content-sizing'
       : '/__test/bundle'
