@@ -1207,3 +1207,87 @@ test('legend controls stay separate from plot inspection', async ({ page }) => {
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => tooltip.getByRole('listitem').count()).toBe(2);
 });
+
+test('long bar category labels fit their columns and retain full readings', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const theme of ['light', 'dark']) {
+    if (theme === 'dark')
+      await page.getByRole('button', { name: 'Switch to dark theme' }).click();
+    for (const width of [1280, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const mode of ['plain', 'with actions']) {
+        const chart = page.getByRole('region', {
+          name: `Long category bars ${mode}`,
+          exact: true,
+        });
+        const labels = chart.getByTitle(/B2B|Business|International/);
+        await expect.poll(() => labels.count()).toBe(6);
+        await expect
+          .poll(async () => {
+            const bounds = await labels.evaluateAll(elements =>
+              elements.map(element => {
+                const rect = element.getBoundingClientRect();
+                return {
+                  left: rect.left,
+                  right: rect.right,
+                  width: rect.width,
+                };
+              })
+            );
+            const columns = await chart
+              .getByRole('button', { name: /: \d+ people/ })
+              .evaluateAll(elements =>
+                elements.map(element => {
+                  const rect = element.getBoundingClientRect();
+                  return { left: rect.left, right: rect.right };
+                })
+              );
+            const centers = columns.map(
+              column => (column.left + column.right) / 2
+            );
+            const halfColumn = (centers[1]! - centers[0]!) / 2;
+            return bounds.every(
+              (label, index) =>
+                label.width > 0 &&
+                label.left >= centers[index]! - halfColumn - 1 &&
+                label.right <= centers[index]! + halfColumn + 1
+            );
+          })
+          .toBe(true);
+        const last = 'B2BReactivationWithoutSpaces';
+        expect(
+          await chart.getByTitle(last, { exact: true }).evaluate(element => {
+            const style = getComputedStyle(element);
+            return (
+              element.scrollWidth > element.clientWidth &&
+              style.overflowX === 'hidden' &&
+              style.textOverflow === 'ellipsis'
+            );
+          })
+        ).toBe(true);
+        await chart
+          .getByRole('button', { name: new RegExp(`${last}: 20 people`) })
+          .hover();
+        await expect
+          .poll(() => page.getByRole('tooltip').textContent())
+          .toContain(last);
+        await page.keyboard.press('Escape');
+        if (mode === 'with actions') {
+          await chart
+            .getByRole('button', { name: `${last}: Actions`, exact: true })
+            .click();
+          await expect
+            .poll(() =>
+              page
+                .getByRole('menuitem', { name: 'Inspect', exact: true })
+                .isVisible()
+            )
+            .toBe(true);
+          await page.keyboard.press('Escape');
+        }
+      }
+    }
+  }
+});

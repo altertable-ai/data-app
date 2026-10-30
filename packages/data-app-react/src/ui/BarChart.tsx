@@ -180,7 +180,7 @@ export function BarChart<Row extends BarChartItem>({
                             }}
                             aria-label={`${item.label}: Actions`}
                           >
-                            {item.label}
+                            <span title={item.label}>{item.label}</span>
                             <AppIcon name="disclosure" size={12} />
                           </MenuButton>
                           <ExplorationActionMenu
@@ -192,7 +192,7 @@ export function BarChart<Row extends BarChartItem>({
                         </MenuTrigger>
                       ) : (
                         <span className="altertable-selectable-bars-label">
-                          {item.label}
+                          <span title={item.label}>{item.label}</span>
                         </span>
                       )}
                     </div>

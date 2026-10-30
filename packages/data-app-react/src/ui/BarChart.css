@@ -80,7 +80,8 @@
   justify-content: center;
   gap: var(--atbl-space-xs);
   min-height: var(--atbl-control-compact-height);
-  padding-top: 4px;
+  min-width: 0;
+  padding: 4px 4px 0;
   color: var(--atbl-muted);
 }
 .altertable-chart-item-label-row > span {
@@ -94,9 +95,21 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  min-width: 0;
+  max-width: 100%;
   min-height: 0;
   padding: 0;
   color: inherit;
+}
+
+.altertable-selectable-bars-label > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.altertable-selectable-bars-label > svg {
+  flex-shrink: 0;
 }
 
 .altertable-chart-item-label-row button.altertable-selectable-bars-label {

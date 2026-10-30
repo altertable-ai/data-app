@@ -580,6 +580,37 @@ createRoot(document.getElementById('root')!).render(
           </ChartLegend>
         </Stack>
       </Example>
+      {[false, true].map(withActions => (
+        <Example
+          key={String(withActions)}
+          name={`Long category bars ${withActions ? 'with actions' : 'plain'}`}
+          description="Long category labels stay within their bar columns."
+        >
+          <BarChart
+            ariaLabel={`Long category bars ${withActions ? 'with actions' : 'plain'}`}
+            unit="people"
+            items={[
+              'B2B Preonboarding',
+              'B2B Retention',
+              'Business Development',
+              'B2B Onboarding',
+              'International After Sales',
+              'B2BReactivationWithoutSpaces',
+            ].map((label, index) => ({
+              id: String(index),
+              label,
+              value: 60 - index * 8,
+            }))}
+            itemActions={
+              withActions
+                ? () => [
+                    { id: 'inspect', label: 'Inspect', onSelect: () => {} },
+                  ]
+                : undefined
+            }
+          />
+        </Example>
+      ))}
       <Example
         name="Standalone bar"
         description="Original category input contract."
