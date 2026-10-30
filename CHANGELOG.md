@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.75.0](https://github.com/altertable-ai/data-app/compare/v0.74.0...v0.75.0) (2026-10-30)
+
+
+### Features
+
+* **embed:** keep repair feedback consistent through app updates ([#121](https://github.com/altertable-ai/data-app/issues/121)) ([eeb8b32](https://github.com/altertable-ai/data-app/commit/eeb8b323f1d713d196871c8d2e86947694ba5043))
+
+
+### Bug Fixes
+
+* enforce query row ceiling and preserve routing errors ([#123](https://github.com/altertable-ai/data-app/issues/123)) ([e740c76](https://github.com/altertable-ai/data-app/commit/e740c764b2d804579f5d9841a3982708422eb03f))
+* prevent long bar chart category labels from overlapping ([#127](https://github.com/altertable-ai/data-app/issues/127)) ([27f9b89](https://github.com/altertable-ai/data-app/commit/27f9b898580f6d3228f4b6ff87f1d276faf5471a))
+* **react:** harden tooltip interactions ([#126](https://github.com/altertable-ai/data-app/issues/126)) ([9f73507](https://github.com/altertable-ai/data-app/commit/9f73507e3ba83653427a2865077d4b2b805c03bb))
+* **react:** use a static widget loading label ([#124](https://github.com/altertable-ai/data-app/issues/124)) ([2b51407](https://github.com/altertable-ai/data-app/commit/2b51407dc7c4f993c015d78e86d38e96d819c971))
+
 ## [0.74.0](https://github.com/altertable-ai/data-app/compare/v0.73.0...v0.74.0) (2026-10-24)
 
 
