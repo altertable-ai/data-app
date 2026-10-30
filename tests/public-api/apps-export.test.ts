@@ -228,3 +228,29 @@ describe('export', () => {
         .toBe(true);
     });
 });
+
+test('omitting presentation and export retains refresh and loaded content', async ({
+  page,
+}) => {
+  await page.goto('/declared-app?no-exports');
+  await page
+    .getByRole('button', { name: 'Resolve alpha 1', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Show primary', exact: true }).click();
+  await expect
+    .poll(() =>
+      page
+        .getByRole('button', { name: 'Refresh data', exact: true })
+        .isEnabled()
+    )
+    .toBe(true);
+  expect(
+    await page.getByRole('button', { name: 'Present story' }).count()
+  ).toBe(0);
+  expect(await page.getByRole('button', { name: /Export/ }).count()).toBe(0);
+  await expect
+    .poll(() =>
+      page.getByRole('region', { name: 'Alpha visualization' }).isVisible()
+    )
+    .toBe(true);
+});

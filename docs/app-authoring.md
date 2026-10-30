@@ -13,10 +13,13 @@ for the requested change. For a new app, use the starter supplied by the authori
 | ----------------------- | ------------------------------------------------------------------- |
 | Hosted / remote / cloud | `starter-data-app/index.tsx`                                        |
 | Local                   | `starter-local-data-app`                                            |
+| Hosted metric           | `starter-metric-data-app/index.tsx`                                 |
+| Hosted Finding          | `starter-finding-data-app/index.tsx`                                |
+| Local metric            | `starter-local-metric-data-app`                                     |
+| Local Finding           | `starter-local-finding-data-app`                                    |
 
-These are the currently shipped runtime starters. Select a use-case starter when
-one is supplied by the authoring workflow; otherwise adapt the shared starter's
-sample content to the app brief. The hosted starter demonstrates query → operation
+Choose the runtime and use case supplied by the app brief. Each starter is editable
+source; replace fixture queries and sample content before publishing. The hosted starter demonstrates query → operation
 → context → view → dataset → widget composition, including a story example.
 Hosted apps stay in one file with public package imports
 and a literal `defineDataApp()` declaration. Local apps use the same composition
