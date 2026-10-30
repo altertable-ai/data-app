@@ -1,11 +1,5 @@
-import {
-  createMessageClient,
-  getDataAppTransport,
-} from '@altertable/data-app/client';
-import {
-  openExternalLinkRoute,
-  parseExternalUrl,
-} from '@altertable/data-app/contract';
+import { getDataAppTransport } from '@altertable/data-app/client';
+import { parseExternalUrl } from '@altertable/data-app/contract';
 import {
   useEffect,
   useRef,
@@ -51,15 +45,10 @@ export function ExternalLink({
     request.current = controller;
     setPending(true);
     setError(false);
-    const client = createMessageClient(
-      { 'navigation:openExternal': openExternalLinkRoute },
-      transport.request
-    );
-    void client
+    void transport
       .request(
-        'navigation:openExternal',
-        { url },
-        { signal: controller.signal }
+        { route: 'navigation:openExternal', payload: { url } },
+        controller.signal
       )
       .catch(() => {
         if (!controller.signal.aborted) setError(true);
