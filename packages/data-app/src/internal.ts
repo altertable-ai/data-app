@@ -88,3 +88,28 @@ export {
   type SourceDimensionVariable,
 } from './core/dimension-source.ts';
 export { parseAppDiagnosticReport } from './core/diagnostics.ts';
+
+export {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  type DateTimeRangePreset,
+  type DateTimeRangeVariable,
+  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeComparisonSelection,
+  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeVariableOptions,
+} from './core/date-time-variable.ts';
+export {
+  parseDateTimeRange,
+  serializeDateTimeRange,
+  resolveDateTimeRange,
+  formatDateTimeRange,
+  formatDateTimeBound,
+  parseDateTimeBound,
+} from './core/date-time-range-value.ts';
+export type {
+  DateTimeRange,
+  AbsoluteOrRelativeDateTime,
+  RelativeDateTime,
+} from './core/date-time-range.ts';

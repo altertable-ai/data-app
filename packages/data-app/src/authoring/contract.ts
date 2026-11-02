@@ -5,10 +5,15 @@
  */
 import { parseDate, today } from '@internationalized/date';
 
+import { createDateTimeRangeContract } from '../core/date-time-range-contract.ts';
 import {
   attachDimensionSelectors,
   validateVariableInput,
 } from '../core/dimension-source.ts';
+export type {
+  DateTimeRangeContract,
+  DateTimeRangeRequest,
+} from '../core/date-time-range-contract.ts';
 import { formatDateRange } from '../core/format.ts';
 import { invariant } from '../core/invariant.ts';
 import {
@@ -18,7 +23,6 @@ import {
   decodeQueryResult,
   type QueryDefinitions,
   type CheckedQueries,
-  type QueryParameters,
   type QueryInputParameters,
   type QueryRow,
   type IsUnion,
@@ -103,6 +107,7 @@ export type DateRangeContractOptions = {
 
 /** One source policy for the server parser, URL variable, and displayed reporting period. */
 export function defineDateRangeContract(options: DateRangeContractOptions) {
+  options = { ...options };
   invariant(
     Number.isInteger(options.maxRangeDays) && options.maxRangeDays > 0,
     'Date range needs a positive maxRangeDays.'
@@ -111,26 +116,8 @@ export function defineDateRangeContract(options: DateRangeContractOptions) {
   if (typeof options.maxDate === 'string') parseDate(options.maxDate);
   today(options.timeZone);
 
-  function bounds() {
-    const latest = today(options.timeZone).subtract({
-      days: options.completeDays === false ? 0 : 1,
-    });
-    const sourceMax =
-      typeof options.maxDate === 'function'
-        ? options.maxDate()
-        : options.maxDate;
-    const maxDate =
-      sourceMax && parseDate(sourceMax).compare(latest) < 0
-        ? parseDate(sourceMax).toString()
-        : latest.toString();
-
-    return {
-      minDate: options.minDate,
-      maxDate,
-      maxRangeDays: options.maxRangeDays,
-      timeZone: options.timeZone,
-    };
-  }
+  const datetime = createDateTimeRangeContract(options);
+  const bounds = datetime.bounds;
 
   function period({ start, end }: DateRangeInput): ReportingPeriod {
     return {
@@ -181,6 +168,7 @@ export function defineDateRangeContract(options: DateRangeContractOptions) {
   }
 
   return {
+    datetime,
     request,
     parseRequest,
     bounds,
@@ -375,7 +363,12 @@ export function defineOperation<
     async run(context, input) {
       async function query<Name extends keyof Queries & string>(
         name: Name,
-        values: Partial<QueryParameters> = {},
+        values: Record<
+          string,
+          | import('../core/queries.ts').QueryParameterValue
+          | import('../core/date-time-range.ts').DateTimeRange
+          | undefined
+        > = {},
         options?: { limit?: number }
       ) {
         invariant(Object.hasOwn(queries, name), `Unknown query name: ${name}.`);
@@ -461,3 +454,30 @@ export type {
 } from '../core/filters.ts';
 
 export { variableInput } from '../core/dimension-source.ts';
+
+export {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  type DateTimeRangePreset,
+  type DateTimeRangeVariable,
+  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeComparisonSelection,
+  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeVariableOptions,
+} from '../core/date-time-variable.ts';
+export {
+  parseDateTimeRange,
+  serializeDateTimeRange,
+  resolveDateTimeRange,
+  formatDateTimeRange,
+  formatDateTimeBound,
+  parseDateTimeBound,
+} from '../core/date-time-range-value.ts';
+export type {
+  DateTimeRange,
+  AbsoluteOrRelativeDateTime,
+  RelativeDateTime,
+} from '../core/date-time-range.ts';
+
+export { dateTimeRangeSql } from '../core/date-time-range-sql.ts';

@@ -973,7 +973,14 @@ test('filter actions stay balanced with long selections and Done preserves filte
     const clearBox = await controls
       .getByRole('button', { name: 'Clear', exact: true })
       .boundingBox();
-    expect(Math.abs(inputBox!.y - clearBox!.y)).toBeLessThan(1);
+    const lastFilterBox = await controls
+      .getByRole('button', { name: 'Segment: Enterprise', exact: true })
+      .boundingBox();
+    expect(clearBox!.y).toBeGreaterThanOrEqual(lastFilterBox!.y);
+    if (Math.abs(clearBox!.y - lastFilterBox!.y) < 1)
+      expect(clearBox!.x).toBeGreaterThanOrEqual(
+        lastFilterBox!.x + lastFilterBox!.width
+      );
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth

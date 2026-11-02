@@ -14,6 +14,8 @@ import clients from '@/tests/public-api/fixtures/clients.html';
 import controls from '@/tests/public-api/fixtures/controls.html';
 import dateAxes from '@/tests/public-api/fixtures/date-axes.html';
 import datePresentation from '@/tests/public-api/fixtures/date-presentation.html';
+import datetimeComparison from '@/tests/public-api/fixtures/datetime-comparison.html';
+import datetime from '@/tests/public-api/fixtures/datetime.html';
 import declaredApp from '@/tests/public-api/fixtures/declared-app.html';
 import diagnosticsHost from '@/tests/public-api/fixtures/diagnostics-host.html';
 import exploration from '@/tests/public-api/fixtures/exploration.html';
@@ -91,6 +93,8 @@ const server = Bun.serve({
     '/controls': controls,
     '/tooltips': tooltips,
     '/filters': filters,
+    '/datetime': datetime,
+    '/datetime-comparison': datetimeComparison,
     '/filter-presentation': filterPresentation,
     '/search-catalog': searchCatalog,
     '/static': staticApp,

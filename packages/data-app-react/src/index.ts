@@ -110,3 +110,20 @@ export {
 export type { AnnotationBarHandle, AnnotationBarProps } from './host/index.ts';
 
 export { ExternalLink, type ExternalLinkProps } from './authoring/index.ts';
+
+export {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  type DateTimeRangePreset,
+  type DateTimeRangeVariable,
+  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeComparisonSelection,
+  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeVariableOptions,
+} from './authoring/index.ts';
+
+export {
+  DateTimeRangePicker,
+  type DateTimeRangePickerProps,
+} from './authoring/index.ts';

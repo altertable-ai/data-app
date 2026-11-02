@@ -1,3 +1,7 @@
+import type {
+  DateTimeRangeComparisonRequest,
+  DateTimeRangeComparisonVariable,
+} from './date-time-variable.ts';
 import {
   createDimensionFilter,
   parseFacetOptions,
@@ -48,6 +52,14 @@ export class DimensionMembershipError extends Error {
   }
 }
 
+type ParsedVariableValues<Variables extends VariableCollection> = {
+  [
+    Key in keyof Variables
+  ]: Variables[Key] extends DateTimeRangeComparisonVariable
+    ? DateTimeRangeComparisonRequest
+    : AppVariableValues<Variables>[Key];
+};
+
 /** Validate named variable values at the operation boundary. Date inputs belong to the base parser. */
 export function variableInput<
   Input extends object,
@@ -59,7 +71,7 @@ export function variableInput<
       ? never
       : Variables[Key];
   }
-): (value: unknown) => Input & AppVariableValues<Variables> {
+): (value: unknown) => Input & ParsedVariableValues<Variables> {
   const previous = parserVariables.get(parse) ?? {};
   const definitions = { ...variables };
   for (const [name, variable] of Object.entries(definitions))
@@ -80,13 +92,18 @@ export function variableInput<
     const values: Record<string, unknown> = {};
     for (const [name, variable] of Object.entries(definitions)) {
       const selected = (value as Record<string, unknown>)[name];
+      if (variable.kind === 'dateTimeRangeComparison') {
+        values[name] = variable.parseInput(selected);
+        continue;
+      }
       invariant(
         variable.valid(selected as never),
         `Invalid ${variable.label ?? name}.`
       );
-      values[name] = selected;
+      values[name] =
+        variable.kind === 'dateTimeRange' ? variable.parse(selected) : selected;
     }
-    return { ...input, ...values } as Input & AppVariableValues<Variables>;
+    return { ...input, ...values } as Input & ParsedVariableValues<Variables>;
   }
   parserVariables.set(parser, {
     ...previous,

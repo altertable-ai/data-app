@@ -206,3 +206,57 @@ const dailyCountsView = defineTimeView({
 Custom control ownership is needed only when generated controls cannot express
 the requirement; use `/ui` for that case. Do not reuse reserved inspection,
 presentation, or navigation URL keys.
+
+## Absolute and relative datetime ranges
+
+Use `dateTimeRangeVariable()` for times, rolling windows, or mixed absolute and
+relative bounds. Share the variable between the operation parser and the view;
+`<DataApp>` supplies the picker and URL state:
+
+```ts
+import {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  defineDateRangeContract,
+  variableInput,
+} from '@altertable/data-app/contract';
+
+const calendar = defineDateRangeContract({
+  maxRangeDays: 366,
+  timeZone: 'UTC',
+  completeDays: false,
+});
+const period = dateTimeRangeVariable({
+  key: 'period',
+  contract: calendar,
+  comparison: true,
+  defaultValue: '30d',
+  presets: [
+    ...dateTimeRangePresets.analytics,
+    { label: 'Past 6 months', range: '6mo', shortcut: '6mo' },
+  ],
+});
+const events = dataApp.defineOperation({
+  input: variableInput(() => ({}), { period }),
+  checks: [{ period: period.input(period.defaultValue) }],
+  policy: { maxQueryRows: 1000, maxDurationMs: 15000 },
+  async run({ query }, input) {
+    const current = await query('events', { period: input.period.range });
+    const previous = input.period.comparison
+      ? await query('events', { period: input.period.comparison })
+      : null;
+    return { current: current.rows, previous: previous?.rows ?? null };
+  },
+});
+// Use operation: 'events', time: period in defineTimeView().
+```
+
+Use `dateTimeRangePresets.monitoring` for shorter windows, or omit `presets`
+for the default menu. The optional contract shares coverage and range limits with
+the picker and server parser; omit it for unrestricted datetime filters. Relative
+selections stay relative across reloads.
+Bind the value to a [datetime query parameter](contract.md#bind-datetime-ranges).
+`comparison: true` adds the previous-period toggle and resolves both query ranges
+against one reference time. `defineTimeView({ time: period, ... })` supplies metric
+comparison labels from the displayed request. Omit `comparison` for a plain
+`DateTimeRange` query input. Existing calendar variables remain supported.

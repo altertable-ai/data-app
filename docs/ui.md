@@ -293,3 +293,10 @@ for inline forms.
 Use `<Button variant="primary">` for the main committing action, such as Apply.
 Use outline and ghost buttons for secondary actions.
 Use `<Button variant="inline">` for actions within text or table cells. Use buttons for opening sheets and links for URL navigation.
+
+## Datetime selection
+
+Prefer a [datetime variable](variables.md#absolute-and-relative-datetime-ranges)
+for generated controls and URL state. For custom screens, `<DateTimeRangePicker>`
+accepts the same `DateTimeRange` and preset sets, with calendar and natural-language
+entry. See its props in [REFERENCE.md](../REFERENCE.md).

@@ -77,6 +77,7 @@
     "typecheck": "bun ../../node_modules/typescript/bin/tsc --noEmit -p tsconfig.build.json"
   },
   "dependencies": {
-    "@internationalized/date": "3.12.4"
+    "@internationalized/date": "3.12.4",
+    "chrono-node": "2.9.1"
   }
 }

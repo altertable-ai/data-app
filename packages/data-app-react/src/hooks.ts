@@ -4,7 +4,11 @@ import type {
   DataOperations,
   DateRangeRequest,
 } from '@altertable/data-app/contract';
-import { type DimensionOption } from '@altertable/data-app/contract';
+import {
+  parseDateTimeRange,
+  formatDateTimeRange,
+  type DimensionOption,
+} from '@altertable/data-app/contract';
 import type { CheckedVariableDeclarations } from '@altertable/data-app/internal';
 import type { IsUnion } from '@altertable/data-app/internal';
 import { facetSource, type FacetVariable } from '@altertable/data-app/internal';
@@ -50,7 +54,9 @@ import type { AuthoringDataContext } from './ui/data-context.ts';
 import type { EmptyContent } from './ui/presentation.ts';
 import {
   dateRangeVariable,
-  type DateRangeVariable,
+  type DateTimeRangeVariable,
+  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonRequest,
   type DateRangeVariableOptions,
 } from './ui/variables.ts';
 import { useViewVariables } from './view-controls.tsx';
@@ -64,6 +70,94 @@ import {
   type ViewBindingOptions,
   type ViewDate,
 } from './view.ts';
+
+type CalendarTimeViewDefinition<
+  Operations extends DataOperations,
+  Name extends keyof Operations & string,
+  Additional extends VariableCollection,
+  Context extends AuthoringDataContext,
+> = {
+  operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
+  dataContext: Context;
+  time: Omit<DateRangeVariableOptions, 'key'>;
+  variables?: Additional &
+    CheckedVariableDeclarations<NoInfer<Additional>> & {
+      period?: never;
+    } & Omit<
+      CheckedFacetContexts<TimeVariables<NoInfer<Additional>>>,
+      'period'
+    > &
+    Omit<
+      CheckedFacetSources<Operations, TimeVariables<NoInfer<Additional>>>,
+      'period'
+    >;
+  isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
+  emptyFallback: EmptyContent;
+} & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>> &
+  ViewBindingOptions<
+    TimeVariables<NoInfer<Additional>>,
+    InputOf<Operations[Name]>,
+    RequiredPeriodBinding<InputOf<Operations[Name]>>
+  >;
+
+type DateTimeViewDefinition<
+  Operations extends DataOperations,
+  Name extends keyof Operations & string,
+  Additional extends VariableCollection,
+  Context extends AuthoringDataContext,
+  Period extends DateTimeRangeVariable | DateTimeRangeComparisonVariable =
+    DateTimeRangeVariable,
+> = Omit<
+  DataViewDefinition<
+    Name,
+    { period: Period } & NoInfer<Additional>,
+    InputOf<Operations[Name]>,
+    OutputOf<Operations[Name]>
+  >,
+  'variables' | 'describeInput' | 'date'
+> & {
+  operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
+  dataContext: Context;
+  time: Period;
+  variables?: Additional &
+    CheckedVariableDeclarations<NoInfer<Additional>> & {
+      period?: never;
+    } & Omit<
+      CheckedFacetContexts<{ period: Period } & NoInfer<Additional>>,
+      'period'
+    > &
+    Omit<
+      CheckedFacetSources<Operations, { period: Period } & NoInfer<Additional>>,
+      'period'
+    >;
+} & ViewBindingOptions<
+    { period: Period } & NoInfer<Additional>,
+    InputOf<Operations[Name]>,
+    Period extends DateTimeRangeComparisonVariable
+      ? InputOf<Operations[Name]> extends {
+          period: DateTimeRangeComparisonRequest;
+        }
+        ? never
+        : 'period'
+      : never
+  >;
+
+function reportingTimeZone(definition: {
+  variables: VariableCollection;
+  time?: DateTimeRangeVariable | DateTimeRangeComparisonVariable;
+  date?: { variable: string };
+}) {
+  const period = definition.date
+    ? definition.variables[definition.date.variable]
+    : definition.time;
+  if (period?.kind === 'dateRange') return period.bounds().timeZone;
+  if (
+    period?.kind === 'dateTimeRangeComparison' ||
+    period?.kind === 'dateTimeRange'
+  )
+    return period.contract?.bounds().timeZone;
+  return undefined;
+}
 
 const clientScopes = new WeakMap<object, string>();
 
@@ -482,15 +576,7 @@ export function createDataHooks<Operations extends DataOperations>(
               evidence: definition.dataContext.evidence(dataset.evidence),
             },
             view,
-            normalized.date &&
-              normalized.variables[normalized.date.variable]?.kind ===
-                'dateRange'
-              ? (
-                  normalized.variables[
-                    normalized.date.variable
-                  ] as DateRangeVariable
-                ).bounds().timeZone
-              : undefined
+            reportingTimeZone(normalized)
           );
         },
         metric(
@@ -618,34 +704,17 @@ export function createDataHooks<Operations extends DataOperations>(
    * Mappers must preserve the period and dimension selections; bindings extract nested inputs.
    * Use defineDataView with describeInput for deliberately fixed-period views. */
 
-  function defineTimeView<
+  function defineCalendarTimeView<
     Name extends keyof Operations & string,
     const Additional extends VariableCollection = {},
     const Context extends AuthoringDataContext = AuthoringDataContext,
   >(
-    definition: {
-      operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
-      dataContext: Context;
-      time: Omit<DateRangeVariableOptions, 'key'>;
-      variables?: Additional &
-        CheckedVariableDeclarations<NoInfer<Additional>> & {
-          period?: never;
-        } & Omit<
-          CheckedFacetContexts<TimeVariables<NoInfer<Additional>>>,
-          'period'
-        > &
-        Omit<
-          CheckedFacetSources<Operations, TimeVariables<NoInfer<Additional>>>,
-          'period'
-        >;
-      isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
-      emptyFallback: EmptyContent;
-    } & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>> &
-      ViewBindingOptions<
-        TimeVariables<NoInfer<Additional>>,
-        InputOf<Operations[Name]>,
-        RequiredPeriodBinding<InputOf<Operations[Name]>>
-      >
+    definition: CalendarTimeViewDefinition<
+      Operations,
+      Name,
+      Additional,
+      Context
+    >
   ) {
     const period = dateRangeVariable({ ...definition.time, key: 'period' });
 
@@ -662,7 +731,7 @@ export function createDataHooks<Operations extends DataOperations>(
       } & Additional &
         CheckedFacetContexts<NoInfer<TimeVariables<Additional>>>,
       bindings: definition.bindings,
-      input(values) {
+      input(values: ResolvedVariables<TimeVariables<Additional>>) {
         if (definition.input) return definition.input(values);
         if (!definition.variables || !Object.keys(definition.variables).length)
           return values.period as InputOf<Operations[Name]>;
@@ -671,7 +740,7 @@ export function createDataHooks<Operations extends DataOperations>(
       },
       date: {
         variable: 'period' as never,
-        input(input) {
+        input(input: InputOf<Operations[Name]>) {
           return definition.bindings?.period
             ? (definition.bindings.period(input) as DateRangeRequest)
             : ((input && typeof input === 'object' && 'period' in input
@@ -681,7 +750,140 @@ export function createDataHooks<Operations extends DataOperations>(
       },
       isEmpty: definition.isEmpty,
       emptyFallback: definition.emptyFallback,
-    });
+    } as unknown as Parameters<
+      typeof bindDataView<
+        Name,
+        { period: typeof period } & Additional,
+        Context,
+        true
+      >
+    >[0]);
+  }
+
+  function defineDateTimeView<
+    Name extends keyof Operations & string,
+    const Additional extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
+    Period extends DateTimeRangeVariable | DateTimeRangeComparisonVariable =
+      DateTimeRangeVariable,
+  >(
+    definition: DateTimeViewDefinition<
+      Operations,
+      Name,
+      Additional,
+      Context,
+      Period
+    >
+  ) {
+    const period = definition.time;
+    return bindDataView<
+      Name,
+      { period: Period } & Additional,
+      Context,
+      Period extends DateTimeRangeComparisonVariable ? true : false
+    >({
+      ...definition,
+      variables: { ...definition.variables, period } as {
+        period: Period;
+      } & Additional &
+        CheckedFacetContexts<NoInfer<{ period: Period } & Additional>>,
+      ...(period.kind === 'dateTimeRangeComparison'
+        ? {
+            date: {
+              variable: 'period',
+              input(input: InputOf<Operations[Name]>) {
+                return (
+                  definition.bindings?.period
+                    ? definition.bindings.period(input)
+                    : (input as { period: unknown }).period
+                ) as DateTimeRangeComparisonRequest;
+              },
+            },
+          }
+        : {}),
+      describeInput(input: InputOf<Operations[Name]>) {
+        const selected = definition.bindings?.period
+          ? definition.bindings.period(input)
+          : (input as { period: unknown }).period;
+        return period.kind === 'dateTimeRangeComparison'
+          ? formatDateTimeRange(
+              parseDateTimeRange(
+                (selected as DateTimeRangeComparisonRequest).range
+              )
+            )
+          : period.describe!(parseDateTimeRange(selected));
+      },
+    } as unknown as Parameters<
+      typeof bindDataView<
+        Name,
+        { period: Period } & Additional,
+        Context,
+        Period extends DateTimeRangeComparisonVariable ? true : false
+      >
+    >[0]);
+  }
+
+  /** Share a datetime variable with the operation parser via time: period.
+   * Existing calendar time options retain their comparison workflow.
+   */
+  function defineTimeView<
+    Name extends keyof Operations & string,
+    const Additional extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
+  >(
+    definition: DateTimeViewDefinition<
+      Operations,
+      Name,
+      Additional,
+      Context,
+      DateTimeRangeComparisonVariable
+    >
+  ): BoundDataView<
+    Name,
+    { period: DateTimeRangeComparisonVariable } & Additional,
+    InputOf<Operations[Name]>,
+    OutputOf<Operations[Name]>,
+    Context,
+    true
+  >;
+  function defineTimeView<
+    Name extends keyof Operations & string,
+    const Additional extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
+  >(
+    definition: DateTimeViewDefinition<Operations, Name, Additional, Context>
+  ): BoundDataView<
+    Name,
+    { period: DateTimeRangeVariable } & Additional,
+    InputOf<Operations[Name]>,
+    OutputOf<Operations[Name]>,
+    Context,
+    false
+  >;
+  function defineTimeView<
+    Name extends keyof Operations & string,
+    const Additional extends VariableCollection = {},
+    const Context extends AuthoringDataContext = AuthoringDataContext,
+  >(
+    definition: CalendarTimeViewDefinition<
+      Operations,
+      Name,
+      Additional,
+      Context
+    >
+  ): BoundDataView<
+    Name,
+    TimeVariables<Additional>,
+    InputOf<Operations[Name]>,
+    OutputOf<Operations[Name]>,
+    Context,
+    true
+  >;
+  function defineTimeView(definition: any): any {
+    return definition.time.kind === 'dateTimeRange' ||
+      definition.time.kind === 'dateTimeRangeComparison'
+      ? defineDateTimeView(definition)
+      : defineCalendarTimeView(definition);
   }
 
   /** Bind typed options to a registered operation and explicitly declared variable dependencies.
@@ -775,21 +977,13 @@ export function createDataHooks<Operations extends DataOperations>(
       snapshot: request.snapshot,
       scope: displayedScope(request.view, describeInput),
       refetch() {
-        void request.refetch();
+        if (!variables.refreshTime()) void request.refetch();
       },
       cancel: request.cancel,
       refreshing: request.refreshing,
       queries: request.queries,
       emptyFallback: definition.emptyFallback,
-      timeZone:
-        definition.date &&
-        definition.variables[definition.date.variable]?.kind === 'dateRange'
-          ? (
-              definition.variables[
-                definition.date.variable
-              ] as DateRangeVariable
-            ).bounds().timeZone
-          : undefined,
+      timeZone: reportingTimeZone(definition),
       searchControls: variables.searchControls,
       filterControls: variables.filterControls,
       variables,

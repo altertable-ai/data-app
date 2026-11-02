@@ -11,3 +11,12 @@ export type {
   QueryRow,
 } from './authoring/index.ts';
 export { dataAppTitle } from './core/config.ts';
+
+export type {
+  DateTimeRange,
+  AbsoluteOrRelativeDateTime,
+  RelativeDateTime,
+  RelativeAnchor,
+  RelativeOffset,
+  RelativeUnit,
+} from './authoring/index.ts';

@@ -1,0 +1,230 @@
+.altertable-datetime-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 22rem;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: var(--atbl-control-height);
+  padding: var(--atbl-control-padding-block) var(--atbl-control-padding-inline);
+  font: var(--atbl-type-label-weight) var(--atbl-type-label-size) /
+    var(--atbl-type-label-leading) var(--atbl-font);
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+  cursor: text;
+}
+.altertable-datetime-input input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+.altertable-datetime-input[data-disabled] {
+  opacity: 0.5;
+}
+.altertable-datetime-shortcut {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 2rem;
+  padding: 0.1rem 0.25rem;
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-subtle);
+  color: var(--atbl-muted);
+  text-align: center;
+  font-size: var(--atbl-type-meta-size);
+}
+.altertable-datetime-popover {
+  width: min(22rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  overflow: visible;
+  box-sizing: border-box;
+}
+.altertable-datetime-presets {
+  padding: 0.25rem;
+  max-height: var(--available-height, 32rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.altertable-datetime-presets ~ .altertable-datetime-presets {
+  padding-top: 0;
+}
+.altertable-datetime-presets:has(~ .altertable-datetime-presets) {
+  padding-bottom: 0;
+}
+.altertable-datetime-presets button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  border: 0;
+  border-radius: var(--atbl-radius-control);
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.altertable-datetime-presets button[data-divider] {
+  position: relative;
+  margin-top: 0.8rem;
+}
+.altertable-datetime-presets button[data-divider]::before {
+  content: '';
+  position: absolute;
+  inset: -0.55rem 0 auto;
+  border-top: 1px solid var(--atbl-border);
+}
+.altertable-datetime-presets button small {
+  display: block;
+  margin-top: 0.125rem;
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+}
+.altertable-datetime-presets button[data-highlighted] {
+  background: var(--atbl-subtle);
+}
+.altertable-datetime-check {
+  margin-left: auto;
+}
+.altertable-datetime-help {
+  position: absolute;
+  top: 0;
+  width: 16rem;
+  max-height: var(--available-height, 32rem);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 1rem;
+  border: 1px solid var(--atbl-border);
+  border-radius: var(--atbl-radius-control);
+  background: var(--atbl-surface);
+  color: var(--atbl-text);
+}
+.altertable-datetime-help[data-side='left'] {
+  right: calc(100% + 0.5rem);
+}
+.altertable-datetime-help[data-side='right'] {
+  left: calc(100% + 0.5rem);
+}
+.altertable-datetime-help h4 {
+  margin: 0.75rem 0 0.25rem;
+  color: var(--atbl-muted);
+  font-weight: 500;
+}
+.altertable-datetime-help section div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.altertable-datetime-help button {
+  font: inherit;
+  font-size: var(--atbl-type-meta-size);
+  padding: 0.25rem;
+  color: inherit;
+  background: var(--atbl-subtle);
+  border: 0;
+  border-radius: var(--atbl-radius-control);
+  cursor: pointer;
+}
+.altertable-datetime-error {
+  padding: 0.5rem;
+  margin: 0;
+}
+.altertable-datetime-calendar-panel {
+  padding: 0.75rem;
+  max-height: var(--available-height, 32rem);
+  overflow-y: auto;
+}
+.altertable-datetime-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+@media (max-width: 680px) {
+  .altertable-datetime-popover {
+    max-height: var(--available-height, calc(100dvh - 2rem));
+    overflow-y: auto;
+  }
+  .altertable-datetime-help {
+    position: static;
+    width: 100%;
+    max-height: none;
+    border: 0;
+    border-top: 1px solid var(--atbl-border);
+  }
+}
+.altertable-datetime-calendar {
+  width: 100%;
+  min-width: 0;
+}
+.altertable-datetime-calendar header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.altertable-datetime-calendar table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 2px;
+}
+.altertable-datetime-calendar th {
+  color: var(--atbl-muted);
+  font-size: var(--atbl-type-meta-size);
+  font-weight: 500;
+}
+.altertable-datetime-calendar td {
+  text-align: center;
+  padding: 0;
+}
+.altertable-datetime-calendar .react-aria-CalendarCell {
+  display: grid;
+  place-items: center;
+  min-height: 40px;
+  cursor: pointer;
+  border-radius: var(--atbl-radius-control);
+  font-variant-numeric: tabular-nums;
+}
+.altertable-datetime-calendar .react-aria-CalendarCell[data-selected] {
+  background: var(--atbl-subtle);
+  font-weight: 650;
+}
+.altertable-datetime-calendar .react-aria-CalendarCell[data-selection-start],
+.altertable-datetime-calendar .react-aria-CalendarCell[data-selection-end] {
+  background: var(--atbl-text);
+  color: var(--atbl-surface);
+}
+.altertable-datetime-calendar .react-aria-CalendarCell[data-disabled],
+.altertable-datetime-calendar .react-aria-CalendarCell[data-unavailable] {
+  color: var(--atbl-muted);
+  cursor: default;
+  text-decoration: line-through;
+}
+.altertable-datetime-calendar .react-aria-CalendarCell[data-outside-month] {
+  visibility: hidden;
+}
+
+.altertable-datetime-help[data-side='inline'] {
+  position: static;
+  width: 100%;
+  max-height: none;
+  border: 0;
+  border-top: 1px solid var(--atbl-border);
+}
+.altertable-datetime-popover:has(
+  .altertable-datetime-help[data-side='inline']
+) {
+  max-height: var(--available-height, calc(100dvh - 2rem));
+  overflow-y: auto;
+}

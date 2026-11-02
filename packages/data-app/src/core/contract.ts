@@ -25,6 +25,8 @@ export type {
   ReportingPeriod,
   DateRangeContractOptions,
   DateRangeContract,
+  DateTimeRangeContract,
+  DateTimeRangeRequest,
   RegisteredQuery,
   OperationDefinition,
   ConnectionOperation,
@@ -136,3 +138,29 @@ export {
   type OpenExternalLink,
   type ExternalLinkResult,
 } from './external-link.ts';
+export {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  type DateTimeRangePreset,
+  type DateTimeRangeVariable,
+  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeComparisonSelection,
+  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeVariableOptions,
+} from '../authoring/contract.ts';
+export {
+  parseDateTimeRange,
+  serializeDateTimeRange,
+  resolveDateTimeRange,
+  formatDateTimeRange,
+  formatDateTimeBound,
+  parseDateTimeBound,
+} from '../authoring/contract.ts';
+export type {
+  DateTimeRange,
+  AbsoluteOrRelativeDateTime,
+  RelativeDateTime,
+} from '../authoring/contract.ts';
+
+export { dateTimeRangeSql } from '../authoring/contract.ts';

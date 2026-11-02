@@ -14,7 +14,7 @@ import { readRequestBody, RequestBodyTooLargeError } from './request-body.ts';
 /** Authorization result for one viewer request. A hosted adapter must scope its lakehouse client. */
 export type RequestAccess = {
   lakehouse: Lakehouse;
-  /** Trusted values shared across queries; each query uses only its declared keys. */
+  /** Trusted values shared across queries; each query uses only its declared keys. Datetime ranges use serializeDateTimeRange(); they are decoded and validated before SQL binding. */
   queryParams?: QueryParameters;
 };
 

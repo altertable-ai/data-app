@@ -1,4 +1,8 @@
 import type {
+  DateTimeRangeComparisonSelection,
+  DateTimeRange,
+} from '@altertable/data-app/contract';
+import type {
   NumberFilter,
   NumberSelection,
   BooleanSelection,
@@ -15,7 +19,7 @@ import {
 import type { AppVariable } from '@altertable/data-app/internal';
 import { type DimensionSelectionVariable } from '@altertable/data-app/internal';
 import { useQueries } from '@tanstack/react-query';
-import { useContext, type ReactNode } from 'react';
+import { useContext, useMemo, useReducer, type ReactNode } from 'react';
 
 import {
   SearchSuggestionsContext,
@@ -23,6 +27,7 @@ import {
 } from './search-suggestions.ts';
 import { ChoicePicker } from './ui/ChoicePicker.tsx';
 import { DateRangePicker } from './ui/DateRangePicker.tsx';
+import { DateTimeRangePicker } from './ui/DateTimeRangePicker.tsx';
 import { DimensionPicker } from './ui/DimensionPicker.tsx';
 import { NumberFilterPicker } from './ui/NumberFilterPicker.tsx';
 import type { ControlLabelPlacement } from './ui/PickerField.tsx';
@@ -53,14 +58,31 @@ export function useViewVariables<Variables extends VariableCollection>(
   ) => Promise<unknown>
 ) {
   const variables = useAppVariables(definitions);
+  const [referenceRevision, refreshReference] = useReducer(
+    value => value + 1,
+    0
+  );
+  const selectionKey = JSON.stringify(variables.values);
+  const reference = useMemo(
+    // Capture one reporting instant per selection, refresh, or reporting-day change.
+    // eslint-disable-next-line react/purity
+    () => new Date(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectionKey, referenceRevision, variables.calendarRevision]
+  );
+  const hasComparison = Object.values(definitions).some(
+    variable => variable.kind === 'dateTimeRangeComparison'
+  );
   const resolved = {} as ResolvedVariables<Variables>;
   for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
     const definition = definitions[name]!;
     const value = variables.values[name];
     resolved[name] = (
-      definition.kind === 'dateRange'
-        ? definition.input(value as DateRangeSelection)
-        : value
+      definition.kind === 'dateTimeRangeComparison'
+        ? definition.input(value as DateTimeRangeComparisonSelection, reference)
+        : definition.kind === 'dateRange'
+          ? definition.input(value as DateRangeSelection)
+          : value
     ) as ResolvedVariables<Variables>[typeof name];
   }
   const facets = Object.entries(definitions).filter(
@@ -236,6 +258,54 @@ export function useViewVariables<Variables extends VariableCollection>(
             )}
           />
         );
+      } else if (definition.kind === 'dateTimeRangeComparison') {
+        const selection = value as DateTimeRangeComparisonSelection;
+        control = (
+          <DateTimeRangePicker
+            key={name}
+            label={definition.label}
+            labelPlacement={labelPlacement}
+            value={selection.range}
+            maxRangeDays={definition.maxRangeDays}
+            presets={definition.presets}
+            contract={definition.contract}
+            comparison={{
+              enabled: selection.comparison === 'previous',
+              range: definition.previous(selection),
+              onChange: enabled =>
+                setControlValue({
+                  range: selection.range,
+                  ...(enabled ? { comparison: 'previous' } : {}),
+                } as AppVariableValues<Variables>[typeof name]),
+            }}
+            onChange={range => {
+              const next: DateTimeRangeComparisonSelection = {
+                range,
+                ...(selection.comparison && definition.previous({ range })
+                  ? { comparison: 'previous' }
+                  : {}),
+              };
+              setControlValue(
+                next as AppVariableValues<Variables>[typeof name]
+              );
+            }}
+          />
+        );
+      } else if (definition.kind === 'dateTimeRange') {
+        control = (
+          <DateTimeRangePicker
+            key={name}
+            label={definition.label}
+            labelPlacement={labelPlacement}
+            value={value as DateTimeRange}
+            maxRangeDays={definition.maxRangeDays}
+            presets={definition.presets}
+            contract={definition.contract}
+            onChange={next =>
+              setControlValue(next as AppVariableValues<Variables>[typeof name])
+            }
+          />
+        );
       } else if (definition.kind === 'dimension') {
         const filter = definition as DimensionSelectionVariable;
         const facet = dimensionState(name, filter);
@@ -365,6 +435,11 @@ export function useViewVariables<Variables extends VariableCollection>(
   const hasControls = allFilters.length > 0 || orderedDisplayOptions.length > 0;
 
   return {
+    refreshTime() {
+      if (!hasComparison) return false;
+      refreshReference();
+      return true;
+    },
     ...variables,
     resolved,
     searchControls: searchControls.length ? searchControls : null,
