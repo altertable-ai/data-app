@@ -98,8 +98,11 @@ export function createDateTimeRangeContract(options: DateRangeContractOptions) {
   return {
     timeZone,
     bounds,
+    /** Validate coverage and duration while preserving symbolic relative bounds. */
     parse,
+    /** Resolve to UTC-rebased bounds using reporting-zone wall-clock fields, then validate policy. */
     resolve,
+    /** Return the preceding equal-length interval, or null when source coverage excludes it. */
     comparison,
     /** Resolve both periods against one reference instant. Use these bounds for comparison queries. */
     request(

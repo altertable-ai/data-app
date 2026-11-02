@@ -618,9 +618,9 @@ DateTimeRangeComparisonVariableOptions (type, @altertable/data-app/contract, @al
 DateTimeRangeContract (type, @altertable/data-app/contract): Datetime policy exposed by defineDateRangeContract().datetime. Parsing preserves relative values.
 DateTimeRangeContract.timeZone: string
 DateTimeRangeContract.bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }
-DateTimeRangeContract.parse: (value: unknown, now?: Date | undefined) => DateTimeRange
-DateTimeRangeContract.resolve: (value: unknown, now?: Date | undefined) => { from: Date; to: Date; }
-DateTimeRangeContract.comparison: (value: unknown, now?: Date | undefined) => { from: Date; to: Date; } | null
+DateTimeRangeContract.parse: (value: unknown, now?: Date | undefined) => DateTimeRange — Validate coverage and duration while preserving symbolic relative bounds.
+DateTimeRangeContract.resolve: (value: unknown, now?: Date | undefined) => { from: Date; to: Date; } — Resolve to UTC-rebased bounds using reporting-zone wall-clock fields, then validate policy.
+DateTimeRangeContract.comparison: (value: unknown, now?: Date | undefined) => { from: Date; to: Date; } | null — Return the preceding equal-length interval, or null when source coverage excludes it.
 DateTimeRangeContract.request: (value: unknown, compare?: boolean | undefined, now?: Date | undefined) => DateTimeRangeRequest — Resolve both periods against one reference instant. Use these bounds for comparison queries.
 DateTimeRangeParseFailureReason (type, @altertable/data-app/format): = 'ambiguous' | 'empty' | 'invalid-range' | 'unrecognized'
 DateTimeRangeParserOptions (type, @altertable/data-app/format)
@@ -709,7 +709,7 @@ defineDateRangeContract.options.minDate?: string
 defineDateRangeContract.options.maxDate?: string | (() => string)
 defineDateRangeContract.options.maxRangeDays: number
 defineDateRangeContract.options.timeZone: string
-defineDateRangeContract.options.completeDays?: boolean
+defineDateRangeContract.options.completeDays?: boolean — Defaults to complete days through yesterday in the reporting timezone. Set false to include today.
 defineOperation (function, @altertable/data-app/contract): <Input, Output, const Queries extends QueryDefinitions>(operation: OperationDefinition<Input, Output, Queries> & { queries: CheckedQueries<Queries>; }): Omit<DataOperation<Input, Output>, 'queryNames'> & { queryNames: { readonly [Name in keyof Queries & string]: Name; }; }
 defineOperation.operation.input: (value: unknown) => Input
 defineOperation.operation.checks: readonly [Input, ...Input[]]

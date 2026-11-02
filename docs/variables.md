@@ -220,6 +220,7 @@ import {
   defineDateRangeContract,
   variableInput,
 } from '@altertable/data-app/contract';
+import { createDataHooks } from '@altertable/data-app-react';
 
 const calendar = defineDateRangeContract({
   maxRangeDays: 366,
@@ -248,15 +249,21 @@ const events = dataApp.defineOperation({
     return { current: current.rows, previous: previous?.rows ?? null };
   },
 });
-// Use operation: 'events', time: period in defineTimeView().
+// ... client created from { events }, and eventsContext
+const { defineTimeView } = createDataHooks(client);
+const eventsView = defineTimeView({
+  operation: 'events',
+  dataContext: eventsContext,
+  time: period,
+  isEmpty: result => result.current.length === 0,
+  emptyFallback: { title: 'No events' },
+});
 ```
 
-Use `dateTimeRangePresets.monitoring` for shorter windows, or omit `presets`
-for the default menu. The optional contract shares coverage and range limits with
-the picker and server parser; omit it for unrestricted datetime filters. Relative
-selections stay relative across reloads.
-Bind the value to a [datetime query parameter](contract.md#bind-datetime-ranges).
-`comparison: true` adds the previous-period toggle and resolves both query ranges
-against one reference time. `defineTimeView({ time: period, ... })` supplies metric
-comparison labels from the displayed request. Omit `comparison` for a plain
-`DateTimeRange` query input. Existing calendar variables remain supported.
+Use `dateTimeRangePresets.monitoring` for shorter windows. Bind the query bounds
+to a [datetime parameter](contract.md#bind-datetime-ranges).
+`comparison: true` adds the toggle and supplies current/previous ranges resolved
+against one reference time; the view derives metric comparison labels from that
+request. Omit `comparison` for a plain `DateTimeRange` input, and omit `contract`
+when no shared reporting policy is needed. Relative selections stay relative
+across reloads.

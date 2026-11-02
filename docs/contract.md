@@ -84,8 +84,9 @@ Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 
 ### Bind datetime ranges
 
-Declare a `dateTimeRange` parameter and pass the [datetime variable](variables.md#absolute-and-relative-datetime-ranges)
-value directly to `query()`. Reference its bounds in SQL:
+Declare a `dateTimeRange` parameter and pass a `DateTimeRange` to `query()`.
+For a [comparison variable](variables.md#absolute-and-relative-datetime-ranges),
+pass its `range` or `comparison` bounds. Reference those bounds in SQL:
 
 ```ts
 const dataApp = defineDataApp({
@@ -101,12 +102,12 @@ const dataApp = defineDataApp({
 });
 ```
 
-The start is inclusive and the end exclusive; null bounds mean unbounded start
-and now respectively. Relative values resolve at query execution. Absolute
-values encode wall-clock fields in UTC: selecting 4 PM stores 16:00Z.
+The start is inclusive and the end exclusive. Relative values resolve at query
+execution. Absolute values encode wall-clock fields in UTC: selecting 4 PM stores
+16:00Z.
 SQL bounds are timezone-free timestamps. Configure the backend session to the
 reporting timezone and interpret timestamp-with-timezone comparisons in that
-same zone. Validate timezone-dependent range limits on the backend.
+same zone.
 
 ## Share reporting policy
 
@@ -125,9 +126,6 @@ const calendar = defineDateRangeContract({
 });
 ```
 
-For datetime values, `calendar.datetime.parse()` validates without resolving
-relative bounds. `calendar.datetime.request(range, true)` resolves one execution
-snapshot and its preceding equal-length comparison for querying.
-The existing calendar flow retains `calendar.parseRequest()` and the comparison
-control in `defineTimeView()`; its inclusive `start`/`end` dates remain supported.
-Datetime variables enable the same workflow with `comparison: true`.
+Use the shared contract in the [datetime variable workflow](variables.md#absolute-and-relative-datetime-ranges),
+including optional previous-period comparison. Calendar-only views share it with
+`calendar.parseRequest()` and `defineTimeView()`.

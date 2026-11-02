@@ -102,6 +102,7 @@ export type DateRangeContractOptions = {
   maxDate?: string | (() => string);
   maxRangeDays: number;
   timeZone: string;
+  /** Defaults to complete days through yesterday in the reporting timezone. Set false to include today. */
   completeDays?: boolean;
 };
 
