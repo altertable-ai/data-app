@@ -33,3 +33,9 @@ export {
   type AppFailure,
   type AppDiagnosticReport,
 } from '../core/diagnostics.ts';
+
+export {
+  navigateNewTab,
+  navigateNewWindow,
+  navigateNewWindowOrTab,
+} from './external-link.ts';

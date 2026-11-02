@@ -1,12 +1,14 @@
 import {
   openExternalLinkRoute,
+  resolveExternalLinkTarget,
+  type ExternalLinkTarget,
   MessageRoutingError,
   type OpenExternalLink,
   type ExternalLinkResult,
   type MessageContext,
 } from '@altertable/data-app/contract';
 
-/** Show a host-owned confirmation before opening a new tab. No iframe permissions are added. */
+/** Show a host-owned confirmation before external navigation. No iframe permissions are added. */
 export function createExternalLinkHandler({
   window: host = window,
   allowedOrigins,
@@ -16,10 +18,10 @@ export function createExternalLinkHandler({
   /** Exact HTTPS origins. Omit to allow any HTTPS destination after confirmation. */
   allowedOrigins?: readonly string[];
   /** Called synchronously on the host confirmation click instead of native navigation.
-   * The event carries confirmation-click modifiers. The callback owns popup opening
-   * and opener/referrer protection; do not await before opening a window.
+   * The target is resolved from the app's original request, including its modifier keys.
+   * The callback owns popup opening and opener/referrer protection; do not await before opening.
    */
-  navigate?: (url: string, event: MouseEvent) => void;
+  navigate?: (url: string, target: ExternalLinkTarget) => void;
 } = {}) {
   const origins =
     allowedOrigins &&
@@ -37,12 +39,15 @@ export function createExternalLinkHandler({
     { signal }: MessageContext
   ): Promise<ExternalLinkResult> {
     signal.throwIfAborted();
-    const { url } = openExternalLinkRoute.input(input);
+    const request = openExternalLinkRoute.input(input);
+    const { url } = request;
     if (origins && !origins.has(new URL(url).origin))
       throw new MessageRoutingError(
         'forbidden',
         'This external destination is not allowed.'
       );
+    const target = resolveExternalLinkTarget(request);
+    if (!target) return 'ignored';
     if (pending)
       throw new MessageRoutingError(
         'external_link_busy',
@@ -79,14 +84,20 @@ export function createExternalLinkHandler({
         cancel.addEventListener('click', () => dialog.close());
         function open(event: MouseEvent) {
           if (event.type === 'auxclick' && event.button !== 1) return;
-          if (navigate) {
-            event.preventDefault();
-            try {
-              navigate(url, event);
-            } catch (error) {
-              reject(error);
-              return;
-            }
+          event.preventDefault();
+          try {
+            if (navigate) navigate(url, target!);
+            else
+              host.open(
+                url,
+                '_blank',
+                target === 'window'
+                  ? 'popup,noopener,noreferrer'
+                  : 'noopener,noreferrer'
+              );
+          } catch (error) {
+            reject(error);
+            return;
           }
           resolve('opened');
         }

@@ -109,8 +109,20 @@ const router = createMessageRouter(
 // Pass router.dispatch as the bridge's onMessage handler.
 ```
 
-To use an existing host navigation helper, pass it as `navigate`, for example
-`createExternalLinkHandler({ navigate: navigateNewTab })`.
+To use existing host navigation helpers, dispatch on the resolved target:
+
+```ts
+const openExternalLink = createExternalLinkHandler({
+  navigate: (url, target) => {
+    if (target === 'window') navigateNewWindow(url);
+    else navigateNewTab(url);
+  },
+});
+// Register openExternalLink for navigation:openExternal in the host router.
+```
+
+Here `navigateNewWindow` and `navigateNewTab` are the host's navigation helpers.
+The target comes from the original frame request, including its modifier keys.
 
 Choose permitted origins according to the host's data policy: URLs can carry app
 data, and the initial origin check does not constrain redirects at the destination.

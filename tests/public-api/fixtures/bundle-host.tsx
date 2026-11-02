@@ -58,18 +58,23 @@ function Host() {
     createExternalLinkHandler({
       allowedOrigins: ['https://example.com'],
       navigate: params.has('custom-navigation')
-        ? (url, event) => {
+        ? (url, target) => {
             setExternalNavigation(
               JSON.stringify({
                 url,
-                shiftKey: event.shiftKey,
-                trusted: event.isTrusted,
+                target,
                 activated: navigator.userActivation.isActive,
               })
             );
             if (params.has('navigation-error'))
               throw new Error('Navigation failed');
-            window.open(url, '_blank', 'noopener,noreferrer');
+            window.open(
+              url,
+              '_blank',
+              target === 'window'
+                ? 'popup,noopener,noreferrer'
+                : 'noopener,noreferrer'
+            );
           }
         : undefined,
     })

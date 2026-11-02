@@ -97,7 +97,7 @@ test('an Activity-hidden link cancels confirmation and works again when restored
   expect(page.context().pages()).toHaveLength(1);
 });
 
-test('host navigation helper runs on confirmation with user activation and modifiers', async ({
+test('host navigation helper uses the app request and retains host user activation', async ({
   page,
 }) => {
   await page
@@ -126,8 +126,7 @@ test('host navigation helper runs on confirmation with user activation and modif
   await external.waitForLoadState();
   expect(JSON.parse((await navigation.textContent())!)).toEqual({
     url: 'https://example.com/report?source=widget',
-    shiftKey: true,
-    trusted: true,
+    target: 'tab',
     activated: true,
   });
   expect(await external.evaluate(() => window.opener)).toBeNull();
@@ -156,4 +155,108 @@ test('a failing host navigation helper closes confirmation and permits retry', a
   await link.click();
   await dialog.getByRole('button', { name: 'Cancel' }).click();
   await expect.poll(() => dialog.count()).toBe(0);
+});
+
+for (const { name, button, modifiers, target } of [
+  {
+    name: 'explicit tab',
+    button: 'Request new tab',
+    modifiers: [],
+    target: 'tab',
+  },
+  {
+    name: 'explicit window',
+    button: 'Request new window',
+    modifiers: [],
+    target: 'window',
+  },
+  {
+    name: 'Shift event',
+    button: 'Request from event',
+    modifiers: ['Shift'],
+    target: 'window',
+  },
+  {
+    name: 'Ctrl event',
+    button: 'Request from event',
+    modifiers: ['Control'],
+    target: 'tab',
+  },
+  {
+    name: 'Cmd event',
+    button: 'Request from event',
+    modifiers: ['Meta'],
+    target: 'tab',
+  },
+  {
+    name: 'Shift precedence',
+    button: 'Request from event',
+    modifiers: ['Shift', 'Control'],
+    target: 'window',
+  },
+] as const) {
+  test(`bridge navigation supports ${name}`, async ({ page }) => {
+    await page
+      .context()
+      .route('https://example.com/**', route =>
+        route.fulfill({ contentType: 'text/html', body: 'Report' })
+      );
+    await page.goto('/bundle-host?custom-navigation');
+    const app = page.frameLocator('iframe');
+    await app
+      .getByRole('button', { name: button, exact: true })
+      .press([...modifiers, 'Enter'].join('+'));
+    const dialog = page.getByRole('dialog', { name: 'Open external link' });
+    await expect.poll(() => dialog.isVisible()).toBe(true);
+    const opened = page.context().waitForEvent('page');
+    // Confirmation modifiers must not replace the original frame's intent.
+    await dialog
+      .getByRole('link')
+      .click({ modifiers: target === 'tab' ? ['Shift'] : [] });
+    const external = await opened;
+    await external.waitForLoadState();
+    expect(
+      JSON.parse((await page.getByLabel('External navigation').textContent())!)
+    ).toEqual({ url: 'https://example.com/report', target, activated: true });
+    await expect
+      .poll(() => app.getByLabel('External navigation result').textContent())
+      .toBe('opened');
+    expect(page.context().pages()).toHaveLength(2);
+  });
+}
+
+test('unmodified event navigation is ignored without confirmation', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?custom-navigation');
+  const app = page.frameLocator('iframe');
+  await app.getByRole('button', { name: 'Request from event' }).click();
+  await expect
+    .poll(() => app.getByLabel('External navigation result').textContent())
+    .toBe('ignored');
+  expect(await page.getByRole('dialog').count()).toBe(0);
+  expect(await page.getByLabel('External navigation').textContent()).toBe('');
+  expect(page.context().pages()).toHaveLength(1);
+});
+
+test('ExternalLink forwards original Shift navigation to the host', async ({
+  page,
+}) => {
+  await page
+    .context()
+    .route('https://example.com/**', route =>
+      route.fulfill({ contentType: 'text/html', body: 'Report' })
+    );
+  await page.goto('/bundle-host?custom-navigation');
+  const app = page.frameLocator('iframe');
+  await app
+    .getByRole('link', { name: 'View full report' })
+    .click({ modifiers: ['Shift'] });
+  const opened = page.context().waitForEvent('page');
+  await page.getByRole('dialog').getByRole('link').click();
+  await (await opened).waitForLoadState();
+  expect(
+    JSON.parse((await page.getByLabel('External navigation').textContent())!)
+      .target
+  ).toBe('window');
 });

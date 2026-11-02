@@ -1,4 +1,8 @@
-import { getDataAppTransport } from '@altertable/data-app/client';
+import {
+  getDataAppTransport,
+  navigateNewTab,
+  navigateNewWindowOrTab,
+} from '@altertable/data-app/client';
 import { parseExternalUrl } from '@altertable/data-app/contract';
 import {
   useEffect,
@@ -45,11 +49,12 @@ export function ExternalLink({
     request.current = controller;
     setPending(true);
     setError(false);
-    void transport
-      .request(
-        { route: 'navigation:openExternal', payload: { url } },
-        controller.signal
-      )
+    const options = { signal: controller.signal };
+    const navigation =
+      event.shiftKey || event.metaKey || event.ctrlKey
+        ? navigateNewWindowOrTab(url, event, options)
+        : navigateNewTab(url, options);
+    void navigation
       .catch(() => {
         if (!controller.signal.aborted) setError(true);
       })

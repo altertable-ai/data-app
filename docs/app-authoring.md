@@ -68,6 +68,11 @@ function ReportLink() {
 }
 ```
 
+For programmatic navigation, import `navigateNewTab`, `navigateNewWindow`, or
+`navigateNewWindowOrTab` from `@altertable/data-app/client`. For example,
+`navigateNewWindowOrTab(url, event)` accepts a DOM or React event: Shift requests
+a window, Ctrl/Cmd requests a tab, and an unmodified event does nothing.
+
 Embedded hosts must enable the [external link route](embed.md#external-links).
 
 ## Verify the app

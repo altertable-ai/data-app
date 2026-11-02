@@ -129,6 +129,9 @@ export type {
 
 export {
   parseExternalUrl,
+  resolveExternalLinkTarget,
+  type ExternalLinkTarget,
+  type ExternalLinkModifiers,
   openExternalLinkRoute,
   type OpenExternalLink,
   type ExternalLinkResult,
