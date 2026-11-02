@@ -650,3 +650,22 @@ it.each(['since February 30 2026 4pm', 'since April 31 2026 4pm'])(
     expect(canParseDateTimeRangeInput(input, parserOptions)).toBe(false);
   }
 );
+
+it.each([
+  ['Jan to Jul 2026', 'Jan\t'.concat('\t'.repeat(10000), 'to\tJul 2026')],
+  [
+    '1700000000 to 1700003600',
+    '1700000000\t'.concat('\t'.repeat(10000), 'to\t1700003600'),
+  ],
+  [
+    'July 1 2026 to July 2 2026',
+    'July 1 2026\t'.concat('\t'.repeat(10000), 'to\tJuly 2 2026'),
+  ],
+  ['from 2 days ago', 'from'.concat('\t'.repeat(10000), '2 days ago')],
+  ['since July 1 2026', 'since'.concat('\t'.repeat(10000), 'July 1 2026')],
+  ['from', 'from'.concat('\t'.repeat(10000))],
+])('normalizes repeated whitespace before parsing %s', (normalized, input) => {
+  expect(parseDateTimeRangeInput(input, parserOptions)).toEqual(
+    parseDateTimeRangeInput(normalized, parserOptions)
+  );
+});

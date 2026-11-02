@@ -40,7 +40,8 @@ export type ParseDateTimeRangeResult =
 
 type ParseSuccess = Extract<ParseDateTimeRangeResult, { ok: true }>;
 
-const RANGE_SEPARATOR_PATTERN = /\s*(?:-|–|—| to )\s*/i;
+// Input whitespace is normalized to single spaces before matching.
+const RANGE_SEPARATOR_PATTERN = / ?(?:-|–|—| to ) ?/i;
 
 const RELATIVE_UNIT_PATTERNS: ReadonlyArray<{
   unit: RelativeUnit;
@@ -106,7 +107,7 @@ const BARE_RELATIVE_PATTERN = new RegExp(
   'i'
 );
 
-const SINCE_PREFIX_PATTERN = /^(?:since|from)\s+(.+)$/i;
+const SINCE_PREFIX_PATTERN = /^(?:since|from) (.+)$/i;
 
 const UNIX_TIMESTAMP_PATTERN = /^\d+$/;
 
