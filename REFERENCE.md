@@ -711,6 +711,12 @@ ExplorationActionControl.indicator?: 'chevron' | 'ellipsis' — Chart labels use
 ExplorationActionControl.ref?: Ref<HTMLButtonElement> — Shares this menu trigger with an item's context and keyboard actions.
 ExplorationActionControl.className?: string
 ExplorationActionControlProps (type, @altertable/data-app-react/ui): = props listed as ExplorationActionControl.*
+ExternalLink (component, @altertable/data-app-react): (props: ExternalLinkProps) — Open HTTPS links through the host when embedded, or a native new tab when standalone.
+ExternalLink.href: string
+ExternalLink.children: ReactNode
+ExternalLink.className?: string
+ExternalLink.title?: string
+ExternalLinkProps (type, @altertable/data-app-react): = props listed as ExternalLink.*
 FilterActions (component, @altertable/data-app-react/ui): (props: FilterActionsProps)
 FilterActions.onClear?: (() => void)
 FilterActions.onApply: () => void [variant 1 of 2]

@@ -1,9 +1,12 @@
 import { defineDataApp } from '@altertable/data-app';
-import { injectDataAppStyles } from '@altertable/data-app-react';
+import { ExternalLink, injectDataAppStyles } from '@altertable/data-app-react';
 import { mountDataApp, searchVariable } from '@altertable/data-app-react';
 import { DataApp, useAppVariables } from '@altertable/data-app-react/ui';
 import {
   createMessageClient,
+  navigateNewTab,
+  navigateNewWindow,
+  navigateNewWindowOrTab,
   createDataClient,
   getDataAppTransport,
   getDataAppNavigation,
@@ -13,7 +16,7 @@ import {
   connectionCheck,
   type ConnectionOperation,
 } from '@altertable/data-app/contract';
-import { useState } from 'react';
+import { Activity, useState } from 'react';
 
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
 const dataApp = defineDataApp({
@@ -40,9 +43,11 @@ const variables = {
 
 function App() {
   const [crashed, setCrashed] = useState(false);
+  const [reportVisible, setReportVisible] = useState(true);
   const state = useAppVariables(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
+  const [navigationResult, setNavigationResult] = useState('');
   const [content, setContent] = useState<
     'short' | 'long' | 'viewport' | 'scaled' | 'oscillating'
   >('short');
@@ -69,6 +74,59 @@ function App() {
       toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}
     >
+      <output aria-label="External navigation result">
+        {navigationResult}
+      </output>
+      <button
+        onClick={() => {
+          void navigateNewTab('https://example.com/report').then(
+            setNavigationResult,
+            () => setNavigationResult('failed')
+          );
+        }}
+      >
+        Request new tab
+      </button>
+      <button
+        onClick={() => {
+          void navigateNewWindow('https://example.com/report').then(
+            setNavigationResult,
+            () => setNavigationResult('failed')
+          );
+        }}
+      >
+        Request new window
+      </button>
+      <button
+        onKeyDown={event => {
+          if (event.key !== 'Enter') return;
+          event.preventDefault();
+          void navigateNewWindowOrTab('https://example.com/report', event).then(
+            setNavigationResult,
+            () => setNavigationResult('failed')
+          );
+        }}
+        onClick={event => {
+          void navigateNewWindowOrTab('https://example.com/report', event).then(
+            setNavigationResult,
+            () => setNavigationResult('failed')
+          );
+        }}
+      >
+        Request from event
+      </button>
+      <button onClick={() => setReportVisible(value => !value)}>
+        {reportVisible ? 'Hide report link' : 'Show report link'}
+      </button>
+      <Activity mode={reportVisible ? 'visible' : 'hidden'}>
+        <ExternalLink href="https://example.com/report?source=widget">
+          View full report
+        </ExternalLink>
+      </Activity>
+      <ExternalLink href="https://denied.example/report">
+        Denied report
+      </ExternalLink>
+      <ExternalLink href="javascript:alert(1)">Unsafe report</ExternalLink>
       <button onClick={() => setCrashed(true)}>Crash render</button>
       <button
         onClick={() =>

@@ -1,5 +1,6 @@
 import {
   createNavigationHandler,
+  createExternalLinkHandler,
   createSqlQueryHandler,
   type DataAppDiagnostic,
   type DataAppLogger,
@@ -9,11 +10,17 @@ import { DataAppBridge } from '@altertable/data-app-embed/react';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
   createMessageRouter,
+  openExternalLinkRoute,
   defineMessageRoute,
   sqlQueryRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
-import { useReducer, useState } from 'react';
+import {
+  useReducer,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
@@ -51,6 +58,45 @@ const offscreen = {
 } as const;
 
 function Host() {
+  const [externalNavigation, setExternalNavigation] = useState('');
+  function navigateNewWindowOrTab(
+    url: string,
+    event: KeyboardEvent | ReactKeyboardEvent | ReactMouseEvent
+  ) {
+    const target = event.shiftKey
+      ? 'window'
+      : event.metaKey || event.ctrlKey
+        ? 'tab'
+        : undefined;
+    if (!target) return;
+    setExternalNavigation(
+      JSON.stringify({
+        url,
+        target,
+        keys: {
+          shiftKey: event.shiftKey,
+          metaKey: event.metaKey,
+          ctrlKey: event.ctrlKey,
+        },
+        keyboardEvent: event instanceof KeyboardEvent,
+        activated: navigator.userActivation.isActive,
+      })
+    );
+    if (params.has('navigation-error')) throw new Error('Navigation failed');
+    window.open(
+      url,
+      '_blank',
+      target === 'window' ? 'popup,noopener,noreferrer' : 'noopener,noreferrer'
+    );
+  }
+  const [openExternalLink] = useState(() =>
+    createExternalLinkHandler({
+      allowedOrigins: ['https://example.com'],
+      navigate: params.has('custom-navigation')
+        ? navigateNewWindowOrTab
+        : undefined,
+    })
+  );
   const [echoRequests, setEchoRequests] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [cancelledRequests, setCancelledRequests] = useState(0);
@@ -109,6 +155,7 @@ function Host() {
     {
       ...bridgeRoutes,
       'data:sql': sqlQueryRoute,
+      'navigation:openExternal': openExternalLinkRoute,
       'export:csv': fileRoute,
       'export:zip': fileRoute,
     },
@@ -146,6 +193,7 @@ function Host() {
           return response.json();
         },
       })),
+      'navigation:openExternal': openExternalLink,
       'export:csv': download,
       'export:zip': download,
     }
@@ -168,6 +216,7 @@ function Host() {
       <output aria-label="Host diagnostics" style={offscreen}>
         {JSON.stringify(diagnostics)}
       </output>
+      <output aria-label="External navigation">{externalNavigation}</output>
       <button onClick={changeHandler}>Change handler</button>
       <button
         onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}

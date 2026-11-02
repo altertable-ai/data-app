@@ -23,3 +23,5 @@ export {
   type DataAppRepairOptions,
   type DataAppRepairStatus,
 } from './repair.ts';
+
+export { createExternalLinkHandler } from './external-link.ts';

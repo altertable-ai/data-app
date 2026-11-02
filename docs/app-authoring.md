@@ -59,6 +59,29 @@ Keep credentials, authorization, and enforced query limits in the host/backend.
 The starter supplies transport and mounting; change them only for an explicit
 integration task.
 
+## Link to external pages
+
+Use `<ExternalLink>` for HTTPS destinations in widget content:
+
+```tsx
+import { ExternalLink } from '@altertable/data-app-react';
+
+function ReportLink() {
+  return (
+    <ExternalLink href="https://example.com/report">
+      View full report
+    </ExternalLink>
+  );
+}
+```
+
+For programmatic navigation, import `navigateNewTab`, `navigateNewWindow`, or
+`navigateNewWindowOrTab` from `@altertable/data-app/client`. For example,
+`navigateNewWindowOrTab(url, event)` accepts a DOM or React event: Shift requests
+a window, Ctrl/Cmd requests a tab, and an unmodified event does nothing.
+
+Embedded hosts must enable the [external link route](embed.md#external-links).
+
 ## Verify the app
 
 Run the authoring workflow's validation, then inspect the app:

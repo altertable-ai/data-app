@@ -106,3 +106,5 @@ export type { SectionHeadingProps } from '../ui/SectionHeading.tsx';
 export { DateDisplay } from '../ui/DateDisplay.tsx';
 export type { DateDisplayProps } from '../ui/DateDisplay.tsx';
 export { useDateFormatting } from '../date-formatting.ts';
+
+export { ExternalLink, type ExternalLinkProps } from '../ui/ExternalLink.tsx';

@@ -2,6 +2,7 @@ import {
   type DataAppLogger,
   type DataAppStatus,
   createNavigationHandler,
+  createExternalLinkHandler,
   createSqlQueryHandler,
 } from '@altertable/data-app-embed';
 import { DataAppBridge } from '@altertable/data-app-embed/react';
@@ -23,6 +24,7 @@ import {
   annotationSendRoute,
   annotationUpdateRoute,
   createMessageRouter,
+  openExternalLinkRoute,
   defineMessageRoute,
   sqlQueryRoute,
   DataSourceError,
@@ -221,6 +223,8 @@ function Host() {
     ...(hostOptions.has('lazy') ? { loading: 'lazy' as const } : {}),
   };
   const forward = createHttpTransport();
+  const [openExternalLink] = useState(() => createExternalLinkHandler());
+
   const fileExportRoute = defineMessageRoute({
     input(value: unknown): { filename: string; blob: Blob } {
       if (!value || typeof value !== 'object')
@@ -262,6 +266,7 @@ function Host() {
       'annotation:send': annotationSendRoute,
       'annotation:update': annotationUpdateRoute,
       'data:sql': sqlQueryRoute,
+      'navigation:openExternal': openExternalLinkRoute,
       'export:csv': fileExportRoute,
       'export:zip': fileExportRoute,
     },
@@ -277,6 +282,7 @@ function Host() {
         if (annotationFailure) throw new Error('Fixture failure');
         return annotationsHost.handlers['annotation:draft'](draft);
       },
+      'navigation:openExternal': openExternalLink,
       'export:csv': downloadExport,
       'export:zip': downloadExport,
       'data:sql': createSqlQueryHandler(async () => ({
