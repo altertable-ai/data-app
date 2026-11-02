@@ -130,6 +130,10 @@ export function parseDateTimeRange(
     }
   }
   invariant(
+    duration === undefined || duration > 0,
+    'Start must be before end.'
+  );
+  invariant(
     maxRangeDays === undefined ||
       (!!range.from &&
         (duration === undefined || duration <= maxRangeDays * 86_400_000)),
@@ -253,7 +257,8 @@ export function parseDateTimeBound(
         )![0] as RelativeUnit,
       })
     );
-    return parseDateTimeRange({ from: { anchor, offset } }).from!;
+    // Validate the bound without comparing it to an implicit "now" end.
+    return parseDateTimeRange({ to: { anchor, offset } }).to!;
   }
   // datetime-local controls encode fields without performing a local-time conversion.
   if (

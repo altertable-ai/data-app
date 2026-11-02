@@ -413,3 +413,71 @@ test('HTTP host datetime parameters decode validated JSON and remain protected f
   }
   expect(sqlCalls).toBe(1);
 });
+
+test('nonpositive fixed relative ranges are rejected by variables and HTTP input before querying', async () => {
+  const period = dateTimeRangeVariable({
+    key: 'period',
+    defaultValue: '1h',
+    maxRangeDays: 1,
+  });
+  const unrestricted = dateTimeRangeVariable({
+    key: 'period',
+    defaultValue: '1h',
+  });
+  const dataApp = defineDataApp({
+    title: 'Validated range',
+    description: 'Relative order',
+    scope: { organization: 'test', environment: 'test' },
+    queries: {
+      events: {
+        statement: 'SELECT $period.from AS start',
+        params: { period: { type: 'dateTimeRange' } },
+        projections: { start: { type: 'string' } },
+      },
+    },
+  });
+  const operation = dataApp.defineOperation({
+    input: variableInput(() => ({}), { period }),
+    checks: [{ period: period.defaultValue }],
+    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+    async run({ query }, input) {
+      return (await query('events', input)).rows;
+    },
+  });
+  const queryAll = vi.fn(async () => ({
+    columns: [{ name: 'start' }],
+    rows: [['start']],
+  }));
+  const handle = createDataHandler({ events: operation }, async () => ({
+    lakehouse: { queryAll },
+  }));
+  for (const amount of [0, 1]) {
+    for (const to of [
+      null,
+      { anchor: 'RELATIVE_ANCHOR_NOW' as const, offset: [] },
+    ]) {
+      const range: DateTimeRange = {
+        from: {
+          anchor: 'RELATIVE_ANCHOR_NOW',
+          offset: [{ amount, unit: 'HOUR' }],
+        },
+        to,
+      };
+      expect(period.valid(range)).toBe(false);
+      expect(unrestricted.valid(range)).toBe(false);
+      expect(() => parseDateTimeRange(range)).toThrow(
+        'Start must be before end.'
+      );
+      const response = await handle(
+        new Request('http://localhost/api/data/events', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ period: range }),
+        })
+      );
+      expect(response.status).toBe(400);
+    }
+  }
+  expect(queryAll).not.toHaveBeenCalled();
+  expect(period.valid(period.defaultValue)).toBe(true);
+});
