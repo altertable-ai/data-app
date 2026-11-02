@@ -1,7 +1,6 @@
 import {
   openExternalLinkRoute,
   resolveExternalLinkTarget,
-  type ExternalLinkTarget,
   MessageRoutingError,
   type OpenExternalLink,
   type ExternalLinkResult,
@@ -18,10 +17,11 @@ export function createExternalLinkHandler({
   /** Exact HTTPS origins. Omit to allow any HTTPS destination after confirmation. */
   allowedOrigins?: readonly string[];
   /** Called synchronously on the host confirmation click instead of native navigation.
-   * The target is resolved from the app's original request, including its modifier keys.
+   * Receives an undispatched, synthetic KeyboardEvent with the original modifier keys.
+   * Explicit tab/window requests map to Ctrl/Shift so modifier-based helpers work directly.
    * The callback owns popup opening and opener/referrer protection; do not await before opening.
    */
-  navigate?: (url: string, target: ExternalLinkTarget) => void;
+  navigate?: (url: string, event: KeyboardEvent) => void;
 } = {}) {
   const origins =
     allowedOrigins &&
@@ -48,6 +48,14 @@ export function createExternalLinkHandler({
       );
     const target = resolveExternalLinkTarget(request);
     if (!target) return 'ignored';
+    const keys =
+      request.target === 'event'
+        ? request.keys
+        : {
+            shiftKey: target === 'window',
+            ctrlKey: target === 'tab',
+            metaKey: false,
+          };
     if (pending)
       throw new MessageRoutingError(
         'external_link_busy',
@@ -86,7 +94,7 @@ export function createExternalLinkHandler({
           if (event.type === 'auxclick' && event.button !== 1) return;
           event.preventDefault();
           try {
-            if (navigate) navigate(url, target!);
+            if (navigate) navigate(url, new KeyboardEvent('navigation', keys));
             else
               host.open(
                 url,

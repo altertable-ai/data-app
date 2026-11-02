@@ -15,7 +15,12 @@ import {
   sqlQueryRoute,
   DataSourceError,
 } from '@altertable/data-app/contract';
-import { useReducer, useState } from 'react';
+import {
+  useReducer,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+} from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { bridgeRoutes } from '@/tests/public-api/fixtures/bridge-routes';
@@ -54,28 +59,41 @@ const offscreen = {
 
 function Host() {
   const [externalNavigation, setExternalNavigation] = useState('');
+  function navigateNewWindowOrTab(
+    url: string,
+    event: KeyboardEvent | ReactKeyboardEvent | ReactMouseEvent
+  ) {
+    const target = event.shiftKey
+      ? 'window'
+      : event.metaKey || event.ctrlKey
+        ? 'tab'
+        : undefined;
+    if (!target) return;
+    setExternalNavigation(
+      JSON.stringify({
+        url,
+        target,
+        keys: {
+          shiftKey: event.shiftKey,
+          metaKey: event.metaKey,
+          ctrlKey: event.ctrlKey,
+        },
+        keyboardEvent: event instanceof KeyboardEvent,
+        activated: navigator.userActivation.isActive,
+      })
+    );
+    if (params.has('navigation-error')) throw new Error('Navigation failed');
+    window.open(
+      url,
+      '_blank',
+      target === 'window' ? 'popup,noopener,noreferrer' : 'noopener,noreferrer'
+    );
+  }
   const [openExternalLink] = useState(() =>
     createExternalLinkHandler({
       allowedOrigins: ['https://example.com'],
       navigate: params.has('custom-navigation')
-        ? (url, target) => {
-            setExternalNavigation(
-              JSON.stringify({
-                url,
-                target,
-                activated: navigator.userActivation.isActive,
-              })
-            );
-            if (params.has('navigation-error'))
-              throw new Error('Navigation failed');
-            window.open(
-              url,
-              '_blank',
-              target === 'window'
-                ? 'popup,noopener,noreferrer'
-                : 'noopener,noreferrer'
-            );
-          }
+        ? navigateNewWindowOrTab
         : undefined,
     })
   );

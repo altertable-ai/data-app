@@ -127,6 +127,8 @@ test('host navigation helper uses the app request and retains host user activati
   expect(JSON.parse((await navigation.textContent())!)).toEqual({
     url: 'https://example.com/report?source=widget',
     target: 'tab',
+    keys: { shiftKey: false, metaKey: false, ctrlKey: true },
+    keyboardEvent: true,
     activated: true,
   });
   expect(await external.evaluate(() => window.opener)).toBeNull();
@@ -217,7 +219,24 @@ for (const { name, button, modifiers, target } of [
     await external.waitForLoadState();
     expect(
       JSON.parse((await page.getByLabel('External navigation').textContent())!)
-    ).toEqual({ url: 'https://example.com/report', target, activated: true });
+    ).toEqual({
+      url: 'https://example.com/report',
+      target,
+      activated: true,
+      keyboardEvent: true,
+      keys:
+        button === 'Request from event'
+          ? {
+              shiftKey: (modifiers as readonly string[]).includes('Shift'),
+              metaKey: (modifiers as readonly string[]).includes('Meta'),
+              ctrlKey: (modifiers as readonly string[]).includes('Control'),
+            }
+          : {
+              shiftKey: target === 'window',
+              metaKey: false,
+              ctrlKey: target === 'tab',
+            },
+    });
     await expect
       .poll(() => app.getByLabel('External navigation result').textContent())
       .toBe('opened');
