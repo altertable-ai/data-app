@@ -60,8 +60,10 @@ accessible role/name or label queries scoped to the relevant region. Keep browse
 workflows self-contained in `apps-*.test.ts`.
 
 When a change requires new app code or an authoring decision, update the relevant
-guide and starter. Keep app authoring in `docs/`; document current usage with one
-focused example, `<Component>` and `functionName()` notation.
+guide and starter. Keep SDK mechanics and shared component guidance in `docs/`;
+use-case composition belongs to the app brief and selected starter.
+Document current usage with one focused example, `<Component>` and
+`functionName()` notation.
 Show complete enclosing calls and components; use `// ...` for unrelated setup.
 Name the app declaration `dataApp`; keep the API's `app` prop name.
 Leave prop inventories to TypeScript and JSDoc. Generate `REFERENCE.md` with

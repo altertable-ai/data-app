@@ -21,10 +21,10 @@ Open <http://127.0.0.1:25837>. Alternatively, configure
 `ALTERTABLE_DATA_PROXY_URL` and `ALTERTABLE_DATA_PROXY_TOKEN` for an existing
 CLI proxy. Missing credentials stop startup.
 
-## Build the exploration
+## Build the app
 
-Replace the connectivity check with bounded operations, views, CSV export, and
-story. Change identity, appearance, and queries in `app.ts`.
+Replace the connectivity check with bounded operations, views, and the content
+specified by the app brief. Change identity, appearance, and queries in `app.ts`.
 
 ```fish
 bun run check

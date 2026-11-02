@@ -17,10 +17,14 @@ on this package.
 
 ## Starters
 
-| ID                       | Use                                                                       |
-| ------------------------ | ------------------------------------------------------------------------- |
-| `starter-data-app`       | [Hosted single-file app](templates/starter-data-app/index.tsx)            |
-| `starter-local-data-app` | [Local Bun and React project](templates/starter-local-data-app/README.md) |
+| ID                               | Use                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `starter-data-app`               | [Hosted single-file app](templates/starter-data-app/index.tsx)            |
+| `starter-local-data-app`         | [Local Bun and React project](templates/starter-local-data-app/README.md) |
+| `starter-metric-data-app`        | [Hosted metric app](templates/starter-metric-data-app/index.tsx)          |
+| `starter-finding-data-app`       | [Hosted finding app](templates/starter-finding-data-app/index.tsx)        |
+| `starter-local-metric-data-app`  | [Local metric app](templates/starter-local-metric-data-app/README.md)     |
+| `starter-local-finding-data-app` | [Local finding app](templates/starter-local-finding-data-app/README.md)   |
 
 Pin to the same exact version as `@altertable/data-app`. Authoring guides and
 API reference ship in that base package.

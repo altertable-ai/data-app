@@ -1,7 +1,8 @@
 # UI quality
 
-Lead with a supported finding and visible scope. Explain each chart's purpose,
-measures, units, and source evidence. Use package typography and formatters;
+Make the main result easy to identify and compare. Make its scope, units, and
+supporting evidence explicit, using context supplied by the host where available
+instead of repeating it. Explain each chart's purpose and measures. Use package typography and formatters;
 keep primary values prominent and preserve exact values in records and exports.
 
 Compose with `<Stack>`, `<Grid>`, and `<TextContent>`; parents own spacing and

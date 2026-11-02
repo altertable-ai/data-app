@@ -1,8 +1,16 @@
 # Stories and CSV export
 
-Supply `story` and `datasets` on `<DataApp>` from `@altertable/data-app-react`.
-Both use the displayed snapshot, including during refresh or failure.
-Setup and static screens use `<DataApp>` from `/ui` and may omit both.
+The bound `<DataApp>` from `@altertable/data-app-react` accepts an optional `story`
+callback and optional nonempty `datasets` list. Omit either prop to omit its toolbar
+control. Supplied features use the displayed snapshot, including during refresh or
+failure. A story callback returning `[]` leaves a disabled presentation action.
+Set `showToolbar={false}` to omit page actions together; data loading, error states,
+and declared filters remain available. Setup and static screens can use `<DataApp>`
+from `/ui`.
+
+These are component contracts. The app brief determines the
+intended presentation and export coverage. A presentation story is distinct from
+explanatory prose in the app body.
 
 ## Present data with stories
 
@@ -41,8 +49,9 @@ Keep the starter's `formatMetric()` import for formatted headlines.
 ## Export displayed data as CSV
 
 Declare [datasets](widgets.md#declare-datasets-and-metrics) once and pass
-`datasets={[sampleCounts]}`. Include every distinct displayed dataset
-at its displayed grain; reuse a dataset for visuals sharing the same rows.
+`datasets={[sampleCounts]}`. This list determines which datasets are available
+for export, using their bound rows and columns. Preserve the displayed grain;
+reuse a dataset for visuals sharing the same rows.
 
 One dataset downloads as CSV; multiple datasets offer individual downloads and
 **Export all** as ZIP. Filenames use the displayed scope. Accessors must return

@@ -24,6 +24,10 @@ import styles from '@/dev/fixtures/styles.html';
 import { dataApp as starterApp } from '@/packages/data-app-examples/templates/starter-local-data-app/app';
 import starterPage from '@/packages/data-app-examples/templates/starter-local-data-app/src/index.html';
 import { operations as starterOperations } from '@/packages/data-app-examples/templates/starter-local-data-app/src/operations';
+import findingStarterPage from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/index.html';
+import { operations as findingStarterOperations } from '@/packages/data-app-examples/templates/starter-local-finding-data-app/src/operations';
+import metricStarterPage from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/index.html';
+import { operations as metricStarterOperations } from '@/packages/data-app-examples/templates/starter-local-metric-data-app/src/operations';
 
 async function bundle(entry: string) {
   const result = await Bun.build({
@@ -93,6 +97,12 @@ const hostedApps = {
   },
 };
 const hostedApp = hostedApps[isDevelopment ? 'development' : 'test'];
+const loadMetricStarterBundle = await createBundleLoader(
+  '../packages/data-app-examples/templates/starter-metric-data-app/index.tsx'
+);
+const loadFindingStarterBundle = await createBundleLoader(
+  '../packages/data-app-examples/templates/starter-finding-data-app/index.tsx'
+);
 const loadHostedAppBundle = await createBundleLoader(hostedApp.entry);
 const loadPlaygroundBundle = isDevelopment
   ? loadHostedAppBundle
@@ -101,6 +111,7 @@ const serveReloadEvents =
   isDevelopment &&
   createReloadHandler([
     '../dev',
+    '../packages/data-app-examples/templates',
     './fixtures/bundle-app.tsx',
     './fixtures/bridge-frame.ts',
   ]);
@@ -120,6 +131,20 @@ serveLocalApp({
   title: starterApp.title,
   port: port + 2,
 });
+if (isDevelopment)
+  serveLocalApp({
+    page: metricStarterPage,
+    operations: metricStarterOperations,
+    title: 'Local metric starter',
+    port: port + 3,
+  });
+if (isDevelopment)
+  serveLocalApp({
+    page: findingStarterPage,
+    operations: findingStarterOperations,
+    title: 'Local finding starter',
+    port: port + 4,
+  });
 const loadFrameBundle = await createBundleLoader('./fixtures/bridge-frame.ts');
 Bun.serve({
   hostname: '127.0.0.1',
@@ -153,6 +178,8 @@ Bun.serve({
     '/playground': bundleHost,
     '/content-sizing': bundleHost,
     [hostedApp.path]: bundleHost,
+    '/starter-finding-data-app': bundleHost,
+    '/starter-metric-data-app': bundleHost,
   },
   async fetch(request, server) {
     const path = new URL(request.url).pathname;
@@ -204,6 +231,10 @@ Bun.serve({
     }
     if (path === '/__test/content-sizing')
       return new Response(await loadHostedAppBundle());
+    if (path === '/__test/starter-metric-data-app')
+      return new Response(await loadMetricStarterBundle());
+    if (path === '/__test/starter-finding-data-app')
+      return new Response(await loadFindingStarterBundle());
     if (path === '/__test/playground')
       return new Response(await loadPlaygroundBundle());
     if (path === `/__test${hostedApp.path}`)

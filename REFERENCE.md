@@ -298,6 +298,7 @@ CsvTable.rows: readonly (readonly CsvCell[])[]
 DataApp (component, @altertable/data-app-react): <Data, Input>(props: DataAppProps<Data, Input>) — Executes the primary view and owns its controls, inspection, exports, and stories.
 DataApp.children: ReactNode
 DataApp.description?: ReactNode — Override the declared subtitle; null hides it.
+DataApp.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states.
 DataApp.toolbarActions?: ReactNode
 DataApp.footerActions?: ReactNode
 DataApp.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
@@ -305,13 +306,14 @@ DataApp.showSearch?: boolean — Show declared search controls. Defaults to true
 DataApp.showFilters?: boolean — Show declared filter controls, including display options. Defaults to true; hiding preserves their values.
 DataApp.view: DeclaredView<Data, Input, unknown> & { scope(snapshot: DisplayedSnapshot<Data, Input>): string; }
 DataApp.showSearchSuggestions?: boolean — Show supplied datasets’ record suggestions on the first declared search. Defaults to true.
-DataApp.story: (snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<StoryFinding, 'evidence'> & { evidence: RegisteredBinding; })[]
-DataApp.datasets: readonly [ExportDataset<Data, Input>, ...ExportDataset<Data, Input>[]]
+DataApp.story?: ((snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<StoryFinding, 'evidence'> & { evidence: RegisteredBinding; })[]) — Omit to leave presentation out of the toolbar.
+DataApp.datasets?: readonly [ExportDataset<Data, Input>, ...ExportDataset<Data, Input>[]] — Omit to leave CSV export out of the toolbar.
 DataApp.details?: readonly DetailContent<any, any>[] — Detail destinations available to dataset actions and metric record inspection.
 DataApp (component, @altertable/data-app-react/ui): (props: DataAppProps) — Setup and static screens; fetched data uses the declared-view DataApp.
 DataApp.children: ReactNode
 DataApp.dataContext: DataContext
 DataApp.description?: ReactNode — Override the declared subtitle; null hides it.
+DataApp.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states.
 DataApp.toolbarActions?: ReactNode
 DataApp.footerActions?: ReactNode
 DataApp.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
@@ -342,6 +344,7 @@ DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode
 DataAppProps.dataContext: DataContext
 DataAppProps.description?: ReactNode — Override the declared subtitle; null hides it.
+DataAppProps.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states.
 DataAppProps.toolbarActions?: ReactNode
 DataAppProps.footerActions?: ReactNode
 DataAppProps.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.

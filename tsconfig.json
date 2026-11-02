@@ -29,6 +29,8 @@
     "tests",
     "scripts",
     "dev",
-    "packages/data-app-examples/templates/starter-data-app/index.tsx"
+    "packages/data-app-examples/templates/starter-data-app/index.tsx",
+    "packages/data-app-examples/templates/starter-metric-data-app/index.tsx",
+    "packages/data-app-examples/templates/starter-finding-data-app/index.tsx"
   ]
 }

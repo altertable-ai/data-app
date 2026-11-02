@@ -1,7 +1,7 @@
 # Direct UI composition
 
 Import from `@altertable/data-app-react/ui` for setup/static screens, custom
-controls, or a deliberately custom shell. Standard data apps use declared views
+controls, or a deliberately custom shell. For data-backed content, prefer declared views
 and bound widgets from `@altertable/data-app-react`.
 
 `<DataApp>` here renders a static screen and accepts optional direct CSV data.
