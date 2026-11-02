@@ -32,9 +32,6 @@ const javascript = await fetch(
       ? '/__test/content-sizing'
       : '/__test/bundle'
 ).then(response => response.text());
-const openExternalLink = createExternalLinkHandler({
-  allowedOrigins: ['https://example.com'],
-});
 const fileRoute = defineMessageRoute({
   input(value: unknown) {
     const file = value as { filename: string; blob: Blob };
@@ -56,6 +53,27 @@ const offscreen = {
 } as const;
 
 function Host() {
+  const [externalNavigation, setExternalNavigation] = useState('');
+  const [openExternalLink] = useState(() =>
+    createExternalLinkHandler({
+      allowedOrigins: ['https://example.com'],
+      navigate: params.has('custom-navigation')
+        ? (url, event) => {
+            setExternalNavigation(
+              JSON.stringify({
+                url,
+                shiftKey: event.shiftKey,
+                trusted: event.isTrusted,
+                activated: navigator.userActivation.isActive,
+              })
+            );
+            if (params.has('navigation-error'))
+              throw new Error('Navigation failed');
+            window.open(url, '_blank', 'noopener,noreferrer');
+          }
+        : undefined,
+    })
+  );
   const [echoRequests, setEchoRequests] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [cancelledRequests, setCancelledRequests] = useState(0);
@@ -175,6 +193,7 @@ function Host() {
       <output aria-label="Host diagnostics" style={offscreen}>
         {JSON.stringify(diagnostics)}
       </output>
+      <output aria-label="External navigation">{externalNavigation}</output>
       <button onClick={changeHandler}>Change handler</button>
       <button
         onClick={() => setTheme(value => (value === 'dark' ? 'light' : 'dark'))}

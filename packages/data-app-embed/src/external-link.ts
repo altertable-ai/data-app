@@ -10,10 +10,16 @@ import {
 export function createExternalLinkHandler({
   window: host = window,
   allowedOrigins,
+  navigate,
 }: {
   window?: Window;
   /** Exact HTTPS origins. Omit to allow any HTTPS destination after confirmation. */
   allowedOrigins?: readonly string[];
+  /** Called synchronously on the host confirmation click instead of native navigation.
+   * The event carries confirmation-click modifiers. The callback owns popup opening
+   * and opener/referrer protection; do not await before opening a window.
+   */
+  navigate?: (url: string, event: MouseEvent) => void;
 } = {}) {
   const origins =
     allowedOrigins &&
@@ -71,7 +77,21 @@ export function createExternalLinkHandler({
         signal.addEventListener('abort', abort, { once: true });
         dialog.addEventListener('close', () => resolve('cancelled'));
         cancel.addEventListener('click', () => dialog.close());
-        link.addEventListener('click', () => resolve('opened'));
+        function open(event: MouseEvent) {
+          if (event.type === 'auxclick' && event.button !== 1) return;
+          if (navigate) {
+            event.preventDefault();
+            try {
+              navigate(url, event);
+            } catch (error) {
+              reject(error);
+              return;
+            }
+          }
+          resolve('opened');
+        }
+        link.addEventListener('click', open);
+        link.addEventListener('auxclick', open);
         // Remove the abort listener when the dialog settles, including showModal failures.
         cleanup = () => signal.removeEventListener('abort', abort);
         dialog.showModal();

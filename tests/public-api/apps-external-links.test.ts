@@ -96,3 +96,64 @@ test('an Activity-hidden link cancels confirmation and works again when restored
   await expect.poll(() => link.getAttribute('aria-disabled')).toBe('false');
   expect(page.context().pages()).toHaveLength(1);
 });
+
+test('host navigation helper runs on confirmation with user activation and modifiers', async ({
+  page,
+}) => {
+  await page
+    .context()
+    .route('https://example.com/**', route =>
+      route.fulfill({ contentType: 'text/html', body: '<h1>Report</h1>' })
+    );
+  await page.goto('/bundle-host?custom-navigation');
+  const app = page.frameLocator('iframe');
+  const dialog = page.getByRole('dialog', { name: 'Open external link' });
+  const navigation = page.getByLabel('External navigation');
+  await app.getByRole('link', { name: 'Denied report' }).click();
+  await expect
+    .poll(() =>
+      app.getByRole('alert').filter({ hasText: 'Could not open' }).count()
+    )
+    .toBe(1);
+  expect(await navigation.textContent()).toBe('');
+  await app.getByRole('link', { name: 'View full report' }).click();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  expect(await navigation.textContent()).toBe('');
+  await app.getByRole('link', { name: 'View full report' }).click();
+  const opened = page.context().waitForEvent('page');
+  await dialog.getByRole('link').click({ modifiers: ['Shift'] });
+  const external = await opened;
+  await external.waitForLoadState();
+  expect(JSON.parse((await navigation.textContent())!)).toEqual({
+    url: 'https://example.com/report?source=widget',
+    shiftKey: true,
+    trusted: true,
+    activated: true,
+  });
+  expect(await external.evaluate(() => window.opener)).toBeNull();
+  expect(await external.evaluate(() => document.referrer)).toBe('');
+  expect(page.context().pages()).toHaveLength(2);
+  await expect.poll(() => dialog.count()).toBe(0);
+});
+
+test('a failing host navigation helper closes confirmation and permits retry', async ({
+  page,
+}) => {
+  await page.goto('/bundle-host?custom-navigation&navigation-error');
+  const app = page.frameLocator('iframe');
+  const link = app.getByRole('link', { name: 'View full report' });
+  const dialog = page.getByRole('dialog', { name: 'Open external link' });
+  await link.click();
+  await dialog.getByRole('link').click({ button: 'middle' });
+  await expect.poll(() => dialog.count()).toBe(0);
+  await expect
+    .poll(() =>
+      app.getByRole('alert').filter({ hasText: 'Could not open' }).count()
+    )
+    .toBe(1);
+  await expect.poll(() => link.getAttribute('aria-disabled')).toBe('false');
+  expect(page.context().pages()).toHaveLength(1);
+  await link.click();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect.poll(() => dialog.count()).toBe(0);
+});
