@@ -25,10 +25,17 @@ test('sandboxed widget opens an approved external link only after host confirmat
   );
   await dialog.getByRole('button', { name: 'Cancel' }).press('Escape');
   await expect.poll(() => dialog.count()).toBe(0);
-  await app.getByRole('link', { name: 'View full report' }).press('Enter');
-  const opened = page.context().waitForEvent('page');
-  await dialog.getByRole('link', { name: 'Open example.com' }).click();
-  const external = await opened;
+  const reportLink = app.getByRole('link', { name: 'View full report' });
+  // Host dismissal precedes the asynchronous cancellation response to the iframe.
+  await expect
+    .poll(() => reportLink.getAttribute('aria-disabled'))
+    .toBe('false');
+  await reportLink.press('Enter');
+  await expect.poll(() => dialog.isVisible()).toBe(true);
+  const [external] = await Promise.all([
+    page.context().waitForEvent('page'),
+    dialog.getByRole('link', { name: 'Open example.com' }).click(),
+  ]);
   await external.waitForLoadState();
   expect(external.url()).toBe('https://example.com/report?source=widget');
   expect(await external.evaluate(() => window.opener)).toBeNull();
