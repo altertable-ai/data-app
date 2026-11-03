@@ -1,6 +1,6 @@
 {
   "name": "data-app-workspace",
-  "version": "0.74.0",
+  "version": "0.75.0",
   "private": true,
   "workspaces": [
     "packages/*",
@@ -33,13 +33,13 @@
     "knip": "knip"
   },
   "devDependencies": {
-    "@altertable/data-app": "0.74.0",
-    "@altertable/data-app-bun": "0.74.0",
-    "@altertable/data-app-embed": "0.74.0",
-    "@altertable/data-app-examples": "0.74.0",
-    "@altertable/data-app-manifest": "0.74.0",
-    "@altertable/data-app-react": "0.74.0",
-    "@altertable/data-app-worker": "0.74.0",
+    "@altertable/data-app": "0.75.0",
+    "@altertable/data-app-bun": "0.75.0",
+    "@altertable/data-app-embed": "0.75.0",
+    "@altertable/data-app-examples": "0.75.0",
+    "@altertable/data-app-manifest": "0.75.0",
+    "@altertable/data-app-react": "0.75.0",
+    "@altertable/data-app-worker": "0.75.0",
     "@types/bun": "1.4.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
