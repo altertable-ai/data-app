@@ -737,10 +737,3 @@ export function parseDateTimeRangeInput(
 
   return failure('unrecognized', normalizedInput);
 }
-
-export function canParseDateTimeRangeInput(
-  input: string,
-  options?: DateTimeRangeParserOptions
-): boolean {
-  return parseDateTimeRangeInput(input, options).ok;
-}

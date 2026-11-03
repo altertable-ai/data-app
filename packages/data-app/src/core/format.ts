@@ -1,7 +1,4 @@
-export {
-  parseDateTimeRangeInput,
-  canParseDateTimeRangeInput,
-} from './date-time-range-parser.ts';
+export { parseDateTimeRangeInput } from './date-time-range-parser.ts';
 export type {
   DateTimeRangeParserOptions,
   DateTimeRangeParseFailureReason,

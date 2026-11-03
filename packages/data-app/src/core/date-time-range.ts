@@ -34,3 +34,6 @@ export type RelativeUnit =
   | 'WEEK'
   | 'MONTH'
   | 'YEAR';
+
+/** Bounded, resolved wall-clock dates encoded in UTC, with an exclusive end. */
+export type ResolvedDateTimeRange = { from: Date; to: Date };

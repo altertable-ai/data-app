@@ -151,8 +151,6 @@ Button.variant?: 'elevated' | 'ghost' | 'inline' | 'outline' | 'primary' — Inl
 Button.size?: 'compact' | 'default' | 'icon' | 'icon-compact'
 Button.…: plus props inherited from React
 ButtonProps (type, @altertable/data-app-react): = props listed as Button.*
-canParseDateTimeRangeInput (function, @altertable/data-app/format): (input: string, options: DateTimeRangeParserOptions): boolean
-canParseDateTimeRangeInput.options.now?: Date — UTC-encoded reference fields for omitted dates/years. Defaults to the current UTC date/time.
 chartColor (function, @altertable/data-app-react): (id: string): string
 ChartLegend (component, @altertable/data-app-react/ui): (props: ChartLegendProps)
 ChartLegend.children: ReactNode
@@ -513,7 +511,7 @@ DateFormatOptions.missing?: string
 DatePresetId (type, @altertable/data-app-react/ui): = 'day' | 'last-14' | 'last-3' | 'last-30' | 'last-7' | 'last-90' | 'previous-month' | 'previous-week' | 'this-month' | 'this-week'
 DateRange (type, @altertable/data-app-react/ui): = props listed as previousDateRange.options.* — ISO calendar dates; the app operation defines timezone and inclusive bounds.
 DateRangeContract (type, @altertable/data-app/contract)
-DateRangeContract.datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => { ...; }; comparison: (value: unk…
+DateRangeContract.datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange; comparison…
 DateRangeContract.request: (value: unknown, compare?: boolean | undefined) => DateRangeRequest
 DateRangeContract.parseRequest: (value: unknown) => DateRangeRequest
 DateRangeContract.bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }
@@ -556,7 +554,7 @@ dateRangeVariable (function, @altertable/data-app-react): (options: DateRangeVar
 dateRangeVariable.options.label?: string
 dateRangeVariable.options.key: string — URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields.
 dateRangeVariable.options.defaultValue: DateRangeSelection & { comparison?: undefined; }
-dateRangeVariable.options.contract: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => { ...; }; comparison:…
+dateRangeVariable.options.contract: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange…
 dateRangeVariable.options.history?: HistoryMode
 dateRangeVariable.options.comparison?: boolean — Opt into a URL-backed comparison with the preceding equal-length range.
 dateRangeVariable.options.presentation?: VariablePresentation
@@ -588,8 +586,8 @@ DateTimeFormatOptions.timeZone?: string
 DateTimeFormatOptions.precision?: 'minute' | 'second'
 DateTimeRange (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract, @altertable/data-app/format): = props listed as dateTimeRangeSql.range.*
 DateTimeRangeComparisonRequest (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): An execution snapshot with the relative selection retained for URL and displayed-scope matching.
-DateTimeRangeComparisonRequest.range: { from: Date; to: Date; }
-DateTimeRangeComparisonRequest.comparison: { from: Date; to: Date; } | null
+DateTimeRangeComparisonRequest.range: ResolvedDateTimeRange
+DateTimeRangeComparisonRequest.comparison: ResolvedDateTimeRange | null
 DateTimeRangeComparisonRequest.selection: DateTimeRangeComparisonSelection
 DateTimeRangeComparisonRequest.reference: string
 DateTimeRangeComparisonSelection (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui)
@@ -608,19 +606,19 @@ DateTimeRangeComparisonVariable.read: (params: URLSearchParams) => DateTimeRange
 DateTimeRangeComparisonVariable.write: (value: DateTimeRangeComparisonSelection) => Record<string, string | null>
 DateTimeRangeComparisonVariable.valid: (value: DateTimeRangeComparisonSelection) => boolean
 DateTimeRangeComparisonVariable.same: (left: DateTimeRangeComparisonSelection, right: DateTimeRangeComparisonSelection) => boolean
-DateTimeRangeComparisonVariable.contract: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => { ...; }; comparison:…
+DateTimeRangeComparisonVariable.contract: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange…
 DateTimeRangeComparisonVariable.maxRangeDays?: number
 DateTimeRangeComparisonVariable.presets?: readonly DateTimeRangePreset[]
 DateTimeRangeComparisonVariable.input: (selection: DateTimeRangeComparisonSelection, now?: Date | undefined) => DateTimeRangeComparisonRequest
 DateTimeRangeComparisonVariable.parseInput: (value: unknown) => DateTimeRangeComparisonRequest
-DateTimeRangeComparisonVariable.previous: (selection: DateTimeRangeComparisonSelection) => { from: Date; to: Date; } | null
+DateTimeRangeComparisonVariable.previous: (selection: DateTimeRangeComparisonSelection) => ResolvedDateTimeRange | null
 DateTimeRangeComparisonVariableOptions (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as dateTimeRangeVariable.options.*
 DateTimeRangeContract (type, @altertable/data-app/contract): Datetime policy exposed by defineDateRangeContract().datetime. Parsing preserves relative values.
 DateTimeRangeContract.timeZone: string
 DateTimeRangeContract.bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }
 DateTimeRangeContract.parse: (value: unknown, now?: Date | undefined) => DateTimeRange — Validate coverage and duration while preserving symbolic relative bounds.
-DateTimeRangeContract.resolve: (value: unknown, now?: Date | undefined) => { from: Date; to: Date; } — Resolve to UTC-rebased bounds using reporting-zone wall-clock fields, then validate policy.
-DateTimeRangeContract.comparison: (value: unknown, now?: Date | undefined) => { from: Date; to: Date; } | null — Return the preceding equal-length interval, or null when source coverage excludes it.
+DateTimeRangeContract.resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange — Resolve to UTC-rebased bounds using reporting-zone wall-clock fields, then validate policy.
+DateTimeRangeContract.comparison: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange | null — Return the preceding equal-length interval, or null when source coverage excludes it.
 DateTimeRangeContract.request: (value: unknown, compare?: boolean | undefined, now?: Date | undefined) => DateTimeRangeRequest — Resolve both periods against one reference instant. Use these bounds for comparison queries.
 DateTimeRangeParseFailureReason (type, @altertable/data-app/format): = 'ambiguous' | 'empty' | 'invalid-range' | 'unrecognized'
 DateTimeRangeParserOptions (type, @altertable/data-app/format)
@@ -634,7 +632,7 @@ DateTimeRangePicker.placeholder?: string
 DateTimeRangePicker.label?: string
 DateTimeRangePicker.labelPlacement?: ControlLabelPlacement
 DateTimeRangePicker.maxRangeDays?: number — Client limit for determinate durations; validate timezone-dependent ranges on the backend.
-DateTimeRangePicker.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => { ...; }; comparison:… — Shared reporting policy; generated controls inherit it from their variable.
+DateTimeRangePicker.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange… — Shared reporting policy; generated controls inherit it from their variable.
 DateTimeRangePicker.presets?: readonly DateTimeRangePreset[] — Suggestions in display order. Omit for defaults; [] retains calendar and text entry. Invalid or over-limit suggestions are omitted; typed input is not restricted to the menu.
 DateTimeRangePicker.disabled?: boolean
 DateTimeRangePicker.comparison?: { enabled: boolean; range: DateTimeRange | null; onChange: (enabled: boolean) => void; } — Optional controlled comparison with the immediately preceding equal-length interval.
@@ -647,8 +645,8 @@ dateTimeRangePresets (const, @altertable/data-app/contract, @altertable/data-app
 dateTimeRangePresets.monitoring: readonly DateTimeRangePreset[]
 dateTimeRangePresets.analytics: readonly DateTimeRangePreset[]
 DateTimeRangeRequest (type, @altertable/data-app/contract): Resolved UTC-rebased bounds for one execution, optionally with the preceding equal-length interval.
-DateTimeRangeRequest.range: { from: Date; to: Date; }
-DateTimeRangeRequest.comparison: { from: Date; to: Date; } | null
+DateTimeRangeRequest.range: ResolvedDateTimeRange
+DateTimeRangeRequest.comparison: ResolvedDateTimeRange | null
 dateTimeRangeSql (function, @altertable/data-app/contract): (range: DateTimeRange, parameter: string): { from: string; to: string; params: Record<string, string>; } — DuckDB timestamp expressions using the query session's timezone for relative anchors. Absolute fields remain UTC-rebased TIMESTAMP values. Start is inclusive, end exclusive.
 dateTimeRangeSql.range.from?: AbsoluteOrRelativeDateTime | null — Inclusive start; null or omitted means unbounded.
 dateTimeRangeSql.range.to?: AbsoluteOrRelativeDateTime | null — Exclusive end; null or omitted means now.
@@ -660,10 +658,10 @@ dateTimeRangeVariable.options.maxRangeDays?: number — Client limit for determi
 dateTimeRangeVariable.options.presets?: readonly DateTimeRangePreset[] — Suggestions in display order. Omit for defaults; [] retains calendar and text entry. Invalid or over-limit suggestions are omitted; typed input is not restricted to the menu.
 dateTimeRangeVariable.options.history?: HistoryMode
 dateTimeRangeVariable.options.presentation?: VariablePresentation
-dateTimeRangeVariable.options.comparison: true
-dateTimeRangeVariable.options.contract: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => { ...; }; comparison:…
-dateTimeRangeVariable.options.comparison?: false — Enable the previous-period reporting workflow. Requires a shared contract.
-dateTimeRangeVariable.options.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => { ...; }; comparison:… — Shared reporting coverage, timezone, duration limits, and comparison policy.
+dateTimeRangeVariable.options.allowComparison: true
+dateTimeRangeVariable.options.contract: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange…
+dateTimeRangeVariable.options.allowComparison?: false — Enable the previous-period reporting workflow. Requires a shared contract.
+dateTimeRangeVariable.options.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange… — Shared reporting coverage, timezone, duration limits, and comparison policy.
 DateTimeRangeVariable (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui)
 DateTimeRangeVariable.kind: 'dateTimeRange'
 DateTimeRangeVariable.label?: string
@@ -679,7 +677,7 @@ DateTimeRangeVariable.valid: (value: DateTimeRange) => boolean
 DateTimeRangeVariable.same: (left: DateTimeRange, right: DateTimeRange) => boolean
 DateTimeRangeVariable.parse: (value: unknown) => DateTimeRange
 DateTimeRangeVariable.maxRangeDays?: number
-DateTimeRangeVariable.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => { ...; }; comparison:… — Shared reporting coverage, timezone, duration limits, and comparison policy.
+DateTimeRangeVariable.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange… — Shared reporting coverage, timezone, duration limits, and comparison policy.
 DateTimeRangeVariable.presets?: readonly DateTimeRangePreset[]
 DateTimeRangeVariableOptions (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as dateTimeRangeVariable.options.*
 DateTimeTooltip (component, @altertable/data-app-react): (props: DateTimeTooltipProps) — Exact-time disclosure uses the same reporting zone and locale as other date displays.
@@ -1336,6 +1334,9 @@ resolveDateTimeRange (function, @altertable/data-app/contract): (value: DateTime
 resolveDateTimeRange.value.from?: AbsoluteOrRelativeDateTime | null — Inclusive start; null or omitted means unbounded.
 resolveDateTimeRange.value.to?: AbsoluteOrRelativeDateTime | null — Exclusive end; null or omitted means now.
 resolveDateTimeRange.now.…: plus props inherited from built-in
+ResolvedDateTimeRange (type, @altertable/data-app/contract): Bounded, resolved wall-clock dates encoded in UTC, with an exclusive end.
+ResolvedDateTimeRange.from: Date
+ResolvedDateTimeRange.to: Date
 RetentionChart (component, @altertable/data-app-react/ui): (props: RetentionChartProps) — Query-defined retention curves with count inspection and dotted incomplete periods. Rates are not recomputed from counts. Compose inside VisualizationWidget.
 RetentionChart.ariaLabel: string — Accessible measure and scope description.
 RetentionChart.unit: string — Population unit, such as users or sessions.

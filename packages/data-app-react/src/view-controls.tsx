@@ -19,7 +19,7 @@ import {
 import type { AppVariable } from '@altertable/data-app/internal';
 import { type DimensionSelectionVariable } from '@altertable/data-app/internal';
 import { useQueries } from '@tanstack/react-query';
-import { useContext, useMemo, useReducer, type ReactNode } from 'react';
+import { useContext, useReducer, useState, type ReactNode } from 'react';
 
 import {
   SearchSuggestionsContext,
@@ -63,13 +63,22 @@ export function useViewVariables<Variables extends VariableCollection>(
     0
   );
   const selectionKey = JSON.stringify(variables.values);
-  const reference = useMemo(
-    // Capture one reporting instant per selection, refresh, or reporting-day change.
+  const referenceKey = JSON.stringify([
+    selectionKey,
+    referenceRevision,
+    variables.calendarRevision,
+  ]);
+  const [snapshot, setSnapshot] = useState(() => ({
+    key: referenceKey,
+    reference: new Date(),
+  }));
+  let reference = snapshot.reference;
+  if (snapshot.key !== referenceKey) {
+    // A new selection, refresh, or reporting day starts a new execution snapshot.
     // eslint-disable-next-line react/purity
-    () => new Date(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [selectionKey, referenceRevision, variables.calendarRevision]
-  );
+    reference = new Date();
+    setSnapshot({ key: referenceKey, reference });
+  }
   const hasComparison = Object.values(definitions).some(
     variable => variable.kind === 'dateTimeRangeComparison'
   );

@@ -159,6 +159,7 @@ export {
 } from '../authoring/contract.ts';
 export type {
   DateTimeRange,
+  ResolvedDateTimeRange,
   AbsoluteOrRelativeDateTime,
   RelativeDateTime,
 } from '../authoring/contract.ts';

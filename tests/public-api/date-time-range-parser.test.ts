@@ -1,7 +1,4 @@
-import {
-  canParseDateTimeRangeInput,
-  parseDateTimeRangeInput,
-} from '@altertable/data-app/format';
+import { parseDateTimeRangeInput } from '@altertable/data-app/format';
 import { describe, expect, it } from 'vitest';
 const NOW = new Date('2026-07-02T15:30:00Z');
 const parserOptions = { now: NOW };
@@ -586,20 +583,6 @@ describe('parseDateTimeRangeInput', () => {
   });
 });
 
-describe('canParseDateTimeRangeInput', () => {
-  it('returns true only for parseable input', () => {
-    expect(canParseDateTimeRangeInput('today', parserOptions)).toBe(true);
-    expect(canParseDateTimeRangeInput('last 2 weeks', parserOptions)).toBe(
-      true
-    );
-    expect(canParseDateTimeRangeInput('', parserOptions)).toBe(false);
-    expect(canParseDateTimeRangeInput('not a date', parserOptions)).toBe(false);
-    expect(
-      canParseDateTimeRangeInput('1783517884 - 1782913084', parserOptions)
-    ).toBe(false);
-  });
-});
-
 describe('UTC-rebased absolute dates', () => {
   it.each([
     ['since July 1 2026 4pm', '2026-07-01T16:00:00.000Z'],
@@ -647,7 +630,7 @@ describe('UTC-rebased absolute dates', () => {
 it.each(['since February 30 2026 4pm', 'since April 31 2026 4pm'])(
   'rejects impossible wall-clock dates: %s',
   input => {
-    expect(canParseDateTimeRangeInput(input, parserOptions)).toBe(false);
+    expect(parseDateTimeRangeInput(input, parserOptions).ok).toBe(false);
   }
 );
 

@@ -8,6 +8,7 @@ import {
   formatDateTime,
   type DateFormatOptions,
 } from '@altertable/data-app/format';
+import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
 
 /** Rebased timestamps are wall-clock fields; never convert them through the display timezone. */
 export function dateTimeRangeLabel(
@@ -17,7 +18,10 @@ export function dateTimeRangeLabel(
   const { from, to } = parseDateTimeRange(value);
   if (!(from instanceof Date) || !(to instanceof Date))
     return formatDateTimeRange(value);
-  if (from.getTime() % 86_400_000 === 0 && to.getTime() % 86_400_000 === 0)
+  if (
+    from.getTime() % fixedUnitMilliseconds.DAY === 0 &&
+    to.getTime() % fixedUnitMilliseconds.DAY === 0
+  )
     return formatDateRange(
       {
         start: from.toISOString().slice(0, 10),

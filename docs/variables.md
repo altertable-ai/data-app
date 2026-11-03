@@ -230,7 +230,7 @@ const calendar = defineDateRangeContract({
 const period = dateTimeRangeVariable({
   key: 'period',
   contract: calendar,
-  comparison: true,
+  allowComparison: true,
   defaultValue: '30d',
   presets: [
     ...dateTimeRangePresets.analytics,
@@ -262,7 +262,7 @@ const eventsView = defineTimeView({
 
 Use `dateTimeRangePresets.monitoring` for shorter windows. Bind the query bounds
 to a [datetime parameter](contract.md#bind-datetime-ranges).
-`comparison: true` adds the toggle and supplies current/previous ranges resolved
+`allowComparison: true` adds the toggle and supplies current/previous ranges resolved
 against one reference time; the view derives metric comparison labels from that
 request. Omit `comparison` for a plain `DateTimeRange` input, and omit `contract`
 when no shared reporting policy is needed. Relative selections stay relative

@@ -25,7 +25,7 @@ const period = dateTimeRangeVariable({
   key: 'period',
   defaultValue: '7d',
   contract,
-  comparison: true,
+  allowComparison: true,
 });
 const dataApp = defineDataApp({
   title: 'Datetime comparisons',

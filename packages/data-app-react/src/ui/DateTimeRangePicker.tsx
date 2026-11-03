@@ -15,7 +15,14 @@ import {
   type DateFormatOptions,
   parseDateTimeRangeInput,
 } from '@altertable/data-app/format';
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useReducer,
+} from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
@@ -26,6 +33,10 @@ import {
   getDateTimeRangeInputSegmentSelection,
 } from './date-time-range-input.ts';
 import { dateTimeRangeLabel } from './date-time-range-label.ts';
+import {
+  dateTimeRangePickerReducer,
+  initialPickerState,
+} from './date-time-range-picker-state.ts';
 import { DateTimeRangeCalendar } from './DateTimeRangeCalendar.tsx';
 import { AppIcon } from './icons.ts';
 import { PickerField, type ControlLabelPlacement } from './PickerField.tsx';
@@ -187,7 +198,22 @@ export function DateTimeRangePicker({
   const helpTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   );
-  const [open, setOpen] = useState(false);
+  const [state, dispatch] = useReducer(
+    dateTimeRangePickerReducer,
+    initialPickerState
+  );
+  const {
+    open,
+    mode,
+    draft,
+    edited,
+    highlight,
+    error,
+    help,
+    helpSide,
+    calendar,
+    complete,
+  } = state;
   const [selectionRevision, setSelectionRevision] = useState(0);
   useLayoutEffect(() => {
     if (selectionRevision) {
@@ -195,17 +221,6 @@ export function DateTimeRangePicker({
       input.current?.select();
     }
   }, [selectionRevision]);
-  const [mode, setMode] = useState<'presets' | 'editing' | 'calendar'>(
-    'presets'
-  );
-  const [draft, setDraft] = useState('');
-  const [edited, setEdited] = useState(false);
-  const [highlight, setHighlight] = useState(-1);
-  const [error, setError] = useState('');
-  const [help, setHelp] = useState(false);
-  const [helpSide, setHelpSide] = useState<'left' | 'right' | 'inline'>('left');
-  const [calendar, setCalendar] = useState<DateTimeRange | null>(null);
-  const [complete, setComplete] = useState(false);
   const popup = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -220,9 +235,7 @@ export function DateTimeRangePicker({
       // Calendar month/year selects render their own nested overlay in a portal.
       if (mode === 'calendar' && target.closest('.altertable-popover-surface'))
         return;
-      setOpen(false);
-      setHelp(false);
-      setError('');
+      dispatch({ type: 'close' });
       pending.current = null;
     }
     document.addEventListener('pointerdown', dismissOutside, true);
@@ -289,38 +302,29 @@ export function DateTimeRangePicker({
     setSelectionRevision(revision => revision + 1);
   }
   function openPresets() {
-    if (!open) {
-      setDraft(resolvedLabel(value, contract, dateFormatting));
-      setEdited(false);
-      setError('');
-      setHelp(false);
-    }
     pending.current = null;
-    setHighlight(-1);
-    setMode('presets');
-    setOpen(true);
     const bounds = trigger.current?.getBoundingClientRect();
-    setHelpSide(
-      bounds && bounds.left >= 280
-        ? 'left'
-        : bounds && window.innerWidth - bounds.right >= 280
-          ? 'right'
-          : 'inline'
-    );
+    dispatch({
+      type: 'open',
+      draft: resolvedLabel(value, contract, dateFormatting),
+      helpSide:
+        bounds && bounds.left >= 280
+          ? 'left'
+          : bounds && window.innerWidth - bounds.right >= 280
+            ? 'right'
+            : 'inline',
+    });
     selectInput();
   }
   function close(focus = false) {
-    setError('');
-    setOpen(false);
-    setHelp(false);
+    dispatch({ type: 'close' });
     pending.current = null;
     if (focus) input.current?.focus();
   }
   function commit(range: DateTimeRange, isLive = false) {
     const issue = rangeError(range);
     if (issue) {
-      setError(issue);
-      setHelp(true);
+      dispatch({ type: 'error', error: issue });
       return;
     }
     onChange(range, isLive);
@@ -345,8 +349,7 @@ export function DateTimeRangePicker({
         /* Show the same recoverable parse error as natural language. */
       }
     }
-    setError("Couldn't parse that date range.");
-    setHelp(true);
+    dispatch({ type: 'error', error: "Couldn't parse that date range." });
   }
   function choose(index: number) {
     if (index === comparisonIndex && comparison?.range) {
@@ -360,6 +363,7 @@ export function DateTimeRangePicker({
       return;
     }
     if (index === calendarIndex) {
+      let nextCalendar: DateTimeRange | null = null;
       try {
         if (value) {
           const resolved = contract
@@ -369,31 +373,34 @@ export function DateTimeRangePicker({
           const to = new Date(resolved.to.getTime() - 1);
           from?.setUTCHours(0, 0, 0, 0);
           to.setUTCHours(24, 0, 0, 0);
-          setCalendar(from ? { from, to } : null);
-        } else setCalendar(null);
+          nextCalendar = from ? { from, to } : null;
+        }
       } catch {
-        setCalendar(null);
+        nextCalendar = null;
       }
-      setComplete(false);
-      setMode('calendar');
-      setHelp(false);
-      setError('');
+      dispatch({ type: 'calendar', value: nextCalendar });
     } else {
-      setHighlight(moreIndex);
-      setHelp(true);
+      dispatch({ type: 'update', value: { highlight: moreIndex, help: true } });
       selectInput();
     }
   }
   function back() {
-    setMode('presets');
-    setHighlight(calendarIndex);
+    dispatch({
+      type: 'update',
+      value: { mode: 'presets', highlight: calendarIndex },
+    });
     selectInput();
   }
   function highlightOption(index: number) {
-    setHighlight(index);
+    dispatch({ type: 'update', value: { highlight: index } });
     clearTimeout(helpTimer.current);
-    if (index === moreIndex) setHelp(true);
-    else helpTimer.current = setTimeout(() => setHelp(false), 300);
+    if (index === moreIndex)
+      dispatch({ type: 'update', value: { help: true } });
+    else
+      helpTimer.current = setTimeout(
+        () => dispatch({ type: 'update', value: { help: false } }),
+        300
+      );
     requestAnimationFrame(() =>
       document
         .getElementById(`${id}-option-${index}`)
@@ -462,14 +469,10 @@ export function DateTimeRangePicker({
                 ? 'Live'
                 : `${selected?.label ?? summaryLabel(value, dateFormatting)}${comparison?.enabled ? ' · vs previous' : ''}`
           }
-          onFocus={() => setError('')}
+          onFocus={() => dispatch({ type: 'update', value: { error: '' } })}
           onChange={event => {
             pending.current = null;
-            setDraft(event.target.value);
-            setEdited(true);
-            setMode('editing');
-            setHighlight(-1);
-            setError('');
+            dispatch({ type: 'edit', draft: event.target.value });
           }}
           onKeyDown={event => {
             if (
@@ -531,8 +534,8 @@ export function DateTimeRangePicker({
                 : 1) as -1 | 1,
             };
             if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-              setMode('editing');
-              setHighlight(-1);
+              dispatch({ type: 'update', value: { mode: 'editing' } });
+              dispatch({ type: 'update', value: { highlight: -1 } });
               const selection = getDateTimeRangeInputSegmentSelection(args);
               if (selection) {
                 event.preventDefault();
@@ -548,10 +551,7 @@ export function DateTimeRangePicker({
               if (edit) {
                 event.preventDefault();
                 pending.current = edit;
-                setDraft(edit.value);
-                setEdited(true);
-                setMode('editing');
-                setError('');
+                dispatch({ type: 'edit', draft: edit.value });
                 requestAnimationFrame(() => {
                   const next = pending.current;
                   if (next)
@@ -634,8 +634,12 @@ export function DateTimeRangePicker({
                     : maxRangeDays
                 }
                 contract={contract}
-                onChange={setCalendar}
-                onCompleteChange={setComplete}
+                onChange={calendar =>
+                  dispatch({ type: 'update', value: { calendar } })
+                }
+                onCompleteChange={complete =>
+                  dispatch({ type: 'update', value: { complete } })
+                }
               />
               <footer className="altertable-datetime-actions">
                 <Button onClick={back}>‹ Presets</Button>
@@ -683,7 +687,10 @@ export function DateTimeRangePicker({
                       }
                       onMouseDown={event => event.preventDefault()}
                       onMouseMove={() => {
-                        setMode('presets');
+                        dispatch({
+                          type: 'update',
+                          value: { mode: 'presets' },
+                        });
                         highlightOption(index);
                       }}
                       onClick={() => choose(index)}
@@ -717,7 +724,9 @@ export function DateTimeRangePicker({
                         className="altertable-datetime-check"
                         aria-hidden="true"
                       >
-                        {preset && preset === selected ? '✓' : ''}
+                        {preset && preset === selected ? (
+                          <AppIcon name="check" size={14} />
+                        ) : null}
                       </span>
                     </button>
                   );
@@ -742,7 +751,11 @@ export function DateTimeRangePicker({
                   onMouseEnter={() => clearTimeout(helpTimer.current)}
                   onMouseLeave={() => {
                     if (!error && highlight !== moreIndex)
-                      helpTimer.current = setTimeout(() => setHelp(false), 300);
+                      helpTimer.current = setTimeout(
+                        () =>
+                          dispatch({ type: 'update', value: { help: false } }),
+                        300
+                      );
                   }}
                 >
                   <strong>Date range syntax</strong>
@@ -784,7 +797,7 @@ export function DateTimeRangePicker({
                 id={`${id}-option-${comparisonIndex}`}
                 data-highlighted={highlight === comparisonIndex || undefined}
                 onMouseMove={() => {
-                  setMode('presets');
+                  dispatch({ type: 'update', value: { mode: 'presets' } });
                   highlightOption(comparisonIndex);
                 }}
                 onFocus={() => highlightOption(comparisonIndex)}
@@ -827,7 +840,9 @@ export function DateTimeRangePicker({
                   </small>
                 </span>
                 <span className="altertable-datetime-check" aria-hidden="true">
-                  {comparison.enabled ? '✓' : ''}
+                  {comparison.enabled ? (
+                    <AppIcon name="check" size={14} />
+                  ) : null}
                 </span>
               </button>
             </div>

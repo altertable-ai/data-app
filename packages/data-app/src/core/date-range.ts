@@ -1,6 +1,7 @@
 import { parseDate, today, type CalendarDate } from '@internationalized/date';
 
 import { KEY_SEPARATOR } from './keys.ts';
+import { fixedUnitMilliseconds } from './time-units.ts';
 
 /** ISO calendar dates; the app operation defines timezone and inclusive bounds. */
 export type DateRange = { start: string; end: string };
@@ -22,7 +23,7 @@ export function inclusiveDays(range: DateRange): number {
   return (
     (parseDate(range.end).toDate('UTC').getTime() -
       parseDate(range.start).toDate('UTC').getTime()) /
-      86_400_000 +
+      fixedUnitMilliseconds.DAY +
     1
   );
 }
@@ -84,7 +85,7 @@ export function availableDatePresets({
   ) {
     const days =
       (end.toDate('UTC').getTime() - start.toDate('UTC').getTime()) /
-        86_400_000 +
+        fixedUnitMilliseconds.DAY +
       1;
     const range = { start: start.toString(), end: end.toString() };
     const key = [range.start, range.end].join(KEY_SEPARATOR);

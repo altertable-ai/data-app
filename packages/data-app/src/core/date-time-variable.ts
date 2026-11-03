@@ -49,7 +49,7 @@ export type DateTimeRangeVariableOptions = {
   key: string;
   label?: string;
   /** Enable the previous-period reporting workflow. Requires a shared contract. */
-  comparison?: false;
+  allowComparison?: false;
   /** Relative defaults such as "7d" stay relative. */
   defaultValue: DateTimeRange | string;
   /** Client limit for determinate durations; the backend must validate timezone-dependent ranges. */
@@ -87,9 +87,9 @@ export type DateTimeRangeComparisonRequest = DateTimeRangeRequest & {
 
 export type DateTimeRangeComparisonVariableOptions = Omit<
   DateTimeRangeVariableOptions,
-  'comparison' | 'contract'
+  'allowComparison' | 'contract'
 > & {
-  comparison: true;
+  allowComparison: true;
   contract: DateRangeContract;
 };
 
@@ -124,7 +124,7 @@ export function dateTimeRangeVariable(
   options: DateTimeRangeVariableOptions | DateTimeRangeComparisonVariableOptions
 ): DateTimeRangeVariable | DateTimeRangeComparisonVariable {
   const base = createDateTimeRangeVariable(options);
-  return options.comparison ? withComparison(base, options) : base;
+  return options.allowComparison ? withComparison(base, options) : base;
 }
 
 /** One declaration drives the generated picker, URL state, and structured query parameter. */

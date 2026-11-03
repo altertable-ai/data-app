@@ -18,7 +18,7 @@ test('comparison selection stays relative in URLs and resolves one protected req
     const period = dateTimeRangeVariable({
       key: 'period',
       contract,
-      comparison: true,
+      allowComparison: true,
       defaultValue: '7d',
     });
     const selected = {
@@ -73,7 +73,7 @@ test('comparison is unavailable outside coverage and an invalid comparison URL i
   const period = dateTimeRangeVariable({
     key: 'window',
     contract,
-    comparison: true,
+    allowComparison: true,
     defaultValue: {
       from: new Date('2026-06-01T00:00:00Z'),
       to: new Date('2026-06-03T00:00:00Z'),

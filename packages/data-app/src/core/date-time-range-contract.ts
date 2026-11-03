@@ -9,13 +9,17 @@ import {
   parseDateTimeRange,
   resolveDateTimeRange,
 } from './date-time-range-value.ts';
-import type { DateTimeRange } from './date-time-range.ts';
+import type {
+  DateTimeRange,
+  ResolvedDateTimeRange,
+} from './date-time-range.ts';
 import { invariant } from './invariant.ts';
+import { fixedUnitMilliseconds } from './time-units.ts';
 
 /** Resolved UTC-rebased bounds for one execution, optionally with the preceding equal-length interval. */
 export type DateTimeRangeRequest = {
-  range: { from: Date; to: Date };
-  comparison: { from: Date; to: Date } | null;
+  range: ResolvedDateTimeRange;
+  comparison: ResolvedDateTimeRange | null;
 };
 
 /** Datetime policy exposed by defineDateRangeContract().datetime. Parsing preserves relative values. */
@@ -62,7 +66,8 @@ export function createDateTimeRangeContract(options: DateRangeContractOptions) {
     const limits = bounds(now);
     invariant(range.from, 'Choose a bounded datetime range.');
     invariant(
-      range.to.getTime() - range.from.getTime() <= maxRangeDays * 86_400_000,
+      range.to.getTime() - range.from.getTime() <=
+        maxRangeDays * fixedUnitMilliseconds.DAY,
       `Choose a range of at most ${maxRangeDays} days.`
     );
     invariant(

@@ -113,3 +113,5 @@ export type {
   AbsoluteOrRelativeDateTime,
   RelativeDateTime,
 } from './core/date-time-range.ts';
+
+export { fixedUnitMilliseconds } from './core/time-units.ts';

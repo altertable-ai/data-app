@@ -49,7 +49,7 @@ hooks.defineTimeView(shadowed);
 const compared = dateTimeRangeVariable({
   key: 'period',
   defaultValue: 'yesterday',
-  comparison: true,
+  allowComparison: true,
   contract: defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' }),
 });
 const comparisonHooks =
@@ -96,5 +96,9 @@ const missingReader = {
 };
 // @ts-expect-error Nested datetime comparison inputs require a period binding.
 comparisonHooks.defineTimeView(missingReader);
-// @ts-expect-error Comparison policy is required when enabling the reporting workflow.
-dateTimeRangeVariable({ key: 'period', defaultValue: '7d', comparison: true });
+dateTimeRangeVariable({
+  key: 'period',
+  defaultValue: '7d',
+  // @ts-expect-error Comparison policy is required when enabling the reporting workflow.
+  allowComparison: true,
+});

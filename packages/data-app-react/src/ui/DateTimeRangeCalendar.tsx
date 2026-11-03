@@ -3,8 +3,9 @@ import {
   type DateTimeRange,
   type DateRangeContract,
 } from '@altertable/data-app/contract';
+import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
 import { parseDate, today, type CalendarDate } from '@internationalized/date';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
 import {
   RangeCalendar,
   RangeCalendarStateContext,
@@ -86,7 +87,7 @@ export function DateTimeRangeCalendar({
         Math.abs(
           date.toDate('UTC').getTime() - anchor.toDate('UTC').getTime()
         ) >=
-          maxRangeDays * 86_400_000
+          maxRangeDays * fixedUnitMilliseconds.DAY
       }
       onChange={range => {
         setSelection(range);
@@ -174,8 +175,9 @@ function CalendarCompleteness({
 }) {
   const state = useContext(RangeCalendarStateContext);
   const complete = !!state?.value && !state.anchorDate;
+  const notifyChange = useEffectEvent(onChange);
   useEffect(() => {
-    onChange(complete);
-  }, [complete, onChange]);
+    notifyChange(complete);
+  }, [complete]);
   return null;
 }

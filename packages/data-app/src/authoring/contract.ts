@@ -10,6 +10,7 @@ import {
   attachDimensionSelectors,
   validateVariableInput,
 } from '../core/dimension-source.ts';
+import { fixedUnitMilliseconds } from '../core/time-units.ts';
 export type {
   DateTimeRangeContract,
   DateTimeRangeRequest,
@@ -82,7 +83,7 @@ export function previousDateRange({
   const last = parseDate(end);
   const days =
     (last.toDate('UTC').getTime() - first.toDate('UTC').getTime()) /
-      86_400_000 +
+      fixedUnitMilliseconds.DAY +
     1;
   invariant(days >= 1, 'Date range must start before it ends.');
   const previousEnd = first.subtract({ days: 1 });
@@ -107,17 +108,28 @@ export type DateRangeContractOptions = {
 };
 
 /** One source policy for the server parser, URL variable, and displayed reporting period. */
-export function defineDateRangeContract(options: DateRangeContractOptions) {
-  options = { ...options };
+export function defineDateRangeContract({
+  minDate,
+  maxDate,
+  maxRangeDays,
+  timeZone,
+  completeDays,
+}: DateRangeContractOptions) {
   invariant(
-    Number.isInteger(options.maxRangeDays) && options.maxRangeDays > 0,
+    Number.isInteger(maxRangeDays) && maxRangeDays > 0,
     'Date range needs a positive maxRangeDays.'
   );
-  if (options.minDate) parseDate(options.minDate);
-  if (typeof options.maxDate === 'string') parseDate(options.maxDate);
-  today(options.timeZone);
+  if (minDate) parseDate(minDate);
+  if (typeof maxDate === 'string') parseDate(maxDate);
+  today(timeZone);
 
-  const datetime = createDateTimeRangeContract(options);
+  const datetime = createDateTimeRangeContract({
+    minDate,
+    maxDate,
+    maxRangeDays,
+    timeZone,
+    completeDays,
+  });
   const bounds = datetime.bounds;
 
   function period({ start, end }: DateRangeInput): ReportingPeriod {
@@ -125,20 +137,18 @@ export function defineDateRangeContract(options: DateRangeContractOptions) {
       kind: 'calendar',
       start,
       end,
-      timeZone: options.timeZone,
+      timeZone,
     };
   }
 
   function describeInput(input: DateRangeInput) {
-    return `${formatDateRange(input)} ${options.timeZone}`;
+    return `${formatDateRange(input)} ${timeZone}`;
   }
 
   function comparison(input: DateRangeInput): DateRangeInput | null {
     const previous = previousDateRange(input);
 
-    return options.minDate && previous.start < options.minDate
-      ? null
-      : previous;
+    return minDate && previous.start < minDate ? null : previous;
   }
 
   function request(value: unknown, compare = false): DateRangeRequest {
@@ -222,7 +232,7 @@ export function parseDateRangeInput(
   );
   invariant(
     first <= last &&
-      (last - first) / 86_400_000 < maxRangeDays &&
+      (last - first) / fixedUnitMilliseconds.DAY < maxRangeDays &&
       (minDate === undefined || first >= day(minDate)) &&
       (maxDate === undefined || last <= day(maxDate)),
     `Choose up to ${maxRangeDays} days within the available range.`
@@ -477,6 +487,7 @@ export {
 } from '../core/date-time-range-value.ts';
 export type {
   DateTimeRange,
+  ResolvedDateTimeRange,
   AbsoluteOrRelativeDateTime,
   RelativeDateTime,
 } from '../core/date-time-range.ts';

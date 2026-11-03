@@ -5,6 +5,7 @@ import {
   parseDateTime,
   type DateTimeFormatOptions,
 } from '@altertable/data-app/format';
+import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { classNames } from './classNames.ts';
@@ -63,7 +64,10 @@ function reportingPeriodText(
   if (!end) return label(period, options);
   const start = new Date(
     end.getTime() -
-      period.amount * (period.unit === 'hour' ? 3_600_000 : 86_400_000)
+      period.amount *
+        (period.unit === 'hour'
+          ? fixedUnitMilliseconds.HOUR
+          : fixedUnitMilliseconds.DAY)
   );
 
   return `${label(period, options)}, ${formatDateTime(start, options)} to ${formatDateTime(end, options)} in ${options.timeZone ?? 'UTC'}`;

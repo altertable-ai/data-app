@@ -1,4 +1,5 @@
 import { formatDateRange, pluralize } from '@altertable/data-app/format';
+import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
 import {
   availableDatePresets,
   inclusiveDays,
@@ -266,7 +267,7 @@ export function DateRangePicker({
                       date.toDate('UTC').getTime() -
                         anchorDate.toDate('UTC').getTime()
                     ) >=
-                      maxRangeDays * 86_400_000
+                      maxRangeDays * fixedUnitMilliseconds.DAY
                   }
                 >
                   <header>

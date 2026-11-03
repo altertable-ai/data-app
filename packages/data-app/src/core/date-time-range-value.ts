@@ -9,6 +9,7 @@ import type {
   RelativeUnit,
 } from './date-time-range.ts';
 import { invariant } from './invariant.ts';
+import { fixedUnitMilliseconds } from './time-units.ts';
 
 const anchors: Record<RelativeAnchor, string> = {
   RELATIVE_ANCHOR_NOW: 'Now',
@@ -108,17 +109,10 @@ export function parseDateTimeRange(
   ) {
     const to = range.to ?? { anchor: 'RELATIVE_ANCHOR_NOW', offset: [] };
     if (range.from.anchor === to.anchor) {
-      const fixed: Partial<Record<RelativeUnit, number>> = {
-        SECOND: 1000,
-        MINUTE: 60_000,
-        HOUR: 3_600_000,
-        DAY: 86_400_000,
-        WEEK: 7 * 86_400_000,
-      };
       function offset(bound: RelativeDateTime) {
         let total = 0;
         for (const item of bound.offset) {
-          const unit = fixed[item.unit];
+          const unit = fixedUnitMilliseconds[item.unit];
           if (unit === undefined) return undefined;
           total += item.amount * unit;
         }
@@ -136,7 +130,8 @@ export function parseDateTimeRange(
   invariant(
     maxRangeDays === undefined ||
       (!!range.from &&
-        (duration === undefined || duration <= maxRangeDays * 86_400_000)),
+        (duration === undefined ||
+          duration <= maxRangeDays * fixedUnitMilliseconds.DAY)),
     `Choose a range of at most ${maxRangeDays} days.`
   );
   return range;
