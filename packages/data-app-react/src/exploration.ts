@@ -1,4 +1,7 @@
-import type { DateRangeRequest } from '@altertable/data-app/contract';
+import type {
+  DateTimeRangeComparisonRequest,
+  DateRangeRequest,
+} from '@altertable/data-app/contract';
 import type {
   AppVariable,
   AppVariableValues,
@@ -32,7 +35,10 @@ type TargetDefinition = {
   variables: VariableCollection;
   input: (values: any) => unknown;
   bindings?: ViewBindings<any, any>;
-  date?: { variable: string; input: (input: any) => DateRangeRequest };
+  date?: {
+    variable: string;
+    input: (input: any) => DateRangeRequest | DateTimeRangeComparisonRequest;
+  };
   key?: string;
 };
 const targets = new WeakMap<object, TargetDefinition>();
@@ -83,7 +89,8 @@ function commit(definition: TargetDefinition, values: Record<string, unknown>) {
   const resolved = Object.fromEntries(
     Object.entries(definition.variables).map(([name, variable]) => [
       name,
-      variable.kind === 'dateRange'
+      variable.kind === 'dateRange' ||
+      variable.kind === 'dateTimeRangeComparison'
         ? variable.input(values[name] as never)
         : values[name],
     ])
@@ -114,6 +121,14 @@ export function targetAvailable(
         return true;
     }
     const shown = readInput(definition, key, displayedInput);
+    if (variable.kind === 'dateTimeRangeComparison')
+      return (
+        !!shown &&
+        variable.same(
+          applied[key] as never,
+          (shown as DateTimeRangeComparisonRequest).selection
+        )
+      );
     return variable.kind === 'dateRange'
       ? JSON.stringify(variable.input(applied[key] as never)) ===
           JSON.stringify(shown)

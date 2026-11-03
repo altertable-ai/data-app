@@ -1,10 +1,15 @@
-import { type DateRangeRequest } from '@altertable/data-app/contract';
+import {
+  type DateTimeRangeRequest,
+  type DateRangeRequest,
+} from '@altertable/data-app/contract';
 import {
   formatDateRange,
   formatMetric,
   type MetricFormat,
   type DateFormatOptions,
 } from '@altertable/data-app/format';
+
+import { dateTimeRangeLabel } from './date-time-range-label.ts';
 
 export type MetricComparison = {
   current: { value: number; formattedValue: string; periodLabel?: string };
@@ -19,7 +24,7 @@ export type MetricComparison = {
 /** Label a comparison from the input that produced the displayed result. Null means the
  * requested previous period has no comparable value; zero remains a measured value. */
 export function calendarMetricComparison(
-  displayedInput: DateRangeRequest,
+  displayedInput: DateRangeRequest | DateTimeRangeRequest,
   values: {
     current: number;
     previous: number | null;
@@ -30,11 +35,18 @@ export function calendarMetricComparison(
 ): MetricComparison | undefined {
   if (!displayedInput.comparison) return undefined;
 
+  function label(
+    range: DateRangeRequest['range'] | DateTimeRangeRequest['range']
+  ) {
+    return 'start' in range
+      ? formatDateRange(range, options)
+      : dateTimeRangeLabel(range, options);
+  }
   return {
     current: {
       value: values.current,
       formattedValue: formatMetric(values.current, values.format),
-      periodLabel: formatDateRange(displayedInput.range, options),
+      periodLabel: label(displayedInput.range),
     },
     previous: {
       value: values.previous,
@@ -42,7 +54,7 @@ export function calendarMetricComparison(
         values.previous === null
           ? 'Not available'
           : formatMetric(values.previous, values.format),
-      periodLabel: formatDateRange(displayedInput.comparison, options),
+      periodLabel: label(displayedInput.comparison),
     },
     favorableDirection: values.favorableDirection,
   };

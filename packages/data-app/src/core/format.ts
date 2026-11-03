@@ -1,3 +1,17 @@
+export { parseDateTimeRangeInput } from './date-time-range-parser.ts';
+export type {
+  DateTimeRangeParserOptions,
+  DateTimeRangeParseFailureReason,
+  ParseDateTimeRangeResult,
+} from './date-time-range-parser.ts';
+export type {
+  DateTimeRange,
+  AbsoluteOrRelativeDateTime,
+  RelativeDateTime,
+  RelativeAnchor,
+  RelativeOffset,
+  RelativeUnit,
+} from './date-time-range.ts';
 import { parseDateTime, type DateFormatOptions } from './date-format.ts';
 export {
   formatDate,
@@ -143,3 +157,5 @@ export function formatPercent(
 
   return formatNumber(ratio, percentOptions);
 }
+
+export { formatDateTimeRange } from './date-time-range-value.ts';

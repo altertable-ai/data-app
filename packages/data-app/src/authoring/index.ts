@@ -11,3 +11,12 @@ export type {
   QueryProjections,
   QueryRow,
 } from '../core/config.ts';
+
+export type {
+  DateTimeRange,
+  AbsoluteOrRelativeDateTime,
+  RelativeDateTime,
+  RelativeAnchor,
+  RelativeOffset,
+  RelativeUnit,
+} from '../core/date-time-range.ts';

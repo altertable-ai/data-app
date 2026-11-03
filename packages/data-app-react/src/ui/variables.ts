@@ -102,11 +102,17 @@ export function useAppVariables<const Variables extends VariableCollection>(
     currentSearch,
     serverSearch
   );
-  const zones = Object.values(definitions)
-    .filter(item => item.kind === 'dateRange')
-    .map(item => (item as DateRangeVariable).bounds().timeZone);
+  const zones = Object.values(definitions).flatMap(item =>
+    item.kind === 'dateRange'
+      ? [item.bounds().timeZone]
+      : (item.kind === 'dateTimeRange' ||
+            item.kind === 'dateTimeRangeComparison') &&
+          item.contract
+        ? [item.contract.bounds().timeZone]
+        : []
+  );
   const zoneKey = [...new Set(zones)].sort().join('|');
-  const [, bumpDay] = useReducer(value => value + 1, 0);
+  const [calendarRevision, bumpDay] = useReducer(value => value + 1, 0);
 
   useEffect(() => {
     if (!zoneKey) return;
@@ -218,5 +224,26 @@ export function useAppVariables<const Variables extends VariableCollection>(
     };
   }
 
-  return { values, set, reset, resetAll, clearAll, update, bind };
+  return {
+    values,
+    calendarRevision,
+    set,
+    reset,
+    resetAll,
+    clearAll,
+    update,
+    bind,
+  };
 }
+
+export {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  type DateTimeRangePreset,
+  type DateTimeRangeVariable,
+  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeComparisonSelection,
+  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeVariableOptions,
+} from '@altertable/data-app/internal';

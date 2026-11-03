@@ -131,7 +131,6 @@ export function ViewControlBar({
                   )}
                 </Button>
               )}
-              {onClear && <FilterActions onClear={clearFilters} />}
             </div>
           )}
           {primaryFilters}
@@ -149,6 +148,7 @@ export function ViewControlBar({
               ))}
             </fieldset>
           )}
+          {onClear && <FilterActions onClear={clearFilters} />}
         </div>
         {displayOptions.length > 0 && (
           <DisplayOptionsPopover changedCount={changedDisplayOptionCount}>

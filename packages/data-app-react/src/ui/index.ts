@@ -211,3 +211,20 @@ export type {
   ExplorationAction,
   ItemActions,
 } from './ExplorationActionControl.tsx';
+
+export {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  type DateTimeRangePreset,
+  type DateTimeRangeVariable,
+  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeComparisonSelection,
+  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeVariableOptions,
+} from './variables.ts';
+
+export {
+  DateTimeRangePicker,
+  type DateTimeRangePickerProps,
+} from './DateTimeRangePicker.tsx';

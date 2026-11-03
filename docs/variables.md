@@ -206,3 +206,64 @@ const dailyCountsView = defineTimeView({
 Custom control ownership is needed only when generated controls cannot express
 the requirement; use `/ui` for that case. Do not reuse reserved inspection,
 presentation, or navigation URL keys.
+
+## Absolute and relative datetime ranges
+
+Use `dateTimeRangeVariable()` for times, rolling windows, or mixed absolute and
+relative bounds. Share the variable between the operation parser and the view;
+`<DataApp>` supplies the picker and URL state:
+
+```ts
+import {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  defineDateRangeContract,
+  variableInput,
+} from '@altertable/data-app/contract';
+import { createDataHooks } from '@altertable/data-app-react';
+
+const calendar = defineDateRangeContract({
+  maxRangeDays: 366,
+  timeZone: 'UTC',
+  completeDays: false,
+});
+const period = dateTimeRangeVariable({
+  key: 'period',
+  contract: calendar,
+  allowComparison: true,
+  defaultValue: '30d',
+  presets: [
+    ...dateTimeRangePresets.analytics,
+    { label: 'Past 6 months', range: '6mo', shortcut: '6mo' },
+  ],
+});
+const events = dataApp.defineOperation({
+  input: variableInput(() => ({}), { period }),
+  checks: [{ period: period.input(period.defaultValue) }],
+  policy: { maxQueryRows: 1000, maxDurationMs: 15000 },
+  async run({ query }, input) {
+    const current = await query('events', { period: input.period.range });
+    const previous = input.period.comparison
+      ? await query('events', { period: input.period.comparison })
+      : null;
+    return { current: current.rows, previous: previous?.rows ?? null };
+  },
+});
+// ... client created from { events }, and eventsContext
+const { defineTimeView } = createDataHooks(client);
+const eventsView = defineTimeView({
+  operation: 'events',
+  dataContext: eventsContext,
+  time: period,
+  isEmpty: result => result.current.length === 0,
+  emptyFallback: { title: 'No events' },
+});
+```
+
+Use `dateTimeRangePresets.monitoring` for shorter windows. Bind the query bounds
+to a [datetime parameter](contract.md#bind-datetime-ranges).
+`allowComparison: true` adds the toggle and supplies current/previous ranges resolved
+against one reference time; the view derives metric comparison labels from that
+request. Omit `comparison` for a plain `DateTimeRange` input, and omit `contract`
+when no shared reporting policy is needed. Relative selections stay relative
+across reloads.

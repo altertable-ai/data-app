@@ -108,3 +108,20 @@ export type { DateDisplayProps } from '../ui/DateDisplay.tsx';
 export { useDateFormatting } from '../date-formatting.ts';
 
 export { ExternalLink, type ExternalLinkProps } from '../ui/ExternalLink.tsx';
+
+export {
+  dateTimeRangeVariable,
+  dateTimeRangePresets,
+  type DateTimeRangePreset,
+  type DateTimeRangeVariable,
+  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeComparisonSelection,
+  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeVariableOptions,
+} from '../ui/variables.ts';
+
+export {
+  DateTimeRangePicker,
+  type DateTimeRangePickerProps,
+} from '../ui/DateTimeRangePicker.tsx';

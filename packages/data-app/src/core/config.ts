@@ -75,9 +75,10 @@ export type DataAppDefinition<
  * references, and callbacks. Extraction reads literals without executing app code.
  * TypeScript and runtime query rules own configuration validation.
  *
- * SQL passes unchanged to the backend, which interprets placeholders such as `$orgId`.
+ * Scalar placeholders pass to the backend. Datetime-range bound references ($period.from/to)
+ * expand to DuckDB timestamp expressions while the range is bound as JSON.
  * Declare each parameter's type and optional defaultValue.
- * Values are finite numbers, strings, booleans, or null, never SQL fragments or identifiers.
+ * Values are scalars or declared datetime ranges, never SQL fragments or identifiers.
  * Host queryParams supply protected values; callers cannot override them.
  */
 export function defineDataApp<const Queries extends QueryDefinitions>(
@@ -110,3 +111,12 @@ export function dataAppTitle(
 ): string {
   return `${config.title} • ${config.scope.organization}/${config.scope.environment} • Altertable app`;
 }
+
+export type {
+  DateTimeRange,
+  AbsoluteOrRelativeDateTime,
+  RelativeDateTime,
+  RelativeAnchor,
+  RelativeOffset,
+  RelativeUnit,
+} from './date-time-range.ts';

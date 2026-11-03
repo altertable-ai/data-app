@@ -82,11 +82,39 @@ return SQL text and declare `string` when exact numeric precision matters.
 
 Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 
-## Shared date ranges
+### Bind datetime ranges
 
-For period-driven analysis, declare `defineDateRangeContract()` from
-`@altertable/data-app/contract` once and share it between the operation's parser
-and `defineTimeView()`:
+Declare a `dateTimeRange` parameter and pass a `DateTimeRange` to `query()`.
+For a [comparison variable](variables.md#absolute-and-relative-datetime-ranges),
+pass its `range` or `comparison` bounds. Reference those bounds in SQL:
+
+```ts
+const dataApp = defineDataApp({
+  // ... title, description, and scope
+  queries: {
+    events: {
+      statement: `SELECT occurred_at AS "occurredAt" FROM events
+        WHERE occurred_at >= $period.from AND occurred_at < $period.to`,
+      params: { period: { type: 'dateTimeRange' } },
+      projections: { occurredAt: { type: 'string' } },
+    },
+  },
+});
+```
+
+The start is inclusive and the end exclusive. Relative values resolve at query
+execution. Absolute values encode wall-clock fields in UTC: selecting 4 PM stores
+16:00Z.
+SQL bounds are timezone-free timestamps. Configure the backend session to the
+reporting timezone and interpret timestamp-with-timezone comparisons in that
+same zone.
+
+## Share reporting policy
+
+Pass an optional `defineDateRangeContract()` to `dateTimeRangeVariable()` to
+share coverage, duration limits, and reporting timezone between the picker and
+server parser. By default, coverage ends yesterday; set `completeDays: false`
+to include today. Declare the policy once:
 
 ```ts
 import { defineDateRangeContract } from '@altertable/data-app/contract';
@@ -98,5 +126,6 @@ const calendar = defineDateRangeContract({
 });
 ```
 
-Use `calendar.parseRequest()` to validate periods. The contract owns source
-coverage, time zone, maximum range, and comparison rules.
+Use the shared contract in the [datetime variable workflow](variables.md#absolute-and-relative-datetime-ranges),
+including optional previous-period comparison. Calendar-only views share it with
+`calendar.parseRequest()` and `defineTimeView()`.

@@ -1,3 +1,9 @@
+import { expandDateTimeRangeParameters } from './date-time-range-sql.ts';
+import {
+  parseDateTimeRange,
+  serializeDateTimeRange,
+} from './date-time-range-value.ts';
+import type { DateTimeRange } from './date-time-range.ts';
 import { invariant } from './invariant.ts';
 import type { QueryResult } from './operation-types.ts';
 
@@ -23,17 +29,36 @@ export type QueryRow<Projections extends QueryProjections> = {
 };
 
 export type QueryParameterValue = string | number | boolean | null;
-/** Typed scalar parameters with optional fallback values. */
-export type QueryParameter = {
-  [Type in QueryValueType]:
-    | { type: Type; nullable?: false; defaultValue?: QueryValues[Type] }
-    | { type: Type; nullable: true; defaultValue?: QueryValues[Type] | null };
-}[QueryValueType];
+/** Typed scalar or datetime-range parameters with optional fallback values. */
+export type QueryParameter =
+  | {
+      type: 'dateTimeRange';
+      nullable?: false;
+      /** Absolute defaults may use canonical UTC ISO strings (including milliseconds) for static manifests. Snapshots hydrate them into Dates. */
+      defaultValue?: {
+        [Bound in keyof DateTimeRange]: DateTimeRange[Bound] | string;
+      };
+    }
+  | {
+      [Type in QueryValueType]:
+        | { type: Type; nullable?: false; defaultValue?: QueryValues[Type] }
+        | {
+            type: Type;
+            nullable: true;
+            defaultValue?: QueryValues[Type] | null;
+          };
+    }[QueryValueType];
 
 /** Callers may omit values supplied by host context or declaration defaults. */
 export type QueryInputParameters<
   Params extends Readonly<Record<string, QueryParameter>>,
-> = { [Name in keyof Params]?: QueryValue<Params[Name]> };
+> = {
+  [Name in keyof Params]?: Params[Name] extends { type: 'dateTimeRange' }
+    ? DateTimeRange
+    : Params[Name] extends QueryField
+      ? QueryValue<Params[Name]>
+      : never;
+};
 type QueryDefinition = {
   statement: string;
   params: Readonly<Record<string, QueryParameter>>;
@@ -54,7 +79,7 @@ export type KnownRecord<RecordType> = '__proto__' extends keyof RecordType
         ? never
         : RecordType
       : never;
-type CheckedField<Field extends QueryField> =
+type CheckedField<Field extends { type: string; nullable?: boolean }> =
   true extends IsUnion<Field>
     ? never
     : true extends IsUnion<Field['type']>
@@ -98,9 +123,16 @@ export type CheckedQueries<Queries extends QueryDefinitions> =
         projections: CheckedProjections<Queries[Name]['projections']>;
       };
     };
-type FrozenField<Field extends QueryField> = Field extends unknown
-  ? Readonly<Field>
-  : never;
+type FrozenField<Field extends { type: string; nullable?: boolean }> =
+  Field extends { type: 'dateTimeRange' }
+    ? Readonly<{
+        [Key in keyof Field]: Key extends 'defaultValue'
+          ? DateTimeRange
+          : Field[Key];
+      }>
+    : Field extends unknown
+      ? Readonly<Field>
+      : never;
 export type QuerySnapshot<Queries extends QueryDefinitions> = {
   readonly [Name in keyof Queries]: {
     readonly statement: Queries[Name]['statement'];
@@ -169,12 +201,34 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
         const params = Object.freeze(
           Object.fromEntries(
             Object.entries(query.params).map(([key, declaration]) => {
+              if (declaration.type === 'dateTimeRange')
+                invariant(
+                  /^[A-Za-z_][A-Za-z0-9_]*$/.test(key) &&
+                    (declaration as { nullable?: boolean }).nullable !== true,
+                  'Datetime ranges require a SQL parameter name and cannot be nullable.'
+                );
               invariant(
                 !Object.hasOwn(declaration, 'defaultValue') ||
-                  isQueryParameterValue(declaration.defaultValue),
+                  (declaration.type === 'dateTimeRange'
+                    ? !!parseDateTimeRange(declaration.defaultValue)
+                    : isQueryParameterValue(declaration.defaultValue)),
                 `Invalid default for parameter ${key} in query ${name}.`
               );
-              return [key, snapshotField(declaration)];
+              return [
+                key,
+                declaration.type === 'dateTimeRange'
+                  ? Object.freeze({
+                      ...declaration,
+                      ...(declaration.defaultValue === undefined
+                        ? {}
+                        : {
+                            defaultValue: parseDateTimeRange(
+                              declaration.defaultValue
+                            ),
+                          }),
+                    })
+                  : snapshotField(declaration),
+              ];
             })
           )
         );
@@ -187,7 +241,14 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
         return [
           name,
           Object.freeze({
-            statement: query.statement,
+            statement: expandDateTimeRangeParameters(
+              query.statement,
+              new Set(
+                Object.entries(query.params)
+                  .filter(([, p]) => p.type === 'dateTimeRange')
+                  .map(([key]) => key)
+              )
+            ),
             params,
             projections: Object.freeze(
               Object.fromEntries(
@@ -287,7 +348,9 @@ function castQueryCell(
 /** Host context supplies protected values; callers and defaults fill the remaining parameters. */
 export function resolveQueryParameters(
   declarations: Readonly<Record<string, QueryParameter>>,
-  values: Partial<QueryParameters>,
+  values: Readonly<
+    Record<string, QueryParameterValue | DateTimeRange | undefined>
+  >,
   context: QueryParameters
 ): QueryParameters {
   if (!values || typeof values !== 'object' || Array.isArray(values))
@@ -306,6 +369,15 @@ export function resolveQueryParameters(
           ? values[key]
           : declaration.defaultValue;
       if (value === undefined) throw new Error(`Missing parameter ${key}.`);
+      if (declaration.type === 'dateTimeRange')
+        return [
+          key,
+          serializeDateTimeRange(
+            parseDateTimeRange(
+              typeof value === 'string' ? JSON.parse(value) : value
+            )
+          ),
+        ];
       const nullable =
         declaration.type === 'null' || declaration.nullable === true;
       if (
@@ -314,7 +386,7 @@ export function resolveQueryParameters(
           : typeof value === declaration.type && isQueryParameterValue(value))
       )
         throw new Error(`Parameter ${key} does not match ${declaration.type}.`);
-      return [key, value];
+      return [key, value as QueryParameterValue];
     })
   );
 }

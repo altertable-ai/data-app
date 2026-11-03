@@ -4,6 +4,10 @@ import {
   type DatePresetId,
   type DateRange,
 } from './date-range.ts';
+import type {
+  DateTimeRangeVariable,
+  DateTimeRangeComparisonVariable,
+} from './date-time-variable.ts';
 import type { SourceDimensionVariable } from './dimension-source.ts';
 import type {
   DimensionSelection,
@@ -50,6 +54,8 @@ export type VariableCollection = Record<
   | ChoiceVariable<any>
   | MultiChoiceVariable
   | DateRangeVariable
+  | DateTimeRangeVariable
+  | DateTimeRangeComparisonVariable
   | DimensionVariable<any>
   | FacetVariable<any, any, string, unknown>
   | SourceDimensionVariable<any>
