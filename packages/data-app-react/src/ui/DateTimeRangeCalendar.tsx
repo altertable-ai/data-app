@@ -16,6 +16,7 @@ import {
   type RangeValue,
 } from 'react-aria-components';
 
+import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
 import { Select } from './Select.tsx';
 
@@ -33,6 +34,7 @@ export function DateTimeRangeCalendar({
   onCompleteChange: (complete: boolean) => void;
   onChange: (value: DateTimeRange | null) => void;
 }) {
+  const { locale } = useDateFormatting();
   const limits = contract?.bounds();
   const currentDay = limits ? parseDate(limits.maxDate) : today('UTC');
   const [selection, setSelection] = useState<RangeValue<CalendarDate> | null>(
@@ -112,7 +114,7 @@ export function DateTimeRangeCalendar({
           value={String(focused.month)}
           options={Array.from({ length: 12 }, (_, index) => ({
             id: String(index + 1),
-            label: new Intl.DateTimeFormat('en', {
+            label: new Intl.DateTimeFormat(locale, {
               month: 'long',
               timeZone: 'UTC',
             }).format(new Date(Date.UTC(2000, index, 1))),

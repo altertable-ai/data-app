@@ -1,10 +1,6 @@
-type DateTimeRangeSegmentKind =
-  | 'month'
-  | 'day'
-  | 'year'
-  | 'hour'
-  | 'minute'
-  | 'period';
+import { formatDateTime } from '@altertable/data-app/format';
+
+type DateTimeRangeSegmentKind = 'month' | 'day' | 'year' | 'hour' | 'minute';
 
 type DateTimeRangeSegment = {
   kind: DateTimeRangeSegmentKind;
@@ -21,7 +17,6 @@ type DateTimeRangeEndpoint = {
   year: number;
   hour: number;
   minute: number;
-  period: 'AM' | 'PM';
   segments: DateTimeRangeSegment[];
 };
 
@@ -34,33 +29,20 @@ type DateTimeRangeInputEdit = DateTimeRangeInputSelection & {
   value: string;
 };
 
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
-
 export function getDateTimeRangeInputSegmentSelection({
   value,
+  locale = 'en-US',
   selectionStart,
   selectionEnd,
   direction,
 }: {
   value: string;
+  locale?: string;
   selectionStart: number;
   selectionEnd: number;
   direction: -1 | 1;
 }): DateTimeRangeInputSelection | null {
-  const segments = getDateTimeRangeEndpoints(value).flatMap(
+  const segments = getDateTimeRangeEndpoints(value, locale).flatMap(
     endpoint => endpoint.segments
   );
   const selectedIndex = segments.findIndex(
@@ -95,16 +77,18 @@ export function getDateTimeRangeInputSegmentSelection({
 
 export function editDateTimeRangeInputSegment({
   value,
+  locale = 'en-US',
   selectionStart,
   selectionEnd,
   direction,
 }: {
   value: string;
+  locale?: string;
   selectionStart: number;
   selectionEnd: number;
   direction: -1 | 1;
 }): DateTimeRangeInputEdit | null {
-  const endpoints = getDateTimeRangeEndpoints(value);
+  const endpoints = getDateTimeRangeEndpoints(value, locale);
   const segment = endpoints
     .flatMap(endpoint => endpoint.segments)
     .find(
@@ -121,9 +105,9 @@ export function editDateTimeRangeInputSegment({
   }
 
   const editedEndpoint = editEndpoint(endpoint, segment.kind, direction);
-  const nextEndpointValue = formatEndpoint(editedEndpoint);
+  const nextEndpointValue = formatEndpoint(editedEndpoint, locale);
   const nextValue = `${value.slice(0, endpoint.start)}${nextEndpointValue}${value.slice(endpoint.end)}`;
-  const nextSegment = getDateTimeRangeEndpoints(nextValue)
+  const nextSegment = getDateTimeRangeEndpoints(nextValue, locale)
     .at(segment.endpointIndex)
     ?.segments.find(candidate => candidate.kind === segment.kind);
 
@@ -138,73 +122,84 @@ export function editDateTimeRangeInputSegment({
   };
 }
 
-function getDateTimeRangeEndpoints(value: string): DateTimeRangeEndpoint[] {
-  const pattern = new RegExp(
-    `\\b(${MONTHS.join('|')}) (\\d{1,2}), (\\d{4}), (\\d{1,2}):(\\d{2}) (AM|PM)\\b`,
-    'g'
-  );
+/** Convert only complete, formatter-produced endpoints; natural-language input stays untouched. */
+export function normalizeDateTimeRangeInput(
+  value: string,
+  locale: string
+): string {
+  const endpoints = getDateTimeRangeEndpoints(value, locale);
+  for (const endpoint of endpoints.toReversed()) {
+    value = `${value.slice(0, endpoint.start)}${endpointDate(endpoint).toISOString()}${value.slice(endpoint.end)}`;
+  }
+  return value;
+}
 
-  return [...value.matchAll(pattern)].flatMap((match, endpointIndex) => {
-    const [
-      matchedValue,
-      monthLabel,
-      dayLabel,
-      yearLabel,
-      hourLabel,
-      minuteLabel,
-      period,
-    ] = match;
-    const start = match.index;
-
-    if (
-      !matchedValue ||
-      !monthLabel ||
-      !dayLabel ||
-      !yearLabel ||
-      !hourLabel ||
-      !minuteLabel ||
-      (period !== 'AM' && period !== 'PM')
-    ) {
-      return [];
-    }
-
-    const month = MONTHS.findIndex(candidate => candidate === monthLabel);
-    if (month < 0) {
-      return [];
-    }
-
-    const dayStart = start + monthLabel.length + 1;
-    const yearStart = dayStart + dayLabel.length + 2;
-    const hourStart = yearStart + yearLabel.length + 2;
-    const minuteStart = hourStart + hourLabel.length + 1;
-    const periodStart = minuteStart + minuteLabel.length + 1;
-
-    return [
-      {
-        start,
-        end: start + matchedValue.length,
-        month,
-        day: Number(dayLabel),
-        year: Number(yearLabel),
-        hour: Number(hourLabel),
-        minute: Number(minuteLabel),
-        period,
-        segments: [
-          createSegment('month', endpointIndex, start, monthLabel.length),
-          createSegment('day', endpointIndex, dayStart, dayLabel.length),
-          createSegment('year', endpointIndex, yearStart, yearLabel.length),
-          createSegment('hour', endpointIndex, hourStart, hourLabel.length),
-          createSegment(
-            'minute',
-            endpointIndex,
-            minuteStart,
-            minuteLabel.length
-          ),
-          createSegment('period', endpointIndex, periodStart, period.length),
-        ],
-      },
-    ];
+function getDateTimeRangeEndpoints(
+  value: string,
+  locale: string
+): DateTimeRangeEndpoint[] {
+  const formatter = new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    hourCycle: 'h23',
+    timeZone: 'UTC',
   });
+  const sample = formatter.formatToParts(
+    new Date(Date.UTC(2026, 10, 22, 16, 45))
+  );
+  const months = Array.from(
+    { length: 12 },
+    (_, month) =>
+      formatter
+        .formatToParts(new Date(Date.UTC(2026, month, 22)))
+        .find(part => part.type === 'month')!.value
+  );
+  const number = new Intl.NumberFormat(locale, { useGrouping: false });
+  const digits = Array.from({ length: 10 }, (_, digit) => number.format(digit));
+  function parseNumber(text: string) {
+    return Number(
+      Array.from(text, char => {
+        const digit = digits.indexOf(char);
+        return digit < 0 ? char : String(digit);
+      }).join('')
+    );
+  }
+  const fields: DateTimeRangeSegmentKind[] = [];
+  const pattern = sample
+    .map(part => {
+      if (part.type === 'literal') return RegExp.escape(part.value);
+      if (!['month', 'day', 'year', 'hour', 'minute'].includes(part.type))
+        return RegExp.escape(part.value);
+      fields.push(part.type as DateTimeRangeSegmentKind);
+      return part.type === 'month'
+        ? `(${months.map(month => RegExp.escape(month)).join('|')})`
+        : part.type === 'year'
+          ? '(\\p{Decimal_Number}{1,4})'
+          : '(\\p{Decimal_Number}{1,2})';
+    })
+    .join('');
+  return [...value.matchAll(new RegExp(pattern, 'dgu'))].flatMap(
+    (match, endpointIndex) => {
+      const values = Object.fromEntries(
+        fields.map((field, index) => [field, match[index + 1]!])
+      );
+      const endpoint: DateTimeRangeEndpoint = {
+        start: match.index,
+        end: match.index + match[0].length,
+        month: months.indexOf(values.month!),
+        day: parseNumber(values.day!),
+        year: parseNumber(values.year!),
+        hour: parseNumber(values.hour!),
+        minute: parseNumber(values.minute!),
+        segments: fields.map((field, index) => {
+          const [start, end] = match.indices![index + 1]!;
+          return createSegment(field, endpointIndex, start, end - start);
+        }),
+      };
+      // Reject overflow and partial matches before interpreting localized text as dates.
+      return formatEndpoint(endpoint, locale) === match[0] ? [endpoint] : [];
+    }
+  );
 }
 
 function createSegment(
@@ -246,26 +241,28 @@ function editEndpoint(
       );
       break;
     case 'hour':
-      edited.hour = wrap(endpoint.hour + direction, 1, 12);
+      edited.hour = wrap(endpoint.hour + direction, 0, 23);
       break;
     case 'minute':
       edited.minute = wrap(endpoint.minute + direction, 0, 59);
-      break;
-    case 'period':
-      edited.period = endpoint.period === 'AM' ? 'PM' : 'AM';
       break;
   }
 
   return edited;
 }
 
-function formatEndpoint(endpoint: DateTimeRangeEndpoint): string {
-  const month = MONTHS.at(endpoint.month);
-  if (!month) {
-    return '';
-  }
+function endpointDate(endpoint: DateTimeRangeEndpoint): Date {
+  const date = new Date(0);
+  date.setUTCFullYear(endpoint.year, endpoint.month, endpoint.day);
+  date.setUTCHours(endpoint.hour, endpoint.minute, 0, 0);
+  return date;
+}
 
-  return `${month} ${endpoint.day}, ${String(endpoint.year).padStart(4, '0')}, ${endpoint.hour}:${String(endpoint.minute).padStart(2, '0')} ${endpoint.period}`;
+function formatEndpoint(
+  endpoint: DateTimeRangeEndpoint,
+  locale: string
+): string {
+  return formatDateTime(endpointDate(endpoint), { locale, timeZone: 'UTC' });
 }
 
 function getEndpointDaysInMonth(year: number, month: number): number {

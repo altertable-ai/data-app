@@ -29,6 +29,9 @@ const period = dateTimeRangeVariable({
 });
 const dataApp = defineDataApp({
   title: 'Datetime comparisons',
+  dateFormatting: {
+    locale: new URLSearchParams(location.search).get('locale') ?? 'en-US',
+  },
   description: 'Compare absolute or relative reporting intervals.',
   scope: { organization: 'test', environment: 'test' },
   queries: {

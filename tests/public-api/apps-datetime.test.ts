@@ -173,7 +173,9 @@ test('live mode, limits, empty values, and outside focus remain controlled', asy
   await page.getByRole('option', { name: 'Live', exact: true }).click();
   await expect.poll(() => output.textContent()).toContain('"live":true');
   await input.click();
-  await page.getByRole('option', { name: 'Past 1 day', exact: true }).click();
+  await page
+    .getByRole('option', { name: 'Past 24 hours', exact: true })
+    .click();
   await expect.poll(() => output.textContent()).toContain('"live":false');
   await input.click();
   await input.fill('2w');
@@ -238,7 +240,9 @@ test('applying the initial calendar selection commits absolute days and Tab dism
   const input = page.getByRole('combobox', { name: 'Custom period' });
   const output = page.getByRole('status', { name: 'Custom selection' });
   await input.click();
-  await page.getByRole('option', { name: 'Past 1 day', exact: true }).click();
+  await page
+    .getByRole('option', { name: 'Past 24 hours', exact: true })
+    .click();
   await input.click();
   await page.getByRole('option', { name: 'Select from calendar…' }).click();
   await page.getByRole('button', { name: 'Apply', exact: true }).click();

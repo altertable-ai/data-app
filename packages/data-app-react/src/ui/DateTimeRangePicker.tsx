@@ -10,13 +10,19 @@ import {
   type DateTimeRangePreset,
   type DateRangeContract,
 } from '@altertable/data-app/contract';
-import { parseDateTimeRangeInput } from '@altertable/data-app/format';
+import {
+  formatDateTime,
+  type DateFormatOptions,
+  parseDateTimeRangeInput,
+} from '@altertable/data-app/format';
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 
+import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import {
   editDateTimeRangeInputSegment,
+  normalizeDateTimeRangeInput,
   getDateTimeRangeInputSegmentSelection,
 } from './date-time-range-input.ts';
 import { dateTimeRangeLabel } from './date-time-range-label.ts';
@@ -55,7 +61,7 @@ export type DateTimeRangePickerProps = {
 const presetInputs = [
   ['15m', 'Past 15 minutes'],
   ['4h', 'Past 4 hours'],
-  ['1d', 'Past 1 day'],
+  ['1d', 'Past 24 hours'],
   ['2d', 'Past 2 days'],
   ['3d', 'Past 3 days'],
   ['7d', 'Past 7 days'],
@@ -86,27 +92,19 @@ const examples = {
   Since: ['since 7/1', 'Jul 2 12pm to now'],
   Unix: ['1783003329 - 1783608129', '1783609703 to now'],
 };
-function dateLabel(date: Date, year = false) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    ...(year ? ({ year: 'numeric' } as const) : {}),
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'UTC',
-  }).format(date);
-}
 function resolvedLabel(
   value: DateTimeRange | null,
-  contract?: DateRangeContract
+  contract?: DateRangeContract,
+  options: DateFormatOptions = {}
 ) {
   if (!value) return '';
   try {
     const { from, to } = contract
       ? contract.datetime.resolve(value)
       : resolveDateTimeRange(value);
-    return from ? `${dateLabel(from, true)} - ${dateLabel(to, true)}` : '';
+    return from
+      ? `${formatDateTime(from, { ...options, timeZone: 'UTC' })} – ${formatDateTime(to, { ...options, timeZone: 'UTC' })}`
+      : '';
   } catch {
     // A UTC-only preview may be inverted even when valid in the reporting zone.
     return value.from
@@ -114,7 +112,7 @@ function resolvedLabel(
       : '';
   }
 }
-function summaryLabel(value: DateTimeRange | null) {
+function summaryLabel(value: DateTimeRange | null, options: DateFormatOptions) {
   if (!value) return '';
   for (const [input, label] of presetInputs) {
     const parsed = parseDateTimeRangeInput(input);
@@ -152,9 +150,9 @@ function summaryLabel(value: DateTimeRange | null) {
   }
   if (value.from instanceof Date) {
     return value.to instanceof Date
-      ? `${dateLabel(value.from)} - ${dateLabel(value.to)}`
+      ? dateTimeRangeLabel(value, options)
       : !value.to
-        ? `Since ${dateLabel(value.from)}`
+        ? `Since ${formatDateTime(value.from, { ...options, timeZone: 'UTC' })}`
         : formatDateTimeRange(value);
   }
   return formatDateTimeRange(value);
@@ -180,6 +178,7 @@ export function DateTimeRangePicker({
   disabled,
 }: DateTimeRangePickerProps) {
   const id = useId();
+  const dateFormatting = useDateFormatting();
   const trigger = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const pending = useRef<{ value: string; start: number; end: number } | null>(
@@ -291,7 +290,7 @@ export function DateTimeRangePicker({
   }
   function openPresets() {
     if (!open) {
-      setDraft(resolvedLabel(value, contract));
+      setDraft(resolvedLabel(value, contract, dateFormatting));
       setEdited(false);
       setError('');
       setHelp(false);
@@ -328,13 +327,14 @@ export function DateTimeRangePicker({
     close(true);
   }
   function submit(text: string) {
-    const result = parseDateTimeRangeInput(text);
+    const normalized = normalizeDateTimeRangeInput(text, dateFormatting.locale);
+    const result = parseDateTimeRangeInput(normalized);
     if (result.ok) {
       commit(result.range);
       return;
     }
     // Explicit bound expressions retain anchors on either side of the range.
-    const bounds = text.split(/\s+to\s+/i);
+    const bounds = normalized.split(/\s+(?:to|–)\s+/i);
     if (bounds.length === 2) {
       try {
         const from = parseDateTimeBound(bounds[0]!);
@@ -425,8 +425,14 @@ export function DateTimeRangePicker({
           if (!disabled) openPresets();
         }}
       >
-        <span className="altertable-datetime-shortcut" aria-hidden="true">
-          {selected?.shortcut ?? '–'}
+        <span
+          className="altertable-datetime-shortcut"
+          aria-hidden="true"
+          data-word={
+            /^(today|yesterday)$/i.test(selected?.shortcut ?? '') || undefined
+          }
+        >
+          <span>{selected?.shortcut ?? '–'}</span>
         </span>
         <input
           ref={input}
@@ -454,7 +460,7 @@ export function DateTimeRangePicker({
               ? draft
               : live
                 ? 'Live'
-                : `${selected?.label ?? summaryLabel(value)}${comparison?.enabled ? ' · vs previous' : ''}`
+                : `${selected?.label ?? summaryLabel(value, dateFormatting)}${comparison?.enabled ? ' · vs previous' : ''}`
           }
           onFocus={() => setError('')}
           onChange={event => {
@@ -517,6 +523,7 @@ export function DateTimeRangePicker({
             };
             const args = {
               value: current.value,
+              locale: dateFormatting.locale,
               selectionStart: current.start,
               selectionEnd: current.end,
               direction: (event.key === 'ArrowLeft' || event.key === 'ArrowDown'
@@ -684,9 +691,16 @@ export function DateTimeRangePicker({
                       <span
                         className="altertable-datetime-shortcut"
                         aria-hidden="true"
+                        data-word={
+                          (preset &&
+                            /^(today|yesterday)$/i.test(
+                              preset.shortcut ?? ''
+                            )) ||
+                          undefined
+                        }
                       >
                         {preset ? (
-                          preset.shortcut
+                          <span>{preset.shortcut}</span>
                         ) : (
                           <AppIcon
                             name={
@@ -808,7 +822,7 @@ export function DateTimeRangePicker({
                   Compare with previous period
                   <small id={`${id}-comparison-description`}>
                     {comparison.range
-                      ? dateTimeRangeLabel(comparison.range)
+                      ? dateTimeRangeLabel(comparison.range, dateFormatting)
                       : 'Outside available source coverage'}
                   </small>
                 </span>

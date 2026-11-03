@@ -114,3 +114,58 @@ test('plain datetime views inherit the reporting contract timezone', async ({
     )
     .toBe('America/New_York');
 });
+
+for (const locale of ['en-US', 'fr-FR', 'en-GB']) {
+  test(`datetime display and keyboard edits share the ${locale} app format`, async ({
+    page,
+  }) => {
+    await page.clock.setFixedTime(new Date('2026-07-10T16:00:00Z'));
+    await page.goto(`/datetime-comparison?locale=${locale}`);
+    const picker = page.getByRole('combobox', {
+      name: 'Date range',
+      exact: true,
+    });
+    await picker.click();
+    const formatter = new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      hourCycle: 'h23',
+      timeZone: 'UTC',
+    });
+    function label(from: string, to: string) {
+      return `${formatter.format(new Date(from))} – ${formatter.format(new Date(to))}`;
+    }
+    expect(await picker.inputValue()).toBe(
+      label('2026-07-03T16:00:00Z', '2026-07-10T16:00:00Z')
+    );
+    expect(
+      await page
+        .getByRole('checkbox', { name: 'Compare with previous period' })
+        .textContent()
+    ).toContain(label('2026-06-26T16:00:00Z', '2026-07-03T16:00:00Z'));
+    // Select the first hour in the localized text and edit it without a format change.
+    const text = await picker.inputValue();
+    const hour = text.indexOf('16:00');
+    await picker.evaluate(
+      (element, start) =>
+        (element as HTMLInputElement).setSelectionRange(start, start + 2),
+      hour
+    );
+    await picker.press('ArrowUp');
+    await picker.press('Enter');
+    await expect
+      .poll(() =>
+        page.getByRole('status', { name: 'Applied comparison' }).textContent()
+      )
+      .toContain('2026-07-03T17:00:00.000Z');
+    await picker.click();
+    await page
+      .getByRole('option', { name: 'Past 24 hours', exact: true })
+      .click();
+    await expect
+      .poll(() =>
+        page.getByRole('status', { name: 'Applied comparison' }).textContent()
+      )
+      .toContain('2026-07-09T16:00:00.000Z');
+  });
+}
