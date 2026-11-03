@@ -139,8 +139,18 @@ function SourceBridge(props: SourceBridgeProps) {
     props.repair?.revision,
   ]);
 
+  const allow = iframeProps?.allow
+    ? `${iframeProps.allow}; clipboard-write`
+    : 'clipboard-write';
+
   return (
-    <iframe {...iframeProps} loading="eager" ref={setIframe} title={title} />
+    <iframe
+      {...iframeProps}
+      loading="eager"
+      ref={setIframe}
+      title={title}
+      allow={allow}
+    />
   );
 }
 
