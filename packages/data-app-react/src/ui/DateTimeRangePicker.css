@@ -104,6 +104,11 @@
 .altertable-datetime-presets button[data-highlighted] {
   background: var(--atbl-subtle);
 }
+.altertable-datetime-presets
+  button[data-highlighted]
+  .altertable-datetime-shortcut {
+  background: var(--atbl-border);
+}
 .altertable-datetime-check {
   margin-left: auto;
 }
