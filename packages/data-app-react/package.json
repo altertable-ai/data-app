@@ -4,9 +4,17 @@
   "description": "React components, hooks, styles, and authoring tools for Altertable data apps.",
   "keywords": [
     "altertable",
-    "analytics",
     "data-app",
+    "data-apps",
     "react",
+    "react-components",
+    "dashboard",
+    "analytics",
+    "charts",
+    "data-visualization",
+    "business-intelligence",
+    "reporting",
+    "ai-agents",
     "typescript"
   ],
   "homepage": "https://github.com/altertable-ai/data-app",
