@@ -626,9 +626,9 @@ test('elapsed time starts with preparation, continues through activity and revis
       page.getByRole('button', { name: 'Fix errors', exact: true }).isEnabled()
     )
     .toBe(true);
-  const now = new Date('2026-10-27T10:00:00Z');
-  await page.clock.install({ time: now });
-  await page.clock.pauseAt(now);
+  // The installed clock keeps running until paused, so pause at a later time.
+  await page.clock.install({ time: new Date('2026-10-27T09:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-10-27T10:00:00Z'));
   const banner = page.getByRole('region', { name: 'App errors' });
   const status = banner.getByLabel('Repair request status');
   const fix = banner.getByRole('button', { name: 'Fix errors', exact: true });
