@@ -4,12 +4,23 @@
   "description": "Portable definitions, contracts, formatting, browser clients, and request handlers for Altertable data apps.",
   "keywords": [
     "altertable",
-    "analytics",
     "data-app",
-    "react",
+    "data-apps",
+    "dashboard",
+    "analytics",
+    "embedded-analytics",
+    "business-intelligence",
+    "bi",
+    "reporting",
+    "data-visualization",
+    "sql",
+    "lakehouse",
+    "ai-agents",
+    "mcp",
+    "mcp-apps",
     "typescript"
   ],
-  "homepage": "https://github.com/altertable-ai/data-app",
+  "homepage": "https://altertable.ai/docs/data-apps",
   "bugs": {
     "url": "https://github.com/altertable-ai/data-app/issues"
   },

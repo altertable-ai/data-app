@@ -4,10 +4,14 @@
   "description": "Self-contained sandbox Worker for serving Altertable data apps.",
   "keywords": [
     "altertable",
-    "analytics",
     "data-app",
-    "react",
-    "typescript"
+    "data-apps",
+    "cloudflare",
+    "cloudflare-workers",
+    "sandbox",
+    "iframe",
+    "embedded-analytics",
+    "analytics"
   ],
   "homepage": "https://github.com/altertable-ai/data-app",
   "bugs": {
