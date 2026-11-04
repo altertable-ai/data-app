@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
@@ -14,19 +12,24 @@ test('widget headings share muted typography and preserve section hierarchy', as
       .getByRole('heading', { name: 'Event overview', level: 2 })
       .count()
   ).toBe(1);
-  const headingSizes = await page
-    .getByRole('heading', { name: 'Witness reports', level: 3 })
-    .evaluate(element => {
-      const chevron = element.querySelector('svg')!;
-      const count = element.querySelector('.altertable-data-widget-count')!;
-      return {
-        heading: parseFloat(getComputedStyle(element).fontSize),
-        chevron: parseFloat(getComputedStyle(chevron).width),
-        count: parseFloat(getComputedStyle(count).fontSize),
-      };
-    });
-  expect(headingSizes.chevron).toBe(headingSizes.heading);
-  expect(headingSizes.count).toBeCloseTo(headingSizes.heading * 0.85, 1);
+  const witnessHeading = page.getByRole('heading', {
+    name: 'Witness reports',
+    level: 3,
+  });
+  const headingSize = await witnessHeading.evaluate(element =>
+    parseFloat(getComputedStyle(element).fontSize)
+  );
+  // The decorative chevron is hidden from assistive technology, so only its
+  // rendered icon can locate it.
+  const chevronBox = await witnessHeading
+    .getByRole('button', { name: 'Explore Witness reports', exact: true })
+    .locator('svg')
+    .boundingBox();
+  const countSize = await witnessHeading
+    .getByText('3', { exact: true })
+    .evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+  expect(chevronBox!.width).toBeCloseTo(headingSize, 1);
+  expect(countSize).toBeCloseTo(headingSize * 0.85, 1);
   const styles: string[][] = [];
   for (const name of [
     'Events',
@@ -57,7 +60,8 @@ test('widget headings share muted typography and preserve section hierarchy', as
       .evaluate(element => getComputedStyle(element).color)
   ).toBe(
     await page
-      .locator('.altertable-data-table thead th')
+      .getByRole('table')
+      .getByRole('columnheader')
       .first()
       .evaluate(element => getComputedStyle(element).color)
   );
@@ -89,7 +93,10 @@ test('dates share locale and reporting zone with explicit overrides and raw CSV'
   const downloading = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export CSV', exact: true }).click();
   const download = await downloading;
-  const csv = await readFile((await download.path())!, 'utf8');
+  const chunks: Buffer[] = [];
+  for await (const chunk of await download.createReadStream())
+    chunks.push(chunk);
+  const csv = Buffer.concat(chunks).toString('utf8');
   expect(csv).toContain('2026-09-24T15:00:05Z');
   expect(csv).toContain('2026-09-24 15:00:05');
   expect(csv).not.toContain('24 Sept');

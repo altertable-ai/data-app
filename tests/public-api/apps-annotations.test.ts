@@ -36,26 +36,29 @@ for (const failure of [false, true]) {
       exact: true,
     });
     await selection.press('ArrowRight');
-    await selection.dispatchEvent('keydown', {
-      key: 'Enter',
-      code: 'Enter',
-      isComposing: true,
-    });
-    expect(
-      await app.getByRole('textbox', { name: 'Annotation text' }).count()
-    ).toBe(0);
     await selection.press('Enter');
     const comment = app.getByRole('textbox', {
       name: 'Annotation text',
       exact: true,
     });
-    await comment.fill('Compare with last year');
-    await comment.dispatchEvent('keydown', {
-      key: 'Enter',
-      code: 'Enter',
-      isComposing: true,
+    const output = page.getByRole('status', {
+      name: 'Annotation drafts',
+      exact: true,
     });
-    expect(await comment.inputValue()).toBe('Compare with last year');
+    // Enter while an input method is composing confirms the composition, not the draft.
+    const client = await page.context().newCDPSession(page);
+    await comment.fill('Compare with last year');
+    await client.send('Input.imeSetComposition', {
+      text: 'か',
+      selectionStart: 1,
+      selectionEnd: 1,
+    });
+    await page.keyboard.press('Enter');
+    expect(await comment.isVisible()).toBe(true);
+    expect(await comment.inputValue()).toContain('Compare with last year');
+    expect(JSON.parse((await output.textContent()) || '[]')).toEqual([]);
+    await client.send('Input.insertText', { text: '' });
+    await comment.fill('Compare with last year');
     await app
       .getByRole('button', { name: 'Add annotation', exact: true })
       .click();
@@ -77,10 +80,6 @@ for (const failure of [false, true]) {
         .getByRole('button', { name: 'Add annotation', exact: true })
         .click();
     }
-    const output = page.getByRole('status', {
-      name: 'Annotation drafts',
-      exact: true,
-    });
     await expect
       .poll(async () => JSON.parse((await output.textContent()) || '[]').length)
       .toBe(1);
@@ -185,8 +184,8 @@ test('Mod+Enter sends only from the focused annotation input and preserves draft
   await expect.poll(() => send.isEnabled()).toBe(true);
   await send.hover();
   await expect
-    .poll(() => page.getByRole('tooltip').locator('kbd').textContent())
-    .toBe(modifier === 'Meta' ? '⌘↩' : 'Ctrl+Enter');
+    .poll(() => page.getByRole('tooltip').textContent())
+    .toContain(modifier === 'Meta' ? '⌘↩' : 'Ctrl+Enter');
   await selection.press('ArrowRight');
   await selection.press(`${modifier}+Enter`);
   await send.press(`${modifier}+Enter`);

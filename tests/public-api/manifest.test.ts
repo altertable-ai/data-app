@@ -1,5 +1,7 @@
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
+import { getExampleDirectory } from '@altertable/data-app-examples';
 import {
   extractDataAppManifest,
   overrideDataAppManifest,
@@ -304,12 +306,9 @@ test.each([
   ['starter-data-app', 'Sample counts'],
   ['starter-metric-data-app', 'Sample metric'],
   ['starter-finding-data-app', 'Sample finding'],
-])('extracts the %s declaration', async (starter, title) => {
+] as const)('extracts the %s declaration', async (starter, title) => {
   const text = await readFile(
-    new URL(
-      `../../packages/data-app-examples/templates/${starter}/index.tsx`,
-      import.meta.url
-    ),
+    join(getExampleDirectory(starter), 'index.tsx'),
     'utf8'
   );
   const result = extractDataAppManifest(text);
@@ -359,10 +358,7 @@ describe('manifest override', () => {
 
   test('rewrites only the changed values of the hosted starter', async () => {
     const text = await readFile(
-      new URL(
-        '../../packages/data-app-examples/templates/starter-data-app/index.tsx',
-        import.meta.url
-      ),
+      join(getExampleDirectory('starter-data-app'), 'index.tsx'),
       'utf8'
     );
     expect(

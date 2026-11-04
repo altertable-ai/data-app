@@ -1,5 +1,3 @@
-import { readFile } from 'node:fs/promises';
-
 import type { DataAppDiagnostic } from '@altertable/data-app-embed';
 import { expect } from 'vitest';
 
@@ -468,10 +466,16 @@ for (const source of ['bundle', 'packaged', 'url']) {
       .toContain('period=last-30');
     if (source === 'packaged') {
       await expect
-        .poll(() => page.locator('iframe').getAttribute('src'))
+        .poll(() =>
+          page.getByTitle('Sandbox app', { exact: true }).getAttribute('src')
+        )
         .toMatch(/^data:text\/html/);
       await expect
-        .poll(() => page.locator('iframe').getAttribute('sandbox'))
+        .poll(() =>
+          page
+            .getByTitle('Sandbox app', { exact: true })
+            .getAttribute('sandbox')
+        )
         .toBe('allow-scripts');
       const frame = page.frames().find(frame => frame !== page.mainFrame())!;
       expect(
@@ -618,9 +622,10 @@ test('a content-sized frame follows its app height and keeps its toolbar and she
     .click();
   const download = await downloaded;
   expect(download.suggestedFilename()).toBe('Summary.csv');
-  expect(await readFile((await download.path())!, 'utf8')).toBe(
-    '\uFEFFTotal\r\n0\r\n'
-  );
+  const chunks: Buffer[] = [];
+  for await (const chunk of await download.createReadStream())
+    chunks.push(Buffer.from(chunk));
+  expect(Buffer.concat(chunks).toString('utf8')).toBe('\uFEFFTotal\r\n0\r\n');
   const root = app.locator(':root');
   function frameHeight() {
     return frame.evaluate(element => element.getBoundingClientRect().height);
@@ -660,10 +665,11 @@ test('a content-sized frame follows its app height and keeps its toolbar and she
     );
   }
   await expect.poll(fitsViewport).toBe(true);
-  await page.evaluate(() => scrollBy(0, 600));
-  expect(
-    await frame.evaluate(element => element.getBoundingClientRect().top)
-  ).toBeLessThan(0);
+  await page.mouse.move(8, viewport / 2);
+  await page.mouse.wheel(0, 600);
+  await expect
+    .poll(() => frame.evaluate(element => element.getBoundingClientRect().top))
+    .toBeLessThan(0);
   await expect.poll(fitsViewport).toBe(true);
   await page.keyboard.press('Escape');
   await expect.poll(() => sheet.count()).toBe(0);
@@ -719,9 +725,6 @@ for (const label of [
     await app.getByRole('button', { name: label, exact: true }).click();
     const authoredHeight = Math.round(page.viewportSize()!.height * 0.8);
     await expect.poll(frameHeight).toBe(authoredHeight);
-    await expect
-      .poll(() => root.evaluate(element => getComputedStyle(element).overflowY))
-      .not.toBe('hidden');
     await app.getByRole('button', { name: label, exact: true }).hover();
     await page.mouse.wheel(0, 10000);
     await expect

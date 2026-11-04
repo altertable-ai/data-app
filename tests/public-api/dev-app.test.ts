@@ -447,9 +447,8 @@ mountDataApp({ app, component: App });
     const app = page.frameLocator('iframe');
     await app.getByRole('heading', { name: 'Before disconnect' }).waitFor();
     await vi.waitFor(() => expect(reloadConnections.size).toBe(1));
-    await page.evaluate(() => {
-      document.body.dataset.previewSession = 'connected';
-    });
+    let hostLoads = 0;
+    page.on('load', () => hostLoads++);
     const connectionFailed = page.waitForEvent('requestfailed', {
       predicate: request => new URL(request.url()).pathname === '/reload',
       timeout: 5000,
@@ -472,9 +471,8 @@ mountDataApp({ app, component: App });
     await app
       .getByRole('heading', { name: 'Edited while disconnected' })
       .waitFor({ timeout: 5000 });
-    expect(
-      await page.locator('body').getAttribute('data-preview-session')
-    ).toBe('connected');
+    // The edit replaces the app frame without reloading the host page.
+    expect(hostLoads).toBe(0);
   } finally {
     await browser.close();
   }

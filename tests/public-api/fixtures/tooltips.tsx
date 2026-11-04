@@ -4,7 +4,8 @@ import {
   IconButton,
 } from '@altertable/data-app-react';
 import { Tooltip, TooltipProvider } from '@altertable/data-app-react/ui';
-import { useRef, useState } from 'react';
+import { applyAppearance } from '@altertable/data-app/appearance';
+import { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 function App() {
@@ -14,6 +15,18 @@ function App() {
   const [mounted, setMounted] = useState(true);
   const [pressed, setPressed] = useState(0);
   const [timing, setTiming] = useState({ delay: 500, skipDelayDuration: 300 });
+  // App shortcuts change state without moving focus or the pointer.
+  useEffect(() => {
+    function shortcut(event: KeyboardEvent) {
+      if (!event.altKey) return;
+      if (event.code === 'KeyC') setContent(value => !value);
+      else if (event.code === 'KeyU') setMounted(value => !value);
+      else if (event.code === 'KeyQ')
+        setTiming({ delay: 100, skipDelayDuration: 1000 });
+    }
+    document.addEventListener('keydown', shortcut);
+    return () => document.removeEventListener('keydown', shortcut);
+  }, []);
   return (
     <main style={{ padding: 24, display: 'grid', gap: 24 }}>
       <TooltipProvider {...timing}>
@@ -104,4 +117,6 @@ function App() {
   );
 }
 injectDataAppStyles();
+const theme = new URLSearchParams(location.search).get('theme');
+if (theme === 'light' || theme === 'dark') applyAppearance({ theme });
 createRoot(document.getElementById('root')!).render(<App />);

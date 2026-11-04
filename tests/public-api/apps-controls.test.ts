@@ -136,16 +136,21 @@ test('mobile text controls retain a 16px floor and picker search keeps a stable 
       parseFloat(getComputedStyle(element).fontSize)
     )
   ).toBeGreaterThanOrEqual(16);
+  // The divider is the search field's decorative container border, which has no
+  // accessible handle of its own.
   function divider() {
     return search.evaluate(
       element => getComputedStyle(element.parentElement!).borderBottomColor
     );
   }
   const focused = await divider();
-  await search.evaluate(element => element.blur());
+  await page.keyboard.press('Tab');
+  expect(
+    await search.evaluate(element => element === document.activeElement)
+  ).toBe(false);
   await search.hover();
   expect(await divider()).toBe(focused);
-  await search.focus();
+  await search.click();
   expect(await divider()).toBe(focused);
   await page.setViewportSize({ width: 820, height: 900 });
   expect(

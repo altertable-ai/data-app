@@ -1,15 +1,19 @@
-import { readFile } from 'node:fs/promises';
-
 import { unzipSync, strFromU8 } from 'fflate';
+import type { Download } from 'playwright';
 import { describe, expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
 describe('export', () => {
-  async function contents(download: import('playwright').Download) {
-    const path = await download.path();
-    expect(path).not.toBeNull();
-    return readFile(path!, 'utf8');
+  async function bytes(download: Download) {
+    const chunks: Buffer[] = [];
+    for await (const chunk of await download.createReadStream())
+      chunks.push(chunk);
+    return Buffer.concat(chunks);
+  }
+
+  async function contents(download: Download) {
+    return (await bytes(download)).toString('utf8');
   }
 
   test('standalone toolbar downloads a UTF-8 CSV with escaped cells', async ({
@@ -203,7 +207,7 @@ describe('export', () => {
         .click();
       download = await downloaded;
       expect(download.suggestedFilename()).toBe('gallery.zip');
-      const files = unzipSync(await readFile((await download.path())!));
+      const files = unzipSync(await bytes(download));
       expect(Object.keys(files)).toEqual(['Counts.csv', 'Summary.csv']);
       expect(Array.from(files['Summary.csv']!.slice(0, 3))).toEqual([
         239, 187, 191,

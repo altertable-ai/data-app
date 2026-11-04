@@ -153,15 +153,11 @@ test('provider timing updates affect hover delay and skip duration without remou
   await first.focus();
   await expect.poll(() => tooltip.textContent()).toBe('First hint');
   await page.clock.pauseAt(new Date(Date.now() + 1000));
-  const original = await first.elementHandle();
-  await page
-    .getByRole('button', { name: 'Use quick hints' })
-    .evaluate(element => (element as HTMLButtonElement).click());
+  // The fixture's Alt+Q shortcut applies quick hints without moving focus.
+  await page.keyboard.press('Alt+KeyQ');
   await page.clock.runFor(20);
   expect(
-    await original!.evaluate(
-      element => element.isConnected && element === document.activeElement
-    )
+    await first.evaluate(element => element === document.activeElement)
   ).toBe(true);
   await page.keyboard.press('Escape');
   await page.mouse.move(1, 1);
@@ -207,14 +203,10 @@ test('removing content and unmounting cancel pending or visible hints', async ({
   const tooltip = page.getByRole('tooltip');
   await page.getByRole('button', { name: 'Dynamic', exact: true }).focus();
   await expect.poll(() => tooltip.textContent()).toBe('Dynamic hint');
-  // Change content without moving focus or the pointer off the trigger.
-  await page
-    .getByRole('button', { name: 'Toggle content' })
-    .evaluate(element => (element as HTMLButtonElement).click());
+  // The fixture's Alt+C shortcut changes content without moving focus or the pointer.
+  await page.keyboard.press('Alt+KeyC');
   await expect.poll(() => tooltip.count()).toBe(0);
-  await page
-    .getByRole('button', { name: 'Toggle content' })
-    .evaluate(element => (element as HTMLButtonElement).click());
+  await page.keyboard.press('Alt+KeyC');
   expect(await tooltip.count()).toBe(0);
   await page.getByRole('button', { name: 'Toggle content' }).focus();
   await page.getByRole('button', { name: 'Dynamic', exact: true }).focus();
@@ -224,9 +216,7 @@ test('removing content and unmounting cancel pending or visible hints', async ({
   await page.clock.install();
   await page.clock.runFor(400);
   await page.getByRole('button', { name: 'Unmountable', exact: true }).hover();
-  await page
-    .getByRole('button', { name: 'Toggle trigger' })
-    .evaluate(element => (element as HTMLButtonElement).click());
+  await page.keyboard.press('Alt+KeyU');
   await page.clock.runFor(1000);
   expect(await tooltip.count()).toBe(0);
 });
@@ -240,9 +230,7 @@ test('unmounting an open hint releases the shared instant-hover window', async (
   await expect
     .poll(() => page.getByRole('tooltip').textContent())
     .toBe('Unmountable hint');
-  await page
-    .getByRole('button', { name: 'Toggle trigger' })
-    .evaluate(element => (element as HTMLButtonElement).click());
+  await page.keyboard.press('Alt+KeyU');
   await page.clock.runFor(1000);
   await page.getByRole('button', { name: 'First', exact: true }).hover();
   await page.clock.runFor(100);
@@ -295,10 +283,7 @@ for (const theme of ['light', 'dark']) {
     }) => {
       await page.setViewportSize({ width, height: 812 });
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      await page.goto('/tooltips');
-      await page.evaluate(theme => {
-        document.documentElement.dataset.atblTheme = theme;
-      }, theme);
+      await page.goto(`/tooltips?theme=${theme}`);
       const trigger = page.getByRole('button', { name: 'Edge', exact: true });
       await trigger.focus();
       const tooltip = page.getByRole('tooltip');

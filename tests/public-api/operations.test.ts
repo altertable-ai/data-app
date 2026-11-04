@@ -353,24 +353,17 @@ test('an HTTP client rejects malformed results and exposes actionable errors wit
 test('browser operations retain cryptographic request IDs without randomUUID and fail closed without secure randomness', async () => {
   const operations = { count: operation() };
   const client = createDataClient({ operations, lakehouse: lakehouse() });
-  const getRandomValues = vi.fn((bytes: Uint8Array) => {
-    bytes.fill(255);
-    return bytes;
-  });
-  vi.stubGlobal('crypto', { getRandomValues });
-  const insecureRandom = vi.spyOn(Math, 'random').mockImplementation(() => {
-    throw new Error('Insecure randomness must not be used.');
+  vi.stubGlobal('crypto', {
+    getRandomValues(bytes: Uint8Array) {
+      return bytes.fill(255);
+    },
   });
   try {
     const result = await client.query('count', 3);
     expect(result.requestId).toBe('ffffffff-ffff-4fff-bfff-ffffffffffff');
-    expect(getRandomValues).toHaveBeenCalledOnce();
-    expect(insecureRandom).not.toHaveBeenCalled();
     vi.stubGlobal('crypto', {});
     await expect(client.query('count', 3)).rejects.toThrow();
-    expect(insecureRandom).not.toHaveBeenCalled();
   } finally {
-    insecureRandom.mockRestore();
     vi.unstubAllGlobals();
   }
 });

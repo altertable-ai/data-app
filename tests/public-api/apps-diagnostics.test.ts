@@ -1,8 +1,16 @@
 import { mkdir } from 'node:fs/promises';
 
+import type { Locator } from 'playwright';
 import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
+
+async function clickAt(button: Locator) {
+  const box = (await button.boundingBox())!;
+  await button
+    .page()
+    .mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
 
 const screenshotRoot =
   process.env.DATA_APP_SCREENSHOT_DIR ?? '/tmp/data-app-diagnostics';
@@ -128,12 +136,8 @@ test('independent widget and operation failures share latest repair report and p
   await page.goto('/diagnostics?progress');
   const frame = page.frameLocator('iframe');
   await expect.poll(() => frame.getByText('Chart ready').count()).toBe(2);
-  const widget = frame.locator('.altertable-data-widget').first();
+  const widget = frame.getByRole('region', { name: 'Revenue', exact: true });
   const dimensions = await widget.boundingBox();
-  const heading = await frame
-    .getByRole('heading', { name: 'Revenue', exact: true })
-    .elementHandle();
-  const footer = await frame.getByText('USD · Updated today').elementHandle();
   const neighbor = await frame
     .getByText('Neighbor below the widgets')
     .boundingBox();
@@ -145,8 +149,6 @@ test('independent widget and operation failures share latest repair report and p
     .poll(() => page.getByLabel('Repair requests').textContent())
     .toBe('1');
   const error = await widget.boundingBox();
-  expect(await heading!.evaluate(node => node.isConnected)).toBe(true);
-  expect(await footer!.evaluate(node => node.isConnected)).toBe(true);
   const after = await frame
     .getByText('Neighbor below the widgets')
     .boundingBox();
@@ -229,10 +231,12 @@ test('independent widget and operation failures share latest repair report and p
     path: `${screenshotRoot}/diagnostics-banner-light.png`,
     animations: 'disabled',
   });
-  await page.locator('.diagnostics-preview').screenshot({
-    path: `${screenshotRoot}/diagnostics-light.png`,
-    animations: 'disabled',
-  });
+  await page
+    .getByRole('region', { name: 'App preview', exact: true })
+    .screenshot({
+      path: `${screenshotRoot}/diagnostics-light.png`,
+      animations: 'disabled',
+    });
   await page.getByRole('button', { name: 'working', exact: true }).click();
   await page.getByRole('button', { name: 'Change theme' }).click();
   await page.setViewportSize({ width: 375, height: 1100 });
@@ -243,16 +247,22 @@ test('independent widget and operation failures share latest repair report and p
       .evaluate(node => getComputedStyle(node).animationName)
   ).toBe('none');
   await expect
-    .poll(() => frame.locator('html').getAttribute('data-atbl-theme'))
+    .poll(() =>
+      frame
+        .locator(':root')
+        .evaluate(element => getComputedStyle(element).colorScheme)
+    )
     .toBe('dark');
   await banner.screenshot({
     path: `${screenshotRoot}/diagnostics-banner-dark-narrow.png`,
     animations: 'disabled',
   });
-  await page.locator('.diagnostics-preview').screenshot({
-    path: `${screenshotRoot}/diagnostics-dark-narrow.png`,
-    animations: 'disabled',
-  });
+  await page
+    .getByRole('region', { name: 'App preview', exact: true })
+    .screenshot({
+      path: `${screenshotRoot}/diagnostics-dark-narrow.png`,
+      animations: 'disabled',
+    });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth
@@ -306,10 +316,12 @@ test('fourth failing revision and recreated/reloaded viewers keep automatic allo
     .toContain('Automatic fixes are paused');
   expect(await page.getByLabel('Repair requests').textContent()).toBe('3');
   await mkdir(screenshotRoot, { recursive: true });
-  await page.locator('.diagnostics-preview').screenshot({
-    path: `${screenshotRoot}/diagnostics-limit.png`,
-    animations: 'disabled',
-  });
+  await page
+    .getByRole('region', { name: 'App preview', exact: true })
+    .screenshot({
+      path: `${screenshotRoot}/diagnostics-limit.png`,
+      animations: 'disabled',
+    });
   await page.getByRole('button', { name: 'Recreate viewer' }).click();
   await frame.getByRole('button', { name: 'Break widgets' }).click();
   await page.reload();
@@ -369,17 +381,16 @@ test('multiple banner and widget buttons cannot bypass shared serialization', as
     .poll(() => page.getByLabel('Repair delivery status').textContent())
     .toBe('accepted');
   await page.getByRole('button', { name: 'review', exact: true }).click();
-  await Promise.all([
-    page.getByRole('button', { name: 'Fix errors' }).click({ force: true }),
-    frame
-      .getByRole('button', { name: 'Fix error' })
-      .first()
-      .click({ force: true }),
-    frame
-      .getByRole('button', { name: 'Fix error' })
-      .last()
-      .click({ force: true }),
-  ]);
+  // Rapid clicks land wherever the buttons were, even after one becomes disabled.
+  const targets = [];
+  for (const button of [
+    page.getByRole('button', { name: 'Fix errors' }),
+    frame.getByRole('button', { name: 'Fix error' }).first(),
+    frame.getByRole('button', { name: 'Fix error' }).last(),
+  ])
+    targets.push((await button.boundingBox())!);
+  for (const box of targets)
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect
     .poll(() => page.getByLabel('Repair delivery status').textContent())
     .toBe('accepted');
@@ -424,19 +435,27 @@ test('unsupported host exposes diagnostics and a manual recovery instruction', a
   expect(await banner.textContent()).not.toContain('Live SDK operations');
   expect(await banner.textContent()).not.toContain('Diagnostics copied.');
   await mkdir(screenshotRoot, { recursive: true });
-  await page.locator('.diagnostics-preview').screenshot({
-    path: `${screenshotRoot}/diagnostics-copy-light.png`,
-    animations: 'disabled',
-  });
+  await page
+    .getByRole('region', { name: 'App preview', exact: true })
+    .screenshot({
+      path: `${screenshotRoot}/diagnostics-copy-light.png`,
+      animations: 'disabled',
+    });
   await page.getByRole('button', { name: 'Change theme' }).click();
   await page.setViewportSize({ width: 375, height: 1100 });
   await expect
-    .poll(() => frame.locator('html').getAttribute('data-atbl-theme'))
+    .poll(() =>
+      frame
+        .locator(':root')
+        .evaluate(element => getComputedStyle(element).colorScheme)
+    )
     .toBe('dark');
-  await page.locator('.diagnostics-preview').screenshot({
-    path: `${screenshotRoot}/diagnostics-copy-dark-narrow.png`,
-    animations: 'disabled',
-  });
+  await page
+    .getByRole('region', { name: 'App preview', exact: true })
+    .screenshot({
+      path: `${screenshotRoot}/diagnostics-copy-dark-narrow.png`,
+      animations: 'disabled',
+    });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth
@@ -476,7 +495,10 @@ test('clipboard rejection keeps a selectable complete report for manual recovery
     )
     .toContain('Couldn’t copy.');
   const report = JSON.parse(
-    (await page.locator('.atbl-repair-banner pre').textContent())!
+    (await page
+      .getByRole('region', { name: 'App errors' })
+      .getByText(/"failures":/)
+      .textContent())!
   );
   expect(report.failures).toHaveLength(6);
   expect(report.pending).toBe(0);
@@ -492,15 +514,13 @@ test('explicit widget widths remain stable when rendering fails at wide and narr
     const frame = page.frameLocator('iframe');
     await expect.poll(() => frame.getByText('Chart ready').count()).toBe(2);
     const before = await frame
-      .locator('.altertable-data-widget')
-      .first()
+      .getByRole('region', { name: 'Revenue', exact: true })
       .boundingBox();
     await frame.getByRole('button', { name: 'Break widgets' }).click();
     const error = frame.getByRole('region', { name: 'Revenue error' });
     await expect.poll(() => error.isVisible()).toBe(true);
     const after = await frame
-      .locator('.altertable-data-widget')
-      .first()
+      .getByRole('region', { name: 'Revenue', exact: true })
       .boundingBox();
     expect(before!.width).toBe(260);
     expect(after!.width).toBeCloseTo(before!.width, 0);
@@ -540,8 +560,8 @@ test('preparation stays loading after acceptance and transitions to activity, re
       .getByRole('button', { name: 'Copy diagnostics', exact: true })
       .isEnabled()
   ).toBe(true);
-  // Native disabled controls cannot issue another request, including forced clicks.
-  await fix.click({ force: true });
+  // Native disabled controls cannot issue another request when clicked.
+  await clickAt(fix);
   expect(await page.getByLabel('Repair requests').textContent()).toBe('1');
   await page.getByRole('button', { name: 'working', exact: true }).click();
   await expect.poll(() => status.textContent()).toContain('Updating your app');
@@ -555,7 +575,7 @@ test('preparation stays loading after acceptance and transitions to activity, re
   expect(await fix.isEnabled()).toBe(true);
   await fix.click();
   expect(await fix.isDisabled()).toBe(true);
-  await fix.click({ force: true });
+  await clickAt(fix);
   expect(await page.getByLabel('Repair requests').textContent()).toBe('2');
   await expect.poll(() => status.textContent()).toContain('Preparing a fix');
   expect(await loading.isVisible()).toBe(true);

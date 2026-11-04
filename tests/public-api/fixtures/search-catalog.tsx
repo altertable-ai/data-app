@@ -42,13 +42,15 @@ if (new URLSearchParams(location.search).has('manyPeople')) {
 const relatedSearch = new URLSearchParams(location.search).has('relatedSearch');
 if (relatedSearch)
   catalog.people.push({ id: 99, name: 'Alpha person', team: 'Design' });
+function increment(id: string) {
+  const output = document.getElementById(id)!;
+  output.textContent = String(Number(output.textContent) + 1);
+}
 const client = createDataClient<{
   catalog: DataOperation<{ q: string; notes?: string }, typeof catalog>;
 }>({
   async transport(_name, value) {
-    document.body.dataset.requests = String(
-      Number(document.body.dataset.requests ?? 0) + 1
-    );
+    increment('requests');
     const { q } = value as { q: string };
     function matches(row: { name: string }) {
       return relatedSearch || row.name.toLowerCase().includes(q.toLowerCase());
@@ -122,9 +124,7 @@ const people = view.dataset({
   suggestions: {
     title: row => {
       if (new URLSearchParams(location.search).has('invalidSuggestions')) {
-        document.body.dataset.suggestionReads = String(
-          Number(document.body.dataset.suggestionReads ?? 0) + 1
-        );
+        increment('suggestion-reads');
         return '';
       }
       return row.name;

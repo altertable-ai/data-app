@@ -143,14 +143,15 @@ for (const locale of ['en-US', 'fr-FR', 'en-GB']) {
         .getByRole('checkbox', { name: 'Compare with previous period' })
         .textContent()
     ).toContain(label('2026-06-26T16:00:00Z', '2026-07-03T16:00:00Z'));
-    // Select the first hour in the localized text and edit it without a format change.
-    const text = await picker.inputValue();
-    const hour = text.indexOf('16:00');
-    await picker.evaluate(
-      (element, start) =>
-        (element as HTMLInputElement).setSelectionRange(start, start + 2),
-      hour
-    );
+    // Move across the localized date segments to the first hour and edit it
+    // without a format change.
+    await picker.press('ArrowLeft');
+    for (let step = 0; step < 4; step++) await picker.press('ArrowRight');
+    expect(
+      await picker.evaluate((element: HTMLInputElement) =>
+        element.value.slice(element.selectionStart!, element.selectionEnd!)
+      )
+    ).toBe('16');
     await picker.press('ArrowUp');
     await picker.press('Enter');
     await expect

@@ -10,15 +10,42 @@ export async function scrollPastToolbar(page: Page) {
     exact: true,
   });
   await toolbar.waitFor();
-  await page.evaluate(() =>
-    window.scrollTo(0, document.documentElement.scrollHeight)
-  );
-  await expect
-    .poll(() =>
-      toolbar.evaluate(element => element.getBoundingClientRect().bottom)
-    )
-    .toBeLessThanOrEqual(0);
+  await scrollPage(page, 'end');
+  expect(
+    await toolbar.evaluate(element => element.getBoundingClientRect().bottom)
+  ).toBeLessThanOrEqual(0);
   await page
     .getByRole('group', { name: 'Active filters', exact: true })
     .waitFor();
+}
+
+/** Wheel the page to one edge and wait for each scroll gesture to settle. */
+export async function scrollPage(page: Page, edge: 'start' | 'end') {
+  // Layout can still grow after a resize, so wheel again until the edge holds.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const distance = await page.evaluate(
+      edge =>
+        edge === 'start'
+          ? -window.scrollY
+          : document.documentElement.scrollHeight -
+            window.innerHeight -
+            window.scrollY,
+      edge
+    );
+    if (Math.abs(distance) < 1) return;
+    await page.mouse.wheel(0, distance);
+    await page.evaluate(
+      () =>
+        new Promise<void>(resolve => {
+          let last = window.scrollY;
+          const timer = setInterval(() => {
+            if (window.scrollY === last) {
+              clearInterval(timer);
+              resolve();
+            }
+            last = window.scrollY;
+          }, 100);
+        })
+    );
+  }
 }

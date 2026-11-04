@@ -1,7 +1,10 @@
 import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
-import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
+import {
+  scrollPage,
+  scrollPastToolbar,
+} from '@/tests/public-api/filter-summary';
 
 test('toolbar editors and floating summaries disclose the same active scope without duplicating primary controls', async ({
   page,
@@ -65,7 +68,7 @@ test('toolbar editors and floating summaries disclose the same active scope with
   await floating
     .getByRole('button', { name: 'Open filters', exact: true })
     .focus();
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await scrollPage(page, 'start');
   await expect.poll(() => floating.count()).toBe(0);
   await expect
     .poll(() =>
