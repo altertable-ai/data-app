@@ -93,6 +93,16 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(bunx --no-install playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      - name: Restore browser cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install browser
+        run: bash scripts/install-test-browser.sh
       - name: Build packages
         run: bun run build
       - name: Verify packed packages
