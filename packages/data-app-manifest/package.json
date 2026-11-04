@@ -4,8 +4,13 @@
   "description": "Static source-only manifest extraction and rewriting for Altertable data app tooling.",
   "keywords": [
     "altertable",
-    "analytics",
     "data-app",
+    "data-apps",
+    "manifest",
+    "static-analysis",
+    "ast",
+    "build-tools",
+    "analytics",
     "typescript"
   ],
   "homepage": "https://github.com/altertable-ai/data-app",

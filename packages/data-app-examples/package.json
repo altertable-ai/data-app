@@ -2,6 +2,18 @@
   "name": "@altertable/data-app-examples",
   "version": "0.75.0",
   "description": "Canonical starter templates for Altertable data apps.",
+  "keywords": [
+    "altertable",
+    "data-app",
+    "data-apps",
+    "templates",
+    "starter",
+    "boilerplate",
+    "dashboard",
+    "analytics",
+    "react",
+    "typescript"
+  ],
   "license": "MIT",
   "author": "Altertable",
   "repository": {

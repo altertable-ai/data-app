@@ -4,8 +4,14 @@
   "description": "Iframe hosting, sandbox bootstrap, and React host bindings for Altertable data apps.",
   "keywords": [
     "altertable",
-    "analytics",
     "data-app",
+    "data-apps",
+    "embed",
+    "embedded-analytics",
+    "iframe",
+    "sandbox",
+    "dashboard",
+    "analytics",
     "react",
     "typescript"
   ],

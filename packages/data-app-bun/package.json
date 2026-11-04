@@ -4,9 +4,14 @@
   "description": "Local Bun servers, lakehouse access, and development previews for Altertable data apps.",
   "keywords": [
     "altertable",
-    "analytics",
     "data-app",
-    "react",
+    "data-apps",
+    "bun",
+    "dev-server",
+    "local-development",
+    "lakehouse",
+    "sql",
+    "analytics",
     "typescript"
   ],
   "homepage": "https://github.com/altertable-ai/data-app",
