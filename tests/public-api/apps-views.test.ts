@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { test } from '@/tests/public-api/browser';
+import { isChromium, test } from '@/tests/public-api/browser';
 
 test('primary and independent sections retain their own displayed input and inspection evidence', async ({
   page,
@@ -432,7 +432,21 @@ test('a phone reader can select filters, compare periods and inspect results by 
 test('query inspection displays and copies resolved parameters without interpolating SQL', async ({
   page,
 }) => {
-  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  // Only Chromium grants automation access to the system clipboard; elsewhere, record writes.
+  const realClipboard = isChromium(page);
+  if (realClipboard)
+    await page
+      .context()
+      .grantPermissions(['clipboard-read', 'clipboard-write']);
+  else
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator.clipboard, 'writeText', {
+        value: async (value: string) => {
+          (window as typeof window & { copiedQuery: string }).copiedQuery =
+            value;
+        },
+      });
+    });
   await page.goto('/inspection-app');
   await page
     .getByRole('button', { name: 'Explore Summary', exact: true })
@@ -458,7 +472,11 @@ test('query inspection displays and copies resolved parameters without interpola
     .poll(() => inspection.textContent())
     .toContain('SELECT $count AS count');
   function copied() {
-    return page.evaluate(() => navigator.clipboard.readText());
+    return realClipboard
+      ? page.evaluate(() => navigator.clipboard.readText())
+      : page.evaluate(
+          () => (window as typeof window & { copiedQuery: string }).copiedQuery
+        );
   }
   const query = `-- Parameters: ${JSON.stringify(params)}\nSELECT $count AS count`;
   await inspection.getByRole('figure').hover();

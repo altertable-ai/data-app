@@ -95,7 +95,9 @@ test('standalone charts retain formatted hover and tap inspection, zero values, 
       await expect
         .poll(() => current.getByRole('tooltip').textContent())
         .toContain('0.0 ms');
-      await current.mouse.wheel(0, 40);
+      // Mobile WebKit has no wheel, so a phone scrolls the page instead.
+      if (touch) await current.evaluate(() => window.scrollBy(0, 40));
+      else await current.mouse.wheel(0, 40);
       await expect.poll(() => current.getByRole('tooltip').count()).toBe(0);
     }
     const pie = current.getByRole('region', {

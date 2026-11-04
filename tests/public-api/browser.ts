@@ -46,6 +46,11 @@ afterAll(async () => {
   }
 });
 
+/** Chromium-only steps use browser APIs that Firefox and WebKit do not expose. */
+export function isChromium(page: Page) {
+  return page.context().browser()?.browserType().name() === 'chromium';
+}
+
 export const test = vitestTest.extend<{ page: Page; mobilePage: Page }>({
   // eslint-disable-next-line no-empty-pattern -- Vitest fixture dependencies use destructuring.
   page: async ({}, use) => {

@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { test } from '@/tests/public-api/browser';
+import { isChromium, test } from '@/tests/public-api/browser';
 
 test('a host without annotation capability preserves the normal reader toolbar', async ({
   page,
@@ -46,18 +46,21 @@ for (const failure of [false, true]) {
       exact: true,
     });
     // Enter while an input method is composing confirms the composition, not the draft.
-    const client = await page.context().newCDPSession(page);
-    await comment.fill('Compare with last year');
-    await client.send('Input.imeSetComposition', {
-      text: 'か',
-      selectionStart: 1,
-      selectionEnd: 1,
-    });
-    await page.keyboard.press('Enter');
-    expect(await comment.isVisible()).toBe(true);
-    expect(await comment.inputValue()).toContain('Compare with last year');
-    expect(JSON.parse((await output.textContent()) || '[]')).toEqual([]);
-    await client.send('Input.insertText', { text: '' });
+    // Only Chromium exposes a trusted input-method composition to automation.
+    if (isChromium(page)) {
+      const client = await page.context().newCDPSession(page);
+      await comment.fill('Compare with last year');
+      await client.send('Input.imeSetComposition', {
+        text: 'か',
+        selectionStart: 1,
+        selectionEnd: 1,
+      });
+      await page.keyboard.press('Enter');
+      expect(await comment.isVisible()).toBe(true);
+      expect(await comment.inputValue()).toContain('Compare with last year');
+      expect(JSON.parse((await output.textContent()) || '[]')).toEqual([]);
+      await client.send('Input.insertText', { text: '' });
+    }
     await comment.fill('Compare with last year');
     await app
       .getByRole('button', { name: 'Add annotation', exact: true })

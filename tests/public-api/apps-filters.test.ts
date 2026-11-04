@@ -1,7 +1,7 @@
 import type { Page, Locator } from 'playwright';
 import { expect } from 'vitest';
 
-import { test } from '@/tests/public-api/browser';
+import { isChromium, test } from '@/tests/public-api/browser';
 import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
 
 async function choose(
@@ -825,18 +825,23 @@ test('slash search shortcut accepts the Shift modifier required by AZERTY', asyn
     name: 'Search customers',
     exact: true,
   });
-  // AZERTY types "/" with Shift and the Period key; emulate that trusted key press.
-  const session = await page.context().newCDPSession(page);
   await display.focus();
-  for (const type of ['keyDown', 'keyUp'] as const)
-    await session.send('Input.dispatchKeyEvent', {
-      type,
-      key: '/',
-      code: 'Period',
-      text: type === 'keyDown' ? '/' : undefined,
-      modifiers: 8,
-      windowsVirtualKeyCode: 190,
-    });
+  if (isChromium(page)) {
+    // AZERTY types "/" with Shift and the Period key; emulate that trusted key press.
+    const session = await page.context().newCDPSession(page);
+    for (const type of ['keyDown', 'keyUp'] as const)
+      await session.send('Input.dispatchKeyEvent', {
+        type,
+        key: '/',
+        code: 'Period',
+        text: type === 'keyDown' ? '/' : undefined,
+        modifiers: 8,
+        windowsVirtualKeyCode: 190,
+      });
+  } else {
+    // Other engines cannot emit a layout-specific key, so cover the plain shortcut.
+    await page.keyboard.press('Slash');
+  }
   expect(
     await search.evaluate(element => element === document.activeElement)
   ).toBe(true);
