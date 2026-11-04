@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { test } from '@/tests/public-api/browser';
+import { isChromium, test } from '@/tests/public-api/browser';
 
 test('primary and independent sections retain their own displayed input and inspection evidence', async ({
   page,
@@ -432,13 +432,21 @@ test('a phone reader can select filters, compare periods and inspect results by 
 test('query inspection displays and copies resolved parameters without interpolating SQL', async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator.clipboard, 'writeText', {
-      value: async (value: string) => {
-        (window as typeof window & { copiedQuery: string }).copiedQuery = value;
-      },
+  // Only Chromium grants automation access to the system clipboard; elsewhere, record writes.
+  const realClipboard = isChromium(page);
+  if (realClipboard)
+    await page
+      .context()
+      .grantPermissions(['clipboard-read', 'clipboard-write']);
+  else
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator.clipboard, 'writeText', {
+        value: async (value: string) => {
+          (window as typeof window & { copiedQuery: string }).copiedQuery =
+            value;
+        },
+      });
     });
-  });
   await page.goto('/inspection-app');
   await page
     .getByRole('button', { name: 'Explore Summary', exact: true })
@@ -455,18 +463,20 @@ test('query inspection displays and copies resolved parameters without interpola
     exact: true,
   });
   await expect
-    .poll(() => parameters.locator('dt').allTextContents())
+    .poll(() => parameters.getByRole('term').allTextContents())
     .toEqual(Object.keys(params).map(key => `$${key}`));
   await expect
-    .poll(() => parameters.locator('dd').allTextContents())
+    .poll(() => parameters.getByRole('definition').allTextContents())
     .toEqual(Object.values(params).map(value => JSON.stringify(value)));
   await expect
     .poll(() => inspection.textContent())
     .toContain('SELECT $count AS count');
   function copied() {
-    return page.evaluate(
-      () => (window as typeof window & { copiedQuery: string }).copiedQuery
-    );
+    return realClipboard
+      ? page.evaluate(() => navigator.clipboard.readText())
+      : page.evaluate(
+          () => (window as typeof window & { copiedQuery: string }).copiedQuery
+        );
   }
   const query = `-- Parameters: ${JSON.stringify(params)}\nSELECT $count AS count`;
   await inspection.getByRole('figure').hover();
@@ -488,11 +498,17 @@ test('a widget title uses available header space before wrapping', async ({
   const heading = page.getByRole('heading', { name: title, exact: true });
   await expect.poll(() => heading.isVisible()).toBe(true);
   function lines() {
+    // Count the distinct rendered line positions of the title's text.
     return heading.evaluate(element => {
-      const text = element.querySelector('button')!.firstElementChild!;
-      const range = document.createRange();
-      range.selectNodeContents(text);
-      return new Set([...range.getClientRects()].map(rect => rect.top)).size;
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const tops = new Set<number>();
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        for (const rect of range.getClientRects())
+          if (rect.width > 0) tops.add(Math.round(rect.top));
+      }
+      return tops.size;
     });
   }
   expect(await lines()).toBe(1);
@@ -536,7 +552,7 @@ test('query parameters remain readable within a phone-width inspection sheet', a
     exact: true,
   });
   await expect
-    .poll(() => parameters.locator('dd').nth(1).textContent())
+    .poll(() => parameters.getByRole('definition').nth(1).textContent())
     .toBe(JSON.stringify('Long parameter value '.repeat(10)));
   expect(
     await parameters.evaluate(element => {

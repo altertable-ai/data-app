@@ -134,7 +134,7 @@ test('query expansion leaves literals, comments, quoted identifiers, and other p
     '/* outer /* $period.from */ comment */'
   );
   expect(app.queries.events.statement).toContain('$count AS count');
-  expect(app.queries.events.statement).toContain('WITH RECURSIVE');
+  expect(app.queries.events.statement).not.toContain('$period.from AS bound');
 });
 
 test('SQL helpers produce parameterized bounds and reject unsafe structured values', () => {

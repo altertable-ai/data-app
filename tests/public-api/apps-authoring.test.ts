@@ -219,16 +219,14 @@ describe('authoring', () => {
       .toBe(true);
     await expect
       .poll(() =>
-        story.evaluate(element =>
-          (element.getAttribute('aria-describedby') ?? '')
-            .split(' ')
-            .map(
-              id => element.ownerDocument.getElementById(id)?.textContent ?? ''
-            )
-            .join(' ')
-        )
+        app
+          .getByRole('dialog', {
+            description: 'Demonstration values for group Beta.',
+            exact: true,
+          })
+          .count()
       )
-      .toBe('Demonstration values for group Beta.');
+      .toBe(1);
     await story
       .getByRole('button', { name: 'Exit presentation', exact: true })
       .click();

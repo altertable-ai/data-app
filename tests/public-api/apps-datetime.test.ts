@@ -361,20 +361,24 @@ test('modified arrows preserve native text selection without editing date segmen
   await input.press('Enter');
   await input.click();
   const draft = await input.inputValue();
-  await input.evaluate((element: HTMLInputElement) =>
-    element.setSelectionRange(0, 0)
-  );
-  await input.press('Shift+ArrowRight');
-  expect(
-    await input.evaluate((element: HTMLInputElement) => [
+  const box = (await input.boundingBox())!;
+  function selection() {
+    return input.evaluate((element: HTMLInputElement) => [
       element.selectionStart,
       element.selectionEnd,
-    ])
-  ).toEqual([0, 1]);
+    ]);
+  }
+  // Pointer placement before the first character puts the caret at the start.
+  await input.click({ position: { x: 1, y: box.height / 2 } });
+  expect(await selection()).toEqual([0, 0]);
+  await input.press('Shift+ArrowRight');
+  expect(await selection()).toEqual([0, 1]);
   for (const modifier of ['Shift', 'Control', 'Alt', 'Meta']) {
-    await input.evaluate((element: HTMLInputElement) =>
-      element.setSelectionRange(0, 3)
-    );
+    // Shrink the selection back to its start anchor, then select three characters.
+    for (let step = 0; step < 50 && (await selection())[1]! > 0; step++)
+      await input.press('Shift+ArrowLeft');
+    for (let step = 0; step < 3; step++) await input.press('Shift+ArrowRight');
+    expect(await selection()).toEqual([0, 3]);
     await input.press(`${modifier}+ArrowUp`);
     expect(await input.inputValue()).toBe(draft);
   }

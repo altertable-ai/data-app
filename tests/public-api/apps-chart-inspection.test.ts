@@ -95,7 +95,9 @@ test('standalone charts retain formatted hover and tap inspection, zero values, 
       await expect
         .poll(() => current.getByRole('tooltip').textContent())
         .toContain('0.0 ms');
-      await current.evaluate(() => window.dispatchEvent(new Event('scroll')));
+      // Mobile WebKit has no wheel, so a phone scrolls the page instead.
+      if (touch) await current.evaluate(() => window.scrollBy(0, 40));
+      else await current.mouse.wheel(0, 40);
       await expect.poll(() => current.getByRole('tooltip').count()).toBe(0);
     }
     const pie = current.getByRole('region', {
@@ -357,6 +359,10 @@ for (const name of ['Hover bars', 'Inspection lines', 'Inspection areas']) {
       });
       const plot = chart.getByRole('application');
       const tooltip = chart.getByRole('tooltip');
+      if (exit === 'blur') {
+        // Keep the previous focus target in view so tabbing away cannot scroll.
+        await page.setViewportSize({ width: 1280, height: 2400 });
+      }
       await plot.scrollIntoViewIfNeeded();
       if (exit === 'blur') await plot.focus();
       const bounds = (await plot.boundingBox())!;
@@ -374,9 +380,15 @@ for (const name of ['Hover bars', 'Inspection lines', 'Inspection areas']) {
         await page.mouse.move(0, 0);
         await expect.poll(() => tooltip.isVisible()).toBe(false);
       } else {
-        await page
-          .getByRole('button', { name: 'Switch to dark theme', exact: true })
-          .evaluate(element => element.focus({ preventScroll: true }));
+        // Move keyboard focus out of the plot while the pointer stays over it.
+        const scrollY = await page.evaluate(() => window.scrollY);
+        await page.keyboard.press('Shift+Tab');
+        expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
+        await expect
+          .poll(() =>
+            plot.evaluate(element => element.contains(document.activeElement))
+          )
+          .toBe(false);
       }
       await plot.focus();
       await expect.poll(() => tooltip.getByRole('listitem').count()).toBe(2);

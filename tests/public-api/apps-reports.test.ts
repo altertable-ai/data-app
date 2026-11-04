@@ -1,3 +1,4 @@
+import type { FrameLocator, Locator, Page } from 'playwright';
 import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
@@ -69,34 +70,31 @@ for (const width of [375, 1280]) {
           },
         });
     });
-    async function readable() {
-      await expect
-        .poll(() =>
-          page.getByRole('heading', { name: 'Activity overview' }).isVisible()
-        )
-        .toBe(true);
-      const geometry = await page.getByRole('main').evaluate(element => {
-        const rect = element.getBoundingClientRect();
-        const sections = element.querySelector(
-          '[aria-label="Report sections"]'
-        )!;
-        const children = [...sections.children].map(child =>
-          child.getBoundingClientRect()
+    const main = page.getByRole('main');
+    async function readable(content?: Locator) {
+      const heading = main.getByRole('heading', { name: 'Activity overview' });
+      await expect.poll(() => heading.isVisible()).toBe(true);
+      const bounds = (await main.boundingBox())!;
+      const viewport = await page.evaluate(() => ({
+        width: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+      }));
+      expect(bounds.x).toBeGreaterThan(0);
+      expect(bounds.x + bounds.width).toBeLessThan(viewport.width);
+      expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.width);
+      const sections = [
+        heading,
+        main.getByText('Activity at every screen size.', { exact: true }),
+        ...(content ? [content] : []),
+        main.getByText('Following section', { exact: true }),
+      ];
+      const boxes = [];
+      for (const section of sections)
+        boxes.push((await section.boundingBox())!);
+      for (let index = 1; index < boxes.length; index++)
+        expect(boxes[index]!.y).toBeGreaterThan(
+          boxes[index - 1]!.y + boxes[index - 1]!.height
         );
-        return {
-          left: rect.left,
-          right: rect.right,
-          width: document.documentElement.clientWidth,
-          scrollWidth: document.documentElement.scrollWidth,
-          gaps: children
-            .slice(1)
-            .map((child, index) => child.top - children[index]!.bottom),
-        };
-      });
-      expect(geometry.left).toBeGreaterThan(0);
-      expect(geometry.right).toBeLessThan(geometry.width);
-      expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.width);
-      expect(geometry.gaps.every(gap => gap > 0)).toBe(true);
     }
     await page.goto('/layout');
     await expect
@@ -110,28 +108,18 @@ for (const width of [375, 1280]) {
     await readable();
     await expect.poll(() => Boolean(respond)).toBe(true);
     respond!(null);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('alert')
-          .filter({ hasText: 'Couldn’t load results' })
-          .isVisible()
-      )
-      .toBe(true);
-    await readable();
+    const failure = page
+      .getByRole('alert')
+      .filter({ hasText: 'Couldn’t load results' });
+    await expect.poll(() => failure.isVisible()).toBe(true);
+    await readable(failure);
     respond = undefined;
     await page.getByRole('button', { name: 'Retry', exact: true }).click();
     await expect.poll(() => Boolean(respond)).toBe(true);
     respond!([]);
-    await expect
-      .poll(() =>
-        page
-          .getByRole('main')
-          .getByText('No activity', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
-    await readable();
+    const empty = main.getByText('No activity', { exact: true });
+    await expect.poll(() => empty.isVisible()).toBe(true);
+    await readable(empty);
     respond = undefined;
     await page
       .getByRole('button', { name: 'Refresh data', exact: true })
@@ -140,31 +128,21 @@ for (const width of [375, 1280]) {
     respond!([42]);
     const cards = page.getByLabel('Activity cards');
     await expect.poll(() => cards.isVisible()).toBe(true);
-    await readable();
-    const positions = await cards.evaluate(element =>
-      [...element.children].map(child => {
-        const rect = child.getBoundingClientRect();
-        return {
-          left: rect.left,
-          width: rect.width,
-          top: rect.top,
-          bottom: rect.bottom,
-        };
-      })
-    );
-    expect(positions[1]!.top).toBeGreaterThan(positions[0]!.bottom);
-    expect(Math.abs(positions[0]!.left - positions[1]!.left)).toBeLessThan(1);
+    await readable(cards);
+    const metrics = cards.getByRole('region', { name: 'Events', exact: true });
+    const first = (await metrics.nth(0).boundingBox())!;
+    const second = (await metrics.nth(1).boundingBox())!;
+    expect(second.y).toBeGreaterThan(first.y + first.height);
+    expect(Math.abs(first.x - second.x)).toBeLessThan(1);
     if (width === 375)
-      expect(Math.abs(positions[0]!.width - positions[1]!.width)).toBeLessThan(
-        1
-      );
-    else expect(positions[0]!.width).toBeGreaterThan(positions[1]!.width);
+      expect(Math.abs(first.width - second.width)).toBeLessThan(1);
+    else expect(first.width).toBeGreaterThan(second.width);
     respond = undefined;
     await page
       .getByRole('button', { name: 'Refresh data', exact: true })
       .click();
     await expect.poll(() => Boolean(respond)).toBe(true);
-    await readable();
+    await readable(cards);
     expect(
       await cards
         .getByRole('region', { name: 'Events', exact: true })
@@ -180,7 +158,7 @@ for (const width of [375, 1280]) {
           .isVisible()
       )
       .toBe(true);
-    await readable();
+    await readable(cards);
     expect(
       await cards
         .getByRole('region', { name: 'Events', exact: true })
@@ -281,25 +259,20 @@ test('a report explicitly installs styles under CSP and can style another docume
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/styles');
-  const grid = page.getByLabel('Report grid');
-  await expect.poll(() => grid.count()).toBe(1);
-  expect(
-    await grid.evaluate(element => getComputedStyle(element).display)
-  ).toBe('block');
+  // Installed styles draw a visible card border; an unstyled document has none.
+  function styled(report: Page | FrameLocator) {
+    return report
+      .getByRole('region', { name: 'start short', exact: true })
+      .evaluate(element => getComputedStyle(element).borderTopWidth !== '0px');
+  }
+  expect(await styled(page)).toBe(false);
   await page
     .getByRole('button', { name: 'Style other report', exact: true })
     .click();
-  const other = page.frameLocator('iframe').getByLabel('Report grid');
-  await expect
-    .poll(() => other.evaluate(element => getComputedStyle(element).display))
-    .toBe('grid');
-  expect(
-    await grid.evaluate(element => getComputedStyle(element).display)
-  ).toBe('block');
+  await expect.poll(() => styled(page.frameLocator('iframe'))).toBe(true);
+  expect(await styled(page)).toBe(false);
   await page.getByRole('button', { name: 'Style report', exact: true }).click();
-  await expect
-    .poll(() => grid.evaluate(element => getComputedStyle(element).display))
-    .toBe('grid');
+  await expect.poll(() => styled(page)).toBe(true);
   await page.getByRole('button', { name: 'Style report', exact: true }).click();
   expect(
     await page
@@ -348,9 +321,7 @@ test('an author can override public control tokens and apply and restore appeara
     name: 'Custom action',
     exact: true,
   });
-  await expect
-    .poll(() => action.evaluate(element => getComputedStyle(element).height))
-    .toBe('60px');
+  await expect.poll(async () => (await action.boundingBox())?.height).toBe(60);
   const originalColor = await action.evaluate(
     element => getComputedStyle(element).color
   );
@@ -532,16 +503,18 @@ test('local derived defaults compose and explicit tokens retain precedence', asy
 test('layout spacing is independent of widget padding', async ({ page }) => {
   await page.goto('/appearance');
   const layout = page.getByLabel('Spacing layout', { exact: true });
-  expect(await layout.evaluate(el => getComputedStyle(el).gap)).toBe('40px');
-  const heading = layout.getByRole('heading', {
-    name: 'Padding example',
-    exact: true,
-  });
-  expect(
-    await heading.evaluate(
-      el => getComputedStyle(el.parentElement!.parentElement!).paddingLeft
-    )
-  ).toBe('12px');
+  const example = (await layout
+    .getByRole('region', { name: 'Padding example', exact: true })
+    .boundingBox())!;
+  const peer = (await layout
+    .getByRole('region', { name: 'Padding peer', exact: true })
+    .boundingBox())!;
+  expect(peer.x - (example.x + example.width)).toBe(40);
+  const heading = (await layout
+    .getByRole('heading', { name: 'Padding example', exact: true })
+    .boundingBox())!;
+  // The 12px widget padding sits inside its 1px border.
+  expect(heading.x - example.x).toBe(13);
 });
 
 test('compact controls and selected-control elevation follow appearance presets', async ({
@@ -561,22 +534,16 @@ test('compact controls and selected-control elevation follow appearance presets'
     exact: true,
   });
   for (const [density, height] of [
-    ['compact', '26px'],
-    ['comfortable', '30px'],
-    ['spacious', '34px'],
-  ]) {
+    ['compact', 26],
+    ['comfortable', 30],
+    ['spacious', 34],
+  ] as const) {
     await page
       .getByRole('button', { name: `Apply density ${density}`, exact: true })
       .click();
-    expect(await compact.evaluate(el => getComputedStyle(el).minHeight)).toBe(
-      height
-    );
-    expect(await regular.evaluate(el => getComputedStyle(el).minHeight)).toBe(
-      '60px'
-    );
-    expect(
-      await defaultControl.evaluate(el => getComputedStyle(el).minHeight)
-    ).toBe(`${parseInt(height!, 10) + 8}px`);
+    expect((await compact.boundingBox())!.height).toBe(height);
+    expect((await regular.boundingBox())!.height).toBe(60);
+    expect((await defaultControl.boundingBox())!.height).toBe(height + 8);
   }
   const shadows: string[] = [];
   for (const elevation of ['flat', 'subtle', 'raised']) {
@@ -610,19 +577,16 @@ for (const width of [320, 1280]) {
       await page.goto(embedded ? '/bundle-host' : '/static');
       const app = embedded ? page.frameLocator('iframe') : page;
       await expect.poll(() => app.getByRole('main').isVisible()).toBe(true);
-      const geometry = await app.getByRole('main').evaluate(main => {
-        const body = main.querySelector('.altertable-app-body')!;
-        return {
-          padding: Number.parseFloat(getComputedStyle(main).paddingBottom),
-          gap:
-            main.getBoundingClientRect().bottom -
-            body.getBoundingClientRect().bottom,
-          footer: !!document.querySelector('.altertable-app-footer'),
-        };
+      // Measure the space below the lowest visible content inside the main region.
+      const gap = await app.getByRole('main').evaluate(main => {
+        const bottoms = [...main.querySelectorAll('*')]
+          .map(element => element.getBoundingClientRect())
+          .filter(rect => rect.width > 1 && rect.height > 1)
+          .map(rect => rect.bottom);
+        return main.getBoundingClientRect().bottom - Math.max(...bottoms);
       });
-      expect(geometry.footer).toBe(!embedded);
-      expect(geometry.padding).toBeGreaterThanOrEqual(64);
-      expect(geometry.gap).toBeGreaterThanOrEqual(geometry.padding - 1);
+      expect(await app.getByRole('contentinfo').count()).toBe(embedded ? 0 : 1);
+      expect(gap).toBeGreaterThanOrEqual(63);
     }
   });
 }

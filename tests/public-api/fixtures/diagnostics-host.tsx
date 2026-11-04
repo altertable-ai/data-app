@@ -141,8 +141,8 @@ function Host() {
       <output aria-label="Observed app errors">
         {diagnostics.report?.failures.length ?? 0}
       </output>
-      <div
-        className="diagnostics-preview"
+      <section
+        aria-label="App preview"
         style={{
           marginTop: 12,
           border: '1px solid light-dark(#e3e6e8, #3b4248)',
@@ -167,7 +167,7 @@ function Host() {
             },
           }}
         />
-      </div>
+      </section>
     </div>
   );
 }

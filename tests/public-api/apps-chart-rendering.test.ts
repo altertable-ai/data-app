@@ -351,11 +351,20 @@ test('filled areas suppress internal pointer outlines while preserving keyboard 
   });
   const plot = chart.getByRole('application');
   await plot.click();
-  await expect.poll(() => chart.locator(':focus').count()).toBe(1);
+  // Pointer focus may land on an inner series; none of it shows an outline.
+  const example = page.getByRole('region', {
+    name: 'Inspection areas basic example',
+    exact: true,
+  });
+  await expect
+    .poll(() =>
+      example.evaluate(element => element.contains(document.activeElement))
+    )
+    .toBe(true);
   expect(
-    await chart
-      .locator(':focus')
-      .evaluate(element => getComputedStyle(element).outlineStyle)
+    await example.evaluate(
+      () => getComputedStyle(document.activeElement!).outlineStyle
+    )
   ).toBe('none');
   await plot.focus();
   await page.keyboard.press('ArrowRight');

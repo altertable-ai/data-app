@@ -1,7 +1,10 @@
+import type { Page } from 'playwright';
 import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
+// Playwright resolves the ARIA 1.3 mark role, but its role type does not list it yet.
+const mark = 'mark' as Parameters<Page['getByRole']>[0];
 const url = '/filter-presentation?spend=all&typeahead';
 
 test('typeahead uses displayed records and supports manual keyboard selection', async ({
@@ -10,7 +13,7 @@ test('typeahead uses displayed records and supports manual keyboard selection', 
   await page.goto(`${url}&openDetails`);
   const input = page.getByRole('combobox', { name: 'Search customers' });
   const options = page.getByRole('option');
-  await input.focus();
+  await input.click();
   expect(await page.getByRole('listbox').count()).toBe(0);
   await input.fill('a');
   await expect.poll(() => options.count()).toBe(5);
@@ -138,15 +141,21 @@ test('suggestions stay on one line aligned with the input and do not flash an em
   await expect.poll(() => options.count()).toBe(5);
   await expect.poll(() => input.getAttribute('aria-busy')).toBeNull();
   const inputBox = await input.boundingBox();
-  const titleBox = await options.first().locator(':scope > span').boundingBox();
-  const detailBox = await options.first().locator('small').boundingBox();
+  const titleBox = await options
+    .first()
+    .getByText('Foundry Team', { exact: true })
+    .boundingBox();
+  const detailBox = await options
+    .first()
+    .getByText('DE · Enterprise', { exact: true })
+    .boundingBox();
   expect(Math.abs(inputBox!.x - titleBox!.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(titleBox!.y - detailBox!.y)).toBeLessThan(5);
   expect(detailBox!.x - (titleBox!.x + titleBox!.width)).toBeLessThanOrEqual(
     10
   );
   const panel = page.getByRole('listbox');
-  const panelBox = await panel.locator('..').boundingBox();
+  const panelBox = await panel.boundingBox();
   expect(panelBox!.x).toBeLessThan(inputBox!.x);
   expect(panelBox!.width).toBeLessThanOrEqual(640);
   expect(panelBox!.x + panelBox!.width).toBeLessThanOrEqual(1280 - 12);
@@ -183,7 +192,8 @@ test('multiple datasets combine suggestions without extra requests or colliding 
       .getByRole('button', { name: 'Complete: 1 projects', exact: true })
       .count()
   ).toBe(1);
-  const requests = await page.locator('body').getAttribute('data-requests');
+  const requests = page.getByRole('status', { name: 'Data requests' });
+  const initialRequests = Number(await requests.textContent());
   await input.fill('a');
   const options = page.getByRole('option');
   await expect.poll(() => options.count()).toBe(4);
@@ -197,9 +207,7 @@ test('multiple datasets combine suggestions without extra requests or colliding 
     elements.map(element => element.id)
   );
   expect(new Set(ids).size).toBe(4);
-  expect(Number(await page.locator('body').getAttribute('data-requests'))).toBe(
-    Number(requests) + 1
-  );
+  expect(Number(await requests.textContent())).toBe(initialRequests + 1);
   await input.press('ArrowUp');
   await input.press('Enter');
   await expect.poll(() => input.inputValue()).toBe('Alpine');
@@ -232,23 +240,37 @@ test('suggestions use the shared highlighting stack without filtering the displa
   await expect.poll(() => options.count()).toBe(5);
   await expect.poll(() => input.getAttribute('aria-busy')).toBeNull();
   expect(
-    await options.first().locator(':scope > span mark').allTextContents()
+    await options
+      .first()
+      .getByText(/^Foundry Team$|^Beacon Labs$/)
+      .getByRole(mark)
+      .allTextContents()
   ).toEqual(['a']);
-  expect(await options.first().locator('small mark').count()).toBe(0);
-  await input.fill('e');
-  await expect.poll(() => input.getAttribute('aria-busy')).toBeNull();
-  expect(await options.first().locator('small mark').count()).toBeGreaterThan(
+  expect(await options.first().getByText(/ · /).getByRole(mark).count()).toBe(
     0
   );
+  await input.fill('e');
+  await expect.poll(() => input.getAttribute('aria-busy')).toBeNull();
+  expect(
+    await options.first().getByText(/ · /).getByRole(mark).count()
+  ).toBeGreaterThan(0);
   await input.fill('Beacon');
   await expect.poll(() => input.getAttribute('aria-busy')).toBe('true');
   expect(await options.count()).toBe(5);
   expect(
-    await options.first().locator(':scope > span mark').textContent()
+    await options
+      .first()
+      .getByText(/^Foundry Team$|^Beacon Labs$/)
+      .getByRole(mark)
+      .textContent()
   ).toBe('Beacon');
   await expect.poll(() => options.count()).toBe(1);
   expect(
-    await options.first().locator(':scope > span mark').textContent()
+    await options
+      .first()
+      .getByText(/^Foundry Team$|^Beacon Labs$/)
+      .getByRole(mark)
+      .textContent()
   ).toBe('Beacon');
   await options.first().click();
   await expect.poll(() => input.inputValue()).toBe('Beacon Labs');
@@ -353,8 +375,8 @@ for (const mode of ['hideSearch', 'noSearch']) {
     expect(await page.getByRole('combobox').count()).toBe(0);
     expect(await page.getByRole('searchbox').count()).toBe(0);
     expect(
-      await page.locator('body').getAttribute('data-suggestion-reads')
-    ).toBeNull();
+      await page.getByRole('status', { name: 'Suggestion reads' }).textContent()
+    ).toBe('0');
     expect(await page.getByRole('alert').count()).toBe(0);
   });
 }
@@ -366,23 +388,13 @@ test('page search shortcuts remain unconsumed inside a native modal sheet', asyn
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   await expect.poll(() => sheet.count()).toBe(1);
-  for (const modifier of ['ctrlKey', 'metaKey']) {
-    const state = await sheet.evaluate((element, modifier) => {
-      const target = element.querySelector('button');
-      target?.focus();
-      const event = new KeyboardEvent('keydown', {
-        key: 'k',
-        [modifier]: true,
-        bubbles: true,
-        cancelable: true,
-      });
-      target?.dispatchEvent(event);
-      return {
-        prevented: event.defaultPrevented,
-        focusRetained: document.activeElement === target,
-      };
-    }, modifier);
-    expect(state).toEqual({ prevented: false, focusRetained: true });
+  const target = sheet.getByRole('button').first();
+  for (const modifier of ['Control', 'Meta']) {
+    await target.press(`${modifier}+k`);
+    expect(
+      await target.evaluate(element => element === document.activeElement)
+    ).toBe(true);
+    expect(await sheet.isVisible()).toBe(true);
   }
 });
 

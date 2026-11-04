@@ -20,9 +20,11 @@ test('sandboxed widget opens an approved external link only after host confirmat
     'https://example.com/report?source=widget'
   );
   expect(page.context().pages()).toHaveLength(1);
-  expect(await page.locator('iframe').getAttribute('sandbox')).toBe(
-    'allow-scripts'
-  );
+  expect(
+    await page
+      .getByTitle('Sandbox app', { exact: true })
+      .getAttribute('sandbox')
+  ).toBe('allow-scripts');
   await dialog.getByRole('button', { name: 'Cancel' }).press('Escape');
   await expect.poll(() => dialog.count()).toBe(0);
   const reportLink = app.getByRole('link', { name: 'View full report' });
@@ -70,7 +72,7 @@ test('iframe reload dismisses a pending host confirmation and permits another re
   await link.click({ button: 'middle' });
   const dialog = page.getByRole('dialog', { name: 'Open external link' });
   await expect.poll(() => dialog.isVisible()).toBe(true);
-  await page.locator('iframe').evaluate(frame => {
+  await page.getByTitle('Sandbox app', { exact: true }).evaluate(frame => {
     frame.setAttribute('src', frame.getAttribute('src')!);
   });
   await expect.poll(() => dialog.count()).toBe(0);

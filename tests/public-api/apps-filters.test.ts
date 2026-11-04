@@ -1,7 +1,7 @@
 import type { Page, Locator } from 'playwright';
 import { expect } from 'vitest';
 
-import { test } from '@/tests/public-api/browser';
+import { isChromium, test } from '@/tests/public-api/browser';
 import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
 
 async function choose(
@@ -137,12 +137,13 @@ test('presentation groups disclose secondary restrictions and preserve them acro
     .boundingBox();
   await expect
     .poll(async () => {
-      const menu = await page.getByRole('listbox').locator('..').boundingBox();
+      const menu = await page.getByRole('listbox').boundingBox();
       return Math.abs(
         menu!.x + menu!.width - selectionButton!.x - selectionButton!.width
       );
     })
-    .toBeLessThan(1);
+    // The listbox sits inside the menu's 1px border.
+    .toBeLessThan(2);
   await page.keyboard.press('Escape');
   await expect.poll(() => page.getByRole('listbox').count()).toBe(0);
   expect(await display.count()).toBe(1);
@@ -825,13 +826,22 @@ test('slash search shortcut accepts the Shift modifier required by AZERTY', asyn
     exact: true,
   });
   await display.focus();
-  await display.dispatchEvent('keydown', {
-    key: '/',
-    code: 'Period',
-    shiftKey: true,
-    bubbles: true,
-    cancelable: true,
-  });
+  if (isChromium(page)) {
+    // AZERTY types "/" with Shift and the Period key; emulate that trusted key press.
+    const session = await page.context().newCDPSession(page);
+    for (const type of ['keyDown', 'keyUp'] as const)
+      await session.send('Input.dispatchKeyEvent', {
+        type,
+        key: '/',
+        code: 'Period',
+        text: type === 'keyDown' ? '/' : undefined,
+        modifiers: 8,
+        windowsVirtualKeyCode: 190,
+      });
+  } else {
+    // Other engines cannot emit a layout-specific key, so cover the plain shortcut.
+    await page.keyboard.press('Slash');
+  }
   expect(
     await search.evaluate(element => element === document.activeElement)
   ).toBe(true);
@@ -840,13 +850,7 @@ test('slash search shortcut accepts the Shift modifier required by AZERTY', asyn
   expect(
     await display.evaluate(element => element === document.activeElement)
   ).toBe(true);
-  await display.dispatchEvent('keydown', {
-    key: '?',
-    code: 'Slash',
-    shiftKey: true,
-    bubbles: true,
-    cancelable: true,
-  });
+  await page.keyboard.press('Shift+Slash');
   expect(
     await display.evaluate(element => element === document.activeElement)
   ).toBe(true);
@@ -991,20 +995,19 @@ test('filter actions stay balanced with long selections and Done preserves filte
   const sheet = page.getByRole('dialog', { name: /^Filters(?: \(|$)/ });
   const clear = sheet.getByRole('button', { name: 'Clear', exact: true });
   const show = sheet.getByRole('button', { name: 'Done', exact: true });
-  const actionLayout = await sheet.getByRole('button').evaluateAll(buttons => {
-    const clear = buttons.find(
-      button => button.textContent?.trim() === 'Clear'
-    )!;
-    const show = buttons.find(button => button.textContent?.trim() === 'Done')!;
-    const clearBox = clear.getBoundingClientRect();
-    const showBox = show.getBoundingClientRect();
-    return {
-      gap: showBox.x - clearBox.right,
-      verticalOffset: Math.abs(clearBox.y - showBox.y),
-    };
-  });
-  expect(actionLayout.gap).toBeGreaterThan(0);
-  expect(actionLayout.verticalOffset).toBeLessThan(1);
+  // The sheet may still be entering, so wait for the two actions to settle side by side.
+  await expect
+    .poll(async () => {
+      const [clearBox, showBox] = await Promise.all([
+        clear.boundingBox(),
+        show.boundingBox(),
+      ]);
+      return (
+        showBox!.x - clearBox!.x - clearBox!.width > 0 &&
+        Math.abs(clearBox!.y - showBox!.y) < 1
+      );
+    })
+    .toBe(true);
   const selectedURL = page.url();
   await show.click();
   await expect.poll(() => sheet.count()).toBe(0);
@@ -1068,12 +1071,10 @@ test('filter bar leads with the sheet and summarizes active secondary filters', 
         .isVisible()
     )
     .toBe(true);
+  // Done shows no keyboard shortcut hint beside its label.
   expect(
-    await sheet
-      .getByRole('button', { name: 'Done', exact: true })
-      .locator('kbd')
-      .count()
-  ).toBe(0);
+    await sheet.getByRole('button', { name: 'Done', exact: true }).innerText()
+  ).toBe('Done');
   await choose(page, sheet, 'Active account', 'Any');
   await sheet.getByRole('button', { name: 'Done', exact: true }).click();
   expect(
@@ -1259,16 +1260,23 @@ test('a calendar in a filter sheet can float beyond the sheet without clipping',
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
   await sheet.getByRole('button', { name: /Choose dates/ }).click();
-  const calendar = page.locator('.altertable-date-range-popover');
+  const calendar = page
+    .getByRole('dialog')
+    .filter({ has: page.getByRole('grid') })
+    .filter({ hasNot: page.getByRole('button', { name: 'Done' }) });
   const bounds = await calendar.boundingBox();
   expect(bounds!.width).toBeGreaterThan(450);
-  const lastDay = await calendar.getByRole('gridcell').last().boundingBox();
-  expect(lastDay!.x + lastDay!.width).toBeLessThanOrEqual(
-    bounds!.x + bounds!.width
+  const sheetBounds = await sheet.boundingBox();
+  expect(bounds!.x + bounds!.width).toBeGreaterThan(
+    sheetBounds!.x + sheetBounds!.width
   );
-  expect(
-    await sheet.evaluate(element => getComputedStyle(element).overflow)
-  ).toBe('visible');
+  const lastDay = calendar.getByRole('gridcell').last();
+  const lastDayBounds = await lastDay.boundingBox();
+  expect(lastDayBounds!.x + lastDayBounds!.width).toBeLessThanOrEqual(
+    page.viewportSize()!.width
+  );
+  // The sheet does not clip the overflowing calendar: its last day still receives the pointer.
+  await lastDay.hover({ trial: true, timeout: 2000 });
   await page.keyboard.press('Escape');
   await expect.poll(() => calendar.count()).toBe(0);
   expect(await sheet.isVisible()).toBe(true);

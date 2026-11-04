@@ -98,6 +98,7 @@ test('long currency axis labels fit inside the plot at desktop and phone widths'
     name: 'Long currency labels basic example',
     exact: true,
   });
+  const plot = chart.getByRole('application');
   for (const theme of ['light', 'dark']) {
     if (theme === 'dark') {
       await page.getByRole('button', { name: 'Switch to dark theme' }).click();
@@ -105,24 +106,26 @@ test('long currency axis labels fit inside the plot at desktop and phone widths'
     for (const width of [1280, 320]) {
       await page.setViewportSize({ width, height: 900 });
       await expect
-        .poll(() =>
-          chart.evaluate(element => {
-            const svg = element.querySelector('svg[role="application"]');
-            if (!svg) return false;
-            const bounds = svg.getBoundingClientRect();
-            const labels = Array.from(svg.querySelectorAll('text')).filter(
-              label => label.textContent?.includes('€')
-            );
-            return (
-              labels.some(label => label.textContent === '-€100,000.00') &&
-              labels.some(label => label.textContent === '€200,000.00') &&
-              labels.every(label => {
-                const box = label.getBoundingClientRect();
-                return box.left >= bounds.left && box.right <= bounds.right;
-              })
-            );
-          })
-        )
+        .poll(async () => {
+          const bounds = await plot.boundingBox();
+          const labels = await plot.getByText(/€/).all();
+          const boxes = await Promise.all(
+            labels.map(label => label.boundingBox())
+          );
+          return (
+            (await plot.getByText('-€100,000.00', { exact: true }).count()) ===
+              1 &&
+            (await plot.getByText('€200,000.00', { exact: true }).count()) ===
+              1 &&
+            !!bounds &&
+            boxes.every(
+              box =>
+                !!box &&
+                box.x >= bounds.x &&
+                box.x + box.width <= bounds.x + bounds.width
+            )
+          );
+        })
         .toBe(true);
     }
   }
@@ -214,9 +217,8 @@ test('retention derives ticks, inspection, and accessible readings from authored
   expect(await tooltip.textContent()).toContain(
     'Beta: 20% · 10 / 50 users · Incomplete period'
   );
-  await page
-    .getByRole('button', { name: 'Switch to dark theme', exact: true })
-    .evaluate(element => element.focus({ preventScroll: true }));
+  await page.keyboard.press('Escape');
+  await expect.poll(() => tooltip.count()).toBe(0);
   const image = await readChartImage(plot);
   const tailPixels = image.pixels.filter(
     (_, index) =>

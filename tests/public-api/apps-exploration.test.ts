@@ -1,6 +1,7 @@
 import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
+import { readChartImage } from '@/tests/public-api/chart-image';
 import { scrollPastToolbar } from '@/tests/public-api/filter-summary';
 
 function selection(value: string | null) {
@@ -37,7 +38,10 @@ test('chart breakdowns are independent and an explicit drill updates filter and 
   page,
 }) => {
   await page.goto('/exploration');
-  const displayed = page.locator('output[aria-label="Displayed breakdowns"]');
+  const displayed = page.getByRole('status', {
+    name: 'Displayed breakdowns',
+    exact: true,
+  });
   await expect
     .poll(() => displayed.textContent())
     .toContain('"revenue":"region"');
@@ -752,7 +756,9 @@ test('icon breakdown controls explain their purpose on keyboard focus', async ({
   await page.getByRole('option', { name: 'Country', exact: true }).click();
   await expect
     .poll(() =>
-      page.locator('output[aria-label="Displayed breakdowns"]').textContent()
+      page
+        .getByRole('status', { name: 'Displayed breakdowns', exact: true })
+        .textContent()
     )
     .toContain('"revenue":"country"');
 });
@@ -1077,13 +1083,17 @@ test('widget placement preserves active filter counts, editing, and clearing', a
     name: 'Remove Country filter',
     exact: true,
   });
+  // Hovering the remove target visibly highlights it within its chip.
+  const idle = await readChartImage(remove);
   await remove.hover();
-  const backgrounds = await remove.evaluate(element => ({
-    button: getComputedStyle(element).backgroundColor,
-    chip: getComputedStyle(element.parentElement!).backgroundColor,
-  }));
-  expect(backgrounds.button).not.toBe('rgba(0, 0, 0, 0)');
-  expect(backgrounds.button).not.toBe(backgrounds.chip);
+  await expect
+    .poll(async () => {
+      const hovered = await readChartImage(remove);
+      return hovered.pixels.filter(
+        (color, index) => color !== idle.pixels[index]
+      ).length;
+    })
+    .toBeGreaterThan(idle.pixels.length / 4);
   await floating
     .getByRole('button', { name: 'Clear filters', exact: true })
     .click();
@@ -1156,7 +1166,9 @@ test('mapped scope choices keep actions available only for the displayed selecti
   await page.evaluate(() => window.dispatchEvent(new Event('release-sales')));
   await expect
     .poll(() =>
-      page.locator('output[aria-label="Displayed breakdowns"]').textContent()
+      page
+        .getByRole('status', { name: 'Displayed breakdowns', exact: true })
+        .textContent()
     )
     .toContain('"windowId":"previous"');
   await mark.click();
