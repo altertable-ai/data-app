@@ -20,10 +20,36 @@ concurrency:
   cancel-in-progress: ${{ !inputs.ref }}
 
 jobs:
-  package:
-    name: Source and packed package
+  changes:
+    name: Detect changes
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 5
+    outputs:
+      tests: ${{ steps.changes.outputs.tests }}
+    steps:
+      - name: Check out revision
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Decide whether tests must run
+        id: changes
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          # Pull request checkouts are merge commits whose first parent is the base.
+          if [ "$EVENT_NAME" = pull_request ] &&
+            ! git diff --name-only HEAD^1 HEAD | grep -qvE '(^docs/.*|\.md)$'; then
+            echo "tests=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "tests=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  static:
+    name: Static checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Check out revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -41,12 +67,80 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      - name: Install browser
-        run: bash scripts/install-test-browser.sh
-      - name: Verify repository
-        run: bun run check
+      - name: Verify sources
+        run: bun run check:static
       - name: Verify lockfile is unchanged
         run: git diff --exit-code -- bun.lock
+
+  package:
+    name: Packed package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build packages
+        run: bun run build
+      - name: Verify packed packages
+        run: bun run check:package
+      - name: Verify starters
+        run: bun run check:starter
+
+  test:
+    name: Tests (${{ matrix.shard }}/4)
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Check out revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          persist-credentials: false
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          package-manager-cache: false
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(bunx --no-install playwright --version | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      - name: Restore browser cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - name: Install browser
+        run: bash scripts/install-test-browser.sh
+      - name: Build packages
+        run: bun run build
+      - name: Run tests
+        run: bun run test --shard=${{ matrix.shard }}/4
 
   workflows:
     name: Validate workflows
@@ -60,3 +154,22 @@ jobs:
           persist-credentials: false
       - name: Validate GitHub Actions and shell scripts
         run: bash scripts/check-workflows.sh
+
+  check:
+    # Single required status: passes only when every job succeeded or was intentionally skipped.
+    name: Source and packed package
+    needs: [changes, static, package, test, workflows]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every check to pass
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          for result in $RESULTS; do
+            case "$result" in
+              success | skipped) ;;
+              *) echo "A required check finished with: $result" >&2; exit 1 ;;
+            esac
+          done
