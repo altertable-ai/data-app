@@ -99,8 +99,6 @@ const view = createDataHooks(client).defineTimeView({
   }),
   operation: 'events',
   time: period,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No events' },
 });
 const dataset = view.dataset({
   name: 'Selection',

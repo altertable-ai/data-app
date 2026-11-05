@@ -13,24 +13,28 @@ import { sampleDataContext } from '#app/data-context.ts';
 import type { operations } from '#app/operations.ts';
 const { defineDataView } =
   createDataHooks(createDataClient<typeof operations>());
+// Each chart has its own operation and view; views share the filters declared once here.
+const groupFilters = {
+  groupName: choiceVariable({
+    key: 'group',
+    label: 'Group',
+    defaultValue: 'all',
+    options: [
+      { id: 'all', label: 'All groups' },
+      { id: 'Alpha', label: 'Alpha' },
+      { id: 'Beta', label: 'Beta' },
+    ],
+  }),
+};
+function describeGroup({ groupName }: { groupName: string }) {
+  return groupName === 'all' ? 'all groups' : groupName;
+}
 const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  variables: {
-    groupName: choiceVariable({
-      key: 'group',
-      label: 'Group',
-      defaultValue: 'all',
-      options: [
-        { id: 'all', label: 'All groups' },
-        { id: 'Alpha', label: 'Alpha' },
-        { id: 'Beta', label: 'Beta' },
-      ],
-    }),
-  },
-  describeInput: ({ groupName }) =>
-    groupName === 'all' ? 'all groups' : groupName,
-  isEmpty: result => result.groups.length === 0,
+  variables: groupFilters,
+  describeInput: describeGroup,
+  isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching groups',
     description: 'No observations are available for this query.',
@@ -38,7 +42,7 @@ const sampleCountsView = defineDataView({
 });
 const sampleCounts = sampleCountsView.dataset({
   name: 'Sample counts',
-  select: result => result.groups,
+  select: rows => rows,
   rowKey: row => row.groupName,
   columns: {
     groupName: { label: 'Group', value: row => row.groupName },
@@ -49,9 +53,20 @@ const sampleCounts = sampleCountsView.dataset({
     glossaryIds: ['sampleCount'],
   },
 });
-const segments = sampleCountsView.dataset({
+const segmentCountsView = defineDataView({
+  dataContext: sampleDataContext,
+  operation: 'sampleCountsBySegment',
+  variables: groupFilters,
+  describeInput: describeGroup,
+  isEmpty: rows => rows.length === 0,
+  emptyFallback: {
+    title: 'No matching segments',
+    description: 'No observations are available for this query.',
+  },
+});
+const segmentCounts = segmentCountsView.dataset({
   name: 'Counts by segment',
-  select: result => result.segments,
+  select: rows => rows,
   rowKey: row => row.segmentName,
   columns: {
     segmentName: { label: 'Segment', value: row => row.segmentName },
@@ -70,55 +85,58 @@ const groupActions = sampleCounts.actions(
   { primary: 'drill' }
 );
 // Keep only the breakdowns and interactions relevant to the requested metric.
-const sampleContent = sampleCountsView.content(result => (
-  <Stack>
-    <VisualizationWidget
-      dataset={sampleCounts}
-      source={result}
-      title="Sample count"
-      description="Select a group to filter both charts; choose All groups to reset."
-      actions={groupActions}
-    >
-      {(rows, actions) => (
-        <BarChart
-          ariaLabel="Sample counts by group"
-          unit="samples"
-          items={rows.map(row => ({
-            ...row,
-            id: row.groupName,
-            label: row.groupName,
-            value: row.sampleCount,
-          }))}
-          itemActions={actions}
-        />
-      )}
-    </VisualizationWidget>
-    <VisualizationWidget
-      dataset={segments}
-      source={result}
-      title="Samples by segment"
-      description="Segment breakdown for the selected group scope."
-    >
-      {(rows, actions) => (
-        <BarChart
-          ariaLabel="Sample counts by segment"
-          unit="samples"
-          items={rows.map(row => ({
-            ...row,
-            id: row.segmentName,
-            label: row.segmentName,
-            value: row.sampleCount,
-          }))}
-          itemActions={actions}
-        />
-      )}
-    </VisualizationWidget>
-  </Stack>
+const groupContent = sampleCountsView.content(result => (
+  <VisualizationWidget
+    dataset={sampleCounts}
+    source={result}
+    title="Sample count"
+    description="Select a group to filter both charts; choose All groups to reset."
+    actions={groupActions}
+  >
+    {(rows, actions) => (
+      <BarChart
+        ariaLabel="Sample counts by group"
+        unit="samples"
+        items={rows.map(row => ({
+          ...row,
+          id: row.groupName,
+          label: row.groupName,
+          value: row.sampleCount,
+        }))}
+        itemActions={actions}
+      />
+    )}
+  </VisualizationWidget>
+));
+const segmentContent = segmentCountsView.content(result => (
+  <VisualizationWidget
+    dataset={segmentCounts}
+    source={result}
+    title="Samples by segment"
+    description="Segment breakdown for the selected group scope."
+  >
+    {(rows, actions) => (
+      <BarChart
+        ariaLabel="Sample counts by segment"
+        unit="samples"
+        items={rows.map(row => ({
+          ...row,
+          id: row.segmentName,
+          label: row.segmentName,
+          value: row.sampleCount,
+        }))}
+        itemActions={actions}
+      />
+    )}
+  </VisualizationWidget>
 ));
 export function App() {
   return (
     <DataApp view={sampleCountsView} showToolbar={false}>
-      <DataSection content={sampleContent} />
+      <Stack>
+        <DataSection content={groupContent} label="Sample count" />
+        <DataSection content={segmentContent} label="Samples by segment" />
+      </Stack>
     </DataApp>
   );
 }

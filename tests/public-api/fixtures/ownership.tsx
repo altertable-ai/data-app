@@ -49,8 +49,6 @@ function declareView() {
     operation: 'rows',
     variables: { search: searchVariable({ key: 'q', label: 'Search rows' }) },
     describeInput: () => 'all rows',
-    isEmpty: () => false,
-    emptyFallback: { title: 'No rows' },
   });
   const dataset = view.dataset({
     name: 'Rows',

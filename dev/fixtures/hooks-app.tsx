@@ -123,8 +123,6 @@ function App() {
     input: () => ({ version }),
     describeInput: (input: InputOf<typeof operations.alpha>) =>
       `selection ${input.version}`,
-    isEmpty: () => false,
-    emptyFallback: { title: 'No activity' },
   };
   const result = useDeclaredResult(
     operation === 'alpha'
@@ -194,6 +192,7 @@ function App() {
       </p>
       <DataSection
         result={result}
+        notice="inline"
         emptyFallback={{ title: 'No activity' }}
         {...narrative}
       />

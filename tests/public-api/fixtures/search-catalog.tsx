@@ -115,8 +115,6 @@ const view = createDataHooks(client).defineDataView({
   }),
   describeInput: input =>
     input.q ? `Workspace matching ${input.q}` : 'Workspace',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No matching records' },
 });
 const people = view.dataset({
   name: 'People',

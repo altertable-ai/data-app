@@ -115,8 +115,6 @@ const hooks =
   );
 const feedback = {
   dataContext: context,
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
 };
 const view = hooks.defineDataView({
   ...feedback,

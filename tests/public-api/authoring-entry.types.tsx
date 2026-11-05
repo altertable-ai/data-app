@@ -43,8 +43,6 @@ const view = hooks.defineDataView({
   dataContext: context,
   operation: 'count',
   describeInput: () => 'all',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
 });
 const dataApp = defineDataApp({
   title: 'Test',
@@ -218,8 +216,6 @@ view.content(source => {
 hooks.defineDataView({
   operation: 'count',
   describeInput: () => 'all',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
 });
 view.metric(
   // @ts-expect-error Metric registration validates the view's glossary keys.

@@ -840,6 +840,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           <DataSection
             loadingFallback={<ContentSkeleton variant="panel" />}
             result={{ view: dataView, refetch: () => setRequest('ready') }}
+            notice="inline"
             emptyFallback={empty}
             label="Fixture request"
           >

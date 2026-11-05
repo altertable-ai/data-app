@@ -166,8 +166,6 @@ test('authoring a view rejects invalid datasets and unregistered evidence', () =
     operation: 'rows',
     variables: { group: searchVariable({ key: 'group' }) },
     describeInput: input => input.group,
-    isEmpty: () => false,
-    emptyFallback: { title: 'Empty' },
   });
   expect(() =>
     view.dataset({

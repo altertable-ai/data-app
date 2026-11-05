@@ -1,9 +1,17 @@
-import { useContext, type ComponentPropsWithRef, type ReactNode } from 'react';
+import {
+  useCallback,
+  useContext,
+  type ComponentPropsWithRef,
+  type ReactNode,
+  type Ref,
+} from 'react';
 
 import { sectionContent, type ViewContent } from '../content.ts';
 import { DateFormattingContext } from '../date-formatting.ts';
 import {
-  PrimaryViewContext,
+  AppViewResultsContext,
+  assertAppRendersFilters,
+  type DeclaredView,
   type ViewResult,
   useDeclaredResult,
 } from '../view-runtime.tsx';
@@ -13,6 +21,7 @@ import {
   useInspectionDefaults,
 } from './InspectionContext.tsx';
 import { type EmptyContent } from './presentation.ts';
+import { useHasNearedViewport } from './useHasNearedViewport.ts';
 
 export type DataSectionProps<Data, Input = unknown> = {
   content: ViewContent<Data, Input>;
@@ -21,37 +30,72 @@ export type DataSectionProps<Data, Input = unknown> = {
   label?: string;
 } & Omit<ComponentPropsWithRef<'div'>, 'children' | 'content'>;
 
+type SectionProps<Data, Input> = Omit<
+  DataSectionProps<Data, Input>,
+  'content'
+> &
+  Omit<ReturnType<typeof sectionContent<Data, Input>>, 'view'>;
+
+/** Sections of views that `<DataApp>` runs share its results; every other section
+ * requests its own view once it nears the viewport. */
 export function DataSection<Data, Input>({
   content,
   ...presentation
 }: DataSectionProps<Data, Input>) {
-  const primary = useContext(PrimaryViewContext);
+  const app = useContext(AppViewResultsContext);
   const { view, ...section } = sectionContent(content);
-  if (primary?.declaration === view) {
-    // Identity proves the shared result belongs to this content's declaration.
-    const result = primary.result as ViewResult<Data, Input>;
+  // Identity proves the shared result belongs to this content's declaration.
+  const appResult = app?.results.get(view) as
+    | ViewResult<Data, Input>
+    | undefined;
+  if (!appResult) {
+    if (app) assertAppRendersFilters(view, app.primaryView);
+    return <LazySection view={view} {...section} {...presentation} />;
+  }
+  // The app reports the primary view's request state for the whole page.
+  if (view === app?.primaryView)
     return (
       <DataSectionBoundary
         {...section}
         {...presentation}
-        result={result}
+        result={appResult}
         notice="none"
       />
     );
-  }
-  return <IndependentSection view={view} {...section} {...presentation} />;
+  return (
+    <StandaloneSection {...section} {...presentation} result={appResult} />
+  );
 }
 
-function IndependentSection<Data, Input>({
+/** Requests its view only once the section nears the viewport,
+ * so each widget's query runs when a reader can see it. */
+function LazySection<Data, Input>({
   view,
+  ref,
   ...props
-}: Omit<DataSectionProps<Data, Input>, 'content'> &
-  ReturnType<typeof sectionContent<Data, Input>>) {
-  const result = useDeclaredResult(view);
-  const defaults = useInspectionDefaults();
-  const section = (
-    <DataSectionBoundary {...props} result={result} notice="inline" />
+}: SectionProps<Data, Input> & { view: DeclaredView<Data, Input> }) {
+  const [observeViewport, hasNearedViewport] = useHasNearedViewport();
+  const result = useDeclaredResult(view, { enabled: hasNearedViewport });
+  const sectionRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      assignRef(ref, element);
+      const stopObserving = observeViewport(element);
+      return () => {
+        stopObserving?.();
+        assignRef(ref, null);
+      };
+    },
+    [ref, observeViewport]
   );
+  return <StandaloneSection {...props} ref={sectionRef} result={result} />;
+}
+
+/** Reports its own request state inline and inspects its own queries. */
+function StandaloneSection<Data, Input>({
+  result,
+  ...props
+}: SectionProps<Data, Input> & { result: ViewResult<Data, Input> }) {
+  const defaults = useInspectionDefaults();
   return (
     <DateFormattingContext value={{ timeZone: result.timeZone }}>
       <InspectionContext
@@ -61,8 +105,13 @@ function IndependentSection<Data, Input>({
           queries: result.queries,
         }}
       >
-        {section}
+        <DataSectionBoundary {...props} result={result} notice="inline" />
       </InspectionContext>
     </DateFormattingContext>
   );
+}
+
+function assignRef<Value>(ref: Ref<Value> | undefined, value: Value) {
+  if (typeof ref === 'function') ref(value);
+  else if (ref) ref.current = value;
 }

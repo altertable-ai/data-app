@@ -5,7 +5,6 @@ import { type ComponentPropsWithRef, type ReactNode } from 'react';
 import { Button } from './Button.tsx';
 import { DataBoundary } from './DataBoundary.tsx';
 import { EmptyState } from './EmptyState.tsx';
-import { useInspectionDefaults } from './InspectionContext.tsx';
 import { type EmptyContent } from './presentation.ts';
 import { StatusPanel } from './StatusPanel.tsx';
 
@@ -70,7 +69,8 @@ export type DataSectionProps<Data, Input = unknown> = {
   loadingFallback: ReactNode;
   error?: { title: ReactNode; description?: ReactNode; onRetry?: () => void };
   label?: string;
-  notice?: 'none' | 'inline';
+  /** `none` when the page reports this result's request state; `inline` otherwise. */
+  notice: 'none' | 'inline';
 } & (
   | {
       result: SectionResult<Data, Input> & { emptyFallback: EmptyContent };
@@ -89,7 +89,7 @@ export function DataSectionBoundary<Data, Input>({
   loadingFallback,
   error,
   label,
-  notice: feedback,
+  notice,
   ...props
 }: DataSectionProps<Data, Input>) {
   const fallback =
@@ -99,9 +99,6 @@ export function DataSectionBoundary<Data, Input>({
     fallback,
     'A section needs an empty fallback from its result or props.'
   );
-  const defaults = useInspectionDefaults();
-  const notice =
-    feedback ?? (defaults?.primaryView === result.view ? 'none' : 'inline');
   return (
     <DataBoundary
       {...props}

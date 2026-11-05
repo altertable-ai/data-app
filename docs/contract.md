@@ -2,7 +2,8 @@
 
 Keep the starter's `defineDataApp()` declaration and operation registry. Declare
 named SQL queries with typed `params` and `projections`; execute them through
-`dataApp.defineOperation()`. Use descriptive `lowerCamelCase` query names.
+`dataApp.defineOperation()`. Write one query and operation per widget result,
+and use descriptive `lowerCamelCase` query names.
 
 ## Execute named queries
 

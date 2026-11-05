@@ -88,8 +88,6 @@ function makeApp(id: string) {
     dataContext: context,
     variables: { search, category },
     describeInput: () => `${id} scope`,
-    isEmpty: () => false,
-    emptyFallback: { title: 'No counts' },
   });
   const dataset = view.dataset({
     name: 'Counts',

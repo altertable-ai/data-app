@@ -51,7 +51,6 @@ import {
   type FilterPatch,
 } from './exploration.ts';
 import type { AuthoringDataContext } from './ui/data-context.ts';
-import type { EmptyContent } from './ui/presentation.ts';
 import {
   dateRangeVariable,
   type DateTimeRangeVariable,
@@ -60,15 +59,17 @@ import {
   type DateRangeVariableOptions,
 } from './ui/variables.ts';
 import { useViewVariables } from './view-controls.tsx';
-import { DeclaredView } from './view-runtime.tsx';
+import { DeclaredView, type ViewRequest } from './view-runtime.tsx';
 import {
   describeViewInput,
+  resolveViewEmptiness,
   resolveViewInput,
   type DataViewDefinition,
   type ResolvedDataViewDefinition,
   type ResolvedVariables,
   type ViewBindingOptions,
   type ViewDate,
+  type ViewEmptiness,
 } from './view.ts';
 
 type CalendarTimeViewDefinition<
@@ -91,9 +92,8 @@ type CalendarTimeViewDefinition<
       CheckedFacetSources<Operations, TimeVariables<NoInfer<Additional>>>,
       'period'
     >;
-  isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
-  emptyFallback: EmptyContent;
-} & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>> &
+} & ViewEmptiness<OutputOf<Operations[Name]>> &
+  TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>> &
   ViewBindingOptions<
     TimeVariables<NoInfer<Additional>>,
     InputOf<Operations[Name]>,
@@ -333,14 +333,19 @@ export function createDataHooks<Operations extends DataOperations>(
 ) {
   const clientScope = getClientScope(client);
 
-  function useDataQuery<Name extends keyof Operations & string>(
-    name: Name,
-    input: InputOf<Operations[Name]>
-  ) {
+  function useDataQuery<Name extends keyof Operations & string>({
+    name,
+    input,
+    enabled,
+  }: {
+    name: Name;
+    input: InputOf<Operations[Name]>;
+  } & ViewRequest) {
     const queryClient = useQueryClient();
     const queryKey = ['data-operation', clientScope, name, input] as const;
     const query = useQuery({
       queryKey,
+      enabled,
       queryFn({ signal }) {
         return client.query(name as never, input, { signal });
       },
@@ -367,15 +372,19 @@ export function createDataHooks<Operations extends DataOperations>(
    * stays labeled through refreshes and errors. Input equality uses React Query's
    * stable key hash. */
 
-  function useDataView<Name extends keyof Operations & string>(
-    name: Name,
-    input: InputOf<Operations[Name]>,
-    options: {
-      isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
-      describeInput?: (input: InputOf<Operations[Name]>) => string;
-    }
-  ) {
-    const query = useDataQuery(name, input);
+  function useDataView<Name extends keyof Operations & string>({
+    name,
+    input,
+    isEmpty,
+    describeInput,
+    enabled,
+  }: {
+    name: Name;
+    input: InputOf<Operations[Name]>;
+    isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
+    describeInput?: (input: InputOf<Operations[Name]>) => string;
+  } & ViewRequest) {
+    const query = useDataQuery({ name, input, enabled });
     const [last, setLast] = useState<{
       clientScope: string;
       name: Name;
@@ -413,8 +422,8 @@ export function createDataHooks<Operations extends DataOperations>(
       pending: query.isFetching,
       error: query.error instanceof Error ? query.error : undefined,
       sameInput,
-      describe: options.describeInput ?? (() => 'this view'),
-      isEmpty: options.isEmpty,
+      describe: describeInput ?? (() => 'this view'),
+      isEmpty,
     });
 
     return {
@@ -534,9 +543,15 @@ export function createDataHooks<Operations extends DataOperations>(
       DataViewDefinition<Name, Variables, Input, Data>,
       'variables' | 'input'
     > = definition;
-    const normalized = { ...metadata, variables, input, describeInput };
+    const normalized = {
+      ...metadata,
+      ...resolveViewEmptiness(definition),
+      variables,
+      input,
+      describeInput,
+    };
     const view = Object.assign(
-      new DeclaredView(() => useView(normalized), normalized),
+      new DeclaredView(request => useView(normalized, request), normalized),
       {
         filter() {
           return createFilterTarget<Variables>({
@@ -639,10 +654,14 @@ export function createDataHooks<Operations extends DataOperations>(
   > {
     type Data = OutputOf<Operations[Name]>;
     type Input = InputOf<Operations[Name]>;
-    const target = new DetailView<Data, Input>(definition, input => {
-      const request = useDataView(definition.operation, input, {
-        isEmpty: definition.isEmpty,
+    const resolved = { ...definition, ...resolveViewEmptiness(definition) };
+    const target = new DetailView<Data, Input>(resolved, input => {
+      const request = useDataView({
+        name: definition.operation,
+        input,
+        isEmpty: resolved.isEmpty,
         describeInput: definition.describeInput,
+        enabled: true,
       });
       return {
         view: request.view,
@@ -655,7 +674,7 @@ export function createDataHooks<Operations extends DataOperations>(
         cancel: request.cancel,
         refreshing: request.refreshing,
         queries: request.queries,
-        emptyFallback: definition.emptyFallback,
+        emptyFallback: resolved.emptyFallback,
       };
     });
     return Object.assign(target, {
@@ -948,7 +967,8 @@ export function createDataHooks<Operations extends DataOperations>(
       Variables,
       InputOf<Operations[Name]>,
       OutputOf<Operations[Name]>
-    >
+    >,
+    request: ViewRequest
   ) {
     const variables = useViewVariables(
       definition.variables,
@@ -962,26 +982,25 @@ export function createDataHooks<Operations extends DataOperations>(
     );
     const describeInput =
       describeViewInput<InputOf<Operations[Name]>>(definition);
-    const request = useDataView(
-      definition.operation,
-      resolveViewInput(definition, variables.resolved),
-      {
-        ...definition,
-        describeInput,
-      }
-    );
+    const dataView = useDataView({
+      name: definition.operation,
+      input: resolveViewInput(definition, variables.resolved),
+      isEmpty: definition.isEmpty,
+      describeInput,
+      enabled: request.enabled,
+    });
 
     return {
-      view: request.view,
+      view: dataView.view,
       dataContext: definition.dataContext,
-      snapshot: request.snapshot,
-      scope: displayedScope(request.view, describeInput),
+      snapshot: dataView.snapshot,
+      scope: displayedScope(dataView.view, describeInput),
       refetch() {
-        if (!variables.refreshTime()) void request.refetch();
+        if (!variables.refreshTime()) void dataView.refetch();
       },
-      cancel: request.cancel,
-      refreshing: request.refreshing,
-      queries: request.queries,
+      cancel: dataView.cancel,
+      refreshing: dataView.refreshing,
+      queries: dataView.queries,
       emptyFallback: definition.emptyFallback,
       timeZone: reportingTimeZone(definition),
       searchControls: variables.searchControls,

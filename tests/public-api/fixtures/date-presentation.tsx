@@ -88,8 +88,6 @@ const view = createDataHooks(client).defineTimeView({
     contract: calendar,
     defaultValue: { kind: 'dates', start: '2026-09-24', end: '2026-09-24' },
   },
-  isEmpty: () => false,
-  emptyFallback: { title: 'No events' },
 });
 const events = view.dataset({
   name: 'Witness reports',
@@ -134,8 +132,6 @@ const tokyoView = createDataHooks(client).defineTimeView({
     }),
     defaultValue: { kind: 'dates', start: '2026-09-24', end: '2026-09-24' },
   },
-  isEmpty: () => false,
-  emptyFallback: { title: 'No Tokyo events' },
 });
 const tokyoEvents = tokyoView.dataset({
   name: 'Tokyo events',

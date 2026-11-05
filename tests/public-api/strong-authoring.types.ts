@@ -108,8 +108,6 @@ const feedback = {
   dataContext: createDataContext({})({ description: 'View', glossary: {} }),
   input: (values: { search?: string }) => ({ search: values.search ?? '' }),
   describeInput: () => 'All',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
 };
 // @ts-expect-error A broad collection cannot erase facet dependencies.
 hooks.defineDataView({ ...feedback, variables });

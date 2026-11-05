@@ -70,8 +70,6 @@ const view = defineDataView({
     }),
   },
   describeInput: input => input.period,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No results' },
 });
 const metric = view.metric(
   {

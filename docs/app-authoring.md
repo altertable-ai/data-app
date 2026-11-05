@@ -31,18 +31,23 @@ app-owned files, not installed packages.
 1. **Define the question and scope.** Inspect relevant fields, definitions, time
    coverage, and missing or incomplete observations. Establish the population,
    grain, measures, and comparison. Choose a chart that answers the question.
-2. **Replace the starter queries and operation.** Write queries
-   against inspected data and preserve supplied metric definitions. Declare `params`
-   and result aliases in `projections`. Validate flat operation inputs, execute
-   named queries with `query()`, and derive results from its typed rows.
+2. **Write one query and operation per widget.** Give each metric, chart, and
+   table its own named query and operation; do not combine unrelated results
+   into one query. Write queries against inspected data and preserve supplied
+   metric definitions. Declare `params` and result aliases in `projections`.
+   Validate flat operation inputs, execute named queries with `query()`, and
+   derive results from its typed rows.
 3. **Update context and bindings.** Describe definitions and coverage in the data
    context, using the operation's `queryNames` for evidence. Declare each dataset
    and metric once, with stable row keys, raw column values, and shared formats.
-4. **Adapt the view.** Keep related results in one view. Use flat input fields
-   matching variable names so `input` and `bindings` can be omitted. Declare
-   useful filters in `variables`; `<DataApp>` renders them. Use `defineTimeView()`
-   for period-driven analysis and `defineDataView()` otherwise. Split views only
-   for independent requests. Keep protected values such as `orgId` backend-owned.
+4. **Define one view per operation.** Pass the headline view to `<DataApp view>`
+   and render each view in its own `<DataSection>`. Declare shared filters once,
+   pass them to every view that reads them, and include them on the headline
+   view, which renders their controls. Use flat input fields matching variable
+   names so `input` and `bindings` can be omitted. Use `defineTimeView()` for
+   period-driven analysis and `defineDataView()` otherwise. Keep protected
+   values such as `orgId` backend-owned. See
+   [views](views.md#give-each-widget-its-own-view).
 5. **Compose the content.** Follow the app brief for section order and narrative.
    Use `<Stack>` for sections, `<Grid>` for peers, and bound widgets
    from `@altertable/data-app-react`. Keep static explanations outside loading

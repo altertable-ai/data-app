@@ -153,8 +153,6 @@ const base = {
   operation: 'view' as const,
   dataContext: context,
   describeInput: () => 'All',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
   input: (values: {
     region: DimensionSelection<string>;
     numeric: DimensionSelection<number>;
@@ -220,8 +218,6 @@ const timed = {
   operation: 'timed' as const,
   dataContext: context,
   time,
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
 };
 hooks.defineTimeView({ ...timed, variables: { search, region } });
 const missingTimeContext = {

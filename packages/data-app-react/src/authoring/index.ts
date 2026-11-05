@@ -18,7 +18,7 @@ export { DetailView, DetailContent, useDetailNavigation } from '../details.tsx';
 export type { DetailViewDefinition } from '../details.tsx';
 export type { CsvCell } from '../ui/csv-export.ts';
 export { DataApp } from '../ui/DataApp.tsx';
-export type { DataAppProps } from '../ui/DataApp.tsx';
+export type { DataAppProps, DataAppView } from '../ui/DataApp.tsx';
 export { Stack } from '../ui/Stack.tsx';
 export type { StackProps } from '../ui/Stack.tsx';
 export { Grid } from '../ui/Grid.tsx';

@@ -1,8 +1,8 @@
 # Views and displayed results
 
-Keep the starter's client and hooks. Use one view for related results; split only
-when sections need independent requests. The examples continue the hosted
-starter's `sampleCountsByGroup` operation and `sampleDataContext`.
+Keep the starter's client and hooks. Define one view per operation, and one
+operation per widget. The examples continue the hosted starter's
+`sampleCountsByGroup` operation and `sampleDataContext`.
 
 ## Bind a view
 
@@ -52,6 +52,56 @@ Keep operation input flat and named like the variables. Omit `input` and
 analysis and `defineDataView()` otherwise. Adapt an existing nested input only
 when required; see [input mapping](variables.md#adapt-existing-input-shapes).
 
+## Give each widget its own view
+
+The hosted starter gives its total and its group counts separate operations and
+views. `<DataApp view>` loads with the page; every other `<DataSection>` loads
+when it nears the viewport. Declare shared filters once and pass them to each
+view. The `<DataApp>` view must include every shared filter because it renders
+their controls; a section whose filters it lacks fails with an error:
+
+```tsx
+// ... client, operations, sampleDataContext, and section contents
+const { defineDataView } = createDataHooks(client);
+
+const groupFilters = {
+  groupName: searchVariable({ key: 'group', label: 'Group', defaultValue: '' }),
+};
+function describeGroup({ groupName }: { groupName: string }) {
+  return groupName || 'all groups';
+}
+const sampleCountsView = defineDataView({
+  dataContext: sampleDataContext,
+  operation: 'sampleCountsByGroup',
+  variables: groupFilters,
+  describeInput: describeGroup,
+  isEmpty: rows => rows.length === 0,
+  emptyFallback: { title: 'No matching groups' },
+});
+const sampleTotalView = defineDataView({
+  dataContext: sampleDataContext,
+  operation: 'sampleTotal',
+  variables: groupFilters,
+  describeInput: describeGroup,
+});
+
+function App() {
+  return (
+    <DataApp view={sampleCountsView}>
+      <Stack>
+        <DataSection content={totalContent} />
+        <DataSection content={countsContent} />
+      </Stack>
+    </DataApp>
+  );
+}
+```
+
+Share one [data context](data-context.md) across the app's views. Group widgets
+in one view only when they show the same result, such as a chart and the table
+of its rows. A story or export that reads other views lists them in
+[`summaryViews`](stories-and-export.md).
+
 ## Preserve displayed results
 
 Use the source from `view.content()` for every widget. Derive narrative, story,
@@ -60,8 +110,8 @@ refresh or failure. Use `result.scope` in content and `view.scope(snapshot)` in
 stories. Let views and bound widgets own request state and loading feedback.
 Keep static introductions outside loading boundaries.
 
-A measured zero is valid data. Set `isEmpty` for the analysis and provide useful
-`emptyFallback` copy.
+A measured zero is valid data. Set `isEmpty` and useful `emptyFallback` copy when
+a result can be empty; omit both when it never is, such as a total.
 
 ## Detail destinations
 

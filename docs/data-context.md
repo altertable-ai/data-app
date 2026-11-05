@@ -1,7 +1,8 @@
 # Data context and evidence
 
-Continue the starter's operation and context. Use its derived `queryNames` for
-business definitions and evidence. Reference only queries the view executes.
+Continue the starter's operations and context. Build one context from every
+operation's `queryNames` and share it across the app's views. Reference only
+queries the app executes.
 
 ## Bind evidence
 
@@ -9,21 +10,24 @@ business definitions and evidence. Reference only queries the view executes.
 import { createDataContext } from '@altertable/data-app-react';
 
 // ... operations
-const queryNames = operations.sampleCountsByGroup.queryNames;
+const queryNames = {
+  ...operations.sampleCountsByGroup.queryNames,
+  ...operations.sampleTotal.queryNames,
+};
 const sampleDataContext = createDataContext(queryNames)({
   description: 'Sample counts for the selected groups.',
   glossary: {
     sampleCount: {
       term: 'Sample count',
       definition: 'The number of samples in each group.',
-      queryNames: [queryNames.sampleCountsByGroup],
+      queryNames: [queryNames.sampleCountsByGroup, queryNames.sampleTotal],
     },
   },
 });
 ```
 
 Import `createDataContext()` from `@altertable/data-app-react`. Supply
-`dataContext: sampleDataContext` on `sampleCountsView`, then use its glossary IDs
+`dataContext: sampleDataContext` on each view, then use its glossary IDs
 in `view.metric()` and `view.dataset()`. Reuse those bindings in widgets and stories.
 Detail views need their own context when their queries differ.
 

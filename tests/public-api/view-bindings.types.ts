@@ -99,8 +99,6 @@ const hooks =
 const feedback = {
   dataContext: context,
   describeInput: () => 'usage',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No usage' },
 };
 
 declare const selectedVariables:

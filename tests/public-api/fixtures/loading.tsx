@@ -111,16 +111,12 @@ const primaryView = hooks.defineDataView({
   dataContext: context,
   variables: { search },
   describeInput: () => 'primary scope',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No counts' },
 });
 const secondaryView = hooks.defineDataView({
   operation: 'secondary',
   dataContext: secondaryContext,
   variables: { search },
   describeInput: () => 'secondary scope',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No counts' },
 });
 const primaryDataset = primaryView.dataset({
   name: 'Primary counts',

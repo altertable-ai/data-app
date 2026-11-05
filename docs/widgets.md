@@ -48,16 +48,16 @@ values available in a table when they matter.
 
 ## Declare datasets and metrics
 
-Continue the starter's `sampleCountsView`. Use `<BarChart>` from
+Continue the starter's `sampleCountsView` and `sampleTotalView`. Use `<BarChart>` from
 `@altertable/data-app-react/ui`.
-Bind reusable selections to the view. Declare evidence references directly;
+Bind reusable selections to the view whose operation returns them. Declare evidence references directly;
 the view validates them against its own context. A dataset's columns supply both formatted
 table cells and raw CSV values. Widgets derive their readings, evidence, and empty fallback from the binding.
 Declare at least one dataset column. Metric selectors may return `previous`
 only for views with a date binding, including `defineTimeView()`.
 
 ```tsx
-// ... sampleCountsView and imports
+// ... sampleCountsView, sampleTotalView, and imports
 const sampleCounts = sampleCountsView.dataset({
   name: 'Sample counts',
   select: rows => rows,
@@ -68,18 +68,21 @@ const sampleCounts = sampleCountsView.dataset({
     sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
   },
 });
-const totalSamples = sampleCountsView.metric(
+const totalSamples = sampleTotalView.metric(
   {
     id: 'total-samples',
     glossaryId: 'sampleCount',
     label: 'Total samples',
     format: { kind: 'count', compact: true },
   },
-  rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
+  total => ({ current: total.sampleCount })
 );
-const sampleContent = sampleCountsView.content(result => (
+const totalContent = sampleTotalView.content(result => (
+  <MetricWidget metric={totalSamples} source={result} />
+));
+// The table and chart are two representations of the same rows.
+const countsContent = sampleCountsView.content(result => (
   <Grid columns={2}>
-    <MetricWidget metric={totalSamples} source={result} />
     <TableWidget dataset={sampleCounts} source={result} />
     <VisualizationWidget dataset={sampleCounts} source={result}>
       {rows => (
@@ -99,10 +102,12 @@ const sampleContent = sampleCountsView.content(result => (
 ));
 ```
 
+Render each content in its own `<DataSection>`.
+
 Column keys supply IDs and default labels; set `label` for a different header.
 Keep row keys stable and unique. Custom cells use `format: row => ...`; CSV uses
 the raw `value` accessor. Metric comparisons require a view date binding.
-Reuse bindings in stories with `source={snapshot}` from the same view.
+Reuse bindings in stories with the snapshot of the view that owns them.
 
 Tables search and paginate only supplied rows. Use query-backed pagination with a
 stable sort and total `count` for larger datasets. Provide useful `emptyFallback`

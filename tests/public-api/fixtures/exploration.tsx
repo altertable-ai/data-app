@@ -280,8 +280,6 @@ const sales = hooks.defineDataView({
   input: ({ window, ...values }) => ({ ...values, windowId: window }),
   bindings: { window: input => input.windowId },
   describeInput: input => describeFilters(input),
-  isEmpty: () => false,
-  emptyFallback: { title: 'No sales' },
 });
 const otherSales = hooks.defineDataView({
   operation: 'sales',
@@ -290,8 +288,6 @@ const otherSales = hooks.defineDataView({
   input: ({ window, ...values }) => ({ ...values, windowId: window }),
   bindings: { window: input => input.windowId },
   describeInput: describeFilters,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No sales' },
 });
 class ConfigurationBoundary extends Component<
   { children: ReactNode },

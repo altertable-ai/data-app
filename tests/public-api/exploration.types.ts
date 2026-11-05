@@ -71,8 +71,6 @@ const view = hooks.defineDataView({
   dataContext: context,
   variables: { region, customer, by, sort, mode },
   describeInput: () => 'Sales',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
 });
 view.breakdown('by');
 // @ts-expect-error Only display choices can be chart breakdown targets.
@@ -215,8 +213,6 @@ const targetHooks =
 const definition = {
   dataContext: context,
   describeInput: () => 'Targets',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
 };
 const strings = targetHooks.defineDataView({
   ...definition,

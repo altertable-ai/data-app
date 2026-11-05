@@ -107,14 +107,17 @@ export class RegisteredBinding {
   protected assertSource(source: object) {
     if (this.#owner) assertSourceOwner(this.#owner, source);
   }
-  static evidence(binding: RegisteredBinding, owner: object): WidgetEvidence {
+  static evidence(
+    binding: RegisteredBinding,
+    owners: readonly object[]
+  ): WidgetEvidence {
     invariant(
       binding instanceof RegisteredBinding,
       'Story evidence must be a registered metric or dataset binding.'
     );
     invariant(
-      binding.#owner === owner,
-      'Story evidence must belong to the story view.'
+      !!binding.#owner && owners.includes(binding.#owner),
+      'Story evidence must belong to the app view or one of its summary views.'
     );
     invariant(
       binding.#evidence,
@@ -125,9 +128,9 @@ export class RegisteredBinding {
 }
 export function registeredEvidence(
   binding: RegisteredBinding,
-  owner: object
+  owners: readonly object[]
 ): WidgetEvidence {
-  return RegisteredBinding.evidence(binding, owner);
+  return RegisteredBinding.evidence(binding, owners);
 }
 
 export class ExportDataset<Data, Input> extends RegisteredBinding {
@@ -431,27 +434,32 @@ export function displayedScope<Data, Input>(
   return { loading: false, value: describeInput(input) };
 }
 
-export function exportDatasets<Data, Input>(
-  datasets: readonly [
-    ExportDataset<Data, Input>,
-    ...ExportDataset<Data, Input>[],
-  ],
-  snapshot: DisplayedSnapshot<Data, Input>,
-  scope: string,
-  appTitle: string
-): CsvExport {
-  const name = datasets.length === 1 ? datasets[0].name : appTitle;
+type DisplayedTable = {
+  dataset: ExportDataset<any, any>;
+  snapshot: DisplayedSnapshot<any, any>;
+};
+
+/** Export each dataset from the displayed snapshot of the view that owns it. */
+export function exportDatasets({
+  tables,
+  scope,
+  appTitle,
+}: {
+  tables: readonly DisplayedTable[];
+  scope: string;
+  appTitle: string;
+}): CsvExport {
+  const [first, ...rest] = tables;
+  invariant(first, 'An export needs at least one dataset.');
+  const name = rest.length ? appTitle : first.dataset.name;
   const filename =
     `${name}-${scope}`
       .toLowerCase()
       .replace(/[^\p{L}\p{N}]+/gu, '-')
       .replace(/^-|-$/g, '')
       .slice(0, 200) || 'data';
-  return {
-    filename,
-    tables: datasets.map(dataset => datasetCsv(dataset, snapshot)) as [
-      CsvTable,
-      ...CsvTable[],
-    ],
-  };
+  function csv({ dataset, snapshot }: DisplayedTable) {
+    return datasetCsv(dataset, snapshot);
+  }
+  return { filename, tables: [csv(first), ...rest.map(csv)] };
 }

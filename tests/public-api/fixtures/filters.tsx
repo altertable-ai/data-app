@@ -120,8 +120,6 @@ const view = defineDataView({
   operation: 'filters',
   variables: { search, choice, tags, amount, active, country },
   describeInput: input => JSON.stringify(input),
-  isEmpty: () => false,
-  emptyFallback: { title: 'No result' },
 });
 const dataset = view.dataset({
   name: 'Result',

@@ -24,8 +24,6 @@ const feedback = {
     description: 'Events',
     glossary: { count: { term: 'Count', definition: 'Event count' } },
   }),
-  isEmpty: () => false,
-  emptyFallback: { title: 'No events' },
 };
 hooks.defineTimeView({ ...feedback, operation: 'events', time: period });
 hooks.defineTimeView({

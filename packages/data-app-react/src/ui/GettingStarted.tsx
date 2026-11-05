@@ -23,8 +23,6 @@ const connectionView = defineDataView({
   dataContext: connectionContext,
   operation: 'connection',
   describeInput: () => 'the connection',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No connection' },
 });
 
 /** Query-backed connection state and next steps for a newly created app. Mount within

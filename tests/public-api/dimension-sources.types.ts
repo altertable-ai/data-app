@@ -186,6 +186,4 @@ createDataHooks(
   },
   dataContext: createDataContext({})({ description: 'Sources', glossary: {} }),
   describeInput: () => 'All',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No values' },
 });

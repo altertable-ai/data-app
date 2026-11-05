@@ -18,10 +18,10 @@ import {
   InspectionOwner,
   InspectionProvider,
 } from './ui/InspectionProvider.tsx';
-import type { EmptyContent } from './ui/presentation.ts';
 import { searchParams, subscribeSearch, writeSearch } from './ui/search.ts';
 import { Sheet } from './ui/Sheet.tsx';
 import type { ViewResult } from './view-runtime.tsx';
+import type { ViewEmptiness } from './view.ts';
 
 export type DetailViewDefinition<Data, Input> = {
   id: string;
@@ -29,15 +29,14 @@ export type DetailViewDefinition<Data, Input> = {
   /** Validates untrusted navigation input before a detail operation can run. */
   parseInput: (input: unknown) => Input;
   describeInput: (input: Input) => string;
-  isEmpty: (data: Data) => boolean;
-  emptyFallback: EmptyContent;
-};
+} & ViewEmptiness<Data>;
 
 /** A typed, query-backed destination. */
 export class DetailView<Data, Input> {
   #content?: DetailContent<Data, Input>;
   constructor(
-    readonly definition: DetailViewDefinition<Data, Input>,
+    readonly definition: DetailViewDefinition<Data, Input> &
+      Required<ViewEmptiness<Data>>,
     readonly useResult: (input: Input) => ViewResult<Data, Input>
   ) {
     invariant(!!definition.id.trim(), 'A detail view needs a nonempty ID.');
@@ -217,7 +216,6 @@ function DetailContentBody<Data, Input>({
       value={{
         dataContext: result.dataContext,
         queries: result.queries,
-        primaryView: result.view,
       }}
     >
       <DataSectionBoundary

@@ -2,26 +2,32 @@
 
 Use `<Stack>` for reading order, `<Grid>` for peer widgets, and `<GridItem>` for
 spans. The shell owns page width and gutters; parents own spacing and widgets
-own internal padding. Keep default density unless customization is requested.
+own internal padding. Lay out sections the same way as widgets; static headings
+and prose stay outside their loading boundaries. Keep default density unless
+customization is requested.
 
 ```tsx
-// ... sampleCountsView, sampleCounts, and totalSamples
-const sampleContent = sampleCountsView.content(result => (
-  <Stack>
-    <SectionHeading>Sample counts</SectionHeading>
-    <TextContent>
-      <p>Explore the sources behind this finding.</p>
-    </TextContent>
-    <Grid columns={3}>
-      <GridItem span={2}>
-        <TableWidget dataset={sampleCounts} source={result} />
-      </GridItem>
-      <GridItem>
-        <MetricWidget metric={totalSamples} source={result} />
-      </GridItem>
-    </Grid>
-  </Stack>
-));
+// ... sampleCountsView, countsContent, and totalContent
+function App() {
+  return (
+    <DataApp view={sampleCountsView}>
+      <Stack>
+        <SectionHeading>Sample counts</SectionHeading>
+        <TextContent>
+          <p>Explore the sources behind this finding.</p>
+        </TextContent>
+        <Grid columns={3}>
+          <GridItem span={2}>
+            <DataSection content={countsContent} />
+          </GridItem>
+          <GridItem>
+            <DataSection content={totalContent} />
+          </GridItem>
+        </Grid>
+      </Stack>
+    </DataApp>
+  );
+}
 ```
 
 Grids wrap to fit their container and spans collapse when needed. Set widget

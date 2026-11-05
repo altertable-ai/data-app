@@ -125,13 +125,10 @@ export type DataViewDefinition<
 > = {
   operation: Name;
   dataContext: DataContext;
-  /** App-owned semantics: measured zero need not mean an empty result. */
-  isEmpty: (data: Data) => boolean;
-  /** Inherited by DataSection unless it supplies its own copy. */
-  emptyFallback: EmptyContent;
-} & (keyof Variables extends never
-  ? { variables?: Variables & CheckedFacetContexts<NoInfer<Variables>> }
-  : { variables: Variables & CheckedFacetContexts<NoInfer<Variables>> }) &
+} & ViewEmptiness<Data> &
+  (keyof Variables extends never
+    ? { variables?: Variables & CheckedFacetContexts<NoInfer<Variables>> }
+    : { variables: Variables & CheckedFacetContexts<NoInfer<Variables>> }) &
   ViewInputMapping<NoInfer<Variables>, Input> &
   ViewBindingOptions<NoInfer<Variables>, Input> &
   (
@@ -150,10 +147,29 @@ export type ResolvedDataViewDefinition<
 > = Omit<
   DataViewDefinition<Name, Variables, Input, Data>,
   'variables' | 'input'
-> & {
-  variables: Variables;
-  input: (values: ResolvedVariables<Variables>) => Input;
+> &
+  Required<ViewEmptiness<Data>> & {
+    variables: Variables;
+    input: (values: ResolvedVariables<Variables>) => Input;
+  };
+
+/** Omit both for a result that is never empty, such as a total. */
+export type ViewEmptiness<Data> = {
+  /** App-owned semantics: measured zero need not mean an empty result. Defaults to never empty. */
+  isEmpty?: (data: Data) => boolean;
+  /** Inherited by DataSection unless it supplies its own copy. */
+  emptyFallback?: EmptyContent;
 };
+
+/** Fill in the defaults for a view that omits its empty semantics. */
+export function resolveViewEmptiness<Data>(
+  definition: ViewEmptiness<Data>
+): Required<ViewEmptiness<Data>> {
+  return {
+    isEmpty: definition.isEmpty ?? (() => false),
+    emptyFallback: definition.emptyFallback ?? { title: 'No results' },
+  };
+}
 
 export function describeViewInput<Input>(definition: {
   variables: VariableCollection;

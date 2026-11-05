@@ -23,6 +23,7 @@ import filterPresentation from '@/tests/public-api/fixtures/filter-presentation.
 import filters from '@/tests/public-api/fixtures/filters.html';
 import inspectionApp from '@/tests/public-api/fixtures/inspection-app.html';
 import layout from '@/tests/public-api/fixtures/layout.html';
+import lazySections from '@/tests/public-api/fixtures/lazy-sections.html';
 import loading from '@/tests/public-api/fixtures/loading.html';
 import ownership from '@/tests/public-api/fixtures/ownership.html';
 import searchCatalog from '@/tests/public-api/fixtures/search-catalog.html';
@@ -99,6 +100,7 @@ const server = Bun.serve({
     '/search-catalog': searchCatalog,
     '/static': staticApp,
     '/layout': layout,
+    '/lazy-sections': lazySections,
     '/ownership': ownership,
     '/annotations-host': annotationsHost,
     '/appearance': appearance,
@@ -157,21 +159,21 @@ const server = Bun.serve({
         limit: number;
         params?: Record<string, string | number>;
       };
-      if (statement.trim().startsWith('WITH sample_counts(') && limit === 10)
+      if (statement.trim().startsWith('WITH sample_counts(')) {
+        const query = database.query(statement);
         return Response.json({
-          columns: [{ name: 'group_name' }, { name: 'sample_count' }],
-          rows: database
-            .query(statement)
-            .values(
-              Object.fromEntries(
-                Object.entries(params ?? {}).map(([key, value]) => [
-                  `$${key}`,
-                  value,
-                ])
-              )
-            ),
+          columns: query.columnNames.map(name => ({ name })),
+          rows: query.values(
+            Object.fromEntries(
+              Object.entries(params ?? {}).map(([key, value]) => [
+                `$${key}`,
+                value,
+              ])
+            )
+          ),
           queryId: 'sample-query',
         });
+      }
       if (statement === 'SELECT 1 AS connection_check' && limit === 1)
         return Response.json({
           columns: [{ name: 'connection_check' }],

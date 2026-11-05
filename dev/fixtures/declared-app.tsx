@@ -55,8 +55,6 @@ const alpha = hooks.defineDataView({
     }),
   },
   describeInput: input => `version ${input.version}`,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No alpha' },
 });
 const betaContext = createDataContext({ beta: 'beta' })({
   description: 'Independent beta context',
@@ -72,8 +70,6 @@ const beta = hooks.defineDataView({
   dataContext: betaContext,
   operation: 'beta',
   describeInput: () => 'beta',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No beta' },
 });
 const alphaDataset = alpha.dataset({
   name: 'Alpha',

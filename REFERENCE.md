@@ -299,7 +299,7 @@ CsvTable (type, @altertable/data-app-react/ui): One named dataset with ordered c
 CsvTable.name: string
 CsvTable.columns: readonly string[]
 CsvTable.rows: readonly (readonly CsvCell[])[]
-DataApp (component, @altertable/data-app-react): <Data, Input>(props: DataAppProps<Data, Input>) — Executes the primary view and owns its controls, inspection, exports, and stories.
+DataApp (component, @altertable/data-app-react): <Data, Input, const SummaryViews extends readonly AnyView[] = [ ]>(props: DataAppProps<Data, Input, SummaryViews>) — Executes the primary view and its summary views, and owns controls, inspection, exports, and stories.
 DataApp.children: ReactNode
 DataApp.description?: ReactNode — Override the declared subtitle; null hides it.
 DataApp.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states.
@@ -308,10 +308,11 @@ DataApp.footerActions?: ReactNode
 DataApp.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
 DataApp.showSearch?: boolean — Show declared search controls. Defaults to true; hiding preserves their values.
 DataApp.showFilters?: boolean — Show declared filter controls, including display options. Defaults to true; hiding preserves their values.
-DataApp.view: DeclaredView<Data, Input, unknown> & { scope(snapshot: DisplayedSnapshot<Data, Input>): string; }
+DataApp.view: DataAppView<Data, Input>
+DataApp.summaryViews?: SummaryViews — Other views that the story and CSV export read, sharing `view`’s data context. They load with `view` instead of waiting for their sections to near the viewport.
 DataApp.showSearchSuggestions?: boolean — Show supplied datasets’ record suggestions on the first declared search. Defaults to true.
-DataApp.story?: ((snapshot: DisplayedSnapshot<Data, Input>) => readonly (Omit<StoryFinding, 'evidence'> & { evidence: RegisteredBinding; })[]) — Omit to leave presentation out of the toolbar.
-DataApp.datasets?: readonly [ExportDataset<Data, Input>, ...ExportDataset<Data, Input>[]] — Omit to leave CSV export out of the toolbar.
+DataApp.story?: ((snapshot: DisplayedSnapshot<Data, Input>, ...summaries: { [Index in keyof SummaryViews]: SnapshotOf<SummaryViews[Index]>; }) => StoryFindings) — Omit to leave presentation out of the toolbar. Receives `view`’s displayed snapshot, then one per summary view in `summaryViews` order.
+DataApp.datasets?: readonly [ExportDataset<Data, Input> | ExportOf<SummaryViews[number]>, ...(ExportDataset<Data, Input> | ExportOf<...>)[]] — Omit to leave CSV export out of the toolbar. Datasets may belong to `view` or a summary view.
 DataApp.details?: readonly DetailContent<any, any>[] — Detail destinations available to dataset actions and metric record inspection.
 DataApp (component, @altertable/data-app-react/ui): (props: DataAppProps) — Setup and static screens; fetched data uses the declared-view DataApp.
 DataApp.children: ReactNode
@@ -343,7 +344,7 @@ DataAppError (class, @altertable/data-app/client)
 DataAppError.code: string
 DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
-DataAppProps (type, @altertable/data-app-react): <Data, Input> = props listed as DataApp.*
+DataAppProps (type, @altertable/data-app-react): <Data, Input, SummaryViews> = props listed as DataApp.*
 DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode
 DataAppProps.dataContext: DataContext
@@ -367,6 +368,8 @@ DataAppStylesOptions (type, @altertable/data-app-react)
 DataAppStylesOptions.document?: Document — Defaults to the current browser document.
 DataAppStylesOptions.nonce?: string — Nonce permitted by the document's style-src CSP.
 DataAppStyleToken (type, @altertable/data-app-react, @altertable/data-app-react/ui): = '--atbl-accent' | '--atbl-accent-subtle' | '--atbl-annotation-accent' | '--atbl-annotation-accent-hover' | '--atbl-annotation-highlight' | '--atbl-annotation-on-accent' | ... 88 more ... | '--atbl-type-widget-size'
+DataAppView (type, @altertable/data-app-react): <Data, Input> — A declared data or time view that `<DataApp>` can run and describe.
+DataAppView.scope: (snapshot: DisplayedSnapshot<Data, Input>) => string
 DataClient (type, @altertable/data-app/client): <Operations> = props listed as createDataHooks.client.*
 DataClientOptions (type, @altertable/data-app/client): <Operations> = props listed as createDataClient.options.* — Browser operations and named-operation delivery are mutually exclusive.
 DataContext (type, @altertable/data-app-react)
@@ -399,7 +402,7 @@ DataResponse.queriedAt: string
 DataResponse.queryIds: string[]
 DataResponse.queries?: DisclosedQuery[]
 DataResponse.input: Input — The exact browser input that produced this response.
-DataSection (component, @altertable/data-app-react): <Data, Input>(props: DataSectionProps<Data, Input>)
+DataSection (component, @altertable/data-app-react): <Data, Input>(props: DataSectionProps<Data, Input>) — Sections of views that `<DataApp>` runs share its results; every other section requests its own view once it nears the viewport.
 DataSection.content: ViewContent<Data, Input>
 DataSection.emptyFallback?: EmptyContent
 DataSection.error?: { title: ReactNode; description?: ReactNode; onRetry?: (() => void) | undefined; }
@@ -719,7 +722,7 @@ DetailContent (class, @altertable/data-app-react): <Data, Input> — A destinati
 DetailContent.target: DetailView<Data, Input>
 DetailContent.render: (source: ViewSource<Data, Input>) => ReactNode
 DetailView (class, @altertable/data-app-react): <Data, Input> — A typed, query-backed destination.
-DetailView.definition: DetailViewDefinition<Data, Input>
+DetailView.definition: { id: string; title: ReactNode; parseInput: (input: unknown) => Input; describeInput: (input: Input) => string; } & ViewEmptiness<Data> & Required<ViewEmptiness<...>>
 DetailView.useResult: (input: Input) => ViewResult<Data, Input>
 DetailView.content: (render: (source: ViewSource<Data, Input>) => ReactNode) => DetailContent<Data, Input>
 DetailViewDefinition (type, @altertable/data-app-react): <Data, Input>
@@ -727,8 +730,8 @@ DetailViewDefinition.id: string
 DetailViewDefinition.title: ReactNode
 DetailViewDefinition.parseInput: (input: unknown) => Input — Validates untrusted navigation input before a detail operation can run.
 DetailViewDefinition.describeInput: (input: Input) => string
-DetailViewDefinition.isEmpty: (data: Data) => boolean
-DetailViewDefinition.emptyFallback: EmptyContent
+DetailViewDefinition.isEmpty?: ((data: Data) => boolean) — App-owned semantics: measured zero need not mean an empty result. Defaults to never empty.
+DetailViewDefinition.emptyFallback?: EmptyContent — Inherited by DataSection unless it supplies its own copy.
 dimensionFilter (function, @altertable/data-app/contract): <const T extends string>(config: DimensionFilterOptions<T>): DimensionVariable<T>; <const T extends number>(config: DimensionFilterOptions<T>): DimensionVariable<T> — A bounded categorical filter with app-owned fixed options.
 dimensionFilter.config.key: string
 dimensionFilter.config.label: string

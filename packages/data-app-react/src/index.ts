@@ -52,6 +52,7 @@ export type {
   DetailViewDefinition,
   CsvCell,
   DataAppProps,
+  DataAppView,
   StackProps,
   GridProps,
   GridItemProps,

@@ -335,11 +335,6 @@ const view = defineDataView({
   }),
   describeInput: input =>
     input.search ? `Customers matching “${input.search}”` : 'Customer accounts',
-  isEmpty: () => false,
-  emptyFallback: {
-    title: 'No matching customers',
-    description: 'Try a different search or clear filters.',
-  },
 });
 function createCustomers(onSelect?: (row: (typeof records)[number]) => void) {
   return view.dataset({

@@ -89,8 +89,6 @@ const view = createDataHooks(client).defineTimeView({
   operation: 'events',
   time: period,
   dataContext: context,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No events' },
 });
 const metric = view.metric(
   { id: 'events', glossaryId: 'events', format: { kind: 'count' } },
