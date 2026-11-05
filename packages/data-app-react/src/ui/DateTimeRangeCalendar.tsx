@@ -24,6 +24,7 @@ import {
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
+import type { DateRangePickerProps } from './DateRangePicker.tsx';
 import { Select } from './Select.tsx';
 
 /** Calendar days map to UTC fields and a next-midnight exclusive end. */
@@ -32,15 +33,15 @@ export function DateTimeRangeCalendar({
   maxRangeDays,
   contract,
   bounds,
-  isDateUnavailable,
+  isDateAvailable,
   onChange,
   onCompleteChange,
 }: {
   value: DateTimeRange | null;
   maxRangeDays?: number;
   contract?: DateRangeContract;
-  bounds?: { minDate?: string; maxDate?: string; timeZone?: string };
-  isDateUnavailable?: (date: CalendarDate) => boolean;
+  bounds?: Pick<DateRangePickerProps, 'minDate' | 'maxDate' | 'timeZone'>;
+  isDateAvailable?: DateRangePickerProps['isDateAvailable'];
   onCompleteChange: (complete: boolean) => void;
   onChange: (value: DateTimeRange | null) => void;
 }) {
@@ -104,7 +105,7 @@ export function DateTimeRangeCalendar({
       maxValue={maximum}
       minValue={limits?.minDate ? parseDate(limits.minDate) : undefined}
       isDateUnavailable={(date, anchor) =>
-        !!isDateUnavailable?.(toCalendarDate(date)) ||
+        isDateAvailable?.(toCalendarDate(date)) === false ||
         (!!maxRangeDays &&
           !!anchor &&
           Math.abs(

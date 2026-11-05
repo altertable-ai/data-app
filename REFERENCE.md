@@ -530,7 +530,7 @@ DateRangePicker.isRequired?: boolean
 DateRangePicker.className?: string | ((state: DateRangePickerRenderState) => string)
 DateRangePicker.style?: CSSProperties | ((state: DateRangePickerRenderState) => CSSProperties)
 DateRangePicker.validate?: ((range: { start: CalendarDate; end: CalendarDate; }) => string | true | string[] | null | undefined) — Rejects a candidate inclusive range before it is committed.
-DateRangePicker.isDateUnavailable?: ((date: CalendarDate) => boolean) — Unavailable days cannot be selected or included in a committed range.
+DateRangePicker.isDateAvailable?: ((date: CalendarDate) => boolean) — Only available days can be selected or included in a committed range.
 DateRangePicker.label?: string
 DateRangePicker.labelPlacement?: 'above' | 'beside'
 DateRangePicker.value: DateRange | null

@@ -211,8 +211,8 @@ function CalendarControls() {
             ? range => (range.start.day === 10 ? 'Blocked by host' : null)
             : undefined
         }
-        isDateUnavailable={
-          options.has('unavailable') ? date => date.day === 11 : undefined
+        isDateAvailable={
+          options.has('unavailable') ? date => date.day !== 11 : undefined
         }
         value={value}
         onChange={setValue}

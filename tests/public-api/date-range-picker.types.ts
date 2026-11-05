@@ -18,7 +18,7 @@ function verifyControlledDateRange(props: DateRangePickerProps) {
     style: state => ({ opacity: state.isDisabled ? 0.5 : 1 }),
     validate: range =>
       range.start.compare(range.end) > 0 ? 'Invalid order' : null,
-    isDateUnavailable: date => date.day === 11,
+    isDateAvailable: date => date.day !== 11,
   };
   const ariaForm: DateRangePickerProps = {
     ...controlled,

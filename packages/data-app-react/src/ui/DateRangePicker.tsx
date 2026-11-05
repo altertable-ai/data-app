@@ -1,5 +1,5 @@
 import type { DateTimeRange } from '@altertable/data-app/contract';
-import { formatDateRange } from '@altertable/data-app/format';
+import { formatDateRange, pluralize } from '@altertable/data-app/format';
 import {
   availableDatePresets,
   withinBounds,
@@ -41,8 +41,8 @@ export type DateRangePickerProps = {
     start: CalendarDate;
     end: CalendarDate;
   }) => string | string[] | true | null | undefined;
-  /** Unavailable days cannot be selected or included in a committed range. */
-  isDateUnavailable?: (date: CalendarDate) => boolean;
+  /** Only available days can be selected or included in a committed range. */
+  isDateAvailable?: (date: CalendarDate) => boolean;
   label?: string;
   labelPlacement?: Exclude<ControlLabelPlacement, 'inline'>;
   value: DateRange | null;
@@ -115,13 +115,13 @@ export function DateRangePicker({
       return 'Choose whole calendar days, or select a reporting preset.';
     if (!withinBounds(dates, minDate, maxDate, maxRangeDays))
       return maxRangeDays
-        ? `Choose up to ${maxRangeDays} available days.`
+        ? `Choose up to ${maxRangeDays} available ${pluralize(maxRangeDays, 'day')}.`
         : 'Choose dates within the available range.';
     const start = parseDate(dates.start);
     const end = parseDate(dates.end);
-    if (props.isDateUnavailable) {
+    if (props.isDateAvailable) {
       for (let day = start; day.compare(end) <= 0; day = day.add({ days: 1 }))
-        if (props.isDateUnavailable(day))
+        if (!props.isDateAvailable(day))
           return 'Choose a range without unavailable dates.';
     }
     const issue = props.validate?.({ start, end });
@@ -164,7 +164,7 @@ export function DateRangePicker({
         maxDate,
         timeZone,
         validate,
-        isDateUnavailable: props.isDateUnavailable,
+        isDateAvailable: props.isDateAvailable,
         readOnly: props.isReadOnly,
         className,
         style: props.style,

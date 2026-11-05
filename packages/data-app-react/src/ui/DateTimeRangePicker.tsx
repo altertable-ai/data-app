@@ -15,7 +15,7 @@ import {
   type DateFormatOptions,
   parseDateTimeRangeInput,
 } from '@altertable/data-app/format';
-import { parseDate, type CalendarDate } from '@internationalized/date';
+import { parseDate } from '@internationalized/date';
 import {
   useEffect,
   useId,
@@ -25,7 +25,6 @@ import {
   useReducer,
   type ReactNode,
   type InputHTMLAttributes,
-  type CSSProperties,
 } from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
@@ -42,7 +41,7 @@ import {
   dateTimeRangePickerReducer,
   initialPickerState,
 } from './date-time-range-picker-state.ts';
-import type { DateRangePickerRenderState } from './DateRangePicker.tsx';
+import type { DateRangePickerProps } from './DateRangePicker.tsx';
 import { DateTimeRangeCalendar } from './DateTimeRangeCalendar.tsx';
 import { AppIcon } from './icons.ts';
 import { PickerField, type ControlLabelPlacement } from './PickerField.tsx';
@@ -76,37 +75,37 @@ export type DateTimeRangePickerProps = {
 };
 
 /** Internal bridge for inclusive calendar-date APIs. UTC Dates encode day fields only. */
-type CalendarPickerAdapter = {
-  readOnly?: boolean;
-  className?: string | ((state: DateRangePickerRenderState) => string);
-  style?:
-    | CSSProperties
-    | ((state: DateRangePickerRenderState) => CSSProperties);
-  isDateUnavailable?: (date: CalendarDate) => boolean;
-  minDate?: string;
-  maxDate?: string;
-  timeZone?: string;
+type CalendarPickerAdapter = Pick<
+  DateRangePickerProps,
+  'className' | 'style' | 'isDateAvailable' | 'minDate' | 'maxDate' | 'timeZone'
+> & {
+  readOnly?: DateRangePickerProps['isReadOnly'];
   validate: (range: DateTimeRange) => string;
   label: string;
   comparisonLabel?: string;
   inputLabel: string;
   selectedIndex: number;
   onPreset: (index: number) => void;
-  footer?: ReactNode;
+  footer?: DateRangePickerProps['calendarFooter'];
   reset?: ReactNode;
   inputProps?: Pick<
-    InputHTMLAttributes<HTMLInputElement>,
+    DateRangePickerProps,
     | 'id'
     | 'aria-describedby'
     | 'aria-labelledby'
-    | 'aria-invalid'
-    | 'aria-required'
     | 'autoFocus'
     | 'onFocus'
     | 'onBlur'
     | 'onKeyUp'
-  >;
+  > &
+    Pick<
+      InputHTMLAttributes<HTMLInputElement>,
+      'aria-invalid' | 'aria-required'
+    >;
 };
+
+const inclusiveIsoDateRangePattern =
+  /^(\d{4}-\d{2}-\d{2})(?:\s+(?:to|–|-)\s+(\d{4}-\d{2}-\d{2}))?$/i;
 
 const presetInputs = [
   ['15m', 'Past 15 minutes'],
@@ -407,12 +406,7 @@ export function RangePicker({
     );
     // Calendar date endpoints are inclusive, including ISO dates and same-day pairs.
     const isoDates =
-      calendarAdapter &&
-      normalized
-        .trim()
-        .match(
-          /^(\d{4}-\d{2}-\d{2})(?:\s+(?:to|–|-)\s+(\d{4}-\d{2}-\d{2}))?$/i
-        );
+      calendarAdapter && normalized.trim().match(inclusiveIsoDateRangePattern);
     if (isoDates) {
       try {
         commit({
@@ -769,7 +763,7 @@ export function RangePicker({
                 }
                 contract={contract}
                 bounds={calendarAdapter}
-                isDateUnavailable={calendarAdapter?.isDateUnavailable}
+                isDateAvailable={calendarAdapter?.isDateAvailable}
                 onChange={calendar =>
                   dispatch({ type: 'update', value: { calendar } })
                 }

@@ -262,17 +262,6 @@ filter declarations own URL state, validation, and operation meaning.
 | `<DateRangePicker>`                | Explicit or relative periods                                      |
 | `<DimensionPicker>`                | Typed categorical predicates with fixed or facet options          |
 
-`<DateRangePicker>` uses one editable input. Integrate through `value` and
-`onChange`; `startName` and `endName` are no longer supported. Migrate native form
-submission to serialize the controlled range in your submit handler, and replace
-code that targets separate start/end inputs with controlled state updates.
-The picker now exposes explicit props instead of inheriting the React Aria
-component API. Replace styling callbacks that access React Aria's `state` with the
-picker's typed state flags. `validate` and `isDateUnavailable` apply to typed,
-preset, and calendar selections. Read-only controls remain focusable.
-Editable dates use Gregorian years with localized month names, digits, and order;
-display summaries retain the app's locale formatting.
-
 ```tsx
 function FilterChoices() {
   // ... metric, statuses, and their change handlers
