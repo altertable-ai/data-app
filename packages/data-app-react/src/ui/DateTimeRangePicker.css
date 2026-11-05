@@ -214,7 +214,7 @@
   font-variant-numeric: tabular-nums;
 }
 .altertable-datetime-calendar .react-aria-CalendarCell[data-selected] {
-  background: var(--atbl-subtle);
+  background: var(--atbl-accent-subtle, var(--atbl-subtle));
   font-weight: 650;
 }
 .altertable-datetime-calendar .react-aria-CalendarCell[data-selection-start],

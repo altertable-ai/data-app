@@ -162,13 +162,13 @@ test('calendar and dimension controls preserve comparisons, measured zero, and U
         .isVisible()
     )
     .toBe(true);
-  await page.getByRole('button', { name: /^Choose dates/ }).click();
+  await page.getByRole('combobox', { name: 'Date range', exact: true }).click();
   await page
     .getByRole('checkbox', {
       name: 'Compare with previous period',
       exact: true,
     })
-    .check();
+    .click();
   await page.keyboard.press('Escape');
   await expect.poll(() => page.url()).toContain('compare=previous');
   await page.getByRole('button', { name: 'Region: All', exact: true }).click();
@@ -383,7 +383,7 @@ test('a phone reader can select filters, compare periods and inspect results by 
         .textContent()
     )
     .toBe('Measured events: 0');
-  await page.getByRole('button', { name: /^Choose dates/ }).tap();
+  await page.getByRole('combobox', { name: 'Date range', exact: true }).tap();
   await page
     .getByRole('checkbox', {
       name: 'Compare with previous period',
@@ -418,7 +418,7 @@ test('a phone reader can select filters, compare periods and inspect results by 
     )
     .toBe('Measured events: 0');
   expect(page.url()).toBe(selected);
-  await page.getByRole('button', { name: /^Choose dates/ }).tap();
+  await page.getByRole('combobox', { name: 'Date range', exact: true }).tap();
   expect(
     await page
       .getByRole('checkbox', {
@@ -765,4 +765,63 @@ test('public shimmer text exposes one readable copy and respects reduced motion'
     )
     .toBe(0);
   expect(await preview.textContent()).toBe('Preparing results');
+});
+
+test('calendar reporting uses the shared picker without changing inclusive request or preset URLs', async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-04-10T12:00:00Z'));
+  await page.goto('/time-app');
+  const picker = page.getByRole('combobox', {
+    name: 'Date range',
+    exact: true,
+  });
+  await picker.click();
+  await picker.fill('March 8 to March 9 2026');
+  await picker.press('Enter');
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('start'))
+    .toBe('2026-03-08');
+  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-09');
+  await picker.click();
+  await picker.fill('March 8 2026 10:00 to March 8 2026 16:00');
+  await picker.press('Enter');
+  await expect.poll(() => page.getByRole('alert').count()).toBe(1);
+  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-09');
+  await picker.press('Escape');
+  await picker.click();
+  await page
+    .getByRole('option', { name: 'Latest 7 available days', exact: true })
+    .click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('period'))
+    .toBe('last-7');
+  await page.reload();
+  await expect.poll(() => picker.inputValue()).toBe('Latest 7 available days');
+  await page
+    .getByRole('button', { name: 'Reset date range', exact: true })
+    .click();
+  await expect.poll(() => picker.inputValue()).toBe('Mar 4–6, 2026');
+  await picker.click();
+  await page.getByRole('option', { name: 'Select from calendar…' }).click();
+  const calendar = page.getByRole('dialog', { name: 'Date range calendar' });
+  await calendar.getByRole('button', { name: /March 8, 2026/ }).click();
+  expect(
+    await calendar
+      .getByRole('button', { name: 'Apply', exact: true })
+      .isDisabled()
+  ).toBe(true);
+  await calendar.getByRole('button', { name: /March 8, 2026/ }).click();
+  await calendar.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('start'))
+    .toBe('2026-03-08');
+  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-08');
+  await picker.click();
+  await picker.fill('February 1 to March 31 2026');
+  await picker.press('Enter');
+  await expect
+    .poll(() => page.getByRole('alert').textContent())
+    .toContain('31 available days');
+  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-08');
 });

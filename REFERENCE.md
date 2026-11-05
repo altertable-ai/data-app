@@ -522,7 +522,7 @@ DateRangeContract.describeInput: (input: DateRange) => string
 DateRangeContract.view: { period: ({ start, end }: DateRange) => ReportingPeriod; describeInput: (input: DateRange) => string; }
 DateRangeContractOptions (type, @altertable/data-app/contract): = props listed as defineDateRangeContract.options.*
 DateRangeInput (type, @altertable/data-app/contract): = props listed as previousDateRange.options.* — ISO calendar dates; the app operation defines timezone and inclusive bounds.
-DateRangePicker (component, @altertable/data-app-react/ui): (props: DateRangePickerProps) — The app owns URL state; `dateRangeControl` binds a date variable to this picker.
+DateRangePicker (component, @altertable/data-app-react/ui): (props: DateRangePickerProps) — Inclusive calendar-date adapter for the shared range picker. Existing variables retain their URL and preset semantics.
 DateRangePicker.label?: string
 DateRangePicker.labelPlacement?: 'above' | 'beside'
 DateRangePicker.value: DateRange | null

@@ -30,9 +30,9 @@
   font-weight: 400;
 }
 .altertable-field[data-label-placement='above']
-  > :is(button, .altertable-date-range),
+  > :is(button, .altertable-datetime-input),
 .altertable-field[data-label-placement='beside']
-  > :is(button, .altertable-date-range) {
+  > :is(button, .altertable-datetime-input) {
   width: 100%;
   max-width: 100%;
   min-width: 0;

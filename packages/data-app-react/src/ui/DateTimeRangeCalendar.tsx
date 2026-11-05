@@ -26,18 +26,20 @@ export function DateTimeRangeCalendar({
   value,
   maxRangeDays,
   contract,
+  bounds,
   onChange,
   onCompleteChange,
 }: {
   value: DateTimeRange | null;
   maxRangeDays?: number;
   contract?: DateRangeContract;
+  bounds?: { minDate?: string; maxDate?: string };
   onCompleteChange: (complete: boolean) => void;
   onChange: (value: DateTimeRange | null) => void;
 }) {
   const { locale } = useDateFormatting();
-  const limits = contract?.bounds();
-  const currentDay = limits ? parseDate(limits.maxDate) : today('UTC');
+  const limits = bounds ?? contract?.bounds();
+  const currentDay = limits?.maxDate ? parseDate(limits.maxDate) : today('UTC');
   const [selection, setSelection] = useState<RangeValue<CalendarDate> | null>(
     () => {
       if (!value) return null;
