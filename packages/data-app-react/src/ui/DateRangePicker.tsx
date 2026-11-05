@@ -140,6 +140,16 @@ export function DateRangePicker({
           onKeyUp: props.onKeyUp,
         },
         label: value ? formatDateRange(value, formatting) : '',
+        inputLabel: value
+          ? [value.start, value.end]
+              .map(date =>
+                new Intl.DateTimeFormat(formatting.locale, {
+                  dateStyle: 'medium',
+                  timeZone: 'UTC',
+                }).format(parseDate(date).toDate('UTC'))
+              )
+              .join(' – ')
+          : '',
         comparisonLabel: comparison?.range
           ? formatDateRange(comparison.range, formatting)
           : undefined,

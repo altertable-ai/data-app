@@ -825,3 +825,27 @@ test('calendar reporting uses the shared picker without changing inclusive reque
     .toContain('31 available days');
   expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-08');
 });
+
+test('calendar picker opens absolute dates and edits day segments without changing inclusive endpoints', async ({
+  page,
+}) => {
+  await page.goto('/time-app');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  await input.click();
+  expect(await input.inputValue()).toBe('Mar 4, 2026 – Mar 6, 2026');
+  await input.press('ArrowLeft');
+  await input.press('ArrowRight');
+  await input.press('ArrowRight');
+  await input.press('ArrowUp');
+  await input.press('Enter');
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('start'))
+    .toBe('2026-03-05');
+  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-06');
+  await input.click();
+  await input.fill('Mar 4, 2026 – Mar 6, 2026');
+  await input.click();
+  expect(await input.inputValue()).toBe('Mar 4, 2026 – Mar 6, 2026');
+  await input.press('Escape');
+  expect(new URL(page.url()).searchParams.get('start')).toBe('2026-03-05');
+});

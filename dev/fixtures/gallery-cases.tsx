@@ -491,7 +491,10 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         </Case>
       </Section>
       <Section id="dates" title="Dates, periods and freshness">
-        <Case title="Bounded date range and comparison">
+        <Case
+          title="Bounded date range and comparison"
+          note="Historical coverage: September 1–30, 2026. Presets end at the latest available day. Click the field to edit absolute dates; Left/Right select parts, Up/Down adjust them, and Enter applies."
+        >
           <DateRangePicker
             label="Gallery dates"
             value={dates}

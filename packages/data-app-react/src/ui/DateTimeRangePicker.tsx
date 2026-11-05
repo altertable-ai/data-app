@@ -78,6 +78,7 @@ type CalendarPickerAdapter = {
   validate: (range: DateTimeRange) => string;
   label: string;
   comparisonLabel?: string;
+  inputLabel: string;
   selectedIndex: number;
   onPreset: (index: number) => void;
   footer?: ReactNode;
@@ -342,7 +343,7 @@ export function RangePicker({
     dispatch({
       type: 'open',
       draft:
-        calendarAdapter?.label ??
+        calendarAdapter?.inputLabel ??
         resolvedLabel(value, contract, dateFormatting),
       helpSide:
         bounds && bounds.left >= 280
@@ -380,7 +381,11 @@ export function RangePicker({
         return;
       }
     }
-    const normalized = normalizeDateTimeRangeInput(text, dateFormatting.locale);
+    const normalized = normalizeDateTimeRangeInput(
+      text,
+      dateFormatting.locale,
+      !!calendarAdapter
+    );
     const result = parseDateTimeRangeInput(normalized);
     if (result.ok) {
       commit(result.range);
@@ -481,7 +486,7 @@ export function RangePicker({
         data-atbl-focus="group"
         data-atbl-internal-surface="field"
         onClick={() => {
-          if (!disabled) openPresets();
+          if (!disabled && !open) openPresets();
         }}
       >
         <span
@@ -589,6 +594,7 @@ export function RangePicker({
             const args = {
               value: current.value,
               locale: dateFormatting.locale,
+              dateOnly: !!calendarAdapter,
               selectionStart: current.start,
               selectionEnd: current.end,
               direction: (event.key === 'ArrowLeft' || event.key === 'ArrowDown'
