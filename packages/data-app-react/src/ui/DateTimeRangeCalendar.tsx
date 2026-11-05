@@ -4,7 +4,12 @@ import {
   type DateRangeContract,
 } from '@altertable/data-app/contract';
 import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
-import { parseDate, today, type CalendarDate } from '@internationalized/date';
+import {
+  parseDate,
+  today,
+  toCalendarDate,
+  type CalendarDate,
+} from '@internationalized/date';
 import { useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
 import {
   RangeCalendar,
@@ -27,6 +32,7 @@ export function DateTimeRangeCalendar({
   maxRangeDays,
   contract,
   bounds,
+  isDateUnavailable,
   onChange,
   onCompleteChange,
 }: {
@@ -34,6 +40,7 @@ export function DateTimeRangeCalendar({
   maxRangeDays?: number;
   contract?: DateRangeContract;
   bounds?: { minDate?: string; maxDate?: string; timeZone?: string };
+  isDateUnavailable?: (date: CalendarDate) => boolean;
   onCompleteChange: (complete: boolean) => void;
   onChange: (value: DateTimeRange | null) => void;
 }) {
@@ -97,12 +104,13 @@ export function DateTimeRangeCalendar({
       maxValue={maximum}
       minValue={limits?.minDate ? parseDate(limits.minDate) : undefined}
       isDateUnavailable={(date, anchor) =>
-        !!maxRangeDays &&
-        !!anchor &&
-        Math.abs(
-          date.toDate('UTC').getTime() - anchor.toDate('UTC').getTime()
-        ) >=
-          maxRangeDays * fixedUnitMilliseconds.DAY
+        !!isDateUnavailable?.(toCalendarDate(date)) ||
+        (!!maxRangeDays &&
+          !!anchor &&
+          Math.abs(
+            date.toDate('UTC').getTime() - anchor.toDate('UTC').getTime()
+          ) >=
+            maxRangeDays * fixedUnitMilliseconds.DAY)
       }
       onChange={range => {
         setSelection(range);

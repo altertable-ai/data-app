@@ -15,7 +15,7 @@ import {
   type DateFormatOptions,
   parseDateTimeRangeInput,
 } from '@altertable/data-app/format';
-import { parseDate } from '@internationalized/date';
+import { parseDate, type CalendarDate } from '@internationalized/date';
 import {
   useEffect,
   useId,
@@ -25,12 +25,14 @@ import {
   useReducer,
   type ReactNode,
   type InputHTMLAttributes,
+  type CSSProperties,
 } from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import {
+  formatDateTimeRangeInputDate,
   editDateTimeRangeInputSegment,
   normalizeDateTimeRangeInput,
   getDateTimeRangeInputSegmentSelection,
@@ -40,6 +42,7 @@ import {
   dateTimeRangePickerReducer,
   initialPickerState,
 } from './date-time-range-picker-state.ts';
+import type { DateRangePickerRenderState } from './DateRangePicker.tsx';
 import { DateTimeRangeCalendar } from './DateTimeRangeCalendar.tsx';
 import { AppIcon } from './icons.ts';
 import { PickerField, type ControlLabelPlacement } from './PickerField.tsx';
@@ -74,6 +77,12 @@ export type DateTimeRangePickerProps = {
 
 /** Internal bridge for inclusive calendar-date APIs. UTC Dates encode day fields only. */
 type CalendarPickerAdapter = {
+  readOnly?: boolean;
+  className?: string | ((state: DateRangePickerRenderState) => string);
+  style?:
+    | CSSProperties
+    | ((state: DateRangePickerRenderState) => CSSProperties);
+  isDateUnavailable?: (date: CalendarDate) => boolean;
   minDate?: string;
   maxDate?: string;
   timeZone?: string;
@@ -144,7 +153,7 @@ function resolvedLabel(
       ? contract.datetime.resolve(value)
       : resolveDateTimeRange(value);
     return from
-      ? `${formatDateTime(from, { ...options, timeZone: 'UTC' })} – ${formatDateTime(to, { ...options, timeZone: 'UTC' })}`
+      ? `${formatDateTimeRangeInputDate(from, options.locale ?? 'en-US')} – ${formatDateTimeRangeInputDate(to, options.locale ?? 'en-US')}`
       : '';
   } catch {
     // A UTC-only preview may be inverted even when valid in the reporting zone.
@@ -282,6 +291,12 @@ export function RangePicker({
   }, [open, mode]);
 
   useEffect(() => () => clearTimeout(helpTimer.current), []);
+  useEffect(() => {
+    if (calendarAdapter?.readOnly) {
+      pending.current = null;
+      dispatch({ type: 'close' });
+    }
+  }, [calendarAdapter?.readOnly]);
   function rangeError(range: DateTimeRange) {
     try {
       if (calendarAdapter) return calendarAdapter.validate(range);
@@ -340,6 +355,7 @@ export function RangePicker({
     setSelectionRevision(revision => revision + 1);
   }
   function openPresets() {
+    if (calendarAdapter?.readOnly) return;
     pending.current = null;
     const bounds = trigger.current?.getBoundingClientRect();
     dispatch({
@@ -362,6 +378,7 @@ export function RangePicker({
     if (focus) input.current?.focus();
   }
   function commit(range: DateTimeRange, isLive = false) {
+    if (calendarAdapter?.readOnly) return;
     const issue = rangeError(range);
     if (issue) {
       dispatch({ type: 'error', error: issue });
@@ -429,6 +446,7 @@ export function RangePicker({
     dispatch({ type: 'error', error: "Couldn't parse that date range." });
   }
   function choose(index: number) {
+    if (calendarAdapter?.readOnly) return;
     if (index === comparisonIndex && comparison?.range) {
       comparison.onChange(!comparison.enabled);
       close(true);
@@ -498,13 +516,30 @@ export function RangePicker({
       input.current?.select();
     }
   }
+  const renderState = {
+    isOpen: open,
+    isDisabled: !!disabled,
+    isReadOnly: !!calendarAdapter?.readOnly,
+    isInvalid: !!error || !!calendarAdapter?.inputProps?.['aria-invalid'],
+  };
   return (
     <PickerField label={label} labelPlacement={labelPlacement}>
       {/* The input owns keyboard activation; the surrounding padding shares its click target. */}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         ref={trigger}
-        className={classNames('altertable-datetime-input', className)}
+        className={classNames(
+          'altertable-datetime-input',
+          className,
+          typeof calendarAdapter?.className === 'function'
+            ? calendarAdapter.className(renderState)
+            : calendarAdapter?.className
+        )}
+        style={
+          typeof calendarAdapter?.style === 'function'
+            ? calendarAdapter.style(renderState)
+            : calendarAdapter?.style
+        }
         data-disabled={disabled || undefined}
         data-atbl-focus="group"
         data-atbl-internal-surface="field"
@@ -550,7 +585,8 @@ export function RangePicker({
               : calendarAdapter?.inputProps?.['aria-describedby']
           }
           disabled={disabled}
-          readOnly={!open}
+          readOnly={!open || calendarAdapter?.readOnly}
+          aria-readonly={calendarAdapter?.readOnly || undefined}
           placeholder={placeholder}
           value={
             open
@@ -568,6 +604,9 @@ export function RangePicker({
             dispatch({ type: 'edit', draft: event.target.value });
           }}
           onKeyDown={event => {
+            if (calendarAdapter?.readOnly) return;
+            if (!event.key.startsWith('Arrow') && event.key !== 'Enter')
+              pending.current = null;
             if (
               event.key.startsWith('Arrow') &&
               (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
@@ -730,6 +769,7 @@ export function RangePicker({
                 }
                 contract={contract}
                 bounds={calendarAdapter}
+                isDateUnavailable={calendarAdapter?.isDateUnavailable}
                 onChange={calendar =>
                   dispatch({ type: 'update', value: { calendar } })
                 }
@@ -737,6 +777,11 @@ export function RangePicker({
                   dispatch({ type: 'update', value: { complete } })
                 }
               />
+              {complete && calendar && rangeError(calendar) && (
+                <p role="alert" className="altertable-datetime-error">
+                  {rangeError(calendar)}
+                </p>
+              )}
               {calendarAdapter?.footer}
               <footer className="altertable-datetime-actions">
                 <Button onClick={back}>‹ Presets</Button>
@@ -899,6 +944,9 @@ export function RangePicker({
                 }}
                 onFocus={() => highlightOption(comparisonIndex)}
                 onKeyDown={event => {
+                  if (calendarAdapter?.readOnly) return;
+                  if (!event.key.startsWith('Arrow') && event.key !== 'Enter')
+                    pending.current = null;
                   if (
                     ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)
                   ) {

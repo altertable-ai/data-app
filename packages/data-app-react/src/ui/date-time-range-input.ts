@@ -145,6 +145,7 @@ function getDateTimeRangeEndpoints(
   locale: string,
   dateOnly: boolean
 ): DateTimeRangeEndpoint[] {
+  locale = new Intl.Locale(locale, { calendar: 'gregory' }).toString();
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     ...(dateOnly ? {} : { timeStyle: 'short' as const }),
@@ -272,12 +273,22 @@ function formatEndpoint(
   locale: string,
   dateOnly: boolean
 ): string {
+  return formatDateTimeRangeInputDate(endpointDate(endpoint), locale, dateOnly);
+}
+
+/** Editable endpoints use Gregorian years while retaining locale order, month names, and digits. */
+export function formatDateTimeRangeInputDate(
+  date: Date,
+  locale: string,
+  dateOnly = false
+): string {
+  locale = new Intl.Locale(locale, { calendar: 'gregory' }).toString();
   if (dateOnly)
     return new Intl.DateTimeFormat(locale, {
       dateStyle: 'medium',
       timeZone: 'UTC',
-    }).format(endpointDate(endpoint));
-  return formatDateTime(endpointDate(endpoint), { locale, timeZone: 'UTC' });
+    }).format(date);
+  return formatDateTime(date, { locale, timeZone: 'UTC' });
 }
 
 function getEndpointDaysInMonth(year: number, month: number): number {

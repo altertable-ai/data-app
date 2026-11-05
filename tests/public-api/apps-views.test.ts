@@ -901,3 +901,26 @@ test('pointer repositioning clears the prior keyboard segment without losing the
     .toBe('2026-03-05');
   expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-05');
 });
+
+test('native caret navigation clears pending calendar segments', async ({
+  page,
+}) => {
+  await page.goto('/time-app');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  await input.click();
+  await input.press('ArrowLeft');
+  await input.press('ArrowRight');
+  await input.press('ArrowRight');
+  await input.press('End');
+  await input.press('ArrowUp');
+  expect(await input.inputValue()).toBe('Mar 4, 2026 – Mar 6, 2026');
+  await input.press('End');
+  await input.press('ArrowLeft');
+  await input.press('ArrowLeft');
+  await input.press('ArrowDown');
+  await input.press('Enter');
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('start'))
+    .toBe('2026-03-04');
+  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-05');
+});

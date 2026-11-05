@@ -7,10 +7,10 @@ import {
   type DateRange,
 } from '@altertable/data-app/internal';
 import { parseDate, type CalendarDate } from '@internationalized/date';
-import type { ComponentProps, ReactNode } from 'react';
-import type { DateRangePicker as AriaDateRangePicker } from 'react-aria-components';
+import type { CSSProperties, InputHTMLAttributes, ReactNode } from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
+import { formatDateTimeRangeInputDate } from './date-time-range-input.ts';
 import { RangePicker } from './DateTimeRangePicker.tsx';
 import { AppIcon } from './icons.ts';
 import type { ControlLabelPlacement } from './PickerField.tsx';
@@ -19,7 +19,30 @@ export {
   type DateRange,
 } from '@altertable/data-app/internal';
 
+/** State exposed to calendar picker styling callbacks. */
+export type DateRangePickerRenderState = {
+  isOpen: boolean;
+  isDisabled: boolean;
+  isReadOnly: boolean;
+  isInvalid: boolean;
+};
+
 export type DateRangePickerProps = {
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isInvalid?: boolean;
+  isRequired?: boolean;
+  className?: string | ((state: DateRangePickerRenderState) => string);
+  style?:
+    | CSSProperties
+    | ((state: DateRangePickerRenderState) => CSSProperties);
+  /** Rejects a candidate inclusive range before it is committed. */
+  validate?: (range: {
+    start: CalendarDate;
+    end: CalendarDate;
+  }) => string | string[] | true | null | undefined;
+  /** Unavailable days cannot be selected or included in a committed range. */
+  isDateUnavailable?: (date: CalendarDate) => boolean;
   label?: string;
   labelPlacement?: Exclude<ControlLabelPlacement, 'inline'>;
   value: DateRange | null;
@@ -40,19 +63,16 @@ export type DateRangePickerProps = {
     range: DateRange | null;
     onChange: (enabled: boolean) => void;
   };
-} & Omit<
-  ComponentProps<typeof AriaDateRangePicker<CalendarDate>>,
-  | 'children'
-  | 'startName'
-  | 'endName'
-  | 'value'
-  | 'onChange'
-  | 'minValue'
-  | 'maxValue'
-  | 'isOpen'
-  | 'onOpenChange'
-  | 'defaultValue'
-  | 'defaultOpen'
+} & Pick<
+  InputHTMLAttributes<HTMLInputElement>,
+  | 'id'
+  | 'aria-label'
+  | 'aria-labelledby'
+  | 'aria-describedby'
+  | 'autoFocus'
+  | 'onFocus'
+  | 'onBlur'
+  | 'onKeyUp'
 >;
 
 /** Inclusive calendar-date adapter for the shared range picker. Existing variables retain their URL and preset semantics.
@@ -83,7 +103,7 @@ export function DateRangePicker({
     maxDate,
     maxRangeDays,
     timeZone,
-  });
+  }).filter(preset => !validate(calendarInterval(preset.range)));
   const selectedIndex = presets.findIndex(preset =>
     selectedPresetId === undefined
       ? value?.start === preset.range.start && value?.end === preset.range.end
@@ -93,11 +113,23 @@ export function DateRangePicker({
     const dates = calendarDates(range);
     if (!dates)
       return 'Choose whole calendar days, or select a reporting preset.';
-    return withinBounds(dates, minDate, maxDate, maxRangeDays)
-      ? ''
-      : maxRangeDays
+    if (!withinBounds(dates, minDate, maxDate, maxRangeDays))
+      return maxRangeDays
         ? `Choose up to ${maxRangeDays} available days.`
         : 'Choose dates within the available range.';
+    const start = parseDate(dates.start);
+    const end = parseDate(dates.end);
+    if (props.isDateUnavailable) {
+      for (let day = start; day.compare(end) <= 0; day = day.add({ days: 1 }))
+        if (props.isDateUnavailable(day))
+          return 'Choose a range without unavailable dates.';
+    }
+    const issue = props.validate?.({ start, end });
+    return Array.isArray(issue)
+      ? issue.join(' ')
+      : typeof issue === 'string'
+        ? issue
+        : '';
   }
   return (
     <RangePicker
@@ -108,8 +140,7 @@ export function DateRangePicker({
         const dates = calendarDates(range);
         if (dates) onChange(dates);
       }}
-      disabled={props.isDisabled || props.isReadOnly}
-      className={typeof className === 'string' ? className : undefined}
+      disabled={props.isDisabled}
       maxRangeDays={maxRangeDays}
       presets={presets.map(preset => ({
         label: preset.label,
@@ -133,6 +164,10 @@ export function DateRangePicker({
         maxDate,
         timeZone,
         validate,
+        isDateUnavailable: props.isDateUnavailable,
+        readOnly: props.isReadOnly,
+        className,
+        style: props.style,
         inputProps: {
           id: props.id,
           'aria-describedby': props['aria-describedby'],
@@ -148,10 +183,11 @@ export function DateRangePicker({
         inputLabel: value
           ? [value.start, value.end]
               .map(date =>
-                new Intl.DateTimeFormat(formatting.locale, {
-                  dateStyle: 'medium',
-                  timeZone: 'UTC',
-                }).format(parseDate(date).toDate('UTC'))
+                formatDateTimeRangeInputDate(
+                  parseDate(date).toDate('UTC'),
+                  formatting.locale,
+                  true
+                )
               )
               .join(' – ')
           : '',

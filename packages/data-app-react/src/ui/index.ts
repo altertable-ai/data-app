@@ -42,6 +42,7 @@ export type {
   DatePresetId,
   DateRange,
   DateRangePickerProps,
+  DateRangePickerRenderState,
 } from './DateRangePicker.tsx';
 export { useAppVariables } from './variables.ts';
 export { SearchField } from './SearchField.tsx';

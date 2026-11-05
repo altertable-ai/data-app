@@ -25,6 +25,9 @@ import { useState } from 'react';
 const app = defineDataApp({
   title: 'Datetime exploration',
   description: 'Explore a datetime range.',
+  dateFormatting: {
+    locale: new URLSearchParams(location.search).get('locale') ?? 'en-US',
+  },
   scope: { organization: 'test', environment: 'test' },
   queries: {
     events: {
@@ -183,6 +186,8 @@ function ReportingZone() {
 }
 
 function CalendarControls() {
+  const options = new URLSearchParams(location.search);
+  const [readOnly, setReadOnly] = useState(options.has('readOnly'));
   const [value, setValue] = useState<DateRange | null>({
     start: '2027-03-04',
     end: '2027-03-06',
@@ -191,6 +196,24 @@ function CalendarControls() {
     <main>
       <DateRangePicker
         label="Calendar period"
+        isReadOnly={readOnly}
+        isDisabled={options.has('disabled')}
+        className={state =>
+          state.isReadOnly
+            ? 'readonly-calendar'
+            : state.isOpen
+              ? 'open-calendar'
+              : 'editable-calendar'
+        }
+        style={state => ({ width: state.isOpen ? 420 : 360 })}
+        validate={
+          options.has('validate')
+            ? range => (range.start.day === 10 ? 'Blocked by host' : null)
+            : undefined
+        }
+        isDateUnavailable={
+          options.has('unavailable') ? date => date.day === 11 : undefined
+        }
         value={value}
         onChange={setValue}
         maxDate={
@@ -199,6 +222,9 @@ function CalendarControls() {
             : undefined
         }
       />
+      <Button onClick={() => setReadOnly(value => !value)}>
+        Toggle read only
+      </Button>
       <output aria-label="Calendar selection">{JSON.stringify(value)}</output>
     </main>
   );
