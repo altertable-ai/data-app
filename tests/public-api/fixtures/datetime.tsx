@@ -13,6 +13,7 @@ import {
   injectDataAppStyles,
   useDateFormatting,
 } from '@altertable/data-app-react';
+import { DateRangePicker, type DateRange } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   type DateTimeRange,
@@ -115,6 +116,8 @@ const content = view.content(source => (
   </TextWidget>
 ));
 function App() {
+  if (new URLSearchParams(location.search).has('calendarControls'))
+    return <CalendarControls />;
   if (new URLSearchParams(location.search).has('controls'))
     return <PickerControls />;
   return (
@@ -177,4 +180,26 @@ function PickerControls() {
 function ReportingZone() {
   const { timeZone } = useDateFormatting();
   return <output aria-label="Reporting timezone">{timeZone}</output>;
+}
+
+function CalendarControls() {
+  const [value, setValue] = useState<DateRange | null>({
+    start: '2027-03-04',
+    end: '2027-03-06',
+  });
+  return (
+    <main>
+      <DateRangePicker
+        label="Calendar period"
+        value={value}
+        onChange={setValue}
+        maxDate={
+          new URLSearchParams(location.search).has('bounded')
+            ? '2027-03-31'
+            : undefined
+        }
+      />
+      <output aria-label="Calendar selection">{JSON.stringify(value)}</output>
+    </main>
+  );
 }

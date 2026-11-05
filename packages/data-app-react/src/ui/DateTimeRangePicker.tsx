@@ -15,6 +15,7 @@ import {
   type DateFormatOptions,
   parseDateTimeRangeInput,
 } from '@altertable/data-app/format';
+import { parseDate } from '@internationalized/date';
 import {
   useEffect,
   useId,
@@ -75,6 +76,7 @@ export type DateTimeRangePickerProps = {
 type CalendarPickerAdapter = {
   minDate?: string;
   maxDate?: string;
+  timeZone?: string;
   validate: (range: DateTimeRange) => string;
   label: string;
   comparisonLabel?: string;
@@ -386,6 +388,27 @@ export function RangePicker({
       dateFormatting.locale,
       !!calendarAdapter
     );
+    // Calendar date endpoints are inclusive, including ISO dates and same-day pairs.
+    const isoDates =
+      calendarAdapter &&
+      normalized
+        .trim()
+        .match(
+          /^(\d{4}-\d{2}-\d{2})(?:\s+(?:to|–|-)\s+(\d{4}-\d{2}-\d{2}))?$/i
+        );
+    if (isoDates) {
+      try {
+        commit({
+          from: parseDate(isoDates[1]!).toDate('UTC'),
+          to: parseDate(isoDates[2] ?? isoDates[1]!)
+            .add({ days: 1 })
+            .toDate('UTC'),
+        });
+      } catch {
+        dispatch({ type: 'error', error: 'Choose valid calendar dates.' });
+      }
+      return;
+    }
     const result = parseDateTimeRangeInput(normalized);
     if (result.ok) {
       commit(result.range);
@@ -501,6 +524,9 @@ export function RangePicker({
         <input
           {...calendarAdapter?.inputProps}
           ref={input}
+          onPointerDown={() => {
+            pending.current = null;
+          }}
           role="combobox"
           aria-label={label}
           aria-expanded={open}

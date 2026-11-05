@@ -849,3 +849,55 @@ test('calendar picker opens absolute dates and edits day segments without changi
   await input.press('Escape');
   expect(new URL(page.url()).searchParams.get('start')).toBe('2026-03-05');
 });
+
+test('calendar ISO inputs preserve inclusive end days and reject invalid dates', async ({
+  page,
+}) => {
+  await page.goto('/time-app');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  for (const [text, end] of [
+    ['2026-03-08 to 2026-03-09', '2026-03-09'],
+    ['2026-03-08 – 2026-03-08', '2026-03-08'],
+    ['2026-03-08', '2026-03-08'],
+    ['March 8 to March 9 2026', '2026-03-09'],
+  ]) {
+    await input.click();
+    await input.fill(text!);
+    await input.press('Enter');
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get('start'))
+      .toBe('2026-03-08');
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get('end'))
+      .toBe(end);
+  }
+  await input.click();
+  await input.fill('2026-02-30 to 2026-03-09');
+  await input.press('Enter');
+  await expect
+    .poll(() => page.getByRole('alert').textContent())
+    .toContain('valid calendar dates');
+  expect(new URL(page.url()).searchParams.get('start')).toBe('2026-03-08');
+});
+
+test('pointer repositioning clears the prior keyboard segment without losing the draft', async ({
+  page,
+}) => {
+  await page.goto('/time-app');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  await input.click();
+  await input.press('ArrowLeft');
+  await input.press('ArrowRight');
+  await input.press('ArrowRight');
+  await input.press('ArrowUp');
+  await input.click();
+  await input.press('End');
+  await input.press('ArrowLeft');
+  await input.press('ArrowLeft');
+  await input.press('ArrowDown');
+  await input.press('Enter');
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('start'))
+    .toBe('2026-03-05');
+  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-05');
+});

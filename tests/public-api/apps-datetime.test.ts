@@ -421,3 +421,40 @@ test('shared reporting policy governs generated datetime presets, calendar, text
   await page.reload();
   await expect.poll(() => input.inputValue()).toBe('Yesterday');
 });
+
+test('calendar adapters preserve future selections without an explicit maximum', async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-07-10T12:00:00Z'));
+  await page.goto('/datetime?calendarControls');
+  const input = page.getByRole('combobox', {
+    name: 'Calendar period',
+    exact: true,
+  });
+  await input.click();
+  await page.getByRole('option', { name: 'Select from calendar…' }).click();
+  const calendar = page.getByRole('dialog', {
+    name: 'Calendar period calendar',
+  });
+  await calendar.getByRole('button', { name: 'Apply', exact: true }).click();
+  expect(
+    await page.getByRole('status', { name: 'Calendar selection' }).textContent()
+  ).toContain('2027-03-06');
+  await input.click();
+  await page.getByRole('option', { name: 'Select from calendar…' }).click();
+  await calendar.getByRole('button', { name: 'Next month' }).click();
+  await calendar.getByRole('button', { name: /April 1, 2027/ }).click();
+  await calendar.getByRole('button', { name: /April 2, 2027/ }).click();
+  await calendar.getByRole('button', { name: 'Apply', exact: true }).click();
+  await expect
+    .poll(() =>
+      page.getByRole('status', { name: 'Calendar selection' }).textContent()
+    )
+    .toBe('{"start":"2027-04-01","end":"2027-04-02"}');
+  await page.goto('/datetime?calendarControls&bounded');
+  await input.click();
+  await page.getByRole('option', { name: 'Select from calendar…' }).click();
+  expect(
+    await calendar.getByRole('button', { name: 'Next month' }).isDisabled()
+  ).toBe(true);
+});

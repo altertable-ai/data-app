@@ -127,6 +127,7 @@ export function DateRangePicker({
       calendarAdapter={{
         minDate,
         maxDate,
+        timeZone,
         validate,
         inputProps: {
           id: props.id,
