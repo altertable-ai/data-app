@@ -262,6 +262,11 @@ filter declarations own URL state, validation, and operation meaning.
 | `<DateRangePicker>`                | Explicit or relative periods                                      |
 | `<DimensionPicker>`                | Typed categorical predicates with fixed or facet options          |
 
+`<DateRangePicker>` uses one editable input. Integrate through `value` and
+`onChange`; `startName` and `endName` are no longer supported. Migrate native form
+submission to serialize the controlled range in your submit handler, and replace
+code that targets separate start/end inputs with controlled state updates.
+
 ```tsx
 function FilterChoices() {
   // ... metric, statuses, and their change handlers

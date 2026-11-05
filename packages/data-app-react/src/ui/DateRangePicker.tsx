@@ -43,6 +43,8 @@ export type DateRangePickerProps = {
 } & Omit<
   ComponentProps<typeof AriaDateRangePicker<CalendarDate>>,
   | 'children'
+  | 'startName'
+  | 'endName'
   | 'value'
   | 'onChange'
   | 'minValue'
@@ -53,7 +55,9 @@ export type DateRangePickerProps = {
   | 'defaultOpen'
 >;
 
-/** Inclusive calendar-date adapter for the shared range picker. Existing variables retain their URL and preset semantics. */
+/** Inclusive calendar-date adapter for the shared range picker. Existing variables retain their URL and preset semantics.
+ * One editable input exposes the range through value/onChange; separate named start/end form fields are not supported.
+ */
 export function DateRangePicker({
   label = 'Date range',
   labelPlacement,
