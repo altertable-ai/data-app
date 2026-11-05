@@ -140,6 +140,10 @@ choices; empty means no choices, unlike an unrestricted dimension.
 
 ## Reporting periods
 
+Choose calendar contracts for inclusive reporting days and datetime variables for
+rolling windows or times within a day. Both use the same picker; keep calendar
+contracts when your operations accept inclusive `start` and `end` dates.
+
 Use `defineTimeView()` when the analysis is period-driven. Obtain it from the
 existing hooks factory and share a `defineDateRangeContract()` with the parser.
 After adapting the operation to accept `{ period, groupName }`, the view can stay

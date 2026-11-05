@@ -1,49 +1,48 @@
+import type { DateTimeRange } from '@altertable/data-app/contract';
 import { formatDateRange, pluralize } from '@altertable/data-app/format';
-import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
 import {
   availableDatePresets,
-  inclusiveDays,
   withinBounds,
-  type DatePreset,
   type DatePresetId,
   type DateRange,
 } from '@altertable/data-app/internal';
 import { parseDate, type CalendarDate } from '@internationalized/date';
-import { useState, type ComponentProps, type ReactNode } from 'react';
-import {
-  Button,
-  CalendarCell,
-  CalendarGrid,
-  CalendarGridBody,
-  CalendarGridHeader,
-  CalendarHeaderCell,
-  CalendarMonthPicker,
-  CalendarYearPicker,
-  DateInput,
-  DateRangePicker as AriaDateRangePicker,
-  DateSegment,
-  Dialog,
-  Group,
-  ListBox,
-  ListBoxItem,
-  RangeCalendar,
-  Select,
-  SelectValue,
-  type RangeValue,
-} from 'react-aria-components';
+import type { CSSProperties, InputHTMLAttributes, ReactNode } from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
-import { Checkbox } from './Checkbox.tsx';
-import { classNames } from './classNames.ts';
+import { formatDateTimeRangeInputDate } from './date-time-range-input.ts';
+import { RangePicker } from './DateTimeRangePicker.tsx';
 import { AppIcon } from './icons.ts';
-import { PickerField, type ControlLabelPlacement } from './PickerField.tsx';
-import { PopoverSurface } from './PopoverSurface.tsx';
+import type { ControlLabelPlacement } from './PickerField.tsx';
 export {
   type DatePresetId,
   type DateRange,
 } from '@altertable/data-app/internal';
 
+/** State exposed to calendar picker styling callbacks. */
+export type DateRangePickerRenderState = {
+  isOpen: boolean;
+  isDisabled: boolean;
+  isReadOnly: boolean;
+  isInvalid: boolean;
+};
+
 export type DateRangePickerProps = {
+  isDisabled?: boolean;
+  isReadOnly?: boolean;
+  isInvalid?: boolean;
+  isRequired?: boolean;
+  className?: string | ((state: DateRangePickerRenderState) => string);
+  style?:
+    | CSSProperties
+    | ((state: DateRangePickerRenderState) => CSSProperties);
+  /** Rejects a candidate inclusive range before it is committed. */
+  validate?: (range: {
+    start: CalendarDate;
+    end: CalendarDate;
+  }) => string | string[] | true | null | undefined;
+  /** Only available days can be selected or included in a committed range. */
+  isDateAvailable?: (date: CalendarDate) => boolean;
   label?: string;
   labelPlacement?: Exclude<ControlLabelPlacement, 'inline'>;
   value: DateRange | null;
@@ -64,20 +63,21 @@ export type DateRangePickerProps = {
     range: DateRange | null;
     onChange: (enabled: boolean) => void;
   };
-} & Omit<
-  ComponentProps<typeof AriaDateRangePicker<CalendarDate>>,
-  | 'children'
-  | 'value'
-  | 'onChange'
-  | 'minValue'
-  | 'maxValue'
-  | 'isOpen'
-  | 'onOpenChange'
-  | 'defaultValue'
-  | 'defaultOpen'
+} & Pick<
+  InputHTMLAttributes<HTMLInputElement>,
+  | 'id'
+  | 'aria-label'
+  | 'aria-labelledby'
+  | 'aria-describedby'
+  | 'autoFocus'
+  | 'onFocus'
+  | 'onBlur'
+  | 'onKeyUp'
 >;
 
-/** The app owns URL state; `dateRangeControl` binds a date variable to this picker. */
+/** Inclusive calendar-date adapter for the shared range picker. Existing variables retain their URL and preset semantics.
+ * One editable input exposes the range through value/onChange; separate named start/end form fields are not supported.
+ */
 export function DateRangePicker({
   label = 'Date range',
   labelPlacement,
@@ -97,329 +97,159 @@ export function DateRangePicker({
   className,
   ...props
 }: DateRangePickerProps) {
-  const dateFormatting = useDateFormatting();
-  const [error, setError] = useState('');
-  const [open, setOpen] = useState(false);
-  const selected: RangeValue<CalendarDate> | null = value
-    ? { start: parseDate(value.start), end: parseDate(value.end) }
-    : null;
+  const formatting = useDateFormatting();
   const presets = availableDatePresets({
     minDate,
     maxDate,
     maxRangeDays,
     timeZone,
-  });
-  const selectedDays = value ? inclusiveDays(value) : 0;
-
-  function choosePreset(preset: DatePreset) {
-    setError('');
-    if (onPresetChange) onPresetChange(preset.id);
-    else onChange(preset.range);
-    setOpen(false);
-  }
-
-  return (
-    <PickerField label={label} labelPlacement={labelPlacement}>
-      <AriaDateRangePicker
-        {...props}
-        isOpen={open}
-        onOpenChange={next => {
-          setOpen(next);
-          if (next) setError('');
-        }}
-        aria-label={`${props['aria-label'] ?? label}${comparison?.enabled ? ', compared with previous period' : ''}`}
-        className={values =>
-          classNames(
-            'altertable-date-range',
-            typeof className === 'function' ? className(values) : className
-          )
-        }
-        value={selected}
-        onChange={range => {
-          const next = range
-            ? { start: range.start.toString(), end: range.end.toString() }
-            : null;
-          if (next && !withinBounds(next, minDate, maxDate, maxRangeDays)) {
-            setError(
-              maxRangeDays
-                ? `Choose up to ${maxRangeDays} available days.`
-                : 'Choose dates within the available range.'
-            );
-
-            return;
-          }
-          setError('');
-          onChange(next);
-        }}
-        minValue={minDate ? parseDate(minDate) : undefined}
-        maxValue={maxDate ? parseDate(maxDate) : undefined}
-      >
-        <Group
-          data-invalid={error || props.isInvalid ? true : undefined}
-          data-disabled={props.isDisabled || undefined}
-          data-atbl-internal-surface="field"
-          data-atbl-focus="group"
-        >
-          <Button
-            data-atbl-internal-surface="control"
-            data-atbl-focus="ring"
-            data-atbl-control="action"
-            aria-label="Choose dates"
-          >
-            <AppIcon name="calendar" size={16} />
-          </Button>
-          <DateInput slot="start">
-            {segment => (
-              <DateSegment
-                data-atbl-focus="inset"
-                data-atbl-internal-focus-state="focused"
-                data-atbl-control="text"
-                segment={segment}
-              />
-            )}
-          </DateInput>
-          <span aria-hidden="true">–</span>
-          <DateInput slot="end">
-            {segment => (
-              <DateSegment
-                data-atbl-focus="inset"
-                data-atbl-internal-focus-state="focused"
-                data-atbl-control="text"
-                segment={segment}
-              />
-            )}
-          </DateInput>
-          {(onReset || resetValue) &&
-            value &&
-            !(
-              isDefault ??
-              (resetValue &&
-                value.start === resetValue.start &&
-                value.end === resetValue.end)
-            ) && (
-              <button
-                data-atbl-focus="ring"
-                data-atbl-control="action"
-                type="button"
-                className="altertable-date-range-reset"
-                aria-label="Reset date range"
-                onClick={() =>
-                  onReset ? onReset() : onChange(resetValue ?? null)
-                }
-              >
-                <AppIcon name="reset" size={14} />
-              </button>
-            )}
-        </Group>
-        {comparison?.enabled && (
-          <span className="altertable-date-range-comparison" aria-hidden="true">
-            vs prior
-          </span>
-        )}
-        {error && (
-          <span className="altertable-date-range-error" role="alert">
-            {error}
-          </span>
-        )}
-        <PopoverSurface className="altertable-date-range-popover">
-          <Dialog>
-            <div className="altertable-date-range-content">
-              {presets.length > 0 && (
-                <fieldset className="altertable-date-range-presets">
-                  <legend className="altertable-date-range-heading">
-                    Quick ranges
-                  </legend>
-                  <div className="altertable-date-range-preset-list">
-                    {presets.map(preset => (
-                      <Button
-                        data-atbl-internal-surface="option"
-                        data-atbl-focus="inset"
-                        data-atbl-control="action"
-                        key={preset.id}
-                        className="altertable-date-range-preset"
-                        aria-current={
-                          (
-                            selectedPresetId === undefined
-                              ? value?.start === preset.range.start &&
-                                value?.end === preset.range.end
-                              : selectedPresetId === preset.id
-                          )
-                            ? 'true'
-                            : undefined
-                        }
-                        onPress={() => choosePreset(preset)}
-                      >
-                        {preset.label}
-                      </Button>
-                    ))}
-                  </div>
-                </fieldset>
-              )}
-              <div className="altertable-date-range-custom">
-                <span className="altertable-date-range-heading">
-                  Custom range
-                </span>
-                <RangeCalendar
-                  isDateUnavailable={(date, anchorDate) =>
-                    !!maxRangeDays &&
-                    !!anchorDate &&
-                    Math.abs(
-                      date.toDate('UTC').getTime() -
-                        anchorDate.toDate('UTC').getTime()
-                    ) >=
-                      maxRangeDays * fixedUnitMilliseconds.DAY
-                  }
-                >
-                  <header>
-                    <Button
-                      data-atbl-internal-surface="control"
-                      data-atbl-focus="ring"
-                      data-atbl-control="action"
-                      slot="previous"
-                      aria-label="Previous month"
-                    >
-                      <AppIcon name="previousMonth" size={16} />
-                    </Button>
-                    <CalendarMonthPicker format="short">
-                      {picker => (
-                        <Select
-                          aria-label={picker['aria-label']}
-                          selectedKey={String(picker.value)}
-                          onSelectionChange={key =>
-                            picker.onChange(Number(key))
-                          }
-                          className="altertable-calendar-select"
-                        >
-                          <Button
-                            data-atbl-internal-surface="control"
-                            data-atbl-focus="ring"
-                            data-atbl-control="action"
-                          >
-                            <SelectValue />
-                            <AppIcon name="disclosure" size={14} />
-                          </Button>
-                          <PopoverSurface
-                            className="altertable-calendar-select-popover"
-                            placement="bottom start"
-                          >
-                            <ListBox items={picker.items}>
-                              {month => (
-                                <ListBoxItem
-                                  data-atbl-internal-surface="option"
-                                  data-atbl-focus="inset"
-                                  data-atbl-control="action"
-                                  id={String(month.id)}
-                                  textValue={month.formatted}
-                                >
-                                  {month.formatted}
-                                </ListBoxItem>
-                              )}
-                            </ListBox>
-                          </PopoverSurface>
-                        </Select>
-                      )}
-                    </CalendarMonthPicker>
-                    <CalendarYearPicker>
-                      {picker => (
-                        <Select
-                          aria-label={picker['aria-label']}
-                          selectedKey={String(picker.value)}
-                          onSelectionChange={key =>
-                            picker.onChange(Number(key))
-                          }
-                          className="altertable-calendar-select"
-                        >
-                          <Button
-                            data-atbl-internal-surface="control"
-                            data-atbl-focus="ring"
-                            data-atbl-control="action"
-                          >
-                            <SelectValue />
-                            <AppIcon name="disclosure" size={14} />
-                          </Button>
-                          <PopoverSurface
-                            className="altertable-calendar-select-popover"
-                            placement="bottom start"
-                          >
-                            <ListBox items={picker.items}>
-                              {year => (
-                                <ListBoxItem
-                                  data-atbl-internal-surface="option"
-                                  data-atbl-focus="inset"
-                                  data-atbl-control="action"
-                                  id={String(year.id)}
-                                  textValue={year.formatted}
-                                >
-                                  {year.formatted}
-                                </ListBoxItem>
-                              )}
-                            </ListBox>
-                          </PopoverSurface>
-                        </Select>
-                      )}
-                    </CalendarYearPicker>
-                    <Button
-                      data-atbl-internal-surface="control"
-                      data-atbl-focus="ring"
-                      data-atbl-control="action"
-                      slot="next"
-                      aria-label="Next month"
-                    >
-                      <AppIcon name="nextMonth" size={16} />
-                    </Button>
-                  </header>
-                  <CalendarGrid>
-                    <CalendarGridHeader>
-                      {day => <CalendarHeaderCell>{day}</CalendarHeaderCell>}
-                    </CalendarGridHeader>
-                    <CalendarGridBody>
-                      {date => (
-                        <CalendarCell
-                          data-atbl-focus="inset"
-                          data-atbl-control="action"
-                          date={date}
-                        />
-                      )}
-                    </CalendarGridBody>
-                  </CalendarGrid>
-                </RangeCalendar>
-                <div className="altertable-date-range-footer">
-                  <div>
-                    <span className="altertable-date-range-footer-label">
-                      Selected dates
-                    </span>
-                    <strong>
-                      {value
-                        ? formatDateRange(value, dateFormatting)
-                        : 'Select a start and end date'}
-                    </strong>
-                  </div>
-                  {value && (
-                    <span className="altertable-date-range-footer-meta">
-                      {selectedDays} {pluralize(selectedDays, 'day')}
-                      {timeZone ? ` · ${timeZone}` : ''}
-                    </span>
-                  )}
-                </div>
-                {comparison && (
-                  <Checkbox
-                    className="altertable-date-range-compare"
-                    label="Compare with previous period"
-                    checked={comparison.enabled}
-                    disabled={!comparison.range}
-                    onChange={comparison.onChange}
-                    description={
-                      comparison.range &&
-                      formatDateRange(comparison.range, dateFormatting)
-                    }
-                  />
-                )}
-              </div>
-            </div>
-            {calendarFooter}
-          </Dialog>
-        </PopoverSurface>
-      </AriaDateRangePicker>
-    </PickerField>
+  }).filter(preset => !validate(calendarInterval(preset.range)));
+  const selectedIndex = presets.findIndex(preset =>
+    selectedPresetId === undefined
+      ? value?.start === preset.range.start && value?.end === preset.range.end
+      : selectedPresetId === preset.id
   );
+  function validate(range: DateTimeRange) {
+    const dates = calendarDates(range);
+    if (!dates)
+      return 'Choose whole calendar days, or select a reporting preset.';
+    if (!withinBounds(dates, minDate, maxDate, maxRangeDays))
+      return maxRangeDays
+        ? `Choose up to ${maxRangeDays} available ${pluralize(maxRangeDays, 'day')}.`
+        : 'Choose dates within the available range.';
+    const start = parseDate(dates.start);
+    const end = parseDate(dates.end);
+    if (props.isDateAvailable) {
+      for (let day = start; day.compare(end) <= 0; day = day.add({ days: 1 }))
+        if (!props.isDateAvailable(day))
+          return 'Choose a range without unavailable dates.';
+    }
+    const issue = props.validate?.({ start, end });
+    return Array.isArray(issue)
+      ? issue.join(' ')
+      : typeof issue === 'string'
+        ? issue
+        : '';
+  }
+  return (
+    <RangePicker
+      label={props['aria-label'] ?? label}
+      labelPlacement={labelPlacement}
+      value={value ? calendarInterval(value) : null}
+      onChange={range => {
+        const dates = calendarDates(range);
+        if (dates) onChange(dates);
+      }}
+      disabled={props.isDisabled}
+      maxRangeDays={maxRangeDays}
+      presets={presets.map(preset => ({
+        label: preset.label,
+        shortcut: preset.id.startsWith('last-')
+          ? `${preset.id.slice(5)}d`
+          : undefined,
+        range: calendarInterval(preset.range),
+      }))}
+      comparison={
+        comparison
+          ? {
+              ...comparison,
+              range: comparison.range
+                ? calendarInterval(comparison.range)
+                : null,
+            }
+          : undefined
+      }
+      calendarAdapter={{
+        minDate,
+        maxDate,
+        timeZone,
+        validate,
+        isDateAvailable: props.isDateAvailable,
+        readOnly: props.isReadOnly,
+        className,
+        style: props.style,
+        inputProps: {
+          id: props.id,
+          'aria-describedby': props['aria-describedby'],
+          'aria-labelledby': props['aria-labelledby'],
+          'aria-invalid': props.isInvalid,
+          'aria-required': props.isRequired,
+          autoFocus: props.autoFocus,
+          onFocus: props.onFocus,
+          onBlur: props.onBlur,
+          onKeyUp: props.onKeyUp,
+        },
+        label: value ? formatDateRange(value, formatting) : '',
+        inputLabel: value
+          ? [value.start, value.end]
+              .map(date =>
+                formatDateTimeRangeInputDate(
+                  parseDate(date).toDate('UTC'),
+                  formatting.locale,
+                  true
+                )
+              )
+              .join(' – ')
+          : '',
+        comparisonLabel: comparison?.range
+          ? formatDateRange(comparison.range, formatting)
+          : undefined,
+        selectedIndex,
+        onPreset(index) {
+          const preset = presets[index]!;
+          if (onPresetChange) onPresetChange(preset.id);
+          else onChange(preset.range);
+        },
+        footer: calendarFooter,
+        reset:
+          (onReset || resetValue) &&
+          value &&
+          !(
+            isDefault ??
+            (resetValue &&
+              value.start === resetValue.start &&
+              value.end === resetValue.end)
+          ) ? (
+            <button
+              type="button"
+              disabled={props.isDisabled || props.isReadOnly}
+              data-atbl-focus="ring"
+              data-atbl-control="action"
+              aria-label="Reset date range"
+              onClick={event => {
+                event.stopPropagation();
+                if (onReset) onReset();
+                else onChange(resetValue ?? null);
+              }}
+            >
+              <AppIcon name="reset" size={14} />
+            </button>
+          ) : undefined,
+      }}
+    />
+  );
+}
+
+function calendarInterval(range: DateRange): DateTimeRange {
+  return {
+    from: parseDate(range.start).toDate('UTC'),
+    to: parseDate(range.end).add({ days: 1 }).toDate('UTC'),
+  };
+}
+
+function calendarDates(range: DateTimeRange): DateRange | null {
+  if (
+    !(range.from instanceof Date) ||
+    !(range.to instanceof Date) ||
+    !Number.isFinite(range.from.getTime()) ||
+    !Number.isFinite(range.to.getTime()) ||
+    range.from.getTime() >= range.to.getTime() ||
+    range.from.toISOString().slice(11) !== '00:00:00.000Z' ||
+    range.to.toISOString().slice(11) !== '00:00:00.000Z'
+  )
+    return null;
+  return {
+    start: range.from.toISOString().slice(0, 10),
+    end: new Date(range.to.getTime() - 1).toISOString().slice(0, 10),
+  };
 }

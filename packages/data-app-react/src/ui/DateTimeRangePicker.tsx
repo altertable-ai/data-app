@@ -15,6 +15,7 @@ import {
   type DateFormatOptions,
   parseDateTimeRangeInput,
 } from '@altertable/data-app/format';
+import { parseDate } from '@internationalized/date';
 import {
   useEffect,
   useId,
@@ -22,12 +23,15 @@ import {
   useRef,
   useState,
   useReducer,
+  type ReactNode,
+  type InputHTMLAttributes,
 } from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import {
+  formatDateTimeRangeInputDate,
   editDateTimeRangeInputSegment,
   normalizeDateTimeRangeInput,
   getDateTimeRangeInputSegmentSelection,
@@ -37,6 +41,7 @@ import {
   dateTimeRangePickerReducer,
   initialPickerState,
 } from './date-time-range-picker-state.ts';
+import type { DateRangePickerProps } from './DateRangePicker.tsx';
 import { DateTimeRangeCalendar } from './DateTimeRangeCalendar.tsx';
 import { AppIcon } from './icons.ts';
 import { PickerField, type ControlLabelPlacement } from './PickerField.tsx';
@@ -68,6 +73,39 @@ export type DateTimeRangePickerProps = {
     onChange: (enabled: boolean) => void;
   };
 };
+
+/** Internal bridge for inclusive calendar-date APIs. UTC Dates encode day fields only. */
+type CalendarPickerAdapter = Pick<
+  DateRangePickerProps,
+  'className' | 'style' | 'isDateAvailable' | 'minDate' | 'maxDate' | 'timeZone'
+> & {
+  readOnly?: DateRangePickerProps['isReadOnly'];
+  validate: (range: DateTimeRange) => string;
+  label: string;
+  comparisonLabel?: string;
+  inputLabel: string;
+  selectedIndex: number;
+  onPreset: (index: number) => void;
+  footer?: DateRangePickerProps['calendarFooter'];
+  reset?: ReactNode;
+  inputProps?: Pick<
+    DateRangePickerProps,
+    | 'id'
+    | 'aria-describedby'
+    | 'aria-labelledby'
+    | 'autoFocus'
+    | 'onFocus'
+    | 'onBlur'
+    | 'onKeyUp'
+  > &
+    Pick<
+      InputHTMLAttributes<HTMLInputElement>,
+      'aria-invalid' | 'aria-required'
+    >;
+};
+
+const inclusiveIsoDateRangePattern =
+  /^(\d{4}-\d{2}-\d{2})(?:\s+(?:to|–|-)\s+(\d{4}-\d{2}-\d{2}))?$/i;
 
 const presetInputs = [
   ['15m', 'Past 15 minutes'],
@@ -114,7 +152,7 @@ function resolvedLabel(
       ? contract.datetime.resolve(value)
       : resolveDateTimeRange(value);
     return from
-      ? `${formatDateTime(from, { ...options, timeZone: 'UTC' })} – ${formatDateTime(to, { ...options, timeZone: 'UTC' })}`
+      ? `${formatDateTimeRangeInputDate(from, options.locale ?? 'en-US')} – ${formatDateTimeRangeInputDate(to, options.locale ?? 'en-US')}`
       : '';
   } catch {
     // A UTC-only preview may be inverted even when valid in the reporting zone.
@@ -174,7 +212,11 @@ function summaryLabel(value: DateTimeRange | null, options: DateFormatOptions) {
  * Unmodified arrows navigate presets or edit date segments. Escape returns from the
  * calendar to presets or closes the picker. Calendar days end at exclusive next UTC midnight.
  */
-export function DateTimeRangePicker({
+export function DateTimeRangePicker(props: DateTimeRangePickerProps) {
+  return <RangePicker {...props} />;
+}
+
+export function RangePicker({
   value,
   onChange,
   liveOption,
@@ -187,7 +229,8 @@ export function DateTimeRangePicker({
   contract,
   presets: configuredPresets,
   disabled,
-}: DateTimeRangePickerProps) {
+  calendarAdapter,
+}: DateTimeRangePickerProps & { calendarAdapter?: CalendarPickerAdapter }) {
   const id = useId();
   const dateFormatting = useDateFormatting();
   const trigger = useRef<HTMLDivElement>(null);
@@ -247,8 +290,15 @@ export function DateTimeRangePicker({
   }, [open, mode]);
 
   useEffect(() => () => clearTimeout(helpTimer.current), []);
+  useEffect(() => {
+    if (calendarAdapter?.readOnly) {
+      pending.current = null;
+      dispatch({ type: 'close' });
+    }
+  }, [calendarAdapter?.readOnly]);
   function rangeError(range: DateTimeRange) {
     try {
+      if (calendarAdapter) return calendarAdapter.validate(range);
       parseDateTimeRange(range, { maxRangeDays });
       contract?.datetime.parse(range);
       return '';
@@ -292,21 +342,26 @@ export function DateTimeRangePicker({
     serializeDateTimeRange(value) ===
       serializeDateTimeRange(liveOption.dateTimeRange)
   );
-  const selected = presets.find(
-    preset =>
-      value &&
-      preset.live === live &&
-      serializeDateTimeRange(preset.range) === serializeDateTimeRange(value)
-  );
+  const selected = calendarAdapter
+    ? presets[calendarAdapter.selectedIndex]
+    : presets.find(
+        preset =>
+          value &&
+          preset.live === live &&
+          serializeDateTimeRange(preset.range) === serializeDateTimeRange(value)
+      );
   function selectInput() {
     setSelectionRevision(revision => revision + 1);
   }
   function openPresets() {
+    if (calendarAdapter?.readOnly) return;
     pending.current = null;
     const bounds = trigger.current?.getBoundingClientRect();
     dispatch({
       type: 'open',
-      draft: resolvedLabel(value, contract, dateFormatting),
+      draft:
+        calendarAdapter?.inputLabel ??
+        resolvedLabel(value, contract, dateFormatting),
       helpSide:
         bounds && bounds.left >= 280
           ? 'left'
@@ -322,6 +377,7 @@ export function DateTimeRangePicker({
     if (focus) input.current?.focus();
   }
   function commit(range: DateTimeRange, isLive = false) {
+    if (calendarAdapter?.readOnly) return;
     const issue = rangeError(range);
     if (issue) {
       dispatch({ type: 'error', error: issue });
@@ -331,7 +387,39 @@ export function DateTimeRangePicker({
     close(true);
   }
   function submit(text: string) {
-    const normalized = normalizeDateTimeRangeInput(text, dateFormatting.locale);
+    if (calendarAdapter) {
+      const index = presets.findIndex(
+        preset =>
+          preset.label.toLowerCase() === text.trim().toLowerCase() ||
+          preset.shortcut?.toLowerCase() === text.trim().toLowerCase()
+      );
+      if (index >= 0) {
+        calendarAdapter.onPreset(index);
+        close(true);
+        return;
+      }
+    }
+    const normalized = normalizeDateTimeRangeInput(
+      text,
+      dateFormatting.locale,
+      !!calendarAdapter
+    );
+    // Calendar date endpoints are inclusive, including ISO dates and same-day pairs.
+    const isoDates =
+      calendarAdapter && normalized.trim().match(inclusiveIsoDateRangePattern);
+    if (isoDates) {
+      try {
+        commit({
+          from: parseDate(isoDates[1]!).toDate('UTC'),
+          to: parseDate(isoDates[2] ?? isoDates[1]!)
+            .add({ days: 1 })
+            .toDate('UTC'),
+        });
+      } catch {
+        dispatch({ type: 'error', error: 'Choose valid calendar dates.' });
+      }
+      return;
+    }
     const result = parseDateTimeRangeInput(normalized);
     if (result.ok) {
       commit(result.range);
@@ -352,6 +440,7 @@ export function DateTimeRangePicker({
     dispatch({ type: 'error', error: "Couldn't parse that date range." });
   }
   function choose(index: number) {
+    if (calendarAdapter?.readOnly) return;
     if (index === comparisonIndex && comparison?.range) {
       comparison.onChange(!comparison.enabled);
       close(true);
@@ -359,7 +448,10 @@ export function DateTimeRangePicker({
     }
     const preset = presets[index];
     if (preset) {
-      commit(preset.range, preset.live);
+      if (calendarAdapter) {
+        calendarAdapter.onPreset(index);
+        close(true);
+      } else commit(preset.range, preset.live);
       return;
     }
     if (index === calendarIndex) {
@@ -418,18 +510,35 @@ export function DateTimeRangePicker({
       input.current?.select();
     }
   }
+  const renderState = {
+    isOpen: open,
+    isDisabled: !!disabled,
+    isReadOnly: !!calendarAdapter?.readOnly,
+    isInvalid: !!error || !!calendarAdapter?.inputProps?.['aria-invalid'],
+  };
   return (
     <PickerField label={label} labelPlacement={labelPlacement}>
       {/* The input owns keyboard activation; the surrounding padding shares its click target. */}
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div
         ref={trigger}
-        className={classNames('altertable-datetime-input', className)}
+        className={classNames(
+          'altertable-datetime-input',
+          className,
+          typeof calendarAdapter?.className === 'function'
+            ? calendarAdapter.className(renderState)
+            : calendarAdapter?.className
+        )}
+        style={
+          typeof calendarAdapter?.style === 'function'
+            ? calendarAdapter.style(renderState)
+            : calendarAdapter?.style
+        }
         data-disabled={disabled || undefined}
         data-atbl-focus="group"
         data-atbl-internal-surface="field"
         onClick={() => {
-          if (!disabled) openPresets();
+          if (!disabled && !open) openPresets();
         }}
       >
         <span
@@ -442,7 +551,11 @@ export function DateTimeRangePicker({
           <span>{selected?.shortcut ?? '–'}</span>
         </span>
         <input
+          {...calendarAdapter?.inputProps}
           ref={input}
+          onPointerDown={() => {
+            pending.current = null;
+          }}
           role="combobox"
           aria-label={label}
           aria-expanded={open}
@@ -457,24 +570,37 @@ export function DateTimeRangePicker({
               ? `${id}-option-${highlight}`
               : undefined
           }
-          aria-invalid={!!error}
-          aria-describedby={error ? `${id}-error` : undefined}
+          aria-invalid={
+            !!error || calendarAdapter?.inputProps?.['aria-invalid']
+          }
+          aria-describedby={
+            error
+              ? `${id}-error`
+              : calendarAdapter?.inputProps?.['aria-describedby']
+          }
           disabled={disabled}
-          readOnly={!open}
+          readOnly={!open || calendarAdapter?.readOnly}
+          aria-readonly={calendarAdapter?.readOnly || undefined}
           placeholder={placeholder}
           value={
             open
               ? draft
               : live
                 ? 'Live'
-                : `${selected?.label ?? summaryLabel(value, dateFormatting)}${comparison?.enabled ? ' · vs previous' : ''}`
+                : `${selected?.label ?? calendarAdapter?.label ?? summaryLabel(value, dateFormatting)}${comparison?.enabled ? ' · vs previous' : ''}`
           }
-          onFocus={() => dispatch({ type: 'update', value: { error: '' } })}
+          onFocus={event => {
+            dispatch({ type: 'update', value: { error: '' } });
+            calendarAdapter?.inputProps?.onFocus?.(event);
+          }}
           onChange={event => {
             pending.current = null;
             dispatch({ type: 'edit', draft: event.target.value });
           }}
           onKeyDown={event => {
+            if (calendarAdapter?.readOnly) return;
+            if (!event.key.startsWith('Arrow') && event.key !== 'Enter')
+              pending.current = null;
             if (
               event.key.startsWith('Arrow') &&
               (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
@@ -527,6 +653,7 @@ export function DateTimeRangePicker({
             const args = {
               value: current.value,
               locale: dateFormatting.locale,
+              dateOnly: !!calendarAdapter,
               selectionStart: current.start,
               selectionEnd: current.end,
               direction: (event.key === 'ArrowLeft' || event.key === 'ArrowDown'
@@ -581,6 +708,7 @@ export function DateTimeRangePicker({
             }
           }}
         />
+        {calendarAdapter?.reset}
         <AppIcon name="disclosure" size={14} />
       </div>
       <PopoverSurface
@@ -634,6 +762,8 @@ export function DateTimeRangePicker({
                     : maxRangeDays
                 }
                 contract={contract}
+                bounds={calendarAdapter}
+                isDateAvailable={calendarAdapter?.isDateAvailable}
                 onChange={calendar =>
                   dispatch({ type: 'update', value: { calendar } })
                 }
@@ -641,6 +771,12 @@ export function DateTimeRangePicker({
                   dispatch({ type: 'update', value: { complete } })
                 }
               />
+              {complete && calendar && rangeError(calendar) && (
+                <p role="alert" className="altertable-datetime-error">
+                  {rangeError(calendar)}
+                </p>
+              )}
+              {calendarAdapter?.footer}
               <footer className="altertable-datetime-actions">
                 <Button onClick={back}>‹ Presets</Button>
                 <Button
@@ -802,6 +938,9 @@ export function DateTimeRangePicker({
                 }}
                 onFocus={() => highlightOption(comparisonIndex)}
                 onKeyDown={event => {
+                  if (calendarAdapter?.readOnly) return;
+                  if (!event.key.startsWith('Arrow') && event.key !== 'Enter')
+                    pending.current = null;
                   if (
                     ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)
                   ) {
@@ -835,7 +974,8 @@ export function DateTimeRangePicker({
                   Compare with previous period
                   <small id={`${id}-comparison-description`}>
                     {comparison.range
-                      ? dateTimeRangeLabel(comparison.range, dateFormatting)
+                      ? (calendarAdapter?.comparisonLabel ??
+                        dateTimeRangeLabel(comparison.range, dateFormatting))
                       : 'Outside available source coverage'}
                   </small>
                 </span>

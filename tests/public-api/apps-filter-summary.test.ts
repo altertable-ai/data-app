@@ -37,7 +37,7 @@ test('toolbar editors and floating summaries disclose the same active scope with
   ).toBe(0);
   expect(
     await toolbar
-      .getByRole('button', { name: 'Choose dates Date range', exact: true })
+      .getByRole('combobox', { name: 'Date range', exact: true })
       .count()
   ).toBe(1);
   expect(

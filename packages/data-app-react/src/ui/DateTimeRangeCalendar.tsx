@@ -4,7 +4,12 @@ import {
   type DateRangeContract,
 } from '@altertable/data-app/contract';
 import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
-import { parseDate, today, type CalendarDate } from '@internationalized/date';
+import {
+  parseDate,
+  today,
+  toCalendarDate,
+  type CalendarDate,
+} from '@internationalized/date';
 import { useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
 import {
   RangeCalendar,
@@ -19,6 +24,7 @@ import {
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
+import type { DateRangePickerProps } from './DateRangePicker.tsx';
 import { Select } from './Select.tsx';
 
 /** Calendar days map to UTC fields and a next-midnight exclusive end. */
@@ -26,18 +32,28 @@ export function DateTimeRangeCalendar({
   value,
   maxRangeDays,
   contract,
+  bounds,
+  isDateAvailable,
   onChange,
   onCompleteChange,
 }: {
   value: DateTimeRange | null;
   maxRangeDays?: number;
   contract?: DateRangeContract;
+  bounds?: Pick<DateRangePickerProps, 'minDate' | 'maxDate' | 'timeZone'>;
+  isDateAvailable?: DateRangePickerProps['isDateAvailable'];
   onCompleteChange: (complete: boolean) => void;
   onChange: (value: DateTimeRange | null) => void;
 }) {
   const { locale } = useDateFormatting();
-  const limits = contract?.bounds();
-  const currentDay = limits ? parseDate(limits.maxDate) : today('UTC');
+  const limits = bounds ?? contract?.bounds();
+  const currentDay = today(limits?.timeZone ?? 'UTC');
+  // Calendar adapters retain optional bounds; standalone datetime controls retain their existing ceiling.
+  const maximum = limits?.maxDate
+    ? parseDate(limits.maxDate)
+    : bounds
+      ? undefined
+      : currentDay;
   const [selection, setSelection] = useState<RangeValue<CalendarDate> | null>(
     () => {
       if (!value) return null;
@@ -47,7 +63,8 @@ export function DateTimeRangeCalendar({
           : resolveDateTimeRange(value);
         if (
           !resolved.from ||
-          resolved.from.toISOString().slice(0, 10) > currentDay.toString()
+          (maximum &&
+            resolved.from.toISOString().slice(0, 10) > maximum.toString())
         )
           return null;
         return {
@@ -61,7 +78,13 @@ export function DateTimeRangeCalendar({
       }
     }
   );
-  const [focused, setFocused] = useState(selection?.start ?? currentDay);
+  const [focused, setFocused] = useState(
+    selection?.start ?? maximum ?? currentDay
+  );
+  const lastYear =
+    maximum?.year ??
+    Math.min(9999, Math.max(currentDay.year, focused.year) + 100);
+  const firstYear = Math.max(1, Math.min(currentDay.year - 100, focused.year));
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     // Opening the calendar is an explicit action; focus its selected day, not its header.
@@ -79,15 +102,16 @@ export function DateTimeRangeCalendar({
       value={selection}
       focusedValue={focused}
       onFocusChange={setFocused}
-      maxValue={currentDay}
+      maxValue={maximum}
       minValue={limits?.minDate ? parseDate(limits.minDate) : undefined}
       isDateUnavailable={(date, anchor) =>
-        !!maxRangeDays &&
-        !!anchor &&
-        Math.abs(
-          date.toDate('UTC').getTime() - anchor.toDate('UTC').getTime()
-        ) >=
-          maxRangeDays * fixedUnitMilliseconds.DAY
+        isDateAvailable?.(toCalendarDate(date)) === false ||
+        (!!maxRangeDays &&
+          !!anchor &&
+          Math.abs(
+            date.toDate('UTC').getTime() - anchor.toDate('UTC').getTime()
+          ) >=
+            maxRangeDays * fixedUnitMilliseconds.DAY)
       }
       onChange={range => {
         setSelection(range);
@@ -127,13 +151,10 @@ export function DateTimeRangeCalendar({
           value={String(focused.year)}
           options={Array.from(
             {
-              length:
-                currentDay.year -
-                Math.min(currentDay.year - 100, focused.year) +
-                1,
+              length: lastYear - firstYear + 1,
             },
             (_, index) => {
-              const year = currentDay.year - index;
+              const year = lastYear - index;
               return { id: String(year), label: String(year) };
             }
           )}
@@ -143,7 +164,8 @@ export function DateTimeRangeCalendar({
           size="icon-compact"
           aria-label="Next month"
           disabled={
-            focused.year >= currentDay.year && focused.month >= currentDay.month
+            !!maximum &&
+            focused.set({ day: 1 }).compare(maximum.set({ day: 1 })) >= 0
           }
           onClick={() => setFocused(focused.add({ months: 1 }))}
         >

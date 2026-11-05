@@ -522,7 +522,15 @@ DateRangeContract.describeInput: (input: DateRange) => string
 DateRangeContract.view: { period: ({ start, end }: DateRange) => ReportingPeriod; describeInput: (input: DateRange) => string; }
 DateRangeContractOptions (type, @altertable/data-app/contract): = props listed as defineDateRangeContract.options.*
 DateRangeInput (type, @altertable/data-app/contract): = props listed as previousDateRange.options.* — ISO calendar dates; the app operation defines timezone and inclusive bounds.
-DateRangePicker (component, @altertable/data-app-react/ui): (props: DateRangePickerProps) — The app owns URL state; `dateRangeControl` binds a date variable to this picker.
+DateRangePicker (component, @altertable/data-app-react/ui): (props: DateRangePickerProps) — Inclusive calendar-date adapter for the shared range picker. Existing variables retain their URL and preset semantics.
+DateRangePicker.isDisabled?: boolean
+DateRangePicker.isReadOnly?: boolean
+DateRangePicker.isInvalid?: boolean
+DateRangePicker.isRequired?: boolean
+DateRangePicker.className?: string | ((state: DateRangePickerRenderState) => string)
+DateRangePicker.style?: CSSProperties | ((state: DateRangePickerRenderState) => CSSProperties)
+DateRangePicker.validate?: ((range: { start: CalendarDate; end: CalendarDate; }) => string | true | string[] | null | undefined) — Rejects a candidate inclusive range before it is committed.
+DateRangePicker.isDateAvailable?: ((date: CalendarDate) => boolean) — Only available days can be selected or included in a committed range.
 DateRangePicker.label?: string
 DateRangePicker.labelPlacement?: 'above' | 'beside'
 DateRangePicker.value: DateRange | null
@@ -538,8 +546,13 @@ DateRangePicker.onPresetChange?: ((id: DatePresetId) => void)
 DateRangePicker.selectedPresetId?: DatePresetId | null
 DateRangePicker.calendarFooter?: ReactNode
 DateRangePicker.comparison?: { enabled: boolean; range: DateRange | null; onChange: (enabled: boolean) => void; }
-DateRangePicker.…: plus props inherited from @react-types/shared, React, react-aria-components, react-stately
+DateRangePicker.…: plus props inherited from React
 DateRangePickerProps (type, @altertable/data-app-react/ui): = props listed as DateRangePicker.*
+DateRangePickerRenderState (type, @altertable/data-app-react/ui): State exposed to calendar picker styling callbacks.
+DateRangePickerRenderState.isOpen: boolean
+DateRangePickerRenderState.isDisabled: boolean
+DateRangePickerRenderState.isReadOnly: boolean
+DateRangePickerRenderState.isInvalid: boolean
 DateRangeRequest (type, @altertable/data-app/contract)
 DateRangeRequest.range: DateRange
 DateRangeRequest.comparison: DateRange | null
