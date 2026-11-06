@@ -5,18 +5,21 @@ import {
   mountDataApp,
 } from '@altertable/data-app-react';
 import {
+  choiceVariable,
   createDataHooks,
   DataApp,
   DataSection,
-  VisualizationWidget,
-  DataValue,
-  TableWidget,
-  Ranking,
+  MetricWidget,
   Stack,
-  TextContent,
+  TableWidget,
+  VisualizationWidget,
 } from '@altertable/data-app-react';
+import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
-import { parseCount } from '@altertable/data-app/contract';
+import {
+  defineDateRangeContract,
+  parseCount,
+} from '@altertable/data-app/contract';
 const dataApp = defineDataApp({
   title: 'Sample finding',
   description:
@@ -24,151 +27,242 @@ const dataApp = defineDataApp({
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {
-    sampleCountsByGroup: {
+    samples: {
       projections: {
-        group_name: { type: 'string' },
+        period_start: { type: 'string' },
+        member: { type: 'string' },
+        selected: { type: 'boolean' },
         sample_count: { type: 'number' },
       },
       statement: `
-SELECT group_name, SUM(sample_count) AS sample_count
-FROM starter_demo.sample_counts
-WHERE $groupName = '' OR group_name = $groupName
-GROUP BY group_name ORDER BY sample_count DESC LIMIT $limit`,
+SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
+  CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS member,
+  sample_date >= CAST($selected_start AS DATE) AS selected,
+  SUM(sample_count) AS sample_count
+FROM starter_demo.daily_samples
+WHERE sample_date BETWEEN CAST($start AS DATE) AND CAST($end AS DATE)
+GROUP BY ALL ORDER BY period_start, member LIMIT $limit`,
       params: {
-        groupName: { type: 'string', defaultValue: '' },
-        limit: { type: 'number', defaultValue: 10 },
+        start: { type: 'string', defaultValue: '2026-03-09' },
+        end: { type: 'string', defaultValue: '2026-03-15' },
+        selected_start: { type: 'string', defaultValue: '2026-03-09' },
+        grain: { type: 'string', defaultValue: 'day' },
+        breakdown: { type: 'string', defaultValue: 'segment' },
+        limit: { type: 'number', defaultValue: 500 },
       },
     },
   },
 });
+const calendar = defineDateRangeContract({
+  minDate: '2026-01-05',
+  maxDate: '2026-03-29',
+  maxRangeDays: 28,
+  timeZone: 'UTC',
+});
+const findingPeriod = { start: '2026-03-09', end: '2026-03-15' };
 const operations = {
-  sampleCountsByGroup: dataApp.defineOperation({
-    input: () => ({}),
-    checks: [{}],
-    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
-    async run({ query }) {
-      const result = await query('sampleCountsByGroup', {});
+  samples: dataApp.defineOperation({
+    input: value => {
+      const { period, grain, breakdown } = (value ?? {}) as Record<
+        string,
+        unknown
+      >;
+      if (grain !== 'day' && grain !== 'week')
+        throw new Error('Expected a day or week grain.');
+      if (breakdown !== 'segment' && breakdown !== 'group')
+        throw new Error('Expected a segment or group breakdown.');
+      return { period: calendar.parseRequest(period), grain, breakdown };
+    },
+    checks: [
+      {
+        period: calendar.request(findingPeriod, true),
+        grain: 'day',
+        breakdown: 'segment',
+      },
+      {
+        period: calendar.request(findingPeriod),
+        grain: 'week',
+        breakdown: 'group',
+      },
+    ],
+    policy: { maxQueryRows: 500, maxDurationMs: 15000 },
+    async run({ query }, { period: { range, comparison }, grain, breakdown }) {
+      const result = await query('samples', {
+        start: comparison?.start ?? range.start,
+        end: range.end,
+        selected_start: range.start,
+        grain,
+        breakdown,
+      });
       return result.rows.map(row => ({
-        groupName: row.group_name,
+        periodStart: row.period_start,
+        member: row.member,
         sampleCount: parseCount(row.sample_count),
+        selected: row.selected,
       }));
     },
   }),
 };
-const queryNames = operations.sampleCountsByGroup.queryNames;
+const queryNames = operations.samples.queryNames;
 const sampleDataContext = createDataContext(queryNames)({
   description:
-    'Fictional sample volumes grouped from starter_demo.sample_counts. Replace this evidence with the actual Finding queries.',
+    'Fictional daily samples from starter_demo.daily_samples. Replace this evidence with the actual Finding queries.',
   glossary: {
     sampleCount: {
       term: 'Sample count',
-      definition: 'A fixture value: Alpha is 2,200,000 and Beta is 600,000.',
-      queryNames: [queryNames.sampleCountsByGroup],
+      definition: 'Fixture samples recorded per day, group, and segment.',
+      queryNames: [queryNames.samples],
     },
   },
 });
-const { defineDataView } = createDataHooks(createDataClient({ operations }));
-const sampleCountsView = defineDataView({
+const { defineTimeView } = createDataHooks(createDataClient({ operations }));
+const samplesView = defineTimeView({
   dataContext: sampleDataContext,
-  operation: 'sampleCountsByGroup',
-  describeInput: () => 'fixture groups',
-  isEmpty: sampleCounts => sampleCounts.length === 0,
+  operation: 'samples',
+  time: {
+    contract: calendar,
+    defaultValue: { kind: 'dates', ...findingPeriod },
+    comparison: true,
+  },
+  variables: {
+    grain: choiceVariable({
+      key: 'grain',
+      label: 'Grain',
+      defaultValue: 'day',
+      options: [
+        { id: 'day', label: 'Day' },
+        { id: 'week', label: 'Week' },
+      ],
+      presentation: { group: 'display', control: 'widget' },
+    }),
+    breakdown: choiceVariable({
+      key: 'breakdown',
+      label: 'Breakdown',
+      defaultValue: 'segment',
+      options: [
+        { id: 'segment', label: 'Segment' },
+        { id: 'group', label: 'Group' },
+      ],
+      presentation: { group: 'display', control: 'widget' },
+    }),
+  },
+  isEmpty: rows => rows.length === 0,
   emptyFallback: {
-    title: 'No matching groups',
-    description: 'No observations are available for this query.',
+    title: 'No samples in this period',
+    description: 'No observations are available for this period.',
   },
 });
-const sampleCounts = sampleCountsView.dataset({
-  name: 'Sample counts',
-  select: rows => rows,
-  rowKey: row => row.groupName,
-  columns: {
-    groupName: { label: 'Group', value: row => row.groupName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
-  },
-  evidence: {
-    id: 'counts-by-group',
-    glossaryIds: ['sampleCount'],
-  },
-});
-const totalSamples = sampleCountsView.metric(
+type SampleRow = { sampleCount: number; selected: boolean };
+function total(rows: readonly SampleRow[]) {
+  return rows.reduce((sum, row) => sum + row.sampleCount, 0);
+}
+function totalsBy<Row extends SampleRow>(
+  rows: readonly Row[],
+  key: (row: Row) => string
+) {
+  const totals = new Map<string, number>();
+  for (const row of rows)
+    totals.set(key(row), (totals.get(key(row)) ?? 0) + row.sampleCount);
+  return [...totals].map(([id, sampleCount]) => ({ id, sampleCount }));
+}
+const count = { kind: 'count' } as const;
+const totalSamples = samplesView.metric(
   {
     id: 'total-samples',
-    label: 'Total samples',
+    label: 'Samples',
     glossaryId: 'sampleCount',
-    format: { kind: 'count' },
+    format: count,
   },
-  rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
+  (rows, input) => ({
+    current: total(rows.filter(row => row.selected)),
+    ...(input.period.comparison && {
+      previous: total(rows.filter(row => !row.selected)),
+    }),
+  })
 );
-const alphaSamples = sampleCountsView.metric(
-  {
-    id: 'alpha-samples',
-    label: 'Alpha samples',
-    glossaryId: 'sampleCount',
-    format: { kind: 'count' },
+const trend = samplesView.dataset({
+  name: 'Samples over time',
+  select: rows => totalsBy(rows, row => row.periodStart),
+  rowKey: row => row.id,
+  columns: {
+    id: { label: 'Period start', value: row => row.id },
+    sampleCount: { value: row => row.sampleCount, format: count },
   },
-  rows => {
-    const alpha = rows.find(row => row.groupName === 'Alpha');
-    if (!alpha)
-      throw new Error('The sample Finding requires evidence for Alpha.');
-    return { current: alpha.sampleCount };
-  }
-);
-// This fictional Finding demonstrates prose, inline evidence, and a Markdown-table equivalent.
-// Preserve each real Finding's own headings and argument instead of reusing these sections.
-const sampleContent = sampleCountsView.content(result => (
+  evidence: { id: 'samples-over-time', glossaryIds: ['sampleCount'] },
+});
+const breakdown = samplesView.dataset({
+  name: 'Samples by member',
+  select: rows =>
+    totalsBy(
+      rows.filter(row => row.selected),
+      row => row.member
+    ),
+  rowKey: row => row.id,
+  columns: {
+    id: { label: 'Member', value: row => row.id },
+    sampleCount: { value: row => row.sampleCount, format: count },
+  },
+  evidence: { id: 'samples-by-member', glossaryIds: ['sampleCount'] },
+});
+const sampleRows = samplesView.dataset({
+  name: 'Samples',
+  select: rows => rows.filter(row => row.selected),
+  rowKey: row => `${row.periodStart}:${row.member}`,
+  columns: {
+    periodStart: { label: 'Period start', value: row => row.periodStart },
+    member: { label: 'Member', value: row => row.member },
+    sampleCount: { value: row => row.sampleCount, format: count },
+  },
+  evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
+});
+// The Finding's text is shown above the app; keep content to charts and captions.
+const sampleContent = samplesView.content(result => (
   <Stack>
-    <TextContent>
-      <h2>Contribution by group</h2>
-      <p>
-        <strong>Alpha</strong> contributed{' '}
-        <DataValue metric={alphaSamples} source={result} /> of the{' '}
-        <DataValue metric={totalSamples} source={result} /> recorded samples.
-        The group comparison below supports that concentration; it does not
-        explain its cause.
-      </p>
-    </TextContent>
+    <MetricWidget metric={totalSamples} source={result} />
     <VisualizationWidget
-      dataset={sampleCounts}
+      dataset={trend}
       source={result}
-      title="Sample count"
+      title="Samples over time"
+      description="Includes the previous period when comparison is on."
+      breakdown={samplesView.breakdown('grain')}
     >
       {rows => (
-        <Ranking
-          aria-label="Samples by group"
+        <ComposedChart
+          ariaLabel="Samples over time"
+          data={rows}
+          valueFormat={count}
+        >
+          <ComposedChart.XAxis dataKey="id" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Line dataKey="sampleCount" name="Samples" />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      )}
+    </VisualizationWidget>
+    <VisualizationWidget
+      dataset={breakdown}
+      source={result}
+      title="Samples by member"
+      breakdown={samplesView.breakdown('breakdown')}
+    >
+      {rows => (
+        <BarChart
+          ariaLabel="Samples by member"
+          unit="samples"
           items={rows.map(row => ({
-            id: row.groupName,
-            label: row.groupName,
+            ...row,
+            label: row.id,
             value: row.sampleCount,
           }))}
         />
       )}
     </VisualizationWidget>
-    <TextContent>
-      <h2>Supporting evidence</h2>
-      <p>
-        The source rows are grouped by <code>group_name</code> and summed using{' '}
-        <code>sample_count</code>. The table retains the exact values behind the
-        comparison.
-      </p>
-      <ul>
-        <li>Compare the groups within the same sample population.</li>
-        <li>
-          <em>Volume alone does not establish performance or causality.</em>
-        </li>
-      </ul>
-    </TextContent>
-    <TableWidget
-      dataset={sampleCounts}
-      source={result}
-      title="Counts by group"
-      pagination={false}
-    />
+    <TableWidget dataset={sampleRows} source={result} title="Samples" />
   </Stack>
 ));
 function App() {
   return (
-    <DataApp view={sampleCountsView} showToolbar={false}>
+    <DataApp view={samplesView} showToolbar={false}>
       <DataSection content={sampleContent} />
     </DataApp>
   );

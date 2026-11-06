@@ -305,7 +305,6 @@ test('preserves the shared Node and Bun archive consumer contract', async () => 
 test.each([
   ['starter-data-app', 'Sample counts'],
   ['starter-metric-data-app', 'Sample metric'],
-  ['starter-finding-data-app', 'Sample finding'],
 ] as const)('extracts the %s declaration', async (starter, title) => {
   const text = await readFile(
     join(getExampleDirectory(starter), 'index.tsx'),
@@ -325,6 +324,29 @@ test.each([
         params: {
           groupName: { type: 'string', defaultValue: '' },
           limit: { type: 'number', defaultValue: 10 },
+        },
+      },
+    },
+  });
+});
+
+test('extracts the Finding exploration declaration', async () => {
+  const text = await readFile(
+    join(getExampleDirectory('starter-finding-data-app'), 'index.tsx'),
+    'utf8'
+  );
+  const result = extractDataAppManifest(text);
+  expect(result.diagnostics).toEqual([]);
+  expect(result.manifest).toMatchObject({
+    title: 'Sample finding',
+    scope: { organization: 'demo', environment: 'sample' },
+    queries: {
+      samples: {
+        params: {
+          start: { type: 'string', defaultValue: '2026-03-09' },
+          end: { type: 'string', defaultValue: '2026-03-15' },
+          grain: { type: 'string', defaultValue: 'day' },
+          breakdown: { type: 'string', defaultValue: 'segment' },
         },
       },
     },
