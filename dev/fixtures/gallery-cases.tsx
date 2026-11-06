@@ -84,6 +84,11 @@ import { WidgetViewTabs } from '@/packages/data-app-react/src/ui/WidgetViewTabs.
 
 import '@/dev/fixtures/gallery.css';
 
+const disabledDateDefault: DateTimeRange = {
+  from: new Date('2026-09-01T00:00:00Z'),
+  to: new Date('2026-10-01T00:00:00Z'),
+};
+
 const dimension = dimensionFilter({
   key: 'fixture_dimension',
   label: 'Typed interface',
@@ -234,6 +239,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
     from: new Date('2026-09-24T00:00:00Z'),
     to: new Date('2026-10-01T00:00:00Z'),
   });
+  const [disabledResetRange, setDisabledResetRange] = useState(dateTimeRange);
   const [dateTimeComparison, setDateTimeComparison] = useState(false);
   const resolvedDateTimeRange = resolveDateTimeRange(dateTimeRange);
   const dateTimeComparisonRange: DateTimeRange | null =
@@ -526,6 +532,14 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               label="Disabled dates"
               value={dateTimeRange}
               onChange={() => {}}
+              disabled
+            />
+            <DateTimeRangePicker
+              label="Disabled dates with reset"
+              value={disabledResetRange}
+              onChange={setDisabledResetRange}
+              isDefault={disabledResetRange === disabledDateDefault}
+              onReset={() => setDisabledResetRange(disabledDateDefault)}
               disabled
             />
           </Stack>
