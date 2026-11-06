@@ -443,3 +443,33 @@ test('reset restores the default datetime selection and removes its URL override
   await expect.poll(() => input.inputValue()).toBe('Past 7 days');
   expect(new URL(page.url()).searchParams.has('period')).toBe(false);
 });
+
+test('disabled datetime pickers hide reset and cannot activate it by keyboard', async ({
+  page,
+}) => {
+  await page.goto('/datetime?disabledReset');
+  const input = page.getByRole('combobox', {
+    name: 'Disabled reset period',
+    exact: true,
+  });
+  const reset = page.getByRole('button', {
+    name: 'Reset date range',
+    exact: true,
+  });
+  const count = page.getByRole('status', { name: 'Reset count' });
+  const toggle = page.getByRole('button', {
+    name: 'Toggle disabled',
+    exact: true,
+  });
+  await expect.poll(() => input.isDisabled()).toBe(true);
+  expect(await reset.count()).toBe(0);
+  await toggle.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Enter');
+  expect(await count.textContent()).toBe('0');
+  await toggle.click();
+  await expect.poll(() => reset.count()).toBe(1);
+  await reset.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => count.textContent()).toBe('1');
+});

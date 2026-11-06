@@ -115,6 +115,8 @@ const content = view.content(source => (
   </TextWidget>
 ));
 function App() {
+  if (new URLSearchParams(location.search).has('disabledReset'))
+    return <DisabledResetPicker />;
   if (new URLSearchParams(location.search).has('controls'))
     return <PickerControls />;
   return (
@@ -177,4 +179,28 @@ function PickerControls() {
 function ReportingZone() {
   const { timeZone } = useDateFormatting();
   return <output aria-label="Reporting timezone">{timeZone}</output>;
+}
+
+function DisabledResetPicker() {
+  const [disabled, setDisabled] = useState(true);
+  const [resets, setResets] = useState(0);
+  return (
+    <main>
+      <DateTimeRangePicker
+        label="Disabled reset period"
+        value={{
+          from: new Date('2026-07-01T00:00:00Z'),
+          to: new Date('2026-07-02T00:00:00Z'),
+        }}
+        onChange={() => {}}
+        disabled={disabled}
+        isDefault={false}
+        onReset={() => setResets(count => count + 1)}
+      />
+      <Button onClick={() => setDisabled(value => !value)}>
+        Toggle disabled
+      </Button>
+      <output aria-label="Reset count">{resets}</output>
+    </main>
+  );
 }

@@ -574,7 +574,7 @@ export function DateTimeRangePicker({
             }
           }}
         />
-        {onReset && !isDefault && value && (
+        {!disabled && onReset && !isDefault && value && (
           <button
             type="button"
             className="altertable-datetime-reset"
