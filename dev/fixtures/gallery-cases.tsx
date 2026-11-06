@@ -48,7 +48,6 @@ import {
   type AppIconName,
 } from '@altertable/data-app-react/ui';
 import {
-  defineDateRangeContract,
   dimensionFilter,
   resolveDateTimeRange,
   type DateTimeRange,
@@ -95,12 +94,6 @@ const dimension = dimensionFilter({
     { value: 'null', label: 'Literal null', count: 0 },
     { value: 'http', label: 'HTTP', count: 12 },
   ],
-});
-const galleryDateContract = defineDateRangeContract({
-  minDate: '2026-09-01',
-  maxDate: '2026-09-30',
-  maxRangeDays: 30,
-  timeZone: 'UTC',
 });
 const options = [
   { id: 'http', label: 'HTTP' },
@@ -510,12 +503,11 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         </Case>
       </Section>
       <Section id="dates" title="Dates, periods and freshness">
-        <Case title="Bounded datetime range and comparison">
+        <Case title="Datetime range and comparison">
           <DateTimeRangePicker
             label="Gallery datetime range"
             value={dateTimeRange}
             onChange={setDateTimeRange}
-            contract={galleryDateContract}
             comparison={{
               enabled: dateTimeComparison,
               range: dateTimeComparisonRange,
