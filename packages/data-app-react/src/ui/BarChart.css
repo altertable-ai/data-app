@@ -73,6 +73,11 @@
   position: relative;
   display: flex;
 }
+.altertable-selectable-bars-items
+  > .altertable-chart-item-actions
+  > .altertable-chart-column {
+  align-self: stretch;
+}
 
 .altertable-chart-item-label-row {
   display: flex;

@@ -147,6 +147,32 @@ test('standalone bar, line and area tooltips stay put while the same item is hig
   }
 });
 
+test('standalone bars inspect the nearest category between visible bars', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Standalone bar basic example',
+    exact: true,
+  });
+  const wedButton = chart.getByRole('button', {
+    name: 'Wed: 8.0 ms',
+    exact: true,
+  });
+  await wedButton.scrollIntoViewIfNeeded();
+  const wed = await wedButton.boundingBox();
+  const thu = await chart
+    .getByRole('button', { name: 'Thu: 3.0 ms', exact: true })
+    .boundingBox();
+  const boundary = (wed!.x + wed!.width / 2 + thu!.x + thu!.width / 2) / 2;
+  const y = wed!.y + wed!.height / 2;
+  const tooltip = page.getByRole('tooltip');
+  await page.mouse.move(boundary - 3, y);
+  await expect.poll(() => tooltip.textContent()).toContain('Wed');
+  await page.mouse.move(boundary + 3, y);
+  await expect.poll(() => tooltip.textContent()).toContain('Thu');
+});
+
 test('funnel inspection follows the hovered or tapped conversion and drop-off portion', async ({
   page,
   mobilePage,
