@@ -1,27 +1,31 @@
 import { parseCount } from '@altertable/data-app/contract';
 
-import { calendar, dataApp, findingPeriod } from '#config';
+import { dataApp, period } from '#config';
 export const operations = {
   samples: dataApp.defineOperation({
     input: value => {
-      const { period, grain, breakdown } = (value ?? {}) as Record<
-        string,
-        unknown
-      >;
+      const {
+        period: selection,
+        grain,
+        breakdown,
+      } = (value ?? {}) as Record<string, unknown>;
       if (grain !== 'day' && grain !== 'week')
         throw new Error('Expected a day or week grain.');
       if (breakdown !== 'segment' && breakdown !== 'group')
         throw new Error('Expected a segment or group breakdown.');
-      return { period: calendar.parseRequest(period), grain, breakdown };
+      return { period: period.parseInput(selection), grain, breakdown };
     },
     checks: [
       {
-        period: calendar.request(findingPeriod, true),
+        period: period.input({
+          ...period.defaultValue,
+          comparison: 'previous',
+        }),
         grain: 'day',
         breakdown: 'segment',
       },
       {
-        period: calendar.request(findingPeriod),
+        period: period.input(period.defaultValue),
         grain: 'week',
         breakdown: 'group',
       },
@@ -29,9 +33,9 @@ export const operations = {
     policy: { maxQueryRows: 500, maxDurationMs: 15000 },
     async run({ query }, { period: { range, comparison }, grain, breakdown }) {
       const result = await query('samples', {
-        start: comparison?.start ?? range.start,
-        end: range.end,
-        selected_start: range.start,
+        start: (comparison?.from ?? range.from).toISOString(),
+        end: range.to.toISOString(),
+        selected_start: range.from.toISOString(),
         grain,
         breakdown,
       });

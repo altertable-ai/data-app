@@ -17,6 +17,7 @@ import {
 import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
+  dateTimeRangeVariable,
   defineDateRangeContract,
   parseCount,
 } from '@altertable/data-app/contract';
@@ -37,15 +38,18 @@ const dataApp = defineDataApp({
       statement: `
 SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
   CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS member,
-  sample_date >= CAST($selected_start AS DATE) AS selected,
+  sample_date >= CAST($selected_start AS TIMESTAMP) AS selected,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
-WHERE sample_date BETWEEN CAST($start AS DATE) AND CAST($end AS DATE)
+WHERE sample_date >= CAST($start AS TIMESTAMP) AND sample_date < CAST($end AS TIMESTAMP)
 GROUP BY ALL ORDER BY period_start, member LIMIT $limit`,
       params: {
-        start: { type: 'string', defaultValue: '2026-03-09' },
-        end: { type: 'string', defaultValue: '2026-03-15' },
-        selected_start: { type: 'string', defaultValue: '2026-03-09' },
+        start: { type: 'string', defaultValue: '2026-03-09T00:00:00Z' },
+        end: { type: 'string', defaultValue: '2026-03-16T00:00:00Z' },
+        selected_start: {
+          type: 'string',
+          defaultValue: '2026-03-09T00:00:00Z',
+        },
         grain: { type: 'string', defaultValue: 'day' },
         breakdown: { type: 'string', defaultValue: 'segment' },
         limit: { type: 'number', defaultValue: 500 },
@@ -59,28 +63,39 @@ const calendar = defineDateRangeContract({
   maxRangeDays: 28,
   timeZone: 'UTC',
 });
-const findingPeriod = { start: '2026-03-09', end: '2026-03-15' };
+const findingPeriod = {
+  from: new Date('2026-03-09T00:00:00Z'),
+  to: new Date('2026-03-16T00:00:00Z'),
+};
+const period = dateTimeRangeVariable({
+  key: 'period',
+  contract: calendar,
+  allowComparison: true,
+  defaultValue: findingPeriod,
+  presets: [{ label: 'Finding period', range: findingPeriod }],
+});
 const operations = {
   samples: dataApp.defineOperation({
     input: value => {
-      const { period, grain, breakdown } = (value ?? {}) as Record<
-        string,
-        unknown
-      >;
+      const {
+        period: selection,
+        grain,
+        breakdown,
+      } = (value ?? {}) as Record<string, unknown>;
       if (grain !== 'day' && grain !== 'week')
         throw new Error('Expected a day or week grain.');
       if (breakdown !== 'segment' && breakdown !== 'group')
         throw new Error('Expected a segment or group breakdown.');
-      return { period: calendar.parseRequest(period), grain, breakdown };
+      return { period: period.parseInput(selection), grain, breakdown };
     },
     checks: [
       {
-        period: calendar.request(findingPeriod, true),
+        period: period.input({ range: findingPeriod, comparison: 'previous' }),
         grain: 'day',
         breakdown: 'segment',
       },
       {
-        period: calendar.request(findingPeriod),
+        period: period.input(period.defaultValue),
         grain: 'week',
         breakdown: 'group',
       },
@@ -88,9 +103,9 @@ const operations = {
     policy: { maxQueryRows: 500, maxDurationMs: 15000 },
     async run({ query }, { period: { range, comparison }, grain, breakdown }) {
       const result = await query('samples', {
-        start: comparison?.start ?? range.start,
-        end: range.end,
-        selected_start: range.start,
+        start: (comparison?.from ?? range.from).toISOString(),
+        end: range.to.toISOString(),
+        selected_start: range.from.toISOString(),
         grain,
         breakdown,
       });
@@ -119,11 +134,7 @@ const { defineTimeView } = createDataHooks(createDataClient({ operations }));
 const samplesView = defineTimeView({
   dataContext: sampleDataContext,
   operation: 'samples',
-  time: {
-    contract: calendar,
-    defaultValue: { kind: 'dates', ...findingPeriod },
-    comparison: true,
-  },
+  time: period,
   variables: {
     grain: choiceVariable({
       key: 'grain',
