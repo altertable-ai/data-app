@@ -259,12 +259,11 @@ filter declarations own URL state, validation, and operation meaning.
 | `<SegmentedControl>`               | Compact radio choices                                             |
 | `<NumberField>`                    | Localized numeric input; empty is `null`                          |
 | `<NumberRangeField>`               | Exact, inclusive minimum/maximum; omitted bounds are unrestricted |
-| `<DateTimeRangePicker>`            | Datetime ranges or inclusive calendar-day periods                 |
+| `<DateTimeRangePicker>`            | Datetime ranges with an exclusive end                             |
 | `<DimensionPicker>`                | Typed categorical predicates with fixed or facet options          |
 
-Use `calendarDaysOnly` when directly controlling `<DateTimeRangePicker>` with
-inclusive `{ start, end }` calendar dates. Generated controls from
-`dateRangeVariable()` set this mode for you and keep their existing URL values.
+Use `dateTimeRangeVariable()` for generated reporting controls. Calendar-day
+selections resolve to datetime bounds at midnight with an exclusive end.
 
 ```tsx
 function FilterChoices() {

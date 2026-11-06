@@ -3,14 +3,14 @@ import {
   dimensionFilter,
   parseDimensionSelection,
   parseCount,
-  type DateRangeRequest,
+  type DateTimeRangeComparisonRequest,
   type DimensionSelection,
   type QueryRow,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
 
 import { dataApp } from '@/dev/app';
-import { calendar, countries } from '@/dev/commerce';
+import { countries, period } from '@/dev/commerce';
 
 export const countryFilter = dimensionFilter({
   key: 'country',
@@ -20,7 +20,7 @@ export const countryFilter = dimensionFilter({
   options: countries,
 });
 export type OrderInput = {
-  period: DateRangeRequest;
+  period: DateTimeRangeComparisonRequest;
   country: DimensionSelection<string>;
 };
 function parseInput(value: unknown): OrderInput {
@@ -28,7 +28,7 @@ function parseInput(value: unknown): OrderInput {
     throw new Error('Expected order filters.');
   const input = value as Record<string, unknown>;
   return {
-    period: calendar.parseRequest(input.period),
+    period: period.parseInput(input.period),
     country: parseDimensionSelection(input.country, countryFilter),
   };
 }
@@ -46,10 +46,7 @@ function totals(
     refunds: amount(row.refunds),
   };
 }
-const checkRange = calendar.request(
-  { start: calendar.bounds().maxDate, end: calendar.bounds().maxDate },
-  true
-);
+const checkRange = period.input(period.defaultValue);
 export const operations = {
   orderOverview: dataApp.defineOperation({
     input: parseInput,
@@ -64,8 +61,7 @@ export const operations = {
     async run({ query }, { country, period }) {
       const member = country.kind === 'all' ? undefined : country.members[0];
       const params = {
-        start: period.range.start,
-        end: period.range.end,
+        window: period.range,
         countryMode: country.kind,
         country: member?.kind === 'value' ? member.value : null,
       };
@@ -82,8 +78,7 @@ export const operations = {
         query('ordersByValue', params),
         query('previousPeriod', {
           ...params,
-          start: period.comparison?.start ?? period.range.start,
-          end: period.comparison?.end ?? period.range.end,
+          window: period.comparison ?? period.range,
           enabled: period.comparison !== null,
         }),
         query('orders', params),

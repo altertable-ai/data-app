@@ -206,14 +206,19 @@ test('calendar and dimension controls preserve comparisons, measured zero, and U
     .toBe(true);
 });
 
-test('the unified picker keeps calendar-day presets and date-only URLs', async ({
+test('the unified picker sends calendar selections as exclusive-end datetime parameters', async ({
   page,
 }) => {
   await page.goto('/time-app');
   const picker = page.getByRole('combobox', { name: 'Date range' });
   await picker.click();
   await page.getByRole('option', { name: 'Latest 7 available days' }).click();
-  await expect.poll(() => page.url()).toContain('period=last-7');
+  await expect
+    .poll(() => JSON.parse(new URL(page.url()).searchParams.get('period')!))
+    .toEqual({
+      from: '2026-03-25T00:00:00.000Z',
+      to: '2026-04-01T00:00:00.000Z',
+    });
   await expect.poll(() => picker.inputValue()).toBe('Latest 7 available days');
   await picker.click();
   await page.getByRole('option', { name: 'Select from calendar…' }).click();
@@ -225,9 +230,9 @@ test('the unified picker keeps calendar-day presets and date-only URLs', async (
     .getByRole('gridcell', { name: 'Thursday, March 12, 2026' })
     .click();
   await calendar.getByRole('button', { name: 'Apply' }).click();
-  const params = new URL(page.url()).searchParams;
-  expect(params.get('start')).toBe('2026-03-10');
-  expect(params.get('end')).toBe('2026-03-12');
+  const range = JSON.parse(new URL(page.url()).searchParams.get('period')!);
+  expect(range.from).toBe('2026-03-10T00:00:00.000Z');
+  expect(range.to).toBe('2026-03-13T00:00:00.000Z');
   await expect
     .poll(() =>
       page.getByText(/^Displayed period: Mar 10–12, 2026 UTC/).isVisible()

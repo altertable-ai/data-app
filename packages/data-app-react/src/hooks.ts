@@ -51,6 +51,7 @@ import {
   type FilterPatch,
 } from './exploration.ts';
 import type { AuthoringDataContext } from './ui/data-context.ts';
+import { dateTimeRangeLabel } from './ui/date-time-range-label.ts';
 import type { EmptyContent } from './ui/presentation.ts';
 import {
   dateRangeVariable,
@@ -805,13 +806,21 @@ export function createDataHooks<Operations extends DataOperations>(
         const selected = definition.bindings?.period
           ? definition.bindings.period(input)
           : (input as { period: unknown }).period;
-        return period.kind === 'dateTimeRangeComparison'
-          ? formatDateTimeRange(
-              parseDateTimeRange(
-                (selected as DateTimeRangeComparisonRequest).range
-              )
-            )
-          : period.describe!(parseDateTimeRange(selected));
+        const range = parseDateTimeRange(
+          period.kind === 'dateTimeRangeComparison'
+            ? (selected as DateTimeRangeComparisonRequest).range
+            : selected
+        );
+        const completeDays =
+          range.from instanceof Date &&
+          range.to instanceof Date &&
+          range.from.getTime() % 86_400_000 === 0 &&
+          range.to.getTime() % 86_400_000 === 0;
+        return completeDays
+          ? `${dateTimeRangeLabel(range)} ${period.contract?.bounds().timeZone ?? 'UTC'}`
+          : period.kind === 'dateTimeRangeComparison'
+            ? formatDateTimeRange(range)
+            : period.describe!(range);
       },
     } as unknown as Parameters<
       typeof bindDataView<

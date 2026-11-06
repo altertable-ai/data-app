@@ -6,6 +6,7 @@ import {
   DataSection,
   MetricWidget,
   DataValue,
+  dateTimeRangeVariable,
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
@@ -15,7 +16,7 @@ import {
   defineOperation,
   dimensionFilter,
   parseDimensionSelection,
-  type DateRangeRequest,
+  type DateTimeRangeComparisonRequest,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 
@@ -24,6 +25,27 @@ const calendar = defineDateRangeContract({
   maxDate: '2026-03-31',
   maxRangeDays: 31,
   timeZone: 'UTC',
+});
+const presets = [1, 3, 7, 14, 30].map(days => ({
+  label: days === 1 ? 'Latest available day' : `Latest ${days} available days`,
+  shortcut: days === 1 ? '-' : `${days}d`,
+  range: {
+    from: new Date(Date.UTC(2026, 2, 31 - days + 1)),
+    to: new Date('2026-04-01T00:00:00Z'),
+  },
+}));
+const period = dateTimeRangeVariable({
+  key: 'period',
+  contract: calendar,
+  allowComparison: true,
+  presets,
+  defaultValue: {
+    from: new Date('2026-03-04T00:00:00Z'),
+    to: new Date('2026-03-07T00:00:00Z'),
+  },
+  presentation: new URLSearchParams(location.search).has('displayDate')
+    ? { group: 'display' }
+    : undefined,
 });
 const region = dimensionFilter<string>({
   key: 'region',
@@ -41,19 +63,22 @@ const region = dimensionFilter<string>({
     { value: 'null', label: 'Literal null' },
   ],
 });
-type Input = { period: DateRangeRequest; region: DimensionSelection<string> };
+type Input = {
+  period: DateTimeRangeComparisonRequest;
+  region: DimensionSelection<string>;
+};
 const operation = defineOperation({
   queries: {},
   input(value: unknown): Input {
     const input = value as Input;
     return {
-      period: calendar.parseRequest(input.period),
+      period: period.parseInput(input.period),
       region: parseDimensionSelection(input.region, region),
     };
   },
   checks: [
     {
-      period: calendar.request({ start: '2026-03-04', end: '2026-03-06' }),
+      period: period.input(period.defaultValue),
       region: { kind: 'all' as const },
     },
   ],
@@ -83,14 +108,7 @@ const context = createDataContext({ activity: 'activity' })({
 const view = createDataHooks(client).defineTimeView({
   dataContext: context,
   operation: 'activity',
-  time: {
-    contract: calendar,
-    defaultValue: { kind: 'dates', start: '2026-03-04', end: '2026-03-06' },
-    comparison: true,
-    presentation: new URLSearchParams(location.search).has('displayDate')
-      ? { group: 'display' }
-      : undefined,
-  },
+  time: period,
   variables: { region },
   isEmpty: () => false,
   emptyFallback: { title: 'No events' },
@@ -102,7 +120,15 @@ const metric = view.metric(
 const dataset = view.dataset({
   name: 'Events',
   select: (count, input) => [
-    { count, period: calendar.describeInput(input.period.range) },
+    {
+      count,
+      period: calendar.describeInput({
+        start: input.period.range.from.toISOString().slice(0, 10),
+        end: new Date(input.period.range.to.getTime() - 1)
+          .toISOString()
+          .slice(0, 10),
+      }),
+    },
   ],
   rowKey: () => 'events',
   columns: {
