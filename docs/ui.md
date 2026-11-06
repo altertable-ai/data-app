@@ -152,10 +152,6 @@ Compose the visual inside `<VisualizationWidget dataset={dataset} source={result
 so rows, loading state, evidence, and inspection come from that dataset.
 Pass ordered items with unique, nonblank IDs and finite numbers. Bar and pie
 values must be nonnegative. Use `formatValue` for domain formatting.
-For time-bucketed `<BarChart>` items, provide `time` as a Unix timestamp in
-milliseconds alongside the display `label`. Without `itemActions`, the chart
-uses those timestamps to choose readable time ticks and fits bars to its
-available width.
 
 Line and area charts space samples equally; include missing periods and use
 composed charts for irregular intervals. Distinguish missing observations from zero.
