@@ -1,14 +1,19 @@
 import { type MetricFormat } from '@altertable/data-app/format';
 import {
+  Children,
+  Fragment,
+  isValidElement,
   useState,
   useCallback,
   useEffect,
   useRef,
   type PointerEvent,
   type ComponentProps,
+  type ReactNode,
 } from 'react';
 import {
   ComposedChart as RechartsComposedChart,
+  CartesianGrid as NativeCartesianGrid,
   ZAxis,
   ReferenceLine,
   ReferenceArea,
@@ -20,6 +25,7 @@ import {
   ErrorBar,
 } from 'recharts';
 
+import type { HorizontalGridProps } from './chart-data.ts';
 import { ChartDateAxes } from './chart-date-axis.tsx';
 import {
   ChartInteractionContext,
@@ -39,6 +45,11 @@ import {
 import { ChartValueFormat } from './chart-value-format.ts';
 import { classNames } from './classNames.ts';
 import { ComposedChartLegend as Legend } from './ComposedChartLegend.tsx';
+import {
+  type ChartCursorGroup,
+  ChartCursorChartContext,
+  useLinkedChartCursor,
+} from './use-chart-cursor-group.tsx';
 
 function findNearestSeriesId(
   hoveredSeriesId: string | null,
@@ -60,18 +71,28 @@ function findNearestSeriesId(
   return selected;
 }
 
-export type ComposedChartProps<Row = unknown> = Omit<
-  ComponentProps<typeof RechartsComposedChart<Row>>,
-  'data' | 'title'
-> & {
-  /** Displayed rows; series and axes select fields with Recharts dataKey props. */
-  data: readonly Row[];
-  /** Describes the measures and scope for assistive technology. */
-  ariaLabel: string;
-  /** Shared measure semantics: compact numeric axes and precise tooltips.
-   * For mixed units, use explicit axis tickFormatter and series/tooltip formatters. */
-  valueFormat?: MetricFormat;
-};
+export type ComposedChartProps<Row = unknown> = HorizontalGridProps &
+  Omit<ComponentProps<typeof RechartsComposedChart<Row>>, 'data' | 'title'> & {
+    /** Displayed rows; series and axes select fields with Recharts dataKey props. */
+    data: readonly Row[];
+    /** Describes the measures and scope for assistive technology. */
+    ariaLabel: string;
+    /** Shared measure semantics: compact numeric axes and precise tooltips.
+     * For mixed units, use explicit axis tickFormatter and series/tooltip formatters. */
+    valueFormat?: MetricFormat;
+    /** Share mouse-hover timestamps with charts receiving the same handle, using the temporal X axis. */
+    cursorGroup?: ChartCursorGroup;
+  };
+
+function hasAuthoredGrid(children: ReactNode): boolean {
+  return Children.toArray(children).some(
+    child =>
+      isValidElement<{ children?: ReactNode }>(child) &&
+      (child.type === CartesianGrid ||
+        child.type === NativeCartesianGrid ||
+        (child.type === Fragment && hasAuthoredGrid(child.props.children)))
+  );
+}
 
 /** Compose Cartesian series inside VisualizationWidget. Defaults to responsive
  * full width and 300px height. Children retain native Recharts props and behavior,
@@ -84,12 +105,17 @@ function ComposedChartRoot<Row>({
   data,
   ariaLabel,
   valueFormat,
+  cursorGroup,
+  horizontalGrid = false,
+  children,
   width = '100%',
   height = 300,
   responsive = true,
   className,
   ...props
 }: ComposedChartProps<Row>) {
+  const cursor = useLinkedChartCursor(cursorGroup);
+  const [mouseHover, setMouseHover] = useState(false);
   const [hasPointerFocus, setHasPointerFocus] = useState(false);
   const [isPointerInspection, setIsPointerInspection] = useState(false);
   const [hoveredSeriesId, setHoveredSeriesId] = useState<string | null>(null);
@@ -115,6 +141,7 @@ function ComposedChartRoot<Row>({
     setPointerPosition(latestPointerPosition.current);
   }, [points]);
   function trackPointer(event: PointerEvent<HTMLElement>) {
+    setMouseHover(event.pointerType === 'mouse');
     const svg = event.currentTarget.querySelector('svg[role="application"]');
     if (
       !(svg instanceof SVGSVGElement) ||
@@ -147,6 +174,8 @@ function ComposedChartRoot<Row>({
     return true;
   }
   function resetPointerInspection() {
+    setMouseHover(false);
+    cursor.reset();
     setIsPointerInspection(false);
     setHoveredSeriesId(null);
     latestPointerPosition.current = null;
@@ -171,58 +200,65 @@ function ComposedChartRoot<Row>({
     };
   }, []);
   return (
-    <ChartInteractionContext.Provider
-      value={{
-        isPointerInspection,
-        activeSeriesId,
-        activePoint:
-          activeSeriesId == null ? undefined : points.get(activeSeriesId),
-        registerPoint,
-        setHoveredSeriesId,
-        seriesCount: seriesIds.size,
-        registerSeries,
-      }}
-    >
-      <section
-        className={classNames('altertable-composed-chart', className)}
-        aria-label={ariaLabel}
-        data-atbl-internal-pointer-focus={hasPointerFocus || undefined}
-        onPointerDownCapture={event => {
-          setHasPointerFocus(trackPointer(event));
-        }}
-        onPointerOverCapture={trackPointer}
-        onPointerMoveCapture={trackPointer}
-        onPointerLeave={event => {
-          if (event.pointerType !== 'touch') {
-            resetPointerInspection();
-          }
-        }}
-        onKeyDownCapture={() => {
-          setHasPointerFocus(false);
-          resetPointerInspection();
-        }}
-        onBlurCapture={event => {
-          if (!event.currentTarget.contains(event.relatedTarget)) {
-            setHasPointerFocus(false);
-            resetPointerInspection();
-          }
+    <ChartCursorChartContext.Provider value={{ cursor, mouseHover }}>
+      <ChartInteractionContext.Provider
+        value={{
+          isPointerInspection,
+          activeSeriesId,
+          activePoint:
+            activeSeriesId == null ? undefined : points.get(activeSeriesId),
+          registerPoint,
+          setHoveredSeriesId,
+          seriesCount: seriesIds.size,
+          registerSeries,
         }}
       >
-        <ChartValueFormat.Provider value={valueFormat}>
-          <ChartDateAxes data={data}>
-            <RechartsComposedChart
-              data-atbl-focus="inset"
-              {...props}
-              data={data}
-              width={width}
-              height={height}
-              responsive={responsive}
-              aria-label={ariaLabel}
-            />
-          </ChartDateAxes>
-        </ChartValueFormat.Provider>
-      </section>
-    </ChartInteractionContext.Provider>
+        <section
+          className={classNames('altertable-composed-chart', className)}
+          aria-label={ariaLabel}
+          data-atbl-internal-pointer-focus={hasPointerFocus || undefined}
+          onPointerDownCapture={event => {
+            setHasPointerFocus(trackPointer(event));
+          }}
+          onPointerOverCapture={trackPointer}
+          onPointerMoveCapture={trackPointer}
+          onPointerLeave={event => {
+            if (event.pointerType !== 'touch') {
+              resetPointerInspection();
+            }
+          }}
+          onKeyDownCapture={() => {
+            setHasPointerFocus(false);
+            resetPointerInspection();
+          }}
+          onBlurCapture={event => {
+            if (!event.currentTarget.contains(event.relatedTarget)) {
+              setHasPointerFocus(false);
+              resetPointerInspection();
+            }
+          }}
+        >
+          <ChartValueFormat.Provider value={valueFormat}>
+            <ChartDateAxes data={data}>
+              <RechartsComposedChart
+                data-atbl-focus="inset"
+                {...props}
+                data={data}
+                width={width}
+                height={height}
+                responsive={responsive}
+                aria-label={ariaLabel}
+              >
+                {horizontalGrid && !hasAuthoredGrid(children) && (
+                  <CartesianGrid />
+                )}
+                {children}
+              </RechartsComposedChart>
+            </ChartDateAxes>
+          </ChartValueFormat.Provider>
+        </section>
+      </ChartInteractionContext.Provider>
+    </ChartCursorChartContext.Provider>
   );
 }
 

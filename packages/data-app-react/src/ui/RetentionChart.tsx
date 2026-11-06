@@ -2,7 +2,10 @@ import { formatNumber, formatPercent } from '@altertable/data-app/format';
 import { invariant } from '@altertable/data-app/internal';
 import { Fragment } from 'react';
 
-import { type CountChartProps } from './chart-data.ts';
+import {
+  type CountChartProps,
+  type HorizontalGridProps,
+} from './chart-data.ts';
 import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
@@ -28,9 +31,10 @@ export type RetentionChartSeries = {
   cohortSize: number;
   points: readonly RetentionChartPoint[];
 };
-export type RetentionChartProps = CountChartProps & {
-  series: readonly RetentionChartSeries[];
-};
+export type RetentionChartProps = CountChartProps &
+  HorizontalGridProps & {
+    series: readonly RetentionChartSeries[];
+  };
 
 type RetentionReading = {
   point: RetentionChartPoint;
@@ -143,6 +147,7 @@ export function RetentionChart({
   ariaLabel,
   className,
   formatValue = formatNumber,
+  horizontalGrid = true,
 }: RetentionChartProps) {
   const { rows, rowsByOffset, cohorts } = createRetentionModel(
     series,
@@ -159,7 +164,7 @@ export function RetentionChart({
       ) : (
         <>
           <ComposedChart data={rows} ariaLabel={`${ariaLabel} plot`}>
-            <ComposedChart.CartesianGrid />
+            {horizontalGrid && <ComposedChart.CartesianGrid />}
             <ComposedChart.XAxis
               dataKey="offset"
               type="number"

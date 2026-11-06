@@ -10,9 +10,17 @@ import {
   type ComponentProps,
   type ReactNode,
 } from 'react';
-import { XAxis, usePlotArea, type XAxisTickContentProps } from 'recharts';
+import {
+  XAxis,
+  useActiveTooltipLabel,
+  useIsTooltipActive,
+  useXAxisScale,
+  usePlotArea,
+  type XAxisTickContentProps,
+} from 'recharts';
 
 import { chartTimestamp, timeModel, timeTicks } from './chart-time.ts';
+import { ChartCursorChartContext } from './use-chart-cursor-group.tsx';
 
 type LabelFormatter = (value: unknown) => string;
 type ChartDateAxesApi = {
@@ -100,6 +108,55 @@ const xAxisDefaults = {
   tick: { fontSize: 'var(--atbl-type-meta-size)' },
 };
 
+function LinkedTimeCursor({
+  times,
+  axisId,
+}: {
+  times: readonly number[];
+  axisId: string | number;
+}) {
+  const context = useContext(ChartCursorChartContext);
+  const label = useActiveTooltipLabel();
+  const active = useIsTooltipActive();
+  const scale = useXAxisScale(axisId);
+  const plot = usePlotArea();
+  const mouseHover = context?.mouseHover;
+  const setTime = context?.cursor.setTime;
+  const reset = context?.cursor.reset;
+  useEffect(() => {
+    if (!mouseHover || !active) {
+      reset?.();
+    } else {
+      const time = chartTimestamp(label, true);
+      if (time != null && times.includes(time)) setTime?.(time);
+    }
+  }, [mouseHover, active, label, times, setTime, reset]);
+  const time = context?.cursor.time;
+  if (time == null || !times.includes(time)) return null;
+  const x = scale?.(time);
+  if (
+    !plot ||
+    x == null ||
+    !Number.isFinite(x) ||
+    x < plot.x ||
+    x > plot.x + plot.width
+  )
+    return null;
+  return (
+    <line
+      aria-hidden="true"
+      x1={x}
+      x2={x}
+      y1={plot.y}
+      y2={plot.y + plot.height}
+      stroke="var(--atbl-muted)"
+      strokeOpacity={0.3}
+      pointerEvents="none"
+      data-atbl-internal-linked-cursor="true"
+    />
+  );
+}
+
 /**
  * Infers temporal input from ISO dates, zoned ISO timestamps, and Date values.
  * Use scale="utc" for epoch milliseconds or type="category" for date-like categories.
@@ -130,6 +187,19 @@ export function ChartXAxis<Row = unknown, Value = string | number | Date>(
       numeric
     );
   }, [data, dataKey, enabled, numeric]);
+  const cursorModel = useMemo(() => {
+    if (!data?.length || dataKey == null || props.type === 'category')
+      return null;
+    if (props.scale !== 'utc' && props.scale !== 'time') return null;
+    return timeModel(
+      data.map(row =>
+        typeof dataKey === 'function'
+          ? dataKey(row as Row)
+          : field(row, dataKey)
+      ),
+      props.scale === 'utc' || props.scale === 'time'
+    );
+  }, [data, dataKey, props.type, props.scale]);
   const register = context?.register;
   const id = props.xAxisId ?? 0;
   useEffect(
@@ -137,67 +207,80 @@ export function ChartXAxis<Row = unknown, Value = string | number | Date>(
     [register, id, model]
   );
   if (!model || dataKey == null) {
-    return <XAxis<Row, Value> {...xAxisDefaults} {...props} />;
+    return (
+      <>
+        <XAxis<Row, Value> {...xAxisDefaults} {...props} />
+        {cursorModel && (
+          <LinkedTimeCursor times={cursorModel.times} axisId={id} />
+        )}
+      </>
+    );
   }
   const automaticTicks =
     props.ticks == null && props.tickFormatter == null
       ? timeTicks(model, plot?.width ?? 400)
       : null;
   return (
-    <XAxis<Row, number | null>
-      {...xAxisDefaults}
-      scale="utc"
-      domain={
-        model.start === model.end || context?.barAxes.has(id)
-          ? [
-              model.start - model.minimumInterval / 2,
-              model.end + model.minimumInterval / 2,
-            ]
-          : [model.start, model.end]
-      }
-      ticks={automaticTicks?.ticks}
-      interval={automaticTicks ? 0 : undefined}
-      height={48}
-      tickFormatter={model.tooltip}
-      tick={
-        automaticTicks
-          ? ({ x, y, payload, index }: XAxisTickContentProps) => {
-              const label = automaticTicks.label(Number(payload.value), index);
-              return (
-                <text
-                  x={x}
-                  y={Number(y) + 5}
-                  fill="var(--atbl-muted)"
-                  fontSize="var(--atbl-type-meta-size)"
-                  textAnchor={
-                    index === 0
-                      ? 'start'
-                      : index === automaticTicks.ticks.length - 1
-                        ? 'end'
-                        : 'middle'
-                  }
-                >
-                  <tspan x={x} dy="0.8em">
-                    {label.main}
-                  </tspan>
-                  {label.context && (
-                    <tspan x={x} dy="1.4em">
-                      {label.context}
+    <>
+      <XAxis<Row, number | null>
+        {...xAxisDefaults}
+        scale="utc"
+        domain={
+          model.start === model.end || context?.barAxes.has(id)
+            ? [
+                model.start - model.minimumInterval / 2,
+                model.end + model.minimumInterval / 2,
+              ]
+            : [model.start, model.end]
+        }
+        ticks={automaticTicks?.ticks}
+        interval={automaticTicks ? 0 : undefined}
+        height={48}
+        tickFormatter={model.tooltip}
+        tick={
+          automaticTicks
+            ? ({ x, y, payload, index }: XAxisTickContentProps) => {
+                const label = automaticTicks.label(
+                  Number(payload.value),
+                  index
+                );
+                return (
+                  <text
+                    x={x}
+                    y={Number(y) + 5}
+                    fill="var(--atbl-muted)"
+                    fontSize="var(--atbl-type-meta-size)"
+                    textAnchor={
+                      index === 0
+                        ? 'start'
+                        : index === automaticTicks.ticks.length - 1
+                          ? 'end'
+                          : 'middle'
+                    }
+                  >
+                    <tspan x={x} dy="0.8em">
+                      {label.main}
                     </tspan>
-                  )}
-                </text>
-              );
-            }
-          : xAxisDefaults.tick
-      }
-      {...axisProps}
-      type="number"
-      dataKey={row =>
-        chartTimestamp(
-          typeof dataKey === 'function' ? dataKey(row) : field(row, dataKey),
-          numeric
-        )
-      }
-    />
+                    {label.context && (
+                      <tspan x={x} dy="1.4em">
+                        {label.context}
+                      </tspan>
+                    )}
+                  </text>
+                );
+              }
+            : xAxisDefaults.tick
+        }
+        {...axisProps}
+        type="number"
+        dataKey={row =>
+          chartTimestamp(
+            typeof dataKey === 'function' ? dataKey(row) : field(row, dataKey),
+            numeric
+          )
+        }
+      />
+      <LinkedTimeCursor times={model.times} axisId={id} />
+    </>
   );
 }

@@ -12,7 +12,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 
-import type { ChartItem, ValueChartProps } from './chart-data.ts';
+import type { CartesianChartItem, CartesianChartProps } from './chart-data.ts';
 import { validateValueChartItems } from './chart-data.ts';
 import {
   ChartArea,
@@ -20,6 +20,7 @@ import {
   ChartDot,
   ChartXAxis,
   ChartYAxis,
+  ChartGrid,
 } from './chart-primitives.tsx';
 import {
   ExplorationActionControl,
@@ -30,20 +31,27 @@ import {
 } from './ExplorationActionControl.tsx';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
 import { Tooltip } from './Tooltip.tsx';
+import { useLinkedChartCursor } from './use-chart-cursor-group.tsx';
 import { useChartScrollToEnd } from './use-chart-scroll-to-end.ts';
 
 /** Ordered, equally spaced samples; negative values share an explicit zero baseline. */
-export function TrendChart<Row extends ChartItem>({
+export function TrendChart<Row extends CartesianChartItem>({
   items,
   unit,
   ariaLabel,
   formatValue = formatNumber,
   kind,
   itemActions,
-}: ValueChartProps<Row> & { kind: 'line' | 'area' }) {
+  cursorGroup,
+  horizontalGrid = false,
+}: CartesianChartProps<Row> & { kind: 'line' | 'area' }) {
   validateValueChartItems(kind, items);
   const Plot = kind === 'area' ? RechartsAreaChart : RechartsLineChart;
   const chartActions = useChartActions();
+  const cursor = useLinkedChartCursor(cursorGroup);
+  const linkedItem = items.find(
+    item => item.time === cursor.time && cursor.time != null
+  );
   const [activeIndex, setActiveIndex] = useState<number>();
   const scrollport = useChartScrollToEnd(items);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
@@ -60,7 +68,15 @@ export function TrendChart<Row extends ChartItem>({
     0
   );
   return (
-    <section className="altertable-trend-chart" aria-label={ariaLabel}>
+    <section
+      className="altertable-trend-chart"
+      aria-label={ariaLabel}
+      onPointerLeave={cursor.reset}
+      onKeyDownCapture={cursor.reset}
+      onPointerDownCapture={event => {
+        if (event.pointerType !== 'mouse') cursor.reset();
+      }}
+    >
       {items.length === 0 && <span>No data</span>}
       {items.length > 0 && (
         <>
@@ -88,6 +104,7 @@ export function TrendChart<Row extends ChartItem>({
                     domain={[low, high === low ? low + 1 : high]}
                   />
                   <ReferenceLine y={0} stroke="var(--atbl-border)" />
+                  {horizontalGrid && <ChartGrid />}
                   {kind === 'area' && (
                     <ChartArea
                       dataKey="plotValue"
@@ -112,6 +129,15 @@ export function TrendChart<Row extends ChartItem>({
                     }
                     activeDot={false}
                   />
+                  {linkedItem && (
+                    <ReferenceLine
+                      x={linkedItem.id}
+                      stroke="var(--atbl-muted)"
+                      strokeOpacity={0.3}
+                      pointerEvents="none"
+                      data-atbl-internal-linked-cursor="true"
+                    />
+                  )}
                 </Plot>
               </div>
               <div className="altertable-trend-points">
@@ -131,7 +157,13 @@ export function TrendChart<Row extends ChartItem>({
                     };
                   return (
                     <Fragment key={item.id}>
-                      <div className="altertable-chart-item-actions">
+                      <div
+                        className="altertable-chart-item-actions"
+                        onPointerMove={event => {
+                          if (event.pointerType === 'mouse')
+                            cursor.setTime(item.time);
+                        }}
+                      >
                         <Tooltip
                           variant="chart"
                           followCursor={false}

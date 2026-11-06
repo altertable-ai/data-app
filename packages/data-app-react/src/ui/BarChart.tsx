@@ -7,14 +7,23 @@ import {
   type ComponentRef,
   type RefObject,
 } from 'react';
-import { BarChart as RechartsBarChart, Cell } from 'recharts';
+import {
+  BarChart as RechartsBarChart,
+  Cell,
+  type BarShapeProps,
+} from 'recharts';
 
 import {
   validateValueChartItems,
   type ChartItem,
-  type ValueChartProps,
+  type CartesianChartProps,
 } from './chart-data.ts';
-import { ChartBar, ChartXAxis, ChartYAxis } from './chart-primitives.tsx';
+import {
+  ChartBar,
+  ChartGrid,
+  ChartXAxis,
+  ChartYAxis,
+} from './chart-primitives.tsx';
 import { chartBarFill } from './chartColor.ts';
 import {
   openExplorationMenu,
@@ -26,6 +35,7 @@ import {
 import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
 import { Tooltip } from './Tooltip.tsx';
+import { useLinkedChartCursor } from './use-chart-cursor-group.tsx';
 import { useChartScrollToEnd } from './use-chart-scroll-to-end.ts';
 
 export type BarChartItem = ChartItem & {
@@ -79,7 +89,7 @@ function timeTickIndices(items: readonly BarChartItem[], width: number) {
 }
 
 export type BarChartProps<Row extends BarChartItem = BarChartItem> =
-  ValueChartProps<Row>;
+  CartesianChartProps<Row>;
 
 /** Nonnegative category values. Compose inside VisualizationWidget for a titled panel.
  * Owns hover/touch tooltips; no selection state or keyboard navigation. */
@@ -89,9 +99,15 @@ export function BarChart<Row extends BarChartItem>({
   ariaLabel,
   formatValue = formatNumber,
   itemActions,
+  cursorGroup,
+  horizontalGrid = false,
 }: BarChartProps<Row>) {
   validateValueChartItems('bar', items);
   const chartActions = useChartActions();
+  const cursor = useLinkedChartCursor(cursorGroup);
+  const linkedItem = items.find(
+    item => item.time === cursor.time && cursor.time != null
+  );
   const [activeId, setActiveId] = useState<string>();
   const [viewportWidth, setViewportWidth] = useState(0);
   const scrollport = useChartScrollToEnd(items);
@@ -126,7 +142,15 @@ export function BarChart<Row extends BarChartItem>({
   }, [scrollport]);
 
   return (
-    <section className="altertable-selectable-bars" aria-label={ariaLabel}>
+    <section
+      className="altertable-selectable-bars"
+      aria-label={ariaLabel}
+      onPointerLeave={cursor.reset}
+      onKeyDownCapture={cursor.reset}
+      onPointerDownCapture={event => {
+        if (event.pointerType !== 'mouse') cursor.reset();
+      }}
+    >
       {items.length === 0 && <span>No data</span>}
       <div
         className="altertable-selectable-bars-scroll"
@@ -153,9 +177,31 @@ export function BarChart<Row extends BarChartItem>({
             >
               <ChartXAxis hide dataKey="id" scale="band" />
               <ChartYAxis hide domain={[0, 1]} allowDataOverflow />
+              {horizontalGrid && <ChartGrid />}
               <ChartBar
                 dataKey="plotValue"
                 minPointSize={value => ((value ?? 0) > 0 ? 7 : 0)}
+                background={
+                  linkedItem
+                    ? ({ index, x, y, width, height }: BarShapeProps) => (
+                        <g>
+                          {items[index]?.id === linkedItem.id && (
+                            <rect
+                              x={x}
+                              y={y}
+                              width={width}
+                              height={height}
+                              fill="var(--atbl-muted)"
+                              fillOpacity={0.14}
+                              pointerEvents="none"
+                              aria-hidden="true"
+                              data-atbl-internal-linked-cursor="true"
+                            />
+                          )}
+                        </g>
+                      )
+                    : false
+                }
               >
                 {items.map(item => (
                   <Cell
@@ -182,7 +228,13 @@ export function BarChart<Row extends BarChartItem>({
               };
               return (
                 <Fragment key={item.id}>
-                  <div className="altertable-chart-item-actions">
+                  <div
+                    className="altertable-chart-item-actions"
+                    onPointerMove={event => {
+                      if (event.pointerType === 'mouse')
+                        cursor.setTime(item.time);
+                    }}
+                  >
                     <Tooltip
                       variant="chart"
                       followCursor={false}

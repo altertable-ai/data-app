@@ -108,10 +108,13 @@ AreaChart.itemActions?: ItemActions<Row> — Actions available for each displaye
 AreaChart.unit: string
 AreaChart.ariaLabel: string
 AreaChart.formatValue?: ((value: number) => string)
+AreaChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
+AreaChart.cursorGroup?: ChartCursorGroup — Share mouse-hover timestamps with charts receiving the same handle. Matches each item's time exactly.
 AreaChartItem (type, @altertable/data-app-react/ui)
 AreaChartItem.id: string
 AreaChartItem.label: string
 AreaChartItem.value: number
+AreaChartItem.time?: number — Optional timestamp in epoch milliseconds for cursor linking. Omit for category samples.
 AreaChartProps (type, @altertable/data-app-react/ui): <Row> = props listed as AreaChart.*
 BarChart (component, @altertable/data-app-react/ui): <Row extends BarChartItem>(props: BarChartProps<Row>) — Nonnegative category values. Compose inside VisualizationWidget for a titled panel. Owns hover/touch tooltips; no selection state or keyboard navigation.
 BarChart.items: readonly Row[] — Ordered samples; the chart validates IDs and values when rendering.
@@ -119,6 +122,8 @@ BarChart.itemActions?: ItemActions<Row> — Actions available for each displayed
 BarChart.unit: string
 BarChart.ariaLabel: string
 BarChart.formatValue?: ((value: number) => string)
+BarChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
+BarChart.cursorGroup?: ChartCursorGroup — Share mouse-hover timestamps with charts receiving the same handle. Matches each item's time exactly.
 BarChartItem (type, @altertable/data-app-react/ui)
 BarChartItem.id: string
 BarChartItem.label: string
@@ -153,6 +158,7 @@ Button.size?: 'compact' | 'default' | 'icon' | 'icon-compact'
 Button.…: plus props inherited from React
 ButtonProps (type, @altertable/data-app-react): = props listed as Button.*
 chartColor (function, @altertable/data-app-react): (id: string): string
+ChartCursorGroup (type, @altertable/data-app-react/ui): Opaque shared-cursor handle. Create with useChartCursorGroup and pass through chart cursorGroup props.
 ChartLegend (component, @altertable/data-app-react/ui): (props: ChartLegendProps)
 ChartLegend.children: ReactNode
 ChartLegend.layout?: 'horizontal' | 'single-row' | 'vertical' — Single-row fits up to four cells before expansion, adapting to available width.
@@ -245,9 +251,11 @@ Comparison.favorableDirection?: 'down' | 'up' [variant 2 of 2]
 Comparison.label: string [variant 2 of 2]
 ComparisonProps (type, @altertable/data-app-react): = props listed as Comparison.*
 ComposedChart (component, @altertable/data-app-react/ui): <Row>(props: ComposedChartProps<Row>) — Shared themed series and controls; other children retain native Recharts defaults.
+ComposedChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 ComposedChart.data: readonly Row[] — Displayed rows; series and axes select fields with Recharts dataKey props.
 ComposedChart.ariaLabel: string — Describes the measures and scope for assistive technology.
 ComposedChart.valueFormat?: MetricFormat — Shared measure semantics: compact numeric axes and precise tooltips. For mixed units, use explicit axis tickFormatter and series/tooltip formatters.
+ComposedChart.cursorGroup?: ChartCursorGroup — Share mouse-hover timestamps with charts receiving the same handle, using the temporal X axis.
 ComposedChart.…: plus props inherited from recharts
 ComposedChart.Dot: (props: DotProps & { active?: boolean; })
 ComposedChart.Area: <Row = unknown, Value = number | null>(props: AreaProps<Row, Value>)
@@ -891,6 +899,7 @@ FunnelChart.ariaLabel: string — Accessible measure and scope description.
 FunnelChart.unit: string — Population unit, such as users or sessions.
 FunnelChart.formatValue?: ((value: number) => string) — Formats counts; rates use percentage formatting.
 FunnelChart.className?: string
+FunnelChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 FunnelChart.steps: readonly FunnelChartStep[]
 FunnelChart.series: readonly FunnelChartSeries[]
 FunnelChartProps (type, @altertable/data-app-react/ui): = props listed as FunnelChart.*
@@ -990,10 +999,13 @@ LineChart.itemActions?: ItemActions<Row> — Actions available for each displaye
 LineChart.unit: string
 LineChart.ariaLabel: string
 LineChart.formatValue?: ((value: number) => string)
+LineChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
+LineChart.cursorGroup?: ChartCursorGroup — Share mouse-hover timestamps with charts receiving the same handle. Matches each item's time exactly.
 LineChartItem (type, @altertable/data-app-react/ui)
 LineChartItem.id: string
 LineChartItem.label: string
 LineChartItem.value: number
+LineChartItem.time?: number — Optional timestamp in epoch milliseconds for cursor linking. Omit for category samples.
 LineChartProps (type, @altertable/data-app-react/ui): <Row> = props listed as LineChart.*
 LiveControl (component, @altertable/data-app-react/ui): (props: LiveControlProps) — Toggle an app-owned recurring refresh. The app supplies the timer and its cadence.
 LiveControl.enabled: boolean
@@ -1356,6 +1368,7 @@ RetentionChart.ariaLabel: string — Accessible measure and scope description.
 RetentionChart.unit: string — Population unit, such as users or sessions.
 RetentionChart.formatValue?: ((value: number) => string) — Formats counts; rates use percentage formatting.
 RetentionChart.className?: string
+RetentionChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 RetentionChart.series: readonly RetentionChartSeries[]
 RetentionChartPoint (type, @altertable/data-app-react/ui)
 RetentionChartPoint.offset: number — Nonnegative integer, unique per series; uneven offsets retain their distance.
@@ -1370,6 +1383,7 @@ RetentionChartSeries.label: string
 RetentionChartSeries.cohortSize: number — Finite, nonnegative starting population.
 RetentionChartSeries.points: readonly RetentionChartPoint[]
 ScatterChart (component, @altertable/data-app-react/ui): (props: ScatterChartProps) — Independent finite X/Y observations on linear axes that include zero. Negative and constant coordinates are supported.
+ScatterChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 ScatterChart.items: readonly ScatterChartItem[]
 ScatterChart.xLabel: string
 ScatterChart.yLabel: string
@@ -1673,6 +1687,7 @@ UpdatedAt.onOpenChange?: ((open: boolean) => void)
 UpdatedAt.timeZone?: string
 UpdatedAtProps (type, @altertable/data-app-react): = props listed as UpdatedAt.*
 useAppVariables (hook, @altertable/data-app-react/ui): <const Variables extends VariableCollection>(definitions: Variables): { values: AppVariableValues<Variables>; calendarRevision: number; set: <Key extends keyof Variables & string>(name: Key, value: AppVariableValues<Variables>[Key]) => void; ... 4 more ...; bind: <Key extends keyof Variables & stri… — URL is the source of truth for app variables; one update can change dependent values atomically.
+useChartCursorGroup (hook, @altertable/data-app-react/ui): (): ChartCursorGroup — Creates a stable shared mouse-hover cursor handle. Pass it explicitly to each participating chart's cursorGroup prop. Peers indicate exact timestamp matches while tooltips remain local.
 useDateFormatting (hook, @altertable/data-app-react, @altertable/data-app-react/ui): (options: {…}): { locale: string; timeZone: string; } — Resolve date display defaults for custom charts and narrative. Explicit options override the view and app.
 useDateFormatting.options.locale?: string
 useDateFormatting.options.timeZone?: string

@@ -183,12 +183,7 @@ export function ChartTooltip({
         }}
         onPointerMove={event => {
           onPointerMove?.(event);
-          if (
-            event.defaultPrevented ||
-            event.pointerType !== 'mouse' ||
-            !followCursor
-          )
-            return;
+          if (event.defaultPrevented || event.pointerType !== 'mouse') return;
           if (
             !chartPointerMoved(
               event.currentTarget.ownerDocument,
@@ -197,6 +192,9 @@ export function ChartTooltip({
             )
           )
             return;
+          // A fixed tooltip stays put while open, but real mouse movement
+          // must be able to resume inspection after scroll dismissal.
+          if (!followCursor && visible) return;
           positionAtPointer(event);
           if (!suppressed.current) setOpen(true);
         }}

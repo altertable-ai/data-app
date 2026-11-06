@@ -147,6 +147,44 @@ test('standalone bar, line and area tooltips stay put while the same item is hig
   }
 });
 
+test('fixed chart inspection resumes within the same sample after scrolling', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const name of ['Standalone bar', 'Standalone line', 'Standalone area']) {
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    const point = chart.getByRole('button', {
+      name: 'Wed: 8.0 ms',
+      exact: true,
+    });
+    await point.hover();
+    const bounds = await point.boundingBox();
+    const x = bounds!.x + bounds!.width / 2;
+    const y = bounds!.y + bounds!.height / 2;
+    await page.mouse.move(x + 1, y);
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain('8.0 ms');
+    await page.evaluate(() => window.scrollBy(0, 10));
+    await expect.poll(() => page.getByRole('tooltip').count()).toBe(0);
+    await page.mouse.move(x + 2, y);
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain('8.0 ms');
+    if (name !== 'Standalone bar') {
+      await expect
+        .poll(() => chart.locator('.altertable-chart-canvas circle').count())
+        .toBe(1);
+    }
+    await page.keyboard.press('Escape');
+    await page.mouse.move(x + 3, y);
+    expect(await page.getByRole('tooltip').count()).toBe(0);
+  }
+});
+
 test('standalone bars inspect the nearest category between visible bars', async ({
   page,
 }) => {
