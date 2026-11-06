@@ -568,15 +568,12 @@ DateTimeRangePicker.maxRangeDays?: number — Client limit for determinate durat
 DateTimeRangePicker.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange… — Shared reporting policy; generated controls inherit it from their variable.
 DateTimeRangePicker.presets?: readonly DateTimeRangePreset[] — Suggestions in display order. Omit for defaults; [] retains calendar and text entry. Invalid or over-limit suggestions are omitted; typed input is not restricted to the menu.
 DateTimeRangePicker.disabled?: boolean
-DateTimeRangePicker.selectedPresetId?: string | null
-DateTimeRangePicker.onPresetChange?: ((id: string) => void)
 DateTimeRangePicker.isDefault?: boolean
 DateTimeRangePicker.onReset?: (() => void)
 DateTimeRangePicker.calendarFooter?: ReactNode
 DateTimeRangePicker.comparison?: { enabled: boolean; range: DateTimeRange | null; onChange: (enabled: boolean) => void; } — Optional controlled comparison with the immediately preceding equal-length interval.
 DateTimeRangePickerProps (type, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as DateTimeRangePicker.*
 DateTimeRangePreset (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): A picker suggestion. Text ranges use the same natural-language parser as typed input.
-DateTimeRangePreset.id?: string — Stable identity for controls that retain a relative preset in URL state.
 DateTimeRangePreset.label: string — Menu label, also shown when this preset matches the selected range.
 DateTimeRangePreset.range: string | DateTimeRange
 DateTimeRangePreset.shortcut?: string — Optional compact badge, for example "15m".

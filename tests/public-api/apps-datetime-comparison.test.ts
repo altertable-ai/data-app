@@ -2,7 +2,7 @@ import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
-test('datetime comparisons preserve selection through queries, reload, refresh, and clear', async ({
+test('datetime comparisons preserve selection through queries, reload, refresh, and reset', async ({
   page,
 }) => {
   await page.clock.setFixedTime(new Date('2026-07-10T16:00:00Z'));
@@ -57,7 +57,9 @@ test('datetime comparisons preserve selection through queries, reload, refresh, 
   await expect
     .poll(() => output.textContent())
     .toContain('2026-07-10T17:00:00.000Z');
-  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Reset date range', exact: true })
+    .click();
   await expect.poll(() => output.textContent()).toContain('"comparison":null');
   expect(new URL(page.url()).searchParams.has('compare')).toBe(false);
 });

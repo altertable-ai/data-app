@@ -260,6 +260,8 @@ export function useViewVariables<Variables extends VariableCollection>(
             maxRangeDays={definition.maxRangeDays}
             presets={definition.presets}
             contract={definition.contract}
+            isDefault={!active}
+            onReset={() => setControlValue(baseline)}
             comparison={{
               enabled: selection.comparison === 'previous',
               range: definition.previous(selection),
@@ -292,6 +294,8 @@ export function useViewVariables<Variables extends VariableCollection>(
             maxRangeDays={definition.maxRangeDays}
             presets={definition.presets}
             contract={definition.contract}
+            isDefault={!active}
+            onReset={() => setControlValue(baseline)}
             onChange={next =>
               setControlValue(next as AppVariableValues<Variables>[typeof name])
             }

@@ -62,8 +62,6 @@ export type DateTimeRangePickerProps = {
    */
   presets?: readonly DateTimeRangePreset[];
   disabled?: boolean;
-  selectedPresetId?: string | null;
-  onPresetChange?: (id: string) => void;
   isDefault?: boolean;
   onReset?: () => void;
   calendarFooter?: ReactNode;
@@ -188,8 +186,6 @@ export function DateTimeRangePicker({
   onChange,
   liveOption,
   comparison,
-  selectedPresetId,
-  onPresetChange,
   isDefault,
   onReset,
   calendarFooter,
@@ -272,7 +268,6 @@ export function DateTimeRangePicker({
   }
 
   const presets: (DateTimeRangePreset & {
-    id?: string;
     range: DateTimeRange;
     live: boolean;
   })[] = [
@@ -314,10 +309,7 @@ export function DateTimeRangePicker({
     preset =>
       value &&
       preset.live === live &&
-      (selectedPresetId !== undefined
-        ? preset.id === selectedPresetId
-        : serializeDateTimeRange(preset.range) ===
-          serializeDateTimeRange(value))
+      serializeDateTimeRange(preset.range) === serializeDateTimeRange(value)
   );
   function selectInput() {
     setSelectionRevision(revision => revision + 1);
@@ -382,10 +374,7 @@ export function DateTimeRangePicker({
     }
     const preset = presets[index];
     if (preset) {
-      if (preset.id && onPresetChange) {
-        onPresetChange(preset.id);
-        close(true);
-      } else commit(preset.range, preset.live);
+      commit(preset.range, preset.live);
       return;
     }
     if (index === calendarIndex) {

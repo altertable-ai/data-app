@@ -37,7 +37,7 @@ GROUP BY c.country ORDER BY revenue DESC, c.country`,
       projections: { day: { type: 'string' }, order_count: { type: 'number' } },
       statement: `
 SELECT CAST(g.day AS DATE) AS day, count(o.id) AS order_count
-FROM generate_series(CAST($window.from AS DATE), CAST($window.to AS DATE) - INTERVAL 1 DAY, INTERVAL 1 DAY) g(day)
+FROM generate_series(CAST($window.from AS DATE), CAST(CAST($window.to AS TIMESTAMP) - INTERVAL 1 MICROSECOND AS DATE), INTERVAL 1 DAY) g(day)
 LEFT JOIN (
   SELECT o.id, o.ordered_at FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
   WHERE o.ordered_at >= CAST($window.from AS TIMESTAMP) AND o.ordered_at < CAST($window.to AS TIMESTAMP) AND ($countryMode = 'all' OR CASE WHEN $countryMode = 'include' THEN c.country IS NOT DISTINCT FROM $country ELSE c.country IS DISTINCT FROM $country END)
