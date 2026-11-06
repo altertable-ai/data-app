@@ -8,8 +8,6 @@ import {
 
 /** Coordinates in the chart SVG, shared by pointer tracking and active samples. */
 export type ChartPoint = { x: number; y: number };
-type ChartBarTarget = ChartPoint & { width: number; height: number };
-export type ChartTarget = ChartPoint | ChartBarTarget;
 
 type ChartInteractionApi = {
   isPointerInspection: boolean;
@@ -17,13 +15,6 @@ type ChartInteractionApi = {
   seriesCount: number;
   /** Line and area series register the sample at the current inspection position. */
   registerPoint: (id: string, x: number, y: number) => () => void;
-  registerBar: (
-    id: string,
-    x: number,
-    y: number,
-    width: number,
-    height: number
-  ) => () => void;
   registerSeries: (id: string) => () => void;
   activeSeriesId: string | null;
   setHoveredSeriesId: (id: string | null) => void;
