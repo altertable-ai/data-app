@@ -3,9 +3,12 @@
   box-sizing: border-box;
   text-align: left;
 }
+/* Label and value both keep a readable base; spare width goes to the label first
+   (its much larger grow factor), so the value truncates before the label does. */
 .altertable-picker-label {
-  flex: 0 1 auto;
+  flex: 1000 1 6em;
   min-width: 0;
+  max-width: max-content;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -14,9 +17,9 @@
   font-weight: var(--atbl-type-meta-weight);
 }
 .altertable-picker-value {
-  flex: none;
+  flex: 1 1 6em;
   min-width: 0;
-  max-width: 55%;
+  max-width: max-content;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

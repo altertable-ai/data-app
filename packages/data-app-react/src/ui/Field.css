@@ -37,8 +37,3 @@
   max-width: 100%;
   min-width: 0;
 }
-.altertable-field .altertable-picker-value {
-  max-width: calc(
-    100% - var(--atbl-control-icon-size) - var(--atbl-control-gap)
-  );
-}
