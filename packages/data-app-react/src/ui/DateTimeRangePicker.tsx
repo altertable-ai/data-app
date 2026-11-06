@@ -422,6 +422,26 @@ function DateTimePicker({
     }
   }
 
+  const defaultPresets = presetInputs.map(([shortcut, label]) => ({
+    shortcut,
+    label,
+    range: shortcut,
+  }));
+  const defaultsFitContract = defaultPresets.some(preset => {
+    const parsed = parseDateTimeRangeInput(preset.range);
+    return parsed.ok && !rangeError(parsed.range);
+  });
+  const suggestedPresets =
+    configuredPresets ??
+    (contract && !defaultsFitContract
+      ? availableDatePresets(contract.bounds()).map(preset => ({
+          id: preset.id,
+          label: preset.label,
+          range: calendarRangeToDateTime(preset.range),
+          shortcut: calendarPresetShortcut(preset.id),
+        }))
+      : defaultPresets);
+
   const presets: (DateTimeRangePreset & {
     id?: string;
     range: DateTimeRange;
@@ -437,14 +457,7 @@ function DateTimePicker({
           },
         ]
       : []),
-    ...(
-      configuredPresets ??
-      presetInputs.map(([shortcut, label]) => ({
-        shortcut,
-        label,
-        range: shortcut,
-      }))
-    ).flatMap(preset => {
+    ...suggestedPresets.flatMap(preset => {
       if (typeof preset.range !== 'string')
         return [{ ...preset, range: preset.range, live: false }];
       const result = parseDateTimeRangeInput(preset.range);

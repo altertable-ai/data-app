@@ -136,6 +136,16 @@ mountDataApp({ app, component: App });
 function PickerControls() {
   const [value, setValue] = useState<DateTimeRange | null>(null);
   const [live, setLive] = useState(false);
+  const historicalContract = new URLSearchParams(location.search).has(
+    'historical'
+  )
+    ? defineDateRangeContract({
+        minDate: '2026-09-01',
+        maxDate: '2026-09-30',
+        maxRangeDays: 30,
+        timeZone: 'UTC',
+      })
+    : undefined;
   return (
     <main
       style={{
@@ -149,7 +159,8 @@ function PickerControls() {
         label="Custom period"
         presets={presets}
         value={value}
-        maxRangeDays={3}
+        maxRangeDays={historicalContract ? 30 : 3}
+        contract={historicalContract}
         liveOption={{
           dateTimeRange: {
             from: {

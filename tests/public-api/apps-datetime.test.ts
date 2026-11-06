@@ -351,6 +351,25 @@ test('standalone menus support monitoring and empty presets without losing text 
   await expect.poll(() => generated.inputValue()).toBe('Past 2 weeks');
 });
 
+test('bounded historical ranges offer calendar presets when none are configured', async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date('2026-11-06T12:00:00Z'));
+  await page.goto('/datetime?controls&historical');
+  const input = page.getByRole('combobox', {
+    name: 'Custom period',
+    exact: true,
+  });
+  await input.click();
+  await page.getByRole('option', { name: 'Latest 7 available days' }).click();
+  await expect.poll(() => input.inputValue()).toBe('Latest 7 available days');
+  await expect
+    .poll(() =>
+      page.getByRole('status', { name: 'Custom selection' }).textContent()
+    )
+    .toContain('2026-10-01T00:00:00.000Z');
+});
+
 test('modified arrows preserve native text selection without editing date segments', async ({
   page,
 }) => {
