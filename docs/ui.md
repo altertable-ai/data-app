@@ -262,9 +262,6 @@ filter declarations own URL state, validation, and operation meaning.
 | `<DateTimeRangePicker>`            | Datetime ranges with an exclusive end                             |
 | `<DimensionPicker>`                | Typed categorical predicates with fixed or facet options          |
 
-Use `dateTimeRangeVariable()` for generated reporting controls. Calendar-day
-selections resolve to datetime bounds at midnight with an exclusive end.
-
 ```tsx
 function FilterChoices() {
   // ... metric, statuses, and their change handlers
