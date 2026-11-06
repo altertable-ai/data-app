@@ -123,6 +123,7 @@ BarChartItem (type, @altertable/data-app-react/ui)
 BarChartItem.id: string
 BarChartItem.label: string
 BarChartItem.value: number
+BarChartItem.time?: number — Milliseconds since the Unix epoch. Enables adaptive time ticks when no item actions are supplied.
 BarChartProps (type, @altertable/data-app-react/ui): <Row> = props listed as BarChart.*
 booleanFilter (function, @altertable/data-app/contract): (options: FilterOptions<BooleanSelection>): BooleanFilter — Boolean predicate with a distinct unrestricted state.
 booleanFilter.options.key: string

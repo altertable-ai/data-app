@@ -3,10 +3,11 @@
 }
 .altertable-selectable-bars-scroll {
   min-width: 0;
-  width: 100%;
+  width: auto;
   height: 260px;
   margin: 12px 2px 14px;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 .altertable-selectable-bars-item {
   display: flex;
@@ -105,6 +106,45 @@
   min-height: 0;
   padding: 0;
   color: inherit;
+}
+
+.altertable-selectable-bars-scroll[data-time-axis='true']
+  :is(
+    .altertable-selectable-bars-item,
+    .altertable-chart-item-actions,
+    .altertable-tooltip-trigger.altertable-chart-column
+  ) {
+  min-width: 0;
+}
+.altertable-selectable-bars-scroll[data-time-axis='true']
+  .altertable-chart-item-actions
+  > .altertable-tooltip-trigger.altertable-chart-column[data-variant='chart'] {
+  min-width: 0;
+}
+.altertable-selectable-bars-scroll[data-time-axis='true']
+  .altertable-chart-item-label-row {
+  position: relative;
+  padding-inline: 0;
+}
+.altertable-selectable-bars-scroll[data-time-axis='true']
+  .altertable-chart-item-label-row:not([data-time-tick='true'])
+  > span {
+  display: none;
+}
+.altertable-selectable-bars-scroll[data-time-axis='true']
+  .altertable-chart-item-label-row
+  > span {
+  position: absolute;
+  left: 50%;
+  width: max-content;
+  max-width: none;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.altertable-selectable-bars-scroll[data-time-axis='true']
+  .altertable-selectable-bars-label
+  > span {
+  overflow: visible;
 }
 
 .altertable-selectable-bars-label > span {

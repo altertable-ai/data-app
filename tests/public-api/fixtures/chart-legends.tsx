@@ -611,6 +611,23 @@ createRoot(document.getElementById('root')!).render(
           />
         </Example>
       ))}
+      {new URLSearchParams(location.search).has('minute-bars') && (
+        <Example
+          name="Minute bars"
+          description="One-minute samples use sparse time ticks and fit the chart width."
+        >
+          <BarChart
+            ariaLabel="Minute bars"
+            unit="requests"
+            items={Array.from({ length: 60 }, (_, index) => ({
+              id: String(index),
+              label: `12:${String(index).padStart(2, '0')}`,
+              time: Date.UTC(2026, 0, 1, 12, index),
+              value: 20 + (index % 12),
+            }))}
+          />
+        </Example>
+      )}
       <Example
         name="Standalone bar"
         description="Original category input contract."
