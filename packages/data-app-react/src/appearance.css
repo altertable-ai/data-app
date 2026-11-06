@@ -11,7 +11,6 @@
   --atbl-palette-positive: #147862;
   --atbl-palette-danger: #b42318;
   --atbl-chart-strength: 100%;
-  --atbl-accent-subtle-strength: 12%;
 }
 :root[data-atbl-theme='dark'] {
   --atbl-palette-background: #151719;
@@ -55,7 +54,6 @@
 }
 :root[data-atbl-theme='dark'] {
   --atbl-palette-accent: var(--atbl-input-dark-accent, var(--atbl-text));
-  --atbl-accent-subtle-strength: 22%;
   --atbl-palette-on-accent: var(--atbl-input-on-accent, var(--atbl-background));
   --atbl-palette-positive: #6bc39a;
   --atbl-palette-danger: #f97066;

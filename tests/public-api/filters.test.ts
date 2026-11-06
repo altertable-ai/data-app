@@ -2,7 +2,7 @@ import {
   searchVariable,
   choiceVariable,
   multiChoiceVariable,
-  dateRangeVariable,
+  dateTimeRangeVariable,
   type VariablePresentation,
 } from '@altertable/data-app-react';
 import { useAppVariables } from '@altertable/data-app-react/ui';
@@ -63,7 +63,7 @@ test('presentation intent is retained by each variable constructor without chang
       options: [{ value: 'FR', label: 'France' }],
       presentation,
     }),
-    dateRangeVariable({
+    dateTimeRangeVariable({
       key: 'period',
       contract: defineDateRangeContract({
         minDate: '2026-01-01',
@@ -71,7 +71,10 @@ test('presentation intent is retained by each variable constructor without chang
         maxRangeDays: 31,
         timeZone: 'UTC',
       }),
-      defaultValue: { kind: 'dates', start: '2026-01-01', end: '2026-01-31' },
+      defaultValue: {
+        from: new Date('2026-01-01T00:00:00Z'),
+        to: new Date('2026-02-01T00:00:00Z'),
+      },
       presentation,
     }),
   ];

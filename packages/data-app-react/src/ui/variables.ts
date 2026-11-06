@@ -1,12 +1,8 @@
 import {
   invariant,
-  type DatePresetId,
-  type DateRange,
   defineAppVariables,
   type AppVariable,
   type AppVariableValues,
-  type DateRangeSelection,
-  type DateRangeVariable,
   type HistoryMode,
   type VariableCollection,
 } from '@altertable/data-app/internal';
@@ -18,7 +14,6 @@ export {
   searchVariable,
   choiceVariable,
   multiChoiceVariable,
-  dateRangeVariable,
   type VariablePresentation,
   type AppVariable,
   type AppVariableValues,
@@ -26,63 +21,8 @@ export {
   type ChoiceVariable,
   type MultiChoiceVariable,
   type SearchVariable,
-  type DateRangeSelection,
-  type DateRangeVariable,
-  type DateRangeVariableOptions,
   type VariableCollection,
 } from '@altertable/data-app/internal';
-
-/** Adapt one date variable to the controlled picker without giving the picker URL ownership. */
-export function dateRangeControl(
-  variable: DateRangeVariable,
-  selection: DateRangeSelection,
-  onChange: (selection: DateRangeSelection) => void
-) {
-  const value = variable.resolve(selection);
-
-  function update(next: DateRangeSelection) {
-    return onChange(
-      selection.comparison && variable.previous(next)
-        ? { ...next, comparison: 'previous' }
-        : next
-    );
-  }
-
-  return {
-    value,
-    label: variable.label,
-    onChange(range: DateRange | null) {
-      return update(
-        range ? { kind: 'dates', ...range } : variable.defaultValue
-      );
-    },
-    onPresetChange(id: DatePresetId) {
-      return update({ kind: 'preset', id });
-    },
-    selectedPresetId: selection.kind === 'preset' ? selection.id : null,
-    onReset() {
-      return onChange(variable.defaultValue);
-    },
-    isDefault: variable.same(selection, variable.defaultValue),
-    resetValue: variable.resolve(variable.defaultValue),
-    ...(variable.supportsComparison
-      ? {
-          comparison: {
-            enabled: selection.comparison === 'previous',
-            range: variable.previous(selection),
-            onChange(enabled: boolean) {
-              return onChange(
-                enabled
-                  ? { ...selection, comparison: 'previous' }
-                  : { ...selection, comparison: undefined }
-              );
-            },
-          },
-        }
-      : {}),
-    ...variable.bounds(),
-  };
-}
 
 function currentSearch() {
   return searchParams().toString();
@@ -103,13 +43,11 @@ export function useAppVariables<const Variables extends VariableCollection>(
     serverSearch
   );
   const zones = Object.values(definitions).flatMap(item =>
-    item.kind === 'dateRange'
-      ? [item.bounds().timeZone]
-      : (item.kind === 'dateTimeRange' ||
-            item.kind === 'dateTimeRangeComparison') &&
-          item.contract
-        ? [item.contract.bounds().timeZone]
-        : []
+    (item.kind === 'dateTimeRange' ||
+      item.kind === 'dateTimeRangeComparison') &&
+    item.contract
+      ? [item.contract.bounds().timeZone]
+      : []
   );
   const zoneKey = [...new Set(zones)].sort().join('|');
   const [calendarRevision, bumpDay] = useReducer(value => value + 1, 0);

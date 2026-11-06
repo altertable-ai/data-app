@@ -127,5 +127,6 @@ const calendar = defineDateRangeContract({
 ```
 
 Use the shared contract in the [datetime variable workflow](variables.md#absolute-and-relative-datetime-ranges),
-including optional previous-period comparison. Calendar-only views share it with
-`calendar.parseRequest()` and `defineTimeView()`.
+including optional previous-period comparison. Resolved datetime requests include
+the start and exclude the end. Pass the variable to `defineTimeView()` and
+validate operation input with its parser.

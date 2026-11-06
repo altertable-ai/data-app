@@ -1,7 +1,7 @@
 import {
   createDataContext,
   createDataHooks,
-  dateRangeVariable,
+  dateTimeRangeVariable,
   searchVariable,
   choiceVariable,
 } from '@altertable/data-app-react';
@@ -10,14 +10,14 @@ import {
   dimensionFilter,
   defineDateRangeContract,
   type DataOperation,
-  type DateRangeRequest,
+  type DateTimeRangeComparisonRequest,
   type DimensionOption,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 
 type Operations = {
   strings: DataOperation<
-    { search: string; period: DateRangeRequest },
+    { search: string; period: DateTimeRangeComparisonRequest },
     DimensionOption<string>[]
   >;
   numbers: DataOperation<
@@ -30,7 +30,7 @@ type Operations = {
   >;
   timed: DataOperation<
     {
-      period: DateRangeRequest;
+      period: DateTimeRangeComparisonRequest;
       search: string;
       region: DimensionSelection<string>;
     },
@@ -47,10 +47,11 @@ type Operations = {
   >;
 };
 const hooks = createDataHooks(createDataClient<Operations>());
-const period = dateRangeVariable({
+const period = dateTimeRangeVariable({
   key: 'period',
   contract: defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' }),
-  defaultValue: { kind: 'preset', id: 'last-7' },
+  allowComparison: true,
+  defaultValue: '7d',
 });
 const search = searchVariable({ key: 'search' });
 const region = hooks.defineFacetFilter({
@@ -63,7 +64,7 @@ const region = hooks.defineFacetFilter({
     operation: 'strings',
     input(values) {
       const text: string = values.search;
-      const dates: DateRangeRequest = values.period;
+      const dates: DateTimeRangeComparisonRequest = values.period;
       // @ts-expect-error The context is the declared dependency collection, not an arbitrary map.
       void values.invented;
       // @ts-expect-error A facet cannot depend on its own selection before it is declared.
@@ -212,14 +213,10 @@ hooks.defineFacetFilter({
   },
 });
 
-const time = {
-  contract: defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' }),
-  defaultValue: { kind: 'preset', id: 'last-7' },
-} as const;
 const timed = {
   operation: 'timed' as const,
   dataContext: context,
-  time,
+  time: period,
   isEmpty: () => false,
   emptyFallback: { title: 'Empty' },
 };
@@ -228,7 +225,7 @@ const missingTimeContext = {
   ...timed,
   variables: { region },
   input: (values: {
-    period: DateRangeRequest;
+    period: DateTimeRangeComparisonRequest;
     region: DimensionSelection<string>;
   }) => ({ ...values, search: '' }),
 };

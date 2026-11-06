@@ -129,7 +129,7 @@ const group = defineFacetFilter({
 });
 ```
 
-Declare `period` with `dateRangeVariable()`, include it alongside `group` in the view's variables,
+Declare `period` with `dateTimeRangeVariable()`, include it alongside `group` in the view's variables,
 and return parsed dimension options from the `groups` operation. Validate facet
 selections with `parseDimensionSelection(value, group)` from `/contract`.
 
@@ -140,23 +140,28 @@ choices; empty means no choices, unlike an unrestricted dimension.
 
 ## Reporting periods
 
-Choose calendar contracts for inclusive reporting days and datetime variables for
-rolling windows or times within a day. Both use the same picker; keep calendar
-contracts when your operations accept inclusive `start` and `end` dates.
-
-Use `defineTimeView()` when the analysis is period-driven. Obtain it from the
-existing hooks factory and share a `defineDateRangeContract()` with the parser.
-After adapting the operation to accept `{ period, groupName }`, the view can stay
-flat:
+Use `defineTimeView()` when the analysis is period-driven. Declare a
+`dateTimeRangeVariable()` and share its `defineDateRangeContract()` with the
+operation parser. Datetime bounds include `from` and exclude `to`; the `period`
+URL value stores the datetime selection. After adapting the operation to accept
+`{ period, groupName }`, the view can stay flat:
 
 ```ts
 // ... client, dailyCountsContext, and calendar contract
 const { defineTimeView } = createDataHooks(client);
+const period = dateTimeRangeVariable({
+  key: 'period',
+  contract: calendar,
+  defaultValue: {
+    from: new Date('2026-03-04T00:00:00Z'),
+    to: new Date('2026-03-11T00:00:00Z'),
+  },
+});
 
 const dailyCountsView = defineTimeView({
   dataContext: dailyCountsContext,
   operation: 'dailyCountsByGroup',
-  time: { contract: calendar, defaultValue: { kind: 'preset', id: 'last-7' } },
+  time: period,
   variables: {
     groupName: searchVariable({
       key: 'group',
@@ -169,8 +174,9 @@ const dailyCountsView = defineTimeView({
 });
 ```
 
-The operation's parser validates `period` with `calendar.parseRequest()`.
-Without additional variables, the default input is the calendar request itself.
+The operation's parser validates `period` with `period.parse()` or
+`period.parseInput()` when comparison is enabled. Resolved comparison requests
+have exclusive `range.to` and `comparison.to` bounds.
 Use `defineDataView()` for fixed snapshots or analysis without a reporting period.
 
 ## Numeric and boolean predicates
@@ -213,8 +219,8 @@ presentation, or navigation URL keys.
 
 ## Absolute and relative datetime ranges
 
-Use `dateTimeRangeVariable()` for times, rolling windows, or mixed absolute and
-relative bounds. Share the variable between the operation parser and the view;
+Use `dateTimeRangeVariable()` for calendar days, times, rolling windows, or
+mixed absolute and relative bounds. Share the variable between the operation parser and the view;
 `<DataApp>` supplies the picker and URL state:
 
 ```ts
@@ -270,4 +276,5 @@ to a [datetime parameter](contract.md#bind-datetime-ranges).
 against one reference time; the view derives metric comparison labels from that
 request. Omit `comparison` for a plain `DateTimeRange` input, and omit `contract`
 when no shared reporting policy is needed. Relative selections stay relative
-across reloads.
+across reloads. Query `from` inclusively and `to` exclusively. A September 24–30
+calendar selection uses `2026-09-24T00:00:00Z` through `2026-10-01T00:00:00Z`.

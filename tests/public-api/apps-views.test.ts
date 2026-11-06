@@ -162,14 +162,10 @@ test('calendar and dimension controls preserve comparisons, measured zero, and U
         .isVisible()
     )
     .toBe(true);
-  await page.getByRole('combobox', { name: 'Date range', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Date range' }).click();
   await page
-    .getByRole('checkbox', {
-      name: 'Compare with previous period',
-      exact: true,
-    })
+    .getByRole('option', { name: /Compare with previous period/ })
     .click();
-  await page.keyboard.press('Escape');
   await expect.poll(() => page.url()).toContain('compare=previous');
   await page.getByRole('button', { name: 'Region: All', exact: true }).click();
   await page.getByRole('option', { name: 'Europe', exact: true }).click();
@@ -206,6 +202,40 @@ test('calendar and dimension controls preserve comparisons, measured zero, and U
         .getByRole('main')
         .getByText(/^Displayed period: Mar 4–6, 2026 UTC/)
         .isVisible()
+    )
+    .toBe(true);
+});
+
+test('the unified picker sends calendar selections as exclusive-end datetime parameters', async ({
+  page,
+}) => {
+  await page.goto('/time-app');
+  const picker = page.getByRole('combobox', { name: 'Date range' });
+  await picker.click();
+  await page.getByRole('option', { name: 'Latest 7 available days' }).click();
+  await expect
+    .poll(() => JSON.parse(new URL(page.url()).searchParams.get('period')!))
+    .toEqual({
+      from: '2026-03-25T00:00:00.000Z',
+      to: '2026-04-01T00:00:00.000Z',
+    });
+  await expect.poll(() => picker.inputValue()).toBe('Latest 7 available days');
+  await picker.click();
+  await page.getByRole('option', { name: 'Select from calendar…' }).click();
+  const calendar = page.getByRole('dialog', { name: 'Date range calendar' });
+  await calendar
+    .getByRole('gridcell', { name: 'Tuesday, March 10, 2026' })
+    .click();
+  await calendar
+    .getByRole('gridcell', { name: 'Thursday, March 12, 2026' })
+    .click();
+  await calendar.getByRole('button', { name: 'Apply' }).click();
+  const range = JSON.parse(new URL(page.url()).searchParams.get('period')!);
+  expect(range.from).toBe('2026-03-10T00:00:00.000Z');
+  expect(range.to).toBe('2026-03-13T00:00:00.000Z');
+  await expect
+    .poll(() =>
+      page.getByText(/^Displayed period: Mar 10–12, 2026 UTC/).isVisible()
     )
     .toBe(true);
 });
@@ -383,12 +413,9 @@ test('a phone reader can select filters, compare periods and inspect results by 
         .textContent()
     )
     .toBe('Measured events: 0');
-  await page.getByRole('combobox', { name: 'Date range', exact: true }).tap();
+  await page.getByRole('combobox', { name: 'Date range' }).tap();
   await page
-    .getByRole('checkbox', {
-      name: 'Compare with previous period',
-      exact: true,
-    })
+    .getByRole('option', { name: /Compare with previous period/ })
     .tap();
   await expect.poll(() => page.url()).toContain('compare=previous');
   await page.touchscreen.tap(8, 8);
@@ -418,15 +445,12 @@ test('a phone reader can select filters, compare periods and inspect results by 
     )
     .toBe('Measured events: 0');
   expect(page.url()).toBe(selected);
-  await page.getByRole('combobox', { name: 'Date range', exact: true }).tap();
+  await page.getByRole('combobox', { name: 'Date range' }).tap();
   expect(
     await page
-      .getByRole('checkbox', {
-        name: 'Compare with previous period',
-        exact: true,
-      })
-      .isChecked()
-  ).toBe(true);
+      .getByRole('option', { name: /Compare with previous period/ })
+      .getAttribute('aria-selected')
+  ).toBe('true');
 });
 
 test('query inspection displays and copies resolved parameters without interpolating SQL', async ({
@@ -765,162 +789,4 @@ test('public shimmer text exposes one readable copy and respects reduced motion'
     )
     .toBe(0);
   expect(await preview.textContent()).toBe('Preparing results');
-});
-
-test('calendar reporting uses the shared picker without changing inclusive request or preset URLs', async ({
-  page,
-}) => {
-  await page.clock.setFixedTime(new Date('2026-04-10T12:00:00Z'));
-  await page.goto('/time-app');
-  const picker = page.getByRole('combobox', {
-    name: 'Date range',
-    exact: true,
-  });
-  await picker.click();
-  await picker.fill('March 8 to March 9 2026');
-  await picker.press('Enter');
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('start'))
-    .toBe('2026-03-08');
-  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-09');
-  await picker.click();
-  await picker.fill('March 8 2026 10:00 to March 8 2026 16:00');
-  await picker.press('Enter');
-  await expect.poll(() => page.getByRole('alert').count()).toBe(1);
-  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-09');
-  await picker.press('Escape');
-  await picker.click();
-  await page
-    .getByRole('option', { name: 'Latest 7 available days', exact: true })
-    .click();
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('period'))
-    .toBe('last-7');
-  await page.reload();
-  await expect.poll(() => picker.inputValue()).toBe('Latest 7 available days');
-  await page
-    .getByRole('button', { name: 'Reset date range', exact: true })
-    .click();
-  await expect.poll(() => picker.inputValue()).toBe('Mar 4–6, 2026');
-  await picker.click();
-  await page.getByRole('option', { name: 'Select from calendar…' }).click();
-  const calendar = page.getByRole('dialog', { name: 'Date range calendar' });
-  await calendar.getByRole('button', { name: /March 8, 2026/ }).click();
-  expect(
-    await calendar
-      .getByRole('button', { name: 'Apply', exact: true })
-      .isDisabled()
-  ).toBe(true);
-  await calendar.getByRole('button', { name: /March 8, 2026/ }).click();
-  await calendar.getByRole('button', { name: 'Apply', exact: true }).click();
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('start'))
-    .toBe('2026-03-08');
-  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-08');
-  await picker.click();
-  await picker.fill('February 1 to March 31 2026');
-  await picker.press('Enter');
-  await expect
-    .poll(() => page.getByRole('alert').textContent())
-    .toContain('31 available days');
-  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-08');
-});
-
-test('calendar picker opens absolute dates and edits day segments without changing inclusive endpoints', async ({
-  page,
-}) => {
-  await page.goto('/time-app');
-  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
-  await input.click();
-  expect(await input.inputValue()).toBe('Mar 4, 2026 – Mar 6, 2026');
-  await input.press('ArrowLeft');
-  await input.press('ArrowRight');
-  await input.press('ArrowRight');
-  await input.press('ArrowUp');
-  await input.press('Enter');
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('start'))
-    .toBe('2026-03-05');
-  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-06');
-  await input.click();
-  await input.fill('Mar 4, 2026 – Mar 6, 2026');
-  await input.click();
-  expect(await input.inputValue()).toBe('Mar 4, 2026 – Mar 6, 2026');
-  await input.press('Escape');
-  expect(new URL(page.url()).searchParams.get('start')).toBe('2026-03-05');
-});
-
-test('calendar ISO inputs preserve inclusive end days and reject invalid dates', async ({
-  page,
-}) => {
-  await page.goto('/time-app');
-  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
-  for (const [text, end] of [
-    ['2026-03-08 to 2026-03-09', '2026-03-09'],
-    ['2026-03-08 – 2026-03-08', '2026-03-08'],
-    ['2026-03-08', '2026-03-08'],
-    ['March 8 to March 9 2026', '2026-03-09'],
-  ]) {
-    await input.click();
-    await input.fill(text!);
-    await input.press('Enter');
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get('start'))
-      .toBe('2026-03-08');
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get('end'))
-      .toBe(end);
-  }
-  await input.click();
-  await input.fill('2026-02-30 to 2026-03-09');
-  await input.press('Enter');
-  await expect
-    .poll(() => page.getByRole('alert').textContent())
-    .toContain('valid calendar dates');
-  expect(new URL(page.url()).searchParams.get('start')).toBe('2026-03-08');
-});
-
-test('pointer repositioning clears the prior keyboard segment without losing the draft', async ({
-  page,
-}) => {
-  await page.goto('/time-app');
-  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
-  await input.click();
-  await input.press('ArrowLeft');
-  await input.press('ArrowRight');
-  await input.press('ArrowRight');
-  await input.press('ArrowUp');
-  await input.click();
-  await input.press('End');
-  await input.press('ArrowLeft');
-  await input.press('ArrowLeft');
-  await input.press('ArrowDown');
-  await input.press('Enter');
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('start'))
-    .toBe('2026-03-05');
-  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-05');
-});
-
-test('native caret navigation clears pending calendar segments', async ({
-  page,
-}) => {
-  await page.goto('/time-app');
-  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
-  await input.click();
-  await input.press('ArrowLeft');
-  await input.press('ArrowRight');
-  await input.press('ArrowRight');
-  await input.press('End');
-  await input.press('ArrowUp');
-  expect(await input.inputValue()).toBe('Mar 4, 2026 – Mar 6, 2026');
-  await input.press('End');
-  await input.press('ArrowLeft');
-  await input.press('ArrowLeft');
-  await input.press('ArrowDown');
-  await input.press('Enter');
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('start'))
-    .toBe('2026-03-04');
-  expect(new URL(page.url()).searchParams.get('end')).toBe('2026-03-05');
 });

@@ -10,12 +10,10 @@ import {
   attachDimensionSelectors,
   validateVariableInput,
 } from '../core/dimension-source.ts';
-import { fixedUnitMilliseconds } from '../core/time-units.ts';
 export type {
   DateTimeRangeContract,
   DateTimeRangeRequest,
 } from '../core/date-time-range-contract.ts';
-import { formatDateRange } from '../core/format.ts';
 import { invariant } from '../core/invariant.ts';
 import {
   MAX_QUERY_ROWS,
@@ -38,7 +36,6 @@ export type {
   QueryProjections,
   QueryRow,
 } from '../core/queries.ts';
-import type { DateRange as DateRangeInput } from '../core/date-range.ts';
 import type {
   QueryResult,
   DataOperation,
@@ -68,32 +65,6 @@ export function parseTrue(value: unknown): true {
   return true;
 }
 
-export type { DateRange as DateRangeInput } from '../core/date-range.ts';
-export type DateRangeRequest = {
-  range: DateRangeInput;
-  comparison: DateRangeInput | null;
-};
-
-/** The immediately preceding, equally long set of calendar days. */
-export function previousDateRange({
-  start,
-  end,
-}: DateRangeInput): DateRangeInput {
-  const first = parseDate(start);
-  const last = parseDate(end);
-  const days =
-    (last.toDate('UTC').getTime() - first.toDate('UTC').getTime()) /
-      fixedUnitMilliseconds.DAY +
-    1;
-  invariant(days >= 1, 'Date range must start before it ends.');
-  const previousEnd = first.subtract({ days: 1 });
-
-  return {
-    start: previousEnd.subtract({ days: days - 1 }).toString(),
-    end: previousEnd.toString(),
-  };
-}
-
 export type ReportingPeriod =
   | { kind: 'rolling'; amount: number; unit: 'hour' | 'day'; end: string }
   | { kind: 'calendar'; start: string; end: string; timeZone: string };
@@ -107,7 +78,7 @@ export type DateRangeContractOptions = {
   completeDays?: boolean;
 };
 
-/** One source policy for the server parser, URL variable, and displayed reporting period. */
+/** One source policy for datetime picker validation and operation requests. */
 export function defineDateRangeContract({
   minDate,
   maxDate,
@@ -132,114 +103,13 @@ export function defineDateRangeContract({
   });
   const bounds = datetime.bounds;
 
-  function period({ start, end }: DateRangeInput): ReportingPeriod {
-    return {
-      kind: 'calendar',
-      start,
-      end,
-      timeZone,
-    };
-  }
-
-  function describeInput(input: DateRangeInput) {
-    return `${formatDateRange(input)} ${timeZone}`;
-  }
-
-  function comparison(input: DateRangeInput): DateRangeInput | null {
-    const previous = previousDateRange(input);
-
-    return minDate && previous.start < minDate ? null : previous;
-  }
-
-  function request(value: unknown, compare = false): DateRangeRequest {
-    const range = parseDateRangeInput(value, bounds());
-    const previous = compare ? comparison(range) : null;
-    invariant(
-      !compare || previous,
-      'Comparison is outside available source coverage.'
-    );
-
-    return { range, comparison: previous };
-  }
-
-  function parseRequest(value: unknown): DateRangeRequest {
-    invariant(value && typeof value === 'object', 'Choose a date range.');
-    const input = value as Record<string, unknown>;
-    const parsed = request(input.range, input.comparison != null);
-    if (input.comparison != null) {
-      const supplied = parseDateRangeInput(input.comparison, bounds());
-      invariant(
-        supplied.start === parsed.comparison?.start &&
-          supplied.end === parsed.comparison?.end,
-        'Comparison must be the preceding equal-length range.'
-      );
-    }
-
-    return parsed;
-  }
-
   return {
     datetime,
-    request,
-    parseRequest,
     bounds,
-    parse(value: unknown) {
-      return parseDateRangeInput(value, bounds());
-    },
-    period,
-    comparison,
-    describeInput,
-    view: { period, describeInput },
   };
 }
 
 export type DateRangeContract = ReturnType<typeof defineDateRangeContract>;
-
-/** Validate calendar dates and a bounded inclusive range on the server. */
-export function parseDateRangeInput(
-  value: unknown,
-  {
-    minDate,
-    maxDate,
-    maxRangeDays,
-  }: { minDate?: string; maxDate?: string; maxRangeDays: number }
-): DateRangeInput {
-  invariant(
-    value && typeof value === 'object' && !Array.isArray(value),
-    'Choose a date range.'
-  );
-  const { start, end } = value as Record<string, unknown>;
-
-  function day(input: unknown): number {
-    invariant(
-      typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input),
-      'Dates must be YYYY-MM-DD.'
-    );
-    const timestamp = Date.parse(`${input}T00:00:00Z`);
-    invariant(
-      Number.isFinite(timestamp) &&
-        new Date(timestamp).toISOString().slice(0, 10) === input,
-      'Choose valid calendar dates.'
-    );
-
-    return timestamp;
-  }
-  const first = day(start);
-  const last = day(end);
-  invariant(
-    Number.isInteger(maxRangeDays) && maxRangeDays > 0,
-    'Maximum range days must be positive.'
-  );
-  invariant(
-    first <= last &&
-      (last - first) / fixedUnitMilliseconds.DAY < maxRangeDays &&
-      (minDate === undefined || first >= day(minDate)) &&
-      (maxDate === undefined || last <= day(maxDate)),
-    `Choose up to ${maxRangeDays} days within the available range.`
-  );
-
-  return { start: start as string, end: end as string };
-}
 
 /** Accepts numeric strings from DuckDB; rejects negative, fractional, and unsafe integers. */
 export function parseCount(value: unknown): number {

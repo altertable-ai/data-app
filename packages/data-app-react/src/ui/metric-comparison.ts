@@ -1,9 +1,5 @@
+import { type DateTimeRangeRequest } from '@altertable/data-app/contract';
 import {
-  type DateTimeRangeRequest,
-  type DateRangeRequest,
-} from '@altertable/data-app/contract';
-import {
-  formatDateRange,
   formatMetric,
   type MetricFormat,
   type DateFormatOptions,
@@ -23,8 +19,8 @@ export type MetricComparison = {
 
 /** Label a comparison from the input that produced the displayed result. Null means the
  * requested previous period has no comparable value; zero remains a measured value. */
-export function calendarMetricComparison(
-  displayedInput: DateRangeRequest | DateTimeRangeRequest,
+export function dateTimeMetricComparison(
+  displayedInput: DateTimeRangeRequest,
   values: {
     current: number;
     previous: number | null;
@@ -35,12 +31,8 @@ export function calendarMetricComparison(
 ): MetricComparison | undefined {
   if (!displayedInput.comparison) return undefined;
 
-  function label(
-    range: DateRangeRequest['range'] | DateTimeRangeRequest['range']
-  ) {
-    return 'start' in range
-      ? formatDateRange(range, options)
-      : dateTimeRangeLabel(range, options);
+  function label(range: DateTimeRangeRequest['range']) {
+    return dateTimeRangeLabel(range, options);
   }
   return {
     current: {

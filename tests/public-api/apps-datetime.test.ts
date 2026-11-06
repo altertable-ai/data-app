@@ -422,149 +422,54 @@ test('shared reporting policy governs generated datetime presets, calendar, text
   await expect.poll(() => input.inputValue()).toBe('Yesterday');
 });
 
-test('calendar adapters preserve future selections without an explicit maximum', async ({
+test('reset restores the default datetime selection and removes its URL override', async ({
   page,
 }) => {
-  await page.clock.setFixedTime(new Date('2026-07-10T12:00:00Z'));
-  await page.goto('/datetime?calendarControls');
-  const input = page.getByRole('combobox', {
-    name: 'Calendar period',
-    exact: true,
-  });
+  await page.goto('/datetime');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  await expect.poll(() => input.inputValue()).toBe('Past 7 days');
+  expect(
+    await page
+      .getByRole('button', { name: 'Reset date range', exact: true })
+      .count()
+  ).toBe(0);
   await input.click();
-  await page.getByRole('option', { name: 'Select from calendar…' }).click();
-  const calendar = page.getByRole('dialog', {
-    name: 'Calendar period calendar',
-  });
-  await calendar.getByRole('button', { name: 'Apply', exact: true }).click();
-  expect(
-    await page.getByRole('status', { name: 'Calendar selection' }).textContent()
-  ).toContain('2027-03-06');
-  await input.click();
-  await page.getByRole('option', { name: 'Select from calendar…' }).click();
-  await calendar.getByRole('button', { name: 'Next month' }).click();
-  await calendar.getByRole('button', { name: /April 1, 2027/ }).click();
-  await calendar.getByRole('button', { name: /April 2, 2027/ }).click();
-  await calendar.getByRole('button', { name: 'Apply', exact: true }).click();
-  await expect
-    .poll(() =>
-      page.getByRole('status', { name: 'Calendar selection' }).textContent()
-    )
-    .toBe('{"start":"2027-04-01","end":"2027-04-02"}');
-  await page.goto('/datetime?calendarControls&bounded');
-  await input.click();
-  await page.getByRole('option', { name: 'Select from calendar…' }).click();
-  expect(
-    await calendar.getByRole('button', { name: 'Next month' }).isDisabled()
-  ).toBe(true);
-});
-
-test('calendar validation covers typed ranges, unavailable interior days and calendar cells', async ({
-  page,
-}) => {
-  await page.clock.setFixedTime(new Date('2027-03-12T12:00:00Z'));
-  await page.goto('/datetime?calendarControls&validate&unavailable');
-  const input = page.getByRole('combobox', {
-    name: 'Calendar period',
-    exact: true,
-  });
-  const output = page.getByRole('status', { name: 'Calendar selection' });
-  for (const [text, message] of [
-    ['2027-03-10 to 2027-03-10', 'Blocked by host'],
-    ['2027-03-09 to 2027-03-12', 'unavailable dates'],
-  ]) {
-    await input.click();
-    expect(
-      await page
-        .getByRole('option', { name: 'Last 3 days', exact: true })
-        .count()
-    ).toBe(0);
-    await input.fill(text!);
-    await input.press('Enter');
-    await expect
-      .poll(() => page.getByRole('alert').textContent())
-      .toContain(message);
-    expect(await output.textContent()).toContain('2027-03-04');
-    await input.press('Escape');
-  }
-  await input.click();
-  await page.getByRole('option', { name: 'Select from calendar…' }).click();
-  const calendar = page.getByRole('dialog', {
-    name: 'Calendar period calendar',
-  });
-  expect(
-    await calendar
-      .getByRole('button', { name: /March 11, 2027/ })
-      .getAttribute('aria-disabled')
-  ).toBe('true');
-  await calendar.getByRole('button', { name: /March 10, 2027/ }).click();
-  await calendar.getByRole('button', { name: /March 10, 2027/ }).click();
-  await expect
-    .poll(() => calendar.getByRole('alert').textContent())
-    .toBe('Blocked by host');
-  expect(
-    await calendar
-      .getByRole('button', { name: 'Apply', exact: true })
-      .isDisabled()
-  ).toBe(true);
-});
-
-test('readonly calendar controls stay focusable and styling callbacks track open state', async ({
-  page,
-}) => {
-  await page.goto('/datetime?calendarControls&readOnly');
-  const input = page.getByRole('combobox', {
-    name: 'Calendar period',
-    exact: true,
-  });
-  expect(await input.isDisabled()).toBe(false);
-  await input.focus();
-  expect(
-    await input.evaluate(element => element === document.activeElement)
-  ).toBe(true);
-  expect(await input.getAttribute('aria-readonly')).toBe('true');
+  await input.fill('4h');
   await input.press('Enter');
-  expect(await input.getAttribute('aria-expanded')).toBe('false');
-  expect(
-    await page
-      .locator('.readonly-calendar')
-      .evaluate(element => element.getBoundingClientRect().width)
-  ).toBe(360);
-  await page.getByRole('button', { name: 'Toggle read only' }).click();
-  await input.click();
-  expect(
-    await page
-      .locator('.open-calendar')
-      .evaluate(element => element.getBoundingClientRect().width)
-  ).toBe(420);
-  await input.press('Escape');
-  expect(await page.locator('.editable-calendar').count()).toBe(1);
+  await expect.poll(() => input.inputValue()).toBe('Past 4 hours');
+  await page
+    .getByRole('button', { name: 'Reset date range', exact: true })
+    .click();
+  await expect.poll(() => input.inputValue()).toBe('Past 7 days');
+  expect(new URL(page.url()).searchParams.has('period')).toBe(false);
 });
 
-for (const locale of ['th-TH', 'ar-EG', 'fa-IR']) {
-  test(`calendar ${locale} editing round-trips and supports arrow edits`, async ({
-    page,
-  }) => {
-    await page.goto(`/datetime?calendarControls&locale=${locale}`);
-    const input = page.getByRole('combobox', {
-      name: 'Calendar period',
-      exact: true,
-    });
-    const output = page.getByRole('status', { name: 'Calendar selection' });
-    await input.click();
-    await input.press('Enter');
-    expect(await page.getByRole('alert').count()).toBe(0);
-    expect(await output.textContent()).toBe(
-      '{"start":"2027-03-04","end":"2027-03-06"}'
-    );
-    await input.click();
-    await input.press('ArrowLeft');
-    await input.press('ArrowRight');
-    await input.press('ArrowDown');
-    await input.press('Enter');
-    expect(await page.getByRole('alert').count()).toBe(0);
-    await expect
-      .poll(() => output.textContent())
-      .not.toBe('{"start":"2027-03-04","end":"2027-03-06"}');
+test('disabled datetime pickers hide reset and cannot activate it by keyboard', async ({
+  page,
+}) => {
+  await page.goto('/datetime?disabledReset');
+  const input = page.getByRole('combobox', {
+    name: 'Disabled reset period',
+    exact: true,
   });
-}
+  const reset = page.getByRole('button', {
+    name: 'Reset date range',
+    exact: true,
+  });
+  const count = page.getByRole('status', { name: 'Reset count' });
+  const toggle = page.getByRole('button', {
+    name: 'Toggle disabled',
+    exact: true,
+  });
+  await expect.poll(() => input.isDisabled()).toBe(true);
+  expect(await reset.count()).toBe(0);
+  await toggle.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Enter');
+  expect(await count.textContent()).toBe('0');
+  await toggle.click();
+  await expect.poll(() => reset.count()).toBe(1);
+  await reset.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => count.textContent()).toBe('1');
+});

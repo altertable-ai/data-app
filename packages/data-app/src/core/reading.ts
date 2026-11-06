@@ -1,7 +1,4 @@
-import {
-  type DateTimeRangeRequest,
-  type DateRangeRequest,
-} from './contract.ts';
+import { type DateTimeRangeRequest } from './contract.ts';
 
 export type DataReading<Value> =
   | { loading: true; value?: never }
@@ -11,5 +8,5 @@ export type DataReading<Value> =
  * Comparison activation belongs to the reading's period, not these values. */
 export type MetricValues = { current: number; previous?: number | null };
 export type MetricReading = DataReading<
-  MetricValues & { period?: DateRangeRequest | DateTimeRangeRequest }
+  MetricValues & { period?: DateTimeRangeRequest }
 >;
