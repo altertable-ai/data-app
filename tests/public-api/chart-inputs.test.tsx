@@ -10,13 +10,26 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from 'vitest';
 
 test('standalone charts preserve their item validation and empty-result contract', () => {
-  for (const Chart of [BarChart, LineChart, AreaChart, PieChart]) {
+  type Items = readonly { id: string; label: string; value: number }[];
+  const charts = {
+    bar: (items: Items) => (
+      <BarChart items={items} unit="ms" ariaLabel="Values" />
+    ),
+    line: (items: Items) => (
+      <LineChart items={items} unit="ms" ariaLabel="Values" />
+    ),
+    area: (items: Items) => (
+      <AreaChart items={items} unit="ms" ariaLabel="Values" />
+    ),
+    pie: (items: Items) => (
+      <PieChart items={items} unit="ms" ariaLabel="Values" />
+    ),
+  };
+  for (const [kind, chart] of Object.entries(charts)) {
     function render(
       items: readonly { id: string; label: string; value: number }[]
     ) {
-      return renderToStaticMarkup(
-        <Chart items={items} unit="ms" ariaLabel="Values" />
-      );
+      return renderToStaticMarkup(chart(items));
     }
     expect(render([])).toContain('No data');
     expect(() =>
@@ -31,7 +44,7 @@ test('standalone charts preserve their item validation and empty-result contract
     expect(() => render([{ id: 'a', label: 'A', value: NaN }])).toThrow(
       /finite/
     );
-    if (Chart === BarChart || Chart === PieChart) {
+    if (kind === 'bar' || kind === 'pie') {
       expect(() => render([{ id: 'a', label: 'A', value: -1 }])).toThrow(
         /nonnegative/
       );

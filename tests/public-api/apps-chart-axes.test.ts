@@ -166,17 +166,97 @@ test('standalone charts keep the latest samples visible initially and after data
           );
         })
         .toBe(true);
-      await chart
-        .getByRole('button', {
-          name: `Sample ${count}: ${count} ms`,
-          exact: true,
-        })
-        .hover();
+      if (name === 'Recent bar') {
+        await chart
+          .getByRole('button', {
+            name: `Sample ${count}: ${count} ms`,
+            exact: true,
+          })
+          .hover();
+      } else {
+        const position = await chart
+          .locator(`[data-atbl-internal-sample="${count - 1}"]`)
+          .evaluate(element => {
+            const matrix = (element as SVGGraphicsElement).getScreenCTM()!;
+            return { x: matrix.e, y: matrix.f };
+          });
+        await page.mouse.move(position.x, position.y);
+      }
       await expect
         .poll(() => page.getByRole('tooltip').textContent())
         .toContain(`${count} ms`);
       await page.keyboard.press('Escape');
     }
+  }
+});
+
+test('minute bars fit their container and show readable time ticks at wide and narrow widths', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends?minute-bars');
+  await page.addStyleTag({
+    content: '::-webkit-scrollbar { width: 15px; height: 15px; }',
+  });
+  const chart = page.getByRole('region', {
+    name: 'Minute bars basic example',
+    exact: true,
+  });
+  for (const width of [1280, 996, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await chart.scrollIntoViewIfNeeded();
+    await expect
+      .poll(async () => {
+        const scroll = chart.locator('.altertable-selectable-bars-scroll');
+        return scroll.evaluate(
+          element => element.scrollWidth <= element.clientWidth
+        );
+      })
+      .toBe(true);
+    const widths = await chart
+      .locator('.altertable-selectable-bars-scroll')
+      .evaluate(async element => {
+        const samples: number[] = [];
+        for (let frame = 0; frame < 30; frame++) {
+          await new Promise(requestAnimationFrame);
+          samples.push(element.clientWidth);
+        }
+        return samples;
+      });
+    expect(new Set(widths).size).toBe(1);
+    const labels = chart.locator('[title^="12:"]:visible');
+    const boxes = await Promise.all(
+      (await labels.all()).map(label => label.boundingBox())
+    );
+    expect(boxes.length).toBeGreaterThanOrEqual(2);
+    expect(boxes.length).toBeLessThanOrEqual(6);
+    expect(
+      boxes.every(
+        (box, index) =>
+          !!box &&
+          (index === 0 ||
+            box.x >= boxes[index - 1]!.x + boxes[index - 1]!.width)
+      )
+    ).toBe(true);
+    const plot = await chart
+      .locator('.altertable-selectable-bars-plot')
+      .boundingBox();
+    const centers = boxes.map(box => box!.x + box!.width / 2);
+    const gaps = centers
+      .slice(1)
+      .map((center, index) => center - centers[index]!);
+    expect(Math.max(...gaps) - Math.min(...gaps)).toBeLessThan(1);
+    const leftMargin = centers[0]! - plot!.x;
+    const rightMargin = plot!.x + plot!.width - centers.at(-1)!;
+    expect(Math.abs(leftMargin - rightMargin)).toBeLessThan(
+      plot!.width / 60 + 1
+    );
+    await chart
+      .getByRole('button', { name: '12:37: 21 requests', exact: true })
+      .hover();
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain('12:37');
+    await page.keyboard.press('Escape');
   }
 });
 

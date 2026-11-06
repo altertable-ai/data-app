@@ -1,9 +1,12 @@
-import { type ChartItem, type ValueChartProps } from './chart-data.ts';
+import {
+  type CartesianChartItem,
+  type CartesianChartProps,
+} from './chart-data.ts';
 import { TrendChart } from './TrendChart.tsx';
 
-export type LineChartItem = ChartItem;
+export type LineChartItem = CartesianChartItem;
 export type LineChartProps<Row extends LineChartItem = LineChartItem> =
-  ValueChartProps<Row>;
+  CartesianChartProps<Row>;
 
 /** Equally spaced finite samples in supplied order; fill missing periods explicitly.
  * Supports negative values, single points, and horizontal scrolling for long series.

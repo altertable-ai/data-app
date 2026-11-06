@@ -3,7 +3,10 @@ import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { invariant } from '@altertable/data-app/internal';
 import { Fragment, useEffect, useRef, useState } from 'react';
 
-import { type CountChartProps } from './chart-data.ts';
+import {
+  type CountChartProps,
+  type HorizontalGridProps,
+} from './chart-data.ts';
 import { ChartTooltipContent } from './chart-primitives.tsx';
 import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
@@ -19,10 +22,11 @@ export type FunnelChartSeries = {
   /** Finite, nonnegative counts aligned with steps and nonincreasing. */
   values: readonly number[];
 };
-export type FunnelChartProps = CountChartProps & {
-  steps: readonly FunnelChartStep[];
-  series: readonly FunnelChartSeries[];
-};
+export type FunnelChartProps = CountChartProps &
+  HorizontalGridProps & {
+    steps: readonly FunnelChartStep[];
+    series: readonly FunnelChartSeries[];
+  };
 
 type FunnelPopulation = {
   id: string;
@@ -127,6 +131,7 @@ export function FunnelChart({
   ariaLabel,
   className,
   formatValue = formatNumber,
+  horizontalGrid = true,
 }: FunnelChartProps) {
   const chartId = useSvgId();
   const [highlighted, setHighlighted] = useState<{
@@ -200,7 +205,7 @@ export function FunnelChart({
                 barGap={1}
                 onMouseLeave={clearHighlight}
               >
-                <ComposedChart.CartesianGrid />
+                {horizontalGrid && <ComposedChart.CartesianGrid />}
                 <ComposedChart.XAxis dataKey="label" interval={0} height={48} />
                 <ComposedChart.YAxis
                   domain={[0, 100]}

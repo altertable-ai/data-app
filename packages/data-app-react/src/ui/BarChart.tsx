@@ -1,20 +1,31 @@
 import { formatNumber } from '@altertable/data-app/format';
 import {
   Fragment,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentRef,
   type RefObject,
 } from 'react';
-import { BarChart as RechartsBarChart, Cell } from 'recharts';
+import {
+  BarChart as RechartsBarChart,
+  Cell,
+  type BarShapeProps,
+} from 'recharts';
 
 import {
   validateValueChartItems,
   type ChartItem,
-  type ValueChartProps,
+  type CartesianChartProps,
 } from './chart-data.ts';
-import { ChartBar, ChartXAxis, ChartYAxis } from './chart-primitives.tsx';
+import {
+  ChartBar,
+  ChartGrid,
+  ChartXAxis,
+  ChartYAxis,
+} from './chart-primitives.tsx';
 import { chartBarFill } from './chartColor.ts';
+import { ChartTooltip } from './ChartTooltip.tsx';
 import {
   openExplorationMenu,
   useChartActions,
@@ -24,13 +35,61 @@ import {
 } from './ExplorationActionControl.tsx';
 import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
-import { Tooltip } from './Tooltip.tsx';
+import { useLinkedChartCursor } from './use-chart-cursor-group.tsx';
 import { useChartScrollToEnd } from './use-chart-scroll-to-end.ts';
 
-export type BarChartItem = ChartItem;
+export type BarChartItem = ChartItem & {
+  /** Milliseconds since the Unix epoch. Enables adaptive time ticks when no item actions are supplied. */
+  time?: number;
+};
+
+const timeTickIntervals = [
+  60_000,
+  2 * 60_000,
+  5 * 60_000,
+  10 * 60_000,
+  15 * 60_000,
+  30 * 60_000,
+  60 * 60_000,
+  2 * 60 * 60_000,
+  6 * 60 * 60_000,
+  12 * 60 * 60_000,
+  24 * 60 * 60_000,
+  2 * 24 * 60 * 60_000,
+  7 * 24 * 60 * 60_000,
+  14 * 24 * 60 * 60_000,
+];
+
+function timeTickIndices(items: readonly BarChartItem[], width: number) {
+  if (items.length === 1) return new Set([0]);
+  if (items.length < 2 || width <= 0) return new Set<number>();
+  const slotWidth = width / items.length;
+  const cadence = (items.at(-1)!.time! - items[0]!.time!) / (items.length - 1);
+  const minimumInterval = Math.max(cadence, (100 / slotWidth) * cadence);
+  const interval =
+    timeTickIntervals.find(candidate => candidate >= minimumInterval) ??
+    Math.ceil(minimumInterval / timeTickIntervals.at(-1)!) *
+      timeTickIntervals.at(-1)!;
+  const indices = new Set<number>();
+  const stride = Math.max(1, Math.ceil(interval / cadence));
+  const count = Math.max(
+    1,
+    Math.min(
+      Math.floor((items.length - 1) / stride) + 1,
+      Math.floor(Math.max(0, width - 60) / (stride * slotWidth)) + 1
+    )
+  );
+  // Center the tick sequence within the supplied window so rolling windows
+  // have balanced edge margins as well as a consistent interval.
+  const start = Math.floor((items.length - 1 - (count - 1) * stride) / 2);
+  for (let tick = 0; tick < count; tick++) {
+    indices.add(start + tick * stride);
+  }
+  return indices;
+}
 
 export type BarChartProps<Row extends BarChartItem = BarChartItem> =
-  ValueChartProps<Row>;
+  CartesianChartProps<Row>;
 
 /** Nonnegative category values. Compose inside VisualizationWidget for a titled panel.
  * Owns hover/touch tooltips; no selection state or keyboard navigation. */
@@ -40,24 +99,76 @@ export function BarChart<Row extends BarChartItem>({
   ariaLabel,
   formatValue = formatNumber,
   itemActions,
+  cursorGroup,
+  horizontalGrid = false,
 }: BarChartProps<Row>) {
   validateValueChartItems('bar', items);
   const chartActions = useChartActions();
+  const cursor = useLinkedChartCursor(cursorGroup);
+  const linkedItem = items.find(
+    item => item.time === cursor.time && cursor.time != null
+  );
   const [activeId, setActiveId] = useState<string>();
+  const [viewportWidth, setViewportWidth] = useState(0);
   const scrollport = useChartScrollToEnd(items);
+  const plotRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
 
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 1);
+  const hasTimeAxis =
+    items.length > 0 &&
+    items.every(
+      (item, index) =>
+        typeof item.time === 'number' &&
+        Number.isFinite(item.time) &&
+        (index === 0 || item.time > items[index - 1]!.time!)
+    );
+  const compactTimeAxis = hasTimeAxis && !itemActions;
+  const minimumSlotWidth = compactTimeAxis ? 3.5 : 45;
+  const plotWidth = Math.max(viewportWidth, items.length * minimumSlotWidth);
+  const ticks = compactTimeAxis ? timeTickIndices(items, plotWidth) : null;
+
+  useLayoutEffect(() => {
+    const element = scrollport.current;
+    if (!element) return;
+    function updateWidth() {
+      // clientWidth rounds up fractional grid widths, which can create a
+      // scrollbar and feed a different width back into this observer.
+      setViewportWidth(Math.floor(element!.getBoundingClientRect().width));
+    }
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [scrollport]);
 
   return (
-    <section className="altertable-selectable-bars" aria-label={ariaLabel}>
+    <section
+      className="altertable-selectable-bars"
+      aria-label={ariaLabel}
+      onPointerLeave={cursor.reset}
+      onKeyDownCapture={cursor.reset}
+      onPointerDownCapture={event => {
+        if (event.pointerType !== 'mouse') cursor.reset();
+      }}
+    >
       {items.length === 0 && <span>No data</span>}
-      <div className="altertable-selectable-bars-scroll" ref={scrollport}>
+      <div
+        className="altertable-selectable-bars-scroll"
+        data-time-axis={compactTimeAxis || undefined}
+        ref={scrollport}
+      >
         <div
           className="altertable-selectable-bars-plot"
-          style={{ minWidth: items.length * 45 }}
+          ref={plotRef}
+          style={{ width: plotWidth }}
         >
-          <div className="altertable-chart-canvas" aria-hidden="true">
+          <div
+            className="altertable-chart-canvas"
+            aria-hidden="true"
+            ref={canvasRef}
+          >
             <RechartsBarChart
               data={items.map(item => ({
                 ...item,
@@ -73,22 +184,45 @@ export function BarChart<Row extends BarChartItem>({
             >
               <ChartXAxis hide dataKey="id" scale="band" />
               <ChartYAxis hide domain={[0, 1]} allowDataOverflow />
+              {horizontalGrid && <ChartGrid />}
               <ChartBar
                 dataKey="plotValue"
                 minPointSize={value => ((value ?? 0) > 0 ? 7 : 0)}
+                background={
+                  linkedItem
+                    ? ({ index, x, y, width, height }: BarShapeProps) => (
+                        <g>
+                          {items[index]?.id === linkedItem.id && (
+                            <rect
+                              x={x}
+                              y={y}
+                              width={width}
+                              height={height}
+                              fill="var(--atbl-muted)"
+                              fillOpacity={0.14}
+                              pointerEvents="none"
+                              aria-hidden="true"
+                              data-atbl-internal-linked-cursor="true"
+                            />
+                          )}
+                        </g>
+                      )
+                    : false
+                }
               >
                 {items.map(item => (
                   <Cell
                     key={item.id}
                     fill={chartBarFill}
                     opacity={activeId === item.id ? 0.75 : 1}
+                    data-atbl-internal-bar-id={item.id}
                   />
                 ))}
               </ChartBar>
             </RechartsBarChart>
           </div>
           <div className="altertable-selectable-bars-items">
-            {items.map(item => {
+            {items.map((item, index) => {
               const actions = chartActions.actions(
                 itemActions?.(item) ?? [],
                 item.label,
@@ -102,9 +236,33 @@ export function BarChart<Row extends BarChartItem>({
               };
               return (
                 <Fragment key={item.id}>
-                  <div className="altertable-chart-item-actions">
-                    <Tooltip
+                  <div
+                    className="altertable-chart-item-actions"
+                    onPointerMove={event => {
+                      if (event.pointerType === 'mouse')
+                        cursor.setTime(item.time);
+                    }}
+                  >
+                    <ChartTooltip
                       variant="chart"
+                      followCursor={false}
+                      boundaryRefs={[canvasRef, scrollport]}
+                      anchorRect={trigger => {
+                        const bar = plotRef.current?.querySelector(
+                          `[data-atbl-internal-bar-id="${CSS.escape(item.id)}"]`
+                        );
+                        const bounds =
+                          bar?.getBoundingClientRect() ??
+                          trigger?.getBoundingClientRect();
+                        if (!bounds) return null;
+                        const top = bar ? bounds.top : bounds.top + 220;
+                        return new DOMRect(
+                          bounds.left + bounds.width / 2,
+                          top,
+                          0,
+                          0
+                        );
+                      }}
                       onOpenChange={open =>
                         setActiveId(current =>
                           open
@@ -164,8 +322,11 @@ export function BarChart<Row extends BarChartItem>({
                           <span className="altertable-selectable-bars-area" />
                         </button>
                       )}
-                    </Tooltip>
-                    <div className="altertable-chart-item-label-row">
+                    </ChartTooltip>
+                    <div
+                      className="altertable-chart-item-label-row"
+                      data-time-tick={ticks?.has(index) || undefined}
+                    >
                       {actions.length ? (
                         <MenuTrigger>
                           <MenuButton

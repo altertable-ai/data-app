@@ -9,6 +9,8 @@ import appearance from '@/tests/public-api/fixtures/appearance.html';
 import bridgeFrame from '@/tests/public-api/fixtures/bridge-frame.html';
 import bridgeHost from '@/tests/public-api/fixtures/bridge-host.html';
 import bundleHost from '@/tests/public-api/fixtures/bundle-host.html';
+import chartCursors from '@/tests/public-api/fixtures/chart-cursors.html';
+import chartGrids from '@/tests/public-api/fixtures/chart-grids.html';
 import chartLegends from '@/tests/public-api/fixtures/chart-legends.html';
 import clients from '@/tests/public-api/fixtures/clients.html';
 import controls from '@/tests/public-api/fixtures/controls.html';
@@ -105,6 +107,8 @@ const server = Bun.serve({
     '/date-presentation': datePresentation,
     '/styles': styles,
     '/chart-legends': chartLegends,
+    '/chart-cursors': chartCursors,
+    '/chart-grids': chartGrids,
     '/time-app': timeApp,
     '/clients': clients,
     '/diagnostics': diagnosticsHost,

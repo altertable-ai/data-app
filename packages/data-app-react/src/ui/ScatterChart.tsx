@@ -1,8 +1,8 @@
 import { validateScatterChartItems } from './chart-data.ts';
-import type { ScatterChartItem } from './chart-data.ts';
+import type { ScatterChartItem, HorizontalGridProps } from './chart-data.ts';
 import { Tooltip } from './Tooltip.tsx';
 export type { ScatterChartItem } from './chart-data.ts';
-export type ScatterChartProps = {
+export type ScatterChartProps = HorizontalGridProps & {
   items: readonly ScatterChartItem[];
   xLabel: string;
   yLabel: string;
@@ -53,6 +53,7 @@ export function ScatterChart({
   ariaLabel,
   formatX = formatNumber,
   formatY = formatNumber,
+  horizontalGrid = true,
 }: ScatterChartProps) {
   validateScatterChartItems(items);
   const xScale = scale(items.map(item => item.x));
@@ -72,7 +73,10 @@ export function ScatterChart({
                 <div
                   key={index}
                   className="altertable-scatter-gridline"
-                  style={{ bottom: `${index * 50}%` }}
+                  style={{
+                    bottom: `${index * 50}%`,
+                    borderTopStyle: horizontalGrid ? undefined : 'none',
+                  }}
                   aria-hidden="true"
                 >
                   <span title={formatY(value)}>{formatY(value)}</span>

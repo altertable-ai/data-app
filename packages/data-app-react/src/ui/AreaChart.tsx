@@ -1,9 +1,12 @@
-import { type ChartItem, type ValueChartProps } from './chart-data.ts';
+import {
+  type CartesianChartItem,
+  type CartesianChartProps,
+} from './chart-data.ts';
 import { TrendChart } from './TrendChart.tsx';
 
-export type AreaChartItem = ChartItem;
+export type AreaChartItem = CartesianChartItem;
 export type AreaChartProps<Row extends AreaChartItem = AreaChartItem> =
-  ValueChartProps<Row>;
+  CartesianChartProps<Row>;
 
 /** Ordered finite samples filled to a zero baseline, including negative values.
  * Samples are equally spaced; supply missing periods explicitly.

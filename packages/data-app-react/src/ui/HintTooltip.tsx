@@ -39,6 +39,7 @@ export function HintTooltip({
   variant = 'hint',
   align = 'center',
   placement = 'bottom',
+  followCursor: _followCursor,
   portalRoot,
   className,
   ref,
