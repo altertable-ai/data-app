@@ -26,8 +26,9 @@ export const dataAppExamples = [
   },
   {
     id: 'starter-finding-data-app',
-    title: 'Hosted Finding document',
-    description: 'A focused finding app for hosted execution.',
+    title: 'Hosted Finding exploration',
+    description:
+      'An interactive companion to a Finding’s text for hosted execution.',
     mode: 'hosted',
   },
   {
@@ -38,8 +39,9 @@ export const dataAppExamples = [
   },
   {
     id: 'starter-local-finding-data-app',
-    title: 'Local Finding document',
-    description: 'A focused finding app for local execution.',
+    title: 'Local Finding exploration',
+    description:
+      'An interactive companion to a Finding’s text for local execution.',
     mode: 'local',
   },
 ] as const;
