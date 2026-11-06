@@ -134,6 +134,7 @@ export function TrendChart<Row extends ChartItem>({
                       <div className="altertable-chart-item-actions">
                         <Tooltip
                           variant="chart"
+                          followCursor={false}
                           onOpenChange={open =>
                             setActiveIndex(current =>
                               open

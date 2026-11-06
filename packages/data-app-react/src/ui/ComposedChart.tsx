@@ -2,6 +2,8 @@ import { type MetricFormat } from '@altertable/data-app/format';
 import {
   useState,
   useCallback,
+  useEffect,
+  useRef,
   type PointerEvent,
   type ComponentProps,
 } from 'react';
@@ -94,6 +96,7 @@ function ComposedChartRoot<Row>({
   const [pointerPosition, setPointerPosition] = useState<ChartPoint | null>(
     null
   );
+  const latestPointerPosition = useRef<ChartPoint | null>(null);
   const [points, setPoints] = useState<ReadonlyMap<string, ChartPoint>>(
     () => new Map()
   );
@@ -106,6 +109,11 @@ function ComposedChartRoot<Row>({
         return next;
       });
   }, []);
+  useEffect(() => {
+    // A new active sample moves the registered dots; re-evaluate the latest
+    // pointer position even if its previous nearest series was unchanged.
+    setPointerPosition(latestPointerPosition.current);
+  }, [points]);
   function trackPointer(event: PointerEvent<HTMLElement>) {
     const svg = event.currentTarget.querySelector('svg[role="application"]');
     if (
@@ -119,6 +127,7 @@ function ComposedChartRoot<Row>({
     setIsPointerInspection(true);
     // Direct-hit series do not need pointer coordinates to select a sample.
     if (hoveredSeriesId != null && !points.has(hoveredSeriesId)) {
+      latestPointerPosition.current = null;
       setPointerPosition(null);
       return true;
     }
@@ -127,12 +136,20 @@ function ComposedChartRoot<Row>({
     const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
       matrix.inverse()
     );
-    setPointerPosition({ x: point.x, y: point.y });
+    const nextPosition = { x: point.x, y: point.y };
+    latestPointerPosition.current = nextPosition;
+    setPointerPosition(current =>
+      findNearestSeriesId(hoveredSeriesId, points, current) ===
+      findNearestSeriesId(hoveredSeriesId, points, nextPosition)
+        ? current
+        : nextPosition
+    );
     return true;
   }
   function resetPointerInspection() {
     setIsPointerInspection(false);
     setHoveredSeriesId(null);
+    latestPointerPosition.current = null;
     setPointerPosition(null);
   }
   const activeSeriesId = findNearestSeriesId(

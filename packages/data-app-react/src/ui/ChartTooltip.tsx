@@ -37,6 +37,7 @@ export function ChartTooltip({
   variant = 'chart',
   align = 'center',
   placement,
+  followCursor = true,
   portalRoot,
   className,
   ref,
@@ -110,7 +111,7 @@ export function ChartTooltip({
     close();
   });
 
-  function followCursor(event: { clientX: number; clientY: number }) {
+  function positionAtPointer(event: { clientX: number; clientY: number }) {
     const { clientX: x, clientY: y } = event;
     refs.setPositionReference({
       getBoundingClientRect() {
@@ -176,13 +177,18 @@ export function ChartTooltip({
               event.clientY
             )
           ) {
-            followCursor(event);
+            positionAtPointer(event);
             setOpen(true);
           }
         }}
         onPointerMove={event => {
           onPointerMove?.(event);
-          if (event.defaultPrevented || event.pointerType !== 'mouse') return;
+          if (
+            event.defaultPrevented ||
+            event.pointerType !== 'mouse' ||
+            !followCursor
+          )
+            return;
           if (
             !chartPointerMoved(
               event.currentTarget.ownerDocument,
@@ -191,7 +197,7 @@ export function ChartTooltip({
             )
           )
             return;
-          followCursor(event);
+          positionAtPointer(event);
           if (!suppressed.current) setOpen(true);
         }}
         onPointerLeave={event => {
@@ -203,7 +209,7 @@ export function ChartTooltip({
           onPointerDown?.(event);
           if (event.defaultPrevented) return;
           if (event.pointerType !== 'mouse') {
-            followCursor(event);
+            positionAtPointer(event);
             setOpen(wasOpen => !wasOpen);
           }
         }}

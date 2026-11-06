@@ -121,6 +121,32 @@ test('standalone charts retain formatted hover and tap inspection, zero values, 
   }
 });
 
+test('standalone line and area tooltips stay put while the same point is highlighted', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const name of ['Standalone line', 'Standalone area']) {
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    const point = chart.getByRole('button', {
+      name: 'Wed: 8.0 ms',
+      exact: true,
+    });
+    await point.scrollIntoViewIfNeeded();
+    const bounds = await point.boundingBox();
+    const y = bounds!.y + bounds!.height * 0.75;
+    await page.mouse.move(bounds!.x + bounds!.width * 0.25, y);
+    const tooltip = page.getByRole('tooltip');
+    await expect.poll(() => tooltip.textContent()).toContain('8.0 ms');
+    const initial = await tooltip.boundingBox();
+    await page.mouse.move(bounds!.x + bounds!.width * 0.75, y);
+    expect(await tooltip.textContent()).toContain('8.0 ms');
+    expect(await tooltip.boundingBox()).toEqual(initial);
+  }
+});
+
 test('funnel inspection follows the hovered or tapped conversion and drop-off portion', async ({
   page,
   mobilePage,
