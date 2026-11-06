@@ -25,6 +25,7 @@ import {
   ChartYAxis,
 } from './chart-primitives.tsx';
 import { chartBarFill } from './chartColor.ts';
+import { ChartTooltip } from './ChartTooltip.tsx';
 import {
   openExplorationMenu,
   useChartActions,
@@ -34,7 +35,6 @@ import {
 } from './ExplorationActionControl.tsx';
 import { AppIcon } from './icons.ts';
 import { MenuButton, MenuTrigger } from './Menu.tsx';
-import { Tooltip } from './Tooltip.tsx';
 import { useLinkedChartCursor } from './use-chart-cursor-group.tsx';
 import { useChartScrollToEnd } from './use-chart-scroll-to-end.ts';
 
@@ -111,6 +111,7 @@ export function BarChart<Row extends BarChartItem>({
   const [activeId, setActiveId] = useState<string>();
   const [viewportWidth, setViewportWidth] = useState(0);
   const scrollport = useChartScrollToEnd(items);
+  const plotRef = useRef<HTMLDivElement>(null);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
 
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 1);
@@ -159,6 +160,7 @@ export function BarChart<Row extends BarChartItem>({
       >
         <div
           className="altertable-selectable-bars-plot"
+          ref={plotRef}
           style={{ width: plotWidth }}
         >
           <div className="altertable-chart-canvas" aria-hidden="true">
@@ -208,6 +210,7 @@ export function BarChart<Row extends BarChartItem>({
                     key={item.id}
                     fill={chartBarFill}
                     opacity={activeId === item.id ? 0.75 : 1}
+                    data-atbl-internal-bar-id={item.id}
                   />
                 ))}
               </ChartBar>
@@ -235,9 +238,25 @@ export function BarChart<Row extends BarChartItem>({
                         cursor.setTime(item.time);
                     }}
                   >
-                    <Tooltip
+                    <ChartTooltip
                       variant="chart"
                       followCursor={false}
+                      anchorRect={trigger => {
+                        const bar = plotRef.current?.querySelector(
+                          `[data-atbl-internal-bar-id="${CSS.escape(item.id)}"]`
+                        );
+                        const bounds =
+                          bar?.getBoundingClientRect() ??
+                          trigger?.getBoundingClientRect();
+                        if (!bounds) return null;
+                        const top = bar ? bounds.top : bounds.top + 220;
+                        return new DOMRect(
+                          bounds.left + bounds.width / 2,
+                          top,
+                          0,
+                          0
+                        );
+                      }}
                       onOpenChange={open =>
                         setActiveId(current =>
                           open
@@ -297,7 +316,7 @@ export function BarChart<Row extends BarChartItem>({
                           <span className="altertable-selectable-bars-area" />
                         </button>
                       )}
-                    </Tooltip>
+                    </ChartTooltip>
                     <div
                       className="altertable-chart-item-label-row"
                       data-time-tick={ticks?.has(index) || undefined}

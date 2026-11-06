@@ -38,6 +38,9 @@ export function ChartTooltip({
   align = 'center',
   placement,
   followCursor = true,
+  anchorRect,
+  mouseHover = true,
+  touchInspection = true,
   portalRoot,
   className,
   ref,
@@ -46,7 +49,12 @@ export function ChartTooltip({
   onPointerLeave,
   onPointerDown,
   ...props
-}: TooltipProps) {
+}: TooltipProps & {
+  /** Internal geometry anchor for charts whose hit area extends beyond the mark. */
+  anchorRect?: (trigger: Element | null) => DOMRect | null;
+  mouseHover?: boolean;
+  touchInspection?: boolean;
+}) {
   const tooltipId = useId();
   const describedBy = tooltipId;
   const [open, setOpen] = useState(false);
@@ -59,6 +67,7 @@ export function ChartTooltip({
   }, [visible]);
   const [dialogRoot, setDialogRoot] = useState<HTMLDialogElement | null>(null);
   const suppressed = useRef(false);
+  const lastAnchor = useRef<DOMRect | null>(null);
   const side = placement ?? 'top';
 
   function close() {
@@ -112,9 +121,28 @@ export function ChartTooltip({
   });
 
   function positionAtPointer(event: { clientX: number; clientY: number }) {
+    const anchor = anchorRect?.(refs.domReference.current);
+    if (anchor) {
+      const previous = lastAnchor.current;
+      if (
+        previous &&
+        previous.x === anchor.x &&
+        previous.y === anchor.y &&
+        previous.width === anchor.width &&
+        previous.height === anchor.height
+      )
+        return;
+      // An anchored chart may move inspection to another sample without
+      // leaving its shared hit area. Escape only suppresses the old sample.
+      if (previous) suppressed.current = false;
+      lastAnchor.current = anchor;
+    }
     const { clientX: x, clientY: y } = event;
     refs.setPositionReference({
+      contextElement: refs.domReference.current ?? undefined,
       getBoundingClientRect() {
+        const anchor = anchorRect?.(refs.domReference.current);
+        if (anchor) return anchor;
         return {
           x,
           y,
@@ -166,6 +194,7 @@ export function ChartTooltip({
           onPointerEnter?.(event);
           if (
             event.defaultPrevented ||
+            !mouseHover ||
             event.pointerType !== 'mouse' ||
             suppressed.current
           )
@@ -183,7 +212,12 @@ export function ChartTooltip({
         }}
         onPointerMove={event => {
           onPointerMove?.(event);
-          if (event.defaultPrevented || event.pointerType !== 'mouse') return;
+          if (
+            event.defaultPrevented ||
+            !mouseHover ||
+            event.pointerType !== 'mouse'
+          )
+            return;
           if (
             !chartPointerMoved(
               event.currentTarget.ownerDocument,
@@ -206,7 +240,7 @@ export function ChartTooltip({
         onPointerDown={event => {
           onPointerDown?.(event);
           if (event.defaultPrevented) return;
-          if (event.pointerType !== 'mouse') {
+          if (event.pointerType !== 'mouse' && touchInspection) {
             positionAtPointer(event);
             setOpen(wasOpen => !wasOpen);
           }

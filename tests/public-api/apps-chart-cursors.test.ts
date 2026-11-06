@@ -70,7 +70,14 @@ test('opted-in time charts share only mouse cursors at exact timestamps', async 
     } else {
       await chart(name)
         .getByRole('button', { name: 'Minute 1: 11 requests', exact: true })
-        .hover();
+        .scrollIntoViewIfNeeded();
+      const position = await chart(name)
+        .locator('[data-atbl-internal-sample="1"]')
+        .evaluate(element => {
+          const matrix = (element as SVGGraphicsElement).getScreenCTM()!;
+          return { x: matrix.e, y: matrix.f };
+        });
+      await page.mouse.move(position.x, position.y);
     }
     await expect.poll(() => cursor('Linked bar').count()).toBe(1);
     const band = cursor('Linked bar');

@@ -27,6 +27,7 @@ function Example() {
   const independent = useChartCursorGroup();
   const [showSource, setShowSource] = useState(true);
   const [revision, setRevision] = useState(0);
+  const [selected, setSelected] = useState('none');
   return (
     <>
       <button onClick={() => setShowSource(false)}>Remove source</button>
@@ -114,6 +115,41 @@ function Example() {
       </div>
 
       <BarChart items={items} unit="requests" ariaLabel="Outside group" />
+      {new URLSearchParams(location.search).has('actions') && (
+        <>
+          <output aria-label="Selected sample">{selected}</output>
+          <LineChart
+            ariaLabel="Action line"
+            items={items.map((item, index) => ({
+              ...item,
+              value: index === 1 ? 100 : 0,
+            }))}
+            unit="requests"
+            itemActions={item => [
+              {
+                id: 'inspect',
+                label: 'Inspect',
+                onSelect: () => setSelected(`line: ${item.label}`),
+              },
+            ]}
+          />
+          <AreaChart
+            ariaLabel="Action area"
+            items={items.map((item, index) => ({
+              ...item,
+              value: index === 1 ? 100 : 0,
+            }))}
+            unit="requests"
+            itemActions={item => [
+              {
+                id: 'inspect',
+                label: 'Inspect',
+                onSelect: () => setSelected(`area: ${item.label}`),
+              },
+            ]}
+          />
+        </>
+      )}
     </>
   );
 }

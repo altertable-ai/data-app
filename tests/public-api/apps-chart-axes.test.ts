@@ -166,12 +166,22 @@ test('standalone charts keep the latest samples visible initially and after data
           );
         })
         .toBe(true);
-      await chart
-        .getByRole('button', {
-          name: `Sample ${count}: ${count} ms`,
-          exact: true,
-        })
-        .hover();
+      if (name === 'Recent bar') {
+        await chart
+          .getByRole('button', {
+            name: `Sample ${count}: ${count} ms`,
+            exact: true,
+          })
+          .hover();
+      } else {
+        const position = await chart
+          .locator(`[data-atbl-internal-sample="${count - 1}"]`)
+          .evaluate(element => {
+            const matrix = (element as SVGGraphicsElement).getScreenCTM()!;
+            return { x: matrix.e, y: matrix.f };
+          });
+        await page.mouse.move(position.x, position.y);
+      }
       await expect
         .poll(() => page.getByRole('tooltip').textContent())
         .toContain(`${count} ms`);
