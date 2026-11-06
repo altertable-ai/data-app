@@ -1,12 +1,18 @@
 import { useDateAxisLabel, useDateAxisBar } from './chart-date-axis.tsx';
 export { ChartXAxis } from './chart-date-axis.tsx';
 import { formatMetric, formatNumber } from '@altertable/data-app/format';
-import { useContext, useLayoutEffect, type ComponentProps } from 'react';
+import {
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  type ComponentProps,
+} from 'react';
 import {
   Area,
   Dot,
   type DotProps,
   Bar,
+  Rectangle,
   Line,
   Scatter,
   YAxis,
@@ -15,6 +21,7 @@ import {
   Tooltip,
   DefaultTooltipContent,
   type BarProps,
+  type BarShapeProps,
   type LineProps,
   type AreaProps,
 } from 'recharts';
@@ -65,19 +72,55 @@ function NearestChartDot({
   ) : null;
 }
 
+function NearestChartBar({
+  seriesId,
+  x,
+  y,
+  width,
+  height,
+  fill,
+  radius,
+  stroke,
+}: BarShapeProps & { seriesId: string }) {
+  const interaction = useContext(ChartInteractionContext);
+  const registerBar = interaction?.registerBar;
+  useLayoutEffect(
+    () => registerBar?.(seriesId, x, y, width, height),
+    [registerBar, seriesId, x, y, width, height]
+  );
+  return isChartSeriesActive(interaction, seriesId) ? (
+    <Rectangle
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      fill={fill}
+      radius={radius}
+      stroke={stroke}
+      opacity={0.75}
+    />
+  ) : null;
+}
+
 /** Shared series defaults; native props override every authored choice. */
 export function ChartBar<Row = unknown, Value = number | null>(
   props: BarProps<Row, Value>
 ) {
   useDateAxisBar(props.xAxisId);
   const series = useChartSeries(props.id);
+  const renderActiveBar = useCallback(
+    (shapeProps: BarShapeProps) => (
+      <NearestChartBar seriesId={series.id} {...shapeProps} />
+    ),
+    [series.id]
+  );
   return (
     <ChartSeries id={series.id}>
       <Bar<Row, Value>
         fill={chartBarFill}
         radius={props.stackId == null ? [5, 5, 0, 0] : 0}
         maxBarSize={30}
-        activeBar={series.active ? { opacity: 0.75 } : false}
+        activeBar={renderActiveBar}
         isAnimationActive={false}
         {...props}
         id={series.id}

@@ -105,6 +105,7 @@ export function BarChart<Row extends BarChartItem>({
                   <div className="altertable-chart-item-actions">
                     <Tooltip
                       variant="chart"
+                      followCursor={false}
                       onOpenChange={open =>
                         setActiveId(current =>
                           open

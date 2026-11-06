@@ -1649,7 +1649,7 @@ Tooltip.variant?: 'chart' | 'hint'
 Tooltip.onOpenChange?: ((open: boolean) => void)
 Tooltip.align?: 'center' | 'end' | 'start'
 Tooltip.placement?: 'bottom' | 'top'
-Tooltip.followCursor?: boolean — Keep a chart tooltip at its entry position while hovering one sample.
+Tooltip.followCursor?: boolean — Set false to keep a chart tooltip at its entry position while hovering one sample.
 Tooltip.portalRoot?: RefObject<HTMLElement | null>
 Tooltip.…: plus props inherited from React
 TooltipProps (type, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as Tooltip.*

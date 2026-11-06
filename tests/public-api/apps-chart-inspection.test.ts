@@ -121,11 +121,11 @@ test('standalone charts retain formatted hover and tap inspection, zero values, 
   }
 });
 
-test('standalone line and area tooltips stay put while the same point is highlighted', async ({
+test('standalone bar, line and area tooltips stay put while the same item is highlighted', async ({
   page,
 }) => {
   await page.goto('/chart-legends');
-  for (const name of ['Standalone line', 'Standalone area']) {
+  for (const name of ['Standalone bar', 'Standalone line', 'Standalone area']) {
     const chart = page.getByRole('region', {
       name: `${name} basic example`,
       exact: true,
@@ -145,6 +145,32 @@ test('standalone line and area tooltips stay put while the same point is highlig
     expect(await tooltip.textContent()).toContain('8.0 ms');
     expect(await tooltip.boundingBox()).toEqual(initial);
   }
+});
+
+test('grouped bar inspection chooses the nearest bar across the gap', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', { name: 'Hover bars', exact: true });
+  const plot = chart.getByRole('application');
+  await plot.scrollIntoViewIfNeeded();
+  const label = await plot.getByText('One', { exact: true }).boundingBox();
+  const bounds = await plot.boundingBox();
+  const x = label!.x + label!.width / 2;
+  const y = bounds!.y + bounds!.height * 0.8;
+  const tooltip = chart.getByRole('tooltip');
+  await page.mouse.move(x - 17, y);
+  await expect.poll(() => tooltip.textContent()).toContain('Purple');
+  await page.mouse.move(x + 17, y);
+  await expect.poll(() => tooltip.textContent()).toContain('Green');
+  await page.mouse.move(x - 1, y);
+  await expect.poll(() => tooltip.textContent()).toContain('Purple');
+  await page.mouse.move(x + 1, y);
+  await expect.poll(() => tooltip.textContent()).toContain('Green');
+  const initial = await tooltip.boundingBox();
+  await page.mouse.move(x + 2, y);
+  expect(await tooltip.textContent()).toContain('Green');
+  expect(await tooltip.boundingBox()).toEqual(initial);
 });
 
 test('funnel inspection follows the hovered or tapped conversion and drop-off portion', async ({

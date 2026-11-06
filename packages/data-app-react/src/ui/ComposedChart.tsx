@@ -24,6 +24,7 @@ import { ChartDateAxes } from './chart-date-axis.tsx';
 import {
   ChartInteractionContext,
   type ChartPoint,
+  type ChartTarget,
 } from './chart-interaction.tsx';
 import {
   ChartBar as Bar,
@@ -42,16 +43,30 @@ import { ComposedChartLegend as Legend } from './ComposedChartLegend.tsx';
 
 function findNearestSeriesId(
   hoveredSeriesId: string | null,
-  points: ReadonlyMap<string, ChartPoint>,
+  points: ReadonlyMap<string, ChartTarget>,
   position: ChartPoint | null
 ) {
-  // Bars and scatter points use direct hits; line and area samples use distance.
+  // Scatter points use direct hits; other series use their active sample geometry.
   if (!position || (hoveredSeriesId != null && !points.has(hoveredSeriesId)))
     return hoveredSeriesId;
   let selected = hoveredSeriesId;
   let distance = Infinity;
   for (const [id, point] of points) {
-    const candidate = Math.hypot(point.x - position.x, point.y - position.y);
+    const candidate =
+      'width' in point
+        ? Math.hypot(
+            Math.max(
+              point.x - position.x,
+              0,
+              position.x - point.x - point.width
+            ),
+            Math.max(
+              point.y - position.y,
+              0,
+              position.y - point.y - point.height
+            )
+          )
+        : Math.hypot(point.x - position.x, point.y - position.y);
     if (candidate < distance) {
       distance = candidate;
       selected = id;
@@ -97,11 +112,11 @@ function ComposedChartRoot<Row>({
     null
   );
   const latestPointerPosition = useRef<ChartPoint | null>(null);
-  const [points, setPoints] = useState<ReadonlyMap<string, ChartPoint>>(
+  const [points, setPoints] = useState<ReadonlyMap<string, ChartTarget>>(
     () => new Map()
   );
-  const registerPoint = useCallback((id: string, x: number, y: number) => {
-    setPoints(current => new Map(current).set(id, { x, y }));
+  const registerTarget = useCallback((id: string, target: ChartTarget) => {
+    setPoints(current => new Map(current).set(id, target));
     return () =>
       setPoints(current => {
         const next = new Map(current);
@@ -109,6 +124,15 @@ function ComposedChartRoot<Row>({
         return next;
       });
   }, []);
+  const registerPoint = useCallback(
+    (id: string, x: number, y: number) => registerTarget(id, { x, y }),
+    [registerTarget]
+  );
+  const registerBar = useCallback(
+    (id: string, x: number, y: number, width: number, height: number) =>
+      registerTarget(id, { x, y, width, height }),
+    [registerTarget]
+  );
   useEffect(() => {
     // A new active sample moves the registered dots; re-evaluate the latest
     // pointer position even if its previous nearest series was unchanged.
@@ -178,6 +202,7 @@ function ComposedChartRoot<Row>({
         activePoint:
           activeSeriesId == null ? undefined : points.get(activeSeriesId),
         registerPoint,
+        registerBar,
         setHoveredSeriesId,
         seriesCount: seriesIds.size,
         registerSeries,
