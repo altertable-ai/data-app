@@ -15,19 +15,33 @@ test('datetime comparisons preserve selection through queries, reload, refresh, 
   await expect.poll(() => output.textContent()).toContain('"comparison":null');
   await picker.click();
   await picker.press('End');
-  const compare = page.getByRole('checkbox', {
+  const compare = page.getByRole('option', {
     name: 'Compare with previous period',
   });
-  expect(
-    await compare.evaluate(element => element === document.activeElement)
-  ).toBe(true);
-  expect(await picker.getAttribute('aria-activedescendant')).toBe(null);
-  await compare.press('Enter');
-  await picker.press('Escape');
+  expect(await picker.getAttribute('aria-activedescendant')).toBe(
+    await compare.getAttribute('id')
+  );
+  await expect
+    .poll(async () => {
+      const row = await compare.boundingBox();
+      const menu = await page
+        .locator('.altertable-datetime-popover')
+        .boundingBox();
+      return !!row && !!menu && row.y + row.height <= menu.y + menu.height;
+    })
+    .toBe(true);
+  expect(await compare.getAttribute('aria-selected')).toBe('false');
+  await picker.press('Enter');
   await expect
     .poll(() => output.textContent())
     .toContain('2026-06-26T16:00:00.000Z');
   expect(new URL(page.url()).searchParams.get('compare')).toBe('previous');
+  await picker.click();
+  expect(await compare.getAttribute('aria-selected')).toBe('true');
+  expect(await compare.locator('.altertable-datetime-check svg').count()).toBe(
+    1
+  );
+  await picker.press('Escape');
   expect(
     await page.getByText('100.0% vs', { exact: false }).count()
   ).toBeGreaterThan(0);
@@ -48,6 +62,37 @@ test('datetime comparisons preserve selection through queries, reload, refresh, 
   expect(new URL(page.url()).searchParams.has('compare')).toBe(false);
 });
 
+test('the final preset scrolls within the popover border when space is limited', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 936, height: 400 });
+  await page.goto('/datetime-comparison');
+  const picker = page.getByRole('combobox', {
+    name: 'Date range',
+    exact: true,
+  });
+  await picker.click();
+  await picker.press('End');
+  const geometry = await page
+    .locator('.altertable-datetime-popover')
+    .evaluate(popover => {
+      const scroller = popover.firstElementChild!;
+      const last = popover.querySelector<HTMLElement>(
+        '.altertable-datetime-presets button:last-child'
+      )!;
+      return {
+        popoverBottom: popover.getBoundingClientRect().bottom,
+        scrollerBottom: scroller.getBoundingClientRect().bottom,
+        lastBottom: last.getBoundingClientRect().bottom,
+        scrollHeight: scroller.scrollHeight,
+        clientHeight: scroller.clientHeight,
+      };
+    });
+  expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight);
+  expect(geometry.scrollerBottom).toBeLessThan(geometry.popoverBottom);
+  expect(geometry.lastBottom).toBeLessThanOrEqual(geometry.popoverBottom);
+});
+
 test('coverage disables comparison and changing range repairs an unavailable previous period', async ({
   page,
 }) => {
@@ -59,7 +104,7 @@ test('coverage disables comparison and changing range repairs an unavailable pre
   });
   await picker.click();
   await page
-    .getByRole('checkbox', { name: 'Compare with previous period' })
+    .getByRole('option', { name: 'Compare with previous period' })
     .click();
   await picker.click();
   await picker.fill('June 1 to June 3 2026');
@@ -72,7 +117,7 @@ test('coverage disables comparison and changing range repairs an unavailable pre
   await picker.click();
   expect(
     await page
-      .getByRole('checkbox', { name: 'Compare with previous period' })
+      .getByRole('option', { name: 'Compare with previous period' })
       .isEnabled()
   ).toBe(false);
   await picker.press('Escape');
@@ -92,13 +137,13 @@ test('calendar editing hides comparison until returning to presets', async ({
   await page.getByRole('option', { name: 'Select from calendar…' }).click();
   expect(
     await page
-      .getByRole('checkbox', { name: 'Compare with previous period' })
+      .getByRole('option', { name: 'Compare with previous period' })
       .count()
   ).toBe(0);
-  await page.getByRole('button', { name: '‹ Presets', exact: true }).click();
+  await page.getByRole('button', { name: 'Presets', exact: true }).click();
   expect(
     await page
-      .getByRole('checkbox', { name: 'Compare with previous period' })
+      .getByRole('option', { name: 'Compare with previous period' })
       .isVisible()
   ).toBe(true);
 });
@@ -140,7 +185,7 @@ for (const locale of ['en-US', 'fr-FR', 'en-GB']) {
     );
     expect(
       await page
-        .getByRole('checkbox', { name: 'Compare with previous period' })
+        .getByRole('option', { name: 'Compare with previous period' })
         .textContent()
     ).toContain(label('2026-06-26T16:00:00Z', '2026-07-03T16:00:00Z'));
     // Move across the localized date segments to the first hour and edit it

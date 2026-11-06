@@ -16,6 +16,8 @@ import type {
 
 /** A picker suggestion. Text ranges use the same natural-language parser as typed input. */
 export type DateTimeRangePreset = {
+  /** Stable identity for controls that retain a relative preset in URL state. */
+  id?: string;
   /** Menu label, also shown when this preset matches the selected range. */
   label: string;
   range: DateTimeRange | string;

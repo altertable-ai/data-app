@@ -26,7 +26,6 @@ import {
   DataTableShare,
   DataTableTimestamp,
   DataWidget,
-  DateRangePicker,
   DateTimeRangePicker,
   GlossaryDefinition,
   GlossaryExplanation,
@@ -44,13 +43,14 @@ import {
   TabList,
   TabPanel,
   TabPanels,
-  type DateRange,
   type LiveIntervalSeconds,
   type WidgetStatus,
   type AppIconName,
 } from '@altertable/data-app-react/ui';
 import {
+  defineDateRangeContract,
   dimensionFilter,
+  resolveDateTimeRange,
   type DateTimeRange,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
@@ -95,6 +95,12 @@ const dimension = dimensionFilter({
     { value: 'null', label: 'Literal null', count: 0 },
     { value: 'http', label: 'HTTP', count: 12 },
   ],
+});
+const galleryDateContract = defineDateRangeContract({
+  minDate: '2026-09-01',
+  maxDate: '2026-09-30',
+  maxRangeDays: 30,
+  timeZone: 'UTC',
 });
 const options = [
   { id: 'http', label: 'HTTP' },
@@ -231,7 +237,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
   const [notice, setNotice] = useState(false);
   const [cycle, setCycle] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [dates, setDates] = useState<DateRange | null>({
+  const [dates, setDates] = useState<{ start: string; end: string } | null>({
     start: '2026-09-24',
     end: '2026-09-30',
   });
@@ -240,6 +246,18 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
     from: new Date('2026-09-24T00:00:00Z'),
     to: new Date('2026-10-01T00:00:00Z'),
   });
+  const [dateTimeComparison, setDateTimeComparison] = useState(false);
+  const resolvedDateTimeRange = resolveDateTimeRange(dateTimeRange);
+  const dateTimeComparisonRange: DateTimeRange | null =
+    resolvedDateTimeRange.from === null
+      ? null
+      : {
+          from: new Date(
+            2 * resolvedDateTimeRange.from.getTime() -
+              resolvedDateTimeRange.to.getTime()
+          ),
+          to: resolvedDateTimeRange.from,
+        };
   const [live, setLive] = useState(false);
   const [interval, setInterval] = useState<LiveIntervalSeconds>(60);
   const [view, setView] = useState<'ready' | 'empty'>('ready');
@@ -497,21 +515,24 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         </Case>
       </Section>
       <Section id="dates" title="Dates, periods and freshness">
-        <Case
-          title="Bounded date range and comparison"
-          note="Historical coverage: September 1–30, 2026. Presets end at the latest available day. Click the field to edit absolute dates; Left/Right select parts, Up/Down adjust them, and Enter applies."
-        >
-          <DateRangePicker
+        <Case title="Bounded date range and comparison">
+          <DateTimeRangePicker
+            calendarDaysOnly
             label="Gallery dates"
             value={dates}
-            onChange={setDates}
+            onChange={next => {
+              setDates(next);
+              if (!next || !galleryDateContract.comparison(next))
+                setComparison(false);
+            }}
+            selectedPresetId={null}
             minDate="2026-09-01"
             maxDate="2026-09-30"
             maxRangeDays={30}
             timeZone="UTC"
             comparison={{
               enabled: comparison,
-              range: { start: '2026-09-17', end: '2026-09-23' },
+              range: dates ? galleryDateContract.comparison(dates) : null,
               onChange: setComparison,
             }}
           />
@@ -522,20 +543,28 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             value={dateTimeRange}
             onChange={setDateTimeRange}
             maxRangeDays={30}
+            comparison={{
+              enabled: dateTimeComparison,
+              range: dateTimeComparisonRange,
+              onChange: setDateTimeComparison,
+            }}
           />
         </Case>
         <Case title="Unset and disabled dates">
           <Stack>
-            <DateRangePicker
+            <DateTimeRangePicker
+              calendarDaysOnly
               label="Unset dates"
               value={null}
               onChange={() => {}}
             />
-            <DateRangePicker
+            <DateTimeRangePicker
+              calendarDaysOnly
               label="Disabled dates"
               value={dates}
               onChange={() => {}}
-              isDisabled
+              selectedPresetId={null}
+              disabled
             />
           </Stack>
         </Case>

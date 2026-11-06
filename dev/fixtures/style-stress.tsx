@@ -7,7 +7,7 @@ import {
 } from '@altertable/data-app-react';
 import {
   ChoicePicker,
-  DateRangePicker,
+  DateTimeRangePicker,
   SearchField,
   LiveControl,
   MetricWidget,
@@ -82,7 +82,8 @@ function Stress() {
           value={region}
           onChange={setRegion}
         />
-        <DateRangePicker
+        <DateTimeRangePicker
+          calendarDaysOnly
           label="Reporting dates"
           value={dates}
           onChange={setDates}

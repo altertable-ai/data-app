@@ -26,7 +26,6 @@ import {
   balanceSearchSuggestions,
 } from './search-suggestions.ts';
 import { ChoicePicker } from './ui/ChoicePicker.tsx';
-import { DateRangePicker } from './ui/DateRangePicker.tsx';
 import { DateTimeRangePicker } from './ui/DateTimeRangePicker.tsx';
 import { DimensionPicker } from './ui/DimensionPicker.tsx';
 import { NumberFilterPicker } from './ui/NumberFilterPicker.tsx';
@@ -257,11 +256,10 @@ export function useViewVariables<Variables extends VariableCollection>(
       if (definition.kind === 'dateRange') {
         const selection = value as DateRangeSelection;
         control = (
-          <DateRangePicker
+          <DateTimeRangePicker
             key={name}
-            labelPlacement={
-              labelPlacement === 'inline' ? undefined : labelPlacement
-            }
+            calendarDaysOnly
+            labelPlacement={labelPlacement}
             {...dateRangeControl(definition, selection, next =>
               setControlValue(next as AppVariableValues<Variables>[typeof name])
             )}

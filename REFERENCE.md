@@ -151,6 +151,26 @@ Button.variant?: 'elevated' | 'ghost' | 'inline' | 'outline' | 'primary' — Inl
 Button.size?: 'compact' | 'default' | 'icon' | 'icon-compact'
 Button.…: plus props inherited from React
 ButtonProps (type, @altertable/data-app-react): = props listed as Button.*
+CalendarDateRangePickerProps (type, @altertable/data-app-react/ui)
+CalendarDateRangePickerProps.calendarDaysOnly: true — Keep inclusive calendar dates and the current date-only URL contract.
+CalendarDateRangePickerProps.value: DateRange | null
+CalendarDateRangePickerProps.onChange: (value: DateRange | null) => void
+CalendarDateRangePickerProps.label?: string
+CalendarDateRangePickerProps.labelPlacement?: ControlLabelPlacement
+CalendarDateRangePickerProps.className?: string
+CalendarDateRangePickerProps.placeholder?: string
+CalendarDateRangePickerProps.disabled?: boolean
+CalendarDateRangePickerProps.minDate?: string
+CalendarDateRangePickerProps.maxDate?: string
+CalendarDateRangePickerProps.maxRangeDays?: number
+CalendarDateRangePickerProps.timeZone?: string
+CalendarDateRangePickerProps.selectedPresetId?: DatePresetId | null
+CalendarDateRangePickerProps.onPresetChange?: ((id: DatePresetId) => void)
+CalendarDateRangePickerProps.isDefault?: boolean
+CalendarDateRangePickerProps.onReset?: (() => void)
+CalendarDateRangePickerProps.resetValue?: DateRange
+CalendarDateRangePickerProps.calendarFooter?: ReactNode
+CalendarDateRangePickerProps.comparison?: { enabled: boolean; range: DateRange | null; onChange: (enabled: boolean) => void; }
 chartColor (function, @altertable/data-app-react): (id: string): string
 ChartLegend (component, @altertable/data-app-react/ui): (props: ChartLegendProps)
 ChartLegend.children: ReactNode
@@ -358,7 +378,7 @@ DataAppProvider (component, @altertable/data-app-react/ui): <const Queries exten
 DataAppProvider.app: DataAppDefinition<Queries>
 DataAppProvider.children: ReactNode
 DataAppStyle (type, @altertable/data-app-react, @altertable/data-app-react/ui): React style properties with checked public Altertable custom properties.
-DataAppStyle.{--atbl-accent, --atbl-accent-subtle, --atbl-annotation-accent, --atbl-annotation-accent-hover, --atbl-annotation-highlight, --atbl-annotation-on-accent, --atbl-backdrop, --atbl-background, --atbl-border, --atbl-chart-1, --atbl-chart-2, --atbl-chart-3, --atbl-chart-4, --atbl-chart-5, --atbl-chart-6, --atbl-chart-7, --atbl-chart-8, --atbl-chart-fill, --atbl-code-keyword, --atbl-code-surface, --atbl-code-text, --atbl-content-width, --atbl-control-compact-height, --atbl-control-disabled-opacity, --atbl-control-gap, --atbl-control-height, --atbl-control-hover-border, --atbl-control-hover-surface, --atbl-control-icon-size, --atbl-control-open-border, --atbl-control-open-surface, --atbl-control-padding-block, --atbl-control-padding-inline, --atbl-control-pressed-surface, --atbl-control-selected-surface, --atbl-control-selected-text, --atbl-control-text-size, --atbl-cursor-action, --atbl-cursor-busy, --atbl-cursor-disabled, --atbl-cursor-help, --atbl-danger, --atbl-danger-subtle, --atbl-dropdown-item-gap, --atbl-dropdown-item-padding-block, --atbl-dropdown-item-padding-inline, --atbl-dropdown-padding, --atbl-duration-fast, --atbl-duration-normal, --atbl-duration-slow, --atbl-ease-enter, --atbl-ease-standard, --atbl-focus-color, --atbl-focus-outline, --atbl-focus-ring-inset, --atbl-focus-ring-offset, --atbl-font, --atbl-font-heading, --atbl-layout-gap, --atbl-mono-font, --atbl-muted, --atbl-negative, --atbl-on-accent, --atbl-positive, --atbl-radius-control, --atbl-radius-overlay, --atbl-radius-surface, --atbl-shadow-control, --atbl-shadow-overlay, --atbl-shadow-surface, --atbl-space-lg, --atbl-space-md, --atbl-space-sm, --atbl-space-xl, --atbl-space-xs, --atbl-subtle, --atbl-surface, --atbl-surface-padding, --atbl-text, --atbl-text-measure, --atbl-type-body-leading, --atbl-type-body-size, --atbl-type-emphasis-weight, --atbl-type-heading-leading, --atbl-type-heading-weight, --atbl-type-label-leading, --atbl-type-label-size, --atbl-type-label-weight, --atbl-type-meta-size, --atbl-type-meta-weight, --atbl-type-metric-leading, --atbl-type-metric-size, --atbl-type-page-size, --atbl-type-section-size, --atbl-type-widget-size}?: string | number
+DataAppStyle.{--atbl-accent, --atbl-annotation-accent, --atbl-annotation-accent-hover, --atbl-annotation-highlight, --atbl-annotation-on-accent, --atbl-backdrop, --atbl-background, --atbl-border, --atbl-chart-1, --atbl-chart-2, --atbl-chart-3, --atbl-chart-4, --atbl-chart-5, --atbl-chart-6, --atbl-chart-7, --atbl-chart-8, --atbl-chart-fill, --atbl-code-keyword, --atbl-code-surface, --atbl-code-text, --atbl-content-width, --atbl-control-compact-height, --atbl-control-disabled-opacity, --atbl-control-gap, --atbl-control-height, --atbl-control-hover-border, --atbl-control-hover-surface, --atbl-control-icon-size, --atbl-control-open-border, --atbl-control-open-surface, --atbl-control-padding-block, --atbl-control-padding-inline, --atbl-control-pressed-surface, --atbl-control-selected-surface, --atbl-control-selected-text, --atbl-control-text-size, --atbl-cursor-action, --atbl-cursor-busy, --atbl-cursor-disabled, --atbl-cursor-help, --atbl-danger, --atbl-danger-subtle, --atbl-dropdown-item-gap, --atbl-dropdown-item-padding-block, --atbl-dropdown-item-padding-inline, --atbl-dropdown-padding, --atbl-duration-fast, --atbl-duration-normal, --atbl-duration-slow, --atbl-ease-enter, --atbl-ease-standard, --atbl-focus-color, --atbl-focus-outline, --atbl-focus-ring-inset, --atbl-focus-ring-offset, --atbl-font, --atbl-font-heading, --atbl-layout-gap, --atbl-mono-font, --atbl-muted, --atbl-negative, --atbl-on-accent, --atbl-positive, --atbl-radius-control, --atbl-radius-overlay, --atbl-radius-surface, --atbl-shadow-control, --atbl-shadow-overlay, --atbl-shadow-surface, --atbl-space-lg, --atbl-space-md, --atbl-space-sm, --atbl-space-xl, --atbl-space-xs, --atbl-subtle, --atbl-surface, --atbl-surface-padding, --atbl-text, --atbl-text-measure, --atbl-type-body-leading, --atbl-type-body-size, --atbl-type-emphasis-weight, --atbl-type-heading-leading, --atbl-type-heading-weight, --atbl-type-label-leading, --atbl-type-label-size, --atbl-type-label-weight, --atbl-type-meta-size, --atbl-type-meta-weight, --atbl-type-metric-leading, --atbl-type-metric-size, --atbl-type-page-size, --atbl-type-section-size, --atbl-type-widget-size}?: string | number
 DataAppStyle.…: plus props inherited from csstype
 DataAppStyleHooks (type, @altertable/data-app-react, @altertable/data-app-react/ui)
 DataAppStyleHooks.data-atbl-focus?: 'group' | 'inset' | 'ring'
@@ -366,7 +386,7 @@ DataAppStyleHooks.data-atbl-control?: 'action' | 'default' | 'help' | 'text'
 DataAppStylesOptions (type, @altertable/data-app-react)
 DataAppStylesOptions.document?: Document — Defaults to the current browser document.
 DataAppStylesOptions.nonce?: string — Nonce permitted by the document's style-src CSP.
-DataAppStyleToken (type, @altertable/data-app-react, @altertable/data-app-react/ui): = '--atbl-accent' | '--atbl-accent-subtle' | '--atbl-annotation-accent' | '--atbl-annotation-accent-hover' | '--atbl-annotation-highlight' | '--atbl-annotation-on-accent' | ... 88 more ... | '--atbl-type-widget-size'
+DataAppStyleToken (type, @altertable/data-app-react, @altertable/data-app-react/ui): = '--atbl-accent' | '--atbl-annotation-accent' | '--atbl-annotation-accent-hover' | '--atbl-annotation-highlight' | '--atbl-annotation-on-accent' | '--atbl-backdrop' | '--atbl-background' | ... 86 more ... | '--atbl-type-widget-size'
 DataClient (type, @altertable/data-app/client): <Operations> = props listed as createDataHooks.client.*
 DataClientOptions (type, @altertable/data-app/client): <Operations> = props listed as createDataClient.options.* — Browser operations and named-operation delivery are mutually exclusive.
 DataContext (type, @altertable/data-app-react)
@@ -522,37 +542,6 @@ DateRangeContract.describeInput: (input: DateRange) => string
 DateRangeContract.view: { period: ({ start, end }: DateRange) => ReportingPeriod; describeInput: (input: DateRange) => string; }
 DateRangeContractOptions (type, @altertable/data-app/contract): = props listed as defineDateRangeContract.options.*
 DateRangeInput (type, @altertable/data-app/contract): = props listed as previousDateRange.options.* — ISO calendar dates; the app operation defines timezone and inclusive bounds.
-DateRangePicker (component, @altertable/data-app-react/ui): (props: DateRangePickerProps) — Inclusive calendar-date adapter for the shared range picker. Existing variables retain their URL and preset semantics.
-DateRangePicker.isDisabled?: boolean
-DateRangePicker.isReadOnly?: boolean
-DateRangePicker.isInvalid?: boolean
-DateRangePicker.isRequired?: boolean
-DateRangePicker.className?: string | ((state: DateRangePickerRenderState) => string)
-DateRangePicker.style?: CSSProperties | ((state: DateRangePickerRenderState) => CSSProperties)
-DateRangePicker.validate?: ((range: { start: CalendarDate; end: CalendarDate; }) => string | true | string[] | null | undefined) — Rejects a candidate inclusive range before it is committed.
-DateRangePicker.isDateAvailable?: ((date: CalendarDate) => boolean) — Only available days can be selected or included in a committed range.
-DateRangePicker.label?: string
-DateRangePicker.labelPlacement?: 'above' | 'beside'
-DateRangePicker.value: DateRange | null
-DateRangePicker.onChange: (range: DateRange | null) => void
-DateRangePicker.minDate?: string
-DateRangePicker.maxDate?: string
-DateRangePicker.maxRangeDays?: number
-DateRangePicker.timeZone?: string
-DateRangePicker.resetValue?: DateRange — Used to display the reset affordance. The app variable owns the URL and reset meaning.
-DateRangePicker.isDefault?: boolean
-DateRangePicker.onReset?: (() => void)
-DateRangePicker.onPresetChange?: ((id: DatePresetId) => void)
-DateRangePicker.selectedPresetId?: DatePresetId | null
-DateRangePicker.calendarFooter?: ReactNode
-DateRangePicker.comparison?: { enabled: boolean; range: DateRange | null; onChange: (enabled: boolean) => void; }
-DateRangePicker.…: plus props inherited from React
-DateRangePickerProps (type, @altertable/data-app-react/ui): = props listed as DateRangePicker.*
-DateRangePickerRenderState (type, @altertable/data-app-react/ui): State exposed to calendar picker styling callbacks.
-DateRangePickerRenderState.isOpen: boolean
-DateRangePickerRenderState.isDisabled: boolean
-DateRangePickerRenderState.isReadOnly: boolean
-DateRangePickerRenderState.isInvalid: boolean
 DateRangeRequest (type, @altertable/data-app/contract)
 DateRangeRequest.range: DateRange
 DateRangeRequest.comparison: DateRange | null
@@ -636,21 +625,38 @@ DateTimeRangeContract.request: (value: unknown, compare?: boolean | undefined, n
 DateTimeRangeParseFailureReason (type, @altertable/data-app/format): = 'ambiguous' | 'empty' | 'invalid-range' | 'unrecognized'
 DateTimeRangeParserOptions (type, @altertable/data-app/format)
 DateTimeRangeParserOptions.now?: Date — UTC-encoded reference fields for omitted dates/years. Defaults to the current UTC date/time.
-DateTimeRangePicker (component, @altertable/data-app-react, @altertable/data-app-react/ui): (props: DateTimeRangePickerProps) — A datetime picker with presets, natural-language input, and a calendar. Presets apply immediately; Enter or calendar Apply commits edits; dismissal discards them.
-DateTimeRangePicker.value: DateTimeRange | null
-DateTimeRangePicker.onChange: (value: DateTimeRange, live?: boolean | undefined) => void — Commits a selection; the optional second argument indicates host-owned Live mode.
-DateTimeRangePicker.liveOption?: { dateTimeRange: DateTimeRange; isLive: boolean; } — Adds a Live preset using dateTimeRange; isLive reflects the applied mode. The host owns refresh scheduling.
-DateTimeRangePicker.className?: string
-DateTimeRangePicker.placeholder?: string
+DateTimeRangePicker (component, @altertable/data-app-react, @altertable/data-app-react/ui): (props: DateTimeRangePickerProps) — One picker visual for datetime and inclusive calendar-day selections.
+DateTimeRangePicker.calendarDaysOnly: true [variant 1 of 2] — Keep inclusive calendar dates and the current date-only URL contract.
+DateTimeRangePicker.value: DateRange | null [variant 1 of 2]
+DateTimeRangePicker.onChange: (value: DateRange | null) => void [variant 1 of 2]
 DateTimeRangePicker.label?: string
 DateTimeRangePicker.labelPlacement?: ControlLabelPlacement
-DateTimeRangePicker.maxRangeDays?: number — Client limit for determinate durations; validate timezone-dependent ranges on the backend.
-DateTimeRangePicker.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange… — Shared reporting policy; generated controls inherit it from their variable.
-DateTimeRangePicker.presets?: readonly DateTimeRangePreset[] — Suggestions in display order. Omit for defaults; [] retains calendar and text entry. Invalid or over-limit suggestions are omitted; typed input is not restricted to the menu.
+DateTimeRangePicker.className?: string
+DateTimeRangePicker.placeholder?: string
 DateTimeRangePicker.disabled?: boolean
-DateTimeRangePicker.comparison?: { enabled: boolean; range: DateTimeRange | null; onChange: (enabled: boolean) => void; } — Optional controlled comparison with the immediately preceding equal-length interval.
+DateTimeRangePicker.minDate?: string [variant 1 of 2]
+DateTimeRangePicker.maxDate?: string [variant 1 of 2]
+DateTimeRangePicker.maxRangeDays?: number
+DateTimeRangePicker.timeZone?: string [variant 1 of 2]
+DateTimeRangePicker.selectedPresetId?: DatePresetId | null [variant 1 of 2]
+DateTimeRangePicker.onPresetChange?: ((id: DatePresetId) => void) [variant 1 of 2]
+DateTimeRangePicker.isDefault?: boolean
+DateTimeRangePicker.onReset?: (() => void)
+DateTimeRangePicker.resetValue?: DateRange [variant 1 of 2]
+DateTimeRangePicker.calendarFooter?: ReactNode
+DateTimeRangePicker.comparison?: { enabled: boolean; range: DateRange | null; onChange: (enabled: boolean) => void; } [variant 1 of 2]
+DateTimeRangePicker.calendarDaysOnly?: false [variant 2 of 2]
+DateTimeRangePicker.value: DateTimeRange | null [variant 2 of 2]
+DateTimeRangePicker.onChange: (value: DateTimeRange, live?: boolean | undefined) => void [variant 2 of 2] — Commits a selection; the optional second argument indicates host-owned Live mode.
+DateTimeRangePicker.liveOption?: { dateTimeRange: DateTimeRange; isLive: boolean; } [variant 2 of 2] — Adds a Live preset using dateTimeRange; isLive reflects the applied mode. The host owns refresh scheduling.
+DateTimeRangePicker.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange… [variant 2 of 2] — Shared reporting policy; generated controls inherit it from their variable.
+DateTimeRangePicker.presets?: readonly DateTimeRangePreset[] [variant 2 of 2] — Suggestions in display order. Omit for defaults; [] retains calendar and text entry. Invalid or over-limit suggestions are omitted; typed input is not restricted to the menu.
+DateTimeRangePicker.selectedPresetId?: string | null [variant 2 of 2]
+DateTimeRangePicker.onPresetChange?: ((id: string) => void) [variant 2 of 2]
+DateTimeRangePicker.comparison?: { enabled: boolean; range: DateTimeRange | null; onChange: (enabled: boolean) => void; } [variant 2 of 2] — Optional controlled comparison with the immediately preceding equal-length interval.
 DateTimeRangePickerProps (type, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as DateTimeRangePicker.*
 DateTimeRangePreset (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): A picker suggestion. Text ranges use the same natural-language parser as typed input.
+DateTimeRangePreset.id?: string — Stable identity for controls that retain a relative preset in URL state.
 DateTimeRangePreset.label: string — Menu label, also shown when this preset matches the selected range.
 DateTimeRangePreset.range: string | DateTimeRange
 DateTimeRangePreset.shortcut?: string — Optional compact badge, for example "15m".

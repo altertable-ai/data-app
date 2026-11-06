@@ -1,5 +1,6 @@
 /* eslint-disable jsx-a11y/prefer-tag-over-role -- The editable combobox owns a custom listbox and calendar popup, not a native select. */
 import {
+  defineDateRangeContract,
   parseDateTimeBound,
   parseDateTimeRange,
   formatDateTimeBound,
@@ -9,6 +10,7 @@ import {
   type DateTimeRange,
   type DateTimeRangePreset,
   type DateRangeContract,
+  type DateRangeInput as DateRange,
 } from '@altertable/data-app/contract';
 import {
   formatDateTime,
@@ -16,12 +18,17 @@ import {
   parseDateTimeRangeInput,
 } from '@altertable/data-app/format';
 import {
+  availableDatePresets,
+  type DatePresetId,
+} from '@altertable/data-app/internal';
+import {
   useEffect,
   useId,
   useLayoutEffect,
   useRef,
   useState,
   useReducer,
+  type ReactNode,
 } from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
@@ -42,7 +49,8 @@ import { AppIcon } from './icons.ts';
 import { PickerField, type ControlLabelPlacement } from './PickerField.tsx';
 import { PopoverSurface } from './PopoverSurface.tsx';
 
-export type DateTimeRangePickerProps = {
+type DateTimePickerProps = {
+  calendarDaysOnly?: false;
   value: DateTimeRange | null;
   /** Commits a selection; the optional second argument indicates host-owned Live mode. */
   onChange: (value: DateTimeRange, live?: boolean) => void;
@@ -61,6 +69,11 @@ export type DateTimeRangePickerProps = {
    */
   presets?: readonly DateTimeRangePreset[];
   disabled?: boolean;
+  selectedPresetId?: string | null;
+  onPresetChange?: (id: string) => void;
+  isDefault?: boolean;
+  onReset?: () => void;
+  calendarFooter?: ReactNode;
   /** Optional controlled comparison with the immediately preceding equal-length interval. */
   comparison?: {
     enabled: boolean;
@@ -68,6 +81,142 @@ export type DateTimeRangePickerProps = {
     onChange: (enabled: boolean) => void;
   };
 };
+type DateTimePickerInternalProps = Omit<
+  DateTimePickerProps,
+  'calendarDaysOnly'
+> & {
+  calendarDaysOnly?: boolean;
+};
+
+export type CalendarDateRangePickerProps = {
+  /** Keep inclusive calendar dates and the current date-only URL contract. */
+  calendarDaysOnly: true;
+  value: DateRange | null;
+  onChange: (value: DateRange | null) => void;
+  label?: string;
+  labelPlacement?: ControlLabelPlacement;
+  className?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  minDate?: string;
+  maxDate?: string;
+  maxRangeDays?: number;
+  timeZone?: string;
+  selectedPresetId?: DatePresetId | null;
+  onPresetChange?: (id: DatePresetId) => void;
+  isDefault?: boolean;
+  onReset?: () => void;
+  resetValue?: DateRange;
+  calendarFooter?: ReactNode;
+  comparison?: {
+    enabled: boolean;
+    range: DateRange | null;
+    onChange: (enabled: boolean) => void;
+  };
+};
+
+export type DateTimeRangePickerProps =
+  | DateTimePickerProps
+  | CalendarDateRangePickerProps;
+
+function calendarRangeToDateTime(range: DateRange): DateTimeRange {
+  const from = new Date(`${range.start}T00:00:00Z`);
+  const to = new Date(`${range.end}T00:00:00Z`);
+  to.setUTCDate(to.getUTCDate() + 1);
+  return { from, to };
+}
+
+function dateTimeToCalendarRange(range: DateTimeRange): DateRange {
+  if (!(range.from instanceof Date) || !(range.to instanceof Date))
+    throw new Error('Choose calendar dates.');
+  return {
+    start: range.from.toISOString().slice(0, 10),
+    end: new Date(range.to.getTime() - 1).toISOString().slice(0, 10),
+  };
+}
+
+function calendarPresetShortcut(id: DatePresetId): string {
+  switch (id) {
+    case 'day':
+      return '-';
+    case 'this-week':
+      return 'WTD';
+    case 'previous-week':
+      return 'wk';
+    case 'this-month':
+      return 'MTD';
+    case 'previous-month':
+      return 'mo';
+    default:
+      return `${id.slice(5)}d`;
+  }
+}
+
+/** One picker visual for datetime and inclusive calendar-day selections. */
+export function DateTimeRangePicker(props: DateTimeRangePickerProps) {
+  if (!props.calendarDaysOnly) return <DateTimePicker {...props} />;
+  const {
+    calendarDaysOnly: _,
+    value,
+    onChange,
+    minDate,
+    maxDate,
+    maxRangeDays = 36500,
+    timeZone = 'UTC',
+    selectedPresetId,
+    onPresetChange,
+    isDefault,
+    onReset,
+    resetValue,
+    calendarFooter,
+    comparison,
+    ...rest
+  } = props;
+  const bounds = { minDate, maxDate, maxRangeDays, timeZone };
+  const contract = defineDateRangeContract({
+    ...bounds,
+    completeDays: false,
+  });
+  const presets = availableDatePresets(bounds).map(preset => ({
+    id: preset.id,
+    label: preset.label,
+    range: calendarRangeToDateTime(preset.range),
+    shortcut: calendarPresetShortcut(preset.id),
+  }));
+  return (
+    <DateTimePicker
+      {...rest}
+      value={value ? calendarRangeToDateTime(value) : null}
+      onChange={range =>
+        onChange(dateTimeToCalendarRange(contract.datetime.resolve(range)))
+      }
+      contract={contract}
+      maxRangeDays={maxRangeDays}
+      presets={presets}
+      selectedPresetId={selectedPresetId}
+      onPresetChange={
+        onPresetChange ? id => onPresetChange(id as DatePresetId) : undefined
+      }
+      isDefault={
+        isDefault ??
+        (resetValue
+          ? value?.start === resetValue.start && value?.end === resetValue.end
+          : undefined)
+      }
+      onReset={onReset ?? (resetValue ? () => onChange(resetValue) : undefined)}
+      calendarFooter={calendarFooter}
+      calendarDaysOnly
+      comparison={
+        comparison && {
+          ...comparison,
+          range: comparison.range
+            ? calendarRangeToDateTime(comparison.range)
+            : null,
+        }
+      }
+    />
+  );
+}
 
 const presetInputs = [
   ['15m', 'Past 15 minutes'],
@@ -177,11 +326,17 @@ function summaryLabel(value: DateTimeRange | null, options: DateFormatOptions) {
  * Unmodified arrows navigate presets or edit date segments. Escape returns from the
  * calendar to presets or closes the picker. Calendar days end at exclusive next UTC midnight.
  */
-export function DateTimeRangePicker({
+function DateTimePicker({
   value,
   onChange,
   liveOption,
   comparison,
+  selectedPresetId,
+  onPresetChange,
+  isDefault,
+  onReset,
+  calendarFooter,
+  calendarDaysOnly,
   className,
   placeholder = 'Select date range…',
   label = 'Date range',
@@ -190,7 +345,7 @@ export function DateTimeRangePicker({
   contract,
   presets: configuredPresets,
   disabled,
-}: DateTimeRangePickerProps) {
+}: DateTimePickerInternalProps) {
   const id = useId();
   const dateFormatting = useDateFormatting();
   const trigger = useRef<HTMLDivElement>(null);
@@ -220,7 +375,7 @@ export function DateTimeRangePicker({
   const [selectionRevision, setSelectionRevision] = useState(0);
   useLayoutEffect(() => {
     if (selectionRevision) {
-      input.current?.focus();
+      input.current?.focus({ preventScroll: true });
       input.current?.select();
     }
   }, [selectionRevision]);
@@ -253,14 +408,25 @@ export function DateTimeRangePicker({
   function rangeError(range: DateTimeRange) {
     try {
       parseDateTimeRange(range, { maxRangeDays });
-      contract?.datetime.parse(range);
+      const resolved = contract?.datetime.resolve(range);
+      if (
+        calendarDaysOnly &&
+        (!resolved?.from ||
+          resolved.from.getTime() % 86_400_000 !== 0 ||
+          resolved.to.getTime() % 86_400_000 !== 0)
+      )
+        return 'Choose complete calendar days.';
       return '';
     } catch (error) {
       return error instanceof Error ? error.message : 'Invalid date range.';
     }
   }
 
-  const presets = [
+  const presets: (DateTimeRangePreset & {
+    id?: string;
+    range: DateTimeRange;
+    live: boolean;
+  })[] = [
     ...(liveOption
       ? [
           {
@@ -299,7 +465,10 @@ export function DateTimeRangePicker({
     preset =>
       value &&
       preset.live === live &&
-      serializeDateTimeRange(preset.range) === serializeDateTimeRange(value)
+      (selectedPresetId !== undefined
+        ? preset.id === selectedPresetId
+        : serializeDateTimeRange(preset.range) ===
+          serializeDateTimeRange(value))
   );
   function selectInput() {
     setSelectionRevision(revision => revision + 1);
@@ -355,14 +524,19 @@ export function DateTimeRangePicker({
     dispatch({ type: 'error', error: "Couldn't parse that date range." });
   }
   function choose(index: number) {
-    if (index === comparisonIndex && comparison?.range) {
-      comparison.onChange(!comparison.enabled);
-      close(true);
+    if (index === comparisonIndex) {
+      if (comparison?.range) {
+        comparison.onChange(!comparison.enabled);
+        close(true);
+      }
       return;
     }
     const preset = presets[index];
     if (preset) {
-      commit(preset.range, preset.live);
+      if (preset.id && onPresetChange) {
+        onPresetChange(preset.id);
+        close(true);
+      } else commit(preset.range, preset.live);
       return;
     }
     if (index === calendarIndex) {
@@ -412,14 +586,8 @@ export function DateTimeRangePicker({
   }
   function navigateOption(index: number) {
     highlightOption(index);
-    if (index === comparisonIndex) {
-      popup.current
-        ?.querySelector<HTMLButtonElement>('button[role="checkbox"]')
-        ?.focus();
-    } else {
-      input.current?.focus();
-      input.current?.select();
-    }
+    input.current?.focus();
+    input.current?.select();
   }
   return (
     <PickerField label={label} labelPlacement={labelPlacement}>
@@ -448,10 +616,7 @@ export function DateTimeRangePicker({
           aria-haspopup={mode === 'calendar' ? 'dialog' : 'listbox'}
           aria-autocomplete={mode === 'presets' ? 'list' : 'none'}
           aria-activedescendant={
-            open &&
-            mode !== 'calendar' &&
-            highlight >= 0 &&
-            highlight !== comparisonIndex
+            open && mode !== 'calendar' && highlight >= 0
               ? `${id}-option-${highlight}`
               : undefined
           }
@@ -494,14 +659,6 @@ export function DateTimeRangePicker({
               return;
             }
             if (event.key === 'Tab') {
-              const checkbox = popup.current?.querySelector<HTMLButtonElement>(
-                'button[role="checkbox"]:not(:disabled)'
-              );
-              if (!event.shiftKey && comparison && checkbox) {
-                event.preventDefault();
-                checkbox.focus();
-                return;
-              }
               close();
               return;
             }
@@ -579,6 +736,21 @@ export function DateTimeRangePicker({
             }
           }}
         />
+        {onReset && !isDefault && value && (
+          <button
+            type="button"
+            className="altertable-datetime-reset"
+            data-atbl-focus="ring"
+            data-atbl-control="action"
+            aria-label="Reset date range"
+            onClick={event => {
+              event.stopPropagation();
+              onReset();
+            }}
+          >
+            <AppIcon name="reset" size={14} />
+          </button>
+        )}
         {error && (
           <span id={`${id}-error`} role="alert" className="altertable-sr-only">
             {error}
@@ -658,6 +830,7 @@ export function DateTimeRangePicker({
                   Apply
                 </Button>
               </footer>
+              {calendarFooter}
             </div>
           ) : (
             <>
@@ -665,14 +838,17 @@ export function DateTimeRangePicker({
                 id={`${id}-popup`}
                 role="listbox"
                 aria-label="Date range presets"
+                aria-multiselectable={comparison ? true : undefined}
                 className="altertable-datetime-presets"
               >
                 {[
                   ...presets.map(preset => preset.label),
                   'Select from calendar…',
                   'More',
+                  ...(comparison ? ['Compare with previous period'] : []),
                 ].map((text, index) => {
                   const preset = presets[index];
+                  const isComparison = index === comparisonIndex;
                   return (
                     <button
                       data-atbl-focus="inset"
@@ -682,10 +858,16 @@ export function DateTimeRangePicker({
                       tabIndex={-1}
                       id={`${id}-option-${index}`}
                       key={index}
-                      aria-selected={!!preset && preset === selected}
+                      aria-selected={
+                        isComparison
+                          ? comparison?.enabled
+                          : !!preset && preset === selected
+                      }
+                      disabled={isComparison && !comparison?.range}
                       data-highlighted={highlight === index || undefined}
                       data-divider={
                         index === calendarIndex ||
+                        isComparison ||
                         preset?.shortcut === 'today' ||
                         (index === 1 && !!liveOption) ||
                         undefined
@@ -704,7 +886,9 @@ export function DateTimeRangePicker({
                         className="altertable-datetime-shortcut"
                         aria-hidden="true"
                       >
-                        {preset ? (
+                        {isComparison ? (
+                          <span>vs</span>
+                        ) : preset ? (
                           <span>{shortcutLabel(preset.shortcut)}</span>
                         ) : (
                           <AppIcon
@@ -717,12 +901,25 @@ export function DateTimeRangePicker({
                           />
                         )}
                       </span>
-                      <span>{text}</span>
+                      <span>
+                        {text}
+                        {isComparison && (
+                          <small>
+                            {comparison?.range
+                              ? dateTimeRangeLabel(
+                                  comparison.range,
+                                  dateFormatting
+                                )
+                              : 'Outside available source coverage'}
+                          </small>
+                        )}
+                      </span>
                       <span
                         className="altertable-datetime-check"
                         aria-hidden="true"
                       >
-                        {preset && preset === selected ? (
+                        {(isComparison && comparison?.enabled) ||
+                        (preset && preset === selected) ? (
                           <AppIcon name="check" size={14} />
                         ) : null}
                       </span>
@@ -775,66 +972,6 @@ export function DateTimeRangePicker({
                 </aside>
               )}
             </>
-          )}
-          {comparison && mode !== 'calendar' && (
-            <div className="altertable-datetime-presets">
-              <button
-                type="button"
-                data-atbl-focus="inset"
-                data-atbl-control="action"
-                role="checkbox"
-                id={`${id}-option-${comparisonIndex}`}
-                data-highlighted={highlight === comparisonIndex || undefined}
-                onMouseMove={() => {
-                  dispatch({ type: 'update', value: { mode: 'presets' } });
-                  highlightOption(comparisonIndex);
-                }}
-                onFocus={() => highlightOption(comparisonIndex)}
-                onKeyDown={event => {
-                  if (
-                    ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)
-                  ) {
-                    event.preventDefault();
-                    navigateOption(
-                      event.key === 'ArrowUp'
-                        ? moreIndex
-                        : event.key === 'End'
-                          ? comparisonIndex
-                          : 0
-                    );
-                  }
-                }}
-                aria-checked={comparison.enabled}
-                aria-label="Compare with previous period"
-                aria-describedby={`${id}-comparison-description`}
-                disabled={!comparison.range}
-                data-divider
-                onClick={() => {
-                  comparison.onChange(!comparison.enabled);
-                  close(true);
-                }}
-              >
-                <span
-                  className="altertable-datetime-shortcut"
-                  aria-hidden="true"
-                >
-                  vs
-                </span>
-                <span>
-                  Compare with previous period
-                  <small id={`${id}-comparison-description`}>
-                    {comparison.range
-                      ? dateTimeRangeLabel(comparison.range, dateFormatting)
-                      : 'Outside available source coverage'}
-                  </small>
-                </span>
-                <span className="altertable-datetime-check" aria-hidden="true">
-                  {comparison.enabled ? (
-                    <AppIcon name="check" size={14} />
-                  ) : null}
-                </span>
-              </button>
-            </div>
           )}
         </div>
       </PopoverSurface>
