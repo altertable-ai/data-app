@@ -2,6 +2,7 @@ import {
   createDataHooks,
   createDataContext,
   searchVariable,
+  dateTimeRangeVariable,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -11,7 +12,7 @@ import {
   parseDimensionSelection,
   dimensionPredicate,
   parseCount,
-  type DateRangeRequest,
+  type DateTimeRangeComparisonRequest,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 import { expect, test } from 'vitest';
@@ -34,11 +35,23 @@ test('a calendar and dimension declaration validates and escapes the input used 
       { value: 'null', label: 'Literal null' },
     ],
   });
+  const period = dateTimeRangeVariable({
+    key: 'period',
+    contract: calendar,
+    allowComparison: true,
+    defaultValue: {
+      from: new Date('2026-03-04T00:00:00Z'),
+      to: new Date('2026-03-07T00:00:00Z'),
+    },
+  });
   const input: {
-    period: DateRangeRequest;
+    period: DateTimeRangeComparisonRequest;
     region: DimensionSelection<string>;
   } = {
-    period: calendar.request({ start: '2026-03-04', end: '2026-03-06' }, true),
+    period: period.input({
+      range: period.defaultValue.range,
+      comparison: 'previous',
+    }),
     region: {
       kind: 'include' as const,
       members: [
@@ -56,7 +69,7 @@ test('a calendar and dimension declaration validates and escapes the input used 
       input(value: unknown) {
         const request = value as typeof input;
         return {
-          period: calendar.parseRequest(request.period),
+          period: period.parseInput(request.period),
           region: parseDimensionSelection(request.region, region),
         };
       },
@@ -96,8 +109,8 @@ test('a calendar and dimension declaration validates and escapes the input used 
   const response = await client.query('activity', input);
   expect(response.data).toBe(0);
   expect(response.input.period.comparison).toEqual({
-    start: '2026-03-01',
-    end: '2026-03-03',
+    from: new Date('2026-03-01T00:00:00Z'),
+    to: new Date('2026-03-04T00:00:00Z'),
   });
   expect(statements).toEqual([
     'SELECT count FROM activity WHERE region = $region OR region IS NULL',
@@ -108,11 +121,26 @@ test('a calendar and dimension declaration validates and escapes the input used 
     )
   ).toEqual(input.region);
   for (const period of [
-    { range: { start: '2026-02-30', end: '2026-03-02' }, comparison: null },
-    { range: { start: '2026-03-01', end: '2026-03-09' }, comparison: null },
     {
-      range: input.period.range,
-      comparison: { start: '2026-03-02', end: '2026-03-03' },
+      ...input.period,
+      range: {
+        from: new Date('2026-02-01T00:00:00Z'),
+        to: new Date('2026-03-07T00:00:00Z'),
+      },
+    },
+    {
+      ...input.period,
+      range: {
+        from: new Date('2026-03-01T00:00:00Z'),
+        to: new Date('2026-03-10T00:00:00Z'),
+      },
+    },
+    {
+      ...input.period,
+      comparison: {
+        from: new Date('2026-03-02T00:00:00Z'),
+        to: new Date('2026-03-04T00:00:00Z'),
+      },
     },
   ])
     await expect(

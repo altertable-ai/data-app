@@ -129,7 +129,7 @@ const group = defineFacetFilter({
 });
 ```
 
-Declare `period` with `dateRangeVariable()`, include it alongside `group` in the view's variables,
+Declare `period` with `dateTimeRangeVariable()`, include it alongside `group` in the view's variables,
 and return parsed dimension options from the `groups` operation. Validate facet
 selections with `parseDimensionSelection(value, group)` from `/contract`.
 

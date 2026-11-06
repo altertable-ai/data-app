@@ -61,7 +61,6 @@ export {
   searchVariable,
   choiceVariable,
   multiChoiceVariable,
-  dateRangeVariable,
 } from '../ui/variables.ts';
 export type {
   AppVariable,
@@ -71,9 +70,6 @@ export type {
   ChoiceVariable,
   MultiChoiceVariable,
   SearchVariable,
-  DateRangeSelection,
-  DateRangeVariable,
-  DateRangeVariableOptions,
 } from '../ui/variables.ts';
 export { PeriodSummary } from '../ui/PeriodSummary.tsx';
 export type {

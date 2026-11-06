@@ -17,14 +17,6 @@ export {
   resolveDataView,
 } from './core/data-view.ts';
 export {
-  type DatePreset,
-  type DatePresetId,
-  type DateRange,
-  availableDatePresets,
-  inclusiveDays,
-  withinBounds,
-} from './core/date-range.ts';
-export {
   type DimensionFilterSettings,
   type DimensionValue,
   dimensionMemberKey,
@@ -47,16 +39,12 @@ export {
   type AppVariableValues,
   type ChoiceOption,
   type ChoiceVariable,
-  type DateRangeSelection,
-  type DateRangeVariable,
-  type DateRangeVariableOptions,
   type HistoryMode,
   type MultiChoiceVariable,
   type SearchVariable,
   type VariableCollection,
   type VariablePresentation,
   choiceVariable,
-  dateRangeVariable,
   defineAppVariables,
   multiChoiceVariable,
   searchVariable,

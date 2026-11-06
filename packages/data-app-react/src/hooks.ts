@@ -1,9 +1,6 @@
 import type { DataClient } from '@altertable/data-app/client';
 import type { InputOf, OutputOf } from '@altertable/data-app/client';
-import type {
-  DataOperations,
-  DateRangeRequest,
-} from '@altertable/data-app/contract';
+import type { DataOperations } from '@altertable/data-app/contract';
 import {
   parseDateTimeRange,
   formatDateTimeRange,
@@ -52,13 +49,10 @@ import {
 } from './exploration.ts';
 import type { AuthoringDataContext } from './ui/data-context.ts';
 import { dateTimeRangeLabel } from './ui/date-time-range-label.ts';
-import type { EmptyContent } from './ui/presentation.ts';
 import {
-  dateRangeVariable,
   type DateTimeRangeVariable,
   type DateTimeRangeComparisonVariable,
   type DateTimeRangeComparisonRequest,
-  type DateRangeVariableOptions,
 } from './ui/variables.ts';
 import { useViewVariables } from './view-controls.tsx';
 import { DeclaredView } from './view-runtime.tsx';
@@ -71,35 +65,6 @@ import {
   type ViewBindingOptions,
   type ViewDate,
 } from './view.ts';
-
-type CalendarTimeViewDefinition<
-  Operations extends DataOperations,
-  Name extends keyof Operations & string,
-  Additional extends VariableCollection,
-  Context extends AuthoringDataContext,
-> = {
-  operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
-  dataContext: Context;
-  time: Omit<DateRangeVariableOptions, 'key'>;
-  variables?: Additional &
-    CheckedVariableDeclarations<NoInfer<Additional>> & {
-      period?: never;
-    } & Omit<
-      CheckedFacetContexts<TimeVariables<NoInfer<Additional>>>,
-      'period'
-    > &
-    Omit<
-      CheckedFacetSources<Operations, TimeVariables<NoInfer<Additional>>>,
-      'period'
-    >;
-  isEmpty: (data: OutputOf<Operations[Name]>) => boolean;
-  emptyFallback: EmptyContent;
-} & TimeInputMapping<NoInfer<Additional>, InputOf<Operations[Name]>> &
-  ViewBindingOptions<
-    TimeVariables<NoInfer<Additional>>,
-    InputOf<Operations[Name]>,
-    RequiredPeriodBinding<InputOf<Operations[Name]>>
-  >;
 
 type DateTimeViewDefinition<
   Operations extends DataOperations,
@@ -151,7 +116,6 @@ function reportingTimeZone(definition: {
   const period = definition.date
     ? definition.variables[definition.date.variable]
     : definition.time;
-  if (period?.kind === 'dateRange') return period.bounds().timeZone;
   if (
     period?.kind === 'dateTimeRangeComparison' ||
     period?.kind === 'dateTimeRange'
@@ -171,33 +135,6 @@ function getClientScope(client: object): string {
 
   return scope;
 }
-
-type TimeVariables<Additional extends VariableCollection> = {
-  period: ReturnType<typeof dateRangeVariable>;
-} & Additional;
-type TimeInput<Additional extends VariableCollection> =
-  keyof Additional extends never
-    ? DateRangeRequest
-    : ResolvedVariables<TimeVariables<Additional>>;
-type TimeInputMapping<Additional extends VariableCollection, Input> =
-  TimeInput<Additional> extends Input
-    ? {
-        input?: (values: ResolvedVariables<TimeVariables<Additional>>) => Input;
-      }
-    : {
-        input: (values: ResolvedVariables<TimeVariables<Additional>>) => Input;
-      };
-
-/** Match the period reader's precedence for each possible operation input. */
-type RequiredPeriodBinding<Input> = Input extends unknown
-  ? 'period' extends keyof Input
-    ? Input extends { period: DateRangeRequest }
-      ? never
-      : 'period'
-    : Input extends DateRangeRequest
-      ? never
-      : 'period'
-  : never;
 
 type NonEmptyColumns<Columns extends object> = keyof Columns extends never
   ? never
@@ -699,68 +636,6 @@ export function createDataHooks<Operations extends DataOperations>(
     });
   }
 
-  /** One time declaration owns the URL picker, operation input, and displayed-period label.
-   * Without extra variables, the default input is the DateRangeRequest; with them it is
-   * { period, ...variables }. Other operation shapes require an input mapper.
-   * Mappers must preserve the period and dimension selections; bindings extract nested inputs.
-   * Use defineDataView with describeInput for deliberately fixed-period views. */
-
-  function defineCalendarTimeView<
-    Name extends keyof Operations & string,
-    const Additional extends VariableCollection = {},
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: CalendarTimeViewDefinition<
-      Operations,
-      Name,
-      Additional,
-      Context
-    >
-  ) {
-    const period = dateRangeVariable({ ...definition.time, key: 'period' });
-
-    return bindDataView<
-      Name,
-      { period: typeof period } & Additional,
-      Context,
-      true
-    >({
-      operation: definition.operation,
-      dataContext: definition.dataContext,
-      variables: { period, ...definition.variables } as {
-        period: typeof period;
-      } & Additional &
-        CheckedFacetContexts<NoInfer<TimeVariables<Additional>>>,
-      bindings: definition.bindings,
-      input(values: ResolvedVariables<TimeVariables<Additional>>) {
-        if (definition.input) return definition.input(values);
-        if (!definition.variables || !Object.keys(definition.variables).length)
-          return values.period as InputOf<Operations[Name]>;
-
-        return { ...values } as InputOf<Operations[Name]>;
-      },
-      date: {
-        variable: 'period' as never,
-        input(input: InputOf<Operations[Name]>) {
-          return definition.bindings?.period
-            ? (definition.bindings.period(input) as DateRangeRequest)
-            : ((input && typeof input === 'object' && 'period' in input
-                ? input.period
-                : input) as DateRangeRequest);
-        },
-      },
-      isEmpty: definition.isEmpty,
-      emptyFallback: definition.emptyFallback,
-    } as unknown as Parameters<
-      typeof bindDataView<
-        Name,
-        { period: typeof period } & Additional,
-        Context,
-        true
-      >
-    >[0]);
-  }
-
   function defineDateTimeView<
     Name extends keyof Operations & string,
     const Additional extends VariableCollection = {},
@@ -832,9 +707,7 @@ export function createDataHooks<Operations extends DataOperations>(
     >[0]);
   }
 
-  /** Share a datetime variable with the operation parser via time: period.
-   * Existing calendar time options retain their comparison workflow.
-   */
+  /** Share a datetime variable with the operation parser via time: period. */
   function defineTimeView<
     Name extends keyof Operations & string,
     const Additional extends VariableCollection = {},
@@ -869,30 +742,8 @@ export function createDataHooks<Operations extends DataOperations>(
     Context,
     false
   >;
-  function defineTimeView<
-    Name extends keyof Operations & string,
-    const Additional extends VariableCollection = {},
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: CalendarTimeViewDefinition<
-      Operations,
-      Name,
-      Additional,
-      Context
-    >
-  ): BoundDataView<
-    Name,
-    TimeVariables<Additional>,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>,
-    Context,
-    true
-  >;
   function defineTimeView(definition: any): any {
-    return definition.time.kind === 'dateTimeRange' ||
-      definition.time.kind === 'dateTimeRangeComparison'
-      ? defineDateTimeView(definition)
-      : defineCalendarTimeView(definition);
+    return defineDateTimeView(definition);
   }
 
   /** Bind typed options to a registered operation and explicitly declared variable dependencies.

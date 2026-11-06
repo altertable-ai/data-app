@@ -20,6 +20,7 @@ import { Sheet } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   formatCount,
+  formatDateRange,
   formatMetric,
   formatPercent,
   type MetricFormat,
@@ -484,7 +485,7 @@ function presentOrders(snapshot: OrderSnapshot) {
         change === null
           ? `Paid revenue reached ${formatMetric(current.revenue, currency)}`
           : `Paid revenue ${change >= 0 ? 'rose' : 'fell'} ${formatPercent(Math.abs(change))} against the previous period`,
-      context: `${scope}. Compared with ${calendar.describeInput({ start: input.period.comparison.from.toISOString().slice(0, 10), end: new Date(input.period.comparison.to.getTime() - 1).toISOString().slice(0, 10) })}.`,
+      context: `${scope}. Compared with ${formatDateRange({ start: input.period.comparison.from.toISOString().slice(0, 10), end: new Date(input.period.comparison.to.getTime() - 1).toISOString().slice(0, 10) })} ${calendar.bounds().timeZone}.`,
       visual: (
         <Grid columns={2}>
           <MetricWidget metric={revenueMetric} source={snapshot} />

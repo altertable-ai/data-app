@@ -3,7 +3,7 @@ import {
   choiceVariable,
   createDataContext,
   createDataHooks,
-  dateRangeVariable,
+  dateTimeRangeVariable,
   multiChoiceVariable,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
@@ -13,7 +13,7 @@ import {
   dimensionFilter,
   parseEmptyInput,
   type DataOperation,
-  type DateRangeRequest,
+  type DateTimeRangeComparisonRequest,
   type DimensionOption,
 } from '@altertable/data-app/contract';
 
@@ -109,7 +109,7 @@ const hooks =
   createDataHooks(
     createDataClient<{
       count: DataOperation<Record<string, never>, number>;
-      time: DataOperation<DateRangeRequest, number>;
+      time: DataOperation<{ period: DateTimeRangeComparisonRequest }, number>;
       regions: DataOperation<Record<string, never>, DimensionOption<string>[]>;
     }>()
   );
@@ -138,24 +138,24 @@ const comparisonValues = { current: 1, previous: 0 };
 view.metric(metric, () => comparisonValues);
 
 const calendar = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
-const period = dateRangeVariable({
+const period = dateTimeRangeVariable({
   key: 'period',
   contract: calendar,
-  defaultValue: { kind: 'preset', id: 'last-7' },
+  allowComparison: true,
+  defaultValue: '7d',
 });
 const dated = hooks.defineDataView({
   ...feedback,
   operation: 'time',
   variables: { period },
-  input: values => values.period,
-  date: { variable: 'period', input: input => input },
+  date: { variable: 'period', input: input => input.period },
 });
 dated.metric(metric, data => ({ current: data, previous: 0 }));
 dated.metric(metric, data => ({ current: data, previous: null }));
 const timeView = hooks.defineTimeView({
   ...feedback,
   operation: 'time',
-  time: { contract: calendar, defaultValue: { kind: 'preset', id: 'last-7' } },
+  time: period,
 });
 timeView.metric(metric, data => ({ current: data, previous: 0 }));
 

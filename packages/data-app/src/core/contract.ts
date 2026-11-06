@@ -2,9 +2,7 @@
 export {
   parseEmptyInput,
   parseTrue,
-  previousDateRange,
   defineDateRangeContract,
-  parseDateRangeInput,
   parseCount,
   parseLabel,
   defineQueryNames,
@@ -21,7 +19,6 @@ export {
   variableInput,
 } from '../authoring/contract.ts';
 export type {
-  DateRangeRequest,
   ReportingPeriod,
   DateRangeContractOptions,
   DateRangeContract,
@@ -41,7 +38,6 @@ export type {
   QueryResult,
   DisclosedQuery,
   DataOperation,
-  DateRangeInput,
   DimensionSelection,
   DimensionMember,
   DimensionOption,

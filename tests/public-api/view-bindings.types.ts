@@ -8,12 +8,10 @@ import {
 import { createDataClient } from '@altertable/data-app/client';
 import {
   booleanFilter,
-  defineDateRangeContract,
   dimensionFilter,
   numberFilter,
   type BooleanSelection,
   type DataOperation,
-  type DateRangeRequest,
   type DimensionSelection,
   type NumberSelection,
 } from '@altertable/data-app/contract';
@@ -72,28 +70,6 @@ const hooks =
         number
       >;
       nested: DataOperation<{ filters: Filters }, number>;
-      time: DataOperation<DateRangeRequest, number>;
-      shadowedTime: DataOperation<
-        DateRangeRequest & { period?: string },
-        number
-      >;
-      unionTime: DataOperation<
-        DateRangeRequest | { period: DateRangeRequest },
-        number
-      >;
-      nestedTime: DataOperation<
-        {
-          filters: {
-            period: DateRangeRequest;
-            organization: DimensionSelection<string>;
-          };
-        },
-        number
-      >;
-      directTime: DataOperation<
-        { period: DateRangeRequest; organization: DimensionSelection<string> },
-        number
-      >;
     }>()
   );
 const feedback = {
@@ -262,80 +238,4 @@ hooks.defineDataView({
   variables: selections,
   input: values => ({ selected: values.choices }),
   bindings: { choices: input => input.selected },
-});
-
-const time = {
-  contract: defineDateRangeContract({
-    minDate: '2026-01-01',
-    maxRangeDays: 90,
-    timeZone: 'UTC',
-  }),
-  defaultValue: { kind: 'preset' as const, id: 'last-7' as const },
-};
-// Bare calendar requests and top-level period/filter fields derive their bindings.
-hooks.defineTimeView({ ...feedback, operation: 'time', time });
-hooks.defineTimeView({
-  ...feedback,
-  operation: 'unionTime',
-  time,
-  input: values => values.period,
-});
-// @ts-expect-error A possible incompatible period field shadows the bare calendar request.
-hooks.defineTimeView({
-  ...feedback,
-  operation: 'shadowedTime',
-  time,
-  input: values => ({ ...values.period, period: 'bad' }),
-});
-hooks.defineTimeView({
-  ...feedback,
-  operation: 'shadowedTime',
-  time,
-  input: values => values.period,
-  bindings: {
-    period: input => ({ range: input.range, comparison: input.comparison }),
-  },
-});
-hooks.defineTimeView({
-  ...feedback,
-  operation: 'directTime',
-  time,
-  variables: { organization },
-});
-// @ts-expect-error Nested period and organization inputs require bindings.
-hooks.defineTimeView({
-  ...feedback,
-  operation: 'nestedTime',
-  time,
-  variables: { organization },
-  input: values => ({ filters: values }),
-});
-hooks.defineTimeView({
-  ...feedback,
-  operation: 'nestedTime',
-  time,
-  variables: { organization },
-  input: values => ({ filters: values }),
-  // @ts-expect-error Binding the period alone does not preserve the organization filter.
-  bindings: { period: input => input.filters.period },
-});
-hooks.defineTimeView({
-  ...feedback,
-  operation: 'nestedTime',
-  time,
-  variables: { organization },
-  input: values => ({ filters: values }),
-  // @ts-expect-error Binding the organization alone does not preserve the nested period.
-  bindings: { organization: input => input.filters.organization },
-});
-hooks.defineTimeView({
-  ...feedback,
-  operation: 'nestedTime',
-  time,
-  variables: { organization },
-  input: values => ({ filters: values }),
-  bindings: {
-    period: input => input.filters.period,
-    organization: input => input.filters.organization,
-  },
 });

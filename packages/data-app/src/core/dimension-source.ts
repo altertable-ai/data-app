@@ -60,17 +60,13 @@ type ParsedVariableValues<Variables extends VariableCollection> = {
     : AppVariableValues<Variables>[Key];
 };
 
-/** Validate named variable values at the operation boundary. Date inputs belong to the base parser. */
+/** Validate named variable values at the operation boundary. */
 export function variableInput<
   Input extends object,
   const Variables extends VariableCollection,
 >(
   parse: (value: unknown) => Input,
-  variables: Variables & {
-    [Key in keyof Variables]: Variables[Key] extends { kind: 'dateRange' }
-      ? never
-      : Variables[Key];
-  }
+  variables: Variables
 ): (value: unknown) => Input & ParsedVariableValues<Variables> {
   const previous = parserVariables.get(parse) ?? {};
   const definitions = { ...variables };

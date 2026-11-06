@@ -19,6 +19,7 @@ import {
   type DateTimeRangeComparisonRequest,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
+import { formatDateRange } from '@altertable/data-app/format';
 
 const calendar = defineDateRangeContract({
   minDate: '2026-02-01',
@@ -122,12 +123,12 @@ const dataset = view.dataset({
   select: (count, input) => [
     {
       count,
-      period: calendar.describeInput({
+      period: `${formatDateRange({
         start: input.period.range.from.toISOString().slice(0, 10),
         end: new Date(input.period.range.to.getTime() - 1)
           .toISOString()
           .slice(0, 10),
-      }),
+      })} ${calendar.bounds().timeZone}`,
     },
   ],
   rowKey: () => 'events',

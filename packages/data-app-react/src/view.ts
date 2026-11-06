@@ -4,12 +4,10 @@ import {
   formatDateTimeRange,
   type DateTimeRangeComparisonRequest,
   type DateTimeRangeComparisonVariable,
-  type DateRangeRequest,
 } from '@altertable/data-app/contract';
 import type {
   AppVariable,
   AppVariableValues,
-  DateRangeVariable,
   VariableCollection,
   CheckedFacetContexts,
 } from '@altertable/data-app/internal';
@@ -21,9 +19,7 @@ import type { EmptyContent } from './ui/presentation.ts';
 type ResolvedVariable<Variable> =
   Variable extends DateTimeRangeComparisonVariable
     ? DateTimeRangeComparisonRequest
-    : Variable extends DateRangeVariable
-      ? DateRangeRequest
-      : AppVariableValues<{ value: Variable }>['value'];
+    : AppVariableValues<{ value: Variable }>['value'];
 export type ResolvedVariables<Variables extends VariableCollection> = {
   [Key in keyof Variables]:
     | ResolvedVariable<Variables[Key]>
@@ -31,18 +27,16 @@ export type ResolvedVariables<Variables extends VariableCollection> = {
 };
 
 type DateVariableKey<Variables extends VariableCollection> = {
-  [Key in keyof Variables]: Variables[Key] extends
-    | DateRangeVariable
-    | DateTimeRangeComparisonVariable
-    ? Key
-    : never;
+  [
+    Key in keyof Variables
+  ]: Variables[Key] extends DateTimeRangeComparisonVariable ? Key : never;
 }[keyof Variables] &
   string;
 
 /** Extract the selected range and comparison unchanged, including from nested inputs. */
 export type ViewDate<Variables extends VariableCollection, Input> = {
   variable: DateVariableKey<Variables>;
-  input: (input: Input) => DateRangeRequest | DateTimeRangeComparisonRequest;
+  input: (input: Input) => DateTimeRangeComparisonRequest;
 };
 
 /** Read variable values from a custom operation input; omitted keys use top-level fields. */
@@ -54,9 +48,9 @@ export type ViewBindings<
 }>;
 
 type RequiredFilterBindingKeys<Variables extends VariableCollection, Input> = {
-  [Key in keyof Variables]: Variables[Key]['kind'] extends
-    | 'dateRange'
-    | 'dateTimeRangeComparison'
+  [
+    Key in keyof Variables
+  ]: Variables[Key]['kind'] extends 'dateTimeRangeComparison'
     ? never
     : Variables[Key]['kind'] extends 'choice'
       ? [Input] extends [Record<Key, unknown>]
@@ -160,16 +154,14 @@ export function describeViewInput<Input>(definition: {
   bindings?: Partial<Record<string, (input: Input) => unknown>>;
   date?: {
     variable: string;
-    input: (input: Input) => DateRangeRequest | DateTimeRangeComparisonRequest;
+    input: (input: Input) => DateTimeRangeComparisonRequest;
   };
   describeInput?: (input: Input) => string;
 }): (input: Input) => string {
   const date = definition.date;
   const variable = date && definition.variables[date.variable];
   invariant(
-    !date ||
-      variable?.kind === 'dateRange' ||
-      variable?.kind === 'dateTimeRangeComparison',
+    !date || variable?.kind === 'dateTimeRangeComparison',
     'The view date must reference a date range variable.'
   );
   if (definition.describeInput) return definition.describeInput;
@@ -178,12 +170,7 @@ export function describeViewInput<Input>(definition: {
 
   function describeInput(input: Input) {
     const request = dateBinding.input(input);
-    const period =
-      variable?.kind === 'dateTimeRangeComparison'
-        ? formatDateTimeRange(parseDateTimeRange(request.range))
-        : (variable as DateRangeVariable).describeInput(
-            request as DateRangeRequest
-          );
+    const period = formatDateTimeRange(parseDateTimeRange(request.range));
     const filters = Object.entries(definition.variables)
       .filter(([, variable]) =>
         ['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind)
@@ -236,33 +223,11 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
                 serializeDateTimeRange(mapped.comparison)),
         'The operation input must preserve the selected datetime range and comparison.'
       );
-    } else {
-      const selected = values[definition.date.variable] as DateRangeRequest;
-      const mapped = definition.date.input(input) as DateRangeRequest;
-      invariant(
-        mapped && mapped.range && 'comparison' in mapped,
-        'The operation input must preserve the selected date range and comparison.'
-      );
-
-      function sameRange(
-        a: DateRangeRequest['comparison'],
-        b: DateRangeRequest['comparison']
-      ) {
-        return (
-          a === b || (!!a && !!b && a.start === b.start && a.end === b.end)
-        );
-      }
-      invariant(
-        sameRange(selected.range, mapped.range) &&
-          sameRange(selected.comparison, mapped.comparison),
-        'The operation input must preserve the selected date range and comparison.'
-      );
     }
   }
 
   for (const [key, variable] of Object.entries(definition.variables)) {
     if (
-      variable.kind === 'dateRange' ||
       variable.kind === 'dateTimeRangeComparison' ||
       (variable.presentation?.group === 'display' && variable.kind !== 'choice')
     )

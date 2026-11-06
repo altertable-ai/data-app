@@ -1,6 +1,5 @@
 /* eslint-disable jsx-a11y/prefer-tag-over-role -- The editable combobox owns a custom listbox and calendar popup, not a native select. */
 import {
-  defineDateRangeContract,
   parseDateTimeBound,
   parseDateTimeRange,
   formatDateTimeBound,
@@ -10,17 +9,12 @@ import {
   type DateTimeRange,
   type DateTimeRangePreset,
   type DateRangeContract,
-  type DateRangeInput as DateRange,
 } from '@altertable/data-app/contract';
 import {
   formatDateTime,
   type DateFormatOptions,
   parseDateTimeRangeInput,
 } from '@altertable/data-app/format';
-import {
-  availableDatePresets,
-  type DatePresetId,
-} from '@altertable/data-app/internal';
 import {
   useEffect,
   useId,
@@ -49,8 +43,7 @@ import { AppIcon } from './icons.ts';
 import { PickerField, type ControlLabelPlacement } from './PickerField.tsx';
 import { PopoverSurface } from './PopoverSurface.tsx';
 
-type DateTimePickerProps = {
-  calendarDaysOnly?: false;
+export type DateTimeRangePickerProps = {
   value: DateTimeRange | null;
   /** Commits a selection; the optional second argument indicates host-owned Live mode. */
   onChange: (value: DateTimeRange, live?: boolean) => void;
@@ -81,142 +74,6 @@ type DateTimePickerProps = {
     onChange: (enabled: boolean) => void;
   };
 };
-type DateTimePickerInternalProps = Omit<
-  DateTimePickerProps,
-  'calendarDaysOnly'
-> & {
-  calendarDaysOnly?: boolean;
-};
-
-export type CalendarDateRangePickerProps = {
-  /** Keep inclusive calendar dates and the current date-only URL contract. */
-  calendarDaysOnly: true;
-  value: DateRange | null;
-  onChange: (value: DateRange | null) => void;
-  label?: string;
-  labelPlacement?: ControlLabelPlacement;
-  className?: string;
-  placeholder?: string;
-  disabled?: boolean;
-  minDate?: string;
-  maxDate?: string;
-  maxRangeDays?: number;
-  timeZone?: string;
-  selectedPresetId?: DatePresetId | null;
-  onPresetChange?: (id: DatePresetId) => void;
-  isDefault?: boolean;
-  onReset?: () => void;
-  resetValue?: DateRange;
-  calendarFooter?: ReactNode;
-  comparison?: {
-    enabled: boolean;
-    range: DateRange | null;
-    onChange: (enabled: boolean) => void;
-  };
-};
-
-export type DateTimeRangePickerProps =
-  | DateTimePickerProps
-  | CalendarDateRangePickerProps;
-
-function calendarRangeToDateTime(range: DateRange): DateTimeRange {
-  const from = new Date(`${range.start}T00:00:00Z`);
-  const to = new Date(`${range.end}T00:00:00Z`);
-  to.setUTCDate(to.getUTCDate() + 1);
-  return { from, to };
-}
-
-function dateTimeToCalendarRange(range: DateTimeRange): DateRange {
-  if (!(range.from instanceof Date) || !(range.to instanceof Date))
-    throw new Error('Choose calendar dates.');
-  return {
-    start: range.from.toISOString().slice(0, 10),
-    end: new Date(range.to.getTime() - 1).toISOString().slice(0, 10),
-  };
-}
-
-function calendarPresetShortcut(id: DatePresetId): string {
-  switch (id) {
-    case 'day':
-      return '-';
-    case 'this-week':
-      return 'WTD';
-    case 'previous-week':
-      return 'wk';
-    case 'this-month':
-      return 'MTD';
-    case 'previous-month':
-      return 'mo';
-    default:
-      return `${id.slice(5)}d`;
-  }
-}
-
-/** One picker visual for datetime and inclusive calendar-day selections. */
-export function DateTimeRangePicker(props: DateTimeRangePickerProps) {
-  if (!props.calendarDaysOnly) return <DateTimePicker {...props} />;
-  const {
-    calendarDaysOnly: _,
-    value,
-    onChange,
-    minDate,
-    maxDate,
-    maxRangeDays = 36500,
-    timeZone = 'UTC',
-    selectedPresetId,
-    onPresetChange,
-    isDefault,
-    onReset,
-    resetValue,
-    calendarFooter,
-    comparison,
-    ...rest
-  } = props;
-  const bounds = { minDate, maxDate, maxRangeDays, timeZone };
-  const contract = defineDateRangeContract({
-    ...bounds,
-    completeDays: false,
-  });
-  const presets = availableDatePresets(bounds).map(preset => ({
-    id: preset.id,
-    label: preset.label,
-    range: calendarRangeToDateTime(preset.range),
-    shortcut: calendarPresetShortcut(preset.id),
-  }));
-  return (
-    <DateTimePicker
-      {...rest}
-      value={value ? calendarRangeToDateTime(value) : null}
-      onChange={range =>
-        onChange(dateTimeToCalendarRange(contract.datetime.resolve(range)))
-      }
-      contract={contract}
-      maxRangeDays={maxRangeDays}
-      presets={presets}
-      selectedPresetId={selectedPresetId}
-      onPresetChange={
-        onPresetChange ? id => onPresetChange(id as DatePresetId) : undefined
-      }
-      isDefault={
-        isDefault ??
-        (resetValue
-          ? value?.start === resetValue.start && value?.end === resetValue.end
-          : undefined)
-      }
-      onReset={onReset ?? (resetValue ? () => onChange(resetValue) : undefined)}
-      calendarFooter={calendarFooter}
-      calendarDaysOnly
-      comparison={
-        comparison && {
-          ...comparison,
-          range: comparison.range
-            ? calendarRangeToDateTime(comparison.range)
-            : null,
-        }
-      }
-    />
-  );
-}
 
 const presetInputs = [
   ['15m', 'Past 15 minutes'],
@@ -326,7 +183,7 @@ function summaryLabel(value: DateTimeRange | null, options: DateFormatOptions) {
  * Unmodified arrows navigate presets or edit date segments. Escape returns from the
  * calendar to presets or closes the picker. Calendar days end at exclusive next UTC midnight.
  */
-function DateTimePicker({
+export function DateTimeRangePicker({
   value,
   onChange,
   liveOption,
@@ -336,7 +193,6 @@ function DateTimePicker({
   isDefault,
   onReset,
   calendarFooter,
-  calendarDaysOnly,
   className,
   placeholder = 'Select date range…',
   label = 'Date range',
@@ -345,7 +201,7 @@ function DateTimePicker({
   contract,
   presets: configuredPresets,
   disabled,
-}: DateTimePickerInternalProps) {
+}: DateTimeRangePickerProps) {
   const id = useId();
   const dateFormatting = useDateFormatting();
   const trigger = useRef<HTMLDivElement>(null);
@@ -408,14 +264,7 @@ function DateTimePicker({
   function rangeError(range: DateTimeRange) {
     try {
       parseDateTimeRange(range, { maxRangeDays });
-      const resolved = contract?.datetime.resolve(range);
-      if (
-        calendarDaysOnly &&
-        (!resolved?.from ||
-          resolved.from.getTime() % 86_400_000 !== 0 ||
-          resolved.to.getTime() % 86_400_000 !== 0)
-      )
-        return 'Choose complete calendar days.';
+      contract?.datetime.resolve(range);
       return '';
     } catch (error) {
       return error instanceof Error ? error.message : 'Invalid date range.';

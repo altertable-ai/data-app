@@ -34,11 +34,9 @@ import { SearchField, type SearchFieldProps } from './ui/SearchField.tsx';
 import { SearchTypeahead } from './ui/SearchTypeahead.tsx';
 import { Select } from './ui/Select.tsx';
 import {
-  dateRangeControl,
   useAppVariables,
   type AppVariableValues,
   type VariableCollection,
-  type DateRangeSelection,
 } from './ui/variables.ts';
 import {
   ViewControlBar,
@@ -88,9 +86,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     resolved[name] = (
       definition.kind === 'dateTimeRangeComparison'
         ? definition.input(value as DateTimeRangeComparisonSelection, reference)
-        : definition.kind === 'dateRange'
-          ? definition.input(value as DateRangeSelection)
-          : value
+        : value
     ) as ResolvedVariables<Variables>[typeof name];
   }
   const facets = Object.entries(definitions).filter(
@@ -253,19 +249,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         if (onClear && variable.same(next, baseline)) onClear();
       }
       let control: ReactNode = null;
-      if (definition.kind === 'dateRange') {
-        const selection = value as DateRangeSelection;
-        control = (
-          <DateTimeRangePicker
-            key={name}
-            calendarDaysOnly
-            labelPlacement={labelPlacement}
-            {...dateRangeControl(definition, selection, next =>
-              setControlValue(next as AppVariableValues<Variables>[typeof name])
-            )}
-          />
-        );
-      } else if (definition.kind === 'dateTimeRangeComparison') {
+      if (definition.kind === 'dateTimeRangeComparison') {
         const selection = value as DateTimeRangeComparisonSelection;
         control = (
           <DateTimeRangePicker

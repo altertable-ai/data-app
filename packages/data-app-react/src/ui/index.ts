@@ -37,8 +37,6 @@ export type { MetricWidgetProps } from './MetricWidget.tsx';
 export { DimensionPicker } from './DimensionPicker.tsx';
 export { LiveControl } from './LiveControl.tsx';
 export type { LiveControlProps, LiveIntervalSeconds } from './LiveControl.tsx';
-export type { DateRangeInput as DateRange } from '@altertable/data-app/contract';
-export type { DatePresetId } from '@altertable/data-app/internal';
 export { useAppVariables } from './variables.ts';
 export { SearchField } from './SearchField.tsx';
 export type { SearchFieldProps } from './SearchField.tsx';
@@ -223,5 +221,4 @@ export {
 export {
   DateTimeRangePicker,
   type DateTimeRangePickerProps,
-  type CalendarDateRangePickerProps,
 } from './DateTimeRangePicker.tsx';
