@@ -31,6 +31,7 @@ export const operations = {
       const result = await query('samples', {
         start: comparison?.start ?? range.start,
         end: range.end,
+        selected_start: range.start,
         grain,
         breakdown,
       });
@@ -38,7 +39,7 @@ export const operations = {
         periodStart: row.period_start,
         member: row.member,
         sampleCount: parseCount(row.sample_count),
-        selected: row.period_start >= range.start,
+        selected: row.selected,
       }));
     },
   }),

@@ -31,11 +31,13 @@ const dataApp = defineDataApp({
       projections: {
         period_start: { type: 'string' },
         member: { type: 'string' },
+        selected: { type: 'boolean' },
         sample_count: { type: 'number' },
       },
       statement: `
 SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
   CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS member,
+  sample_date >= CAST($selected_start AS DATE) AS selected,
   SUM(sample_count) AS sample_count
 FROM starter_demo.daily_samples
 WHERE sample_date BETWEEN CAST($start AS DATE) AND CAST($end AS DATE)
@@ -43,6 +45,7 @@ GROUP BY ALL ORDER BY period_start, member LIMIT $limit`,
       params: {
         start: { type: 'string', defaultValue: '2026-03-09' },
         end: { type: 'string', defaultValue: '2026-03-15' },
+        selected_start: { type: 'string', defaultValue: '2026-03-09' },
         grain: { type: 'string', defaultValue: 'day' },
         breakdown: { type: 'string', defaultValue: 'segment' },
         limit: { type: 'number', defaultValue: 500 },
@@ -87,6 +90,7 @@ const operations = {
       const result = await query('samples', {
         start: comparison?.start ?? range.start,
         end: range.end,
+        selected_start: range.start,
         grain,
         breakdown,
       });
@@ -94,7 +98,7 @@ const operations = {
         periodStart: row.period_start,
         member: row.member,
         sampleCount: parseCount(row.sample_count),
-        selected: row.period_start >= range.start,
+        selected: row.selected,
       }));
     },
   }),
