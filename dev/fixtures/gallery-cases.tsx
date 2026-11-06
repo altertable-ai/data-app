@@ -237,11 +237,6 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
   const [notice, setNotice] = useState(false);
   const [cycle, setCycle] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [dates, setDates] = useState<{ start: string; end: string } | null>({
-    start: '2026-09-24',
-    end: '2026-09-30',
-  });
-  const [comparison, setComparison] = useState(false);
   const [dateTimeRange, setDateTimeRange] = useState<DateTimeRange>({
     from: new Date('2026-09-24T00:00:00Z'),
     to: new Date('2026-10-01T00:00:00Z'),
@@ -515,34 +510,12 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         </Case>
       </Section>
       <Section id="dates" title="Dates, periods and freshness">
-        <Case title="Bounded date range and comparison">
-          <DateTimeRangePicker
-            calendarDaysOnly
-            label="Gallery dates"
-            value={dates}
-            onChange={next => {
-              setDates(next);
-              if (!next || !galleryDateContract.comparison(next))
-                setComparison(false);
-            }}
-            selectedPresetId={null}
-            minDate="2026-09-01"
-            maxDate="2026-09-30"
-            maxRangeDays={30}
-            timeZone="UTC"
-            comparison={{
-              enabled: comparison,
-              range: dates ? galleryDateContract.comparison(dates) : null,
-              onChange: setComparison,
-            }}
-          />
-        </Case>
-        <Case title="Datetime range picker">
+        <Case title="Bounded datetime range and comparison">
           <DateTimeRangePicker
             label="Gallery datetime range"
             value={dateTimeRange}
             onChange={setDateTimeRange}
-            maxRangeDays={30}
+            contract={galleryDateContract}
             comparison={{
               enabled: dateTimeComparison,
               range: dateTimeComparisonRange,
@@ -553,17 +526,14 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         <Case title="Unset and disabled dates">
           <Stack>
             <DateTimeRangePicker
-              calendarDaysOnly
               label="Unset dates"
               value={null}
               onChange={() => {}}
             />
             <DateTimeRangePicker
-              calendarDaysOnly
               label="Disabled dates"
-              value={dates}
+              value={dateTimeRange}
               onChange={() => {}}
-              selectedPresetId={null}
               disabled
             />
           </Stack>
