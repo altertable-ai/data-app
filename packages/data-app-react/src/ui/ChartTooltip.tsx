@@ -16,6 +16,7 @@ import {
   useId,
   useRef,
   useState,
+  type RefObject,
 } from 'react';
 
 import { classNames } from './classNames.ts';
@@ -39,6 +40,7 @@ export function ChartTooltip({
   placement,
   followCursor = true,
   anchorRect,
+  boundaryRefs,
   mouseHover = true,
   touchInspection = true,
   portalRoot,
@@ -52,6 +54,7 @@ export function ChartTooltip({
 }: TooltipProps & {
   /** Internal geometry anchor for charts whose hit area extends beyond the mark. */
   anchorRect?: (trigger: Element | null) => DOMRect | null;
+  boundaryRefs?: readonly RefObject<Element | null>[];
   mouseHover?: boolean;
   touchInspection?: boolean;
 }) {
@@ -101,13 +104,27 @@ export function ChartTooltip({
     return () => window.removeEventListener('scroll', onScroll, true);
   }, [visible]);
 
+  const boundaries = boundaryRefs?.flatMap(ref =>
+    ref.current ? [ref.current] : []
+  );
+  const overflowOptions = boundaries?.length
+    ? { boundary: boundaries, padding: 8 }
+    : undefined;
   const { refs, floatingStyles, update } = useFloating({
     open: visible,
     onOpenChange: setOpen,
     placement: align === 'center' ? side : `${side}-${align}`,
     strategy: 'fixed',
     whileElementsMounted: autoUpdate,
-    middleware: [offset(16), flip(), shift({ padding: 12 })],
+    middleware: [
+      offset(16),
+      flip(overflowOptions),
+      shift({
+        padding: 12,
+        ...overflowOptions,
+        crossAxis: Boolean(overflowOptions),
+      }),
+    ],
   });
 
   const closeOnOutsidePointer = useEffectEvent((event: PointerEvent) => {

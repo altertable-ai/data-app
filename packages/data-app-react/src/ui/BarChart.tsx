@@ -112,6 +112,7 @@ export function BarChart<Row extends BarChartItem>({
   const [viewportWidth, setViewportWidth] = useState(0);
   const scrollport = useChartScrollToEnd(items);
   const plotRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
 
   const maximum = items.reduce((max, item) => Math.max(max, item.value), 1);
@@ -163,7 +164,11 @@ export function BarChart<Row extends BarChartItem>({
           ref={plotRef}
           style={{ width: plotWidth }}
         >
-          <div className="altertable-chart-canvas" aria-hidden="true">
+          <div
+            className="altertable-chart-canvas"
+            aria-hidden="true"
+            ref={canvasRef}
+          >
             <RechartsBarChart
               data={items.map(item => ({
                 ...item,
@@ -241,6 +246,7 @@ export function BarChart<Row extends BarChartItem>({
                     <ChartTooltip
                       variant="chart"
                       followCursor={false}
+                      boundaryRefs={[canvasRef, scrollport]}
                       anchorRect={trigger => {
                         const bar = plotRef.current?.querySelector(
                           `[data-atbl-internal-bar-id="${CSS.escape(item.id)}"]`

@@ -298,6 +298,46 @@ test('bar inspection anchors beside the bar even from the edge of its hit band',
   ).toBeLessThan(20);
 });
 
+test('bar tooltips stay inside the visible plot for full-height and zero-value samples', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Standalone bar basic example',
+    exact: true,
+  });
+  for (const width of [1280, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const name of ['Wed: 8.0 ms', 'Tue: 0.0 ms', 'Mon: 4.0 ms']) {
+      const point = chart.getByRole('button', { name, exact: true });
+      await point.hover();
+      const tooltip = page.getByRole('tooltip');
+      await expect
+        .poll(async () => {
+          const bounds = await tooltip.boundingBox();
+          const plot = await chart
+            .locator('.altertable-chart-canvas')
+            .boundingBox();
+          const viewport = await chart
+            .locator('.altertable-selectable-bars-scroll')
+            .boundingBox();
+          return (
+            !!bounds &&
+            !!plot &&
+            !!viewport &&
+            bounds.y >= Math.max(plot.y, viewport.y) &&
+            bounds.y + bounds.height <=
+              Math.min(plot.y + plot.height, viewport.y + viewport.height) &&
+            bounds.x >= Math.max(plot.x, viewport.x) &&
+            bounds.x + bounds.width <=
+              Math.min(plot.x + plot.width, viewport.x + viewport.width)
+          );
+        })
+        .toBe(true);
+    }
+  }
+});
+
 test('standalone bars inspect the nearest category between visible bars', async ({
   page,
 }) => {

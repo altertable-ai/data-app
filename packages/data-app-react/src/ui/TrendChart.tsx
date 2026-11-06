@@ -60,6 +60,7 @@ export function TrendChart<Row extends CartesianChartItem>({
   const nearest = useRef<number | undefined>(undefined);
   const points = useRef(new Map<number, { x: number; y: number }>());
   const plotRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const highlightedIndex = mouseVisible ? nearestIndex : activeIndex;
   const scrollport = useChartScrollToEnd(items);
   const menuTriggers = useRef(new Map<string, ComponentRef<'button'>>());
@@ -168,7 +169,11 @@ export function TrendChart<Row extends CartesianChartItem>({
               ref={plotRef}
               style={{ minWidth: items.length * 40 }}
             >
-              <div className="altertable-chart-canvas" aria-hidden="true">
+              <div
+                className="altertable-chart-canvas"
+                aria-hidden="true"
+                ref={canvasRef}
+              >
                 <Plot
                   data={items.map(item => ({
                     ...item,
@@ -229,6 +234,7 @@ export function TrendChart<Row extends CartesianChartItem>({
               <ChartTooltip
                 variant="chart"
                 touchInspection={false}
+                boundaryRefs={[canvasRef, scrollport]}
                 onPointerEnter={inspectNearest}
                 onPointerMove={inspectNearest}
                 onPointerLeave={cursor.reset}
