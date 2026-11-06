@@ -27,6 +27,7 @@ import {
   DataTableTimestamp,
   DataWidget,
   DateRangePicker,
+  DateTimeRangePicker,
   GlossaryDefinition,
   GlossaryExplanation,
   GradientScroll,
@@ -50,6 +51,7 @@ import {
 } from '@altertable/data-app-react/ui';
 import {
   dimensionFilter,
+  type DateTimeRange,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
@@ -234,6 +236,10 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
     end: '2026-09-30',
   });
   const [comparison, setComparison] = useState(false);
+  const [dateTimeRange, setDateTimeRange] = useState<DateTimeRange>({
+    from: new Date('2026-09-24T00:00:00Z'),
+    to: new Date('2026-10-01T00:00:00Z'),
+  });
   const [live, setLive] = useState(false);
   const [interval, setInterval] = useState<LiveIntervalSeconds>(60);
   const [view, setView] = useState<'ready' | 'empty'>('ready');
@@ -508,6 +514,14 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
               range: { start: '2026-09-17', end: '2026-09-23' },
               onChange: setComparison,
             }}
+          />
+        </Case>
+        <Case title="Datetime range picker">
+          <DateTimeRangePicker
+            label="Gallery datetime range"
+            value={dateTimeRange}
+            onChange={setDateTimeRange}
+            maxRangeDays={30}
           />
         </Case>
         <Case title="Unset and disabled dates">
