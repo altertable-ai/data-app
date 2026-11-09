@@ -1,6 +1,16 @@
+import type { Locator } from 'playwright';
 import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
+
+async function samplePosition(chart: Locator, index: number) {
+  return chart
+    .locator(`[data-atbl-internal-sample="${index}"]`)
+    .evaluate(element => {
+      const matrix = (element as SVGGraphicsElement).getScreenCTM()!;
+      return { x: matrix.e, y: matrix.f };
+    });
+}
 
 test('mixed chart series describe their measures and inspect the same monthly values with the keyboard', async ({
   page,
@@ -79,7 +89,12 @@ test('standalone charts retain formatted hover and tap inspection, zero values, 
         exact: true,
       });
       if (touch) await point.tap();
-      else await point.hover();
+      else if (name === 'Standalone bar') await point.hover();
+      else {
+        await point.scrollIntoViewIfNeeded();
+        const position = await samplePosition(chart, 2);
+        await current.mouse.move(position.x, position.y);
+      }
       await expect
         .poll(() => current.getByRole('tooltip').textContent())
         .toContain('8.0 ms');
@@ -91,7 +106,11 @@ test('standalone charts retain formatted hover and tap inspection, zero values, 
         exact: true,
       });
       if (touch) await zero.tap();
-      else await zero.hover();
+      else if (name === 'Standalone bar') await zero.hover();
+      else {
+        const position = await samplePosition(chart, 1);
+        await current.mouse.move(position.x, position.y);
+      }
       await expect
         .poll(() => current.getByRole('tooltip').textContent())
         .toContain('0.0 ms');
@@ -119,6 +138,230 @@ test('standalone charts retain formatted hover and tap inspection, zero values, 
     await current.keyboard.press('Escape');
     await expect.poll(() => current.getByRole('tooltip').count()).toBe(0);
   }
+});
+
+test('standalone bar, line and area tooltips stay put while the same item is highlighted', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const name of ['Standalone bar', 'Standalone line', 'Standalone area']) {
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    const point = chart.getByRole('button', {
+      name: 'Wed: 8.0 ms',
+      exact: true,
+    });
+    await point.scrollIntoViewIfNeeded();
+    const bounds = await point.boundingBox();
+    const position =
+      name === 'Standalone bar'
+        ? {
+            x: bounds!.x + bounds!.width / 2,
+            y: bounds!.y + bounds!.height * 0.75,
+          }
+        : await samplePosition(chart, 2);
+    await page.mouse.move(position.x - 2, position.y);
+    const tooltip = page.getByRole('tooltip');
+    await expect.poll(() => tooltip.textContent()).toContain('8.0 ms');
+    const initial = await tooltip.boundingBox();
+    await page.mouse.move(position.x + 2, position.y);
+    expect(await tooltip.textContent()).toContain('8.0 ms');
+    expect(await tooltip.boundingBox()).toEqual(initial);
+  }
+});
+
+test('fixed chart inspection resumes within the same sample after scrolling', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const name of ['Standalone bar', 'Standalone line', 'Standalone area']) {
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    const point = chart.getByRole('button', {
+      name: 'Wed: 8.0 ms',
+      exact: true,
+    });
+    await point.hover();
+    const bounds = await point.boundingBox();
+    const { x, y } =
+      name === 'Standalone bar'
+        ? {
+            x: bounds!.x + bounds!.width / 2,
+            y: bounds!.y + bounds!.height / 2,
+          }
+        : await samplePosition(chart, 2);
+    await page.mouse.move(x + 1, y);
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain('8.0 ms');
+    await page.evaluate(() => window.scrollBy(0, 10));
+    await expect.poll(() => page.getByRole('tooltip').count()).toBe(0);
+    await page.mouse.move(x + 2, y);
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain('8.0 ms');
+    if (name !== 'Standalone bar') {
+      await expect
+        .poll(() => chart.locator('.altertable-chart-canvas circle').count())
+        .toBe(1);
+    }
+    await page.keyboard.press('Escape');
+    await page.mouse.move(x + 3, y);
+    expect(await page.getByRole('tooltip').count()).toBe(0);
+  }
+});
+
+test('standalone line and area inspect the closest dot in both dimensions', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const name of ['Standalone line', 'Standalone area']) {
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    await chart.scrollIntoViewIfNeeded();
+    const low = await samplePosition(chart, 1);
+    const high = await samplePosition(chart, 2);
+    const x = (low.x + high.x) / 2 + 3;
+    await page.mouse.move(x, low.y);
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain('Tue');
+    await page.mouse.move(x, high.y);
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain('Wed');
+    const dot = await chart
+      .locator('.altertable-chart-canvas circle')
+      .boundingBox();
+    expect(dot!.x + dot!.width / 2).toBeCloseTo(high.x, 1);
+    expect(dot!.y + dot!.height / 2).toBeCloseTo(high.y, 1);
+  }
+});
+
+test('trend actions follow the highlighted dot when it differs from the pointer column', async ({
+  page,
+}) => {
+  await page.goto('/chart-cursors?actions');
+  for (const kind of ['line', 'area']) {
+    const chart = page.getByRole('region', {
+      name: `Action ${kind}`,
+      exact: true,
+    });
+    await chart.scrollIntoViewIfNeeded();
+    const low = await samplePosition(chart, 0);
+    const high = await samplePosition(chart, 1);
+    const x = (low.x + high.x) / 2 + 3;
+    await page.mouse.move(x, low.y);
+    await expect
+      .poll(() => page.getByRole('tooltip').textContent())
+      .toContain('Minute 0');
+    await page.mouse.click(x, low.y);
+    await expect
+      .poll(() => page.getByLabel('Selected sample').textContent())
+      .toBe(`${kind}: Minute 0`);
+  }
+});
+
+test('bar inspection anchors beside the bar even from the edge of its hit band', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Standalone bar basic example',
+    exact: true,
+  });
+  const point = chart.getByRole('button', { name: 'Wed: 8.0 ms', exact: true });
+  await point.scrollIntoViewIfNeeded();
+  const hit = await point.boundingBox();
+  const mark = await chart
+    .locator('[data-atbl-internal-bar-id="wed"]')
+    .boundingBox();
+  await page.mouse.move(hit!.x + 2, hit!.y + hit!.height * 0.8);
+  const tooltip = page.getByRole('tooltip');
+  await expect.poll(() => tooltip.textContent()).toContain('Wed');
+  const bounds = await tooltip.boundingBox();
+  expect(bounds!.x + bounds!.width / 2).toBeCloseTo(
+    mark!.x + mark!.width / 2,
+    0
+  );
+  expect(
+    Math.min(
+      Math.abs(bounds!.y + bounds!.height - mark!.y),
+      Math.abs(bounds!.y - mark!.y)
+    )
+  ).toBeLessThan(20);
+});
+
+test('bar tooltips stay inside the visible plot for full-height and zero-value samples', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Standalone bar basic example',
+    exact: true,
+  });
+  for (const width of [1280, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const name of ['Wed: 8.0 ms', 'Tue: 0.0 ms', 'Mon: 4.0 ms']) {
+      const point = chart.getByRole('button', { name, exact: true });
+      await point.hover();
+      const tooltip = page.getByRole('tooltip');
+      await expect
+        .poll(async () => {
+          const bounds = await tooltip.boundingBox();
+          const plot = await chart
+            .locator('.altertable-chart-canvas')
+            .boundingBox();
+          const viewport = await chart
+            .locator('.altertable-selectable-bars-scroll')
+            .boundingBox();
+          return (
+            !!bounds &&
+            !!plot &&
+            !!viewport &&
+            bounds.y >= Math.max(plot.y, viewport.y) &&
+            bounds.y + bounds.height <=
+              Math.min(plot.y + plot.height, viewport.y + viewport.height) &&
+            bounds.x >= Math.max(plot.x, viewport.x) &&
+            bounds.x + bounds.width <=
+              Math.min(plot.x + plot.width, viewport.x + viewport.width)
+          );
+        })
+        .toBe(true);
+    }
+  }
+});
+
+test('standalone bars inspect the nearest category between visible bars', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Standalone bar basic example',
+    exact: true,
+  });
+  const wedButton = chart.getByRole('button', {
+    name: 'Wed: 8.0 ms',
+    exact: true,
+  });
+  await wedButton.scrollIntoViewIfNeeded();
+  const wed = await wedButton.boundingBox();
+  const thu = await chart
+    .getByRole('button', { name: 'Thu: 3.0 ms', exact: true })
+    .boundingBox();
+  const boundary = (wed!.x + wed!.width / 2 + thu!.x + thu!.width / 2) / 2;
+  const y = wed!.y + wed!.height / 2;
+  const tooltip = page.getByRole('tooltip');
+  await page.mouse.move(boundary - 3, y);
+  await expect.poll(() => tooltip.textContent()).toContain('Wed');
+  await page.mouse.move(boundary + 3, y);
+  await expect.poll(() => tooltip.textContent()).toContain('Thu');
 });
 
 test('funnel inspection follows the hovered or tapped conversion and drop-off portion', async ({

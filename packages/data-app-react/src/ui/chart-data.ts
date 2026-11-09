@@ -1,9 +1,24 @@
 import { invariant } from '@altertable/data-app/internal';
 
 import type { ItemActions } from './ExplorationActionControl.tsx';
+import type { ChartCursorGroup } from './use-chart-cursor-group.tsx';
 
 /** Ordered category or time-series sample. IDs are unique and nonblank; values are finite. */
 export type ChartItem = { id: string; label: string; value: number };
+export type CartesianChartItem = ChartItem & {
+  /** Optional timestamp in epoch milliseconds for cursor linking. Omit for category samples. */
+  time?: number;
+};
+export type HorizontalGridProps = {
+  /** Draw horizontal grid lines behind the plotted values. */
+  horizontalGrid?: boolean;
+};
+export type CartesianChartProps<Row extends CartesianChartItem> =
+  ValueChartProps<Row> &
+    HorizontalGridProps & {
+      /** Share mouse-hover timestamps with charts receiving the same handle. Matches each item's time exactly. */
+      cursorGroup?: ChartCursorGroup;
+    };
 export type ValueChartProps<Row extends ChartItem = ChartItem> = {
   /** Ordered samples; the chart validates IDs and values when rendering. */
   items: readonly Row[];

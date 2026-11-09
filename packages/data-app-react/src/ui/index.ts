@@ -116,6 +116,8 @@ export type { PieChartProps, PieChartItem } from './PieChart.tsx';
 export { ScatterChart } from './ScatterChart.tsx';
 export type { ScatterChartProps, ScatterChartItem } from './ScatterChart.tsx';
 export { BarChart } from './BarChart.tsx';
+export { useChartCursorGroup } from './use-chart-cursor-group.tsx';
+export type { ChartCursorGroup } from './use-chart-cursor-group.tsx';
 export type { BarChartProps, BarChartItem } from './BarChart.tsx';
 
 export { DataValue } from './DataValue.tsx';

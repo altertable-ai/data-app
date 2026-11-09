@@ -50,6 +50,8 @@ export type TooltipProps = {
   onOpenChange?: (open: boolean) => void;
   align?: 'start' | 'center' | 'end';
   placement?: 'top' | 'bottom';
+  /** Set false to keep a chart tooltip at its entry position while hovering one sample. */
+  followCursor?: boolean;
   portalRoot?: RefObject<HTMLElement | null>;
 } & Omit<ComponentPropsWithRef<'span'>, 'children' | 'content'>;
 
@@ -59,7 +61,7 @@ export type TooltipProps = {
  * give it an accessible name. Hint content stays open while hovered and opens
  * immediately on keyboard focus; pressing the control or Escape dismisses it.
  * Use HelpPopover for essential information, links, or actions, including on touch.
- * variant="chart" follows the cursor and toggles on tap; it dismisses on scroll
+ * variant="chart" follows the cursor by default and toggles on tap; it dismisses on scroll
  * and does not open on keyboard focus. Native span props and ref target the wrapper. */
 export function Tooltip(props: TooltipProps) {
   const timing = useContext(TooltipContext);
