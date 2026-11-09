@@ -37,13 +37,6 @@ export type { MetricWidgetProps } from './MetricWidget.tsx';
 export { DimensionPicker } from './DimensionPicker.tsx';
 export { LiveControl } from './LiveControl.tsx';
 export type { LiveControlProps, LiveIntervalSeconds } from './LiveControl.tsx';
-export { DateRangePicker } from './DateRangePicker.tsx';
-export type {
-  DatePresetId,
-  DateRange,
-  DateRangePickerProps,
-  DateRangePickerRenderState,
-} from './DateRangePicker.tsx';
 export { useAppVariables } from './variables.ts';
 export { SearchField } from './SearchField.tsx';
 export type { SearchFieldProps } from './SearchField.tsx';

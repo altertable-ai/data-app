@@ -10,8 +10,10 @@ test('toolbar editors and floating summaries disclose the same active scope with
   page,
 }) => {
   const params = new URLSearchParams({
-    start: '2026-03-10',
-    end: '2026-03-12',
+    period: JSON.stringify({
+      from: '2026-03-10T00:00:00.000Z',
+      to: '2026-03-13T00:00:00.000Z',
+    }),
     secondaryRegion: '1',
     region: JSON.stringify({ kind: 'include', members: [['v', 'Europe']] }),
   });
@@ -84,7 +86,10 @@ test('toolbar editors and floating summaries disclose the same active scope with
   await expect
     .poll(() => new URL(page.url()).searchParams.has('region'))
     .toBe(false);
-  expect(new URL(page.url()).searchParams.get('start')).toBe('2026-03-10');
+  expect(JSON.parse(new URL(page.url()).searchParams.get('period')!)).toEqual({
+    from: '2026-03-10T00:00:00.000Z',
+    to: '2026-03-13T00:00:00.000Z',
+  });
   await scrollPastToolbar(page);
   expect(
     await floating

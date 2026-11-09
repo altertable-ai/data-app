@@ -343,8 +343,8 @@ test('extracts the Finding exploration declaration', async () => {
     queries: {
       samples: {
         params: {
-          start: { type: 'string', defaultValue: '2026-03-09' },
-          end: { type: 'string', defaultValue: '2026-03-15' },
+          start: { type: 'string', defaultValue: '2026-03-09T00:00:00Z' },
+          end: { type: 'string', defaultValue: '2026-03-16T00:00:00Z' },
           grain: { type: 'string', defaultValue: 'day' },
           breakdown: { type: 'string', defaultValue: 'segment' },
         },

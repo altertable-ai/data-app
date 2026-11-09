@@ -259,7 +259,7 @@ filter declarations own URL state, validation, and operation meaning.
 | `<SegmentedControl>`               | Compact radio choices                                             |
 | `<NumberField>`                    | Localized numeric input; empty is `null`                          |
 | `<NumberRangeField>`               | Exact, inclusive minimum/maximum; omitted bounds are unrestricted |
-| `<DateRangePicker>`                | Explicit or relative periods                                      |
+| `<DateTimeRangePicker>`            | Datetime ranges with an exclusive end                             |
 | `<DimensionPicker>`                | Typed categorical predicates with fixed or facet options          |
 
 ```tsx

@@ -1,7 +1,4 @@
-import type {
-  DateTimeRangeComparisonRequest,
-  DateRangeRequest,
-} from '@altertable/data-app/contract';
+import type { DateTimeRangeComparisonRequest } from '@altertable/data-app/contract';
 import type {
   AppVariable,
   AppVariableValues,
@@ -37,7 +34,7 @@ type TargetDefinition = {
   bindings?: ViewBindings<any, any>;
   date?: {
     variable: string;
-    input: (input: any) => DateRangeRequest | DateTimeRangeComparisonRequest;
+    input: (input: any) => DateTimeRangeComparisonRequest;
   };
   key?: string;
 };
@@ -89,7 +86,6 @@ function commit(definition: TargetDefinition, values: Record<string, unknown>) {
   const resolved = Object.fromEntries(
     Object.entries(definition.variables).map(([name, variable]) => [
       name,
-      variable.kind === 'dateRange' ||
       variable.kind === 'dateTimeRangeComparison'
         ? variable.input(values[name] as never)
         : values[name],
@@ -129,10 +125,7 @@ export function targetAvailable(
           (shown as DateTimeRangeComparisonRequest).selection
         )
       );
-    return variable.kind === 'dateRange'
-      ? JSON.stringify(variable.input(applied[key] as never)) ===
-          JSON.stringify(shown)
-      : (variable as AppVariable<any>).same(applied[key], shown);
+    return (variable as AppVariable<any>).same(applied[key], shown);
   });
 }
 /** Apply an explicit scope patch and optional chart choice in one history entry. */

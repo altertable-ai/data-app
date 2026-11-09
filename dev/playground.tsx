@@ -20,6 +20,7 @@ import { Sheet } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   formatCount,
+  formatDateRange,
   formatMetric,
   formatPercent,
   type MetricFormat,
@@ -28,7 +29,7 @@ import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { useMemo, useState } from 'react';
 
 import { dataApp } from '@/dev/app';
-import { calendar } from '@/dev/commerce';
+import { calendar, period } from '@/dev/commerce';
 import {
   CountryRanking,
   DailyLineChart,
@@ -137,11 +138,7 @@ const { defineTimeView } = createDataHooks(createDataClient({ operations }));
 const orderView = defineTimeView({
   dataContext: orderDataContext,
   operation: 'orderOverview',
-  time: {
-    contract: calendar,
-    defaultValue: { kind: 'preset', id: 'last-30' },
-    comparison: true,
-  },
+  time: period,
   variables: { country: countryFilter },
   isEmpty: ({ countries }) => countries.length === 0,
   emptyFallback: { title: 'No matching countries' },
@@ -296,8 +293,8 @@ const periodDataset = orderView.dataset({
   },
   columns: {
     period: { value: row => row.period },
-    start: { value: row => row.start },
-    end: { value: row => row.end },
+    start: { value: row => row.from.toISOString() },
+    end: { value: row => row.to.toISOString() },
     orderCount: { label: 'Orders', value: row => row.orderCount },
     revenue: {
       label: 'Paid revenue',
@@ -488,7 +485,7 @@ function presentOrders(snapshot: OrderSnapshot) {
         change === null
           ? `Paid revenue reached ${formatMetric(current.revenue, currency)}`
           : `Paid revenue ${change >= 0 ? 'rose' : 'fell'} ${formatPercent(Math.abs(change))} against the previous period`,
-      context: `${scope}. Compared with ${calendar.describeInput(input.period.comparison)}.`,
+      context: `${scope}. Compared with ${formatDateRange({ start: input.period.comparison.from.toISOString().slice(0, 10), end: new Date(input.period.comparison.to.getTime() - 1).toISOString().slice(0, 10) })} ${calendar.bounds().timeZone}.`,
       visual: (
         <Grid columns={2}>
           <MetricWidget metric={revenueMetric} source={snapshot} />

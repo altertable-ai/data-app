@@ -308,20 +308,15 @@ test('display settings retain nested calendar changes and dismiss one overlay at
   await page
     .getByRole('button', { name: 'Display options', exact: true })
     .click();
-  await display
-    .getByRole('combobox', { name: 'Date range', exact: true })
-    .click();
-  const calendar = page.getByRole('listbox', { name: 'Date range presets' });
+  await display.getByRole('combobox', { name: 'Date range' }).click();
+  const menu = page.getByRole('listbox', { name: 'Date range presets' });
   await page
-    .getByRole('checkbox', {
-      name: 'Compare with previous period',
-      exact: true,
-    })
+    .getByRole('option', { name: /Compare with previous period/ })
     .click();
   await expect
     .poll(() => new URL(page.url()).searchParams.get('compare'))
     .toBe('previous');
-  await expect.poll(() => calendar.count()).toBe(0);
+  await expect.poll(() => menu.count()).toBe(0);
   expect(await display.isVisible()).toBe(true);
   await expect
     .poll(() =>
@@ -1255,16 +1250,14 @@ test('a calendar in a filter sheet can float beyond the sheet without clipping',
   await page.goto('/time-app');
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
-  await sheet
-    .getByRole('combobox', { name: 'Date range', exact: true })
-    .click();
+  await sheet.getByRole('combobox', { name: 'Date range' }).click();
   await page.getByRole('option', { name: 'Select from calendar…' }).click();
   const calendar = page
     .getByRole('dialog')
     .filter({ has: page.getByRole('grid') })
     .filter({ hasNot: page.getByRole('button', { name: 'Done' }) });
   const bounds = await calendar.boundingBox();
-  expect(bounds!.width).toBeGreaterThan(250);
+  expect(bounds!.width).toBeGreaterThan(300);
   const sheetBounds = await sheet.boundingBox();
   expect(bounds!.x + bounds!.width).toBeGreaterThan(
     sheetBounds!.x + sheetBounds!.width

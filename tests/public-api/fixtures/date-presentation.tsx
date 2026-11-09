@@ -16,6 +16,7 @@ import {
   useDateFormatting,
   injectDataAppStyles,
   mountDataApp,
+  dateTimeRangeVariable,
 } from '@altertable/data-app-react';
 import {
   DataApp as StaticDataApp,
@@ -26,7 +27,7 @@ import { createDataClient } from '@altertable/data-app/client';
 import {
   defineDateRangeContract,
   type DataOperation,
-  type DateRangeRequest,
+  type DateTimeRange,
 } from '@altertable/data-app/contract';
 import { formatTime } from '@altertable/data-app/format';
 
@@ -56,8 +57,16 @@ const calendar = defineDateRangeContract({
   maxRangeDays: 30,
   timeZone: 'America/New_York',
 });
+const period = dateTimeRangeVariable({
+  key: 'period',
+  contract: calendar,
+  defaultValue: {
+    from: new Date('2026-09-24T00:00:00Z'),
+    to: new Date('2026-09-25T00:00:00Z'),
+  },
+});
 const client = createDataClient<{
-  events: DataOperation<DateRangeRequest, typeof records>;
+  events: DataOperation<{ period: DateTimeRange }, typeof records>;
 }>({
   async transport() {
     return {
@@ -84,10 +93,7 @@ const view = createDataHooks(client).defineTimeView({
     },
   }),
   operation: 'events',
-  time: {
-    contract: calendar,
-    defaultValue: { kind: 'dates', start: '2026-09-24', end: '2026-09-24' },
-  },
+  time: period,
   isEmpty: () => false,
   emptyFallback: { title: 'No events' },
 });
@@ -125,15 +131,19 @@ const tokyoView = createDataHooks(client).defineTimeView({
     glossary: {},
   }),
   operation: 'events',
-  time: {
+  time: dateTimeRangeVariable({
+    key: 'period',
     contract: defineDateRangeContract({
       minDate: '2026-09-01',
       maxDate: '2026-09-30',
       maxRangeDays: 30,
       timeZone: 'Asia/Tokyo',
     }),
-    defaultValue: { kind: 'dates', start: '2026-09-24', end: '2026-09-24' },
-  },
+    defaultValue: {
+      from: new Date('2026-09-24T00:00:00Z'),
+      to: new Date('2026-09-25T00:00:00Z'),
+    },
+  }),
   isEmpty: () => false,
   emptyFallback: { title: 'No Tokyo events' },
 });

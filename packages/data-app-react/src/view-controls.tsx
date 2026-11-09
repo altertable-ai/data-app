@@ -26,7 +26,6 @@ import {
   balanceSearchSuggestions,
 } from './search-suggestions.ts';
 import { ChoicePicker } from './ui/ChoicePicker.tsx';
-import { DateRangePicker } from './ui/DateRangePicker.tsx';
 import { DateTimeRangePicker } from './ui/DateTimeRangePicker.tsx';
 import { DimensionPicker } from './ui/DimensionPicker.tsx';
 import { NumberFilterPicker } from './ui/NumberFilterPicker.tsx';
@@ -35,11 +34,9 @@ import { SearchField, type SearchFieldProps } from './ui/SearchField.tsx';
 import { SearchTypeahead } from './ui/SearchTypeahead.tsx';
 import { Select } from './ui/Select.tsx';
 import {
-  dateRangeControl,
   useAppVariables,
   type AppVariableValues,
   type VariableCollection,
-  type DateRangeSelection,
 } from './ui/variables.ts';
 import {
   ViewControlBar,
@@ -89,9 +86,7 @@ export function useViewVariables<Variables extends VariableCollection>(
     resolved[name] = (
       definition.kind === 'dateTimeRangeComparison'
         ? definition.input(value as DateTimeRangeComparisonSelection, reference)
-        : definition.kind === 'dateRange'
-          ? definition.input(value as DateRangeSelection)
-          : value
+        : value
     ) as ResolvedVariables<Variables>[typeof name];
   }
   const facets = Object.entries(definitions).filter(
@@ -254,20 +249,7 @@ export function useViewVariables<Variables extends VariableCollection>(
         if (onClear && variable.same(next, baseline)) onClear();
       }
       let control: ReactNode = null;
-      if (definition.kind === 'dateRange') {
-        const selection = value as DateRangeSelection;
-        control = (
-          <DateRangePicker
-            key={name}
-            labelPlacement={
-              labelPlacement === 'inline' ? undefined : labelPlacement
-            }
-            {...dateRangeControl(definition, selection, next =>
-              setControlValue(next as AppVariableValues<Variables>[typeof name])
-            )}
-          />
-        );
-      } else if (definition.kind === 'dateTimeRangeComparison') {
+      if (definition.kind === 'dateTimeRangeComparison') {
         const selection = value as DateTimeRangeComparisonSelection;
         control = (
           <DateTimeRangePicker
@@ -278,6 +260,8 @@ export function useViewVariables<Variables extends VariableCollection>(
             maxRangeDays={definition.maxRangeDays}
             presets={definition.presets}
             contract={definition.contract}
+            isDefault={!active}
+            onReset={() => setControlValue(baseline)}
             comparison={{
               enabled: selection.comparison === 'previous',
               range: definition.previous(selection),
@@ -310,6 +294,8 @@ export function useViewVariables<Variables extends VariableCollection>(
             maxRangeDays={definition.maxRangeDays}
             presets={definition.presets}
             contract={definition.contract}
+            isDefault={!active}
+            onReset={() => setControlValue(baseline)}
             onChange={next =>
               setControlValue(next as AppVariableValues<Variables>[typeof name])
             }

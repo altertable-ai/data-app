@@ -13,17 +13,13 @@ import { createDataClient } from '@altertable/data-app/client';
 
 import { sampleDataContext } from '#app/data-context.ts';
 import type { operations } from '#app/operations.ts';
-import { calendar, findingPeriod } from '#config';
+import { period } from '#config';
 const { defineTimeView } =
   createDataHooks(createDataClient<typeof operations>());
 const samplesView = defineTimeView({
   dataContext: sampleDataContext,
   operation: 'samples',
-  time: {
-    contract: calendar,
-    defaultValue: { kind: 'dates', ...findingPeriod },
-    comparison: true,
-  },
+  time: period,
   variables: {
     grain: choiceVariable({
       key: 'grain',

@@ -4,7 +4,7 @@ import {
 } from '@altertable/data-app/format';
 import { type MetricReading } from '@altertable/data-app/internal';
 
-import { calendarMetricComparison } from './metric-comparison.ts';
+import { dateTimeMetricComparison } from './metric-comparison.ts';
 import { type WidgetEvidence } from './WidgetEvidence.ts';
 
 export type MetricDefinition = {
@@ -22,7 +22,7 @@ export function metricComparison(
 ) {
   if (reading.loading || !reading.value.period) return undefined;
 
-  return calendarMetricComparison(
+  return dateTimeMetricComparison(
     reading.value.period,
     {
       current: reading.value.current,

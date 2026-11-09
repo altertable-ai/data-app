@@ -32,19 +32,17 @@ type DateTimeRangeInputEdit = DateTimeRangeInputSelection & {
 export function getDateTimeRangeInputSegmentSelection({
   value,
   locale = 'en-US',
-  dateOnly = false,
   selectionStart,
   selectionEnd,
   direction,
 }: {
   value: string;
   locale?: string;
-  dateOnly?: boolean;
   selectionStart: number;
   selectionEnd: number;
   direction: -1 | 1;
 }): DateTimeRangeInputSelection | null {
-  const segments = getDateTimeRangeEndpoints(value, locale, dateOnly).flatMap(
+  const segments = getDateTimeRangeEndpoints(value, locale).flatMap(
     endpoint => endpoint.segments
   );
   const selectedIndex = segments.findIndex(
@@ -80,19 +78,17 @@ export function getDateTimeRangeInputSegmentSelection({
 export function editDateTimeRangeInputSegment({
   value,
   locale = 'en-US',
-  dateOnly = false,
   selectionStart,
   selectionEnd,
   direction,
 }: {
   value: string;
   locale?: string;
-  dateOnly?: boolean;
   selectionStart: number;
   selectionEnd: number;
   direction: -1 | 1;
 }): DateTimeRangeInputEdit | null {
-  const endpoints = getDateTimeRangeEndpoints(value, locale, dateOnly);
+  const endpoints = getDateTimeRangeEndpoints(value, locale);
   const segment = endpoints
     .flatMap(endpoint => endpoint.segments)
     .find(
@@ -109,9 +105,9 @@ export function editDateTimeRangeInputSegment({
   }
 
   const editedEndpoint = editEndpoint(endpoint, segment.kind, direction);
-  const nextEndpointValue = formatEndpoint(editedEndpoint, locale, dateOnly);
+  const nextEndpointValue = formatEndpoint(editedEndpoint, locale);
   const nextValue = `${value.slice(0, endpoint.start)}${nextEndpointValue}${value.slice(endpoint.end)}`;
-  const nextSegment = getDateTimeRangeEndpoints(nextValue, locale, dateOnly)
+  const nextSegment = getDateTimeRangeEndpoints(nextValue, locale)
     .at(segment.endpointIndex)
     ?.segments.find(candidate => candidate.kind === segment.kind);
 
@@ -129,26 +125,23 @@ export function editDateTimeRangeInputSegment({
 /** Convert only complete, formatter-produced endpoints; natural-language input stays untouched. */
 export function normalizeDateTimeRangeInput(
   value: string,
-  locale: string,
-  dateOnly = false
+  locale: string
 ): string {
-  const endpoints = getDateTimeRangeEndpoints(value, locale, dateOnly);
-  // Natural-language dates retain inclusive end days; ISO bounds denote exclusive instants.
+  const endpoints = getDateTimeRangeEndpoints(value, locale);
   for (const endpoint of endpoints.toReversed()) {
-    value = `${value.slice(0, endpoint.start)}${dateOnly ? formatEndpoint(endpoint, 'en-US', true) : endpointDate(endpoint).toISOString()}${value.slice(endpoint.end)}`;
+    value = `${value.slice(0, endpoint.start)}${endpointDate(endpoint).toISOString()}${value.slice(endpoint.end)}`;
   }
   return value;
 }
 
 function getDateTimeRangeEndpoints(
   value: string,
-  locale: string,
-  dateOnly: boolean
+  locale: string
 ): DateTimeRangeEndpoint[] {
   locale = new Intl.Locale(locale, { calendar: 'gregory' }).toString();
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
-    ...(dateOnly ? {} : { timeStyle: 'short' as const }),
+    timeStyle: 'short',
     hourCycle: 'h23',
     timeZone: 'UTC',
   });
@@ -197,17 +190,15 @@ function getDateTimeRangeEndpoints(
         month: months.indexOf(values.month!),
         day: parseNumber(values.day!),
         year: parseNumber(values.year!),
-        hour: dateOnly ? 0 : parseNumber(values.hour!),
-        minute: dateOnly ? 0 : parseNumber(values.minute!),
+        hour: parseNumber(values.hour!),
+        minute: parseNumber(values.minute!),
         segments: fields.map((field, index) => {
           const [start, end] = match.indices![index + 1]!;
           return createSegment(field, endpointIndex, start, end - start);
         }),
       };
       // Reject overflow and partial matches before interpreting localized text as dates.
-      return formatEndpoint(endpoint, locale, dateOnly) === match[0]
-        ? [endpoint]
-        : [];
+      return formatEndpoint(endpoint, locale) === match[0] ? [endpoint] : [];
     }
   );
 }
@@ -270,25 +261,9 @@ function endpointDate(endpoint: DateTimeRangeEndpoint): Date {
 
 function formatEndpoint(
   endpoint: DateTimeRangeEndpoint,
-  locale: string,
-  dateOnly: boolean
+  locale: string
 ): string {
-  return formatDateTimeRangeInputDate(endpointDate(endpoint), locale, dateOnly);
-}
-
-/** Editable endpoints use Gregorian years while retaining locale order, month names, and digits. */
-export function formatDateTimeRangeInputDate(
-  date: Date,
-  locale: string,
-  dateOnly = false
-): string {
-  locale = new Intl.Locale(locale, { calendar: 'gregory' }).toString();
-  if (dateOnly)
-    return new Intl.DateTimeFormat(locale, {
-      dateStyle: 'medium',
-      timeZone: 'UTC',
-    }).format(date);
-  return formatDateTime(date, { locale, timeZone: 'UTC' });
+  return formatDateTimeRangeInputDate(endpointDate(endpoint), locale);
 }
 
 function getEndpointDaysInMonth(year: number, month: number): number {
@@ -306,4 +281,15 @@ function toSelection(
   segment: DateTimeRangeSegment | undefined
 ): DateTimeRangeInputSelection | null {
   return segment ? { start: segment.start, end: segment.end } : null;
+}
+
+/** Editable fields use Gregorian years with localized ordering, month names, and digits. */
+export function formatDateTimeRangeInputDate(
+  date: Date,
+  locale: string
+): string {
+  return formatDateTime(date, {
+    locale: new Intl.Locale(locale, { calendar: 'gregory' }).toString(),
+    timeZone: 'UTC',
+  });
 }
