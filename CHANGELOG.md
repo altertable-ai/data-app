@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.76.0](https://github.com/altertable-ai/data-app/compare/v0.75.0...v0.76.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* unify date range controls on DateTimeRangePicker ([#142](https://github.com/altertable-ai/data-app/issues/142))
+* replace the legacy calendar picker with the shared range picker ([#139](https://github.com/altertable-ai/data-app/issues/139))
+
+### Features
+
+* **charts:** refine hover inspection, link cursors, and add horizontal grids ([#143](https://github.com/altertable-ai/data-app/issues/143)) ([da12066](https://github.com/altertable-ai/data-app/commit/da1206654f774df794b69299140d6698a63369e6))
+* **examples:** turn Finding starters into Finding explorations ([#140](https://github.com/altertable-ai/data-app/issues/140)) ([5e4378e](https://github.com/altertable-ai/data-app/commit/5e4378e0b8ba0c8d5a7470e2a16b72153ea486bd))
+* unify date range controls on DateTimeRangePicker ([#142](https://github.com/altertable-ai/data-app/issues/142)) ([3846833](https://github.com/altertable-ai/data-app/commit/384683362a2ef934ee43993c36a8be2efab6788e))
+
+
+### Bug Fixes
+
+* add clipboard-write permission to data app iframe ([#134](https://github.com/altertable-ai/data-app/issues/134)) ([b8f01e3](https://github.com/altertable-ai/data-app/commit/b8f01e3a5dc0d867d219c9408b10e5d5709bfb11))
+* **react:** keep picker labels readable when values are long ([#141](https://github.com/altertable-ai/data-app/issues/141)) ([9d72ea3](https://github.com/altertable-ai/data-app/commit/9d72ea3bd2609a97f86d22882bc5a2543d69e60c))
+* replace the legacy calendar picker with the shared range picker ([#139](https://github.com/altertable-ai/data-app/issues/139)) ([e966828](https://github.com/altertable-ai/data-app/commit/e96682853fe5b8db59426e36065845d22af43361))
+
 ## [0.75.0](https://github.com/altertable-ai/data-app/compare/v0.74.0...v0.75.0) (2026-11-03)
 
 
