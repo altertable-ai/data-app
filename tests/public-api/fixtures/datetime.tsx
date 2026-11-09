@@ -23,6 +23,9 @@ import { useState } from 'react';
 
 const app = defineDataApp({
   title: 'Datetime exploration',
+  dateFormatting: {
+    locale: new URLSearchParams(location.search).get('locale') ?? 'en-US',
+  },
   description: 'Explore a datetime range.',
   scope: { organization: 'test', environment: 'test' },
   queries: {

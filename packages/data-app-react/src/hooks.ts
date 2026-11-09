@@ -636,7 +636,8 @@ export function createDataHooks<Operations extends DataOperations>(
     });
   }
 
-  function defineDateTimeView<
+  /** Share a datetime variable with the operation parser via time: period. */
+  function defineTimeView<
     Name extends keyof Operations & string,
     const Additional extends VariableCollection = {},
     const Context extends AuthoringDataContext = AuthoringDataContext,
@@ -705,45 +706,6 @@ export function createDataHooks<Operations extends DataOperations>(
         Period extends DateTimeRangeComparisonVariable ? true : false
       >
     >[0]);
-  }
-
-  /** Share a datetime variable with the operation parser via time: period. */
-  function defineTimeView<
-    Name extends keyof Operations & string,
-    const Additional extends VariableCollection = {},
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: DateTimeViewDefinition<
-      Operations,
-      Name,
-      Additional,
-      Context,
-      DateTimeRangeComparisonVariable
-    >
-  ): BoundDataView<
-    Name,
-    { period: DateTimeRangeComparisonVariable } & Additional,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>,
-    Context,
-    true
-  >;
-  function defineTimeView<
-    Name extends keyof Operations & string,
-    const Additional extends VariableCollection = {},
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: DateTimeViewDefinition<Operations, Name, Additional, Context>
-  ): BoundDataView<
-    Name,
-    { period: DateTimeRangeVariable } & Additional,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>,
-    Context,
-    false
-  >;
-  function defineTimeView(definition: any): any {
-    return defineDateTimeView(definition);
   }
 
   /** Bind typed options to a registered operation and explicitly declared variable dependencies.

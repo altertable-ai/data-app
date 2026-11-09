@@ -473,3 +473,58 @@ test('disabled datetime pickers hide reset and cannot activate it by keyboard', 
   await page.keyboard.press('Enter');
   await expect.poll(() => count.textContent()).toBe('1');
 });
+
+for (const locale of ['th-TH', 'ar-EG', 'fa-IR']) {
+  test(`datetime ${locale} editing round-trips and preserves Gregorian instants`, async ({
+    page,
+  }) => {
+    await page.goto(`/datetime?locale=${locale}`);
+    const input = page.getByRole('combobox', {
+      name: 'Date range',
+      exact: true,
+    });
+    const output = page.getByRole('status', { name: 'Applied period' });
+    await input.click();
+    await input.fill('Jul 1 2026 4pm to Jul 2 2026 4pm');
+    await input.press('Enter');
+    await expect
+      .poll(() => output.textContent())
+      .toContain('2026-07-02T16:00:00.000Z');
+    await input.click();
+    await input.press('Enter');
+    expect(await input.getAttribute('aria-invalid')).toBe('false');
+    await expect
+      .poll(() => output.textContent())
+      .toContain('2026-07-01T16:00:00.000Z');
+    await input.click();
+    await input.fill(await input.inputValue());
+    await input.press('ArrowLeft');
+    await input.press('ArrowUp');
+    await input.press('Enter');
+    await expect
+      .poll(() => output.textContent())
+      .toContain('2026-07-02T16:01:00.000Z');
+  });
+}
+
+test('native caret movement discards the previous datetime segment selection', async ({
+  page,
+}) => {
+  await page.goto('/datetime');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  await input.click();
+  await input.fill('Jul 1 2026 4pm to Jul 2 2026 4pm');
+  await input.press('Enter');
+  await input.click();
+  await input.press('ArrowLeft');
+  await input.press('ArrowRight');
+  await input.press('End');
+  await input.press('ArrowLeft');
+  await input.press('ArrowUp');
+  await input.press('Enter');
+  await expect
+    .poll(() =>
+      page.getByRole('status', { name: 'Applied period' }).textContent()
+    )
+    .toContain('2026-07-02T16:01:00.000Z');
+});

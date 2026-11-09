@@ -29,6 +29,7 @@ import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import {
+  formatDateTimeRangeInputDate,
   editDateTimeRangeInputSegment,
   normalizeDateTimeRangeInput,
   getDateTimeRangeInputSegmentSelection,
@@ -121,7 +122,7 @@ function resolvedLabel(
       ? contract.datetime.resolve(value)
       : resolveDateTimeRange(value);
     return from
-      ? `${formatDateTime(from, { ...options, timeZone: 'UTC' })} – ${formatDateTime(to, { ...options, timeZone: 'UTC' })}`
+      ? `${formatDateTimeRangeInputDate(from, options.locale ?? 'en-US')} – ${formatDateTimeRangeInputDate(to, options.locale ?? 'en-US')}`
       : '';
   } catch {
     // A UTC-only preview may be inverted even when valid in the reporting zone.
@@ -439,7 +440,7 @@ export function DateTimeRangePicker({
         data-atbl-focus="group"
         data-atbl-internal-surface="field"
         onClick={() => {
-          if (!disabled) openPresets();
+          if (!disabled && !open) openPresets();
         }}
       >
         <span className="altertable-datetime-shortcut" aria-hidden="true">
@@ -447,6 +448,9 @@ export function DateTimeRangePicker({
         </span>
         <input
           ref={input}
+          onPointerDown={() => {
+            pending.current = null;
+          }}
           role="combobox"
           aria-label={label}
           aria-expanded={open}
@@ -476,6 +480,8 @@ export function DateTimeRangePicker({
             dispatch({ type: 'edit', draft: event.target.value });
           }}
           onKeyDown={event => {
+            if (!event.key.startsWith('Arrow') && event.key !== 'Enter')
+              pending.current = null;
             if (
               event.key.startsWith('Arrow') &&
               (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
