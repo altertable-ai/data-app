@@ -43,25 +43,26 @@ export {
 } from './core/reading.ts';
 export { randomUuid } from './core/uuid.ts';
 export {
-  type AppVariable,
-  type AppVariableValues,
+  type AppFilter,
+  type FilterValues,
   type ChoiceOption,
-  type ChoiceVariable,
+  type ChoiceFilter,
   type DateRangeSelection,
-  type DateRangeVariable,
-  type DateRangeVariableOptions,
+  type DateRangeFilter,
+  type DateRangeFilterOptions,
   type HistoryMode,
-  type MultiChoiceVariable,
-  type SearchVariable,
-  type VariableCollection,
-  type VariablePresentation,
-  choiceVariable,
-  dateRangeVariable,
-  defineAppVariables,
-  multiChoiceVariable,
-  searchVariable,
+  type MultiChoiceFilter,
+  type SearchFilter,
+  type FilterCollection,
+  type FilterPresentation,
+  choiceFilter,
+  displayChoice,
+  dateRangeFilter,
+  defineAppFilters,
+  multiChoiceFilter,
+  searchFilter,
   validateChoiceOptions,
-} from './core/variables.ts';
+} from './core/app-filters.ts';
 export {
   RequestBodyTooLargeError,
   readRequestBody,
@@ -71,35 +72,35 @@ export { KEY_SEPARATOR } from './core/keys.ts';
 
 export {
   type CheckedFacetContexts,
-  type CheckedVariableDeclarations,
-} from './core/variables.ts';
+  type CheckedFilterDeclarations,
+} from './core/app-filters.ts';
 
 export { MAX_QUERY_ROWS, type IsUnion } from './core/queries.ts';
 
-export { facetSource, type FacetVariable } from './core/facets.ts';
+export { facetSource, type FacetFilter } from './core/facets.ts';
 
 export {
   createDimensionFilter,
-  type DimensionSelectionVariable,
+  type DimensionSelectionFilter,
 } from './core/dimension.ts';
 
 export {
   dimensionSource,
-  type SourceDimensionVariable,
+  type SourceDimensionFilter,
 } from './core/dimension-source.ts';
 export { parseAppDiagnosticReport } from './core/diagnostics.ts';
 
 export {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   dateTimeRangePresets,
   type DateTimeRangePreset,
-  type DateTimeRangeVariable,
-  type DateTimeRangeComparisonVariable,
-  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeFilter,
+  type DateTimeRangeComparisonFilter,
+  type DateTimeRangeComparisonFilterOptions,
   type DateTimeRangeComparisonSelection,
   type DateTimeRangeComparisonRequest,
-  type DateTimeRangeVariableOptions,
-} from './core/date-time-variable.ts';
+  type DateTimeRangeFilterOptions,
+} from './core/date-time-filter.ts';
 export {
   parseDateTimeRange,
   serializeDateTimeRange,

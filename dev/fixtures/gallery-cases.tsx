@@ -72,12 +72,12 @@ import { AppHeader } from '@/packages/data-app-react/src/ui/AppHeader.tsx';
 import { AppScope } from '@/packages/data-app-react/src/ui/AppScope.tsx';
 import { AppToolbar } from '@/packages/data-app-react/src/ui/AppToolbar.tsx';
 import { ContentSkeleton } from '@/packages/data-app-react/src/ui/ContentSkeleton.tsx';
+import { ControlBar } from '@/packages/data-app-react/src/ui/ControlBar.tsx';
 import { DataBoundary } from '@/packages/data-app-react/src/ui/DataBoundary.tsx';
 import { DataSectionBoundary as DataSection } from '@/packages/data-app-react/src/ui/DataSectionBoundary.tsx';
 import { DataViewToast } from '@/packages/data-app-react/src/ui/DataViewToast.tsx';
 import { Kbd } from '@/packages/data-app-react/src/ui/Kbd.tsx';
 import { StatusPanel } from '@/packages/data-app-react/src/ui/StatusPanel.tsx';
-import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
 import { WidgetDisclosure } from '@/packages/data-app-react/src/ui/WidgetDisclosure.tsx';
 import { WidgetViewTabs } from '@/packages/data-app-react/src/ui/WidgetViewTabs.tsx';
 
@@ -297,7 +297,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
     <CategoryContext.Provider value={category}>
       <Section id="buttons" title="Buttons and selection">
         <Case title="Every button variant and size">
-          <VariableBar aria-label="Demo controls">
+          <ControlBar aria-label="Demo controls">
             {(['primary', 'elevated', 'outline', 'ghost'] as const).map(
               variant =>
                 (['default', 'compact'] as const).map(size => (
@@ -321,7 +321,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             <Button aria-busy="true">
               <AppIcon name="loading" /> Busy action
             </Button>
-          </VariableBar>
+          </ControlBar>
         </Case>
         <Case title="Checkbox copy, checked and disabled">
           <Stack>
@@ -536,7 +536,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           </Stack>
         </Case>
         <Case title="Live controls and timestamp details">
-          <VariableBar aria-label="Demo controls">
+          <ControlBar aria-label="Demo controls">
             <LiveControl
               enabled={live}
               onChange={setLive}
@@ -550,7 +550,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             >
               Exact UTC time
             </DateTimeTooltip>
-          </VariableBar>
+          </ControlBar>
         </Case>
       </Section>
       <Section id="metrics" title="Metric formats and comparisons">
@@ -760,7 +760,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           title="Reserved feedback slot"
           note="The same widget moves between states. Its data and geometry stay fixed."
         >
-          <VariableBar aria-label="Demo controls">
+          <ControlBar aria-label="Demo controls">
             <Button onClick={() => setStatus({ kind: 'idle' })}>
               Widget ready
             </Button>
@@ -781,7 +781,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             >
               Long widget failure
             </Button>
-          </VariableBar>
+          </ControlBar>
         </Case>
         <Case title="Shared widget state">
           <DataWidget
@@ -816,7 +816,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           title="All request states"
           note="No network calls. Initial loading uses a skeleton; refresh retains the displayed result."
         >
-          <VariableBar aria-label="Demo controls">
+          <ControlBar aria-label="Demo controls">
             {(
               [
                 'loading',
@@ -831,7 +831,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
                 {kind}
               </Button>
             ))}
-          </VariableBar>
+          </ControlBar>
         </Case>
         <Case
           title="DataSection"
@@ -920,7 +920,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
       </Section>
       <Section id="overlays" title="Inspection, overlays and disclosures">
         <Case title="Glossary and SQL">
-          <VariableBar aria-label="Demo controls">
+          <ControlBar aria-label="Demo controls">
             <GlossaryDefinition entry={glossary}>
               Activity definition
             </GlossaryDefinition>
@@ -946,7 +946,7 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
             >
               Inspect unavailable evidence
             </AboutData>
-          </VariableBar>
+          </ControlBar>
         </Case>
         <Case title="Tooltip and help popover">
           <Stack>
@@ -1083,13 +1083,13 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
           />
         </Case>
         <Case title="Typed dimension, literal null and missing">
-          <VariableBar aria-label="Typed fixture variables">
+          <ControlBar aria-label="Typed fixture variables">
             <DimensionPicker
               filter={dimension}
               value={dimensionValue}
               onChange={setDimensionValue}
             />
-          </VariableBar>
+          </ControlBar>
         </Case>
         <Case title="Page notice and delayed request feedback">
           <Button onClick={() => setNotice(!notice)}>

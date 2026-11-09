@@ -86,7 +86,7 @@ Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 ### Bind datetime ranges
 
 Declare a `dateTimeRange` parameter and pass a `DateTimeRange` to `query()`.
-For a [comparison variable](variables.md#absolute-and-relative-datetime-ranges),
+For a [comparison filter](filters.md#absolute-and-relative-datetime-ranges),
 pass its `range` or `comparison` bounds. Reference those bounds in SQL:
 
 ```ts
@@ -112,7 +112,7 @@ same zone.
 
 ## Share reporting policy
 
-Pass an optional `defineDateRangeContract()` to `dateTimeRangeVariable()` to
+Pass an optional `defineDateRangeContract()` to `dateTimeRangeFilter()` to
 share coverage, duration limits, and reporting timezone between the picker and
 server parser. By default, coverage ends yesterday; set `completeDays: false`
 to include today. Declare the policy once:
@@ -127,6 +127,6 @@ const calendar = defineDateRangeContract({
 });
 ```
 
-Use the shared contract in the [datetime variable workflow](variables.md#absolute-and-relative-datetime-ranges),
+Use the shared contract in the [datetime filter workflow](filters.md#absolute-and-relative-datetime-ranges),
 including optional previous-period comparison. Calendar-only views share it with
 `calendar.parseRequest()` and `defineTimeView()`.

@@ -1,11 +1,11 @@
 import {
-  searchVariable,
-  choiceVariable,
-  multiChoiceVariable,
-  dateRangeVariable,
-  type VariablePresentation,
+  searchFilter,
+  choiceFilter,
+  multiChoiceFilter,
+  dateRangeFilter,
+  type FilterPresentation,
 } from '@altertable/data-app-react';
-import { useAppVariables } from '@altertable/data-app-react/ui';
+import { useAppFilters } from '@altertable/data-app-react/ui';
 import {
   numberFilter,
   booleanFilter,
@@ -24,7 +24,7 @@ const options = [
   { id: 'b', label: 'Beta' },
 ];
 
-test('variable collections reject malformed presentation metadata from JavaScript callers', () => {
+test('filter collections reject malformed presentation metadata from JavaScript callers', () => {
   for (const presentation of [
     null,
     [],
@@ -32,27 +32,27 @@ test('variable collections reject malformed presentation metadata from JavaScrip
     { prominence: 'hidden' },
   ]) {
     function App() {
-      useAppVariables({
-        choice: choiceVariable({
+      useAppFilters({
+        choice: choiceFilter({
           key: 'choice',
           options,
           defaultValue: 'a',
-          presentation: presentation as VariablePresentation,
+          presentation: presentation as FilterPresentation,
         }),
       });
       return null;
     }
     expect(() => renderToStaticMarkup(createElement(App))).toThrow(
-      'Variable choice has invalid presentation.'
+      'Filter choice has invalid presentation.'
     );
   }
 });
 
-test('presentation intent is retained by each variable constructor without changing URL values', () => {
-  const presentation = { group: 'display', prominence: 'secondary' } as const;
-  const variables = [
-    choiceVariable({ key: 'choice', options, defaultValue: 'a', presentation }),
-    multiChoiceVariable({ key: 'tags', options, presentation }),
+test('presentation intent is retained by each filter constructor without changing URL values', () => {
+  const presentation = { control: 'widget', prominence: 'secondary' } as const;
+  const filters = [
+    choiceFilter({ key: 'choice', options, defaultValue: 'a', presentation }),
+    multiChoiceFilter({ key: 'tags', options, presentation }),
     numberFilter({ key: 'amount', label: 'Amount', presentation }),
     booleanFilter({ key: 'active', label: 'Active', presentation }),
     dimensionFilter<string>({
@@ -63,7 +63,7 @@ test('presentation intent is retained by each variable constructor without chang
       options: [{ value: 'FR', label: 'France' }],
       presentation,
     }),
-    dateRangeVariable({
+    dateRangeFilter({
       key: 'period',
       contract: defineDateRangeContract({
         minDate: '2026-01-01',
@@ -75,10 +75,10 @@ test('presentation intent is retained by each variable constructor without chang
       presentation,
     }),
   ];
-  for (const variable of variables) {
-    expect(variable.presentation).toEqual(presentation);
-    const value = variable.read(new URLSearchParams());
-    expect(value).toEqual(variable.defaultValue);
+  for (const filter of filters) {
+    expect(filter.presentation).toEqual(presentation);
+    const value = filter.read(new URLSearchParams());
+    expect(value).toEqual(filter.defaultValue);
   }
 });
 
@@ -102,21 +102,21 @@ test('dimension limits remain validated for unchecked single selections and dyna
 test('labeled choices validate defaults and selections and canonicalize URL state', () => {
   expect(() => numberFilter({ key: '', label: 'Amount' })).toThrow();
   expect(() => booleanFilter({ key: '', label: 'Active' })).toThrow();
-  const single = choiceVariable({ key: 'choice', options, defaultValue: 'a' });
+  const single = choiceFilter({ key: 'choice', options, defaultValue: 'a' });
   expect(single.describe?.('b')).toBe('Beta');
   expect(single.read(new URLSearchParams('choice=unknown'))).toBe('a');
   expect(single.read(new URLSearchParams('choice=b'))).toBe('b');
   expect(() =>
-    choiceVariable({ key: 'choice', options, defaultValue: 'unknown' })
+    choiceFilter({ key: 'choice', options, defaultValue: 'unknown' })
   ).toThrow();
   expect(() =>
-    choiceVariable({
+    choiceFilter({
       key: 'choice',
       options: [options[0]!, options[0]!],
       defaultValue: 'a',
     })
   ).toThrow();
-  const multiple = multiChoiceVariable({ key: 'tags', options });
+  const multiple = multiChoiceFilter({ key: 'tags', options });
   expect(multiple.write(['b', 'a'])).toEqual({ tags: '["a","b"]' });
   expect(multiple.same(['b', 'a'], ['a', 'b'])).toBe(true);
   expect(multiple.read(new URLSearchParams({ tags: '["a","a"]' }))).toEqual([]);
@@ -128,7 +128,7 @@ test('labeled choices validate defaults and selections and canonicalize URL stat
       new URLSearchParams(multiple.write(['b']) as Record<string, string>)
     )
   ).toEqual(['b']);
-  const search = searchVariable({ key: 'q', defaultValue: 'default' });
+  const search = searchFilter({ key: 'q', defaultValue: 'default' });
   expect(search.clearValue).toBe('');
   expect(
     search.read(new URLSearchParams(search.write('') as Record<string, string>))

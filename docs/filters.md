@@ -1,34 +1,46 @@
-# Variables and filters
+# Filters and display options
 
-Declare controls once in the view's `variables`; `<DataApp view={view}>` renders
-them and owns URL state. Use flat operation inputs matching variable names and
-resolved types. Derive SQL parameters inside the operation.
+Declare every filter and display option once with `defineFilters()`. Each view
+reads that declaration, or a `pick()` of the filters its operation reads, and
+`<DataApp filters>` renders their controls and owns URL state. Use flat operation
+inputs matching filter names and resolved types. Derive SQL parameters inside the
+operation.
 
-## Declare controls once
+## Declare filters once
 
-The starter's operation accepts `{ groupName: string }`, so it needs no `input`
-mapper or explicit `bindings`:
+The starter's operations accept `{ groupName: string }`, so their views need no
+`input` mapper or explicit `bindings`:
 
-```ts
-// ... client and sampleDataContext
-const { defineDataView } = createDataHooks(client);
+```tsx
+// ... client, sampleDataContext, and section contents
+const { defineDataView, defineFilters } = createDataHooks(client);
 
+const filters = defineFilters({
+  groupName: searchFilter({ key: 'group', label: 'Group', defaultValue: '' }),
+});
 const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  variables: {
-    groupName: searchVariable({
-      key: 'group',
-      label: 'Group',
-      defaultValue: '',
-    }),
-  },
+  filters,
   describeInput: ({ groupName }) =>
     groupName ? `group ${groupName}` : 'all groups',
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
 });
+
+function App() {
+  return (
+    <DataApp view={sampleCountsView} filters={filters}>
+      <DataSection content={countsContent} />
+    </DataApp>
+  );
+}
 ```
+
+Pass `filters.pick('groupName')` to a view whose operation reads only some
+filters, so its scope describes only the filters that apply to it. URL keys must
+be unique across the declaration. A view whose filters come from another
+declaration fails with an error, since `<DataApp>` renders only its own.
 
 Keep search local only when it filters already loaded rows. Add dataset
 `suggestions` when record names make useful query completions; suggestions cover
@@ -47,11 +59,11 @@ const group = dataApp.defineDimension({
   selectionMode: 'multiple',
   source: { query: 'groups' },
 });
-const parseInput = variableInput(parseEmptyInput, { group });
+const parseInput = filterInput(parseEmptyInput, { group });
 ```
 
-Import `variableInput()` and `parseEmptyInput()` from `/contract`. Use `parseInput`
-on the operation and declare the same `group` in the view's `variables`. Use an
+Import `filterInput()` and `parseEmptyInput()` from `/contract`. Use `parseInput`
+on the operation and declare the same `group` in `defineFilters()`. Use an
 app-owned base parser instead of `parseEmptyInput()` for other input fields.
 
 Declare the source query in `defineDataApp()` with a nullable `member` parameter
@@ -67,31 +79,36 @@ ORDER BY label
 ```
 
 Here `sample_counts` is the inspected table replacing the starter's fixture.
-Validate these variables in every consuming operation, including details. Map
+Validate these filters in every consuming operation, including details. Map
 parsed predicates to declared query parameters; never interpolate filter values
 into SQL. Each dimension is independent: changing one preserves other selections,
 even when their combination returns no rows. No selection means all members.
 
 ### Chart breakdowns
 
-Use `choiceVariable()` for a display choice, separately from population filters:
+Use `displayChoice()` for a choice that changes how results are shown rather
+than which data is included, and declare it with the filters:
 
 ```ts
-const countsBy = choiceVariable({
-  key: 'counts-by',
-  label: 'Counts breakdown',
-  defaultValue: 'group',
-  options: [
-    { id: 'group', label: 'Group' },
-    { id: 'country', label: 'Country' },
-  ],
-  presentation: { group: 'display', control: 'widget' },
+const filters = defineFilters({
+  group,
+  countsBy: displayChoice({
+    key: 'counts-by',
+    label: 'Counts breakdown',
+    defaultValue: 'group',
+    options: [
+      { id: 'group', label: 'Group' },
+      { id: 'country', label: 'Country' },
+    ],
+    presentation: { control: 'widget' },
+  }),
 });
 ```
 
 Pass `view.breakdown('countsBy')` to `<VisualizationWidget breakdown={...}>`.
-Declare a separate choice for each independently controlled chart.
-Use `presentation.prominence: 'secondary'` for less frequent scope filters.
+Without `control: 'widget'`, a display choice renders in the toolbar's display
+options. Declare a separate choice for each independently controlled chart.
+Use `presentation.prominence: 'secondary'` for less frequent filters.
 
 ## Fixed options and query-backed facets
 
@@ -113,7 +130,7 @@ const group = dimensionFilter({
 Use `defineFacetFilter()` only when options must depend on other selections:
 
 ```ts
-// ... client and period variable
+// ... client and period filter
 const { defineFacetFilter } = createDataHooks(client);
 
 const group = defineFacetFilter({
@@ -129,56 +146,57 @@ const group = defineFacetFilter({
 });
 ```
 
-Declare `period` with `dateRangeVariable()`, include it alongside `group` in the view's variables,
-and return parsed dimension options from the `groups` operation. Validate facet
-selections with `parseDimensionSelection(value, group)` from `/contract`.
+Declare `period` with `dateRangeFilter()` and `group` in the same
+`defineFilters()`, and return parsed dimension options from the `groups`
+operation. Validate facet selections with `parseDimensionSelection(value, group)`
+from `/contract`.
 
 Use `single` for a replacement choice and `multiple` for independent members.
 Enable `allowExclusion` only when the query supports exclusion and its intended
-missing-value behavior. Use `multiChoiceVariable()` for fixed multiselect
+missing-value behavior. Use `multiChoiceFilter()` for fixed multiselect
 choices; empty means no choices, unlike an unrestricted dimension.
 
 ## Reporting periods
 
-Use `defineTimeView()` when the analysis is period-driven. Obtain it from the
-existing hooks factory and share a `defineDateRangeContract()` with the parser.
-After adapting the operation to accept `{ period, groupName }`, the view can stay
-flat:
+Use `defineTimeView()` when the analysis is period-driven. Its filters must
+include `period`; share a `defineDateRangeContract()` with the parser. After
+adapting the operation to accept `{ period, groupName }`, the view can stay flat:
 
 ```ts
 // ... client, dailyCountsContext, and calendar contract
-const { defineTimeView } = createDataHooks(client);
+const { defineFilters, defineTimeView } = createDataHooks(client);
 
+const filters = defineFilters({
+  period: dateRangeFilter({
+    key: 'period',
+    contract: calendar,
+    defaultValue: { kind: 'preset', id: 'last-7' },
+  }),
+  groupName: searchFilter({ key: 'group', label: 'Group', defaultValue: '' }),
+});
 const dailyCountsView = defineTimeView({
   dataContext: dailyCountsContext,
   operation: 'dailyCountsByGroup',
-  time: { contract: calendar, defaultValue: { kind: 'preset', id: 'last-7' } },
-  variables: {
-    groupName: searchVariable({
-      key: 'group',
-      label: 'Group',
-      defaultValue: '',
-    }),
-  },
+  filters,
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
 });
 ```
 
 The operation's parser validates `period` with `calendar.parseRequest()`.
-Without additional variables, the default input is the calendar request itself.
+Without other filters, the default input is the calendar request itself.
 Use `defineDataView()` for fixed snapshots or analysis without a reporting period.
 
 ## Numeric and boolean predicates
 
 Use `numberFilter()` or `booleanFilter()` from `/contract` for field predicates.
-Declare them in `variables` and validate input with `parseNumberSelection()` or
-`parseBooleanSelection()` using the same declarations. Both support
+Declare them in `defineFilters()` and validate input with `parseNumberSelection()`
+or `parseBooleanSelection()` using the same declarations. Both support
 `{ kind: 'all' }`. Offer only predicates the registered query supports.
 
 ## Exclusion, clear, and reset
 
-Clear removes scope predicates and returns dates to defaults, preserving search
+Clear removes filter predicates and returns dates to defaults, preserving search
 and display choices. `resetAll()` restores all defaults. Filters apply immediately;
 use app-owned drafts only when the task needs Apply/Cancel.
 
@@ -188,11 +206,11 @@ Add a mapper and bindings only when an existing operation requires nested or
 differently named inputs. Preserve selected values unchanged in both directions:
 
 ```ts
-// ... client; operation input is { filters: { period, groupName } }
+// ... client and filters; operation input is { filters: { period, groupName } }
 const { defineTimeView } = createDataHooks(client);
 
 const dailyCountsView = defineTimeView({
-  // ... operation, dataContext, time, variables, isEmpty, and emptyFallback
+  // ... operation, dataContext, filters, isEmpty, and emptyFallback
   input: values => ({
     filters: { period: values.period, groupName: values.groupName },
   }),
@@ -209,16 +227,16 @@ presentation, or navigation URL keys.
 
 ## Absolute and relative datetime ranges
 
-Use `dateTimeRangeVariable()` for times, rolling windows, or mixed absolute and
-relative bounds. Share the variable between the operation parser and the view;
+Use `dateTimeRangeFilter()` for times, rolling windows, or mixed absolute and
+relative bounds. Share the filter between the operation parser and the view;
 `<DataApp>` supplies the picker and URL state:
 
 ```ts
 import {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   dateTimeRangePresets,
   defineDateRangeContract,
-  variableInput,
+  filterInput,
 } from '@altertable/data-app/contract';
 import { createDataHooks } from '@altertable/data-app-react';
 
@@ -227,7 +245,7 @@ const calendar = defineDateRangeContract({
   timeZone: 'UTC',
   completeDays: false,
 });
-const period = dateTimeRangeVariable({
+const period = dateTimeRangeFilter({
   key: 'period',
   contract: calendar,
   allowComparison: true,
@@ -238,7 +256,7 @@ const period = dateTimeRangeVariable({
   ],
 });
 const events = dataApp.defineOperation({
-  input: variableInput(() => ({}), { period }),
+  input: filterInput(() => ({}), { period }),
   checks: [{ period: period.input(period.defaultValue) }],
   policy: { maxQueryRows: 1000, maxDurationMs: 15000 },
   async run({ query }, input) {
@@ -250,11 +268,12 @@ const events = dataApp.defineOperation({
   },
 });
 // ... client created from { events }, and eventsContext
-const { defineTimeView } = createDataHooks(client);
+const { defineFilters, defineTimeView } = createDataHooks(client);
+const filters = defineFilters({ period });
 const eventsView = defineTimeView({
   operation: 'events',
   dataContext: eventsContext,
-  time: period,
+  filters,
   isEmpty: result => result.current.length === 0,
   emptyFallback: { title: 'No events' },
 });

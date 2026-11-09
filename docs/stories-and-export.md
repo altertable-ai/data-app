@@ -21,11 +21,12 @@ snapshot per entry in `summaryViews`. Reuse each binding with its own view's
 snapshot and derive scope from it:
 
 ```tsx
-// ... sampleCountsView, sampleTotalView, sampleCounts, totalSamples, and contents
+// ... filters, sampleCountsView, sampleTotalView, sampleCounts, totalSamples, and contents
 function App() {
   return (
     <DataApp
       view={sampleCountsView}
+      filters={filters}
       summaryViews={[sampleTotalView]}
       datasets={[sampleCounts]}
       story={(countsSnapshot, totalSnapshot) => {

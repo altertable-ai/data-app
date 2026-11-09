@@ -5,7 +5,7 @@ import type {
   DataOperation,
   DimensionSelection,
 } from '@altertable/data-app/contract';
-import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
+import { filterInput, dimensionFilter } from '@altertable/data-app/contract';
 const app = defineDataApp({
   title: 'Example',
   description: 'Example',
@@ -87,7 +87,7 @@ app.defineDimension({
   // @ts-expect-error Sources must name a registered query.
   source: { query: 'unknown' },
 });
-const parse = variableInput(() => ({ period: 'today' }), { customer });
+const parse = filterInput(() => ({ period: 'today' }), { customer });
 const parsed = parse({});
 const value: number | undefined =
   parsed.customer.kind === 'all' || parsed.customer.members[0]?.kind !== 'value'
@@ -162,13 +162,15 @@ app.defineDimension({
 
 // Independent sources do not acquire contextual facet dependencies when collected by name.
 const sourceDimensions: Record<string, typeof customer> = { customer };
-createDataHooks(
-  createDataClient<{
-    values: DataOperation<Record<string, DimensionSelection<number>>, number>;
-  }>()
-).defineDataView({
+const sourceHooks =
+  createDataHooks(
+    createDataClient<{
+      values: DataOperation<Record<string, DimensionSelection<number>>, number>;
+    }>()
+  );
+sourceHooks.defineDataView({
   operation: 'values',
-  variables: sourceDimensions,
+  filters: sourceHooks.defineFilters(sourceDimensions),
   bindings: Object.fromEntries(
     Object.keys(sourceDimensions).map(
       name =>

@@ -2,8 +2,8 @@ import { defineDataApp } from '@altertable/data-app';
 import { extractDataAppManifest } from '@altertable/data-app-manifest';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  dateTimeRangeVariable,
-  variableInput,
+  dateTimeRangeFilter,
+  filterInput,
   parseDateTimeRange,
   parseDateTimeBound,
   formatDateTimeBound,
@@ -24,7 +24,7 @@ const relative: DateTimeRange = {
 };
 
 test('datetime variables preserve relative intent and restore absolute values across URLs and JSON', () => {
-  const period = dateTimeRangeVariable({
+  const period = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '7d',
     maxRangeDays: 90,
@@ -35,7 +35,7 @@ test('datetime variables preserve relative intent and restore absolute values ac
     from: new Date('2026-01-01T16:00:00Z'),
     to: { anchor: 'RELATIVE_ANCHOR_START_OF_MONTH', offset: [] },
   };
-  const unbounded = dateTimeRangeVariable({
+  const unbounded = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '7d',
   });
@@ -58,8 +58,8 @@ test('datetime variables preserve relative intent and restore absolute values ac
   expect(serializeDateTimeRange(relative)).toBe(JSON.stringify(relative));
 });
 
-test('variableInput rehydrates dates and a registered query binds a range without app conversion', async () => {
-  const period = dateTimeRangeVariable({ key: 'period', defaultValue: '7d' });
+test('filterInput rehydrates dates and a registered query binds a range without app conversion', async () => {
+  const period = dateTimeRangeFilter({ key: 'period', defaultValue: '7d' });
   const app = defineDataApp({
     title: 'Datetime',
     description: 'Datetime query',
@@ -72,7 +72,7 @@ test('variableInput rehydrates dates and a registered query binds a range withou
       },
     },
   });
-  const input = variableInput(() => ({}), { period });
+  const input = filterInput(() => ({}), { period });
   const operation = app.defineOperation({
     input,
     checks: [{ period: relative }],
@@ -323,7 +323,7 @@ test('rebased mixed ranges survive validation and URL restoration without a repo
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-07-02T14:30:00.000Z'));
   try {
-    const period = dateTimeRangeVariable({
+    const period = dateTimeRangeFilter({
       key: 'period',
       defaultValue: '1d',
       maxRangeDays: 3,
@@ -415,12 +415,12 @@ test('HTTP host datetime parameters decode validated JSON and remain protected f
 });
 
 test('nonpositive fixed relative ranges are rejected by variables and HTTP input before querying', async () => {
-  const period = dateTimeRangeVariable({
+  const period = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '1h',
     maxRangeDays: 1,
   });
-  const unrestricted = dateTimeRangeVariable({
+  const unrestricted = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '1h',
   });
@@ -437,7 +437,7 @@ test('nonpositive fixed relative ranges are rejected by variables and HTTP input
     },
   });
   const operation = dataApp.defineOperation({
-    input: variableInput(() => ({}), { period }),
+    input: filterInput(() => ({}), { period }),
     checks: [{ period: period.defaultValue }],
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run({ query }, input) {

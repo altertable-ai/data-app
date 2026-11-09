@@ -73,7 +73,7 @@ function reportingPeriodText(
   return `${label(period, options)}, ${formatDateTime(start, options)} to ${formatDateTime(end, options)} in ${options.timeZone ?? 'UTC'}`;
 }
 
-/** Read-only period context for the variable bar, including exact bounds for assistive technology. */
+/** Read-only period context for the control bar, including exact bounds for assistive technology. */
 export function PeriodSummary({
   period,
   comparison,

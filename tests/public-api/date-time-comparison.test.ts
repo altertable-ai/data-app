@@ -1,7 +1,7 @@
 import {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   defineDateRangeContract,
-  variableInput,
+  filterInput,
 } from '@altertable/data-app/contract';
 import { expect, test, vi } from 'vitest';
 
@@ -15,7 +15,7 @@ test('comparison selection stays relative in URLs and resolves one protected req
       timeZone: 'America/New_York',
       completeDays: false,
     });
-    const period = dateTimeRangeVariable({
+    const period = dateTimeRangeFilter({
       key: 'period',
       contract,
       allowComparison: true,
@@ -39,7 +39,7 @@ test('comparison selection stays relative in URLs and resolves one protected req
       from: new Date('2026-06-26T12:00:00Z'),
       to: request.range.from,
     });
-    const parse = variableInput(() => ({}), { period });
+    const parse = filterInput(() => ({}), { period });
     vi.setSystemTime(new Date('2026-07-10T16:10:00Z'));
     expect(
       parse(JSON.parse(JSON.stringify({ period: request }))).period
@@ -70,7 +70,7 @@ test('comparison is unavailable outside coverage and an invalid comparison URL i
     maxRangeDays: 31,
     timeZone: 'UTC',
   });
-  const period = dateTimeRangeVariable({
+  const period = dateTimeRangeFilter({
     key: 'window',
     contract,
     allowComparison: true,

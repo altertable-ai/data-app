@@ -54,7 +54,7 @@ export type DateTimeRangePickerProps = {
   labelPlacement?: ControlLabelPlacement;
   /** Client limit for determinate durations; validate timezone-dependent ranges on the backend. */
   maxRangeDays?: number;
-  /** Shared reporting policy; generated controls inherit it from their variable. */
+  /** Shared reporting policy; generated controls inherit it from their filter. */
   contract?: DateRangeContract;
   /** Suggestions in display order. Omit for defaults; [] retains calendar and text entry.
    * Invalid or over-limit suggestions are omitted; typed input is not restricted to the menu.

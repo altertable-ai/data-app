@@ -11,23 +11,20 @@ import {
   createDataHooks,
   DataApp,
   DataSection,
-  searchVariable,
+  searchFilter,
   TableWidget,
 } from '@altertable/data-app-react';
 
 // ... client, operations, and sampleDataContext
-const { defineDataView } = createDataHooks(client);
+const { defineDataView, defineFilters } = createDataHooks(client);
 
+const filters = defineFilters({
+  groupName: searchFilter({ key: 'group', label: 'Group', defaultValue: '' }),
+});
 const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  variables: {
-    groupName: searchVariable({
-      key: 'group',
-      label: 'Group',
-      defaultValue: '',
-    }),
-  },
+  filters,
   describeInput: ({ groupName }) =>
     groupName ? `group ${groupName}` : 'all groups',
   isEmpty: rows => rows.length === 0,
@@ -40,40 +37,44 @@ const sampleContent = sampleCountsView.content(result => (
 
 function App() {
   return (
-    <DataApp view={sampleCountsView} story={story} datasets={[sampleCounts]}>
+    <DataApp
+      view={sampleCountsView}
+      filters={filters}
+      story={story}
+      datasets={[sampleCounts]}
+    >
       <DataSection content={sampleContent} />
     </DataApp>
   );
 }
 ```
 
-Keep operation input flat and named like the variables. Omit `input` and
-`bindings` when those shapes match. Use `defineTimeView()` for period-driven
+Keep operation input flat and named like the [filters](filters.md). Omit `input`
+and `bindings` when those shapes match. Use `defineTimeView()` for period-driven
 analysis and `defineDataView()` otherwise. Adapt an existing nested input only
-when required; see [input mapping](variables.md#adapt-existing-input-shapes).
+when required; see [input mapping](filters.md#adapt-existing-input-shapes).
 
 ## Give each widget its own view
 
 The hosted starter gives its total and its group counts separate operations and
 views. `<DataApp view>` loads with the page; every other `<DataSection>` loads
-when it nears the viewport. Declare shared filters once and pass them to each
-view. The `<DataApp>` view must include every shared filter because it renders
-their controls; a section whose filters it lacks fails with an error:
+when it nears the viewport. Both views read the same filters, and
+`<DataApp filters>` renders their controls once:
 
 ```tsx
 // ... client, operations, sampleDataContext, and section contents
-const { defineDataView } = createDataHooks(client);
+const { defineDataView, defineFilters } = createDataHooks(client);
 
-const groupFilters = {
-  groupName: searchVariable({ key: 'group', label: 'Group', defaultValue: '' }),
-};
+const filters = defineFilters({
+  groupName: searchFilter({ key: 'group', label: 'Group', defaultValue: '' }),
+});
 function describeGroup({ groupName }: { groupName: string }) {
   return groupName || 'all groups';
 }
 const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  variables: groupFilters,
+  filters,
   describeInput: describeGroup,
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
@@ -81,13 +82,13 @@ const sampleCountsView = defineDataView({
 const sampleTotalView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleTotal',
-  variables: groupFilters,
+  filters,
   describeInput: describeGroup,
 });
 
 function App() {
   return (
-    <DataApp view={sampleCountsView}>
+    <DataApp view={sampleCountsView} filters={filters}>
       <Stack>
         <DataSection content={totalContent} />
         <DataSection content={countsContent} />
@@ -120,7 +121,7 @@ The destination owns its input parser, operation, datasets, context, and content
 Pass its content to `<DataApp details={[groupDetail]}>`:
 
 ```tsx
-// ... client, operations, sampleDataContext, main view, datasets, and story
+// ... client, operations, sampleDataContext, filters, main view, datasets, and story
 const { defineDetailView } = createDataHooks(client);
 
 const groupView = defineDetailView({
@@ -151,6 +152,7 @@ function App() {
   return (
     <DataApp
       view={sampleCountsView}
+      filters={filters}
       datasets={[sampleCounts]}
       story={story}
       details={[groupDetail]}
@@ -162,7 +164,7 @@ function App() {
 ```
 
 Pass serializable scope and IDs, not records or credentials. Validate dimension selections with
-the dashboard's `variableInput()` parser. The main app owns stories and exports.
+the dashboard's `filterInput()` parser. The main app owns stories and exports.
 
 ### Contributing metric records
 

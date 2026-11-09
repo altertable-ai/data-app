@@ -7,10 +7,10 @@ and prose stay outside their loading boundaries. Keep default density unless
 customization is requested.
 
 ```tsx
-// ... sampleCountsView, countsContent, and totalContent
+// ... filters, sampleCountsView, countsContent, and totalContent
 function App() {
   return (
-    <DataApp view={sampleCountsView}>
+    <DataApp view={sampleCountsView} filters={filters}>
       <Stack>
         <SectionHeading>Sample counts</SectionHeading>
         <TextContent>

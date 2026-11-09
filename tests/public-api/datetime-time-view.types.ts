@@ -1,13 +1,13 @@
 import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   defineDateRangeContract,
   type DataOperation,
   type DateTimeRange,
 } from '@altertable/data-app/contract';
 
-const period = dateTimeRangeVariable({
+const period = dateTimeRangeFilter({
   key: 'period',
   defaultValue: 'yesterday',
   contract: defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' }),
@@ -25,26 +25,19 @@ const feedback = {
     glossary: { count: { term: 'Count', definition: 'Event count' } },
   }),
 };
-hooks.defineTimeView({ ...feedback, operation: 'events', time: period });
+const filters = hooks.defineFilters({ period });
+hooks.defineTimeView({ ...feedback, operation: 'events', filters });
 hooks.defineTimeView({
   ...feedback,
   operation: 'nested',
-  time: period,
+  filters,
   input: values => ({ filters: { period: values.period } }),
   bindings: { period: input => input.filters.period },
 });
 // @ts-expect-error Nested inputs need an explicit mapping and period reader.
-hooks.defineTimeView({ ...feedback, operation: 'nested', time: period });
-const shadowed = {
-  ...feedback,
-  operation: 'events' as const,
-  time: period,
-  variables: { period },
-};
-// @ts-expect-error The selected period cannot be shadowed by an extra variable.
-hooks.defineTimeView(shadowed);
+hooks.defineTimeView({ ...feedback, operation: 'nested', filters });
 
-const compared = dateTimeRangeVariable({
+const compared = dateTimeRangeFilter({
   key: 'period',
   defaultValue: 'yesterday',
   allowComparison: true,
@@ -63,10 +56,11 @@ const comparisonHooks =
       >;
     }>()
   );
+const comparedFilters = comparisonHooks.defineFilters({ period: compared });
 const comparedView = comparisonHooks.defineTimeView({
   ...feedback,
   operation: 'events',
-  time: compared,
+  filters: comparedFilters,
 });
 comparedView.metric(
   {
@@ -80,21 +74,21 @@ comparedView.metric(
 comparisonHooks.defineTimeView({
   ...feedback,
   operation: 'nested',
-  time: compared,
+  filters: comparedFilters,
   input: values => ({ filters: { period: values.period } }),
   bindings: { period: input => input.filters.period },
 });
 const missingReader = {
   ...feedback,
   operation: 'nested' as const,
-  time: compared,
+  filters: comparedFilters,
   input: (values: { period: ReturnType<typeof compared.input> }) => ({
     filters: values,
   }),
 };
 // @ts-expect-error Nested datetime comparison inputs require a period binding.
 comparisonHooks.defineTimeView(missingReader);
-dateTimeRangeVariable({
+dateTimeRangeFilter({
   key: 'period',
   defaultValue: '7d',
   // @ts-expect-error Comparison policy is required when enabling the reporting workflow.

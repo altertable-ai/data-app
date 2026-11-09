@@ -52,7 +52,7 @@ export type DateRangePickerProps = {
   maxDate?: string;
   maxRangeDays?: number;
   timeZone?: string;
-  /** Used to display the reset affordance. The app variable owns the URL and reset meaning. */
+  /** Used to display the reset affordance. The app filter owns the URL and reset meaning. */
   resetValue?: DateRange;
   isDefault?: boolean;
   onReset?: () => void;
@@ -77,7 +77,7 @@ export type DateRangePickerProps = {
   | 'defaultOpen'
 >;
 
-/** The app owns URL state; `dateRangeControl` binds a date variable to this picker. */
+/** The app owns URL state; `dateRangeControl` binds a date filter to this picker. */
 export function DateRangePicker({
   label = 'Date range',
   labelPlacement,

@@ -9,8 +9,8 @@ import {
   VisualizationWidget,
   Stack,
   TableWidget,
-  searchVariable,
-  type SearchVariable,
+  searchFilter,
+  type SearchFilter,
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
@@ -77,11 +77,11 @@ const client = createDataClient<{
     };
   },
 });
-const searchVariables: Record<string, SearchVariable> = {
-  q: searchVariable({ key: 'q', label: 'Search workspace' }),
+const searchVariables: Record<string, SearchFilter> = {
+  q: searchFilter({ key: 'q', label: 'Search workspace' }),
 };
 if (new URLSearchParams(location.search).has('secondSearch')) {
-  searchVariables.notes = searchVariable({
+  searchVariables.notes = searchFilter({
     key: 'notes',
     label: 'Search notes',
   });
@@ -89,9 +89,11 @@ if (new URLSearchParams(location.search).has('secondSearch')) {
 if (new URLSearchParams(location.search).has('noSearch')) {
   delete searchVariables.q;
 }
-const view = createDataHooks(client).defineDataView({
+const { defineDataView, defineFilters } = createDataHooks(client);
+const filters = defineFilters(searchVariables);
+const view = defineDataView({
   operation: 'catalog',
-  variables: searchVariables,
+  filters,
   input: values => ({ ...values, q: values.q ?? '' }),
   dataContext: createDataContext({ catalog: 'catalog' })({
     description: 'Illustrative people and projects.',
@@ -243,6 +245,7 @@ function App() {
   return (
     <DataApp
       view={view}
+      filters={filters}
       showSearch={!new URLSearchParams(location.search).has('hideSearch')}
       datasets={[people, projects]}
       story={snapshot => [

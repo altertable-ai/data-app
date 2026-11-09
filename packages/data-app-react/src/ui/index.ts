@@ -43,7 +43,7 @@ export type {
   DateRange,
   DateRangePickerProps,
 } from './DateRangePicker.tsx';
-export { useAppVariables } from './variables.ts';
+export { useAppFilters } from './app-filters.ts';
 export { SearchField } from './SearchField.tsx';
 export type { SearchFieldProps } from './SearchField.tsx';
 export { searchItems, matchSearchText } from './searchItems.ts';
@@ -155,8 +155,8 @@ export type {
 } from './NumberField.tsx';
 export { FilterBar } from './FilterBar.tsx';
 export type { FilterBarProps } from './FilterBar.tsx';
-export { VariableBar } from './VariableBar.tsx';
-export type { VariableBarProps } from './VariableBar.tsx';
+export { ControlBar } from './ControlBar.tsx';
+export type { ControlBarProps } from './ControlBar.tsx';
 export { FilterActions } from './FilterActions.tsx';
 export type { FilterActionsProps } from './FilterActions.tsx';
 
@@ -213,16 +213,16 @@ export type {
 } from './ExplorationActionControl.tsx';
 
 export {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   dateTimeRangePresets,
   type DateTimeRangePreset,
-  type DateTimeRangeVariable,
-  type DateTimeRangeComparisonVariable,
-  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeFilter,
+  type DateTimeRangeComparisonFilter,
+  type DateTimeRangeComparisonFilterOptions,
   type DateTimeRangeComparisonSelection,
   type DateTimeRangeComparisonRequest,
-  type DateTimeRangeVariableOptions,
-} from './variables.ts';
+  type DateTimeRangeFilterOptions,
+} from './app-filters.ts';
 
 export {
   DateTimeRangePicker,

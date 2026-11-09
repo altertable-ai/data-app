@@ -2,22 +2,22 @@ import { type ComponentPropsWithRef, type ReactNode } from 'react';
 
 import { classNames } from './classNames.ts';
 
-export type VariableBarProps = {
+export type ControlBarProps = {
   children: ReactNode;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
 /** User-controlled inputs below the page header. */
-export function VariableBar({
+export function ControlBar({
   children,
   className,
   role = 'group',
-  'aria-label': ariaLabel = 'View variables',
+  'aria-label': ariaLabel = 'View controls',
   ...props
-}: VariableBarProps) {
+}: ControlBarProps) {
   return (
     <div
       {...props}
-      className={classNames('altertable-variable-bar', className)}
+      className={classNames('altertable-control-bar', className)}
       role={role}
       aria-label={ariaLabel}
     >

@@ -1,4 +1,4 @@
-import { createDataHooks, searchVariable } from '@altertable/data-app-react';
+import { createDataHooks, searchFilter } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   parseFacetOptions,
@@ -11,7 +11,7 @@ type Operations = {
   options: DataOperation<{ search: string }, DimensionOption<number>[]>;
 };
 const hooks = createDataHooks(createDataClient<Operations>());
-const search = searchVariable({ key: 'search' });
+const search = searchFilter({ key: 'search' });
 const filter = hooks.defineFacetFilter({
   key: 'number',
   label: 'Number',

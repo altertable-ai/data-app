@@ -1,9 +1,10 @@
 import {
-  choiceVariable,
-  searchVariable,
-  multiChoiceVariable,
+  choiceFilter,
+  searchFilter,
+  multiChoiceFilter,
   createDataContext,
   createDataHooks,
+  dateRangeFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -29,23 +30,15 @@ const organization = dimensionFilter<string>({
   selectionMode: 'single',
   options: [{ value: 'worldia', label: 'Worldia' }],
 });
-const variables = {
-  organization,
-  window: choiceVariable({
-    key: 'window',
-    defaultValue: '90',
-    options: [{ id: '90', label: '90 days' }],
-  }),
-};
-type Filters = {
+const window = choiceFilter({
+  key: 'window',
+  defaultValue: '90',
+  options: [{ id: '90', label: '90 days' }],
+});
+type NestedFilters = {
   organization: DimensionSelection<string>;
   amount: NumberSelection;
   active: BooleanSelection;
-};
-const filters = {
-  organization,
-  amount: numberFilter({ key: 'amount', label: 'Amount' }),
-  active: booleanFilter({ key: 'active', label: 'Active' }),
 };
 const hooks =
   createDataHooks(
@@ -66,12 +59,11 @@ const hooks =
         number
       >;
       narrow: DataOperation<{ organization: { kind: 'all' } }, number>;
-      mixedVariable: DataOperation<{ org: string }, number>;
       union: DataOperation<
         { organization: DimensionSelection<string> } | { org: string },
         number
       >;
-      nested: DataOperation<{ filters: Filters }, number>;
+      nested: DataOperation<{ filters: NestedFilters }, number>;
       time: DataOperation<DateRangeRequest, number>;
       shadowedTime: DataOperation<
         DateRangeRequest & { period?: string },
@@ -100,72 +92,92 @@ const feedback = {
   dataContext: context,
   describeInput: () => 'usage',
 };
+const appFilters = hooks.defineFilters({
+  organization,
+  window,
+  amount: numberFilter({ key: 'amount', label: 'Amount' }),
+  active: booleanFilter({ key: 'active', label: 'Active' }),
+  search: searchFilter({ key: 'q', label: 'Search' }),
+  choices: multiChoiceFilter({
+    key: 'choices',
+    label: 'Choices',
+    options: [
+      { id: 'one', label: 'One' },
+      { id: 'two', label: 'Two' },
+    ],
+    defaultValue: [],
+  }),
+  period: dateRangeFilter({
+    key: 'period',
+    contract: defineDateRangeContract({
+      minDate: '2026-01-01',
+      maxRangeDays: 90,
+      timeZone: 'UTC',
+    }),
+    defaultValue: { kind: 'preset', id: 'last-7' },
+  }),
+});
+const windowed = appFilters.pick('organization', 'window');
+const nested = appFilters.pick('organization', 'amount', 'active');
 
-declare const selectedVariables:
-  | typeof variables
-  | Pick<typeof variables, 'window'>;
+declare const choose: boolean;
 hooks.defineDataView({
   ...feedback,
   operation: 'direct',
-  variables: selectedVariables,
+  filters: choose ? windowed : appFilters.pick('window'),
   input: values => ({ organization: { kind: 'all' as const }, ...values }),
 });
 
-declare const mixedVariable: typeof organization | typeof variables.window;
-hooks.defineDataView({
-  ...feedback,
-  operation: 'mixedVariable',
-  // @ts-expect-error Narrow a variable declaration before deriving its bindings.
-  variables: { organization: mixedVariable },
-  input: () => ({ org: 'worldia' }),
-});
+declare const mixedFilter: typeof organization | typeof window;
+// @ts-expect-error Narrow a filter declaration before deriving its bindings.
+hooks.defineFilters({ organization: mixedFilter });
 
 // @ts-expect-error The original app drops organization without a binding to recover it.
 hooks.defineDataView({
   ...feedback,
   operation: 'flattened',
-  variables,
+  filters: windowed,
   input: () => ({ org: 'worldia', windowId: '90' }),
 });
 // @ts-expect-error An optional field cannot supply an automatic filter binding.
 hooks.defineDataView({
   ...feedback,
   operation: 'optional',
-  variables,
+  filters: windowed,
   input: values => values,
 });
 // @ts-expect-error A scalar organization field cannot preserve a dimension selection.
 hooks.defineDataView({
   ...feedback,
   operation: 'wrongType',
-  variables,
+  filters: windowed,
   input: () => ({ organization: 'worldia', window: '90' }),
 });
 // @ts-expect-error Every input union member must supply the automatic filter field.
 hooks.defineDataView({
   ...feedback,
   operation: 'union',
-  variables: { organization },
+  filters: appFilters.pick('organization'),
   input: values => values,
 });
 // @ts-expect-error An all-only field cannot carry every organization selection.
 hooks.defineDataView({
   ...feedback,
   operation: 'narrow',
-  variables: { organization },
+  filters: appFilters.pick('organization'),
   input: () => ({ organization: { kind: 'all' } }),
 });
 // @ts-expect-error Nested filter fields require explicit bindings.
 hooks.defineDataView({
   ...feedback,
   operation: 'nested',
-  variables: filters,
+  filters: nested,
   input: values => ({ filters: values }),
 });
 hooks.defineDataView({
   ...feedback,
   operation: 'nested',
-  variables: filters,
+  filters: nested,
   input: values => ({ filters: values }),
   // @ts-expect-error All nested filters require bindings, including amount and active.
   bindings: { organization: input => input.filters.organization },
@@ -173,7 +185,7 @@ hooks.defineDataView({
 hooks.defineDataView({
   ...feedback,
   operation: 'flattened',
-  variables,
+  filters: windowed,
   input: () => ({ org: 'worldia', windowId: '90' }),
   bindings: {
     // @ts-expect-error A binding returns a selection, not its scalar query parameter.
@@ -182,17 +194,17 @@ hooks.defineDataView({
 });
 
 // Direct fields and canonical inputs need no repeated binding configuration.
-hooks.defineDataView({ ...feedback, operation: 'direct', variables });
+hooks.defineDataView({ ...feedback, operation: 'direct', filters: windowed });
 hooks.defineDataView({
   ...feedback,
   operation: 'direct',
-  variables,
+  filters: windowed,
   input: values => values,
 });
 hooks.defineDataView({
   ...feedback,
   operation: 'nested',
-  variables: filters,
+  filters: nested,
   input: values => ({ filters: values }),
   bindings: {
     organization: input => input.filters.organization,
@@ -205,13 +217,13 @@ hooks.defineDataView({
 hooks.defineDataView({
   ...feedback,
   operation: 'flattened',
-  variables: { window: variables.window },
+  filters: appFilters.pick('window'),
   input: values => ({ org: '', windowId: values.window }),
 });
 hooks.defineDataView({
   ...feedback,
   operation: 'flattened',
-  variables: { window: variables.window },
+  filters: appFilters.pick('window'),
   input: values => ({ org: '', windowId: values.window }),
   bindings: {
     window: input => {
@@ -221,74 +233,55 @@ hooks.defineDataView({
   },
 });
 
-const search = { search: searchVariable({ key: 'q', label: 'Search' }) };
 // @ts-expect-error A renamed search needs a reader.
 hooks.defineDataView({
   ...feedback,
   operation: 'mappedSearch',
-  variables: search,
+  filters: appFilters.pick('search'),
   input: values => ({ query: values.search }),
 });
 hooks.defineDataView({
   ...feedback,
   operation: 'mappedSearch',
-  variables: search,
+  filters: appFilters.pick('search'),
   input: values => ({ query: values.search }),
   bindings: { search: input => input.query },
 });
-const selections = {
-  choices: multiChoiceVariable({
-    key: 'choices',
-    label: 'Choices',
-    options: [
-      { id: 'one', label: 'One' },
-      { id: 'two', label: 'Two' },
-    ],
-    defaultValue: [],
-  }),
-};
 // @ts-expect-error A renamed multi-choice needs a reader.
 hooks.defineDataView({
   ...feedback,
   operation: 'mappedChoices',
-  variables: selections,
+  filters: appFilters.pick('choices'),
   input: values => ({ selected: values.choices }),
 });
 hooks.defineDataView({
   ...feedback,
   operation: 'mappedChoices',
-  variables: selections,
+  filters: appFilters.pick('choices'),
   input: values => ({ selected: values.choices }),
   bindings: { choices: input => input.selected },
 });
 
-const time = {
-  contract: defineDateRangeContract({
-    minDate: '2026-01-01',
-    maxRangeDays: 90,
-    timeZone: 'UTC',
-  }),
-  defaultValue: { kind: 'preset' as const, id: 'last-7' as const },
-};
 // Bare calendar requests and top-level period/filter fields derive their bindings.
-hooks.defineTimeView({ ...feedback, operation: 'time', time });
+const period = appFilters.pick('period');
+hooks.defineTimeView({ ...feedback, operation: 'time', filters: period });
 hooks.defineTimeView({
   ...feedback,
   operation: 'unionTime',
-  time,
+  filters: period,
   input: values => values.period,
 });
 // @ts-expect-error A possible incompatible period field shadows the bare calendar request.
 hooks.defineTimeView({
   ...feedback,
   operation: 'shadowedTime',
-  time,
+  filters: period,
   input: values => ({ ...values.period, period: 'bad' }),
 });
 hooks.defineTimeView({
   ...feedback,
   operation: 'shadowedTime',
-  time,
+  filters: period,
   input: values => values.period,
   bindings: {
     period: input => ({ range: input.range, comparison: input.comparison }),
@@ -297,22 +290,19 @@ hooks.defineTimeView({
 hooks.defineTimeView({
   ...feedback,
   operation: 'directTime',
-  time,
-  variables: { organization },
+  filters: appFilters.pick('period', 'organization'),
 });
 // @ts-expect-error Nested period and organization inputs require bindings.
 hooks.defineTimeView({
   ...feedback,
   operation: 'nestedTime',
-  time,
-  variables: { organization },
+  filters: appFilters.pick('period', 'organization'),
   input: values => ({ filters: values }),
 });
 hooks.defineTimeView({
   ...feedback,
   operation: 'nestedTime',
-  time,
-  variables: { organization },
+  filters: appFilters.pick('period', 'organization'),
   input: values => ({ filters: values }),
   // @ts-expect-error Binding the period alone does not preserve the organization filter.
   bindings: { period: input => input.filters.period },
@@ -320,8 +310,7 @@ hooks.defineTimeView({
 hooks.defineTimeView({
   ...feedback,
   operation: 'nestedTime',
-  time,
-  variables: { organization },
+  filters: appFilters.pick('period', 'organization'),
   input: values => ({ filters: values }),
   // @ts-expect-error Binding the organization alone does not preserve the nested period.
   bindings: { organization: input => input.filters.organization },
@@ -329,8 +318,7 @@ hooks.defineTimeView({
 hooks.defineTimeView({
   ...feedback,
   operation: 'nestedTime',
-  time,
-  variables: { organization },
+  filters: appFilters.pick('period', 'organization'),
   input: values => ({ filters: values }),
   bindings: {
     period: input => input.filters.period,

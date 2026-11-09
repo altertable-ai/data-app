@@ -1,10 +1,10 @@
-import { useAppVariables } from '@altertable/data-app-react/ui';
-type VariableCollection = Parameters<typeof useAppVariables>[0];
+import { useAppFilters } from '@altertable/data-app-react/ui';
+type FilterCollection = Parameters<typeof useAppFilters>[0];
 import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
   createDataContext,
-  searchVariable,
+  searchFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -12,7 +12,7 @@ import {
   type QueryDefinitions,
   type QueryParameter,
   type QueryProjections,
-  type DimensionVariable,
+  type DimensionFilter,
   type DataOperation,
   type DimensionOption,
 } from '@altertable/data-app/contract';
@@ -87,7 +87,7 @@ type Source = {
   view: DataOperation<{ search: string }, number>;
 };
 const hooks = createDataHooks(createDataClient<Source>());
-const search = searchVariable({ key: 'search' });
+const search = searchFilter({ key: 'search' });
 const facet = hooks.defineFacetFilter({
   key: 'region',
   label: 'Region',
@@ -100,9 +100,9 @@ const facet = hooks.defineFacetFilter({
   },
 });
 // @ts-expect-error A facet cannot be widened to a fixed-option filter.
-const erased: DimensionVariable<string> = facet;
+const erased: DimensionFilter<string> = facet;
 void erased;
-const variables: VariableCollection = { region: facet };
+const broadFilters: FilterCollection = { region: facet };
 const feedback = {
   operation: 'view' as const,
   dataContext: createDataContext({})({ description: 'View', glossary: {} }),
@@ -110,15 +110,11 @@ const feedback = {
   describeInput: () => 'All',
 };
 // @ts-expect-error A broad collection cannot erase facet dependencies.
-hooks.defineDataView({ ...feedback, variables });
+hooks.defineFilters(broadFilters);
 const missing = createDataHooks(createDataClient<{ view: Source['view'] }>());
-const dependent = {
-  ...feedback,
-  variables: { search, region: facet },
-  bindings: { region: () => facet.defaultValue },
-};
+const dependent = { search, region: facet };
 // @ts-expect-error The receiving registry must contain the facet operation.
-missing.defineDataView(dependent);
+missing.defineFilters(dependent);
 const wrongInput =
   createDataHooks(
     createDataClient<{
@@ -127,7 +123,7 @@ const wrongInput =
     }>()
   );
 // @ts-expect-error Reused facets must supply the receiving operation's input type.
-wrongInput.defineDataView(dependent);
+wrongInput.defineFilters(dependent);
 const wrongOutput =
   createDataHooks(
     createDataClient<{
@@ -136,8 +132,12 @@ const wrongOutput =
     }>()
   );
 // @ts-expect-error Reused facets must match the receiving operation's option value type.
-wrongOutput.defineDataView(dependent);
-hooks.defineDataView(dependent);
+wrongOutput.defineFilters(dependent);
+hooks.defineDataView({
+  ...feedback,
+  filters: hooks.defineFilters(dependent),
+  bindings: { region: () => facet.defaultValue },
+});
 
 const noDefault = {
   ...inputQuery,
@@ -170,12 +170,12 @@ const fixed = dimensionFilter({
   selectionMode: 'single',
   options: [],
 });
-const conditionalVariables = choose ? { region: facet } : { region: fixed };
-// @ts-expect-error Narrow conditional variable maps before declaring facet dependencies.
-hooks.defineDataView({ ...feedback, variables: conditionalVariables });
-const conditionalVariable = { region: choose ? facet : fixed };
-// @ts-expect-error A conditional member cannot hide the facet's required search variable.
-hooks.defineDataView({ ...feedback, variables: conditionalVariable });
+const conditionalFilters = choose ? { region: facet } : { region: fixed };
+// @ts-expect-error Narrow conditional filter maps before declaring facet dependencies.
+hooks.defineFilters(conditionalFilters);
+const conditionalFilter = { region: choose ? facet : fixed };
+// @ts-expect-error A conditional member cannot hide the facet's required search filter.
+hooks.defineFilters(conditionalFilter);
 const conditionalContext = choose ? { search } : {};
 const invalidContext = {
   key: 'conditional',

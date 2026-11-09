@@ -11,7 +11,7 @@ import {
   bindDimensionSource,
   type DimensionSourceConfig,
   type DimensionSourceQueryName,
-  type SourceDimensionVariable,
+  type SourceDimensionFilter,
 } from './dimension-source.ts';
 import {
   snapshotQueries,
@@ -53,7 +53,7 @@ export type DataAppDefinition<
     config: DimensionSourceConfig<Type> & {
       source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
     }
-  ): SourceDimensionVariable<{ string: string; number: number }[Type]>;
+  ): SourceDimensionFilter<{ string: string; number: number }[Type]>;
   defineOperation<Input, Output>(
     operation: OperationDefinition<Input, Output, Queries>
   ): ReturnType<typeof defineOperation<Input, Output, Queries>>;

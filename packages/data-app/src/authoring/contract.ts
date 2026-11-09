@@ -8,7 +8,7 @@ import { parseDate, today } from '@internationalized/date';
 import { createDateTimeRangeContract } from '../core/date-time-range-contract.ts';
 import {
   attachDimensionSelectors,
-  validateVariableInput,
+  validateFilterInput,
 } from '../core/dimension-source.ts';
 import { fixedUnitMilliseconds } from '../core/time-units.ts';
 export type {
@@ -107,7 +107,7 @@ export type DateRangeContractOptions = {
   completeDays?: boolean;
 };
 
-/** One source policy for the server parser, URL variable, and displayed reporting period. */
+/** One source policy for the server parser, URL filter, and displayed reporting period. */
 export function defineDateRangeContract({
   minDate,
   maxDate,
@@ -400,7 +400,7 @@ export function defineOperation<
           definition.projections
         );
       }
-      await validateVariableInput(operation.input, input, query);
+      await validateFilterInput(operation.input, input, query);
       context.signal.throwIfAborted();
       return operation.run({ signal: context.signal, query }, input);
     },
@@ -446,7 +446,7 @@ export type {
   DimensionSelection,
   DimensionMember,
   DimensionOption,
-  DimensionVariable,
+  DimensionFilter,
   DimensionFilterOptions,
 } from '../core/dimension.ts';
 
@@ -464,19 +464,19 @@ export type {
   BooleanFilter,
 } from '../core/filters.ts';
 
-export { variableInput } from '../core/dimension-source.ts';
+export { filterInput } from '../core/dimension-source.ts';
 
 export {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   dateTimeRangePresets,
   type DateTimeRangePreset,
-  type DateTimeRangeVariable,
-  type DateTimeRangeComparisonVariable,
-  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeFilter,
+  type DateTimeRangeComparisonFilter,
+  type DateTimeRangeComparisonFilterOptions,
   type DateTimeRangeComparisonSelection,
   type DateTimeRangeComparisonRequest,
-  type DateTimeRangeVariableOptions,
-} from '../core/date-time-variable.ts';
+  type DateTimeRangeFilterOptions,
+} from '../core/date-time-filter.ts';
 export {
   parseDateTimeRange,
   serializeDateTimeRange,

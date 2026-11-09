@@ -1,9 +1,9 @@
 import {
   createDataContext,
   createDataHooks,
-  dateRangeVariable,
-  searchVariable,
-  choiceVariable,
+  dateRangeFilter,
+  searchFilter,
+  choiceFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -47,12 +47,12 @@ type Operations = {
   >;
 };
 const hooks = createDataHooks(createDataClient<Operations>());
-const period = dateRangeVariable({
+const period = dateRangeFilter({
   key: 'period',
   contract: defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' }),
   defaultValue: { kind: 'preset', id: 'last-7' },
 });
-const search = searchVariable({ key: 'search' });
+const search = searchFilter({ key: 'search' });
 const region = hooks.defineFacetFilter({
   key: 'region',
   label: 'Region',
@@ -68,7 +68,7 @@ const region = hooks.defineFacetFilter({
       void values.invented;
       // @ts-expect-error A facet cannot depend on its own selection before it is declared.
       void values.region;
-      // @ts-expect-error Date variables resolve to requests rather than URL selections.
+      // @ts-expect-error Date filters resolve to requests rather than URL selections.
       const selection: 'preset' = values.period.kind;
       void selection;
       return { search: text, period: dates };
@@ -165,29 +165,30 @@ const base = {
     extra: values.extra ?? 'table',
   }),
 };
-hooks.defineDataView({
-  ...base,
-  variables: { search, period, region, numeric },
-});
-// @ts-expect-error A consuming view must provide every facet dependency.
-hooks.defineDataView({ ...base, variables: { region, numeric } });
-const incompatibleContext = {
-  ...base,
-  variables: { search: numeric, period, region, numeric },
-};
+const filters = hooks.defineFilters({ search, period, region, numeric });
+hooks.defineDataView({ ...base, filters });
+// @ts-expect-error A filter collection must provide every facet dependency.
+hooks.defineFilters({ region, numeric });
+const incompatibleContext = { search: numeric, period, region, numeric };
 // @ts-expect-error A dependency with the same name but a different type is incompatible.
-hooks.defineDataView(incompatibleContext);
+hooks.defineFilters(incompatibleContext);
 // @ts-expect-error A missing date dependency is also rejected.
-hooks.defineDataView({ ...base, variables: { search, region, numeric } });
-const extra = choiceVariable({
+hooks.defineFilters({ search, region, numeric });
+const extra = choiceFilter({
   key: 'display',
   options: [{ id: 'table', label: 'Table' }],
   defaultValue: 'table',
 });
-hooks.defineDataView({
-  ...base,
-  variables: { search, period, region, numeric, extra },
+const withExtra = hooks.defineFilters({
+  search,
+  period,
+  region,
+  numeric,
+  extra,
 });
+hooks.defineDataView({ ...base, filters: withExtra });
+// A view can read a subset whose facets depend on filters it does not read.
+hooks.defineDataView({ ...base, filters: withExtra.pick('region', 'numeric') });
 // A dependent facet can consume another already-declared facet's typed selection.
 hooks.defineFacetFilter({
   key: 'dependent',
@@ -210,26 +211,16 @@ hooks.defineFacetFilter({
   },
 });
 
-const time = {
-  contract: defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' }),
-  defaultValue: { kind: 'preset', id: 'last-7' },
-} as const;
 const timed = {
   operation: 'timed' as const,
   dataContext: context,
-  time,
 };
-hooks.defineTimeView({ ...timed, variables: { search, region } });
-const missingTimeContext = {
+hooks.defineTimeView({
   ...timed,
-  variables: { region },
-  input: (values: {
-    period: DateRangeRequest;
-    region: DimensionSelection<string>;
-  }) => ({ ...values, search: '' }),
-};
-// @ts-expect-error Time views validate facet dependencies against the implicit period and explicit variables.
-hooks.defineTimeView(missingTimeContext);
+  filters: hooks.defineFilters({ period, search, region }),
+});
+// @ts-expect-error Time view filters validate facet dependencies, including the period.
+hooks.defineFilters({ period, region });
 
 // @ts-expect-error Executable facet metadata is not a public field callers can replace.
 void region.facet;
@@ -242,12 +233,8 @@ const fixedRegion = dimensionFilter({
   selectionMode: 'single',
   options: [],
 });
-const conditionalTimeVariables = chooseContext
-  ? { region }
-  : { region: fixedRegion };
-const conditionalTime = {
-  ...missingTimeContext,
-  variables: conditionalTimeVariables,
-};
-// @ts-expect-error Time views cannot erase a conditional facet's context requirements.
-hooks.defineTimeView(conditionalTime);
+const conditionalTimeFilters = chooseContext
+  ? { period, region }
+  : { period, region: fixedRegion };
+// @ts-expect-error Filter collections cannot erase a conditional facet's context requirements.
+hooks.defineFilters(conditionalTimeFilters);

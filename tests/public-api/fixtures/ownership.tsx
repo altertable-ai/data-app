@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
-  searchVariable,
+  searchFilter,
   createDataContext,
   DataApp,
   DataSection,
@@ -43,11 +43,14 @@ const hooks = createDataHooks(
     },
   })
 );
+const filters = hooks.defineFilters({
+  search: searchFilter({ key: 'q', label: 'Search rows' }),
+});
 function declareView() {
   const view = hooks.defineDataView({
     dataContext: context,
     operation: 'rows',
-    variables: { search: searchVariable({ key: 'q', label: 'Search rows' }) },
+    filters,
     describeInput: () => 'all rows',
   });
   const dataset = view.dataset({
@@ -112,6 +115,7 @@ function App() {
     <AuthoringBoundary>
       <DataApp
         view={own.view}
+        filters={filters}
         datasets={[
           ['export', 'search-suggestions'].includes(binding ?? '')
             ? other.dataset

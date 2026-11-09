@@ -297,55 +297,6 @@ test('secondary filter fields remain ordered and clear closes the panel', async 
   ).toBe(1);
 });
 
-test('display settings retain nested calendar changes and dismiss one overlay at a time', async ({
-  page,
-}) => {
-  await page.goto('/time-app?displayDate');
-  const display = page.getByRole('dialog', {
-    name: 'Display options',
-    exact: true,
-  });
-  await page
-    .getByRole('button', { name: 'Display options', exact: true })
-    .click();
-  await display.getByRole('button', { name: /^Choose dates/ }).click();
-  const calendar = page.getByRole('dialog').filter({
-    has: page.getByRole('checkbox', {
-      name: 'Compare with previous period',
-      exact: true,
-    }),
-  });
-  await calendar
-    .getByRole('checkbox', {
-      name: 'Compare with previous period',
-      exact: true,
-    })
-    .check();
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('compare'))
-    .toBe('previous');
-  await page.keyboard.press('Escape');
-  await expect.poll(() => calendar.count()).toBe(0);
-  expect(await display.isVisible()).toBe(true);
-  await expect
-    .poll(() =>
-      display.evaluate(element => element.contains(document.activeElement))
-    )
-    .toBe(true);
-  await page.keyboard.press('Escape');
-  await expect.poll(() => display.count()).toBe(0);
-  await expect
-    .poll(() =>
-      page
-        .getByRole('button', {
-          name: 'Display options, 1 changed',
-          exact: true,
-        })
-        .evaluate(element => element === document.activeElement)
-    )
-    .toBe(true);
-});
-
 test('search-only and display-only views never offer a filter Clear action', async ({
   page,
 }) => {
@@ -400,7 +351,7 @@ test('automatic filters retain separate search controls and URL state', async ({
   page,
 }) => {
   await page.goto('/filters');
-  const search = page.getByRole('group', { name: 'Search variables' });
+  const search = page.getByRole('group', { name: 'Search filters' });
   const filters = page.getByRole('group', {
     name: 'View controls',
     exact: true,
@@ -482,7 +433,7 @@ test('generated search has its own row above filters with consistent hover borde
   page,
 }) => {
   await page.goto('/filters');
-  const search = page.getByRole('group', { name: 'Search variables' });
+  const search = page.getByRole('group', { name: 'Search filters' });
   const field = search.getByRole('searchbox').locator('..');
   const display = page.getByRole('button', { name: 'Alpha Display' });
   const country = page.getByRole('button', {

@@ -1,7 +1,7 @@
 import {
   defineDateRangeContract,
-  dateTimeRangeVariable,
-  variableInput,
+  dateTimeRangeFilter,
+  filterInput,
 } from '@altertable/data-app/contract';
 import { parseDateTimeRangeInput } from '@altertable/data-app/format';
 import { expect, test, vi } from 'vitest';
@@ -98,7 +98,7 @@ test('a variable applies its contract to defaults, URL values, and server parsin
       maxRangeDays: 7,
       timeZone: 'UTC',
     });
-    const period = dateTimeRangeVariable({
+    const period = dateTimeRangeFilter({
       key: 'period',
       contract,
       defaultValue: 'yesterday',
@@ -106,7 +106,7 @@ test('a variable applies its contract to defaults, URL values, and server parsin
     expect(period.maxRangeDays).toBe(7);
     expect(period.valid(range('today'))).toBe(false);
     expect(() => period.parse(range('today'))).toThrow('coverage');
-    const parseInput = variableInput(() => ({}), { period });
+    const parseInput = filterInput(() => ({}), { period });
     expect(() => parseInput({ period: range('today') })).toThrow();
     expect(
       parseInput({ period: JSON.parse(JSON.stringify(range('yesterday'))) })
@@ -118,7 +118,7 @@ test('a variable applies its contract to defaults, URL values, and server parsin
       )
     ).toEqual(range('yesterday'));
     expect(() =>
-      dateTimeRangeVariable({ key: 'bad', contract, defaultValue: 'today' })
+      dateTimeRangeFilter({ key: 'bad', contract, defaultValue: 'today' })
     ).toThrow('coverage');
   } finally {
     vi.useRealTimers();

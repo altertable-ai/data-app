@@ -10,9 +10,9 @@ import {
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   defineDateRangeContract,
-  variableInput,
+  filterInput,
 } from '@altertable/data-app/contract';
 
 const contract = defineDateRangeContract({
@@ -21,7 +21,7 @@ const contract = defineDateRangeContract({
   timeZone: 'UTC',
   completeDays: false,
 });
-const period = dateTimeRangeVariable({
+const period = dateTimeRangeFilter({
   key: 'period',
   defaultValue: '7d',
   contract,
@@ -48,7 +48,7 @@ const dataApp = defineDataApp({
   },
 });
 const events = dataApp.defineOperation({
-  input: variableInput(() => ({}), { period }),
+  input: filterInput(() => ({}), { period }),
   checks: [{ period: period.input(period.defaultValue) }],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }, input) {
@@ -85,9 +85,11 @@ const context = createDataContext(events.queryNames)({
     },
   },
 });
-const view = createDataHooks(client).defineTimeView({
+const { defineFilters, defineTimeView } = createDataHooks(client);
+const filters = defineFilters({ period });
+const view = defineTimeView({
   operation: 'events',
-  time: period,
+  filters,
   dataContext: context,
 });
 const metric = view.metric(
@@ -113,7 +115,12 @@ const content = view.content(source => (
 ));
 function App() {
   return (
-    <DataApp view={view} datasets={[dataset]} story={() => []}>
+    <DataApp
+      view={view}
+      filters={filters}
+      datasets={[dataset]}
+      story={() => []}
+    >
       <DataSection content={content} />
     </DataApp>
   );

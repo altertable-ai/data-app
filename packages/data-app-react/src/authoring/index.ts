@@ -19,6 +19,7 @@ export type { DetailViewDefinition } from '../details.tsx';
 export type { CsvCell } from '../ui/csv-export.ts';
 export { DataApp } from '../ui/DataApp.tsx';
 export type { DataAppProps, DataAppView } from '../ui/DataApp.tsx';
+export type { Filters } from '../filter-set.ts';
 export { Stack } from '../ui/Stack.tsx';
 export type { StackProps } from '../ui/Stack.tsx';
 export { Grid } from '../ui/Grid.tsx';
@@ -58,23 +59,24 @@ export type { UpdatedAtProps } from '../ui/UpdatedAt.tsx';
 export { DateTimeTooltip } from '../ui/DateTimeTooltip.tsx';
 export type { DateTimeTooltipProps } from '../ui/DateTimeTooltip.tsx';
 export {
-  searchVariable,
-  choiceVariable,
-  multiChoiceVariable,
-  dateRangeVariable,
-} from '../ui/variables.ts';
+  searchFilter,
+  choiceFilter,
+  displayChoice,
+  multiChoiceFilter,
+  dateRangeFilter,
+} from '../ui/app-filters.ts';
 export type {
-  AppVariable,
-  VariablePresentation,
-  AppVariableValues,
+  AppFilter,
+  FilterPresentation,
+  FilterValues,
   ChoiceOption,
-  ChoiceVariable,
-  MultiChoiceVariable,
-  SearchVariable,
+  ChoiceFilter,
+  MultiChoiceFilter,
+  SearchFilter,
   DateRangeSelection,
-  DateRangeVariable,
-  DateRangeVariableOptions,
-} from '../ui/variables.ts';
+  DateRangeFilter,
+  DateRangeFilterOptions,
+} from '../ui/app-filters.ts';
 export { PeriodSummary } from '../ui/PeriodSummary.tsx';
 export type {
   ReportingPeriod,
@@ -110,16 +112,16 @@ export { useDateFormatting } from '../date-formatting.ts';
 export { ExternalLink, type ExternalLinkProps } from '../ui/ExternalLink.tsx';
 
 export {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   dateTimeRangePresets,
   type DateTimeRangePreset,
-  type DateTimeRangeVariable,
-  type DateTimeRangeComparisonVariable,
-  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeFilter,
+  type DateTimeRangeComparisonFilter,
+  type DateTimeRangeComparisonFilterOptions,
   type DateTimeRangeComparisonSelection,
   type DateTimeRangeComparisonRequest,
-  type DateTimeRangeVariableOptions,
-} from '../ui/variables.ts';
+  type DateTimeRangeFilterOptions,
+} from '../ui/app-filters.ts';
 
 export {
   DateTimeRangePicker,

@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
-  choiceVariable,
-  searchVariable,
+  displayChoice,
+  searchFilter,
   createDataHooks,
   createDataContext,
   DataApp,
@@ -10,9 +10,9 @@ import {
   TextContent,
   injectDataAppStyles,
   mountDataApp,
-  type AppVariableValues,
+  type FilterValues,
 } from '@altertable/data-app-react';
-import { Sheet, useAppVariables } from '@altertable/data-app-react/ui';
+import { Sheet, useAppFilters } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   booleanFilter,
@@ -33,7 +33,7 @@ const dataApp = defineDataApp({
 });
 
 const variables = {
-  search: searchVariable({ key: 'q', label: 'Search customers' }),
+  search: searchFilter({ key: 'q', label: 'Search customers' }),
   country: dimensionFilter<string>({
     key: 'country',
     label: 'Country',
@@ -97,7 +97,7 @@ const variables = {
     max: 50,
     presentation: { prominence: 'secondary' },
   }),
-  sort: choiceVariable({
+  sort: displayChoice({
     key: 'sort',
     label: 'Sort by',
     defaultValue: 'spend',
@@ -105,9 +105,8 @@ const variables = {
       { id: 'spend', label: 'Monthly spend' },
       { id: 'name', label: 'Customer name' },
     ],
-    presentation: { group: 'display' },
   }),
-  direction: choiceVariable({
+  direction: displayChoice({
     key: 'direction',
     label: 'Order',
     defaultValue: 'desc',
@@ -115,10 +114,10 @@ const variables = {
       { id: 'desc', label: 'Descending' },
       { id: 'asc', label: 'Ascending' },
     ],
-    presentation: { group: 'display', prominence: 'secondary' },
+    presentation: { prominence: 'secondary' },
   }),
 };
-type Input = AppVariableValues<typeof variables>;
+type Input = FilterValues<typeof variables>;
 const records = [
   {
     name: 'Atelier North',
@@ -299,24 +298,21 @@ const client = createDataClient({
     },
   },
 });
-const { defineDataView } = createDataHooks(client);
+const { defineDataView, defineFilters } = createDataHooks(client);
 const displayOnly = new URLSearchParams(location.search).has('displayOnly');
 const searchOnly = new URLSearchParams(location.search).has('searchOnly');
-const viewVariables:
-  | typeof variables
-  | Pick<typeof variables, 'search'>
-  | Pick<typeof variables, 'search' | 'sort' | 'direction'> = searchOnly
-  ? { search: variables.search }
+const filters = searchOnly
+  ? defineFilters({ search: variables.search })
   : displayOnly
-    ? {
+    ? defineFilters({
         search: variables.search,
         sort: variables.sort,
         direction: variables.direction,
-      }
-    : variables;
+      })
+    : defineFilters(variables);
 const view = defineDataView({
   operation: 'customers',
-  variables: viewVariables,
+  filters,
   input: values => ({
     sort: variables.sort.defaultValue,
     direction: variables.direction.defaultValue,
@@ -391,7 +387,7 @@ function CustomerTable({
     | { loading: true }
     | { loading: false; data: { rows: typeof records }; input: Input };
 }) {
-  const filters = useAppVariables(customerFilters);
+  const filters = useAppFilters(customerFilters);
   const hasActiveFilters =
     !source.loading &&
     (source.input.country.kind !== 'all' ||
@@ -432,6 +428,7 @@ function App() {
     <>
       <DataApp
         view={view}
+        filters={filters}
         showSearchSuggestions={new URLSearchParams(location.search).has(
           'typeahead'
         )}

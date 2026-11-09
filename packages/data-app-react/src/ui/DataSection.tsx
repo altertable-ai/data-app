@@ -10,7 +10,7 @@ import { sectionContent, type ViewContent } from '../content.ts';
 import { DateFormattingContext } from '../date-formatting.ts';
 import {
   AppViewResultsContext,
-  assertAppRendersFilters,
+  assertAppFilters,
   type DeclaredView,
   type ViewResult,
   useDeclaredResult,
@@ -49,7 +49,7 @@ export function DataSection<Data, Input>({
     | ViewResult<Data, Input>
     | undefined;
   if (!appResult) {
-    if (app) assertAppRendersFilters(view, app.primaryView);
+    if (app) assertAppFilters(view, app.filters);
     return <LazySection view={view} {...section} {...presentation} />;
   }
   // The app reports the primary view's request state for the whole page.

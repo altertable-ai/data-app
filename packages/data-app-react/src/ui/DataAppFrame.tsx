@@ -12,6 +12,7 @@ import { AppHeader } from './AppHeader.tsx';
 import { AppLayout } from './AppLayout.tsx';
 import { AppScope } from './AppScope.tsx';
 import { AppToolbar } from './AppToolbar.tsx';
+import { ControlBar } from './ControlBar.tsx';
 import { type CsvExport } from './csv-export.ts';
 import { type DataContext } from './data-context.ts';
 import { type SectionResult } from './DataSectionBoundary.tsx';
@@ -24,7 +25,6 @@ import { TextContent } from './TextContent.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 import { useAppAppearance } from './useAppAppearance.ts';
 import { useDataAppPresentation } from './useDataAppPresentation.ts';
-import { VariableBar } from './VariableBar.tsx';
 
 export type DataAppBaseProps = {
   children: ReactNode;
@@ -168,12 +168,12 @@ export function DataAppFrame<Data, Input>(
 
   const searchRegion =
     request?.searchControls && props.showSearch !== false ? (
-      <VariableBar
-        className="altertable-variable-searches"
-        aria-label="Search variables"
+      <ControlBar
+        className="altertable-control-searches"
+        aria-label="Search filters"
       >
         {request.searchControls}
-      </VariableBar>
+      </ControlBar>
     ) : null;
   const filterRegion =
     request?.filterControls && props.showFilters !== false

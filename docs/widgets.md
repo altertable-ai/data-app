@@ -196,7 +196,7 @@ metric actions use `metric.actions()` and `<MetricWidget>`. Actions must belong
 to the binding rendered by the widget. Metric mappings receive `undefined` for
 the row and displayed input as their second argument.
 
-`view.filter()` targets scope variables. An optional `breakdown` explicitly updates
+`view.filter()` targets filters, not display choices. An optional `breakdown` explicitly updates
 one chart's display choice in the same history entry. Filters preserve unrelated selections. Declare chart breakdown choices
 independently of scope filters.
 

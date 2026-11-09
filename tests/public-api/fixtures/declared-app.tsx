@@ -6,7 +6,7 @@ import {
   DataSection,
   TextWidget,
   VisualizationWidget,
-  searchVariable,
+  searchFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataTransport } from '@altertable/data-app/client';
@@ -44,16 +44,17 @@ const context = createDataContext({ alpha: 'alpha', beta: 'beta' })({
   description: 'Declared views',
   glossary: {},
 });
+const filters = hooks.defineFilters({
+  version: searchFilter({
+    key: 'version',
+    label: 'Version',
+    defaultValue: '1',
+  }),
+});
 const alpha = hooks.defineDataView({
   dataContext: context,
   operation: 'alpha',
-  variables: {
-    version: searchVariable({
-      key: 'version',
-      label: 'Version',
-      defaultValue: '1',
-    }),
-  },
+  filters,
   describeInput: input => `version ${input.version}`,
 });
 const betaContext = createDataContext({ beta: 'beta' })({
@@ -156,6 +157,7 @@ export function DeclaredApp() {
   return (
     <DataApp
       view={alpha}
+      filters={filters}
       {...(new URLSearchParams(location.search).has('no-exports')
         ? {}
         : { story: () => [], datasets: [alphaDataset] as const })}

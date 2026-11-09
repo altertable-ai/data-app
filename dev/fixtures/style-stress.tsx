@@ -21,7 +21,7 @@ import { createRoot } from 'react-dom/client';
 import { AppFooter } from '@/packages/data-app-react/src/ui/AppFooter.tsx';
 import { AppHeader } from '@/packages/data-app-react/src/ui/AppHeader.tsx';
 import { AppLayout } from '@/packages/data-app-react/src/ui/AppLayout.tsx';
-import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
+import { ControlBar } from '@/packages/data-app-react/src/ui/ControlBar.tsx';
 
 injectDataAppStyles();
 const params = new URLSearchParams(location.search);
@@ -69,7 +69,7 @@ function Stress() {
           wraps. Numerical strings deliberately preserve every supplied digit.
         </p>
       </TextContent>
-      <VariableBar aria-label="Stress controls">
+      <ControlBar aria-label="Stress controls">
         <ChoicePicker
           selectionMode="single"
           label="Organization and geographic reporting region"
@@ -109,7 +109,7 @@ function Stress() {
         <Button onClick={() => setLoading(!loading)}>
           Toggle the value loading state without removing its heading
         </Button>
-      </VariableBar>
+      </ControlBar>
       <Grid columns={2}>
         <MetricWidget
           label="A precisely formatted amount with an exceptionally long descriptive label"

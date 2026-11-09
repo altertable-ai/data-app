@@ -2,6 +2,7 @@ import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
   createDataContext,
+  dateRangeFilter,
   DataApp,
   DataSection,
   TableWidget,
@@ -72,7 +73,30 @@ const client = createDataClient<{
     };
   },
 });
-const view = createDataHooks(client).defineTimeView({
+const { defineDataView, defineFilters, defineTimeView } =
+  createDataHooks(client);
+const day = { kind: 'dates', start: '2026-09-24', end: '2026-09-24' } as const;
+const filters = defineFilters({
+  period: dateRangeFilter({
+    key: 'period',
+    contract: calendar,
+    defaultValue: day,
+  }),
+  // The Tokyo view reports in its own zone, so it reads its own period.
+  tokyoPeriod: dateRangeFilter({
+    key: 'tokyo',
+    label: 'Tokyo period',
+    contract: defineDateRangeContract({
+      minDate: '2026-09-01',
+      maxDate: '2026-09-30',
+      maxRangeDays: 30,
+      timeZone: 'Asia/Tokyo',
+    }),
+    defaultValue: day,
+    presentation: { prominence: 'secondary' },
+  }),
+});
+const view = defineTimeView({
   dataContext: createDataContext({ events: 'events' })({
     description: 'Sample dated events.',
     glossary: {
@@ -84,10 +108,7 @@ const view = createDataHooks(client).defineTimeView({
     },
   }),
   operation: 'events',
-  time: {
-    contract: calendar,
-    defaultValue: { kind: 'dates', start: '2026-09-24', end: '2026-09-24' },
-  },
+  filters: filters.pick('period'),
 });
 const events = view.dataset({
   name: 'Witness reports',
@@ -117,21 +138,15 @@ const events = view.dataset({
   },
   evidence: { id: 'events', glossaryIds: ['events'] },
 });
-const tokyoView = createDataHooks(client).defineTimeView({
+const tokyoView = defineDataView({
   dataContext: createDataContext({ events: 'events' })({
     description: 'Independent Tokyo events.',
     glossary: {},
   }),
   operation: 'events',
-  time: {
-    contract: defineDateRangeContract({
-      minDate: '2026-09-01',
-      maxDate: '2026-09-30',
-      maxRangeDays: 30,
-      timeZone: 'Asia/Tokyo',
-    }),
-    defaultValue: { kind: 'dates', start: '2026-09-24', end: '2026-09-24' },
-  },
+  filters: filters.pick('tokyoPeriod'),
+  input: values => values.tokyoPeriod,
+  date: { filter: 'tokyoPeriod', input: input => input },
 });
 const tokyoEvents = tokyoView.dataset({
   name: 'Tokyo events',
@@ -235,6 +250,7 @@ function App() {
   return (
     <DataApp
       view={view}
+      filters={filters}
       datasets={[events]}
       story={source => [
         {

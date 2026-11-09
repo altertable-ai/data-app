@@ -4,18 +4,18 @@ import {
   DataSection,
   VisualizationWidget,
   Stack,
-  choiceVariable,
+  choiceFilter,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 
 import { sampleDataContext } from '#app/data-context.ts';
 import type { operations } from '#app/operations.ts';
-const { defineDataView } =
+const { defineDataView, defineFilters } =
   createDataHooks(createDataClient<typeof operations>());
-// Each chart has its own operation and view; views share the filters declared once here.
-const groupFilters = {
-  groupName: choiceVariable({
+// Declare filters once; each chart's view reads them, and <DataApp> renders their controls.
+const filters = defineFilters({
+  groupName: choiceFilter({
     key: 'group',
     label: 'Group',
     defaultValue: 'all',
@@ -25,14 +25,14 @@ const groupFilters = {
       { id: 'Beta', label: 'Beta' },
     ],
   }),
-};
+});
 function describeGroup({ groupName }: { groupName: string }) {
   return groupName === 'all' ? 'all groups' : groupName;
 }
 const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  variables: groupFilters,
+  filters,
   describeInput: describeGroup,
   isEmpty: rows => rows.length === 0,
   emptyFallback: {
@@ -56,7 +56,7 @@ const sampleCounts = sampleCountsView.dataset({
 const segmentCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsBySegment',
-  variables: groupFilters,
+  filters,
   describeInput: describeGroup,
   isEmpty: rows => rows.length === 0,
   emptyFallback: {
@@ -132,7 +132,7 @@ const segmentContent = segmentCountsView.content(result => (
 ));
 export function App() {
   return (
-    <DataApp view={sampleCountsView} showToolbar={false}>
+    <DataApp view={sampleCountsView} filters={filters} showToolbar={false}>
       <Stack>
         <DataSection content={groupContent} label="Sample count" />
         <DataSection content={segmentContent} label="Samples by segment" />

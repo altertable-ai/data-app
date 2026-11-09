@@ -1,4 +1,9 @@
 import type { DateRangeContract } from '../authoring/contract.ts';
+import type {
+  AppFilter,
+  FilterPresentation,
+  HistoryMode,
+} from './app-filters.ts';
 import type { DateTimeRangeRequest } from './date-time-range-contract.ts';
 import { parseDateTimeRangeInput } from './date-time-range-parser.ts';
 import {
@@ -8,11 +13,6 @@ import {
 } from './date-time-range-value.ts';
 import type { DateTimeRange } from './date-time-range.ts';
 import { invariant } from './invariant.ts';
-import type {
-  AppVariable,
-  VariablePresentation,
-  HistoryMode,
-} from './variables.ts';
 
 /** A picker suggestion. Text ranges use the same natural-language parser as typed input. */
 export type DateTimeRangePreset = {
@@ -45,7 +45,7 @@ export const dateTimeRangePresets: {
   ],
 };
 
-export type DateTimeRangeVariableOptions = {
+export type DateTimeRangeFilterOptions = {
   key: string;
   label?: string;
   /** Enable the previous-period reporting workflow. Requires a shared contract. */
@@ -61,12 +61,9 @@ export type DateTimeRangeVariableOptions = {
    */
   presets?: readonly DateTimeRangePreset[];
   history?: HistoryMode;
-  presentation?: VariablePresentation;
+  presentation?: FilterPresentation;
 };
-export type DateTimeRangeVariable = AppVariable<
-  DateTimeRange,
-  'dateTimeRange'
-> & {
+export type DateTimeRangeFilter = AppFilter<DateTimeRange, 'dateTimeRange'> & {
   parse: (value: unknown) => DateTimeRange;
   maxRangeDays?: number;
   /** Shared reporting coverage, timezone, duration limits, and comparison policy. */
@@ -85,15 +82,15 @@ export type DateTimeRangeComparisonRequest = DateTimeRangeRequest & {
   reference: string;
 };
 
-export type DateTimeRangeComparisonVariableOptions = Omit<
-  DateTimeRangeVariableOptions,
+export type DateTimeRangeComparisonFilterOptions = Omit<
+  DateTimeRangeFilterOptions,
   'allowComparison' | 'contract'
 > & {
   allowComparison: true;
   contract: DateRangeContract;
 };
 
-export type DateTimeRangeComparisonVariable = AppVariable<
+export type DateTimeRangeComparisonFilter = AppFilter<
   DateTimeRangeComparisonSelection,
   'dateTimeRangeComparison'
 > & {
@@ -111,24 +108,24 @@ export type DateTimeRangeComparisonVariable = AppVariable<
 };
 
 /** One declaration drives the picker, URL state, and operation input.
- * With comparison enabled, use input(defaultValue) for operation checks and variableInput()
+ * With comparison enabled, use input(defaultValue) for operation checks and filterInput()
  * to validate request snapshots. Query the resulting range and optional comparison bounds.
  */
-export function dateTimeRangeVariable(
-  options: DateTimeRangeComparisonVariableOptions
-): DateTimeRangeComparisonVariable;
-export function dateTimeRangeVariable(
-  options: DateTimeRangeVariableOptions
-): DateTimeRangeVariable;
-export function dateTimeRangeVariable(
-  options: DateTimeRangeVariableOptions | DateTimeRangeComparisonVariableOptions
-): DateTimeRangeVariable | DateTimeRangeComparisonVariable {
-  const base = createDateTimeRangeVariable(options);
+export function dateTimeRangeFilter(
+  options: DateTimeRangeComparisonFilterOptions
+): DateTimeRangeComparisonFilter;
+export function dateTimeRangeFilter(
+  options: DateTimeRangeFilterOptions
+): DateTimeRangeFilter;
+export function dateTimeRangeFilter(
+  options: DateTimeRangeFilterOptions | DateTimeRangeComparisonFilterOptions
+): DateTimeRangeFilter | DateTimeRangeComparisonFilter {
+  const base = createDateTimeRangeFilter(options);
   return options.allowComparison ? withComparison(base, options) : base;
 }
 
 /** One declaration drives the generated picker, URL state, and structured query parameter. */
-function createDateTimeRangeVariable({
+function createDateTimeRangeFilter({
   key,
   label = 'Date range',
   defaultValue,
@@ -138,8 +135,8 @@ function createDateTimeRangeVariable({
   history = 'push',
   presentation,
 }:
-  | DateTimeRangeVariableOptions
-  | DateTimeRangeComparisonVariableOptions): DateTimeRangeVariable {
+  | DateTimeRangeFilterOptions
+  | DateTimeRangeComparisonFilterOptions): DateTimeRangeFilter {
   invariant(
     maxRangeDays === undefined ||
       (Number.isFinite(maxRangeDays) && maxRangeDays > 0),
@@ -203,9 +200,9 @@ function createDateTimeRangeVariable({
 }
 
 function withComparison(
-  base: DateTimeRangeVariable,
-  options: DateTimeRangeComparisonVariableOptions
-): DateTimeRangeComparisonVariable {
+  base: DateTimeRangeFilter,
+  options: DateTimeRangeComparisonFilterOptions
+): DateTimeRangeComparisonFilter {
   const contract = options.contract;
   const compareKey =
     options.key === 'period' ? 'compare' : `${options.key}-compare`;

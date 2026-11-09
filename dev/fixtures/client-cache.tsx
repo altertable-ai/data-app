@@ -8,6 +8,7 @@ import {
 import type { TransportResponse } from '@altertable/data-app/contract';
 import { useState } from 'react';
 
+import { Filters } from '@/packages/data-app-react/src/filter-set.ts';
 import { createDataHooks } from '@/packages/data-app-react/src/hooks.ts';
 import { createDataContext as registerContext } from '@/packages/data-app-react/src/ui/data-context.ts';
 import {
@@ -88,24 +89,30 @@ const clientA = createFixtureClient('a');
 const hooksA = createDataHooks(clientA);
 const hooksAAgain = createDataHooks(clientA);
 const hooksB = createDataHooks(createFixtureClient('b'));
+const category = hooksA.defineFacetFilter({
+  key: 'category',
+  label: 'Category',
+  valueType: 'string',
+  selectionMode: 'single',
+  facet: {
+    context: {},
+    operation: 'facet',
+    input() {
+      return {};
+    },
+  },
+});
+// Each client declares the same filters so its controls load facets through that client.
+const filtersByHooks = new Map(
+  [hooksA, hooksAAgain, hooksB].map(hooks => [
+    hooks,
+    hooks.defineFilters({ category }),
+  ])
+);
 const view = hooksA.defineDataView({
   dataContext: context,
   operation: 'metric',
-  variables: {
-    category: hooksA.defineFacetFilter({
-      key: 'category',
-      label: 'Category',
-      valueType: 'string',
-      selectionMode: 'single',
-      facet: {
-        context: {},
-        operation: 'facet',
-        input() {
-          return {};
-        },
-      },
-    }),
-  },
+  filters: filtersByHooks.get(hooksA)!,
   input({ category }) {
     return { category };
   },
@@ -119,18 +126,21 @@ const view = hooksA.defineDataView({
 });
 
 function Panel({ id, hooks }: { id: string; hooks: typeof hooksA }) {
+  const filters = filtersByHooks.get(hooks)!;
   const result = useDeclaredResult(
     hooks.defineDataView({
       ...getViewDefinition(view),
       dataContext: context,
+      filters,
     })
   );
+  const { searchControls, filterControls } = Filters.useControls(filters);
 
   return (
     <section data-testid={id}>
       <p data-testid="value">{result.snapshot?.data ?? 'pending'}</p>
-      {result.searchControls}
-      {result.filterControls}
+      {searchControls}
+      {filterControls}
       <button onClick={() => void result.cancel()}>Cancel</button>
     </section>
   );

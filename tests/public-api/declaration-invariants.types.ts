@@ -1,10 +1,10 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
-  choiceVariable,
+  choiceFilter,
   createDataContext,
   createDataHooks,
-  dateRangeVariable,
-  multiChoiceVariable,
+  dateRangeFilter,
+  multiChoiceFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -69,33 +69,33 @@ const choices = [
   { id: 'a', label: 'Alpha' },
   { id: 'b', label: 'Beta' },
 ] as const;
-choiceVariable({ key: 'choice', options: choices, defaultValue: 'a' });
-multiChoiceVariable({
+choiceFilter({ key: 'choice', options: choices, defaultValue: 'a' });
+multiChoiceFilter({
   key: 'choices',
   options: choices,
   defaultValue: ['a', 'b'],
 });
-multiChoiceVariable({ key: 'choices', options: choices, defaultValue: [] });
+multiChoiceFilter({ key: 'choices', options: choices, defaultValue: [] });
 // @ts-expect-error Defaults belong to the declared choices.
-choiceVariable({ key: 'choice', options: choices, defaultValue: 'missing' });
-multiChoiceVariable({
+choiceFilter({ key: 'choice', options: choices, defaultValue: 'missing' });
+multiChoiceFilter({
   key: 'choices',
   options: choices,
   // @ts-expect-error Every default belongs to the declared choices.
   defaultValue: ['a', 'missing'],
 });
-choiceVariable({
+choiceFilter({
   key: 'choice',
   options: [{ id: 'a', label: 'Alpha' }],
   // @ts-expect-error Inline choice IDs are preserved without a const assertion.
   defaultValue: 'missing',
 });
 // @ts-expect-error A fixed-choice declaration requires options.
-choiceVariable({ key: 'choice', options: [], defaultValue: 'a' });
+choiceFilter({ key: 'choice', options: [], defaultValue: 'a' });
 // @ts-expect-error Multiple-choice declarations also require options.
-multiChoiceVariable({ key: 'choices', options: [] });
+multiChoiceFilter({ key: 'choices', options: [] });
 declare const dynamicChoices: { id: string; label: string }[];
-choiceVariable({
+choiceFilter({
   key: 'choice',
   options: dynamicChoices,
   defaultValue: 'dynamic',
@@ -136,24 +136,25 @@ const comparisonValues = { current: 1, previous: 0 };
 view.metric(metric, () => comparisonValues);
 
 const calendar = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
-const period = dateRangeVariable({
+const period = dateRangeFilter({
   key: 'period',
   contract: calendar,
   defaultValue: { kind: 'preset', id: 'last-7' },
 });
+const filters = hooks.defineFilters({ period });
 const dated = hooks.defineDataView({
   ...feedback,
   operation: 'time',
-  variables: { period },
+  filters,
   input: values => values.period,
-  date: { variable: 'period', input: input => input },
+  date: { filter: 'period', input: input => input },
 });
 dated.metric(metric, data => ({ current: data, previous: 0 }));
 dated.metric(metric, data => ({ current: data, previous: null }));
 const timeView = hooks.defineTimeView({
   ...feedback,
   operation: 'time',
-  time: { contract: calendar, defaultValue: { kind: 'preset', id: 'last-7' } },
+  filters,
 });
 timeView.metric(metric, data => ({ current: data, previous: 0 }));
 

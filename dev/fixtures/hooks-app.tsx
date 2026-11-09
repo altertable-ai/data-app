@@ -119,7 +119,6 @@ function App() {
   const [version, setVersion] = useState(1);
   const definition = {
     dataContext: context,
-    variables: {},
     input: () => ({ version }),
     describeInput: (input: InputOf<typeof operations.alpha>) =>
       `selection ${input.version}`,

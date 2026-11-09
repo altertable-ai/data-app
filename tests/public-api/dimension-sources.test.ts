@@ -1,6 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
-import { variableInput, type Lakehouse } from '@altertable/data-app/contract';
+import { filterInput, type Lakehouse } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
@@ -51,7 +51,7 @@ function sourceApp(mode: 'single' | 'multiple' = 'single') {
     valueType: 'number',
     source: { query: 'customers' },
   });
-  const parse = variableInput(() => ({}), { region, customer });
+  const parse = filterInput(() => ({}), { region, customer });
   const input = {
     region: { kind: 'all' } as const,
     customer: {
@@ -347,10 +347,10 @@ test('malformed selections fail at the parser boundary', () => {
 test('composed parsers retain source validation and reject replacement variables', () => {
   const { operations, region, customer } = sourceApp();
   expect(() =>
-    variableInput(operations.sales.input, { customer, region })
+    filterInput(operations.sales.input, { customer, region })
   ).not.toThrow();
   const other = sourceApp().customer;
   expect(() =>
-    variableInput(operations.sales.input, { customer: other })
+    filterInput(operations.sales.input, { customer: other })
   ).toThrow('already declared');
 });

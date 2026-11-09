@@ -3,137 +3,132 @@ import {
   serializeDateTimeRange,
   formatDateTimeRange,
   type DateTimeRangeComparisonRequest,
-  type DateTimeRangeComparisonVariable,
+  type DateTimeRangeComparisonFilter,
   type DateRangeRequest,
 } from '@altertable/data-app/contract';
 import type {
-  AppVariable,
-  AppVariableValues,
-  DateRangeVariable,
-  VariableCollection,
-  CheckedFacetContexts,
+  AppFilter,
+  FilterValues,
+  DateRangeFilter,
+  FilterCollection,
 } from '@altertable/data-app/internal';
 import { invariant } from '@altertable/data-app/internal';
 
+import type { Filters } from './filter-set.ts';
 import type { DataContext } from './ui/data-context.ts';
 import type { EmptyContent } from './ui/presentation.ts';
 
-type ResolvedVariable<Variable> =
-  Variable extends DateTimeRangeComparisonVariable
-    ? DateTimeRangeComparisonRequest
-    : Variable extends DateRangeVariable
-      ? DateRangeRequest
-      : AppVariableValues<{ value: Variable }>['value'];
-export type ResolvedVariables<Variables extends VariableCollection> = {
-  [Key in keyof Variables]:
-    | ResolvedVariable<Variables[Key]>
-    | (string extends keyof Variables ? undefined : never);
+type ResolvedFilter<Filter> = Filter extends DateTimeRangeComparisonFilter
+  ? DateTimeRangeComparisonRequest
+  : Filter extends DateRangeFilter
+    ? DateRangeRequest
+    : FilterValues<{ value: Filter }>['value'];
+export type ResolvedFilters<Collection extends FilterCollection> = {
+  [Key in keyof Collection]:
+    | ResolvedFilter<Collection[Key]>
+    | (string extends keyof Collection ? undefined : never);
 };
 
-type DateVariableKey<Variables extends VariableCollection> = {
-  [Key in keyof Variables]: Variables[Key] extends
-    | DateRangeVariable
-    | DateTimeRangeComparisonVariable
+type DateFilterKey<Collection extends FilterCollection> = {
+  [Key in keyof Collection]: Collection[Key] extends
+    | DateRangeFilter
+    | DateTimeRangeComparisonFilter
     ? Key
     : never;
-}[keyof Variables] &
+}[keyof Collection] &
   string;
 
 /** Extract the selected range and comparison unchanged, including from nested inputs. */
-export type ViewDate<Variables extends VariableCollection, Input> = {
-  variable: DateVariableKey<Variables>;
+export type ViewDate<Collection extends FilterCollection, Input> = {
+  filter: DateFilterKey<Collection>;
   input: (input: Input) => DateRangeRequest | DateTimeRangeComparisonRequest;
 };
 
-/** Read variable values from a custom operation input; omitted keys use top-level fields. */
-export type ViewBindings<
-  Variables extends VariableCollection,
-  Input,
-> = Partial<{
-  [Key in keyof Variables]: (input: Input) => ResolvedVariables<Variables>[Key];
+/** Read filter values from a custom operation input; omitted keys use top-level fields. */
+export type ViewBindings<Collection extends FilterCollection, Input> = Partial<{
+  [Key in keyof Collection]: (input: Input) => ResolvedFilters<Collection>[Key];
 }>;
 
-type RequiredFilterBindingKeys<Variables extends VariableCollection, Input> = {
-  [Key in keyof Variables]: Variables[Key]['kind'] extends
+type RequiredFilterBindingKeys<Collection extends FilterCollection, Input> = {
+  [Key in keyof Collection]: Collection[Key]['kind'] extends
     | 'dateRange'
     | 'dateTimeRangeComparison'
     ? never
-    : Variables[Key]['kind'] extends 'choice'
+    : Collection[Key]['kind'] extends 'choice'
       ? [Input] extends [Record<Key, unknown>]
-        ? ResolvedVariables<Variables>[Key] extends Input[Key]
+        ? ResolvedFilters<Collection>[Key] extends Input[Key]
           ? never
           : Key
         : Key
       : Extract<
-            Variables[Key]['presentation'],
+            Collection[Key]['presentation'],
             { group: 'display' }
           > extends never
-        ? [Input] extends [Record<Key, ResolvedVariables<Variables>[Key]>]
-          ? [ResolvedVariables<Variables>[Key]] extends [Input[Key]]
+        ? [Input] extends [Record<Key, ResolvedFilters<Collection>[Key]>]
+          ? [ResolvedFilters<Collection>[Key]] extends [Input[Key]]
             ? never
             : Key
           : Key
         : never;
-}[keyof Variables];
+}[keyof Collection];
 
 /** Derive compatible top-level filter bindings; require readers for other input shapes. */
 export type ViewBindingOptions<
-  Variables extends VariableCollection,
+  Collection extends FilterCollection,
   Input,
-  AdditionalRequired extends keyof Variables = never,
-> = [RequiredFilterBindingKeys<Variables, Input> | AdditionalRequired] extends [
-  never,
-]
-  ? { bindings?: ViewBindings<Variables, Input> }
+  AdditionalRequired extends keyof Collection = never,
+> = [
+  RequiredFilterBindingKeys<Collection, Input> | AdditionalRequired,
+] extends [never]
+  ? { bindings?: ViewBindings<Collection, Input> }
   : {
-      bindings: ViewBindings<Variables, Input> & {
+      bindings: ViewBindings<Collection, Input> & {
         [
           Key in
-            | RequiredFilterBindingKeys<Variables, Input>
+            | RequiredFilterBindingKeys<Collection, Input>
             | AdditionalRequired
-        ]-?: (input: Input) => ResolvedVariables<Variables>[Key];
+        ]-?: (input: Input) => ResolvedFilters<Collection>[Key];
       };
     };
 
-type SameViewInput<Variables extends VariableCollection, Input> = [
-  ResolvedVariables<Variables>,
+type SameViewInput<Collection extends FilterCollection, Input> = [
+  ResolvedFilters<Collection>,
 ] extends [Input]
   ? [Input] extends [
       {
-        [Key in keyof Variables]: Variables[Key]['kind'] extends 'choice'
+        [Key in keyof Collection]: Collection[Key]['kind'] extends 'choice'
           ? string
-          : ResolvedVariables<Variables>[Key];
+          : ResolvedFilters<Collection>[Key];
       },
     ]
     ? [Input] extends [Record<string, never>]
       ? true
-      : [keyof Input] extends [keyof Variables]
+      : [keyof Input] extends [keyof Collection]
         ? true
         : false
     : false
   : false;
-type ViewInputMapping<Variables extends VariableCollection, Input> =
-  SameViewInput<Variables, Input> extends true
-    ? { input?: (values: ResolvedVariables<Variables>) => Input }
-    : { input: (values: ResolvedVariables<Variables>) => Input };
+type ViewInputMapping<Collection extends FilterCollection, Input> =
+  SameViewInput<Collection, Input> extends true
+    ? { input?: (values: ResolvedFilters<Collection>) => Input }
+    : { input: (values: ResolvedFilters<Collection>) => Input };
 
 export type DataViewDefinition<
   Name extends string,
-  Variables extends VariableCollection,
+  Collection extends FilterCollection,
   Input,
   Data,
 > = {
   operation: Name;
   dataContext: DataContext;
+  /** The app's `defineFilters()` result, or a `pick()` of the filters this view reads. */
+  filters?: Filters<Collection>;
 } & ViewEmptiness<Data> &
-  (keyof Variables extends never
-    ? { variables?: Variables & CheckedFacetContexts<NoInfer<Variables>> }
-    : { variables: Variables & CheckedFacetContexts<NoInfer<Variables>> }) &
-  ViewInputMapping<NoInfer<Variables>, Input> &
-  ViewBindingOptions<NoInfer<Variables>, Input> &
+  ViewInputMapping<NoInfer<Collection>, Input> &
+  ViewBindingOptions<NoInfer<Collection>, Input> &
   (
     | {
-        date: ViewDate<Variables, Input>;
+        date: ViewDate<Collection, Input>;
         describeInput?: (input: Input) => string;
       }
     | { date?: never; describeInput: (input: Input) => string }
@@ -141,16 +136,18 @@ export type DataViewDefinition<
 
 export type ResolvedDataViewDefinition<
   Name extends string,
-  Variables extends VariableCollection,
+  Collection extends FilterCollection,
   Input,
   Data,
 > = Omit<
-  DataViewDefinition<Name, Variables, Input, Data>,
-  'variables' | 'input'
+  DataViewDefinition<Name, Collection, Input, Data>,
+  'filters' | 'input'
 > &
   Required<ViewEmptiness<Data>> & {
-    variables: Variables;
-    input: (values: ResolvedVariables<Variables>) => Input;
+    filters: Collection;
+    /** The declaration the view reads, so `<DataApp>` can check it renders the controls. */
+    filterSet?: Filters<Collection>;
+    input: (values: ResolvedFilters<Collection>) => Input;
   };
 
 /** Omit both for a result that is never empty, such as a total. */
@@ -172,21 +169,21 @@ export function resolveViewEmptiness<Data>(
 }
 
 export function describeViewInput<Input>(definition: {
-  variables: VariableCollection;
+  filters: FilterCollection;
   bindings?: Partial<Record<string, (input: Input) => unknown>>;
   date?: {
-    variable: string;
+    filter: string;
     input: (input: Input) => DateRangeRequest | DateTimeRangeComparisonRequest;
   };
   describeInput?: (input: Input) => string;
 }): (input: Input) => string {
   const date = definition.date;
-  const variable = date && definition.variables[date.variable];
+  const variable = date && definition.filters[date.filter];
   invariant(
     !date ||
       variable?.kind === 'dateRange' ||
       variable?.kind === 'dateTimeRangeComparison',
-    'The view date must reference a date range variable.'
+    'The view date must reference a date range filter.'
   );
   if (definition.describeInput) return definition.describeInput;
   invariant(date && variable, 'A view needs a date binding or describeInput.');
@@ -197,15 +194,15 @@ export function describeViewInput<Input>(definition: {
     const period =
       variable?.kind === 'dateTimeRangeComparison'
         ? formatDateTimeRange(parseDateTimeRange(request.range))
-        : (variable as DateRangeVariable).describeInput(
+        : (variable as DateRangeFilter).describeInput(
             request as DateRangeRequest
           );
-    const filters = Object.entries(definition.variables)
+    const summaries = Object.entries(definition.filters)
       .filter(([, variable]) =>
         ['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind)
       )
       .map(([key, filter]) => {
-        const variable = filter as AppVariable<any>;
+        const variable = filter as AppFilter<any>;
         const selected = readViewBinding(definition, key, input);
 
         return variable.valid(selected as never)
@@ -214,27 +211,27 @@ export function describeViewInput<Input>(definition: {
       })
       .filter(Boolean);
 
-    return [period, ...filters].join(' · ');
+    return [period, ...summaries].join(' · ');
   }
 
   return describeInput;
 }
 
-export function resolveViewInput<Variables extends VariableCollection, Input>(
+export function resolveViewInput<Collection extends FilterCollection, Input>(
   definition: {
-    input: (values: ResolvedVariables<Variables>) => Input;
-    date?: ViewDate<Variables, Input>;
-    variables: Variables;
-    bindings?: ViewBindings<Variables, Input>;
+    input: (values: ResolvedFilters<Collection>) => Input;
+    date?: ViewDate<Collection, Input>;
+    filters: Collection;
+    bindings?: ViewBindings<Collection, Input>;
   },
-  values: ResolvedVariables<Variables>
+  values: ResolvedFilters<Collection>
 ): Input {
   const input = definition.input(values);
   if (definition.date) {
-    const variable = definition.variables[definition.date.variable];
+    const variable = definition.filters[definition.date.filter];
     if (variable?.kind === 'dateTimeRangeComparison') {
       const selected = values[
-        definition.date.variable
+        definition.date.filter
       ] as DateTimeRangeComparisonRequest;
       const mapped = definition.date.input(
         input
@@ -253,7 +250,7 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
         'The operation input must preserve the selected datetime range and comparison.'
       );
     } else {
-      const selected = values[definition.date.variable] as DateRangeRequest;
+      const selected = values[definition.date.filter] as DateRangeRequest;
       const mapped = definition.date.input(input) as DateRangeRequest;
       invariant(
         mapped && mapped.range && 'comparison' in mapped,
@@ -276,14 +273,14 @@ export function resolveViewInput<Variables extends VariableCollection, Input>(
     }
   }
 
-  for (const [key, variable] of Object.entries(definition.variables)) {
+  for (const [key, variable] of Object.entries(definition.filters)) {
     if (
       variable.kind === 'dateRange' ||
       variable.kind === 'dateTimeRangeComparison' ||
       (variable.presentation?.group === 'display' && variable.kind !== 'choice')
     )
       continue;
-    const filter = variable as AppVariable<any>;
+    const filter = variable as AppFilter<any>;
     const selected = values[key] as never;
     const mapped = readViewBinding(definition, key, input);
     invariant(

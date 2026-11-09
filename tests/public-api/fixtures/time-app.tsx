@@ -8,6 +8,7 @@ import {
   DataValue,
   injectDataAppStyles,
   mountDataApp,
+  dateRangeFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -80,18 +81,20 @@ const context = createDataContext({ activity: 'activity' })({
     },
   },
 });
-const view = createDataHooks(client).defineTimeView({
-  dataContext: context,
-  operation: 'activity',
-  time: {
+const { defineTimeView, defineFilters } = createDataHooks(client);
+const filters = defineFilters({
+  period: dateRangeFilter({
+    key: 'period',
     contract: calendar,
     defaultValue: { kind: 'dates', start: '2026-03-04', end: '2026-03-06' },
     comparison: true,
-    presentation: new URLSearchParams(location.search).has('displayDate')
-      ? { group: 'display' }
-      : undefined,
-  },
-  variables: { region },
+  }),
+  region,
+});
+const view = defineTimeView({
+  dataContext: context,
+  operation: 'activity',
+  filters,
 });
 const metric = view.metric(
   { id: 'count', glossaryId: 'count', format: { kind: 'count' } },
@@ -128,7 +131,12 @@ const dataApp = defineDataApp({
 });
 function App() {
   return (
-    <DataApp view={view} datasets={[dataset]} story={() => []}>
+    <DataApp
+      view={view}
+      filters={filters}
+      datasets={[dataset]}
+      story={() => []}
+    >
       <DataSection content={content} />
     </DataApp>
   );

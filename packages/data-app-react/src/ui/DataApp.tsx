@@ -15,11 +15,12 @@ import {
 } from '../bindings.ts';
 import { DateFormattingContext } from '../date-formatting.ts';
 import { DetailRoutes, type DetailContent } from '../details.tsx';
+import { Filters, type FilterControls } from '../filter-set.ts';
 import { SearchSuggestionsContext } from '../search-suggestions.ts';
 import { ownedSource } from '../source-owner.ts';
 import {
   AppViewResultsContext,
-  assertAppRendersFilters,
+  assertAppFilters,
   type DeclaredView,
   type ViewResult,
   useDeclaredResult,
@@ -58,6 +59,9 @@ export type DataAppProps<
 > = Omit<DataAppBaseProps, 'dataContext'> &
   DataAppControlProps & {
     view: DataAppView<Data, Input>;
+    /** The `defineFilters()` result every view reads from. `<DataApp>` renders its
+     * controls and owns their URL state. Omit when no view has filters. */
+    filters?: Filters<any>;
     /** Other views that the story and CSV export read, sharing `view`’s data context.
      * They load with `view` instead of waiting for their sections to near the viewport. */
     summaryViews?: SummaryViews;
@@ -88,10 +92,46 @@ export function DataApp<
 >(props: DataAppProps<Data, Input, SummaryViews>) {
   const { summaryViews = [], ...appProps } = props;
   return (
-    <SummaryResults views={summaryViews} results={[]}>
-      {summaries => <PrimaryDataApp {...appProps} summaries={summaries} />}
-    </SummaryResults>
+    <AppFilterControls filters={props.filters}>
+      {controls => (
+        <SummaryResults views={summaryViews} results={[]}>
+          {summaries => (
+            <PrimaryDataApp
+              {...appProps}
+              controls={controls}
+              summaries={summaries}
+            />
+          )}
+        </SummaryResults>
+      )}
+    </AppFilterControls>
   );
+}
+
+type AppFilterControlsProps = {
+  filters: Filters<any> | undefined;
+  children: (controls: FilterControls) => ReactNode;
+};
+
+/** Render the declaration's controls once for the whole app. */
+function AppFilterControls({ filters, children }: AppFilterControlsProps) {
+  if (!filters) return children({ searchControls: null, filterControls: null });
+  invariant(
+    Filters.root(filters) === filters,
+    'Pass the defineFilters() result to <DataApp filters>, not a pick().'
+  );
+  return (
+    <DeclaredFilterControls filters={filters}>
+      {children}
+    </DeclaredFilterControls>
+  );
+}
+
+function DeclaredFilterControls({
+  filters,
+  children,
+}: AppFilterControlsProps & { filters: Filters<any> }) {
+  return children(Filters.useControls(filters));
 }
 
 type SummaryResult = { view: AnyView; result: ViewResult<unknown, unknown> };
@@ -124,11 +164,14 @@ function PrimaryDataApp<
   const SummaryViews extends readonly AnyView[],
 >(
   props: Omit<DataAppProps<Data, Input, SummaryViews>, 'summaryViews'> & {
+    controls: FilterControls;
     summaries: readonly SummaryResult[];
   }
 ) {
   const {
     view,
+    filters,
+    controls,
     summaries,
     datasets,
     story,
@@ -145,12 +188,13 @@ function PrimaryDataApp<
     ...summaries.map(({ view, result }) => [view, result] as const),
   ]);
   const owners = [...results.keys()];
+  assertAppFilters(view, filters);
   for (const summary of summaries) {
     invariant(
       summary.result.dataContext === primary.dataContext,
       'Summary views must share the app view’s data context.'
     );
-    assertAppRendersFilters(summary.view, view);
+    assertAppFilters(summary.view, filters);
   }
   const datasetOwners = (datasets ?? []).map(dataset => {
     const owner = RegisteredBinding.owner(dataset);
@@ -187,6 +231,7 @@ function PrimaryDataApp<
   const allResults = [...results.values()];
   const result = {
     ...primary,
+    ...controls,
     queries: allResults.flatMap(({ queries }) => queries ?? []),
     refreshing: allResults.some(({ refreshing }) => refreshing),
     refetch() {
@@ -248,6 +293,7 @@ function PrimaryDataApp<
         <AppViewResultsContext
           value={{
             primaryView: view,
+            filters,
             results: new Map(results).set(view, result),
           }}
         >

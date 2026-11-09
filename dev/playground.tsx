@@ -3,6 +3,7 @@ import {
   defineDataIdentifiers,
   TextWidget,
   createDataHooks,
+  dateRangeFilter,
   DataApp,
   DataSection,
   Grid,
@@ -133,16 +134,22 @@ const orderDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineTimeView } = createDataHooks(createDataClient({ operations }));
-const orderView = defineTimeView({
-  dataContext: orderDataContext,
-  operation: 'orderOverview',
-  time: {
+const { defineTimeView, defineFilters } = createDataHooks(
+  createDataClient({ operations })
+);
+const filters = defineFilters({
+  period: dateRangeFilter({
+    key: 'period',
     contract: calendar,
     defaultValue: { kind: 'preset', id: 'last-30' },
     comparison: true,
-  },
-  variables: { country: countryFilter },
+  }),
+  country: countryFilter,
+});
+const orderView = defineTimeView({
+  dataContext: orderDataContext,
+  operation: 'orderOverview',
+  filters,
   isEmpty: ({ countries }) => countries.length === 0,
   emptyFallback: { title: 'No matching countries' },
 });
@@ -527,6 +534,7 @@ function App() {
   return (
     <DataApp
       view={orderView}
+      filters={filters}
       datasets={[
         countryDataset,
         dayDataset,

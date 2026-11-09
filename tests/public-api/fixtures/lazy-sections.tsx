@@ -6,7 +6,7 @@ import {
   DataSection,
   injectDataAppStyles,
   mountDataApp,
-  searchVariable,
+  searchFilter,
   Stack,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
@@ -44,19 +44,19 @@ const client = createDataClient<{
     };
   },
 });
-const { defineDataView } = createDataHooks(client);
+const { defineDataView, defineFilters } = createDataHooks(client);
 const dataContext = createDataContext({
   summary: 'summary',
   trend: 'trend',
   breakdown: 'breakdown',
 })({ description: 'One operation per section', glossary: {} });
-const variables = {
-  region: searchVariable({ key: 'region', label: 'Region', defaultValue: '' }),
-};
+const filters = defineFilters({
+  region: searchFilter({ key: 'region', label: 'Region', defaultValue: '' }),
+});
 
 const sectionOptions = {
   dataContext,
-  variables,
+  filters,
   describeInput: ({ region }: { region: string }) => region || 'all regions',
 };
 const summaryView = defineDataView({
@@ -110,20 +110,11 @@ const breakdownCounts = breakdownView.dataset({
   evidence: { id: 'breakdown', queryNames: ['breakdown'] },
 });
 
-const unfilteredSummaryView = defineDataView({
-  dataContext,
-  operation: 'summary',
-  input: () => ({ region: '' }),
-  describeInput: () => 'all regions',
-});
-
 const search = new URLSearchParams(location.search);
 /** `?summary` lets the story and export read the far-away breakdown section. */
 const summarizesBreakdown = search.has('summary');
-/** `?unfiltered-app` gives the app view none of the sections' filters. */
-const appView = search.has('unfiltered-app')
-  ? unfilteredSummaryView
-  : summaryView;
+/** `?without-app-filters` omits `<DataApp filters>`, which the sections' views need. */
+const appFilters = search.has('without-app-filters') ? undefined : filters;
 
 /** Shows authoring invariants as text so tests can read them. */
 class AuthoringBoundary extends Component<
@@ -156,7 +147,8 @@ function App() {
     <AuthoringBoundary>
       {summarizesBreakdown ? (
         <DataApp
-          view={appView}
+          view={summaryView}
+          filters={appFilters}
           summaryViews={[breakdownView]}
           datasets={[breakdownCounts]}
           story={(_summary, breakdown) => [
@@ -171,7 +163,9 @@ function App() {
           {sections}
         </DataApp>
       ) : (
-        <DataApp view={appView}>{sections}</DataApp>
+        <DataApp view={summaryView} filters={appFilters}>
+          {sections}
+        </DataApp>
       )}
     </AuthoringBoundary>
   );

@@ -5,25 +5,24 @@ import {
   type DateRange,
 } from './date-range.ts';
 import type {
-  DateTimeRangeVariable,
-  DateTimeRangeComparisonVariable,
-} from './date-time-variable.ts';
-import type { SourceDimensionVariable } from './dimension-source.ts';
+  DateTimeRangeFilter,
+  DateTimeRangeComparisonFilter,
+} from './date-time-filter.ts';
+import type { SourceDimensionFilter } from './dimension-source.ts';
 import type {
   DimensionSelection,
-  DimensionVariable,
-  DimensionSelectionVariable,
+  DimensionFilter,
+  DimensionSelectionFilter,
 } from './dimension.ts';
-import { facetSource, type FacetVariable } from './facets.ts';
+import { facetSource, type FacetFilter } from './facets.ts';
 import type { NumberFilter, BooleanFilter } from './filters.ts';
 import { invariant } from './invariant.ts';
 import type { HistoryMode } from './navigation.ts';
 import type { IsUnion } from './queries.ts';
 export type { HistoryMode } from './navigation.ts';
 
-export type VariablePresentation = {
-  /** Scope changes the included data; display changes its presentation. Defaults to scope. */
-  group?: 'scope' | 'display';
+/** Where a filter's or display option's control renders. */
+export type FilterPresentation = {
   /** Widget controls render beside their visualization instead of in the toolbar.
    * Scope filters remain available in the Filters sheet and active summaries. */
   control?: 'toolbar' | 'widget';
@@ -32,13 +31,14 @@ export type VariablePresentation = {
 };
 
 /** An app-owned value with one URL representation. Controls never parse or write routes. */
-export type AppVariable<Value, Kind extends string = string> = {
+export type AppFilter<Value, Kind extends string = string> = {
   kind: Kind;
   label?: string;
-  presentation?: VariablePresentation;
+  /** Display options (`displayChoice()`) change how results are shown, not which data is included. */
+  presentation?: FilterPresentation & { group?: 'scope' | 'display' };
   urlKeys: readonly string[];
   defaultValue: Value;
-  /** Unrestricted value, when this variable represents a filter. */
+  /** Unrestricted value, when this filter can be cleared. */
   clearValue?: Value;
   describe?: (value: Value) => string;
   history: HistoryMode;
@@ -48,72 +48,72 @@ export type AppVariable<Value, Kind extends string = string> = {
   same: (left: Value, right: Value) => boolean;
 };
 
-export type VariableCollection = Record<
+export type FilterCollection = Record<
   string,
-  | SearchVariable
-  | ChoiceVariable<any>
-  | MultiChoiceVariable
-  | DateRangeVariable
-  | DateTimeRangeVariable
-  | DateTimeRangeComparisonVariable
-  | DimensionVariable<any>
-  | FacetVariable<any, any, string, unknown>
-  | SourceDimensionVariable<any>
+  | SearchFilter
+  | ChoiceFilter<any>
+  | MultiChoiceFilter
+  | DateRangeFilter
+  | DateTimeRangeFilter
+  | DateTimeRangeComparisonFilter
+  | DimensionFilter<any>
+  | FacetFilter<any, any, string, unknown>
+  | SourceDimensionFilter<any>
   | NumberFilter
   | BooleanFilter
 >;
-export type AppVariableValues<Variables> = {
-  [Key in keyof Variables]: Variables[Key] extends DimensionSelectionVariable<
+export type FilterValues<Collection> = {
+  [Key in keyof Collection]: Collection[Key] extends DimensionSelectionFilter<
     infer Value
   >
     ? DimensionSelection<Value>
-    : Variables[Key] extends AppVariable<infer Value, string>
+    : Collection[Key] extends AppFilter<infer Value, string>
       ? Value
       : never;
 };
 
 /** Keep conditional declarations narrowed so every dependency has one contract. */
-export type CheckedVariableDeclarations<Variables extends VariableCollection> =
-  true extends IsUnion<Variables>
+export type CheckedFilterDeclarations<Collection extends FilterCollection> =
+  true extends IsUnion<Collection>
     ? never
-    : string extends keyof Variables
-      ? Variables
-      : '__proto__' extends keyof Variables
+    : string extends keyof Collection
+      ? Collection
+      : '__proto__' extends keyof Collection
         ? never
         : {
-            [Name in keyof Variables]: true extends IsUnion<Variables[Name]>
+            [Name in keyof Collection]: true extends IsUnion<Collection[Name]>
               ? never
-              : Variables[Name];
+              : Collection[Name];
           };
 
-/** Every facet dependency must be present with a compatible variable declaration. */
-export type CheckedFacetContexts<Variables extends VariableCollection> =
-  CheckedVariableDeclarations<Variables> &
-    (string extends keyof Variables
+/** Every facet dependency must be present with a compatible filter declaration. */
+export type CheckedFacetContexts<Collection extends FilterCollection> =
+  CheckedFilterDeclarations<Collection> &
+    (string extends keyof Collection
       ? Extract<
-          Variables[keyof Variables],
+          Collection[keyof Collection],
           { [facetSource]: unknown }
         > extends never
-        ? Variables
+        ? Collection
         : never
       : {
-          [Name in keyof Variables]: Variables[Name] extends {
+          [Name in keyof Collection]: Collection[Name] extends {
             [facetSource]: { context: infer Context };
           }
             ? string extends keyof Context
               ? never
-              : Variables extends Context
-                ? Variables[Name]
+              : Collection extends Context
+                ? Collection[Name]
                 : never
-            : Variables[Name];
+            : Collection[Name];
         });
 
-/** Name variables once in the app. URL keys must be unique across its controls. */
-export function defineAppVariables<const Variables extends VariableCollection>(
-  variables: Variables
-): Variables {
+/** Name filters once in the app. URL keys must be unique across its controls. */
+export function defineAppFilters<const Collection extends FilterCollection>(
+  filters: Collection
+): Collection {
   const owners = new Map<string, string>();
-  for (const [name, variable] of Object.entries(variables)) {
+  for (const [name, variable] of Object.entries(filters)) {
     const presentation = variable.presentation;
     invariant(
       presentation === undefined ||
@@ -129,52 +129,52 @@ export function defineAppVariables<const Variables extends VariableCollection>(
           (presentation.prominence === undefined ||
             presentation.prominence === 'primary' ||
             presentation.prominence === 'secondary')),
-      `Variable ${name} has invalid presentation.`
+      `Filter ${name} has invalid presentation.`
     );
     for (const key of variable.urlKeys) {
       invariant(
         !['view', 'about', 'tab', 'present', 'step', 'details'].includes(key),
-        `Variable ${name} uses reserved URL key: ${key}.`
+        `Filter ${name} uses reserved URL key: ${key}.`
       );
       invariant(
         !!key && !owners.has(key),
-        `Variable ${name} has an empty or duplicate URL key: ${key}.`
+        `Filter ${name} has an empty or duplicate URL key: ${key}.`
       );
       owners.set(key, name);
     }
   }
 
-  return variables;
+  return filters;
 }
 
-type ScalarVariableOptions = {
+type ScalarFilterOptions = {
   label?: string;
   key: string;
   defaultValue?: string;
   history?: HistoryMode;
-  presentation?: VariablePresentation;
+  presentation?: FilterPresentation;
 };
 
-export type SearchVariable = AppVariable<string, 'search'>;
+export type SearchFilter = AppFilter<string, 'search'>;
 export type ChoiceOption = { id: string; label: string; description?: string };
-export type ChoiceVariable<Value extends string = string> = AppVariable<
+export type ChoiceFilter<Value extends string = string> = AppFilter<
   Value,
   'choice'
 > & {
   options: readonly ChoiceOption[];
 };
-export type MultiChoiceVariable = AppVariable<
-  readonly string[],
-  'multiChoice'
-> & { options: readonly ChoiceOption[]; maxSelected: number };
+export type MultiChoiceFilter = AppFilter<readonly string[], 'multiChoice'> & {
+  options: readonly ChoiceOption[];
+  maxSelected: number;
+};
 
 /** Search query state; typing replaces history by default. */
-export function searchVariable({
+export function searchFilter({
   key,
   label,
   defaultValue = '',
   history = 'replace',
-}: Omit<ScalarVariableOptions, 'presentation'>): SearchVariable {
+}: Omit<ScalarFilterOptions, 'presentation'>): SearchFilter {
   return {
     kind: 'search',
     label: label ?? key,
@@ -208,30 +208,52 @@ export function validateChoiceOptions(options: readonly ChoiceOption[]) {
   );
 }
 
-export function choiceVariable<
-  const Options extends readonly ChoiceOption[],
-  const Presentation extends VariablePresentation | undefined = undefined,
->({
+type ChoiceOptions<Options extends readonly ChoiceOption[]> = Omit<
+  ScalarFilterOptions,
+  'defaultValue'
+> & {
+  defaultValue: NoInfer<Options[number]['id']>;
+  options: Options & (Options extends readonly [] ? never : unknown);
+};
+
+/** One choice that narrows the included data. */
+export function choiceFilter<const Options extends readonly ChoiceOption[]>(
+  options: ChoiceOptions<Options>
+): ChoiceFilter<Options[number]['id']> {
+  return createChoice<Options[number]['id']>(options);
+}
+
+/** One choice that changes how results are shown, such as a chart breakdown or sort order.
+ * Clearing filters keeps it; pass `view.breakdown(name)` to render it beside its chart. */
+export function displayChoice<const Options extends readonly ChoiceOption[]>(
+  options: ChoiceOptions<Options>
+): ChoiceFilter<Options[number]['id']> & {
+  presentation: { group: 'display' };
+} {
+  const presentation = { ...options.presentation, group: 'display' as const };
+  return { ...createChoice<Options[number]['id']>(options), presentation };
+}
+
+function createChoice<Id extends string>({
   key,
   label,
   defaultValue,
   options,
   history = 'push',
   presentation,
-}: Omit<ScalarVariableOptions, 'presentation'> & {
-  presentation?: Presentation;
-  defaultValue: NoInfer<Options[number]['id']>;
-  options: Options & (Options extends readonly [] ? never : unknown);
-}): ChoiceVariable<Options[number]['id']> & { presentation?: Presentation } {
+}: ScalarFilterOptions & {
+  defaultValue: Id;
+  options: readonly ChoiceOption[];
+}): ChoiceFilter<Id> {
   validateChoiceOptions(options);
-  function valid(value: string) {
+  function valid(value: string): value is Id {
     return (
       typeof value === 'string' && options.some(option => option.id === value)
     );
   }
   invariant(
     valid(defaultValue),
-    `Choice variable ${key} must include its default value.`
+    `Choice ${key} must include its default value.`
   );
   return {
     kind: 'choice',
@@ -254,9 +276,8 @@ export function choiceVariable<
   };
 }
 
-export function multiChoiceVariable<
+export function multiChoiceFilter<
   const Options extends readonly ChoiceOption[],
-  const Presentation extends VariablePresentation | undefined = undefined,
 >({
   key,
   label,
@@ -265,12 +286,11 @@ export function multiChoiceVariable<
   maxSelected = options.length,
   history = 'push',
   presentation,
-}: Omit<ScalarVariableOptions, 'defaultValue' | 'presentation'> & {
-  presentation?: Presentation;
+}: Omit<ScalarFilterOptions, 'defaultValue'> & {
   defaultValue?: readonly NoInfer<Options[number]['id']>[];
   options: Options & (Options extends readonly [] ? never : unknown);
   maxSelected?: number;
-}): MultiChoiceVariable & { presentation?: Presentation } {
+}): MultiChoiceFilter {
   validateChoiceOptions(options);
   invariant(
     Number.isSafeInteger(maxSelected) &&
@@ -333,7 +353,7 @@ export type DateRangeSelection =
   | { kind: 'preset'; id: DatePresetId; comparison?: 'previous' }
   | { kind: 'dates'; start: string; end: string; comparison?: 'previous' };
 
-export type DateRangeVariableOptions = {
+export type DateRangeFilterOptions = {
   label?: string;
   /** URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields. */
   key: string;
@@ -342,10 +362,10 @@ export type DateRangeVariableOptions = {
   history?: HistoryMode;
   /** Opt into a URL-backed comparison with the preceding equal-length range. */
   comparison?: boolean;
-  presentation?: VariablePresentation;
+  presentation?: FilterPresentation;
 };
 
-export type DateRangeVariable = AppVariable<DateRangeSelection, 'dateRange'> & {
+export type DateRangeFilter = AppFilter<DateRangeSelection, 'dateRange'> & {
   kind: 'dateRange';
   supportsComparison: boolean;
   input: (selection: DateRangeSelection) => DateRangeRequest;
@@ -374,8 +394,8 @@ const PRESET_IDS = new Set<DatePresetId>([
   'previous-month',
 ]);
 
-/** A date variable keeps relative presets relative and validates exact dates against source coverage. */
-export function dateRangeVariable({
+/** A date filter keeps relative presets relative and validates exact dates against source coverage. */
+export function dateRangeFilter({
   key,
   label = 'Date range',
   defaultValue,
@@ -383,7 +403,7 @@ export function dateRangeVariable({
   history = 'push',
   comparison = false,
   presentation,
-}: DateRangeVariableOptions): DateRangeVariable {
+}: DateRangeFilterOptions): DateRangeFilter {
   const startKey = key === 'period' ? 'start' : [key, 'start'].join('-');
   const endKey = key === 'period' ? 'end' : [key, 'end'].join('-');
   const comparisonKey =
@@ -404,10 +424,7 @@ export function dateRangeVariable({
         // Invalid URL values fall back to the app default.
       }
     }
-    invariant(
-      false,
-      `Date variable ${key} is outside its available data range.`
-    );
+    invariant(false, `Date filter ${key} is outside its available data range.`);
   }
 
   function same(left: DateRangeSelection, right: DateRangeSelection) {
@@ -422,7 +439,7 @@ export function dateRangeVariable({
           left.end === right.end)
     );
   }
-  const variable: DateRangeVariable = {
+  const variable: DateRangeFilter = {
     kind: 'dateRange',
     presentation,
     label,
@@ -509,7 +526,7 @@ export function dateRangeVariable({
   };
   invariant(
     variable.valid(defaultValue),
-    `Date variable ${key} has a default outside its available data range.`
+    `Date filter ${key} has a default outside its available data range.`
   );
 
   return variable;

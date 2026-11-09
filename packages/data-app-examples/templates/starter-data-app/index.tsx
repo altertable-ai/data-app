@@ -11,7 +11,7 @@ import {
   injectDataAppStyles,
   mountDataApp,
   MetricWidget,
-  searchVariable,
+  searchFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import { parseCount } from '@altertable/data-app/contract';
@@ -106,18 +106,20 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineDataView } = createDataHooks(createDataClient({ operations }));
-// Each widget has its own operation and view; views share the filters declared once here.
-const groupFilters = {
-  groupName: searchVariable({ key: 'group', label: 'Group', defaultValue: '' }),
-};
+const { defineDataView, defineFilters } = createDataHooks(
+  createDataClient({ operations })
+);
+// Declare filters once; each widget's view reads them, and <DataApp> renders their controls.
+const filters = defineFilters({
+  groupName: searchFilter({ key: 'group', label: 'Group', defaultValue: '' }),
+});
 function describeGroup({ groupName }: { groupName: string }) {
   return groupName ? `group ${groupName}` : 'all groups';
 }
 const sampleCountsView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  variables: groupFilters,
+  filters,
   describeInput: describeGroup,
   isEmpty: sampleCounts => sampleCounts.length === 0,
   emptyFallback: {
@@ -141,7 +143,7 @@ const sampleCounts = sampleCountsView.dataset({
 const sampleTotalView = defineDataView({
   dataContext: sampleDataContext,
   operation: 'sampleTotal',
-  variables: groupFilters,
+  filters,
   describeInput: describeGroup,
 });
 const totalSamples = sampleTotalView.metric(
@@ -180,6 +182,7 @@ function App() {
   return (
     <DataApp
       view={sampleCountsView}
+      filters={filters}
       summaryViews={[sampleTotalView]}
       datasets={[sampleCounts]}
       story={(countsSnapshot, totalSnapshot) => {

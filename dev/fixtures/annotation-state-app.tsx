@@ -7,7 +7,7 @@ import {
   createDataContext,
   injectDataAppStyles,
   mountDataApp,
-  searchVariable,
+  searchFilter,
 } from '@altertable/data-app-react';
 import {
   createDataClient,
@@ -58,17 +58,18 @@ const context = createDataContext({ counts: 'counts' })({
     },
   },
 });
-const { defineDataView } = createDataHooks(client);
+const { defineDataView, defineFilters } = createDataHooks(client);
+const filters = defineFilters({
+  period: searchFilter({
+    key: 'period',
+    label: 'Period',
+    defaultValue: 'last-30',
+  }),
+});
 const view = defineDataView({
   dataContext: context,
   operation: 'counts',
-  variables: {
-    period: searchVariable({
-      key: 'period',
-      label: 'Period',
-      defaultValue: 'last-30',
-    }),
-  },
+  filters,
   describeInput: input => input.period,
 });
 const metric = view.metric(
@@ -104,6 +105,7 @@ function App() {
   return (
     <DataApp
       view={view}
+      filters={filters}
       story={() => []}
       datasets={[dataset]}
       toolbarActions={

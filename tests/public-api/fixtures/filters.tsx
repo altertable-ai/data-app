@@ -7,9 +7,9 @@ import {
   TextWidget,
   mountDataApp,
   injectDataAppStyles,
-  searchVariable,
-  choiceVariable,
-  multiChoiceVariable,
+  searchFilter,
+  choiceFilter,
+  multiChoiceFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -56,14 +56,14 @@ const options = [
   { id: 'a', label: 'Alpha' },
   { id: 'b', label: 'Beta' },
 ];
-const search = searchVariable({ key: 'q', label: 'Search' });
-const choice = choiceVariable({
+const search = searchFilter({ key: 'q', label: 'Search' });
+const choice = choiceFilter({
   key: 'choice',
   label: 'Display',
   options,
   defaultValue: 'a',
 });
-const tags = multiChoiceVariable({ key: 'tags', label: 'Tags', options });
+const tags = multiChoiceFilter({ key: 'tags', label: 'Tags', options });
 type Input = {
   search: string;
   choice: string;
@@ -111,14 +111,22 @@ const client = createDataClient({
     },
   },
 });
-const { defineDataView } = createDataHooks(client);
+const { defineDataView, defineFilters } = createDataHooks(client);
+const filters = defineFilters({
+  search,
+  choice,
+  tags,
+  amount,
+  active,
+  country,
+});
 const view = defineDataView({
   dataContext: createDataContext({ filters: 'filters' })({
     description: 'Filter result',
     glossary: {},
   }),
   operation: 'filters',
-  variables: { search, choice, tags, amount, active, country },
+  filters,
   describeInput: input => JSON.stringify(input),
 });
 const dataset = view.dataset({
@@ -143,6 +151,7 @@ function App() {
   return (
     <DataApp
       view={view}
+      filters={filters}
       datasets={[dataset]}
       story={() => []}
       showSearch={hideControls || hideSearch ? false : undefined}

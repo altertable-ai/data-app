@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 import { ExternalLink, injectDataAppStyles } from '@altertable/data-app-react';
-import { mountDataApp, searchVariable } from '@altertable/data-app-react';
-import { DataApp, useAppVariables } from '@altertable/data-app-react/ui';
+import { mountDataApp, searchFilter } from '@altertable/data-app-react';
+import { DataApp, useAppFilters } from '@altertable/data-app-react/ui';
 import {
   createMessageClient,
   navigateNewTab,
@@ -38,13 +38,13 @@ const data = createDataClient({
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = {
-  period: searchVariable({ key: 'period', history: 'push' }),
+  period: searchFilter({ key: 'period', history: 'push' }),
 };
 
 function App() {
   const [crashed, setCrashed] = useState(false);
   const [reportVisible, setReportVisible] = useState(true);
-  const state = useAppVariables(variables);
+  const state = useAppFilters(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
   const [navigationResult, setNavigationResult] = useState('');

@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
-  searchVariable,
+  searchFilter,
   createDataContext,
   DataApp,
   DataSection,
@@ -105,17 +105,19 @@ const secondaryContext = createDataContext({ count: 'count', total: 'total' })({
 });
 const hooks = createDataHooks(client);
 
-const search = searchVariable({ key: 'search', label: 'Search' });
+const filters = hooks.defineFilters({
+  search: searchFilter({ key: 'search', label: 'Search' }),
+});
 const primaryView = hooks.defineDataView({
   operation: 'primary',
   dataContext: context,
-  variables: { search },
+  filters,
   describeInput: () => 'primary scope',
 });
 const secondaryView = hooks.defineDataView({
   operation: 'secondary',
   dataContext: secondaryContext,
-  variables: { search },
+  filters,
   describeInput: () => 'secondary scope',
 });
 const primaryDataset = primaryView.dataset({
@@ -197,7 +199,12 @@ function Controls({ name, queries }: { name: string; queries: string[] }) {
 }
 function App() {
   return (
-    <DataApp view={primaryView} datasets={[primaryDataset]} story={() => []}>
+    <DataApp
+      view={primaryView}
+      filters={filters}
+      datasets={[primaryDataset]}
+      story={() => []}
+    >
       <output aria-label="Shimmer preview">
         <ShimmerText>Preparing results</ShimmerText>
       </output>

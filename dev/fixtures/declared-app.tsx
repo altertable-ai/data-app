@@ -6,7 +6,7 @@ import {
   DataSection,
   TextWidget,
   VisualizationWidget,
-  searchVariable,
+  searchFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataOperation } from '@altertable/data-app/contract';
@@ -44,16 +44,17 @@ const context = createDataContext({ alpha: 'alpha', beta: 'beta' })({
   description: 'Declared views',
   glossary: {},
 });
+const filters = hooks.defineFilters({
+  version: searchFilter({
+    key: 'version',
+    label: 'Version',
+    defaultValue: '1',
+  }),
+});
 const alpha = hooks.defineDataView({
   dataContext: context,
   operation: 'alpha',
-  variables: {
-    version: searchVariable({
-      key: 'version',
-      label: 'Version',
-      defaultValue: '1',
-    }),
-  },
+  filters,
   describeInput: input => `version ${input.version}`,
 });
 const betaContext = createDataContext({ beta: 'beta' })({
@@ -148,7 +149,12 @@ export const dataApp = defineDataApp({
 export function DeclaredApp() {
   const [shown, setShown] = useState(false);
   return (
-    <DataApp view={alpha} story={() => []} datasets={[alphaDataset]}>
+    <DataApp
+      view={alpha}
+      filters={filters}
+      story={() => []}
+      datasets={[alphaDataset]}
+    >
       <button onClick={() => resolve('alpha', 1)}>Resolve alpha 1</button>
       <button onClick={() => resolve('alpha', 2)}>Resolve alpha 2</button>
       <button onClick={() => resolve('beta', 1)}>Resolve beta</button>

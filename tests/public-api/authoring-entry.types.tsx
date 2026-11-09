@@ -18,7 +18,7 @@ import {
   DataAppProvider,
   DataApp as StaticApp,
   MetricWidget as StaticMetric,
-  useAppVariables,
+  useAppFilters,
   PresentStory,
   AboutData,
   ShimmerText as DirectShimmerText,
@@ -107,7 +107,7 @@ const rawTable: TableWidgetProps<number> = {
   emptyFallback: { title: 'Empty' },
 };
 <TableWidget {...rawTable} />;
-void [withoutView, useAppVariables, PresentStory, AboutData];
+void [withoutView, useAppFilters, PresentStory, AboutData];
 
 // @ts-expect-error Request subscriptions belong to app and section components.
 void view.useResult;

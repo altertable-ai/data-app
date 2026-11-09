@@ -11,8 +11,9 @@ import {
   mountDataApp,
   injectDataAppStyles,
   useDetailNavigation,
-  searchVariable,
-  choiceVariable,
+  searchFilter,
+  choiceFilter,
+  displayChoice,
 } from '@altertable/data-app-react';
 import {
   BarChart,
@@ -23,7 +24,7 @@ import {
   type ItemActions,
 } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
-import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
+import { filterInput, dimensionFilter } from '@altertable/data-app/contract';
 import { Component, useState, type ReactNode } from 'react';
 
 const app = defineDataApp({
@@ -95,21 +96,21 @@ const choices = [
   { id: 'region', label: 'Region' },
   { id: 'country', label: 'Country' },
 ] as const;
-const revenueBy = choiceVariable({
+const revenueBy = displayChoice({
   key: 'revenue-by',
   label: 'Revenue breakdown',
   defaultValue: 'region',
   options: choices,
-  presentation: { group: 'display', control: 'widget' },
+  presentation: { control: 'widget' },
 });
-const ordersBy = choiceVariable({
+const ordersBy = displayChoice({
   key: 'orders-by',
   label: 'Orders breakdown',
   defaultValue: 'region',
   options: choices,
-  presentation: { group: 'display', control: 'widget' },
+  presentation: { control: 'widget' },
 });
-const windowChoice = choiceVariable({
+const windowChoice = choiceFilter({
   key: 'window',
   label: 'Window',
   defaultValue: 'recent',
@@ -118,8 +119,8 @@ const windowChoice = choiceVariable({
     { id: 'previous', label: 'Previous' },
   ],
 });
-const search = searchVariable({ key: 'q', label: 'Search' });
-const parseInput = variableInput(
+const search = searchFilter({ key: 'q', label: 'Search' });
+const parseInput = filterInput(
   (value: unknown) => {
     const input = value as { search: unknown; windowId: unknown };
     if (!input || typeof input.search !== 'string')
@@ -137,7 +138,7 @@ type Row = {
   revenue: number;
   dimension: 'region' | 'country';
 };
-const parseOrders = variableInput((value: unknown) => {
+const parseOrders = filterInput((value: unknown) => {
   const input = value as { placeId?: unknown; search?: unknown };
   if (
     !input ||
@@ -259,6 +260,13 @@ client.query = new Proxy(client.query, {
   },
 });
 const hooks = createDataHooks(client);
+const appFilters = hooks.defineFilters({
+  ...filters,
+  revenueBy,
+  ordersBy,
+  search,
+  window: windowChoice,
+});
 const context = createDataContext({
   sales: 'sales',
   countries: 'countries',
@@ -276,7 +284,7 @@ const context = createDataContext({
 const sales = hooks.defineDataView({
   operation: 'sales',
   dataContext: context,
-  variables: { ...filters, revenueBy, ordersBy, search, window: windowChoice },
+  filters: appFilters,
   input: ({ window, ...values }) => ({ ...values, windowId: window }),
   bindings: { window: input => input.windowId },
   describeInput: input => describeFilters(input),
@@ -284,7 +292,7 @@ const sales = hooks.defineDataView({
 const otherSales = hooks.defineDataView({
   operation: 'sales',
   dataContext: context,
-  variables: { ...filters, revenueBy, ordersBy, search, window: windowChoice },
+  filters: appFilters,
   input: ({ window, ...values }) => ({ ...values, windowId: window }),
   bindings: { window: input => input.windowId },
   describeInput: describeFilters,
@@ -688,6 +696,7 @@ function App() {
   return (
     <DataApp
       view={sales}
+      filters={appFilters}
       datasets={[places, orderPlaces, ...(showDays ? [days] : [])]}
       details={[ordersDetail, orderRecordDetail]}
       story={snapshot => [

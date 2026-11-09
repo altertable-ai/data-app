@@ -1,12 +1,12 @@
 import { defineDataApp } from '@altertable/data-app';
 import { injectDataAppStyles } from '@altertable/data-app-react';
 import { AnnotationTarget } from '@altertable/data-app-react';
-import { mountDataApp, searchVariable } from '@altertable/data-app-react';
+import { mountDataApp, searchFilter } from '@altertable/data-app-react';
 import {
   DataApp,
   DataWidget,
   MetricWidget,
-  useAppVariables,
+  useAppFilters,
 } from '@altertable/data-app-react/ui';
 import {
   createMessageClient,
@@ -41,12 +41,12 @@ const data = createDataClient({
 });
 const messages = createMessageClient(bridgeRoutes, bridge.request);
 const variables = {
-  period: searchVariable({ key: 'period', history: 'push' }),
+  period: searchFilter({ key: 'period', history: 'push' }),
 };
 
 function App() {
   const [crashed, setCrashed] = useState(false);
-  const state = useAppVariables(variables);
+  const state = useAppFilters(variables);
   const search = state.values.period ? `period=${state.values.period}` : '';
   const [result, setResult] = useState('');
   if (crashed) throw new Error('Uncaught render failure');

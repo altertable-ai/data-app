@@ -5,7 +5,7 @@ import type {
 } from '@altertable/data-app/contract';
 import type {
   DimensionValue,
-  DimensionSelectionVariable,
+  DimensionSelectionFilter,
 } from '@altertable/data-app/internal';
 import { dimensionMemberKey } from '@altertable/data-app/internal';
 import { invariant } from '@altertable/data-app/internal';
@@ -28,7 +28,7 @@ export function DimensionPicker<T extends DimensionValue>({
   error = false,
   onRetry,
 }: {
-  filter: DimensionSelectionVariable<T>;
+  filter: DimensionSelectionFilter<T>;
   labelPlacement?: ControlLabelPlacement;
   value: DimensionSelection<T>;
   onChange: (value: DimensionSelection<T>) => void;

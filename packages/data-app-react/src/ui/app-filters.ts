@@ -2,39 +2,40 @@ import {
   invariant,
   type DatePresetId,
   type DateRange,
-  defineAppVariables,
-  type AppVariable,
-  type AppVariableValues,
+  defineAppFilters,
+  type AppFilter,
+  type FilterValues,
   type DateRangeSelection,
-  type DateRangeVariable,
+  type DateRangeFilter,
   type HistoryMode,
-  type VariableCollection,
+  type FilterCollection,
 } from '@altertable/data-app/internal';
 import { today } from '@internationalized/date';
 import { useEffect, useReducer, useSyncExternalStore } from 'react';
 
 import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 export {
-  searchVariable,
-  choiceVariable,
-  multiChoiceVariable,
-  dateRangeVariable,
-  type VariablePresentation,
-  type AppVariable,
-  type AppVariableValues,
+  searchFilter,
+  choiceFilter,
+  displayChoice,
+  multiChoiceFilter,
+  dateRangeFilter,
+  type FilterPresentation,
+  type AppFilter,
+  type FilterValues,
   type ChoiceOption,
-  type ChoiceVariable,
-  type MultiChoiceVariable,
-  type SearchVariable,
+  type ChoiceFilter,
+  type MultiChoiceFilter,
+  type SearchFilter,
   type DateRangeSelection,
-  type DateRangeVariable,
-  type DateRangeVariableOptions,
-  type VariableCollection,
+  type DateRangeFilter,
+  type DateRangeFilterOptions,
+  type FilterCollection,
 } from '@altertable/data-app/internal';
 
-/** Adapt one date variable to the controlled picker without giving the picker URL ownership. */
+/** Adapt one date filter to the controlled picker without giving the picker URL ownership. */
 export function dateRangeControl(
-  variable: DateRangeVariable,
+  variable: DateRangeFilter,
   selection: DateRangeSelection,
   onChange: (selection: DateRangeSelection) => void
 ) {
@@ -92,11 +93,11 @@ function serverSearch() {
   return '';
 }
 
-/** URL is the source of truth for app variables; one update can change dependent values atomically. */
-export function useAppVariables<const Variables extends VariableCollection>(
-  definitions: Variables
+/** URL is the source of truth for app filters; one update can change dependent values atomically. */
+export function useAppFilters<const Collection extends FilterCollection>(
+  definitions: Collection
 ) {
-  defineAppVariables(definitions);
+  defineAppFilters(definitions);
   const search = useSyncExternalStore(
     subscribeSearch,
     currentSearch,
@@ -130,11 +131,12 @@ export function useAppVariables<const Variables extends VariableCollection>(
   }, [zoneKey]);
 
   const params = new URLSearchParams(search);
-  const values = {} as AppVariableValues<Variables>;
+  const values = {} as FilterValues<Collection>;
   const canonical: Record<string, string | null> = {};
-  for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
-    const variable = definitions[name] as unknown as AppVariable<
-      AppVariableValues<Variables>[typeof name]
+  for (const name of Object.keys(definitions) as (keyof Collection &
+    string)[]) {
+    const variable = definitions[name] as unknown as AppFilter<
+      FilterValues<Collection>[typeof name]
     >;
     const value = variable.read(params);
     values[name] = value;
@@ -151,33 +153,33 @@ export function useAppVariables<const Variables extends VariableCollection>(
   });
 
   function update(
-    next: Partial<AppVariableValues<Variables>>,
+    next: Partial<FilterValues<Collection>>,
     history?: HistoryMode
   ) {
     const changes: Record<string, string | null> = {};
     let mode: HistoryMode = history ?? 'replace';
-    for (const name of Object.keys(next) as (keyof Variables & string)[]) {
-      const variable = definitions[name] as unknown as AppVariable<
-        AppVariableValues<Variables>[typeof name]
+    for (const name of Object.keys(next) as (keyof Collection & string)[]) {
+      const variable = definitions[name] as unknown as AppFilter<
+        FilterValues<Collection>[typeof name]
       >;
       const value = next[name]!;
-      invariant(variable.valid(value), `Invalid value for variable ${name}.`);
+      invariant(variable.valid(value), `Invalid value for filter ${name}.`);
       Object.assign(changes, variable.write(value));
       if (!history && variable.history === 'push') mode = 'push';
     }
     writeSearch(changes, mode);
   }
 
-  function set<Key extends keyof Variables & string>(
+  function set<Key extends keyof Collection & string>(
     name: Key,
-    value: AppVariableValues<Variables>[Key]
+    value: FilterValues<Collection>[Key]
   ) {
-    update({ [name]: value } as Partial<AppVariableValues<Variables>>);
+    update({ [name]: value } as Partial<FilterValues<Collection>>);
   }
 
-  function reset<Key extends keyof Variables & string>(name: Key) {
-    const variable = definitions[name] as unknown as AppVariable<
-      AppVariableValues<Variables>[Key]
+  function reset<Key extends keyof Collection & string>(name: Key) {
+    const variable = definitions[name] as unknown as AppFilter<
+      FilterValues<Collection>[Key]
     >;
     set(name, variable.defaultValue);
   }
@@ -189,7 +191,7 @@ export function useAppVariables<const Variables extends VariableCollection>(
           name,
           variable.defaultValue,
         ])
-      ) as AppVariableValues<Variables>,
+      ) as FilterValues<Collection>,
       'push'
     );
   }
@@ -205,19 +207,19 @@ export function useAppVariables<const Variables extends VariableCollection>(
               variable.presentation?.group !== 'display'
           )
           .map(([name, variable]) => [name, variable.clearValue])
-      ) as Partial<AppVariableValues<Variables>>,
+      ) as Partial<FilterValues<Collection>>,
       'push'
     );
   }
 
-  function bind<Key extends keyof Variables & string>(name: Key) {
-    const variable = definitions[name] as unknown as AppVariable<
-      AppVariableValues<Variables>[Key]
+  function bind<Key extends keyof Collection & string>(name: Key) {
+    const variable = definitions[name] as unknown as AppFilter<
+      FilterValues<Collection>[Key]
     >;
 
     return {
       value: values[name],
-      onChange(value: AppVariableValues<Variables>[Key]) {
+      onChange(value: FilterValues<Collection>[Key]) {
         return set(name, value);
       },
       resetValue: variable.defaultValue,
@@ -237,13 +239,13 @@ export function useAppVariables<const Variables extends VariableCollection>(
 }
 
 export {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   dateTimeRangePresets,
   type DateTimeRangePreset,
-  type DateTimeRangeVariable,
-  type DateTimeRangeComparisonVariable,
-  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeFilter,
+  type DateTimeRangeComparisonFilter,
+  type DateTimeRangeComparisonFilterOptions,
   type DateTimeRangeComparisonSelection,
   type DateTimeRangeComparisonRequest,
-  type DateTimeRangeVariableOptions,
+  type DateTimeRangeFilterOptions,
 } from '@altertable/data-app/internal';

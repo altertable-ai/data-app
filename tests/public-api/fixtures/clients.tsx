@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
-  searchVariable,
+  searchFilter,
   createDataContext,
   DataApp,
   DataSection,
@@ -71,7 +71,7 @@ function makeApp(id: string) {
     },
   });
   const hooks = createDataHooks(client);
-  const search = searchVariable({ key: 'search', label: 'Search categories' });
+  const search = searchFilter({ key: 'search', label: 'Search categories' });
   const category = hooks.defineFacetFilter({
     key: 'category',
     label: 'Category',
@@ -83,10 +83,11 @@ function makeApp(id: string) {
       input: values => ({ search: values.search }),
     },
   });
+  const filters = hooks.defineFilters({ search, category });
   const view = hooks.defineDataView({
     operation: 'count',
     dataContext: context,
-    variables: { search, category },
+    filters,
     describeInput: () => `${id} scope`,
   });
   const dataset = view.dataset({
@@ -105,7 +106,7 @@ function makeApp(id: string) {
       )}
     </TextWidget>
   ));
-  return { view, dataset, content };
+  return { filters, view, dataset, content };
 }
 const a = makeApp('A');
 const b = makeApp('B');
@@ -117,26 +118,31 @@ const dataApp = defineDataApp({
 });
 function App() {
   const [selected, setSelected] = useState(a);
+  // <DataApp> renders the selected client's filters, so B's section, which reads
+  // B's filters, stays outside it to keep its own client while A is selected.
   return (
-    <DataApp
-      view={selected.view}
-      datasets={[selected.dataset]}
-      story={() => []}
-    >
-      <button onClick={() => pending.get('A')?.(response(11))}>
-        Resolve A
-      </button>
-      <button onClick={() => pending.get('B')?.(response(22))}>
-        Resolve B
-      </button>
-      <button onClick={() => setSelected(b)}>Switch client</button>
-      <section aria-label="Selected client">
-        <DataSection content={selected.content} />
-      </section>
+    <>
+      <DataApp
+        view={selected.view}
+        filters={selected.filters}
+        datasets={[selected.dataset]}
+        story={() => []}
+      >
+        <button onClick={() => pending.get('A')?.(response(11))}>
+          Resolve A
+        </button>
+        <button onClick={() => pending.get('B')?.(response(22))}>
+          Resolve B
+        </button>
+        <button onClick={() => setSelected(b)}>Switch client</button>
+        <section aria-label="Selected client">
+          <DataSection content={selected.content} />
+        </section>
+      </DataApp>
       <section aria-label="Independent client">
         <DataSection content={b.content} />
       </section>
-    </DataApp>
+    </>
   );
 }
 injectDataAppStyles();

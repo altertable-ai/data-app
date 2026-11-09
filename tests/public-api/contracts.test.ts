@@ -1,7 +1,7 @@
 import {
   createDataHooks,
   createDataContext,
-  searchVariable,
+  searchFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
@@ -164,7 +164,7 @@ test('authoring a view rejects invalid datasets and unregistered evidence', () =
   const view = hooks.defineDataView({
     dataContext: context,
     operation: 'rows',
-    variables: { group: searchVariable({ key: 'group' }) },
+    filters: hooks.defineFilters({ group: searchFilter({ key: 'group' }) }),
     describeInput: input => input.group,
   });
   expect(() =>

@@ -40,14 +40,16 @@ app-owned files, not installed packages.
 3. **Update context and bindings.** Describe definitions and coverage in the data
    context, using the operation's `queryNames` for evidence. Declare each dataset
    and metric once, with stable row keys, raw column values, and shared formats.
-4. **Define one view per operation.** Pass the headline view to `<DataApp view>`
-   and render each view in its own `<DataSection>`. Declare shared filters once,
-   pass them to every view that reads them, and include them on the headline
-   view, which renders their controls. Use flat input fields matching variable
-   names so `input` and `bindings` can be omitted. Use `defineTimeView()` for
-   period-driven analysis and `defineDataView()` otherwise. Keep protected
-   values such as `orgId` backend-owned. See
-   [views](views.md#give-each-widget-its-own-view).
+4. **Declare filters once, then one view per operation.** Declare every filter
+   and display choice with `defineFilters()` and pass the result to
+   `<DataApp filters>`, which renders their controls. Give each view the
+   declaration, or a `pick()` of the filters its operation reads. Pass the
+   headline view to `<DataApp view>` and render each view in its own
+   `<DataSection>`. Use flat input fields matching filter names so `input` and
+   `bindings` can be omitted. Use `defineTimeView()` for period-driven analysis
+   and `defineDataView()` otherwise. Keep protected values such as `orgId`
+   backend-owned. See [views](views.md#give-each-widget-its-own-view) and
+   [filters](filters.md).
 5. **Compose the content.** Follow the app brief for section order and narrative.
    Use `<Stack>` for sections, `<Grid>` for peers, and bound widgets
    from `@altertable/data-app-react`. Keep static explanations outside loading
@@ -118,7 +120,7 @@ Open only the section needed for a requirement the starter does not cover:
 
 | When                                         | Read                                                              |
 | -------------------------------------------- | ----------------------------------------------------------------- |
-| Adding categorical, numeric, or time filters | [Variables](variables.md)                                         |
+| Adding categorical, numeric, or time filters | [Filters](filters.md)                                             |
 | Adding a chart or narrative binding          | [Widgets](widgets.md)                                             |
 | Adding supplemental control hints            | [Tooltips](ui.md#tooltips-and-explanations)                       |
 | Adding a detail destination                  | [Detail views](views.md#detail-destinations)                      |

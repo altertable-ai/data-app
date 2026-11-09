@@ -18,7 +18,7 @@ export {
   booleanFilter,
   parseNumberSelection,
   parseBooleanSelection,
-  variableInput,
+  filterInput,
 } from '../authoring/contract.ts';
 export type {
   DateRangeRequest,
@@ -45,7 +45,7 @@ export type {
   DimensionSelection,
   DimensionMember,
   DimensionOption,
-  DimensionVariable,
+  DimensionFilter,
   DimensionFilterOptions,
   NumberSelection,
   NumberOperator,
@@ -139,15 +139,15 @@ export {
   type ExternalLinkResult,
 } from './external-link.ts';
 export {
-  dateTimeRangeVariable,
+  dateTimeRangeFilter,
   dateTimeRangePresets,
   type DateTimeRangePreset,
-  type DateTimeRangeVariable,
-  type DateTimeRangeComparisonVariable,
-  type DateTimeRangeComparisonVariableOptions,
+  type DateTimeRangeFilter,
+  type DateTimeRangeComparisonFilter,
+  type DateTimeRangeComparisonFilterOptions,
   type DateTimeRangeComparisonSelection,
   type DateTimeRangeComparisonRequest,
-  type DateTimeRangeVariableOptions,
+  type DateTimeRangeFilterOptions,
 } from '../authoring/contract.ts';
 export {
   parseDateTimeRange,

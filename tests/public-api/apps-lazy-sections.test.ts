@@ -136,24 +136,24 @@ test('a failed summary view blocks the story until a refresh recovers it', async
   await expect.poll(() => present.isEnabled()).toBe(true);
 });
 
-test('a summary view must declare only filters that the app view renders', async ({
+test('a summary view must read the filters that <DataApp> renders', async ({
   page,
 }) => {
-  await page.goto('/lazy-sections?summary&unfiltered-app');
+  await page.goto('/lazy-sections?summary&without-app-filters');
   await expect
     .poll(() => page.getByRole('alert').textContent())
     .toContain(
-      'A view’s filters must also be declared on the app view, which renders their controls.'
+      'A view’s filters must come from the defineFilters() result passed to <DataApp filters>, which renders their controls.'
     );
 });
 
-test('a section view must declare only filters that the app view renders', async ({
+test('a section view must read the filters that <DataApp> renders', async ({
   page,
 }) => {
-  await page.goto('/lazy-sections?unfiltered-app');
+  await page.goto('/lazy-sections?without-app-filters');
   await expect
     .poll(() => page.getByRole('alert').textContent())
     .toContain(
-      'A view’s filters must also be declared on the app view, which renders their controls.'
+      'A view’s filters must come from the defineFilters() result passed to <DataApp filters>, which renders their controls.'
     );
 });

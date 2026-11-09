@@ -3,10 +3,10 @@ import {
   invariant,
   type DataView,
   type DisplayedSnapshot,
-  type VariableCollection,
 } from '@altertable/data-app/internal';
-import { createContext, type ReactNode } from 'react';
+import { createContext } from 'react';
 
+import { Filters } from './filter-set.ts';
 import { type DataContext } from './ui/data-context.ts';
 import { type EmptyContent } from './ui/presentation.ts';
 
@@ -19,8 +19,6 @@ export type ViewResult<Data, Input> = {
   cancel: () => unknown;
   refreshing: boolean;
   queries?: DisclosedQuery[];
-  searchControls?: ReactNode;
-  filterControls?: ReactNode;
   emptyFallback: EmptyContent;
 };
 
@@ -70,27 +68,22 @@ export function useDeclaredResult<View extends DeclaredView<unknown, unknown>>(
  * The primary view's result aggregates the app's requests. */
 export const AppViewResultsContext = createContext<{
   primaryView: DeclaredView<unknown, unknown>;
+  filters: Filters | undefined;
   results: ReadonlyMap<object, ViewResult<unknown, unknown>>;
 } | null>(null);
 
-/** `<DataApp>` renders filter controls from its own view only, so any other view it
- * shows must declare its filters there too. */
-export function assertAppRendersFilters(
+/** `<DataApp filters>` renders filter controls, so every view it shows must read
+ * that declaration or a `pick()` of it. */
+export function assertAppFilters(
   view: DeclaredView<unknown, unknown>,
-  appView: DeclaredView<unknown, unknown>
+  appFilters: Filters | undefined
 ) {
-  const appFilters = filterNames(appView);
+  const { filterSet } = getViewDefinition(view) as { filterSet?: Filters };
+  if (!filterSet) return;
   invariant(
-    filterNames(view).every(name => appFilters.includes(name)),
-    'A view’s filters must also be declared on the app view, which renders their controls.'
+    appFilters && Filters.root(filterSet) === appFilters,
+    'A view’s filters must come from the defineFilters() result passed to <DataApp filters>, which renders their controls.'
   );
-}
-
-function filterNames(view: DeclaredView<unknown, unknown>): string[] {
-  const { variables } = getViewDefinition(view) as {
-    variables?: VariableCollection;
-  };
-  return Object.keys(variables ?? {});
 }
 
 export function getViewDefinition<Data, Input, Definition>(

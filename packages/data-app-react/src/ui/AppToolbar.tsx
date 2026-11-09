@@ -36,7 +36,7 @@ export type AppToolbarProps = {
   csvExport?: CsvExport | null;
 } & Omit<ComponentPropsWithRef<'div'>, 'children'>;
 
-/** Header actions only. Put reader-controlled inputs in DataApp.variables below the header.
+/** Header actions only. Put reader-controlled inputs in DataApp filters below the header.
  * Observation time, or an initial loading status, sits before Refresh. Children prepend app controls in the right
  * cluster; end follows the built-in actions. Live sits beside Refresh when supplied. Refresh also
  * answers Alt/Option+R and uses the button to cancel a running request when onCancel is provided;

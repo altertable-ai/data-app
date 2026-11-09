@@ -1,12 +1,13 @@
+import type { FilterValues, FilterCollection } from './app-filters.ts';
 import type {
   DateTimeRangeComparisonRequest,
-  DateTimeRangeComparisonVariable,
-} from './date-time-variable.ts';
+  DateTimeRangeComparisonFilter,
+} from './date-time-filter.ts';
 import {
   createDimensionFilter,
   parseFacetOptions,
   type DimensionSettings,
-  type DimensionSelectionVariable,
+  type DimensionSelectionFilter,
   type DimensionValue,
   type DimensionSelection,
 } from './dimension.ts';
@@ -22,17 +23,16 @@ import {
   type QueryDefinitions,
   type QueryParameters,
 } from './queries.ts';
-import type { AppVariableValues, VariableCollection } from './variables.ts';
 
 type Source = { query: string; queries: QueryDefinitions };
 export const dimensionSource = Symbol('data-app.dimensionSource');
-export type SourceDimensionVariable<Value extends DimensionValue> =
-  DimensionSelectionVariable<Value> & {
+export type SourceDimensionFilter<Value extends DimensionValue> =
+  DimensionSelectionFilter<Value> & {
     readonly optionsSource: 'query';
     readonly [dimensionSource]: { readonly operation: string };
   };
 const sources = new WeakMap<object, Source>();
-const parserVariables = new WeakMap<Function, VariableCollection>();
+const parserFilters = new WeakMap<Function, FilterCollection>();
 const selectorsKey = Symbol.for('@altertable/data-app/dimension-selectors');
 const ownerKey = Symbol.for('@altertable/data-app/dimension-selector-owner');
 const invalidMemberKey = Symbol.for(
@@ -52,37 +52,37 @@ export class DimensionMembershipError extends Error {
   }
 }
 
-type ParsedVariableValues<Variables extends VariableCollection> = {
+type ParsedFilterValues<Collection extends FilterCollection> = {
   [
-    Key in keyof Variables
-  ]: Variables[Key] extends DateTimeRangeComparisonVariable
+    Key in keyof Collection
+  ]: Collection[Key] extends DateTimeRangeComparisonFilter
     ? DateTimeRangeComparisonRequest
-    : AppVariableValues<Variables>[Key];
+    : FilterValues<Collection>[Key];
 };
 
-/** Validate named variable values at the operation boundary. Date inputs belong to the base parser. */
-export function variableInput<
+/** Validate named filter values at the operation boundary. Date inputs belong to the base parser. */
+export function filterInput<
   Input extends object,
-  const Variables extends VariableCollection,
+  const Collection extends FilterCollection,
 >(
   parse: (value: unknown) => Input,
-  variables: Variables & {
-    [Key in keyof Variables]: Variables[Key] extends { kind: 'dateRange' }
+  filters: Collection & {
+    [Key in keyof Collection]: Collection[Key] extends { kind: 'dateRange' }
       ? never
-      : Variables[Key];
+      : Collection[Key];
   }
-): (value: unknown) => Input & ParsedVariableValues<Variables> {
-  const previous = parserVariables.get(parse) ?? {};
-  const definitions = { ...variables };
+): (value: unknown) => Input & ParsedFilterValues<Collection> {
+  const previous = parserFilters.get(parse) ?? {};
+  const definitions = { ...filters };
   for (const [name, variable] of Object.entries(definitions))
     invariant(
       !previous[name] || previous[name] === variable,
-      `Variable input ${name} is already declared.`
+      `Filter input ${name} is already declared.`
     );
   function parser(value: unknown) {
     invariant(
       value && typeof value === 'object' && !Array.isArray(value),
-      'Expected variable input.'
+      'Expected filter input.'
     );
     const input = parse(value);
     invariant(
@@ -103,9 +103,9 @@ export function variableInput<
       values[name] =
         variable.kind === 'dateTimeRange' ? variable.parse(selected) : selected;
     }
-    return { ...input, ...values } as Input & ParsedVariableValues<Variables>;
+    return { ...input, ...values } as Input & ParsedFilterValues<Collection>;
   }
-  parserVariables.set(parser, {
+  parserFilters.set(parser, {
     ...previous,
     ...definitions,
   });
@@ -143,7 +143,7 @@ export type DimensionSourceQueryName<
 export function bindDimensionSource<const Type extends 'string' | 'number'>(
   config: DimensionSourceConfig<Type>,
   queries: QueryDefinitions
-): SourceDimensionVariable<{ string: string; number: number }[Type]> {
+): SourceDimensionFilter<{ string: string; number: number }[Type]> {
   invariant(
     !config.allowMissing,
     'Source dimensions require concrete members.'
@@ -195,7 +195,7 @@ type Query = (
   options: { limit: number }
 ) => Promise<QueryResult<Record<string, unknown>>>;
 async function loadOptions(
-  variable: DimensionSelectionVariable<any>,
+  variable: DimensionSelectionFilter<any>,
   member: DimensionValue | null,
   query: Query
 ) {
@@ -217,13 +217,13 @@ async function loadOptions(
     throw new DimensionMembershipError(`Invalid ${variable.label} member.`);
   return options;
 }
-export async function validateVariableInput(
+export async function validateFilterInput(
   parser: Function,
   input: unknown,
   query: Query
 ) {
   for (const [name, variable] of Object.entries(
-    parserVariables.get(parser) ?? {}
+    parserFilters.get(parser) ?? {}
   )) {
     if (variable.kind !== 'dimension' || !sources.has(variable)) continue;
     const selection = (input as Record<string, DimensionSelection>)[name]!;
@@ -239,7 +239,7 @@ export function attachDimensionSelectors(
 ) {
   const selectors: DataOperations = {};
   for (const variable of Object.values(
-    parserVariables.get(operation.input) ?? {}
+    parserFilters.get(operation.input) ?? {}
   )) {
     if (variable.kind !== 'dimension' || !(dimensionSource in variable))
       continue;
