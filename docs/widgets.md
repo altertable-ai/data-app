@@ -154,6 +154,21 @@ mapping receives the row and the displayed operation input. It returns the
 destination's own fields and any filter it narrows, such as the clicked group;
 the other filters the destination's operation reads carry over from the
 displayed scope.
+Narrow a dimension filter to the clicked member with an include selection, and
+use `when` to offer an action only on the rows it applies to:
+
+```ts
+// ... breakdown rows with { kind, id }, and an ordersView reading { country }
+action.detail({
+  label: 'View orders',
+  target: ordersView,
+  when: row => row.kind === 'country',
+  input: row => ({
+    country: { kind: 'include', members: [{ kind: 'value', value: row.id }] },
+  }),
+});
+```
+
 Both `children` and alternate-view `render` callbacks receive the displayed rows
 and the same action resolver.
 

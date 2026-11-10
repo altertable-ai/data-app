@@ -78,7 +78,7 @@ function lowerFirst(text: string) {
 }
 
 /** The reporting period, then each scope filter narrowed from its unrestricted value. */
-function describeFilterInput<Filters extends FilterCollection>(
+export function describeFilterInput<Filters extends FilterCollection>(
   filters: Filters
 ): (input: FilterInput<Filters>) => string {
   return input => {

@@ -32,7 +32,9 @@ export type DetailViewDefinition<Data, Input> = {
   title: ReactNode;
   /** Validates untrusted navigation input before a detail operation can run. */
   parseInput: (input: unknown) => Input;
-  describeInput: (input: Input) => string;
+  /** Describe the destination's scope. Defaults to the filters its operation reads;
+   * supply it to name the record, such as `orders for Customer 042`. */
+  describeInput?: (input: Input) => string;
 } & ViewEmptiness<Data>;
 
 /** A typed, query-backed destination. Interactions supply its own fields (`Own`);
@@ -43,7 +45,9 @@ export class DetailView<Data, Input, Own = Input> {
   #filters: FilterCollection;
   constructor(
     readonly definition: DetailViewDefinition<Data, Input> &
-      Required<ViewEmptiness<Data>>,
+      Required<ViewEmptiness<Data>> & {
+        describeInput: (input: Input) => string;
+      },
     readonly useResult: (input: Input) => ViewResult<Data, Input>,
     filters: FilterCollection = {}
   ) {

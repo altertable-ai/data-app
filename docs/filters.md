@@ -290,7 +290,7 @@ const events = dataApp.defineOperation({
 });
 ```
 
-Use `dateTimeRangePresets.monitoring` for shorter windows. Bind the query bounds
+Use `dateTimeRangePresets.monitoring` (past 5 and 15 minutes, past hour, 4 hours, and 24 hours) for shorter windows; `dateTimeRangePresets.analytics` covers past 7, 30, and 90 days, month and year to date, and the past year. A preset `range` is typed-range text such as `'24h'`, `'3d'`, or `'6mo'`. Bind the query bounds
 to a [`dateTimeRange` parameter](contract.md#bind-date-ranges).
 `allowComparison: true` adds the toggle, requires `contract`, and supplies current
 and previous ranges resolved against one reference time. Omit it for a plain

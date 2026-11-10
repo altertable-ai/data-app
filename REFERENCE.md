@@ -320,7 +320,7 @@ createDataHooks().defineDetailView: <Name extends keyof Operations & string, con
 createDataHooks().defineDetailView.definition.id: string
 createDataHooks().defineDetailView.definition.title: ReactNode
 createDataHooks().defineDetailView.definition.parseInput: (input: unknown) => InputOf<Operations[Name]> — Validates untrusted navigation input before a detail operation can run.
-createDataHooks().defineDetailView.definition.describeInput: (input: InputOf<Operations[Name]>) => string
+createDataHooks().defineDetailView.definition.describeInput?: ((input: InputOf<Operations[Name]>) => string) — Describe the destination's scope. Defaults to the filters its operation reads; supply it to name the record, such as `orders for Customer 042`.
 createDataHooks().defineDetailView.definition.isEmpty?: ((data: OutputOf<Operations[Name]>) => boolean) — App-owned semantics: measured zero need not mean an empty result. Defaults to never empty.
 createDataHooks().defineDetailView.definition.emptyFallback?: EmptyContent — Inherited by DataSection unless it supplies its own copy.
 createDataHooks().defineDetailView.definition.operation: Name
@@ -785,7 +785,7 @@ DetailContent (class, @altertable/data-app-react): <Data, Input> — A destinati
 DetailContent.target: DetailView<Data, Input, any>
 DetailContent.render: (state: DataContentState<Data, Input>) => ReactNode
 DetailView (class, @altertable/data-app-react): <Data, Input, Own> — A typed, query-backed destination. Interactions supply its own fields (`Own`); the filters its operation reads carry over from the displayed scope.
-DetailView.definition: { id: string; title: ReactNode; parseInput: (input: unknown) => Input; describeInput: (input: Input) => string; } & ViewEmptiness<Data> & Required<ViewEmptiness<...>>
+DetailView.definition: { id: string; title: ReactNode; parseInput: (input: unknown) => Input; describeInput?: ((input: Input) => string) | undefined; } & ViewEmptiness<Data> & Required<...> & { ...; }
 DetailView.useResult: (input: Input) => ViewResult<Data, Input>
 DetailView.ownInput?: Own
 DetailView.content: (render: (state: DataContentState<Data, Input>) => ReactNode) => DetailContent<Data, Input> — Render like view content: displayed data, its input, and the derived scope.
@@ -793,7 +793,7 @@ DetailViewDefinition (type, @altertable/data-app-react): <Data, Input>
 DetailViewDefinition.id: string
 DetailViewDefinition.title: ReactNode
 DetailViewDefinition.parseInput: (input: unknown) => Input — Validates untrusted navigation input before a detail operation can run.
-DetailViewDefinition.describeInput: (input: Input) => string
+DetailViewDefinition.describeInput?: ((input: Input) => string) — Describe the destination's scope. Defaults to the filters its operation reads; supply it to name the record, such as `orders for Customer 042`.
 DetailViewDefinition.isEmpty?: ((data: Data) => boolean) — App-owned semantics: measured zero need not mean an empty result. Defaults to never empty.
 DetailViewDefinition.emptyFallback?: EmptyContent — Inherited by DataSection unless it supplies its own copy.
 dimensionFilter (function, @altertable/data-app/contract): <const T extends string>(config: DimensionFilterOptions<T>): DimensionFilter<T>; <const T extends number>(config: DimensionFilterOptions<T>): DimensionFilter<T> — A bounded categorical filter with app-owned fixed options.
@@ -1804,6 +1804,11 @@ useDateFormatting.options.timeZone?: string
 useDetailNavigation (hook, @altertable/data-app-react): (): DetailNavigation — Resolve a detail target from an interaction. The destination validates input before fetching.
 useSvgId (hook, @altertable/data-app-react/ui): (): string — Stable React ID for SVG definitions and their URL references; safe with identifier prefixes.
 useViewTab (hook, @altertable/data-app-react/ui): <View extends string>(views: readonly View[], fallback: View): [View, (key: string | number) => void] — Keep a page-level tab in `?view=`; reserve `?tab=` for the inspect sheet.
+ViewSource (type, @altertable/data-app-react): <Data, Input> — A view's displayed data and input, or its loading state; widgets and bindings read it.
+ViewSource.loading: true [variant 1 of 2]
+ViewSource.loading?: false [variant 2 of 2]
+ViewSource.data: Data [variant 2 of 2]
+ViewSource.input: Input [variant 2 of 2]
 VisualizationWidget (component, @altertable/data-app-react): <Row, Data, Input>(props: VisualizationWidgetProps<Row, Data, Input>)
 VisualizationWidget.skeleton?: SkeletonContent
 VisualizationWidget.headingLevel?: 2 | 3 | 4 | 5 | 6 — Document outline level. The widget title keeps the shared widget-heading appearance.

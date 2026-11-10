@@ -45,6 +45,7 @@ import {
   type ViewRequest,
 } from './view-runtime.tsx';
 import {
+  describeFilterInput,
   readViewPeriod,
   resolveViewDefinition,
   resolveViewEmptiness,
@@ -433,7 +434,15 @@ export function createDataHooks<Operations extends DataOperations>(
   > {
     type Data = OutputOf<Operations[Name]>;
     type Input = InputOf<Operations[Name]>;
-    const resolved = { ...definition, ...resolveViewEmptiness(definition) };
+    const resolved = {
+      ...definition,
+      ...resolveViewEmptiness(definition),
+      describeInput:
+        definition.describeInput ??
+        (describeFilterInput(operationFilters[definition.operation] ?? {}) as (
+          input: Input
+        ) => string),
+    };
     const target = new DetailView<
       Data,
       Input,
@@ -445,14 +454,14 @@ export function createDataHooks<Operations extends DataOperations>(
           name: definition.operation,
           input,
           isEmpty: resolved.isEmpty,
-          describeInput: definition.describeInput,
+          describeInput: resolved.describeInput,
           enabled: true,
         });
         return {
           view: request.view,
           dataContext: definition.dataContext,
           snapshot: request.snapshot,
-          scope: displayedScope(request.view, definition.describeInput),
+          scope: displayedScope(request.view, resolved.describeInput),
           refetch() {
             void request.refetch();
           },

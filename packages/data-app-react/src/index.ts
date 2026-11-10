@@ -42,6 +42,7 @@ export type {
   DatasetDefinition,
   Dataset,
   MetricRecords,
+  ViewSource,
   ActionBuilder,
   DetailAction,
   DataAppStylesOptions,

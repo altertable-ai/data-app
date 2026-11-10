@@ -33,6 +33,7 @@ import type { TableWidgetColumn } from './ui/TableWidget.tsx';
 import type { WidgetEvidence } from './ui/WidgetEvidence.ts';
 
 /** Displayed data, or an initial loading reading. Pending filter values are never a source. */
+/** A view's displayed data and input, or its loading state; widgets and bindings read it. */
 export type ViewSource<Data, Input> =
   | { loading: true }
   | { loading?: false; data: Data; input: Input };
