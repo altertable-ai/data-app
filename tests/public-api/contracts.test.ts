@@ -2,14 +2,14 @@ import { createDataHooks, createDataContext } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   choiceFilter,
-  dateRangeFilter,
+  dateTimeRangeFilter,
   defineOperation,
   defineDateRangeContract,
   dimensionFilter,
   searchFilter,
   dimensionPredicate,
   parseCount,
-  type DateRangeRequest,
+  type DateTimeRangeComparisonRequest,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
@@ -33,17 +33,23 @@ test('an operation reading a date range and dimension validates and escapes its 
       { value: 'null', label: 'Literal null' },
     ],
   });
-  const period = dateRangeFilter({
+  const period = dateTimeRangeFilter({
     key: 'period',
     contract: calendar,
-    comparison: true,
-    defaultValue: { kind: 'dates', start: '2026-03-04', end: '2026-03-06' },
+    allowComparison: true,
+    defaultValue: {
+      from: new Date('2026-03-04T00:00:00Z'),
+      to: new Date('2026-03-07T00:00:00Z'),
+    },
   });
   const input: {
-    period: DateRangeRequest;
+    period: DateTimeRangeComparisonRequest;
     region: DimensionSelection<string>;
   } = {
-    period: calendar.request({ start: '2026-03-04', end: '2026-03-06' }, true),
+    period: period.input({
+      range: period.defaultValue.range,
+      comparison: 'previous',
+    }),
     region: {
       kind: 'include' as const,
       members: [
@@ -94,8 +100,8 @@ test('an operation reading a date range and dimension validates and escapes its 
   const response = await client.query('activity', input);
   expect(response.data).toBe(0);
   expect(response.input.period.comparison).toEqual({
-    start: '2026-03-01',
-    end: '2026-03-03',
+    from: new Date('2026-03-01T00:00:00Z'),
+    to: new Date('2026-03-04T00:00:00Z'),
   });
   expect(statements).toEqual([
     'SELECT count FROM activity WHERE region = $region OR region IS NULL',
@@ -106,11 +112,26 @@ test('an operation reading a date range and dimension validates and escapes its 
     )
   ).toEqual(input.region);
   for (const period of [
-    { range: { start: '2026-02-30', end: '2026-03-02' }, comparison: null },
-    { range: { start: '2026-03-01', end: '2026-03-09' }, comparison: null },
     {
-      range: input.period.range,
-      comparison: { start: '2026-03-02', end: '2026-03-03' },
+      ...input.period,
+      range: {
+        from: new Date('2026-02-01T00:00:00Z'),
+        to: new Date('2026-03-07T00:00:00Z'),
+      },
+    },
+    {
+      ...input.period,
+      range: {
+        from: new Date('2026-03-01T00:00:00Z'),
+        to: new Date('2026-03-10T00:00:00Z'),
+      },
+    },
+    {
+      ...input.period,
+      comparison: {
+        from: new Date('2026-03-02T00:00:00Z'),
+        to: new Date('2026-03-04T00:00:00Z'),
+      },
     },
   ])
     await expect(
@@ -205,10 +226,13 @@ test('an operation derives its parser and checks from the filters it reads', asy
     maxRangeDays: 7,
     timeZone: 'UTC',
   });
-  const period = dateRangeFilter({
+  const period = dateTimeRangeFilter({
     key: 'period',
     contract: calendar,
-    defaultValue: { kind: 'dates', start: '2026-03-04', end: '2026-03-06' },
+    defaultValue: {
+      from: new Date('2026-03-04T00:00:00Z'),
+      to: new Date('2026-03-07T00:00:00Z'),
+    },
   });
   const group = groupFilter();
   const received: unknown[] = [];
@@ -230,10 +254,7 @@ test('an operation derives its parser and checks from the filters it reads', asy
       },
     }),
   };
-  const defaults = {
-    period: calendar.request({ start: '2026-03-04', end: '2026-03-06' }, false),
-    group: 'all',
-  };
+  const defaults = { period: period.defaultValue, group: 'all' };
   expect(operations.counts.checks).toEqual([defaults]);
   expect(operations.total.checks).toEqual([{}]);
   const client = createDataClient({
@@ -259,7 +280,10 @@ test('an operation derives its parser and checks from the filters it reads', asy
   expect(() =>
     parse({
       ...defaults,
-      period: { range: { start: '2026-03-01', end: '2026-03-09' } },
+      period: {
+        from: new Date('2026-03-01T00:00:00Z'),
+        to: new Date('2026-03-20T00:00:00Z'),
+      },
     })
   ).toThrow();
   expect(() => operations.total.input({ group: 'all' })).toThrow(
@@ -278,21 +302,9 @@ test('an operation derives its parser and checks from the filters it reads', asy
 });
 
 test('operation declarations reject a second date filter and a parser beside filters', () => {
-  const contract = defineDateRangeContract({
-    maxRangeDays: 7,
-    timeZone: 'UTC',
-  });
   const filters = {
-    period: dateRangeFilter({
-      key: 'period',
-      contract,
-      defaultValue: { kind: 'preset', id: 'last-7' },
-    }),
-    baseline: dateRangeFilter({
-      key: 'baseline',
-      contract,
-      defaultValue: { kind: 'preset', id: 'last-7' },
-    }),
+    period: dateTimeRangeFilter({ key: 'period', defaultValue: '7d' }),
+    baseline: dateTimeRangeFilter({ key: 'baseline', defaultValue: '7d' }),
   };
   expect(() =>
     defineOperation({

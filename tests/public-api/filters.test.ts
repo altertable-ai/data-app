@@ -3,7 +3,7 @@ import {
   searchFilter,
   choiceFilter,
   multiChoiceFilter,
-  dateRangeFilter,
+  dateTimeRangeFilter,
   type FilterPresentation,
   numberFilter,
   booleanFilter,
@@ -61,7 +61,7 @@ test('presentation intent is retained by each filter constructor without changin
       options: [{ value: 'FR', label: 'France' }],
       presentation,
     }),
-    dateRangeFilter({
+    dateTimeRangeFilter({
       key: 'period',
       contract: defineDateRangeContract({
         minDate: '2026-01-01',
@@ -69,7 +69,10 @@ test('presentation intent is retained by each filter constructor without changin
         maxRangeDays: 31,
         timeZone: 'UTC',
       }),
-      defaultValue: { kind: 'dates', start: '2026-01-01', end: '2026-01-31' },
+      defaultValue: {
+        from: new Date('2026-01-01T00:00:00Z'),
+        to: new Date('2026-02-01T00:00:00Z'),
+      },
       presentation,
     }),
   ];
@@ -297,30 +300,26 @@ test('a date range can start with its comparison on and readers can turn it off'
     maxRangeDays: 31,
     timeZone: 'UTC',
   });
-  const period = dateRangeFilter({
+  const range = {
+    from: new Date('2026-03-24T00:00:00Z'),
+    to: new Date('2026-03-31T00:00:00Z'),
+  };
+  const period = dateTimeRangeFilter({
     key: 'period',
     contract,
-    comparison: true,
-    defaultValue: { kind: 'preset', id: 'last-7', comparison: 'previous' },
+    allowComparison: true,
+    defaultComparison: 'previous',
+    defaultValue: range,
   });
   expect(period.read(new URLSearchParams())).toEqual({
-    kind: 'preset',
-    id: 'last-7',
+    range,
     comparison: 'previous',
   });
-  const off = period.write({ kind: 'preset', id: 'last-7' });
+  const off = period.write({ range });
   expect(off).toMatchObject({ compare: 'off' });
   expect(
     period.read(new URLSearchParams(off as Record<string, string>))
-  ).toEqual({ kind: 'preset', id: 'last-7' });
+  ).toEqual({ range });
+  expect(period.write(period.defaultValue)).toMatchObject({ compare: null });
   expect(period.input(period.defaultValue).comparison).not.toBeNull();
-  expect(() =>
-    dateRangeFilter({
-      key: 'period',
-      contract,
-      defaultValue: { kind: 'preset', id: 'last-7', comparison: 'previous' },
-    })
-  ).toThrow(
-    'Date filter period needs comparison: true to start with the comparison on.'
-  );
 });

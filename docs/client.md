@@ -20,12 +20,10 @@ const response = await client.query(
 );
 ```
 
-The app supplies `operations`, the filters each one reads, and an optional
-cancellation `signal`. Inputs and data are inferred from the operation map and
-`run()`. Keep the operations import type-only so implementations stay on the
-server; declare their filters in a browser-safe module both sides import
-([shared filters](filters.md#share-filters-with-http-and-local-apps)). Omit
-`filters` only when no operation declares any.
+Keep the operations import type-only so implementations stay on the server.
+Pass the filters each operation reads from a browser-safe module both sides
+import ([shared filters](filters.md#share-filters-with-http-and-local-apps)).
+Inputs and data are inferred from the operation map and `run()`.
 
 The default endpoint is `/api/data`. Override it with
 `createDataClient<typeof operations>({ filters, endpoint, fetch })` to change the base URL or supply a Fetch

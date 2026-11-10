@@ -162,14 +162,10 @@ test('calendar and dimension controls preserve comparisons, measured zero, and U
         .isVisible()
     )
     .toBe(true);
-  await page.getByRole('button', { name: /^Choose dates/ }).click();
+  await page.getByRole('combobox', { name: 'Date range' }).click();
   await page
-    .getByRole('checkbox', {
-      name: 'Compare with previous period',
-      exact: true,
-    })
-    .check();
-  await page.keyboard.press('Escape');
+    .getByRole('option', { name: /Compare with previous period/ })
+    .click();
   await expect.poll(() => page.url()).toContain('compare=previous');
   await page.getByRole('button', { name: 'Region: All', exact: true }).click();
   await page.getByRole('option', { name: 'Europe', exact: true }).click();
@@ -206,6 +202,40 @@ test('calendar and dimension controls preserve comparisons, measured zero, and U
         .getByRole('main')
         .getByText(/^Displayed period: Mar 4–6, 2026 UTC/)
         .isVisible()
+    )
+    .toBe(true);
+});
+
+test('the unified picker sends calendar selections as exclusive-end datetime parameters', async ({
+  page,
+}) => {
+  await page.goto('/time-app');
+  const picker = page.getByRole('combobox', { name: 'Date range' });
+  await picker.click();
+  await page.getByRole('option', { name: 'Latest 7 available days' }).click();
+  await expect
+    .poll(() => JSON.parse(new URL(page.url()).searchParams.get('period')!))
+    .toEqual({
+      from: '2026-03-25T00:00:00.000Z',
+      to: '2026-04-01T00:00:00.000Z',
+    });
+  await expect.poll(() => picker.inputValue()).toBe('Latest 7 available days');
+  await picker.click();
+  await page.getByRole('option', { name: 'Select from calendar…' }).click();
+  const calendar = page.getByRole('dialog', { name: 'Date range calendar' });
+  await calendar
+    .getByRole('gridcell', { name: 'Tuesday, March 10, 2026' })
+    .click();
+  await calendar
+    .getByRole('gridcell', { name: 'Thursday, March 12, 2026' })
+    .click();
+  await calendar.getByRole('button', { name: 'Apply' }).click();
+  const range = JSON.parse(new URL(page.url()).searchParams.get('period')!);
+  expect(range.from).toBe('2026-03-10T00:00:00.000Z');
+  expect(range.to).toBe('2026-03-13T00:00:00.000Z');
+  await expect
+    .poll(() =>
+      page.getByText(/^Displayed period: Mar 10–12, 2026 UTC/).isVisible()
     )
     .toBe(true);
 });
@@ -385,12 +415,9 @@ test('a phone reader can select filters, compare periods and inspect results by 
         .textContent()
     )
     .toBe('Measured events: 0');
-  await page.getByRole('button', { name: /^Choose dates/ }).tap();
+  await page.getByRole('combobox', { name: 'Date range' }).tap();
   await page
-    .getByRole('checkbox', {
-      name: 'Compare with previous period',
-      exact: true,
-    })
+    .getByRole('option', { name: /Compare with previous period/ })
     .tap();
   await expect.poll(() => page.url()).toContain('compare=previous');
   await page.touchscreen.tap(8, 8);
@@ -420,15 +447,12 @@ test('a phone reader can select filters, compare periods and inspect results by 
     )
     .toBe('Measured events: 0');
   expect(page.url()).toBe(selected);
-  await page.getByRole('button', { name: /^Choose dates/ }).tap();
+  await page.getByRole('combobox', { name: 'Date range' }).tap();
   expect(
     await page
-      .getByRole('checkbox', {
-        name: 'Compare with previous period',
-        exact: true,
-      })
-      .isChecked()
-  ).toBe(true);
+      .getByRole('option', { name: /Compare with previous period/ })
+      .getAttribute('aria-selected')
+  ).toBe('true');
 });
 
 test('query inspection displays and copies resolved parameters without interpolating SQL', async ({

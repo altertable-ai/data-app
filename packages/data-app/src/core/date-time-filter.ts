@@ -88,6 +88,8 @@ export type DateTimeRangeComparisonFilterOptions = Omit<
 > & {
   allowComparison: true;
   contract: DateRangeContract;
+  /** Start with the previous-period comparison on; readers can still turn it off. */
+  defaultComparison?: 'previous';
 };
 
 export type DateTimeRangeComparisonFilter = AppFilter<
@@ -107,9 +109,8 @@ export type DateTimeRangeComparisonFilter = AppFilter<
   ) => DateTimeRangeRequest['comparison'];
 };
 
-/** One declaration drives the picker, URL state, and operation input.
- * With comparison enabled, use input(defaultValue) for operation checks and filterInput()
- * to validate request snapshots. Query the resulting range and optional comparison bounds.
+/** One declaration drives the picker, URL state, and the input of operations that list it.
+ * Query the resulting range and optional comparison: `from` inclusive, `to` exclusive.
  */
 export function dateTimeRangeFilter(
   options: DateTimeRangeComparisonFilterOptions
@@ -206,7 +207,15 @@ function withComparison(
   const contract = options.contract;
   const compareKey =
     options.key === 'period' ? 'compare' : `${options.key}-compare`;
-  const initial = { range: base.defaultValue };
+  const initial: DateTimeRangeComparisonSelection = {
+    range: base.defaultValue,
+    ...(options.defaultComparison ? { comparison: 'previous' as const } : {}),
+  };
+  /** The URL records the comparison only when it differs from the default. */
+  function comparisonParam(selection: DateTimeRangeComparisonSelection) {
+    const state = selection.comparison ?? 'off';
+    return state === (initial.comparison ?? 'off') ? null : state;
+  }
   function parseSelection(
     value: unknown,
     now = new Date()
@@ -268,6 +277,10 @@ function withComparison(
       return false;
     }
   }
+  invariant(
+    valid(initial),
+    `Date filter ${options.key} has a default comparison outside its source coverage.`
+  );
   return {
     kind: 'dateTimeRangeComparison',
     label: base.label,
@@ -330,19 +343,20 @@ function withComparison(
       `${base.describe!(selection.range)}${selection.comparison ? ' vs previous period' : ''}`,
     read(params) {
       const range = base.read(params);
+      const state = params.get(compareKey);
       const compared: DateTimeRangeComparisonSelection = {
         range,
         comparison: 'previous',
       };
-      return params.get(compareKey) === 'previous' && valid(compared)
-        ? compared
-        : { range };
+      const on =
+        state === 'previous' || (state === null && !!initial.comparison);
+      return on && valid(compared) ? compared : { range };
     },
     write(value) {
       const selection = parseSelection(value);
       return {
         ...base.write(selection.range),
-        [compareKey]: selection.comparison ?? null,
+        [compareKey]: comparisonParam(selection),
       };
     },
   };

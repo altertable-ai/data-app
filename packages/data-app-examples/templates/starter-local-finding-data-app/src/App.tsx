@@ -2,118 +2,140 @@ import {
   createDataHooks,
   DataApp,
   DataSection,
-  VisualizationWidget,
-  DataValue,
-  TableWidget,
-  Ranking,
+  MetricWidget,
   Stack,
-  TextContent,
+  TableWidget,
+  VisualizationWidget,
 } from '@altertable/data-app-react';
+import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 
 import { sampleDataContext } from '#app/data-context.ts';
+import { operationFilters } from '#app/filters.ts';
 import type { operations } from '#app/operations.ts';
-const { defineView } = createDataHooks(createDataClient<typeof operations>());
-const sampleCountsView = defineView({
+const { defineView } = createDataHooks(
+  createDataClient<typeof operations>({ filters: operationFilters })
+);
+const samplesView = defineView({
   dataContext: sampleDataContext,
-  operation: 'sampleCountsByGroup',
-  isEmpty: sampleCounts => sampleCounts.length === 0,
+  operation: 'samples',
+  isEmpty: rows => rows.length === 0,
   emptyFallback: {
-    title: 'No matching groups',
-    description: 'No observations are available for this query.',
+    title: 'No samples in this period',
+    description: 'No observations are available for this period.',
   },
 });
-const sampleCounts = sampleCountsView.dataset({
-  name: 'Sample counts',
-  select: rows => rows,
-  rowKey: row => row.groupName,
-  columns: {
-    groupName: { label: 'Group', value: row => row.groupName },
-    sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
-  },
-  evidence: {
-    id: 'counts-by-group',
-    glossaryIds: ['sampleCount'],
-  },
-});
-const totalSamples = sampleCountsView.metric(
+type SampleRow = { sampleCount: number; selected: boolean };
+function total(rows: readonly SampleRow[]) {
+  return rows.reduce((sum, row) => sum + row.sampleCount, 0);
+}
+function totalsBy<Row extends SampleRow>(
+  rows: readonly Row[],
+  key: (row: Row) => string
+) {
+  const totals = new Map<string, number>();
+  for (const row of rows)
+    totals.set(key(row), (totals.get(key(row)) ?? 0) + row.sampleCount);
+  return [...totals].map(([id, sampleCount]) => ({ id, sampleCount }));
+}
+const count = { kind: 'count' } as const;
+const totalSamples = samplesView.metric(
   {
     id: 'total-samples',
-    label: 'Total samples',
+    label: 'Samples',
     glossaryId: 'sampleCount',
-    format: { kind: 'count' },
+    format: count,
   },
-  rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
+  (rows, input) => ({
+    current: total(rows.filter(row => row.selected)),
+    ...(input.period.comparison && {
+      previous: total(rows.filter(row => !row.selected)),
+    }),
+  })
 );
-const alphaSamples = sampleCountsView.metric(
-  {
-    id: 'alpha-samples',
-    label: 'Alpha samples',
-    glossaryId: 'sampleCount',
-    format: { kind: 'count' },
+const trend = samplesView.dataset({
+  name: 'Samples over time',
+  select: rows => totalsBy(rows, row => row.periodStart),
+  rowKey: row => row.id,
+  columns: {
+    id: { label: 'Period start', value: row => row.id },
+    sampleCount: { value: row => row.sampleCount, format: count },
   },
-  rows => {
-    const alpha = rows.find(row => row.groupName === 'Alpha');
-    if (!alpha)
-      throw new Error('The sample Finding requires evidence for Alpha.');
-    return { current: alpha.sampleCount };
-  }
-);
-// This fictional Finding demonstrates prose, inline evidence, and a Markdown-table equivalent.
-// Preserve each real Finding's own headings and argument instead of reusing these sections.
-const sampleContent = sampleCountsView.content(result => (
+  evidence: { id: 'samples-over-time', glossaryIds: ['sampleCount'] },
+});
+const breakdown = samplesView.dataset({
+  name: 'Samples by member',
+  select: rows =>
+    totalsBy(
+      rows.filter(row => row.selected),
+      row => row.member
+    ),
+  rowKey: row => row.id,
+  columns: {
+    id: { label: 'Member', value: row => row.id },
+    sampleCount: { value: row => row.sampleCount, format: count },
+  },
+  evidence: { id: 'samples-by-member', glossaryIds: ['sampleCount'] },
+});
+const sampleRows = samplesView.dataset({
+  name: 'Samples',
+  select: rows => rows.filter(row => row.selected),
+  rowKey: row => `${row.periodStart}:${row.member}`,
+  columns: {
+    periodStart: { label: 'Period start', value: row => row.periodStart },
+    member: { label: 'Member', value: row => row.member },
+    sampleCount: { value: row => row.sampleCount, format: count },
+  },
+  evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
+});
+// The Finding's text is shown above the app; keep content to charts and captions.
+const sampleContent = samplesView.content(result => (
   <Stack>
-    <TextContent>
-      <h2>Contribution by group</h2>
-      <p>
-        <strong>Alpha</strong> contributed{' '}
-        <DataValue metric={alphaSamples} source={result} /> of the{' '}
-        <DataValue metric={totalSamples} source={result} /> recorded samples.
-        The group comparison below supports that concentration; it does not
-        explain its cause.
-      </p>
-    </TextContent>
+    <MetricWidget metric={totalSamples} source={result} />
     <VisualizationWidget
-      dataset={sampleCounts}
+      dataset={trend}
       source={result}
-      title="Sample count"
+      title="Samples over time"
+      description="Includes the previous period when comparison is on."
+      breakdown={samplesView.breakdown('grain')}
     >
       {rows => (
-        <Ranking
-          aria-label="Samples by group"
+        <ComposedChart
+          ariaLabel="Samples over time"
+          data={rows}
+          valueFormat={count}
+        >
+          <ComposedChart.XAxis dataKey="id" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Line dataKey="sampleCount" name="Samples" />
+          <ComposedChart.Tooltip />
+        </ComposedChart>
+      )}
+    </VisualizationWidget>
+    <VisualizationWidget
+      dataset={breakdown}
+      source={result}
+      title="Samples by member"
+      breakdown={samplesView.breakdown('breakdown')}
+    >
+      {rows => (
+        <BarChart
+          ariaLabel="Samples by member"
+          unit="samples"
           items={rows.map(row => ({
-            id: row.groupName,
-            label: row.groupName,
+            ...row,
+            label: row.id,
             value: row.sampleCount,
           }))}
         />
       )}
     </VisualizationWidget>
-    <TextContent>
-      <h2>Supporting evidence</h2>
-      <p>
-        The source rows are grouped by <code>group_name</code> and summed using{' '}
-        <code>sample_count</code>. The table retains the exact values behind the
-        comparison.
-      </p>
-      <ul>
-        <li>Compare the groups within the same sample population.</li>
-        <li>
-          <em>Volume alone does not establish performance or causality.</em>
-        </li>
-      </ul>
-    </TextContent>
-    <TableWidget
-      dataset={sampleCounts}
-      source={result}
-      title="Counts by group"
-      pagination={false}
-    />
+    <TableWidget dataset={sampleRows} source={result} title="Samples" />
   </Stack>
 ));
 export function App() {
   return (
-    <DataApp view={sampleCountsView} showToolbar={false}>
+    <DataApp view={samplesView} showToolbar={false}>
       <DataSection content={sampleContent} />
     </DataApp>
   );

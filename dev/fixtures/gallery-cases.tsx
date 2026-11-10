@@ -26,7 +26,7 @@ import {
   DataTableShare,
   DataTableTimestamp,
   DataWidget,
-  DateRangePicker,
+  DateTimeRangePicker,
   GlossaryDefinition,
   GlossaryExplanation,
   GradientScroll,
@@ -43,13 +43,14 @@ import {
   TabList,
   TabPanel,
   TabPanels,
-  type DateRange,
   type LiveIntervalSeconds,
   type WidgetStatus,
   type AppIconName,
 } from '@altertable/data-app-react/ui';
 import {
   dimensionFilter,
+  resolveDateTimeRange,
+  type DateTimeRange,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
@@ -82,6 +83,11 @@ import { WidgetDisclosure } from '@/packages/data-app-react/src/ui/WidgetDisclos
 import { WidgetViewTabs } from '@/packages/data-app-react/src/ui/WidgetViewTabs.tsx';
 
 import '@/dev/fixtures/gallery.css';
+
+const disabledDateDefault: DateTimeRange = {
+  from: new Date('2026-09-01T00:00:00Z'),
+  to: new Date('2026-10-01T00:00:00Z'),
+};
 
 const dimension = dimensionFilter({
   key: 'fixture_dimension',
@@ -229,11 +235,23 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
   const [notice, setNotice] = useState(false);
   const [cycle, setCycle] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [dates, setDates] = useState<DateRange | null>({
-    start: '2026-09-24',
-    end: '2026-09-30',
+  const [dateTimeRange, setDateTimeRange] = useState<DateTimeRange>({
+    from: new Date('2026-09-24T00:00:00Z'),
+    to: new Date('2026-10-01T00:00:00Z'),
   });
-  const [comparison, setComparison] = useState(false);
+  const [disabledResetRange, setDisabledResetRange] = useState(dateTimeRange);
+  const [dateTimeComparison, setDateTimeComparison] = useState(false);
+  const resolvedDateTimeRange = resolveDateTimeRange(dateTimeRange);
+  const dateTimeComparisonRange: DateTimeRange | null =
+    resolvedDateTimeRange.from === null
+      ? null
+      : {
+          from: new Date(
+            2 * resolvedDateTimeRange.from.getTime() -
+              resolvedDateTimeRange.to.getTime()
+          ),
+          to: resolvedDateTimeRange.from,
+        };
   const [live, setLive] = useState(false);
   const [interval, setInterval] = useState<LiveIntervalSeconds>(60);
   const [view, setView] = useState<'ready' | 'empty'>('ready');
@@ -491,34 +509,38 @@ export function GalleryCases({ category }: { category: GalleryCategory }) {
         </Case>
       </Section>
       <Section id="dates" title="Dates, periods and freshness">
-        <Case title="Bounded date range and comparison">
-          <DateRangePicker
-            label="Gallery dates"
-            value={dates}
-            onChange={setDates}
-            minDate="2026-09-01"
-            maxDate="2026-09-30"
-            maxRangeDays={30}
-            timeZone="UTC"
+        <Case title="Datetime range and comparison">
+          <DateTimeRangePicker
+            label="Gallery datetime range"
+            value={dateTimeRange}
+            onChange={setDateTimeRange}
             comparison={{
-              enabled: comparison,
-              range: { start: '2026-09-17', end: '2026-09-23' },
-              onChange: setComparison,
+              enabled: dateTimeComparison,
+              range: dateTimeComparisonRange,
+              onChange: setDateTimeComparison,
             }}
           />
         </Case>
         <Case title="Unset and disabled dates">
           <Stack>
-            <DateRangePicker
+            <DateTimeRangePicker
               label="Unset dates"
               value={null}
               onChange={() => {}}
             />
-            <DateRangePicker
+            <DateTimeRangePicker
               label="Disabled dates"
-              value={dates}
+              value={dateTimeRange}
               onChange={() => {}}
-              isDisabled
+              disabled
+            />
+            <DateTimeRangePicker
+              label="Disabled dates with reset"
+              value={disabledResetRange}
+              onChange={setDisabledResetRange}
+              isDefault={disabledResetRange === disabledDateDefault}
+              onReset={() => setDisabledResetRange(disabledDateDefault)}
+              disabled
             />
           </Stack>
         </Case>

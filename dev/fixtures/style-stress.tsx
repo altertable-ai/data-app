@@ -7,7 +7,7 @@ import {
 } from '@altertable/data-app-react';
 import {
   ChoicePicker,
-  DateRangePicker,
+  DateTimeRangePicker,
   SearchField,
   LiveControl,
   MetricWidget,
@@ -15,6 +15,7 @@ import {
   DataTable,
 } from '@altertable/data-app-react/ui';
 import { applyAppearance } from '@altertable/data-app/appearance';
+import type { DateTimeRange } from '@altertable/data-app/contract';
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -35,9 +36,9 @@ const exactValue = new Intl.NumberFormat('fr-FR', {
 function Stress() {
   const [query, setQuery] = useState('Une recherche avec beaucoup de mots');
   const [region, setRegion] = useState('long');
-  const [dates, setDates] = useState<{ start: string; end: string } | null>({
-    start: '2026-09-24',
-    end: '2026-09-30',
+  const [dates, setDates] = useState<DateTimeRange>({
+    from: new Date('2026-09-24T00:00:00Z'),
+    to: new Date('2026-10-01T00:00:00Z'),
   });
   const [live, setLive] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -82,16 +83,17 @@ function Stress() {
           value={region}
           onChange={setRegion}
         />
-        <DateRangePicker
+        <DateTimeRangePicker
           label="Reporting dates"
           value={dates}
           onChange={setDates}
-          minDate="2026-09-01"
-          maxDate="2026-09-30"
           maxRangeDays={30}
           comparison={{
             enabled: true,
-            range: { start: '2026-09-17', end: '2026-09-23' },
+            range: {
+              from: new Date('2026-09-17T00:00:00Z'),
+              to: new Date('2026-09-24T00:00:00Z'),
+            },
             onChange: () => {},
           }}
         />

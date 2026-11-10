@@ -11,17 +11,36 @@ import {
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  dateRangeFilter,
+  dateTimeRangeFilter,
   defineDateRangeContract,
   defineOperation,
   dimensionFilter,
 } from '@altertable/data-app/contract';
+import { formatDateRange } from '@altertable/data-app/format';
 
 const calendar = defineDateRangeContract({
   minDate: '2026-02-01',
   maxDate: '2026-03-31',
   maxRangeDays: 31,
   timeZone: 'UTC',
+});
+const presets = [1, 3, 7, 14, 30].map(days => ({
+  label: days === 1 ? 'Latest available day' : `Latest ${days} available days`,
+  shortcut: days === 1 ? '-' : `${days}d`,
+  range: {
+    from: new Date(Date.UTC(2026, 2, 31 - days + 1)),
+    to: new Date('2026-04-01T00:00:00Z'),
+  },
+}));
+const period = dateTimeRangeFilter({
+  key: 'period',
+  contract: calendar,
+  allowComparison: true,
+  presets,
+  defaultValue: {
+    from: new Date('2026-03-04T00:00:00Z'),
+    to: new Date('2026-03-07T00:00:00Z'),
+  },
 });
 const region = dimensionFilter<string>({
   key: 'region',
@@ -38,12 +57,6 @@ const region = dimensionFilter<string>({
     { value: 'Europe', label: 'Europe' },
     { value: 'null', label: 'Literal null' },
   ],
-});
-const period = dateRangeFilter({
-  key: 'period',
-  contract: calendar,
-  defaultValue: { kind: 'dates', start: '2026-03-04', end: '2026-03-06' },
-  comparison: true,
 });
 const operation = defineOperation({
   queries: {},
@@ -80,7 +93,15 @@ const metric = view.metric(
 const dataset = view.dataset({
   name: 'Events',
   select: (count, input) => [
-    { count, period: calendar.describeInput(input.period.range) },
+    {
+      count,
+      period: `${formatDateRange({
+        start: input.period.range.from.toISOString().slice(0, 10),
+        end: new Date(input.period.range.to.getTime() - 1)
+          .toISOString()
+          .slice(0, 10),
+      })} ${calendar.bounds().timeZone}`,
+    },
   ],
   rowKey: () => 'events',
   columns: {

@@ -3,22 +3,19 @@ import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   choiceFilter,
-  dateRangeFilter,
+  dateTimeRangeFilter,
   defineDateRangeContract,
   facetFilter,
 } from '@altertable/data-app/contract';
 
 const calendar = defineDateRangeContract({ maxRangeDays: 30, timeZone: 'UTC' });
-const period = dateRangeFilter({
+const period = dateTimeRangeFilter({
   key: 'period',
   contract: calendar,
-  defaultValue: { kind: 'preset', id: 'last-7' },
+  allowComparison: true,
+  defaultValue: '7d',
 });
-const other = dateRangeFilter({
-  key: 'other',
-  contract: calendar,
-  defaultValue: { kind: 'preset', id: 'last-7' },
-});
+const other = dateTimeRangeFilter({ key: 'other', defaultValue: '7d' });
 const group = choiceFilter({
   key: 'group',
   label: 'Group',
@@ -53,7 +50,7 @@ const operations = {
     filters: { period, group, segment: facet },
     policy: { maxQueryRows: 10, maxDurationMs: 1000 },
     async run({ query }, input) {
-      const p: { start: string } = input.period.range;
+      const p: { from: Date; to: Date } = input.period.range;
       const g: 'all' | 'a' = input.group;
       void p;
       void g;

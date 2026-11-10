@@ -521,7 +521,12 @@ test('floating filters include non-default dates and comparisons and clear to th
   page,
 }) => {
   for (const search of [
-    'start=2026-03-10&end=2026-03-12',
+    new URLSearchParams({
+      period: JSON.stringify({
+        from: '2026-03-10T00:00:00.000Z',
+        to: '2026-03-13T00:00:00.000Z',
+      }),
+    }).toString(),
     'compare=previous',
   ]) {
     await page.goto(`/time-app?${search}`);
@@ -535,8 +540,7 @@ test('floating filters include non-default dates and comparisons and clear to th
       .click();
     await expect.poll(() => floating.count()).toBe(0);
     const params = new URL(page.url()).searchParams;
-    expect(params.has('start')).toBe(false);
-    expect(params.has('end')).toBe(false);
+    expect(params.has('period')).toBe(false);
     expect(params.has('compare')).toBe(false);
     await expect
       .poll(() => page.getByText(/Mar 4.*6, 2026 UTC/).count())
@@ -1038,7 +1042,14 @@ test('active filters can be removed individually without changing other filters 
 test('removing the active period returns dates and comparison to their defaults', async ({
   page,
 }) => {
-  await page.goto('/time-app?start=2026-03-10&end=2026-03-12&compare=previous');
+  const params = new URLSearchParams({
+    period: JSON.stringify({
+      from: '2026-03-10T00:00:00.000Z',
+      to: '2026-03-13T00:00:00.000Z',
+    }),
+    compare: 'previous',
+  });
+  await page.goto(`/time-app?${params}`);
   await scrollPastToolbar(page);
   const floating = page.getByRole('group', {
     name: 'Active filters',
@@ -1048,10 +1059,9 @@ test('removing the active period returns dates and comparison to their defaults'
     .getByRole('button', { name: 'Remove Date range filter', exact: true })
     .click();
   await expect.poll(() => floating.count()).toBe(0);
-  const params = new URL(page.url()).searchParams;
-  expect(params.has('start')).toBe(false);
-  expect(params.has('end')).toBe(false);
-  expect(params.has('compare')).toBe(false);
+  const resulting = new URL(page.url()).searchParams;
+  expect(resulting.has('period')).toBe(false);
+  expect(resulting.has('compare')).toBe(false);
 });
 
 test('widget placement preserves active filter counts, editing, and clearing', async ({

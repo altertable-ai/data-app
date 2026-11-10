@@ -1,14 +1,24 @@
 import { parseCount } from '@altertable/data-app/contract';
 
+import { operationFilters } from '#app/filters.ts';
 import { dataApp } from '#config';
 export const operations = {
-  sampleCountsByGroup: dataApp.defineOperation({
-    policy: { maxQueryRows: 10, maxDurationMs: 15000 },
-    async run({ query }) {
-      const result = await query('sampleCountsByGroup', {});
+  samples: dataApp.defineOperation({
+    filters: operationFilters.samples,
+    policy: { maxQueryRows: 500, maxDurationMs: 15000 },
+    async run({ query }, { period: { range, comparison }, grain, breakdown }) {
+      const result = await query('samples', {
+        start: (comparison?.from ?? range.from).toISOString(),
+        end: range.to.toISOString(),
+        selected_start: range.from.toISOString(),
+        grain,
+        breakdown,
+      });
       return result.rows.map(row => ({
-        groupName: row.group_name,
+        periodStart: row.period_start,
+        member: row.member,
         sampleCount: parseCount(row.sample_count),
+        selected: row.selected,
       }));
     },
   }),

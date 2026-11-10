@@ -1,17 +1,19 @@
 import {
   parseDateTimeRange,
   formatDateTimeRange,
+  type DateTimeRange,
   type DateTimeRangeComparisonRequest,
-  type DateRangeRequest,
 } from '@altertable/data-app/contract';
 import {
   dateFilterName,
   type AppFilter,
+  type DateFilter,
   type FilterCollection,
   type FilterInput,
 } from '@altertable/data-app/internal';
 
 import type { DataContext } from './ui/data-context.ts';
+import { dateTimeRangeLabel } from './ui/date-time-range-label.ts';
 import type { EmptyContent } from './ui/presentation.ts';
 
 export type ViewDefinition<Name extends string, Input, Data> = {
@@ -85,16 +87,11 @@ export function describeFilterInput<Filters extends FilterCollection>(
     const parts: string[] = [];
     for (const [name, filter] of Object.entries(filters)) {
       const value = (input as Record<string, unknown>)[name];
-      if (filter.kind === 'dateRange')
-        parts.unshift(filter.describeInput(value as DateRangeRequest));
-      else if (filter.kind === 'dateTimeRangeComparison')
-        parts.unshift(
-          formatDateTimeRange(
-            parseDateTimeRange((value as DateTimeRangeComparisonRequest).range)
-          )
-        );
-      else if (filter.kind === 'dateTimeRange')
-        parts.unshift(filter.describe!(parseDateTimeRange(value)));
+      if (
+        filter.kind === 'dateTimeRange' ||
+        filter.kind === 'dateTimeRangeComparison'
+      )
+        parts.unshift(describePeriod(filter, value));
       else if (filter.presentation?.group !== 'display') {
         const scoped = filter as AppFilter<unknown>;
         if (
@@ -116,9 +113,28 @@ export function describeFilterInput<Filters extends FilterCollection>(
 export function readViewPeriod<Filters extends FilterCollection>(
   definition: { filters: Filters; dateFilter?: keyof Filters & string },
   input: FilterInput<Filters>
-): DateRangeRequest | DateTimeRangeComparisonRequest | undefined {
+): DateTimeRangeComparisonRequest | undefined {
   const name = definition.dateFilter;
-  if (!name || definition.filters[name]!.kind === 'dateTimeRange')
+  if (!name || definition.filters[name]!.kind !== 'dateTimeRangeComparison')
     return undefined;
-  return input[name] as DateRangeRequest | DateTimeRangeComparisonRequest;
+  return input[name] as DateTimeRangeComparisonRequest;
+}
+
+/** Complete days read as calendar dates in the reporting zone; other ranges keep their times. */
+function describePeriod(filter: DateFilter, value: unknown) {
+  const range = parseDateTimeRange(
+    filter.kind === 'dateTimeRangeComparison'
+      ? (value as DateTimeRangeComparisonRequest).range
+      : (value as DateTimeRange)
+  );
+  const completeDays =
+    range.from instanceof Date &&
+    range.to instanceof Date &&
+    range.from.getTime() % 86_400_000 === 0 &&
+    range.to.getTime() % 86_400_000 === 0;
+  if (completeDays)
+    return `${dateTimeRangeLabel(range)} ${filter.contract?.bounds().timeZone ?? 'UTC'}`;
+  return filter.kind === 'dateTimeRangeComparison'
+    ? formatDateTimeRange(range)
+    : filter.describe!(range);
 }

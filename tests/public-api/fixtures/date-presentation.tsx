@@ -24,7 +24,7 @@ import {
 } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  dateRangeFilter,
+  dateTimeRangeFilter,
   defineDateRangeContract,
   type DataOperation,
   type FilterCollection,
@@ -58,10 +58,13 @@ const calendar = defineDateRangeContract({
   maxRangeDays: 30,
   timeZone: 'America/New_York',
 });
-const day = { kind: 'dates', start: '2026-09-24', end: '2026-09-24' } as const;
+const day = {
+  from: new Date('2026-09-24T00:00:00Z'),
+  to: new Date('2026-09-25T00:00:00Z'),
+};
 const filters = {
   events: {
-    period: dateRangeFilter({
+    period: dateTimeRangeFilter({
       key: 'period',
       contract: calendar,
       defaultValue: day,
@@ -69,7 +72,7 @@ const filters = {
   },
   // The Tokyo view reports in its own zone, so its operation reads its own period.
   tokyoEvents: {
-    tokyoPeriod: dateRangeFilter({
+    tokyoPeriod: dateTimeRangeFilter({
       key: 'tokyo',
       label: 'Tokyo period',
       contract: defineDateRangeContract({

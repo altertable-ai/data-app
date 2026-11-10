@@ -1,12 +1,8 @@
 import {
   invariant,
-  type DatePresetId,
-  type DateRange,
   defineAppFilters,
   type AppFilter,
   type FilterValues,
-  type DateRangeSelection,
-  type DateRangeFilter,
   type HistoryMode,
   type FilterCollection,
 } from '@altertable/data-app/internal';
@@ -16,62 +12,8 @@ import { useEffect, useReducer, useSyncExternalStore } from 'react';
 import { searchParams, subscribeSearch, writeSearch } from './search.ts';
 export {
   type FilterValues,
-  type DateRangeSelection,
-  type DateRangeFilter,
   type FilterCollection,
 } from '@altertable/data-app/internal';
-
-/** Adapt one date filter to the controlled picker without giving the picker URL ownership. */
-export function dateRangeControl(
-  variable: DateRangeFilter,
-  selection: DateRangeSelection,
-  onChange: (selection: DateRangeSelection) => void
-) {
-  const value = variable.resolve(selection);
-
-  function update(next: DateRangeSelection) {
-    return onChange(
-      selection.comparison && variable.previous(next)
-        ? { ...next, comparison: 'previous' }
-        : next
-    );
-  }
-
-  return {
-    value,
-    label: variable.label,
-    onChange(range: DateRange | null) {
-      return update(
-        range ? { kind: 'dates', ...range } : variable.defaultValue
-      );
-    },
-    onPresetChange(id: DatePresetId) {
-      return update({ kind: 'preset', id });
-    },
-    selectedPresetId: selection.kind === 'preset' ? selection.id : null,
-    onReset() {
-      return onChange(variable.defaultValue);
-    },
-    isDefault: variable.same(selection, variable.defaultValue),
-    resetValue: variable.resolve(variable.defaultValue),
-    ...(variable.supportsComparison
-      ? {
-          comparison: {
-            enabled: selection.comparison === 'previous',
-            range: variable.previous(selection),
-            onChange(enabled: boolean) {
-              return onChange(
-                enabled
-                  ? { ...selection, comparison: 'previous' }
-                  : { ...selection, comparison: undefined }
-              );
-            },
-          },
-        }
-      : {}),
-    ...variable.bounds(),
-  };
-}
 
 function currentSearch() {
   return searchParams().toString();
@@ -92,13 +34,11 @@ export function useAppFilters<const Collection extends FilterCollection>(
     serverSearch
   );
   const zones = Object.values(definitions).flatMap(item =>
-    item.kind === 'dateRange'
-      ? [item.bounds().timeZone]
-      : (item.kind === 'dateTimeRange' ||
-            item.kind === 'dateTimeRangeComparison') &&
-          item.contract
-        ? [item.contract.bounds().timeZone]
-        : []
+    (item.kind === 'dateTimeRange' ||
+      item.kind === 'dateTimeRangeComparison') &&
+    item.contract
+      ? [item.contract.bounds().timeZone]
+      : []
   );
   const zoneKey = [...new Set(zones)].sort().join('|');
   const [calendarRevision, bumpDay] = useReducer(value => value + 1, 0);
@@ -123,12 +63,12 @@ export function useAppFilters<const Collection extends FilterCollection>(
   const canonical: Record<string, string | null> = {};
   for (const name of Object.keys(definitions) as (keyof Collection &
     string)[]) {
-    const variable = definitions[name] as unknown as AppFilter<
+    const filter = definitions[name] as unknown as AppFilter<
       FilterValues<Collection>[typeof name]
     >;
-    const value = variable.read(params);
+    const value = filter.read(params);
     values[name] = value;
-    Object.assign(canonical, variable.write(value));
+    Object.assign(canonical, filter.write(value));
   }
 
   useEffect(() => {
@@ -147,13 +87,13 @@ export function useAppFilters<const Collection extends FilterCollection>(
     const changes: Record<string, string | null> = {};
     let mode: HistoryMode = history ?? 'replace';
     for (const name of Object.keys(next) as (keyof Collection & string)[]) {
-      const variable = definitions[name] as unknown as AppFilter<
+      const filter = definitions[name] as unknown as AppFilter<
         FilterValues<Collection>[typeof name]
       >;
       const value = next[name]!;
-      invariant(variable.valid(value), `Invalid value for filter ${name}.`);
-      Object.assign(changes, variable.write(value));
-      if (!history && variable.history === 'push') mode = 'push';
+      invariant(filter.valid(value), `Invalid value for filter ${name}.`);
+      Object.assign(changes, filter.write(value));
+      if (!history && filter.history === 'push') mode = 'push';
     }
     writeSearch(changes, mode);
   }
@@ -166,18 +106,18 @@ export function useAppFilters<const Collection extends FilterCollection>(
   }
 
   function reset<Key extends keyof Collection & string>(name: Key) {
-    const variable = definitions[name] as unknown as AppFilter<
+    const filter = definitions[name] as unknown as AppFilter<
       FilterValues<Collection>[Key]
     >;
-    set(name, variable.defaultValue);
+    set(name, filter.defaultValue);
   }
 
   function resetAll() {
     update(
       Object.fromEntries(
-        Object.entries(definitions).map(([name, variable]) => [
+        Object.entries(definitions).map(([name, filter]) => [
           name,
-          variable.defaultValue,
+          filter.defaultValue,
         ])
       ) as FilterValues<Collection>,
       'push'
@@ -189,19 +129,19 @@ export function useAppFilters<const Collection extends FilterCollection>(
       Object.fromEntries(
         Object.entries(definitions)
           .filter(
-            ([, variable]) =>
-              variable.clearValue !== undefined &&
-              variable.kind !== 'search' &&
-              variable.presentation?.group !== 'display'
+            ([, filter]) =>
+              filter.clearValue !== undefined &&
+              filter.kind !== 'search' &&
+              filter.presentation?.group !== 'display'
           )
-          .map(([name, variable]) => [name, variable.clearValue])
+          .map(([name, filter]) => [name, filter.clearValue])
       ) as Partial<FilterValues<Collection>>,
       'push'
     );
   }
 
   function bind<Key extends keyof Collection & string>(name: Key) {
-    const variable = definitions[name] as unknown as AppFilter<
+    const filter = definitions[name] as unknown as AppFilter<
       FilterValues<Collection>[Key]
     >;
 
@@ -210,7 +150,7 @@ export function useAppFilters<const Collection extends FilterCollection>(
       onChange(value: FilterValues<Collection>[Key]) {
         return set(name, value);
       },
-      resetValue: variable.defaultValue,
+      resetValue: filter.defaultValue,
     };
   }
 

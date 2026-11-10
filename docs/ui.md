@@ -259,7 +259,7 @@ filter declarations own URL state, validation, and operation meaning.
 | `<SegmentedControl>`               | Compact radio choices                                             |
 | `<NumberField>`                    | Localized numeric input; empty is `null`                          |
 | `<NumberRangeField>`               | Exact, inclusive minimum/maximum; omitted bounds are unrestricted |
-| `<DateRangePicker>`                | Explicit or relative periods                                      |
+| `<DateTimeRangePicker>`            | Datetime ranges with an exclusive end                             |
 | `<DimensionPicker>`                | Typed categorical predicates with fixed or facet options          |
 
 ```tsx
@@ -296,7 +296,7 @@ Use `<Button variant="inline">` for actions within text or table cells. Use butt
 
 ## Datetime selection
 
-Prefer a [datetime filter](filters.md#absolute-and-relative-datetime-ranges)
+Prefer a [datetime filter](filters.md#date-ranges)
 for generated controls and URL state. For custom screens, `<DateTimeRangePicker>`
 accepts the same `DateTimeRange` and preset sets, with calendar and natural-language
 entry. See its props in [REFERENCE.md](../REFERENCE.md).

@@ -30,14 +30,11 @@ import {
   balanceSearchSuggestions,
 } from './search-suggestions.ts';
 import {
-  dateRangeControl,
   useAppFilters,
   type FilterValues,
   type FilterCollection,
-  type DateRangeSelection,
 } from './ui/app-filters.ts';
 import { ChoicePicker } from './ui/ChoicePicker.tsx';
-import { DateRangePicker } from './ui/DateRangePicker.tsx';
 import { DateTimeRangePicker } from './ui/DateTimeRangePicker.tsx';
 import { DimensionPicker } from './ui/DimensionPicker.tsx';
 import { NumberFilterPicker } from './ui/NumberFilterPicker.tsx';
@@ -78,7 +75,7 @@ export function useFilterValues<Collection extends FilterCollection>(
     setSnapshot({ key: referenceKey, reference });
   }
   const hasComparison = Object.values(definitions).some(
-    variable => variable.kind === 'dateTimeRangeComparison'
+    filter => filter.kind === 'dateTimeRangeComparison'
   );
   const resolved: FilterInput<Collection> = resolveFilterInput(
     definitions,
@@ -231,7 +228,7 @@ export function useFilterControls<Collection extends FilterCollection>(
     string)[]) {
     const definition = definitions[name]!;
     const value = filters.values[name];
-    const variable = definition as AppFilter<any>;
+    const filter = definition as AppFilter<any>;
     const widgetControl = definition.presentation?.control === 'widget';
     const group = definition.presentation?.group ?? 'scope';
     const prominence = definition.presentation?.prominence ?? 'primary';
@@ -257,38 +254,25 @@ export function useFilterControls<Collection extends FilterCollection>(
       );
       continue;
     }
-    if (group === 'scope' && variable.clearValue !== undefined) {
-      clearedFilters[name] = variable.clearValue;
-      if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
+    if (group === 'scope' && filter.clearValue !== undefined) {
+      clearedFilters[name] = filter.clearValue;
+      if (!filter.same(value, filter.clearValue)) hasActiveFilters = true;
     }
     const baseline =
       group === 'display'
-        ? variable.defaultValue
-        : (variable.clearValue ?? variable.defaultValue);
-    const active = !variable.same(value, baseline);
+        ? filter.defaultValue
+        : (filter.clearValue ?? filter.defaultValue);
+    const active = !filter.same(value, baseline);
     function renderControl(
       labelPlacement: ControlLabelPlacement,
       onClear?: () => void
     ) {
       function setControlValue(next: FilterValues<Collection>[typeof name]) {
         filters.set(name, next);
-        if (onClear && variable.same(next, baseline)) onClear();
+        if (onClear && filter.same(next, baseline)) onClear();
       }
       let control: ReactNode = null;
-      if (definition.kind === 'dateRange') {
-        const selection = value as DateRangeSelection;
-        control = (
-          <DateRangePicker
-            key={name}
-            labelPlacement={
-              labelPlacement === 'inline' ? undefined : labelPlacement
-            }
-            {...dateRangeControl(definition, selection, next =>
-              setControlValue(next as FilterValues<Collection>[typeof name])
-            )}
-          />
-        );
-      } else if (definition.kind === 'dateTimeRangeComparison') {
+      if (definition.kind === 'dateTimeRangeComparison') {
         const selection = value as DateTimeRangeComparisonSelection;
         control = (
           <DateTimeRangePicker
@@ -299,6 +283,8 @@ export function useFilterControls<Collection extends FilterCollection>(
             maxRangeDays={definition.maxRangeDays}
             presets={definition.presets}
             contract={definition.contract}
+            isDefault={!active}
+            onReset={() => setControlValue(baseline)}
             comparison={{
               enabled: selection.comparison === 'previous',
               range: definition.previous(selection),
@@ -329,19 +315,21 @@ export function useFilterControls<Collection extends FilterCollection>(
             maxRangeDays={definition.maxRangeDays}
             presets={definition.presets}
             contract={definition.contract}
+            isDefault={!active}
+            onReset={() => setControlValue(baseline)}
             onChange={next =>
               setControlValue(next as FilterValues<Collection>[typeof name])
             }
           />
         );
       } else if (definition.kind === 'dimension') {
-        const filter = definition as DimensionSelectionFilter;
-        const facet = dimensionState(name, filter);
+        const dimension = definition as DimensionSelectionFilter;
+        const facet = dimensionState(name, dimension);
         control = (
           <DimensionPicker
             key={name}
             labelPlacement={labelPlacement}
-            filter={filter}
+            filter={dimension}
             value={value as DimensionSelection}
             options={facet.options}
             loading={facet.loading}
@@ -448,7 +436,7 @@ export function useFilterControls<Collection extends FilterCollection>(
                   value as DimensionSelection,
                   dimensionState(name, definition).options
                 )
-              : (variable.describe?.(value) ?? String(value)),
+              : (filter.describe?.(value) ?? String(value)),
         });
       }
       if (!widgetControl && prominence === 'primary')

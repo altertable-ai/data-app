@@ -22,12 +22,14 @@ import {
   useRef,
   useState,
   useReducer,
+  type ReactNode,
 } from 'react';
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
 import { classNames } from './classNames.ts';
 import {
+  formatDateTimeRangeInputDate,
   editDateTimeRangeInputSegment,
   normalizeDateTimeRangeInput,
   getDateTimeRangeInputSegmentSelection,
@@ -61,6 +63,9 @@ export type DateTimeRangePickerProps = {
    */
   presets?: readonly DateTimeRangePreset[];
   disabled?: boolean;
+  isDefault?: boolean;
+  onReset?: () => void;
+  calendarFooter?: ReactNode;
   /** Optional controlled comparison with the immediately preceding equal-length interval. */
   comparison?: {
     enabled: boolean;
@@ -80,6 +85,9 @@ const presetInputs = [
   ['today', 'Today'],
   ['yesterday', 'Yesterday'],
 ] as const;
+function shortcutLabel(shortcut?: string) {
+  return !shortcut || /^(today|yesterday)$/i.test(shortcut) ? '-' : shortcut;
+}
 const examples = {
   Recent: [
     '45m',
@@ -114,7 +122,7 @@ function resolvedLabel(
       ? contract.datetime.resolve(value)
       : resolveDateTimeRange(value);
     return from
-      ? `${formatDateTime(from, { ...options, timeZone: 'UTC' })} – ${formatDateTime(to, { ...options, timeZone: 'UTC' })}`
+      ? `${formatDateTimeRangeInputDate(from, options.locale ?? 'en-US')} – ${formatDateTimeRangeInputDate(to, options.locale ?? 'en-US')}`
       : '';
   } catch {
     // A UTC-only preview may be inverted even when valid in the reporting zone.
@@ -179,6 +187,9 @@ export function DateTimeRangePicker({
   onChange,
   liveOption,
   comparison,
+  isDefault,
+  onReset,
+  calendarFooter,
   className,
   placeholder = 'Select date range…',
   label = 'Date range',
@@ -217,7 +228,7 @@ export function DateTimeRangePicker({
   const [selectionRevision, setSelectionRevision] = useState(0);
   useLayoutEffect(() => {
     if (selectionRevision) {
-      input.current?.focus();
+      input.current?.focus({ preventScroll: true });
       input.current?.select();
     }
   }, [selectionRevision]);
@@ -250,14 +261,17 @@ export function DateTimeRangePicker({
   function rangeError(range: DateTimeRange) {
     try {
       parseDateTimeRange(range, { maxRangeDays });
-      contract?.datetime.parse(range);
+      contract?.datetime.resolve(range);
       return '';
     } catch (error) {
       return error instanceof Error ? error.message : 'Invalid date range.';
     }
   }
 
-  const presets = [
+  const presets: (DateTimeRangePreset & {
+    range: DateTimeRange;
+    live: boolean;
+  })[] = [
     ...(liveOption
       ? [
           {
@@ -352,9 +366,11 @@ export function DateTimeRangePicker({
     dispatch({ type: 'error', error: "Couldn't parse that date range." });
   }
   function choose(index: number) {
-    if (index === comparisonIndex && comparison?.range) {
-      comparison.onChange(!comparison.enabled);
-      close(true);
+    if (index === comparisonIndex) {
+      if (comparison?.range) {
+        comparison.onChange(!comparison.enabled);
+        close(true);
+      }
       return;
     }
     const preset = presets[index];
@@ -409,14 +425,8 @@ export function DateTimeRangePicker({
   }
   function navigateOption(index: number) {
     highlightOption(index);
-    if (index === comparisonIndex) {
-      popup.current
-        ?.querySelector<HTMLButtonElement>('button[role="checkbox"]')
-        ?.focus();
-    } else {
-      input.current?.focus();
-      input.current?.select();
-    }
+    input.current?.focus();
+    input.current?.select();
   }
   return (
     <PickerField label={label} labelPlacement={labelPlacement}>
@@ -426,23 +436,21 @@ export function DateTimeRangePicker({
         ref={trigger}
         className={classNames('altertable-datetime-input', className)}
         data-disabled={disabled || undefined}
+        data-invalid={!!error || undefined}
         data-atbl-focus="group"
         data-atbl-internal-surface="field"
         onClick={() => {
-          if (!disabled) openPresets();
+          if (!disabled && !open) openPresets();
         }}
       >
-        <span
-          className="altertable-datetime-shortcut"
-          aria-hidden="true"
-          data-word={
-            /^(today|yesterday)$/i.test(selected?.shortcut ?? '') || undefined
-          }
-        >
-          <span>{selected?.shortcut ?? '–'}</span>
+        <span className="altertable-datetime-shortcut" aria-hidden="true">
+          <span>{shortcutLabel(selected?.shortcut)}</span>
         </span>
         <input
           ref={input}
+          onPointerDown={() => {
+            pending.current = null;
+          }}
           role="combobox"
           aria-label={label}
           aria-expanded={open}
@@ -450,10 +458,7 @@ export function DateTimeRangePicker({
           aria-haspopup={mode === 'calendar' ? 'dialog' : 'listbox'}
           aria-autocomplete={mode === 'presets' ? 'list' : 'none'}
           aria-activedescendant={
-            open &&
-            mode !== 'calendar' &&
-            highlight >= 0 &&
-            highlight !== comparisonIndex
+            open && mode !== 'calendar' && highlight >= 0
               ? `${id}-option-${highlight}`
               : undefined
           }
@@ -475,6 +480,8 @@ export function DateTimeRangePicker({
             dispatch({ type: 'edit', draft: event.target.value });
           }}
           onKeyDown={event => {
+            if (!event.key.startsWith('Arrow') && event.key !== 'Enter')
+              pending.current = null;
             if (
               event.key.startsWith('Arrow') &&
               (event.shiftKey || event.ctrlKey || event.altKey || event.metaKey)
@@ -496,14 +503,6 @@ export function DateTimeRangePicker({
               return;
             }
             if (event.key === 'Tab') {
-              const checkbox = popup.current?.querySelector<HTMLButtonElement>(
-                'button[role="checkbox"]:not(:disabled)'
-              );
-              if (!event.shiftKey && comparison && checkbox) {
-                event.preventDefault();
-                checkbox.focus();
-                return;
-              }
               close();
               return;
             }
@@ -581,6 +580,26 @@ export function DateTimeRangePicker({
             }
           }}
         />
+        {!disabled && onReset && !isDefault && value && (
+          <button
+            type="button"
+            className="altertable-datetime-reset"
+            data-atbl-focus="ring"
+            data-atbl-control="action"
+            aria-label="Reset date range"
+            onClick={event => {
+              event.stopPropagation();
+              onReset();
+            }}
+          >
+            <AppIcon name="reset" size={14} />
+          </button>
+        )}
+        {error && (
+          <span id={`${id}-error`} role="alert" className="altertable-sr-only">
+            {error}
+          </span>
+        )}
         <AppIcon name="disclosure" size={14} />
       </div>
       <PopoverSurface
@@ -642,7 +661,9 @@ export function DateTimeRangePicker({
                 }
               />
               <footer className="altertable-datetime-actions">
-                <Button onClick={back}>‹ Presets</Button>
+                <Button onClick={back}>
+                  <AppIcon name="previous" size={16} /> Presets
+                </Button>
                 <Button
                   variant="primary"
                   disabled={!complete || !calendar || !!rangeError(calendar)}
@@ -653,6 +674,7 @@ export function DateTimeRangePicker({
                   Apply
                 </Button>
               </footer>
+              {calendarFooter}
             </div>
           ) : (
             <>
@@ -660,14 +682,17 @@ export function DateTimeRangePicker({
                 id={`${id}-popup`}
                 role="listbox"
                 aria-label="Date range presets"
+                aria-multiselectable={comparison ? true : undefined}
                 className="altertable-datetime-presets"
               >
                 {[
                   ...presets.map(preset => preset.label),
                   'Select from calendar…',
                   'More',
+                  ...(comparison ? ['Compare with previous period'] : []),
                 ].map((text, index) => {
                   const preset = presets[index];
+                  const isComparison = index === comparisonIndex;
                   return (
                     <button
                       data-atbl-focus="inset"
@@ -677,10 +702,16 @@ export function DateTimeRangePicker({
                       tabIndex={-1}
                       id={`${id}-option-${index}`}
                       key={index}
-                      aria-selected={!!preset && preset === selected}
+                      aria-selected={
+                        isComparison
+                          ? comparison?.enabled
+                          : !!preset && preset === selected
+                      }
+                      disabled={isComparison && !comparison?.range}
                       data-highlighted={highlight === index || undefined}
                       data-divider={
                         index === calendarIndex ||
+                        isComparison ||
                         preset?.shortcut === 'today' ||
                         (index === 1 && !!liveOption) ||
                         undefined
@@ -698,16 +729,11 @@ export function DateTimeRangePicker({
                       <span
                         className="altertable-datetime-shortcut"
                         aria-hidden="true"
-                        data-word={
-                          (preset &&
-                            /^(today|yesterday)$/i.test(
-                              preset.shortcut ?? ''
-                            )) ||
-                          undefined
-                        }
                       >
-                        {preset ? (
-                          <span>{preset.shortcut}</span>
+                        {isComparison ? (
+                          <span>vs</span>
+                        ) : preset ? (
+                          <span>{shortcutLabel(preset.shortcut)}</span>
                         ) : (
                           <AppIcon
                             name={
@@ -719,12 +745,25 @@ export function DateTimeRangePicker({
                           />
                         )}
                       </span>
-                      <span>{text}</span>
+                      <span>
+                        {text}
+                        {isComparison && (
+                          <small>
+                            {comparison?.range
+                              ? dateTimeRangeLabel(
+                                  comparison.range,
+                                  dateFormatting
+                                )
+                              : 'Outside available source coverage'}
+                          </small>
+                        )}
+                      </span>
                       <span
                         className="altertable-datetime-check"
                         aria-hidden="true"
                       >
-                        {preset && preset === selected ? (
+                        {(isComparison && comparison?.enabled) ||
+                        (preset && preset === selected) ? (
                           <AppIcon name="check" size={14} />
                         ) : null}
                       </span>
@@ -732,15 +771,6 @@ export function DateTimeRangePicker({
                   );
                 })}
               </div>
-              {error && (
-                <p
-                  role="alert"
-                  id={`${id}-error`}
-                  className="altertable-datetime-error"
-                >
-                  {error}
-                </p>
-              )}
               {/* Pointer retention lets users cross the gap to the keyboard-accessible example buttons. */}
               {(help || !!error) && (
                 // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Hover retains the help panel while crossing the popup gap.
@@ -786,66 +816,6 @@ export function DateTimeRangePicker({
                 </aside>
               )}
             </>
-          )}
-          {comparison && mode !== 'calendar' && (
-            <div className="altertable-datetime-presets">
-              <button
-                type="button"
-                data-atbl-focus="inset"
-                data-atbl-control="action"
-                role="checkbox"
-                id={`${id}-option-${comparisonIndex}`}
-                data-highlighted={highlight === comparisonIndex || undefined}
-                onMouseMove={() => {
-                  dispatch({ type: 'update', value: { mode: 'presets' } });
-                  highlightOption(comparisonIndex);
-                }}
-                onFocus={() => highlightOption(comparisonIndex)}
-                onKeyDown={event => {
-                  if (
-                    ['ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)
-                  ) {
-                    event.preventDefault();
-                    navigateOption(
-                      event.key === 'ArrowUp'
-                        ? moreIndex
-                        : event.key === 'End'
-                          ? comparisonIndex
-                          : 0
-                    );
-                  }
-                }}
-                aria-checked={comparison.enabled}
-                aria-label="Compare with previous period"
-                aria-describedby={`${id}-comparison-description`}
-                disabled={!comparison.range}
-                data-divider
-                onClick={() => {
-                  comparison.onChange(!comparison.enabled);
-                  close(true);
-                }}
-              >
-                <span
-                  className="altertable-datetime-shortcut"
-                  aria-hidden="true"
-                >
-                  vs
-                </span>
-                <span>
-                  Compare with previous period
-                  <small id={`${id}-comparison-description`}>
-                    {comparison.range
-                      ? dateTimeRangeLabel(comparison.range, dateFormatting)
-                      : 'Outside available source coverage'}
-                  </small>
-                </span>
-                <span className="altertable-datetime-check" aria-hidden="true">
-                  {comparison.enabled ? (
-                    <AppIcon name="check" size={14} />
-                  ) : null}
-                </span>
-              </button>
-            </div>
           )}
         </div>
       </PopoverSurface>

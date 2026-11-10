@@ -19,6 +19,7 @@ import {
 
 import { useDateFormatting } from '../date-formatting.ts';
 import { Button } from './Button.tsx';
+import { AppIcon } from './icons.ts';
 import { Select } from './Select.tsx';
 
 /** Calendar days map to UTC fields and a next-midnight exclusive end. */
@@ -104,14 +105,15 @@ export function DateTimeRangeCalendar({
       <CalendarCompleteness onChange={onCompleteChange} />
       <header>
         <Button
-          size="icon-compact"
+          size="icon"
           aria-label="Previous month"
           onClick={() => setFocused(focused.subtract({ months: 1 }))}
         >
-          ‹
+          <AppIcon name="previousMonth" size={16} />
         </Button>
         <Select
           label="Month"
+          labelPlacement="inline"
           value={String(focused.month)}
           options={Array.from({ length: 12 }, (_, index) => ({
             id: String(index + 1),
@@ -124,6 +126,7 @@ export function DateTimeRangeCalendar({
         />
         <Select
           label="Year"
+          labelPlacement="inline"
           value={String(focused.year)}
           options={Array.from(
             {
@@ -140,14 +143,14 @@ export function DateTimeRangeCalendar({
           onChange={year => setFocused(focused.set({ year: Number(year) }))}
         />
         <Button
-          size="icon-compact"
+          size="icon"
           aria-label="Next month"
           disabled={
             focused.year >= currentDay.year && focused.month >= currentDay.month
           }
           onClick={() => setFocused(focused.add({ months: 1 }))}
         >
-          ›
+          <AppIcon name="nextMonth" size={16} />
         </Button>
       </header>
       <CalendarGrid>

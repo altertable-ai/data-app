@@ -1,4 +1,3 @@
-import type { DateRange } from './date-range.ts';
 import {
   parseDateTimeRange,
   serializeDateTimeRange,
@@ -34,7 +33,7 @@ export type QueryRow<Projections extends QueryProjections> = {
 };
 
 export type QueryParameterValue = string | number | boolean | null;
-/** Typed scalar, range, or dimension parameters with optional fallback values.
+/** Typed scalar, datetime-range, or dimension parameters with optional fallback values.
  * Reference a range's bounds as `$name.from` (inclusive) and `$name.to` (exclusive),
  * and a dimension selection as `$name.matches(column)`. */
 export type QueryParameter =
@@ -45,12 +44,6 @@ export type QueryParameter =
       valueType: 'string' | 'number';
       nullable?: false;
       defaultValue?: never;
-    }
-  | {
-      /** A `DateRange` of inclusive ISO calendar dates, such as a date filter's `range`. */
-      type: 'dateRange';
-      nullable?: false;
-      defaultValue?: DateRange;
     }
   | {
       type: 'dateTimeRange';
@@ -76,15 +69,13 @@ export type QueryInputParameters<
 > = {
   [Name in keyof Params]?: Params[Name] extends { type: 'dateTimeRange' }
     ? DateTimeRange
-    : Params[Name] extends { type: 'dateRange' }
-      ? DateRange
-      : Params[Name] extends { type: 'dimension'; valueType: 'number' }
-        ? DimensionSelection<number>
-        : Params[Name] extends { type: 'dimension' }
-          ? DimensionSelection<string>
-          : Params[Name] extends QueryField
-            ? QueryValue<Params[Name]>
-            : never;
+    : Params[Name] extends { type: 'dimension'; valueType: 'number' }
+      ? DimensionSelection<number>
+      : Params[Name] extends { type: 'dimension' }
+        ? DimensionSelection<string>
+        : Params[Name] extends QueryField
+          ? QueryValue<Params[Name]>
+          : never;
 };
 type QueryDefinition = {
   statement: string;
@@ -151,7 +142,7 @@ export type CheckedQueries<Queries extends QueryDefinitions> =
       };
     };
 type FrozenField<Field extends { type: string; nullable?: boolean }> =
-  Field extends { type: 'dateRange' } | { type: 'dimension' }
+  Field extends { type: 'dimension' }
     ? Readonly<Field>
     : Field extends { type: 'dateTimeRange' }
       ? Readonly<{
@@ -221,22 +212,6 @@ function serializeSelection(
   });
 }
 
-/** Inclusive ISO calendar dates, start on or before end. */
-function isDateRange(value: unknown): value is DateRange {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const { start, end } = value as Record<string, unknown>;
-  const day = /^\d{4}-\d{2}-\d{2}$/;
-  return (
-    typeof start === 'string' &&
-    typeof end === 'string' &&
-    day.test(start) &&
-    day.test(end) &&
-    Number.isFinite(Date.parse(`${start}T00:00:00Z`)) &&
-    Number.isFinite(Date.parse(`${end}T00:00:00Z`)) &&
-    start <= end
-  );
-}
-
 function isQueryParameterValue(value: unknown): value is QueryParameterValue {
   return (
     value === null ||
@@ -288,7 +263,6 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
             Object.entries(query.params).map(([key, declaration]) => {
               if (
                 declaration.type === 'dateTimeRange' ||
-                declaration.type === 'dateRange' ||
                 declaration.type === 'dimension'
               )
                 invariant(
@@ -309,25 +283,9 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
                 !Object.hasOwn(declaration, 'defaultValue') ||
                   (declaration.type === 'dateTimeRange'
                     ? !!parseDateTimeRange(declaration.defaultValue)
-                    : declaration.type === 'dateRange'
-                      ? isDateRange(declaration.defaultValue)
-                      : isQueryParameterValue(declaration.defaultValue)),
+                    : isQueryParameterValue(declaration.defaultValue)),
                 `Invalid default for parameter ${key} in query ${name}.`
               );
-              if (declaration.type === 'dateRange')
-                return [
-                  key,
-                  Object.freeze({
-                    ...declaration,
-                    ...(declaration.defaultValue === undefined
-                      ? {}
-                      : {
-                          defaultValue: Object.freeze({
-                            ...declaration.defaultValue,
-                          }),
-                        }),
-                  }),
-                ];
               return [
                 key,
                 declaration.type === 'dateTimeRange'
@@ -359,9 +317,7 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
               query.statement,
               new Map(
                 Object.entries(query.params).flatMap(([key, p]) =>
-                  p.type === 'dateTimeRange' ||
-                  p.type === 'dateRange' ||
-                  p.type === 'dimension'
+                  p.type === 'dateTimeRange' || p.type === 'dimension'
                     ? [[key, p as StructuredParameter]]
                     : []
                 )
@@ -469,11 +425,7 @@ export function resolveQueryParameters(
   values: Readonly<
     Record<
       string,
-      | QueryParameterValue
-      | DateTimeRange
-      | DateRange
-      | DimensionSelection
-      | undefined
+      QueryParameterValue | DateTimeRange | DimensionSelection | undefined
     >
   >,
   context: QueryParameters
@@ -496,12 +448,6 @@ export function resolveQueryParameters(
       if (value === undefined) throw new Error(`Missing parameter ${key}.`);
       if (declaration.type === 'dimension')
         return [key, serializeSelection(key, declaration.valueType, value)];
-      if (declaration.type === 'dateRange') {
-        const range = typeof value === 'string' ? JSON.parse(value) : value;
-        if (!isDateRange(range))
-          throw new Error(`Parameter ${key} is not a date range.`);
-        return [key, JSON.stringify({ start: range.start, end: range.end })];
-      }
       if (declaration.type === 'dateTimeRange')
         return [
           key,

@@ -54,8 +54,8 @@ Bind reusable selections to the view whose operation returns them. Declare evide
 the view validates them against its own context. A dataset's columns supply both formatted
 table cells and raw CSV values. Widgets derive their readings, evidence, and empty fallback from the binding.
 Declare at least one dataset column. Metric selectors may return `previous`
-only when the view's operation reads a `dateRangeFilter()` or a comparison
-`dateTimeRangeFilter()`.
+only when the view's operation reads a `dateTimeRangeFilter()` with
+`allowComparison: true`.
 
 ```tsx
 // ... sampleCountsView, sampleTotalView, and imports

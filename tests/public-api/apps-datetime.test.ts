@@ -421,3 +421,110 @@ test('shared reporting policy governs generated datetime presets, calendar, text
   await page.reload();
   await expect.poll(() => input.inputValue()).toBe('Yesterday');
 });
+
+test('reset restores the default datetime selection and removes its URL override', async ({
+  page,
+}) => {
+  await page.goto('/datetime');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  await expect.poll(() => input.inputValue()).toBe('Past 7 days');
+  expect(
+    await page
+      .getByRole('button', { name: 'Reset date range', exact: true })
+      .count()
+  ).toBe(0);
+  await input.click();
+  await input.fill('4h');
+  await input.press('Enter');
+  await expect.poll(() => input.inputValue()).toBe('Past 4 hours');
+  await page
+    .getByRole('button', { name: 'Reset date range', exact: true })
+    .click();
+  await expect.poll(() => input.inputValue()).toBe('Past 7 days');
+  expect(new URL(page.url()).searchParams.has('period')).toBe(false);
+});
+
+test('disabled datetime pickers hide reset and cannot activate it by keyboard', async ({
+  page,
+}) => {
+  await page.goto('/datetime?disabledReset');
+  const input = page.getByRole('combobox', {
+    name: 'Disabled reset period',
+    exact: true,
+  });
+  const reset = page.getByRole('button', {
+    name: 'Reset date range',
+    exact: true,
+  });
+  const count = page.getByRole('status', { name: 'Reset count' });
+  const toggle = page.getByRole('button', {
+    name: 'Toggle disabled',
+    exact: true,
+  });
+  await expect.poll(() => input.isDisabled()).toBe(true);
+  expect(await reset.count()).toBe(0);
+  await toggle.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Enter');
+  expect(await count.textContent()).toBe('0');
+  await toggle.click();
+  await expect.poll(() => reset.count()).toBe(1);
+  await reset.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => count.textContent()).toBe('1');
+});
+
+for (const locale of ['th-TH', 'ar-EG', 'fa-IR']) {
+  test(`datetime ${locale} editing round-trips and preserves Gregorian instants`, async ({
+    page,
+  }) => {
+    await page.goto(`/datetime?locale=${locale}`);
+    const input = page.getByRole('combobox', {
+      name: 'Date range',
+      exact: true,
+    });
+    const output = page.getByRole('status', { name: 'Applied period' });
+    await input.click();
+    await input.fill('Jul 1 2026 4pm to Jul 2 2026 4pm');
+    await input.press('Enter');
+    await expect
+      .poll(() => output.textContent())
+      .toContain('2026-07-02T16:00:00.000Z');
+    await input.click();
+    await input.press('Enter');
+    expect(await input.getAttribute('aria-invalid')).toBe('false');
+    await expect
+      .poll(() => output.textContent())
+      .toContain('2026-07-01T16:00:00.000Z');
+    await input.click();
+    await input.fill(await input.inputValue());
+    await input.press('ArrowLeft');
+    await input.press('ArrowUp');
+    await input.press('Enter');
+    await expect
+      .poll(() => output.textContent())
+      .toContain('2026-07-02T16:01:00.000Z');
+  });
+}
+
+test('native caret movement discards the previous datetime segment selection', async ({
+  page,
+}) => {
+  await page.goto('/datetime');
+  const input = page.getByRole('combobox', { name: 'Date range', exact: true });
+  await input.click();
+  await input.fill('Jul 1 2026 4pm to Jul 2 2026 4pm');
+  await input.press('Enter');
+  await input.click();
+  await input.press('ArrowLeft');
+  await input.press('ArrowRight');
+  await input.press('End');
+  await input.press('ArrowLeft');
+  await input.press('ArrowUp');
+  await input.press('Enter');
+  await expect
+    .poll(() =>
+      page.getByRole('status', { name: 'Applied period' }).textContent()
+    )
+    .toContain('2026-07-02T16:01:00.000Z');
+});

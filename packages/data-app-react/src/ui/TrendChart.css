@@ -12,6 +12,12 @@
 .altertable-trend-points {
   position: relative;
   display: flex;
+  width: 100%;
+}
+.altertable-trend-points
+  > .altertable-chart-item-actions
+  > .altertable-chart-column {
+  align-self: stretch;
 }
 .altertable-trend-point {
   --atbl-focus-outline: none;

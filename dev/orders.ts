@@ -1,6 +1,5 @@
 import type { InputOf, OutputOf } from '@altertable/data-app/client';
 import {
-  dateRangeFilter,
   dimensionFilter,
   parseCount,
   type QueryRow,
@@ -8,7 +7,7 @@ import {
 import { formatCount, formatPercent } from '@altertable/data-app/format';
 
 import { dataApp } from '@/dev/app';
-import { calendar, countries } from '@/dev/commerce';
+import { countries, period } from '@/dev/commerce';
 
 const countryFilter = dimensionFilter({
   key: 'country',
@@ -16,12 +15,6 @@ const countryFilter = dimensionFilter({
   valueType: 'string',
   selectionMode: 'single',
   options: countries,
-});
-const periodFilter = dateRangeFilter({
-  key: 'period',
-  contract: calendar,
-  defaultValue: { kind: 'preset', id: 'last-30' },
-  comparison: true,
 });
 function amount(value: number): number {
   if (value < 0) throw new Error('Expected a nonnegative amount.');
@@ -39,13 +32,12 @@ function totals(
 }
 export const operations = {
   orderOverview: dataApp.defineOperation({
-    filters: { period: periodFilter, country: countryFilter },
+    filters: { period, country: countryFilter },
     policy: { maxQueryRows: 300, maxDurationMs: 15000 },
     async run({ query }, { country, period }) {
       const member = country.kind === 'all' ? undefined : country.members[0];
       const params = {
-        start: period.range.start,
-        end: period.range.end,
+        window: period.range,
         countryMode: country.kind,
         country: member?.kind === 'value' ? member.value : null,
       };
@@ -62,8 +54,7 @@ export const operations = {
         query('ordersByValue', params),
         query('previousPeriod', {
           ...params,
-          start: period.comparison?.start ?? period.range.start,
-          end: period.comparison?.end ?? period.range.end,
+          window: period.comparison ?? period.range,
           enabled: period.comparison !== null,
         }),
         query('orders', params),

@@ -2,12 +2,12 @@ import { defineDataApp } from '@altertable/data-app';
 import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  dateRangeFilter,
+  dateTimeRangeFilter,
   defineDateRangeContract,
   dimensionFilter,
   facetFilter,
   searchFilter,
-  type DateRangeRequest,
+  type DateTimeRangeComparisonRequest,
   type DimensionOption,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
@@ -19,10 +19,11 @@ const app = defineDataApp({
   queries: {},
 });
 const policy = { maxQueryRows: 10, maxDurationMs: 1000 };
-const period = dateRangeFilter({
+const period = dateTimeRangeFilter({
   key: 'period',
   contract: defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' }),
-  defaultValue: { kind: 'preset', id: 'last-7' },
+  allowComparison: true,
+  defaultValue: '7d',
 });
 const search = searchFilter({ key: 'search' });
 const region = facetFilter({
@@ -53,7 +54,7 @@ const operations = {
     policy,
     async run(_context, input): Promise<DimensionOption<string>[]> {
       const text: string = input.search;
-      const dates: DateRangeRequest = input.period;
+      const dates: DateTimeRangeComparisonRequest = input.period;
       // @ts-expect-error The context is the operation's filters, not an arbitrary map.
       void input.invented;
       // @ts-expect-error Date filters resolve to requests rather than URL selections.

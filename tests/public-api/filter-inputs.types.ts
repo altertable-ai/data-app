@@ -4,14 +4,14 @@ import { createDataClient } from '@altertable/data-app/client';
 import {
   booleanFilter,
   choiceFilter,
-  dateRangeFilter,
+  dateTimeRangeFilter,
   defineDateRangeContract,
   dimensionFilter,
   multiChoiceFilter,
   numberFilter,
   searchFilter,
   type BooleanSelection,
-  type DateRangeRequest,
+  type DateTimeRangeComparisonRequest,
   type DimensionSelection,
   type NumberSelection,
 } from '@altertable/data-app/contract';
@@ -50,14 +50,15 @@ const filters = {
     ],
     defaultValue: [],
   }),
-  period: dateRangeFilter({
+  period: dateTimeRangeFilter({
     key: 'period',
     contract: defineDateRangeContract({
       minDate: '2026-01-01',
       maxRangeDays: 90,
       timeZone: 'UTC',
     }),
-    defaultValue: { kind: 'preset', id: 'last-7' },
+    allowComparison: true,
+    defaultValue: '7d',
   }),
 };
 
@@ -68,7 +69,7 @@ type ExpectedInput = {
   active: BooleanSelection;
   search: string;
   choices: readonly string[];
-  period: DateRangeRequest;
+  period: DateTimeRangeComparisonRequest;
 };
 const operations = {
   usage: app.defineOperation({
@@ -80,8 +81,8 @@ const operations = {
       const windowDays: number = input.window;
       // @ts-expect-error A dimension arrives as its selection, not a scalar value.
       const organizationId: string = input.organization;
-      // @ts-expect-error A date range arrives as a resolved request, not a URL selection.
-      void input.period.kind;
+      // @ts-expect-error A comparison range arrives as a resolved request, not a URL selection.
+      void input.period.selection.range.kind;
       // @ts-expect-error The input has no field beyond the declared filters.
       void input.invented;
       void [expected, windowDays, organizationId];

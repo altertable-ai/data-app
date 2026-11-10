@@ -1,11 +1,9 @@
 import {
   defineAppFilters,
   type AppFilter,
-  type DateRangeFilter,
   type FilterCollection,
   type FilterValues,
 } from './app-filters.ts';
-import type { DateRangeRequest } from './contract.ts';
 import type {
   DateTimeRangeComparisonFilter,
   DateTimeRangeComparisonRequest,
@@ -15,12 +13,10 @@ import type {
 import { invariant } from './invariant.ts';
 import type { IsUnion } from './queries.ts';
 
-/** The value an operation receives for one filter: date ranges arrive as resolved requests. */
+/** The value an operation receives for one filter: comparisons arrive as resolved requests. */
 type FilterInputValue<Filter> = Filter extends DateTimeRangeComparisonFilter
   ? DateTimeRangeComparisonRequest
-  : Filter extends DateRangeFilter
-    ? DateRangeRequest
-    : FilterValues<{ value: Filter }>['value'];
+  : FilterValues<{ value: Filter }>['value'];
 
 /** An operation's input: one flat field per declared filter. */
 export type FilterInput<Filters extends FilterCollection> =
@@ -28,10 +24,7 @@ export type FilterInput<Filters extends FilterCollection> =
     ? Record<string, never>
     : { [Name in keyof Filters]: FilterInputValue<Filters[Name]> };
 
-export type DateFilter =
-  | DateRangeFilter
-  | DateTimeRangeFilter
-  | DateTimeRangeComparisonFilter;
+export type DateFilter = DateTimeRangeFilter | DateTimeRangeComparisonFilter;
 
 /** Exactly the date filters, so a view knows which one sets its reporting period. */
 type DateFilterNames<Filters extends FilterCollection> = {
@@ -53,9 +46,7 @@ export type CheckedOperationFilters<Filters extends FilterCollection> =
 
 function isDateFilter(filter: FilterCollection[string]): filter is DateFilter {
   return (
-    filter.kind === 'dateRange' ||
-    filter.kind === 'dateTimeRange' ||
-    filter.kind === 'dateTimeRangeComparison'
+    filter.kind === 'dateTimeRange' || filter.kind === 'dateTimeRangeComparison'
   );
 }
 
@@ -89,9 +80,7 @@ export function resolveFilterInput<Filters extends FilterCollection>(
     input[name] =
       filter.kind === 'dateTimeRangeComparison'
         ? filter.input(value as DateTimeRangeComparisonSelection, reference)
-        : filter.kind === 'dateRange'
-          ? filter.input(value as never)
-          : value;
+        : value;
   }
   return input as FilterInput<Filters>;
 }
@@ -111,10 +100,7 @@ export function parseFilterInput<Filters extends FilterCollection>(
   const input: Record<string, unknown> = {};
   for (const [name, filter] of Object.entries(filters)) {
     const selected = fields[name];
-    if (
-      filter.kind === 'dateRange' ||
-      filter.kind === 'dateTimeRangeComparison'
-    )
+    if (filter.kind === 'dateTimeRangeComparison')
       input[name] = filter.parseInput(selected);
     else if (filter.kind === 'dateTimeRange')
       input[name] = filter.parse(selected);

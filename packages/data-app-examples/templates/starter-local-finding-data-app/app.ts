@@ -1,4 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
+
 export const dataApp = defineDataApp({
   title: 'Sample finding',
   description:
@@ -6,19 +7,31 @@ export const dataApp = defineDataApp({
   scope: { organization: 'demo', environment: 'sample' },
   appearance: { theme: 'system' },
   queries: {
-    sampleCountsByGroup: {
+    samples: {
       projections: {
-        group_name: { type: 'string' },
+        period_start: { type: 'string' },
+        member: { type: 'string' },
+        selected: { type: 'boolean' },
         sample_count: { type: 'number' },
       },
       statement: `
-SELECT group_name, SUM(sample_count) AS sample_count
-FROM starter_demo.sample_counts
-WHERE $groupName = '' OR group_name = $groupName
-GROUP BY group_name ORDER BY sample_count DESC LIMIT $limit`,
+SELECT strftime(date_trunc($grain, sample_date), '%Y-%m-%d') AS period_start,
+  CASE WHEN $breakdown = 'group' THEN group_name ELSE segment_name END AS member,
+  sample_date >= CAST($selected_start AS TIMESTAMP) AS selected,
+  SUM(sample_count) AS sample_count
+FROM starter_demo.daily_samples
+WHERE sample_date >= CAST($start AS TIMESTAMP) AND sample_date < CAST($end AS TIMESTAMP)
+GROUP BY ALL ORDER BY period_start, member LIMIT $limit`,
       params: {
-        groupName: { type: 'string', defaultValue: '' },
-        limit: { type: 'number', defaultValue: 10 },
+        start: { type: 'string', defaultValue: '2026-03-09T00:00:00Z' },
+        end: { type: 'string', defaultValue: '2026-03-16T00:00:00Z' },
+        selected_start: {
+          type: 'string',
+          defaultValue: '2026-03-09T00:00:00Z',
+        },
+        grain: { type: 'string', defaultValue: 'day' },
+        breakdown: { type: 'string', defaultValue: 'segment' },
+        limit: { type: 'number', defaultValue: 500 },
       },
     },
   },

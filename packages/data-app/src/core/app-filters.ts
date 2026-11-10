@@ -1,9 +1,3 @@
-import type { DateRangeContract, DateRangeRequest } from './contract.ts';
-import {
-  availableDatePresets,
-  type DatePresetId,
-  type DateRange,
-} from './date-range.ts';
 import type {
   DateTimeRangeFilter,
   DateTimeRangeComparisonFilter,
@@ -53,7 +47,6 @@ export type FilterCollection = Record<
   | SearchFilter
   | ChoiceFilter<any>
   | MultiChoiceFilter
-  | DateRangeFilter
   | DateTimeRangeFilter
   | DateTimeRangeComparisonFilter
   | DimensionFilter<any>
@@ -91,8 +84,8 @@ export function defineAppFilters<const Collection extends FilterCollection>(
   filters: Collection
 ): Collection {
   const owners = new Map<string, string>();
-  for (const [name, variable] of Object.entries(filters)) {
-    const presentation = variable.presentation;
+  for (const [name, filter] of Object.entries(filters)) {
+    const presentation = filter.presentation;
     invariant(
       presentation === undefined ||
         (presentation !== null &&
@@ -109,7 +102,7 @@ export function defineAppFilters<const Collection extends FilterCollection>(
             presentation.prominence === 'secondary')),
       `Filter ${name} has invalid presentation.`
     );
-    for (const key of variable.urlKeys) {
+    for (const key of filter.urlKeys) {
       invariant(
         !['view', 'about', 'tab', 'present', 'step', 'details'].includes(key),
         `Filter ${name} uses reserved URL key: ${key}.`
@@ -336,222 +329,4 @@ export function multiChoiceFilter<
     valid,
     same,
   };
-}
-
-export type DateRangeSelection =
-  | { kind: 'preset'; id: DatePresetId; comparison?: 'previous' }
-  | { kind: 'dates'; start: string; end: string; comparison?: 'previous' };
-
-export type DateRangeFilterOptions = {
-  label?: string;
-  /** URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields. */
-  key: string;
-  /** Include `comparison: 'previous'` to start with the comparison on; requires `comparison: true`. */
-  defaultValue: DateRangeSelection;
-  contract: DateRangeContract;
-  history?: HistoryMode;
-  /** Opt into a URL-backed comparison with the preceding equal-length range. */
-  comparison?: boolean;
-  presentation?: FilterPresentation;
-};
-
-export type DateRangeFilter = AppFilter<DateRangeSelection, 'dateRange'> & {
-  kind: 'dateRange';
-  supportsComparison: boolean;
-  input: (selection: DateRangeSelection) => DateRangeRequest;
-  /** Validate an untrusted request against the same source policy. */
-  parseInput: (value: unknown) => DateRangeRequest;
-  describeInput: (input: DateRangeRequest) => string;
-  bounds: () => {
-    minDate?: string;
-    maxDate: string;
-    maxRangeDays: number;
-    timeZone: string;
-  };
-  resolve: (selection: DateRangeSelection) => DateRange;
-  previous: (selection: DateRangeSelection) => DateRange | null;
-  comparisonRange: (selection: DateRangeSelection) => DateRange | null;
-};
-
-const PRESET_IDS = new Set<DatePresetId>([
-  'day',
-  'last-3',
-  'last-7',
-  'last-14',
-  'last-30',
-  'last-90',
-  'this-week',
-  'previous-week',
-  'this-month',
-  'previous-month',
-]);
-
-function withoutComparison(selection: DateRangeSelection): DateRangeSelection {
-  return selection.kind === 'preset'
-    ? { kind: 'preset', id: selection.id }
-    : { kind: 'dates', start: selection.start, end: selection.end };
-}
-
-/** A date filter keeps relative presets relative and validates exact dates against source coverage. */
-export function dateRangeFilter({
-  key,
-  label = 'Date range',
-  defaultValue,
-  contract,
-  history = 'push',
-  comparison = false,
-  presentation,
-}: DateRangeFilterOptions): DateRangeFilter {
-  const startKey = key === 'period' ? 'start' : [key, 'start'].join('-');
-  const endKey = key === 'period' ? 'end' : [key, 'end'].join('-');
-  const comparisonKey =
-    key === 'period' ? 'compare' : [key, 'compare'].join('-');
-  const bounds = contract.bounds;
-
-  function resolve(selection: DateRangeSelection): DateRange {
-    const limits = bounds();
-    if (selection.kind === 'preset') {
-      const preset = availableDatePresets(limits).find(
-        item => item.id === selection.id
-      );
-      if (preset) return preset.range;
-    } else {
-      try {
-        return contract.parse(selection);
-      } catch {
-        // Invalid URL values fall back to the app default.
-      }
-    }
-    invariant(false, `Date filter ${key} is outside its available data range.`);
-  }
-
-  function same(left: DateRangeSelection, right: DateRangeSelection) {
-    return (
-      left.kind === right.kind &&
-      left.comparison === right.comparison &&
-      (left.kind === 'preset' && right.kind === 'preset'
-        ? left.id === right.id
-        : left.kind === 'dates' &&
-          right.kind === 'dates' &&
-          left.start === right.start &&
-          left.end === right.end)
-    );
-  }
-  const variable: DateRangeFilter = {
-    kind: 'dateRange',
-    presentation,
-    label,
-    describe: selection =>
-      contract.describeInput(variable.input(selection).range),
-    supportsComparison: comparison,
-    input(selection) {
-      return contract.request(
-        resolve(selection),
-        selection.comparison === 'previous' && comparison
-      );
-    },
-    parseInput(value) {
-      const request = contract.parseRequest(value);
-      invariant(
-        comparison || request.comparison === null,
-        `Date filter ${key} does not support comparison.`
-      );
-      return request;
-    },
-    describeInput(input) {
-      return contract.describeInput(input.range);
-    },
-    urlKeys: comparison
-      ? [key, startKey, endKey, comparisonKey]
-      : [key, startKey, endKey],
-    defaultValue,
-    clearValue: defaultValue,
-    history,
-    bounds,
-    resolve,
-    previous(selection) {
-      return comparison ? contract.comparison(resolve(selection)) : null;
-    },
-    comparisonRange(selection) {
-      return selection.comparison === 'previous' && comparison
-        ? contract.comparison(resolve(selection))
-        : null;
-    },
-    same,
-    valid(value) {
-      try {
-        const range = resolve(value);
-
-        return (
-          value.comparison === undefined ||
-          (value.comparison === 'previous' &&
-            comparison &&
-            contract.comparison(range) !== null)
-        );
-      } catch {
-        return false;
-      }
-    },
-    read(params) {
-      /** The URL records the comparison only when it differs from the default. */
-      function withComparison(
-        selection: DateRangeSelection
-      ): DateRangeSelection {
-        const range = withoutComparison(selection);
-        const state = params.get(comparisonKey);
-        const on =
-          comparison &&
-          (state === 'previous' ||
-            (state === null && defaultValue.comparison === 'previous'));
-        if (!on) return range;
-        const selected = { ...range, comparison: 'previous' as const };
-
-        return variable.valid(selected) ? selected : range;
-      }
-      const presetId = params.get(key);
-      if (presetId && PRESET_IDS.has(presetId as DatePresetId)) {
-        const selection = {
-          kind: 'preset',
-          id: presetId as DatePresetId,
-        } as const;
-        if (variable.valid(selection)) return withComparison(selection);
-      }
-      const start = params.get(startKey);
-      const end = params.get(endKey);
-      if (start && end) {
-        const selection = { kind: 'dates', start, end } as const;
-        if (variable.valid(selection)) return withComparison(selection);
-      }
-
-      return withComparison(defaultValue);
-    },
-    write(value) {
-      return {
-        ...(same(value, defaultValue)
-          ? { [key]: null, [startKey]: null, [endKey]: null }
-          : value.kind === 'preset'
-            ? { [key]: value.id, [startKey]: null, [endKey]: null }
-            : { [key]: null, [startKey]: value.start, [endKey]: value.end }),
-        ...(comparison
-          ? {
-              [comparisonKey]:
-                (value.comparison ?? 'off') ===
-                (defaultValue.comparison ?? 'off')
-                  ? null
-                  : (value.comparison ?? 'off'),
-            }
-          : {}),
-      };
-    },
-  };
-  invariant(
-    defaultValue.comparison === undefined || comparison,
-    `Date filter ${key} needs comparison: true to start with the comparison on.`
-  );
-  invariant(
-    variable.valid(defaultValue),
-    `Date filter ${key} has a default outside its available data range.`
-  );
-
-  return variable;
 }

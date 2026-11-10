@@ -1210,13 +1210,14 @@ test('a calendar in a filter sheet can float beyond the sheet without clipping',
   await page.goto('/time-app');
   await page.getByRole('button', { name: 'Filters', exact: true }).click();
   const sheet = page.getByRole('dialog', { name: 'Filters', exact: true });
-  await sheet.getByRole('button', { name: /Choose dates/ }).click();
+  await sheet.getByRole('combobox', { name: 'Date range' }).click();
+  await page.getByRole('option', { name: 'Select from calendar…' }).click();
   const calendar = page
     .getByRole('dialog')
     .filter({ has: page.getByRole('grid') })
     .filter({ hasNot: page.getByRole('button', { name: 'Done' }) });
   const bounds = await calendar.boundingBox();
-  expect(bounds!.width).toBeGreaterThan(450);
+  expect(bounds!.width).toBeGreaterThan(300);
   const sheetBounds = await sheet.boundingBox();
   expect(bounds!.x + bounds!.width).toBeGreaterThan(
     sheetBounds!.x + sheetBounds!.width

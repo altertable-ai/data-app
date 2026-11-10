@@ -1,10 +1,9 @@
 # Filters and display options
 
-Declare each filter once as a constant, then list it in `filters` on every
-operation that reads it. The operation's input parser and checks, its view's
-reporting period and scope, and the controls and URL state that `<DataApp>`
-renders all derive from that list. Import filter constructors and types from
-`@altertable/data-app/contract`.
+Declare each filter once as a constant and list it in `filters` on every
+operation that reads it. Everything else derives from that list: input
+validation, checks, the view's period and scope, and the controls `<DataApp>`
+renders. Import filters from `@altertable/data-app/contract`.
 
 ## Declare filters on operations
 
@@ -47,21 +46,15 @@ function App() {
 }
 ```
 
-`<DataApp>` renders one control for every filter any of the client's operations
-reads. Share the same constant across operations: two different filters under
-one name fail. URL keys must be unique. Omit `filters` for an operation without
-inputs. An operation with its own fields, such as a detail record ID, adds an
-`input` parser and `checks` for those fields only; it still lists the displayed
-filters it reads in `filters`, which parse themselves.
-
-A view's scope defaults to its reporting period, then the label and value of each
-filter narrowed from its unrestricted value, such as `group Alpha`, or
-`all data`; it reads inside sentences like “Showing group Alpha”. Pass `describeInput` to `defineView()` only when the scope needs
-specific copy.
-
-Keep search local only when it filters already loaded rows. Add dataset
-`suggestions` when record names make useful query completions; suggestions cover
-supplied rows only.
+- Reuse the same constant on every operation that reads it; two filters with one
+  name, or one URL key, fail.
+- Omit `filters` for an operation without inputs.
+- A detail operation that also needs its own fields, such as a record ID, keeps
+  `filters` for the scope and adds `input` and `checks` for those fields only.
+- The view's scope reads like “Mar 1–7, 2026 UTC · group Alpha” or “all data”.
+  Pass `describeInput` only for different copy.
+- Use `searchFilter()` to query the server; use a table's `search` prop to filter
+  rows already loaded.
 
 ## Read filter values
 
@@ -74,15 +67,13 @@ supplied rows only.
 | `multiChoiceFilter()`                                  | Selected option IDs                                        |
 | `dimensionFilter()`, `facetFilter()`, source dimension | `DimensionSelection`                                       |
 | `numberFilter()`, `booleanFilter()`                    | `NumberSelection`, `BooleanSelection`                      |
-| `dateRangeFilter()`                                    | `DateRangeRequest` (`{ range, comparison }`)               |
 | `dateTimeRangeFilter()`                                | `DateTimeRange`                                            |
 | `dateTimeRangeFilter({ allowComparison: true })`       | `DateTimeRangeComparisonRequest` (`{ range, comparison }`) |
 
-Inputs are validated against the filters before `run()`. Pass values to declared
-query parameters inside `run()`; never interpolate filter values into SQL.
-Date ranges bind as [range parameters](contract.md#bind-date-ranges). A
-`DimensionSelection` binds whole to a `{ type: 'dimension', valueType }`
-parameter, and `$country.matches(column)` keeps the rows it selects, including
+Pass values to declared query parameters; never interpolate them into SQL. Date
+ranges bind as [`dateTimeRange` parameters](contract.md#bind-date-ranges). A
+dimension selection binds whole to a `{ type: 'dimension', valueType }`
+parameter; `$country.matches(column)` keeps the selected rows, including
 multiple members, missing values, and exclusion:
 
 ```ts
@@ -128,8 +119,7 @@ WHERE ($member IS NULL OR group_name = $member)
 ORDER BY label
 ```
 
-Here `sample_counts` is the inspected table replacing the starter's fixture.
-Operations reading `group` check selected members against this source before
+Operations reading `group` check selected members against this query before
 `run()`. Use `dimensionFilter()` when options are known constants:
 
 ```ts
@@ -149,12 +139,9 @@ Set `defaultValue` to start from a narrower selection, such as
 `{ kind: 'include', members: [{ kind: 'value', value: 'paid' }] }`; clearing
 filters still returns to every member.
 
-Each dimension is independent: changing one preserves other selections, even
-when their combination returns no rows. No selection means all members. Use
-`single` for a replacement choice and `multiple` for independent members. Enable
-`allowExclusion` only when the query supports exclusion and its intended
-missing-value behavior. Use `multiChoiceFilter()` for fixed multiselect choices;
-empty means no choices, unlike an unrestricted dimension.
+No selection means every member. Enable `allowExclusion` and `allowMissing` only
+when the query handles them. Use `multiChoiceFilter()` for fixed multiselect
+choices; empty means no choices, unlike an unrestricted dimension.
 
 ## Facet filters
 
@@ -181,14 +168,12 @@ const operations = {
 };
 ```
 
-`options` names a registered operation; its own filters decide which selections
-narrow the options. Here, changing `period` reloads the group options. Return
-`{ value, label, count? }[]` directly from `run()`: at most 200 distinct values,
-and `count` is the number the picker shows beside each option, such as the
-records it would keep. Selections are checked for shape on the server, not
-membership; use a source dimension when the server must reject unknown members.
-In local apps, list the options operation in the shared `operationFilters` map
-like any other operation that reads filters.
+- `options` names a registered operation. Its filters decide what narrows the
+  options: here, changing `period` reloads them.
+- Return `{ value, label, count? }[]` from `run()`, at most 200 values. The picker
+  shows `count` beside each option.
+- The server checks a facet selection's shape, not its members; use a source
+  dimension when unknown members must be rejected.
 
 ## Display choices and breakdowns
 
@@ -210,50 +195,15 @@ const countsBy = displayChoice({
 // ... sampleCountsByGroup declares filters: { groupName, countsBy }
 ```
 
-Pass `view.breakdown('countsBy')` to `<VisualizationWidget breakdown={...}>`;
-the view's operation must declare the choice. Without `control: 'widget'`, a
-display choice renders in the toolbar's display options. Declare a separate
-choice for each independently controlled chart. Display choices do not appear in
-the scope. Use `presentation.prominence: 'secondary'` for less frequent filters.
+Pass `view.breakdown('countsBy')` to `<VisualizationWidget breakdown>`. Without
+`control: 'widget'`, the choice renders in the toolbar's display options. Use one
+choice per independently controlled chart. Use
+`presentation.prominence: 'secondary'` for less frequent filters.
 
-## Reporting periods
+## Date ranges
 
-An operation reads at most one date filter. It sets the view's reporting period,
-time zone, and metric comparisons; it need not be named `period`. For calendar
-days, use `dateRangeFilter()` with a shared `defineDateRangeContract()`:
-
-```ts
-const calendar = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
-const period = dateRangeFilter({
-  key: 'period',
-  contract: calendar,
-  comparison: true,
-  defaultValue: { kind: 'preset', id: 'last-7' },
-});
-const dailyCounts = dataApp.defineOperation({
-  filters: { period, groupName },
-  policy: { maxQueryRows: 100, maxDurationMs: 15000 },
-  async run({ query }, { period, groupName }) {
-    const result = await query('dailyCounts', {
-      period: period.range,
-      groupName,
-    });
-    // ... query { period: period.comparison } when it is not null
-    return result.rows;
-  },
-});
-```
-
-`period.range` holds inclusive ISO dates. Pass it to a
-[`dateRange` parameter](contract.md#bind-date-ranges) and filter with
-`$period.from` and `$period.to`. `comparison: true` adds the previous-period
-toggle; `period.comparison` is `null` while it is off. Add
-`comparison: 'previous'` to `defaultValue` to start with it on.
-
-### Absolute and relative datetime ranges
-
-Use `dateTimeRangeFilter()` for times, rolling windows, or mixed absolute and
-relative bounds:
+Use one `dateTimeRangeFilter()` per operation. It sets the view's reporting
+period, time zone, and metric comparisons:
 
 ```ts
 import {
@@ -262,40 +212,40 @@ import {
   defineDateRangeContract,
 } from '@altertable/data-app/contract';
 
-const calendar = defineDateRangeContract({
-  maxRangeDays: 366,
-  timeZone: 'UTC',
-  completeDays: false,
-});
+const calendar = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
 const period = dateTimeRangeFilter({
   key: 'period',
   contract: calendar,
   allowComparison: true,
   defaultValue: '30d',
-  presets: [
-    ...dateTimeRangePresets.analytics,
-    { label: 'Past 6 months', range: '6mo', shortcut: '6mo' },
-  ],
+  presets: dateTimeRangePresets.analytics,
 });
-const events = dataApp.defineOperation({
-  filters: { period },
-  policy: { maxQueryRows: 1000, maxDurationMs: 15000 },
-  async run({ query }, { period }) {
-    const current = await query('events', { period: period.range });
-    const previous = period.comparison
-      ? await query('events', { period: period.comparison })
-      : null;
-    return { current: current.rows, previous: previous?.rows ?? null };
+const dailyCounts = dataApp.defineOperation({
+  filters: { period, groupName },
+  policy: { maxQueryRows: 100, maxDurationMs: 15000 },
+  async run({ query }, { period, groupName }) {
+    const current = await query('dailyCounts', {
+      period: period.range,
+      groupName,
+    });
+    // ... query { period: period.comparison } when it is not null
+    return current.rows;
   },
 });
 ```
 
-Use `dateTimeRangePresets.monitoring` (past 5 and 15 minutes, past hour, 4 hours, and 24 hours) for shorter windows; `dateTimeRangePresets.analytics` covers past 7, 30, and 90 days, month and year to date, and the past year. A preset `range` is typed-range text such as `'24h'`, `'3d'`, or `'6mo'`. Bind the query bounds
-to a [`dateTimeRange` parameter](contract.md#bind-date-ranges).
-`allowComparison: true` adds the toggle, requires `contract`, and supplies current
-and previous ranges resolved against one reference time. Omit it for a plain
-`DateTimeRange` input; `contract` is then optional. Relative selections stay
-relative across reloads.
+- Ranges include `from` and exclude `to`: September 24–30 queries
+  `2026-09-24T00:00:00Z` through `2026-10-01T00:00:00Z`. Bind them to a
+  [`dateTimeRange` parameter](contract.md#bind-date-ranges).
+- `allowComparison: true` requires `contract` and gives `{ range, comparison }`;
+  `comparison` is `null` while the toggle is off. Add
+  `defaultComparison: 'previous'` to start with it on. Without
+  `allowComparison`, the input is the range itself.
+- `defaultValue` and preset `range` take range text such as `'24h'`, `'7d'`, or
+  `'6mo'`, or `{ from, to }`. `dateTimeRangePresets.analytics` covers days to a
+  year; `dateTimeRangePresets.monitoring` covers minutes to 24 hours.
+- The contract ends coverage yesterday; set `completeDays: false` to include
+  today.
 
 ## Exclusion, clear, and reset
 

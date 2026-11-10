@@ -1,9 +1,7 @@
 /** Operation authoring and delivery contracts; portable across runtimes. */
 export {
   parseTrue,
-  previousDateRange,
   defineDateRangeContract,
-  parseDateRangeInput,
   parseCount,
   parseLabel,
   defineQueryNames,
@@ -21,11 +19,9 @@ export {
   choiceFilter,
   displayChoice,
   multiChoiceFilter,
-  dateRangeFilter,
   facetFilter,
 } from '../authoring/contract.ts';
 export type {
-  DateRangeRequest,
   ReportingPeriod,
   DateRangeContractOptions,
   DateRangeContract,
@@ -44,7 +40,6 @@ export type {
   QueryResult,
   DisclosedQuery,
   DataOperation,
-  DateRangeInput,
   DimensionSelection,
   DimensionMember,
   DimensionOption,
@@ -61,9 +56,6 @@ export type {
   ChoiceFilter,
   ChoiceOption,
   MultiChoiceFilter,
-  DateRangeFilter,
-  DateRangeFilterOptions,
-  DateRangeSelection,
   FilterCollection,
   FilterPresentation,
   FacetFilter,

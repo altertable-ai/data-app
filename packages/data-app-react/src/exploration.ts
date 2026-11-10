@@ -43,9 +43,9 @@ export function createFilterTarget<Collection extends FilterCollection>(
 export function createBreakdownTarget<Value extends string>(
   definition: TargetDefinition
 ): BreakdownTarget<Value> {
-  const variable = definition.filters[definition.key!];
+  const filter = definition.filters[definition.key!];
   invariant(
-    variable?.kind === 'choice' && variable.presentation?.group === 'display',
+    filter?.kind === 'choice' && filter.presentation?.group === 'display',
     'Choose a displayChoice() filter.'
   );
   const target = new BreakdownTarget<Value>();
@@ -63,17 +63,17 @@ function readInput(key: string, input: unknown) {
 function appliedValues(definition: TargetDefinition) {
   const params = searchParams();
   return Object.fromEntries(
-    Object.entries(definition.filters).map(([name, variable]) => [
+    Object.entries(definition.filters).map(([name, filter]) => [
       name,
-      variable.read(params),
+      filter.read(params),
     ])
   );
 }
 function commit(definition: TargetDefinition, values: Record<string, unknown>) {
   const changes = Object.assign(
     {},
-    ...Object.entries(definition.filters).map(([name, variable]) =>
-      (variable as AppFilter<any>).write(values[name])
+    ...Object.entries(definition.filters).map(([name, filter]) =>
+      (filter as AppFilter<any>).write(values[name])
     )
   );
   writeSearch(changes, 'push');
@@ -89,24 +89,21 @@ export function targetAvailable(
     'Exploration targets must belong to the dataset view.'
   );
   const applied = appliedValues(definition);
-  return Object.entries(definition.filters).every(([key, variable]) => {
-    if (variable.presentation?.group === 'display') {
+  return Object.entries(definition.filters).every(([key, filter]) => {
+    if (filter.presentation?.group === 'display') {
       if (!(target instanceof BreakdownTarget && key === definition.key))
         return true;
     }
     const shown = readInput(key, displayedInput);
-    if (variable.kind === 'dateTimeRangeComparison')
+    if (filter.kind === 'dateTimeRangeComparison')
       return (
         !!shown &&
-        variable.same(
+        filter.same(
           applied[key] as never,
           (shown as DateTimeRangeComparisonRequest).selection
         )
       );
-    return variable.kind === 'dateRange'
-      ? JSON.stringify(variable.input(applied[key] as never)) ===
-          JSON.stringify(shown)
-      : (variable as AppFilter<any>).same(applied[key], shown);
+    return (filter as AppFilter<any>).same(applied[key], shown);
   });
 }
 /** Apply an explicit scope patch and optional chart choice in one history entry. */
@@ -118,11 +115,11 @@ export function applyFilter(
   const definition = targets.get(target)!;
   const values = appliedValues(definition);
   for (const [key, value] of Object.entries(patch)) {
-    const variable = definition.filters[key];
+    const filter = definition.filters[key];
     invariant(
-      variable &&
-        variable.presentation?.group !== 'display' &&
-        (variable as AppFilter<any>).valid(value),
+      filter &&
+        filter.presentation?.group !== 'display' &&
+        (filter as AppFilter<any>).valid(value),
       'Filter actions can only update scope filters.'
     );
   }
@@ -132,9 +129,9 @@ export function applyFilter(
       choice.owner === definition.owner,
       'Breakdown must belong to the filter view.'
     );
-    const variable = choice.filters[choice.key!]!;
+    const filter = choice.filters[choice.key!]!;
     invariant(
-      (variable as AppFilter<any>).valid(breakdown.value),
+      (filter as AppFilter<any>).valid(breakdown.value),
       'Invalid breakdown.'
     );
     patch = { ...patch, [choice.key!]: breakdown.value };
@@ -151,7 +148,7 @@ export function breakdownState(
     definition.owner === owner,
     'Breakdown targets must belong to the dataset view.'
   );
-  const variable = definition.filters[definition.key!] as ChoiceFilter;
+  const filter = definition.filters[definition.key!] as ChoiceFilter;
   const values = appliedValues(definition);
   const value = (
     input === undefined
@@ -159,11 +156,11 @@ export function breakdownState(
       : readInput(definition.key!, input)
   ) as string;
   return {
-    variable,
+    filter,
     value,
-    options: variable.options,
+    options: filter.options,
     set(id: string) {
-      invariant(variable.valid(id), 'Invalid breakdown.');
+      invariant(filter.valid(id), 'Invalid breakdown.');
       commit(definition, { ...values, [definition.key!]: id });
     },
   };

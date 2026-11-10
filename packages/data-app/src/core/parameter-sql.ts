@@ -3,18 +3,7 @@ import { boundExpression } from './date-time-range-sql.ts';
 /** Parameters whose SQL references expand to expressions over their bound JSON value. */
 export type StructuredParameter =
   | { type: 'dateTimeRange' }
-  | { type: 'dateRange' }
   | { type: 'dimension'; valueType: 'string' | 'number' };
-
-/** Calendar ranges bind inclusive ISO dates; their bounds become the same half-open
- * timestamps as datetime ranges: the start day's midnight through the day after the end. */
-function dateBoundExpression(parameter: string, bound: 'from' | 'to'): string {
-  const field = bound === 'from' ? 'start' : 'end';
-  const day = `CAST(json_extract_string($${parameter}, '$.${field}') AS DATE)`;
-  return bound === 'from'
-    ? `CAST(${day} AS TIMESTAMP)`
-    : `CAST(${day} + INTERVAL '1 day' AS TIMESTAMP)`;
-}
 
 /** True for rows the selection keeps. Excluding values keeps missing values unless
  * missing itself is excluded, matching the picker's semantics. */
@@ -72,12 +61,8 @@ export function expandParameterReferences(
       const end = closing < 0 ? statement.length : closing + text.length;
       output += statement.slice(match.index, end);
       token.lastIndex = end;
-    } else if (parameter && match[2] && parameter.type !== 'dimension') {
-      const bound = match[2] as 'from' | 'to';
-      output +=
-        parameter.type === 'dateRange'
-          ? dateBoundExpression(match[1]!, bound)
-          : boundExpression(match[1]!, bound);
+    } else if (parameter?.type === 'dateTimeRange' && match[2]) {
+      output += boundExpression(match[1]!, match[2] as 'from' | 'to');
     } else if (parameter?.type === 'dimension' && match[3]) {
       output += selectionExpression(match[1]!, parameter.valueType, match[3]);
     } else output += text;

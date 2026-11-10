@@ -3,7 +3,7 @@ import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   choiceFilter,
-  dateRangeFilter,
+  dateTimeRangeFilter,
   defineDateRangeContract,
   defineOperation,
   dimensionFilter,
@@ -106,10 +106,11 @@ const context = createDataContext({ count: 'count' })({
   glossary: { count: { term: 'Count', definition: 'Measured count' } },
 });
 const calendar = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
-const period = dateRangeFilter({
+const period = dateTimeRangeFilter({
   key: 'period',
   contract: calendar,
-  defaultValue: { kind: 'preset', id: 'last-7' },
+  allowComparison: true,
+  defaultValue: '7d',
 });
 const policy = { maxQueryRows: 1, maxDurationMs: 1000 };
 const hooks = createDataHooks(

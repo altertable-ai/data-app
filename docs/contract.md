@@ -84,17 +84,9 @@ Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 
 ### Bind date ranges
 
-Pass a date filter's range to a range parameter and reference its bounds as
-`$period.from` and `$period.to` in SQL. Both kinds read the same way: the
-start is inclusive and the end exclusive.
-
-- A `dateRangeFilter()` gives a `DateRange` of inclusive ISO calendar dates.
-  Declare `{ type: 'dateRange' }`; `$period.from` is the start day's midnight
-  and `$period.to` the midnight after the end day.
-- A `dateTimeRangeFilter()` gives a `DateTimeRange`. Declare
-  `{ type: 'dateTimeRange' }`. For a
-  [comparison filter](filters.md#absolute-and-relative-datetime-ranges), pass
-  its `range` or `comparison`.
+Declare `{ type: 'dateTimeRange' }` and pass a date filter's `range` or
+`comparison`. Reference its bounds as `$period.from` (inclusive) and
+`$period.to` (exclusive):
 
 ```ts
 const dataApp = defineDataApp({
@@ -105,7 +97,7 @@ const dataApp = defineDataApp({
         FROM orders
         WHERE ordered_at >= $period.from AND ordered_at < $period.to
         GROUP BY day ORDER BY day`,
-      params: { period: { type: 'dateRange' } },
+      params: { period: { type: 'dateTimeRange' } },
       projections: {
         day: { type: 'string' },
         orders: { type: 'number' },
@@ -139,5 +131,5 @@ const calendar = defineDateRangeContract({
 });
 ```
 
-Use the shared contract in a [reporting period](filters.md#reporting-periods)
-filter, including optional previous-period comparison.
+Use the shared contract in a [date filter](filters.md#date-ranges), including
+optional previous-period comparison.
