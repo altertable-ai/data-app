@@ -346,7 +346,8 @@ export type DateRangeFilterOptions = {
   label?: string;
   /** URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields. */
   key: string;
-  defaultValue: DateRangeSelection & { comparison?: never };
+  /** Include `comparison: 'previous'` to start with the comparison on; requires `comparison: true`. */
+  defaultValue: DateRangeSelection;
   contract: DateRangeContract;
   history?: HistoryMode;
   /** Opt into a URL-backed comparison with the preceding equal-length range. */
@@ -384,6 +385,12 @@ const PRESET_IDS = new Set<DatePresetId>([
   'this-month',
   'previous-month',
 ]);
+
+function withoutComparison(selection: DateRangeSelection): DateRangeSelection {
+  return selection.kind === 'preset'
+    ? { kind: 'preset', id: selection.id }
+    : { kind: 'dates', start: selection.start, end: selection.end };
+}
 
 /** A date filter keeps relative presets relative and validates exact dates against source coverage. */
 export function dateRangeFilter({
@@ -486,14 +493,20 @@ export function dateRangeFilter({
       }
     },
     read(params) {
+      /** The URL records the comparison only when it differs from the default. */
       function withComparison(
         selection: DateRangeSelection
       ): DateRangeSelection {
-        if (!comparison || params.get(comparisonKey) !== 'previous')
-          return selection;
-        const selected = { ...selection, comparison: 'previous' as const };
+        const range = withoutComparison(selection);
+        const state = params.get(comparisonKey);
+        const on =
+          comparison &&
+          (state === 'previous' ||
+            (state === null && defaultValue.comparison === 'previous'));
+        if (!on) return range;
+        const selected = { ...range, comparison: 'previous' as const };
 
-        return variable.valid(selected) ? selected : selection;
+        return variable.valid(selected) ? selected : range;
       }
       const presetId = params.get(key);
       if (presetId && PRESET_IDS.has(presetId as DatePresetId)) {
@@ -519,10 +532,22 @@ export function dateRangeFilter({
           : value.kind === 'preset'
             ? { [key]: value.id, [startKey]: null, [endKey]: null }
             : { [key]: null, [startKey]: value.start, [endKey]: value.end }),
-        ...(comparison ? { [comparisonKey]: value.comparison ?? null } : {}),
+        ...(comparison
+          ? {
+              [comparisonKey]:
+                (value.comparison ?? 'off') ===
+                (defaultValue.comparison ?? 'off')
+                  ? null
+                  : (value.comparison ?? 'off'),
+            }
+          : {}),
       };
     },
   };
+  invariant(
+    defaultValue.comparison === undefined || comparison,
+    `Date filter ${key} needs comparison: true to start with the comparison on.`
+  );
   invariant(
     variable.valid(defaultValue),
     `Date filter ${key} has a default outside its available data range.`

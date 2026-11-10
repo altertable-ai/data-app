@@ -145,6 +145,10 @@ const group = dimensionFilter({
 });
 ```
 
+Set `defaultValue` to start from a narrower selection, such as
+`{ kind: 'include', members: [{ kind: 'value', value: 'paid' }] }`; clearing
+filters still returns to every member.
+
 Each dimension is independent: changing one preserves other selections, even
 when their combination returns no rows. No selection means all members. Use
 `single` for a replacement choice and `multiple` for independent members. Enable
@@ -238,7 +242,8 @@ const dailyCounts = dataApp.defineOperation({
 `period.range` holds inclusive ISO dates. Pass it to a
 [`dateRange` parameter](contract.md#bind-date-ranges) and filter with
 `$period.from` and `$period.to`. `comparison: true` adds the previous-period
-toggle; `period.comparison` is `null` while it is off.
+toggle; `period.comparison` is `null` while it is off. Add
+`comparison: 'previous'` to `defaultValue` to start with it on.
 
 ### Absolute and relative datetime ranges
 

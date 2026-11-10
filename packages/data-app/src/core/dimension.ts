@@ -45,6 +45,15 @@ export type DimensionFilter<T extends DimensionValue = DimensionValue> =
 
 const allSelection: DimensionSelection<never> = { kind: 'all' };
 
+/** Selections are equal when they keep the same members, in any order. */
+function selectionKey(value: DimensionSelection) {
+  return value.kind === 'all'
+    ? 'all'
+    : [value.kind, ...value.members.map(dimensionMemberKey).sort()].join(
+        KEY_SEPARATOR
+      );
+}
+
 export function dimensionMemberKey(member: DimensionMember) {
   return member.kind === 'missing'
     ? 'missing'
@@ -64,7 +73,12 @@ export type DimensionSettings = {
 );
 
 export type DimensionFilterSettings<T extends DimensionValue> =
-  DimensionSettings & { valueType: T extends number ? 'number' : 'string' };
+  DimensionSettings & {
+    valueType: T extends number ? 'number' : 'string';
+    /** The selection before readers change it, such as paid orders only. Clearing
+     * filters still returns to every member. Defaults to `{ kind: 'all' }`. */
+    defaultValue?: DimensionSelection<NoInfer<T>>;
+  };
 
 export type DimensionFilterOptions<T extends DimensionValue> =
   DimensionFilterSettings<T> & {
@@ -124,7 +138,8 @@ export function createDimensionFilter<const T extends DimensionValue>(
     'Dimension selection limit is invalid.'
   );
   const allowMissing = config.allowMissing ?? false;
-  const defaultValue = allSelection;
+  const defaultValue: DimensionSelection<T> =
+    config.defaultValue ?? allSelection;
 
   function validMember(member: DimensionMember<T>): boolean {
     if (!member || typeof member !== 'object') return false;
@@ -155,15 +170,23 @@ export function createDimensionFilter<const T extends DimensionValue>(
     return new Set(ids).size === ids.length;
   }
 
+  invariant(valid(defaultValue), `Invalid default selection for ${label}.`);
+
+  /** The default selection has no URL value; every member is explicit when it differs. */
   function encode(value: DimensionSelection<T>) {
+    if (same(value, defaultValue)) return null;
     return value.kind === 'all'
-      ? null
+      ? JSON.stringify({ kind: 'all' })
       : JSON.stringify({
           kind: value.kind,
           members: value.members.map(member =>
             member.kind === 'missing' ? ['m'] : ['v', member.value]
           ),
         });
+  }
+
+  function same(left: DimensionSelection<T>, right: DimensionSelection<T>) {
+    return selectionKey(left) === selectionKey(right);
   }
 
   function parse(raw: string | null): DimensionSelection<T> {
@@ -174,6 +197,7 @@ export function createDimensionFilter<const T extends DimensionValue>(
       const tokens = Array.isArray(parsed)
         ? { kind: 'include', members: parsed }
         : parsed;
+      if (tokens?.kind === 'all') return allSelection;
       if (!tokens || !Array.isArray(tokens.members)) return defaultValue;
       const value = {
         kind: tokens.kind,
@@ -210,9 +234,7 @@ export function createDimensionFilter<const T extends DimensionValue>(
     clearValue: allSelection,
     history: config.history ?? 'push',
     valid,
-    same(left, right) {
-      return encode(left) === encode(right);
-    },
+    same,
     read(params) {
       return parse(params.get(key));
     },

@@ -534,7 +534,7 @@ DateRangeContractOptions (type, @altertable/data-app/contract): = props listed a
 dateRangeFilter (function, @altertable/data-app/contract): (options: DateRangeFilterOptions): DateRangeFilter — A date filter keeps relative presets relative and validates exact dates against source coverage.
 dateRangeFilter.options.label?: string
 dateRangeFilter.options.key: string — URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields.
-dateRangeFilter.options.defaultValue: DateRangeSelection & { comparison?: undefined; }
+dateRangeFilter.options.defaultValue: DateRangeSelection — Include `comparison: 'previous'` to start with the comparison on; requires `comparison: true`.
 dateRangeFilter.options.contract: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange…
 dateRangeFilter.options.history?: HistoryMode
 dateRangeFilter.options.comparison?: boolean — Opt into a URL-backed comparison with the preceding equal-length range.
@@ -761,6 +761,7 @@ dimensionFilter.config.presentation?: FilterPresentation
 dimensionFilter.config.selectionMode: 'single' [variant 1 of 2]
 dimensionFilter.config.maxSelected?: 1 [variant 1 of 2]
 dimensionFilter.config.valueType: T extends number ? 'number' : 'string'
+dimensionFilter.config.defaultValue?: DimensionSelection<NoInfer<T>> — The selection before readers change it, such as paid orders only. Clearing filters still returns to every member. Defaults to `{ kind: 'all' }`.
 dimensionFilter.config.options: readonly DimensionOption<T>[]
 dimensionFilter.config.selectionMode: 'multiple' [variant 2 of 2]
 dimensionFilter.config.maxSelected?: number [variant 2 of 2]
@@ -857,10 +858,12 @@ facetFilter.config.presentation?: FilterPresentation
 facetFilter.config.selectionMode: 'single' [variant 1 of 2]
 facetFilter.config.maxSelected?: 1 [variant 1 of 2]
 facetFilter.config.valueType: 'string'
+facetFilter.config.defaultValue?: DimensionSelection<string> — The selection before readers change it, such as paid orders only. Clearing filters still returns to every member. Defaults to `{ kind: 'all' }`.
 facetFilter.config.options: Operation — The registered operation that returns this dimension's options.
 facetFilter.config.selectionMode: 'multiple' [variant 2 of 2]
 facetFilter.config.maxSelected?: number [variant 2 of 2]
 facetFilter.config.valueType: 'number'
+facetFilter.config.defaultValue?: DimensionSelection<number> — The selection before readers change it, such as paid orders only. Clearing filters still returns to every member. Defaults to `{ kind: 'all' }`.
 FacetFilter (type, @altertable/data-app/contract): <Value, Operation> — A dimension whose options come from an operation. The options follow that operation's own filters, so selecting a period narrows the choices.
 FacetFilter.kind: 'dimension'
 FacetFilter.label: string

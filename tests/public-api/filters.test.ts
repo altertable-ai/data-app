@@ -250,3 +250,77 @@ test('categorical exclusion explicitly handles missing records and survives URL 
     })
   ).toBe(false);
 });
+
+test('a dimension starts from its default selection and records every other choice', () => {
+  const status = dimensionFilter({
+    key: 'status',
+    label: 'Status',
+    valueType: 'string',
+    selectionMode: 'multiple',
+    options: [
+      { value: 'paid', label: 'Paid' },
+      { value: 'refunded', label: 'Refunded' },
+    ],
+    defaultValue: {
+      kind: 'include',
+      members: [{ kind: 'value', value: 'paid' }],
+    },
+  });
+  const none = new URLSearchParams();
+  expect(status.read(none)).toEqual(status.defaultValue);
+  expect(status.write(status.defaultValue)).toEqual({ status: null });
+  // Every member is a deliberate choice that differs from the default.
+  const all = new URLSearchParams(
+    status.write({ kind: 'all' }) as Record<string, string>
+  );
+  expect(status.read(all)).toEqual({ kind: 'all' });
+  expect(status.clearValue).toEqual({ kind: 'all' });
+  expect(() =>
+    dimensionFilter({
+      key: 'status',
+      label: 'Status',
+      valueType: 'string',
+      selectionMode: 'single',
+      options: [{ value: 'paid', label: 'Paid' }],
+      // Types reject members outside the options; JavaScript callers fail at runtime.
+      defaultValue: {
+        kind: 'include',
+        members: [{ kind: 'value', value: 'pending' }],
+      } as never,
+    })
+  ).toThrow('Invalid default selection for Status.');
+});
+
+test('a date range can start with its comparison on and readers can turn it off', () => {
+  const contract = defineDateRangeContract({
+    maxDate: '2026-03-31',
+    maxRangeDays: 31,
+    timeZone: 'UTC',
+  });
+  const period = dateRangeFilter({
+    key: 'period',
+    contract,
+    comparison: true,
+    defaultValue: { kind: 'preset', id: 'last-7', comparison: 'previous' },
+  });
+  expect(period.read(new URLSearchParams())).toEqual({
+    kind: 'preset',
+    id: 'last-7',
+    comparison: 'previous',
+  });
+  const off = period.write({ kind: 'preset', id: 'last-7' });
+  expect(off).toMatchObject({ compare: 'off' });
+  expect(
+    period.read(new URLSearchParams(off as Record<string, string>))
+  ).toEqual({ kind: 'preset', id: 'last-7' });
+  expect(period.input(period.defaultValue).comparison).not.toBeNull();
+  expect(() =>
+    dateRangeFilter({
+      key: 'period',
+      contract,
+      defaultValue: { kind: 'preset', id: 'last-7', comparison: 'previous' },
+    })
+  ).toThrow(
+    'Date filter period needs comparison: true to start with the comparison on.'
+  );
+});
