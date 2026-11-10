@@ -1,7 +1,6 @@
 /** Operation authoring and delivery contracts; portable across runtimes. */
 export {
   parseTrue,
-  defineDateRangeContract,
   parseCount,
   parseLabel,
   defineQueryNames,
@@ -23,10 +22,8 @@ export {
 } from '../authoring/contract.ts';
 export type {
   ReportingPeriod,
-  DateRangeContractOptions,
-  DateRangeContract,
-  DateTimeRangeContract,
-  DateTimeRangeRequest,
+  DateTimeRangeInput,
+  DateTimeRangePolicy,
   RegisteredQuery,
   ConnectionOperation,
   QueryDefinitions,
@@ -155,11 +152,9 @@ export {
   dateTimeRangePresets,
   type DateTimeRangePreset,
   type DateTimeRangeFilter,
-  type DateTimeRangeComparisonFilter,
-  type DateTimeRangeComparisonFilterOptions,
-  type DateTimeRangeComparisonSelection,
-  type DateTimeRangeComparisonRequest,
   type DateTimeRangeFilterOptions,
+  type DateTimeRangeComparison,
+  type DateTimeRangeSelection,
 } from '../authoring/contract.ts';
 export {
   parseDateTimeRange,

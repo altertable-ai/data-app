@@ -63,7 +63,6 @@ export {
   combineOperationFilters,
   dateFilterName,
   resolveFilterInput,
-  type DateFilter,
   type FilterInput,
 } from './core/operation-filters.ts';
 
@@ -87,11 +86,10 @@ export {
   dateTimeRangePresets,
   type DateTimeRangePreset,
   type DateTimeRangeFilter,
-  type DateTimeRangeComparisonFilter,
-  type DateTimeRangeComparisonFilterOptions,
-  type DateTimeRangeComparisonSelection,
-  type DateTimeRangeComparisonRequest,
   type DateTimeRangeFilterOptions,
+  type DateTimeRangeComparison,
+  type DateTimeRangeSelection,
+  type DateTimeRangeRequest,
 } from './core/date-time-filter.ts';
 export {
   parseDateTimeRange,

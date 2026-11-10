@@ -4,15 +4,14 @@ import { createDataClient } from '@altertable/data-app/client';
 import {
   choiceFilter,
   dateTimeRangeFilter,
-  defineDateRangeContract,
   facetFilter,
 } from '@altertable/data-app/contract';
 
-const calendar = defineDateRangeContract({ maxRangeDays: 30, timeZone: 'UTC' });
 const period = dateTimeRangeFilter({
   key: 'period',
-  contract: calendar,
-  allowComparison: true,
+  maxRangeDays: 30,
+  timeZone: 'UTC',
+  comparison: 'off',
   defaultValue: '7d',
 });
 const other = dateTimeRangeFilter({ key: 'other', defaultValue: '7d' });

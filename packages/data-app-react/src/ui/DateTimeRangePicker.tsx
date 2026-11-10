@@ -8,7 +8,7 @@ import {
   serializeDateTimeRange,
   type DateTimeRange,
   type DateTimeRangePreset,
-  type DateRangeContract,
+  type DateTimeRangePolicy,
 } from '@altertable/data-app/contract';
 import {
   formatDateTime,
@@ -57,7 +57,7 @@ export type DateTimeRangePickerProps = {
   /** Client limit for determinate durations; validate timezone-dependent ranges on the backend. */
   maxRangeDays?: number;
   /** Shared reporting policy; generated controls inherit it from their filter. */
-  contract?: DateRangeContract;
+  policy?: DateTimeRangePolicy;
   /** Suggestions in display order. Omit for defaults; [] retains calendar and text entry.
    * Invalid or over-limit suggestions are omitted; typed input is not restricted to the menu.
    */
@@ -113,13 +113,13 @@ const examples = {
 };
 function resolvedLabel(
   value: DateTimeRange | null,
-  contract?: DateRangeContract,
+  policy?: DateTimeRangePolicy,
   options: DateFormatOptions = {}
 ) {
   if (!value) return '';
   try {
-    const { from, to } = contract
-      ? contract.datetime.resolve(value)
+    const { from, to } = policy
+      ? policy.resolve(value)
       : resolveDateTimeRange(value);
     return from
       ? `${formatDateTimeRangeInputDate(from, options.locale ?? 'en-US')} – ${formatDateTimeRangeInputDate(to, options.locale ?? 'en-US')}`
@@ -195,7 +195,7 @@ export function DateTimeRangePicker({
   label = 'Date range',
   labelPlacement = 'inline',
   maxRangeDays,
-  contract,
+  policy,
   presets: configuredPresets,
   disabled,
 }: DateTimeRangePickerProps) {
@@ -261,7 +261,7 @@ export function DateTimeRangePicker({
   function rangeError(range: DateTimeRange) {
     try {
       parseDateTimeRange(range, { maxRangeDays });
-      contract?.datetime.resolve(range);
+      policy?.resolve(range);
       return '';
     } catch (error) {
       return error instanceof Error ? error.message : 'Invalid date range.';
@@ -320,7 +320,7 @@ export function DateTimeRangePicker({
     const bounds = trigger.current?.getBoundingClientRect();
     dispatch({
       type: 'open',
-      draft: resolvedLabel(value, contract, dateFormatting),
+      draft: resolvedLabel(value, policy, dateFormatting),
       helpSide:
         bounds && bounds.left >= 280
           ? 'left'
@@ -382,8 +382,8 @@ export function DateTimeRangePicker({
       let nextCalendar: DateTimeRange | null = null;
       try {
         if (value) {
-          const resolved = contract
-            ? contract.datetime.resolve(value)
+          const resolved = policy
+            ? policy.resolve(value)
             : resolveDateTimeRange(value);
           const from = resolved.from ? new Date(resolved.from) : null;
           const to = new Date(resolved.to.getTime() - 1);
@@ -644,15 +644,11 @@ export function DateTimeRangePicker({
             >
               <DateTimeRangeCalendar
                 value={value}
-                maxRangeDays={
-                  contract
-                    ? Math.min(
-                        maxRangeDays ?? Infinity,
-                        contract.bounds().maxRangeDays
-                      )
-                    : maxRangeDays
-                }
-                contract={contract}
+                maxRangeDays={Math.min(
+                  maxRangeDays ?? Infinity,
+                  policy?.bounds().maxRangeDays ?? Infinity
+                )}
+                policy={policy}
                 onChange={calendar =>
                   dispatch({ type: 'update', value: { calendar } })
                 }

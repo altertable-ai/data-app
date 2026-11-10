@@ -1,7 +1,4 @@
-import type {
-  DateTimeRangeComparisonSelection,
-  DateTimeRange,
-} from '@altertable/data-app/contract';
+import type { DateTimeRangeSelection } from '@altertable/data-app/contract';
 import type {
   NumberFilter,
   NumberSelection,
@@ -74,8 +71,8 @@ export function useFilterValues<Collection extends FilterCollection>(
     reference = new Date();
     setSnapshot({ key: referenceKey, reference });
   }
-  const hasComparison = Object.values(definitions).some(
-    filter => filter.kind === 'dateTimeRangeComparison'
+  const hasDateFilter = Object.values(definitions).some(
+    filter => filter.kind === 'dateTimeRange'
   );
   const resolved: FilterInput<Collection> = resolveFilterInput(
     definitions,
@@ -88,7 +85,7 @@ export function useFilterValues<Collection extends FilterCollection>(
     resolved,
     /** Start a new reference time for relative ranges; false when none needs one. */
     refreshTime() {
-      if (!hasComparison) return false;
+      if (!hasDateFilter) return false;
       refreshReference();
       return true;
     },
@@ -272,8 +269,11 @@ export function useFilterControls<Collection extends FilterCollection>(
         if (onClear && filter.same(next, baseline)) onClear();
       }
       let control: ReactNode = null;
-      if (definition.kind === 'dateTimeRangeComparison') {
-        const selection = value as DateTimeRangeComparisonSelection;
+      if (definition.kind === 'dateTimeRange') {
+        const selection = value as DateTimeRangeSelection;
+        function select(next: DateTimeRangeSelection) {
+          setControlValue(next as FilterValues<Collection>[typeof name]);
+        }
         control = (
           <DateTimeRangePicker
             key={name}
@@ -282,43 +282,27 @@ export function useFilterControls<Collection extends FilterCollection>(
             value={selection.range}
             maxRangeDays={definition.maxRangeDays}
             presets={definition.presets}
-            contract={definition.contract}
+            policy={definition.policy}
             isDefault={!active}
             onReset={() => setControlValue(baseline)}
-            comparison={{
-              enabled: selection.comparison === 'previous',
-              range: definition.previous(selection),
-              onChange: enabled =>
-                setControlValue({
-                  range: selection.range,
-                  ...(enabled ? { comparison: 'previous' } : {}),
-                } as FilterValues<Collection>[typeof name]),
-            }}
-            onChange={range => {
-              const next: DateTimeRangeComparisonSelection = {
+            {...(definition.comparable && {
+              comparison: {
+                enabled: selection.comparison === 'previous',
+                range: definition.previous(selection),
+                onChange: (enabled: boolean) =>
+                  select({
+                    range: selection.range,
+                    ...(enabled ? { comparison: 'previous' } : {}),
+                  }),
+              },
+            })}
+            onChange={range =>
+              select({
                 range,
                 ...(selection.comparison && definition.previous({ range })
                   ? { comparison: 'previous' }
                   : {}),
-              };
-              setControlValue(next as FilterValues<Collection>[typeof name]);
-            }}
-          />
-        );
-      } else if (definition.kind === 'dateTimeRange') {
-        control = (
-          <DateTimeRangePicker
-            key={name}
-            label={definition.label}
-            labelPlacement={labelPlacement}
-            value={value as DateTimeRange}
-            maxRangeDays={definition.maxRangeDays}
-            presets={definition.presets}
-            contract={definition.contract}
-            isDefault={!active}
-            onReset={() => setControlValue(baseline)}
-            onChange={next =>
-              setControlValue(next as FilterValues<Collection>[typeof name])
+              })
             }
           />
         );

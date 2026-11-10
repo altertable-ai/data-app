@@ -1,7 +1,4 @@
-import type {
-  DateTimeRangeFilter,
-  DateTimeRangeComparisonFilter,
-} from './date-time-filter.ts';
+import type { DateTimeRangeFilter } from './date-time-filter.ts';
 import type { SourceDimensionFilter } from './dimension-source.ts';
 import type {
   DimensionSelection,
@@ -48,7 +45,6 @@ export type FilterCollection = Record<
   | ChoiceFilter<any>
   | MultiChoiceFilter
   | DateTimeRangeFilter
-  | DateTimeRangeComparisonFilter
   | DimensionFilter<any>
   | FacetFilter<any, string>
   | SourceDimensionFilter<any>

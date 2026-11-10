@@ -25,7 +25,6 @@ import {
 import { createDataClient } from '@altertable/data-app/client';
 import {
   dateTimeRangeFilter,
-  defineDateRangeContract,
   type DataOperation,
   type FilterCollection,
   type FilterInput,
@@ -52,12 +51,6 @@ const records = [
     ambiguous: '2026-09-24 15:30:05',
   },
 ];
-const calendar = defineDateRangeContract({
-  minDate: '2026-09-01',
-  maxDate: '2026-09-30',
-  maxRangeDays: 30,
-  timeZone: 'America/New_York',
-});
 const day = {
   from: new Date('2026-09-24T00:00:00Z'),
   to: new Date('2026-09-25T00:00:00Z'),
@@ -66,7 +59,10 @@ const filters = {
   events: {
     period: dateTimeRangeFilter({
       key: 'period',
-      contract: calendar,
+      minDate: '2026-09-01',
+      maxDate: '2026-09-30',
+      maxRangeDays: 30,
+      timeZone: 'America/New_York',
       defaultValue: day,
     }),
   },
@@ -75,12 +71,10 @@ const filters = {
     tokyoPeriod: dateTimeRangeFilter({
       key: 'tokyo',
       label: 'Tokyo period',
-      contract: defineDateRangeContract({
-        minDate: '2026-09-01',
-        maxDate: '2026-09-30',
-        maxRangeDays: 30,
-        timeZone: 'Asia/Tokyo',
-      }),
+      minDate: '2026-09-01',
+      maxDate: '2026-09-30',
+      maxRangeDays: 30,
+      timeZone: 'Asia/Tokyo',
       defaultValue: day,
       presentation: { prominence: 'secondary' },
     }),

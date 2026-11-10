@@ -5,13 +5,12 @@ import {
   booleanFilter,
   choiceFilter,
   dateTimeRangeFilter,
-  defineDateRangeContract,
   dimensionFilter,
   multiChoiceFilter,
   numberFilter,
   searchFilter,
   type BooleanSelection,
-  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeInput,
   type DimensionSelection,
   type NumberSelection,
 } from '@altertable/data-app/contract';
@@ -52,12 +51,9 @@ const filters = {
   }),
   period: dateTimeRangeFilter({
     key: 'period',
-    contract: defineDateRangeContract({
-      minDate: '2026-01-01',
-      maxRangeDays: 90,
-      timeZone: 'UTC',
-    }),
-    allowComparison: true,
+    minDate: '2026-01-01',
+    maxRangeDays: 90,
+    comparison: 'off',
     defaultValue: '7d',
   }),
 };
@@ -69,7 +65,7 @@ type ExpectedInput = {
   active: BooleanSelection;
   search: string;
   choices: readonly string[];
-  period: DateTimeRangeComparisonRequest;
+  period: DateTimeRangeInput;
 };
 const operations = {
   usage: app.defineOperation({

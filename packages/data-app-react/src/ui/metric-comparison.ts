@@ -1,4 +1,4 @@
-import { type DateTimeRangeRequest } from '@altertable/data-app/contract';
+import { type DateTimeRangeInput } from '@altertable/data-app/contract';
 import {
   formatMetric,
   type MetricFormat,
@@ -20,7 +20,7 @@ export type MetricComparison = {
 /** Label a comparison from the input that produced the displayed result. Null means the
  * requested previous period has no comparable value; zero remains a measured value. */
 export function dateTimeMetricComparison(
-  displayedInput: DateTimeRangeRequest,
+  displayedInput: DateTimeRangeInput,
   values: {
     current: number;
     previous: number | null;
@@ -31,7 +31,7 @@ export function dateTimeMetricComparison(
 ): MetricComparison | undefined {
   if (!displayedInput.comparison) return undefined;
 
-  function label(range: DateTimeRangeRequest['range']) {
+  function label(range: DateTimeRangeInput['range']) {
     return dateTimeRangeLabel(range, options);
   }
   return {

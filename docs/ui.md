@@ -299,4 +299,5 @@ Use `<Button variant="inline">` for actions within text or table cells. Use butt
 Prefer a [datetime filter](filters.md#date-ranges)
 for generated controls and URL state. For custom screens, `<DateTimeRangePicker>`
 accepts the same `DateTimeRange` and preset sets, with calendar and natural-language
-entry. See its props in [REFERENCE.md](../REFERENCE.md).
+entry. Pass `policy={period.policy}` to apply a date filter's coverage and time
+zone. See its props in [REFERENCE.md](../REFERENCE.md).

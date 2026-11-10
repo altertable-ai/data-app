@@ -60,15 +60,14 @@ function App() {
 
 `run(context, input)` receives one field per declared filter:
 
-| Filter                                                 | Input value                                                |
-| ------------------------------------------------------ | ---------------------------------------------------------- |
-| `searchFilter()`                                       | `string`, at most `maxLength` (200 by default)             |
-| `choiceFilter()`, `displayChoice()`                    | Selected option ID                                         |
-| `multiChoiceFilter()`                                  | Selected option IDs                                        |
-| `dimensionFilter()`, `facetFilter()`, source dimension | `DimensionSelection`                                       |
-| `numberFilter()`, `booleanFilter()`                    | `NumberSelection`, `BooleanSelection`                      |
-| `dateTimeRangeFilter()`                                | `DateTimeRange`                                            |
-| `dateTimeRangeFilter({ allowComparison: true })`       | `DateTimeRangeComparisonRequest` (`{ range, comparison }`) |
+| Filter                                                 | Input value                                    |
+| ------------------------------------------------------ | ---------------------------------------------- |
+| `searchFilter()`                                       | `string`, at most `maxLength` (200 by default) |
+| `choiceFilter()`, `displayChoice()`                    | Selected option ID                             |
+| `multiChoiceFilter()`                                  | Selected option IDs                            |
+| `dimensionFilter()`, `facetFilter()`, source dimension | `DimensionSelection`                           |
+| `numberFilter()`, `booleanFilter()`                    | `NumberSelection`, `BooleanSelection`          |
+| `dateTimeRangeFilter()`                                | `{ range, comparison }` of resolved dates      |
 
 Pass values to declared query parameters; never interpolate them into SQL. Date
 ranges bind as [`dateTimeRange` parameters](contract.md#bind-date-ranges). A
@@ -209,15 +208,13 @@ period, time zone, and metric comparisons:
 import {
   dateTimeRangeFilter,
   dateTimeRangePresets,
-  defineDateRangeContract,
 } from '@altertable/data-app/contract';
 
-const calendar = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
 const period = dateTimeRangeFilter({
   key: 'period',
-  contract: calendar,
-  allowComparison: true,
   defaultValue: '30d',
+  maxRangeDays: 90,
+  comparison: 'off',
   presets: dateTimeRangePresets.analytics,
 });
 const dailyCounts = dataApp.defineOperation({
@@ -234,18 +231,23 @@ const dailyCounts = dataApp.defineOperation({
 });
 ```
 
-- Ranges include `from` and exclude `to`: September 24–30 queries
-  `2026-09-24T00:00:00Z` through `2026-10-01T00:00:00Z`. Bind them to a
+- `run()` receives `{ range, comparison }` with resolved dates. Ranges include
+  `from` and exclude `to`: September 24–30 queries `2026-09-24T00:00:00Z`
+  through `2026-10-01T00:00:00Z`. Bind them to a
   [`dateTimeRange` parameter](contract.md#bind-date-ranges).
-- `allowComparison: true` requires `contract` and gives `{ range, comparison }`;
-  `comparison` is `null` while the toggle is off. Add
-  `defaultComparison: 'previous'` to start with it on. Without
-  `allowComparison`, the input is the range itself.
+- A range that runs past now ends at now: today picked in the calendar queries
+  midnight through the current time.
+- `comparison: 'off'` or `'on'` offers the previous-period toggle, starting in
+  that state. `period.comparison` is the same window one selected length
+  earlier, such as yesterday through the same time, while the toggle is on, and
+  `null` otherwise. Omit `comparison` for no toggle.
 - `defaultValue` and preset `range` take range text such as `'24h'`, `'7d'`, or
   `'6mo'`, or `{ from, to }`. `dateTimeRangePresets.analytics` covers days to a
   year; `dateTimeRangePresets.monitoring` covers minutes to 24 hours.
-- The contract ends coverage yesterday; set `completeDays: false` to include
-  today.
+- Relative ranges such as `'7d'` resolve in `timeZone`, UTC by default.
+- `minDate`, `maxDate`, and `maxRangeDays` limit what readers can pick.
+  Coverage runs through now; set `completeDays: true` to end it yesterday when
+  the source loads whole days.
 
 ## Exclusion, clear, and reset
 

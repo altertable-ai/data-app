@@ -1,7 +1,7 @@
 import {
   resolveDateTimeRange,
   type DateTimeRange,
-  type DateRangeContract,
+  type DateTimeRangePolicy,
 } from '@altertable/data-app/contract';
 import { fixedUnitMilliseconds } from '@altertable/data-app/internal';
 import { parseDate, today, type CalendarDate } from '@internationalized/date';
@@ -26,25 +26,25 @@ import { Select } from './Select.tsx';
 export function DateTimeRangeCalendar({
   value,
   maxRangeDays,
-  contract,
+  policy,
   onChange,
   onCompleteChange,
 }: {
   value: DateTimeRange | null;
   maxRangeDays?: number;
-  contract?: DateRangeContract;
+  policy?: DateTimeRangePolicy;
   onCompleteChange: (complete: boolean) => void;
   onChange: (value: DateTimeRange | null) => void;
 }) {
   const { locale } = useDateFormatting();
-  const limits = contract?.bounds();
+  const limits = policy?.bounds();
   const currentDay = limits ? parseDate(limits.maxDate) : today('UTC');
   const [selection, setSelection] = useState<RangeValue<CalendarDate> | null>(
     () => {
       if (!value) return null;
       try {
-        const resolved = contract
-          ? contract.datetime.resolve(value)
+        const resolved = policy
+          ? policy.resolve(value)
           : resolveDateTimeRange(value);
         if (
           !resolved.from ||

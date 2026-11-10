@@ -12,18 +12,11 @@ import {
 import { createDataClient } from '@altertable/data-app/client';
 import {
   dateTimeRangeFilter,
-  defineDateRangeContract,
   defineOperation,
   dimensionFilter,
 } from '@altertable/data-app/contract';
 import { formatDateRange } from '@altertable/data-app/format';
 
-const calendar = defineDateRangeContract({
-  minDate: '2026-02-01',
-  maxDate: '2026-03-31',
-  maxRangeDays: 31,
-  timeZone: 'UTC',
-});
 const presets = [1, 3, 7, 14, 30].map(days => ({
   label: days === 1 ? 'Latest available day' : `Latest ${days} available days`,
   shortcut: days === 1 ? '-' : `${days}d`,
@@ -34,8 +27,10 @@ const presets = [1, 3, 7, 14, 30].map(days => ({
 }));
 const period = dateTimeRangeFilter({
   key: 'period',
-  contract: calendar,
-  allowComparison: true,
+  minDate: '2026-02-01',
+  maxDate: '2026-03-31',
+  maxRangeDays: 31,
+  comparison: 'off',
   presets,
   defaultValue: {
     from: new Date('2026-03-04T00:00:00Z'),
@@ -100,7 +95,7 @@ const dataset = view.dataset({
         end: new Date(input.period.range.to.getTime() - 1)
           .toISOString()
           .slice(0, 10),
-      })} ${calendar.bounds().timeZone}`,
+      })} ${period.policy.timeZone}`,
     },
   ],
   rowKey: () => 'events',

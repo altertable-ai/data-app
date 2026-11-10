@@ -1,4 +1,4 @@
-import type { DateTimeRangeComparisonRequest } from '@altertable/data-app/contract';
+import type { DateTimeRangeRequest } from '@altertable/data-app/internal';
 import type {
   AppFilter,
   FilterValues,
@@ -95,12 +95,12 @@ export function targetAvailable(
         return true;
     }
     const shown = readInput(key, displayedInput);
-    if (filter.kind === 'dateTimeRangeComparison')
+    if (filter.kind === 'dateTimeRange')
       return (
         !!shown &&
         filter.same(
           applied[key] as never,
-          (shown as DateTimeRangeComparisonRequest).selection
+          (shown as DateTimeRangeRequest).selection
         )
       );
     return (filter as AppFilter<any>).same(applied[key], shown);

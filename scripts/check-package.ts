@@ -652,11 +652,11 @@ import { createDataClient } from "@altertable/data-app/client";
 import { Grid, injectDataAppStyles } from '@altertable/data-app-react';
 import { MetricWidget } from '@altertable/data-app-react/ui';
 injectDataAppStyles();
-import { defineDateRangeContract, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
+import { dateTimeRangeFilter, createMessageRouter, defineMessageRoute } from "@altertable/data-app/contract";
 import { attachDataAppBridge, startDataAppBootstrap } from "@altertable/data-app-embed";
 import { DataAppBridge } from "@altertable/data-app-embed/react";
 export const app = defineDataApp({ title: "Packed app", description: "Portable declaration", scope: { organization: "demo", environment: "test" }, queries: {} });
-export const api = { defineDataApp, createDataClient, Grid, MetricWidget, defineDateRangeContract, createMessageRouter, defineMessageRoute, attachDataAppBridge, startDataAppBootstrap, DataAppBridge };
+export const api = { defineDataApp, createDataClient, Grid, MetricWidget, dateTimeRangeFilter, createMessageRouter, defineMessageRoute, attachDataAppBridge, startDataAppBootstrap, DataAppBridge };
 `
   );
   await writeFile(

@@ -9,22 +9,15 @@ import {
   mountDataApp,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import {
-  dateTimeRangeFilter,
-  defineDateRangeContract,
-} from '@altertable/data-app/contract';
+import { dateTimeRangeFilter } from '@altertable/data-app/contract';
 
-const contract = defineDateRangeContract({
-  minDate: '2026-06-01',
-  maxRangeDays: 31,
-  timeZone: 'UTC',
-  completeDays: false,
-});
 const period = dateTimeRangeFilter({
   key: 'period',
   defaultValue: '7d',
-  contract,
-  allowComparison: true,
+  minDate: '2026-06-01',
+  maxRangeDays: 31,
+  completeDays: false,
+  comparison: 'off',
 });
 const dataApp = defineDataApp({
   title: 'Datetime comparisons',

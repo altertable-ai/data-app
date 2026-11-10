@@ -5,17 +5,16 @@ import {
   type FilterValues,
 } from './app-filters.ts';
 import type {
-  DateTimeRangeComparisonFilter,
-  DateTimeRangeComparisonRequest,
-  DateTimeRangeComparisonSelection,
   DateTimeRangeFilter,
+  DateTimeRangeSelection,
 } from './date-time-filter.ts';
+import type { DateTimeRangeInput } from './date-time-range-contract.ts';
 import { invariant } from './invariant.ts';
 import type { IsUnion } from './queries.ts';
 
-/** The value an operation receives for one filter: comparisons arrive as resolved requests. */
-type FilterInputValue<Filter> = Filter extends DateTimeRangeComparisonFilter
-  ? DateTimeRangeComparisonRequest
+/** The value an operation receives for one filter: date filters arrive resolved. */
+type FilterInputValue<Filter> = Filter extends DateTimeRangeFilter
+  ? DateTimeRangeInput
   : FilterValues<{ value: Filter }>['value'];
 
 /** An operation's input: one flat field per declared filter. */
@@ -24,11 +23,11 @@ export type FilterInput<Filters extends FilterCollection> =
     ? Record<string, never>
     : { [Name in keyof Filters]: FilterInputValue<Filters[Name]> };
 
-export type DateFilter = DateTimeRangeFilter | DateTimeRangeComparisonFilter;
-
 /** Exactly the date filters, so a view knows which one sets its reporting period. */
 type DateFilterNames<Filters extends FilterCollection> = {
-  [Name in keyof Filters]: Filters[Name] extends DateFilter ? Name : never;
+  [Name in keyof Filters]: Filters[Name] extends DateTimeRangeFilter
+    ? Name
+    : never;
 }[keyof Filters];
 
 /** Filters are a literal record of known names, and at most one is a date filter:
@@ -44,10 +43,10 @@ export type CheckedOperationFilters<Filters extends FilterCollection> =
         ? { 'An operation reads at most one date filter': never }
         : unknown);
 
-function isDateFilter(filter: FilterCollection[string]): filter is DateFilter {
-  return (
-    filter.kind === 'dateTimeRange' || filter.kind === 'dateTimeRangeComparison'
-  );
+function isDateFilter(
+  filter: FilterCollection[string]
+): filter is DateTimeRangeFilter {
+  return filter.kind === 'dateTimeRange';
 }
 
 /** Validate an operation's filters once: unique URL keys and at most one date filter. */
@@ -67,8 +66,8 @@ export function dateFilterName(filters: FilterCollection): string | undefined {
   return Object.keys(filters).find(name => isDateFilter(filters[name]!));
 }
 
-/** Resolve URL selections to the input the operation receives. Relative datetime
- * comparisons resolve against one reference time so both ranges agree. */
+/** Resolve URL selections to the request the browser sends. Relative date ranges
+ * resolve against one reference time so the range and its comparison agree. */
 export function resolveFilterInput<Filters extends FilterCollection>(
   filters: Filters,
   values: FilterValues<Filters>,
@@ -78,8 +77,8 @@ export function resolveFilterInput<Filters extends FilterCollection>(
   for (const [name, filter] of Object.entries(filters)) {
     const value = values[name as keyof Filters];
     input[name] =
-      filter.kind === 'dateTimeRangeComparison'
-        ? filter.input(value as DateTimeRangeComparisonSelection, reference)
+      filter.kind === 'dateTimeRange'
+        ? filter.request(value as DateTimeRangeSelection, reference)
         : value;
   }
   return input as FilterInput<Filters>;
@@ -100,10 +99,8 @@ export function parseFilterInput<Filters extends FilterCollection>(
   const input: Record<string, unknown> = {};
   for (const [name, filter] of Object.entries(filters)) {
     const selected = fields[name];
-    if (filter.kind === 'dateTimeRangeComparison')
+    if (filter.kind === 'dateTimeRange')
       input[name] = filter.parseInput(selected);
-    else if (filter.kind === 'dateTimeRange')
-      input[name] = filter.parse(selected);
     else {
       invariant(
         (filter as AppFilter<unknown>).valid(selected),
@@ -119,10 +116,13 @@ export function parseFilterInput<Filters extends FilterCollection>(
 export function defaultFilterInput<Filters extends FilterCollection>(
   filters: Filters
 ): FilterInput<Filters> {
-  const defaults = Object.fromEntries(
-    Object.entries(filters).map(([name, filter]) => [name, filter.defaultValue])
-  ) as FilterValues<Filters>;
-  return resolveFilterInput(filters, defaults);
+  return Object.fromEntries(
+    Object.entries(filters).map(([name, filter]) => {
+      if (filter.kind !== 'dateTimeRange') return [name, filter.defaultValue];
+      const { range, comparison } = filter.request(filter.defaultValue);
+      return [name, { range, comparison }];
+    })
+  ) as FilterInput<Filters>;
 }
 
 /** Every operation in an app shares one filter per name and one owner per URL key. */

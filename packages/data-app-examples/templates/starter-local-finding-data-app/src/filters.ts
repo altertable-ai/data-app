@@ -1,26 +1,21 @@
 import {
   dateTimeRangeFilter,
-  defineDateRangeContract,
   displayChoice,
 } from '@altertable/data-app/contract';
 
 // Declare each filter once in this browser-safe module: operations read them on
 // the server, and the browser client renders their controls.
-const calendar = defineDateRangeContract({
-  minDate: '2026-01-05',
-  maxDate: '2026-03-29',
-  maxRangeDays: 28,
-  timeZone: 'UTC',
-});
 const findingPeriod = {
   from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
 const period = dateTimeRangeFilter({
   key: 'period',
-  contract: calendar,
-  allowComparison: true,
   defaultValue: findingPeriod,
+  minDate: '2026-01-05',
+  maxDate: '2026-03-29',
+  maxRangeDays: 28,
+  comparison: 'off',
   presets: [{ label: 'Finding period', range: findingPeriod }],
 });
 const grain = displayChoice({

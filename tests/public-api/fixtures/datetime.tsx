@@ -11,11 +11,12 @@ import {
   injectDataAppStyles,
   useDateFormatting,
 } from '@altertable/data-app-react';
+import { useAppFilters } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   dateTimeRangeFilter,
   dateTimeRangePresets,
-  defineDateRangeContract,
+  serializeDateTimeRange,
   type DateTimeRange,
 } from '@altertable/data-app/contract';
 import { useState } from 'react';
@@ -36,14 +37,10 @@ const app = defineDataApp({
   },
 });
 const presetMenu = new URLSearchParams(location.search).get('presets');
-const contract = new URLSearchParams(location.search).has('policy')
-  ? defineDateRangeContract({
-      minDate: '2026-06-01',
-      maxDate: '2026-07-01',
-      maxRangeDays: 7,
-      timeZone:
-        new URLSearchParams(location.search).get('reportingZone') ?? 'UTC',
-    })
+const search = new URLSearchParams(location.search);
+const timeZone = search.get('reportingZone') ?? 'UTC';
+const coverage = search.has('policy')
+  ? { minDate: '2026-06-01', maxDate: '2026-07-01', maxRangeDays: 7 }
   : undefined;
 const presets =
   presetMenu === 'analytics'
@@ -64,20 +61,21 @@ const presets =
         : undefined;
 const period = dateTimeRangeFilter({
   key: 'period',
-  defaultValue: contract
+  defaultValue: coverage
     ? {
         from: new Date('2026-06-28T00:00:00Z'),
         to: new Date('2026-07-02T00:00:00Z'),
       }
     : '7d',
-  contract,
+  ...coverage,
+  timeZone,
   presets,
 });
 const events = app.defineOperation({
   filters: { period },
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }, input) {
-    return (await query('events', input)).rows;
+    return (await query('events', { period: input.period.range })).rows;
   },
 });
 const client = createDataClient({
@@ -110,9 +108,24 @@ const dataset = view.dataset({
 });
 const content = view.content(source => (
   <TextWidget title="Selection" source={source} dataset={dataset}>
-    {rows => <output aria-label="Applied period">{rows[0]?.selection}</output>}
+    {rows => (
+      <>
+        <AppliedPeriod />
+        <output aria-label="Queried period">{rows[0]?.selection}</output>
+      </>
+    )}
   </TextWidget>
 ));
+
+/** The selection keeps relative intent; the query receives it resolved. */
+function AppliedPeriod() {
+  const { values } = useAppFilters({ period });
+  return (
+    <output aria-label="Applied period">
+      {serializeDateTimeRange(values.period.range)}
+    </output>
+  );
+}
 function App() {
   if (new URLSearchParams(location.search).has('disabledReset'))
     return <DisabledResetPicker />;

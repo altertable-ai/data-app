@@ -1,21 +1,13 @@
-import {
-  dateTimeRangeFilter,
-  defineDateRangeContract,
-} from '@altertable/data-app/contract';
+import { dateTimeRangeFilter } from '@altertable/data-app/contract';
 
 // Six months of complete UTC days, matching the seed's UTC bounds.
 const latest = new Date();
 latest.setUTCDate(latest.getUTCDate() - 1);
 const earliest = new Date(latest);
 earliest.setUTCDate(earliest.getUTCDate() - 179);
-export const calendar = defineDateRangeContract({
-  minDate: earliest.toISOString().slice(0, 10),
-  maxDate: latest.toISOString().slice(0, 10),
-  maxRangeDays: 90,
-  timeZone: 'UTC',
-});
-
-const latestMidnight = new Date(`${calendar.bounds().maxDate}T00:00:00Z`);
+const latestMidnight = new Date(
+  `${latest.toISOString().slice(0, 10)}T00:00:00Z`
+);
 const presets = [1, 3, 7, 14, 30, 90].map(days => ({
   label: days === 1 ? 'Yesterday' : `Last ${days} complete days`,
   shortcut: days === 1 ? '-' : `${days}d`,
@@ -27,8 +19,10 @@ const presets = [1, 3, 7, 14, 30, 90].map(days => ({
 const last30 = presets.find(preset => preset.shortcut === '30d');
 export const period = dateTimeRangeFilter({
   key: 'period',
-  contract: calendar,
-  allowComparison: true,
+  minDate: earliest.toISOString().slice(0, 10),
+  maxDate: latest.toISOString().slice(0, 10),
+  maxRangeDays: 90,
+  comparison: 'off',
   presets,
   defaultValue: last30?.range ?? presets[0]!.range,
 });

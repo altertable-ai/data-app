@@ -213,11 +213,9 @@ export {
   dateTimeRangePresets,
   type DateTimeRangePreset,
   type DateTimeRangeFilter,
-  type DateTimeRangeComparisonFilter,
-  type DateTimeRangeComparisonFilterOptions,
-  type DateTimeRangeComparisonSelection,
-  type DateTimeRangeComparisonRequest,
   type DateTimeRangeFilterOptions,
+  type DateTimeRangeComparison,
+  type DateTimeRangeSelection,
 } from './app-filters.ts';
 
 export {

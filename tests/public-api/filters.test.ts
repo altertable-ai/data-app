@@ -11,7 +11,6 @@ import {
   parseBooleanSelection,
   dimensionFilter,
   dimensionPredicate,
-  defineDateRangeContract,
 } from '@altertable/data-app/contract';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -63,12 +62,9 @@ test('presentation intent is retained by each filter constructor without changin
     }),
     dateTimeRangeFilter({
       key: 'period',
-      contract: defineDateRangeContract({
-        minDate: '2026-01-01',
-        maxDate: '2026-01-31',
-        maxRangeDays: 31,
-        timeZone: 'UTC',
-      }),
+      minDate: '2026-01-01',
+      maxDate: '2026-01-31',
+      maxRangeDays: 31,
       defaultValue: {
         from: new Date('2026-01-01T00:00:00Z'),
         to: new Date('2026-02-01T00:00:00Z'),
@@ -295,20 +291,15 @@ test('a dimension starts from its default selection and records every other choi
 });
 
 test('a date range can start with its comparison on and readers can turn it off', () => {
-  const contract = defineDateRangeContract({
-    maxDate: '2026-03-31',
-    maxRangeDays: 31,
-    timeZone: 'UTC',
-  });
   const range = {
     from: new Date('2026-03-24T00:00:00Z'),
     to: new Date('2026-03-31T00:00:00Z'),
   };
   const period = dateTimeRangeFilter({
     key: 'period',
-    contract,
-    allowComparison: true,
-    defaultComparison: 'previous',
+    maxDate: '2026-03-31',
+    maxRangeDays: 31,
+    comparison: 'on',
     defaultValue: range,
   });
   expect(period.read(new URLSearchParams())).toEqual({
@@ -321,5 +312,5 @@ test('a date range can start with its comparison on and readers can turn it off'
     period.read(new URLSearchParams(off as Record<string, string>))
   ).toEqual({ range });
   expect(period.write(period.defaultValue)).toMatchObject({ compare: null });
-  expect(period.input(period.defaultValue).comparison).not.toBeNull();
+  expect(period.request(period.defaultValue).comparison).not.toBeNull();
 });

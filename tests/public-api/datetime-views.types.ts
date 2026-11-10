@@ -3,22 +3,21 @@ import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   dateTimeRangeFilter,
-  defineDateRangeContract,
-  type DateTimeRange,
-  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeInput,
 } from '@altertable/data-app/contract';
 
-const contract = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
 const period = dateTimeRangeFilter({
   key: 'period',
   defaultValue: 'yesterday',
-  contract,
+  maxRangeDays: 90,
+  timeZone: 'UTC',
 });
 const comparedPeriod = dateTimeRangeFilter({
   key: 'compared',
   defaultValue: 'yesterday',
-  allowComparison: true,
-  contract,
+  comparison: 'off',
+  maxRangeDays: 90,
+  timeZone: 'UTC',
 });
 const app = defineDataApp({
   title: 'Datetime views',
@@ -38,8 +37,9 @@ const operations = {
     filters: { period },
     policy,
     async run(_context, input) {
-      const range: DateTimeRange = input.period;
-      void range;
+      const { range, comparison } = input.period;
+      const bounds: { from: Date; to: Date } = range;
+      void [bounds, comparison];
       return 1;
     },
   }),
@@ -47,7 +47,7 @@ const operations = {
     filters: { comparedPeriod },
     policy,
     async run(_context, input) {
-      const request: DateTimeRangeComparisonRequest = input.comparedPeriod;
+      const request: DateTimeRangeInput = input.comparedPeriod;
       void request;
       return 1;
     },
@@ -79,6 +79,6 @@ comparedEvents.metric(count, data => ({ current: data, previous: 1 }));
 dateTimeRangeFilter({
   key: 'period',
   defaultValue: '7d',
-  // @ts-expect-error Comparison policy is required when enabling the reporting workflow.
-  allowComparison: true,
+  // @ts-expect-error The comparison toggle starts off or on.
+  comparison: 'previous',
 });

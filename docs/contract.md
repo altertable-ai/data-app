@@ -107,29 +107,8 @@ const dataApp = defineDataApp({
 });
 ```
 
-Relative datetime values resolve at query
-execution. Absolute values encode wall-clock fields in UTC: selecting 4 PM stores
-16:00Z.
-SQL bounds are timezone-free timestamps. Configure the backend session to the
-reporting timezone and interpret timestamp-with-timezone comparisons in that
-same zone.
-
-## Share reporting policy
-
-Pass an optional `defineDateRangeContract()` to `dateTimeRangeFilter()` to
-share coverage, duration limits, and reporting timezone between the picker and
-server parser. By default, coverage ends yesterday; set `completeDays: false`
-to include today. Declare the policy once:
-
-```ts
-import { defineDateRangeContract } from '@altertable/data-app/contract';
-
-const calendar = defineDateRangeContract({
-  minDate: '2026-01-01',
-  maxRangeDays: 90,
-  timeZone: 'UTC',
-});
-```
-
-Use the shared contract in a [date filter](filters.md#date-ranges), including
-optional previous-period comparison.
+Date filters pass resolved bounds in their `timeZone`, encoded as UTC wall-clock
+fields: 4 PM in the reporting zone is 16:00Z. SQL bounds are therefore
+timezone-free timestamps; interpret timestamp-with-timezone columns in that same
+zone. Coverage and duration limits live on the
+[date filter](filters.md#date-ranges).

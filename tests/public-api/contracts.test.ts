@@ -4,24 +4,17 @@ import {
   choiceFilter,
   dateTimeRangeFilter,
   defineOperation,
-  defineDateRangeContract,
   dimensionFilter,
   searchFilter,
   dimensionPredicate,
   parseCount,
-  type DateTimeRangeComparisonRequest,
+  type DateTimeRangeInput,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
 test('an operation reading a date range and dimension validates and escapes its input', async () => {
-  const calendar = defineDateRangeContract({
-    minDate: '2026-02-27',
-    maxDate: '2026-03-31',
-    maxRangeDays: 7,
-    timeZone: 'UTC',
-  });
   const region = dimensionFilter<string>({
     key: 'region',
     label: 'Region',
@@ -35,18 +28,20 @@ test('an operation reading a date range and dimension validates and escapes its 
   });
   const period = dateTimeRangeFilter({
     key: 'period',
-    contract: calendar,
-    allowComparison: true,
+    minDate: '2026-02-27',
+    maxDate: '2026-03-31',
+    maxRangeDays: 7,
+    comparison: 'off',
     defaultValue: {
       from: new Date('2026-03-04T00:00:00Z'),
       to: new Date('2026-03-07T00:00:00Z'),
     },
   });
   const input: {
-    period: DateTimeRangeComparisonRequest;
+    period: DateTimeRangeInput;
     region: DimensionSelection<string>;
   } = {
-    period: period.input({
+    period: period.request({
       range: period.defaultValue.range,
       comparison: 'previous',
     }),
@@ -220,15 +215,11 @@ function groupFilter() {
 const policy = { maxQueryRows: 1, maxDurationMs: 1000 };
 
 test('an operation derives its parser and checks from the filters it reads', async () => {
-  const calendar = defineDateRangeContract({
+  const period = dateTimeRangeFilter({
+    key: 'period',
     minDate: '2026-03-01',
     maxDate: '2026-03-31',
     maxRangeDays: 7,
-    timeZone: 'UTC',
-  });
-  const period = dateTimeRangeFilter({
-    key: 'period',
-    contract: calendar,
     defaultValue: {
       from: new Date('2026-03-04T00:00:00Z'),
       to: new Date('2026-03-07T00:00:00Z'),
@@ -254,7 +245,16 @@ test('an operation derives its parser and checks from the filters it reads', asy
       },
     }),
   };
-  const defaults = { period: period.defaultValue, group: 'all' };
+  const defaults = {
+    period: {
+      range: {
+        from: new Date('2026-03-04T00:00:00Z'),
+        to: new Date('2026-03-07T00:00:00Z'),
+      },
+      comparison: null,
+    },
+    group: 'all',
+  };
   expect(operations.counts.checks).toEqual([defaults]);
   expect(operations.total.checks).toEqual([{}]);
   const client = createDataClient({
@@ -281,11 +281,14 @@ test('an operation derives its parser and checks from the filters it reads', asy
     parse({
       ...defaults,
       period: {
-        from: new Date('2026-03-01T00:00:00Z'),
-        to: new Date('2026-03-20T00:00:00Z'),
+        range: {
+          from: new Date('2026-03-01T00:00:00Z'),
+          to: new Date('2026-03-20T00:00:00Z'),
+        },
+        comparison: null,
       },
     })
-  ).toThrow();
+  ).toThrow('at most 7');
   expect(() => operations.total.input({ group: 'all' })).toThrow(
     'Unknown filter input: group.'
   );

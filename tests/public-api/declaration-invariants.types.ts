@@ -4,7 +4,6 @@ import { createDataClient } from '@altertable/data-app/client';
 import {
   choiceFilter,
   dateTimeRangeFilter,
-  defineDateRangeContract,
   defineOperation,
   dimensionFilter,
   facetFilter,
@@ -105,11 +104,11 @@ const context = createDataContext({ count: 'count' })({
   description: 'Counts',
   glossary: { count: { term: 'Count', definition: 'Measured count' } },
 });
-const calendar = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
 const period = dateTimeRangeFilter({
   key: 'period',
-  contract: calendar,
-  allowComparison: true,
+  maxRangeDays: 90,
+  timeZone: 'UTC',
+  comparison: 'off',
   defaultValue: '7d',
 });
 const policy = { maxQueryRows: 1, maxDurationMs: 1000 };

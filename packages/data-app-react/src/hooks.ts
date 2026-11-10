@@ -33,7 +33,7 @@ import {
   type BreakdownTarget,
   type FilterPatch,
 } from './exploration.ts';
-import type { DateTimeRangeComparisonFilter } from './ui/app-filters.ts';
+import type { DateTimeRangeFilter } from './ui/app-filters.ts';
 import type { AuthoringDataContext } from './ui/data-context.ts';
 import { useFilterControls, useFilterValues } from './view-controls.tsx';
 import {
@@ -58,12 +58,7 @@ function reportingTimeZone(definition: {
   const period = definition.dateFilter
     ? definition.filters[definition.dateFilter]
     : undefined;
-  if (
-    period?.kind === 'dateTimeRangeComparison' ||
-    period?.kind === 'dateTimeRange'
-  )
-    return period.contract?.bounds().timeZone;
-  return undefined;
+  return period?.kind === 'dateTimeRange' ? period.policy.timeZone : undefined;
 }
 
 const clientScopes = new WeakMap<object, string>();
@@ -111,7 +106,7 @@ type ViewOperationName<Operations extends DataOperations> = {
 
 /** Metric comparisons need a reporting period with a comparison. */
 type HasPeriod<Filters extends FilterCollection> = {
-  [Name in keyof Filters]: Filters[Name] extends DateTimeRangeComparisonFilter
+  [Name in keyof Filters]: Filters[Name] extends DateTimeRangeFilter<true>
     ? true
     : never;
 }[keyof Filters] extends never

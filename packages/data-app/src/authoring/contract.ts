@@ -3,10 +3,8 @@
  * @module @altertable/data-app/contract
  * @see https://github.com/altertable-ai/data-app/blob/main/docs/contract.md
  */
-import { parseDate, today } from '@internationalized/date';
 
 import type { FilterCollection } from '../core/app-filters.ts';
-import { createDateTimeRangeContract } from '../core/date-time-range-contract.ts';
 import {
   attachDimensionSelectors,
   validateSourceMembers,
@@ -19,8 +17,8 @@ import {
   type FilterInput,
 } from '../core/operation-filters.ts';
 export type {
-  DateTimeRangeContract,
-  DateTimeRangeRequest,
+  DateTimeRangeInput,
+  DateTimeRangePolicy,
 } from '../core/date-time-range-contract.ts';
 import { invariant } from '../core/invariant.ts';
 import {
@@ -64,48 +62,6 @@ export function parseTrue(value: unknown): true {
 export type ReportingPeriod =
   | { kind: 'rolling'; amount: number; unit: 'hour' | 'day'; end: string }
   | { kind: 'calendar'; start: string; end: string; timeZone: string };
-
-export type DateRangeContractOptions = {
-  minDate?: string;
-  maxDate?: string | (() => string);
-  maxRangeDays: number;
-  timeZone: string;
-  /** Defaults to complete days through yesterday in the reporting timezone. Set false to include today. */
-  completeDays?: boolean;
-};
-
-/** One source policy for datetime picker validation and operation requests. */
-export function defineDateRangeContract({
-  minDate,
-  maxDate,
-  maxRangeDays,
-  timeZone,
-  completeDays,
-}: DateRangeContractOptions) {
-  invariant(
-    Number.isInteger(maxRangeDays) && maxRangeDays > 0,
-    'Date range needs a positive maxRangeDays.'
-  );
-  if (minDate) parseDate(minDate);
-  if (typeof maxDate === 'string') parseDate(maxDate);
-  today(timeZone);
-
-  const datetime = createDateTimeRangeContract({
-    minDate,
-    maxDate,
-    maxRangeDays,
-    timeZone,
-    completeDays,
-  });
-  const bounds = datetime.bounds;
-
-  return {
-    datetime,
-    bounds,
-  };
-}
-
-export type DateRangeContract = ReturnType<typeof defineDateRangeContract>;
 
 /** Accepts numeric strings from DuckDB; rejects negative, fractional, and unsafe integers. */
 export function parseCount(value: unknown): number {
@@ -471,11 +427,9 @@ export {
   dateTimeRangePresets,
   type DateTimeRangePreset,
   type DateTimeRangeFilter,
-  type DateTimeRangeComparisonFilter,
-  type DateTimeRangeComparisonFilterOptions,
-  type DateTimeRangeComparisonSelection,
-  type DateTimeRangeComparisonRequest,
   type DateTimeRangeFilterOptions,
+  type DateTimeRangeComparison,
+  type DateTimeRangeSelection,
 } from '../core/date-time-filter.ts';
 export {
   parseDateTimeRange,

@@ -34,11 +34,7 @@ export function useAppFilters<const Collection extends FilterCollection>(
     serverSearch
   );
   const zones = Object.values(definitions).flatMap(item =>
-    (item.kind === 'dateTimeRange' ||
-      item.kind === 'dateTimeRangeComparison') &&
-    item.contract
-      ? [item.contract.bounds().timeZone]
-      : []
+    item.kind === 'dateTimeRange' ? [item.policy.timeZone] : []
   );
   const zoneKey = [...new Set(zones)].sort().join('|');
   const [calendarRevision, bumpDay] = useReducer(value => value + 1, 0);
@@ -171,9 +167,7 @@ export {
   dateTimeRangePresets,
   type DateTimeRangePreset,
   type DateTimeRangeFilter,
-  type DateTimeRangeComparisonFilter,
-  type DateTimeRangeComparisonFilterOptions,
-  type DateTimeRangeComparisonSelection,
-  type DateTimeRangeComparisonRequest,
   type DateTimeRangeFilterOptions,
+  type DateTimeRangeComparison,
+  type DateTimeRangeSelection,
 } from '@altertable/data-app/internal';

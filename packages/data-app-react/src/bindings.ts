@@ -1,4 +1,4 @@
-import type { DateTimeRangeComparisonRequest } from '@altertable/data-app/contract';
+import type { DateTimeRangeInput } from '@altertable/data-app/contract';
 import type { DateFormat } from '@altertable/data-app/format';
 import { formatMetric } from '@altertable/data-app/format';
 import type { MetricFormat } from '@altertable/data-app/format';
@@ -327,11 +327,11 @@ function datasetCsv<Data, Input>(
 
 export class Metric<Data, Input> extends RegisteredBinding {
   #select: (data: Data, input: Input) => MetricValues;
-  #date?: (input: Input) => DateTimeRangeComparisonRequest;
+  #date?: (input: Input) => DateTimeRangeInput;
   constructor(
     readonly definition: MetricDefinition,
     select: (data: Data, input: Input) => MetricValues,
-    date?: (input: Input) => DateTimeRangeComparisonRequest,
+    date?: (input: Input) => DateTimeRangeInput,
     owner?: object
   ) {
     super(owner, definition.evidence);
@@ -344,7 +344,7 @@ export class Metric<Data, Input> extends RegisteredBinding {
       Data,
       Input,
       MetricValues & {
-        period?: DateTimeRangeComparisonRequest;
+        period?: DateTimeRangeInput;
       },
       Source
     >(source, (data, input) => {
@@ -424,7 +424,7 @@ export class MetricRecords<Data, Input, DetailData, DetailInput> {
 export function bindMetric<Data, Input>(
   definition: MetricDefinition,
   select: (data: Data, input: Input) => MetricValues,
-  date?: (input: Input) => DateTimeRangeComparisonRequest,
+  date?: (input: Input) => DateTimeRangeInput,
   owner?: object
 ) {
   return new Metric(definition, select, date, owner);

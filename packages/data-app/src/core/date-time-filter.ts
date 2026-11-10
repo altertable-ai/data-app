@@ -1,10 +1,13 @@
-import type { DateRangeContract } from '../authoring/contract.ts';
 import type {
   AppFilter,
   FilterPresentation,
   HistoryMode,
 } from './app-filters.ts';
-import type { DateTimeRangeRequest } from './date-time-range-contract.ts';
+import {
+  createDateTimeRangePolicy,
+  type DateTimeRangeInput,
+  type DateTimeRangePolicy,
+} from './date-time-range-contract.ts';
 import { parseDateTimeRangeInput } from './date-time-range-parser.ts';
 import {
   parseDateTimeRange,
@@ -45,17 +48,28 @@ export const dateTimeRangePresets: {
   ],
 };
 
-export type DateTimeRangeFilterOptions = {
+/** Offer the previous-period comparison, with its toggle starting off or on. */
+export type DateTimeRangeComparison = 'off' | 'on';
+
+export type DateTimeRangeFilterOptions<
+  Comparison extends DateTimeRangeComparison | undefined = undefined,
+> = {
   key: string;
   label?: string;
-  /** Enable the previous-period reporting workflow. Requires a shared contract. */
-  allowComparison?: false;
-  /** Relative defaults such as "7d" stay relative. */
+  /** Range text such as "7d" stays relative; `{ from, to }` is absolute. */
   defaultValue: DateTimeRange | string;
-  /** Client limit for determinate durations; the backend must validate timezone-dependent ranges. */
+  /** Reporting zone for relative ranges, calendar days, and labels. Defaults to UTC. */
+  timeZone?: string;
+  /** Longest selectable range. */
   maxRangeDays?: number;
-  /** Shared reporting coverage, timezone, duration limits, and comparison policy. */
-  contract?: DateRangeContract;
+  /** First date with data, as YYYY-MM-DD. */
+  minDate?: string;
+  /** Last date with data, as YYYY-MM-DD. */
+  maxDate?: string | (() => string);
+  /** End coverage yesterday, for sources that load whole days. */
+  completeDays?: boolean;
+  /** Offer the previous-period comparison. Omit for none. */
+  comparison?: Comparison;
   /** Suggestions in display order. Omit for defaults; [] retains calendar and text entry.
    * Invalid or over-limit suggestions are omitted; typed input is not restricted to the menu.
    */
@@ -63,163 +77,88 @@ export type DateTimeRangeFilterOptions = {
   history?: HistoryMode;
   presentation?: FilterPresentation;
 };
-export type DateTimeRangeFilter = AppFilter<DateTimeRange, 'dateTimeRange'> & {
-  parse: (value: unknown) => DateTimeRange;
-  maxRangeDays?: number;
-  /** Shared reporting coverage, timezone, duration limits, and comparison policy. */
-  contract?: DateRangeContract;
-  presets?: readonly DateTimeRangePreset[];
-};
 
-export type DateTimeRangeComparisonSelection = {
+/** The picker's URL state: the selected range, relative or absolute, and the comparison toggle. */
+export type DateTimeRangeSelection = {
   range: DateTimeRange;
   comparison?: 'previous';
 };
 
-/** An execution snapshot with the relative selection retained for URL and displayed-scope matching. */
-export type DateTimeRangeComparisonRequest = DateTimeRangeRequest & {
-  selection: DateTimeRangeComparisonSelection;
+/** Sent from the browser: the resolved input plus the selection and reference time it came from. */
+export type DateTimeRangeRequest = DateTimeRangeInput & {
+  selection: DateTimeRangeSelection;
   reference: string;
 };
 
-export type DateTimeRangeComparisonFilterOptions = Omit<
-  DateTimeRangeFilterOptions,
-  'allowComparison' | 'contract'
-> & {
-  allowComparison: true;
-  contract: DateRangeContract;
-  /** Start with the previous-period comparison on; readers can still turn it off. */
-  defaultComparison?: 'previous';
-};
-
-export type DateTimeRangeComparisonFilter = AppFilter<
-  DateTimeRangeComparisonSelection,
-  'dateTimeRangeComparison'
-> & {
-  contract: DateRangeContract;
-  maxRangeDays?: number;
-  presets?: readonly DateTimeRangePreset[];
-  input: (
-    selection: DateTimeRangeComparisonSelection,
-    now?: Date
-  ) => DateTimeRangeComparisonRequest;
-  parseInput: (value: unknown) => DateTimeRangeComparisonRequest;
-  previous: (
-    selection: DateTimeRangeComparisonSelection
-  ) => DateTimeRangeRequest['comparison'];
-};
+export type DateTimeRangeFilter<Comparable extends boolean = boolean> =
+  AppFilter<DateTimeRangeSelection, 'dateTimeRange'> & {
+    /** Whether readers can turn on the previous-period comparison. */
+    comparable: Comparable;
+    policy: DateTimeRangePolicy;
+    maxRangeDays?: number;
+    presets?: readonly DateTimeRangePreset[];
+    /** Resolve a selection against one reference time. */
+    request: (
+      selection: DateTimeRangeSelection,
+      now?: Date
+    ) => DateTimeRangeRequest;
+    /** Validate untrusted input against coverage and return what the operation receives. */
+    parseInput: (value: unknown) => DateTimeRangeInput;
+    previous: (
+      selection: DateTimeRangeSelection
+    ) => DateTimeRangeInput['comparison'];
+  };
 
 /** One declaration drives the picker, URL state, and the input of operations that list it.
- * Query the resulting range and optional comparison: `from` inclusive, `to` exclusive.
+ * Operations receive `{ range, comparison }`: `from` inclusive, `to` exclusive.
  */
-export function dateTimeRangeFilter(
-  options: DateTimeRangeComparisonFilterOptions
-): DateTimeRangeComparisonFilter;
-export function dateTimeRangeFilter(
-  options: DateTimeRangeFilterOptions
-): DateTimeRangeFilter;
-export function dateTimeRangeFilter(
-  options: DateTimeRangeFilterOptions | DateTimeRangeComparisonFilterOptions
-): DateTimeRangeFilter | DateTimeRangeComparisonFilter {
-  const base = createDateTimeRangeFilter(options);
-  return options.allowComparison ? withComparison(base, options) : base;
-}
-
-/** One declaration drives the generated picker, URL state, and structured query parameter. */
-function createDateTimeRangeFilter({
-  key,
-  label = 'Date range',
-  defaultValue,
-  maxRangeDays,
-  contract,
-  presets,
-  history = 'push',
-  presentation,
-}:
-  | DateTimeRangeFilterOptions
-  | DateTimeRangeComparisonFilterOptions): DateTimeRangeFilter {
-  invariant(
-    maxRangeDays === undefined ||
-      (Number.isFinite(maxRangeDays) && maxRangeDays > 0),
-    'Maximum range days must be positive.'
-  );
-  function parse(value: unknown) {
-    const range = parseDateTimeRange(value, { maxRangeDays });
-    return contract ? contract.datetime.parse(range) : range;
+export function dateTimeRangeFilter<
+  Comparison extends DateTimeRangeComparison | undefined = undefined,
+>(
+  options: DateTimeRangeFilterOptions<Comparison>
+): DateTimeRangeFilter<undefined extends Comparison ? false : true> {
+  const {
+    key,
+    label = 'Date range',
+    defaultValue,
+    timeZone = 'UTC',
+    maxRangeDays,
+    minDate,
+    maxDate,
+    completeDays,
+    comparison,
+    presets,
+    history = 'push',
+    presentation,
+  } = options;
+  const policy = createDateTimeRangePolicy({
+    minDate,
+    maxDate,
+    maxRangeDays,
+    timeZone,
+    completeDays,
+  });
+  const comparable = comparison !== undefined;
+  const compareKey = key === 'period' ? 'compare' : `${key}-compare`;
+  function parseRange(value: unknown, now?: Date) {
+    return policy.parse(parseDateTimeRange(value, { maxRangeDays }), now);
   }
   const parsed =
     typeof defaultValue === 'string'
       ? parseDateTimeRangeInput(defaultValue)
       : null;
-  invariant(!parsed || parsed.ok, 'Invalid default datetime range.');
-  const initial = parse(parsed?.ok ? parsed.range : defaultValue);
-  function valid(value: DateTimeRange) {
-    try {
-      parse(value);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  function same(left: DateTimeRange, right: DateTimeRange) {
+  invariant(!parsed || parsed.ok, `Invalid default range for ${key}.`);
+  const initial: DateTimeRangeSelection = {
+    range: parseRange(parsed?.ok ? parsed.range : defaultValue),
+    ...(comparison === 'on' ? { comparison: 'previous' as const } : {}),
+  };
+  function sameRange(left: DateTimeRange, right: DateTimeRange) {
     return serializeDateTimeRange(left) === serializeDateTimeRange(right);
-  }
-  return {
-    kind: 'dateTimeRange',
-    label,
-    presentation,
-    urlKeys: [key],
-    defaultValue: initial,
-    clearValue: initial,
-    maxRangeDays: contract
-      ? Math.min(maxRangeDays ?? Infinity, contract.bounds().maxRangeDays)
-      : maxRangeDays,
-    contract,
-    presets,
-    history,
-    parse,
-    valid,
-    same,
-    describe: formatDateTimeRange,
-    read(params) {
-      const text = params.get(key);
-      if (!text || text.length > 8192) return parse(initial);
-      try {
-        return parse(JSON.parse(text));
-      } catch {
-        return parse(initial);
-      }
-    },
-    write(value) {
-      return {
-        [key]: same(value, initial)
-          ? null
-          : serializeDateTimeRange(parse(value)),
-      };
-    },
-  };
-}
-
-function withComparison(
-  base: DateTimeRangeFilter,
-  options: DateTimeRangeComparisonFilterOptions
-): DateTimeRangeComparisonFilter {
-  const contract = options.contract;
-  const compareKey =
-    options.key === 'period' ? 'compare' : `${options.key}-compare`;
-  const initial: DateTimeRangeComparisonSelection = {
-    range: base.defaultValue,
-    ...(options.defaultComparison ? { comparison: 'previous' as const } : {}),
-  };
-  /** The URL records the comparison only when it differs from the default. */
-  function comparisonParam(selection: DateTimeRangeComparisonSelection) {
-    const state = selection.comparison ?? 'off';
-    return state === (initial.comparison ?? 'off') ? null : state;
   }
   function parseSelection(
     value: unknown,
     now = new Date()
-  ): DateTimeRangeComparisonSelection {
+  ): DateTimeRangeSelection {
     invariant(
       !!value && typeof value === 'object' && !Array.isArray(value),
       'Choose a datetime range.'
@@ -227,18 +166,15 @@ function withComparison(
     const selection = value as Record<string, unknown>;
     invariant(
       Object.keys(selection).every(
-        key => key === 'range' || key === 'comparison'
+        name => name === 'range' || name === 'comparison'
       ) &&
         (selection.comparison === undefined ||
-          selection.comparison === 'previous'),
+          (comparable && selection.comparison === 'previous')),
       'Invalid comparison selection.'
     );
-    const range = contract.datetime.parse(
-      parseDateTimeRange(selection.range, { maxRangeDays: base.maxRangeDays }),
-      now
-    );
+    const range = parseRange(selection.range, now);
     invariant(
-      !selection.comparison || contract.datetime.comparison(range, now),
+      !selection.comparison || policy.comparison(range, now),
       'Comparison is outside available source coverage.'
     );
     return {
@@ -246,13 +182,13 @@ function withComparison(
       ...(selection.comparison ? { comparison: 'previous' as const } : {}),
     };
   }
-  function input(
-    value: DateTimeRangeComparisonSelection,
+  function request(
+    value: DateTimeRangeSelection,
     now = new Date()
-  ): DateTimeRangeComparisonRequest {
+  ): DateTimeRangeRequest {
     const selection = parseSelection(value, now);
     return {
-      ...contract.datetime.request(
+      ...policy.request(
         selection.range,
         selection.comparison === 'previous',
         now
@@ -261,15 +197,12 @@ function withComparison(
       reference: now.toISOString(),
     };
   }
-  function same(
-    left: DateTimeRangeComparisonSelection,
-    right: DateTimeRangeComparisonSelection
-  ) {
+  function same(left: DateTimeRangeSelection, right: DateTimeRangeSelection) {
     return (
-      left.comparison === right.comparison && base.same(left.range, right.range)
+      left.comparison === right.comparison && sameRange(left.range, right.range)
     );
   }
-  function valid(value: DateTimeRangeComparisonSelection) {
+  function valid(value: DateTimeRangeSelection) {
     try {
       parseSelection(value);
       return true;
@@ -279,72 +212,80 @@ function withComparison(
   }
   invariant(
     valid(initial),
-    `Date filter ${options.key} has a default comparison outside its source coverage.`
+    `Date filter ${key} has a default outside its source coverage.`
   );
+  /** The URL records the comparison only when it differs from the default. */
+  function comparisonParam(selection: DateTimeRangeSelection) {
+    if (!comparable) return {};
+    const state = selection.comparison ?? 'off';
+    return {
+      [compareKey]: state === (initial.comparison ?? 'off') ? null : state,
+    };
+  }
+  function readRange(params: URLSearchParams) {
+    const text = params.get(key);
+    if (!text || text.length > 8192) return initial.range;
+    try {
+      return parseRange(JSON.parse(text));
+    } catch {
+      return initial.range;
+    }
+  }
   return {
-    kind: 'dateTimeRangeComparison',
-    label: base.label,
-    presentation: base.presentation,
-    history: base.history,
-    urlKeys: [...base.urlKeys, compareKey],
+    kind: 'dateTimeRange',
+    label,
+    presentation,
+    history,
+    urlKeys: comparable ? [key, compareKey] : [key],
     defaultValue: initial,
     clearValue: initial,
-    contract,
-    maxRangeDays: base.maxRangeDays,
-    presets: base.presets,
-    input,
+    comparable: comparable as undefined extends Comparison ? false : true,
+    policy,
+    maxRangeDays,
+    presets,
+    request,
     parseInput(value) {
       invariant(
         !!value && typeof value === 'object' && !Array.isArray(value),
         'Invalid datetime request.'
       );
-      const request = value as Record<string, unknown>;
+      const supplied = value as Record<string, unknown>;
       invariant(
-        Object.keys(request).every(key =>
-          ['range', 'comparison', 'selection', 'reference'].includes(key)
-        ) && typeof request.reference === 'string',
+        Object.keys(supplied).every(name =>
+          ['range', 'comparison', 'selection', 'reference'].includes(name)
+        ),
         'Invalid datetime request.'
       );
-      const now = new Date(request.reference);
-      invariant(
-        Number.isFinite(now.getTime()) &&
-          now.toISOString() === request.reference,
-        'Invalid reference date.'
-      );
-      const expected = input(
-        request.selection as DateTimeRangeComparisonSelection,
-        now
-      );
-      // Validate current source coverage too; a supplied historical reference cannot bypass policy.
-      base.parse(request.range);
-      const actual = parseDateTimeRange(request.range);
-      invariant(
-        base.same(actual, expected.range),
-        'The request must preserve the selected datetime range.'
+      // The server checks the range against current coverage; browser selection fields are ignored.
+      const range = policy.endAtNow(policy.resolve(parseRange(supplied.range)));
+      if (supplied.comparison === null || supplied.comparison === undefined)
+        return { range, comparison: null };
+      invariant(comparable, `${label} has no comparison.`);
+      // The browser shifts by the selected length, which the server does not see:
+      // accept an earlier window of equal length within coverage.
+      const comparison = policy.resolve(
+        parseDateTimeRange(supplied.comparison)
       );
       invariant(
-        request.comparison === null
-          ? expected.comparison === null
-          : !!expected.comparison &&
-              base.same(
-                parseDateTimeRange(request.comparison),
-                expected.comparison
-              ),
-        'Comparison must be the preceding equal-length range.'
+        comparison.to <= range.from &&
+          comparison.to.getTime() - comparison.from.getTime() ===
+            range.to.getTime() - range.from.getTime(),
+        'Comparison must be an earlier range of equal length.'
       );
-      return expected;
+      return { range, comparison };
     },
     previous(selection) {
-      return contract.datetime.comparison(selection.range);
+      return comparable ? policy.comparison(selection.range) : null;
     },
     valid,
     same,
     describe: selection =>
-      `${base.describe!(selection.range)}${selection.comparison ? ' vs previous period' : ''}`,
+      `${formatDateTimeRange(selection.range)}${selection.comparison ? ' vs previous period' : ''}`,
     read(params) {
-      const range = base.read(params);
+      const range = readRange(params);
+      if (!comparable) return { range };
       const state = params.get(compareKey);
-      const compared: DateTimeRangeComparisonSelection = {
+      const compared: DateTimeRangeSelection = {
         range,
         comparison: 'previous',
       };
@@ -355,8 +296,10 @@ function withComparison(
     write(value) {
       const selection = parseSelection(value);
       return {
-        ...base.write(selection.range),
-        [compareKey]: comparisonParam(selection),
+        [key]: sameRange(selection.range, initial.range)
+          ? null
+          : serializeDateTimeRange(selection.range),
+        ...comparisonParam(selection),
       };
     },
   };

@@ -17,7 +17,6 @@ import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   dateTimeRangeFilter,
-  defineDateRangeContract,
   displayChoice,
   parseCount,
 } from '@altertable/data-app/contract';
@@ -91,21 +90,17 @@ GROUP BY ALL ORDER BY period_start, member LIMIT 500`,
   },
 });
 // Declare each filter once; each operation lists the filters it reads.
-const calendar = defineDateRangeContract({
-  minDate: '2026-01-05',
-  maxDate: '2026-03-29',
-  maxRangeDays: 28,
-  timeZone: 'UTC',
-});
 const findingPeriod = {
   from: new Date('2026-03-09T00:00:00Z'),
   to: new Date('2026-03-16T00:00:00Z'),
 };
 const period = dateTimeRangeFilter({
   key: 'period',
-  contract: calendar,
-  allowComparison: true,
   defaultValue: findingPeriod,
+  minDate: '2026-01-05',
+  maxDate: '2026-03-29',
+  maxRangeDays: 28,
+  comparison: 'off',
   presets: [{ label: 'Finding period', range: findingPeriod }],
 });
 const grain = displayChoice({

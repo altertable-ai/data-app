@@ -2,9 +2,9 @@ import {
   fromDate,
   parseDate,
   toCalendarDateTime,
+  today,
 } from '@internationalized/date';
 
-import type { DateRangeContractOptions } from '../authoring/contract.ts';
 import {
   parseDateTimeRange,
   resolveDateTimeRange,
@@ -16,25 +16,39 @@ import type {
 import { invariant } from './invariant.ts';
 import { fixedUnitMilliseconds } from './time-units.ts';
 
-/** Resolved UTC-rebased bounds for one execution, optionally with the preceding equal-length interval. */
-export type DateTimeRangeRequest = {
+/** What an operation receives for a date filter: resolved bounds, `from` inclusive and
+ * `to` exclusive, and the same window one selected length earlier while the comparison is on. */
+export type DateTimeRangeInput = {
   range: ResolvedDateTimeRange;
   comparison: ResolvedDateTimeRange | null;
 };
 
-/** Datetime policy exposed by defineDateRangeContract().datetime. Parsing preserves relative values. */
-export type DateTimeRangeContract = ReturnType<
-  typeof createDateTimeRangeContract
->;
+export type DateTimeRangePolicyOptions = {
+  minDate?: string;
+  maxDate?: string | (() => string);
+  maxRangeDays?: number;
+  timeZone: string;
+  completeDays?: boolean;
+};
 
-export function createDateTimeRangeContract(options: DateRangeContractOptions) {
-  const {
-    minDate,
-    maxDate: sourceMaxDate,
-    maxRangeDays,
-    timeZone,
-    completeDays,
-  } = options;
+/** A date filter's coverage, duration limit, and reporting time zone. Parsing preserves relative values. */
+export type DateTimeRangePolicy = ReturnType<typeof createDateTimeRangePolicy>;
+
+export function createDateTimeRangePolicy({
+  minDate,
+  maxDate: sourceMaxDate,
+  maxRangeDays,
+  timeZone,
+  completeDays = false,
+}: DateTimeRangePolicyOptions) {
+  invariant(
+    maxRangeDays === undefined ||
+      (Number.isInteger(maxRangeDays) && maxRangeDays > 0),
+    'maxRangeDays must be a positive integer.'
+  );
+  if (minDate) parseDate(minDate);
+  if (typeof sourceMaxDate === 'string') parseDate(sourceMaxDate);
+  today(timeZone);
   function reference(now: Date) {
     invariant(Number.isFinite(now.getTime()), 'Invalid reference date.');
     // Resolve symbolic anchors using reporting-zone wall-clock fields, not browser-local fields.
@@ -43,7 +57,7 @@ export function createDateTimeRangeContract(options: DateRangeContractOptions) {
   function bounds(now = new Date()) {
     const date = reference(now).toISOString().slice(0, 10);
     const latest = parseDate(date)
-      .subtract({ days: completeDays === false ? 0 : 1 })
+      .subtract({ days: completeDays ? 1 : 0 })
       .toString();
     const sourceMax =
       typeof sourceMaxDate === 'function' ? sourceMaxDate() : sourceMaxDate;
@@ -55,10 +69,7 @@ export function createDateTimeRangeContract(options: DateRangeContractOptions) {
       timeZone,
     };
   }
-  function resolve(
-    value: unknown,
-    now = new Date()
-  ): DateTimeRangeRequest['range'] {
+  function resolve(value: unknown, now = new Date()): ResolvedDateTimeRange {
     const range = resolveDateTimeRange(
       parseDateTimeRange(value),
       reference(now)
@@ -66,8 +77,9 @@ export function createDateTimeRangeContract(options: DateRangeContractOptions) {
     const limits = bounds(now);
     invariant(range.from, 'Choose a bounded datetime range.');
     invariant(
-      range.to.getTime() - range.from.getTime() <=
-        maxRangeDays * fixedUnitMilliseconds.DAY,
+      maxRangeDays === undefined ||
+        range.to.getTime() - range.from.getTime() <=
+          maxRangeDays * fixedUnitMilliseconds.DAY,
       `Choose a range of at most ${maxRangeDays} days.`
     );
     invariant(
@@ -85,14 +97,29 @@ export function createDateTimeRangeContract(options: DateRangeContractOptions) {
     resolve(range, now);
     return range;
   }
+  /** Hours that have not happened yet hold no data; ending there keeps comparisons equal. */
+  function endAtNow(
+    range: ResolvedDateTimeRange,
+    now = new Date()
+  ): ResolvedDateTimeRange {
+    const current = reference(now);
+    if (range.to <= current) return range;
+    return {
+      from: range.from,
+      to: range.from > current ? range.from : current,
+    };
+  }
+  /** The same window one selected length earlier, ending as far before now as the range does. */
   function comparison(
     value: unknown,
     now = new Date()
-  ): DateTimeRangeRequest['comparison'] {
-    const { from, to } = resolve(value, now);
+  ): ResolvedDateTimeRange | null {
+    const selected = resolve(value, now);
+    const length = selected.to.getTime() - selected.from.getTime();
+    const range = endAtNow(selected, now);
     const previous = {
-      from: new Date(2 * from.getTime() - to.getTime()),
-      to: from,
+      from: new Date(range.from.getTime() - length),
+      to: new Date(range.to.getTime() - length),
     };
     try {
       return resolve(previous, now);
@@ -107,16 +134,18 @@ export function createDateTimeRangeContract(options: DateRangeContractOptions) {
     parse,
     /** Resolve to UTC-rebased bounds using reporting-zone wall-clock fields, then validate policy. */
     resolve,
-    /** Return the preceding equal-length interval, or null when source coverage excludes it. */
+    /** Return the comparison window, or null when source coverage excludes it. */
     comparison,
-    /** Resolve both periods against one reference instant. Use these bounds for comparison queries. */
+    /** End a resolved range at the reference time when it runs past it. */
+    endAtNow,
+    /** Resolve both periods against one reference instant, ending the range at now. */
     request(
       value: unknown,
       compare = false,
       now = new Date()
-    ): DateTimeRangeRequest {
-      const range = resolve(value, now);
-      const previous = compare ? comparison(range, now) : null;
+    ): DateTimeRangeInput {
+      const range = endAtNow(resolve(value, now), now);
+      const previous = compare ? comparison(value, now) : null;
       invariant(
         !compare || previous,
         'Comparison is outside available source coverage.'
