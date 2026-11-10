@@ -82,27 +82,40 @@ return SQL text and declare `string` when exact numeric precision matters.
 
 Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 
-### Bind datetime ranges
+### Bind date ranges
 
-Declare a `dateTimeRange` parameter and pass a `DateTimeRange` to `query()`.
-For a [comparison filter](filters.md#absolute-and-relative-datetime-ranges),
-pass its `range` or `comparison` bounds. Reference those bounds in SQL:
+Pass a date filter's range to a range parameter and reference its bounds as
+`$period.from` and `$period.to` in SQL. Both kinds read the same way: the
+start is inclusive and the end exclusive.
+
+- A `dateRangeFilter()` gives a `DateRange` of inclusive ISO calendar dates.
+  Declare `{ type: 'dateRange' }`; `$period.from` is the start day's midnight
+  and `$period.to` the midnight after the end day.
+- A `dateTimeRangeFilter()` gives a `DateTimeRange`. Declare
+  `{ type: 'dateTimeRange' }`. For a
+  [comparison filter](filters.md#absolute-and-relative-datetime-ranges), pass
+  its `range` or `comparison`.
 
 ```ts
 const dataApp = defineDataApp({
   // ... title, description, and scope
   queries: {
-    events: {
-      statement: `SELECT occurred_at AS "occurredAt" FROM events
-        WHERE occurred_at >= $period.from AND occurred_at < $period.to`,
-      params: { period: { type: 'dateTimeRange' } },
-      projections: { occurredAt: { type: 'string' } },
+    dailyOrders: {
+      statement: `SELECT CAST(ordered_at AS DATE) AS day, count(*) AS orders
+        FROM orders
+        WHERE ordered_at >= $period.from AND ordered_at < $period.to
+        GROUP BY day ORDER BY day`,
+      params: { period: { type: 'dateRange' } },
+      projections: {
+        day: { type: 'string' },
+        orders: { type: 'number' },
+      },
     },
   },
 });
 ```
 
-The start is inclusive and the end exclusive. Relative values resolve at query
+Relative datetime values resolve at query
 execution. Absolute values encode wall-clock fields in UTC: selecting 4 PM stores
 16:00Z.
 SQL bounds are timezone-free timestamps. Configure the backend session to the

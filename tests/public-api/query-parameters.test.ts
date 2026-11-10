@@ -1,5 +1,10 @@
 import { defineDataApp } from '@altertable/data-app';
-import { type QueryParameters } from '@altertable/data-app/contract';
+import { createDataClient } from '@altertable/data-app/client';
+import {
+  dateRangeFilter,
+  defineDateRangeContract,
+  type QueryParameters,
+} from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
@@ -128,4 +133,82 @@ test('host context can supply any declared parameter', async () => {
       },
     ],
   });
+});
+
+test('a date filter binds its range as inclusive calendar days with half-open bounds', async () => {
+  const calendar = defineDateRangeContract({
+    maxDate: '2026-03-31',
+    maxRangeDays: 31,
+    timeZone: 'UTC',
+  });
+  const period = dateRangeFilter({
+    key: 'period',
+    contract: calendar,
+    defaultValue: { kind: 'dates', start: '2026-03-02', end: '2026-03-03' },
+  });
+  const ranges = defineDataApp({
+    title: 'Ranges',
+    description: 'Bind calendar ranges.',
+    scope: { organization: 'demo', environment: 'test' },
+    queries: {
+      orders: {
+        statement:
+          "SELECT count(*) AS orders FROM orders WHERE ordered_at >= $period.from AND ordered_at < $period.to AND note <> '$period.from'",
+        params: { period: { type: 'dateRange' } },
+        projections: { orders: { type: 'number' } },
+      },
+    },
+  });
+  const delivered: { statement: string; params?: QueryParameters }[] = [];
+  const client = createDataClient({
+    operations: {
+      orders: ranges.defineOperation({
+        filters: { period },
+        policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+        async run({ query }, input) {
+          return (await query('orders', { period: input.period.range })).rows;
+        },
+      }),
+    },
+    lakehouse: {
+      async queryAll(statement, { params }) {
+        delivered.push({ statement, params });
+        return { columns: [{ name: 'orders' }], rows: [[2]] };
+      },
+    },
+  });
+  await client.query('orders', {
+    period: period.input(period.defaultValue),
+  });
+  const [{ statement, params }] = delivered as [(typeof delivered)[0]];
+  expect(params).toEqual({
+    period: JSON.stringify({ start: '2026-03-02', end: '2026-03-03' }),
+  });
+  // Bounds expand in SQL code only: the start day's midnight through the day after the end.
+  expect(statement).toContain(
+    "ordered_at >= CAST(CAST(json_extract_string($period, '$.start') AS DATE) AS TIMESTAMP)"
+  );
+  expect(statement).toContain(
+    "ordered_at < CAST(CAST(json_extract_string($period, '$.end') AS DATE) + INTERVAL '1 day' AS TIMESTAMP)"
+  );
+  expect(statement).toContain("note <> '$period.from'");
+  expect(() =>
+    defineDataApp({
+      title: 'Ranges',
+      description: 'Reject malformed defaults.',
+      scope: { organization: 'demo', environment: 'test' },
+      queries: {
+        orders: {
+          statement: 'SELECT 1 AS n WHERE $period.from IS NOT NULL',
+          params: {
+            period: {
+              type: 'dateRange',
+              defaultValue: { start: '2026-03-04', end: '2026-03-01' },
+            },
+          },
+          projections: { n: { type: 'number' } },
+        },
+      },
+    })
+  ).toThrow('Invalid default for parameter period in query orders.');
 });

@@ -42,10 +42,23 @@ function boundExpression(parameter: string, bound: 'from' | 'to'): string {
   ) SELECT value FROM bounds ORDER BY i DESC LIMIT 1)`;
 }
 
-/** Expand bound references only in SQL code, leaving quoted text and comments untouched. */
-export function expandDateTimeRangeParameters(
+/** Calendar ranges bind inclusive ISO dates; their bounds become the same half-open
+ * timestamps as datetime ranges: the start day's midnight through the day after the end. */
+function dateBoundExpression(parameter: string, bound: 'from' | 'to'): string {
+  const field = bound === 'from' ? 'start' : 'end';
+  const day = `CAST(json_extract_string($${parameter}, '$.${field}') AS DATE)`;
+  return bound === 'from'
+    ? `CAST(${day} AS TIMESTAMP)`
+    : `CAST(${day} + INTERVAL '1 day' AS TIMESTAMP)`;
+}
+
+export type RangeParameterKind = 'dateTimeRange' | 'dateRange';
+
+/** Expand `$name.from` and `$name.to` for range parameters only in SQL code, leaving
+ * quoted text and comments untouched. */
+export function expandRangeParameters(
   statement: string,
-  names: ReadonlySet<string>
+  ranges: ReadonlyMap<string, RangeParameterKind>
 ): string {
   // SQL strings/identifiers, dollar-quoted strings, and comments are opaque to expansion.
   const token =
@@ -78,8 +91,12 @@ export function expandDateTimeRangeParameters(
       const end = closing < 0 ? statement.length : closing + text.length;
       output += statement.slice(match.index, end);
       token.lastIndex = end;
-    } else if (match[1] && names.has(match[1]) && match[2]) {
-      output += boundExpression(match[1], match[2] as 'from' | 'to');
+    } else if (match[1] && ranges.has(match[1]) && match[2]) {
+      const bound = match[2] as 'from' | 'to';
+      output +=
+        ranges.get(match[1]) === 'dateRange'
+          ? dateBoundExpression(match[1], bound)
+          : boundExpression(match[1], bound);
     } else output += text;
     position = token.lastIndex;
   }

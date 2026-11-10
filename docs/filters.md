@@ -207,16 +207,20 @@ const dailyCounts = dataApp.defineOperation({
   filters: { period, groupName },
   policy: { maxQueryRows: 100, maxDurationMs: 15000 },
   async run({ query }, { period, groupName }) {
-    const { start, end } = period.range;
-    const result = await query('dailyCounts', { start, end, groupName });
-    // ... query period.comparison when it is not null
+    const result = await query('dailyCounts', {
+      period: period.range,
+      groupName,
+    });
+    // ... query { period: period.comparison } when it is not null
     return result.rows;
   },
 });
 ```
 
-`comparison: true` adds the previous-period toggle; `period.comparison` is `null`
-while it is off.
+`period.range` holds inclusive ISO dates. Pass it to a
+[`dateRange` parameter](contract.md#bind-date-ranges) and filter with
+`$period.from` and `$period.to`. `comparison: true` adds the previous-period
+toggle; `period.comparison` is `null` while it is off.
 
 ### Absolute and relative datetime ranges
 
@@ -259,7 +263,7 @@ const events = dataApp.defineOperation({
 ```
 
 Use `dateTimeRangePresets.monitoring` for shorter windows. Bind the query bounds
-to a [datetime parameter](contract.md#bind-datetime-ranges).
+to a [`dateTimeRange` parameter](contract.md#bind-date-ranges).
 `allowComparison: true` adds the toggle, requires `contract`, and supplies current
 and previous ranges resolved against one reference time. Omit it for a plain
 `DateTimeRange` input; `contract` is then optional. Relative selections stay

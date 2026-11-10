@@ -737,11 +737,12 @@ defineOperation.operation.filters?: CheckedOperationFilters<Filters> — The fil
 defineOperation.operation.run: OperationRun<FilterInput<Filters>, Output, Queries>
 defineQueryNames (function, @altertable/data-app/contract): <const Names extends Record<string, string>>(names: Names): Names
 DetailContent (class, @altertable/data-app-react): <Data, Input> — A destination’s rendered body. Pass these to DataApp.details.
-DetailContent.target: DetailView<Data, Input>
+DetailContent.target: DetailView<Data, Input, any>
 DetailContent.render: (source: ViewSource<Data, Input>) => ReactNode
-DetailView (class, @altertable/data-app-react): <Data, Input> — A typed, query-backed destination.
+DetailView (class, @altertable/data-app-react): <Data, Input, Own> — A typed, query-backed destination. Interactions supply its own fields (`Own`); the filters its operation reads carry over from the displayed scope.
 DetailView.definition: { id: string; title: ReactNode; parseInput: (input: unknown) => Input; describeInput: (input: Input) => string; } & ViewEmptiness<Data> & Required<ViewEmptiness<...>>
 DetailView.useResult: (input: Input) => ViewResult<Data, Input>
+DetailView.ownInput?: Own
 DetailView.content: (render: (source: ViewSource<Data, Input>) => ReactNode) => DetailContent<Data, Input>
 DetailViewDefinition (type, @altertable/data-app-react): <Data, Input>
 DetailViewDefinition.id: string
@@ -1341,22 +1342,24 @@ QueryDefinitions (type, @altertable/data-app, @altertable/data-app/config, @alte
 QueryField (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract)
 QueryField.type: keyof QueryValues
 QueryField.nullable?: boolean
-QueryParameter (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): Typed scalar or datetime-range parameters with optional fallback values.
-QueryParameter.type: 'dateTimeRange' [variant 1 of 9]
-QueryParameter.nullable?: false [variants 1, 2, 3, 4, 5 of 9]
-QueryParameter.defaultValue?: { from?: string | AbsoluteOrRelativeDateTime | null | undefined; to?: string | AbsoluteOrRelativeDateTime | null | undefined; } [variant 1 of 9] — Absolute defaults may use canonical UTC ISO strings (including milliseconds) for static manifests. Snapshots hydrate them into Dates.
-QueryParameter.type: 'boolean' [variants 2, 6 of 9]
-QueryParameter.defaultValue?: boolean [variant 2 of 9]
-QueryParameter.type: 'null' [variants 3, 7 of 9]
-QueryParameter.defaultValue?: null [variants 3, 7 of 9]
-QueryParameter.type: 'number' [variants 4, 8 of 9]
-QueryParameter.defaultValue?: number [variant 4 of 9]
-QueryParameter.type: 'string' [variants 5, 9 of 9]
-QueryParameter.defaultValue?: string [variant 5 of 9]
-QueryParameter.nullable: true [variants 6, 7, 8, 9 of 9]
-QueryParameter.defaultValue?: boolean | null [variant 6 of 9]
-QueryParameter.defaultValue?: number | null [variant 8 of 9]
-QueryParameter.defaultValue?: string | null [variant 9 of 9]
+QueryParameter (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): Typed scalar, calendar-range, or datetime-range parameters with optional fallback values. Reference a range's bounds as `$name.from` (inclusive) and `$name.to` (exclusive).
+QueryParameter.type: 'dateRange' [variant 1 of 10] — A `DateRange` of inclusive ISO calendar dates, such as a date filter's `range`.
+QueryParameter.nullable?: false [variants 1, 2, 3, 4, 5, 6 of 10]
+QueryParameter.defaultValue?: DateRange [variant 1 of 10]
+QueryParameter.type: 'dateTimeRange' [variant 2 of 10]
+QueryParameter.defaultValue?: { from?: string | AbsoluteOrRelativeDateTime | null | undefined; to?: string | AbsoluteOrRelativeDateTime | null | undefined; } [variant 2 of 10] — Absolute defaults may use canonical UTC ISO strings (including milliseconds) for static manifests. Snapshots hydrate them into Dates.
+QueryParameter.type: 'boolean' [variants 3, 7 of 10]
+QueryParameter.defaultValue?: boolean [variant 3 of 10]
+QueryParameter.type: 'null' [variants 4, 8 of 10]
+QueryParameter.defaultValue?: null [variants 4, 8 of 10]
+QueryParameter.type: 'number' [variants 5, 9 of 10]
+QueryParameter.defaultValue?: number [variant 5 of 10]
+QueryParameter.type: 'string' [variants 6, 10 of 10]
+QueryParameter.defaultValue?: string [variant 6 of 10]
+QueryParameter.nullable: true [variants 7, 8, 9, 10 of 10]
+QueryParameter.defaultValue?: boolean | null [variant 7 of 10]
+QueryParameter.defaultValue?: number | null [variant 9 of 10]
+QueryParameter.defaultValue?: string | null [variant 10 of 10]
 QueryParameters (type, @altertable/data-app/contract): <Record<string, QueryParameterValue>> = { readonly [x: string]: QueryParameterValue; } — Parameters are scalar SQL values, never identifiers or SQL fragments.
 QueryParameterValue (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): = string | number | boolean | null
 QueryProjections (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): <Record<string, QueryField>> = { readonly [x: string]: QueryField; }
