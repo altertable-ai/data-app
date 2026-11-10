@@ -1,7 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
-  searchFilter,
   createDataContext,
   DataApp,
   DataSection,
@@ -11,7 +10,11 @@ import {
   injectDataAppStyles,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
+import {
+  searchFilter,
+  type DataOperation,
+  type FilterInput,
+} from '@altertable/data-app/contract';
 import { Component, type ReactNode } from 'react';
 const dataApp = defineDataApp({
   title: 'Binding ownership',
@@ -25,10 +28,16 @@ const context = createDataContext({ rows: 'rows' })({
     count: { term: 'Count', definition: 'Measured rows', queryNames: ['rows'] },
   },
 });
-const hooks = createDataHooks(
+const rowFilters = {
+  search: searchFilter({ key: 'q', label: 'Search rows' }),
+};
+const { defineView } = createDataHooks(
   createDataClient<{
-    rows: DataOperation<{ search: string }, number>;
+    rows: DataOperation<FilterInput<typeof rowFilters>, number> & {
+      filters: typeof rowFilters;
+    };
   }>({
+    filters: { rows: rowFilters },
     async transport() {
       return {
         status: 200,
@@ -43,16 +52,8 @@ const hooks = createDataHooks(
     },
   })
 );
-const filters = hooks.defineFilters({
-  search: searchFilter({ key: 'q', label: 'Search rows' }),
-});
 function declareView() {
-  const view = hooks.defineDataView({
-    dataContext: context,
-    operation: 'rows',
-    filters,
-    describeInput: () => 'all rows',
-  });
+  const view = defineView({ dataContext: context, operation: 'rows' });
   const dataset = view.dataset({
     name: 'Rows',
     select: count => [{ count }],
@@ -115,7 +116,6 @@ function App() {
     <AuthoringBoundary>
       <DataApp
         view={own.view}
-        filters={filters}
         datasets={[
           ['export', 'search-suggestions'].includes(binding ?? '')
             ? other.dataset

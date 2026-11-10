@@ -43,8 +43,6 @@ GROUP BY group_name ORDER BY sample_count DESC LIMIT $limit`,
 });
 const operations = {
   sampleCountsByGroup: dataApp.defineOperation({
-    input: () => ({}),
-    checks: [{}],
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }) {
       const result = await query('sampleCountsByGroup', {});
@@ -67,11 +65,10 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineDataView } = createDataHooks(createDataClient({ operations }));
-const sampleCountsView = defineDataView({
+const { defineView } = createDataHooks(createDataClient({ operations }));
+const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  describeInput: () => 'fixture groups',
   isEmpty: sampleCounts => sampleCounts.length === 0,
   emptyFallback: {
     title: 'No matching groups',

@@ -11,9 +11,6 @@ import {
   mountDataApp,
   injectDataAppStyles,
   useDetailNavigation,
-  searchFilter,
-  choiceFilter,
-  displayChoice,
 } from '@altertable/data-app-react';
 import {
   BarChart,
@@ -24,7 +21,13 @@ import {
   type ItemActions,
 } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
-import { filterInput, dimensionFilter } from '@altertable/data-app/contract';
+import {
+  choiceFilter,
+  dimensionFilter,
+  displayChoice,
+  parseDimensionSelection,
+  searchFilter,
+} from '@altertable/data-app/contract';
 import { Component, useState, type ReactNode } from 'react';
 
 const app = defineDataApp({
@@ -120,52 +123,39 @@ const windowChoice = choiceFilter({
   ],
 });
 const search = searchFilter({ key: 'q', label: 'Search' });
-const parseInput = filterInput(
-  (value: unknown) => {
-    const input = value as { search: unknown; windowId: unknown };
-    if (!input || typeof input.search !== 'string')
-      throw new Error('Invalid search');
-    if (input.windowId !== 'recent' && input.windowId !== 'previous')
-      throw new Error('Invalid window');
-    return { search: input.search, windowId: input.windowId } as const;
-  },
-  { ...filters, revenueBy, ordersBy }
-);
-type Input = ReturnType<typeof parseInput>;
 type Row = {
   id: string;
   label: string;
   revenue: number;
   dimension: 'region' | 'country';
 };
-const parseOrders = filterInput((value: unknown) => {
-  const input = value as { placeId?: unknown; search?: unknown };
+/** Detail destinations parse their own input: the displayed place scope and a place. */
+function parseOrders(value: unknown) {
+  const input = value as {
+    region?: unknown;
+    country?: unknown;
+    placeId?: unknown;
+    search?: unknown;
+  };
   if (
     !input ||
     (input.placeId !== undefined && typeof input.placeId !== 'string')
   )
     throw new Error('Invalid place');
   return {
+    region: parseDimensionSelection(input.region, region),
+    country: parseDimensionSelection(input.country, country),
     placeId: input.placeId as string | undefined,
     search: typeof input.search === 'string' ? input.search : '',
   };
-}, filters);
+}
 const operations = {
   sales: app.defineOperation({
-    input: parseInput,
-    checks: [
-      {
-        search: '',
-        windowId: 'recent',
-        ...defaultFilters,
-        revenueBy: 'region',
-        ordersBy: 'region',
-      } as Input,
-    ],
+    filters: { ...filters, revenueBy, ordersBy, search, window: windowChoice },
     policy: { maxQueryRows: 200, maxDurationMs: 10000 },
     async run({ query, signal }, input) {
       await query('sales');
-      if (input.windowId === 'previous')
+      if (input.window === 'previous')
         await new Promise<void>((resolve, reject) => {
           window.addEventListener('release-sales', () => resolve(), {
             once: true,
@@ -259,14 +249,7 @@ client.query = new Proxy(client.query, {
     return Reflect.apply(query, receiver, [name, input, options]);
   },
 });
-const hooks = createDataHooks(client);
-const appFilters = hooks.defineFilters({
-  ...filters,
-  revenueBy,
-  ordersBy,
-  search,
-  window: windowChoice,
-});
+const { defineView, defineDetailView } = createDataHooks(client);
 const context = createDataContext({
   sales: 'sales',
   countries: 'countries',
@@ -281,20 +264,15 @@ const context = createDataContext({
     },
   },
 });
-const sales = hooks.defineDataView({
+const sales = defineView({
   operation: 'sales',
   dataContext: context,
-  filters: appFilters,
-  input: ({ window, ...values }) => ({ ...values, windowId: window }),
-  bindings: { window: input => input.windowId },
-  describeInput: input => describeFilters(input),
+  describeInput: describeFilters,
 });
-const otherSales = hooks.defineDataView({
+/** A second view of the same operation, whose breakdowns `sales` widgets must reject. */
+const otherSales = defineView({
   operation: 'sales',
   dataContext: context,
-  filters: appFilters,
-  input: ({ window, ...values }) => ({ ...values, windowId: window }),
-  bindings: { window: input => input.windowId },
   describeInput: describeFilters,
 });
 class ConfigurationBoundary extends Component<
@@ -313,7 +291,7 @@ class ConfigurationBoundary extends Component<
     );
   }
 }
-const ordersView = hooks.defineDetailView({
+const ordersView = defineDetailView({
   id: 'orders',
   title: 'Contributing orders',
   operation: 'orders',
@@ -363,7 +341,7 @@ const orders = ordersView.dataset({
   },
   evidence: { id: 'orders', queryNames: ['orders'] },
 });
-const orderRecordView = hooks.defineDetailView({
+const orderRecordView = defineDetailView({
   id: 'order-record',
   title: 'Order record',
   operation: 'orders',
@@ -610,7 +588,7 @@ const content = sales.content(source => (
                 revenue: source.input.revenueBy,
                 orders: source.input.ordersBy,
                 search: source.input.search,
-                windowId: source.input.windowId,
+                window: source.input.window,
               })}
         </output>
       )}
@@ -696,7 +674,6 @@ function App() {
   return (
     <DataApp
       view={sales}
-      filters={appFilters}
       datasets={[places, orderPlaces, ...(showDays ? [days] : [])]}
       details={[ordersDetail, orderRecordDetail]}
       story={snapshot => [

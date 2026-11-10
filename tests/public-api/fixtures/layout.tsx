@@ -24,7 +24,7 @@ const dataApp = defineDataApp({
   scope: { organization: 'test', environment: 'test' },
   queries: {},
 });
-const hooks = createDataHooks(
+const { defineView } = createDataHooks(
   createDataClient<{
     activity: DataOperation<Record<string, never>, number[]>;
   }>({
@@ -41,10 +41,9 @@ const context = createDataContext({ activity: 'activity' })({
     },
   },
 });
-const view = hooks.defineDataView({
+const view = defineView({
   dataContext: context,
   operation: 'activity',
-  describeInput: () => 'all activity',
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No activity' },
 });

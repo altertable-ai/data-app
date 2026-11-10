@@ -1,35 +1,17 @@
 import type { DataClient } from '@altertable/data-app/client';
 import type { InputOf, OutputOf } from '@altertable/data-app/client';
-import type {
-  DataOperations,
-  DateRangeRequest,
-} from '@altertable/data-app/contract';
+import type { DataOperations } from '@altertable/data-app/contract';
 import {
-  parseDateTimeRange,
-  formatDateTimeRange,
-  type DimensionOption,
-} from '@altertable/data-app/contract';
-import type { CheckedFilterDeclarations } from '@altertable/data-app/internal';
-import type { IsUnion } from '@altertable/data-app/internal';
-import { facetSource, type FacetFilter } from '@altertable/data-app/internal';
-import type { ChoiceFilter } from '@altertable/data-app/internal';
-import { randomUuid } from '@altertable/data-app/internal';
-import type { MetricValues } from '@altertable/data-app/internal';
-import type { DisplayedSnapshot } from '@altertable/data-app/internal';
-import {
+  combineOperationFilters,
   displayedSnapshot,
+  randomUuid,
   resolveDataView,
-} from '@altertable/data-app/internal';
-import {
-  invariant,
-  type DateRangeFilter,
+  type ChoiceFilter,
+  type DisplayedSnapshot,
   type FilterCollection,
-  type CheckedFacetContexts,
-} from '@altertable/data-app/internal';
-import {
-  createDimensionFilter,
-  type DimensionFilterSettings,
-  type DimensionValue,
+  type FilterInput,
+  type IsUnion,
+  type MetricValues,
 } from '@altertable/data-app/internal';
 import { hashKey, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
@@ -51,82 +33,33 @@ import {
   type BreakdownTarget,
   type FilterPatch,
 } from './exploration.ts';
-import { Filters } from './filter-set.ts';
-import {
-  type DateTimeRangeFilter,
-  type DateTimeRangeComparisonFilter,
-  type DateTimeRangeComparisonRequest,
+import type {
+  DateTimeRangeComparisonFilter,
+  DateRangeFilter,
 } from './ui/app-filters.ts';
 import type { AuthoringDataContext } from './ui/data-context.ts';
 import { useFilterControls, useFilterValues } from './view-controls.tsx';
-import { DeclaredView, type ViewRequest } from './view-runtime.tsx';
 import {
-  describeViewInput,
+  DeclaredView,
+  type ClientFilters,
+  type ViewRequest,
+} from './view-runtime.tsx';
+import {
+  readViewPeriod,
+  resolveViewDefinition,
   resolveViewEmptiness,
-  resolveViewInput,
-  type DataViewDefinition,
-  type ResolvedDataViewDefinition,
-  type ResolvedFilters,
-  type ViewBindingOptions,
-  type ViewDate,
-  type ViewEmptiness,
+  type ResolvedViewDefinition,
+  type ViewDefinition,
 } from './view.ts';
 
-type CalendarTimeViewDefinition<
-  Operations extends DataOperations,
-  Name extends keyof Operations & string,
-  Collection extends { period: DateRangeFilter } & FilterCollection,
-  Context extends AuthoringDataContext,
-> = {
-  operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
-  dataContext: Context;
-  /** The filters this view reads, including its reporting `period`. */
-  filters: Filters<Collection>;
-} & ViewEmptiness<OutputOf<Operations[Name]>> &
-  TimeInputMapping<NoInfer<Collection>, InputOf<Operations[Name]>> &
-  ViewBindingOptions<
-    NoInfer<Collection>,
-    InputOf<Operations[Name]>,
-    RequiredPeriodBinding<InputOf<Operations[Name]>>
-  >;
-
-type DateTimeViewDefinition<
-  Operations extends DataOperations,
-  Name extends keyof Operations & string,
-  Collection extends {
-    period: DateTimeRangeFilter | DateTimeRangeComparisonFilter;
-  } & FilterCollection,
-  Context extends AuthoringDataContext,
-> = Omit<
-  DataViewDefinition<
-    Name,
-    NoInfer<Collection>,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>
-  >,
-  'filters' | 'describeInput' | 'date'
-> & {
-  operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
-  dataContext: Context;
-  /** The filters this view reads, including its reporting `period`. */
-  filters: Filters<Collection>;
-} & ViewBindingOptions<
-    NoInfer<Collection>,
-    InputOf<Operations[Name]>,
-    Collection['period'] extends DateTimeRangeComparisonFilter
-      ? InputOf<Operations[Name]> extends {
-          period: DateTimeRangeComparisonRequest;
-        }
-        ? never
-        : 'period'
-      : never
-  >;
-
+/** The reporting time zone of the operation's date filter. */
 function reportingTimeZone(definition: {
   filters: FilterCollection;
-  date?: { filter: string };
+  dateFilter?: string;
 }) {
-  const period = definition.filters[definition.date?.filter ?? 'period'];
+  const period = definition.dateFilter
+    ? definition.filters[definition.dateFilter]
+    : undefined;
   if (period?.kind === 'dateRange') return period.bounds().timeZone;
   if (
     period?.kind === 'dateTimeRangeComparison' ||
@@ -148,57 +81,65 @@ function getClientScope(client: object): string {
   return scope;
 }
 
-/** Without other filters, a calendar view's default input is the period request itself. */
-type TimeInput<Collection extends FilterCollection> =
-  Exclude<keyof Collection, 'period'> extends never
-    ? DateRangeRequest
-    : ResolvedFilters<Collection>;
-type TimeInputMapping<Collection extends FilterCollection, Input> =
-  TimeInput<Collection> extends Input
-    ? { input?: (values: ResolvedFilters<Collection>) => Input }
-    : { input: (values: ResolvedFilters<Collection>) => Input };
-
-/** Match the period reader's precedence for each possible operation input. */
-type RequiredPeriodBinding<Input> = Input extends unknown
-  ? 'period' extends keyof Input
-    ? Input extends { period: DateRangeRequest }
-      ? never
-      : 'period'
-    : Input extends DateRangeRequest
-      ? never
-      : 'period'
-  : never;
-
 type NonEmptyColumns<Columns extends object> = keyof Columns extends never
   ? never
   : Columns;
 
-type BoundDataView<
+/** The filters an operation declares; `{}` when it reads none. */
+type FiltersOf<Operation> = Operation extends {
+  filters: infer Filters extends FilterCollection;
+}
+  ? Filters
+  : {};
+
+/** Operations a view can run: those whose input is their declared filters, or empty.
+ * Operations that parse their own input are destinations for `defineDetailView`. */
+type ViewOperationName<Operations extends DataOperations> = {
+  [Name in keyof Operations & string]: Operations[Name] extends {
+    filters: FilterCollection;
+  }
+    ? Name
+    : [InputOf<Operations[Name]>] extends [Record<string, never>]
+      ? Name
+      : never;
+}[keyof Operations & string];
+
+/** Metric comparisons need a reporting period with a comparison. */
+type HasPeriod<Filters extends FilterCollection> = {
+  [Name in keyof Filters]: Filters[Name] extends
+    | DateRangeFilter
+    | DateTimeRangeComparisonFilter
+    ? true
+    : never;
+}[keyof Filters] extends never
+  ? false
+  : true;
+
+type DisplayChoiceName<Filters extends FilterCollection> = {
+  [Name in keyof Filters]: Filters[Name] extends ChoiceFilter<any>
+    ? Extract<Filters[Name]['presentation'], { group: 'display' }> extends never
+      ? never
+      : Name
+    : never;
+}[keyof Filters] &
+  string;
+
+type BoundView<
   Name extends string,
-  Collection extends FilterCollection,
-  Input,
+  Filters extends FilterCollection,
   Data,
   Context extends AuthoringDataContext,
-  HasDate extends boolean,
 > = DeclaredView<
   Data,
-  Input,
-  ResolvedDataViewDefinition<Name, Collection, Input, Data> & {
-    describeInput: (input: Input) => string;
+  FilterInput<Filters>,
+  ResolvedViewDefinition<Name, Filters, Data> & {
+    clientFilters: ClientFilters;
   }
 > & {
-  filter(): FilterTarget<FilterPatch<Collection>>;
-  breakdown<Key extends keyof Collection & string>(
-    key: Key &
-      (Collection[Key] extends ChoiceFilter<any>
-        ? Extract<
-            Collection[Key]['presentation'],
-            { group: 'display' }
-          > extends never
-          ? never
-          : unknown
-        : never)
-  ): Collection[Key] extends ChoiceFilter<infer Value>
+  filter(): FilterTarget<FilterPatch<Filters>>;
+  breakdown<Key extends DisplayChoiceName<Filters>>(
+    key: Key
+  ): Filters[Key] extends ChoiceFilter<infer Value>
     ? BreakdownTarget<Value>
     : never;
   dataset<
@@ -207,73 +148,26 @@ type BoundDataView<
   >(
     definition: DatasetDefinition<
       Data,
-      Input,
+      FilterInput<Filters>,
       Row,
       Parameters<Context['evidence']>[0]
     > & {
       columns: Columns & NonEmptyColumns<Columns>;
     }
-  ): Dataset<Data, Input, Row>;
+  ): Dataset<Data, FilterInput<Filters>, Row>;
   metric(
     definition: Parameters<Context['metric']>[0],
     select: (
       data: Data,
-      input: Input
-    ) => HasDate extends true
+      input: FilterInput<Filters>
+    ) => HasPeriod<Filters> extends true
       ? MetricValues
       : { current: number; previous?: never }
-  ): Metric<Data, Input>;
-  scope(snapshot: DisplayedSnapshot<Data, Input>): string;
+  ): Metric<Data, FilterInput<Filters>>;
+  scope(snapshot: DisplayedSnapshot<Data, FilterInput<Filters>>): string;
   content(
-    render: (state: DataContentState<Data, Input>) => ReactNode
-  ): ViewContent<Data, Input>;
-};
-
-type FacetOperationName<
-  Operations extends DataOperations,
-  Value extends DimensionValue,
-> = {
-  [Name in keyof Operations & string]: OutputOf<
-    Operations[Name]
-  > extends readonly DimensionOption<Value>[]
-    ? Name
-    : never;
-}[keyof Operations & string];
-type FacetConfig<
-  Operations extends DataOperations,
-  Value extends DimensionValue,
-  Context extends FilterCollection,
-  Name extends keyof Operations & string,
-> = DimensionFilterSettings<Value> & {
-  facet: {
-    context: Context &
-      CheckedFilterDeclarations<NoInfer<Context>> &
-      (string extends keyof Context ? never : unknown);
-    operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
-    input: (
-      values: ResolvedFilters<NoInfer<Context>>
-    ) => InputOf<Operations[NoInfer<Name>]>;
-  };
-};
-
-type CheckedFacetSources<
-  Operations extends DataOperations,
-  Collection extends FilterCollection,
-> = CheckedFilterDeclarations<Collection> & {
-  [Key in keyof Collection]: Collection[Key] extends FacetFilter<
-    infer Value,
-    infer _Context,
-    infer Name,
-    infer Input
-  >
-    ? Name extends keyof Operations
-      ? Input extends InputOf<Operations[Name]>
-        ? OutputOf<Operations[Name]> extends readonly DimensionOption<Value>[]
-          ? Collection[Key]
-          : never
-        : never
-      : never
-    : Collection[Key];
+    render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode
+  ): ViewContent<Data, FilterInput<Filters>>;
 };
 
 type BoundDetailView<
@@ -298,11 +192,25 @@ type BoundDetailView<
   ): Metric<Data, Input>;
 };
 
-/** Bind declared operations to URL filters, displayed readings, and request feedback. */
+/** Bind declared operations to URL filters, displayed readings, and request feedback.
+ * The client's operations declare their filters; `<DataApp>` renders their controls. */
 export function createDataHooks<Operations extends DataOperations>(
   client: DataClient<Operations>
 ) {
   const clientScope = getClientScope(client);
+  const operationFilters = client.filters;
+  const appFilters = combineOperationFilters(operationFilters);
+  const clientFilters: ClientFilters = {
+    filters: appFilters,
+    useControls() {
+      return useFilterControls(
+        appFilters,
+        operationFilters,
+        clientScope,
+        loadFacet
+      );
+    },
+  };
 
   function useDataQuery<Name extends keyof Operations & string>({
     name,
@@ -407,135 +315,46 @@ export function createDataHooks<Operations extends DataOperations>(
     };
   }
 
-  /** Omitted filters resolve to {}; matching operation inputs derive from those values.
-   * Supply a mapper for nested or different input shapes. */
-  function defineDataView<
-    Name extends keyof Operations & string,
-    const Collection extends FilterCollection = {},
+  /** One view per operation: its filters, scope, and reporting period come from the
+   * operation. Supply `describeInput` only to replace the derived scope. */
+  function defineView<
+    Name extends ViewOperationName<Operations>,
     const Context extends AuthoringDataContext = AuthoringDataContext,
   >(
-    definition: DataViewDefinition<
+    definition: ViewDefinition<
       Name,
-      Collection,
-      InputOf<Operations[Name]>,
+      FilterInput<FiltersOf<Operations[Name]>>,
       OutputOf<Operations[Name]>
     > & {
       operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
-    } & {
       dataContext: Context;
-      date: ViewDate<Collection, InputOf<Operations[Name]>>;
     }
-  ): BoundDataView<
+  ): BoundView<
     Name,
-    Collection,
-    InputOf<Operations[Name]>,
+    FiltersOf<Operations[Name]>,
     OutputOf<Operations[Name]>,
-    Context,
-    true
-  >;
-  function defineDataView<
-    Name extends keyof Operations & string,
-    const Collection extends FilterCollection = {},
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: DataViewDefinition<
-      Name,
-      Collection,
-      InputOf<Operations[Name]>,
-      OutputOf<Operations[Name]>
-    > & {
-      operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown);
-    } & { dataContext: Context }
-  ): BoundDataView<
-    Name,
-    Collection,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>,
-    Context,
-    false
-  >;
-  function defineDataView<
-    Name extends keyof Operations & string,
-    const Collection extends FilterCollection = {},
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: DataViewDefinition<
-      Name,
-      Collection,
-      InputOf<Operations[Name]>,
-      OutputOf<Operations[Name]>
-    > & { dataContext: Context }
-  ) {
-    return bindDataView(definition);
-  }
-
-  function bindDataView<
-    Name extends keyof Operations & string,
-    const Collection extends FilterCollection,
-    const Context extends AuthoringDataContext,
-    HasDate extends boolean = boolean,
-  >(
-    definition: DataViewDefinition<
-      Name,
-      Collection,
-      InputOf<Operations[Name]>,
-      OutputOf<Operations[Name]>
-    > & { dataContext: Context }
-  ): BoundDataView<
-    Name,
-    Collection,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>,
-    Context,
-    HasDate
+    Context
   > {
-    const filters = (
-      definition.filters ? Filters.collection(definition.filters) : {}
-    ) as Collection;
-    const input =
-      definition.input ??
-      ((values: ResolvedFilters<Collection>) =>
-        values as unknown as InputOf<Operations[Name]>);
-
-    const describeInput = describeViewInput<InputOf<Operations[Name]>>({
-      ...definition,
-      filters,
-    });
+    type Filters = FiltersOf<Operations[Name]>;
     type Data = OutputOf<Operations[Name]>;
-    type Input = InputOf<Operations[Name]>;
-    const metadata: Omit<
-      DataViewDefinition<Name, Collection, Input, Data>,
-      'filters' | 'input'
-    > = definition;
-    const normalized = {
-      ...metadata,
-      ...resolveViewEmptiness(definition),
-      filters,
-      filterSet: definition.filters,
-      input,
-      describeInput,
+    type Input = FilterInput<Filters>;
+    const filters = (operationFilters[definition.operation] ?? {}) as Filters;
+    const resolved = {
+      ...resolveViewDefinition<Name, Filters, Data>(definition, filters),
+      clientFilters,
     };
     const view = Object.assign(
-      new DeclaredView(request => useView(normalized, request), normalized),
+      new DeclaredView<Data, Input, typeof resolved>(
+        // The operation's input is exactly its filters, so the result is typed by them.
+        request => useView(resolved, request) as never,
+        resolved
+      ),
       {
         filter() {
-          return createFilterTarget<Collection>({
-            owner: view,
-            filters,
-            input,
-            bindings: definition.bindings,
-            date: definition.date,
-          });
+          return createFilterTarget<Filters>({ owner: view, filters });
         },
         breakdown(key: string) {
-          return createBreakdownTarget({
-            owner: view,
-            filters,
-            input,
-            bindings: definition.bindings,
-            date: definition.date,
-            key,
-          });
+          return createBreakdownTarget({ owner: view, filters, key });
         },
         dataset<
           Row,
@@ -556,48 +375,33 @@ export function createDataHooks<Operations extends DataOperations>(
               evidence: definition.dataContext.evidence(dataset.evidence),
             },
             view,
-            reportingTimeZone(normalized)
+            reportingTimeZone(resolved)
           );
         },
         metric(
           metric: Parameters<Context['metric']>[0],
-          select: (
-            data: Data,
-            input: Input
-          ) => HasDate extends true
-            ? MetricValues
-            : { current: number; previous?: never }
+          select: (data: Data, input: Input) => MetricValues
         ) {
           return bindMetric(
             definition.dataContext.metric(metric),
             select,
-            definition.date?.input,
+            resolved.dateFilter
+              ? (input: Input) => readViewPeriod(resolved, input)!
+              : undefined,
             view
           );
         },
         scope(snapshot: DisplayedSnapshot<Data, Input>) {
-          return describeInput(snapshot.input);
+          return resolved.describeInput(snapshot.input);
         },
         content(
-          render: (
-            state: DataContentState<
-              OutputOf<Operations[Name]>,
-              InputOf<Operations[Name]>
-            >
-          ) => ReactNode
+          render: (state: DataContentState<Data, Input>) => ReactNode
         ): ViewContent<Data, Input> {
-          return new ViewContent(view, render, describeInput);
+          return new ViewContent(view, render, resolved.describeInput);
         },
       }
     );
-    return view as BoundDataView<
-      Name,
-      Collection,
-      Input,
-      Data,
-      Context,
-      HasDate
-    >;
+    return view as unknown as BoundView<Name, Filters, Data, Context>;
   }
 
   /** Define a typed destination whose untrusted navigation input is validated before querying. */
@@ -682,232 +486,24 @@ export function createDataHooks<Operations extends DataOperations>(
     });
   }
 
-  /** A time view reads its reporting `period` from its filters. Without other filters,
-   * a calendar view's default input is the DateRangeRequest; with them it is
-   * { period, ...filters }. Other operation shapes require an input mapper.
-   * Mappers must preserve the period and dimension selections; bindings extract nested inputs.
-   * Use defineDataView with describeInput for deliberately fixed-period views. */
-  function defineCalendarTimeView<
-    Name extends keyof Operations & string,
-    const Collection extends { period: DateRangeFilter } & FilterCollection,
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: CalendarTimeViewDefinition<
-      Operations,
-      Name,
-      Collection,
-      Context
-    >
-  ) {
-    const hasOtherFilters =
-      Object.keys(Filters.collection(definition.filters)).length > 1;
-    return bindDataView<Name, Collection, Context, true>({
-      operation: definition.operation,
-      dataContext: definition.dataContext,
-      filters: definition.filters,
-      bindings: definition.bindings,
-      input(values: ResolvedFilters<Collection>) {
-        if (definition.input) return definition.input(values);
-        if (!hasOtherFilters) return values.period as InputOf<Operations[Name]>;
-
-        return { ...values } as InputOf<Operations[Name]>;
-      },
-      date: {
-        filter: 'period' as never,
-        input(input: InputOf<Operations[Name]>) {
-          return definition.bindings?.period
-            ? (definition.bindings.period(input) as DateRangeRequest)
-            : ((input && typeof input === 'object' && 'period' in input
-                ? input.period
-                : input) as DateRangeRequest);
-        },
-      },
-      isEmpty: definition.isEmpty,
-      emptyFallback: definition.emptyFallback,
-    } as unknown as Parameters<
-      typeof bindDataView<Name, Collection, Context, true>
-    >[0]);
-  }
-
-  function defineDateTimeView<
-    Name extends keyof Operations & string,
-    const Collection extends {
-      period: DateTimeRangeFilter | DateTimeRangeComparisonFilter;
-    } & FilterCollection,
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(definition: DateTimeViewDefinition<Operations, Name, Collection, Context>) {
-    const period = Filters.collection(definition.filters).period;
-    type HasDate = Collection['period'] extends DateTimeRangeComparisonFilter
-      ? true
-      : false;
-    return bindDataView<Name, Collection, Context, HasDate>({
-      ...definition,
-      ...(period.kind === 'dateTimeRangeComparison'
-        ? {
-            date: {
-              filter: 'period',
-              input(input: InputOf<Operations[Name]>) {
-                return (
-                  definition.bindings?.period
-                    ? definition.bindings.period(input)
-                    : (input as { period: unknown }).period
-                ) as DateTimeRangeComparisonRequest;
-              },
-            },
-          }
-        : {}),
-      describeInput(input: InputOf<Operations[Name]>) {
-        const selected = definition.bindings?.period
-          ? definition.bindings.period(input)
-          : (input as { period: unknown }).period;
-        return period.kind === 'dateTimeRangeComparison'
-          ? formatDateTimeRange(
-              parseDateTimeRange(
-                (selected as DateTimeRangeComparisonRequest).range
-              )
-            )
-          : period.describe!(parseDateTimeRange(selected));
-      },
-    } as unknown as Parameters<
-      typeof bindDataView<Name, Collection, Context, HasDate>
-    >[0]);
-  }
-
-  /** Define a view driven by the `period` filter: a calendar `dateRangeFilter()` or a
-   * datetime `dateTimeRangeFilter()`, declared with the app's other filters. */
-  function defineTimeView<
-    Name extends keyof Operations & string,
-    const Collection extends {
-      period: DateTimeRangeComparisonFilter;
-    } & FilterCollection,
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: DateTimeViewDefinition<Operations, Name, Collection, Context>
-  ): BoundDataView<
-    Name,
-    Collection,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>,
-    Context,
-    true
-  >;
-  function defineTimeView<
-    Name extends keyof Operations & string,
-    const Collection extends { period: DateTimeRangeFilter } & FilterCollection,
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: DateTimeViewDefinition<Operations, Name, Collection, Context>
-  ): BoundDataView<
-    Name,
-    Collection,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>,
-    Context,
-    false
-  >;
-  function defineTimeView<
-    Name extends keyof Operations & string,
-    const Collection extends { period: DateRangeFilter } & FilterCollection,
-    const Context extends AuthoringDataContext = AuthoringDataContext,
-  >(
-    definition: CalendarTimeViewDefinition<
-      Operations,
-      Name,
-      Collection,
-      Context
-    >
-  ): BoundDataView<
-    Name,
-    Collection,
-    InputOf<Operations[Name]>,
-    OutputOf<Operations[Name]>,
-    Context,
-    true
-  >;
-  function defineTimeView(definition: any): any {
-    const period = Filters.collection(definition.filters).period;
-    invariant(
-      period?.kind === 'dateRange' ||
-        period?.kind === 'dateTimeRange' ||
-        period?.kind === 'dateTimeRangeComparison',
-      'A time view needs a date range filter named period.'
-    );
-    return period.kind === 'dateRange'
-      ? defineCalendarTimeView(definition)
-      : defineDateTimeView(definition);
-  }
-
-  /** Bind typed options to a registered operation and explicitly declared filter dependencies.
-   * The input mapper receives only resolved context values; consuming views must include that context.
-   * Options are cached for 60 seconds; known values survive refreshes and errors.
-   * Selected values absent from a new result remain available without an invented count. */
-
-  function defineFacetFilter<
-    const Context extends FilterCollection,
-    const Name extends FacetOperationName<Operations, string>,
-  >(
-    config: FacetConfig<Operations, string, Context, Name>
-  ): FacetFilter<string, Readonly<Context>, Name, InputOf<Operations[Name]>>;
-  function defineFacetFilter<
-    const Context extends FilterCollection,
-    const Name extends FacetOperationName<Operations, number>,
-  >(
-    config: FacetConfig<Operations, number, Context, Name>
-  ): FacetFilter<number, Readonly<Context>, Name, InputOf<Operations[Name]>>;
-  function defineFacetFilter<
-    const Context extends FilterCollection,
-    Value extends DimensionValue,
-    Name extends keyof Operations & string,
-  >(
-    config: DimensionFilterSettings<Value> & {
-      facet: {
-        context: Context;
-        operation: Name;
-        input: (values: ResolvedFilters<Context>) => InputOf<Operations[Name]>;
-      };
-    }
-  ) {
-    const context = Object.freeze({ ...config.facet.context });
-    const operation = config.facet.operation;
-    const mapInput = config.facet.input;
-    return Object.assign(
-      createDimensionFilter<Value>({ ...config, options: [] }, true),
-      {
-        optionsSource: 'query' as const,
-        [facetSource]: Object.freeze({
-          context,
-          operation,
-          input(values: Record<string, unknown>) {
-            const resolved = Object.fromEntries(
-              Object.keys(context).map(name => [name, values[name]])
-            ) as ResolvedFilters<Context>;
-            return mapInput(resolved);
-          },
-        }),
-      }
-    );
-  }
-
   function useView<
     Name extends keyof Operations & string,
-    const Collection extends FilterCollection,
+    Filters extends FilterCollection,
+    Data,
   >(
-    definition: ResolvedDataViewDefinition<
-      Name,
-      Collection,
-      InputOf<Operations[Name]>,
-      OutputOf<Operations[Name]>
-    >,
+    definition: ResolvedViewDefinition<Name, Filters, Data>,
     request: ViewRequest
   ) {
     const filters = useFilterValues(definition.filters);
-    const describeInput =
-      describeViewInput<InputOf<Operations[Name]>>(definition);
     const dataView = useDataView({
       name: definition.operation,
-      input: resolveViewInput(definition, filters.resolved),
-      isEmpty: definition.isEmpty,
-      describeInput,
+      input: filters.resolved as InputOf<Operations[Name]>,
+      isEmpty: definition.isEmpty as (
+        data: OutputOf<Operations[Name]>
+      ) => boolean,
+      describeInput: definition.describeInput as (
+        input: InputOf<Operations[Name]>
+      ) => string,
       enabled: request.enabled,
     });
 
@@ -915,7 +511,7 @@ export function createDataHooks<Operations extends DataOperations>(
       view: dataView.view,
       dataContext: definition.dataContext,
       snapshot: dataView.snapshot,
-      scope: displayedScope(dataView.view, describeInput),
+      scope: displayedScope(dataView.view, definition.describeInput as never),
       refetch() {
         if (!filters.refreshTime()) void dataView.refetch();
       },
@@ -933,25 +529,5 @@ export function createDataHooks<Operations extends DataOperations>(
       .then(response => response.data);
   }
 
-  function useControls(collection: FilterCollection) {
-    return useFilterControls(collection, clientScope, loadFacet);
-  }
-
-  /** Declare the app's filters and display options once. Views read them, or a `pick()`;
-   * `<DataApp filters>` renders their controls. URL keys must be unique. */
-  function defineFilters<const Collection extends FilterCollection>(
-    collection: Collection &
-      CheckedFacetContexts<NoInfer<Collection>> &
-      CheckedFacetSources<Operations, NoInfer<Collection>>
-  ): Filters<Collection> {
-    return Filters.create(collection as Collection, useControls);
-  }
-
-  return {
-    defineFilters,
-    defineDataView,
-    defineDetailView,
-    defineTimeView,
-    defineFacetFilter,
-  };
+  return { defineView, defineDetailView };
 }

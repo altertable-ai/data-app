@@ -1,4 +1,5 @@
 /** Shared operation, query, and response contracts; independent of delivery adapters. */
+import type { FilterCollection } from './app-filters.ts';
 import { type QueryParameters } from './queries.ts';
 
 export type OperationContracts = Record<
@@ -56,6 +57,8 @@ export type OperationContext = {
  * Registered queries decode rows from their declared projections; `run` derives the operation's data.
  */
 export type DataOperation<Input, Output> = {
+  /** The app filters the operation reads; its input has one field per filter. */
+  filters?: Readonly<FilterCollection>;
   input: (value: unknown) => Input;
   run: (context: OperationContext, input: Input) => Promise<Output>;
   checks: readonly [Input, ...Input[]];

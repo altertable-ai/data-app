@@ -7,21 +7,15 @@ import {
   TextWidget,
   mountDataApp,
   injectDataAppStyles,
-  searchFilter,
-  choiceFilter,
-  multiChoiceFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  numberFilter,
   booleanFilter,
+  choiceFilter,
   dimensionFilter,
-  parseNumberSelection,
-  parseBooleanSelection,
-  parseDimensionSelection,
-  type NumberSelection,
-  type BooleanSelection,
-  type DimensionSelection,
+  multiChoiceFilter,
+  numberFilter,
+  searchFilter,
 } from '@altertable/data-app/contract';
 const dataApp = defineDataApp({
   title: 'Filter workflows',
@@ -64,40 +58,8 @@ const choice = choiceFilter({
   defaultValue: 'a',
 });
 const tags = multiChoiceFilter({ key: 'tags', label: 'Tags', options });
-type Input = {
-  search: string;
-  choice: string;
-  tags: readonly string[];
-  amount: NumberSelection;
-  active: BooleanSelection;
-  country: DimensionSelection<string>;
-};
-const defaults: Input = {
-  search: '',
-  choice: 'a',
-  tags: [],
-  amount: amount.defaultValue,
-  active: active.defaultValue,
-  country: country.defaultValue,
-};
 const operation = dataApp.defineOperation({
-  input(value: unknown): Input {
-    const input = value as Input;
-    if (
-      !input ||
-      !search.valid(input.search) ||
-      !choice.valid(input.choice) ||
-      !tags.valid(input.tags)
-    )
-      throw new Error('Invalid variables');
-    return {
-      ...input,
-      amount: parseNumberSelection(input.amount, amount),
-      active: parseBooleanSelection(input.active, active),
-      country: parseDimensionSelection(input.country, country),
-    };
-  },
-  checks: [defaults],
+  filters: { search, choice, tags, amount, active, country },
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run(_context, input) {
     return input;
@@ -111,23 +73,13 @@ const client = createDataClient({
     },
   },
 });
-const { defineDataView, defineFilters } = createDataHooks(client);
-const filters = defineFilters({
-  search,
-  choice,
-  tags,
-  amount,
-  active,
-  country,
-});
-const view = defineDataView({
+const { defineView } = createDataHooks(client);
+const view = defineView({
   dataContext: createDataContext({ filters: 'filters' })({
     description: 'Filter result',
     glossary: {},
   }),
   operation: 'filters',
-  filters,
-  describeInput: input => JSON.stringify(input),
 });
 const dataset = view.dataset({
   name: 'Result',
@@ -151,7 +103,6 @@ function App() {
   return (
     <DataApp
       view={view}
-      filters={filters}
       datasets={[dataset]}
       story={() => []}
       showSearch={hideControls || hideSearch ? false : undefined}

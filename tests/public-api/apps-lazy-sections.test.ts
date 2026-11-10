@@ -136,24 +136,24 @@ test('a failed summary view blocks the story until a refresh recovers it', async
   await expect.poll(() => present.isEnabled()).toBe(true);
 });
 
-test('a summary view must read the filters that <DataApp> renders', async ({
+test('a summary view must come from the client whose filter controls <DataApp> renders', async ({
   page,
 }) => {
-  await page.goto('/lazy-sections?summary&without-app-filters');
+  await page.goto('/lazy-sections?summary&other-client');
   await expect
     .poll(() => page.getByRole('alert').textContent())
     .toContain(
-      'A view’s filters must come from the defineFilters() result passed to <DataApp filters>, which renders their controls.'
+      'Views inside <DataApp> must come from the same createDataHooks() client, which owns their filter controls.'
     );
 });
 
-test('a section view must read the filters that <DataApp> renders', async ({
+test('a section view must come from the client whose filter controls <DataApp> renders', async ({
   page,
 }) => {
-  await page.goto('/lazy-sections?without-app-filters');
+  await page.goto('/lazy-sections?other-client');
   await expect
     .poll(() => page.getByRole('alert').textContent())
     .toContain(
-      'A view’s filters must come from the defineFilters() result passed to <DataApp filters>, which renders their controls.'
+      'Views inside <DataApp> must come from the same createDataHooks() client, which owns their filter controls.'
     );
 });

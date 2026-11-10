@@ -1,7 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 import { injectDataAppStyles } from '@altertable/data-app-react';
 import { AnnotationTarget } from '@altertable/data-app-react';
-import { mountDataApp, searchFilter } from '@altertable/data-app-react';
+import { mountDataApp } from '@altertable/data-app-react';
 import {
   DataApp,
   DataWidget,
@@ -17,6 +17,7 @@ import {
 } from '@altertable/data-app/client';
 import {
   connectionCheck,
+  searchFilter,
   type ConnectionOperation,
 } from '@altertable/data-app/contract';
 import { useState } from 'react';

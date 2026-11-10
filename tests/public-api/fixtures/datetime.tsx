@@ -1,7 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
-  dateTimeRangeFilter,
-  dateTimeRangePresets,
   DateTimeRangePicker,
   Button,
   createDataHooks,
@@ -15,9 +13,10 @@ import {
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  type DateTimeRange,
+  dateTimeRangeFilter,
+  dateTimeRangePresets,
   defineDateRangeContract,
-  filterInput,
+  type DateTimeRange,
 } from '@altertable/data-app/contract';
 import { useState } from 'react';
 
@@ -72,8 +71,7 @@ const period = dateTimeRangeFilter({
   presets,
 });
 const events = app.defineOperation({
-  input: filterInput(() => ({}), { period }),
-  checks: [{ period: period.defaultValue }],
+  filters: { period },
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }, input) {
     return (await query('events', input)).rows;
@@ -92,15 +90,13 @@ const client = createDataClient({
     },
   },
 });
-const { defineFilters, defineTimeView } = createDataHooks(client);
-const filters = defineFilters({ period });
-const view = defineTimeView({
+const { defineView } = createDataHooks(client);
+const view = defineView({
   dataContext: createDataContext(events.queryNames)({
     description: 'Datetime results',
     glossary: {},
   }),
   operation: 'events',
-  filters,
 });
 const dataset = view.dataset({
   name: 'Selection',
@@ -118,12 +114,7 @@ function App() {
   if (new URLSearchParams(location.search).has('controls'))
     return <PickerControls />;
   return (
-    <DataApp
-      view={view}
-      filters={filters}
-      datasets={[dataset]}
-      story={() => []}
-    >
+    <DataApp view={view} datasets={[dataset]} story={() => []}>
       <DataSection content={content} />
       <ReportingZone />
     </DataApp>

@@ -2,7 +2,6 @@ import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
   createDataContext,
-  dateRangeFilter,
   DataApp,
   DataSection,
   TableWidget,
@@ -25,9 +24,11 @@ import {
 } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
+  dateRangeFilter,
   defineDateRangeContract,
   type DataOperation,
-  type DateRangeRequest,
+  type FilterCollection,
+  type FilterInput,
 } from '@altertable/data-app/contract';
 import { formatTime } from '@altertable/data-app/format';
 
@@ -57,9 +58,40 @@ const calendar = defineDateRangeContract({
   maxRangeDays: 30,
   timeZone: 'America/New_York',
 });
+const day = { kind: 'dates', start: '2026-09-24', end: '2026-09-24' } as const;
+const filters = {
+  events: {
+    period: dateRangeFilter({
+      key: 'period',
+      contract: calendar,
+      defaultValue: day,
+    }),
+  },
+  // The Tokyo view reports in its own zone, so its operation reads its own period.
+  tokyoEvents: {
+    tokyoPeriod: dateRangeFilter({
+      key: 'tokyo',
+      label: 'Tokyo period',
+      contract: defineDateRangeContract({
+        minDate: '2026-09-01',
+        maxDate: '2026-09-30',
+        maxRangeDays: 30,
+        timeZone: 'Asia/Tokyo',
+      }),
+      defaultValue: day,
+      presentation: { prominence: 'secondary' },
+    }),
+  },
+};
+type EventsOperation<Filters extends FilterCollection> = DataOperation<
+  FilterInput<Filters>,
+  typeof records
+> & { filters: Filters };
 const client = createDataClient<{
-  events: DataOperation<DateRangeRequest, typeof records>;
+  events: EventsOperation<typeof filters.events>;
+  tokyoEvents: EventsOperation<typeof filters.tokyoEvents>;
 }>({
+  filters,
   async transport() {
     return {
       status: 200,
@@ -73,30 +105,8 @@ const client = createDataClient<{
     };
   },
 });
-const { defineDataView, defineFilters, defineTimeView } =
-  createDataHooks(client);
-const day = { kind: 'dates', start: '2026-09-24', end: '2026-09-24' } as const;
-const filters = defineFilters({
-  period: dateRangeFilter({
-    key: 'period',
-    contract: calendar,
-    defaultValue: day,
-  }),
-  // The Tokyo view reports in its own zone, so it reads its own period.
-  tokyoPeriod: dateRangeFilter({
-    key: 'tokyo',
-    label: 'Tokyo period',
-    contract: defineDateRangeContract({
-      minDate: '2026-09-01',
-      maxDate: '2026-09-30',
-      maxRangeDays: 30,
-      timeZone: 'Asia/Tokyo',
-    }),
-    defaultValue: day,
-    presentation: { prominence: 'secondary' },
-  }),
-});
-const view = defineTimeView({
+const { defineView } = createDataHooks(client);
+const view = defineView({
   dataContext: createDataContext({ events: 'events' })({
     description: 'Sample dated events.',
     glossary: {
@@ -108,7 +118,6 @@ const view = defineTimeView({
     },
   }),
   operation: 'events',
-  filters: filters.pick('period'),
 });
 const events = view.dataset({
   name: 'Witness reports',
@@ -138,15 +147,12 @@ const events = view.dataset({
   },
   evidence: { id: 'events', glossaryIds: ['events'] },
 });
-const tokyoView = defineDataView({
+const tokyoView = defineView({
   dataContext: createDataContext({ events: 'events' })({
     description: 'Independent Tokyo events.',
     glossary: {},
   }),
-  operation: 'events',
-  filters: filters.pick('tokyoPeriod'),
-  input: values => values.tokyoPeriod,
-  date: { filter: 'tokyoPeriod', input: input => input },
+  operation: 'tokyoEvents',
 });
 const tokyoEvents = tokyoView.dataset({
   name: 'Tokyo events',
@@ -250,7 +256,6 @@ function App() {
   return (
     <DataApp
       view={view}
-      filters={filters}
       datasets={[events]}
       story={source => [
         {

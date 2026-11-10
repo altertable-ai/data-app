@@ -5,11 +5,19 @@
  */
 import { parseDate, today } from '@internationalized/date';
 
+import type { FilterCollection } from '../core/app-filters.ts';
 import { createDateTimeRangeContract } from '../core/date-time-range-contract.ts';
 import {
   attachDimensionSelectors,
-  validateFilterInput,
+  validateSourceMembers,
 } from '../core/dimension-source.ts';
+import {
+  defaultFilterInput,
+  defineOperationFilters,
+  parseFilterInput,
+  type CheckedOperationFilters,
+  type FilterInput,
+} from '../core/operation-filters.ts';
 import { fixedUnitMilliseconds } from '../core/time-units.ts';
 export type {
   DateTimeRangeContract,
@@ -49,18 +57,6 @@ export type {
   DisclosedQuery,
   DataOperation,
 } from '../core/operation-types.ts';
-
-export function parseEmptyInput(value: unknown): Record<string, never> {
-  invariant(
-    typeof value === 'object' &&
-      value !== null &&
-      !Array.isArray(value) &&
-      Object.keys(value).length === 0,
-    'This operation takes no inputs.'
-  );
-
-  return {};
-}
 
 export function parseTrue(value: unknown): true {
   invariant(value === true, 'Expected a successful check.');
@@ -322,58 +318,103 @@ export type RegisteredQuery<Queries extends QueryDefinitions> = <
   options?: { limit?: Limit & QueryLimit<NoInfer<Limit>> }
 ) => Promise<QueryResult<QueryRow<Queries[Name]['projections']>>>;
 
-/** Infer operation data from run(). */
-export type OperationDefinition<
+type OperationRun<Input, Output, Queries extends QueryDefinitions> = (
+  context: Pick<OperationContext, 'signal'> & {
+    query: RegisteredQuery<NoInfer<Queries>>;
+  },
+  input: Input
+) => Promise<Output>;
+type OperationPolicy = DataOperation<unknown, unknown>['policy'];
+
+/** An operation that reads app filters. Its input has one field per filter, validated by
+ * the filters themselves; views derive their filters, scope, and period from it. */
+export type FilterOperationDefinition<
+  Filters extends FilterCollection,
+  Output,
+  Queries extends QueryDefinitions,
+> = {
+  /** The filters `run` reads. Omit for an operation without inputs. */
+  filters?: CheckedOperationFilters<Filters>;
+  input?: never;
+  checks?: never;
+  policy: OperationPolicy;
+  run: OperationRun<FilterInput<Filters>, Output, Queries>;
+};
+
+/** An operation with its own input, such as a detail destination's record id. */
+export type InputOperationDefinition<
   Input,
   Output,
   Queries extends QueryDefinitions,
-> = Omit<DataOperation<Input, Output>, 'run' | 'queryNames'> & {
-  run: (
-    context: Pick<OperationContext, 'signal'> & {
-      query: RegisteredQuery<NoInfer<Queries>>;
-    },
-    input: Input
-  ) => Promise<Output>;
+> = {
+  input: (value: unknown) => Input;
+  /** Representative valid inputs; each must pass `input`. */
+  checks: readonly [Input, ...Input[]];
+  filters?: never;
+  policy: OperationPolicy;
+  run: OperationRun<Input, Output, Queries>;
 };
+
+export type DefinedOperation<
+  Input,
+  Output,
+  Queries extends QueryDefinitions,
+  Filters extends FilterCollection | undefined = undefined,
+> = Omit<DataOperation<Input, Output>, 'queryNames' | 'filters'> & {
+  queryNames: { readonly [Name in keyof Queries & string]: Name };
+} & (Filters extends FilterCollection
+    ? { readonly filters: Filters }
+    : { readonly filters?: never });
 
 export function defineOperation<
   Input,
   Output,
   const Queries extends QueryDefinitions,
 >(
-  operation: OperationDefinition<Input, Output, Queries> & {
+  operation: InputOperationDefinition<Input, Output, Queries> & {
     queries: CheckedQueries<Queries>;
   }
-): Omit<DataOperation<Input, Output>, 'queryNames'> & {
-  queryNames: { readonly [Name in keyof Queries & string]: Name };
-} {
+): DefinedOperation<Input, Output, Queries>;
+export function defineOperation<
+  const Queries extends QueryDefinitions,
+  const Filters extends FilterCollection = {},
+  Output = unknown,
+>(
+  operation: FilterOperationDefinition<Filters, Output, Queries> & {
+    queries: CheckedQueries<Queries>;
+  }
+): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>;
+export function defineOperation(
+  operation: (
+    | FilterOperationDefinition<FilterCollection, unknown, QueryDefinitions>
+    | InputOperationDefinition<unknown, unknown, QueryDefinitions>
+  ) & { queries: QueryDefinitions }
+): any {
+  const { policy } = operation;
   invariant(
-    Array.isArray(operation.checks) &&
-      operation.checks.length > 0 &&
-      Number.isInteger(operation.policy.maxQueryRows) &&
-      operation.policy.maxQueryRows > 0 &&
-      operation.policy.maxQueryRows <= MAX_QUERY_ROWS &&
-      Number.isInteger(operation.policy.maxDurationMs) &&
-      operation.policy.maxDurationMs > 0 &&
-      (operation.policy.maxResponseBytes === undefined ||
-        (Number.isInteger(operation.policy.maxResponseBytes) &&
-          operation.policy.maxResponseBytes > 0)),
-    `Each data operation needs check inputs and positive row and duration limits, with at most ${MAX_QUERY_ROWS.toLocaleString('en-US')} rows.`
+    Number.isInteger(policy.maxQueryRows) &&
+      policy.maxQueryRows > 0 &&
+      policy.maxQueryRows <= MAX_QUERY_ROWS &&
+      Number.isInteger(policy.maxDurationMs) &&
+      policy.maxDurationMs > 0 &&
+      (policy.maxResponseBytes === undefined ||
+        (Number.isInteger(policy.maxResponseBytes) &&
+          policy.maxResponseBytes > 0)),
+    `Each data operation needs positive row and duration limits, with at most ${MAX_QUERY_ROWS.toLocaleString('en-US')} rows.`
   );
+  const contract = operationInputContract(operation);
   const queries = snapshotQueries(operation.queries);
   const queryNames = Object.fromEntries(
     Object.keys(queries).map(name => [name, name])
-  ) as { readonly [Name in keyof Queries & string]: Name };
-  for (const input of operation.checks) operation.input(input);
+  );
 
-  const defined: Omit<DataOperation<Input, Output>, 'queryNames'> & {
-    queryNames: { readonly [Name in keyof Queries & string]: Name };
-  } = {
-    ...operation,
+  const defined: DataOperation<unknown, unknown> = {
+    ...contract,
+    policy,
     queryNames,
     async run(context, input) {
-      async function query<Name extends keyof Queries & string>(
-        name: Name,
+      async function query(
+        name: string,
         values: Record<
           string,
           | import('../core/queries.ts').QueryParameterValue
@@ -392,28 +433,59 @@ export function defineOperation<
         const result = await context.lakehouse.queryAll(definition.statement, {
           name,
           params,
-          limit: options?.limit ?? operation.policy.maxQueryRows,
+          limit: options?.limit ?? policy.maxQueryRows,
           signal: context.signal,
         });
-        return decodeQueryResult<Queries[Name]['projections']>(
-          result,
-          definition.projections
-        );
+        return decodeQueryResult(result, definition.projections);
       }
-      await validateFilterInput(operation.input, input, query);
+      if (contract.filters)
+        await validateSourceMembers(contract.filters, input, query);
       context.signal.throwIfAborted();
-      return operation.run({ signal: context.signal, query }, input);
+      return operation.run(
+        { signal: context.signal, query: query as never },
+        input as never
+      );
     },
   };
   attachDimensionSelectors(defined, queries);
   return defined;
 }
 
+/** Filter operations derive their parser and checks; others supply both. */
+function operationInputContract(
+  operation:
+    | FilterOperationDefinition<FilterCollection, unknown, QueryDefinitions>
+    | InputOperationDefinition<unknown, unknown, QueryDefinitions>
+): Pick<DataOperation<unknown, unknown>, 'input' | 'checks' | 'filters'> {
+  if (operation.input) {
+    invariant(
+      !operation.filters,
+      'An operation reads filters or parses its own input, not both.'
+    );
+    const { input, checks } = operation;
+    invariant(
+      Array.isArray(checks) && checks.length > 0,
+      'An operation with its own input needs check inputs.'
+    );
+    for (const check of checks) input(check);
+    return { input, checks };
+  }
+  const filters = defineOperationFilters(operation.filters ?? {});
+  return {
+    filters,
+    input: value => parseFilterInput(filters, value),
+    checks: [defaultFilterInput(filters)],
+  };
+}
+
 /** The built-in connection operation shares one contract with setup clients. */
 export type ConnectionOperation = Omit<
   DataOperation<Record<string, never>, true>,
-  'queryNames'
-> & { queryNames: { readonly connection: 'connection' } };
+  'queryNames' | 'filters'
+> & {
+  readonly filters: {};
+  queryNames: { readonly connection: 'connection' };
+};
 
 /** A connectivity probe uses the app's registered connection query. */
 export function connectionCheck<
@@ -426,8 +498,6 @@ export function connectionCheck<
     queries: { connection } as CheckedQueries<{
       connection: QueryDefinitions[string];
     }>,
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 1, maxDurationMs: 15_000 },
     async run({ query }): Promise<true> {
       await query('connection');
@@ -464,7 +534,29 @@ export type {
   BooleanFilter,
 } from '../core/filters.ts';
 
-export { filterInput } from '../core/dimension-source.ts';
+export {
+  searchFilter,
+  choiceFilter,
+  displayChoice,
+  multiChoiceFilter,
+  dateRangeFilter,
+} from '../core/app-filters.ts';
+export type {
+  AppFilter,
+  FilterValues,
+  SearchFilter,
+  ChoiceFilter,
+  ChoiceOption,
+  MultiChoiceFilter,
+  DateRangeFilter,
+  DateRangeFilterOptions,
+  DateRangeSelection,
+  FilterCollection,
+  FilterPresentation,
+} from '../core/app-filters.ts';
+export { facetFilter } from '../core/facet-filter.ts';
+export type { FacetFilter } from '../core/facets.ts';
+export type { FilterInput } from '../core/operation-filters.ts';
 
 export {
   dateTimeRangeFilter,

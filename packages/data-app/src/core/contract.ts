@@ -1,6 +1,5 @@
 /** Operation authoring and delivery contracts; portable across runtimes. */
 export {
-  parseEmptyInput,
   parseTrue,
   previousDateRange,
   defineDateRangeContract,
@@ -18,7 +17,12 @@ export {
   booleanFilter,
   parseNumberSelection,
   parseBooleanSelection,
-  filterInput,
+  searchFilter,
+  choiceFilter,
+  displayChoice,
+  multiChoiceFilter,
+  dateRangeFilter,
+  facetFilter,
 } from '../authoring/contract.ts';
 export type {
   DateRangeRequest,
@@ -28,7 +32,6 @@ export type {
   DateTimeRangeContract,
   DateTimeRangeRequest,
   RegisteredQuery,
-  OperationDefinition,
   ConnectionOperation,
   QueryDefinitions,
   QueryParameters,
@@ -52,6 +55,22 @@ export type {
   NumberFilter,
   BooleanSelection,
   BooleanFilter,
+  AppFilter,
+  FilterValues,
+  SearchFilter,
+  ChoiceFilter,
+  ChoiceOption,
+  MultiChoiceFilter,
+  DateRangeFilter,
+  DateRangeFilterOptions,
+  DateRangeSelection,
+  FilterCollection,
+  FilterPresentation,
+  FacetFilter,
+  FilterInput,
+  DefinedOperation,
+  FilterOperationDefinition,
+  InputOperationDefinition,
 } from '../authoring/contract.ts';
 export type {
   Lakehouse,

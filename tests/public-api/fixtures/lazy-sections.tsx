@@ -6,70 +6,89 @@ import {
   DataSection,
   injectDataAppStyles,
   mountDataApp,
-  searchFilter,
   Stack,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
+import {
+  searchFilter,
+  type DataOperation,
+  type FilterInput,
+} from '@altertable/data-app/contract';
 import { Component, type ReactNode } from 'react';
 
-type RegionCount = DataOperation<{ region: string }, { count: number }>;
-
-/** The transport stands in for the network and records each request as `name:region`.
- * `?failing=<operation>`, or later `document.body.dataset.failing`, makes that operation fail. */
-const client = createDataClient<{
+const regionFilters = {
+  region: searchFilter({ key: 'region', label: 'Region', defaultValue: '' }),
+};
+type RegionCount = DataOperation<
+  FilterInput<typeof regionFilters>,
+  { count: number }
+> & { filters: typeof regionFilters };
+type Operations = {
   summary: RegionCount;
   trend: RegionCount;
   breakdown: RegionCount;
-}>({
-  async transport(name, input) {
-    const { region } = input as { region: string };
-    const requests = document.body.dataset.requests;
-    document.body.dataset.requests = [requests, `${name}:${region}`]
-      .filter(Boolean)
-      .join(' ');
-    const failing =
-      document.body.dataset.failing ??
-      new URLSearchParams(location.search).get('failing');
-    if (failing === name) return { status: 503, body: {} };
-    return {
-      status: 200,
-      body: {
-        data: { count: region.length },
-        requestId: `${name}:${region}`,
-        queriedAt: '2026-11-05T00:00:00Z',
-        queryIds: [],
-        queries: [{ name, statement: `SELECT ${name}` }],
-      },
-    };
-  },
-});
-const { defineDataView, defineFilters } = createDataHooks(client);
+};
+const operationFilters = {
+  summary: regionFilters,
+  trend: regionFilters,
+  breakdown: regionFilters,
+};
+
+/** The transport stands in for the network and records each request as `name:region`.
+ * `?failing=<operation>`, or later `document.body.dataset.failing`, makes that operation fail. */
+async function transport(name: string, input: unknown) {
+  const { region } = input as FilterInput<typeof regionFilters>;
+  const requests = document.body.dataset.requests;
+  document.body.dataset.requests = [requests, `${name}:${region}`]
+    .filter(Boolean)
+    .join(' ');
+  const failing =
+    document.body.dataset.failing ??
+    new URLSearchParams(location.search).get('failing');
+  if (failing === name) return { status: 503, body: {} };
+  return {
+    status: 200,
+    body: {
+      data: { count: region.length },
+      requestId: `${name}:${region}`,
+      queriedAt: '2026-11-05T00:00:00Z',
+      queryIds: [],
+      queries: [{ name, statement: `SELECT ${name}` }],
+    },
+  };
+}
+const search = new URLSearchParams(location.search);
+const { defineView } = createDataHooks(
+  createDataClient<Operations>({ filters: operationFilters, transport })
+);
+/** `?other-client` declares the breakdown view on a second client, whose filter
+ * controls `<DataApp>` does not own. */
+const breakdownHooks = search.has('other-client')
+  ? createDataHooks(
+      createDataClient<Operations>({ filters: operationFilters, transport })
+    )
+  : { defineView };
 const dataContext = createDataContext({
   summary: 'summary',
   trend: 'trend',
   breakdown: 'breakdown',
 })({ description: 'One operation per section', glossary: {} });
-const filters = defineFilters({
-  region: searchFilter({ key: 'region', label: 'Region', defaultValue: '' }),
-});
 
 const sectionOptions = {
   dataContext,
-  filters,
   describeInput: ({ region }: { region: string }) => region || 'all regions',
 };
-const summaryView = defineDataView({
+const summaryView = defineView({
   ...sectionOptions,
   operation: 'summary',
   emptyFallback: { title: 'No summary' },
 });
-const trendView = defineDataView({
+const trendView = defineView({
   ...sectionOptions,
   operation: 'trend',
   emptyFallback: { title: 'No trend' },
 });
-const breakdownView = defineDataView({
+const breakdownView = breakdownHooks.defineView({
   ...sectionOptions,
   operation: 'breakdown',
   emptyFallback: { title: 'No breakdown' },
@@ -110,11 +129,8 @@ const breakdownCounts = breakdownView.dataset({
   evidence: { id: 'breakdown', queryNames: ['breakdown'] },
 });
 
-const search = new URLSearchParams(location.search);
 /** `?summary` lets the story and export read the far-away breakdown section. */
 const summarizesBreakdown = search.has('summary');
-/** `?without-app-filters` omits `<DataApp filters>`, which the sections' views need. */
-const appFilters = search.has('without-app-filters') ? undefined : filters;
 
 /** Shows authoring invariants as text so tests can read them. */
 class AuthoringBoundary extends Component<
@@ -148,7 +164,6 @@ function App() {
       {summarizesBreakdown ? (
         <DataApp
           view={summaryView}
-          filters={appFilters}
           summaryViews={[breakdownView]}
           datasets={[breakdownCounts]}
           story={(_summary, breakdown) => [
@@ -163,9 +178,7 @@ function App() {
           {sections}
         </DataApp>
       ) : (
-        <DataApp view={summaryView} filters={appFilters}>
-          {sections}
-        </DataApp>
+        <DataApp view={summaryView}>{sections}</DataApp>
       )}
     </AuthoringBoundary>
   );

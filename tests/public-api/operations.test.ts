@@ -51,7 +51,7 @@ test('operation declarations retain runtime validation for unchecked check array
       // @ts-expect-error JavaScript callers can bypass the nonempty tuple contract.
       checks: [],
     })
-  ).toThrow('Each data operation needs check inputs');
+  ).toThrow('An operation with its own input needs check inputs.');
   for (const maxQueryRows of [0, -1, 1.5, Infinity, NaN]) {
     expect(() =>
       defineOperation({

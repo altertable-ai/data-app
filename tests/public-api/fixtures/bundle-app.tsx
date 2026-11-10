@@ -1,6 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import { ExternalLink, injectDataAppStyles } from '@altertable/data-app-react';
-import { mountDataApp, searchFilter } from '@altertable/data-app-react';
+import { mountDataApp } from '@altertable/data-app-react';
 import { DataApp, useAppFilters } from '@altertable/data-app-react/ui';
 import {
   createMessageClient,
@@ -14,6 +14,7 @@ import {
 } from '@altertable/data-app/client';
 import {
   connectionCheck,
+  searchFilter,
   type ConnectionOperation,
 } from '@altertable/data-app/contract';
 import { Activity, useState } from 'react';

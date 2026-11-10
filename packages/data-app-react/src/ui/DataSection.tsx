@@ -49,7 +49,7 @@ export function DataSection<Data, Input>({
     | ViewResult<Data, Input>
     | undefined;
   if (!appResult) {
-    if (app) assertAppFilters(view, app.filters);
+    if (app) assertAppFilters(view, app.clientFilters);
     return <LazySection view={view} {...section} {...presentation} />;
   }
   // The app reports the primary view's request state for the whole page.

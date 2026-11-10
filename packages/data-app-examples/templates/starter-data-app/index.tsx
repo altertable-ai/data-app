@@ -11,10 +11,9 @@ import {
   injectDataAppStyles,
   mountDataApp,
   MetricWidget,
-  searchFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import { parseCount } from '@altertable/data-app/contract';
+import { parseCount, searchFilter } from '@altertable/data-app/contract';
 import { formatMetric } from '@altertable/data-app/format';
 
 const dataApp = defineDataApp({
@@ -48,25 +47,12 @@ WHERE $groupName = '' OR group_name = $groupName`,
     },
   },
 });
-function parseSampleCountFilter(value: unknown) {
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    !('groupName' in value) ||
-    typeof value.groupName !== 'string' ||
-    value.groupName.length > 40
-  )
-    throw new Error('Expected a group name of at most 40 characters.');
-  return { groupName: value.groupName };
-}
+// Declare each filter once; operations list the filters they read, and views,
+// controls, and scope derive from them.
+const groupName = searchFilter({ key: 'group', label: 'Group' });
 const operations = {
   sampleCountsByGroup: dataApp.defineOperation({
-    input: parseSampleCountFilter,
-    checks: [
-      { groupName: '' },
-      { groupName: 'Alpha' },
-      { groupName: 'missing' },
-    ],
+    filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const queryResult = await query('sampleCountsByGroup', { groupName });
@@ -77,12 +63,7 @@ const operations = {
     },
   }),
   sampleTotal: dataApp.defineOperation({
-    input: parseSampleCountFilter,
-    checks: [
-      { groupName: '' },
-      { groupName: 'Alpha' },
-      { groupName: 'missing' },
-    ],
+    filters: { groupName },
     policy: { maxQueryRows: 1, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const queryResult = await query('sampleTotal', { groupName });
@@ -106,21 +87,10 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineDataView, defineFilters } = createDataHooks(
-  createDataClient({ operations })
-);
-// Declare filters once; each widget's view reads them, and <DataApp> renders their controls.
-const filters = defineFilters({
-  groupName: searchFilter({ key: 'group', label: 'Group', defaultValue: '' }),
-});
-function describeGroup({ groupName }: { groupName: string }) {
-  return groupName ? `group ${groupName}` : 'all groups';
-}
-const sampleCountsView = defineDataView({
+const { defineView } = createDataHooks(createDataClient({ operations }));
+const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  filters,
-  describeInput: describeGroup,
   isEmpty: sampleCounts => sampleCounts.length === 0,
   emptyFallback: {
     title: 'No matching groups',
@@ -140,11 +110,9 @@ const sampleCounts = sampleCountsView.dataset({
     glossaryIds: ['sampleCount'],
   },
 });
-const sampleTotalView = defineDataView({
+const sampleTotalView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleTotal',
-  filters,
-  describeInput: describeGroup,
 });
 const totalSamples = sampleTotalView.metric(
   {
@@ -182,7 +150,6 @@ function App() {
   return (
     <DataApp
       view={sampleCountsView}
-      filters={filters}
       summaryViews={[sampleTotalView]}
       datasets={[sampleCounts]}
       story={(countsSnapshot, totalSnapshot) => {

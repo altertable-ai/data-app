@@ -3,7 +3,6 @@ import { extractDataAppManifest } from '@altertable/data-app-manifest';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   dateTimeRangeFilter,
-  filterInput,
   parseDateTimeRange,
   parseDateTimeBound,
   formatDateTimeBound,
@@ -58,7 +57,7 @@ test('datetime variables preserve relative intent and restore absolute values ac
   expect(serializeDateTimeRange(relative)).toBe(JSON.stringify(relative));
 });
 
-test('filterInput rehydrates dates and a registered query binds a range without app conversion', async () => {
+test('an operation reading a datetime filter rehydrates dates and a registered query binds the range without app conversion', async () => {
   const period = dateTimeRangeFilter({ key: 'period', defaultValue: '7d' });
   const app = defineDataApp({
     title: 'Datetime',
@@ -72,10 +71,8 @@ test('filterInput rehydrates dates and a registered query binds a range without 
       },
     },
   });
-  const input = filterInput(() => ({}), { period });
   const operation = app.defineOperation({
-    input,
-    checks: [{ period: relative }],
+    filters: { period },
     policy: { maxQueryRows: 10, maxDurationMs: 1000 },
     async run({ query }, values) {
       return (await query('events', values)).rows;
@@ -99,6 +96,7 @@ test('filterInput rehydrates dates and a registered query binds a range without 
   expect(sent?.statement).not.toContain('$period.from');
   expect(sent?.statement).toContain('localtimestamp');
   expect(sent?.params).toEqual({ period: JSON.stringify(relative) });
+  const { input } = operation;
   const absolute = {
     period: {
       from: '2026-01-01T16:00:00.000Z',
@@ -437,8 +435,7 @@ test('nonpositive fixed relative ranges are rejected by variables and HTTP input
     },
   });
   const operation = dataApp.defineOperation({
-    input: filterInput(() => ({}), { period }),
-    checks: [{ period: period.defaultValue }],
+    filters: { period },
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run({ query }, input) {
       return (await query('events', input)).rows;

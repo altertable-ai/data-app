@@ -1,154 +1,40 @@
 import {
   parseDateTimeRange,
-  serializeDateTimeRange,
   formatDateTimeRange,
   type DateTimeRangeComparisonRequest,
-  type DateTimeRangeComparisonFilter,
   type DateRangeRequest,
 } from '@altertable/data-app/contract';
-import type {
-  AppFilter,
-  FilterValues,
-  DateRangeFilter,
-  FilterCollection,
+import {
+  dateFilterName,
+  type AppFilter,
+  type FilterCollection,
+  type FilterInput,
 } from '@altertable/data-app/internal';
-import { invariant } from '@altertable/data-app/internal';
 
-import type { Filters } from './filter-set.ts';
 import type { DataContext } from './ui/data-context.ts';
 import type { EmptyContent } from './ui/presentation.ts';
 
-type ResolvedFilter<Filter> = Filter extends DateTimeRangeComparisonFilter
-  ? DateTimeRangeComparisonRequest
-  : Filter extends DateRangeFilter
-    ? DateRangeRequest
-    : FilterValues<{ value: Filter }>['value'];
-export type ResolvedFilters<Collection extends FilterCollection> = {
-  [Key in keyof Collection]:
-    | ResolvedFilter<Collection[Key]>
-    | (string extends keyof Collection ? undefined : never);
-};
-
-type DateFilterKey<Collection extends FilterCollection> = {
-  [Key in keyof Collection]: Collection[Key] extends
-    | DateRangeFilter
-    | DateTimeRangeComparisonFilter
-    ? Key
-    : never;
-}[keyof Collection] &
-  string;
-
-/** Extract the selected range and comparison unchanged, including from nested inputs. */
-export type ViewDate<Collection extends FilterCollection, Input> = {
-  filter: DateFilterKey<Collection>;
-  input: (input: Input) => DateRangeRequest | DateTimeRangeComparisonRequest;
-};
-
-/** Read filter values from a custom operation input; omitted keys use top-level fields. */
-export type ViewBindings<Collection extends FilterCollection, Input> = Partial<{
-  [Key in keyof Collection]: (input: Input) => ResolvedFilters<Collection>[Key];
-}>;
-
-type RequiredFilterBindingKeys<Collection extends FilterCollection, Input> = {
-  [Key in keyof Collection]: Collection[Key]['kind'] extends
-    | 'dateRange'
-    | 'dateTimeRangeComparison'
-    ? never
-    : Collection[Key]['kind'] extends 'choice'
-      ? [Input] extends [Record<Key, unknown>]
-        ? ResolvedFilters<Collection>[Key] extends Input[Key]
-          ? never
-          : Key
-        : Key
-      : Extract<
-            Collection[Key]['presentation'],
-            { group: 'display' }
-          > extends never
-        ? [Input] extends [Record<Key, ResolvedFilters<Collection>[Key]>]
-          ? [ResolvedFilters<Collection>[Key]] extends [Input[Key]]
-            ? never
-            : Key
-          : Key
-        : never;
-}[keyof Collection];
-
-/** Derive compatible top-level filter bindings; require readers for other input shapes. */
-export type ViewBindingOptions<
-  Collection extends FilterCollection,
-  Input,
-  AdditionalRequired extends keyof Collection = never,
-> = [
-  RequiredFilterBindingKeys<Collection, Input> | AdditionalRequired,
-] extends [never]
-  ? { bindings?: ViewBindings<Collection, Input> }
-  : {
-      bindings: ViewBindings<Collection, Input> & {
-        [
-          Key in
-            | RequiredFilterBindingKeys<Collection, Input>
-            | AdditionalRequired
-        ]-?: (input: Input) => ResolvedFilters<Collection>[Key];
-      };
-    };
-
-type SameViewInput<Collection extends FilterCollection, Input> = [
-  ResolvedFilters<Collection>,
-] extends [Input]
-  ? [Input] extends [
-      {
-        [Key in keyof Collection]: Collection[Key]['kind'] extends 'choice'
-          ? string
-          : ResolvedFilters<Collection>[Key];
-      },
-    ]
-    ? [Input] extends [Record<string, never>]
-      ? true
-      : [keyof Input] extends [keyof Collection]
-        ? true
-        : false
-    : false
-  : false;
-type ViewInputMapping<Collection extends FilterCollection, Input> =
-  SameViewInput<Collection, Input> extends true
-    ? { input?: (values: ResolvedFilters<Collection>) => Input }
-    : { input: (values: ResolvedFilters<Collection>) => Input };
-
-export type DataViewDefinition<
-  Name extends string,
-  Collection extends FilterCollection,
-  Input,
-  Data,
-> = {
+export type ViewDefinition<Name extends string, Input, Data> = {
   operation: Name;
   dataContext: DataContext;
-  /** The app's `defineFilters()` result, or a `pick()` of the filters this view reads. */
-  filters?: Filters<Collection>;
-} & ViewEmptiness<Data> &
-  ViewInputMapping<NoInfer<Collection>, Input> &
-  ViewBindingOptions<NoInfer<Collection>, Input> &
-  (
-    | {
-        date: ViewDate<Collection, Input>;
-        describeInput?: (input: Input) => string;
-      }
-    | { date?: never; describeInput: (input: Input) => string }
-  );
+  /** Describe the displayed scope in prose. Defaults to the reporting period and each
+   * narrowed filter, such as `Mar 1–7, 2026 UTC · group Alpha`, or `all data`. */
+  describeInput?: (input: Input) => string;
+} & ViewEmptiness<Data>;
 
-export type ResolvedDataViewDefinition<
+/** A view with everything derived from its operation's filters. */
+export type ResolvedViewDefinition<
   Name extends string,
-  Collection extends FilterCollection,
-  Input,
+  Filters extends FilterCollection,
   Data,
-> = Omit<
-  DataViewDefinition<Name, Collection, Input, Data>,
-  'filters' | 'input'
-> &
-  Required<ViewEmptiness<Data>> & {
-    filters: Collection;
-    /** The declaration the view reads, so `<DataApp>` can check it renders the controls. */
-    filterSet?: Filters<Collection>;
-    input: (values: ResolvedFilters<Collection>) => Input;
-  };
+> = Required<ViewEmptiness<Data>> & {
+  operation: Name;
+  dataContext: DataContext;
+  filters: Filters;
+  describeInput: (input: FilterInput<Filters>) => string;
+  /** The operation's date filter, which sets the reporting period. */
+  dateFilter?: keyof Filters & string;
+};
 
 /** Omit both for a result that is never empty, such as a total. */
 export type ViewEmptiness<Data> = {
@@ -168,139 +54,71 @@ export function resolveViewEmptiness<Data>(
   };
 }
 
-export function describeViewInput<Input>(definition: {
-  filters: FilterCollection;
-  bindings?: Partial<Record<string, (input: Input) => unknown>>;
-  date?: {
-    filter: string;
-    input: (input: Input) => DateRangeRequest | DateTimeRangeComparisonRequest;
+/** Derive a view from its operation's filters. */
+export function resolveViewDefinition<
+  Name extends string,
+  Filters extends FilterCollection,
+  Data,
+>(
+  definition: ViewDefinition<Name, FilterInput<Filters>, Data>,
+  filters: Filters
+): ResolvedViewDefinition<Name, Filters, Data> {
+  return {
+    operation: definition.operation,
+    dataContext: definition.dataContext,
+    filters,
+    dateFilter: dateFilterName(filters) as keyof Filters & string,
+    describeInput: definition.describeInput ?? describeFilterInput(filters),
+    ...resolveViewEmptiness(definition),
   };
-  describeInput?: (input: Input) => string;
-}): (input: Input) => string {
-  const date = definition.date;
-  const variable = date && definition.filters[date.filter];
-  invariant(
-    !date ||
-      variable?.kind === 'dateRange' ||
-      variable?.kind === 'dateTimeRangeComparison',
-    'The view date must reference a date range filter.'
-  );
-  if (definition.describeInput) return definition.describeInput;
-  invariant(date && variable, 'A view needs a date binding or describeInput.');
-  const dateBinding = date;
-
-  function describeInput(input: Input) {
-    const request = dateBinding.input(input);
-    const period =
-      variable?.kind === 'dateTimeRangeComparison'
-        ? formatDateTimeRange(parseDateTimeRange(request.range))
-        : (variable as DateRangeFilter).describeInput(
-            request as DateRangeRequest
-          );
-    const summaries = Object.entries(definition.filters)
-      .filter(([, variable]) =>
-        ['dimension', 'numberFilter', 'booleanFilter'].includes(variable.kind)
-      )
-      .map(([key, filter]) => {
-        const variable = filter as AppFilter<any>;
-        const selected = readViewBinding(definition, key, input);
-
-        return variable.valid(selected as never)
-          ? `${variable.label}: ${variable.describe?.(selected as never)}`
-          : null;
-      })
-      .filter(Boolean);
-
-    return [period, ...summaries].join(' · ');
-  }
-
-  return describeInput;
 }
 
-export function resolveViewInput<Collection extends FilterCollection, Input>(
-  definition: {
-    input: (values: ResolvedFilters<Collection>) => Input;
-    date?: ViewDate<Collection, Input>;
-    filters: Collection;
-    bindings?: ViewBindings<Collection, Input>;
-  },
-  values: ResolvedFilters<Collection>
-): Input {
-  const input = definition.input(values);
-  if (definition.date) {
-    const variable = definition.filters[definition.date.filter];
-    if (variable?.kind === 'dateTimeRangeComparison') {
-      const selected = values[
-        definition.date.filter
-      ] as DateTimeRangeComparisonRequest;
-      const mapped = definition.date.input(
-        input
-      ) as DateTimeRangeComparisonRequest;
-      invariant(
-        mapped &&
-          variable.same(selected.selection, mapped.selection) &&
-          selected.reference === mapped.reference &&
-          serializeDateTimeRange(selected.range) ===
-            serializeDateTimeRange(mapped.range) &&
-          (selected.comparison === null
-            ? mapped.comparison === null
-            : !!mapped.comparison &&
-              serializeDateTimeRange(selected.comparison) ===
-                serializeDateTimeRange(mapped.comparison)),
-        'The operation input must preserve the selected datetime range and comparison.'
-      );
-    } else {
-      const selected = values[definition.date.filter] as DateRangeRequest;
-      const mapped = definition.date.input(input) as DateRangeRequest;
-      invariant(
-        mapped && mapped.range && 'comparison' in mapped,
-        'The operation input must preserve the selected date range and comparison.'
-      );
+function lowerFirst(text: string) {
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
 
-      function sameRange(
-        a: DateRangeRequest['comparison'],
-        b: DateRangeRequest['comparison']
-      ) {
-        return (
-          a === b || (!!a && !!b && a.start === b.start && a.end === b.end)
+/** The reporting period, then each scope filter narrowed from its unrestricted value. */
+function describeFilterInput<Filters extends FilterCollection>(
+  filters: Filters
+): (input: FilterInput<Filters>) => string {
+  return input => {
+    const parts: string[] = [];
+    for (const [name, filter] of Object.entries(filters)) {
+      const value = (input as Record<string, unknown>)[name];
+      if (filter.kind === 'dateRange')
+        parts.unshift(filter.describeInput(value as DateRangeRequest));
+      else if (filter.kind === 'dateTimeRangeComparison')
+        parts.unshift(
+          formatDateTimeRange(
+            parseDateTimeRange((value as DateTimeRangeComparisonRequest).range)
+          )
+        );
+      else if (filter.kind === 'dateTimeRange')
+        parts.unshift(filter.describe!(parseDateTimeRange(value)));
+      else if (filter.presentation?.group !== 'display') {
+        const scoped = filter as AppFilter<unknown>;
+        if (
+          scoped.clearValue !== undefined &&
+          scoped.same(value, scoped.clearValue)
+        )
+          continue;
+        parts.push(
+          `${lowerFirst(filter.label ?? name)} ${scoped.describe?.(value) ?? String(value)}`
         );
       }
-      invariant(
-        sameRange(selected.range, mapped.range) &&
-          sameRange(selected.comparison, mapped.comparison),
-        'The operation input must preserve the selected date range and comparison.'
-      );
     }
-  }
-
-  for (const [key, variable] of Object.entries(definition.filters)) {
-    if (
-      variable.kind === 'dateRange' ||
-      variable.kind === 'dateTimeRangeComparison' ||
-      (variable.presentation?.group === 'display' && variable.kind !== 'choice')
-    )
-      continue;
-    const filter = variable as AppFilter<any>;
-    const selected = values[key] as never;
-    const mapped = readViewBinding(definition, key, input);
-    invariant(
-      filter.valid(mapped as never) && filter.same(selected, mapped as never),
-      `The operation input must preserve the ${key} filter selection.`
-    );
-  }
-
-  return input;
+    // Scope reads inside sentences such as "Showing group Beta…".
+    return parts.join(' · ') || 'all data';
+  };
 }
 
-function readViewBinding<Input>(
-  definition: { bindings?: Partial<Record<string, (input: Input) => unknown>> },
-  key: string,
-  input: Input
-): unknown {
-  const read = definition.bindings?.[key];
-  if (read) return read(input);
-
-  return input && typeof input === 'object'
-    ? (input as Record<string, unknown>)[key]
-    : undefined;
+/** The operation input field holding the reporting period, if any. */
+export function readViewPeriod<Filters extends FilterCollection>(
+  definition: { filters: Filters; dateFilter?: keyof Filters & string },
+  input: FilterInput<Filters>
+): DateRangeRequest | DateTimeRangeComparisonRequest | undefined {
+  const name = definition.dateFilter;
+  if (!name || definition.filters[name]!.kind === 'dateTimeRange')
+    return undefined;
+  return input[name] as DateRangeRequest | DateTimeRangeComparisonRequest;
 }

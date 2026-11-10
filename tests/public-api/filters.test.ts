@@ -1,12 +1,10 @@
+import { useAppFilters } from '@altertable/data-app-react/ui';
 import {
   searchFilter,
   choiceFilter,
   multiChoiceFilter,
   dateRangeFilter,
   type FilterPresentation,
-} from '@altertable/data-app-react';
-import { useAppFilters } from '@altertable/data-app-react/ui';
-import {
   numberFilter,
   booleanFilter,
   parseNumberSelection,

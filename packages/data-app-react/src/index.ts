@@ -24,11 +24,6 @@ export {
   DataSection,
   UpdatedAt,
   DateTimeTooltip,
-  searchFilter,
-  choiceFilter,
-  displayChoice,
-  multiChoiceFilter,
-  dateRangeFilter,
   PeriodSummary,
   createDataContext,
   defineDataIdentifiers,
@@ -54,7 +49,6 @@ export type {
   CsvCell,
   DataAppProps,
   DataAppView,
-  Filters,
   StackProps,
   GridProps,
   GridItemProps,
@@ -77,16 +71,6 @@ export type {
   DataSectionProps,
   UpdatedAtProps,
   DateTimeTooltipProps,
-  AppFilter,
-  FilterPresentation,
-  FilterValues,
-  ChoiceOption,
-  ChoiceFilter,
-  MultiChoiceFilter,
-  SearchFilter,
-  DateRangeSelection,
-  DateRangeFilter,
-  DateRangeFilterOptions,
   ReportingPeriod,
   PeriodComparison,
   PeriodSummaryProps,
@@ -113,18 +97,6 @@ export {
 export type { AnnotationBarHandle, AnnotationBarProps } from './host/index.ts';
 
 export { ExternalLink, type ExternalLinkProps } from './authoring/index.ts';
-
-export {
-  dateTimeRangeFilter,
-  dateTimeRangePresets,
-  type DateTimeRangePreset,
-  type DateTimeRangeFilter,
-  type DateTimeRangeComparisonFilter,
-  type DateTimeRangeComparisonFilterOptions,
-  type DateTimeRangeComparisonSelection,
-  type DateTimeRangeComparisonRequest,
-  type DateTimeRangeFilterOptions,
-} from './authoring/index.ts';
 
 export {
   DateTimeRangePicker,

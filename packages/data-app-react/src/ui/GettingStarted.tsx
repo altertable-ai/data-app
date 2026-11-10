@@ -17,9 +17,9 @@ const connectionContext = registerContext({})({
 const client = /* @__PURE__ */ createDataClient<{
   connection: ConnectionOperation;
 }>();
-const { defineDataView } = /* @__PURE__ */ createDataHooks(client);
+const { defineView } = /* @__PURE__ */ createDataHooks(client);
 
-const connectionView = defineDataView({
+const connectionView = defineView({
   dataContext: connectionContext,
   operation: 'connection',
   describeInput: () => 'the connection',

@@ -6,19 +6,33 @@ import {
   DataSection,
   TextWidget,
   VisualizationWidget,
-  searchFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import type { DataTransport } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
+import {
+  searchFilter,
+  type DataOperation,
+  type FilterInput,
+} from '@altertable/data-app/contract';
 import { useState } from 'react';
 type TransportResponse = Awaited<ReturnType<DataTransport>>;
 
+const alphaFilters = {
+  version: searchFilter({
+    key: 'version',
+    label: 'Version',
+    defaultValue: '1',
+  }),
+};
+
 const pending = new Map<string, (response: TransportResponse) => void>();
 const client = createDataClient<{
-  alpha: DataOperation<{ version: string }, { count: number }>;
+  alpha: DataOperation<FilterInput<typeof alphaFilters>, { count: number }> & {
+    filters: typeof alphaFilters;
+  };
   beta: DataOperation<Record<string, never>, { count: number }>;
 }>({
+  filters: { alpha: alphaFilters },
   transport(name, input, signal) {
     const version =
       name === 'alpha' ? (input as { version: string }).version : 1;
@@ -39,24 +53,12 @@ const client = createDataClient<{
     });
   },
 });
-const hooks = createDataHooks(client);
+const { defineView } = createDataHooks(client);
 const context = createDataContext({ alpha: 'alpha', beta: 'beta' })({
   description: 'Declared views',
   glossary: {},
 });
-const filters = hooks.defineFilters({
-  version: searchFilter({
-    key: 'version',
-    label: 'Version',
-    defaultValue: '1',
-  }),
-});
-const alpha = hooks.defineDataView({
-  dataContext: context,
-  operation: 'alpha',
-  filters,
-  describeInput: input => `version ${input.version}`,
-});
+const alpha = defineView({ dataContext: context, operation: 'alpha' });
 const betaContext = createDataContext({ beta: 'beta' })({
   description: 'Independent beta context',
   glossary: {
@@ -67,11 +69,7 @@ const betaContext = createDataContext({ beta: 'beta' })({
     },
   },
 });
-const beta = hooks.defineDataView({
-  dataContext: betaContext,
-  operation: 'beta',
-  describeInput: () => 'beta',
-});
+const beta = defineView({ dataContext: betaContext, operation: 'beta' });
 const alphaDataset = alpha.dataset({
   name: 'Alpha',
   select: (data, input) => [{ ...data, version: input.version }],
@@ -157,7 +155,6 @@ export function DeclaredApp() {
   return (
     <DataApp
       view={alpha}
-      filters={filters}
       {...(new URLSearchParams(location.search).has('no-exports')
         ? {}
         : { story: () => [], datasets: [alphaDataset] as const })}

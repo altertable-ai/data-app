@@ -36,20 +36,17 @@ ORDER BY group_name LIMIT $limit`,
 
 Replace fixture SQL with inspected data. Keep query declarations and projections
 in sync when adapting SQL to the app's inputs. Preserve metric definitions.
-Keep operation inputs flat; derive SQL parameters inside `run()`:
+List the [filters](filters.md) an operation reads; `run()` receives one flat
+field per filter, and you derive SQL parameters inside it:
 
 ```ts
-import { parseCount } from '@altertable/data-app/contract';
+import { parseCount, searchFilter } from '@altertable/data-app/contract';
 
-// ... dataApp and parseSampleCountFilter
+// ... dataApp
+const groupName = searchFilter({ key: 'group', label: 'Group' });
 const operations = {
   sampleCountsByGroup: dataApp.defineOperation({
-    input: parseSampleCountFilter,
-    checks: [
-      { groupName: '' },
-      { groupName: 'Alpha' },
-      { groupName: 'missing' },
-    ],
+    filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const result = await query('sampleCountsByGroup', { groupName });
@@ -62,11 +59,12 @@ const operations = {
 };
 ```
 
-The starter supplies `parseSampleCountFilter()` and `parseCount()`. Validate
-unknown input in the parser and business rules in `run()`. Include representative
-valid inputs in `checks`. Derive results from `query()` rows without duplicate
-schemas or type assertions; clients and views infer the returned type.
-HTTP results must be JSON-serializable.
+The filters validate input and supply the operation's checks; enforce business
+rules in `run()`. Omit `filters` for an operation without inputs. An operation
+with its own input, such as a detail record ID, supplies an `input` parser and
+representative valid `checks` instead. Derive results from `query()` rows
+without duplicate schemas or type assertions; clients and views infer the
+returned type. HTTP results must be JSON-serializable.
 
 Host `queryParams` supplies protected parameters that callers cannot override.
 Other values come from `query()` arguments or defaults. The host/backend enforces
@@ -127,6 +125,5 @@ const calendar = defineDateRangeContract({
 });
 ```
 
-Use the shared contract in the [datetime filter workflow](filters.md#absolute-and-relative-datetime-ranges),
-including optional previous-period comparison. Calendar-only views share it with
-`calendar.parseRequest()` and `defineTimeView()`.
+Use the shared contract in a [reporting period](filters.md#reporting-periods)
+filter, including optional previous-period comparison.

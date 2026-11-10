@@ -1,17 +1,16 @@
+import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
   createDataContext,
-  choiceFilter,
-  displayChoice,
   MetricWidget,
   TableWidget,
   VisualizationWidget,
-  type FilterValues,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
+  choiceFilter,
   dimensionFilter,
-  type DataOperation,
+  displayChoice,
 } from '@altertable/data-app/contract';
 const region = dimensionFilter<string>({
   key: 'region',
@@ -47,31 +46,39 @@ const mode = choiceFilter({
   defaultValue: 'all',
   options: [{ id: 'all', label: 'All' }],
 });
-type Input = {
-  region: typeof region.defaultValue;
-  customer: typeof customer.defaultValue;
-  by: 'region' | 'customer';
-  sort: string;
-  mode: string;
-};
-const hooks =
-  createDataHooks(
-    createDataClient<{
-      sales: DataOperation<Input, { rows: { id: string; value: number }[] }>;
-    }>()
-  );
+const app = defineDataApp({
+  title: 'Exploration',
+  description: 'Explore sales.',
+  scope: { organization: 'demo', environment: 'test' },
+  queries: {},
+});
+const policy = { maxQueryRows: 10, maxDurationMs: 1000 };
+async function noRows(): Promise<{ rows: { id: string; value: number }[] }> {
+  return { rows: [] };
+}
+const hooks = createDataHooks(
+  createDataClient({
+    operations: {
+      sales: app.defineOperation({
+        filters: { region, customer, by, sort, mode },
+        policy,
+        run: noRows,
+      }),
+      strings: app.defineOperation({
+        filters: { region, by },
+        policy,
+        run: noRows,
+      }),
+    },
+  })
+);
 const context = createDataContext({ sales: 'sales' })({
   description: 'Sales',
   glossary: {
     total: { term: 'Total', definition: 'Total value.', queryNames: ['sales'] },
   },
 });
-const view = hooks.defineDataView({
-  operation: 'sales',
-  dataContext: context,
-  filters: hooks.defineFilters({ region, customer, by, sort, mode }),
-  describeInput: () => 'Sales',
-});
+const view = hooks.defineView({ operation: 'sales', dataContext: context });
 view.breakdown('by');
 // @ts-expect-error Only display choices can be chart breakdown targets.
 view.breakdown('region');
@@ -187,35 +194,31 @@ TableWidget({
   actions: metricActions,
 });
 
-const stringCollection = { region, by };
-const numberCollection = {
-  region: customer,
-  by: displayChoice({
-    key: 'by',
-    defaultValue: 'one',
-    options: [{ id: 'one', label: 'One' }],
-  }),
-};
-const targetHooks =
-  createDataHooks(
-    createDataClient<{
-      strings: DataOperation<FilterValues<typeof stringCollection>, unknown>;
-      numbers: DataOperation<FilterValues<typeof numberCollection>, unknown>;
-    }>()
-  );
-const definition = {
-  dataContext: context,
-  describeInput: () => 'Targets',
-};
-const strings = targetHooks.defineDataView({
-  ...definition,
+const numberHooks = createDataHooks(
+  createDataClient({
+    operations: {
+      numbers: app.defineOperation({
+        filters: {
+          region: customer,
+          by: displayChoice({
+            key: 'by',
+            defaultValue: 'one',
+            options: [{ id: 'one', label: 'One' }],
+          }),
+        },
+        policy,
+        run: noRows,
+      }),
+    },
+  })
+);
+const strings = hooks.defineView({
   operation: 'strings',
-  filters: targetHooks.defineFilters(stringCollection),
+  dataContext: context,
 });
-const numbers = targetHooks.defineDataView({
-  ...definition,
+const numbers = numberHooks.defineView({
   operation: 'numbers',
-  filters: targetHooks.defineFilters(numberCollection),
+  dataContext: context,
 });
 const stringFilter = strings.filter();
 const numberFilter = numbers.filter();

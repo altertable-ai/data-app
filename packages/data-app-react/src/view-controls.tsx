@@ -11,6 +11,10 @@ import {
   parseFacetOptions,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
+import {
+  resolveFilterInput,
+  type FilterInput,
+} from '@altertable/data-app/internal';
 import { facetSource, type FacetFilter } from '@altertable/data-app/internal';
 import {
   dimensionSource,
@@ -21,7 +25,6 @@ import { type DimensionSelectionFilter } from '@altertable/data-app/internal';
 import { useQueries } from '@tanstack/react-query';
 import { useContext, useReducer, useState, type ReactNode } from 'react';
 
-import type { FilterControls } from './filter-set.ts';
 import {
   SearchSuggestionsContext,
   balanceSearchSuggestions,
@@ -46,7 +49,7 @@ import {
   ViewControlBar,
   type ActiveFilterControl,
 } from './view-control-bar.tsx';
-import type { ResolvedFilters } from './view.ts';
+import type { FilterControls } from './view-runtime.tsx';
 
 /** A view's URL-backed filter values, resolved for its operation input. */
 export function useFilterValues<Collection extends FilterCollection>(
@@ -77,19 +80,11 @@ export function useFilterValues<Collection extends FilterCollection>(
   const hasComparison = Object.values(definitions).some(
     variable => variable.kind === 'dateTimeRangeComparison'
   );
-  const resolved = {} as ResolvedFilters<Collection>;
-  for (const name of Object.keys(definitions) as (keyof Collection &
-    string)[]) {
-    const definition = definitions[name]!;
-    const value = filters.values[name];
-    resolved[name] = (
-      definition.kind === 'dateTimeRangeComparison'
-        ? definition.input(value as DateTimeRangeComparisonSelection, reference)
-        : definition.kind === 'dateRange'
-          ? definition.input(value as DateRangeSelection)
-          : value
-    ) as ResolvedFilters<Collection>[typeof name];
-  }
+  const resolved: FilterInput<Collection> = resolveFilterInput(
+    definitions,
+    filters.values,
+    reference
+  );
 
   return {
     ...filters,
@@ -103,10 +98,11 @@ export function useFilterValues<Collection extends FilterCollection>(
   };
 }
 
-/** Controls for every declared filter. URL values resolve before facets; facet keys
- * include their dependent inputs for cached, bounded loading. */
+/** Controls for every declared filter. URL values resolve before facets; a facet's
+ * options follow its operation's filters, which key its cached, bounded loading. */
 export function useFilterControls<Collection extends FilterCollection>(
   definitions: Collection,
+  operationFilters: Readonly<Record<string, FilterCollection>>,
   clientScope: string,
   loadFacet: (
     operation: string,
@@ -117,7 +113,7 @@ export function useFilterControls<Collection extends FilterCollection>(
   const filters = useFilterValues(definitions);
   const resolved = filters.resolved;
   const facets = Object.entries(definitions).filter(
-    (entry): entry is [string, FacetFilter<any, any, string, unknown>] =>
+    (entry): entry is [string, FacetFilter<any, string>] =>
       entry[1].kind === 'dimension' &&
       entry[1].optionsSource === 'query' &&
       facetSource in entry[1]
@@ -128,12 +124,22 @@ export function useFilterControls<Collection extends FilterCollection>(
   );
   const optionSources = [
     ...facets.map(([name, filter]) => {
-      const facet = filter[facetSource];
+      const operation = filter[facetSource].operation;
+      // The options operation may read this facet too; it lists every member.
+      const values: Record<string, unknown> = {
+        ...resolved,
+        [name]: { kind: 'all' },
+      };
       return {
         name,
         filter,
-        operation: facet.operation,
-        input: facet.input({ ...resolved, [name]: { kind: 'all' } }),
+        operation,
+        input: Object.fromEntries(
+          Object.keys(operationFilters[operation] ?? {}).map(key => [
+            key,
+            values[key],
+          ])
+        ),
       };
     }),
     ...sourceDimensions.map(([name, filter]) => ({

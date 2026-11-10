@@ -1,7 +1,4 @@
-import type {
-  DateTimeRangeComparisonRequest,
-  DateRangeRequest,
-} from '@altertable/data-app/contract';
+import type { DateTimeRangeComparisonRequest } from '@altertable/data-app/contract';
 import type {
   AppFilter,
   FilterValues,
@@ -11,7 +8,6 @@ import type { ChoiceFilter } from '@altertable/data-app/internal';
 import { invariant } from '@altertable/data-app/internal';
 
 import { searchParams, writeSearch } from './ui/search.ts';
-import { resolveViewInput, type ViewBindings } from './view.ts';
 
 declare const filterPatch: unique symbol;
 declare const breakdownValue: unique symbol;
@@ -30,15 +26,10 @@ export type FilterPatch<Collection extends FilterCollection> = Partial<{
     ? FilterValues<Collection>[Key]
     : never;
 }>;
+/** A view's filters; its operation input has one field per filter. */
 type TargetDefinition = {
   owner: object;
   filters: FilterCollection;
-  input: (values: any) => unknown;
-  bindings?: ViewBindings<any, any>;
-  date?: {
-    filter: string;
-    input: (input: any) => DateRangeRequest | DateTimeRangeComparisonRequest;
-  };
   key?: string;
 };
 const targets = new WeakMap<object, TargetDefinition>();
@@ -66,14 +57,8 @@ function breakdownDefinition(target: BreakdownTarget<any>) {
   invariant(definition, 'Invalid breakdown target.');
   return definition;
 }
-function readInput(definition: TargetDefinition, key: string, input: unknown) {
-  return (
-    definition.bindings?.[key]?.(input) ??
-    (definition.date?.filter === key
-      ? definition.date.input(input)
-      : undefined) ??
-    (input as Record<string, unknown>)?.[key]
-  );
+function readInput(key: string, input: unknown) {
+  return (input as Record<string, unknown>)[key];
 }
 function appliedValues(definition: TargetDefinition) {
   const params = searchParams();
@@ -85,17 +70,6 @@ function appliedValues(definition: TargetDefinition) {
   );
 }
 function commit(definition: TargetDefinition, values: Record<string, unknown>) {
-  // Apply the same preservation checks as the view before mutating its route.
-  const resolved = Object.fromEntries(
-    Object.entries(definition.filters).map(([name, variable]) => [
-      name,
-      variable.kind === 'dateRange' ||
-      variable.kind === 'dateTimeRangeComparison'
-        ? variable.input(values[name] as never)
-        : values[name],
-    ])
-  );
-  resolveViewInput<any, unknown>(definition, resolved);
   const changes = Object.assign(
     {},
     ...Object.entries(definition.filters).map(([name, variable]) =>
@@ -120,7 +94,7 @@ export function targetAvailable(
       if (!(target instanceof BreakdownTarget && key === definition.key))
         return true;
     }
-    const shown = readInput(definition, key, displayedInput);
+    const shown = readInput(key, displayedInput);
     if (variable.kind === 'dateTimeRangeComparison')
       return (
         !!shown &&
@@ -182,7 +156,7 @@ export function breakdownState(
   const value = (
     input === undefined
       ? values[definition.key!]
-      : readInput(definition, definition.key!, input)
+      : readInput(definition.key!, input)
   ) as string;
   return {
     variable,

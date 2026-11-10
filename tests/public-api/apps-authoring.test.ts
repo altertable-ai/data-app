@@ -156,7 +156,7 @@ describe('authoring', () => {
       .poll(() =>
         app
           .getByRole('main')
-          .getByText('Showing all groups', { exact: true })
+          .getByText('Showing all data', { exact: true })
           .isVisible()
       )
       .toBe(true);

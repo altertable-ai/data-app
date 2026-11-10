@@ -1,7 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
-  searchFilter,
   createDataContext,
   DataApp,
   DataSection,
@@ -14,18 +13,37 @@ import {
   type DataTransport,
 } from '@altertable/data-app/client';
 import {
+  facetFilter,
+  searchFilter,
   type DataOperation,
   type DimensionOption,
-  type DimensionSelection,
+  type FilterCollection,
+  type FilterInput,
 } from '@altertable/data-app/contract';
 import { useState } from 'react';
 
+const search = searchFilter({ key: 'search', label: 'Search categories' });
+const category = facetFilter({
+  key: 'category',
+  label: 'Category',
+  valueType: 'string',
+  selectionMode: 'single',
+  options: 'categories',
+});
+const filters = {
+  count: { search, category },
+  categories: { search },
+};
+type FilterOperation<Filters extends FilterCollection, Output> = DataOperation<
+  FilterInput<Filters>,
+  Output
+> & { filters: Filters };
 type Operations = {
-  count: DataOperation<
-    { category: DimensionSelection<string>; search: string },
-    number
+  count: FilterOperation<typeof filters.count, number>;
+  categories: FilterOperation<
+    typeof filters.categories,
+    DimensionOption<string>[]
   >;
-  categories: DataOperation<{ search: string }, DimensionOption<string>[]>;
 };
 const pending = new Map<
   string,
@@ -43,6 +61,7 @@ function response(data: unknown): Awaited<ReturnType<DataTransport>> {
 }
 function makeApp(id: string) {
   const client = createDataClient<Operations>({
+    filters,
     transport(operation, input, signal) {
       const search =
         input &&
@@ -70,25 +89,10 @@ function makeApp(id: string) {
       });
     },
   });
-  const hooks = createDataHooks(client);
-  const search = searchFilter({ key: 'search', label: 'Search categories' });
-  const category = hooks.defineFacetFilter({
-    key: 'category',
-    label: 'Category',
-    valueType: 'string',
-    selectionMode: 'single',
-    facet: {
-      context: { search },
-      operation: 'categories',
-      input: values => ({ search: values.search }),
-    },
-  });
-  const filters = hooks.defineFilters({ search, category });
-  const view = hooks.defineDataView({
+  const { defineView } = createDataHooks(client);
+  const view = defineView({
     operation: 'count',
     dataContext: context,
-    filters,
-    describeInput: () => `${id} scope`,
   });
   const dataset = view.dataset({
     name: 'Counts',
@@ -106,7 +110,7 @@ function makeApp(id: string) {
       )}
     </TextWidget>
   ));
-  return { filters, view, dataset, content };
+  return { view, dataset, content };
 }
 const a = makeApp('A');
 const b = makeApp('B');
@@ -118,13 +122,12 @@ const dataApp = defineDataApp({
 });
 function App() {
   const [selected, setSelected] = useState(a);
-  // <DataApp> renders the selected client's filters, so B's section, which reads
-  // B's filters, stays outside it to keep its own client while A is selected.
+  // <DataApp> renders the selected client's filter controls, so B's section, from
+  // B's client, stays outside it to keep its own client while A is selected.
   return (
     <>
       <DataApp
         view={selected.view}
-        filters={selected.filters}
         datasets={[selected.dataset]}
         story={() => []}
       >

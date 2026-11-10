@@ -82,7 +82,7 @@ AppearanceSettings.density: 'comfortable' | 'compact' | 'spacious'
 AppearanceSettings.cornerRadius: 'large' | 'medium' | 'none' | 'small'
 AppearanceSettings.elevation: 'flat' | 'raised' | 'subtle'
 AppearanceSettings.typography: { body: string; heading: string; }
-AppFilter (type, @altertable/data-app-react): <Value, Kind> — An app-owned value with one URL representation. Controls never parse or write routes.
+AppFilter (type, @altertable/data-app/contract): <Value, Kind> — An app-owned value with one URL representation. Controls never parse or write routes.
 AppFilter.kind: Kind
 AppFilter.label?: string
 AppFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' | undefined; }) — Display options (`displayChoice()`) change how results are shown, not which data is included.
@@ -185,14 +185,14 @@ CheckboxGroup.onChange: (values: string[]) => void
 CheckboxGroup.…: plus props inherited from React
 CheckboxGroupProps (type, @altertable/data-app-react/ui): = props listed as CheckboxGroup.*
 CheckboxProps (type, @altertable/data-app-react/ui): = props listed as Checkbox.*
-choiceFilter (function, @altertable/data-app-react): <const Options extends readonly ChoiceOption[]>(options: ChoiceOptions<Options>): ChoiceFilter<Options[number]['id']> — One choice that narrows the included data.
+choiceFilter (function, @altertable/data-app/contract): <const Options extends readonly ChoiceOption[]>(options: ChoiceOptions<Options>): ChoiceFilter<Options[number]['id']> — One choice that narrows the included data.
 choiceFilter.options.label?: string
 choiceFilter.options.key: string
 choiceFilter.options.history?: HistoryMode
 choiceFilter.options.presentation?: FilterPresentation
 choiceFilter.options.defaultValue: NoInfer<Options[number]['id']>
 choiceFilter.options.options: Options & (Options extends readonly [] ? never : unknown)
-ChoiceFilter (type, @altertable/data-app-react): <Value>
+ChoiceFilter (type, @altertable/data-app/contract): <Value>
 ChoiceFilter.kind: 'choice'
 ChoiceFilter.label?: string
 ChoiceFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' | undefined; }) — Display options (`displayChoice()`) change how results are shown, not which data is included.
@@ -206,7 +206,7 @@ ChoiceFilter.write: (value: Value) => Record<string, string | null>
 ChoiceFilter.valid: (value: Value) => boolean
 ChoiceFilter.same: (left: Value, right: Value) => boolean
 ChoiceFilter.options: readonly ChoiceOption[]
-ChoiceOption (type, @altertable/data-app-react, @altertable/data-app-react/ui)
+ChoiceOption (type, @altertable/data-app/contract, @altertable/data-app-react/ui)
 ChoiceOption.id: string
 ChoiceOption.label: string
 ChoiceOption.description?: string
@@ -277,22 +277,25 @@ ConnectionOperation.input: (value: unknown) => Record<string, never>
 ConnectionOperation.run: (context: OperationContext, input: Record<string, never>) => Promise<true>
 ConnectionOperation.checks: readonly [Record<string, never>, ...Record<string, never>[]]
 ConnectionOperation.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
+ConnectionOperation.filters: {}
 ConnectionOperation.queryNames: { readonly connection: 'connection'; }
 ControlBar (component, @altertable/data-app-react/ui): (props: ControlBarProps) — User-controlled inputs below the page header.
 ControlBar.children: ReactNode
 ControlBar.…: plus props inherited from React
 ControlBarProps (type, @altertable/data-app-react/ui): = props listed as ControlBar.*
-createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations>; <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : [ ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations> — Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. Named clients derive data from the declared operations' run return types.
-createDataClient.options.transport?: DataTransport [variant 1 of 2]
-createDataClient.options.endpoint?: string [variant 1 of 2]
-createDataClient.options.fetch?: typeof fetch [variant 1 of 2]
-createDataClient.options.operations: Operations [variant 2 of 2]
-createDataClient.options.lakehouse?: Lakehouse [variant 2 of 2]
+createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : keyof OperationFilters<Operations> extends never ? [ ] : [ options: never ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations>; <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations> — Named clients derive data from the declared operations' run return types. Without an operation contract, external operation data remains unknown.
 createDataClient.options.transport?: DataTransport
 createDataClient.options.endpoint?: string
 createDataClient.options.fetch?: typeof fetch
+createDataClient.options.operations: Operations [variant 1 of 2]
+createDataClient.options.lakehouse?: Lakehouse [variant 1 of 2]
+createDataClient.options.transport?: DataTransport [variant 2 of 2]
+createDataClient.options.endpoint?: string [variant 2 of 2]
+createDataClient.options.fetch?: typeof fetch [variant 2 of 2]
+createDataClient.options.filters?: OperationFilters<Operations> [variant 2 of 2] — Pass the same filter declarations the server operations read.
 createDataContext (function, @altertable/data-app-react): <const Names extends Record<string, string>>(queryNames: Names): <const Context extends Omit<DataContext, 'glossary'> & { glossary: Record<string, Omit<GlossaryEntry, 'queryNames'> & { queryNames?: Names[keyof Names][]; }>; }>(context: Context) => Context & { ...; } — Bind glossary query references and card evidence to the same registry.
-createDataHooks (function, @altertable/data-app-react): <Operations extends DataOperations>(client: DataClient<Operations>): { defineFilters: <const Collection extends FilterCollection>(collection: Collection & CheckedFilterDeclarations<NoInfer<Collection>> & (string extends NoInfer<keyof Collection> ? ... : { [Name in keyof NoInfer<Collection>]: ...; }… — Bind declared operations to URL filters, displayed readings, and request feedback.
+createDataHooks (function, @altertable/data-app-react): <Operations extends DataOperations>(client: DataClient<Operations>): { defineView: <Name extends ViewOperationName<Operations>, const Context extends AuthoringDataContext = AuthoringDataContext>(definition: { operation: Name; dataContext: DataContext; describeInput?: ((input: FilterInput<...>) => s… — Bind declared operations to URL filters, displayed readings, and request feedback. The client's operations declare their filters; `<DataApp>` renders their controls.
+createDataHooks.client.filters: Readonly<Record<string, FilterCollection>> — Each operation's filters; views derive their inputs and controls from them.
 createDataHooks.client.query: <Name extends keyof Operations & string>(this: void, name: Name & (true extends IsUnion<NoInfer<Name>, NoInfer<Name>> ? never : unknown), input: InputOf<Operations[NoInfer<Name>]>, options?: { ...; } | undefined) => Promise<...>
 CsvCell (type, @altertable/data-app-react): = string | number | boolean | null | undefined
 CsvExport (type, @altertable/data-app-react/ui): All distinct datasets in the displayed result; filename names the download.
@@ -311,8 +314,7 @@ DataApp.footerActions?: ReactNode
 DataApp.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
 DataApp.showSearch?: boolean — Show declared search controls. Defaults to true; hiding preserves their values.
 DataApp.showFilters?: boolean — Show declared filter controls, including display options. Defaults to true; hiding preserves their values.
-DataApp.view: DataAppView<Data, Input>
-DataApp.filters?: Filters<any> — The `defineFilters()` result every view reads from. `<DataApp>` renders its controls and owns their URL state. Omit when no view has filters.
+DataApp.view: DataAppView<Data, Input> — The headline view. `<DataApp>` renders the controls for every filter its client's operations read and owns their URL state.
 DataApp.summaryViews?: SummaryViews — Other views that the story and CSV export read, sharing `view`’s data context. They load with `view` instead of waiting for their sections to near the viewport.
 DataApp.showSearchSuggestions?: boolean — Show supplied datasets’ record suggestions on the first declared search. Defaults to true.
 DataApp.story?: ((snapshot: DisplayedSnapshot<Data, Input>, ...summaries: { [Index in keyof SummaryViews]: SnapshotOf<SummaryViews[Index]>; }) => StoryFindings) — Omit to leave presentation out of the toolbar. Receives `view`’s displayed snapshot, then one per summary view in `summaryViews` order.
@@ -343,7 +345,7 @@ DataAppDefinition.appearance?: AppearanceOptions — Omit to use the standard ap
 DataAppDefinition.dateFormatting?: { locale?: string | undefined; timeZone?: string | undefined; } — Shared date display defaults. Reporting views and individual fields may override the time zone.
 DataAppDefinition.queries: QuerySnapshot<Queries>
 DataAppDefinition.defineDimension: <const Type extends 'string' | 'number'>(config: DimensionSourceConfig<Type> & { source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>>; }; }) => SourceDimensionFilter<...>
-DataAppDefinition.defineOperation: <Input, Output>(operation: OperationDefinition<Input, Output, Queries>) => Omit<DataOperation<Input, Output>, 'queryNames'> & { ...; }
+DataAppDefinition.defineOperation: { <Input, Output>(operation: InputOperationDefinition<Input, Output, Queries>): DefinedOperation<Input, Output, Queries>; <const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDefinition<...>): DefinedOperation<...>; } — Parse a destination's own input, such as a record id, and list valid `checks`. Declare the filters the operation reads; its input, checks, and views derive from them.
 DataAppError (class, @altertable/data-app/client)
 DataAppError.code: string
 DataAppError.requestId?: string
@@ -390,6 +392,7 @@ DataIdentifierDefinition.kind: 'table' [variant 2 of 2]
 DataIdentifierDefinition.catalog: string [variant 2 of 2]
 DataIdentifierDefinition.schema: string [variant 2 of 2]
 DataOperation (type, @altertable/data-app/contract): <Input, Output> — The input parser runs in the operation executor's runtime: server for HTTP apps, browser for bundle apps. Browser validation does not replace backend authorization or query limits.
+DataOperation.filters?: Readonly<FilterCollection> — The app filters the operation reads; its input has one field per filter.
 DataOperation.input: (value: unknown) => Input
 DataOperation.run: (context: OperationContext, input: Input) => Promise<Output>
 DataOperation.checks: readonly [Input, ...Input[]]
@@ -528,7 +531,7 @@ DateRangeContract.comparison: (input: DateRange) => DateRange | null
 DateRangeContract.describeInput: (input: DateRange) => string
 DateRangeContract.view: { period: ({ start, end }: DateRange) => ReportingPeriod; describeInput: (input: DateRange) => string; }
 DateRangeContractOptions (type, @altertable/data-app/contract): = props listed as defineDateRangeContract.options.*
-dateRangeFilter (function, @altertable/data-app-react): (options: DateRangeFilterOptions): DateRangeFilter — A date filter keeps relative presets relative and validates exact dates against source coverage.
+dateRangeFilter (function, @altertable/data-app/contract): (options: DateRangeFilterOptions): DateRangeFilter — A date filter keeps relative presets relative and validates exact dates against source coverage.
 dateRangeFilter.options.label?: string
 dateRangeFilter.options.key: string — URL key for a relative preset; explicit dates use start/end for period, otherwise key-prefixed fields.
 dateRangeFilter.options.defaultValue: DateRangeSelection & { comparison?: undefined; }
@@ -536,7 +539,7 @@ dateRangeFilter.options.contract: { datetime: { timeZone: string; bounds: (now?:
 dateRangeFilter.options.history?: HistoryMode
 dateRangeFilter.options.comparison?: boolean — Opt into a URL-backed comparison with the preceding equal-length range.
 dateRangeFilter.options.presentation?: FilterPresentation
-DateRangeFilter (type, @altertable/data-app-react)
+DateRangeFilter (type, @altertable/data-app/contract)
 DateRangeFilter.kind: 'dateRange'
 DateRangeFilter.label?: string
 DateRangeFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' | undefined; }) — Display options (`displayChoice()`) change how results are shown, not which data is included.
@@ -551,12 +554,13 @@ DateRangeFilter.valid: (value: DateRangeSelection) => boolean
 DateRangeFilter.same: (left: DateRangeSelection, right: DateRangeSelection) => boolean
 DateRangeFilter.supportsComparison: boolean
 DateRangeFilter.input: (selection: DateRangeSelection) => DateRangeRequest
+DateRangeFilter.parseInput: (value: unknown) => DateRangeRequest — Validate an untrusted request against the same source policy.
 DateRangeFilter.describeInput: (input: DateRangeRequest) => string
 DateRangeFilter.bounds: () => { minDate?: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }
 DateRangeFilter.resolve: (selection: DateRangeSelection) => DateRange
 DateRangeFilter.previous: (selection: DateRangeSelection) => DateRange | null
 DateRangeFilter.comparisonRange: (selection: DateRangeSelection) => DateRange | null
-DateRangeFilterOptions (type, @altertable/data-app-react): = props listed as dateRangeFilter.options.*
+DateRangeFilterOptions (type, @altertable/data-app/contract): = props listed as dateRangeFilter.options.*
 DateRangeInput (type, @altertable/data-app/contract): = props listed as previousDateRange.options.* — ISO calendar dates; the app operation defines timezone and inclusive bounds.
 DateRangePicker (component, @altertable/data-app-react/ui): (props: DateRangePickerProps) — The app owns URL state; `dateRangeControl` binds a date filter to this picker.
 DateRangePicker.label?: string
@@ -579,7 +583,7 @@ DateRangePickerProps (type, @altertable/data-app-react/ui): = props listed as Da
 DateRangeRequest (type, @altertable/data-app/contract)
 DateRangeRequest.range: DateRange
 DateRangeRequest.comparison: DateRange | null
-DateRangeSelection (type, @altertable/data-app-react)
+DateRangeSelection (type, @altertable/data-app/contract)
 DateRangeSelection.kind: 'preset' [variant 1 of 2]
 DateRangeSelection.id: DatePresetId [variant 1 of 2]
 DateRangeSelection.comparison?: 'previous'
@@ -592,7 +596,7 @@ DateTimeFormatOptions.missing?: string
 DateTimeFormatOptions.timeZone?: string
 DateTimeFormatOptions.precision?: 'minute' | 'second'
 DateTimeRange (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract, @altertable/data-app/format): = props listed as dateTimeRangeSql.range.*
-DateTimeRangeComparisonFilter (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui)
+DateTimeRangeComparisonFilter (type, @altertable/data-app/contract, @altertable/data-app-react/ui)
 DateTimeRangeComparisonFilter.kind: 'dateTimeRangeComparison'
 DateTimeRangeComparisonFilter.label?: string
 DateTimeRangeComparisonFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' | undefined; }) — Display options (`displayChoice()`) change how results are shown, not which data is included.
@@ -611,13 +615,13 @@ DateTimeRangeComparisonFilter.presets?: readonly DateTimeRangePreset[]
 DateTimeRangeComparisonFilter.input: (selection: DateTimeRangeComparisonSelection, now?: Date | undefined) => DateTimeRangeComparisonRequest
 DateTimeRangeComparisonFilter.parseInput: (value: unknown) => DateTimeRangeComparisonRequest
 DateTimeRangeComparisonFilter.previous: (selection: DateTimeRangeComparisonSelection) => ResolvedDateTimeRange | null
-DateTimeRangeComparisonFilterOptions (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as dateTimeRangeFilter.options.*
-DateTimeRangeComparisonRequest (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): An execution snapshot with the relative selection retained for URL and displayed-scope matching.
+DateTimeRangeComparisonFilterOptions (type, @altertable/data-app/contract, @altertable/data-app-react/ui): = props listed as dateTimeRangeFilter.options.*
+DateTimeRangeComparisonRequest (type, @altertable/data-app/contract, @altertable/data-app-react/ui): An execution snapshot with the relative selection retained for URL and displayed-scope matching.
 DateTimeRangeComparisonRequest.range: ResolvedDateTimeRange
 DateTimeRangeComparisonRequest.comparison: ResolvedDateTimeRange | null
 DateTimeRangeComparisonRequest.selection: DateTimeRangeComparisonSelection
 DateTimeRangeComparisonRequest.reference: string
-DateTimeRangeComparisonSelection (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui)
+DateTimeRangeComparisonSelection (type, @altertable/data-app/contract, @altertable/data-app-react/ui)
 DateTimeRangeComparisonSelection.range: DateTimeRange
 DateTimeRangeComparisonSelection.comparison?: 'previous'
 DateTimeRangeContract (type, @altertable/data-app/contract): Datetime policy exposed by defineDateRangeContract().datetime. Parsing preserves relative values.
@@ -627,7 +631,7 @@ DateTimeRangeContract.parse: (value: unknown, now?: Date | undefined) => DateTim
 DateTimeRangeContract.resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange — Resolve to UTC-rebased bounds using reporting-zone wall-clock fields, then validate policy.
 DateTimeRangeContract.comparison: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange | null — Return the preceding equal-length interval, or null when source coverage excludes it.
 DateTimeRangeContract.request: (value: unknown, compare?: boolean | undefined, now?: Date | undefined) => DateTimeRangeRequest — Resolve both periods against one reference instant. Use these bounds for comparison queries.
-dateTimeRangeFilter (function, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): (options: DateTimeRangeComparisonFilterOptions): DateTimeRangeComparisonFilter; (options: DateTimeRangeFilterOptions): DateTimeRangeFilter — One declaration drives the picker, URL state, and operation input. With comparison enabled, use input(defaultValue) for operation checks and filterInput() to validate request snapshots.
+dateTimeRangeFilter (function, @altertable/data-app/contract, @altertable/data-app-react/ui): (options: DateTimeRangeComparisonFilterOptions): DateTimeRangeComparisonFilter; (options: DateTimeRangeFilterOptions): DateTimeRangeFilter — One declaration drives the picker, URL state, and operation input. With comparison enabled, use input(defaultValue) for operation checks and filterInput() to validate request snapshots.
 dateTimeRangeFilter.options.key: string
 dateTimeRangeFilter.options.label?: string
 dateTimeRangeFilter.options.defaultValue: string | DateTimeRange — Relative defaults such as "7d" stay relative.
@@ -639,7 +643,7 @@ dateTimeRangeFilter.options.allowComparison: true
 dateTimeRangeFilter.options.contract: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange…
 dateTimeRangeFilter.options.allowComparison?: false — Enable the previous-period reporting workflow. Requires a shared contract.
 dateTimeRangeFilter.options.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange… — Shared reporting coverage, timezone, duration limits, and comparison policy.
-DateTimeRangeFilter (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui)
+DateTimeRangeFilter (type, @altertable/data-app/contract, @altertable/data-app-react/ui)
 DateTimeRangeFilter.kind: 'dateTimeRange'
 DateTimeRangeFilter.label?: string
 DateTimeRangeFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' | undefined; }) — Display options (`displayChoice()`) change how results are shown, not which data is included.
@@ -656,7 +660,7 @@ DateTimeRangeFilter.parse: (value: unknown) => DateTimeRange
 DateTimeRangeFilter.maxRangeDays?: number
 DateTimeRangeFilter.contract?: { datetime: { timeZone: string; bounds: (now?: Date | undefined) => { minDate: string | undefined; maxDate: string; maxRangeDays: number; timeZone: string; }; parse: (value: unknown, now?: Date | undefined) => DateTimeRange; resolve: (value: unknown, now?: Date | undefined) => ResolvedDateTimeRange… — Shared reporting coverage, timezone, duration limits, and comparison policy.
 DateTimeRangeFilter.presets?: readonly DateTimeRangePreset[]
-DateTimeRangeFilterOptions (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as dateTimeRangeFilter.options.*
+DateTimeRangeFilterOptions (type, @altertable/data-app/contract, @altertable/data-app-react/ui): = props listed as dateTimeRangeFilter.options.*
 DateTimeRangeParseFailureReason (type, @altertable/data-app/format): = 'ambiguous' | 'empty' | 'invalid-range' | 'unrecognized'
 DateTimeRangeParserOptions (type, @altertable/data-app/format)
 DateTimeRangeParserOptions.now?: Date — UTC-encoded reference fields for omitted dates/years. Defaults to the current UTC date/time.
@@ -674,11 +678,11 @@ DateTimeRangePicker.presets?: readonly DateTimeRangePreset[] — Suggestions in 
 DateTimeRangePicker.disabled?: boolean
 DateTimeRangePicker.comparison?: { enabled: boolean; range: DateTimeRange | null; onChange: (enabled: boolean) => void; } — Optional controlled comparison with the immediately preceding equal-length interval.
 DateTimeRangePickerProps (type, @altertable/data-app-react, @altertable/data-app-react/ui): = props listed as DateTimeRangePicker.*
-DateTimeRangePreset (type, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): A picker suggestion. Text ranges use the same natural-language parser as typed input.
+DateTimeRangePreset (type, @altertable/data-app/contract, @altertable/data-app-react/ui): A picker suggestion. Text ranges use the same natural-language parser as typed input.
 DateTimeRangePreset.label: string — Menu label, also shown when this preset matches the selected range.
 DateTimeRangePreset.range: string | DateTimeRange
 DateTimeRangePreset.shortcut?: string — Optional compact badge, for example "15m".
-dateTimeRangePresets (const, @altertable/data-app/contract, @altertable/data-app-react, @altertable/data-app-react/ui): Monitoring offers minute/hour windows; analytics offers longer periods and to-date windows. Spread either menu to add custom presets.
+dateTimeRangePresets (const, @altertable/data-app/contract, @altertable/data-app-react/ui): Monitoring offers minute/hour windows; analytics offers longer periods and to-date windows. Spread either menu to add custom presets.
 dateTimeRangePresets.monitoring: readonly DateTimeRangePreset[]
 dateTimeRangePresets.analytics: readonly DateTimeRangePreset[]
 DateTimeRangeRequest (type, @altertable/data-app/contract): Resolved UTC-rebased bounds for one execution, optionally with the preceding equal-length interval.
@@ -715,12 +719,21 @@ defineDateRangeContract.options.maxDate?: string | (() => string)
 defineDateRangeContract.options.maxRangeDays: number
 defineDateRangeContract.options.timeZone: string
 defineDateRangeContract.options.completeDays?: boolean — Defaults to complete days through yesterday in the reporting timezone. Set false to include today.
-defineOperation (function, @altertable/data-app/contract): <Input, Output, const Queries extends QueryDefinitions>(operation: OperationDefinition<Input, Output, Queries> & { queries: CheckedQueries<Queries>; }): Omit<DataOperation<Input, Output>, 'queryNames'> & { queryNames: { readonly [Name in keyof Queries & string]: Name; }; }
+DefinedOperation (type, @altertable/data-app/contract): <Input, Output, Queries, Filters>
+DefinedOperation.input: (value: unknown) => Input
+DefinedOperation.run: (context: OperationContext, input: Input) => Promise<Output>
+DefinedOperation.checks: readonly [Input, ...Input[]]
+DefinedOperation.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
+DefinedOperation.queryNames: { readonly [Name in keyof Queries & string]: Name; }
+DefinedOperation.filters?: FilterCollection
+defineOperation (function, @altertable/data-app/contract): <Input, Output, const Queries extends QueryDefinitions>(operation: InputOperationDefinition<Input, Output, Queries> & { queries: CheckedQueries<Queries>; }): DefinedOperation<Input, Output, Queries, undefined>; <const Queries extends QueryDefinitions, const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDefinition<Filters, Output, Queries> & { queries: CheckedQueries<Queries>; }): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>
 defineOperation.operation.input: (value: unknown) => Input
-defineOperation.operation.checks: readonly [Input, ...Input[]]
+defineOperation.operation.checks: readonly [Input, ...Input[]] — Representative valid inputs; each must pass `input`.
 defineOperation.operation.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
-defineOperation.operation.run: (context: Pick<OperationContext, 'signal'> & { query: RegisteredQuery<NoInfer<Queries>>; }, input: Input) => Promise<...>
+defineOperation.operation.run: OperationRun<Input, Output, Queries>
 defineOperation.operation.queries: CheckedQueries<Queries>
+defineOperation.operation.filters?: CheckedOperationFilters<Filters> — The filters `run` reads. Omit for an operation without inputs.
+defineOperation.operation.run: OperationRun<FilterInput<Filters>, Output, Queries>
 defineQueryNames (function, @altertable/data-app/contract): <const Names extends Record<string, string>>(names: Names): Names
 DetailContent (class, @altertable/data-app-react): <Data, Input> — A destination’s rendered body. Pass these to DataApp.details.
 DetailContent.target: DetailView<Data, Input>
@@ -797,7 +810,7 @@ DisclosedQuery.name: string
 DisclosedQuery.statement: string
 DisclosedQuery.params?: Readonly<Record<string, QueryParameterValue>>
 DisclosedQuery.queryId?: string
-displayChoice (function, @altertable/data-app-react): <const Options extends readonly ChoiceOption[]>(options: ChoiceOptions<Options>): AppFilter<Options[number]['id'], 'choice'> & { options: readonly ChoiceOption[]; } & { presentation: { group: 'display'; }; } — One choice that changes how results are shown, such as a chart breakdown or sort order. Clearing filters keeps it; pass `view.breakdown(name)` to render it beside its chart.
+displayChoice (function, @altertable/data-app/contract): <const Options extends readonly ChoiceOption[]>(options: ChoiceOptions<Options>): AppFilter<Options[number]['id'], 'choice'> & { options: readonly ChoiceOption[]; } & { presentation: { group: 'display'; }; } — One choice that changes how results are shown, such as a chart breakdown or sort order. Clearing filters keeps it; pass `view.breakdown(name)` to render it beside its chart.
 displayChoice.options.label?: string
 displayChoice.options.key: string
 displayChoice.options.history?: HistoryMode
@@ -832,6 +845,40 @@ ExternalLink.children: ReactNode
 ExternalLink.className?: string
 ExternalLink.title?: string
 ExternalLinkProps (type, @altertable/data-app-react): = props listed as ExternalLink.*
+facetFilter (function, @altertable/data-app/contract): <const Operation extends string>(config: FacetFilterOptions<string, Operation> & { valueType: 'string'; }): FacetFilter<string, Operation>; <const Operation extends string>(config: FacetFilterOptions<number, Operation> & { valueType: 'number'; }): FacetFilter<number, Operation> — Options load from `options`, an operation returning `DimensionOption[]`; the client checks that it is registered. Validate selections like any dimension.
+facetFilter.config.key: string
+facetFilter.config.label: string
+facetFilter.config.allowMissing?: boolean
+facetFilter.config.allowExclusion?: boolean
+facetFilter.config.history?: HistoryMode
+facetFilter.config.presentation?: FilterPresentation
+facetFilter.config.selectionMode: 'single' [variant 1 of 2]
+facetFilter.config.maxSelected?: 1 [variant 1 of 2]
+facetFilter.config.valueType: 'string'
+facetFilter.config.options: Operation — The registered operation that returns this dimension's options.
+facetFilter.config.selectionMode: 'multiple' [variant 2 of 2]
+facetFilter.config.maxSelected?: number [variant 2 of 2]
+facetFilter.config.valueType: 'number'
+FacetFilter (type, @altertable/data-app/contract): <Value, Operation> — A dimension whose options come from an operation. The options follow that operation's own filters, so selecting a period narrows the choices.
+FacetFilter.kind: 'dimension'
+FacetFilter.label: string
+FacetFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' | undefined; }) — Display options (`displayChoice()`) change how results are shown, not which data is included.
+FacetFilter.urlKeys: readonly string[]
+FacetFilter.defaultValue: DimensionSelection<Value>
+FacetFilter.clearValue?: DimensionSelection<Value> — Unrestricted value, when this filter can be cleared.
+FacetFilter.describe: ((value: DimensionSelection<Value>) => string) & ((selection: DimensionSelection<Value>, options?: readonly DimensionOption<Value>[] | undefined) => string)
+FacetFilter.history: HistoryMode
+FacetFilter.read: (params: URLSearchParams) => DimensionSelection<Value>
+FacetFilter.write: (value: DimensionSelection<Value>) => Record<string, string | null>
+FacetFilter.valid: (value: DimensionSelection<Value>) => boolean
+FacetFilter.same: (left: DimensionSelection<Value>, right: DimensionSelection<Value>) => boolean
+FacetFilter.optionsSource: 'query'
+FacetFilter.selectionMode: 'multiple' | 'single'
+FacetFilter.valueType: Value extends number ? 'number' : 'string'
+FacetFilter.allowMissing: boolean
+FacetFilter.allowExclusion: boolean
+FacetFilter.maxSelected: number
+FacetFilter.options: readonly DimensionOption<Value>[]
 FilterActions (component, @altertable/data-app-react/ui): (props: FilterActionsProps)
 FilterActions.onClear?: (() => void)
 FilterActions.onApply: () => void [variant 1 of 2]
@@ -841,13 +888,16 @@ FilterBar (component, @altertable/data-app-react/ui): (props: FilterBarProps)
 FilterBar.…: plus props inherited from React
 FilterBarProps (type, @altertable/data-app-react/ui): <HTMLAttributes<HTMLDivElement>, HTMLDivElement>
 FilterBarProps.…: plus props inherited from React
-filterInput (function, @altertable/data-app/contract): <Input extends object, const Collection extends FilterCollection>(parse: (value: unknown) => Input, filters: Collection & { [Key in keyof Collection]: Collection[Key] extends { kind: 'dateRange'; } ? never : Collection[Key]; }): (value: unknown) => Input & ParsedFilterValues<Collection> — Validate named filter values at the operation boundary. Date inputs belong to the base parser.
-FilterPresentation (type, @altertable/data-app-react): Where a filter's or display option's control renders.
+FilterCollection (type, @altertable/data-app/contract): = { [x: string]: SearchFilter | BooleanFilter | ChoiceFilter<any> | DateRangeFilter | DateTimeRangeComparisonFilter | ... 5 more ... | SourceDimensionFilter<...>; }
+FilterInput (type, @altertable/data-app/contract): <Filters> = keyof Filters extends never ? Record<string, never> : { [Name in keyof Filters]: FilterInputValue<Filters[Name]>; } — An operation's input: one flat field per declared filter.
+FilterOperationDefinition (type, @altertable/data-app/contract): <Filters, Output, Queries> — An operation that reads app filters. Its input has one field per filter, validated by the filters themselves; views derive their filters, scope, and period from it.
+FilterOperationDefinition.filters?: CheckedOperationFilters<Filters> — The filters `run` reads. Omit for an operation without inputs.
+FilterOperationDefinition.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
+FilterOperationDefinition.run: OperationRun<FilterInput<Filters>, Output, Queries>
+FilterPresentation (type, @altertable/data-app/contract): Where a filter's or display option's control renders.
 FilterPresentation.control?: 'toolbar' | 'widget' — Widget controls render beside their visualization instead of in the toolbar. Scope filters remain available in the Filters sheet and active summaries.
 FilterPresentation.prominence?: 'primary' | 'secondary' — Secondary scope controls live in the Filters sheet with compact pickers when active; secondary display options follow primary options. Defaults to primary.
-Filters (class, @altertable/data-app-react): <Collection> — The app's filters and display options, declared once with `defineFilters()`. Each view reads all of them or a `pick()`; `<DataApp filters>` renders their controls.
-Filters.pick: <const Names extends readonly (keyof Collection & string)[]>(...names: Names) => Filters<Pick<Collection, Names[number]>> — The subset a view reads; it shares the app's URL state and controls.
-FilterValues (type, @altertable/data-app-react): <Collection> = { [Key in keyof Collection]: Collection[Key] extends DimensionSelectionFilter<infer Value extends DimensionValue> ? DimensionSelection<...> : ...; }
+FilterValues (type, @altertable/data-app/contract): <Collection> = { [Key in keyof Collection]: Collection[Key] extends DimensionSelectionFilter<infer Value extends DimensionValue> ? DimensionSelection<...> : ...; }
 formatCount (function, @altertable/data-app/format): (value: number | null | undefined, options: CommonOptions & { compact?: boolean; }): string — Negative and fractional counts render as missing. Compact notation is opt-in.
 formatCount.options.locale?: string
 formatCount.options.missing?: string
@@ -974,6 +1024,11 @@ injectDataAppStyles (function, @altertable/data-app-react, @altertable/data-app-
 injectDataAppStyles.options.document?: Document — Defaults to the current browser document.
 injectDataAppStyles.options.nonce?: string — Nonce permitted by the document's style-src CSP.
 InputOf (type, @altertable/data-app/client): <T> = T extends { input: (value: unknown) => infer Input; } ? Input : never
+InputOperationDefinition (type, @altertable/data-app/contract): <Input, Output, Queries> — An operation with its own input, such as a detail destination's record id.
+InputOperationDefinition.input: (value: unknown) => Input
+InputOperationDefinition.checks: readonly [Input, ...Input[]] — Representative valid inputs; each must pass `input`.
+InputOperationDefinition.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
+InputOperationDefinition.run: OperationRun<Input, Output, Queries>
 isPlainKeyEvent (function, @altertable/data-app-react/ui): (event: KeyEvent, options: {…}): boolean — Keep local key actions separate from shortcuts and IME composition. Pass React's nativeEvent.
 isPlainKeyEvent.event.…: plus props inherited from built-in
 isPlainKeyEvent.options.allowShift?: boolean
@@ -1086,7 +1141,7 @@ mountDataApp (function, @altertable/data-app-react): <const Queries extends Quer
 mountDataApp.options.app: DataAppDefinition<Queries>
 mountDataApp.options.component: ComponentType
 mountDataApp.options.root?: HTMLElement | null
-multiChoiceFilter (function, @altertable/data-app-react): <const Options extends readonly ChoiceOption[]>(options: Omit<ScalarFilterOptions, 'defaultValue'> & { defaultValue?: readonly NoInfer<Options[number]['id']>[]; options: Options & (Options extends readonly [ ] ? never : unknown); maxSelected?: number; }): MultiChoiceFilter
+multiChoiceFilter (function, @altertable/data-app/contract): <const Options extends readonly ChoiceOption[]>(options: Omit<ScalarFilterOptions, 'defaultValue'> & { defaultValue?: readonly NoInfer<Options[number]['id']>[]; options: Options & (Options extends readonly [ ] ? never : unknown); maxSelected?: number; }): MultiChoiceFilter
 multiChoiceFilter.options.label?: string
 multiChoiceFilter.options.key: string
 multiChoiceFilter.options.history?: HistoryMode
@@ -1094,7 +1149,7 @@ multiChoiceFilter.options.presentation?: FilterPresentation
 multiChoiceFilter.options.defaultValue?: readonly NoInfer<Options[number]['id']>[]
 multiChoiceFilter.options.options: Options & (Options extends readonly [] ? never : unknown)
 multiChoiceFilter.options.maxSelected?: number
-MultiChoiceFilter (type, @altertable/data-app-react)
+MultiChoiceFilter (type, @altertable/data-app/contract)
 MultiChoiceFilter.kind: 'multiChoice'
 MultiChoiceFilter.label?: string
 MultiChoiceFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' | undefined; }) — Display options (`displayChoice()`) change how results are shown, not which data is included.
@@ -1154,11 +1209,7 @@ NumberSelection.value: number [variant 2 of 3]
 NumberSelection.kind: 'range' [variant 3 of 3]
 NumberSelection.min?: number [variant 3 of 3]
 NumberSelection.max?: number [variant 3 of 3]
-OperationDefinition (type, @altertable/data-app/contract): <Input, Output, Queries> — Infer operation data from run().
-OperationDefinition.input: (value: unknown) => Input
-OperationDefinition.checks: readonly [Input, ...Input[]]
-OperationDefinition.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
-OperationDefinition.run: (context: Pick<OperationContext, 'signal'> & { query: RegisteredQuery<NoInfer<Queries>>; }, input: Input) => Promise<...>
+OperationFilters (type, @altertable/data-app/client): <Operations> = { readonly [Name in keyof Operations as Operations[Name] extends { filters: infer Filters extends FilterCollection; } ? keyof Filters extends never ? never : Name : never]: ...; } — The filters each operation reads, for operations that read any.
 OutputOf (type, @altertable/data-app/client): <T> = T extends { run: (...args: never[]) => Promise<infer Output>; } ? Output : unknown — An operation's data is what its `run` resolves to.
 parseBooleanSelection (function, @altertable/data-app/contract): (value: unknown, filter: BooleanFilter): BooleanSelection
 parseBooleanSelection.filter.kind: 'booleanFilter'
@@ -1211,7 +1262,6 @@ parseDimensionSelection.filter.allowMissing: boolean
 parseDimensionSelection.filter.allowExclusion: boolean
 parseDimensionSelection.filter.maxSelected: number
 parseDimensionSelection.filter.options: readonly DimensionOption<T>[]
-parseEmptyInput (function, @altertable/data-app/contract): (value: unknown): Record<string, never>
 parseFacetOptions (function, @altertable/data-app/contract): <T extends DimensionValue>(value: unknown, filter: DimensionSelectionFilter<T>): DimensionOption<T>[] — Validate bounded facet results before showing them in a picker.
 parseFacetOptions.filter.kind: 'dimension'
 parseFacetOptions.filter.label: string
@@ -1412,12 +1462,13 @@ SearchField.inputProps?: Omit<DetailedHTMLProps<InputHTMLAttributes<HTMLInputEle
 SearchField.children?: ReactNode
 SearchField.…: plus props inherited from React
 SearchFieldProps (type, @altertable/data-app-react/ui): = props listed as SearchField.*
-searchFilter (function, @altertable/data-app-react): (options: Omit<ScalarFilterOptions, 'presentation'>): SearchFilter — Search query state; typing replaces history by default.
+searchFilter (function, @altertable/data-app/contract): (options: Omit<ScalarFilterOptions, 'presentation'> & { maxLength?: number; }): SearchFilter — Search query state; typing replaces history by default. Operations reject text longer than `maxLength` (200 by default).
 searchFilter.options.label?: string
 searchFilter.options.key: string
 searchFilter.options.defaultValue?: string
 searchFilter.options.history?: HistoryMode
-SearchFilter (type, @altertable/data-app-react)
+searchFilter.options.maxLength?: number
+SearchFilter (type, @altertable/data-app/contract)
 SearchFilter.kind: 'search'
 SearchFilter.label?: string
 SearchFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' | undefined; }) — Display options (`displayChoice()`) change how results are shown, not which data is included.

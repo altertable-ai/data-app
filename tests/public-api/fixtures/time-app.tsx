@@ -8,16 +8,13 @@ import {
   DataValue,
   injectDataAppStyles,
   mountDataApp,
-  dateRangeFilter,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
+  dateRangeFilter,
   defineDateRangeContract,
   defineOperation,
   dimensionFilter,
-  parseDimensionSelection,
-  type DateRangeRequest,
-  type DimensionSelection,
 } from '@altertable/data-app/contract';
 
 const calendar = defineDateRangeContract({
@@ -42,22 +39,15 @@ const region = dimensionFilter<string>({
     { value: 'null', label: 'Literal null' },
   ],
 });
-type Input = { period: DateRangeRequest; region: DimensionSelection<string> };
+const period = dateRangeFilter({
+  key: 'period',
+  contract: calendar,
+  defaultValue: { kind: 'dates', start: '2026-03-04', end: '2026-03-06' },
+  comparison: true,
+});
 const operation = defineOperation({
   queries: {},
-  input(value: unknown): Input {
-    const input = value as Input;
-    return {
-      period: calendar.parseRequest(input.period),
-      region: parseDimensionSelection(input.region, region),
-    };
-  },
-  checks: [
-    {
-      period: calendar.request({ start: '2026-03-04', end: '2026-03-06' }),
-      region: { kind: 'all' as const },
-    },
-  ],
+  filters: { period, region },
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run(_context, input) {
     return input.region.kind === 'all' ? 12 : 0;
@@ -81,21 +71,8 @@ const context = createDataContext({ activity: 'activity' })({
     },
   },
 });
-const { defineTimeView, defineFilters } = createDataHooks(client);
-const filters = defineFilters({
-  period: dateRangeFilter({
-    key: 'period',
-    contract: calendar,
-    defaultValue: { kind: 'dates', start: '2026-03-04', end: '2026-03-06' },
-    comparison: true,
-  }),
-  region,
-});
-const view = defineTimeView({
-  dataContext: context,
-  operation: 'activity',
-  filters,
-});
+const { defineView } = createDataHooks(client);
+const view = defineView({ dataContext: context, operation: 'activity' });
 const metric = view.metric(
   { id: 'count', glossaryId: 'count', format: { kind: 'count' } },
   current => ({ current, previous: 0 })
@@ -131,12 +108,7 @@ const dataApp = defineDataApp({
 });
 function App() {
   return (
-    <DataApp
-      view={view}
-      filters={filters}
-      datasets={[dataset]}
-      story={() => []}
-    >
+    <DataApp view={view} datasets={[dataset]} story={() => []}>
       <DataSection content={content} />
     </DataApp>
   );

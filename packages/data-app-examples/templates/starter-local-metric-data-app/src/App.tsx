@@ -4,36 +4,19 @@ import {
   DataSection,
   VisualizationWidget,
   Stack,
-  choiceFilter,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 
 import { sampleDataContext } from '#app/data-context.ts';
+import { operationFilters } from '#app/filters.ts';
 import type { operations } from '#app/operations.ts';
-const { defineDataView, defineFilters } =
-  createDataHooks(createDataClient<typeof operations>());
-// Declare filters once; each chart's view reads them, and <DataApp> renders their controls.
-const filters = defineFilters({
-  groupName: choiceFilter({
-    key: 'group',
-    label: 'Group',
-    defaultValue: 'all',
-    options: [
-      { id: 'all', label: 'All groups' },
-      { id: 'Alpha', label: 'Alpha' },
-      { id: 'Beta', label: 'Beta' },
-    ],
-  }),
-});
-function describeGroup({ groupName }: { groupName: string }) {
-  return groupName === 'all' ? 'all groups' : groupName;
-}
-const sampleCountsView = defineDataView({
+const { defineView } = createDataHooks(
+  createDataClient<typeof operations>({ filters: operationFilters })
+);
+const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  filters,
-  describeInput: describeGroup,
   isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching groups',
@@ -53,11 +36,9 @@ const sampleCounts = sampleCountsView.dataset({
     glossaryIds: ['sampleCount'],
   },
 });
-const segmentCountsView = defineDataView({
+const segmentCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsBySegment',
-  filters,
-  describeInput: describeGroup,
   isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching segments',
@@ -132,7 +113,7 @@ const segmentContent = segmentCountsView.content(result => (
 ));
 export function App() {
   return (
-    <DataApp view={sampleCountsView} filters={filters} showToolbar={false}>
+    <DataApp view={sampleCountsView} showToolbar={false}>
       <Stack>
         <DataSection content={groupContent} label="Sample count" />
         <DataSection content={segmentContent} label="Samples by segment" />

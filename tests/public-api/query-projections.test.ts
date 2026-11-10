@@ -1,9 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
-import {
-  parseEmptyInput,
-  type QueryResult,
-} from '@altertable/data-app/contract';
+import { type QueryResult } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
@@ -28,8 +25,6 @@ const app = defineDataApp({
   },
 });
 const operation = app.defineOperation({
-  input: parseEmptyInput,
-  checks: [{}],
   policy: { maxQueryRows: 2, maxDurationMs: 1000 },
   async run({ query }) {
     return (await query('revenue')).rows;
@@ -138,8 +133,6 @@ async function castRows(
     },
   });
   const cast = declarations.defineOperation({
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 10, maxDurationMs: 1000 },
     async run({ query }) {
       return (await query(name)).rows;
@@ -293,8 +286,6 @@ test('query projection contracts are copied and frozen with their registry', asy
     false
   );
   const selected = owned.defineOperation({
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run({ query }) {
       return (await query('value')).rows;
@@ -334,8 +325,6 @@ test('all-null rows preserve nullable values and intentional null-only projectio
     },
   });
   const values = nullable.defineOperation({
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 2, maxDurationMs: 1000 },
     async run({ query }) {
       return (await query('values')).rows;
@@ -386,8 +375,6 @@ test('run manipulates declared scalar types after query casting in browser and H
     },
   });
   const values = declared.defineOperation({
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 10, maxDurationMs: 1000 },
     async run({ query }) {
       const result = await query('values', { limit: null });

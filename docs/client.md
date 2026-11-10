@@ -7,9 +7,12 @@ starter's client. Import `createDataClient()` from `@altertable/data-app/client`
 
 ```ts
 import { createDataClient } from '@altertable/data-app/client';
+import { operationFilters } from './filters.ts';
 import type { operations } from './operations.ts';
 
-const client = createDataClient<typeof operations>();
+const client = createDataClient<typeof operations>({
+  filters: operationFilters,
+});
 const response = await client.query(
   'sampleCountsByGroup',
   { groupName: '' },
@@ -17,12 +20,15 @@ const response = await client.query(
 );
 ```
 
-The app supplies `operations` and an optional cancellation `signal`.
-Inputs and data are inferred from the operation map and `run()`. Keep the import
-type-only so operation implementations stay on the server.
+The app supplies `operations`, the filters each one reads, and an optional
+cancellation `signal`. Inputs and data are inferred from the operation map and
+`run()`. Keep the operations import type-only so implementations stay on the
+server; declare their filters in a browser-safe module both sides import
+([shared filters](filters.md#share-filters-with-http-and-local-apps)). Omit
+`filters` only when no operation declares any.
 
 The default endpoint is `/api/data`. Override it with
-`createDataClient<typeof operations>({ endpoint, fetch })` to change the base URL or supply a Fetch
+`createDataClient<typeof operations>({ filters, endpoint, fetch })` to change the base URL or supply a Fetch
 implementation. Calls POST JSON to `/api/data/:operation`; the client sends
 operation inputs rather than SQL or credentials.
 
@@ -36,7 +42,8 @@ See [contracts](contract.md), [server handlers](server.md), and
 
 ## Browser-owned operations for bundle apps
 
-Bundle apps pass their operation registry as a value:
+Bundle apps pass their operation registry as a value, which also supplies its
+filters:
 
 ```ts
 import { createDataClient } from '@altertable/data-app/client';
@@ -56,7 +63,7 @@ must independently enforce access and resource limits.
 
 ## Iframe transport
 
-`createDataClient<typeof operations>({ transport })` accepts a `DataTransport`. Without an explicit
+`createDataClient<typeof operations>({ filters, transport })` accepts a `DataTransport`. Without an explicit
 transport, endpoint, or Fetch implementation, it discovers an installed iframe
 transport before falling back to HTTP. Explicit endpoint/Fetch options select
 HTTP. `createHttpTransport()` provides the underlying operation delivery adapter.

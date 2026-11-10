@@ -1,7 +1,7 @@
 import {
   defineDateRangeContract,
   dateTimeRangeFilter,
-  filterInput,
+  defineOperation,
 } from '@altertable/data-app/contract';
 import { parseDateTimeRangeInput } from '@altertable/data-app/format';
 import { expect, test, vi } from 'vitest';
@@ -106,7 +106,14 @@ test('a variable applies its contract to defaults, URL values, and server parsin
     expect(period.maxRangeDays).toBe(7);
     expect(period.valid(range('today'))).toBe(false);
     expect(() => period.parse(range('today'))).toThrow('coverage');
-    const parseInput = filterInput(() => ({}), { period });
+    const { input: parseInput } = defineOperation({
+      queries: {},
+      filters: { period },
+      policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+      async run() {
+        return null;
+      },
+    });
     expect(() => parseInput({ period: range('today') })).toThrow();
     expect(
       parseInput({ period: JSON.parse(JSON.stringify(range('yesterday'))) })

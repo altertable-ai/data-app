@@ -2,7 +2,7 @@
 
 ## Choose a widget
 
-Metrics, tables, and visualizations from `@altertable/data-app-react` consume view bindings and a source. For static displays, use
+Metrics, tables, and visualizations from `@altertable/data-app-react` consume a view's datasets or metrics and a source. For static displays, use
 [direct UI composition](ui.md).
 Manage requests in [views](views.md).
 
@@ -54,7 +54,8 @@ Bind reusable selections to the view whose operation returns them. Declare evide
 the view validates them against its own context. A dataset's columns supply both formatted
 table cells and raw CSV values. Widgets derive their readings, evidence, and empty fallback from the binding.
 Declare at least one dataset column. Metric selectors may return `previous`
-only for views with a date binding, including `defineTimeView()`.
+only when the view's operation reads a `dateRangeFilter()` or a comparison
+`dateTimeRangeFilter()`.
 
 ```tsx
 // ... sampleCountsView, sampleTotalView, and imports
@@ -106,7 +107,7 @@ Render each content in its own `<DataSection>`.
 
 Column keys supply IDs and default labels; set `label` for a different header.
 Keep row keys stable and unique. Custom cells use `format: row => ...`; CSV uses
-the raw `value` accessor. Metric comparisons require a view date binding.
+the raw `value` accessor. Metric comparisons require that reporting period.
 Reuse bindings in stories with the snapshot of the view that owns them.
 
 Tables search and paginate only supplied rows. Use query-backed pagination with a

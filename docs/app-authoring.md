@@ -35,19 +35,17 @@ app-owned files, not installed packages.
    table its own named query and operation; do not combine unrelated results
    into one query. Write queries against inspected data and preserve supplied
    metric definitions. Declare `params` and result aliases in `projections`.
-   Validate flat operation inputs, execute named queries with `query()`, and
-   derive results from its typed rows.
+   Execute named queries with `query()` and derive results from its typed rows.
 3. **Update context and bindings.** Describe definitions and coverage in the data
    context, using the operation's `queryNames` for evidence. Declare each dataset
    and metric once, with stable row keys, raw column values, and shared formats.
-4. **Declare filters once, then one view per operation.** Declare every filter
-   and display choice with `defineFilters()` and pass the result to
-   `<DataApp filters>`, which renders their controls. Give each view the
-   declaration, or a `pick()` of the filters its operation reads. Pass the
-   headline view to `<DataApp view>` and render each view in its own
-   `<DataSection>`. Use flat input fields matching filter names so `input` and
-   `bindings` can be omitted. Use `defineTimeView()` for period-driven analysis
-   and `defineDataView()` otherwise. Keep protected values such as `orgId`
+4. **Declare filters once, then one view per operation.** Declare each filter
+   and display choice as a constant and list the ones each operation reads in
+   its `filters`; the operation receives one flat input field per filter. Define
+   each view with `defineView({ operation, dataContext })`: its filters,
+   reporting period, and scope derive from the operation. Pass the headline view
+   to `<DataApp view>`, which renders every filter's control, and render each
+   view in its own `<DataSection>`. Keep protected values such as `orgId`
    backend-owned. See [views](views.md#give-each-widget-its-own-view) and
    [filters](filters.md).
 5. **Compose the content.** Follow the app brief for section order and narrative.

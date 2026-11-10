@@ -14,7 +14,7 @@ import type {
   DimensionFilter,
   DimensionSelectionFilter,
 } from './dimension.ts';
-import { facetSource, type FacetFilter } from './facets.ts';
+import type { FacetFilter } from './facets.ts';
 import type { NumberFilter, BooleanFilter } from './filters.ts';
 import { invariant } from './invariant.ts';
 import type { HistoryMode } from './navigation.ts';
@@ -57,7 +57,7 @@ export type FilterCollection = Record<
   | DateTimeRangeFilter
   | DateTimeRangeComparisonFilter
   | DimensionFilter<any>
-  | FacetFilter<any, any, string, unknown>
+  | FacetFilter<any, string>
   | SourceDimensionFilter<any>
   | NumberFilter
   | BooleanFilter
@@ -85,28 +85,6 @@ export type CheckedFilterDeclarations<Collection extends FilterCollection> =
               ? never
               : Collection[Name];
           };
-
-/** Every facet dependency must be present with a compatible filter declaration. */
-export type CheckedFacetContexts<Collection extends FilterCollection> =
-  CheckedFilterDeclarations<Collection> &
-    (string extends keyof Collection
-      ? Extract<
-          Collection[keyof Collection],
-          { [facetSource]: unknown }
-        > extends never
-        ? Collection
-        : never
-      : {
-          [Name in keyof Collection]: Collection[Name] extends {
-            [facetSource]: { context: infer Context };
-          }
-            ? string extends keyof Context
-              ? never
-              : Collection extends Context
-                ? Collection[Name]
-                : never
-            : Collection[Name];
-        });
 
 /** Name filters once in the app. URL keys must be unique across its controls. */
 export function defineAppFilters<const Collection extends FilterCollection>(
@@ -168,13 +146,25 @@ export type MultiChoiceFilter = AppFilter<readonly string[], 'multiChoice'> & {
   maxSelected: number;
 };
 
-/** Search query state; typing replaces history by default. */
+/** Search query state; typing replaces history by default. Operations reject text
+ * longer than `maxLength` (200 by default). */
 export function searchFilter({
   key,
   label,
   defaultValue = '',
   history = 'replace',
-}: Omit<ScalarFilterOptions, 'presentation'>): SearchFilter {
+  maxLength = 200,
+}: Omit<ScalarFilterOptions, 'presentation'> & {
+  maxLength?: number;
+}): SearchFilter {
+  invariant(
+    Number.isSafeInteger(maxLength) && maxLength > 0,
+    `Search ${key} needs a positive maxLength.`
+  );
+  function valid(value: string) {
+    return typeof value === 'string' && value.length <= maxLength;
+  }
+  invariant(valid(defaultValue), `Search ${key} default exceeds maxLength.`);
   return {
     kind: 'search',
     label: label ?? key,
@@ -184,14 +174,13 @@ export function searchFilter({
     describe: value => value,
     history,
     read(params) {
-      return params.get(key) ?? defaultValue;
+      const value = params.get(key);
+      return value !== null && valid(value) ? value : defaultValue;
     },
     write(value) {
       return { [key]: value === defaultValue ? null : value };
     },
-    valid(value) {
-      return typeof value === 'string';
-    },
+    valid,
     same(left, right) {
       return left === right;
     },
@@ -369,6 +358,8 @@ export type DateRangeFilter = AppFilter<DateRangeSelection, 'dateRange'> & {
   kind: 'dateRange';
   supportsComparison: boolean;
   input: (selection: DateRangeSelection) => DateRangeRequest;
+  /** Validate an untrusted request against the same source policy. */
+  parseInput: (value: unknown) => DateRangeRequest;
   describeInput: (input: DateRangeRequest) => string;
   bounds: () => {
     minDate?: string;
@@ -451,6 +442,14 @@ export function dateRangeFilter({
         resolve(selection),
         selection.comparison === 'previous' && comparison
       );
+    },
+    parseInput(value) {
+      const request = contract.parseRequest(value);
+      invariant(
+        comparison || request.comparison === null,
+        `Date filter ${key} does not support comparison.`
+      );
+      return request;
     },
     describeInput(input) {
       return contract.describeInput(input.range);

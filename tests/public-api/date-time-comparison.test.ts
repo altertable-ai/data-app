@@ -1,7 +1,7 @@
 import {
   dateTimeRangeFilter,
   defineDateRangeContract,
-  filterInput,
+  defineOperation,
 } from '@altertable/data-app/contract';
 import { expect, test, vi } from 'vitest';
 
@@ -39,7 +39,14 @@ test('comparison selection stays relative in URLs and resolves one protected req
       from: new Date('2026-06-26T12:00:00Z'),
       to: request.range.from,
     });
-    const parse = filterInput(() => ({}), { period });
+    const { input: parse } = defineOperation({
+      queries: {},
+      filters: { period },
+      policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+      async run() {
+        return null;
+      },
+    });
     vi.setSystemTime(new Date('2026-07-10T16:10:00Z'));
     expect(
       parse(JSON.parse(JSON.stringify({ period: request }))).period

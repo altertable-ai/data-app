@@ -7,16 +7,13 @@ import {
   createDataContext,
   injectDataAppStyles,
   mountDataApp,
-  searchFilter,
 } from '@altertable/data-app-react';
 import {
   createDataClient,
   getDataAppNavigation,
 } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
+import { searchFilter } from '@altertable/data-app/contract';
 import { useEffect } from 'react';
-
-type PeriodInput = { period: string };
 
 const dataApp = defineDataApp({
   title: 'Displayed context',
@@ -30,11 +27,24 @@ function changePeriod(period: string) {
   const navigation = getDataAppNavigation()!;
   navigation.update({ ...navigation.snapshot(), search: `?period=${period}` });
 }
-const client = createDataClient<{
-  counts: DataOperation<PeriodInput, number>;
-}>({
+const period = searchFilter({
+  key: 'period',
+  label: 'Period',
+  defaultValue: 'last-30',
+});
+const operations = {
+  counts: dataApp.defineOperation({
+    filters: { period },
+    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+    async run(): Promise<number> {
+      throw new Error('The fixture transport answers counts.');
+    },
+  }),
+};
+const client = createDataClient<typeof operations>({
+  filters: { counts: operations.counts.filters },
   transport(_name, input) {
-    const { period } = input as PeriodInput;
+    const { period } = input as { period: string };
     if (period === 'last-7') return new Promise(() => {});
     return Promise.resolve({
       status: 200,
@@ -58,18 +68,10 @@ const context = createDataContext({ counts: 'counts' })({
     },
   },
 });
-const { defineDataView, defineFilters } = createDataHooks(client);
-const filters = defineFilters({
-  period: searchFilter({
-    key: 'period',
-    label: 'Period',
-    defaultValue: 'last-30',
-  }),
-});
-const view = defineDataView({
+const { defineView } = createDataHooks(client);
+const view = defineView({
   dataContext: context,
   operation: 'counts',
-  filters,
   describeInput: input => input.period,
 });
 const metric = view.metric(
@@ -105,7 +107,6 @@ function App() {
   return (
     <DataApp
       view={view}
-      filters={filters}
       story={() => []}
       datasets={[dataset]}
       toolbarActions={

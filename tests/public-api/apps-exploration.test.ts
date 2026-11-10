@@ -1170,7 +1170,7 @@ test('mapped scope choices keep actions available only for the displayed selecti
         .getByRole('status', { name: 'Displayed breakdowns', exact: true })
         .textContent()
     )
-    .toContain('"windowId":"previous"');
+    .toContain('"window":"previous"');
   await mark.click();
   await expect
     .poll(() =>

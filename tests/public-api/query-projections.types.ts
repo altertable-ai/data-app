@@ -1,11 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient, type OutputOf } from '@altertable/data-app/client';
-import {
-  defineOperation,
-  parseEmptyInput,
-  type QueryRow,
-} from '@altertable/data-app/contract';
+import { defineOperation, type QueryRow } from '@altertable/data-app/contract';
 
 const app = defineDataApp({
   title: 'Column types',
@@ -47,8 +43,6 @@ const missing: RevenueRow = { country: 'France', revenue: 0, active: true };
 const wrong: RevenueRow = { ...row, revenue: null };
 void [row, missing, wrong];
 const operation = app.defineOperation({
-  input: parseEmptyInput,
-  checks: [{}],
   policy: { maxQueryRows: 10, maxDurationMs: 1000 },
   async run({ query }) {
     const placeholder: null = (await query('nullOnly')).rows[0]!.placeholder;
@@ -97,10 +91,9 @@ const context = createDataContext(operation.queryNames)({
   description: 'Revenue',
   glossary: {},
 });
-const view = createDataHooks(client).defineDataView({
+const view = createDataHooks(client).defineView({
   operation: 'revenue',
   dataContext: context,
-  describeInput: () => 'all revenue',
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No revenue' },
 });
@@ -131,8 +124,6 @@ app.queries.revenue.projections.country = 'number';
 defineOperation({
   // @ts-expect-error Every registered query declares its result columns.
   queries: { missing: { statement: 'SELECT 1', params: {} } },
-  input: parseEmptyInput,
-  checks: [{}],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run() {
     return true;
@@ -195,8 +186,6 @@ defineOperation({
       projections: {},
     },
   },
-  input: parseEmptyInput,
-  checks: [{}],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run() {
     return true;

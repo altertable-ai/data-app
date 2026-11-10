@@ -2,7 +2,6 @@ import { defineDataApp } from '@altertable/data-app';
 import type { OutputOf } from '@altertable/data-app/client';
 import {
   defineOperation,
-  parseEmptyInput,
   connectionCheck,
   type QueryDefinitions,
 } from '@altertable/data-app/contract';
@@ -32,8 +31,6 @@ const dataApp = defineDataApp({
 });
 
 const operation = dataApp.defineOperation({
-  input: parseEmptyInput,
-  checks: [{}],
   policy: { maxQueryRows: 10, maxDurationMs: 1000 },
   async run(context) {
     await context.query('ping');
@@ -101,9 +98,6 @@ defineOperation({
   queries: {},
   // @ts-expect-error Query names are derived; they cannot be declared separately.
   queryNames: { custom: 'custom' },
-  input: parseEmptyInput,
-  output: (value: unknown) => value,
-  checks: [{}],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run() {
     return true;
@@ -171,9 +165,6 @@ void untypedOutput;
 dataApp.defineOperation({
   // @ts-expect-error Bound operations cannot replace the app's query registry.
   queries: {},
-  input: parseEmptyInput,
-  output: (value: unknown) => value,
-  checks: [{}],
   policy: { maxQueryRows: 10, maxDurationMs: 1000 },
   async run() {
     return true;

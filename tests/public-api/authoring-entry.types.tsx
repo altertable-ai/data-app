@@ -24,7 +24,6 @@ import {
   ShimmerText as DirectShimmerText,
 } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
 
 const context = registerContext({ count: 'count' })({
   description: 'Fixture context',
@@ -33,17 +32,6 @@ const context = registerContext({ count: 'count' })({
   },
 });
 
-const hooks =
-  createDataHooks(
-    createDataClient<{
-      count: DataOperation<Record<string, never>, number>;
-    }>()
-  );
-const view = hooks.defineDataView({
-  dataContext: context,
-  operation: 'count',
-  describeInput: () => 'all',
-});
 const dataApp = defineDataApp({
   title: 'Test',
   description: 'Verify app authoring contracts.',
@@ -51,6 +39,19 @@ const dataApp = defineDataApp({
   appearance: {},
   queries: {},
 });
+const hooks = createDataHooks(
+  createDataClient({
+    operations: {
+      count: dataApp.defineOperation({
+        policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+        async run() {
+          return 1;
+        },
+      }),
+    },
+  })
+);
+const view = hooks.defineView({ dataContext: context, operation: 'count' });
 
 const base = {
   dataContext: { description: 'Test', glossary: {} },
@@ -137,14 +138,8 @@ void dataset.props;
 void dataset.csv;
 // @ts-expect-error Request configuration is private after declaration.
 void view.operation;
-// @ts-expect-error Resolved input mapping is private after declaration.
-void view.input;
-// @ts-expect-error Variables are accessed through the displayed result.
-void view.variables;
-// @ts-expect-error Date bindings are private after declaration.
-void view.date;
-// @ts-expect-error Field bindings are private after declaration.
-void view.bindings;
+// @ts-expect-error Filters belong to the operation, not the view.
+void view.filters;
 const boundMetric = view.metric(
   {
     id: 'count',
@@ -213,10 +208,9 @@ view.content(source => {
 // @ts-expect-error Context belongs to the declared view.
 <DataApp {...app} dataContext={context} />;
 // @ts-expect-error A view must own a registered data context.
-hooks.defineDataView({
-  operation: 'count',
-  describeInput: () => 'all',
-});
+hooks.defineView({ operation: 'count' });
+// @ts-expect-error Filters belong to the operations, not the app root.
+<DataApp {...app} filters={{}} />;
 view.metric(
   // @ts-expect-error Metric registration validates the view's glossary keys.
   { id: 'bad', glossaryId: 'missing', format: { kind: 'count' } },

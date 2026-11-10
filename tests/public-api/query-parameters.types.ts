@@ -1,8 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
-import {
-  connectionCheck,
-  parseEmptyInput,
-} from '@altertable/data-app/contract';
+import { connectionCheck } from '@altertable/data-app/contract';
 
 const app = defineDataApp({
   title: 'Parameters',
@@ -32,8 +29,6 @@ const app = defineDataApp({
   },
 });
 app.defineOperation({
-  input: parseEmptyInput,
-  checks: [{}],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }) {
     await query('filtered', { search: 'text' });
@@ -132,8 +127,6 @@ const implicitInput = defineDataApp({
   },
 });
 implicitInput.defineOperation({
-  input: parseEmptyInput,
-  checks: [{}],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }) {
     await query('value', { limit: null });

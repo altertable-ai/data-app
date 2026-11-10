@@ -1,8 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
-import {
-  parseEmptyInput,
-  type QueryParameters,
-} from '@altertable/data-app/contract';
+import { type QueryParameters } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
@@ -34,8 +31,6 @@ async function execute(
 ) {
   const delivered: QueryParameters[] = [];
   const operation = app.defineOperation({
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run({ query }) {
       // @ts-expect-error Exercise malformed input at the runtime boundary.

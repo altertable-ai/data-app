@@ -4,8 +4,11 @@
  */
 import {
   defineOperation,
-  type OperationDefinition,
+  type DefinedOperation,
+  type FilterOperationDefinition,
+  type InputOperationDefinition,
 } from '../authoring/contract.ts';
+import type { FilterCollection } from './app-filters.ts';
 import type { AppearanceOptions } from './appearance.ts';
 import {
   bindDimensionSource,
@@ -13,6 +16,7 @@ import {
   type DimensionSourceQueryName,
   type SourceDimensionFilter,
 } from './dimension-source.ts';
+import type { FilterInput } from './operation-filters.ts';
 import {
   snapshotQueries,
   type QueryDefinitions,
@@ -54,9 +58,17 @@ export type DataAppDefinition<
       source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
     }
   ): SourceDimensionFilter<{ string: string; number: number }[Type]>;
+  /** Parse a destination's own input, such as a record id, and list valid `checks`. */
   defineOperation<Input, Output>(
-    operation: OperationDefinition<Input, Output, Queries>
-  ): ReturnType<typeof defineOperation<Input, Output, Queries>>;
+    operation: InputOperationDefinition<Input, Output, Queries>
+  ): DefinedOperation<Input, Output, Queries>;
+  /** Declare the filters the operation reads; its input, checks, and views derive from them. */
+  defineOperation<
+    const Filters extends FilterCollection = {},
+    Output = unknown,
+  >(
+    operation: FilterOperationDefinition<Filters, Output, Queries>
+  ): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>;
 };
 
 /**
@@ -95,13 +107,11 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
     ) {
       return bindDimensionSource<Type>(config, queries);
     },
-    defineOperation<Input, Output>(
-      operation: OperationDefinition<Input, Output, Queries>
-    ) {
-      return defineOperation<Input, Output, Queries>({
+    defineOperation(operation: object): any {
+      return defineOperation({
         ...operation,
         queries: queries as unknown as CheckedQueries<Queries>,
-      });
+      } as never);
     },
   });
 }

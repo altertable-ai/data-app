@@ -10,11 +10,10 @@ import {
   DataSection,
   VisualizationWidget,
   Stack,
-  choiceFilter,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
-import { parseCount } from '@altertable/data-app/contract';
+import { choiceFilter, parseCount } from '@altertable/data-app/contract';
 const dataApp = defineDataApp({
   title: 'Sample metric',
   description: 'Fixture counts by group; replace with the requested metric.',
@@ -53,29 +52,25 @@ SELECT group_name, sample_count FROM SEMANTIC_VIEW(
     },
   },
 });
-function parseGroupFilter(value: unknown) {
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    !('groupName' in value) ||
-    typeof value.groupName !== 'string' ||
-    !['all', 'Alpha', 'Beta'].includes(value.groupName)
-  )
-    throw new Error('Expected a fixture group.');
-  return { groupName: value.groupName };
-}
+// Declare each filter once; operations list the filters they read, and views,
+// controls, and scope derive from them.
+const groupName = choiceFilter({
+  key: 'group',
+  label: 'Group',
+  defaultValue: 'all',
+  options: [
+    { id: 'all', label: 'All groups' },
+    { id: 'Alpha', label: 'Alpha' },
+    { id: 'Beta', label: 'Beta' },
+  ],
+});
 /** The fixture queries read an empty group name as every group. */
 function queryGroup(groupName: string) {
   return groupName === 'all' ? '' : groupName;
 }
 const operations = {
   sampleCountsByGroup: dataApp.defineOperation({
-    input: parseGroupFilter,
-    checks: [
-      { groupName: 'all' },
-      { groupName: 'Alpha' },
-      { groupName: 'Beta' },
-    ],
+    filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const queryResult = await query('sampleCountsByGroup', {
@@ -94,12 +89,7 @@ const operations = {
     },
   }),
   sampleCountsBySegment: dataApp.defineOperation({
-    input: parseGroupFilter,
-    checks: [
-      { groupName: 'all' },
-      { groupName: 'Alpha' },
-      { groupName: 'Beta' },
-    ],
+    filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const queryResult = await query('sampleCountsBySegment', {
@@ -130,30 +120,10 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineDataView, defineFilters } = createDataHooks(
-  createDataClient({ operations })
-);
-// Declare filters once; each chart's view reads them, and <DataApp> renders their controls.
-const filters = defineFilters({
-  groupName: choiceFilter({
-    key: 'group',
-    label: 'Group',
-    defaultValue: 'all',
-    options: [
-      { id: 'all', label: 'All groups' },
-      { id: 'Alpha', label: 'Alpha' },
-      { id: 'Beta', label: 'Beta' },
-    ],
-  }),
-});
-function describeGroup({ groupName }: { groupName: string }) {
-  return groupName === 'all' ? 'all groups' : groupName;
-}
-const sampleCountsView = defineDataView({
+const { defineView } = createDataHooks(createDataClient({ operations }));
+const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  filters,
-  describeInput: describeGroup,
   isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching groups',
@@ -173,11 +143,9 @@ const sampleCounts = sampleCountsView.dataset({
     glossaryIds: ['sampleCount'],
   },
 });
-const segmentCountsView = defineDataView({
+const segmentCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsBySegment',
-  filters,
-  describeInput: describeGroup,
   isEmpty: rows => rows.length === 0,
   emptyFallback: {
     title: 'No matching segments',
@@ -252,7 +220,7 @@ const segmentContent = segmentCountsView.content(result => (
 ));
 function App() {
   return (
-    <DataApp view={sampleCountsView} filters={filters} showToolbar={false}>
+    <DataApp view={sampleCountsView} showToolbar={false}>
       <Stack>
         <DataSection content={groupContent} label="Sample count" />
         <DataSection content={segmentContent} label="Samples by segment" />

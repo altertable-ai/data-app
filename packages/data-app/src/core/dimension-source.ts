@@ -1,8 +1,4 @@
-import type { FilterValues, FilterCollection } from './app-filters.ts';
-import type {
-  DateTimeRangeComparisonRequest,
-  DateTimeRangeComparisonFilter,
-} from './date-time-filter.ts';
+import type { FilterCollection } from './app-filters.ts';
 import {
   createDimensionFilter,
   parseFacetOptions,
@@ -32,7 +28,6 @@ export type SourceDimensionFilter<Value extends DimensionValue> =
     readonly [dimensionSource]: { readonly operation: string };
   };
 const sources = new WeakMap<object, Source>();
-const parserFilters = new WeakMap<Function, FilterCollection>();
 const selectorsKey = Symbol.for('@altertable/data-app/dimension-selectors');
 const ownerKey = Symbol.for('@altertable/data-app/dimension-selector-owner');
 const invalidMemberKey = Symbol.for(
@@ -50,66 +45,6 @@ export class DimensionMembershipError extends Error {
       (value as { [invalidMemberKey]?: unknown })[invalidMemberKey] === true
     );
   }
-}
-
-type ParsedFilterValues<Collection extends FilterCollection> = {
-  [
-    Key in keyof Collection
-  ]: Collection[Key] extends DateTimeRangeComparisonFilter
-    ? DateTimeRangeComparisonRequest
-    : FilterValues<Collection>[Key];
-};
-
-/** Validate named filter values at the operation boundary. Date inputs belong to the base parser. */
-export function filterInput<
-  Input extends object,
-  const Collection extends FilterCollection,
->(
-  parse: (value: unknown) => Input,
-  filters: Collection & {
-    [Key in keyof Collection]: Collection[Key] extends { kind: 'dateRange' }
-      ? never
-      : Collection[Key];
-  }
-): (value: unknown) => Input & ParsedFilterValues<Collection> {
-  const previous = parserFilters.get(parse) ?? {};
-  const definitions = { ...filters };
-  for (const [name, variable] of Object.entries(definitions))
-    invariant(
-      !previous[name] || previous[name] === variable,
-      `Filter input ${name} is already declared.`
-    );
-  function parser(value: unknown) {
-    invariant(
-      value && typeof value === 'object' && !Array.isArray(value),
-      'Expected filter input.'
-    );
-    const input = parse(value);
-    invariant(
-      input && typeof input === 'object' && !Array.isArray(input),
-      'Expected parsed input object.'
-    );
-    const values: Record<string, unknown> = {};
-    for (const [name, variable] of Object.entries(definitions)) {
-      const selected = (value as Record<string, unknown>)[name];
-      if (variable.kind === 'dateTimeRangeComparison') {
-        values[name] = variable.parseInput(selected);
-        continue;
-      }
-      invariant(
-        variable.valid(selected as never),
-        `Invalid ${variable.label ?? name}.`
-      );
-      values[name] =
-        variable.kind === 'dateTimeRange' ? variable.parse(selected) : selected;
-    }
-    return { ...input, ...values } as Input & ParsedFilterValues<Collection>;
-  }
-  parserFilters.set(parser, {
-    ...previous,
-    ...definitions,
-  });
-  return parser;
 }
 
 export type DimensionSourceConfig<Type extends 'string' | 'number'> =
@@ -217,14 +152,13 @@ async function loadOptions(
     throw new DimensionMembershipError(`Invalid ${variable.label} member.`);
   return options;
 }
-export async function validateFilterInput(
-  parser: Function,
+/** Source dimension selections must name members the source query returns. */
+export async function validateSourceMembers(
+  filters: FilterCollection,
   input: unknown,
   query: Query
 ) {
-  for (const [name, variable] of Object.entries(
-    parserFilters.get(parser) ?? {}
-  )) {
+  for (const [name, variable] of Object.entries(filters)) {
     if (variable.kind !== 'dimension' || !sources.has(variable)) continue;
     const selection = (input as Record<string, DimensionSelection>)[name]!;
     if (selection.kind === 'all') continue;
@@ -238,9 +172,7 @@ export function attachDimensionSelectors(
   queries: QueryDefinitions
 ) {
   const selectors: DataOperations = {};
-  for (const variable of Object.values(
-    parserFilters.get(operation.input) ?? {}
-  )) {
+  for (const variable of Object.values(operation.filters ?? {})) {
     if (variable.kind !== 'dimension' || !(dimensionSource in variable))
       continue;
     const source = sources.get(variable);

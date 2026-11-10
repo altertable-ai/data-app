@@ -11,22 +11,15 @@ import {
   createDataHooks,
   DataApp,
   DataSection,
-  searchFilter,
   TableWidget,
 } from '@altertable/data-app-react';
 
 // ... client, operations, and sampleDataContext
-const { defineDataView, defineFilters } = createDataHooks(client);
+const { defineView } = createDataHooks(client);
 
-const filters = defineFilters({
-  groupName: searchFilter({ key: 'group', label: 'Group', defaultValue: '' }),
-});
-const sampleCountsView = defineDataView({
+const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  filters,
-  describeInput: ({ groupName }) =>
-    groupName ? `group ${groupName}` : 'all groups',
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
 });
@@ -37,58 +30,42 @@ const sampleContent = sampleCountsView.content(result => (
 
 function App() {
   return (
-    <DataApp
-      view={sampleCountsView}
-      filters={filters}
-      story={story}
-      datasets={[sampleCounts]}
-    >
+    <DataApp view={sampleCountsView} story={story} datasets={[sampleCounts]}>
       <DataSection content={sampleContent} />
     </DataApp>
   );
 }
 ```
 
-Keep operation input flat and named like the [filters](filters.md). Omit `input`
-and `bindings` when those shapes match. Use `defineTimeView()` for period-driven
-analysis and `defineDataView()` otherwise. Adapt an existing nested input only
-when required; see [input mapping](filters.md#adapt-existing-input-shapes).
+The view's filters, reporting period, metric comparisons, and scope come from
+the [filters](filters.md) its operation declares. Set `describeInput` only when
+the derived scope needs specific copy.
 
 ## Give each widget its own view
 
 The hosted starter gives its total and its group counts separate operations and
 views. `<DataApp view>` loads with the page; every other `<DataSection>` loads
-when it nears the viewport. Both views read the same filters, and
-`<DataApp filters>` renders their controls once:
+when it nears the viewport. Both operations read the same `groupName` filter,
+and `<DataApp>` renders its control once:
 
 ```tsx
 // ... client, operations, sampleDataContext, and section contents
-const { defineDataView, defineFilters } = createDataHooks(client);
+const { defineView } = createDataHooks(client);
 
-const filters = defineFilters({
-  groupName: searchFilter({ key: 'group', label: 'Group', defaultValue: '' }),
-});
-function describeGroup({ groupName }: { groupName: string }) {
-  return groupName || 'all groups';
-}
-const sampleCountsView = defineDataView({
+const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  filters,
-  describeInput: describeGroup,
   isEmpty: rows => rows.length === 0,
   emptyFallback: { title: 'No matching groups' },
 });
-const sampleTotalView = defineDataView({
+const sampleTotalView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleTotal',
-  filters,
-  describeInput: describeGroup,
 });
 
 function App() {
   return (
-    <DataApp view={sampleCountsView} filters={filters}>
+    <DataApp view={sampleCountsView}>
       <Stack>
         <DataSection content={totalContent} />
         <DataSection content={countsContent} />
@@ -97,6 +74,9 @@ function App() {
   );
 }
 ```
+
+Define every view rendered inside one `<DataApp>` from the same
+`createDataHooks()` result; its client owns their filter controls.
 
 Share one [data context](data-context.md) across the app's views. Group widgets
 in one view only when they show the same result, such as a chart and the table
@@ -121,9 +101,8 @@ The destination owns its input parser, operation, datasets, context, and content
 Pass its content to `<DataApp details={[groupDetail]}>`:
 
 ```tsx
-// ... client, operations, sampleDataContext, filters, main view, datasets, and story
-const { defineDetailView } = createDataHooks(client);
-
+// ... operations, sampleDataContext, main view, datasets, and story
+// ... defineDetailView from the main view's createDataHooks() result
 const groupView = defineDetailView({
   id: 'group',
   title: 'Group counts',
@@ -152,7 +131,6 @@ function App() {
   return (
     <DataApp
       view={sampleCountsView}
-      filters={filters}
       datasets={[sampleCounts]}
       story={story}
       details={[groupDetail]}
@@ -163,8 +141,9 @@ function App() {
 }
 ```
 
-Pass serializable scope and IDs, not records or credentials. Validate dimension selections with
-the dashboard's `filterInput()` parser. The main app owns stories and exports.
+Pass serializable scope and IDs, not records or credentials. `parseInput` can
+reuse the operation's derived `input` parser. The main app owns stories and
+exports.
 
 ### Contributing metric records
 

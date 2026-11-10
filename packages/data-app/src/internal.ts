@@ -70,10 +70,14 @@ export {
 
 export { KEY_SEPARATOR } from './core/keys.ts';
 
+export { type CheckedFilterDeclarations } from './core/app-filters.ts';
 export {
-  type CheckedFacetContexts,
-  type CheckedFilterDeclarations,
-} from './core/app-filters.ts';
+  combineOperationFilters,
+  dateFilterName,
+  resolveFilterInput,
+  type DateFilter,
+  type FilterInput,
+} from './core/operation-filters.ts';
 
 export { MAX_QUERY_ROWS, type IsUnion } from './core/queries.ts';
 

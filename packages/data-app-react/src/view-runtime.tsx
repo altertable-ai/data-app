@@ -3,10 +3,10 @@ import {
   invariant,
   type DataView,
   type DisplayedSnapshot,
+  type FilterCollection,
 } from '@altertable/data-app/internal';
-import { createContext } from 'react';
+import { createContext, type ReactNode } from 'react';
 
-import { Filters } from './filter-set.ts';
 import { type DataContext } from './ui/data-context.ts';
 import { type EmptyContent } from './ui/presentation.ts';
 
@@ -64,25 +64,37 @@ export function useDeclaredResult<View extends DeclaredView<unknown, unknown>>(
   return DeclaredView.useResult(view, request);
 }
 
+export type FilterControls = {
+  searchControls: ReactNode;
+  filterControls: ReactNode;
+};
+
+/** Every filter one client's operations read, and the hook rendering their controls. */
+export type ClientFilters = {
+  filters: FilterCollection;
+  useControls: () => FilterControls;
+};
+
 /** The views `<DataApp>` runs, so their sections reuse its results instead of requesting again.
  * The primary view's result aggregates the app's requests. */
 export const AppViewResultsContext = createContext<{
   primaryView: DeclaredView<unknown, unknown>;
-  filters: Filters | undefined;
+  clientFilters: ClientFilters;
   results: ReadonlyMap<object, ViewResult<unknown, unknown>>;
 } | null>(null);
 
-/** `<DataApp filters>` renders filter controls, so every view it shows must read
- * that declaration or a `pick()` of it. */
+/** `<DataApp>` renders the controls of its client's filters, so every view it shows
+ * must come from the same `createDataHooks()` result. */
 export function assertAppFilters(
   view: DeclaredView<unknown, unknown>,
-  appFilters: Filters | undefined
+  clientFilters: ClientFilters
 ) {
-  const { filterSet } = getViewDefinition(view) as { filterSet?: Filters };
-  if (!filterSet) return;
+  const definition = getViewDefinition(view) as {
+    clientFilters?: ClientFilters;
+  };
   invariant(
-    appFilters && Filters.root(filterSet) === appFilters,
-    'A view’s filters must come from the defineFilters() result passed to <DataApp filters>, which renders their controls.'
+    !definition.clientFilters || definition.clientFilters === clientFilters,
+    'Views inside <DataApp> must come from the same createDataHooks() client, which owns their filter controls.'
   );
 }
 

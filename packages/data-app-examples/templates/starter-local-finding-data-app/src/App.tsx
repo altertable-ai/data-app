@@ -13,12 +13,10 @@ import { createDataClient } from '@altertable/data-app/client';
 
 import { sampleDataContext } from '#app/data-context.ts';
 import type { operations } from '#app/operations.ts';
-const { defineDataView } =
-  createDataHooks(createDataClient<typeof operations>());
-const sampleCountsView = defineDataView({
+const { defineView } = createDataHooks(createDataClient<typeof operations>());
+const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
-  describeInput: () => 'fixture groups',
   isEmpty: sampleCounts => sampleCounts.length === 0,
   emptyFallback: {
     title: 'No matching groups',
