@@ -18,6 +18,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
   });
   const curves = chart.locator('.recharts-line-curve');
   await expect.poll(() => curves.count()).toBe(12);
+  expect(await chart.getByRole('button', { name: 'Show all' }).count()).toBe(0);
   const chartHeight = (await chart.boundingBox())!.height;
   await api.hover();
   await expect
@@ -41,7 +42,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
   expect((await chart.boundingBox())!.height).toBe(chartHeight);
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
-    .toBe((await legend.locator('button[aria-pressed]').count()) - 2);
+    .toBe((await legend.locator('button[aria-pressed]').count()) - 1);
   await expect
     .poll(() =>
       curves.evaluateAll(
@@ -58,7 +59,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
   await analytics.click();
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
-    .toBe((await legend.locator('button[aria-pressed]').count()) - 3);
+    .toBe((await legend.locator('button[aria-pressed]').count()) - 2);
   await expect
     .poll(() =>
       curves.evaluateAll(
@@ -93,7 +94,7 @@ test('focus removes dots from excluded line series', async ({ page }) => {
   await expect.poll(() => dots.count()).toBe(4);
 });
 
-test('automatic legend keeps long labels accessible beside the all-series control', async ({
+test('automatic legend keeps long labels accessible with a conditional reset', async ({
   mobilePage: page,
 }) => {
   await page.setViewportSize({ width: 320, height: 900 });
@@ -103,12 +104,12 @@ test('automatic legend keeps long labels accessible beside the all-series contro
     exact: true,
   });
   const legend = chart.getByRole('list', { name: 'Chart legend' });
-  const all = legend.getByRole('button', { name: 'Show all' });
+  const all = chart.getByRole('button', { name: 'Show all' });
   const label = legend.getByText(
     'Alpha — response time in production workspaces across Europe',
     { exact: true }
   );
-  await expect.poll(() => all.getAttribute('aria-pressed')).toBe('true');
+  expect(await all.count()).toBe(0);
   await expect.poll(() => label.isVisible()).toBe(true);
   expect(await label.getAttribute('title')).toBe(
     'Alpha — response time in production workspaces across Europe'
@@ -122,10 +123,33 @@ test('automatic legend keeps long labels accessible beside the all-series contro
       name: 'Alpha — response time in production workspaces across Europe',
     })
     .click();
-  await expect.poll(() => all.getAttribute('aria-pressed')).toBe('false');
+  await expect.poll(() => all.isVisible()).toBe(true);
   expect((await chart.boundingBox())!.height).toBe(chartHeight);
   await all.click();
-  await expect.poll(() => all.getAttribute('aria-pressed')).toBe('true');
+  await expect.poll(() => all.count()).toBe(0);
+});
+
+test('four series retain every legend cell when focus is toggled', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 915, height: 968 });
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Four series plot',
+    exact: true,
+  });
+  const legend = chart.getByRole('list', { name: 'Chart legend' });
+  await expect.poll(() => legend.getByRole('listitem').count()).toBe(4);
+  expect(await chart.getByRole('button', { name: 'Show all' }).count()).toBe(0);
+  const height = (await chart.boundingBox())!.height;
+  await legend.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect
+    .poll(() => chart.getByRole('button', { name: 'Show all' }).isVisible())
+    .toBe(true);
+  expect(await legend.getByRole('listitem').count()).toBe(4);
+  expect((await chart.boundingBox())!.height).toBe(height);
+  await chart.getByRole('button', { name: 'Show all' }).click();
+  expect(await chart.getByRole('button', { name: 'Show all' }).count()).toBe(0);
 });
 
 test('funnel and retention legends focus their plotted populations', async ({

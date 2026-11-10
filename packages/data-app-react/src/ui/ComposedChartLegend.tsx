@@ -119,7 +119,7 @@ function LegendContent({
       action={
         canInteract ? (
           <ChartLegendAllAction
-            active={!interaction.focusedKeys}
+            visible={!!interaction.focusedKeys}
             onClick={interaction.showAll}
           />
         ) : undefined

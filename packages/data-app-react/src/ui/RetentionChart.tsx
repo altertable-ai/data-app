@@ -255,7 +255,7 @@ export function RetentionChart({
             action={
               interactiveLegend && cohorts.length > 1 ? (
                 <ChartLegendAllAction
-                  active={!legendFocus.focusedIds}
+                  visible={!!legendFocus.focusedIds}
                   onClick={legendFocus.showAll}
                 />
               ) : undefined

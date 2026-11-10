@@ -180,7 +180,7 @@ export function FunnelChart({
               action={
                 interactiveLegend && populations.length > 1 ? (
                   <ChartLegendAllAction
-                    active={!legendFocus.focusedIds}
+                    visible={!!legendFocus.focusedIds}
                     onClick={legendFocus.showAll}
                   />
                 ) : undefined

@@ -592,6 +592,26 @@ createRoot(document.getElementById('root')!).render(
         </ComposedChart>
       </Example>
       <Example
+        name="Four series focus"
+        description="Focus controls do not take a legend cell."
+      >
+        <ComposedChart
+          data={[
+            { x: 0, alpha: 10, beta: 20, gamma: 30, delta: 40 },
+            { x: 1, alpha: 15, beta: 25, gamma: 35, delta: 45 },
+          ]}
+          ariaLabel="Four series plot"
+        >
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Line dataKey="alpha" name="Alpha" />
+          <ComposedChart.Line dataKey="beta" name="Beta" />
+          <ComposedChart.Line dataKey="gamma" name="Gamma" />
+          <ComposedChart.Line dataKey="delta" name="Delta" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
         name="LineChart — long labels"
         description="Twelve series with longer labels and a separately composed legend below the plot."
       >
