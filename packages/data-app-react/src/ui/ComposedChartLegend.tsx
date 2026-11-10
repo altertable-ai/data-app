@@ -6,7 +6,11 @@ import {
   ChartLegendInteractionContext,
   chartLegendSeriesKey,
 } from './chart-legend-interaction.tsx';
-import { ChartLegend, type ChartLegendMarkerKind } from './ChartLegend.tsx';
+import {
+  ChartLegend,
+  ChartLegendFrame,
+  type ChartLegendMarkerKind,
+} from './ChartLegend.tsx';
 
 export type ComposedChartLegendProps = ComponentProps<typeof Legend> & {
   maxVisibleItems?: number;
@@ -100,120 +104,114 @@ function LegendContent({
   const vertical =
     layout === 'vertical' ||
     (layout === 'auto' && (position === 'left' || position === 'right'));
-  return (
-    <>
-      <ChartLegend
-        aria-label={ariaLabel}
-        className={
-          position === 'top' || (position == null && verticalAlign === 'top')
-            ? 'altertable-composed-chart-legend-above'
-            : position === 'bottom' ||
-                (position == null && verticalAlign !== 'middle' && !vertical)
-              ? 'altertable-composed-chart-legend-below'
-              : undefined
-        }
-        maxVisibleItems={maxVisibleItems}
-        layout={vertical ? 'vertical' : 'horizontal'}
-        align={
-          align === 'right' ? 'end' : align === 'left' ? 'start' : 'center'
-        }
-      >
-        {payload.map((entry, index) => {
-          if (entry.type === 'none') return null;
-          const type = iconType ?? entry.type;
-          const kind = iconType
-            ? (legendMarkerKinds[type ?? 'none'] ?? 'point')
-            : 'square';
-          const formatLabel = entry.formatter ?? formatter;
-          const label = formatLabel
-            ? formatLabel(entry.value, entry, index)
-            : entry.value;
-          const content = (
-            <>
-              {type !== 'none' &&
-                (entry.legendIcon ?? (
-                  <ChartLegend.Marker
-                    kind={kind}
-                    color={entry.inactive ? inactiveColor : entry.color}
-                    style={{
-                      width: iconSize,
-                      height: kind === 'square' ? iconSize : iconSize * 0.6,
-                    }}
-                  />
-                ))}
-              <ChartLegend.Label style={labelStyle}>{label}</ChartLegend.Label>
-            </>
-          );
-          return (
-            <ChartLegend.Item
-              key={itemKeys[index]}
-              inactive={entry.inactive}
-              data-legend-muted={
-                canInteract &&
-                interaction.hoveredKey &&
-                interaction.hoveredKey !== itemKeys[index]
-                  ? true
-                  : undefined
-              }
-              data-legend-excluded={
-                canInteract &&
-                interaction.focusedKeys &&
-                !interaction.focusedKeys.has(itemKeys[index]!)
-                  ? true
-                  : undefined
-              }
-              onMouseEnter={event => {
-                if (canInteract) interaction.hover(itemKeys[index]!);
-                onMouseEnter?.(entry, index, event);
-              }}
-              onMouseLeave={event => {
-                if (canInteract) interaction.hover(null);
-                onMouseLeave?.(entry, index, event);
-              }}
-            >
-              {canInteract || onClick ? (
-                <button
-                  type="button"
-                  data-atbl-control="action"
-                  data-atbl-focus="ring"
-                  className="altertable-chart-legend-action"
-                  aria-pressed={
-                    canInteract
-                      ? !!interaction.focusedKeys?.has(itemKeys[index]!)
-                      : undefined
-                  }
-                  onFocus={() => {
-                    if (canInteract) interaction.hover(itemKeys[index]!);
+  const legend = (
+    <ChartLegend
+      aria-label={ariaLabel}
+      className={
+        position === 'top' || (position == null && verticalAlign === 'top')
+          ? 'altertable-composed-chart-legend-above'
+          : position === 'bottom' ||
+              (position == null && verticalAlign !== 'middle' && !vertical)
+            ? 'altertable-composed-chart-legend-below'
+            : undefined
+      }
+      maxVisibleItems={maxVisibleItems}
+      layout={vertical ? 'vertical' : 'horizontal'}
+      align={align === 'right' ? 'end' : align === 'left' ? 'start' : 'center'}
+    >
+      {payload.map((entry, index) => {
+        if (entry.type === 'none') return null;
+        const type = iconType ?? entry.type;
+        const kind = iconType
+          ? (legendMarkerKinds[type ?? 'none'] ?? 'point')
+          : 'square';
+        const formatLabel = entry.formatter ?? formatter;
+        const label = formatLabel
+          ? formatLabel(entry.value, entry, index)
+          : entry.value;
+        const content = (
+          <>
+            {type !== 'none' &&
+              (entry.legendIcon ?? (
+                <ChartLegend.Marker
+                  kind={kind}
+                  color={entry.inactive ? inactiveColor : entry.color}
+                  style={{
+                    width: iconSize,
+                    height: kind === 'square' ? iconSize : iconSize * 0.6,
                   }}
-                  onBlur={() => {
-                    if (canInteract) interaction.hover(null);
-                  }}
-                  onClick={event => {
-                    if (canInteract) interaction.toggle(itemKeys[index]!);
-                    onClick?.(entry, index, event);
-                  }}
-                >
-                  {content}
-                </button>
-              ) : (
-                content
-              )}
-            </ChartLegend.Item>
-          );
-        })}
-      </ChartLegend>
-      {canInteract && interaction.focusedKeys && (
-        <button
-          type="button"
-          data-atbl-control="action"
-          data-atbl-focus="ring"
-          className="altertable-chart-legend-action altertable-chart-legend-show-all"
-          onClick={interaction.showAll}
-        >
-          Show all
-        </button>
-      )}
-    </>
+                />
+              ))}
+            <ChartLegend.Label style={labelStyle}>{label}</ChartLegend.Label>
+          </>
+        );
+        return (
+          <ChartLegend.Item
+            key={itemKeys[index]}
+            inactive={entry.inactive}
+            data-legend-muted={
+              canInteract &&
+              interaction.hoveredKey &&
+              interaction.hoveredKey !== itemKeys[index]
+                ? true
+                : undefined
+            }
+            data-legend-excluded={
+              canInteract &&
+              interaction.focusedKeys &&
+              !interaction.focusedKeys.has(itemKeys[index]!)
+                ? true
+                : undefined
+            }
+            onMouseEnter={event => {
+              if (canInteract) interaction.hover(itemKeys[index]!);
+              onMouseEnter?.(entry, index, event);
+            }}
+            onMouseLeave={event => {
+              if (canInteract) interaction.hover(null);
+              onMouseLeave?.(entry, index, event);
+            }}
+          >
+            {canInteract || onClick ? (
+              <button
+                type="button"
+                data-atbl-control="action"
+                data-atbl-focus="ring"
+                className="altertable-chart-legend-action"
+                aria-pressed={
+                  canInteract
+                    ? !!interaction.focusedKeys?.has(itemKeys[index]!)
+                    : undefined
+                }
+                onFocus={() => {
+                  if (canInteract) interaction.hover(itemKeys[index]!);
+                }}
+                onBlur={() => {
+                  if (canInteract) interaction.hover(null);
+                }}
+                onClick={event => {
+                  if (canInteract) interaction.toggle(itemKeys[index]!);
+                  onClick?.(entry, index, event);
+                }}
+              >
+                {content}
+              </button>
+            ) : (
+              content
+            )}
+          </ChartLegend.Item>
+        );
+      })}
+    </ChartLegend>
+  );
+  return canInteract ? (
+    <ChartLegendFrame
+      onShowAll={interaction.focusedKeys ? interaction.showAll : undefined}
+    >
+      {legend}
+    </ChartLegendFrame>
+  ) : (
+    legend
   );
 }
 

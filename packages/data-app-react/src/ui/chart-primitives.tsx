@@ -54,11 +54,12 @@ function NearestChartDot({
 }: DotProps & { seriesId: string }) {
   const interaction = useContext(ChartInteractionContext);
   const registerPoint = interaction?.registerPoint;
+  const legend = useChartLegendSeries(seriesId, undefined);
   useLayoutEffect(() => {
-    if (cx == null || cy == null) return;
+    if (legend.hidden || cx == null || cy == null) return;
     return registerPoint?.(seriesId, cx, cy);
-  }, [registerPoint, seriesId, cx, cy]);
-  const active = isChartSeriesActive(interaction, seriesId);
+  }, [registerPoint, seriesId, cx, cy, legend.hidden]);
+  const active = !legend.hidden && isChartSeriesActive(interaction, seriesId);
   return active ? (
     <ChartDot
       cx={cx}
@@ -116,21 +117,25 @@ export function ChartLine<Row = unknown, Value = number | null>({
         strokeLinecap="round"
         strokeLinejoin="round"
         dot={
-          dot === true
-            ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
-            : dot
+          legend.hidden
+            ? false
+            : dot === true
+              ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
+              : dot
         }
         activeDot={
-          activeDot === undefined || activeDot === true
-            ? ({ cx, cy }) => (
-                <NearestChartDot
-                  seriesId={series.id}
-                  cx={cx}
-                  cy={cy}
-                  stroke={stroke}
-                />
-              )
-            : activeDot
+          legend.hidden
+            ? false
+            : activeDot === undefined || activeDot === true
+              ? ({ cx, cy }) => (
+                  <NearestChartDot
+                    seriesId={series.id}
+                    cx={cx}
+                    cy={cy}
+                    stroke={stroke}
+                  />
+                )
+              : activeDot
         }
         isAnimationActive={false}
         {...props}
@@ -166,21 +171,25 @@ export function ChartArea<Row = unknown, Value = number | null>({
         fill={stroke}
         fillOpacity={0.14}
         dot={
-          dot === true
-            ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
-            : dot
+          legend.hidden
+            ? false
+            : dot === true
+              ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
+              : dot
         }
         activeDot={
-          activeDot === undefined || activeDot === true
-            ? ({ cx, cy }) => (
-                <NearestChartDot
-                  seriesId={series.id}
-                  cx={cx}
-                  cy={cy}
-                  stroke={stroke}
-                />
-              )
-            : activeDot
+          legend.hidden
+            ? false
+            : activeDot === undefined || activeDot === true
+              ? ({ cx, cy }) => (
+                  <NearestChartDot
+                    seriesId={series.id}
+                    cx={cx}
+                    cy={cy}
+                    stroke={stroke}
+                  />
+                )
+              : activeDot
         }
         isAnimationActive={false}
         {...props}

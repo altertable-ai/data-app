@@ -21,6 +21,36 @@ export type ChartLegendProps = {
   maxVisibleItems?: number;
 } & Omit<ComponentPropsWithRef<'ul'>, 'children'>;
 
+/** Keep the reset control in a stable slot beside an interactive legend. */
+export function ChartLegendFrame({
+  children,
+  onShowAll,
+  enabled = true,
+}: {
+  children: ReactNode;
+  onShowAll?: () => void;
+  enabled?: boolean;
+}) {
+  if (!enabled) return <>{children}</>;
+  return (
+    <div className="altertable-chart-legend-frame">
+      {children}
+      <button
+        type="button"
+        data-atbl-control="action"
+        data-atbl-focus="ring"
+        className="altertable-chart-legend-reset"
+        aria-label="Show all"
+        title="Show all"
+        hidden={!onShowAll}
+        onClick={onShowAll}
+      >
+        All
+      </button>
+    </div>
+  );
+}
+
 /** Optional chart key, placed beside any chart with the app's layout components.
  * Items describe displayed series or categories; the caller owns series visibility and interactions. */
 function ChartLegendRoot({

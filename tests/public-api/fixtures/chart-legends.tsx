@@ -562,6 +562,18 @@ createRoot(document.getElementById('root')!).render(
         </ComposedChart>
       </Example>
       <Example
+        name="Series dot focus"
+        description="Focused line series hide every dot from excluded series."
+      >
+        <ComposedChart data={legendRows} ariaLabel="Series dot plot">
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Line dataKey="alpha" name="Alpha" dot />
+          <ComposedChart.Line dataKey="beta" name="Beta" dot />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
         name="LineChart — long labels"
         description="Twelve series with longer labels and a separately composed legend below the plot."
       >

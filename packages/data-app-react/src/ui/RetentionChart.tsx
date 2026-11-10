@@ -7,7 +7,7 @@ import {
   type HorizontalGridProps,
 } from './chart-data.ts';
 import { useChartLegendFocus } from './chart-legend-interaction.tsx';
-import { ChartLegend } from './ChartLegend.tsx';
+import { ChartLegend, ChartLegendFrame } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
 import { TooltipSurface } from './TooltipSurface.tsx';
@@ -250,57 +250,51 @@ export function RetentionChart({
               }}
             />
           </ComposedChart>
-          <ChartLegend aria-label={`${ariaLabel} cohorts`}>
-            {cohorts.map(item => (
-              <ChartLegend.Item
-                key={item.id}
-                data-legend-muted={
-                  (interactiveLegend &&
-                    legendFocus.hoveredId &&
-                    legendFocus.hoveredId !== item.id) ||
-                  undefined
-                }
-                data-legend-excluded={
-                  (interactiveLegend && !legendFocus.visible(item.id)) ||
-                  undefined
-                }
-              >
-                {interactiveLegend && cohorts.length > 1 ? (
-                  <button
-                    type="button"
-                    data-atbl-control="action"
-                    data-atbl-focus="ring"
-                    className="altertable-chart-legend-action"
-                    aria-pressed={!!legendFocus.focusedIds?.has(item.id)}
-                    onPointerEnter={() => legendFocus.setHoveredId(item.id)}
-                    onPointerLeave={() => legendFocus.setHoveredId(null)}
-                    onFocus={() => legendFocus.setHoveredId(item.id)}
-                    onBlur={() => legendFocus.setHoveredId(null)}
-                    onClick={() => legendFocus.toggle(item.id)}
-                  >
-                    <ChartLegend.Marker kind="square" color={item.color} />
-                    <ChartLegend.Label>{item.label}</ChartLegend.Label>
-                  </button>
-                ) : (
-                  <>
-                    <ChartLegend.Marker kind="square" color={item.color} />
-                    <ChartLegend.Label>{item.label}</ChartLegend.Label>
-                  </>
-                )}
-              </ChartLegend.Item>
-            ))}
-          </ChartLegend>
-          {interactiveLegend && legendFocus.focusedIds && (
-            <button
-              type="button"
-              data-atbl-control="action"
-              data-atbl-focus="ring"
-              className="altertable-chart-legend-action altertable-chart-legend-show-all"
-              onClick={legendFocus.showAll}
-            >
-              Show all
-            </button>
-          )}
+          <ChartLegendFrame
+            enabled={interactiveLegend && cohorts.length > 1}
+            onShowAll={legendFocus.focusedIds ? legendFocus.showAll : undefined}
+          >
+            <ChartLegend aria-label={`${ariaLabel} cohorts`}>
+              {cohorts.map(item => (
+                <ChartLegend.Item
+                  key={item.id}
+                  data-legend-muted={
+                    (interactiveLegend &&
+                      legendFocus.hoveredId &&
+                      legendFocus.hoveredId !== item.id) ||
+                    undefined
+                  }
+                  data-legend-excluded={
+                    (interactiveLegend && !legendFocus.visible(item.id)) ||
+                    undefined
+                  }
+                >
+                  {interactiveLegend && cohorts.length > 1 ? (
+                    <button
+                      type="button"
+                      data-atbl-control="action"
+                      data-atbl-focus="ring"
+                      className="altertable-chart-legend-action"
+                      aria-pressed={!!legendFocus.focusedIds?.has(item.id)}
+                      onPointerEnter={() => legendFocus.setHoveredId(item.id)}
+                      onPointerLeave={() => legendFocus.setHoveredId(null)}
+                      onFocus={() => legendFocus.setHoveredId(item.id)}
+                      onBlur={() => legendFocus.setHoveredId(null)}
+                      onClick={() => legendFocus.toggle(item.id)}
+                    >
+                      <ChartLegend.Marker kind="square" color={item.color} />
+                      <ChartLegend.Label>{item.label}</ChartLegend.Label>
+                    </button>
+                  ) : (
+                    <>
+                      <ChartLegend.Marker kind="square" color={item.color} />
+                      <ChartLegend.Label>{item.label}</ChartLegend.Label>
+                    </>
+                  )}
+                </ChartLegend.Item>
+              ))}
+            </ChartLegend>
+          </ChartLegendFrame>
           <ul
             className="altertable-sr-only"
             aria-label={`${ariaLabel} readings`}

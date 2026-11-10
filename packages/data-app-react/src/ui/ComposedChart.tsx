@@ -136,6 +136,8 @@ function applyNativeLegendInteraction(
       hide?: boolean;
       opacity?: number;
       style?: { pointerEvents?: string };
+      dot?: unknown;
+      activeDot?: unknown;
     }>;
     const id =
       series.props.id ??
@@ -143,23 +145,23 @@ function applyNativeLegendInteraction(
         ? `atbl-native-${path}-${child.key ?? index}`
         : undefined);
     const key = chartLegendSeriesKey(id, series.props.dataKey)!;
+    const excluded = !!(focusedKeys && !focusedKeys.has(key));
     return cloneElement(series, {
       id,
-      opacity:
-        focusedKeys && !focusedKeys.has(key)
-          ? 0
-          : hoveredKey &&
-              (!focusedKeys || focusedKeys.has(hoveredKey)) &&
-              hoveredKey !== key
-            ? 0.2
-            : series.props.opacity,
+      opacity: excluded
+        ? 0
+        : hoveredKey &&
+            (!focusedKeys || focusedKeys.has(hoveredKey)) &&
+            hoveredKey !== key
+          ? 0.2
+          : series.props.opacity,
       style: {
         ...series.props.style,
-        pointerEvents:
-          focusedKeys && !focusedKeys.has(key)
-            ? 'none'
-            : series.props.style?.pointerEvents,
+        pointerEvents: excluded ? 'none' : series.props.style?.pointerEvents,
       },
+      ...(excluded && (child.type === NativeLine || child.type === NativeArea)
+        ? { dot: false, activeDot: false }
+        : {}),
     });
   });
 }

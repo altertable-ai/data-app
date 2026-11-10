@@ -18,6 +18,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
   });
   const curves = chart.locator('.recharts-line-curve');
   await expect.poll(() => curves.count()).toBe(12);
+  const chartHeight = (await chart.boundingBox())!.height;
   await api.hover();
   await expect
     .poll(() =>
@@ -37,6 +38,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
     )
     .toBe(11);
   await api.click();
+  expect((await chart.boundingBox())!.height).toBe(chartHeight);
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
     .toBe((await legend.locator('button[aria-pressed]').count()) - 1);
@@ -70,10 +72,25 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
     )
     .toBe(10);
   await chart.getByRole('button', { name: 'Show all' }).click();
+  expect((await chart.boundingBox())!.height).toBe(chartHeight);
   await expect.poll(() => curves.count()).toBe(12);
   await expect
     .poll(() => legend.locator('[data-legend-excluded]').count())
     .toBe(0);
+});
+
+test('focus removes dots from excluded line series', async ({ page }) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Series dot plot',
+    exact: true,
+  });
+  const dots = chart.locator('.recharts-line-dots circle');
+  await expect.poll(() => dots.count()).toBe(4);
+  await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect.poll(() => dots.count()).toBe(2);
+  await chart.getByRole('button', { name: 'Show all' }).click();
+  await expect.poll(() => dots.count()).toBe(4);
 });
 
 test('funnel and retention legends focus their plotted populations', async ({
