@@ -92,6 +92,12 @@ type FiltersOf<Operation> = Operation extends {
   ? Filters
   : {};
 
+/** The fields a destination's interactions supply; its filters carry over. */
+type DetailOwnInput<Operation> = Omit<
+  InputOf<Operation>,
+  keyof FiltersOf<Operation>
+>;
+
 /** Operations a view can run: those whose input is their declared filters, or empty.
  * Operations that parse their own input are destinations for `defineDetailView`. */
 type ViewOperationName<Operations extends DataOperations> = {
@@ -176,7 +182,8 @@ type BoundDetailView<
   Data,
   Input,
   Context extends AuthoringDataContext,
-> = DetailView<Data, Input> & {
+  Own = Input,
+> = DetailView<Data, Input, Own> & {
   dataset<
     Row,
     const Columns extends Record<string, object> = Record<string, object>,
@@ -421,33 +428,42 @@ export function createDataHooks<Operations extends DataOperations>(
   ): BoundDetailView<
     OutputOf<Operations[Name]>,
     InputOf<Operations[Name]>,
-    Context
+    Context,
+    DetailOwnInput<Operations[Name]>
   > {
     type Data = OutputOf<Operations[Name]>;
     type Input = InputOf<Operations[Name]>;
     const resolved = { ...definition, ...resolveViewEmptiness(definition) };
-    const target = new DetailView<Data, Input>(resolved, input => {
-      const request = useDataView({
-        name: definition.operation,
-        input,
-        isEmpty: resolved.isEmpty,
-        describeInput: definition.describeInput,
-        enabled: true,
-      });
-      return {
-        view: request.view,
-        dataContext: definition.dataContext,
-        snapshot: request.snapshot,
-        scope: displayedScope(request.view, definition.describeInput),
-        refetch() {
-          void request.refetch();
-        },
-        cancel: request.cancel,
-        refreshing: request.refreshing,
-        queries: request.queries,
-        emptyFallback: resolved.emptyFallback,
-      };
-    });
+    const target = new DetailView<
+      Data,
+      Input,
+      DetailOwnInput<Operations[Name]>
+    >(
+      resolved,
+      input => {
+        const request = useDataView({
+          name: definition.operation,
+          input,
+          isEmpty: resolved.isEmpty,
+          describeInput: definition.describeInput,
+          enabled: true,
+        });
+        return {
+          view: request.view,
+          dataContext: definition.dataContext,
+          snapshot: request.snapshot,
+          scope: displayedScope(request.view, definition.describeInput),
+          refetch() {
+            void request.refetch();
+          },
+          cancel: request.cancel,
+          refreshing: request.refreshing,
+          queries: request.queries,
+          emptyFallback: resolved.emptyFallback,
+        };
+      },
+      operationFilters[definition.operation]
+    );
     return Object.assign(target, {
       dataset<
         Row,

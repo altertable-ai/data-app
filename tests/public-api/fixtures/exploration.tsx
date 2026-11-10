@@ -352,7 +352,7 @@ const orderActions = orders.actions(action => ({
   inspect: action.detail({
     label: 'Inspect order',
     target: orderRecordView,
-    input: (row, displayed) => ({ ...displayed, placeId: row.id }),
+    input: row => ({ placeId: row.id }),
   }),
 }));
 const ordersDetail = ordersView.content(source => (
@@ -415,7 +415,7 @@ const details = orderPlaces.actions(action => ({
   orders: action.detail({
     label: 'View orders',
     target: ordersView,
-    input: (row, displayed) => ({ ...displayed, placeId: row.id }),
+    input: row => ({ placeId: row.id }),
   }),
 }));
 const menuActions = places.actions(
@@ -423,7 +423,7 @@ const menuActions = places.actions(
     orders: action.detail({
       label: 'View orders',
       target: ordersView,
-      input: (row, displayed) => ({ ...displayed, placeId: row.id }),
+      input: row => ({ placeId: row.id }),
     }),
     drill: action.filter({
       label: 'Drill down',
@@ -455,7 +455,7 @@ const pieMenuActions = orderPlaces.actions(
     orders: action.detail({
       label: 'View orders',
       target: ordersView,
-      input: (row, displayed) => ({ ...displayed, placeId: row.id }),
+      input: row => ({ placeId: row.id }),
     }),
     filter: action.filter({
       label: 'Filter region',
@@ -495,7 +495,7 @@ const dayActions = days.actions(action => ({
   orders: action.detail({
     label: 'View day',
     target: ordersView,
-    input: (row, displayed) => ({ ...displayed, placeId: row.day }),
+    input: row => ({ placeId: row.day }),
   }),
 }));
 const showDays = new URLSearchParams(location.search).has('days');
@@ -505,7 +505,7 @@ const total = sales.metric(
 );
 const records = total.records({
   target: ordersView,
-  input: input => ({ ...input, placeId: undefined }),
+  input: () => ({ placeId: undefined }),
 });
 const widgetActions = new URLSearchParams(location.search).has(
   'widget-actions'
@@ -514,7 +514,7 @@ const totalActions = total.actions(action => ({
   orders: action.detail({
     label: 'View all orders',
     target: ordersView,
-    input: (_row, input) => ({ ...input, placeId: undefined }),
+    input: () => ({ placeId: undefined }),
   }),
 }));
 const alternateViews = new URLSearchParams(location.search).has(

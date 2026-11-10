@@ -358,11 +358,22 @@ export class Metric<Data, Input> extends RegisteredBinding {
       return { ...values, period: this.#date?.(input) };
     });
   };
-  records<DetailData, DetailInput>(options: {
-    target: DetailView<DetailData, DetailInput>;
-    input: (displayedInput: Input) => DetailInput;
+  /** Show the records behind this metric. `input` returns the destination's own
+   * fields and any filter it narrows; its other filters carry over from the displayed scope. */
+  records<DetailData, DetailInput, Own>(options: {
+    target: DetailView<DetailData, DetailInput, Own>;
+    input: (displayedInput: Input) => Own & Partial<DetailInput>;
   }) {
-    return new MetricRecords(this, options.target, options.input);
+    return new MetricRecords(
+      this,
+      options.target,
+      (displayed: Input) =>
+        DetailView.inputFrom(
+          options.target,
+          options.input(displayed),
+          displayed
+        ) as DetailInput
+    );
   }
   actions<const Actions extends Record<string, ActionDeclaration<void, Input>>>(
     build: (action: ActionBuilder<void, Input>) => Actions,
@@ -375,11 +386,11 @@ export class Metric<Data, Input> extends RegisteredBinding {
 /** A metric-owned record destination. It can only render from that metric's displayed source. */
 export class MetricRecords<Data, Input, DetailData, DetailInput> {
   #metric: Metric<Data, Input>;
-  #target: DetailView<DetailData, DetailInput>;
+  #target: DetailView<DetailData, DetailInput, any>;
   #input: (displayedInput: Input) => DetailInput;
   constructor(
     metric: Metric<Data, Input>,
-    target: DetailView<DetailData, DetailInput>,
+    target: DetailView<DetailData, DetailInput, any>,
     input: (displayedInput: Input) => DetailInput
   ) {
     this.#metric = metric;

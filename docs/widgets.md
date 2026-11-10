@@ -149,8 +149,11 @@ express the requirement; see [direct UI composition](ui.md).
 
 ## Exploration actions
 
-Declare actions on their dataset or metric and pass them to its widget. Detail
-mappings receive the displayed operation input, including during refreshes.
+Declare actions on their dataset or metric and pass them to its widget. A detail
+mapping receives the row and the displayed operation input. It returns the
+destination's own fields and any filter it narrows, such as the clicked group;
+the other filters the destination's operation reads carry over from the
+displayed scope.
 Both `children` and alternate-view `render` callbacks receive the displayed rows
 and the same action resolver.
 

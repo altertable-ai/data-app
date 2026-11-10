@@ -1,4 +1,8 @@
-import { invariant } from '@altertable/data-app/internal';
+import {
+  invariant,
+  resolveFilterInput,
+  type FilterCollection,
+} from '@altertable/data-app/internal';
 import {
   createContext,
   useContext,
@@ -31,15 +35,49 @@ export type DetailViewDefinition<Data, Input> = {
   describeInput: (input: Input) => string;
 } & ViewEmptiness<Data>;
 
-/** A typed, query-backed destination. */
-export class DetailView<Data, Input> {
+/** A typed, query-backed destination. Interactions supply its own fields (`Own`);
+ * the filters its operation reads carry over from the displayed scope. */
+export class DetailView<Data, Input, Own = Input> {
+  declare readonly ownInput?: Own;
   #content?: DetailContent<Data, Input>;
+  #filters: FilterCollection;
   constructor(
     readonly definition: DetailViewDefinition<Data, Input> &
       Required<ViewEmptiness<Data>>,
-    readonly useResult: (input: Input) => ViewResult<Data, Input>
+    readonly useResult: (input: Input) => ViewResult<Data, Input>,
+    filters: FilterCollection = {}
   ) {
     invariant(!!definition.id.trim(), 'A detail view needs a nonempty ID.');
+    this.#filters = filters;
+  }
+
+  /** The destination input: each filter it reads as displayed (or as currently
+   * selected when the source does not read it), then the interaction's own fields
+   * and narrowed filters. */
+  static inputFrom(
+    target: DetailView<any, any, any>,
+    own: object,
+    displayedInput: unknown
+  ): unknown {
+    const filters = target.#filters;
+    const shown = (displayedInput ?? {}) as Record<string, unknown>;
+    const params = searchParams();
+    const selected = resolveFilterInput(
+      filters,
+      Object.fromEntries(
+        Object.entries(filters).map(([name, filter]) => [
+          name,
+          filter.read(params),
+        ])
+      ) as never
+    ) as Record<string, unknown>;
+    const scope = Object.fromEntries(
+      Object.keys(filters).map(name => [
+        name,
+        Object.hasOwn(shown, name) ? shown[name] : selected[name],
+      ])
+    );
+    return { ...scope, ...(own as object) };
   }
 
   content(render: (source: ViewSource<Data, Input>) => ReactNode) {
@@ -48,7 +86,7 @@ export class DetailView<Data, Input> {
     return content;
   }
 
-  static content<Data, Input>(target: DetailView<Data, Input>) {
+  static content<Data, Input>(target: DetailView<Data, Input, any>) {
     invariant(
       target.#content,
       'A detail destination needs content before it can be opened.'
@@ -59,7 +97,7 @@ export class DetailView<Data, Input> {
 
 /** Validate destination input before it enters either navigation or a lazy records query. */
 export function parseDetailInput<Data, Input>(
-  target: DetailView<Data, Input>,
+  target: DetailView<Data, Input, any>,
   value: unknown
 ): Input {
   const input = target.definition.parseInput(value);
@@ -98,7 +136,7 @@ export function parseDetailInput<Data, Input>(
 /** A destination’s rendered body. Pass these to DataApp.details. */
 export class DetailContent<Data, Input> {
   constructor(
-    readonly target: DetailView<Data, Input>,
+    readonly target: DetailView<Data, Input, any>,
     readonly render: (source: ViewSource<Data, Input>) => ReactNode
   ) {}
 }
@@ -174,7 +212,7 @@ function writeRoute(
 
 export type DetailNavigation = {
   open<Data, Input>(
-    target: DetailView<Data, Input>,
+    target: DetailView<Data, Input, any>,
     input: Input,
     trigger?: HTMLElement | SVGElement | null
   ): void;
@@ -297,7 +335,9 @@ export function DetailRoutes({
   const navigation = useMemo<DetailNavigation>(
     () => ({
       open(target, input, trigger) {
-        const content = targets.get(target as DetailView<unknown, unknown>);
+        const content = targets.get(
+          target as DetailView<unknown, unknown, any>
+        );
         invariant(
           content,
           'This detail destination is not registered on DataApp.'

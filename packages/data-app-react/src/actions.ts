@@ -1,6 +1,6 @@
 import { invariant } from '@altertable/data-app/internal';
 
-import type { DetailView } from './details.tsx';
+import { DetailView } from './details.tsx';
 import {
   FilterTarget,
   BreakdownTarget,
@@ -13,17 +13,19 @@ import type {
 } from './ui/ExplorationActionControl.tsx';
 
 type ActionCondition<Row> = { label: string; when?: (row: Row) => boolean };
-type DetailAction<Row, Input, DestinationInput> = ActionCondition<Row> & {
+type DetailAction<Row, Input, DestinationInput, Own> = ActionCondition<Row> & {
   label: string;
-  target: DetailView<any, DestinationInput>;
-  input: (row: Row, displayedInput: Input) => DestinationInput;
+  target: DetailView<any, DestinationInput, Own>;
+  /** The destination's own fields, such as the clicked record, and any filter it
+   * narrows; its other filters carry over from the displayed scope. */
+  input: (row: Row, displayedInput: Input) => Own & Partial<DestinationInput>;
 };
 export type ActionDeclaration<Row, Input> = ActionCondition<Row> &
   (
     | {
         kind: 'detail';
-        target: DetailView<any, any>;
-        input: (row: Row, input: Input) => unknown;
+        target: DetailView<any, any, any>;
+        input: (row: Row, input: Input) => object;
       }
     | {
         kind: 'filter';
@@ -36,8 +38,8 @@ export type ActionDeclaration<Row, Input> = ActionCondition<Row> &
       }
   );
 export class ActionBuilder<Row, Input> {
-  detail<DestinationInput>(
-    config: DetailAction<Row, Input, DestinationInput>
+  detail<DestinationInput, Own>(
+    config: DetailAction<Row, Input, DestinationInput, Own>
   ): ActionDeclaration<Row, Input> {
     return { ...config, kind: 'detail' };
   }
@@ -97,7 +99,7 @@ export function resolveActions<Row, Input>(
   viewOwner: object | undefined,
   source: { loading?: boolean; input?: Input },
   open: (
-    target: DetailView<any, any>,
+    target: DetailView<any, any, any>,
     input: unknown,
     trigger?: HTMLElement | SVGElement
   ) => void
@@ -130,7 +132,11 @@ export function resolveActions<Row, Input>(
               if (action.kind === 'detail') {
                 open(
                   action.target,
-                  action.input(row, input),
+                  DetailView.inputFrom(
+                    action.target,
+                    action.input(row, input),
+                    input
+                  ),
                   trigger ??
                     (document.activeElement instanceof HTMLElement ||
                     document.activeElement instanceof SVGElement
