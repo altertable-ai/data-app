@@ -1,87 +1,44 @@
-import {
-  createDataContext,
-  createDataHooks,
-  dateTimeRangeVariable,
-  searchVariable,
-  choiceVariable,
-} from '@altertable/data-app-react';
+import { defineDataApp } from '@altertable/data-app';
+import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
+  dateTimeRangeFilter,
   dimensionFilter,
-  defineDateRangeContract,
-  type DataOperation,
-  type DateTimeRangeComparisonRequest,
+  facetFilter,
+  searchFilter,
+  type DateTimeRangeInput,
   type DimensionOption,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
 
-type Operations = {
-  strings: DataOperation<
-    { search: string; period: DateTimeRangeComparisonRequest },
-    DimensionOption<string>[]
-  >;
-  numbers: DataOperation<
-    Record<string, never>,
-    readonly DimensionOption<number>[]
-  >;
-  invalid: DataOperation<
-    Record<string, never>,
-    { value: string; label: number }[]
-  >;
-  timed: DataOperation<
-    {
-      period: DateTimeRangeComparisonRequest;
-      search: string;
-      region: DimensionSelection<string>;
-    },
-    number
-  >;
-  view: DataOperation<
-    {
-      region: DimensionSelection<string>;
-      numeric: DimensionSelection<number>;
-      search: string;
-      extra: string;
-    },
-    number
-  >;
-};
-const hooks = createDataHooks(createDataClient<Operations>());
-const period = dateTimeRangeVariable({
+const app = defineDataApp({
+  title: 'Facets',
+  description: 'Facet options follow their operation filters.',
+  scope: { organization: 'demo', environment: 'test' },
+  queries: {},
+});
+const policy = { maxQueryRows: 10, maxDurationMs: 1000 };
+const period = dateTimeRangeFilter({
   key: 'period',
-  contract: defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' }),
-  allowComparison: true,
+  maxRangeDays: 90,
+  timeZone: 'UTC',
+  comparison: 'off',
   defaultValue: '7d',
 });
-const search = searchVariable({ key: 'search' });
-const region = hooks.defineFacetFilter({
+const search = searchFilter({ key: 'search' });
+const region = facetFilter({
   key: 'region',
   label: 'Region',
   valueType: 'string',
   selectionMode: 'multiple',
-  facet: {
-    context: { search, period },
-    operation: 'strings',
-    input(values) {
-      const text: string = values.search;
-      const dates: DateTimeRangeComparisonRequest = values.period;
-      // @ts-expect-error The context is the declared dependency collection, not an arbitrary map.
-      void values.invented;
-      // @ts-expect-error A facet cannot depend on its own selection before it is declared.
-      void values.region;
-      // @ts-expect-error Date variables resolve to requests rather than URL selections.
-      const selection: 'preset' = values.period.kind;
-      void selection;
-      return { search: text, period: dates };
-    },
-  },
+  options: 'regions',
 });
-const numeric = hooks.defineFacetFilter({
+const numeric = facetFilter({
   key: 'numeric',
   label: 'Numeric',
   valueType: 'number',
   selectionMode: 'single',
-  facet: { context: {}, operation: 'numbers', input: () => ({}) },
+  options: 'numbers',
 });
 const numericValue: number =
   numeric.defaultValue.kind === 'include' &&
@@ -89,55 +46,120 @@ const numericValue: number =
     ? numeric.defaultValue.members[0].value
     : 0;
 void numericValue;
-const wrongValueType = {
-  key: 'numeric',
-  label: 'Numeric',
-  valueType: 'string',
-  selectionMode: 'single',
-  facet: { context: {}, operation: 'numbers', input: () => ({}) },
-} as const;
-// @ts-expect-error Numeric operation output cannot supply string options.
-hooks.defineFacetFilter(wrongValueType);
-const wrongStringType = {
-  key: 'string',
-  label: 'String',
-  valueType: 'number',
-  selectionMode: 'single',
-  facet: {
-    context: { search, period },
-    operation: 'strings',
-    input: () => ({ search: '', period: period.input(period.defaultValue) }),
+
+const operations = {
+  // The facet's context is its options operation's filters.
+  regions: app.defineOperation({
+    filters: { search, period },
+    policy,
+    async run(_context, input): Promise<DimensionOption<string>[]> {
+      const text: string = input.search;
+      const dates: DateTimeRangeInput = input.period;
+      // @ts-expect-error The context is the operation's filters, not an arbitrary map.
+      void input.invented;
+      // @ts-expect-error Date filters resolve to requests rather than URL selections.
+      const selection: 'preset' = input.period.kind;
+      void [text, dates, selection];
+      return [];
+    },
+  }),
+  numbers: app.defineOperation({
+    policy,
+    async run(): Promise<readonly DimensionOption<number>[]> {
+      return [];
+    },
+  }),
+  // A dependent facet's options can read another facet's typed selection.
+  dependents: app.defineOperation({
+    filters: { region },
+    policy,
+    async run(_context, input): Promise<DimensionOption<number>[]> {
+      if (input.region.kind === 'include') {
+        const member = input.region.members[0];
+        if (member?.kind === 'value') {
+          const value: string = member.value;
+          void value;
+        }
+      }
+      return [];
+    },
+  }),
+  view: app.defineOperation({
+    filters: {
+      search,
+      period,
+      region,
+      numeric,
+      dependent: facetFilter({
+        key: 'dependent',
+        label: 'Dependent',
+        valueType: 'number',
+        selectionMode: 'single',
+        options: 'dependents',
+      }),
+    },
+    policy,
+    async run(_context, input) {
+      const regions: DimensionSelection<string> = input.region;
+      const numbers: DimensionSelection<number> = input.numeric;
+      void [regions, numbers];
+      return 1;
+    },
+  }),
+};
+const hooks = createDataHooks(createDataClient({ operations }));
+const context = createDataContext({})({ description: 'Facets', glossary: {} });
+hooks.defineView({ operation: 'view', dataContext: context });
+
+const stringOptions = app.defineOperation({
+  policy,
+  async run(): Promise<DimensionOption<string>[]> {
+    return [];
   },
-} as const;
+});
+const numberOptions = app.defineOperation({
+  policy,
+  async run(): Promise<DimensionOption<number>[]> {
+    return [];
+  },
+});
+const invalidOptions = app.defineOperation({
+  policy,
+  async run(): Promise<{ value: string; label: number }[]> {
+    return [];
+  },
+});
+const regionView = app.defineOperation({
+  filters: { region },
+  policy,
+  async run() {
+    return 1;
+  },
+});
+const numericView = app.defineOperation({
+  filters: { numeric },
+  policy,
+  async run() {
+    return 1;
+  },
+});
+createDataClient({ operations: { view: regionView, regions: stringOptions } });
+createDataClient({ operations: { view: numericView, numbers: numberOptions } });
+// @ts-expect-error Numeric operation output cannot supply string options.
+createDataClient({
+  operations: { view: regionView, regions: numberOptions },
+});
 // @ts-expect-error String operation output cannot supply numeric options.
-hooks.defineFacetFilter(wrongStringType);
-const unknownOperation = {
-  key: 'unknown',
-  label: 'Unknown',
-  valueType: 'string',
-  selectionMode: 'single',
-  facet: { context: {}, operation: 'missing', input: () => ({}) },
-} as const;
+createDataClient({
+  operations: { view: numericView, numbers: stringOptions },
+});
 // @ts-expect-error Facets refer to operations in this client's registry.
-hooks.defineFacetFilter(unknownOperation);
-const wrongInput = {
-  key: 'wrong',
-  label: 'Wrong',
-  valueType: 'string',
-  selectionMode: 'single',
-  facet: { context: {}, operation: 'strings', input: () => ({ search: 1 }) },
-} as const;
-// @ts-expect-error The mapper must return the selected operation's input.
-hooks.defineFacetFilter(wrongInput);
-const wrongOutput = {
-  key: 'wrong',
-  label: 'Wrong',
-  valueType: 'string',
-  selectionMode: 'single',
-  facet: { context: {}, operation: 'invalid', input: () => ({}) },
-} as const;
+createDataClient({ operations: { view: regionView } });
 // @ts-expect-error Facet options require string labels.
-hooks.defineFacetFilter(wrongOutput);
+createDataClient({
+  operations: { view: regionView, regions: invalidOptions },
+});
+
 const rawFacet = {
   key: 'raw',
   label: 'Raw',
@@ -148,107 +170,15 @@ const rawFacet = {
 } as const;
 // @ts-expect-error Fixed-option filters cannot bypass operation typing with raw facets.
 dimensionFilter(rawFacet);
-
-const context = createDataContext({})({ description: 'Facets', glossary: {} });
-const base = {
-  operation: 'view' as const,
-  dataContext: context,
-  describeInput: () => 'All',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
-  input: (values: {
-    region: DimensionSelection<string>;
-    numeric: DimensionSelection<number>;
-    search?: string;
-    extra?: string;
-  }) => ({
-    region: values.region,
-    numeric: values.numeric,
-    search: values.search ?? '',
-    extra: values.extra ?? 'table',
-  }),
-};
-hooks.defineDataView({
-  ...base,
-  variables: { search, period, region, numeric },
-});
-// @ts-expect-error A consuming view must provide every facet dependency.
-hooks.defineDataView({ ...base, variables: { region, numeric } });
-const incompatibleContext = {
-  ...base,
-  variables: { search: numeric, period, region, numeric },
-};
-// @ts-expect-error A dependency with the same name but a different type is incompatible.
-hooks.defineDataView(incompatibleContext);
-// @ts-expect-error A missing date dependency is also rejected.
-hooks.defineDataView({ ...base, variables: { search, region, numeric } });
-const extra = choiceVariable({
-  key: 'display',
-  options: [{ id: 'table', label: 'Table' }],
-  defaultValue: 'table',
-});
-hooks.defineDataView({
-  ...base,
-  variables: { search, period, region, numeric, extra },
-});
-// A dependent facet can consume another already-declared facet's typed selection.
-hooks.defineFacetFilter({
-  key: 'dependent',
-  label: 'Dependent',
-  valueType: 'number',
+const namedOptions = {
+  key: 'named',
+  label: 'Named',
+  valueType: 'string',
   selectionMode: 'single',
-  facet: {
-    context: { region },
-    operation: 'numbers',
-    input(values) {
-      if (values.region.kind === 'include') {
-        const member = values.region.members[0];
-        if (member?.kind === 'value') {
-          const value: string = member.value;
-          void value;
-        }
-      }
-      return {};
-    },
-  },
-});
-
-const timed = {
-  operation: 'timed' as const,
-  dataContext: context,
-  time: period,
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
-};
-hooks.defineTimeView({ ...timed, variables: { search, region } });
-const missingTimeContext = {
-  ...timed,
-  variables: { region },
-  input: (values: {
-    period: DateTimeRangeComparisonRequest;
-    region: DimensionSelection<string>;
-  }) => ({ ...values, search: '' }),
-};
-// @ts-expect-error Time views validate facet dependencies against the implicit period and explicit variables.
-hooks.defineTimeView(missingTimeContext);
+  options: 'regions',
+} as const;
+// @ts-expect-error Fixed-option filters cannot name an options operation.
+dimensionFilter(namedOptions);
 
 // @ts-expect-error Executable facet metadata is not a public field callers can replace.
 void region.facet;
-
-declare const chooseContext: boolean;
-const fixedRegion = dimensionFilter({
-  key: 'region',
-  label: 'Region',
-  valueType: 'string',
-  selectionMode: 'single',
-  options: [],
-});
-const conditionalTimeVariables = chooseContext
-  ? { region }
-  : { region: fixedRegion };
-const conditionalTime = {
-  ...missingTimeContext,
-  variables: conditionalTimeVariables,
-};
-// @ts-expect-error Time views cannot erase a conditional facet's context requirements.
-hooks.defineTimeView(conditionalTime);

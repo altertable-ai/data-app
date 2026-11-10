@@ -1,14 +1,13 @@
-import type { DateTimeRangeComparisonRequest } from '@altertable/data-app/contract';
+import type { DateTimeRangeRequest } from '@altertable/data-app/internal';
 import type {
-  AppVariable,
-  AppVariableValues,
-  VariableCollection,
+  AppFilter,
+  FilterValues,
+  FilterCollection,
 } from '@altertable/data-app/internal';
-import type { ChoiceVariable } from '@altertable/data-app/internal';
+import type { ChoiceFilter } from '@altertable/data-app/internal';
 import { invariant } from '@altertable/data-app/internal';
 
 import { searchParams, writeSearch } from './ui/search.ts';
-import { resolveViewInput, type ViewBindings } from './view.ts';
 
 declare const filterPatch: unique symbol;
 declare const breakdownValue: unique symbol;
@@ -19,40 +18,35 @@ export class FilterTarget<Patch> {
 export class BreakdownTarget<Value extends string> {
   declare readonly [breakdownValue]: Value;
 }
-export type FilterPatch<Variables extends VariableCollection> = Partial<{
-  [Key in keyof Variables]: Extract<
-    Variables[Key]['presentation'],
+export type FilterPatch<Collection extends FilterCollection> = Partial<{
+  [Key in keyof Collection]: Extract<
+    Collection[Key]['presentation'],
     { group: 'display' }
   > extends never
-    ? AppVariableValues<Variables>[Key]
+    ? FilterValues<Collection>[Key]
     : never;
 }>;
+/** A view's filters; its operation input has one field per filter. */
 type TargetDefinition = {
   owner: object;
-  variables: VariableCollection;
-  input: (values: any) => unknown;
-  bindings?: ViewBindings<any, any>;
-  date?: {
-    variable: string;
-    input: (input: any) => DateTimeRangeComparisonRequest;
-  };
+  filters: FilterCollection;
   key?: string;
 };
 const targets = new WeakMap<object, TargetDefinition>();
-export function createFilterTarget<Variables extends VariableCollection>(
+export function createFilterTarget<Collection extends FilterCollection>(
   definition: TargetDefinition
-): FilterTarget<FilterPatch<Variables>> {
-  const target = new FilterTarget<FilterPatch<Variables>>();
+): FilterTarget<FilterPatch<Collection>> {
+  const target = new FilterTarget<FilterPatch<Collection>>();
   targets.set(target, definition);
   return target;
 }
 export function createBreakdownTarget<Value extends string>(
   definition: TargetDefinition
 ): BreakdownTarget<Value> {
-  const variable = definition.variables[definition.key!];
+  const filter = definition.filters[definition.key!];
   invariant(
-    variable?.kind === 'choice' && variable.presentation?.group === 'display',
-    'Choose a display choice variable.'
+    filter?.kind === 'choice' && filter.presentation?.group === 'display',
+    'Choose a displayChoice() filter.'
   );
   const target = new BreakdownTarget<Value>();
   targets.set(target, definition);
@@ -63,39 +57,23 @@ function breakdownDefinition(target: BreakdownTarget<any>) {
   invariant(definition, 'Invalid breakdown target.');
   return definition;
 }
-function readInput(definition: TargetDefinition, key: string, input: unknown) {
-  return (
-    definition.bindings?.[key]?.(input) ??
-    (definition.date?.variable === key
-      ? definition.date.input(input)
-      : undefined) ??
-    (input as Record<string, unknown>)?.[key]
-  );
+function readInput(key: string, input: unknown) {
+  return (input as Record<string, unknown>)[key];
 }
 function appliedValues(definition: TargetDefinition) {
   const params = searchParams();
   return Object.fromEntries(
-    Object.entries(definition.variables).map(([name, variable]) => [
+    Object.entries(definition.filters).map(([name, filter]) => [
       name,
-      variable.read(params),
+      filter.read(params),
     ])
   );
 }
 function commit(definition: TargetDefinition, values: Record<string, unknown>) {
-  // Apply the same preservation checks as the view before mutating its route.
-  const resolved = Object.fromEntries(
-    Object.entries(definition.variables).map(([name, variable]) => [
-      name,
-      variable.kind === 'dateTimeRangeComparison'
-        ? variable.input(values[name] as never)
-        : values[name],
-    ])
-  );
-  resolveViewInput<any, unknown>(definition, resolved);
   const changes = Object.assign(
     {},
-    ...Object.entries(definition.variables).map(([name, variable]) =>
-      (variable as AppVariable<any>).write(values[name])
+    ...Object.entries(definition.filters).map(([name, filter]) =>
+      (filter as AppFilter<any>).write(values[name])
     )
   );
   writeSearch(changes, 'push');
@@ -111,21 +89,21 @@ export function targetAvailable(
     'Exploration targets must belong to the dataset view.'
   );
   const applied = appliedValues(definition);
-  return Object.entries(definition.variables).every(([key, variable]) => {
-    if (variable.presentation?.group === 'display') {
+  return Object.entries(definition.filters).every(([key, filter]) => {
+    if (filter.presentation?.group === 'display') {
       if (!(target instanceof BreakdownTarget && key === definition.key))
         return true;
     }
-    const shown = readInput(definition, key, displayedInput);
-    if (variable.kind === 'dateTimeRangeComparison')
+    const shown = readInput(key, displayedInput);
+    if (filter.kind === 'dateTimeRange')
       return (
         !!shown &&
-        variable.same(
+        filter.same(
           applied[key] as never,
-          (shown as DateTimeRangeComparisonRequest).selection
+          (shown as DateTimeRangeRequest).selection
         )
       );
-    return (variable as AppVariable<any>).same(applied[key], shown);
+    return (filter as AppFilter<any>).same(applied[key], shown);
   });
 }
 /** Apply an explicit scope patch and optional chart choice in one history entry. */
@@ -137,12 +115,12 @@ export function applyFilter(
   const definition = targets.get(target)!;
   const values = appliedValues(definition);
   for (const [key, value] of Object.entries(patch)) {
-    const variable = definition.variables[key];
+    const filter = definition.filters[key];
     invariant(
-      variable &&
-        variable.presentation?.group !== 'display' &&
-        (variable as AppVariable<any>).valid(value),
-      'Filter actions can only update scope variables.'
+      filter &&
+        filter.presentation?.group !== 'display' &&
+        (filter as AppFilter<any>).valid(value),
+      'Filter actions can only update scope filters.'
     );
   }
   if (breakdown) {
@@ -151,9 +129,9 @@ export function applyFilter(
       choice.owner === definition.owner,
       'Breakdown must belong to the filter view.'
     );
-    const variable = choice.variables[choice.key!]!;
+    const filter = choice.filters[choice.key!]!;
     invariant(
-      (variable as AppVariable<any>).valid(breakdown.value),
+      (filter as AppFilter<any>).valid(breakdown.value),
       'Invalid breakdown.'
     );
     patch = { ...patch, [choice.key!]: breakdown.value };
@@ -170,19 +148,19 @@ export function breakdownState(
     definition.owner === owner,
     'Breakdown targets must belong to the dataset view.'
   );
-  const variable = definition.variables[definition.key!] as ChoiceVariable;
+  const filter = definition.filters[definition.key!] as ChoiceFilter;
   const values = appliedValues(definition);
   const value = (
     input === undefined
       ? values[definition.key!]
-      : readInput(definition, definition.key!, input)
+      : readInput(definition.key!, input)
   ) as string;
   return {
-    variable,
+    filter,
     value,
-    options: variable.options,
+    options: filter.options,
     set(id: string) {
-      invariant(variable.valid(id), 'Invalid breakdown.');
+      invariant(filter.valid(id), 'Invalid breakdown.');
       commit(definition, { ...values, [definition.key!]: id });
     },
   };

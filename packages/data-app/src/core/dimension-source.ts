@@ -1,12 +1,9 @@
-import type {
-  DateTimeRangeComparisonRequest,
-  DateTimeRangeComparisonVariable,
-} from './date-time-variable.ts';
+import type { FilterCollection } from './app-filters.ts';
 import {
   createDimensionFilter,
   parseFacetOptions,
   type DimensionSettings,
-  type DimensionSelectionVariable,
+  type DimensionSelectionFilter,
   type DimensionValue,
   type DimensionSelection,
 } from './dimension.ts';
@@ -22,17 +19,15 @@ import {
   type QueryDefinitions,
   type QueryParameters,
 } from './queries.ts';
-import type { AppVariableValues, VariableCollection } from './variables.ts';
 
 type Source = { query: string; queries: QueryDefinitions };
 export const dimensionSource = Symbol('data-app.dimensionSource');
-export type SourceDimensionVariable<Value extends DimensionValue> =
-  DimensionSelectionVariable<Value> & {
+export type SourceDimensionFilter<Value extends DimensionValue> =
+  DimensionSelectionFilter<Value> & {
     readonly optionsSource: 'query';
     readonly [dimensionSource]: { readonly operation: string };
   };
 const sources = new WeakMap<object, Source>();
-const parserVariables = new WeakMap<Function, VariableCollection>();
 const selectorsKey = Symbol.for('@altertable/data-app/dimension-selectors');
 const ownerKey = Symbol.for('@altertable/data-app/dimension-selector-owner');
 const invalidMemberKey = Symbol.for(
@@ -50,62 +45,6 @@ export class DimensionMembershipError extends Error {
       (value as { [invalidMemberKey]?: unknown })[invalidMemberKey] === true
     );
   }
-}
-
-type ParsedVariableValues<Variables extends VariableCollection> = {
-  [
-    Key in keyof Variables
-  ]: Variables[Key] extends DateTimeRangeComparisonVariable
-    ? DateTimeRangeComparisonRequest
-    : AppVariableValues<Variables>[Key];
-};
-
-/** Validate named variable values at the operation boundary. */
-export function variableInput<
-  Input extends object,
-  const Variables extends VariableCollection,
->(
-  parse: (value: unknown) => Input,
-  variables: Variables
-): (value: unknown) => Input & ParsedVariableValues<Variables> {
-  const previous = parserVariables.get(parse) ?? {};
-  const definitions = { ...variables };
-  for (const [name, variable] of Object.entries(definitions))
-    invariant(
-      !previous[name] || previous[name] === variable,
-      `Variable input ${name} is already declared.`
-    );
-  function parser(value: unknown) {
-    invariant(
-      value && typeof value === 'object' && !Array.isArray(value),
-      'Expected variable input.'
-    );
-    const input = parse(value);
-    invariant(
-      input && typeof input === 'object' && !Array.isArray(input),
-      'Expected parsed input object.'
-    );
-    const values: Record<string, unknown> = {};
-    for (const [name, variable] of Object.entries(definitions)) {
-      const selected = (value as Record<string, unknown>)[name];
-      if (variable.kind === 'dateTimeRangeComparison') {
-        values[name] = variable.parseInput(selected);
-        continue;
-      }
-      invariant(
-        variable.valid(selected as never),
-        `Invalid ${variable.label ?? name}.`
-      );
-      values[name] =
-        variable.kind === 'dateTimeRange' ? variable.parse(selected) : selected;
-    }
-    return { ...input, ...values } as Input & ParsedVariableValues<Variables>;
-  }
-  parserVariables.set(parser, {
-    ...previous,
-    ...definitions,
-  });
-  return parser;
 }
 
 export type DimensionSourceConfig<Type extends 'string' | 'number'> =
@@ -139,7 +78,7 @@ export type DimensionSourceQueryName<
 export function bindDimensionSource<const Type extends 'string' | 'number'>(
   config: DimensionSourceConfig<Type>,
   queries: QueryDefinitions
-): SourceDimensionVariable<{ string: string; number: number }[Type]> {
+): SourceDimensionFilter<{ string: string; number: number }[Type]> {
   invariant(
     !config.allowMissing,
     'Source dimensions require concrete members.'
@@ -162,7 +101,7 @@ export function bindDimensionSource<const Type extends 'string' | 'number'>(
     'Dimension sources require a matching nullable member and concrete value, label, and count projections.'
   );
   const operation = `__dimension:${config.key}`;
-  const variable = Object.assign(
+  const filter = Object.assign(
     createDimensionFilter<{ string: string; number: number }[Type]>(
       {
         ...config,
@@ -181,8 +120,8 @@ export function bindDimensionSource<const Type extends 'string' | 'number'>(
       [dimensionSource]: Object.freeze({ operation }),
     }
   );
-  sources.set(variable, { query: config.source.query, queries });
-  return variable;
+  sources.set(filter, { query: config.source.query, queries });
+  return filter;
 }
 
 type Query = (
@@ -191,11 +130,11 @@ type Query = (
   options: { limit: number }
 ) => Promise<QueryResult<Record<string, unknown>>>;
 async function loadOptions(
-  variable: DimensionSelectionVariable<any>,
+  filter: DimensionSelectionFilter<any>,
   member: DimensionValue | null,
   query: Query
 ) {
-  const source = sources.get(variable)!;
+  const source = sources.get(filter)!;
   const result = await query(
     source.query,
     { member },
@@ -208,25 +147,24 @@ async function loadOptions(
       names.includes('label'),
     'Dimension source must return value and label.'
   );
-  const options = parseFacetOptions(result.rows, variable);
+  const options = parseFacetOptions(result.rows, filter);
   if (member !== null && (options.length !== 1 || options[0]!.value !== member))
-    throw new DimensionMembershipError(`Invalid ${variable.label} member.`);
+    throw new DimensionMembershipError(`Invalid ${filter.label} member.`);
   return options;
 }
-export async function validateVariableInput(
-  parser: Function,
+/** Source dimension selections must name members the source query returns. */
+export async function validateSourceMembers(
+  filters: FilterCollection,
   input: unknown,
   query: Query
 ) {
-  for (const [name, variable] of Object.entries(
-    parserVariables.get(parser) ?? {}
-  )) {
-    if (variable.kind !== 'dimension' || !sources.has(variable)) continue;
+  for (const [name, filter] of Object.entries(filters)) {
+    if (filter.kind !== 'dimension' || !sources.has(filter)) continue;
     const selection = (input as Record<string, DimensionSelection>)[name]!;
     if (selection.kind === 'all') continue;
     for (const member of selection.members)
       if (member.kind === 'value')
-        await loadOptions(variable, member.value, query);
+        await loadOptions(filter, member.value, query);
   }
 }
 export function attachDimensionSelectors(
@@ -234,22 +172,19 @@ export function attachDimensionSelectors(
   queries: QueryDefinitions
 ) {
   const selectors: DataOperations = {};
-  for (const variable of Object.values(
-    parserVariables.get(operation.input) ?? {}
-  )) {
-    if (variable.kind !== 'dimension' || !(dimensionSource in variable))
-      continue;
-    const source = sources.get(variable);
+  for (const filter of Object.values(operation.filters ?? {})) {
+    if (filter.kind !== 'dimension' || !(dimensionSource in filter)) continue;
+    const source = sources.get(filter);
     if (!source) continue;
     invariant(
       JSON.stringify(source.queries[source.query]) ===
         JSON.stringify(queries[source.query]),
       'Dimension sources must belong to the operation query registry.'
     );
-    const name = variable[dimensionSource].operation;
+    const name = filter[dimensionSource].operation;
     invariant(
       !selectors[name] ||
-        (selectors[name] as WithSelectors)[ownerKey] === variable,
+        (selectors[name] as WithSelectors)[ownerKey] === filter,
       'Dimension source keys must be unique across the app.'
     );
     selectors[name] = {
@@ -261,7 +196,7 @@ export function attachDimensionSelectors(
         const member = (value as { member: unknown }).member;
         invariant(
           member === null ||
-            variable.valid({
+            filter.valid({
               kind: 'include',
               members: [{ kind: 'value', value: member as DimensionValue }],
             }),
@@ -278,7 +213,7 @@ export function attachDimensionSelectors(
       queryNames: { [source.query]: source.query },
       async run(context, input: { member: DimensionValue | null }) {
         return loadOptions(
-          variable,
+          filter,
           input.member,
           async (name, params, options) => {
             const definition = queries[name]!;
@@ -300,7 +235,7 @@ export function attachDimensionSelectors(
         );
       },
     } as DataOperation<any, any>;
-    Object.defineProperty(selectors[name]!, ownerKey, { value: variable });
+    Object.defineProperty(selectors[name]!, ownerKey, { value: filter });
   }
   Object.defineProperty(operation, selectorsKey, { value: selectors });
 }

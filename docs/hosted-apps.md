@@ -14,7 +14,7 @@ interpolation), finite signed numbers, booleans, and null. Parentheses, `as`, an
 `satisfies` are allowed. Keep executable composition outside the call; omit spreads,
 computed keys, references, and callbacks. Static apps use `queries: {}`.
 
-Replace sample queries and bindings with inspected source data. Supply `scope`
+Replace sample queries, operations, and datasets with inspected source data. Supply `scope`
 in `defineDataApp()`. When using bound `<DataApp>`, follow its current
 [story and dataset requirements](stories-and-export.md).
 
@@ -23,11 +23,12 @@ the transport; no bootstrap or message routes are needed in app code.
 
 ## Convert a local data app
 
-1. Combine the app's operations and parsers, data context, views, any presentation
+1. Combine the app's filters, operations, data context, views, any presentation
    and export features, app declaration, and browser entry into one `index.tsx`, following the
    [single-file starter](app-authoring.md#use-release-matched-starters).
 2. Replace the HTTP client with `createDataClient({ operations })`, using the
-   operation registry as a value. See [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps)
+   operation registry as a value; it supplies the operations' filters, so drop
+   the `filters` option. See [browser-owned operations](client.md#browser-owned-operations-for-bundle-apps)
    for execution through the host.
 3. Remove the Bun server, HTML, server adapters, credentials, and relative or
    app-alias imports. Rewrite any operation that depends on server-only code

@@ -2,7 +2,7 @@
 
 ## Choose a widget
 
-Metrics, tables, and visualizations from `@altertable/data-app-react` consume view bindings and a source. For static displays, use
+Metrics, tables, and visualizations from `@altertable/data-app-react` consume a view's datasets or metrics and a source. For static displays, use
 [direct UI composition](ui.md).
 Manage requests in [views](views.md).
 
@@ -48,16 +48,17 @@ values available in a table when they matter.
 
 ## Declare datasets and metrics
 
-Continue the starter's `sampleCountsView`. Use `<BarChart>` from
+Continue the starter's `sampleCountsView` and `sampleTotalView`. Use `<BarChart>` from
 `@altertable/data-app-react/ui`.
-Bind reusable selections to the view. Declare evidence references directly;
+Bind reusable selections to the view whose operation returns them. Declare evidence references directly;
 the view validates them against its own context. A dataset's columns supply both formatted
 table cells and raw CSV values. Widgets derive their readings, evidence, and empty fallback from the binding.
 Declare at least one dataset column. Metric selectors may return `previous`
-only for views with a date binding, including `defineTimeView()`.
+only when the view's operation reads a `dateTimeRangeFilter()` with
+`comparison`.
 
 ```tsx
-// ... sampleCountsView and imports
+// ... sampleCountsView, sampleTotalView, and imports
 const sampleCounts = sampleCountsView.dataset({
   name: 'Sample counts',
   select: rows => rows,
@@ -68,18 +69,21 @@ const sampleCounts = sampleCountsView.dataset({
     sampleCount: { value: row => row.sampleCount, format: { kind: 'count' } },
   },
 });
-const totalSamples = sampleCountsView.metric(
+const totalSamples = sampleTotalView.metric(
   {
     id: 'total-samples',
     glossaryId: 'sampleCount',
     label: 'Total samples',
     format: { kind: 'count', compact: true },
   },
-  rows => ({ current: rows.reduce((sum, row) => sum + row.sampleCount, 0) })
+  total => ({ current: total.sampleCount })
 );
-const sampleContent = sampleCountsView.content(result => (
+const totalContent = sampleTotalView.content(result => (
+  <MetricWidget metric={totalSamples} source={result} />
+));
+// The table and chart are two representations of the same rows.
+const countsContent = sampleCountsView.content(result => (
   <Grid columns={2}>
-    <MetricWidget metric={totalSamples} source={result} />
     <TableWidget dataset={sampleCounts} source={result} />
     <VisualizationWidget dataset={sampleCounts} source={result}>
       {rows => (
@@ -99,10 +103,12 @@ const sampleContent = sampleCountsView.content(result => (
 ));
 ```
 
+Render each content in its own `<DataSection>`.
+
 Column keys supply IDs and default labels; set `label` for a different header.
 Keep row keys stable and unique. Custom cells use `format: row => ...`; CSV uses
-the raw `value` accessor. Metric comparisons require a view date binding.
-Reuse bindings in stories with `source={snapshot}` from the same view.
+the raw `value` accessor. Metric comparisons require that reporting period.
+Reuse bindings in stories with the snapshot of the view that owns them.
 
 Tables search and paginate only supplied rows. Use query-backed pagination with a
 stable sort and total `count` for larger datasets. Provide useful `emptyFallback`
@@ -143,8 +149,26 @@ express the requirement; see [direct UI composition](ui.md).
 
 ## Exploration actions
 
-Declare actions on their dataset or metric and pass them to its widget. Detail
-mappings receive the displayed operation input, including during refreshes.
+Declare actions on their dataset or metric and pass them to its widget. A detail
+mapping receives the row and the displayed operation input. It returns the
+destination's own fields and any filter it narrows, such as the clicked group;
+the other filters the destination's operation reads carry over from the
+displayed scope.
+Narrow a dimension filter to the clicked member with an include selection, and
+use `when` to offer an action only on the rows it applies to:
+
+```ts
+// ... breakdown rows with { kind, id }, and an ordersView reading { country }
+action.detail({
+  label: 'View orders',
+  target: ordersView,
+  when: row => row.kind === 'country',
+  input: row => ({
+    country: { kind: 'include', members: [{ kind: 'value', value: row.id }] },
+  }),
+});
+```
+
 Both `children` and alternate-view `render` callbacks receive the displayed rows
 and the same action resolver.
 
@@ -191,7 +215,7 @@ metric actions use `metric.actions()` and `<MetricWidget>`. Actions must belong
 to the binding rendered by the widget. Metric mappings receive `undefined` for
 the row and displayed input as their second argument.
 
-`view.filter()` targets scope variables. An optional `breakdown` explicitly updates
+`view.filter()` targets filters, not display choices. An optional `breakdown` explicitly updates
 one chart's display choice in the same history entry. Filters preserve unrelated selections. Declare chart breakdown choices
 independently of scope filters.
 

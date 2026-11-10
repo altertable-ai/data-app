@@ -1,7 +1,4 @@
-import type {
-  DateTimeRangeComparisonSelection,
-  DateTimeRange,
-} from '@altertable/data-app/contract';
+import type { DateTimeRangeSelection } from '@altertable/data-app/contract';
 import type {
   NumberFilter,
   NumberSelection,
@@ -11,13 +8,17 @@ import {
   parseFacetOptions,
   type DimensionSelection,
 } from '@altertable/data-app/contract';
-import { facetSource, type FacetVariable } from '@altertable/data-app/internal';
+import {
+  resolveFilterInput,
+  type FilterInput,
+} from '@altertable/data-app/internal';
+import { facetSource, type FacetFilter } from '@altertable/data-app/internal';
 import {
   dimensionSource,
-  type SourceDimensionVariable,
+  type SourceDimensionFilter,
 } from '@altertable/data-app/internal';
-import type { AppVariable } from '@altertable/data-app/internal';
-import { type DimensionSelectionVariable } from '@altertable/data-app/internal';
+import type { AppFilter } from '@altertable/data-app/internal';
+import { type DimensionSelectionFilter } from '@altertable/data-app/internal';
 import { useQueries } from '@tanstack/react-query';
 import { useContext, useReducer, useState, type ReactNode } from 'react';
 
@@ -25,6 +26,11 @@ import {
   SearchSuggestionsContext,
   balanceSearchSuggestions,
 } from './search-suggestions.ts';
+import {
+  useAppFilters,
+  type FilterValues,
+  type FilterCollection,
+} from './ui/app-filters.ts';
 import { ChoicePicker } from './ui/ChoicePicker.tsx';
 import { DateTimeRangePicker } from './ui/DateTimeRangePicker.tsx';
 import { DimensionPicker } from './ui/DimensionPicker.tsx';
@@ -34,36 +40,25 @@ import { SearchField, type SearchFieldProps } from './ui/SearchField.tsx';
 import { SearchTypeahead } from './ui/SearchTypeahead.tsx';
 import { Select } from './ui/Select.tsx';
 import {
-  useAppVariables,
-  type AppVariableValues,
-  type VariableCollection,
-} from './ui/variables.ts';
-import {
   ViewControlBar,
   type ActiveFilterControl,
 } from './view-control-bar.tsx';
-import type { ResolvedVariables } from './view.ts';
+import type { FilterControls } from './view-runtime.tsx';
 
-/** URL values resolve before facets; facet keys include their dependent inputs for cached, bounded loading. */
-export function useViewVariables<Variables extends VariableCollection>(
-  definitions: Variables,
-  clientScope: string,
-  loadFacet: (
-    operation: string,
-    input: unknown,
-    signal: AbortSignal
-  ) => Promise<unknown>
+/** A view's URL-backed filter values, resolved for its operation input. */
+export function useFilterValues<Collection extends FilterCollection>(
+  definitions: Collection
 ) {
-  const variables = useAppVariables(definitions);
+  const filters = useAppFilters(definitions);
   const [referenceRevision, refreshReference] = useReducer(
     value => value + 1,
     0
   );
-  const selectionKey = JSON.stringify(variables.values);
+  const selectionKey = JSON.stringify(filters.values);
   const referenceKey = JSON.stringify([
     selectionKey,
     referenceRevision,
-    variables.calendarRevision,
+    filters.calendarRevision,
   ]);
   const [snapshot, setSnapshot] = useState(() => ({
     key: referenceKey,
@@ -76,37 +71,69 @@ export function useViewVariables<Variables extends VariableCollection>(
     reference = new Date();
     setSnapshot({ key: referenceKey, reference });
   }
-  const hasComparison = Object.values(definitions).some(
-    variable => variable.kind === 'dateTimeRangeComparison'
+  const hasDateFilter = Object.values(definitions).some(
+    filter => filter.kind === 'dateTimeRange'
   );
-  const resolved = {} as ResolvedVariables<Variables>;
-  for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
-    const definition = definitions[name]!;
-    const value = variables.values[name];
-    resolved[name] = (
-      definition.kind === 'dateTimeRangeComparison'
-        ? definition.input(value as DateTimeRangeComparisonSelection, reference)
-        : value
-    ) as ResolvedVariables<Variables>[typeof name];
-  }
+  const resolved: FilterInput<Collection> = resolveFilterInput(
+    definitions,
+    filters.values,
+    reference
+  );
+
+  return {
+    ...filters,
+    resolved,
+    /** Start a new reference time for relative ranges; false when none needs one. */
+    refreshTime() {
+      if (!hasDateFilter) return false;
+      refreshReference();
+      return true;
+    },
+  };
+}
+
+/** Controls for every declared filter. URL values resolve before facets; a facet's
+ * options follow its operation's filters, which key its cached, bounded loading. */
+export function useFilterControls<Collection extends FilterCollection>(
+  definitions: Collection,
+  operationFilters: Readonly<Record<string, FilterCollection>>,
+  clientScope: string,
+  loadFacet: (
+    operation: string,
+    input: unknown,
+    signal: AbortSignal
+  ) => Promise<unknown>
+): FilterControls {
+  const filters = useFilterValues(definitions);
+  const resolved = filters.resolved;
   const facets = Object.entries(definitions).filter(
-    (entry): entry is [string, FacetVariable<any, any, string, unknown>] =>
+    (entry): entry is [string, FacetFilter<any, string>] =>
       entry[1].kind === 'dimension' &&
       entry[1].optionsSource === 'query' &&
       facetSource in entry[1]
   );
   const sourceDimensions = Object.entries(definitions).filter(
-    (entry): entry is [string, SourceDimensionVariable<any>] =>
+    (entry): entry is [string, SourceDimensionFilter<any>] =>
       entry[1].kind === 'dimension' && dimensionSource in entry[1]
   );
   const optionSources = [
     ...facets.map(([name, filter]) => {
-      const facet = filter[facetSource];
+      const operation = filter[facetSource].operation;
+      // The options operation may read this facet too; it lists every member.
+      const values: Record<string, unknown> = {
+        ...resolved,
+        [name]: { kind: 'all' },
+      };
       return {
         name,
         filter,
-        operation: facet.operation,
-        input: facet.input({ ...resolved, [name]: { kind: 'all' } }),
+        operation,
+        input: Object.fromEntries(
+          Object.keys(operationFilters[operation] ?? {}).map(key => [
+            key,
+            values[key],
+          ])
+        ),
       };
     }),
     ...sourceDimensions.map(([name, filter]) => ({
@@ -160,10 +187,7 @@ export function useViewVariables<Variables extends VariableCollection>(
       gcTime: 300000,
     })),
   });
-  function dimensionState(
-    name: string,
-    filter: DimensionSelectionVariable<any>
-  ) {
+  function dimensionState(name: string, filter: DimensionSelectionFilter<any>) {
     const facet = facetState.get(name);
     const selected = lookups.flatMap((item, index) =>
       item.name === name ? [lookupQueries[index]!] : []
@@ -195,12 +219,13 @@ export function useViewVariables<Variables extends VariableCollection>(
   let activeFilterCount = 0;
   let changedDisplayOptionCount = 0;
   let hasActiveFilters = false;
-  const clearedFilters: Partial<AppVariableValues<Variables>> = {};
+  const clearedFilters: Partial<FilterValues<Collection>> = {};
   const searchControls: ReactNode[] = [];
-  for (const name of Object.keys(definitions) as (keyof Variables & string)[]) {
+  for (const name of Object.keys(definitions) as (keyof Collection &
+    string)[]) {
     const definition = definitions[name]!;
-    const value = variables.values[name];
-    const variable = definition as AppVariable<any>;
+    const value = filters.values[name];
+    const filter = definition as AppFilter<any>;
     const widgetControl = definition.presentation?.control === 'widget';
     const group = definition.presentation?.group ?? 'scope';
     const prominence = definition.presentation?.prominence ?? 'primary';
@@ -220,37 +245,35 @@ export function useViewVariables<Variables extends VariableCollection>(
           value={value as string}
           resetValue={definition.defaultValue}
           onChange={next =>
-            variables.set(
-              name,
-              next as AppVariableValues<Variables>[typeof name]
-            )
+            filters.set(name, next as FilterValues<Collection>[typeof name])
           }
         />
       );
       continue;
     }
-    if (group === 'scope' && variable.clearValue !== undefined) {
-      clearedFilters[name] = variable.clearValue;
-      if (!variable.same(value, variable.clearValue)) hasActiveFilters = true;
+    if (group === 'scope' && filter.clearValue !== undefined) {
+      clearedFilters[name] = filter.clearValue;
+      if (!filter.same(value, filter.clearValue)) hasActiveFilters = true;
     }
     const baseline =
       group === 'display'
-        ? variable.defaultValue
-        : (variable.clearValue ?? variable.defaultValue);
-    const active = !variable.same(value, baseline);
+        ? filter.defaultValue
+        : (filter.clearValue ?? filter.defaultValue);
+    const active = !filter.same(value, baseline);
     function renderControl(
       labelPlacement: ControlLabelPlacement,
       onClear?: () => void
     ) {
-      function setControlValue(
-        next: AppVariableValues<Variables>[typeof name]
-      ) {
-        variables.set(name, next);
-        if (onClear && variable.same(next, baseline)) onClear();
+      function setControlValue(next: FilterValues<Collection>[typeof name]) {
+        filters.set(name, next);
+        if (onClear && filter.same(next, baseline)) onClear();
       }
       let control: ReactNode = null;
-      if (definition.kind === 'dateTimeRangeComparison') {
-        const selection = value as DateTimeRangeComparisonSelection;
+      if (definition.kind === 'dateTimeRange') {
+        const selection = value as DateTimeRangeSelection;
+        function select(next: DateTimeRangeSelection) {
+          setControlValue(next as FilterValues<Collection>[typeof name]);
+        }
         control = (
           <DateTimeRangePicker
             key={name}
@@ -259,63 +282,45 @@ export function useViewVariables<Variables extends VariableCollection>(
             value={selection.range}
             maxRangeDays={definition.maxRangeDays}
             presets={definition.presets}
-            contract={definition.contract}
+            policy={definition.policy}
             isDefault={!active}
             onReset={() => setControlValue(baseline)}
-            comparison={{
-              enabled: selection.comparison === 'previous',
-              range: definition.previous(selection),
-              onChange: enabled =>
-                setControlValue({
-                  range: selection.range,
-                  ...(enabled ? { comparison: 'previous' } : {}),
-                } as AppVariableValues<Variables>[typeof name]),
-            }}
-            onChange={range => {
-              const next: DateTimeRangeComparisonSelection = {
+            {...(definition.comparable && {
+              comparison: {
+                enabled: selection.comparison === 'previous',
+                range: definition.previous(selection),
+                onChange: (enabled: boolean) =>
+                  select({
+                    range: selection.range,
+                    ...(enabled ? { comparison: 'previous' } : {}),
+                  }),
+              },
+            })}
+            onChange={range =>
+              select({
                 range,
                 ...(selection.comparison && definition.previous({ range })
                   ? { comparison: 'previous' }
                   : {}),
-              };
-              setControlValue(
-                next as AppVariableValues<Variables>[typeof name]
-              );
-            }}
-          />
-        );
-      } else if (definition.kind === 'dateTimeRange') {
-        control = (
-          <DateTimeRangePicker
-            key={name}
-            label={definition.label}
-            labelPlacement={labelPlacement}
-            value={value as DateTimeRange}
-            maxRangeDays={definition.maxRangeDays}
-            presets={definition.presets}
-            contract={definition.contract}
-            isDefault={!active}
-            onReset={() => setControlValue(baseline)}
-            onChange={next =>
-              setControlValue(next as AppVariableValues<Variables>[typeof name])
+              })
             }
           />
         );
       } else if (definition.kind === 'dimension') {
-        const filter = definition as DimensionSelectionVariable;
-        const facet = dimensionState(name, filter);
+        const dimension = definition as DimensionSelectionFilter;
+        const facet = dimensionState(name, dimension);
         control = (
           <DimensionPicker
             key={name}
             labelPlacement={labelPlacement}
-            filter={filter}
+            filter={dimension}
             value={value as DimensionSelection}
             options={facet.options}
             loading={facet.loading}
             error={facet.error}
             onRetry={facet.retry}
             onChange={next =>
-              setControlValue(next as AppVariableValues<Variables>[typeof name])
+              setControlValue(next as FilterValues<Collection>[typeof name])
             }
           />
         );
@@ -327,7 +332,7 @@ export function useViewVariables<Variables extends VariableCollection>(
             filter={definition as NumberFilter}
             value={value as NumberSelection}
             onChange={next =>
-              setControlValue(next as AppVariableValues<Variables>[typeof name])
+              setControlValue(next as FilterValues<Collection>[typeof name])
             }
           />
         );
@@ -352,7 +357,7 @@ export function useViewVariables<Variables extends VariableCollection>(
                   : {
                       kind: 'is',
                       value: next === 'true',
-                    }) as AppVariableValues<Variables>[typeof name]
+                    }) as FilterValues<Collection>[typeof name]
               )
             }
           />
@@ -369,7 +374,7 @@ export function useViewVariables<Variables extends VariableCollection>(
             maxSelected={definition.maxSelected}
             emptySelectionLabel="None"
             onChange={next =>
-              setControlValue(next as AppVariableValues<Variables>[typeof name])
+              setControlValue(next as FilterValues<Collection>[typeof name])
             }
           />
         );
@@ -383,7 +388,7 @@ export function useViewVariables<Variables extends VariableCollection>(
             value={value as string}
             options={definition.options}
             onChange={next =>
-              setControlValue(next as AppVariableValues<Variables>[typeof name])
+              setControlValue(next as FilterValues<Collection>[typeof name])
             }
           />
         );
@@ -404,9 +409,9 @@ export function useViewVariables<Variables extends VariableCollection>(
               ? undefined
               : onClear => renderControl('inline', onClear),
           onRemove: () =>
-            variables.set(
+            filters.set(
               name,
-              baseline as AppVariableValues<Variables>[typeof name]
+              baseline as FilterValues<Collection>[typeof name]
             ),
           label: definition.label ?? name,
           summary:
@@ -415,7 +420,7 @@ export function useViewVariables<Variables extends VariableCollection>(
                   value as DimensionSelection,
                   dimensionState(name, definition).options
                 )
-              : (variable.describe?.(value) ?? String(value)),
+              : (filter.describe?.(value) ?? String(value)),
         });
       }
       if (!widgetControl && prominence === 'primary')
@@ -430,13 +435,6 @@ export function useViewVariables<Variables extends VariableCollection>(
   const hasControls = allFilters.length > 0 || orderedDisplayOptions.length > 0;
 
   return {
-    refreshTime() {
-      if (!hasComparison) return false;
-      refreshReference();
-      return true;
-    },
-    ...variables,
-    resolved,
     searchControls: searchControls.length ? searchControls : null,
     filterControls:
       hasControls || hasActiveFilters ? (
@@ -448,9 +446,7 @@ export function useViewVariables<Variables extends VariableCollection>(
           displayOptions={orderedDisplayOptions}
           changedDisplayOptionCount={changedDisplayOptionCount}
           onClear={
-            hasActiveFilters
-              ? () => variables.update(clearedFilters)
-              : undefined
+            hasActiveFilters ? () => filters.update(clearedFilters) : undefined
           }
         />
       ) : null,

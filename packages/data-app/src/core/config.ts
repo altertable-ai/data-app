@@ -4,15 +4,20 @@
  */
 import {
   defineOperation,
-  type OperationDefinition,
+  type DefinedOperation,
+  type FilterOperationDefinition,
+  type InputOperationDefinition,
+  type WithFilterInput,
 } from '../authoring/contract.ts';
+import type { FilterCollection } from './app-filters.ts';
 import type { AppearanceOptions } from './appearance.ts';
 import {
   bindDimensionSource,
   type DimensionSourceConfig,
   type DimensionSourceQueryName,
-  type SourceDimensionVariable,
+  type SourceDimensionFilter,
 } from './dimension-source.ts';
+import type { FilterInput } from './operation-filters.ts';
 import {
   snapshotQueries,
   type QueryDefinitions,
@@ -53,10 +58,24 @@ export type DataAppDefinition<
     config: DimensionSourceConfig<Type> & {
       source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
     }
-  ): SourceDimensionVariable<{ string: string; number: number }[Type]>;
-  defineOperation<Input, Output>(
-    operation: OperationDefinition<Input, Output, Queries>
-  ): ReturnType<typeof defineOperation<Input, Output, Queries>>;
+  ): SourceDimensionFilter<{ string: string; number: number }[Type]>;
+  /** Parse a destination's own input, such as a record id, and list valid `checks`.
+   * Declare `filters` too when it reads the displayed scope. */
+  defineOperation<Input, Output, const Filters extends FilterCollection = {}>(
+    operation: InputOperationDefinition<Input, Output, Queries, Filters>
+  ): DefinedOperation<
+    WithFilterInput<Filters, Input>,
+    Output,
+    Queries,
+    keyof Filters extends never ? undefined : Filters
+  >;
+  /** Declare the filters the operation reads; its input, checks, and views derive from them. */
+  defineOperation<
+    const Filters extends FilterCollection = {},
+    Output = unknown,
+  >(
+    operation: FilterOperationDefinition<Filters, Output, Queries>
+  ): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>;
 };
 
 /**
@@ -95,13 +114,11 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
     ) {
       return bindDimensionSource<Type>(config, queries);
     },
-    defineOperation<Input, Output>(
-      operation: OperationDefinition<Input, Output, Queries>
-    ) {
-      return defineOperation<Input, Output, Queries>({
+    defineOperation(operation: object): any {
+      return defineOperation({
         ...operation,
         queries: queries as unknown as CheckedQueries<Queries>,
-      });
+      } as never);
     },
   });
 }

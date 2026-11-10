@@ -2,7 +2,8 @@
 
 Keep the starter's `defineDataApp()` declaration and operation registry. Declare
 named SQL queries with typed `params` and `projections`; execute them through
-`dataApp.defineOperation()`. Use descriptive `lowerCamelCase` query names.
+`dataApp.defineOperation()`. Write one query and operation per widget result,
+and use descriptive `lowerCamelCase` query names.
 
 ## Execute named queries
 
@@ -35,20 +36,17 @@ ORDER BY group_name LIMIT $limit`,
 
 Replace fixture SQL with inspected data. Keep query declarations and projections
 in sync when adapting SQL to the app's inputs. Preserve metric definitions.
-Keep operation inputs flat; derive SQL parameters inside `run()`:
+List the [filters](filters.md) an operation reads; `run()` receives one flat
+field per filter, and you derive SQL parameters inside it:
 
 ```ts
-import { parseCount } from '@altertable/data-app/contract';
+import { parseCount, searchFilter } from '@altertable/data-app/contract';
 
-// ... dataApp and parseSampleCountFilter
+// ... dataApp
+const groupName = searchFilter({ key: 'group', label: 'Group' });
 const operations = {
   sampleCountsByGroup: dataApp.defineOperation({
-    input: parseSampleCountFilter,
-    checks: [
-      { groupName: '' },
-      { groupName: 'Alpha' },
-      { groupName: 'missing' },
-    ],
+    filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
     async run({ query }, { groupName }) {
       const result = await query('sampleCountsByGroup', { groupName });
@@ -61,11 +59,13 @@ const operations = {
 };
 ```
 
-The starter supplies `parseSampleCountFilter()` and `parseCount()`. Validate
-unknown input in the parser and business rules in `run()`. Include representative
-valid inputs in `checks`. Derive results from `query()` rows without duplicate
-schemas or type assertions; clients and views infer the returned type.
-HTTP results must be JSON-serializable.
+The filters validate input and supply the operation's checks; enforce business
+rules in `run()`. Omit `filters` for an operation without inputs. An operation
+with its own fields, such as a detail record ID, adds an `input` parser and
+representative valid `checks` for those fields; its `filters` still parse the
+scope it reads. Derive results from `query()` rows
+without duplicate schemas or type assertions; clients and views infer the
+returned type. HTTP results must be JSON-serializable.
 
 Host `queryParams` supplies protected parameters that callers cannot override.
 Other values come from `query()` arguments or defaults. The host/backend enforces
@@ -82,51 +82,33 @@ return SQL text and declare `string` when exact numeric precision matters.
 
 Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 
-### Bind datetime ranges
+### Bind date ranges
 
-Declare a `dateTimeRange` parameter and pass a `DateTimeRange` to `query()`.
-For a [comparison variable](variables.md#absolute-and-relative-datetime-ranges),
-pass its `range` or `comparison` bounds. Reference those bounds in SQL:
+Declare `{ type: 'dateTimeRange' }` and pass a date filter's `range` or
+`comparison`. Reference its bounds as `$period.from` (inclusive) and
+`$period.to` (exclusive):
 
 ```ts
 const dataApp = defineDataApp({
   // ... title, description, and scope
   queries: {
-    events: {
-      statement: `SELECT occurred_at AS "occurredAt" FROM events
-        WHERE occurred_at >= $period.from AND occurred_at < $period.to`,
+    dailyOrders: {
+      statement: `SELECT CAST(ordered_at AS DATE) AS day, count(*) AS orders
+        FROM orders
+        WHERE ordered_at >= $period.from AND ordered_at < $period.to
+        GROUP BY day ORDER BY day`,
       params: { period: { type: 'dateTimeRange' } },
-      projections: { occurredAt: { type: 'string' } },
+      projections: {
+        day: { type: 'string' },
+        orders: { type: 'number' },
+      },
     },
   },
 });
 ```
 
-The start is inclusive and the end exclusive. Relative values resolve at query
-execution. Absolute values encode wall-clock fields in UTC: selecting 4 PM stores
-16:00Z.
-SQL bounds are timezone-free timestamps. Configure the backend session to the
-reporting timezone and interpret timestamp-with-timezone comparisons in that
-same zone.
-
-## Share reporting policy
-
-Pass an optional `defineDateRangeContract()` to `dateTimeRangeVariable()` to
-share coverage, duration limits, and reporting timezone between the picker and
-server parser. By default, coverage ends yesterday; set `completeDays: false`
-to include today. Declare the policy once:
-
-```ts
-import { defineDateRangeContract } from '@altertable/data-app/contract';
-
-const calendar = defineDateRangeContract({
-  minDate: '2026-01-01',
-  maxRangeDays: 90,
-  timeZone: 'UTC',
-});
-```
-
-Use the shared contract in the [datetime variable workflow](variables.md#absolute-and-relative-datetime-ranges),
-including optional previous-period comparison. Resolved datetime requests include
-the start and exclude the end. Pass the variable to `defineTimeView()` and
-validate operation input with its parser.
+Date filters pass resolved bounds in their `timeZone`, encoded as UTC wall-clock
+fields: 4 PM in the reporting zone is 16:00Z. SQL bounds are therefore
+timezone-free timestamps; interpret timestamp-with-timezone columns in that same
+zone. Coverage and duration limits live on the
+[date filter](filters.md#date-ranges).

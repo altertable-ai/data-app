@@ -1,7 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import { parseEmptyInput } from '@altertable/data-app/contract';
 
 const app = defineDataApp({
   title: 'Run results',
@@ -17,8 +16,6 @@ const app = defineDataApp({
 });
 const operations = {
   totals: app.defineOperation({
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 10, maxDurationMs: 1000 },
     async run({ query }) {
       const { rows } = await query('totals');
@@ -43,10 +40,9 @@ createDataClient<typeof operations>({
   // @ts-expect-error Output parsers are not client configuration.
   outputs: { totals: () => ({}) },
 });
-createDataHooks(client).defineDataView({
+createDataHooks(client).defineView({
   operation: 'totals',
   dataContext: createDataContext({})({ description: 'Totals', glossary: {} }),
-  describeInput: () => 'All',
   isEmpty(data) {
     const count: number = data.total;
     // @ts-expect-error View data derives from the same operation return type.

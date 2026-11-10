@@ -1,11 +1,15 @@
 import { injectDataAppStyles } from '@altertable/data-app-react';
-import { DataAppProvider, TextWidget } from '@altertable/data-app-react/ui';
+import {
+  DataAppProvider,
+  TextWidget,
+  useAppFilters,
+} from '@altertable/data-app-react/ui';
 import {
   createDataClient,
   type InputOf,
   type OutputOf,
 } from '@altertable/data-app/client';
-import { defineOperation } from '@altertable/data-app/contract';
+import { defineOperation, searchFilter } from '@altertable/data-app/contract';
 import type { TransportResponse } from '@altertable/data-app/contract';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { useState } from 'react';
@@ -27,13 +31,15 @@ const context = registerContext({})({
   glossary: {},
 });
 
+const version = searchFilter({
+  key: 'version',
+  label: 'Selection',
+  defaultValue: '1',
+});
 const operations = {
   alpha: defineOperation({
     queries: {},
-    input(value: unknown) {
-      return value as { version: number };
-    },
-    checks: [{ version: 1 }],
+    filters: { version },
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run() {
       return { kind: 'alpha', count: 1 };
@@ -41,10 +47,7 @@ const operations = {
   }),
   beta: defineOperation({
     queries: {},
-    input(value: unknown) {
-      return value as { version: number };
-    },
-    checks: [{ version: 1 }],
+    filters: { version },
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run() {
       return { kind: 'beta', label: 'Beta' };
@@ -53,11 +56,16 @@ const operations = {
 };
 const pending = new Map<string, (response: TransportResponse) => void>();
 const client = createDataClient<typeof operations>({
+  filters: {
+    alpha: operations.alpha.filters,
+    beta: operations.beta.filters,
+  },
   transport(name, input, signal) {
     return new Promise((resolve, reject) => {
-      const key = [name, (input as { version: number }).version].join(
-        KEY_SEPARATOR
-      );
+      const key = [
+        name,
+        (input as InputOf<typeof operations.alpha>).version,
+      ].join(KEY_SEPARATOR);
 
       function abort() {
         pending.delete(key);
@@ -72,12 +80,23 @@ const client = createDataClient<typeof operations>({
     });
   },
 });
-const { defineDataView } = createDataHooks(client);
+const { defineView } = createDataHooks(client);
+function describeInput(input: InputOf<typeof operations.alpha>) {
+  return `selection ${input.version}`;
+}
+const views = {
+  alpha: defineView({
+    dataContext: context,
+    operation: 'alpha',
+    describeInput,
+  }),
+  beta: defineView({ dataContext: context, operation: 'beta', describeInput }),
+};
 const narrativeRows = bindDataset({
   name: 'Activity',
   select: (
     data: OutputOf<typeof operations.alpha | typeof operations.beta>,
-    input: { version: number }
+    input: InputOf<typeof operations.alpha>
   ) => [
     {
       value: 'count' in data ? data.count : data.label,
@@ -93,7 +112,7 @@ const narrativeRows = bindDataset({
 });
 const narrative = defineDataContent<
   OutputOf<(typeof operations)[keyof typeof operations]>,
-  { version: number }
+  InputOf<typeof operations.alpha>
 >(result => (
   <TextWidget
     title="Activity explained"
@@ -116,24 +135,15 @@ const narrative = defineDataContent<
 
 function App() {
   const [operation, setOperation] = useState<'alpha' | 'beta'>('alpha');
-  const [version, setVersion] = useState(1);
-  const definition = {
-    dataContext: context,
-    variables: {},
-    input: () => ({ version }),
-    describeInput: (input: InputOf<typeof operations.alpha>) =>
-      `selection ${input.version}`,
-    isEmpty: () => false,
-    emptyFallback: { title: 'No activity' },
-  };
-  const result = useDeclaredResult(
-    operation === 'alpha'
-      ? defineDataView({ ...definition, operation: 'alpha' })
-      : defineDataView({ ...definition, operation: 'beta' })
-  );
+  const selection = useAppFilters({ version });
+  const current = selection.values.version;
+  function setVersion(value: number) {
+    selection.set('version', String(value));
+  }
+  const result = useDeclaredResult(views[operation]);
 
   function settle(failed: boolean) {
-    pending.get([operation, version].join(KEY_SEPARATOR))?.(
+    pending.get([operation, current].join(KEY_SEPARATOR))?.(
       failed
         ? {
             status: 502,
@@ -149,9 +159,9 @@ function App() {
             body: {
               data:
                 operation === 'alpha'
-                  ? { kind: 'alpha', count: version }
-                  : { kind: 'beta', label: `Beta ${version}` },
-              requestId: [operation, version].join(KEY_SEPARATOR),
+                  ? { kind: 'alpha', count: Number(current) }
+                  : { kind: 'beta', label: `Beta ${current}` },
+              requestId: [operation, current].join(KEY_SEPARATOR),
               queriedAt: '2026-09-30T00:00:00Z',
               queryIds: [],
               queries: [
@@ -180,7 +190,7 @@ function App() {
       >
         Beta
       </button>
-      <button onClick={() => setVersion(value => value + 1)}>
+      <button onClick={() => setVersion(Number(current) + 1)}>
         Change input
       </button>
       <button onClick={() => settle(false)}>Resolve request</button>
@@ -194,6 +204,7 @@ function App() {
       </p>
       <DataSection
         result={result}
+        notice="inline"
         emptyFallback={{ title: 'No activity' }}
         {...narrative}
       />

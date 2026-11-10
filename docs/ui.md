@@ -10,7 +10,7 @@ frame for deliberately custom content. Use `<GettingStarted>` for
 connection setup. Fetched data belongs to a declared view; avoid inventing
 request states to populate a shell.
 
-Custom controls own values and change handlers; use `useAppVariables()` for
+Custom controls own values and change handlers; use `useAppFilters()` for
 custom URL state. Use `<DataTable>` for custom tables and `<Tabs>`, `<Sheet>`,
 and `<HelpPopover>` for navigation and overlays.
 
@@ -283,8 +283,8 @@ function FilterChoices() {
 
 A standalone `<Checkbox>` uses `checked` and `onChange`; group items use `value`.
 
-Use `<FilterBar>` to arrange predicates and `<VariableBar>` for mixed app
-parameters. Use `<FilterActions>` for Clear or paired Apply/Cancel actions on
+Use `<FilterBar>` to arrange predicates and `<ControlBar>` for a row of mixed
+search, filter, and display controls. Use `<FilterActions>` for Clear or paired Apply/Cancel actions on
 app-owned drafts; provide the handlers for your applied state.
 
 Use `<NumberFilterPicker>` for a numeric predicate popover or numeric fields
@@ -296,7 +296,8 @@ Use `<Button variant="inline">` for actions within text or table cells. Use butt
 
 ## Datetime selection
 
-Prefer a [datetime variable](variables.md#absolute-and-relative-datetime-ranges)
+Prefer a [datetime filter](filters.md#date-ranges)
 for generated controls and URL state. For custom screens, `<DateTimeRangePicker>`
 accepts the same `DateTimeRange` and preset sets, with calendar and natural-language
-entry. See its props in [REFERENCE.md](../REFERENCE.md).
+entry. Pass `policy={period.policy}` to apply a date filter's coverage and time
+zone. See its props in [REFERENCE.md](../REFERENCE.md).

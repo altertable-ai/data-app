@@ -10,6 +10,7 @@ import {
 import { Dialog, DialogTrigger } from 'react-aria-components';
 
 import { Button, PressButton } from './ui/Button.tsx';
+import { ControlBar } from './ui/ControlBar.tsx';
 import { FilterActions } from './ui/FilterActions.tsx';
 import { GradientScroll } from './ui/GradientScroll.tsx';
 import { AppIcon } from './ui/icons.ts';
@@ -17,7 +18,6 @@ import { ControlLabelValue } from './ui/PickerField.tsx';
 import { PopoverSurface } from './ui/PopoverSurface.tsx';
 import { Sheet } from './ui/Sheet.tsx';
 import { Tooltip } from './ui/Tooltip.tsx';
-import { VariableBar } from './ui/VariableBar.tsx';
 
 export type ActiveFilterControl = {
   id: string;
@@ -101,7 +101,7 @@ export function ViewControlBar({
 
   return (
     <>
-      <VariableBar
+      <ControlBar
         ref={toolbarRef}
         className="altertable-primary-controls"
         aria-label="View controls"
@@ -155,7 +155,7 @@ export function ViewControlBar({
             {displayOptions}
           </DisplayOptionsPopover>
         )}
-      </VariableBar>
+      </ControlBar>
       {toolbarAboveViewport && activeFilters.length > 0 && (
         <fieldset
           ref={summaryRef}
@@ -227,12 +227,12 @@ export function ViewControlBar({
             </div>
           }
         >
-          <VariableBar
+          <ControlBar
             aria-label="All filters"
             className="altertable-sheet-filters"
           >
             {allFilters}
-          </VariableBar>
+          </ControlBar>
         </Sheet>
       )}
     </>

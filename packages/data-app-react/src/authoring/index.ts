@@ -4,7 +4,8 @@ export type {
   DatasetSuggestionOptions,
   DatasetDeclaration as DatasetDefinition,
 } from '../bindings.ts';
-export type { MetricRecords } from '../bindings.ts';
+export type { Dataset, MetricRecords, ViewSource } from '../bindings.ts';
+export type { ActionBuilder, DetailAction } from '../actions.ts';
 export { injectDataAppStyles } from '../styles.ts';
 export type { DataAppStylesOptions } from '../styles.ts';
 export type {
@@ -18,7 +19,7 @@ export { DetailView, DetailContent, useDetailNavigation } from '../details.tsx';
 export type { DetailViewDefinition } from '../details.tsx';
 export type { CsvCell } from '../ui/csv-export.ts';
 export { DataApp } from '../ui/DataApp.tsx';
-export type { DataAppProps } from '../ui/DataApp.tsx';
+export type { DataAppProps, DataAppView } from '../ui/DataApp.tsx';
 export { Stack } from '../ui/Stack.tsx';
 export type { StackProps } from '../ui/Stack.tsx';
 export { Grid } from '../ui/Grid.tsx';
@@ -57,20 +58,6 @@ export { UpdatedAt } from '../ui/UpdatedAt.tsx';
 export type { UpdatedAtProps } from '../ui/UpdatedAt.tsx';
 export { DateTimeTooltip } from '../ui/DateTimeTooltip.tsx';
 export type { DateTimeTooltipProps } from '../ui/DateTimeTooltip.tsx';
-export {
-  searchVariable,
-  choiceVariable,
-  multiChoiceVariable,
-} from '../ui/variables.ts';
-export type {
-  AppVariable,
-  VariablePresentation,
-  AppVariableValues,
-  ChoiceOption,
-  ChoiceVariable,
-  MultiChoiceVariable,
-  SearchVariable,
-} from '../ui/variables.ts';
 export { PeriodSummary } from '../ui/PeriodSummary.tsx';
 export type {
   ReportingPeriod,
@@ -104,18 +91,6 @@ export type { DateDisplayProps } from '../ui/DateDisplay.tsx';
 export { useDateFormatting } from '../date-formatting.ts';
 
 export { ExternalLink, type ExternalLinkProps } from '../ui/ExternalLink.tsx';
-
-export {
-  dateTimeRangeVariable,
-  dateTimeRangePresets,
-  type DateTimeRangePreset,
-  type DateTimeRangeVariable,
-  type DateTimeRangeComparisonVariable,
-  type DateTimeRangeComparisonVariableOptions,
-  type DateTimeRangeComparisonSelection,
-  type DateTimeRangeComparisonRequest,
-  type DateTimeRangeVariableOptions,
-} from '../ui/variables.ts';
 
 export {
   DateTimeRangePicker,

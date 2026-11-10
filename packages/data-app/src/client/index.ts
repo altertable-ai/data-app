@@ -10,6 +10,7 @@ export {
   type DataResponse,
   type DataClient,
   type DataClientOptions,
+  type OperationFilters,
   DataAppError,
 } from '../authoring/client.ts';
 export { createHttpTransport, type DataTransport } from './transport.ts';

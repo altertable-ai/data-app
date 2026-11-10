@@ -1,10 +1,7 @@
-import type { OutputOf } from '@altertable/data-app/client';
+import type { InputOf, OutputOf } from '@altertable/data-app/client';
 import {
   dimensionFilter,
-  parseDimensionSelection,
   parseCount,
-  type DateTimeRangeComparisonRequest,
-  type DimensionSelection,
   type QueryRow,
 } from '@altertable/data-app/contract';
 import { formatCount, formatPercent } from '@altertable/data-app/format';
@@ -12,26 +9,13 @@ import { formatCount, formatPercent } from '@altertable/data-app/format';
 import { dataApp } from '@/dev/app';
 import { countries, period } from '@/dev/commerce';
 
-export const countryFilter = dimensionFilter({
+const countryFilter = dimensionFilter({
   key: 'country',
   label: 'Country',
   valueType: 'string',
   selectionMode: 'single',
   options: countries,
 });
-export type OrderInput = {
-  period: DateTimeRangeComparisonRequest;
-  country: DimensionSelection<string>;
-};
-function parseInput(value: unknown): OrderInput {
-  if (!value || typeof value !== 'object')
-    throw new Error('Expected order filters.');
-  const input = value as Record<string, unknown>;
-  return {
-    period: period.parseInput(input.period),
-    country: parseDimensionSelection(input.country, countryFilter),
-  };
-}
 function amount(value: number): number {
   if (value < 0) throw new Error('Expected a nonnegative amount.');
   return value;
@@ -46,17 +30,9 @@ function totals(
     refunds: amount(row.refunds),
   };
 }
-const checkRange = period.input(period.defaultValue);
 export const operations = {
   orderOverview: dataApp.defineOperation({
-    input: parseInput,
-    checks: [
-      { period: checkRange, country: { kind: 'all' } },
-      {
-        period: checkRange,
-        country: { kind: 'include', members: [{ kind: 'value', value: 'FI' }] },
-      },
-    ] satisfies [OrderInput, ...OrderInput[]],
+    filters: { period, country: countryFilter },
     policy: { maxQueryRows: 300, maxDurationMs: 15000 },
     async run({ query }, { country, period }) {
       const member = country.kind === 'all' ? undefined : country.members[0];
@@ -115,6 +91,7 @@ export const operations = {
   }),
 };
 export const queryNames = operations.orderOverview.queryNames;
+export type OrderInput = InputOf<typeof operations.orderOverview>;
 export type OrderOverview = OutputOf<typeof operations.orderOverview>;
 export type CountryRevenue = OrderOverview['countries'][number];
 export type OrderDay = OrderOverview['days'][number];

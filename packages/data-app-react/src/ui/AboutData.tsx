@@ -189,12 +189,13 @@ export function InspectionSheet({
   };
   const listed = listedGlossaryEntries(subject);
   const names = glossaryQueries(subject);
-  if (names && resolvedQueries?.length) {
+  // A registered context knows every app query, including views that have not loaded yet.
+  const knownQueries = resolvedContext?.queryNames
+    ? Object.values(resolvedContext.queryNames)
+    : resolvedQueries?.map(query => query.name);
+  if (names && knownQueries?.length) {
     for (const name of names) {
-      invariant(
-        resolvedQueries.some(query => query.name === name),
-        `Unknown query name: ${name}.`
-      );
+      invariant(knownQueries.includes(name), `Unknown query name: ${name}.`);
     }
   }
   const hasQueries = (resolvedQueries ?? []).some(

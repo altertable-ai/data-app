@@ -16,42 +16,51 @@ explanatory prose in the app body.
 
 Continue the starter's `totalSamples` binding. Return one to four findings with a
 headline, visual, and registered dataset or
-metric as `evidence`. Reuse bindings and derive scope from the snapshot:
+metric as `evidence`. The story receives `view`'s displayed snapshot, then one
+snapshot per entry in `summaryViews`. Reuse each binding with its own view's
+snapshot and derive scope from it:
 
 ```tsx
-// ... sampleCountsView, sampleCounts, totalSamples, and sampleContent
+// ... sampleCountsView, sampleTotalView, sampleCounts, totalSamples, and contents
 function App() {
   return (
     <DataApp
       view={sampleCountsView}
+      summaryViews={[sampleTotalView]}
       datasets={[sampleCounts]}
-      story={snapshot => {
-        const total = totalSamples.read(snapshot);
+      story={(countsSnapshot, totalSnapshot) => {
+        const total = totalSamples.read(totalSnapshot);
         return [
           {
             id: 'total-samples',
             headline: `Total samples: ${formatMetric(total.value.current, totalSamples.definition.format)}`,
-            context: sampleCountsView.scope(snapshot),
-            visual: <MetricWidget metric={totalSamples} source={snapshot} />,
+            context: sampleCountsView.scope(countsSnapshot),
+            visual: (
+              <MetricWidget metric={totalSamples} source={totalSnapshot} />
+            ),
             evidence: totalSamples,
           },
         ];
       }}
     >
-      <DataSection content={sampleContent} />
+      <DataSection content={totalContent} />
+      <DataSection content={countsContent} />
     </DataApp>
   );
 }
 ```
+
+List a view in `summaryViews` only when the story or export reads it: summary
+views load with the page instead of when their sections near the viewport.
 
 Keep the starter's `formatMetric()` import for formatted headlines.
 
 ## Export displayed data as CSV
 
 Declare [datasets](widgets.md#declare-datasets-and-metrics) once and pass
-`datasets={[sampleCounts]}`. This list determines which datasets are available
-for export, using their bound rows and columns. Preserve the displayed grain;
-reuse a dataset for visuals sharing the same rows.
+`datasets={[sampleCounts]}`. List datasets from `view` or a summary view; each
+exports its bound rows and columns. Preserve the displayed grain; reuse a dataset
+for visuals sharing the same rows.
 
 One dataset downloads as CSV; multiple datasets offer individual downloads and
 **Export all** as ZIP. Filenames use the displayed scope. Accessors must return

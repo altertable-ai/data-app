@@ -29,7 +29,7 @@ import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { useMemo, useState } from 'react';
 
 import { dataApp } from '@/dev/app';
-import { calendar, period } from '@/dev/commerce';
+import { period } from '@/dev/commerce';
 import {
   CountryRanking,
   DailyLineChart,
@@ -40,7 +40,6 @@ import {
   queryNames,
   summarizeOrders,
   describeWeeklyOrderTrend,
-  countryFilter,
   type OrderOverview,
   type OrderInput,
   type Order,
@@ -134,12 +133,10 @@ const orderDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineTimeView } = createDataHooks(createDataClient({ operations }));
-const orderView = defineTimeView({
+const { defineView } = createDataHooks(createDataClient({ operations }));
+const orderView = defineView({
   dataContext: orderDataContext,
   operation: 'orderOverview',
-  time: period,
-  variables: { country: countryFilter },
   isEmpty: ({ countries }) => countries.length === 0,
   emptyFallback: { title: 'No matching countries' },
 });
@@ -485,7 +482,7 @@ function presentOrders(snapshot: OrderSnapshot) {
         change === null
           ? `Paid revenue reached ${formatMetric(current.revenue, currency)}`
           : `Paid revenue ${change >= 0 ? 'rose' : 'fell'} ${formatPercent(Math.abs(change))} against the previous period`,
-      context: `${scope}. Compared with ${formatDateRange({ start: input.period.comparison.from.toISOString().slice(0, 10), end: new Date(input.period.comparison.to.getTime() - 1).toISOString().slice(0, 10) })} ${calendar.bounds().timeZone}.`,
+      context: `${scope}. Compared with ${formatDateRange({ start: input.period.comparison.from.toISOString().slice(0, 10), end: new Date(input.period.comparison.to.getTime() - 1).toISOString().slice(0, 10) })} ${period.policy.timeZone}.`,
       visual: (
         <Grid columns={2}>
           <MetricWidget metric={revenueMetric} source={snapshot} />

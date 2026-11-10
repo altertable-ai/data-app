@@ -6,27 +6,17 @@ import {
   DataSection,
   MetricWidget,
   DataValue,
-  dateTimeRangeVariable,
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  defineDateRangeContract,
+  dateTimeRangeFilter,
   defineOperation,
   dimensionFilter,
-  parseDimensionSelection,
-  type DateTimeRangeComparisonRequest,
-  type DimensionSelection,
 } from '@altertable/data-app/contract';
 import { formatDateRange } from '@altertable/data-app/format';
 
-const calendar = defineDateRangeContract({
-  minDate: '2026-02-01',
-  maxDate: '2026-03-31',
-  maxRangeDays: 31,
-  timeZone: 'UTC',
-});
 const presets = [1, 3, 7, 14, 30].map(days => ({
   label: days === 1 ? 'Latest available day' : `Latest ${days} available days`,
   shortcut: days === 1 ? '-' : `${days}d`,
@@ -35,18 +25,17 @@ const presets = [1, 3, 7, 14, 30].map(days => ({
     to: new Date('2026-04-01T00:00:00Z'),
   },
 }));
-const period = dateTimeRangeVariable({
+const period = dateTimeRangeFilter({
   key: 'period',
-  contract: calendar,
-  allowComparison: true,
+  minDate: '2026-02-01',
+  maxDate: '2026-03-31',
+  maxRangeDays: 31,
+  comparison: 'off',
   presets,
   defaultValue: {
     from: new Date('2026-03-04T00:00:00Z'),
     to: new Date('2026-03-07T00:00:00Z'),
   },
-  presentation: new URLSearchParams(location.search).has('displayDate')
-    ? { group: 'display' }
-    : undefined,
 });
 const region = dimensionFilter<string>({
   key: 'region',
@@ -64,25 +53,9 @@ const region = dimensionFilter<string>({
     { value: 'null', label: 'Literal null' },
   ],
 });
-type Input = {
-  period: DateTimeRangeComparisonRequest;
-  region: DimensionSelection<string>;
-};
 const operation = defineOperation({
   queries: {},
-  input(value: unknown): Input {
-    const input = value as Input;
-    return {
-      period: period.parseInput(input.period),
-      region: parseDimensionSelection(input.region, region),
-    };
-  },
-  checks: [
-    {
-      period: period.input(period.defaultValue),
-      region: { kind: 'all' as const },
-    },
-  ],
+  filters: { period, region },
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run(_context, input) {
     return input.region.kind === 'all' ? 12 : 0;
@@ -106,14 +79,8 @@ const context = createDataContext({ activity: 'activity' })({
     },
   },
 });
-const view = createDataHooks(client).defineTimeView({
-  dataContext: context,
-  operation: 'activity',
-  time: period,
-  variables: { region },
-  isEmpty: () => false,
-  emptyFallback: { title: 'No events' },
-});
+const { defineView } = createDataHooks(client);
+const view = defineView({ dataContext: context, operation: 'activity' });
 const metric = view.metric(
   { id: 'count', glossaryId: 'count', format: { kind: 'count' } },
   current => ({ current, previous: 0 })
@@ -128,7 +95,7 @@ const dataset = view.dataset({
         end: new Date(input.period.range.to.getTime() - 1)
           .toISOString()
           .slice(0, 10),
-      })} ${calendar.bounds().timeZone}`,
+      })} ${period.policy.timeZone}`,
     },
   ],
   rowKey: () => 'events',

@@ -156,7 +156,7 @@ describe('authoring', () => {
       .poll(() =>
         app
           .getByRole('main')
-          .getByText('Showing all groups', { exact: true })
+          .getByText('Showing all data', { exact: true })
           .isVisible()
       )
       .toBe(true);
@@ -288,15 +288,23 @@ describe('authoring', () => {
           .isVisible()
       )
       .toBe(true);
+    // Each widget runs its own query through the host, capped by its operation policy.
+    const countRequests = requests.filter(request =>
+      request.statement.includes('ORDER BY group_name')
+    );
+    const totalRequests = requests.filter(request =>
+      request.statement.includes('SUM(sample_count)')
+    );
+    expect(countRequests.length).toBeGreaterThan(0);
+    expect(totalRequests.length).toBeGreaterThan(0);
+    expect(countRequests.length + totalRequests.length).toBe(requests.length);
+    expect(requests.every(request => request.host)).toBe(true);
     expect(
-      requests.every(
-        request =>
-          request.host &&
-          request.limit === 10 &&
-          request.params.limit === 10 &&
-          request.statement === requests[0]?.statement
+      countRequests.every(
+        request => request.limit === 10 && request.params.limit === 10
       )
     ).toBe(true);
+    expect(totalRequests.every(request => request.limit === 1)).toBe(true);
     await expect
       .poll(() =>
         app
@@ -316,14 +324,18 @@ describe('authoring', () => {
     });
     await page.goto('/starter-data-app');
     const app = page.frameLocator('iframe');
-    await expect
-      .poll(() =>
-        app
-          .getByRole('alert')
-          .filter({ hasText: 'Couldn’t load results' })
-          .isVisible()
-      )
-      .toBe(true);
+    const sections = ['Sample total', 'Group counts'].map(name =>
+      app.getByRole('region', { name, exact: true })
+    );
+    for (const section of sections)
+      await expect
+        .poll(() =>
+          section
+            .getByRole('alert')
+            .filter({ hasText: 'Couldn’t load results' })
+            .isVisible()
+        )
+        .toBe(true);
     await expect
       .poll(() =>
         app
@@ -339,7 +351,9 @@ describe('authoring', () => {
       )
       .toBe(true);
     fail = false;
-    await app.getByRole('button', { name: 'Retry', exact: true }).click();
+    await sections[1]!
+      .getByRole('button', { name: 'Retry', exact: true })
+      .click();
     await expect
       .poll(() =>
         app
@@ -347,6 +361,9 @@ describe('authoring', () => {
           .filter({ visible: true })
           .isVisible()
       )
+      .toBe(true);
+    await expect
+      .poll(() => sections[0]!.getByText('2.2M', { exact: true }).isVisible())
       .toBe(true);
   });
 

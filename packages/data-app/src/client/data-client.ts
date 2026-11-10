@@ -1,6 +1,11 @@
+import type { FilterCollection } from '../core/app-filters.ts';
 import type { DataOperations, Lakehouse } from '../core/contract.ts';
 import { withDimensionSelectors } from '../core/dimension-source.ts';
+import type { DimensionOption } from '../core/dimension.ts';
+import { facetSource, type FacetFilter } from '../core/facets.ts';
+import { invariant } from '../core/invariant.ts';
 import { defineDataQueryRoute, MessageRoutingError } from '../core/messages.ts';
+import { combineOperationFilters } from '../core/operation-filters.ts';
 import type {
   DataQueryBody,
   InputOf,
@@ -26,10 +31,25 @@ export type DataResponse<Output, Input = unknown> = DataQueryBody<Output> & {
   input: Input;
 };
 
+/** The filters each operation reads, for operations that read any. */
+export type OperationFilters<Operations extends DataOperations> = {
+  readonly [
+    Name in keyof Operations as Operations[Name] extends {
+      filters: infer Filters extends FilterCollection;
+    }
+      ? keyof Filters extends never
+        ? never
+        : Name
+      : never
+  ]: Operations[Name] extends { filters: infer Filters } ? Filters : never;
+};
+
 declare const clientContract: unique symbol;
 export type DataClient<Operations extends DataOperations> = {
   /** Preserve the operation registry when passing clients through helpers. */
   readonly [clientContract]: (operations: Operations) => Operations;
+  /** Each operation's filters; views derive their inputs and controls from them. */
+  readonly filters: Readonly<Record<string, FilterCollection>>;
   query<Name extends keyof Operations & string>(
     this: void,
     name: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown),
@@ -42,8 +62,9 @@ export type DataClient<Operations extends DataOperations> = {
 
 /** The factory is the only place that grants a client its invariant contract witness. */
 function typedClient<Operations extends DataOperations>(
-  implementation: Pick<DataClient<Operations>, 'query'>
+  implementation: Pick<DataClient<Operations>, 'query' | 'filters'>
 ): DataClient<Operations> {
+  combineOperationFilters(implementation.filters);
   const query = implementation.query;
   implementation.query = async (name, input, options) => {
     const end = appDiagnostics.begin();
@@ -75,6 +96,49 @@ type TransportOptions = {
   endpoint?: string;
   fetch?: typeof fetch;
 };
+/** Server-owned operations stay type-only, so the browser receives their filters. */
+type TransportFilters<Operations extends DataOperations> =
+  keyof OperationFilters<Operations> extends never
+    ? { filters?: OperationFilters<Operations> }
+    : {
+        /** Pass the same filter declarations the server operations read. */
+        filters: OperationFilters<Operations>;
+      };
+
+/** Distribute over conditional filter members so each possible facet is checked. */
+type UncheckedFacet<Operations extends DataOperations, Filter, Key> =
+  Filter extends FacetFilter<infer Value, infer Source>
+    ? Source extends keyof Operations
+      ? OutputOf<Operations[Source]> extends readonly DimensionOption<Value>[]
+        ? never
+        : Key
+      : Key
+    : never;
+
+/** The filter names whose facet options are missing or mistyped. Only known names:
+ * a typed contract may widen `filters` with an index signature. */
+type UncheckedFacetNames<Operations extends DataOperations, Filters> = {
+  [Key in keyof Filters as string extends Key ? never : Key]: UncheckedFacet<
+    Operations,
+    Filters[Key],
+    Key
+  >;
+} extends infer Checked
+  ? Checked[keyof Checked]
+  : never;
+
+/** Every facet filter loads its options from a registered operation returning them. */
+type CheckedFacets<Operations extends DataOperations> = {
+  [Name in keyof Operations]: Operations[Name] extends {
+    filters: infer Filters;
+  }
+    ? UncheckedFacetNames<Operations, Filters>
+    : never;
+}[keyof Operations] extends never
+  ? unknown
+  : {
+      'Facet filter options must name a registered operation returning DimensionOption[]': never;
+    };
 /** Browser operations and named-operation delivery are mutually exclusive. */
 export type DataClientOptions<Operations extends DataOperations> =
   (KnownRecord<Operations> extends never
@@ -91,36 +155,48 @@ export type DataClientOptions<Operations extends DataOperations> =
           transport?: never;
           endpoint?: never;
           fetch?: never;
+          filters?: never;
         }
-      | TransportOptions
-    );
+      | (TransportOptions & TransportFilters<Operations>)
+    ) &
+    CheckedFacets<Operations>;
 
 const dataQueryRoute = defineDataQueryRoute();
 
 /** Named HTTP operations, or browser-owned operations executed through an authorized SQL bridge. */
-export function createDataClient<Operations extends DataOperations>(
-  options: DataClientOptions<Operations>
-): DataClient<Operations>;
 /** Named clients derive data from the declared operations' run return types. */
 export function createDataClient<Operations extends DataOperations>(
-  ...args: DataClientOptions<Operations> extends never ? [options: never] : []
+  ...args: DataClientOptions<Operations> extends never
+    ? [options: never]
+    : keyof OperationFilters<Operations> extends never
+      ? []
+      : [options: never]
 ): DataClient<Operations>;
 /** Without an operation contract, external operation data remains unknown. */
 export function createDataClient(
   options?: TransportOptions
 ): DataClient<DataOperations>;
 export function createDataClient<Operations extends DataOperations>(
-  options: DataClientOptions<Operations> | TransportOptions = {}
+  options: DataClientOptions<Operations>
+): DataClient<Operations>;
+export function createDataClient<Operations extends DataOperations>(
+  options:
+    | DataClientOptions<Operations>
+    | (TransportOptions & {
+        filters?: Readonly<Record<string, FilterCollection>>;
+      }) = {}
 ): DataClient<Operations> {
   if (options.operations)
     return createOperationClient({
       operations: withDimensionSelectors(options.operations),
       lakehouse: options.lakehouse,
     });
+  const filters = Object.freeze({ ...options.filters });
   const http = createHttpTransport(options);
   const useHttp = options.endpoint !== undefined || options.fetch !== undefined;
 
   return typedClient<Operations>({
+    filters,
     async query(name, input, { signal } = {}) {
       const transport =
         options.transport ??
@@ -152,7 +228,21 @@ function createOperationClient<Operations extends DataOperations>(options: {
   lakehouse?: Lakehouse;
 }): DataClient<Operations> {
   const operations = Object.freeze({ ...options.operations });
+  const filters: Record<string, FilterCollection> = {};
+  for (const [name, operation] of Object.entries(operations))
+    if (operation.filters && Object.keys(operation.filters).length)
+      filters[name] = operation.filters;
+  for (const operationFilters of Object.values(filters))
+    for (const filter of Object.values(operationFilters)) {
+      const facet = (filter as Partial<FacetFilter>)[facetSource];
+      if (facet)
+        invariant(
+          Object.hasOwn(operations, facet.operation),
+          `Facet filter ${filter.label} loads options from an unregistered operation: ${facet.operation}.`
+        );
+    }
   return typedClient<Operations>({
+    filters: Object.freeze(filters),
     async query(name, input, { signal } = {}) {
       signal?.throwIfAborted();
       const requestId = randomUuid();

@@ -1,16 +1,16 @@
+import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
   createDataContext,
-  choiceVariable,
   MetricWidget,
   TableWidget,
   VisualizationWidget,
-  type AppVariableValues,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
+  choiceFilter,
   dimensionFilter,
-  type DataOperation,
+  displayChoice,
 } from '@altertable/data-app/contract';
 const region = dimensionFilter<string>({
   key: 'region',
@@ -26,7 +26,7 @@ const customer = dimensionFilter<number>({
   selectionMode: 'single',
   options: [{ value: 1, label: 'One' }],
 });
-const by = choiceVariable({
+const by = displayChoice({
   key: 'by',
   label: 'Breakdown',
   defaultValue: 'region',
@@ -34,46 +34,51 @@ const by = choiceVariable({
     { id: 'region', label: 'Region' },
     { id: 'customer', label: 'Customer' },
   ],
-  presentation: { group: 'display', control: 'widget' },
+  presentation: { control: 'widget' },
 });
-const sort = choiceVariable({
+const sort = displayChoice({
   key: 'sort',
   options: [{ id: 'asc', label: 'Ascending' }],
   defaultValue: 'asc',
-  presentation: { group: 'display' },
 });
-const mode = choiceVariable({
+const mode = choiceFilter({
   key: 'mode',
   defaultValue: 'all',
   options: [{ id: 'all', label: 'All' }],
 });
-type Input = {
-  region: typeof region.defaultValue;
-  customer: typeof customer.defaultValue;
-  by: 'region' | 'customer';
-  sort: string;
-  mode: string;
-};
-const hooks =
-  createDataHooks(
-    createDataClient<{
-      sales: DataOperation<Input, { rows: { id: string; value: number }[] }>;
-    }>()
-  );
+const app = defineDataApp({
+  title: 'Exploration',
+  description: 'Explore sales.',
+  scope: { organization: 'demo', environment: 'test' },
+  queries: {},
+});
+const policy = { maxQueryRows: 10, maxDurationMs: 1000 };
+async function noRows(): Promise<{ rows: { id: string; value: number }[] }> {
+  return { rows: [] };
+}
+const hooks = createDataHooks(
+  createDataClient({
+    operations: {
+      sales: app.defineOperation({
+        filters: { region, customer, by, sort, mode },
+        policy,
+        run: noRows,
+      }),
+      strings: app.defineOperation({
+        filters: { region, by },
+        policy,
+        run: noRows,
+      }),
+    },
+  })
+);
 const context = createDataContext({ sales: 'sales' })({
   description: 'Sales',
   glossary: {
     total: { term: 'Total', definition: 'Total value.', queryNames: ['sales'] },
   },
 });
-const view = hooks.defineDataView({
-  operation: 'sales',
-  dataContext: context,
-  variables: { region, customer, by, sort, mode },
-  describeInput: () => 'Sales',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
-});
+const view = hooks.defineView({ operation: 'sales', dataContext: context });
 view.breakdown('by');
 // @ts-expect-error Only display choices can be chart breakdown targets.
 view.breakdown('region');
@@ -113,7 +118,7 @@ rows.actions(action => ({
   breakdown: action.filter({
     label: 'Breakdown',
     target: view.filter(),
-    // @ts-expect-error Ordinary filters cannot write chart display variables.
+    // @ts-expect-error Ordinary filters cannot write chart display options.
     values: () => ({ by: 'region' }),
   }),
   display: action.filter({
@@ -189,44 +194,31 @@ TableWidget({
   actions: metricActions,
 });
 
-const stringVariables = { region, by };
-const numberVariables = {
-  region: customer,
-  by: choiceVariable({
-    key: 'by',
-    defaultValue: 'one',
-    options: [{ id: 'one', label: 'One' }],
-    presentation: { group: 'display' },
-  }),
-};
-const targetHooks =
-  createDataHooks(
-    createDataClient<{
-      strings: DataOperation<
-        AppVariableValues<typeof stringVariables>,
-        unknown
-      >;
-      numbers: DataOperation<
-        AppVariableValues<typeof numberVariables>,
-        unknown
-      >;
-    }>()
-  );
-const definition = {
-  dataContext: context,
-  describeInput: () => 'Targets',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
-};
-const strings = targetHooks.defineDataView({
-  ...definition,
+const numberHooks = createDataHooks(
+  createDataClient({
+    operations: {
+      numbers: app.defineOperation({
+        filters: {
+          region: customer,
+          by: displayChoice({
+            key: 'by',
+            defaultValue: 'one',
+            options: [{ id: 'one', label: 'One' }],
+          }),
+        },
+        policy,
+        run: noRows,
+      }),
+    },
+  })
+);
+const strings = hooks.defineView({
   operation: 'strings',
-  variables: stringVariables,
+  dataContext: context,
 });
-const numbers = targetHooks.defineDataView({
-  ...definition,
+const numbers = numberHooks.defineView({
   operation: 'numbers',
-  variables: numberVariables,
+  dataContext: context,
 });
 const stringFilter = strings.filter();
 const numberFilter = numbers.filter();

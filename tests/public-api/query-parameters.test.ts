@@ -1,6 +1,7 @@
 import { defineDataApp } from '@altertable/data-app';
+import { createDataClient } from '@altertable/data-app/client';
 import {
-  parseEmptyInput,
+  dimensionFilter,
   type QueryParameters,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
@@ -34,8 +35,6 @@ async function execute(
 ) {
   const delivered: QueryParameters[] = [];
   const operation = app.defineOperation({
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run({ query }) {
       // @ts-expect-error Exercise malformed input at the runtime boundary.
@@ -133,4 +132,71 @@ test('host context can supply any declared parameter', async () => {
       },
     ],
   });
+});
+
+test('a dimension filter binds its selection and matches rows in SQL', async () => {
+  const country = dimensionFilter({
+    key: 'country',
+    label: 'Country',
+    valueType: 'string',
+    selectionMode: 'multiple',
+    allowMissing: true,
+    allowExclusion: true,
+    options: [
+      { value: 'US', label: 'United States' },
+      { value: 'FR', label: 'France' },
+    ],
+  });
+  const dimensions = defineDataApp({
+    title: 'Dimensions',
+    description: 'Bind dimension selections.',
+    scope: { organization: 'demo', environment: 'test' },
+    queries: {
+      orders: {
+        statement:
+          'SELECT count(*) AS orders FROM orders o JOIN customers c ON c.id = o.customer_id WHERE $country.matches(c.country)',
+        params: { country: { type: 'dimension', valueType: 'string' } },
+        projections: { orders: { type: 'number' } },
+      },
+    },
+  });
+  const delivered: { statement: string; params?: QueryParameters }[] = [];
+  const client = createDataClient({
+    operations: {
+      orders: dimensions.defineOperation({
+        filters: { country },
+        policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+        async run({ query }, input) {
+          return (await query('orders', { country: input.country })).rows;
+        },
+      }),
+    },
+    lakehouse: {
+      async queryAll(statement, { params }) {
+        delivered.push({ statement, params });
+        return { columns: [{ name: 'orders' }], rows: [[2]] };
+      },
+    },
+  });
+  await client.query('orders', {
+    country: {
+      kind: 'exclude',
+      members: [{ kind: 'value', value: 'US' }, { kind: 'missing' }],
+    },
+  });
+  await client.query('orders', { country: { kind: 'all' } });
+  expect(delivered.map(({ params }) => params)).toEqual([
+    {
+      country: JSON.stringify({
+        kind: 'exclude',
+        values: ['US'],
+        missing: true,
+      }),
+    },
+    { country: JSON.stringify({ kind: 'all' }) },
+  ]);
+  expect(delivered[0]!.statement).not.toContain('$country.matches');
+  expect(delivered[0]!.statement).toContain(
+    "list_contains(CAST(json_extract($country, '$.values') AS VARCHAR[]), c.country)"
+  );
 });

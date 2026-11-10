@@ -1,35 +1,34 @@
 import { defineDataApp } from '@altertable/data-app';
-import {
-  choiceVariable,
-  createDataContext,
-  createDataHooks,
-  dateTimeRangeVariable,
-  multiChoiceVariable,
-} from '@altertable/data-app-react';
+import { createDataContext, createDataHooks } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  defineDateRangeContract,
+  choiceFilter,
+  dateTimeRangeFilter,
   defineOperation,
   dimensionFilter,
-  parseEmptyInput,
-  type DataOperation,
-  type DateTimeRangeComparisonRequest,
+  facetFilter,
+  multiChoiceFilter,
   type DimensionOption,
 } from '@altertable/data-app/contract';
 
+function parseRecordId(value: unknown): { id: string } {
+  if (!value || typeof value !== 'object' || !('id' in value))
+    throw new Error('Expected a record id.');
+  return { id: String(value.id) };
+}
 const operation = {
   queries: {},
-  input: parseEmptyInput,
+  input: parseRecordId,
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run() {
     return 1;
   },
 };
-defineOperation({ ...operation, checks: [{}] });
-defineOperation({ ...operation, checks: [{}, {}] as const });
+defineOperation({ ...operation, checks: [{ id: 'a' }] });
+defineOperation({ ...operation, checks: [{ id: 'a' }, { id: 'b' }] as const });
 // @ts-expect-error Every operation declares at least one input check.
 defineOperation({ ...operation, checks: [] });
-declare const uncheckedInputs: Record<string, never>[];
+declare const uncheckedInputs: { id: string }[];
 // @ts-expect-error An ordinary array does not guarantee a check input.
 defineOperation({ ...operation, checks: uncheckedInputs });
 const app = defineDataApp({
@@ -69,33 +68,33 @@ const choices = [
   { id: 'a', label: 'Alpha' },
   { id: 'b', label: 'Beta' },
 ] as const;
-choiceVariable({ key: 'choice', options: choices, defaultValue: 'a' });
-multiChoiceVariable({
+choiceFilter({ key: 'choice', options: choices, defaultValue: 'a' });
+multiChoiceFilter({
   key: 'choices',
   options: choices,
   defaultValue: ['a', 'b'],
 });
-multiChoiceVariable({ key: 'choices', options: choices, defaultValue: [] });
+multiChoiceFilter({ key: 'choices', options: choices, defaultValue: [] });
 // @ts-expect-error Defaults belong to the declared choices.
-choiceVariable({ key: 'choice', options: choices, defaultValue: 'missing' });
-multiChoiceVariable({
+choiceFilter({ key: 'choice', options: choices, defaultValue: 'missing' });
+multiChoiceFilter({
   key: 'choices',
   options: choices,
   // @ts-expect-error Every default belongs to the declared choices.
   defaultValue: ['a', 'missing'],
 });
-choiceVariable({
+choiceFilter({
   key: 'choice',
   options: [{ id: 'a', label: 'Alpha' }],
   // @ts-expect-error Inline choice IDs are preserved without a const assertion.
   defaultValue: 'missing',
 });
 // @ts-expect-error A fixed-choice declaration requires options.
-choiceVariable({ key: 'choice', options: [], defaultValue: 'a' });
+choiceFilter({ key: 'choice', options: [], defaultValue: 'a' });
 // @ts-expect-error Multiple-choice declarations also require options.
-multiChoiceVariable({ key: 'choices', options: [] });
+multiChoiceFilter({ key: 'choices', options: [] });
 declare const dynamicChoices: { id: string; label: string }[];
-choiceVariable({
+choiceFilter({
   key: 'choice',
   options: dynamicChoices,
   defaultValue: 'dynamic',
@@ -105,59 +104,57 @@ const context = createDataContext({ count: 'count' })({
   description: 'Counts',
   glossary: { count: { term: 'Count', definition: 'Measured count' } },
 });
-const hooks =
-  createDataHooks(
-    createDataClient<{
-      count: DataOperation<Record<string, never>, number>;
-      time: DataOperation<{ period: DateTimeRangeComparisonRequest }, number>;
-      regions: DataOperation<Record<string, never>, DimensionOption<string>[]>;
-    }>()
-  );
-const feedback = {
-  dataContext: context,
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
-};
-const view = hooks.defineDataView({
-  ...feedback,
-  operation: 'count',
-  describeInput: () => 'all',
+const period = dateTimeRangeFilter({
+  key: 'period',
+  maxRangeDays: 90,
+  timeZone: 'UTC',
+  comparison: 'off',
+  defaultValue: '7d',
 });
+const policy = { maxQueryRows: 1, maxDurationMs: 1000 };
+const hooks = createDataHooks(
+  createDataClient({
+    operations: {
+      count: app.defineOperation({
+        policy,
+        async run() {
+          return 1;
+        },
+      }),
+      time: app.defineOperation({
+        filters: { period },
+        policy,
+        async run() {
+          return 1;
+        },
+      }),
+      regions: app.defineOperation({
+        policy,
+        async run(): Promise<DimensionOption<string>[]> {
+          return [];
+        },
+      }),
+    },
+  })
+);
+const view = hooks.defineView({ dataContext: context, operation: 'count' });
 const metric = {
   id: 'count',
   glossaryId: 'count' as const,
   format: { kind: 'count' as const },
 };
 view.metric(metric, data => ({ current: data }));
-// @ts-expect-error Comparisons require a date binding on the owning view.
+// @ts-expect-error Comparisons require the operation to read a date range.
 view.metric(metric, data => ({ current: data, previous: 1 }));
-// @ts-expect-error A null comparison measurement still requires a date binding.
+// @ts-expect-error A null comparison measurement still requires a date range.
 view.metric(metric, data => ({ current: data, previous: null }));
 const comparisonValues = { current: 1, previous: 0 };
 // @ts-expect-error Intermediate values cannot bypass the comparison requirement.
 view.metric(metric, () => comparisonValues);
 
-const calendar = defineDateRangeContract({ maxRangeDays: 90, timeZone: 'UTC' });
-const period = dateTimeRangeVariable({
-  key: 'period',
-  contract: calendar,
-  allowComparison: true,
-  defaultValue: '7d',
-});
-const dated = hooks.defineDataView({
-  ...feedback,
-  operation: 'time',
-  variables: { period },
-  date: { variable: 'period', input: input => input.period },
-});
+const dated = hooks.defineView({ dataContext: context, operation: 'time' });
 dated.metric(metric, data => ({ current: data, previous: 0 }));
 dated.metric(metric, data => ({ current: data, previous: null }));
-const timeView = hooks.defineTimeView({
-  ...feedback,
-  operation: 'time',
-  time: period,
-});
-timeView.metric(metric, data => ({ current: data, previous: 0 }));
 
 const dataset = {
   name: 'Counts',
@@ -177,25 +174,17 @@ view.dataset({ ...dataset, columns: emptyColumns });
 // @ts-expect-error Columns retain the inferred row type.
 view.dataset({ ...dataset, columns: { count: { value: row => row.missing } } });
 
-const facet = { context: {}, operation: 'regions' as const, input: () => ({}) };
-hooks.defineFacetFilter({
+const facet = {
   key: 'region',
   label: 'Region',
   valueType: 'string',
   selectionMode: 'single',
-  maxSelected: 1,
-  facet,
-});
-const invalidFacetLimit = {
-  key: 'region',
-  label: 'Region',
-  valueType: 'string',
-  selectionMode: 'single',
-  maxSelected: 2,
-  facet,
+  options: 'regions',
 } as const;
-// @ts-expect-error Typed facet declarations also constrain single-selection limits.
-hooks.defineFacetFilter(invalidFacetLimit);
+facetFilter({ ...facet, maxSelected: 1 });
+const invalidFacetLimit = { ...facet, maxSelected: 2 } as const;
+// @ts-expect-error Facet declarations also constrain single-selection limits.
+facetFilter(invalidFacetLimit);
 
 const mixedDimension = {
   key: 'mixed',

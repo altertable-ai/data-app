@@ -346,8 +346,10 @@ for (const binding of [
       .poll(() => page.getByRole('alert').textContent())
       .toContain(
         binding.startsWith('story')
-          ? 'Story evidence must belong to the story view.'
-          : 'A binding requires the displayed source from its own view.'
+          ? 'Story evidence must belong to the app view or one of its summary views.'
+          : binding === 'dataset' || binding === 'metric'
+            ? 'A binding requires the displayed source from its own view.'
+            : 'A toolbar dataset must belong to the app view or one of its summary views.'
       );
     expect(
       await page

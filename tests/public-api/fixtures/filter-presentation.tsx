@@ -1,7 +1,5 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
-  choiceVariable,
-  searchVariable,
   createDataHooks,
   createDataContext,
   DataApp,
@@ -10,17 +8,16 @@ import {
   TextContent,
   injectDataAppStyles,
   mountDataApp,
-  type AppVariableValues,
 } from '@altertable/data-app-react';
-import { Sheet, useAppVariables } from '@altertable/data-app-react/ui';
+import { Sheet, useAppFilters } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   booleanFilter,
   dimensionFilter,
+  displayChoice,
   numberFilter,
-  parseBooleanSelection,
-  parseDimensionSelection,
-  parseNumberSelection,
+  searchFilter,
+  type FilterInput,
 } from '@altertable/data-app/contract';
 import { useState } from 'react';
 
@@ -33,7 +30,7 @@ const dataApp = defineDataApp({
 });
 
 const variables = {
-  search: searchVariable({ key: 'q', label: 'Search customers' }),
+  search: searchFilter({ key: 'q', label: 'Search customers' }),
   country: dimensionFilter<string>({
     key: 'country',
     label: 'Country',
@@ -97,7 +94,7 @@ const variables = {
     max: 50,
     presentation: { prominence: 'secondary' },
   }),
-  sort: choiceVariable({
+  sort: displayChoice({
     key: 'sort',
     label: 'Sort by',
     defaultValue: 'spend',
@@ -105,9 +102,8 @@ const variables = {
       { id: 'spend', label: 'Monthly spend' },
       { id: 'name', label: 'Customer name' },
     ],
-    presentation: { group: 'display' },
   }),
-  direction: choiceVariable({
+  direction: displayChoice({
     key: 'direction',
     label: 'Order',
     defaultValue: 'desc',
@@ -115,10 +111,38 @@ const variables = {
       { id: 'desc', label: 'Descending' },
       { id: 'asc', label: 'Ascending' },
     ],
-    presentation: { group: 'display', prominence: 'secondary' },
+    presentation: { prominence: 'secondary' },
   }),
 };
-type Input = AppVariableValues<typeof variables>;
+type Input = FilterInput<typeof variables>;
+const displayOnly = new URLSearchParams(location.search).has('displayOnly');
+const searchOnly = new URLSearchParams(location.search).has('searchOnly');
+/** `?searchOnly` and `?displayOnly` narrow the filters the operation reads. */
+const operationFilters:
+  | Pick<typeof variables, 'search'>
+  | Pick<typeof variables, 'search' | 'sort' | 'direction'>
+  | typeof variables = searchOnly
+  ? { search: variables.search }
+  : displayOnly
+    ? {
+        search: variables.search,
+        sort: variables.sort,
+        direction: variables.direction,
+      }
+    : variables;
+/** The query for filters the operation does not read: every record, in default order. */
+const unrestricted: Input = {
+  search: '',
+  sort: variables.sort.defaultValue,
+  direction: variables.direction.defaultValue,
+  country: { kind: 'all' },
+  segment: { kind: 'all' },
+  active: { kind: 'all' },
+  spend: { kind: 'all' },
+  billing: { kind: 'all' },
+  owner: { kind: 'all' },
+  orders: { kind: 'all' },
+};
 const records = [
   {
     name: 'Atelier North',
@@ -231,36 +255,10 @@ function matchesNumber(selection: Input['spend'], value: number) {
   }
 }
 const operation = dataApp.defineOperation({
-  input(value: unknown): Input {
-    const input = value as Input;
-    if (
-      !input ||
-      !variables.search.valid(input.search) ||
-      !variables.sort.valid(input.sort) ||
-      !variables.direction.valid(input.direction)
-    )
-      throw new Error('Invalid customer inputs');
-    return {
-      ...input,
-      country: parseDimensionSelection(input.country, variables.country),
-      segment: parseDimensionSelection(input.segment, variables.segment),
-      active: parseBooleanSelection(input.active, variables.active),
-      spend: parseNumberSelection(input.spend, variables.spend),
-      billing: parseDimensionSelection(input.billing, variables.billing),
-      owner: parseDimensionSelection(input.owner, variables.owner),
-      orders: parseNumberSelection(input.orders, variables.orders),
-    };
-  },
-  checks: [
-    Object.fromEntries(
-      Object.entries(variables).map(([name, variable]) => [
-        name,
-        variable.defaultValue,
-      ])
-    ) as Input,
-  ],
+  filters: operationFilters,
   policy: { maxQueryRows: 20, maxDurationMs: 1000 },
-  async run(_context, input) {
+  async run(_context, selected) {
+    const input: Input = { ...unrestricted, ...selected };
     if (
       new URLSearchParams(location.search).has('slowSearch') &&
       input.search
@@ -299,47 +297,15 @@ const client = createDataClient({
     },
   },
 });
-const { defineDataView } = createDataHooks(client);
-const displayOnly = new URLSearchParams(location.search).has('displayOnly');
-const searchOnly = new URLSearchParams(location.search).has('searchOnly');
-const viewVariables:
-  | typeof variables
-  | Pick<typeof variables, 'search'>
-  | Pick<typeof variables, 'search' | 'sort' | 'direction'> = searchOnly
-  ? { search: variables.search }
-  : displayOnly
-    ? {
-        search: variables.search,
-        sort: variables.sort,
-        direction: variables.direction,
-      }
-    : variables;
-const view = defineDataView({
+const { defineView } = createDataHooks(client);
+const view = defineView({
   operation: 'customers',
-  variables: viewVariables,
-  input: values => ({
-    sort: variables.sort.defaultValue,
-    direction: variables.direction.defaultValue,
-    country: { kind: 'all' as const },
-    segment: { kind: 'all' as const },
-    active: { kind: 'all' as const },
-    spend: { kind: 'all' as const },
-    billing: { kind: 'all' as const },
-    owner: { kind: 'all' as const },
-    orders: { kind: 'all' as const },
-    ...values,
-  }),
   dataContext: createDataContext({ customers: 'customers' })({
     description: 'Illustrative customer account records.',
     glossary: {},
   }),
   describeInput: input =>
     input.search ? `Customers matching “${input.search}”` : 'Customer accounts',
-  isEmpty: () => false,
-  emptyFallback: {
-    title: 'No matching customers',
-    description: 'Try a different search or clear filters.',
-  },
 });
 function createCustomers(onSelect?: (row: (typeof records)[number]) => void) {
   return view.dataset({
@@ -392,20 +358,21 @@ function CustomerTable({
   customers,
 }: {
   customers: ReturnType<typeof createCustomers>;
-  source:
-    | { loading: true }
-    | { loading: false; data: { rows: typeof records }; input: Input };
+  source: Parameters<Parameters<typeof view.content>[0]>[0];
 }) {
-  const filters = useAppVariables(customerFilters);
+  const filters = useAppFilters(customerFilters);
+  const input = source.loading
+    ? undefined
+    : { ...unrestricted, ...source.input };
   const hasActiveFilters =
-    !source.loading &&
-    (source.input.country.kind !== 'all' ||
-      source.input.segment.kind !== 'all' ||
-      source.input.active.kind !== 'all' ||
-      source.input.billing.kind !== 'all' ||
-      source.input.owner.kind !== 'all' ||
-      source.input.spend.kind !== 'all' ||
-      source.input.orders.kind !== 'all');
+    !!input &&
+    (input.country.kind !== 'all' ||
+      input.segment.kind !== 'all' ||
+      input.active.kind !== 'all' ||
+      input.billing.kind !== 'all' ||
+      input.owner.kind !== 'all' ||
+      input.spend.kind !== 'all' ||
+      input.orders.kind !== 'all');
   return (
     <TableWidget
       dataset={customers}

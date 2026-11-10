@@ -9,23 +9,15 @@ import {
   mountDataApp,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import {
-  dateTimeRangeVariable,
-  defineDateRangeContract,
-  variableInput,
-} from '@altertable/data-app/contract';
+import { dateTimeRangeFilter } from '@altertable/data-app/contract';
 
-const contract = defineDateRangeContract({
-  minDate: '2026-06-01',
-  maxRangeDays: 31,
-  timeZone: 'UTC',
-  completeDays: false,
-});
-const period = dateTimeRangeVariable({
+const period = dateTimeRangeFilter({
   key: 'period',
   defaultValue: '7d',
-  contract,
-  allowComparison: true,
+  minDate: '2026-06-01',
+  maxRangeDays: 31,
+  completeDays: false,
+  comparison: 'off',
 });
 const dataApp = defineDataApp({
   title: 'Datetime comparisons',
@@ -48,8 +40,7 @@ const dataApp = defineDataApp({
   },
 });
 const events = dataApp.defineOperation({
-  input: variableInput(() => ({}), { period }),
-  checks: [{ period: period.input(period.defaultValue) }],
+  filters: { period },
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }, input) {
     const current = await query('current', { window: input.period.range });
@@ -85,13 +76,8 @@ const context = createDataContext(events.queryNames)({
     },
   },
 });
-const view = createDataHooks(client).defineTimeView({
-  operation: 'events',
-  time: period,
-  dataContext: context,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No events' },
-});
+const { defineView } = createDataHooks(client);
+const view = defineView({ operation: 'events', dataContext: context });
 const metric = view.metric(
   { id: 'events', glossaryId: 'events', format: { kind: 'count' } },
   data => data

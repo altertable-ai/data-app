@@ -1,24 +1,19 @@
 import {
-  dateTimeRangeVariable,
-  defineDateRangeContract,
-  variableInput,
+  dateTimeRangeFilter,
+  defineOperation,
 } from '@altertable/data-app/contract';
 import { expect, test, vi } from 'vitest';
 
-test('comparison selection stays relative in URLs and resolves one protected request snapshot', () => {
+test('comparison selection stays relative in URLs and the server checks the resolved ranges', () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-07-10T16:00:00Z'));
   try {
-    const contract = defineDateRangeContract({
+    const period = dateTimeRangeFilter({
+      key: 'period',
       minDate: '2026-06-01',
       maxRangeDays: 31,
       timeZone: 'America/New_York',
-      completeDays: false,
-    });
-    const period = dateTimeRangeVariable({
-      key: 'period',
-      contract,
-      allowComparison: true,
+      comparison: 'off',
       defaultValue: '7d',
     });
     const selected = {
@@ -30,7 +25,7 @@ test('comparison selection stays relative in URLs and resolves one protected req
       if (value !== null) params.set(key, value);
     expect(params.get('compare')).toBe('previous');
     expect(period.read(params)).toEqual(selected);
-    const request = period.input(selected);
+    const request = period.request(selected);
     expect(request.range).toEqual({
       from: new Date('2026-07-03T12:00:00Z'),
       to: new Date('2026-07-10T12:00:00Z'),
@@ -39,25 +34,42 @@ test('comparison selection stays relative in URLs and resolves one protected req
       from: new Date('2026-06-26T12:00:00Z'),
       to: request.range.from,
     });
-    const parse = variableInput(() => ({}), { period });
+    const { input: parse } = defineOperation({
+      queries: {},
+      filters: { period },
+      policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+      async run() {
+        return null;
+      },
+    });
     vi.setSystemTime(new Date('2026-07-10T16:10:00Z'));
+    const { range, comparison } = request;
     expect(
       parse(JSON.parse(JSON.stringify({ period: request }))).period
-    ).toEqual(request);
-    expect(() =>
-      parse({ period: { ...request, comparison: request.range } })
-    ).toThrow('preceding');
+    ).toEqual({ range, comparison });
+    expect(parse({ period: { range, comparison } }).period).toEqual({
+      range,
+      comparison,
+    });
+    expect(() => parse({ period: { range, comparison: range } })).toThrow(
+      'earlier'
+    );
     expect(() =>
       parse({
         period: {
-          ...request,
-          range: { ...request.range, from: new Date('2026-07-02T12:00:00Z') },
+          range: { ...range, from: new Date('2026-07-02T12:00:00Z') },
+          comparison,
         },
       })
-    ).toThrow('preserve');
+    ).toThrow('earlier');
     expect(() =>
-      parse({ period: { ...request, reference: 'invalid' } })
-    ).toThrow('reference');
+      parse({
+        period: {
+          range: { ...range, from: new Date('2026-05-01') },
+          comparison: null,
+        },
+      })
+    ).toThrow();
     expect(period.write(period.clearValue!).compare).toBeNull();
   } finally {
     vi.useRealTimers();
@@ -65,15 +77,11 @@ test('comparison selection stays relative in URLs and resolves one protected req
 });
 
 test('comparison is unavailable outside coverage and an invalid comparison URL is repaired', () => {
-  const contract = defineDateRangeContract({
+  const period = dateTimeRangeFilter({
+    key: 'window',
     minDate: '2026-06-01',
     maxRangeDays: 31,
-    timeZone: 'UTC',
-  });
-  const period = dateTimeRangeVariable({
-    key: 'window',
-    contract,
-    allowComparison: true,
+    comparison: 'off',
     defaultValue: {
       from: new Date('2026-06-01T00:00:00Z'),
       to: new Date('2026-06-03T00:00:00Z'),

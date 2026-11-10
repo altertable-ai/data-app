@@ -1,8 +1,7 @@
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
-  parseEmptyInput,
-  type DimensionSelection,
+  facetFilter,
   type DimensionOption,
 } from '@altertable/data-app/contract';
 import type { TransportResponse } from '@altertable/data-app/contract';
@@ -13,6 +12,7 @@ import { createDataContext as registerContext } from '@/packages/data-app-react/
 import {
   useDeclaredResult,
   getViewDefinition,
+  type ClientFilters,
 } from '@/packages/data-app-react/src/view-runtime.tsx';
 
 const context = registerContext({})({
@@ -21,13 +21,17 @@ const context = registerContext({})({
 });
 
 const policy = { maxQueryRows: 10, maxDurationMs: 1000 };
+const category = facetFilter({
+  key: 'category',
+  label: 'Category',
+  valueType: 'string',
+  selectionMode: 'single',
+  options: 'facet',
+});
 const operations = {
   metric: defineOperation({
     queries: {},
-    input(value: unknown) {
-      return value as { category: DimensionSelection<string> };
-    },
-    checks: [{ category: { kind: 'all' } }],
+    filters: { category },
     policy,
     async run() {
       return 1;
@@ -35,8 +39,6 @@ const operations = {
   }),
   facet: defineOperation({
     queries: {},
-    input: parseEmptyInput,
-    checks: [{}],
     policy,
     async run(): Promise<DimensionOption<string>[]> {
       return [];
@@ -49,6 +51,7 @@ function createFixtureClient(id: string) {
   const calls = new Map<string, number>();
 
   return createDataClient<typeof operations>({
+    filters: { metric: operations.metric.filters },
     transport(name, _, signal) {
       calls.set(name, (calls.get(name) ?? 0) + 1);
       document.body.setAttribute(
@@ -88,49 +91,37 @@ const clientA = createFixtureClient('a');
 const hooksA = createDataHooks(clientA);
 const hooksAAgain = createDataHooks(clientA);
 const hooksB = createDataHooks(createFixtureClient('b'));
-const view = hooksA.defineDataView({
-  dataContext: context,
-  operation: 'metric',
-  variables: {
-    category: hooksA.defineFacetFilter({
-      key: 'category',
-      label: 'Category',
-      valueType: 'string',
-      selectionMode: 'single',
-      facet: {
-        context: {},
-        operation: 'facet',
-        input() {
-          return {};
-        },
+// Each client loads the category facet through its own transport.
+const viewsByHooks = new Map(
+  [hooksA, hooksAAgain, hooksB].map(hooks => [
+    hooks,
+    hooks.defineView({
+      dataContext: context,
+      operation: 'metric',
+      isEmpty() {
+        return false;
+      },
+      emptyFallback: { title: 'No data' },
+      describeInput() {
+        return 'All categories';
       },
     }),
-  },
-  input({ category }) {
-    return { category };
-  },
-  isEmpty() {
-    return false;
-  },
-  emptyFallback: { title: 'No data' },
-  describeInput() {
-    return 'All categories';
-  },
-});
+  ])
+);
 
 function Panel({ id, hooks }: { id: string; hooks: typeof hooksA }) {
-  const result = useDeclaredResult(
-    hooks.defineDataView({
-      ...getViewDefinition(view),
-      dataContext: context,
-    })
-  );
+  const view = viewsByHooks.get(hooks)!;
+  const result = useDeclaredResult(view);
+  const { clientFilters } = getViewDefinition(view) as {
+    clientFilters: ClientFilters;
+  };
+  const { searchControls, filterControls } = clientFilters.useControls();
 
   return (
     <section data-testid={id}>
       <p data-testid="value">{result.snapshot?.data ?? 'pending'}</p>
-      {result.searchControls}
-      {result.filterControls}
+      {searchControls}
+      {filterControls}
       <button onClick={() => void result.cancel()}>Cancel</button>
     </section>
   );

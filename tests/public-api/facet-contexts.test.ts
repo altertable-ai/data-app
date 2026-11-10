@@ -1,28 +1,26 @@
-import { createDataHooks, searchVariable } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
+  defineOperation,
+  facetFilter,
   parseFacetOptions,
-  type DataOperation,
+  searchFilter,
   type DimensionOption,
 } from '@altertable/data-app/contract';
 import { expect, test } from 'vitest';
 
-type Operations = {
-  options: DataOperation<{ search: string }, DimensionOption<number>[]>;
-};
-const hooks = createDataHooks(createDataClient<Operations>());
-const search = searchVariable({ key: 'search' });
-const filter = hooks.defineFacetFilter({
+const filter = facetFilter({
   key: 'number',
   label: 'Number',
   valueType: 'number',
   selectionMode: 'single',
-  facet: {
-    context: { search },
-    operation: 'options',
-    input: values => ({ search: values.search }),
-  },
+  options: 'options',
 });
+const policy = { maxQueryRows: 1, maxDurationMs: 1000 };
+const lakehouse = {
+  async queryAll() {
+    return { columns: [], rows: [] };
+  },
+};
 
 test('facet result boundaries retain typed option, count, and uniqueness validation', () => {
   expect(
@@ -44,4 +42,41 @@ test('facet result boundaries retain typed option, count, and uniqueness validat
     })),
   ])
     expect(() => parseFacetOptions(result, filter)).toThrow();
+});
+
+test('a facet filter loads its options from a registered operation', async () => {
+  const search = searchFilter({ key: 'search' });
+  const options = defineOperation({
+    queries: {},
+    filters: { search },
+    policy,
+    async run(_, input): Promise<DimensionOption<number>[]> {
+      return [{ value: input.search.length, label: input.search }];
+    },
+  });
+  const metric = defineOperation({
+    queries: {},
+    filters: { search, number: filter },
+    policy,
+    async run() {
+      return 1;
+    },
+  });
+  const client = createDataClient({
+    operations: { options, metric },
+    lakehouse,
+  });
+  expect(client.filters).toEqual({
+    options: { search },
+    metric: { search, number: filter },
+  });
+  expect((await client.query('options', { search: 'abc' })).data).toEqual([
+    { value: 3, label: 'abc' },
+  ]);
+  expect(() =>
+    // @ts-expect-error The options operation must be registered.
+    createDataClient({ operations: { metric }, lakehouse })
+  ).toThrow(
+    'Facet filter Number loads options from an unregistered operation: options.'
+  );
 });

@@ -17,14 +17,12 @@ const connectionContext = registerContext({})({
 const client = /* @__PURE__ */ createDataClient<{
   connection: ConnectionOperation;
 }>();
-const { defineDataView } = /* @__PURE__ */ createDataHooks(client);
+const { defineView } = /* @__PURE__ */ createDataHooks(client);
 
-const connectionView = defineDataView({
+const connectionView = defineView({
   dataContext: connectionContext,
   operation: 'connection',
   describeInput: () => 'the connection',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No connection' },
 });
 
 /** Query-backed connection state and next steps for a newly created app. Mount within

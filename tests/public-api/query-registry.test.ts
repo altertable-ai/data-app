@@ -2,7 +2,6 @@ import { defineDataApp, type DataAppConfig } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
-  parseEmptyInput,
   type Lakehouse,
   type QueryDefinitions,
   type QueryParameters,
@@ -33,8 +32,6 @@ function products(values: Record<string, unknown> = {}) {
   return defineOperation({
     // @ts-expect-error Exercise an intentionally erased runtime registry.
     queries: { products: definition },
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {
       // @ts-expect-error Exercise runtime validation of an untyped parameter bag.
@@ -183,8 +180,6 @@ test('registry validation checks declarations and defaults without interpreting 
       defineOperation({
         // @ts-expect-error Exercise malformed runtime declarations.
         queries: { query },
-        input: parseEmptyInput,
-        checks: [{}],
         policy: { maxQueryRows: 20, maxDurationMs: 1000 },
         async run() {
           return true;
@@ -213,8 +208,6 @@ test('query delivery preserves SQL and parameter values for backend interpretati
         },
       },
     },
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {
       return query('scalars', {
@@ -243,8 +236,6 @@ test('registered operation context exposes only named execution and rejects raw 
   const statements: DeliveredQuery[] = [];
   for (const raw of [true, false]) {
     const operation = dataApp.defineOperation({
-      input: parseEmptyInput,
-      checks: [{}],
       policy: { maxQueryRows: 20, maxDurationMs: 1000 },
       async run(context) {
         expect(context).not.toHaveProperty('lakehouse');
@@ -284,8 +275,6 @@ test('SQL placeholders and syntax are passed to the backend without inspection',
   } satisfies QueryDefinitions;
   const operation = defineOperation({
     queries: definitions,
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {
       return query('backendSyntax');
@@ -331,15 +320,21 @@ test('app definitions keep their query registries independent', async () => {
     },
   });
   const statements: DeliveredQuery[] = [];
-  for (const app of [firstApp, secondApp]) {
-    const count = app.defineOperation({
-      input: parseEmptyInput,
-      checks: [{}],
-      policy: { maxQueryRows: 20, maxDurationMs: 1000 },
+  const policy = { maxQueryRows: 20, maxDurationMs: 1000 };
+  for (const count of [
+    firstApp.defineOperation({
+      policy,
       async run({ query }) {
         return query('count');
       },
-    });
+    }),
+    secondApp.defineOperation({
+      policy,
+      async run({ query }) {
+        return query('count');
+      },
+    }),
+  ]) {
     await createDataClient({
       operations: { count },
       lakehouse: source(statements),
@@ -391,8 +386,6 @@ test('the app owns one immutable registry independent of later caller mutations'
     Reflect.set(app.queries.selected.params.value, 'defaultValue', 99)
   ).toBe(false);
   const operation = app.defineOperation({
-    input: parseEmptyInput,
-    checks: [{}],
     policy: { maxQueryRows: 20, maxDurationMs: 1000 },
     async run({ query }) {
       return query('selected');

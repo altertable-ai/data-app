@@ -1,10 +1,4 @@
 import {
-  choiceVariable,
-  multiChoiceVariable,
-  searchVariable,
-  type VariablePresentation,
-} from '@altertable/data-app-react';
-import {
   ChoicePicker,
   RadioGroup,
   Radio,
@@ -17,16 +11,23 @@ import {
   SegmentedControl,
   FilterActions,
 } from '@altertable/data-app-react/ui';
-import { numberFilter, booleanFilter } from '@altertable/data-app/contract';
+import {
+  booleanFilter,
+  choiceFilter,
+  multiChoiceFilter,
+  numberFilter,
+  searchFilter,
+  type FilterPresentation,
+} from '@altertable/data-app/contract';
 const options = [{ id: 'a', label: 'Alpha' }];
-const presentation: VariablePresentation = {
-  group: 'display',
+const presentation: FilterPresentation = {
+  control: 'widget',
   prominence: 'secondary',
 };
-// @ts-expect-error Presentation groups express scope or display intent.
-const invalidGroup: VariablePresentation = { group: 'toolbar' };
+// @ts-expect-error Display options are declared with displayChoice, not a presentation group.
+const invalidGroup: FilterPresentation = { group: 'display' };
 // @ts-expect-error Prominence is primary or secondary.
-const invalidProminence: VariablePresentation = { prominence: 'hidden' };
+const invalidProminence: FilterPresentation = { prominence: 'hidden' };
 void [presentation, invalidGroup, invalidProminence];
 const controls = (
   <>
@@ -89,7 +90,7 @@ const mixedMode = (
   />
 );
 // @ts-expect-error Choices require labeled options.
-choiceVariable({ key: 'choice', defaultValue: 'a' });
+choiceFilter({ key: 'choice', defaultValue: 'a' });
 // @ts-expect-error Apply and Cancel form one draft interaction.
 const incompleteDraft = <FilterActions onApply={() => {}} />;
 void [
@@ -97,9 +98,9 @@ void [
   missingMode,
   mixedMode,
   incompleteDraft,
-  choiceVariable({ key: 'choice', options, defaultValue: 'a' }),
-  multiChoiceVariable({ key: 'tags', options }),
-  searchVariable({ key: 'q' }),
+  choiceFilter({ key: 'choice', options, defaultValue: 'a' }),
+  multiChoiceFilter({ key: 'tags', options }),
+  searchFilter({ key: 'q' }),
   numberFilter({ key: 'amount', label: 'Amount' }),
   booleanFilter({ key: 'active', label: 'Active' }),
 ];

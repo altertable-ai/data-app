@@ -9,14 +9,17 @@ import {
   VisualizationWidget,
   Stack,
   TableWidget,
-  searchVariable,
-  type SearchVariable,
   injectDataAppStyles,
   mountDataApp,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
+import {
+  searchFilter,
+  type DataOperation,
+  type FilterInput,
+  type SearchFilter,
+} from '@altertable/data-app/contract';
 
 const catalog = {
   people: [
@@ -46,12 +49,28 @@ function increment(id: string) {
   const output = document.getElementById(id)!;
   output.textContent = String(Number(output.textContent) + 1);
 }
+/** `?secondSearch` adds a search and `?noSearch` removes the workspace search. */
+const searchFilters: Record<string, SearchFilter> = {
+  q: searchFilter({ key: 'q', label: 'Search workspace' }),
+};
+if (new URLSearchParams(location.search).has('secondSearch')) {
+  searchFilters.notes = searchFilter({
+    key: 'notes',
+    label: 'Search notes',
+  });
+}
+if (new URLSearchParams(location.search).has('noSearch')) {
+  delete searchFilters.q;
+}
 const client = createDataClient<{
-  catalog: DataOperation<{ q: string; notes?: string }, typeof catalog>;
+  catalog: DataOperation<FilterInput<typeof searchFilters>, typeof catalog> & {
+    filters: typeof searchFilters;
+  };
 }>({
+  filters: { catalog: searchFilters },
   async transport(_name, value) {
     increment('requests');
-    const { q } = value as { q: string };
+    const { q = '' } = value as FilterInput<typeof searchFilters>;
     function matches(row: { name: string }) {
       return relatedSearch || row.name.toLowerCase().includes(q.toLowerCase());
     }
@@ -77,22 +96,9 @@ const client = createDataClient<{
     };
   },
 });
-const searchVariables: Record<string, SearchVariable> = {
-  q: searchVariable({ key: 'q', label: 'Search workspace' }),
-};
-if (new URLSearchParams(location.search).has('secondSearch')) {
-  searchVariables.notes = searchVariable({
-    key: 'notes',
-    label: 'Search notes',
-  });
-}
-if (new URLSearchParams(location.search).has('noSearch')) {
-  delete searchVariables.q;
-}
-const view = createDataHooks(client).defineDataView({
+const { defineView } = createDataHooks(client);
+const view = defineView({
   operation: 'catalog',
-  variables: searchVariables,
-  input: values => ({ ...values, q: values.q ?? '' }),
   dataContext: createDataContext({ catalog: 'catalog' })({
     description: 'Illustrative people and projects.',
     glossary: {
@@ -115,8 +121,6 @@ const view = createDataHooks(client).defineDataView({
   }),
   describeInput: input =>
     input.q ? `Workspace matching ${input.q}` : 'Workspace',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No matching records' },
 });
 const people = view.dataset({
   name: 'People',

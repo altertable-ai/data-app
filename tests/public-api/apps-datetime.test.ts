@@ -263,11 +263,11 @@ test('applying the initial calendar selection commits absolute days and Tab dism
   ).toBe(true);
 });
 
-test('rebased mixed ranges can be applied, reopened, and restored before their UTC preview start', async ({
+test('wall-clock ranges in a zone ahead of UTC can be applied, reopened, and restored', async ({
   page,
 }) => {
-  await page.clock.setFixedTime(new Date('2026-07-02T14:30:00.000Z'));
-  await page.goto('/datetime');
+  await page.clock.setFixedTime(new Date('2026-07-02T14:30:00.000Z')); // 16:30 in Paris.
+  await page.goto('/datetime?reportingZone=Europe/Paris');
   const input = page.getByRole('combobox', { name: 'Date range', exact: true });
   const output = page.getByRole('status', { name: 'Applied period' });
   await input.click();

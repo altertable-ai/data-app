@@ -7,16 +7,26 @@ import {
   createDataContext,
   injectDataAppStyles,
   mountDataApp,
-  searchVariable,
 } from '@altertable/data-app-react';
 import {
   createDataClient,
   getDataAppNavigation,
 } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
+import {
+  searchFilter,
+  type DataOperation,
+  type FilterInput,
+} from '@altertable/data-app/contract';
 import { useEffect } from 'react';
 
-type PeriodInput = { period: string };
+const countsFilters = {
+  period: searchFilter({
+    key: 'period',
+    label: 'Period',
+    defaultValue: 'last-30',
+  }),
+};
+type CountsInput = FilterInput<typeof countsFilters>;
 
 const dataApp = defineDataApp({
   title: 'Displayed context',
@@ -31,10 +41,13 @@ function changePeriod(period: string) {
   navigation.update({ ...navigation.snapshot(), search: `?period=${period}` });
 }
 const client = createDataClient<{
-  counts: DataOperation<PeriodInput, number>;
+  counts: DataOperation<CountsInput, number> & {
+    filters: typeof countsFilters;
+  };
 }>({
+  filters: { counts: countsFilters },
   transport(_name, input) {
-    const { period } = input as PeriodInput;
+    const { period } = input as CountsInput;
     if (period === 'last-7') return new Promise(() => {});
     return Promise.resolve({
       status: 200,
@@ -58,20 +71,11 @@ const context = createDataContext({ counts: 'counts' })({
     },
   },
 });
-const { defineDataView } = createDataHooks(client);
-const view = defineDataView({
+const { defineView } = createDataHooks(client);
+const view = defineView({
   dataContext: context,
   operation: 'counts',
-  variables: {
-    period: searchVariable({
-      key: 'period',
-      label: 'Period',
-      defaultValue: 'last-30',
-    }),
-  },
   describeInput: input => input.period,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No results' },
 });
 const metric = view.metric(
   {

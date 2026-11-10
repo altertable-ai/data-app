@@ -1,11 +1,10 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataHooks, createDataContext } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import type {
-  DataOperation,
-  DimensionSelection,
+import {
+  dimensionFilter,
+  type DimensionSelection,
 } from '@altertable/data-app/contract';
-import { variableInput, dimensionFilter } from '@altertable/data-app/contract';
 const app = defineDataApp({
   title: 'Example',
   description: 'Example',
@@ -87,13 +86,19 @@ app.defineDimension({
   // @ts-expect-error Sources must name a registered query.
   source: { query: 'unknown' },
 });
-const parse = variableInput(() => ({ period: 'today' }), { customer });
-const parsed = parse({});
-const value: number | undefined =
-  parsed.customer.kind === 'all' || parsed.customer.members[0]?.kind !== 'value'
-    ? undefined
-    : parsed.customer.members[0].value;
-void value;
+const policy = { maxQueryRows: 10, maxDurationMs: 1000 };
+app.defineOperation({
+  filters: { customer },
+  policy,
+  async run(_context, input) {
+    const value: number | undefined =
+      input.customer.kind === 'all' ||
+      input.customer.members[0]?.kind !== 'value'
+        ? undefined
+        : input.customer.members[0].value;
+    return value;
+  },
+});
 dimensionFilter<string>({
   key: 'bad',
   label: 'Bad',
@@ -160,32 +165,27 @@ app.defineDimension({
   source: { query: 'nullableCount' },
 });
 
-// Independent sources do not acquire contextual facet dependencies when collected by name.
+// Source dimensions need no facet dependencies; an operation names each filter it reads.
+const operations = {
+  values: app.defineOperation({
+    filters: { customer },
+    policy,
+    async run(_context, input) {
+      const selection: DimensionSelection<number> = input.customer;
+      return selection.kind;
+    },
+  }),
+};
 const sourceDimensions: Record<string, typeof customer> = { customer };
-createDataHooks(
-  createDataClient<{
-    values: DataOperation<Record<string, DimensionSelection<number>>, number>;
-  }>()
-).defineDataView({
-  operation: 'values',
-  variables: sourceDimensions,
-  bindings: Object.fromEntries(
-    Object.keys(sourceDimensions).map(
-      name =>
-        [
-          name,
-          (input: Record<string, DimensionSelection<number>>) => input[name],
-        ] as const
-    )
-  ),
-  input: values => {
-    const input: Record<string, DimensionSelection<number>> = {};
-    for (const [name, value] of Object.entries(values))
-      if (value) input[name] = value;
-    return input;
+app.defineOperation({
+  // @ts-expect-error A record without known names hides the operation's input fields.
+  filters: sourceDimensions,
+  policy,
+  async run() {
+    return 0;
   },
+});
+createDataHooks(createDataClient({ operations })).defineView({
+  operation: 'values',
   dataContext: createDataContext({})({ description: 'Sources', glossary: {} }),
-  describeInput: () => 'All',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No values' },
 });

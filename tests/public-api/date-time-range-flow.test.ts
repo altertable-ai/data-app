@@ -2,8 +2,7 @@ import { defineDataApp } from '@altertable/data-app';
 import { extractDataAppManifest } from '@altertable/data-app-manifest';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  dateTimeRangeVariable,
-  variableInput,
+  dateTimeRangeFilter,
   parseDateTimeRange,
   parseDateTimeBound,
   formatDateTimeBound,
@@ -24,42 +23,44 @@ const relative: DateTimeRange = {
 };
 
 test('datetime variables preserve relative intent and restore absolute values across URLs and JSON', () => {
-  const period = dateTimeRangeVariable({
+  const period = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '7d',
     maxRangeDays: 90,
   });
-  expect(period.defaultValue).toEqual(relative);
-  expect(period.read(new URLSearchParams())).toEqual(relative);
+  expect(period.defaultValue).toEqual({ range: relative });
+  expect(period.read(new URLSearchParams())).toEqual({ range: relative });
   const mixed: DateTimeRange = {
     from: new Date('2026-01-01T16:00:00Z'),
     to: { anchor: 'RELATIVE_ANCHOR_START_OF_MONTH', offset: [] },
   };
-  const unbounded = dateTimeRangeVariable({
+  const unlimited = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '7d',
   });
-  const written = unbounded.write(mixed);
-  const restored = unbounded.read(
+  const written = unlimited.write({ range: mixed });
+  const restored = unlimited.read(
     new URLSearchParams({ period: written.period! })
   );
-  expect(restored.from).toBeInstanceOf(Date);
-  expect(restored).toEqual(mixed);
-  expect(unbounded.same(restored, mixed)).toBe(true);
-  expect(period.read(new URLSearchParams({ period: '{broken' }))).toEqual(
-    relative
-  );
+  expect(restored.range.from).toBeInstanceOf(Date);
+  expect(restored).toEqual({ range: mixed });
+  expect(unlimited.same(restored, { range: mixed })).toBe(true);
+  expect(period.read(new URLSearchParams({ period: '{broken' }))).toEqual({
+    range: relative,
+  });
   expect(
     period.valid({
-      from: new Date('2020-01-01T00:00:00Z'),
-      to: new Date('2026-01-01T00:00:00Z'),
+      range: {
+        from: new Date('2020-01-01T00:00:00Z'),
+        to: new Date('2026-01-01T00:00:00Z'),
+      },
     })
   ).toBe(false);
   expect(serializeDateTimeRange(relative)).toBe(JSON.stringify(relative));
 });
 
-test('variableInput rehydrates dates and a registered query binds a range without app conversion', async () => {
-  const period = dateTimeRangeVariable({ key: 'period', defaultValue: '7d' });
+test('an operation receives a resolved date range that a registered query binds without app conversion', async () => {
+  const period = dateTimeRangeFilter({ key: 'period', defaultValue: '7d' });
   const app = defineDataApp({
     title: 'Datetime',
     description: 'Datetime query',
@@ -72,13 +73,11 @@ test('variableInput rehydrates dates and a registered query binds a range withou
       },
     },
   });
-  const input = variableInput(() => ({}), { period });
   const operation = app.defineOperation({
-    input,
-    checks: [{ period: relative }],
+    filters: { period },
     policy: { maxQueryRows: 10, maxDurationMs: 1000 },
-    async run({ query }, values) {
-      return (await query('events', values)).rows;
+    async run({ query }, { period }) {
+      return (await query('events', { period: period.range })).rows;
     },
   });
   let sent: { statement: string; params: unknown } | undefined;
@@ -94,20 +93,33 @@ test('variableInput rehydrates dates and a registered query binds a range withou
       },
     },
   });
-  const result = await client.query('events', { period: relative });
+  const result = await client.query('events', {
+    period: period.request({ range: relative }),
+  });
   expect(result.data).toEqual([{ start: 'start', end: 'end' }]);
   expect(sent?.statement).not.toContain('$period.from');
-  expect(sent?.statement).toContain('localtimestamp');
-  expect(sent?.params).toEqual({ period: JSON.stringify(relative) });
+  const bound = JSON.parse((sent!.params as { period: string }).period);
+  expect(new Date(bound.to).getTime() - new Date(bound.from).getTime()).toBe(
+    7 * 86_400_000
+  );
+  const { input } = operation;
   const absolute = {
     period: {
-      from: '2026-01-01T16:00:00.000Z',
-      to: '2026-01-02T16:00:00.000Z',
+      range: {
+        from: '2026-01-01T16:00:00.000Z',
+        to: '2026-01-02T16:00:00.000Z',
+      },
+      comparison: null,
     },
   };
-  expect(input(absolute).period.from).toBeInstanceOf(Date);
+  expect(input(absolute).period.range.from).toBeInstanceOf(Date);
   expect(() =>
-    input({ period: { from: { anchor: 'DROP TABLE events', offset: [] } } })
+    input({
+      period: {
+        range: { from: { anchor: 'DROP TABLE events', offset: [] } },
+        comparison: null,
+      },
+    })
   ).toThrow();
 });
 
@@ -319,34 +331,38 @@ export const dataApp = defineDataApp(${JSON.stringify(declaration)});`
   ]);
 });
 
-test('rebased mixed ranges survive validation and URL restoration without a reporting timezone', () => {
+test('mixed ranges validate in the reporting zone and survive URL restoration', () => {
   vi.useFakeTimers();
-  vi.setSystemTime(new Date('2026-07-02T14:30:00.000Z'));
+  vi.setSystemTime(new Date('2026-07-02T14:30:00.000Z')); // 16:30 in Paris.
   try {
-    const period = dateTimeRangeVariable({
+    const period = dateTimeRangeFilter({
       key: 'period',
       defaultValue: '1d',
       maxRangeDays: 3,
+      timeZone: 'Europe/Paris',
     });
     const range = { from: new Date('2026-07-02T16:00:00.000Z'), to: null };
-    expect(period.valid(range)).toBe(true);
+    expect(period.valid({ range })).toBe(true);
     expect(
       period.read(
         new URLSearchParams({ period: serializeDateTimeRange(range) })
       )
-    ).toEqual(range);
-    expect(period.parse(range)).toEqual(range);
+    ).toEqual({ range });
     expect(
       period.valid({
-        from: new Date('2026-07-02T16:00:00Z'),
-        to: new Date('2026-07-01T16:00:00Z'),
+        range: {
+          from: new Date('2026-07-02T16:00:00Z'),
+          to: new Date('2026-07-01T16:00:00Z'),
+        },
       })
     ).toBe(false);
-    expect(period.valid(relative)).toBe(false);
+    expect(period.valid({ range: relative })).toBe(false);
     expect(
       period.valid({
-        from: new Date('2026-07-01T16:00:00Z'),
-        to: new Date('2026-07-05T16:00:00Z'),
+        range: {
+          from: new Date('2026-07-01T16:00:00Z'),
+          to: new Date('2026-07-05T16:00:00Z'),
+        },
       })
     ).toBe(false);
   } finally {
@@ -415,12 +431,12 @@ test('HTTP host datetime parameters decode validated JSON and remain protected f
 });
 
 test('nonpositive fixed relative ranges are rejected by variables and HTTP input before querying', async () => {
-  const period = dateTimeRangeVariable({
+  const period = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '1h',
     maxRangeDays: 1,
   });
-  const unrestricted = dateTimeRangeVariable({
+  const unrestricted = dateTimeRangeFilter({
     key: 'period',
     defaultValue: '1h',
   });
@@ -437,8 +453,7 @@ test('nonpositive fixed relative ranges are rejected by variables and HTTP input
     },
   });
   const operation = dataApp.defineOperation({
-    input: variableInput(() => ({}), { period }),
-    checks: [{ period: period.defaultValue }],
+    filters: { period },
     policy: { maxQueryRows: 1, maxDurationMs: 1000 },
     async run({ query }, input) {
       return (await query('events', input)).rows;
@@ -463,8 +478,8 @@ test('nonpositive fixed relative ranges are rejected by variables and HTTP input
         },
         to,
       };
-      expect(period.valid(range)).toBe(false);
-      expect(unrestricted.valid(range)).toBe(false);
+      expect(period.valid({ range })).toBe(false);
+      expect(unrestricted.valid({ range })).toBe(false);
       expect(() => parseDateTimeRange(range)).toThrow(
         'Start must be before end.'
       );

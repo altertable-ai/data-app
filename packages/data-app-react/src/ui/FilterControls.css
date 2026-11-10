@@ -134,20 +134,20 @@
 }
 
 /* Inline filter rows share the regular control height. */
-:is(.altertable-filter-bar, .altertable-variable-bar) .altertable-number-field {
+:is(.altertable-filter-bar, .altertable-control-bar) .altertable-number-field {
   flex-direction: row;
   align-items: center;
 }
-:is(.altertable-filter-bar, .altertable-variable-bar)
+:is(.altertable-filter-bar, .altertable-control-bar)
   .altertable-number-field
   > label {
   white-space: nowrap;
 }
-:is(.altertable-filter-bar, .altertable-variable-bar)
+:is(.altertable-filter-bar, .altertable-control-bar)
   .altertable-number-range-field {
   position: relative;
 }
-:is(.altertable-filter-bar, .altertable-variable-bar)
+:is(.altertable-filter-bar, .altertable-control-bar)
   .altertable-number-range-field
   legend {
   position: absolute;

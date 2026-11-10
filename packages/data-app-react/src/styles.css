@@ -33,7 +33,7 @@
 @import './ui/LoadingStatus.css' layer(atbl.components);
 @import './ui/RefreshControl.css' layer(atbl.components);
 @import './ui/AppToolbar.css' layer(atbl.components);
-@import './ui/VariableBar.css' layer(atbl.components);
+@import './ui/ControlBar.css' layer(atbl.components);
 @import './ui/DataViewToast.css' layer(atbl.components);
 @import './ui/DataBoundary.css' layer(atbl.components);
 @import './ui/StatusPanel.css' layer(atbl.components);

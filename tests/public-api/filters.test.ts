@@ -1,19 +1,16 @@
+import { useAppFilters } from '@altertable/data-app-react/ui';
 import {
-  searchVariable,
-  choiceVariable,
-  multiChoiceVariable,
-  dateTimeRangeVariable,
-  type VariablePresentation,
-} from '@altertable/data-app-react';
-import { useAppVariables } from '@altertable/data-app-react/ui';
-import {
+  searchFilter,
+  choiceFilter,
+  multiChoiceFilter,
+  dateTimeRangeFilter,
+  type FilterPresentation,
   numberFilter,
   booleanFilter,
   parseNumberSelection,
   parseBooleanSelection,
   dimensionFilter,
   dimensionPredicate,
-  defineDateRangeContract,
 } from '@altertable/data-app/contract';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -24,7 +21,7 @@ const options = [
   { id: 'b', label: 'Beta' },
 ];
 
-test('variable collections reject malformed presentation metadata from JavaScript callers', () => {
+test('filter collections reject malformed presentation metadata from JavaScript callers', () => {
   for (const presentation of [
     null,
     [],
@@ -32,27 +29,27 @@ test('variable collections reject malformed presentation metadata from JavaScrip
     { prominence: 'hidden' },
   ]) {
     function App() {
-      useAppVariables({
-        choice: choiceVariable({
+      useAppFilters({
+        choice: choiceFilter({
           key: 'choice',
           options,
           defaultValue: 'a',
-          presentation: presentation as VariablePresentation,
+          presentation: presentation as FilterPresentation,
         }),
       });
       return null;
     }
     expect(() => renderToStaticMarkup(createElement(App))).toThrow(
-      'Variable choice has invalid presentation.'
+      'Filter choice has invalid presentation.'
     );
   }
 });
 
-test('presentation intent is retained by each variable constructor without changing URL values', () => {
-  const presentation = { group: 'display', prominence: 'secondary' } as const;
-  const variables = [
-    choiceVariable({ key: 'choice', options, defaultValue: 'a', presentation }),
-    multiChoiceVariable({ key: 'tags', options, presentation }),
+test('presentation intent is retained by each filter constructor without changing URL values', () => {
+  const presentation = { control: 'widget', prominence: 'secondary' } as const;
+  const filters = [
+    choiceFilter({ key: 'choice', options, defaultValue: 'a', presentation }),
+    multiChoiceFilter({ key: 'tags', options, presentation }),
     numberFilter({ key: 'amount', label: 'Amount', presentation }),
     booleanFilter({ key: 'active', label: 'Active', presentation }),
     dimensionFilter<string>({
@@ -63,14 +60,11 @@ test('presentation intent is retained by each variable constructor without chang
       options: [{ value: 'FR', label: 'France' }],
       presentation,
     }),
-    dateTimeRangeVariable({
+    dateTimeRangeFilter({
       key: 'period',
-      contract: defineDateRangeContract({
-        minDate: '2026-01-01',
-        maxDate: '2026-01-31',
-        maxRangeDays: 31,
-        timeZone: 'UTC',
-      }),
+      minDate: '2026-01-01',
+      maxDate: '2026-01-31',
+      maxRangeDays: 31,
       defaultValue: {
         from: new Date('2026-01-01T00:00:00Z'),
         to: new Date('2026-02-01T00:00:00Z'),
@@ -78,10 +72,10 @@ test('presentation intent is retained by each variable constructor without chang
       presentation,
     }),
   ];
-  for (const variable of variables) {
-    expect(variable.presentation).toEqual(presentation);
-    const value = variable.read(new URLSearchParams());
-    expect(value).toEqual(variable.defaultValue);
+  for (const filter of filters) {
+    expect(filter.presentation).toEqual(presentation);
+    const value = filter.read(new URLSearchParams());
+    expect(value).toEqual(filter.defaultValue);
   }
 });
 
@@ -105,21 +99,21 @@ test('dimension limits remain validated for unchecked single selections and dyna
 test('labeled choices validate defaults and selections and canonicalize URL state', () => {
   expect(() => numberFilter({ key: '', label: 'Amount' })).toThrow();
   expect(() => booleanFilter({ key: '', label: 'Active' })).toThrow();
-  const single = choiceVariable({ key: 'choice', options, defaultValue: 'a' });
+  const single = choiceFilter({ key: 'choice', options, defaultValue: 'a' });
   expect(single.describe?.('b')).toBe('Beta');
   expect(single.read(new URLSearchParams('choice=unknown'))).toBe('a');
   expect(single.read(new URLSearchParams('choice=b'))).toBe('b');
   expect(() =>
-    choiceVariable({ key: 'choice', options, defaultValue: 'unknown' })
+    choiceFilter({ key: 'choice', options, defaultValue: 'unknown' })
   ).toThrow();
   expect(() =>
-    choiceVariable({
+    choiceFilter({
       key: 'choice',
       options: [options[0]!, options[0]!],
       defaultValue: 'a',
     })
   ).toThrow();
-  const multiple = multiChoiceVariable({ key: 'tags', options });
+  const multiple = multiChoiceFilter({ key: 'tags', options });
   expect(multiple.write(['b', 'a'])).toEqual({ tags: '["a","b"]' });
   expect(multiple.same(['b', 'a'], ['a', 'b'])).toBe(true);
   expect(multiple.read(new URLSearchParams({ tags: '["a","a"]' }))).toEqual([]);
@@ -131,7 +125,7 @@ test('labeled choices validate defaults and selections and canonicalize URL stat
       new URLSearchParams(multiple.write(['b']) as Record<string, string>)
     )
   ).toEqual(['b']);
-  const search = searchVariable({ key: 'q', defaultValue: 'default' });
+  const search = searchFilter({ key: 'q', defaultValue: 'default' });
   expect(search.clearValue).toBe('');
   expect(
     search.read(new URLSearchParams(search.write('') as Record<string, string>))
@@ -254,4 +248,69 @@ test('categorical exclusion explicitly handles missing records and survives URL 
       members: [{ kind: 'value', value: 'FR' }],
     })
   ).toBe(false);
+});
+
+test('a dimension starts from its default selection and records every other choice', () => {
+  const status = dimensionFilter({
+    key: 'status',
+    label: 'Status',
+    valueType: 'string',
+    selectionMode: 'multiple',
+    options: [
+      { value: 'paid', label: 'Paid' },
+      { value: 'refunded', label: 'Refunded' },
+    ],
+    defaultValue: {
+      kind: 'include',
+      members: [{ kind: 'value', value: 'paid' }],
+    },
+  });
+  const none = new URLSearchParams();
+  expect(status.read(none)).toEqual(status.defaultValue);
+  expect(status.write(status.defaultValue)).toEqual({ status: null });
+  // Every member is a deliberate choice that differs from the default.
+  const all = new URLSearchParams(
+    status.write({ kind: 'all' }) as Record<string, string>
+  );
+  expect(status.read(all)).toEqual({ kind: 'all' });
+  expect(status.clearValue).toEqual({ kind: 'all' });
+  expect(() =>
+    dimensionFilter({
+      key: 'status',
+      label: 'Status',
+      valueType: 'string',
+      selectionMode: 'single',
+      options: [{ value: 'paid', label: 'Paid' }],
+      // Types reject members outside the options; JavaScript callers fail at runtime.
+      defaultValue: {
+        kind: 'include',
+        members: [{ kind: 'value', value: 'pending' }],
+      } as never,
+    })
+  ).toThrow('Invalid default selection for Status.');
+});
+
+test('a date range can start with its comparison on and readers can turn it off', () => {
+  const range = {
+    from: new Date('2026-03-24T00:00:00Z'),
+    to: new Date('2026-03-31T00:00:00Z'),
+  };
+  const period = dateTimeRangeFilter({
+    key: 'period',
+    maxDate: '2026-03-31',
+    maxRangeDays: 31,
+    comparison: 'on',
+    defaultValue: range,
+  });
+  expect(period.read(new URLSearchParams())).toEqual({
+    range,
+    comparison: 'previous',
+  });
+  const off = period.write({ range });
+  expect(off).toMatchObject({ compare: 'off' });
+  expect(
+    period.read(new URLSearchParams(off as Record<string, string>))
+  ).toEqual({ range });
+  expect(period.write(period.defaultValue)).toMatchObject({ compare: null });
+  expect(period.request(period.defaultValue).comparison).not.toBeNull();
 });

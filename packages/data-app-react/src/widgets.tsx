@@ -260,7 +260,7 @@ function VisualizationWidgetContent<Row, Data, Input>({
   const action = state ? (
     <div ref={controlRef}>
       <Select
-        label={state.variable.label ?? 'Break down by'}
+        label={state.filter.label ?? 'Break down by'}
         labelPlacement="inline"
         icon="breakdown"
         size="compact"

@@ -6,19 +6,38 @@ import {
   DataSection,
   TextWidget,
   VisualizationWidget,
-  searchVariable,
 } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
-import type { DataOperation } from '@altertable/data-app/contract';
-import type { TransportResponse } from '@altertable/data-app/contract';
+import {
+  defineOperation,
+  searchFilter,
+  type TransportResponse,
+} from '@altertable/data-app/contract';
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
 import { useState } from 'react';
 
 const pending = new Map<string, (response: TransportResponse) => void>();
-const client = createDataClient<{
-  alpha: DataOperation<{ version: string }, { count: number }>;
-  beta: DataOperation<Record<string, never>, { count: number }>;
-}>({
+const version = searchFilter({
+  key: 'version',
+  label: 'Version',
+  defaultValue: '1',
+});
+const policy = { maxQueryRows: 1, maxDurationMs: 1000 };
+/** The fixture transport answers every operation; `run` never executes in the browser. */
+async function answeredByTransport(): Promise<{ count: number }> {
+  throw new Error('The fixture transport answers this operation.');
+}
+const operations = {
+  alpha: defineOperation({
+    queries: {},
+    filters: { version },
+    policy,
+    run: answeredByTransport,
+  }),
+  beta: defineOperation({ queries: {}, policy, run: answeredByTransport }),
+};
+const client = createDataClient<typeof operations>({
+  filters: { alpha: operations.alpha.filters },
   transport(name, input, signal) {
     const version =
       name === 'alpha' ? (input as { version: string }).version : 1;
@@ -44,19 +63,10 @@ const context = createDataContext({ alpha: 'alpha', beta: 'beta' })({
   description: 'Declared views',
   glossary: {},
 });
-const alpha = hooks.defineDataView({
+const alpha = hooks.defineView({
   dataContext: context,
   operation: 'alpha',
-  variables: {
-    version: searchVariable({
-      key: 'version',
-      label: 'Version',
-      defaultValue: '1',
-    }),
-  },
   describeInput: input => `version ${input.version}`,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No alpha' },
 });
 const betaContext = createDataContext({ beta: 'beta' })({
   description: 'Independent beta context',
@@ -68,12 +78,10 @@ const betaContext = createDataContext({ beta: 'beta' })({
     },
   },
 });
-const beta = hooks.defineDataView({
+const beta = hooks.defineView({
   dataContext: betaContext,
   operation: 'beta',
   describeInput: () => 'beta',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No beta' },
 });
 const alphaDataset = alpha.dataset({
   name: 'Alpha',

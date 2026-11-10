@@ -42,9 +42,9 @@ import {
 } from '@/dev/fixtures/gallery-catalog';
 import { bindDataset } from '@/packages/data-app-react/src/bindings.ts';
 import { defineDataContent } from '@/packages/data-app-react/src/content.ts';
+import { ControlBar } from '@/packages/data-app-react/src/ui/ControlBar.tsx';
 import { DataBoundary } from '@/packages/data-app-react/src/ui/DataBoundary.tsx';
 import { writeSearch } from '@/packages/data-app-react/src/ui/search.ts';
-import { VariableBar } from '@/packages/data-app-react/src/ui/VariableBar.tsx';
 
 const options = [
   { id: 'http', label: 'HTTP' },
@@ -225,7 +225,7 @@ function TextExamples() {
             complete example.
           </p>
         </TextWidget>
-        <VariableBar>
+        <ControlBar>
           <ChoicePicker
             selectionMode="single"
             label="Narrative region"
@@ -265,7 +265,7 @@ function TextExamples() {
           >
             Show zero activity
           </Button>
-        </VariableBar>
+        </ControlBar>
         <DataBoundary
           view={view}
           loadingFallback={narrative.loadingFallback}
@@ -303,7 +303,7 @@ function QuickControls() {
             the pickers to compare ready, loading, empty, and failed states.
           </p>
         </Stack>
-        <VariableBar aria-label="Demo controls">
+        <ControlBar aria-label="Demo controls">
           <Button>Default button</Button>
           <Button variant="ghost" size="compact">
             Compact ghost action
@@ -318,13 +318,13 @@ function QuickControls() {
             checked={checked}
             onChange={setChecked}
           />
-        </VariableBar>
+        </ControlBar>
         <SearchField
           label="Search gallery records"
           value={query}
           onChange={setQuery}
         />
-        <VariableBar aria-label="Demo controls">
+        <ControlBar aria-label="Demo controls">
           <ChoicePicker
             selectionMode="multiple"
             label="Categories"
@@ -386,7 +386,7 @@ function QuickControls() {
             onChange={() => {}}
             disabled
           />
-        </VariableBar>
+        </ControlBar>
       </Stack>
     </section>
   );
@@ -401,7 +401,7 @@ function Overview() {
           title="Monday accounts for 60% of recorded activity"
           description="20 events across two active workspaces. Tuesday has a measured zero. Select a day to inspect it, or search the workspace records below."
         >
-          <VariableBar aria-label="Dashboard context">
+          <ControlBar aria-label="Dashboard context">
             <PeriodSummary
               period={{
                 kind: 'calendar',
@@ -421,7 +421,7 @@ function Overview() {
                 widget heading to inspect its definition and sample SQL.
               </p>
             </HelpPopover>
-          </VariableBar>
+          </ControlBar>
         </DataWidget>
         <Grid columns={3} minItemWidth="compact">
           <MetricWidget

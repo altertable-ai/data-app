@@ -16,7 +16,6 @@ import {
   useDateFormatting,
   injectDataAppStyles,
   mountDataApp,
-  dateTimeRangeVariable,
 } from '@altertable/data-app-react';
 import {
   DataApp as StaticDataApp,
@@ -25,9 +24,10 @@ import {
 } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  defineDateRangeContract,
+  dateTimeRangeFilter,
   type DataOperation,
-  type DateTimeRange,
+  type FilterCollection,
+  type FilterInput,
 } from '@altertable/data-app/contract';
 import { formatTime } from '@altertable/data-app/format';
 
@@ -51,23 +51,44 @@ const records = [
     ambiguous: '2026-09-24 15:30:05',
   },
 ];
-const calendar = defineDateRangeContract({
-  minDate: '2026-09-01',
-  maxDate: '2026-09-30',
-  maxRangeDays: 30,
-  timeZone: 'America/New_York',
-});
-const period = dateTimeRangeVariable({
-  key: 'period',
-  contract: calendar,
-  defaultValue: {
-    from: new Date('2026-09-24T00:00:00Z'),
-    to: new Date('2026-09-25T00:00:00Z'),
+const day = {
+  from: new Date('2026-09-24T00:00:00Z'),
+  to: new Date('2026-09-25T00:00:00Z'),
+};
+const filters = {
+  events: {
+    period: dateTimeRangeFilter({
+      key: 'period',
+      minDate: '2026-09-01',
+      maxDate: '2026-09-30',
+      maxRangeDays: 30,
+      timeZone: 'America/New_York',
+      defaultValue: day,
+    }),
   },
-});
+  // The Tokyo view reports in its own zone, so its operation reads its own period.
+  tokyoEvents: {
+    tokyoPeriod: dateTimeRangeFilter({
+      key: 'tokyo',
+      label: 'Tokyo period',
+      minDate: '2026-09-01',
+      maxDate: '2026-09-30',
+      maxRangeDays: 30,
+      timeZone: 'Asia/Tokyo',
+      defaultValue: day,
+      presentation: { prominence: 'secondary' },
+    }),
+  },
+};
+type EventsOperation<Filters extends FilterCollection> = DataOperation<
+  FilterInput<Filters>,
+  typeof records
+> & { filters: Filters };
 const client = createDataClient<{
-  events: DataOperation<{ period: DateTimeRange }, typeof records>;
+  events: EventsOperation<typeof filters.events>;
+  tokyoEvents: EventsOperation<typeof filters.tokyoEvents>;
 }>({
+  filters,
   async transport() {
     return {
       status: 200,
@@ -81,7 +102,8 @@ const client = createDataClient<{
     };
   },
 });
-const view = createDataHooks(client).defineTimeView({
+const { defineView } = createDataHooks(client);
+const view = defineView({
   dataContext: createDataContext({ events: 'events' })({
     description: 'Sample dated events.',
     glossary: {
@@ -93,9 +115,6 @@ const view = createDataHooks(client).defineTimeView({
     },
   }),
   operation: 'events',
-  time: period,
-  isEmpty: () => false,
-  emptyFallback: { title: 'No events' },
 });
 const events = view.dataset({
   name: 'Witness reports',
@@ -125,27 +144,12 @@ const events = view.dataset({
   },
   evidence: { id: 'events', glossaryIds: ['events'] },
 });
-const tokyoView = createDataHooks(client).defineTimeView({
+const tokyoView = defineView({
   dataContext: createDataContext({ events: 'events' })({
     description: 'Independent Tokyo events.',
     glossary: {},
   }),
-  operation: 'events',
-  time: dateTimeRangeVariable({
-    key: 'period',
-    contract: defineDateRangeContract({
-      minDate: '2026-09-01',
-      maxDate: '2026-09-30',
-      maxRangeDays: 30,
-      timeZone: 'Asia/Tokyo',
-    }),
-    defaultValue: {
-      from: new Date('2026-09-24T00:00:00Z'),
-      to: new Date('2026-09-25T00:00:00Z'),
-    },
-  }),
-  isEmpty: () => false,
-  emptyFallback: { title: 'No Tokyo events' },
+  operation: 'tokyoEvents',
 });
 const tokyoEvents = tokyoView.dataset({
   name: 'Tokyo events',

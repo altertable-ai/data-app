@@ -99,6 +99,7 @@ createRoot(document.getElementById('root')!).render(
         </TextContent>
         <DataSection
           result={{ view, refetch() {} }}
+          notice="inline"
           emptyFallback={{ title: 'No results' }}
           loadingFallback={<Cards loading />}
         >

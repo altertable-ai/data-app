@@ -1,4 +1,4 @@
-import type { DateTimeRangeComparisonRequest } from '@altertable/data-app/contract';
+import type { DateTimeRangeInput } from '@altertable/data-app/contract';
 import type { DateFormat } from '@altertable/data-app/format';
 import { formatMetric } from '@altertable/data-app/format';
 import type { MetricFormat } from '@altertable/data-app/format';
@@ -30,6 +30,7 @@ import type { TableWidgetColumn } from './ui/TableWidget.tsx';
 import type { WidgetEvidence } from './ui/WidgetEvidence.ts';
 
 /** Displayed data, or an initial loading reading. Pending filter values are never a source. */
+/** A view's displayed data and input, or its loading state; widgets and bindings read it. */
 export type ViewSource<Data, Input> =
   | { loading: true }
   | { loading?: false; data: Data; input: Input };
@@ -104,14 +105,17 @@ export class RegisteredBinding {
   protected assertSource(source: object) {
     if (this.#owner) assertSourceOwner(this.#owner, source);
   }
-  static evidence(binding: RegisteredBinding, owner: object): WidgetEvidence {
+  static evidence(
+    binding: RegisteredBinding,
+    owners: readonly object[]
+  ): WidgetEvidence {
     invariant(
       binding instanceof RegisteredBinding,
       'Story evidence must be a registered metric or dataset binding.'
     );
     invariant(
-      binding.#owner === owner,
-      'Story evidence must belong to the story view.'
+      !!binding.#owner && owners.includes(binding.#owner),
+      'Story evidence must belong to the app view or one of its summary views.'
     );
     invariant(
       binding.#evidence,
@@ -122,9 +126,9 @@ export class RegisteredBinding {
 }
 export function registeredEvidence(
   binding: RegisteredBinding,
-  owner: object
+  owners: readonly object[]
 ): WidgetEvidence {
-  return RegisteredBinding.evidence(binding, owner);
+  return RegisteredBinding.evidence(binding, owners);
 }
 
 export class ExportDataset<Data, Input> extends RegisteredBinding {
@@ -323,11 +327,11 @@ function datasetCsv<Data, Input>(
 
 export class Metric<Data, Input> extends RegisteredBinding {
   #select: (data: Data, input: Input) => MetricValues;
-  #date?: (input: Input) => DateTimeRangeComparisonRequest;
+  #date?: (input: Input) => DateTimeRangeInput;
   constructor(
     readonly definition: MetricDefinition,
     select: (data: Data, input: Input) => MetricValues,
-    date?: (input: Input) => DateTimeRangeComparisonRequest,
+    date?: (input: Input) => DateTimeRangeInput,
     owner?: object
   ) {
     super(owner, definition.evidence);
@@ -340,7 +344,7 @@ export class Metric<Data, Input> extends RegisteredBinding {
       Data,
       Input,
       MetricValues & {
-        period?: DateTimeRangeComparisonRequest;
+        period?: DateTimeRangeInput;
       },
       Source
     >(source, (data, input) => {
@@ -352,11 +356,22 @@ export class Metric<Data, Input> extends RegisteredBinding {
       return { ...values, period: this.#date?.(input) };
     });
   };
-  records<DetailData, DetailInput>(options: {
-    target: DetailView<DetailData, DetailInput>;
-    input: (displayedInput: Input) => DetailInput;
+  /** Show the records behind this metric. `input` returns the destination's own
+   * fields and any filter it narrows; its other filters carry over from the displayed scope. */
+  records<DetailData, DetailInput, Own>(options: {
+    target: DetailView<DetailData, DetailInput, Own>;
+    input: (displayedInput: Input) => Own & Partial<DetailInput>;
   }) {
-    return new MetricRecords(this, options.target, options.input);
+    return new MetricRecords(
+      this,
+      options.target,
+      (displayed: Input) =>
+        DetailView.inputFrom(
+          options.target,
+          options.input(displayed),
+          displayed
+        ) as DetailInput
+    );
   }
   actions<const Actions extends Record<string, ActionDeclaration<void, Input>>>(
     build: (action: ActionBuilder<void, Input>) => Actions,
@@ -369,11 +384,11 @@ export class Metric<Data, Input> extends RegisteredBinding {
 /** A metric-owned record destination. It can only render from that metric's displayed source. */
 export class MetricRecords<Data, Input, DetailData, DetailInput> {
   #metric: Metric<Data, Input>;
-  #target: DetailView<DetailData, DetailInput>;
+  #target: DetailView<DetailData, DetailInput, any>;
   #input: (displayedInput: Input) => DetailInput;
   constructor(
     metric: Metric<Data, Input>,
-    target: DetailView<DetailData, DetailInput>,
+    target: DetailView<DetailData, DetailInput, any>,
     input: (displayedInput: Input) => DetailInput
   ) {
     this.#metric = metric;
@@ -409,7 +424,7 @@ export class MetricRecords<Data, Input, DetailData, DetailInput> {
 export function bindMetric<Data, Input>(
   definition: MetricDefinition,
   select: (data: Data, input: Input) => MetricValues,
-  date?: (input: Input) => DateTimeRangeComparisonRequest,
+  date?: (input: Input) => DateTimeRangeInput,
   owner?: object
 ) {
   return new Metric(definition, select, date, owner);
@@ -428,27 +443,32 @@ export function displayedScope<Data, Input>(
   return { loading: false, value: describeInput(input) };
 }
 
-export function exportDatasets<Data, Input>(
-  datasets: readonly [
-    ExportDataset<Data, Input>,
-    ...ExportDataset<Data, Input>[],
-  ],
-  snapshot: DisplayedSnapshot<Data, Input>,
-  scope: string,
-  appTitle: string
-): CsvExport {
-  const name = datasets.length === 1 ? datasets[0].name : appTitle;
+type DisplayedTable = {
+  dataset: ExportDataset<any, any>;
+  snapshot: DisplayedSnapshot<any, any>;
+};
+
+/** Export each dataset from the displayed snapshot of the view that owns it. */
+export function exportDatasets({
+  tables,
+  scope,
+  appTitle,
+}: {
+  tables: readonly DisplayedTable[];
+  scope: string;
+  appTitle: string;
+}): CsvExport {
+  const [first, ...rest] = tables;
+  invariant(first, 'An export needs at least one dataset.');
+  const name = rest.length ? appTitle : first.dataset.name;
   const filename =
     `${name}-${scope}`
       .toLowerCase()
       .replace(/[^\p{L}\p{N}]+/gu, '-')
       .replace(/^-|-$/g, '')
       .slice(0, 200) || 'data';
-  return {
-    filename,
-    tables: datasets.map(dataset => datasetCsv(dataset, snapshot)) as [
-      CsvTable,
-      ...CsvTable[],
-    ],
-  };
+  function csv({ dataset, snapshot }: DisplayedTable) {
+    return datasetCsv(dataset, snapshot);
+  }
+  return { filename, tables: [csv(first), ...rest.map(csv)] };
 }

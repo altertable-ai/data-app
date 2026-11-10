@@ -1,6 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
-import { variableInput, type Lakehouse } from '@altertable/data-app/contract';
+import type { Lakehouse } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
@@ -51,7 +51,6 @@ function sourceApp(mode: 'single' | 'multiple' = 'single') {
     valueType: 'number',
     source: { query: 'customers' },
   });
-  const parse = variableInput(() => ({}), { region, customer });
   const input = {
     region: { kind: 'all' } as const,
     customer: {
@@ -61,8 +60,7 @@ function sourceApp(mode: 'single' | 'multiple' = 'single') {
   };
   const operations = {
     sales: app.defineOperation({
-      input: parse,
-      checks: [input],
+      filters: { region, customer },
       policy: { maxDurationMs: 1000, maxQueryRows: 200 },
       async run({ query }) {
         return (await query('business')).rows;
@@ -344,13 +342,44 @@ test('malformed selections fail at the parser boundary', () => {
     ).toThrow('Invalid Customer');
 });
 
-test('composed parsers retain source validation and reject replacement variables', () => {
-  const { operations, region, customer } = sourceApp();
-  expect(() =>
-    variableInput(operations.sales.input, { customer, region })
-  ).not.toThrow();
+test('operations sharing a client share one source dimension declaration', () => {
+  const { app, operations, customer } = sourceApp();
   const other = sourceApp().customer;
+  const policy = { maxDurationMs: 1000, maxQueryRows: 200 };
+  const lakehouse: Lakehouse = {
+    async queryAll() {
+      return { columns: [], rows: [] };
+    },
+  };
+  const customers = app.defineOperation({
+    filters: { customer },
+    policy,
+    async run() {
+      return 0;
+    },
+  });
+  expect(
+    createDataClient({ operations: { ...operations, customers }, lakehouse })
+      .filters
+  ).toEqual({ sales: operations.sales.filters, customers: { customer } });
+  const replaced = app.defineOperation({
+    filters: { customer: other },
+    policy,
+    async run() {
+      return 0;
+    },
+  });
   expect(() =>
-    variableInput(operations.sales.input, { customer: other })
-  ).toThrow('already declared');
+    createDataClient({ operations: { ...operations, replaced }, lakehouse })
+  ).toThrow('Dimension source keys must be unique across the app.');
+  const renamed = app.defineOperation({
+    filters: { buyer: other },
+    policy,
+    async run() {
+      return 0;
+    },
+  });
+  expect(() =>
+    createDataClient({ operations: { ...operations, renamed }, lakehouse })
+  ).toThrow('Dimension source keys must be unique across the app.');
 });

@@ -1,9 +1,9 @@
-import { invariant } from './invariant.ts';
 import {
-  type AppVariable,
+  type AppFilter,
   type HistoryMode,
-  type VariablePresentation,
-} from './variables.ts';
+  type FilterPresentation,
+} from './app-filters.ts';
+import { invariant } from './invariant.ts';
 
 export type NumberOperator = 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte';
 export type NumberSelection =
@@ -11,12 +11,12 @@ export type NumberSelection =
   | { kind: 'comparison'; operator: NumberOperator; value: number }
   | { kind: 'range'; min?: number; max?: number };
 export type BooleanSelection = { kind: 'all' } | { kind: 'is'; value: boolean };
-export type NumberFilter = AppVariable<NumberSelection, 'numberFilter'> & {
+export type NumberFilter = AppFilter<NumberSelection, 'numberFilter'> & {
   label: string;
   min?: number;
   max?: number;
 };
-export type BooleanFilter = AppVariable<BooleanSelection, 'booleanFilter'> & {
+export type BooleanFilter = AppFilter<BooleanSelection, 'booleanFilter'> & {
   label: string;
 };
 
@@ -25,7 +25,7 @@ type FilterOptions<Value> = {
   label: string;
   defaultValue?: Value;
   history?: HistoryMode;
-  presentation?: VariablePresentation;
+  presentation?: FilterPresentation;
 };
 const all = { kind: 'all' } as const;
 export const numberOperatorLabels: Record<NumberOperator, string> = {

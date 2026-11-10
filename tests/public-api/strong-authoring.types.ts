@@ -1,18 +1,14 @@
-import { useAppVariables } from '@altertable/data-app-react/ui';
-type VariableCollection = Parameters<typeof useAppVariables>[0];
 import { defineDataApp } from '@altertable/data-app';
-import {
-  createDataHooks,
-  createDataContext,
-  searchVariable,
-} from '@altertable/data-app-react';
+import { createDataHooks, createDataContext } from '@altertable/data-app-react';
 import { createDataClient } from '@altertable/data-app/client';
 import {
-  parseEmptyInput,
+  dimensionFilter,
+  facetFilter,
+  searchFilter,
   type QueryDefinitions,
   type QueryParameter,
   type QueryProjections,
-  type DimensionVariable,
+  type DimensionFilter,
   type DataOperation,
   type DimensionOption,
 } from '@altertable/data-app/contract';
@@ -65,8 +61,6 @@ const app = defineDataApp({
   queries: { items: inputQuery } satisfies QueryDefinitions,
 });
 app.defineOperation({
-  input: parseEmptyInput,
-  checks: [{}],
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
   async run({ query }) {
     await query('items');
@@ -82,64 +76,69 @@ app.defineOperation({
   },
 });
 
-type Source = {
-  strings: DataOperation<{ search: string }, DimensionOption<string>[]>;
-  view: DataOperation<{ search: string }, number>;
-};
-const hooks = createDataHooks(createDataClient<Source>());
-const search = searchVariable({ key: 'search' });
-const facet = hooks.defineFacetFilter({
+const policy = { maxQueryRows: 1, maxDurationMs: 1000 };
+const search = searchFilter({ key: 'search' });
+const region = facetFilter({
   key: 'region',
   label: 'Region',
   valueType: 'string',
   selectionMode: 'single',
-  facet: {
-    context: { search },
-    operation: 'strings',
-    input: values => ({ search: values.search }),
-  },
+  options: 'regions',
 });
 // @ts-expect-error A facet cannot be widened to a fixed-option filter.
-const erased: DimensionVariable<string> = facet;
+const erased: DimensionFilter<string> = region;
 void erased;
-const variables: VariableCollection = { region: facet };
-const feedback = {
-  operation: 'view' as const,
-  dataContext: createDataContext({})({ description: 'View', glossary: {} }),
-  input: (values: { search?: string }) => ({ search: values.search ?? '' }),
-  describeInput: () => 'All',
-  isEmpty: () => false,
-  emptyFallback: { title: 'Empty' },
-};
-// @ts-expect-error A broad collection cannot erase facet dependencies.
-hooks.defineDataView({ ...feedback, variables });
-const missing = createDataHooks(createDataClient<{ view: Source['view'] }>());
-const dependent = {
-  ...feedback,
-  variables: { search, region: facet },
-  bindings: { region: () => facet.defaultValue },
-};
+const regions = app.defineOperation({
+  filters: { search },
+  policy,
+  async run(): Promise<DimensionOption<string>[]> {
+    return [];
+  },
+});
+const view = app.defineOperation({
+  filters: { search, region },
+  policy,
+  async run() {
+    return 1;
+  },
+});
+createDataClient({ operations: { regions, view } });
 // @ts-expect-error The receiving registry must contain the facet operation.
-missing.defineDataView(dependent);
-const wrongInput =
-  createDataHooks(
-    createDataClient<{
-      view: Source['view'];
-      strings: DataOperation<{ search: number }, DimensionOption<string>[]>;
-    }>()
-  );
-// @ts-expect-error Reused facets must supply the receiving operation's input type.
-wrongInput.defineDataView(dependent);
-const wrongOutput =
-  createDataHooks(
-    createDataClient<{
-      view: Source['view'];
-      strings: DataOperation<{ search: string }, DimensionOption<number>[]>;
-    }>()
-  );
-// @ts-expect-error Reused facets must match the receiving operation's option value type.
-wrongOutput.defineDataView(dependent);
-hooks.defineDataView(dependent);
+createDataClient({ operations: { view } });
+const numberRegions = app.defineOperation({
+  filters: { search },
+  policy,
+  async run(): Promise<DimensionOption<number>[]> {
+    return [];
+  },
+});
+// @ts-expect-error Facet options must match the facet's value type.
+createDataClient({ operations: { regions: numberRegions, view } });
+const fixed = dimensionFilter({
+  key: 'region',
+  label: 'Region',
+  valueType: 'string',
+  selectionMode: 'single',
+  options: [],
+});
+const conditionalView = app.defineOperation({
+  filters: choose ? { region } : { region: fixed },
+  policy,
+  async run() {
+    return 1;
+  },
+});
+// @ts-expect-error Narrow conditional filter maps before declaring facet dependencies.
+createDataClient({ operations: { view: conditionalView } });
+
+type Source = {
+  strings: DataOperation<{ search: string }, DimensionOption<string>[]>;
+  view: DataOperation<{ search: string }, number>;
+};
+const dataContext = createDataContext({})({
+  description: 'View',
+  glossary: {},
+});
 
 const noDefault = {
   ...inputQuery,
@@ -163,35 +162,6 @@ createDataHooks<Source>(untyped);
 const erasedClient = { query: untyped.query };
 // @ts-expect-error Extracting a method cannot manufacture an operation registry contract.
 createDataHooks<Source>(erasedClient);
-
-import { dimensionFilter } from '@altertable/data-app/contract';
-const fixed = dimensionFilter({
-  key: 'region',
-  label: 'Region',
-  valueType: 'string',
-  selectionMode: 'single',
-  options: [],
-});
-const conditionalVariables = choose ? { region: facet } : { region: fixed };
-// @ts-expect-error Narrow conditional variable maps before declaring facet dependencies.
-hooks.defineDataView({ ...feedback, variables: conditionalVariables });
-const conditionalVariable = { region: choose ? facet : fixed };
-// @ts-expect-error A conditional member cannot hide the facet's required search variable.
-hooks.defineDataView({ ...feedback, variables: conditionalVariable });
-const conditionalContext = choose ? { search } : {};
-const invalidContext = {
-  key: 'conditional',
-  label: 'Conditional',
-  valueType: 'string',
-  selectionMode: 'single',
-  facet: {
-    context: conditionalContext,
-    operation: 'strings',
-    input: () => ({ search: '' }),
-  },
-} as const;
-// @ts-expect-error Narrow conditional context declarations before creating a facet.
-hooks.defineFacetFilter(invalidContext);
 
 // @ts-expect-error Empty names cannot be registered queries.
 defineDataApp({ ...header, queries: { '': emptyQuery } });
@@ -225,20 +195,8 @@ const operation = choose ? 'alpha' : 'beta';
 void branchClient.query(operation, { text: 'only alpha' });
 void branchClient.query('alpha', { text: 'alpha' });
 const branchHooks = createDataHooks(branchClient);
-const branchView = {
-  ...feedback,
-  operation,
-  input: () => ({ text: 'only alpha' }),
-};
-// @ts-expect-error A view cannot decouple a conditional operation from its input mapper.
-branchHooks.defineDataView(branchView);
-
-const inheritedContext = {
-  ...invalidContext,
-  facet: { ...invalidContext.facet, context: { __proto__: search } },
-};
-// @ts-expect-error Prototype setters cannot declare facet dependencies.
-hooks.defineFacetFilter(inheritedContext);
+// @ts-expect-error A view cannot run a conditional operation.
+branchHooks.defineView({ operation, dataContext });
 
 declare const alphaOperation: Branches['alpha'];
 declare const betaOperation: Branches['beta'];
@@ -250,8 +208,8 @@ createDataClient({ operations: conditionalOperations });
 // @ts-expect-error A prototype setter cannot register an own operation.
 createDataClient({ operations: { __proto__: alphaOperation } });
 
+// @ts-expect-error A conditional operation member must also be narrowed before registration.
 createDataClient({
-  // @ts-expect-error A conditional operation member must also be narrowed before registration.
   operations: { branch: choose ? alphaOperation : betaOperation },
 });
 

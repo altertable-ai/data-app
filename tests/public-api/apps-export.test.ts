@@ -81,7 +81,7 @@ describe('export', () => {
     }
 
     await expectExport(
-      'sample-counts-all-groups.csv',
+      'sample-counts-all-data.csv',
       '\uFEFFGroup,Sample count\r\nAlpha,2200000\r\nBeta,0\r\n'
     );
     gate = new Promise<void>(resolve => {
@@ -99,7 +99,7 @@ describe('export', () => {
       )
       .toBe(true);
     await expectExport(
-      'sample-counts-all-groups.csv',
+      'sample-counts-all-data.csv',
       '\uFEFFGroup,Sample count\r\nAlpha,2200000\r\nBeta,0\r\n'
     );
     release();
@@ -166,7 +166,7 @@ describe('export', () => {
     const downloaded = page.waitForEvent('download');
     await app.getByRole('button', { name: 'Try again', exact: true }).click();
     expect((await downloaded).suggestedFilename()).toBe(
-      'sample-counts-all-groups.csv'
+      'sample-counts-all-data.csv'
     );
     await expect.poll(() => app.getByRole('alert').count()).toBe(0);
     await expect.poll(() => button.isEnabled()).toBe(true);

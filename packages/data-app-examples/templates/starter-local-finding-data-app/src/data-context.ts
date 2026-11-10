@@ -1,5 +1,11 @@
 import { createDataContext } from '@altertable/data-app-react';
-const queryNames = { samples: 'samples' } as const;
+// The browser imports operations by type only, so name their queries here.
+const queryNames = {
+  sampleTotal: 'sampleTotal',
+  samplesOverTime: 'samplesOverTime',
+  samplesByMember: 'samplesByMember',
+  sampleRows: 'sampleRows',
+} as const;
 export const sampleDataContext = createDataContext(queryNames)({
   description:
     'Fictional daily samples from starter_demo.daily_samples. Replace this evidence with the actual Finding queries.',
@@ -7,7 +13,7 @@ export const sampleDataContext = createDataContext(queryNames)({
     sampleCount: {
       term: 'Sample count',
       definition: 'Fixture samples recorded per day, group, and segment.',
-      queryNames: [queryNames.samples],
+      queryNames: Object.values(queryNames),
     },
   },
 });

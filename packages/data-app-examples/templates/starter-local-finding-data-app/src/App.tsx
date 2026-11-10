@@ -1,5 +1,4 @@
 import {
-  choiceVariable,
   createDataHooks,
   DataApp,
   DataSection,
@@ -12,97 +11,73 @@ import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 
 import { sampleDataContext } from '#app/data-context.ts';
+import { operationFilters } from '#app/filters.ts';
 import type { operations } from '#app/operations.ts';
-import { period } from '#config';
-const { defineTimeView } =
-  createDataHooks(createDataClient<typeof operations>());
-const samplesView = defineTimeView({
-  dataContext: sampleDataContext,
-  operation: 'samples',
-  time: period,
-  variables: {
-    grain: choiceVariable({
-      key: 'grain',
-      label: 'Grain',
-      defaultValue: 'day',
-      options: [
-        { id: 'day', label: 'Day' },
-        { id: 'week', label: 'Week' },
-      ],
-      presentation: { group: 'display', control: 'widget' },
-    }),
-    breakdown: choiceVariable({
-      key: 'breakdown',
-      label: 'Breakdown',
-      defaultValue: 'segment',
-      options: [
-        { id: 'segment', label: 'Segment' },
-        { id: 'group', label: 'Group' },
-      ],
-      presentation: { group: 'display', control: 'widget' },
-    }),
-  },
-  isEmpty: rows => rows.length === 0,
-  emptyFallback: {
-    title: 'No samples in this period',
-    description: 'No observations are available for this period.',
-  },
-});
-type SampleRow = { sampleCount: number; selected: boolean };
-function total(rows: readonly SampleRow[]) {
-  return rows.reduce((sum, row) => sum + row.sampleCount, 0);
-}
-function totalsBy<Row extends SampleRow>(
-  rows: readonly Row[],
-  key: (row: Row) => string
-) {
-  const totals = new Map<string, number>();
-  for (const row of rows)
-    totals.set(key(row), (totals.get(key(row)) ?? 0) + row.sampleCount);
-  return [...totals].map(([id, sampleCount]) => ({ id, sampleCount }));
-}
+const { defineView } = createDataHooks(
+  createDataClient<typeof operations>({ filters: operationFilters })
+);
 const count = { kind: 'count' } as const;
-const totalSamples = samplesView.metric(
+const emptyFallback = {
+  title: 'No samples in this period',
+  description: 'No observations are available for this period.',
+};
+const totalView = defineView({
+  dataContext: sampleDataContext,
+  operation: 'sampleTotal',
+});
+const totalSamples = totalView.metric(
   {
     id: 'total-samples',
     label: 'Samples',
     glossaryId: 'sampleCount',
     format: count,
   },
-  (rows, input) => ({
-    current: total(rows.filter(row => row.selected)),
-    ...(input.period.comparison && {
-      previous: total(rows.filter(row => !row.selected)),
-    }),
+  total => ({
+    current: total.current,
+    ...(total.previous !== null && { previous: total.previous }),
   })
 );
-const trend = samplesView.dataset({
+const trendView = defineView({
+  dataContext: sampleDataContext,
+  operation: 'samplesOverTime',
+  isEmpty: rows => rows.length === 0,
+  emptyFallback,
+});
+const trend = trendView.dataset({
   name: 'Samples over time',
-  select: rows => totalsBy(rows, row => row.periodStart),
-  rowKey: row => row.id,
+  select: rows => rows,
+  rowKey: row => row.periodStart,
   columns: {
-    id: { label: 'Period start', value: row => row.id },
+    periodStart: { label: 'Period start', value: row => row.periodStart },
     sampleCount: { value: row => row.sampleCount, format: count },
   },
   evidence: { id: 'samples-over-time', glossaryIds: ['sampleCount'] },
 });
-const breakdown = samplesView.dataset({
+const memberView = defineView({
+  dataContext: sampleDataContext,
+  operation: 'samplesByMember',
+  isEmpty: rows => rows.length === 0,
+  emptyFallback,
+});
+const byMember = memberView.dataset({
   name: 'Samples by member',
-  select: rows =>
-    totalsBy(
-      rows.filter(row => row.selected),
-      row => row.member
-    ),
-  rowKey: row => row.id,
+  select: rows => rows,
+  rowKey: row => row.member,
   columns: {
-    id: { label: 'Member', value: row => row.id },
+    member: { label: 'Member', value: row => row.member },
     sampleCount: { value: row => row.sampleCount, format: count },
   },
   evidence: { id: 'samples-by-member', glossaryIds: ['sampleCount'] },
 });
-const sampleRows = samplesView.dataset({
+const rowsView = defineView({
+  dataContext: sampleDataContext,
+  operation: 'sampleRows',
+  isEmpty: rows => rows.length === 0,
+  emptyFallback,
+});
+const sampleRows = rowsView.dataset({
   name: 'Samples',
-  select: rows => rows.filter(row => row.selected),
+  select: rows => rows,
   rowKey: row => `${row.periodStart}:${row.member}`,
   columns: {
     periodStart: { label: 'Period start', value: row => row.periodStart },
@@ -112,54 +87,64 @@ const sampleRows = samplesView.dataset({
   evidence: { id: 'samples', glossaryIds: ['sampleCount'] },
 });
 // The Finding's text is shown above the app; keep content to charts and captions.
-const sampleContent = samplesView.content(result => (
-  <Stack>
-    <MetricWidget metric={totalSamples} source={result} />
-    <VisualizationWidget
-      dataset={trend}
-      source={result}
-      title="Samples over time"
-      description="Includes the previous period when comparison is on."
-      breakdown={samplesView.breakdown('grain')}
-    >
-      {rows => (
-        <ComposedChart
-          ariaLabel="Samples over time"
-          data={rows}
-          valueFormat={count}
-        >
-          <ComposedChart.XAxis dataKey="id" />
-          <ComposedChart.YAxis />
-          <ComposedChart.Line dataKey="sampleCount" name="Samples" />
-          <ComposedChart.Tooltip />
-        </ComposedChart>
-      )}
-    </VisualizationWidget>
-    <VisualizationWidget
-      dataset={breakdown}
-      source={result}
-      title="Samples by member"
-      breakdown={samplesView.breakdown('breakdown')}
-    >
-      {rows => (
-        <BarChart
-          ariaLabel="Samples by member"
-          unit="samples"
-          items={rows.map(row => ({
-            ...row,
-            label: row.id,
-            value: row.sampleCount,
-          }))}
-        />
-      )}
-    </VisualizationWidget>
-    <TableWidget dataset={sampleRows} source={result} title="Samples" />
-  </Stack>
+const totalContent = totalView.content(result => (
+  <MetricWidget metric={totalSamples} source={result} />
+));
+const trendContent = trendView.content(result => (
+  <VisualizationWidget
+    dataset={trend}
+    source={result}
+    title="Samples over time"
+    description="Includes the previous period when comparison is on."
+    breakdown={trendView.breakdown('grain')}
+  >
+    {rows => (
+      <ComposedChart
+        ariaLabel="Samples over time"
+        data={rows}
+        valueFormat={count}
+      >
+        <ComposedChart.XAxis dataKey="periodStart" />
+        <ComposedChart.YAxis />
+        <ComposedChart.Line dataKey="sampleCount" name="Samples" />
+        <ComposedChart.Tooltip />
+      </ComposedChart>
+    )}
+  </VisualizationWidget>
+));
+const memberContent = memberView.content(result => (
+  <VisualizationWidget
+    dataset={byMember}
+    source={result}
+    title="Samples by member"
+    breakdown={memberView.breakdown('breakdown')}
+  >
+    {rows => (
+      <BarChart
+        ariaLabel="Samples by member"
+        unit="samples"
+        items={rows.map(row => ({
+          ...row,
+          id: row.member,
+          label: row.member,
+          value: row.sampleCount,
+        }))}
+      />
+    )}
+  </VisualizationWidget>
+));
+const rowsContent = rowsView.content(result => (
+  <TableWidget dataset={sampleRows} source={result} title="Samples" />
 ));
 export function App() {
   return (
-    <DataApp view={samplesView} showToolbar={false}>
-      <DataSection content={sampleContent} />
+    <DataApp view={totalView} showToolbar={false}>
+      <Stack>
+        <DataSection content={totalContent} />
+        <DataSection content={trendContent} />
+        <DataSection content={memberContent} />
+        <DataSection content={rowsContent} />
+      </Stack>
     </DataApp>
   );
 }

@@ -24,9 +24,6 @@ export {
   DataSection,
   UpdatedAt,
   DateTimeTooltip,
-  searchVariable,
-  choiceVariable,
-  multiChoiceVariable,
   PeriodSummary,
   createDataContext,
   defineDataIdentifiers,
@@ -43,7 +40,11 @@ export type {
   DatasetColumn,
   DatasetSuggestionOptions,
   DatasetDefinition,
+  Dataset,
   MetricRecords,
+  ViewSource,
+  ActionBuilder,
+  DetailAction,
   DataAppStylesOptions,
   DataAppStyle,
   DataAppStyleToken,
@@ -51,6 +52,7 @@ export type {
   DetailViewDefinition,
   CsvCell,
   DataAppProps,
+  DataAppView,
   StackProps,
   GridProps,
   GridItemProps,
@@ -73,13 +75,6 @@ export type {
   DataSectionProps,
   UpdatedAtProps,
   DateTimeTooltipProps,
-  AppVariable,
-  VariablePresentation,
-  AppVariableValues,
-  ChoiceOption,
-  ChoiceVariable,
-  MultiChoiceVariable,
-  SearchVariable,
   ReportingPeriod,
   PeriodComparison,
   PeriodSummaryProps,
@@ -106,18 +101,6 @@ export {
 export type { AnnotationBarHandle, AnnotationBarProps } from './host/index.ts';
 
 export { ExternalLink, type ExternalLinkProps } from './authoring/index.ts';
-
-export {
-  dateTimeRangeVariable,
-  dateTimeRangePresets,
-  type DateTimeRangePreset,
-  type DateTimeRangeVariable,
-  type DateTimeRangeComparisonVariable,
-  type DateTimeRangeComparisonVariableOptions,
-  type DateTimeRangeComparisonSelection,
-  type DateTimeRangeComparisonRequest,
-  type DateTimeRangeVariableOptions,
-} from './authoring/index.ts';
 
 export {
   DateTimeRangePicker,

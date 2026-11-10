@@ -1,16 +1,10 @@
 import { createDataClient } from '@altertable/data-app/client';
-import {
-  defineOperation,
-  parseEmptyInput,
-  type Lakehouse,
-} from '@altertable/data-app/contract';
+import { defineOperation, type Lakehouse } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
 import { expect, test } from 'vitest';
 
 const definition = {
   queries: {},
-  input: parseEmptyInput,
-  checks: [{}] as const,
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
 };
 const lakehouse: Lakehouse = {

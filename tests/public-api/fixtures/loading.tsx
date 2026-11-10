@@ -1,7 +1,6 @@
 import { defineDataApp } from '@altertable/data-app';
 import {
   createDataHooks,
-  searchVariable,
   createDataContext,
   DataApp,
   DataSection,
@@ -14,6 +13,7 @@ import { ShimmerText } from '@altertable/data-app-react/ui';
 import { createDataClient } from '@altertable/data-app/client';
 import {
   defineOperation,
+  searchFilter,
   type QueryResult,
 } from '@altertable/data-app/contract';
 
@@ -22,15 +22,11 @@ type Pending = {
 };
 const pending = new Map<string, Pending>();
 
-function searchInput(value: unknown) {
-  const search = (value as { search?: unknown })?.search;
-  return { search: typeof search === 'string' ? search : '' };
-}
+const search = searchFilter({ key: 'search', label: 'Search' });
 
 const policy = { maxQueryRows: 1, maxDurationMs: 60_000 };
 const primary = defineOperation({
-  input: searchInput,
-  checks: [{ search: '' }],
+  filters: { search },
   queries: {
     count: {
       projections: { count: { type: 'number' } } as const,
@@ -45,8 +41,7 @@ const primary = defineOperation({
   },
 });
 const secondary = defineOperation({
-  input: searchInput,
-  checks: [{ search: '' }],
+  filters: { search },
   queries: {
     count: {
       projections: { count: { type: 'number' } } as const,
@@ -103,24 +98,11 @@ const secondaryContext = createDataContext({ count: 'count', total: 'total' })({
     total: { term: 'Total', definition: 'All rows.', queryNames: ['total'] },
   },
 });
-const hooks = createDataHooks(client);
-
-const search = searchVariable({ key: 'search', label: 'Search' });
-const primaryView = hooks.defineDataView({
-  operation: 'primary',
-  dataContext: context,
-  variables: { search },
-  describeInput: () => 'primary scope',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No counts' },
-});
-const secondaryView = hooks.defineDataView({
+const { defineView } = createDataHooks(client);
+const primaryView = defineView({ operation: 'primary', dataContext: context });
+const secondaryView = defineView({
   operation: 'secondary',
   dataContext: secondaryContext,
-  variables: { search },
-  describeInput: () => 'secondary scope',
-  isEmpty: () => false,
-  emptyFallback: { title: 'No counts' },
 });
 const primaryDataset = primaryView.dataset({
   name: 'Primary counts',

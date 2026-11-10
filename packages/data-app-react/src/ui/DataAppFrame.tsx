@@ -1,7 +1,7 @@
 import { type DisclosedQuery } from '@altertable/data-app/contract';
 import {
   displayedSnapshot,
-  type DisplayedSnapshot,
+  type DataReading,
 } from '@altertable/data-app/internal';
 import { useEffect, useRef, type ComponentRef, type ReactNode } from 'react';
 
@@ -12,6 +12,7 @@ import { AppHeader } from './AppHeader.tsx';
 import { AppLayout } from './AppLayout.tsx';
 import { AppScope } from './AppScope.tsx';
 import { AppToolbar } from './AppToolbar.tsx';
+import { ControlBar } from './ControlBar.tsx';
 import { type CsvExport } from './csv-export.ts';
 import { type DataContext } from './data-context.ts';
 import { type SectionResult } from './DataSectionBoundary.tsx';
@@ -19,12 +20,11 @@ import { DataViewToast } from './DataViewToast.tsx';
 import { InspectionContext } from './InspectionContext.tsx';
 import { InspectionProvider } from './InspectionProvider.tsx';
 import { Stack } from './Stack.tsx';
-import { type BoundStory } from './story.ts';
+import { type StoryFinding } from './story.ts';
 import { TextContent } from './TextContent.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 import { useAppAppearance } from './useAppAppearance.ts';
 import { useDataAppPresentation } from './useDataAppPresentation.ts';
-import { VariableBar } from './VariableBar.tsx';
 
 export type DataAppBaseProps = {
   children: ReactNode;
@@ -62,25 +62,25 @@ export type StaticDataAppProps = DataAppBaseProps & {
   queries?: DisclosedQuery[];
 };
 
-export type DataAppProps<Data = unknown, Input = unknown> =
-  | (DataAppBaseProps &
-      DataAppControlProps & {
-        request: DataAppRequest<Data, Input>;
-        /** Findings are always derived from the result currently visible to the user. */
-        story?: BoundStory<Data, Input>;
-        /** Export every distinct dataset in the displayed result. */
-        csvExport?: (snapshot: DisplayedSnapshot<Data, Input>) => CsvExport;
-        queries?: never;
-      })
-  | (StaticDataAppProps & {
-      request?: never;
-      story?: never;
-    });
+type DataAppFrameProps<Data, Input> = DataAppBaseProps &
+  DataAppControlProps &
+  (
+    | { request: DataAppRequest<Data, Input>; queries?: never }
+    | { request?: never; queries?: DisclosedQuery[] }
+  ) & {
+    /** Omit to leave presentation out; findings come from the displayed results.
+     * No findings keep the action disabled. */
+    story?: DataReading<readonly StoryFinding[]>;
+    /** Omit to leave CSV export out of the toolbar. */
+    csvExport?: DataReading<CsvExport>;
+  };
 
 /** Owns the page title, header, gutter, and width; body content uses section headings.
  * The primary request binds the toolbar, controls, refresh, and inspection.
  * Children always render; compose DataSection boundaries around independently loading content. */
-export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
+export function DataAppFrame<Data, Input>(
+  props: DataAppFrameProps<Data, Input>
+) {
   const {
     dataContext,
     description,
@@ -102,8 +102,7 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
   });
 
   const snapshot = request && displayedSnapshot(request.view);
-  const findings = request && snapshot ? props.story?.(snapshot) : undefined;
-  const story = findings?.length ? { findings } : undefined;
+  const findings = props.story?.loading === false ? props.story.value : [];
   const scope = (
     <AppScope
       organization={app.scope.organization}
@@ -114,13 +113,8 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
     props.showToolbar === false ? null : (
       <AppToolbar
         csvExport={
-          request
-            ? snapshot
-              ? props.csvExport?.(snapshot)
-              : props.csvExport
-                ? null
-                : undefined
-            : props.csvExport
+          props.csvExport &&
+          (props.csvExport.loading ? null : props.csvExport.value)
         }
         requestState={request?.view.kind}
         refresh={
@@ -138,17 +132,16 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
             : undefined
         }
         story={
-          story
+          props.story &&
+          (findings.length
             ? {
-                ...story,
+                findings,
                 title: app.title,
                 scope,
                 dataContext,
                 theme: themeController,
               }
-            : request && props.story
-              ? null
-              : undefined
+            : null)
         }
         aboutData={
           <AboutData
@@ -175,12 +168,12 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
 
   const searchRegion =
     request?.searchControls && props.showSearch !== false ? (
-      <VariableBar
-        className="altertable-variable-searches"
-        aria-label="Search variables"
+      <ControlBar
+        className="altertable-control-searches"
+        aria-label="Search filters"
       >
         {request.searchControls}
-      </VariableBar>
+      </ControlBar>
     ) : null;
   const filterRegion =
     request?.filterControls && props.showFilters !== false
@@ -193,7 +186,6 @@ export function DataAppFrame<Data, Input>(props: DataAppProps<Data, Input>) {
         value={{
           dataContext,
           queries: request?.queries ?? queries,
-          primaryView: request?.view,
         }}
       >
         <AppLayout

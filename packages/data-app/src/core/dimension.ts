@@ -1,11 +1,11 @@
+import type {
+  AppFilter,
+  HistoryMode,
+  FilterPresentation,
+} from './app-filters.ts';
 import { facetSource } from './facets.ts';
 import { invariant } from './invariant.ts';
 import { KEY_SEPARATOR } from './keys.ts';
-import type {
-  AppVariable,
-  HistoryMode,
-  VariablePresentation,
-} from './variables.ts';
 
 export type DimensionValue = string | number;
 export type DimensionMember<T extends DimensionValue = DimensionValue> =
@@ -19,9 +19,9 @@ export type DimensionOption<T extends DimensionValue = DimensionValue> = {
   label: string;
   count?: number;
 };
-export type DimensionSelectionVariable<
+export type DimensionSelectionFilter<
   T extends DimensionValue = DimensionValue,
-> = AppVariable<DimensionSelection<T>, 'dimension'> & {
+> = AppFilter<DimensionSelection<T>, 'dimension'> & {
   readonly optionsSource: 'fixed' | 'query';
   label: string;
   selectionMode: 'single' | 'multiple';
@@ -37,13 +37,22 @@ export type DimensionSelectionVariable<
 };
 
 /** A fixed-option dimension retains its distinction from query-backed facets. */
-export type DimensionVariable<T extends DimensionValue = DimensionValue> =
-  DimensionSelectionVariable<T> & {
+export type DimensionFilter<T extends DimensionValue = DimensionValue> =
+  DimensionSelectionFilter<T> & {
     readonly optionsSource: 'fixed';
     readonly [facetSource]?: never;
   };
 
 const allSelection: DimensionSelection<never> = { kind: 'all' };
+
+/** Selections are equal when they keep the same members, in any order. */
+function selectionKey(value: DimensionSelection) {
+  return value.kind === 'all'
+    ? 'all'
+    : [value.kind, ...value.members.map(dimensionMemberKey).sort()].join(
+        KEY_SEPARATOR
+      );
+}
 
 export function dimensionMemberKey(member: DimensionMember) {
   return member.kind === 'missing'
@@ -57,14 +66,19 @@ export type DimensionSettings = {
   allowMissing?: boolean;
   allowExclusion?: boolean;
   history?: HistoryMode;
-  presentation?: VariablePresentation;
+  presentation?: FilterPresentation;
 } & (
   | { selectionMode: 'single'; maxSelected?: 1 }
   | { selectionMode: 'multiple'; maxSelected?: number }
 );
 
 export type DimensionFilterSettings<T extends DimensionValue> =
-  DimensionSettings & { valueType: T extends number ? 'number' : 'string' };
+  DimensionSettings & {
+    valueType: T extends number ? 'number' : 'string';
+    /** The selection before readers change it, such as paid orders only. Clearing
+     * filters still returns to every member. Defaults to `{ kind: 'all' }`. */
+    defaultValue?: DimensionSelection<NoInfer<T>>;
+  };
 
 export type DimensionFilterOptions<T extends DimensionValue> =
   DimensionFilterSettings<T> & {
@@ -75,13 +89,13 @@ export type DimensionFilterOptions<T extends DimensionValue> =
 /** A bounded categorical filter with app-owned fixed options. */
 export function dimensionFilter<const T extends string>(
   config: DimensionFilterOptions<T>
-): DimensionVariable<T>;
+): DimensionFilter<T>;
 export function dimensionFilter<const T extends number>(
   config: DimensionFilterOptions<T>
-): DimensionVariable<T>;
+): DimensionFilter<T>;
 export function dimensionFilter<const T extends DimensionValue>(
   config: DimensionFilterOptions<T>
-): DimensionVariable<T> {
+): DimensionFilter<T> {
   return { ...createDimensionFilter(config), optionsSource: 'fixed' };
 }
 
@@ -91,7 +105,7 @@ export function createDimensionFilter<const T extends DimensionValue>(
     options: readonly DimensionOption<T>[];
   },
   dynamic = false
-): DimensionSelectionVariable<T> {
+): DimensionSelectionFilter<T> {
   const { key, label, selectionMode, valueType } = config;
   const options = config.options ?? [];
   const optionKeys = options.map(option =>
@@ -124,7 +138,8 @@ export function createDimensionFilter<const T extends DimensionValue>(
     'Dimension selection limit is invalid.'
   );
   const allowMissing = config.allowMissing ?? false;
-  const defaultValue = allSelection;
+  const defaultValue: DimensionSelection<T> =
+    config.defaultValue ?? allSelection;
 
   function validMember(member: DimensionMember<T>): boolean {
     if (!member || typeof member !== 'object') return false;
@@ -155,15 +170,23 @@ export function createDimensionFilter<const T extends DimensionValue>(
     return new Set(ids).size === ids.length;
   }
 
+  invariant(valid(defaultValue), `Invalid default selection for ${label}.`);
+
+  /** The default selection has no URL value; every member is explicit when it differs. */
   function encode(value: DimensionSelection<T>) {
+    if (same(value, defaultValue)) return null;
     return value.kind === 'all'
-      ? null
+      ? JSON.stringify({ kind: 'all' })
       : JSON.stringify({
           kind: value.kind,
           members: value.members.map(member =>
             member.kind === 'missing' ? ['m'] : ['v', member.value]
           ),
         });
+  }
+
+  function same(left: DimensionSelection<T>, right: DimensionSelection<T>) {
+    return selectionKey(left) === selectionKey(right);
   }
 
   function parse(raw: string | null): DimensionSelection<T> {
@@ -174,6 +197,7 @@ export function createDimensionFilter<const T extends DimensionValue>(
       const tokens = Array.isArray(parsed)
         ? { kind: 'include', members: parsed }
         : parsed;
+      if (tokens?.kind === 'all') return allSelection;
       if (!tokens || !Array.isArray(tokens.members)) return defaultValue;
       const value = {
         kind: tokens.kind,
@@ -210,9 +234,7 @@ export function createDimensionFilter<const T extends DimensionValue>(
     clearValue: allSelection,
     history: config.history ?? 'push',
     valid,
-    same(left, right) {
-      return encode(left) === encode(right);
-    },
+    same,
     read(params) {
       return parse(params.get(key));
     },
@@ -240,7 +262,7 @@ export function createDimensionFilter<const T extends DimensionValue>(
 /** Server-side parser; call from the operation input parser before building SQL. */
 export function parseDimensionSelection<T extends DimensionValue>(
   value: unknown,
-  filter: DimensionSelectionVariable<T>
+  filter: DimensionSelectionFilter<T>
 ): DimensionSelection<T> {
   invariant(
     filter.valid(value as DimensionSelection<T>),
@@ -253,7 +275,7 @@ export function parseDimensionSelection<T extends DimensionValue>(
 /** Validate bounded facet results before showing them in a picker. */
 export function parseFacetOptions<T extends DimensionValue>(
   value: unknown,
-  filter: DimensionSelectionVariable<T>
+  filter: DimensionSelectionFilter<T>
 ): DimensionOption<T>[] {
   invariant(
     Array.isArray(value) && value.length <= 200,

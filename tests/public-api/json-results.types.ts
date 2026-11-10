@@ -1,14 +1,9 @@
 import { defineDataApp } from '@altertable/data-app';
 import { createDataClient } from '@altertable/data-app/client';
-import {
-  defineOperation,
-  parseEmptyInput,
-} from '@altertable/data-app/contract';
+import { defineOperation } from '@altertable/data-app/contract';
 
 const definition = {
   queries: {},
-  input: parseEmptyInput,
-  checks: [{}] as const,
   policy: { maxQueryRows: 1, maxDurationMs: 1000 },
 };
 const app = defineDataApp({
