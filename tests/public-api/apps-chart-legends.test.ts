@@ -112,6 +112,23 @@ test('focus removes dots from excluded line series', async ({ page }) => {
   await expect.poll(() => dots.count()).toBe(4);
 });
 
+test('first legend click does not activate a plot tooltip', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Response time across twelve services',
+    exact: true,
+  });
+  const api = chart.getByRole('button', { name: 'API', exact: true });
+  await api.click();
+  await expect.poll(() => api.getAttribute('aria-pressed')).toBe('true');
+  await expect.poll(() => chart.getByRole('tooltip').count()).toBe(0);
+  await expect
+    .poll(() => chart.locator('.recharts-active-dot').count())
+    .toBe(0);
+});
+
 test('legend keyboard controls focus and restore series', async ({ page }) => {
   await page.goto('/chart-legends');
   const chart = page.getByRole('region', {

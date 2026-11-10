@@ -124,7 +124,7 @@ export function ChartLine<Row = unknown, Value = number | null>({
               : dot
         }
         activeDot={
-          legend.hidden
+          legend.hidden || legend.inspectingLegend
             ? false
             : activeDot === undefined || activeDot === true
               ? ({ cx, cy }) => (
@@ -178,7 +178,7 @@ export function ChartArea<Row = unknown, Value = number | null>({
               : dot
         }
         activeDot={
-          legend.hidden
+          legend.hidden || legend.inspectingLegend
             ? false
             : activeDot === undefined || activeDot === true
               ? ({ cx, cy }) => (
@@ -354,6 +354,7 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
       content={content => (
         <ChartTooltipContent
           {...content}
+          active={legendInteraction?.hoveredKey ? false : content.active}
           payload={(interaction?.isPointerInspection &&
           interaction.seriesCount !== 1 &&
           props.shared !== true

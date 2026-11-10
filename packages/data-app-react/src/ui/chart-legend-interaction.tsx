@@ -35,6 +35,7 @@ export function useChartLegendSeries(id: unknown, dataKey: unknown) {
   const interaction = useContext(ChartLegendInteractionContext);
   const key = chartLegendSeriesKey(id, dataKey);
   return {
+    inspectingLegend: !!interaction?.hoveredKey,
     hidden: !!(
       key &&
       interaction?.focusedKeys &&

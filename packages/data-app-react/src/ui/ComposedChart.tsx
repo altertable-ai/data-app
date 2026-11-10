@@ -163,6 +163,9 @@ function applyNativeLegendInteraction(
       ...(excluded && (child.type === NativeLine || child.type === NativeArea)
         ? { dot: false, activeDot: false }
         : {}),
+      ...(hoveredKey && (child.type === NativeLine || child.type === NativeArea)
+        ? { activeDot: false }
+        : {}),
     });
   });
 }
