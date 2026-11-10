@@ -340,11 +340,24 @@ test('extracts the Finding exploration declaration', async () => {
   expect(result.manifest).toMatchObject({
     title: 'Sample finding',
     scope: { organization: 'demo', environment: 'sample' },
+    // One query per widget.
     queries: {
-      samples: {
+      sampleTotal: { params: { period: { type: 'dateTimeRange' } } },
+      samplesOverTime: {
         params: {
-          start: { type: 'string', defaultValue: '2026-03-09T00:00:00Z' },
-          end: { type: 'string', defaultValue: '2026-03-16T00:00:00Z' },
+          period: { type: 'dateTimeRange' },
+          grain: { type: 'string', defaultValue: 'day' },
+        },
+      },
+      samplesByMember: {
+        params: {
+          period: { type: 'dateTimeRange' },
+          breakdown: { type: 'string', defaultValue: 'segment' },
+        },
+      },
+      sampleRows: {
+        params: {
+          period: { type: 'dateTimeRange' },
           grain: { type: 'string', defaultValue: 'day' },
           breakdown: { type: 'string', defaultValue: 'segment' },
         },

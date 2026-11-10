@@ -6,7 +6,6 @@ import {
 
 // Declare each filter once in this browser-safe module: operations read them on
 // the server, and the browser client renders their controls.
-
 const calendar = defineDateRangeContract({
   minDate: '2026-01-05',
   maxDate: '2026-03-29',
@@ -47,5 +46,8 @@ const breakdown = displayChoice({
 
 /** The filters each operation reads. */
 export const operationFilters = {
-  samples: { period, grain, breakdown },
+  sampleTotal: { period },
+  samplesOverTime: { period, grain },
+  samplesByMember: { period, breakdown },
+  sampleRows: { period, grain, breakdown },
 };
