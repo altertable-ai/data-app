@@ -247,6 +247,63 @@ function LegendIdentityExample({ kind }: { kind: LegendKind }) {
   );
 }
 
+function DynamicLegendExample() {
+  const [showAlpha, setShowAlpha] = useState(true);
+  return (
+    <>
+      <Button onClick={() => setShowAlpha(false)}>Remove Alpha series</Button>
+      <ComposedChart
+        data={[
+          { x: 0, alpha: 10, beta: 20, gamma: 30 },
+          { x: 1, alpha: 15, beta: 25, gamma: 35 },
+        ]}
+        ariaLabel="Dynamic legend plot"
+      >
+        <ComposedChart.XAxis dataKey="x" type="number" />
+        <ComposedChart.YAxis />
+        <ComposedChart.Tooltip
+          shared
+          content={({ active, payload }) =>
+            active && payload.length ? (
+              <div role="tooltip">
+                {payload.map(entry => String(entry.name)).join(', ')}
+              </div>
+            ) : null
+          }
+        />
+        {showAlpha && <ComposedChart.Line dataKey="alpha" name="Alpha" />}
+        <ComposedChart.Line dataKey="beta" name="Beta" />
+        <ComposedChart.Line dataKey="gamma" name="Gamma" />
+        <ComposedChart.Legend />
+      </ComposedChart>
+    </>
+  );
+}
+
+function DynamicFunnelExample() {
+  const [showFree, setShowFree] = useState(true);
+  return (
+    <>
+      <Button onClick={() => setShowFree(false)}>Remove Free plan</Button>
+      <FunnelChart
+        ariaLabel="Dynamic funnel plot"
+        unit="users"
+        steps={[
+          { id: 'visit', label: 'Visited' },
+          { id: 'signup', label: 'Signed up' },
+        ]}
+        series={[
+          ...(showFree
+            ? [{ id: 'free', label: 'Free plan', values: [1000, 600] }]
+            : []),
+          { id: 'paid', label: 'Paid plan', values: [500, 400] },
+          { id: 'enterprise', label: 'Enterprise plan', values: [200, 180] },
+        ]}
+      />
+    </>
+  );
+}
+
 // Keep large-series rendering cases out of the public gallery.
 createRoot(document.getElementById('root')!).render(
   <Stack>
@@ -610,6 +667,18 @@ createRoot(document.getElementById('root')!).render(
           <ComposedChart.Line dataKey="delta" name="Delta" />
           <ComposedChart.Legend />
         </ComposedChart>
+      </Example>
+      <Example
+        name="Dynamic legend focus"
+        description="Removing a focused series reconciles the remaining legend."
+      >
+        <DynamicLegendExample />
+      </Example>
+      <Example
+        name="Dynamic funnel focus"
+        description="Removing a focused population reconciles the remaining legend."
+      >
+        <DynamicFunnelExample />
       </Example>
       <Example
         name="LineChart — long labels"

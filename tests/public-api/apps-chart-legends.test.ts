@@ -127,6 +127,11 @@ test('first legend click does not activate a plot tooltip', async ({
   await expect
     .poll(() => chart.locator('.recharts-active-dot').count())
     .toBe(0);
+  await page.mouse.move(20, 20);
+  await expect.poll(() => chart.getByRole('tooltip').count()).toBe(0);
+  await expect
+    .poll(() => chart.locator('.recharts-active-dot').count())
+    .toBe(0);
 });
 
 test('legend keyboard controls focus and restore series', async ({ page }) => {
@@ -218,6 +223,91 @@ test('four series exit focus when all are re-enabled', async ({ page }) => {
       .toBe('false');
   }
   expect((await chart.boundingBox())!.height).toBe(height);
+});
+
+test('removing a focused series reconciles focus with current series', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const example = page.getByRole('region', {
+    name: 'Dynamic legend focus basic example',
+    exact: true,
+  });
+  const chart = example.getByRole('region', {
+    name: 'Dynamic legend plot',
+    exact: true,
+  });
+  await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(2);
+  await example.getByRole('button', { name: 'Remove Alpha series' }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  const beta = chart.getByRole('button', { name: 'Beta', exact: true });
+  const gamma = chart.getByRole('button', { name: 'Gamma', exact: true });
+  await beta.click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(1);
+  await gamma.click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  await expect.poll(() => beta.getAttribute('aria-pressed')).toBe('false');
+  await expect.poll(() => gamma.getAttribute('aria-pressed')).toBe('false');
+});
+
+test('custom tooltip content receives only focused series', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Dynamic legend plot',
+    exact: true,
+  });
+  await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect.poll(() => chart.getByRole('tooltip').count()).toBe(0);
+  const plot = chart.getByRole('application');
+  await plot.scrollIntoViewIfNeeded();
+  const bounds = await plot.boundingBox();
+  await page.mouse.move(
+    bounds!.x + bounds!.width / 2,
+    bounds!.y + bounds!.height / 2
+  );
+  const tooltip = chart.getByRole('tooltip');
+  await expect.poll(() => tooltip.textContent()).toContain('Alpha');
+  expect(await tooltip.textContent()).not.toContain('Beta');
+  expect(await tooltip.textContent()).not.toContain('Gamma');
+});
+
+test('funnel focus follows changing populations', async ({ page }) => {
+  await page.goto('/chart-legends');
+  const example = page.getByRole('region', {
+    name: 'Dynamic funnel focus basic example',
+    exact: true,
+  });
+  const chart = example.getByRole('region', {
+    name: 'Dynamic funnel plot',
+    exact: true,
+  });
+  await chart.getByRole('button', { name: /Free plan/ }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(2);
+  await example.getByRole('button', { name: 'Remove Free plan' }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  await chart.getByRole('button', { name: /Paid plan/ }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(1);
+  await chart.getByRole('button', { name: /Enterprise plan/ }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
 });
 
 test('funnel and retention legends focus their plotted populations', async ({

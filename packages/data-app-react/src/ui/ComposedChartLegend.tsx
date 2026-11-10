@@ -1,5 +1,10 @@
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { useContext, useState, type ComponentProps } from 'react';
+import {
+  useContext,
+  useLayoutEffect,
+  useState,
+  type ComponentProps,
+} from 'react';
 import { Legend, type LegendPayload } from 'recharts';
 
 import {
@@ -93,6 +98,9 @@ function LegendContent({
   const selectableKeys = itemKeys.filter(
     (_, index) => payload[index]?.type !== 'none'
   );
+  useLayoutEffect(() => {
+    interaction?.reconcile(selectableKeys);
+  });
   const canInteract =
     interactive &&
     !onClick &&

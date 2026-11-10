@@ -12,17 +12,31 @@ export function chartLegendSeriesKey(id: unknown, dataKey: unknown) {
 export type ChartLegendInteraction = {
   hoveredKey: string | null;
   focusedKeys: ReadonlySet<string> | null;
+  suppressPlotInspection: boolean;
   hover: (key: string | null) => void;
   toggle: (key: string, keys: readonly string[]) => void;
+  reconcile: (keys: readonly string[]) => void;
 };
+
+export function reconcileLegendFocus(
+  focused: ReadonlySet<string> | null,
+  keys: readonly string[]
+) {
+  if (!focused) return null;
+  const available = new Set(keys);
+  const next = new Set([...focused].filter(key => available.has(key)));
+  if (next.size === 0 || next.size === available.size) return null;
+  return next.size === focused.size ? focused : next;
+}
 
 export function toggleLegendFocus(
   focused: ReadonlySet<string> | null,
   key: string,
   keys: readonly string[]
 ) {
-  if (!focused) return new Set([key]);
-  const next = new Set(focused);
+  const current = reconcileLegendFocus(focused, keys);
+  if (!current) return new Set([key]);
+  const next = new Set(current);
   if (next.has(key)) next.delete(key);
   else next.add(key);
   return next.size === 0 || next.size === new Set(keys).size ? null : next;
@@ -35,7 +49,7 @@ export function useChartLegendSeries(id: unknown, dataKey: unknown) {
   const interaction = useContext(ChartLegendInteractionContext);
   const key = chartLegendSeriesKey(id, dataKey);
   return {
-    inspectingLegend: !!interaction?.hoveredKey,
+    inspectingLegend: !!interaction?.suppressPlotInspection,
     hidden: !!(
       key &&
       interaction?.focusedKeys &&
@@ -55,11 +69,7 @@ export function useChartLegendFocus(ids: readonly string[]) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [storedFocusedIds, setStoredFocusedIds] =
     useState<ReadonlySet<string> | null>(null);
-  const available = new Set(ids);
-  const visibleIds =
-    storedFocusedIds &&
-    new Set([...storedFocusedIds].filter(id => available.has(id)));
-  const focusedIds = visibleIds?.size ? visibleIds : null;
+  const focusedIds = reconcileLegendFocus(storedFocusedIds, ids);
   function toggle(id: string) {
     setStoredFocusedIds(current => toggleLegendFocus(current, id, ids));
   }

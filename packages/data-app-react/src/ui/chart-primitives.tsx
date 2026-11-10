@@ -1,7 +1,13 @@
 import { useDateAxisLabel, useDateAxisBar } from './chart-date-axis.tsx';
 export { ChartXAxis } from './chart-date-axis.tsx';
 import { formatMetric, formatNumber } from '@altertable/data-app/format';
-import { useContext, useLayoutEffect, type ComponentProps } from 'react';
+import {
+  cloneElement,
+  isValidElement,
+  useContext,
+  useLayoutEffect,
+  type ComponentProps,
+} from 'react';
 import {
   Area,
   Dot,
@@ -14,6 +20,7 @@ import {
   CartesianGrid,
   Tooltip,
   DefaultTooltipContent,
+  type TooltipContentProps,
   type BarProps,
   type LineProps,
   type AreaProps,
@@ -348,30 +355,10 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
   const dateLabel = useDateAxisLabel(props.axisId);
   const interaction = useContext(ChartInteractionContext);
   const legendInteraction = useContext(ChartLegendInteractionContext);
+  const { content: authoredContent, ...tooltipProps } = props;
   return (
     <Tooltip
       labelFormatter={dateLabel}
-      content={content => (
-        <ChartTooltipContent
-          {...content}
-          active={legendInteraction?.hoveredKey ? false : content.active}
-          payload={(interaction?.isPointerInspection &&
-          interaction.seriesCount !== 1 &&
-          props.shared !== true
-            ? content.payload.filter(
-                entry => entry.graphicalItemId === interaction.activeSeriesId
-              )
-            : content.payload
-          ).filter(entry => {
-            if (!legendInteraction?.focusedKeys) return true;
-            const key = chartLegendSeriesKey(
-              entry.graphicalItemId,
-              entry.dataKey
-            );
-            return key == null || legendInteraction.focusedKeys.has(key);
-          })}
-        />
-      )}
       position={
         interaction?.isPointerInspection && interaction.activePoint
           ? { y: interaction.activePoint.y }
@@ -379,7 +366,32 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
       }
       cursor={false}
       isAnimationActive={false}
-      {...props}
+      {...tooltipProps}
+      content={content => {
+        if (legendInteraction?.suppressPlotInspection) return null;
+        const payload = (
+          interaction?.isPointerInspection &&
+          interaction.seriesCount !== 1 &&
+          props.shared !== true
+            ? content.payload.filter(
+                entry => entry.graphicalItemId === interaction.activeSeriesId
+              )
+            : content.payload
+        ).filter(entry => {
+          if (!legendInteraction?.focusedKeys) return true;
+          const key = chartLegendSeriesKey(
+            entry.graphicalItemId,
+            entry.dataKey
+          );
+          return key == null || legendInteraction.focusedKeys.has(key);
+        });
+        const filtered: TooltipContentProps = { ...content, payload };
+        if (typeof authoredContent === 'function')
+          return authoredContent(filtered);
+        if (isValidElement<TooltipContentProps>(authoredContent))
+          return cloneElement(authoredContent, filtered);
+        return <ChartTooltipContent {...filtered} />;
+      }}
     />
   );
 }

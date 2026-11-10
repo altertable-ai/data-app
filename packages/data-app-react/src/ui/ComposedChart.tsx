@@ -40,6 +40,7 @@ import {
 import {
   ChartLegendInteractionContext,
   chartLegendSeriesKey,
+  reconcileLegendFocus,
   toggleLegendFocus,
 } from './chart-legend-interaction.tsx';
 import {
@@ -109,6 +110,7 @@ function applyNativeLegendInteraction(
   children: ReactNode,
   focusedKeys: ReadonlySet<string> | null,
   hoveredKey: string | null,
+  suppressPlotInspection: boolean,
   path = 'root'
 ): ReactNode {
   return Children.map(children, (child, index) => {
@@ -120,6 +122,7 @@ function applyNativeLegendInteraction(
           props.children,
           focusedKeys,
           hoveredKey,
+          suppressPlotInspection,
           `${path}-${child.key ?? index}`
         ),
       } as { children: ReactNode });
@@ -163,7 +166,8 @@ function applyNativeLegendInteraction(
       ...(excluded && (child.type === NativeLine || child.type === NativeArea)
         ? { dot: false, activeDot: false }
         : {}),
-      ...(hoveredKey && (child.type === NativeLine || child.type === NativeArea)
+      ...(suppressPlotInspection &&
+      (child.type === NativeLine || child.type === NativeArea)
         ? { activeDot: false }
         : {}),
     });
@@ -227,6 +231,7 @@ function ComposedChartRoot<Row>({
       resetPointerInspection();
       return false;
     }
+    setSuppressPlotInspection(false);
     setIsPointerInspection(true);
     // Direct-hit series do not need pointer coordinates to select a sample.
     if (hoveredSeriesId != null && !points.has(hoveredSeriesId)) {
@@ -276,10 +281,15 @@ function ComposedChartRoot<Row>({
     };
   }, []);
   const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  const [suppressPlotInspection, setSuppressPlotInspection] = useState(false);
   const [focusedLegendKeys, setFocusedLegendKeys] =
     useState<ReadonlySet<string> | null>(null);
+  const reconcileLegendKeys = useCallback((keys: readonly string[]) => {
+    setFocusedLegendKeys(current => reconcileLegendFocus(current, keys));
+  }, []);
   const toggleLegendKey = useCallback(
     (key: string, keys: readonly string[]) => {
+      setSuppressPlotInspection(true);
       setFocusedLegendKeys(current => toggleLegendFocus(current, key, keys));
     },
     []
@@ -290,8 +300,13 @@ function ComposedChartRoot<Row>({
         value={{
           hoveredKey: legendHoveredKey,
           focusedKeys: focusedLegendKeys,
-          hover: setLegendHoveredKey,
+          suppressPlotInspection,
+          hover: key => {
+            setLegendHoveredKey(key);
+            if (key) setSuppressPlotInspection(true);
+          },
           toggle: toggleLegendKey,
+          reconcile: reconcileLegendKeys,
         }}
       >
         <ChartInteractionContext.Provider
@@ -324,6 +339,12 @@ function ComposedChartRoot<Row>({
               setHasPointerFocus(false);
               resetPointerInspection();
             }}
+            onFocusCapture={event => {
+              const svg = event.currentTarget.querySelector(
+                'svg[role="application"]'
+              );
+              if (svg?.contains(event.target)) setSuppressPlotInspection(false);
+            }}
             onBlurCapture={event => {
               if (!event.currentTarget.contains(event.relatedTarget)) {
                 setHasPointerFocus(false);
@@ -348,7 +369,8 @@ function ComposedChartRoot<Row>({
                   {applyNativeLegendInteraction(
                     children,
                     focusedLegendKeys,
-                    legendHoveredKey
+                    legendHoveredKey,
+                    suppressPlotInspection
                   )}
                 </RechartsComposedChart>
               </ChartDateAxes>
