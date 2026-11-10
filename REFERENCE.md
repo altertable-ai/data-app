@@ -345,7 +345,7 @@ DataAppDefinition.appearance?: AppearanceOptions — Omit to use the standard ap
 DataAppDefinition.dateFormatting?: { locale?: string | undefined; timeZone?: string | undefined; } — Shared date display defaults. Reporting views and individual fields may override the time zone.
 DataAppDefinition.queries: QuerySnapshot<Queries>
 DataAppDefinition.defineDimension: <const Type extends 'string' | 'number'>(config: DimensionSourceConfig<Type> & { source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>>; }; }) => SourceDimensionFilter<...>
-DataAppDefinition.defineOperation: { <Input, Output>(operation: InputOperationDefinition<Input, Output, Queries>): DefinedOperation<Input, Output, Queries>; <const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDefinition<...>): DefinedOperation<...>; } — Parse a destination's own input, such as a record id, and list valid `checks`. Declare the filters the operation reads; its input, checks, and views derive from them.
+DataAppDefinition.defineOperation: { <Input, Output, const Filters extends FilterCollection = {}>(operation: InputOperationDefinition<Input, Output, Queries, Filters>): DefinedOperation<WithFilterInput<Filters, Input>, Output, Queries, ...>; <const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDe… — Parse a destination's own input, such as a record id, and list valid `checks`. Declare `filters` too when it reads the displayed scope.
 DataAppError (class, @altertable/data-app/client)
 DataAppError.code: string
 DataAppError.requestId?: string
@@ -726,11 +726,12 @@ DefinedOperation.checks: readonly [Input, ...Input[]]
 DefinedOperation.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
 DefinedOperation.queryNames: { readonly [Name in keyof Queries & string]: Name; }
 DefinedOperation.filters?: FilterCollection
-defineOperation (function, @altertable/data-app/contract): <Input, Output, const Queries extends QueryDefinitions>(operation: InputOperationDefinition<Input, Output, Queries> & { queries: CheckedQueries<Queries>; }): DefinedOperation<Input, Output, Queries, undefined>; <const Queries extends QueryDefinitions, const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDefinition<Filters, Output, Queries> & { queries: CheckedQueries<Queries>; }): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>
-defineOperation.operation.input: (value: unknown) => Input
-defineOperation.operation.checks: readonly [Input, ...Input[]] — Representative valid inputs; each must pass `input`.
+defineOperation (function, @altertable/data-app/contract): <Input, Output, const Queries extends QueryDefinitions, const Filters extends FilterCollection = {}>(operation: InputOperationDefinition<Input, Output, Queries, Filters> & { queries: CheckedQueries<Queries>; }): DefinedOperation<WithFilterInput<Filters, Input>, Output, Queries, keyof Filters extend…; <const Queries extends QueryDefinitions, const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDefinition<Filters, Output, Queries> & { queries: CheckedQueries<Queries>; }): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>
+defineOperation.operation.filters?: CheckedOperationFilters<Filters> — Filters the operation reads beside its own input; they are parsed for it.
+defineOperation.operation.input: (value: unknown) => Input — Parses the operation's own fields, without the filters.
+defineOperation.operation.checks: readonly [Input, ...Input[]] — Representative valid own inputs; each must pass `input`.
 defineOperation.operation.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
-defineOperation.operation.run: OperationRun<Input, Output, Queries>
+defineOperation.operation.run: OperationRun<WithFilterInput<Filters, Input>, Output, Queries>
 defineOperation.operation.queries: CheckedQueries<Queries>
 defineOperation.operation.filters?: CheckedOperationFilters<Filters> — The filters `run` reads. Omit for an operation without inputs.
 defineOperation.operation.run: OperationRun<FilterInput<Filters>, Output, Queries>
@@ -1024,11 +1025,12 @@ injectDataAppStyles (function, @altertable/data-app-react, @altertable/data-app-
 injectDataAppStyles.options.document?: Document — Defaults to the current browser document.
 injectDataAppStyles.options.nonce?: string — Nonce permitted by the document's style-src CSP.
 InputOf (type, @altertable/data-app/client): <T> = T extends { input: (value: unknown) => infer Input; } ? Input : never
-InputOperationDefinition (type, @altertable/data-app/contract): <Input, Output, Queries> — An operation with its own input, such as a detail destination's record id.
-InputOperationDefinition.input: (value: unknown) => Input
-InputOperationDefinition.checks: readonly [Input, ...Input[]] — Representative valid inputs; each must pass `input`.
+InputOperationDefinition (type, @altertable/data-app/contract): <Input, Output, Queries, Filters> — An operation with its own input, such as a detail destination's record id. It may also read filters, such as the displayed scope it lists records for.
+InputOperationDefinition.filters?: CheckedOperationFilters<Filters> — Filters the operation reads beside its own input; they are parsed for it.
+InputOperationDefinition.input: (value: unknown) => Input — Parses the operation's own fields, without the filters.
+InputOperationDefinition.checks: readonly [Input, ...Input[]] — Representative valid own inputs; each must pass `input`.
 InputOperationDefinition.policy: { maxQueryRows: number; maxDurationMs: number; maxResponseBytes?: number | undefined; }
-InputOperationDefinition.run: OperationRun<Input, Output, Queries>
+InputOperationDefinition.run: OperationRun<WithFilterInput<Filters, Input>, Output, Queries>
 isPlainKeyEvent (function, @altertable/data-app-react/ui): (event: KeyEvent, options: {…}): boolean — Keep local key actions separate from shortcuts and IME composition. Pass React's nativeEvent.
 isPlainKeyEvent.event.…: plus props inherited from built-in
 isPlainKeyEvent.options.allowShift?: boolean
@@ -1803,4 +1805,5 @@ WidgetStatus.kind: 'updating' [variant 2 of 3]
 WidgetStatus.message?: string [variants 2, 3 of 3]
 WidgetStatus.kind: 'error' [variant 3 of 3]
 WidgetStatus.onRetry?: (() => void) [variant 3 of 3]
+WithFilterInput (type, @altertable/data-app/contract): <Filters, Input> = keyof Filters extends never ? Input : FilterInput<Filters> & Input — The full input of an operation with its own fields and optional filters.
 ```

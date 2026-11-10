@@ -96,9 +96,11 @@ type FiltersOf<Operation> = Operation extends {
  * Operations that parse their own input are destinations for `defineDetailView`. */
 type ViewOperationName<Operations extends DataOperations> = {
   [Name in keyof Operations & string]: Operations[Name] extends {
-    filters: FilterCollection;
+    filters: infer Filters extends FilterCollection;
   }
-    ? Name
+    ? [FilterInput<Filters>] extends [InputOf<Operations[Name]>]
+      ? Name
+      : never
     : [InputOf<Operations[Name]>] extends [Record<string, never>]
       ? Name
       : never;

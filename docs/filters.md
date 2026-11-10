@@ -50,8 +50,9 @@ function App() {
 `<DataApp>` renders one control for every filter any of the client's operations
 reads. Share the same constant across operations: two different filters under
 one name fail. URL keys must be unique. Omit `filters` for an operation without
-inputs. An operation with its own input, such as a detail record ID, keeps
-`input` and `checks` and cannot also declare `filters`.
+inputs. An operation with its own fields, such as a detail record ID, adds an
+`input` parser and `checks` for those fields only; it still lists the displayed
+filters it reads in `filters`, which parse themselves.
 
 A view's scope defaults to its reporting period, then the label and value of each
 filter narrowed from its unrestricted value, such as `group Alpha`, or

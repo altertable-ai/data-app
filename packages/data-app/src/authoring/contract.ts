@@ -341,19 +341,29 @@ export type FilterOperationDefinition<
   run: OperationRun<FilterInput<Filters>, Output, Queries>;
 };
 
-/** An operation with its own input, such as a detail destination's record id. */
+/** An operation with its own input, such as a detail destination's record id. It may
+ * also read filters, such as the displayed scope it lists records for. */
 export type InputOperationDefinition<
   Input,
   Output,
   Queries extends QueryDefinitions,
+  Filters extends FilterCollection = {},
 > = {
+  /** Filters the operation reads beside its own input; they are parsed for it. */
+  filters?: CheckedOperationFilters<Filters>;
+  /** Parses the operation's own fields, without the filters. */
   input: (value: unknown) => Input;
-  /** Representative valid inputs; each must pass `input`. */
+  /** Representative valid own inputs; each must pass `input`. */
   checks: readonly [Input, ...Input[]];
-  filters?: never;
   policy: OperationPolicy;
-  run: OperationRun<Input, Output, Queries>;
+  run: OperationRun<WithFilterInput<Filters, Input>, Output, Queries>;
 };
+
+/** The full input of an operation with its own fields and optional filters. */
+export type WithFilterInput<
+  Filters extends FilterCollection,
+  Input,
+> = keyof Filters extends never ? Input : FilterInput<Filters> & Input;
 
 export type DefinedOperation<
   Input,
@@ -370,11 +380,17 @@ export function defineOperation<
   Input,
   Output,
   const Queries extends QueryDefinitions,
+  const Filters extends FilterCollection = {},
 >(
-  operation: InputOperationDefinition<Input, Output, Queries> & {
+  operation: InputOperationDefinition<Input, Output, Queries, Filters> & {
     queries: CheckedQueries<Queries>;
   }
-): DefinedOperation<Input, Output, Queries>;
+): DefinedOperation<
+  WithFilterInput<Filters, Input>,
+  Output,
+  Queries,
+  keyof Filters extends never ? undefined : Filters
+>;
 export function defineOperation<
   const Queries extends QueryDefinitions,
   const Filters extends FilterCollection = {},
@@ -451,31 +467,56 @@ export function defineOperation(
   return defined;
 }
 
-/** Filter operations derive their parser and checks; others supply both. */
+/** Filters parse themselves; an operation's own `input` parses only its other fields. */
 function operationInputContract(
   operation:
     | FilterOperationDefinition<FilterCollection, unknown, QueryDefinitions>
     | InputOperationDefinition<unknown, unknown, QueryDefinitions>
 ): Pick<DataOperation<unknown, unknown>, 'input' | 'checks' | 'filters'> {
-  if (operation.input) {
-    invariant(
-      !operation.filters,
-      'An operation reads filters or parses its own input, not both.'
-    );
-    const { input, checks } = operation;
-    invariant(
-      Array.isArray(checks) && checks.length > 0,
-      'An operation with its own input needs check inputs.'
-    );
-    for (const check of checks) input(check);
-    return { input, checks };
-  }
   const filters = defineOperationFilters(operation.filters ?? {});
-  return {
-    filters,
-    input: value => parseFilterInput(filters, value),
-    checks: [defaultFilterInput(filters)],
-  };
+  const defaults = defaultFilterInput(filters);
+  if (!operation.input)
+    return {
+      filters,
+      input: value => parseFilterInput(filters, value),
+      checks: [defaults],
+    };
+  const parseOwn = operation.input;
+  invariant(
+    Array.isArray(operation.checks) && operation.checks.length > 0,
+    'An operation with its own input needs check inputs.'
+  );
+  if (!Object.keys(filters).length) {
+    for (const check of operation.checks) parseOwn(check);
+    return { input: parseOwn, checks: operation.checks };
+  }
+  function input(value: unknown) {
+    invariant(
+      value && typeof value === 'object' && !Array.isArray(value),
+      'Expected operation input.'
+    );
+    const own: Record<string, unknown> = {};
+    const selected: Record<string, unknown> = {};
+    for (const [name, field] of Object.entries(value))
+      (Object.hasOwn(filters, name) ? selected : own)[name] = field;
+    const parsed = parseOwn(own);
+    invariant(
+      !!parsed && typeof parsed === 'object',
+      'Expected parsed input object.'
+    );
+    for (const name of Object.keys(parsed))
+      invariant(
+        !Object.hasOwn(filters, name),
+        `Input field ${name} is also a filter; the filter parses it.`
+      );
+    return { ...parseFilterInput(filters, selected), ...parsed };
+  }
+  const checks = operation.checks.map(check => ({
+    ...defaults,
+    ...(check as object),
+  })) as unknown as readonly [unknown, ...unknown[]];
+  for (const check of checks) input(check);
+  return { filters, input, checks };
 }
 
 /** The built-in connection operation shares one contract with setup clients. */

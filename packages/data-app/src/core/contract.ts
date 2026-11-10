@@ -71,6 +71,7 @@ export type {
   DefinedOperation,
   FilterOperationDefinition,
   InputOperationDefinition,
+  WithFilterInput,
 } from '../authoring/contract.ts';
 export type {
   Lakehouse,

@@ -305,20 +305,57 @@ test('operation declarations reject a second date filter and a parser beside fil
       },
     })
   ).toThrow('An operation reads at most one date filter.');
-  // JavaScript callers can declare both input contracts.
-  const both = {
+  // The filter parses its own field; the operation's parser cannot claim it too.
+  expect(() =>
+    defineOperation({
+      queries: {},
+      filters: { group: groupFilter() },
+      input: (value: unknown) => ({ group: String(value) }),
+      checks: [{ group: 'all' }],
+      policy,
+      async run() {
+        return 1;
+      },
+    })
+  ).toThrow('Input field group is also a filter; the filter parses it.');
+});
+
+test('a destination reads the displayed filters beside its own record key', async () => {
+  const group = groupFilter();
+  const records = defineOperation({
     queries: {},
-    filters: { group: groupFilter() },
-    input: (value: unknown) => value,
-    checks: [{ group: 'all' }],
-    policy,
-    async run() {
-      return 1;
+    filters: { group },
+    input(value: unknown) {
+      const { recordId } = value as { recordId?: unknown };
+      if (typeof recordId !== 'string') throw new Error('Expected a record.');
+      return { recordId };
     },
-  };
-  expect(() => defineOperation(both as never)).toThrow(
-    'An operation reads filters or parses its own input, not both.'
-  );
+    checks: [{ recordId: 'r1' }],
+    policy: { maxQueryRows: 1, maxDurationMs: 1000 },
+    async run(_context, input) {
+      return `${input.group}:${input.recordId}`;
+    },
+  });
+  expect(records.checks).toEqual([{ group: 'all', recordId: 'r1' }]);
+  const client = createDataClient({
+    operations: { records },
+    lakehouse: {
+      async queryAll() {
+        return { columns: [], rows: [] };
+      },
+    },
+  });
+  expect(client.filters).toEqual({ records: { group } });
+  await expect(
+    client.query('records', { group: 'alpha', recordId: 'r2' })
+  ).resolves.toMatchObject({ data: 'alpha:r2' });
+  for (const invalid of [
+    { group: 'missing', recordId: 'r2' },
+    { group: 'alpha' },
+  ])
+    await expect(
+      client.query('records', invalid as never)
+    ).rejects.toMatchObject({ code: 'invalid_input' });
 });
 
 test('operations sharing a client share one declaration per filter name', () => {

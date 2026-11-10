@@ -61,8 +61,9 @@ const operations = {
 
 The filters validate input and supply the operation's checks; enforce business
 rules in `run()`. Omit `filters` for an operation without inputs. An operation
-with its own input, such as a detail record ID, supplies an `input` parser and
-representative valid `checks` instead. Derive results from `query()` rows
+with its own fields, such as a detail record ID, adds an `input` parser and
+representative valid `checks` for those fields; its `filters` still parse the
+scope it reads. Derive results from `query()` rows
 without duplicate schemas or type assertions; clients and views infer the
 returned type. HTTP results must be JSON-serializable.
 

@@ -7,6 +7,7 @@ import {
   type DefinedOperation,
   type FilterOperationDefinition,
   type InputOperationDefinition,
+  type WithFilterInput,
 } from '../authoring/contract.ts';
 import type { FilterCollection } from './app-filters.ts';
 import type { AppearanceOptions } from './appearance.ts';
@@ -58,10 +59,16 @@ export type DataAppDefinition<
       source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>> };
     }
   ): SourceDimensionFilter<{ string: string; number: number }[Type]>;
-  /** Parse a destination's own input, such as a record id, and list valid `checks`. */
-  defineOperation<Input, Output>(
-    operation: InputOperationDefinition<Input, Output, Queries>
-  ): DefinedOperation<Input, Output, Queries>;
+  /** Parse a destination's own input, such as a record id, and list valid `checks`.
+   * Declare `filters` too when it reads the displayed scope. */
+  defineOperation<Input, Output, const Filters extends FilterCollection = {}>(
+    operation: InputOperationDefinition<Input, Output, Queries, Filters>
+  ): DefinedOperation<
+    WithFilterInput<Filters, Input>,
+    Output,
+    Queries,
+    keyof Filters extends never ? undefined : Filters
+  >;
   /** Declare the filters the operation reads; its input, checks, and views derive from them. */
   defineOperation<
     const Filters extends FilterCollection = {},

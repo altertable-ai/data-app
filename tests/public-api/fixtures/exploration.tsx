@@ -25,7 +25,6 @@ import {
   choiceFilter,
   dimensionFilter,
   displayChoice,
-  parseDimensionSelection,
   searchFilter,
 } from '@altertable/data-app/contract';
 import { Component, useState, type ReactNode } from 'react';
@@ -129,25 +128,12 @@ type Row = {
   revenue: number;
   dimension: 'region' | 'country';
 };
-/** Detail destinations parse their own input: the displayed place scope and a place. */
-function parseOrders(value: unknown) {
-  const input = value as {
-    region?: unknown;
-    country?: unknown;
-    placeId?: unknown;
-    search?: unknown;
-  };
-  if (
-    !input ||
-    (input.placeId !== undefined && typeof input.placeId !== 'string')
-  )
+/** The order details read the displayed place scope as filters and parse their own place. */
+function parsePlace(value: unknown) {
+  const { placeId } = value as { placeId?: unknown };
+  if (placeId !== undefined && typeof placeId !== 'string')
     throw new Error('Invalid place');
-  return {
-    region: parseDimensionSelection(input.region, region),
-    country: parseDimensionSelection(input.country, country),
-    placeId: input.placeId as string | undefined,
-    search: typeof input.search === 'string' ? input.search : '',
-  };
+  return { placeId };
 }
 const operations = {
   sales: app.defineOperation({
@@ -190,8 +176,9 @@ const operations = {
     },
   }),
   orders: app.defineOperation({
-    input: parseOrders,
-    checks: [{ ...defaultFilters, placeId: undefined, search: '' }],
+    filters: { ...filters, search },
+    input: parsePlace,
+    checks: [{ placeId: undefined }, { placeId: 'fr' }],
     policy: { maxQueryRows: 200, maxDurationMs: 10000 },
     async run({ query }, input) {
       await query('orders');

@@ -157,3 +157,32 @@ const conditional = {
 };
 // @ts-expect-error the `segments` options operation is not registered
 createDataClient({ operations: conditional });
+
+// A destination reads the displayed filters beside its own record key.
+const records = {
+  records: app.defineOperation({
+    filters: { group },
+    input: value => value as { recordId: string },
+    checks: [{ recordId: 'r1' }],
+    policy: { maxQueryRows: 1, maxDurationMs: 1 },
+    async run(_context, input) {
+      const scope: 'all' | 'a' = input.group;
+      const recordId: string = input.recordId;
+      return [scope, recordId];
+    },
+  }),
+};
+const recordHooks = createDataHooks(createDataClient({ operations: records }));
+recordHooks.defineView({
+  // @ts-expect-error a view cannot supply the record key
+  operation: 'records',
+  dataContext: context,
+});
+recordHooks.defineDetailView({
+  id: 'record',
+  title: 'Record',
+  operation: 'records',
+  dataContext: context,
+  parseInput: records.records.input,
+  describeInput: input => `${input.group} ${input.recordId}`,
+});
