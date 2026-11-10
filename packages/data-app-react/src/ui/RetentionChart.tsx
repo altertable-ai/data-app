@@ -252,6 +252,9 @@ export function RetentionChart({
           </ComposedChart>
           <ChartLegend
             aria-label={`${ariaLabel} cohorts`}
+            heading={
+              interactiveLegend && cohorts.length > 1 ? 'Cohorts' : undefined
+            }
             action={
               interactiveLegend && cohorts.length > 1 ? (
                 <ChartLegendAllAction
@@ -267,6 +270,8 @@ export function RetentionChart({
                 data-legend-muted={
                   (interactiveLegend &&
                     legendFocus.hoveredId &&
+                    (!legendFocus.focusedIds ||
+                      legendFocus.focusedIds.has(legendFocus.hoveredId)) &&
                     legendFocus.hoveredId !== item.id) ||
                   undefined
                 }

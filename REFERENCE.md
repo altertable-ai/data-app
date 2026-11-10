@@ -166,7 +166,8 @@ ChartLegend.children: ReactNode
 ChartLegend.layout?: 'horizontal' | 'single-row' | 'vertical' — Single-row fits up to four cells before expansion, adapting to available width.
 ChartLegend.align?: 'center' | 'end' | 'start'
 ChartLegend.maxVisibleItems?: number — Optional cell cap, including expansion. Horizontal legends default to two rows.
-ChartLegend.action?: ReactNode — Optional control in a stable toolbar above the legend.
+ChartLegend.heading?: string — Visible label above the legend items.
+ChartLegend.action?: ReactNode — Optional control beside the heading.
 ChartLegend.…: plus props inherited from React
 ChartLegend.Item: (props: ChartLegendItemProps)
 ChartLegend.Marker: (props: ChartLegendMarkerProps)

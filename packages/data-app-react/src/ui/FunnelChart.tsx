@@ -177,6 +177,11 @@ export function FunnelChart({
             <ChartLegend
               aria-label="Funnel series"
               layout="single-row"
+              heading={
+                interactiveLegend && populations.length > 1
+                  ? 'Series'
+                  : undefined
+              }
               action={
                 interactiveLegend && populations.length > 1 ? (
                   <ChartLegendAllAction
@@ -193,6 +198,8 @@ export function FunnelChart({
                   data-legend-muted={
                     (interactiveLegend &&
                       legendFocus.hoveredId &&
+                      (!legendFocus.focusedIds ||
+                        legendFocus.focusedIds.has(legendFocus.hoveredId)) &&
                       legendFocus.hoveredId !== item.id) ||
                     undefined
                   }

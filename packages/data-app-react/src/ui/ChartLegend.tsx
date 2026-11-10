@@ -19,7 +19,9 @@ export type ChartLegendProps = {
   align?: 'start' | 'center' | 'end';
   /** Optional cell cap, including expansion. Horizontal legends default to two rows. */
   maxVisibleItems?: number;
-  /** Optional control in a stable toolbar above the legend. */
+  /** Visible label above the legend items. */
+  heading?: string;
+  /** Optional control beside the heading. */
   action?: ReactNode;
 } & Omit<ComponentPropsWithRef<'ul'>, 'children'>;
 
@@ -52,6 +54,7 @@ function ChartLegendRoot({
   layout = 'horizontal',
   align = 'start',
   maxVisibleItems,
+  heading,
   action,
   className,
   'aria-label': ariaLabel = 'Chart legend',
@@ -65,7 +68,9 @@ function ChartLegendRoot({
     const container = containerRef.current;
     if (!container) return;
     function measure() {
-      const list = containerRef.current?.firstElementChild;
+      const list = containerRef.current?.querySelector(
+        '.altertable-chart-legend'
+      );
       if (list) {
         setColumns(
           getComputedStyle(list).gridTemplateColumns.split(' ').length
@@ -97,8 +102,21 @@ function ChartLegendRoot({
     <div
       ref={containerRef}
       className="altertable-chart-legend-container"
-      data-has-action={!!action || undefined}
+      data-has-heading={!!(heading || action) || undefined}
     >
+      {(heading || action) && (
+        <div className="altertable-chart-legend-header">
+          {heading && (
+            <span
+              className="altertable-chart-legend-heading"
+              aria-hidden="true"
+            >
+              {heading}
+            </span>
+          )}
+          {action}
+        </div>
+      )}
       <ul
         id={listId}
         {...props}
@@ -124,9 +142,6 @@ function ChartLegendRoot({
           </li>
         )}
       </ul>
-      {action && (
-        <div className="altertable-chart-legend-toolbar">{action}</div>
-      )}
     </div>
   );
 }

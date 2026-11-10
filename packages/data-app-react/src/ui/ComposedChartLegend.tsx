@@ -116,6 +116,7 @@ function LegendContent({
             : undefined
       }
       maxVisibleItems={maxVisibleItems}
+      heading={canInteract ? 'Series' : undefined}
       action={
         canInteract ? (
           <ChartLegendAllAction
@@ -160,6 +161,8 @@ function LegendContent({
             data-legend-muted={
               canInteract &&
               interaction.hoveredKey &&
+              (!interaction.focusedKeys ||
+                interaction.focusedKeys.has(interaction.hoveredKey)) &&
               interaction.hoveredKey !== itemKeys[index]
                 ? true
                 : undefined

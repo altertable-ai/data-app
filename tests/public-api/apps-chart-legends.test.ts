@@ -56,6 +56,22 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
     )
     .toBe(11);
   await expect.poll(() => api.getAttribute('aria-pressed')).toBe('true');
+  await analytics.hover();
+  await expect
+    .poll(() => legend.locator('[data-legend-muted]').count())
+    .toBe(0);
+  await expect
+    .poll(() =>
+      curves.evaluateAll(
+        paths =>
+          paths.filter(
+            path =>
+              path.getAttribute('opacity') === '0.2' ||
+              path.closest('.recharts-line')?.getAttribute('opacity') === '0.2'
+          ).length
+      )
+    )
+    .toBe(0);
   await analytics.click();
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
@@ -179,6 +195,10 @@ test('funnel and retention legends focus their plotted populations', async ({
     await expect
       .poll(() => chart.locator('[data-legend-excluded]').count())
       .toBe(1);
+    await secondButton.hover();
+    await expect
+      .poll(() => chart.locator('[data-legend-muted]').count())
+      .toBe(0);
     await secondButton.click();
     await expect
       .poll(() => chart.locator('[data-legend-excluded]').count())
