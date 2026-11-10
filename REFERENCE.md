@@ -166,8 +166,6 @@ ChartLegend.children: ReactNode
 ChartLegend.layout?: 'horizontal' | 'single-row' | 'vertical' — Single-row fits up to four cells before expansion, adapting to available width.
 ChartLegend.align?: 'center' | 'end' | 'start'
 ChartLegend.maxVisibleItems?: number — Optional cell cap, including expansion. Horizontal legends default to two rows.
-ChartLegend.heading?: string — Visible label above the legend items.
-ChartLegend.action?: ReactNode — Optional control beside the heading.
 ChartLegend.…: plus props inherited from React
 ChartLegend.Item: (props: ChartLegendItemProps)
 ChartLegend.Marker: (props: ChartLegendMarkerProps)
@@ -282,7 +280,7 @@ ComposedChart.LabelList: (props: Props)
 ComposedChart.ErrorBar: (outsideProps: Props)
 ComposedChartLegendProps (type, @altertable/data-app-react/ui)
 ComposedChartLegendProps.maxVisibleItems?: number
-ComposedChartLegendProps.interactive?: boolean — Enable hover emphasis and click to focus series. Disable for a descriptive legend or custom controls.
+ComposedChartLegendProps.interactive?: boolean — Enable hover emphasis, click to toggle, and double-click to isolate series.
 ComposedChartLegendProps.…: plus props inherited from React, recharts
 ComposedChartProps (type, @altertable/data-app-react/ui): <Row> = props listed as ComposedChart.*
 connectionCheck (function, @altertable/data-app/contract): <const Queries extends QueryDefinitions & { connection: QueryDefinitions[string]; }>(queries: CheckedQueries<Queries>): ConnectionOperation — A connectivity probe uses the app's registered connection query.
@@ -921,7 +919,7 @@ FunnelChart.className?: string
 FunnelChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 FunnelChart.steps: readonly FunnelChartStep[]
 FunnelChart.series: readonly FunnelChartSeries[]
-FunnelChart.interactiveLegend?: boolean — Disable legend hover and focus controls.
+FunnelChart.interactiveLegend?: boolean — Disable legend hover, click toggle, and double-click isolation.
 FunnelChartProps (type, @altertable/data-app-react/ui): = props listed as FunnelChart.*
 FunnelChartSeries (type, @altertable/data-app-react/ui)
 FunnelChartSeries.id: string — Unique, nonblank population ID.
@@ -1397,7 +1395,7 @@ RetentionChart.formatValue?: ((value: number) => string) — Formats counts; rat
 RetentionChart.className?: string
 RetentionChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 RetentionChart.series: readonly RetentionChartSeries[]
-RetentionChart.interactiveLegend?: boolean — Disable legend hover and focus controls.
+RetentionChart.interactiveLegend?: boolean — Disable legend hover, click toggle, and double-click isolation.
 RetentionChartPoint (type, @altertable/data-app-react/ui)
 RetentionChartPoint.offset: number — Nonnegative integer, unique per series; uneven offsets retain their distance.
 RetentionChartPoint.label: string — Must agree across series for the same offset.

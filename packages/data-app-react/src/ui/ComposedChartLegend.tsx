@@ -5,16 +5,13 @@ import { Legend, type LegendPayload } from 'recharts';
 import {
   ChartLegendInteractionContext,
   chartLegendSeriesKey,
+  useLegendClickActions,
 } from './chart-legend-interaction.tsx';
-import {
-  ChartLegend,
-  ChartLegendAllAction,
-  type ChartLegendMarkerKind,
-} from './ChartLegend.tsx';
+import { ChartLegend, type ChartLegendMarkerKind } from './ChartLegend.tsx';
 
 export type ComposedChartLegendProps = ComponentProps<typeof Legend> & {
   maxVisibleItems?: number;
-  /** Enable hover emphasis and click to focus series. Disable for a descriptive legend or custom controls. */
+  /** Enable hover emphasis, click to toggle, and double-click to isolate series. */
   interactive?: boolean;
 };
 type LegendContentProps = ComposedChartLegendProps & {
@@ -100,6 +97,10 @@ function LegendContent({
     interaction &&
     (payload.filter(entry => entry.type !== 'none').length > 1 ||
       interaction.focusedKeys !== null);
+  const clickActions = useLegendClickActions(
+    key => interaction?.toggle(key, itemKeys),
+    key => interaction?.isolate(key)
+  );
   if (!payload.some(entry => entry.type !== 'none')) return null;
   const vertical =
     layout === 'vertical' ||
@@ -116,15 +117,6 @@ function LegendContent({
             : undefined
       }
       maxVisibleItems={maxVisibleItems}
-      heading={canInteract ? 'Series' : undefined}
-      action={
-        canInteract ? (
-          <ChartLegendAllAction
-            visible={!!interaction.focusedKeys}
-            onClick={interaction.showAll}
-          />
-        ) : undefined
-      }
       layout={vertical ? 'vertical' : 'horizontal'}
       align={align === 'right' ? 'end' : align === 'left' ? 'start' : 'center'}
     >
@@ -189,9 +181,11 @@ function LegendContent({
                 data-atbl-control="action"
                 data-atbl-focus="ring"
                 className="altertable-chart-legend-action"
+                aria-keyshortcuts={canInteract ? 'Shift+Enter' : undefined}
                 aria-pressed={
                   canInteract
-                    ? !!interaction.focusedKeys?.has(itemKeys[index]!)
+                    ? !interaction.focusedKeys ||
+                      interaction.focusedKeys.has(itemKeys[index]!)
                     : undefined
                 }
                 onFocus={() => {
@@ -201,8 +195,18 @@ function LegendContent({
                   if (canInteract) interaction.hover(null);
                 }}
                 onClick={event => {
-                  if (canInteract) interaction.toggle(itemKeys[index]!);
+                  if (canInteract)
+                    clickActions.click(itemKeys[index]!, event.detail);
                   onClick?.(entry, index, event);
+                }}
+                onDoubleClick={() => {
+                  if (canInteract) clickActions.doubleClick(itemKeys[index]!);
+                }}
+                onKeyDown={event => {
+                  if (canInteract && event.key === 'Enter' && event.shiftKey) {
+                    event.preventDefault();
+                    clickActions.doubleClick(itemKeys[index]!);
+                  }
                 }}
               >
                 {content}

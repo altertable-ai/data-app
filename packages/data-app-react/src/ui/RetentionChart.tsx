@@ -6,8 +6,11 @@ import {
   type CountChartProps,
   type HorizontalGridProps,
 } from './chart-data.ts';
-import { useChartLegendFocus } from './chart-legend-interaction.tsx';
-import { ChartLegend, ChartLegendAllAction } from './ChartLegend.tsx';
+import {
+  useChartLegendFocus,
+  useLegendClickActions,
+} from './chart-legend-interaction.tsx';
+import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
 import { TooltipSurface } from './TooltipSurface.tsx';
@@ -35,7 +38,7 @@ export type RetentionChartSeries = {
 export type RetentionChartProps = CountChartProps &
   HorizontalGridProps & {
     series: readonly RetentionChartSeries[];
-    /** Disable legend hover and focus controls. */
+    /** Disable legend hover, click toggle, and double-click isolation. */
     interactiveLegend?: boolean;
   };
 
@@ -154,6 +157,10 @@ export function RetentionChart({
   interactiveLegend = true,
 }: RetentionChartProps) {
   const legendFocus = useChartLegendFocus(series.map(item => item.id));
+  const legendClicks = useLegendClickActions(
+    legendFocus.toggle,
+    legendFocus.isolate
+  );
   const { rows, rowsByOffset, cohorts } = createRetentionModel(
     series,
     unit,
@@ -250,20 +257,7 @@ export function RetentionChart({
               }}
             />
           </ComposedChart>
-          <ChartLegend
-            aria-label={`${ariaLabel} cohorts`}
-            heading={
-              interactiveLegend && cohorts.length > 1 ? 'Cohorts' : undefined
-            }
-            action={
-              interactiveLegend && cohorts.length > 1 ? (
-                <ChartLegendAllAction
-                  visible={!!legendFocus.focusedIds}
-                  onClick={legendFocus.showAll}
-                />
-              ) : undefined
-            }
-          >
+          <ChartLegend aria-label={`${ariaLabel} cohorts`}>
             {cohorts.map(item => (
               <ChartLegend.Item
                 key={item.id}
@@ -286,12 +280,20 @@ export function RetentionChart({
                     data-atbl-control="action"
                     data-atbl-focus="ring"
                     className="altertable-chart-legend-action"
-                    aria-pressed={!!legendFocus.focusedIds?.has(item.id)}
+                    aria-keyshortcuts="Shift+Enter"
+                    aria-pressed={legendFocus.visible(item.id)}
                     onPointerEnter={() => legendFocus.setHoveredId(item.id)}
                     onPointerLeave={() => legendFocus.setHoveredId(null)}
                     onFocus={() => legendFocus.setHoveredId(item.id)}
                     onBlur={() => legendFocus.setHoveredId(null)}
-                    onClick={() => legendFocus.toggle(item.id)}
+                    onClick={event => legendClicks.click(item.id, event.detail)}
+                    onDoubleClick={() => legendClicks.doubleClick(item.id)}
+                    onKeyDown={event => {
+                      if (event.key === 'Enter' && event.shiftKey) {
+                        event.preventDefault();
+                        legendClicks.doubleClick(item.id);
+                      }
+                    }}
                   >
                     <ChartLegend.Marker kind="square" color={item.color} />
                     <ChartLegend.Label>{item.label}</ChartLegend.Label>

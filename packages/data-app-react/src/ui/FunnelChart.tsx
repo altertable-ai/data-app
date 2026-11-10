@@ -7,9 +7,12 @@ import {
   type CountChartProps,
   type HorizontalGridProps,
 } from './chart-data.ts';
-import { useChartLegendFocus } from './chart-legend-interaction.tsx';
+import {
+  useChartLegendFocus,
+  useLegendClickActions,
+} from './chart-legend-interaction.tsx';
 import { ChartTooltipContent } from './chart-primitives.tsx';
-import { ChartLegend, ChartLegendAllAction } from './ChartLegend.tsx';
+import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
 import { useSvgId } from './useSvgId.ts';
@@ -27,7 +30,7 @@ export type FunnelChartProps = CountChartProps &
   HorizontalGridProps & {
     steps: readonly FunnelChartStep[];
     series: readonly FunnelChartSeries[];
-    /** Disable legend hover and focus controls. */
+    /** Disable legend hover, click toggle, and double-click isolation. */
     interactiveLegend?: boolean;
   };
 
@@ -138,6 +141,10 @@ export function FunnelChart({
   interactiveLegend = true,
 }: FunnelChartProps) {
   const legendFocus = useChartLegendFocus(series.map(item => item.id));
+  const legendClicks = useLegendClickActions(
+    legendFocus.toggle,
+    legendFocus.isolate
+  );
   const chartId = useSvgId();
   const [highlighted, setHighlighted] = useState<{
     id: string;
@@ -174,23 +181,7 @@ export function FunnelChart({
       ) : (
         <>
           <div className="altertable-funnel-header">
-            <ChartLegend
-              aria-label="Funnel series"
-              layout="single-row"
-              heading={
-                interactiveLegend && populations.length > 1
-                  ? 'Series'
-                  : undefined
-              }
-              action={
-                interactiveLegend && populations.length > 1 ? (
-                  <ChartLegendAllAction
-                    visible={!!legendFocus.focusedIds}
-                    onClick={legendFocus.showAll}
-                  />
-                ) : undefined
-              }
-            >
+            <ChartLegend aria-label="Funnel series" layout="single-row">
               {populations.map(item => (
                 <ChartLegend.Item
                   key={item.id}
@@ -214,12 +205,22 @@ export function FunnelChart({
                       data-atbl-control="action"
                       data-atbl-focus="ring"
                       className="altertable-chart-legend-action altertable-funnel-legend-button"
-                      aria-pressed={!!legendFocus.focusedIds?.has(item.id)}
+                      aria-keyshortcuts="Shift+Enter"
+                      aria-pressed={legendFocus.visible(item.id)}
                       onPointerEnter={() => legendFocus.setHoveredId(item.id)}
                       onPointerLeave={() => legendFocus.setHoveredId(null)}
                       onFocus={() => legendFocus.setHoveredId(item.id)}
                       onBlur={() => legendFocus.setHoveredId(null)}
-                      onClick={() => legendFocus.toggle(item.id)}
+                      onClick={event =>
+                        legendClicks.click(item.id, event.detail)
+                      }
+                      onDoubleClick={() => legendClicks.doubleClick(item.id)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' && event.shiftKey) {
+                          event.preventDefault();
+                          legendClicks.doubleClick(item.id);
+                        }
+                      }}
                     >
                       <span className="altertable-funnel-series-label">
                         <ChartLegend.Marker kind="square" color={item.color} />

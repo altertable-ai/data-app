@@ -3,30 +3,6 @@
   min-width: 0;
   width: 100%;
 }
-.altertable-chart-legend-container[data-has-heading] {
-  padding-top: var(--atbl-space-md);
-}
-.altertable-chart-legend-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--atbl-space-sm);
-  height: 20px;
-  margin-bottom: var(--atbl-space-xs);
-  color: var(--atbl-muted);
-  font-size: var(--atbl-type-meta-size);
-}
-.altertable-chart-legend-heading {
-  font-weight: var(--atbl-type-label-weight);
-}
-.altertable-chart-legend-reset {
-  color: var(--atbl-muted);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-.altertable-chart-legend-reset[hidden] {
-  display: none;
-}
 .altertable-chart-legend {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

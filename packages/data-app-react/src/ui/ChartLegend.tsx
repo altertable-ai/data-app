@@ -19,33 +19,7 @@ export type ChartLegendProps = {
   align?: 'start' | 'center' | 'end';
   /** Optional cell cap, including expansion. Horizontal legends default to two rows. */
   maxVisibleItems?: number;
-  /** Visible label above the legend items. */
-  heading?: string;
-  /** Optional control beside the heading. */
-  action?: ReactNode;
 } & Omit<ComponentPropsWithRef<'ul'>, 'children'>;
-
-export function ChartLegendAllAction({
-  visible,
-  onClick,
-}: {
-  visible: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      data-atbl-control="action"
-      data-atbl-focus="ring"
-      className="altertable-chart-legend-action altertable-chart-legend-reset"
-      aria-label="Show all"
-      hidden={!visible}
-      onClick={onClick}
-    >
-      Show all
-    </button>
-  );
-}
 
 /** Optional chart key, placed beside any chart with the app's layout components.
  * Items describe displayed series or categories; the caller owns series visibility and interactions. */
@@ -54,8 +28,6 @@ function ChartLegendRoot({
   layout = 'horizontal',
   align = 'start',
   maxVisibleItems,
-  heading,
-  action,
   className,
   'aria-label': ariaLabel = 'Chart legend',
   ...props
@@ -99,24 +71,7 @@ function ChartLegendRoot({
   const visibleCount = items.length > limit ? limit - 1 : limit;
   const hiddenCount = Math.max(0, items.length - visibleCount);
   return (
-    <div
-      ref={containerRef}
-      className="altertable-chart-legend-container"
-      data-has-heading={!!(heading || action) || undefined}
-    >
-      {(heading || action) && (
-        <div className="altertable-chart-legend-header">
-          {heading && (
-            <span
-              className="altertable-chart-legend-heading"
-              aria-hidden="true"
-            >
-              {heading}
-            </span>
-          )}
-          {action}
-        </div>
-      )}
+    <div ref={containerRef} className="altertable-chart-legend-container">
       <ul
         id={listId}
         {...props}

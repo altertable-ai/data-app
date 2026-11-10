@@ -2,7 +2,7 @@ import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
-test('automatic legend previews, focuses multiple series, and restores all', async ({
+test('automatic legend previews, toggles, isolates, and restores series', async ({
   page,
 }) => {
   await page.goto('/chart-legends');
@@ -42,7 +42,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
   expect((await chart.boundingBox())!.height).toBe(chartHeight);
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
-    .toBe((await legend.locator('button[aria-pressed]').count()) - 1);
+    .toBe(1);
   await expect
     .poll(() =>
       curves.evaluateAll(
@@ -54,7 +54,16 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
           ).length
       )
     )
-    .toBe(11);
+    .toBe(1);
+  await expect.poll(() => api.getAttribute('aria-pressed')).toBe('false');
+  await api.dblclick();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  await api.dblclick();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(4);
   await expect.poll(() => api.getAttribute('aria-pressed')).toBe('true');
   await analytics.hover();
   await expect
@@ -88,7 +97,11 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
       )
     )
     .toBe(10);
-  await chart.getByRole('button', { name: 'Show all' }).click();
+  await analytics.dblclick();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(4);
+  await analytics.dblclick();
   expect((await chart.boundingBox())!.height).toBe(chartHeight);
   await expect.poll(() => curves.count()).toBe(12);
   await expect
@@ -96,7 +109,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
     .toBe(0);
 });
 
-test('focus removes dots from excluded line series', async ({ page }) => {
+test('isolation removes dots from excluded line series', async ({ page }) => {
   await page.goto('/chart-legends');
   const chart = page.getByRole('region', {
     name: 'Series dot plot',
@@ -104,13 +117,38 @@ test('focus removes dots from excluded line series', async ({ page }) => {
   });
   const dots = chart.locator('.recharts-line-dots circle');
   await expect.poll(() => dots.count()).toBe(4);
-  await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
+  const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
+  await alpha.dblclick();
   await expect.poll(() => dots.count()).toBe(2);
-  await chart.getByRole('button', { name: 'Show all' }).click();
+  await alpha.dblclick();
   await expect.poll(() => dots.count()).toBe(4);
 });
 
-test('automatic legend keeps long labels accessible with a conditional reset', async ({
+test('legend keyboard controls toggle and isolate series', async ({ page }) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Four series plot',
+    exact: true,
+  });
+  const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
+  await alpha.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('false');
+  await page.keyboard.press('Shift+Enter');
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  await page.keyboard.press('Shift+Enter');
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(3);
+  await page.keyboard.press('Shift+Enter');
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+});
+
+test('automatic legend keeps long labels accessible without layout shift', async ({
   mobilePage: page,
 }) => {
   await page.setViewportSize({ width: 320, height: 900 });
@@ -120,12 +158,10 @@ test('automatic legend keeps long labels accessible with a conditional reset', a
     exact: true,
   });
   const legend = chart.getByRole('list', { name: 'Chart legend' });
-  const all = chart.getByRole('button', { name: 'Show all' });
   const label = legend.getByText(
     'Alpha — response time in production workspaces across Europe',
     { exact: true }
   );
-  expect(await all.count()).toBe(0);
   await expect.poll(() => label.isVisible()).toBe(true);
   expect(await label.getAttribute('title')).toBe(
     'Alpha — response time in production workspaces across Europe'
@@ -134,18 +170,21 @@ test('automatic legend keeps long labels accessible with a conditional reset', a
     await label.evaluate(element => element.scrollWidth > element.clientWidth)
   ).toBe(true);
   const chartHeight = (await chart.boundingBox())!.height;
-  await legend
-    .getByRole('button', {
-      name: 'Alpha — response time in production workspaces across Europe',
-    })
-    .click();
-  await expect.poll(() => all.isVisible()).toBe(true);
+  const alpha = legend.getByRole('button', {
+    name: 'Alpha — response time in production workspaces across Europe',
+  });
+  await alpha.dblclick();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBeGreaterThan(0);
   expect((await chart.boundingBox())!.height).toBe(chartHeight);
-  await all.click();
-  await expect.poll(() => all.count()).toBe(0);
+  await alpha.dblclick();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(0);
 });
 
-test('four series retain every legend cell when focus is toggled', async ({
+test('four series retain every legend cell during isolation', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 915, height: 968 });
@@ -158,14 +197,17 @@ test('four series retain every legend cell when focus is toggled', async ({
   await expect.poll(() => legend.getByRole('listitem').count()).toBe(4);
   expect(await chart.getByRole('button', { name: 'Show all' }).count()).toBe(0);
   const height = (await chart.boundingBox())!.height;
-  await legend.getByRole('button', { name: 'Alpha', exact: true }).click();
+  const alpha = legend.getByRole('button', { name: 'Alpha', exact: true });
+  await alpha.dblclick();
   await expect
-    .poll(() => chart.getByRole('button', { name: 'Show all' }).isVisible())
-    .toBe(true);
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(3);
   expect(await legend.getByRole('listitem').count()).toBe(4);
   expect((await chart.boundingBox())!.height).toBe(height);
-  await chart.getByRole('button', { name: 'Show all' }).click();
-  expect(await chart.getByRole('button', { name: 'Show all' }).count()).toBe(0);
+  await alpha.dblclick();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(0);
 });
 
 test('funnel and retention legends focus their plotted populations', async ({
@@ -188,7 +230,7 @@ test('funnel and retention legends focus their plotted populations', async ({
       name: second,
       exact: name === 'RetentionChart',
     });
-    await firstButton.click();
+    await firstButton.dblclick();
     await expect
       .poll(() => firstButton.getAttribute('aria-pressed'))
       .toBe('true');
@@ -203,10 +245,14 @@ test('funnel and retention legends focus their plotted populations', async ({
     await expect
       .poll(() => chart.locator('[data-legend-excluded]').count())
       .toBe(0);
-    await chart.getByRole('button', { name: 'Show all' }).click();
+    await firstButton.dblclick();
+    await expect
+      .poll(() => chart.locator('[data-legend-excluded]').count())
+      .toBe(1);
+    await firstButton.dblclick();
     await expect
       .poll(() => firstButton.getAttribute('aria-pressed'))
-      .toBe('false');
+      .toBe('true');
   }
 });
 
@@ -219,7 +265,7 @@ test('native function-key series respond to the automatic legend', async ({
     exact: true,
   });
   const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
-  await alpha.click();
+  await alpha.dblclick();
   await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('true');
   await expect
     .poll(() =>
@@ -235,8 +281,10 @@ test('native function-key series respond to the automatic legend', async ({
         )
     )
     .toBe(1);
-  await chart.getByRole('button', { name: 'Show all' }).click();
-  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('false');
+  await alpha.dblclick();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
 });
 
 test('crowded automatic legends reserve a cell for expansion and restore their compact list', async ({
