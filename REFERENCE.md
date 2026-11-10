@@ -280,7 +280,7 @@ ComposedChart.LabelList: (props: Props)
 ComposedChart.ErrorBar: (outsideProps: Props)
 ComposedChartLegendProps (type, @altertable/data-app-react/ui)
 ComposedChartLegendProps.maxVisibleItems?: number
-ComposedChartLegendProps.interactive?: boolean — Enable hover emphasis, click to toggle, and double-click to isolate series.
+ComposedChartLegendProps.interactive?: boolean — Enable hover emphasis and click to focus one or more series.
 ComposedChartLegendProps.…: plus props inherited from React, recharts
 ComposedChartProps (type, @altertable/data-app-react/ui): <Row> = props listed as ComposedChart.*
 connectionCheck (function, @altertable/data-app/contract): <const Queries extends QueryDefinitions & { connection: QueryDefinitions[string]; }>(queries: CheckedQueries<Queries>): ConnectionOperation — A connectivity probe uses the app's registered connection query.
@@ -919,7 +919,7 @@ FunnelChart.className?: string
 FunnelChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 FunnelChart.steps: readonly FunnelChartStep[]
 FunnelChart.series: readonly FunnelChartSeries[]
-FunnelChart.interactiveLegend?: boolean — Disable legend hover, click toggle, and double-click isolation.
+FunnelChart.interactiveLegend?: boolean — Disable legend hover and focus controls.
 FunnelChartProps (type, @altertable/data-app-react/ui): = props listed as FunnelChart.*
 FunnelChartSeries (type, @altertable/data-app-react/ui)
 FunnelChartSeries.id: string — Unique, nonblank population ID.
@@ -1395,7 +1395,7 @@ RetentionChart.formatValue?: ((value: number) => string) — Formats counts; rat
 RetentionChart.className?: string
 RetentionChart.horizontalGrid?: boolean — Draw horizontal grid lines behind the plotted values.
 RetentionChart.series: readonly RetentionChartSeries[]
-RetentionChart.interactiveLegend?: boolean — Disable legend hover, click toggle, and double-click isolation.
+RetentionChart.interactiveLegend?: boolean — Disable legend hover and focus controls.
 RetentionChartPoint (type, @altertable/data-app-react/ui)
 RetentionChartPoint.offset: number — Nonnegative integer, unique per series; uneven offsets retain their distance.
 RetentionChartPoint.label: string — Must agree across series for the same offset.

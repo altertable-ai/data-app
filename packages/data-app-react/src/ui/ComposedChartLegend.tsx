@@ -5,13 +5,12 @@ import { Legend, type LegendPayload } from 'recharts';
 import {
   ChartLegendInteractionContext,
   chartLegendSeriesKey,
-  useLegendClickActions,
 } from './chart-legend-interaction.tsx';
 import { ChartLegend, type ChartLegendMarkerKind } from './ChartLegend.tsx';
 
 export type ComposedChartLegendProps = ComponentProps<typeof Legend> & {
   maxVisibleItems?: number;
-  /** Enable hover emphasis, click to toggle, and double-click to isolate series. */
+  /** Enable hover emphasis and click to focus one or more series. */
   interactive?: boolean;
 };
 type LegendContentProps = ComposedChartLegendProps & {
@@ -91,16 +90,15 @@ function LegendContent({
   const [getItemKeys] = useState(createLegendItemKeys);
   const interaction = useContext(ChartLegendInteractionContext);
   const itemKeys = getItemKeys(payload);
+  const selectableKeys = itemKeys.filter(
+    (_, index) => payload[index]?.type !== 'none'
+  );
   const canInteract =
     interactive &&
     !onClick &&
     interaction &&
     (payload.filter(entry => entry.type !== 'none').length > 1 ||
       interaction.focusedKeys !== null);
-  const clickActions = useLegendClickActions(
-    key => interaction?.toggle(key, itemKeys),
-    key => interaction?.isolate(key)
-  );
   if (!payload.some(entry => entry.type !== 'none')) return null;
   const vertical =
     layout === 'vertical' ||
@@ -181,11 +179,9 @@ function LegendContent({
                 data-atbl-control="action"
                 data-atbl-focus="ring"
                 className="altertable-chart-legend-action"
-                aria-keyshortcuts={canInteract ? 'Shift+Enter' : undefined}
                 aria-pressed={
                   canInteract
-                    ? !interaction.focusedKeys ||
-                      interaction.focusedKeys.has(itemKeys[index]!)
+                    ? !!interaction.focusedKeys?.has(itemKeys[index]!)
                     : undefined
                 }
                 onFocus={() => {
@@ -196,17 +192,8 @@ function LegendContent({
                 }}
                 onClick={event => {
                   if (canInteract)
-                    clickActions.click(itemKeys[index]!, event.detail);
+                    interaction.toggle(itemKeys[index]!, selectableKeys);
                   onClick?.(entry, index, event);
-                }}
-                onDoubleClick={() => {
-                  if (canInteract) clickActions.doubleClick(itemKeys[index]!);
-                }}
-                onKeyDown={event => {
-                  if (canInteract && event.key === 'Enter' && event.shiftKey) {
-                    event.preventDefault();
-                    clickActions.doubleClick(itemKeys[index]!);
-                  }
                 }}
               >
                 {content}

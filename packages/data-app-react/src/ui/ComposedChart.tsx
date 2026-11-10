@@ -40,8 +40,7 @@ import {
 import {
   ChartLegendInteractionContext,
   chartLegendSeriesKey,
-  isolateLegendVisibility,
-  toggleLegendVisibility,
+  toggleLegendFocus,
 } from './chart-legend-interaction.tsx';
 import {
   ChartBar as Bar,
@@ -278,15 +277,10 @@ function ComposedChartRoot<Row>({
     useState<ReadonlySet<string> | null>(null);
   const toggleLegendKey = useCallback(
     (key: string, keys: readonly string[]) => {
-      setFocusedLegendKeys(current =>
-        toggleLegendVisibility(current, key, keys)
-      );
+      setFocusedLegendKeys(current => toggleLegendFocus(current, key, keys));
     },
     []
   );
-  const isolateLegendKey = useCallback((key: string) => {
-    setFocusedLegendKeys(current => isolateLegendVisibility(current, key));
-  }, []);
   return (
     <ChartCursorChartContext.Provider value={{ cursor, mouseHover }}>
       <ChartLegendInteractionContext.Provider
@@ -295,7 +289,6 @@ function ComposedChartRoot<Row>({
           focusedKeys: focusedLegendKeys,
           hover: setLegendHoveredKey,
           toggle: toggleLegendKey,
-          isolate: isolateLegendKey,
         }}
       >
         <ChartInteractionContext.Provider

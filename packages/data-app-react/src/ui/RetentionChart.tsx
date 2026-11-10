@@ -6,10 +6,7 @@ import {
   type CountChartProps,
   type HorizontalGridProps,
 } from './chart-data.ts';
-import {
-  useChartLegendFocus,
-  useLegendClickActions,
-} from './chart-legend-interaction.tsx';
+import { useChartLegendFocus } from './chart-legend-interaction.tsx';
 import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
@@ -38,7 +35,7 @@ export type RetentionChartSeries = {
 export type RetentionChartProps = CountChartProps &
   HorizontalGridProps & {
     series: readonly RetentionChartSeries[];
-    /** Disable legend hover, click toggle, and double-click isolation. */
+    /** Disable legend hover and focus controls. */
     interactiveLegend?: boolean;
   };
 
@@ -157,10 +154,6 @@ export function RetentionChart({
   interactiveLegend = true,
 }: RetentionChartProps) {
   const legendFocus = useChartLegendFocus(series.map(item => item.id));
-  const legendClicks = useLegendClickActions(
-    legendFocus.toggle,
-    legendFocus.isolate
-  );
   const { rows, rowsByOffset, cohorts } = createRetentionModel(
     series,
     unit,
@@ -280,20 +273,12 @@ export function RetentionChart({
                     data-atbl-control="action"
                     data-atbl-focus="ring"
                     className="altertable-chart-legend-action"
-                    aria-keyshortcuts="Shift+Enter"
-                    aria-pressed={legendFocus.visible(item.id)}
+                    aria-pressed={!!legendFocus.focusedIds?.has(item.id)}
                     onPointerEnter={() => legendFocus.setHoveredId(item.id)}
                     onPointerLeave={() => legendFocus.setHoveredId(null)}
                     onFocus={() => legendFocus.setHoveredId(item.id)}
                     onBlur={() => legendFocus.setHoveredId(null)}
-                    onClick={event => legendClicks.click(item.id, event.detail)}
-                    onDoubleClick={() => legendClicks.doubleClick(item.id)}
-                    onKeyDown={event => {
-                      if (event.key === 'Enter' && event.shiftKey) {
-                        event.preventDefault();
-                        legendClicks.doubleClick(item.id);
-                      }
-                    }}
+                    onClick={() => legendFocus.toggle(item.id)}
                   >
                     <ChartLegend.Marker kind="square" color={item.color} />
                     <ChartLegend.Label>{item.label}</ChartLegend.Label>

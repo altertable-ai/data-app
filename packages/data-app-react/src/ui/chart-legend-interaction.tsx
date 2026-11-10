@@ -1,5 +1,5 @@
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 export function chartLegendSeriesKey(id: unknown, dataKey: unknown) {
   if (typeof id === 'string' || typeof id === 'number')
@@ -14,71 +14,18 @@ export type ChartLegendInteraction = {
   focusedKeys: ReadonlySet<string> | null;
   hover: (key: string | null) => void;
   toggle: (key: string, keys: readonly string[]) => void;
-  isolate: (key: string) => void;
 };
 
-export function toggleLegendVisibility(
-  visible: ReadonlySet<string> | null,
+export function toggleLegendFocus(
+  focused: ReadonlySet<string> | null,
   key: string,
   keys: readonly string[]
 ) {
-  const next = visible ? new Set(visible) : new Set(keys);
+  if (!focused) return new Set([key]);
+  const next = new Set(focused);
   if (next.has(key)) next.delete(key);
   else next.add(key);
-  return next.size === new Set(keys).size ? null : next;
-}
-
-export function isolateLegendVisibility(
-  visible: ReadonlySet<string> | null,
-  key: string
-) {
-  if (
-    visible &&
-    (!visible.has(key) || (visible.size === 1 && visible.has(key)))
-  )
-    return null;
-  return new Set([key]);
-}
-
-/** Delay pointer clicks so a double-click performs one isolate action. */
-export function useLegendClickActions(
-  toggle: (key: string) => void,
-  isolate: (key: string) => void
-) {
-  const pending = useRef<{
-    key: string;
-    timer: ReturnType<typeof setTimeout>;
-    toggle: (key: string) => void;
-  } | null>(null);
-  useEffect(
-    () => () => {
-      if (pending.current) clearTimeout(pending.current.timer);
-    },
-    []
-  );
-  return {
-    click: (key: string, detail: number) => {
-      if (pending.current) {
-        clearTimeout(pending.current.timer);
-        if (pending.current.key !== key)
-          pending.current.toggle(pending.current.key);
-        pending.current = null;
-      }
-      if (detail === 0) toggle(key);
-      else {
-        const timer = setTimeout(() => {
-          pending.current = null;
-          toggle(key);
-        }, 500);
-        pending.current = { key, timer, toggle };
-      }
-    },
-    doubleClick: (key: string) => {
-      if (pending.current) clearTimeout(pending.current.timer);
-      pending.current = null;
-      isolate(key);
-    },
-  };
+  return next.size === 0 || next.size === new Set(keys).size ? null : next;
 }
 
 export const ChartLegendInteractionContext =
@@ -111,19 +58,15 @@ export function useChartLegendFocus(ids: readonly string[]) {
   const visibleIds =
     storedFocusedIds &&
     new Set([...storedFocusedIds].filter(id => available.has(id)));
-  const focusedIds = visibleIds;
+  const focusedIds = visibleIds?.size ? visibleIds : null;
   function toggle(id: string) {
-    setStoredFocusedIds(current => toggleLegendVisibility(current, id, ids));
-  }
-  function isolate(id: string) {
-    setStoredFocusedIds(current => isolateLegendVisibility(current, id));
+    setStoredFocusedIds(current => toggleLegendFocus(current, id, ids));
   }
   return {
     hoveredId,
     setHoveredId,
     focusedIds,
     toggle,
-    isolate,
     visible: (id: string) => !focusedIds || focusedIds.has(id),
     opacity: (id: string) =>
       focusedIds && !focusedIds.has(id)
