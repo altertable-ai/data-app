@@ -141,9 +141,13 @@ function App() {
 }
 ```
 
-Pass serializable scope and IDs, not records or credentials. `parseInput` can
-reuse the operation's derived `input` parser. The main app owns stories and
-exports.
+The destination's operation lists the displayed filters it reads in `filters`
+and parses only its own fields, such as a record ID, with `input`. Actions and
+metric records return those own fields and any filter they narrow, such as the
+clicked group; the other filters carry over from the displayed scope. Pass
+serializable IDs, not records or credentials. `parseInput` can reuse the
+operation's `input` parser. Detail content receives `result.scope` like view
+content. The main app owns stories and exports.
 
 ### Contributing metric records
 

@@ -14,7 +14,7 @@ import {
   type RefObject,
 } from 'react';
 
-import type { ViewSource } from './bindings.ts';
+import type { DataContentState } from './content.ts';
 import { ownedSource } from './source-owner.ts';
 import { DataSectionBoundary } from './ui/DataSectionBoundary.tsx';
 import { InspectionContext } from './ui/InspectionContext.tsx';
@@ -80,7 +80,8 @@ export class DetailView<Data, Input, Own = Input> {
     return { ...scope, ...(own as object) };
   }
 
-  content(render: (source: ViewSource<Data, Input>) => ReactNode) {
+  /** Render like view content: displayed data, its input, and the derived scope. */
+  content(render: (state: DataContentState<Data, Input>) => ReactNode) {
     const content = new DetailContent(this, render);
     this.#content = content;
     return content;
@@ -137,7 +138,7 @@ export function parseDetailInput<Data, Input>(
 export class DetailContent<Data, Input> {
   constructor(
     readonly target: DetailView<Data, Input, any>,
-    readonly render: (source: ViewSource<Data, Input>) => ReactNode
+    readonly render: (state: DataContentState<Data, Input>) => ReactNode
   ) {}
 }
 
@@ -259,14 +260,25 @@ function DetailContentBody<Data, Input>({
       <DataSectionBoundary
         result={result}
         loadingFallback={content.render(
-          ownedSource(content.target, { loading: true })
+          ownedSource(content.target, {
+            loading: true,
+            scope: { loading: true },
+          })
         )}
         emptyFallback={content.target.definition.emptyFallback}
         notice="none"
       >
         {(data, displayedInput) =>
           content.render(
-            ownedSource(content.target, { data, input: displayedInput })
+            ownedSource(content.target, {
+              loading: false,
+              data,
+              input: displayedInput,
+              scope: {
+                loading: false,
+                value: content.target.definition.describeInput(displayedInput),
+              },
+            })
           )
         }
       </DataSectionBoundary>

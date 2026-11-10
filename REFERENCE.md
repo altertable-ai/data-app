@@ -56,6 +56,9 @@ AbsoluteOrRelativeDateTime (type, @altertable/data-app, @altertable/data-app/con
 AbsoluteOrRelativeDateTime.anchor: RelativeAnchor [variant 2 of 2]
 AbsoluteOrRelativeDateTime.offset: RelativeOffset[] [variant 2 of 2]
 AbsoluteOrRelativeDateTime.…: plus props inherited from built-in
+ActionBuilder (class, @altertable/data-app-react): <Row, Input>
+ActionBuilder.detail: <DestinationInput, Own>(config: DetailAction<Row, Input, DestinationInput, Own>) => ActionDeclaration<Row, Input>
+ActionBuilder.filter: <Patch extends object, const Values extends NoInfer<Patch>, Value extends string = never>(config: ActionCondition<Row> & { label: string; target: FilterTarget<Patch>; values: (row: Row) => Values & NoInfer<Patch>; breakdown?: { ...; } | undefined; }) => ActionDeclaration<...>
 AnnotationTarget (component, @altertable/data-app-react): (props: AnnotationTargetProps) — A stable feedback target for app-owned content outside the built-in widgets.
 AnnotationTarget.annotationId: string
 AnnotationTarget.label: string
@@ -286,17 +289,46 @@ ControlBarProps (type, @altertable/data-app-react/ui): = props listed as Control
 createDataClient (function, @altertable/data-app/client): <Operations extends DataOperations>(...args: DataClientOptions<Operations> extends never ? [ options: never ] : keyof OperationFilters<Operations> extends never ? [ ] : [ options: never ]): DataClient<Operations>; (options: TransportOptions): DataClient<DataOperations>; <Operations extends DataOperations>(options: DataClientOptions<Operations>): DataClient<Operations> — Named clients derive data from the declared operations' run return types. Without an operation contract, external operation data remains unknown.
 createDataClient.options.transport?: DataTransport
 createDataClient.options.endpoint?: string
-createDataClient.options.fetch?: typeof fetch
+createDataClient.options.fetch?: (input: RequestInfo | URL, init: RequestInit): Promise<Response>
+createDataClient.options.fetch?: (input: string | URL | Request, init: BunFetchRequestInit): Promise<Response>
+createDataClient.options.fetch?: (input: string | URL | Request, init: RequestInit): Promise<Response>
 createDataClient.options.operations: Operations [variant 1 of 2]
 createDataClient.options.lakehouse?: Lakehouse [variant 1 of 2]
 createDataClient.options.transport?: DataTransport [variant 2 of 2]
 createDataClient.options.endpoint?: string [variant 2 of 2]
-createDataClient.options.fetch?: typeof fetch [variant 2 of 2]
+createDataClient.options.fetch?: (input: RequestInfo | URL, init: RequestInit): Promise<Response> [variant 2 of 2]
+createDataClient.options.fetch?: (input: string | URL | Request, init: BunFetchRequestInit): Promise<Response> [variant 2 of 2]
+createDataClient.options.fetch?: (input: string | URL | Request, init: RequestInit): Promise<Response> [variant 2 of 2]
 createDataClient.options.filters?: OperationFilters<Operations> [variant 2 of 2] — Pass the same filter declarations the server operations read.
 createDataContext (function, @altertable/data-app-react): <const Names extends Record<string, string>>(queryNames: Names): <const Context extends Omit<DataContext, 'glossary'> & { glossary: Record<string, Omit<GlossaryEntry, 'queryNames'> & { queryNames?: Names[keyof Names][]; }>; }>(context: Context) => Context & { ...; } — Bind glossary query references and card evidence to the same registry.
 createDataHooks (function, @altertable/data-app-react): <Operations extends DataOperations>(client: DataClient<Operations>): { defineView: <Name extends ViewOperationName<Operations>, const Context extends AuthoringDataContext = AuthoringDataContext>(definition: { operation: Name; dataContext: DataContext; describeInput?: ((input: FilterInput<...>) => s… — Bind declared operations to URL filters, displayed readings, and request feedback. The client's operations declare their filters; `<DataApp>` renders their controls.
 createDataHooks.client.filters: Readonly<Record<string, FilterCollection>> — Each operation's filters; views derive their inputs and controls from them.
 createDataHooks.client.query: <Name extends keyof Operations & string>(this: void, name: Name & (true extends IsUnion<NoInfer<Name>, NoInfer<Name>> ? never : unknown), input: InputOf<Operations[NoInfer<Name>]>, options?: { ...; } | undefined) => Promise<...>
+createDataHooks().defineView: <Name extends ViewOperationName<Operations>, const Context extends AuthoringDataContext = AuthoringDataContext>(definition: ViewDefinition<Name, FilterInput<FiltersOf<Operations[Name]>>, OutputOf<Operations[Name]>> & { operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown); dataC…
+createDataHooks().defineView.definition.operation: Name & (true extends IsUnion<NoInfer<Name>> ? never : unknown)
+createDataHooks().defineView.definition.dataContext: DataContext & Context
+createDataHooks().defineView.definition.describeInput?: ((input: FilterInput<FiltersOf<Operations[Name]>>) => string) — Describe the displayed scope in prose. Defaults to the reporting period and each narrowed filter, such as `Mar 1–7, 2026 UTC · group Alpha`, or `all data`.
+createDataHooks().defineView.definition.isEmpty?: ((data: OutputOf<Operations[Name]>) => boolean) — App-owned semantics: measured zero need not mean an empty result. Defaults to never empty.
+createDataHooks().defineView.definition.emptyFallback?: EmptyContent — Inherited by DataSection unless it supplies its own copy.
+createDataHooks().defineView().filter: (): FilterTarget<Partial<{ [Key in keyof FiltersOf<Operations[Name]>]: Extract<FiltersOf<Operations[Name]>[Key]['presentation'], { group: 'display'; }> extends never ? FilterValues<...>[Key] : never; }>>
+createDataHooks().defineView().breakdown: <Key extends DisplayChoiceName<Filters>>(key: Key): FiltersOf<Operations[Name]>[Key] extends ChoiceFilter<infer Value extends string> ? BreakdownTarget<Value> : never
+createDataHooks().defineView().dataset: <Row, const Columns extends Record<string, object> = Record<string, object>>(definition: DatasetDefinition<Data, FilterInput<Filters>, Row, Parameters<Context['evidence']>[0]> & { columns: Columns & NonEmptyColumns<Columns>; }): Dataset<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[N…
+createDataHooks().defineView().metric: (definition: Parameters<Context['metric']>[0], select: (data: Data, input: FilterInput<Filters>) => HasPeriod<Filters> extends true ? MetricValues : { current: number; previous?: never; }): Metric<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>>
+createDataHooks().defineView().scope: (snapshot: DisplayedSnapshot<Data, FilterInput<Filters>>): string
+createDataHooks().defineView().content: (render: (state: DataContentState<Data, FilterInput<Filters>>) => ReactNode): ViewContent<OutputOf<Operations[Name]>, FilterInput<FiltersOf<Operations[Name]>>>
+createDataHooks().defineDetailView: <Name extends keyof Operations & string, const Context extends AuthoringDataContext = AuthoringDataContext>(definition: DetailViewDefinition<OutputOf<Operations[Name]>, InputOf<Operations[Name]>> & { operation: Name; dataContext: Context; }): BoundDetailView<OutputOf<Operations[Name]>, InputOf<Oper…
+createDataHooks().defineDetailView.definition.id: string
+createDataHooks().defineDetailView.definition.title: ReactNode
+createDataHooks().defineDetailView.definition.parseInput: (input: unknown) => InputOf<Operations[Name]> — Validates untrusted navigation input before a detail operation can run.
+createDataHooks().defineDetailView.definition.describeInput: (input: InputOf<Operations[Name]>) => string
+createDataHooks().defineDetailView.definition.isEmpty?: ((data: OutputOf<Operations[Name]>) => boolean) — App-owned semantics: measured zero need not mean an empty result. Defaults to never empty.
+createDataHooks().defineDetailView.definition.emptyFallback?: EmptyContent — Inherited by DataSection unless it supplies its own copy.
+createDataHooks().defineDetailView.definition.operation: Name
+createDataHooks().defineDetailView.definition.dataContext: Context
+createDataHooks().defineDetailView().useResult: (input: Input): ViewResult<OutputOf<Operations[Name]>, InputOf<Operations[Name]>>
+createDataHooks().defineDetailView().content: (render: (state: DataContentState<Data, Input>) => ReactNode): DetailContent<OutputOf<Operations[Name]>, InputOf<Operations[Name]>> — Render like view content: displayed data, its input, and the derived scope.
+createDataHooks().defineDetailView().dataset: <Row, const Columns extends Record<string, object> = Record<string, object>>(definition: DatasetDefinition<Data, Input, Row, Parameters<Context['evidence']>[0]> & { columns: Columns & NonEmptyColumns<Columns>; }): Dataset<OutputOf<Operations[Name]>, InputOf<Operations[Name]>, Row>
+createDataHooks().defineDetailView().metric: (definition: Parameters<Context['metric']>[0], select: (data: Data, input: Input) => { current: number; previous?: never; }): Metric<OutputOf<Operations[Name]>, InputOf<Operations[Name]>>
 CsvCell (type, @altertable/data-app-react): = string | number | boolean | null | undefined
 CsvExport (type, @altertable/data-app-react/ui): All distinct datasets in the displayed result; filename names the download.
 CsvExport.filename: string
@@ -345,7 +377,8 @@ DataAppDefinition.appearance?: AppearanceOptions — Omit to use the standard ap
 DataAppDefinition.dateFormatting?: { locale?: string | undefined; timeZone?: string | undefined; } — Shared date display defaults. Reporting views and individual fields may override the time zone.
 DataAppDefinition.queries: QuerySnapshot<Queries>
 DataAppDefinition.defineDimension: <const Type extends 'string' | 'number'>(config: DimensionSourceConfig<Type> & { source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>>; }; }) => SourceDimensionFilter<...>
-DataAppDefinition.defineOperation: { <Input, Output, const Filters extends FilterCollection = {}>(operation: InputOperationDefinition<Input, Output, Queries, Filters>): DefinedOperation<WithFilterInput<Filters, Input>, Output, Queries, ...>; <const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDe… — Parse a destination's own input, such as a record id, and list valid `checks`. Declare `filters` too when it reads the displayed scope.
+DataAppDefinition.defineOperation: <Input, Output, const Filters extends FilterCollection = {}>(operation: InputOperationDefinition<Input, Output, Queries, Filters>): DefinedOperation<WithFilterInput<Filters, Input>, Output, Queries, keyof Filters extends never ? undefined : Filters> — Parse a destination's own input, such as a record id, and list valid `checks`. Declare `filters` too when it reads the displayed scope.
+DataAppDefinition.defineOperation: <const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDefinition<Filters, Output, Queries>): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>
 DataAppError (class, @altertable/data-app/client)
 DataAppError.code: string
 DataAppError.requestId?: string
@@ -416,6 +449,13 @@ DataSection.error?: { title: ReactNode; description?: ReactNode; onRetry?: (() =
 DataSection.label?: string
 DataSection.…: plus props inherited from React
 DataSectionProps (type, @altertable/data-app-react): <Data, Input> = props listed as DataSection.*
+Dataset (class, @altertable/data-app-react): <Data, Input, Row>
+Dataset.evidence: WidgetEvidence
+Dataset.actions: <const Actions extends Record<string, ActionDeclaration<Row, Input>>>(build: (action: ActionBuilder<Row, Input>) => Actions, options?: { primary?: (keyof Actions & string) | undefined; } | undefined) => ExplorationActions<...>
+Dataset.readSearchSuggestions: (source: ViewSource<Data, Input>) => DataReading<readonly SearchSuggestion[]> | undefined
+Dataset.read: <Source extends ViewSource<Data, Input>>(source: Source) => SourceReading<Source, readonly Row[]>
+Dataset.assertSource: (source: object) => void
+Dataset.name: string
 DatasetColumn (type, @altertable/data-app-react): <Row> — Keys supply IDs; accessors supply raw CSV values. Formats affect display only.
 DatasetColumn.label?: string
 DatasetColumn.value: (row: Row) => CsvCell [variant 1 of 4]
@@ -736,14 +776,19 @@ defineOperation.operation.queries: CheckedQueries<Queries>
 defineOperation.operation.filters?: CheckedOperationFilters<Filters> — The filters `run` reads. Omit for an operation without inputs.
 defineOperation.operation.run: OperationRun<FilterInput<Filters>, Output, Queries>
 defineQueryNames (function, @altertable/data-app/contract): <const Names extends Record<string, string>>(names: Names): Names
+DetailAction (type, @altertable/data-app-react): <Row, Input, DestinationInput, Own> — A detail interaction: the destination and the fields a row supplies.
+DetailAction.label: string
+DetailAction.when?: ((row: Row) => boolean)
+DetailAction.target: DetailView<any, DestinationInput, Own>
+DetailAction.input: (row: Row, displayedInput: Input) => Own & Partial<DestinationInput> — The destination's own fields, such as the clicked record, and any filter it narrows; its other filters carry over from the displayed scope.
 DetailContent (class, @altertable/data-app-react): <Data, Input> — A destination’s rendered body. Pass these to DataApp.details.
 DetailContent.target: DetailView<Data, Input, any>
-DetailContent.render: (source: ViewSource<Data, Input>) => ReactNode
+DetailContent.render: (state: DataContentState<Data, Input>) => ReactNode
 DetailView (class, @altertable/data-app-react): <Data, Input, Own> — A typed, query-backed destination. Interactions supply its own fields (`Own`); the filters its operation reads carry over from the displayed scope.
 DetailView.definition: { id: string; title: ReactNode; parseInput: (input: unknown) => Input; describeInput: (input: Input) => string; } & ViewEmptiness<Data> & Required<ViewEmptiness<...>>
 DetailView.useResult: (input: Input) => ViewResult<Data, Input>
 DetailView.ownInput?: Own
-DetailView.content: (render: (source: ViewSource<Data, Input>) => ReactNode) => DetailContent<Data, Input>
+DetailView.content: (render: (state: DataContentState<Data, Input>) => ReactNode) => DetailContent<Data, Input> — Render like view content: displayed data, its input, and the derived scope.
 DetailViewDefinition (type, @altertable/data-app-react): <Data, Input>
 DetailViewDefinition.id: string
 DetailViewDefinition.title: ReactNode
@@ -772,7 +817,8 @@ DimensionFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scop
 DimensionFilter.urlKeys: readonly string[]
 DimensionFilter.defaultValue: DimensionSelection<T>
 DimensionFilter.clearValue?: DimensionSelection<T> — Unrestricted value, when this filter can be cleared.
-DimensionFilter.describe: ((value: DimensionSelection<T>) => string) & ((selection: DimensionSelection<T>, options?: readonly DimensionOption<T>[] | undefined) => string)
+DimensionFilter.describe: (value: Value): string
+DimensionFilter.describe: (selection: DimensionSelection<T>, options: readonly DimensionOption<T>[]): string
 DimensionFilter.history: HistoryMode
 DimensionFilter.read: (params: URLSearchParams) => DimensionSelection<T>
 DimensionFilter.write: (value: DimensionSelection<T>) => Record<string, string | null>
@@ -871,7 +917,8 @@ FacetFilter.presentation?: (FilterPresentation & { group?: 'display' | 'scope' |
 FacetFilter.urlKeys: readonly string[]
 FacetFilter.defaultValue: DimensionSelection<Value>
 FacetFilter.clearValue?: DimensionSelection<Value> — Unrestricted value, when this filter can be cleared.
-FacetFilter.describe: ((value: DimensionSelection<Value>) => string) & ((selection: DimensionSelection<Value>, options?: readonly DimensionOption<Value>[] | undefined) => string)
+FacetFilter.describe: (value: Value): string
+FacetFilter.describe: (selection: DimensionSelection<T>, options: readonly DimensionOption<T>[]): string
 FacetFilter.history: HistoryMode
 FacetFilter.read: (params: URLSearchParams) => DimensionSelection<Value>
 FacetFilter.write: (value: DimensionSelection<Value>) => Record<string, string | null>
@@ -1038,6 +1085,7 @@ InputOperationDefinition.run: OperationRun<WithFilterInput<Filters, Input>, Outp
 isPlainKeyEvent (function, @altertable/data-app-react/ui): (event: KeyEvent, options: {…}): boolean — Keep local key actions separate from shortcuts and IME composition. Pass React's nativeEvent.
 isPlainKeyEvent.event.…: plus props inherited from built-in
 isPlainKeyEvent.options.allowShift?: boolean
+isPlainKeyEvent().valueOf: (): boolean — Returns the primitive value of the specified object.
 ItemActions (type, @altertable/data-app-react/ui): <Row> = (row: Row) => readonly ExplorationAction[] — Resolves the actions available for a displayed domain row.
 JourneyChart (component, @altertable/data-app-react/ui): (props: JourneyChartProps) — Path exploration with two initial steps, expandable prefixes, and three events per depth. Counts and flows use the Step 1 population. Compose inside VisualizationWidget.
 JourneyChart.ariaLabel: string — Accessible measure and scope description.
@@ -1231,6 +1279,13 @@ parseBooleanSelection.filter.write: (value: BooleanSelection) => Record<string, 
 parseBooleanSelection.filter.valid: (value: BooleanSelection) => boolean
 parseBooleanSelection.filter.same: (left: BooleanSelection, right: BooleanSelection) => boolean
 parseCount (function, @altertable/data-app/contract): (value: unknown): number — Accepts numeric strings from DuckDB; rejects negative, fractional, and unsafe integers.
+parseCount().toString: (radix: number): string — Returns a string representation of an object.
+parseCount().toFixed: (fractionDigits: number): string — Returns a string representing a number in fixed-point notation.
+parseCount().toExponential: (fractionDigits: number): string — Returns a string containing a number represented in exponential notation.
+parseCount().toPrecision: (precision: number): string — Returns a string containing a number represented either in exponential or fixed-point notation with a specified number of digits.
+parseCount().valueOf: (): number — Returns the primitive value of the specified object.
+parseCount().toLocaleString: (locales: string | string[], options: Intl.NumberFormatOptions): string; (locales: Intl.LocalesArgument, options: Intl.NumberFormatOptions): string — Converts a number to a string by using the current or specified locale.
+parseCount().toLocaleString.options.…: plus props inherited from built-in
 parseDateRangeInput (function, @altertable/data-app/contract): (value: unknown, options: {…}): DateRange — Validate calendar dates and a bounded inclusive range on the server.
 parseDateRangeInput.options.minDate?: string
 parseDateRangeInput.options.maxDate?: string
@@ -1255,7 +1310,8 @@ parseDimensionSelection.filter.presentation?: (FilterPresentation & { group?: 'd
 parseDimensionSelection.filter.urlKeys: readonly string[]
 parseDimensionSelection.filter.defaultValue: DimensionSelection<T>
 parseDimensionSelection.filter.clearValue?: DimensionSelection<T> — Unrestricted value, when this filter can be cleared.
-parseDimensionSelection.filter.describe: ((value: DimensionSelection<T>) => string) & ((selection: DimensionSelection<T>, options?: readonly DimensionOption<T>[] | undefined) => string)
+parseDimensionSelection.filter.describe: (value: Value): string
+parseDimensionSelection.filter.describe: (selection: DimensionSelection<T>, options: readonly DimensionOption<T>[]): string
 parseDimensionSelection.filter.history: HistoryMode
 parseDimensionSelection.filter.read: (params: URLSearchParams) => DimensionSelection<T>
 parseDimensionSelection.filter.write: (value: DimensionSelection<T>) => Record<string, string | null>
@@ -1275,7 +1331,8 @@ parseFacetOptions.filter.presentation?: (FilterPresentation & { group?: 'display
 parseFacetOptions.filter.urlKeys: readonly string[]
 parseFacetOptions.filter.defaultValue: DimensionSelection<T>
 parseFacetOptions.filter.clearValue?: DimensionSelection<T> — Unrestricted value, when this filter can be cleared.
-parseFacetOptions.filter.describe: ((value: DimensionSelection<T>) => string) & ((selection: DimensionSelection<T>, options?: readonly DimensionOption<T>[] | undefined) => string)
+parseFacetOptions.filter.describe: (value: Value): string
+parseFacetOptions.filter.describe: (selection: DimensionSelection<T>, options: readonly DimensionOption<T>[]): string
 parseFacetOptions.filter.history: HistoryMode
 parseFacetOptions.filter.read: (params: URLSearchParams) => DimensionSelection<T>
 parseFacetOptions.filter.write: (value: DimensionSelection<T>) => Record<string, string | null>
@@ -1305,6 +1362,7 @@ parseNumberSelection.filter.same: (left: NumberSelection, right: NumberSelection
 parseNumberSelection.filter.min?: number
 parseNumberSelection.filter.max?: number
 parseTrue (function, @altertable/data-app/contract): (value: unknown): true
+parseTrue().valueOf: (): boolean — Returns the primitive value of the specified object.
 PeriodComparison (type, @altertable/data-app-react)
 PeriodComparison.kind: 'previous' [variant 1 of 2]
 PeriodComparison.kind: 'period' [variant 2 of 2]

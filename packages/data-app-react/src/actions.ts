@@ -13,13 +13,15 @@ import type {
 } from './ui/ExplorationActionControl.tsx';
 
 type ActionCondition<Row> = { label: string; when?: (row: Row) => boolean };
-type DetailAction<Row, Input, DestinationInput, Own> = ActionCondition<Row> & {
-  label: string;
-  target: DetailView<any, DestinationInput, Own>;
-  /** The destination's own fields, such as the clicked record, and any filter it
-   * narrows; its other filters carry over from the displayed scope. */
-  input: (row: Row, displayedInput: Input) => Own & Partial<DestinationInput>;
-};
+/** A detail interaction: the destination and the fields a row supplies. */
+export type DetailAction<Row, Input, DestinationInput, Own> =
+  ActionCondition<Row> & {
+    label: string;
+    target: DetailView<any, DestinationInput, Own>;
+    /** The destination's own fields, such as the clicked record, and any filter it
+     * narrows; its other filters carry over from the displayed scope. */
+    input: (row: Row, displayedInput: Input) => Own & Partial<DestinationInput>;
+  };
 export type ActionDeclaration<Row, Input> = ActionCondition<Row> &
   (
     | {

@@ -181,9 +181,14 @@ const operations = {
 };
 ```
 
-`options` names a registered operation that returns `DimensionOption[]`; its own
-filters decide which selections narrow the options. Here, changing `period`
-reloads the group options.
+`options` names a registered operation; its own filters decide which selections
+narrow the options. Here, changing `period` reloads the group options. Return
+`{ value, label, count? }[]` directly from `run()`: at most 200 distinct values,
+and `count` is the number the picker shows beside each option, such as the
+records it would keep. Selections are checked for shape on the server, not
+membership; use a source dimension when the server must reject unknown members.
+In local apps, list the options operation in the shared `operationFilters` map
+like any other operation that reads filters.
 
 ## Display choices and breakdowns
 

@@ -4,7 +4,8 @@ export type {
   DatasetSuggestionOptions,
   DatasetDeclaration as DatasetDefinition,
 } from '../bindings.ts';
-export type { MetricRecords } from '../bindings.ts';
+export type { Dataset, MetricRecords } from '../bindings.ts';
+export type { ActionBuilder, DetailAction } from '../actions.ts';
 export { injectDataAppStyles } from '../styles.ts';
 export type { DataAppStylesOptions } from '../styles.ts';
 export type {

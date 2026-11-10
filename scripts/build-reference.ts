@@ -217,14 +217,25 @@ class Reference {
       const type = await this.typeOf(property, `${context}.${property.name}`);
       if (!type || type.flags & absent) continue;
       const optional = Boolean(property.flags & SymbolFlags.Optional);
+      const doc = await this.doc(property);
+      // Methods list one line per overload so no signature hides behind another's clip.
+      const calls = await this.checker.getSignaturesOfType(
+        (await this.checker.getNonNullableType(type)) ?? type,
+        SignatureKind.Call
+      );
+      if (calls.length > 1) {
+        for (const [index, call] of calls.entries())
+          properties.push({
+            name: property.name,
+            optional,
+            type: await this.signature(call, 'function'),
+            doc: index === 0 ? doc : '',
+          });
+        continue;
+      }
       let text = await this.text(type);
       if (optional) text = text.replace(/ \| undefined$/, '');
-      properties.push({
-        name: property.name,
-        optional,
-        type: text,
-        doc: await this.doc(property),
-      });
+      properties.push({ name: property.name, optional, type: text, doc });
     }
     return { properties, inherited };
   }
@@ -378,7 +389,7 @@ class Reference {
     return clip(`${generic}(${list.join(', ')})${result}`, maxTypeLength);
   }
 
-  private async callable(name: string, type: Type) {
+  private async callable(name: string, type: Type, factory = true) {
     const signatures = await this.checker.getSignaturesOfType(
       type,
       SignatureKind.Call
@@ -404,6 +415,9 @@ class Reference {
         members.push(...(await this.propertyLines(prefix, shapes)));
       }
     }
+    // A factory returning an anonymous object of functions lists each one as `name().member`.
+    if (factory && kind === 'function' && signatures.length === 1)
+      members.push(...(await this.factoryMembers(name, signatures[0]!)));
     for (const property of await this.checker.getPropertiesOfType(type)) {
       if (fromDependency(property) || isSymbolKeyed(property)) continue;
       const member = await this.typeOf(property, `${name}.${property.name}`);
@@ -427,6 +441,56 @@ class Reference {
       head: heads.join('; '),
       members: [...new Set(members)],
     };
+  }
+
+  /** One line per method of a signature's returned object, without expanding further. */
+  private async methods(prefix: string, signature: Signature) {
+    const returned = await this.checker.getReturnTypeOfSignature(signature);
+    if (!returned) return [];
+    const lines: string[] = [];
+    for (const property of await this.checker.getPropertiesOfType(returned)) {
+      if (fromDependency(property) || isSymbolKeyed(property)) continue;
+      const member = await this.checker.getTypeOfSymbol(property);
+      if (!member || member.isErrorType()) continue;
+      const calls = await this.checker.getSignaturesOfType(
+        member,
+        SignatureKind.Call
+      );
+      if (!calls.length) continue;
+      const doc = await this.doc(property);
+      for (const [index, call] of calls.entries())
+        lines.push(
+          joinDoc(
+            `${prefix}.${property.name}: ${await this.signature(call, 'function')}`,
+            index === 0 ? doc : ''
+          )
+        );
+    }
+    return lines;
+  }
+
+  private async factoryMembers(name: string, signature: Signature) {
+    const returned = await this.checker.getReturnTypeOfSignature(signature);
+    if (!returned || (await returned.getAliasSymbol())) return [];
+    const properties = await this.checker.getPropertiesOfType(returned);
+    const lines: string[] = [];
+    for (const property of properties) {
+      const member = await this.typeOf(property, `${name}().${property.name}`);
+      if (!member) return [];
+      const calls = await this.checker.getSignaturesOfType(
+        member,
+        SignatureKind.Call
+      );
+      if (!calls.length) return [];
+      const prefix = `${name}().${property.name}`;
+      const { head, members } = await this.callable(prefix, member, false);
+      const doc = await this.doc(property);
+      lines.push(joinDoc(`${prefix}: ${head}`, doc), ...members);
+      // What the factory method returns, such as a view's dataset() and metric().
+      if (calls.length === 1)
+        lines.push(...(await this.methods(`${prefix}()`, calls[0]!)));
+    }
+    return lines;
   }
 
   async value(exported: Export): Promise<Entry> {
@@ -688,7 +752,24 @@ ${body.join('\n')}
 `;
 }
 
-const reference = render(await generate());
+/** Declaration bundles may import one type twice (`X, X as X$1`); both mean `X`. */
+async function sameNameAliases() {
+  const aliases = new Set<string>();
+  for await (const path of new Bun.Glob(
+    'packages/*/dist/types/**/*.d.ts'
+  ).scan())
+    for (const [, name, alias] of (await Bun.file(path).text()).matchAll(
+      /\b([A-Za-z_][\w]*) as (\1\$\d+)\b/g
+    ))
+      if (name) aliases.add(alias!);
+  return aliases;
+}
+
+const aliases = await sameNameAliases();
+const reference = render(await generate()).replace(
+  /\b([A-Za-z_][\w]*)\$\d+\b/g,
+  (alias, name: string) => (aliases.has(alias) ? name : alias)
+);
 for (const alias of new Set(reference.match(/\b[A-Za-z_$][\w$]*\$\d+\b/g)))
   failures.push(
     `Bundler alias ${alias} has no standalone meaning in the reference.`
