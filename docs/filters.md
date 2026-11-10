@@ -78,8 +78,26 @@ supplied rows only.
 | `dateTimeRangeFilter()`                                | `DateTimeRange`                                            |
 | `dateTimeRangeFilter({ allowComparison: true })`       | `DateTimeRangeComparisonRequest` (`{ range, comparison }`) |
 
-Inputs are validated against the filters before `run()`. Map values to declared
+Inputs are validated against the filters before `run()`. Pass values to declared
 query parameters inside `run()`; never interpolate filter values into SQL.
+Date ranges bind as [range parameters](contract.md#bind-date-ranges). A
+`DimensionSelection` binds whole to a `{ type: 'dimension', valueType }`
+parameter, and `$country.matches(column)` keeps the rows it selects, including
+multiple members, missing values, and exclusion:
+
+```ts
+// ... in defineDataApp({ queries })
+revenueByCampaign: {
+  statement: `SELECT o.campaign, sum(o.amount) AS revenue
+    FROM demo.orders o JOIN demo.customers c ON c.id = o.customer_id
+    WHERE $country.matches(c.country)
+    GROUP BY o.campaign`,
+  params: { country: { type: 'dimension', valueType: 'string' } },
+  projections: { campaign: { type: 'string' }, revenue: { type: 'number' } },
+},
+// ... in the operation: query('revenueByCampaign', { country: input.country })
+```
+
 Dimension, number, and boolean selections support `{ kind: 'all' }`. Offer only
 predicates the registered query supports.
 

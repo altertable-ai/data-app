@@ -1342,24 +1342,26 @@ QueryDefinitions (type, @altertable/data-app, @altertable/data-app/config, @alte
 QueryField (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract)
 QueryField.type: keyof QueryValues
 QueryField.nullable?: boolean
-QueryParameter (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): Typed scalar, calendar-range, or datetime-range parameters with optional fallback values. Reference a range's bounds as `$name.from` (inclusive) and `$name.to` (exclusive).
-QueryParameter.type: 'dateRange' [variant 1 of 10] — A `DateRange` of inclusive ISO calendar dates, such as a date filter's `range`.
-QueryParameter.nullable?: false [variants 1, 2, 3, 4, 5, 6 of 10]
-QueryParameter.defaultValue?: DateRange [variant 1 of 10]
-QueryParameter.type: 'dateTimeRange' [variant 2 of 10]
-QueryParameter.defaultValue?: { from?: string | AbsoluteOrRelativeDateTime | null | undefined; to?: string | AbsoluteOrRelativeDateTime | null | undefined; } [variant 2 of 10] — Absolute defaults may use canonical UTC ISO strings (including milliseconds) for static manifests. Snapshots hydrate them into Dates.
-QueryParameter.type: 'boolean' [variants 3, 7 of 10]
-QueryParameter.defaultValue?: boolean [variant 3 of 10]
-QueryParameter.type: 'null' [variants 4, 8 of 10]
-QueryParameter.defaultValue?: null [variants 4, 8 of 10]
-QueryParameter.type: 'number' [variants 5, 9 of 10]
-QueryParameter.defaultValue?: number [variant 5 of 10]
-QueryParameter.type: 'string' [variants 6, 10 of 10]
-QueryParameter.defaultValue?: string [variant 6 of 10]
-QueryParameter.nullable: true [variants 7, 8, 9, 10 of 10]
-QueryParameter.defaultValue?: boolean | null [variant 7 of 10]
-QueryParameter.defaultValue?: number | null [variant 9 of 10]
-QueryParameter.defaultValue?: string | null [variant 10 of 10]
+QueryParameter (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): Typed scalar, range, or dimension parameters with optional fallback values.
+QueryParameter.type: 'dimension' [variant 1 of 11] — A dimension filter's `DimensionSelection`; `$name.matches(column)` is true for the rows it keeps, including missing-value and exclusion semantics.
+QueryParameter.valueType: 'number' | 'string' [variant 1 of 11]
+QueryParameter.nullable?: false [variants 1, 2, 3, 4, 5, 6, 7 of 11]
+QueryParameter.type: 'dateRange' [variant 2 of 11] — A `DateRange` of inclusive ISO calendar dates, such as a date filter's `range`.
+QueryParameter.defaultValue?: DateRange [variant 2 of 11]
+QueryParameter.type: 'dateTimeRange' [variant 3 of 11]
+QueryParameter.defaultValue?: { from?: string | AbsoluteOrRelativeDateTime | null | undefined; to?: string | AbsoluteOrRelativeDateTime | null | undefined; } [variant 3 of 11] — Absolute defaults may use canonical UTC ISO strings (including milliseconds) for static manifests. Snapshots hydrate them into Dates.
+QueryParameter.type: 'boolean' [variants 4, 8 of 11]
+QueryParameter.defaultValue?: boolean [variant 4 of 11]
+QueryParameter.type: 'null' [variants 5, 9 of 11]
+QueryParameter.defaultValue?: null [variants 5, 9 of 11]
+QueryParameter.type: 'number' [variants 6, 10 of 11]
+QueryParameter.defaultValue?: number [variant 6 of 11]
+QueryParameter.type: 'string' [variants 7, 11 of 11]
+QueryParameter.defaultValue?: string [variant 7 of 11]
+QueryParameter.nullable: true [variants 8, 9, 10, 11 of 11]
+QueryParameter.defaultValue?: boolean | null [variant 8 of 11]
+QueryParameter.defaultValue?: number | null [variant 10 of 11]
+QueryParameter.defaultValue?: string | null [variant 11 of 11]
 QueryParameters (type, @altertable/data-app/contract): <Record<string, QueryParameterValue>> = { readonly [x: string]: QueryParameterValue; } — Parameters are scalar SQL values, never identifiers or SQL fragments.
 QueryParameterValue (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): = string | number | boolean | null
 QueryProjections (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): <Record<string, QueryField>> = { readonly [x: string]: QueryField; }

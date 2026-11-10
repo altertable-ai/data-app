@@ -436,6 +436,7 @@ export function defineOperation(
           | import('../core/queries.ts').QueryParameterValue
           | import('../core/date-time-range.ts').DateTimeRange
           | import('../core/date-range.ts').DateRange
+          | import('../core/dimension.ts').DimensionSelection
           | undefined
         > = {},
         options?: { limit?: number }

@@ -1,15 +1,16 @@
 import type { DateRange } from './date-range.ts';
 import {
-  expandRangeParameters,
-  type RangeParameterKind,
-} from './date-time-range-sql.ts';
-import {
   parseDateTimeRange,
   serializeDateTimeRange,
 } from './date-time-range-value.ts';
 import type { DateTimeRange } from './date-time-range.ts';
+import type { DimensionSelection } from './dimension.ts';
 import { invariant } from './invariant.ts';
 import type { QueryResult } from './operation-types.ts';
+import {
+  expandParameterReferences,
+  type StructuredParameter,
+} from './parameter-sql.ts';
 
 export const MAX_QUERY_ROWS = 10_000;
 
@@ -33,9 +34,18 @@ export type QueryRow<Projections extends QueryProjections> = {
 };
 
 export type QueryParameterValue = string | number | boolean | null;
-/** Typed scalar, calendar-range, or datetime-range parameters with optional fallback
- * values. Reference a range's bounds as `$name.from` (inclusive) and `$name.to` (exclusive). */
+/** Typed scalar, range, or dimension parameters with optional fallback values.
+ * Reference a range's bounds as `$name.from` (inclusive) and `$name.to` (exclusive),
+ * and a dimension selection as `$name.matches(column)`. */
 export type QueryParameter =
+  | {
+      /** A dimension filter's `DimensionSelection`; `$name.matches(column)` is true
+       * for the rows it keeps, including missing-value and exclusion semantics. */
+      type: 'dimension';
+      valueType: 'string' | 'number';
+      nullable?: false;
+      defaultValue?: never;
+    }
   | {
       /** A `DateRange` of inclusive ISO calendar dates, such as a date filter's `range`. */
       type: 'dateRange';
@@ -68,9 +78,13 @@ export type QueryInputParameters<
     ? DateTimeRange
     : Params[Name] extends { type: 'dateRange' }
       ? DateRange
-      : Params[Name] extends QueryField
-        ? QueryValue<Params[Name]>
-        : never;
+      : Params[Name] extends { type: 'dimension'; valueType: 'number' }
+        ? DimensionSelection<number>
+        : Params[Name] extends { type: 'dimension' }
+          ? DimensionSelection<string>
+          : Params[Name] extends QueryField
+            ? QueryValue<Params[Name]>
+            : never;
 };
 type QueryDefinition = {
   statement: string;
@@ -137,7 +151,7 @@ export type CheckedQueries<Queries extends QueryDefinitions> =
       };
     };
 type FrozenField<Field extends { type: string; nullable?: boolean }> =
-  Field extends { type: 'dateRange' }
+  Field extends { type: 'dateRange' } | { type: 'dimension' }
     ? Readonly<Field>
     : Field extends { type: 'dateTimeRange' }
       ? Readonly<{
@@ -166,6 +180,46 @@ export type QuerySnapshot<Queries extends QueryDefinitions> = {
 
 /** Parameters are scalar SQL values, never identifiers or SQL fragments. */
 export type QueryParameters = Readonly<Record<string, QueryParameterValue>>;
+
+/** Bind a selection as JSON the expanded predicate reads: kind, listed values, and
+ * whether missing values are listed. */
+function serializeSelection(
+  key: string,
+  valueType: 'string' | 'number',
+  value: unknown
+): string {
+  const selection = (
+    typeof value === 'string' ? JSON.parse(value) : value
+  ) as DimensionSelection;
+  const valid =
+    !!selection &&
+    typeof selection === 'object' &&
+    (selection.kind === 'all' ||
+      ((selection.kind === 'include' || selection.kind === 'exclude') &&
+        Array.isArray(selection.members) &&
+        selection.members.length > 0 &&
+        selection.members.every(
+          member =>
+            member?.kind === 'missing' ||
+            (member?.kind === 'value' &&
+              (valueType === 'number'
+                ? typeof member.value === 'number' &&
+                  Number.isFinite(member.value)
+                : typeof member.value === 'string'))
+        )));
+  if (!valid)
+    throw new Error(
+      `Parameter ${key} is not a ${valueType} dimension selection.`
+    );
+  if (selection.kind === 'all') return JSON.stringify({ kind: 'all' });
+  return JSON.stringify({
+    kind: selection.kind,
+    values: selection.members.flatMap(member =>
+      member.kind === 'value' ? [member.value] : []
+    ),
+    missing: selection.members.some(member => member.kind === 'missing'),
+  });
+}
 
 /** Inclusive ISO calendar dates, start on or before end. */
 function isDateRange(value: unknown): value is DateRange {
@@ -234,13 +288,23 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
             Object.entries(query.params).map(([key, declaration]) => {
               if (
                 declaration.type === 'dateTimeRange' ||
-                declaration.type === 'dateRange'
+                declaration.type === 'dateRange' ||
+                declaration.type === 'dimension'
               )
                 invariant(
                   /^[A-Za-z_][A-Za-z0-9_]*$/.test(key) &&
                     (declaration as { nullable?: boolean }).nullable !== true,
-                  'Date ranges require a SQL parameter name and cannot be nullable.'
+                  'Range and dimension parameters require a SQL parameter name and cannot be nullable.'
                 );
+              if (declaration.type === 'dimension') {
+                invariant(
+                  (declaration.valueType === 'string' ||
+                    declaration.valueType === 'number') &&
+                    !Object.hasOwn(declaration, 'defaultValue'),
+                  `Dimension parameter ${key} in query ${name} needs a string or number valueType and no default.`
+                );
+                return [key, Object.freeze({ ...declaration })];
+              }
               invariant(
                 !Object.hasOwn(declaration, 'defaultValue') ||
                   (declaration.type === 'dateTimeRange'
@@ -291,12 +355,14 @@ export function snapshotQueries<const Queries extends QueryDefinitions>(
         return [
           name,
           Object.freeze({
-            statement: expandRangeParameters(
+            statement: expandParameterReferences(
               query.statement,
               new Map(
                 Object.entries(query.params).flatMap(([key, p]) =>
-                  p.type === 'dateTimeRange' || p.type === 'dateRange'
-                    ? [[key, p.type as RangeParameterKind]]
+                  p.type === 'dateTimeRange' ||
+                  p.type === 'dateRange' ||
+                  p.type === 'dimension'
+                    ? [[key, p as StructuredParameter]]
                     : []
                 )
               )
@@ -401,7 +467,14 @@ function castQueryCell(
 export function resolveQueryParameters(
   declarations: Readonly<Record<string, QueryParameter>>,
   values: Readonly<
-    Record<string, QueryParameterValue | DateTimeRange | DateRange | undefined>
+    Record<
+      string,
+      | QueryParameterValue
+      | DateTimeRange
+      | DateRange
+      | DimensionSelection
+      | undefined
+    >
   >,
   context: QueryParameters
 ): QueryParameters {
@@ -421,6 +494,8 @@ export function resolveQueryParameters(
           ? values[key]
           : declaration.defaultValue;
       if (value === undefined) throw new Error(`Missing parameter ${key}.`);
+      if (declaration.type === 'dimension')
+        return [key, serializeSelection(key, declaration.valueType, value)];
       if (declaration.type === 'dateRange') {
         const range = typeof value === 'string' ? JSON.parse(value) : value;
         if (!isDateRange(range))
