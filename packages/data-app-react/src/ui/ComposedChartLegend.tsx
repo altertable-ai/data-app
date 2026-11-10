@@ -8,7 +8,7 @@ import {
 } from './chart-legend-interaction.tsx';
 import {
   ChartLegend,
-  ChartLegendFrame,
+  ChartLegendAllAction,
   type ChartLegendMarkerKind,
 } from './ChartLegend.tsx';
 
@@ -104,7 +104,7 @@ function LegendContent({
   const vertical =
     layout === 'vertical' ||
     (layout === 'auto' && (position === 'left' || position === 'right'));
-  const legend = (
+  return (
     <ChartLegend
       aria-label={ariaLabel}
       className={
@@ -116,6 +116,14 @@ function LegendContent({
             : undefined
       }
       maxVisibleItems={maxVisibleItems}
+      action={
+        canInteract ? (
+          <ChartLegendAllAction
+            active={!interaction.focusedKeys}
+            onClick={interaction.showAll}
+          />
+        ) : undefined
+      }
       layout={vertical ? 'vertical' : 'horizontal'}
       align={align === 'right' ? 'end' : align === 'left' ? 'start' : 'center'}
     >
@@ -203,15 +211,6 @@ function LegendContent({
         );
       })}
     </ChartLegend>
-  );
-  return canInteract ? (
-    <ChartLegendFrame
-      onShowAll={interaction.focusedKeys ? interaction.showAll : undefined}
-    >
-      {legend}
-    </ChartLegendFrame>
-  ) : (
-    legend
   );
 }
 

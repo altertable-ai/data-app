@@ -29,7 +29,7 @@ test('mixed chart series describe their measures and inspect the same monthly va
       .count()
   ).toBe(1);
   const legend = chart.getByRole('list', { name: 'Chart legend', exact: true });
-  await expect.poll(() => legend.getByRole('listitem').count()).toBe(3);
+  await expect.poll(() => legend.getByRole('listitem').count()).toBe(4);
   for (const name of ['Revenue (€k)', 'Forecast (€k)', 'Conversion (%)']) {
     await expect
       .poll(() => legend.getByText(name, { exact: true }).isVisible())

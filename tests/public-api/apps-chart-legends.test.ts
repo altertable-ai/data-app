@@ -41,7 +41,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
   expect((await chart.boundingBox())!.height).toBe(chartHeight);
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
-    .toBe((await legend.locator('button[aria-pressed]').count()) - 1);
+    .toBe((await legend.locator('button[aria-pressed]').count()) - 2);
   await expect
     .poll(() =>
       curves.evaluateAll(
@@ -58,7 +58,7 @@ test('automatic legend previews, focuses multiple series, and restores all', asy
   await analytics.click();
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
-    .toBe((await legend.locator('button[aria-pressed]').count()) - 2);
+    .toBe((await legend.locator('button[aria-pressed]').count()) - 3);
   await expect
     .poll(() =>
       curves.evaluateAll(
@@ -91,6 +91,41 @@ test('focus removes dots from excluded line series', async ({ page }) => {
   await expect.poll(() => dots.count()).toBe(2);
   await chart.getByRole('button', { name: 'Show all' }).click();
   await expect.poll(() => dots.count()).toBe(4);
+});
+
+test('automatic legend keeps long labels accessible beside the all-series control', async ({
+  mobilePage: page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Long series labels plot',
+    exact: true,
+  });
+  const legend = chart.getByRole('list', { name: 'Chart legend' });
+  const all = legend.getByRole('button', { name: 'Show all' });
+  const label = legend.getByText(
+    'Alpha — response time in production workspaces across Europe',
+    { exact: true }
+  );
+  await expect.poll(() => all.getAttribute('aria-pressed')).toBe('true');
+  await expect.poll(() => label.isVisible()).toBe(true);
+  expect(await label.getAttribute('title')).toBe(
+    'Alpha — response time in production workspaces across Europe'
+  );
+  expect(
+    await label.evaluate(element => element.scrollWidth > element.clientWidth)
+  ).toBe(true);
+  const chartHeight = (await chart.boundingBox())!.height;
+  await legend
+    .getByRole('button', {
+      name: 'Alpha — response time in production workspaces across Europe',
+    })
+    .click();
+  await expect.poll(() => all.getAttribute('aria-pressed')).toBe('false');
+  expect((await chart.boundingBox())!.height).toBe(chartHeight);
+  await all.click();
+  await expect.poll(() => all.getAttribute('aria-pressed')).toBe('true');
 });
 
 test('funnel and retention legends focus their plotted populations', async ({
@@ -260,7 +295,7 @@ test('crowded legends fill two rows and keep overflow in the final column on res
         const right = Math.max(...cells.map(cell => cell.right));
         return (
           cells.length <= 8 &&
-          cells.at(-1)!.text === `+${13 - cells.length} more` &&
+          cells.at(-1)!.text?.startsWith(`+${13 - cells.length} more`) &&
           rows === 2 &&
           cells.length === firstRow * 2 &&
           Math.abs(cells.at(-1)!.right - right) < 1

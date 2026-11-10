@@ -19,35 +19,32 @@ export type ChartLegendProps = {
   align?: 'start' | 'center' | 'end';
   /** Optional cell cap, including expansion. Horizontal legends default to two rows. */
   maxVisibleItems?: number;
+  /** Control shown in the final cell, beside the expansion control when needed. */
+  action?: ReactNode;
 } & Omit<ComponentPropsWithRef<'ul'>, 'children'>;
 
-/** Keep the reset control in a stable slot beside an interactive legend. */
-export function ChartLegendFrame({
-  children,
-  onShowAll,
-  enabled = true,
+export function ChartLegendAllAction({
+  active,
+  onClick,
 }: {
-  children: ReactNode;
-  onShowAll?: () => void;
-  enabled?: boolean;
+  active: boolean;
+  onClick: () => void;
 }) {
-  if (!enabled) return <>{children}</>;
   return (
-    <div className="altertable-chart-legend-frame">
-      {children}
-      <button
-        type="button"
-        data-atbl-control="action"
-        data-atbl-focus="ring"
-        className="altertable-chart-legend-reset"
-        aria-label="Show all"
-        title="Show all"
-        hidden={!onShowAll}
-        onClick={onShowAll}
-      >
+    <button
+      type="button"
+      data-atbl-control="action"
+      data-atbl-focus="ring"
+      className="altertable-chart-legend-action altertable-chart-legend-all"
+      aria-label="Show all"
+      aria-pressed={active}
+      onClick={onClick}
+    >
+      <span className="altertable-chart-legend-all-long">All series</span>
+      <span className="altertable-chart-legend-all-short" aria-hidden="true">
         All
-      </button>
-    </div>
+      </span>
+    </button>
   );
 }
 
@@ -58,6 +55,7 @@ function ChartLegendRoot({
   layout = 'horizontal',
   align = 'start',
   maxVisibleItems,
+  action,
   className,
   'aria-label': ariaLabel = 'Chart legend',
   ...props
@@ -96,7 +94,8 @@ function ChartLegendRoot({
       : cappedLimit >= columns
         ? Math.floor(cappedLimit / columns) * columns
         : cappedLimit;
-  const visibleCount = items.length > limit ? limit - 1 : limit;
+  const visibleCount =
+    items.length + (action ? 1 : 0) > limit ? Math.max(1, limit - 1) : limit;
   const hiddenCount = Math.max(0, items.length - visibleCount);
   return (
     <div ref={containerRef} className="altertable-chart-legend-container">
@@ -109,6 +108,11 @@ function ChartLegendRoot({
         className={classNames('altertable-chart-legend', className)}
       >
         {expanded ? items : items.slice(0, visibleCount)}
+        {hiddenCount === 0 && action && (
+          <li className="altertable-chart-legend-item altertable-chart-legend-action-item">
+            {action}
+          </li>
+        )}
         {hiddenCount > 0 && (
           <li className="altertable-chart-legend-overflow">
             <button
@@ -122,6 +126,7 @@ function ChartLegendRoot({
             >
               {expanded ? 'Show fewer' : `+${hiddenCount} more`}
             </button>
+            {action}
           </li>
         )}
       </ul>

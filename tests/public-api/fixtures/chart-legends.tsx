@@ -574,6 +574,24 @@ createRoot(document.getElementById('root')!).render(
         </ComposedChart>
       </Example>
       <Example
+        name="Automatic long series labels"
+        description="Long automatic legend labels remain readable at narrow widths."
+      >
+        <ComposedChart data={legendRows} ariaLabel="Long series labels plot">
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Line
+            dataKey="alpha"
+            name="Alpha — response time in production workspaces across Europe"
+          />
+          <ComposedChart.Line
+            dataKey="beta"
+            name="Beta — response time in production workspaces across North America"
+          />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
         name="LineChart — long labels"
         description="Twelve series with longer labels and a separately composed legend below the plot."
       >

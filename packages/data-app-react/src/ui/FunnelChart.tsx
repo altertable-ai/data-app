@@ -9,7 +9,7 @@ import {
 } from './chart-data.ts';
 import { useChartLegendFocus } from './chart-legend-interaction.tsx';
 import { ChartTooltipContent } from './chart-primitives.tsx';
-import { ChartLegend, ChartLegendFrame } from './ChartLegend.tsx';
+import { ChartLegend, ChartLegendAllAction } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
 import { useSvgId } from './useSvgId.ts';
@@ -174,72 +174,72 @@ export function FunnelChart({
       ) : (
         <>
           <div className="altertable-funnel-header">
-            <ChartLegendFrame
-              enabled={interactiveLegend && populations.length > 1}
-              onShowAll={
-                legendFocus.focusedIds ? legendFocus.showAll : undefined
+            <ChartLegend
+              aria-label="Funnel series"
+              layout="single-row"
+              action={
+                interactiveLegend && populations.length > 1 ? (
+                  <ChartLegendAllAction
+                    active={!legendFocus.focusedIds}
+                    onClick={legendFocus.showAll}
+                  />
+                ) : undefined
               }
             >
-              <ChartLegend aria-label="Funnel series" layout="single-row">
-                {populations.map(item => (
-                  <ChartLegend.Item
-                    key={item.id}
-                    className="altertable-funnel-summary-item"
-                    data-legend-muted={
-                      (interactiveLegend &&
-                        legendFocus.hoveredId &&
-                        legendFocus.hoveredId !== item.id) ||
-                      undefined
-                    }
-                    data-legend-excluded={
-                      (interactiveLegend && !legendFocus.visible(item.id)) ||
-                      undefined
-                    }
-                  >
-                    {interactiveLegend && populations.length > 1 ? (
-                      <button
-                        type="button"
-                        data-atbl-control="action"
-                        data-atbl-focus="ring"
-                        className="altertable-chart-legend-action altertable-funnel-legend-button"
-                        aria-pressed={!!legendFocus.focusedIds?.has(item.id)}
-                        onPointerEnter={() => legendFocus.setHoveredId(item.id)}
-                        onPointerLeave={() => legendFocus.setHoveredId(null)}
-                        onFocus={() => legendFocus.setHoveredId(item.id)}
-                        onBlur={() => legendFocus.setHoveredId(null)}
-                        onClick={() => legendFocus.toggle(item.id)}
-                      >
-                        <span className="altertable-funnel-series-label">
-                          <ChartLegend.Marker
-                            kind="square"
-                            color={item.color}
-                          />
-                          <ChartLegend.Label>{item.label}</ChartLegend.Label>
-                        </span>
-                        <strong className="altertable-funnel-series-value">
-                          {formatPercent(
-                            rows.at(-1)?.readings.get(item.id)?.conversion ??
-                              null
-                          )}
-                        </strong>
-                      </button>
-                    ) : (
+              {populations.map(item => (
+                <ChartLegend.Item
+                  key={item.id}
+                  className="altertable-funnel-summary-item"
+                  data-legend-muted={
+                    (interactiveLegend &&
+                      legendFocus.hoveredId &&
+                      legendFocus.hoveredId !== item.id) ||
+                    undefined
+                  }
+                  data-legend-excluded={
+                    (interactiveLegend && !legendFocus.visible(item.id)) ||
+                    undefined
+                  }
+                >
+                  {interactiveLegend && populations.length > 1 ? (
+                    <button
+                      type="button"
+                      data-atbl-control="action"
+                      data-atbl-focus="ring"
+                      className="altertable-chart-legend-action altertable-funnel-legend-button"
+                      aria-pressed={!!legendFocus.focusedIds?.has(item.id)}
+                      onPointerEnter={() => legendFocus.setHoveredId(item.id)}
+                      onPointerLeave={() => legendFocus.setHoveredId(null)}
+                      onFocus={() => legendFocus.setHoveredId(item.id)}
+                      onBlur={() => legendFocus.setHoveredId(null)}
+                      onClick={() => legendFocus.toggle(item.id)}
+                    >
                       <span className="altertable-funnel-series-label">
                         <ChartLegend.Marker kind="square" color={item.color} />
                         <ChartLegend.Label>{item.label}</ChartLegend.Label>
                       </span>
-                    )}
-                    {(!interactiveLegend || populations.length <= 1) && (
                       <strong className="altertable-funnel-series-value">
                         {formatPercent(
                           rows.at(-1)?.readings.get(item.id)?.conversion ?? null
                         )}
                       </strong>
-                    )}
-                  </ChartLegend.Item>
-                ))}
-              </ChartLegend>
-            </ChartLegendFrame>
+                    </button>
+                  ) : (
+                    <span className="altertable-funnel-series-label">
+                      <ChartLegend.Marker kind="square" color={item.color} />
+                      <ChartLegend.Label>{item.label}</ChartLegend.Label>
+                    </span>
+                  )}
+                  {(!interactiveLegend || populations.length <= 1) && (
+                    <strong className="altertable-funnel-series-value">
+                      {formatPercent(
+                        rows.at(-1)?.readings.get(item.id)?.conversion ?? null
+                      )}
+                    </strong>
+                  )}
+                </ChartLegend.Item>
+              ))}
+            </ChartLegend>
             <p className="altertable-funnel-path">
               {steps[0]!.label} → {steps.at(-1)!.label}
             </p>
