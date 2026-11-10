@@ -6,6 +6,7 @@ import {
   type CountChartProps,
   type HorizontalGridProps,
 } from './chart-data.ts';
+import { useChartLegendFocus } from './chart-legend-interaction.tsx';
 import { ChartLegend } from './ChartLegend.tsx';
 import { classNames } from './classNames.ts';
 import { ComposedChart } from './ComposedChart.tsx';
@@ -34,6 +35,8 @@ export type RetentionChartSeries = {
 export type RetentionChartProps = CountChartProps &
   HorizontalGridProps & {
     series: readonly RetentionChartSeries[];
+    /** Disable legend hover and focus controls. */
+    interactiveLegend?: boolean;
   };
 
 type RetentionReading = {
@@ -148,7 +151,9 @@ export function RetentionChart({
   className,
   formatValue = formatNumber,
   horizontalGrid = true,
+  interactiveLegend = true,
 }: RetentionChartProps) {
+  const legendFocus = useChartLegendFocus(series.map(item => item.id));
   const { rows, rowsByOffset, cohorts } = createRetentionModel(
     series,
     unit,
@@ -187,6 +192,13 @@ export function RetentionChart({
                   }
                   name={item.label}
                   stroke={item.color}
+                  opacity={interactiveLegend ? legendFocus.opacity(item.id) : 1}
+                  style={{
+                    pointerEvents:
+                      interactiveLegend && !legendFocus.visible(item.id)
+                        ? 'none'
+                        : undefined,
+                  }}
                   connectNulls={false}
                 />
                 <ComposedChart.Line
@@ -195,6 +207,13 @@ export function RetentionChart({
                   }
                   name={item.label}
                   stroke={item.color}
+                  opacity={interactiveLegend ? legendFocus.opacity(item.id) : 1}
+                  style={{
+                    pointerEvents:
+                      interactiveLegend && !legendFocus.visible(item.id)
+                        ? 'none'
+                        : undefined,
+                  }}
                   strokeDasharray="3 3"
                   dot={false}
                   activeDot={false}
@@ -215,7 +234,11 @@ export function RetentionChart({
                     <strong>{row.label}</strong>
                     {cohorts.map(item => {
                       const reading = row.readings.get(item.id);
-                      if (!reading) return null;
+                      if (
+                        !reading ||
+                        (interactiveLegend && !legendFocus.visible(item.id))
+                      )
+                        return null;
                       return (
                         <span key={item.id}>
                           {item.label}: {reading.description}
@@ -229,12 +252,55 @@ export function RetentionChart({
           </ComposedChart>
           <ChartLegend aria-label={`${ariaLabel} cohorts`}>
             {cohorts.map(item => (
-              <ChartLegend.Item key={item.id}>
-                <ChartLegend.Marker kind="square" color={item.color} />
-                <ChartLegend.Label>{item.label}</ChartLegend.Label>
+              <ChartLegend.Item
+                key={item.id}
+                data-legend-muted={
+                  (interactiveLegend &&
+                    legendFocus.hoveredId &&
+                    legendFocus.hoveredId !== item.id) ||
+                  undefined
+                }
+                data-legend-excluded={
+                  (interactiveLegend && !legendFocus.visible(item.id)) ||
+                  undefined
+                }
+              >
+                {interactiveLegend && cohorts.length > 1 ? (
+                  <button
+                    type="button"
+                    data-atbl-control="action"
+                    data-atbl-focus="ring"
+                    className="altertable-chart-legend-action"
+                    aria-pressed={!!legendFocus.focusedIds?.has(item.id)}
+                    onPointerEnter={() => legendFocus.setHoveredId(item.id)}
+                    onPointerLeave={() => legendFocus.setHoveredId(null)}
+                    onFocus={() => legendFocus.setHoveredId(item.id)}
+                    onBlur={() => legendFocus.setHoveredId(null)}
+                    onClick={() => legendFocus.toggle(item.id)}
+                  >
+                    <ChartLegend.Marker kind="square" color={item.color} />
+                    <ChartLegend.Label>{item.label}</ChartLegend.Label>
+                  </button>
+                ) : (
+                  <>
+                    <ChartLegend.Marker kind="square" color={item.color} />
+                    <ChartLegend.Label>{item.label}</ChartLegend.Label>
+                  </>
+                )}
               </ChartLegend.Item>
             ))}
           </ChartLegend>
+          {interactiveLegend && legendFocus.focusedIds && (
+            <button
+              type="button"
+              data-atbl-control="action"
+              data-atbl-focus="ring"
+              className="altertable-chart-legend-action altertable-chart-legend-show-all"
+              onClick={legendFocus.showAll}
+            >
+              Show all
+            </button>
+          )}
           <ul
             className="altertable-sr-only"
             aria-label={`${ariaLabel} readings`}

@@ -2,6 +2,147 @@ import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
+test('automatic legend previews, focuses multiple series, and restores all', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Response time across twelve services',
+    exact: true,
+  });
+  const legend = chart.getByRole('list', { name: 'Chart legend' });
+  const api = legend.getByRole('button', { name: 'API', exact: true });
+  const analytics = legend.getByRole('button', {
+    name: 'Analytics',
+    exact: true,
+  });
+  const curves = chart.locator('.recharts-line-curve');
+  await expect.poll(() => curves.count()).toBe(12);
+  await api.hover();
+  await expect
+    .poll(() =>
+      legend.getByRole('listitem').nth(1).getAttribute('data-legend-muted')
+    )
+    .toBe('true');
+  await expect
+    .poll(() =>
+      curves.evaluateAll(
+        paths =>
+          paths.filter(
+            path =>
+              path.getAttribute('opacity') === '0.2' ||
+              path.closest('.recharts-line')?.getAttribute('opacity') === '0.2'
+          ).length
+      )
+    )
+    .toBe(11);
+  await api.click();
+  await expect
+    .poll(async () => legend.locator('[data-legend-excluded]').count())
+    .toBe((await legend.locator('button[aria-pressed]').count()) - 1);
+  await expect
+    .poll(() =>
+      curves.evaluateAll(
+        paths =>
+          paths.filter(
+            path =>
+              path.getAttribute('opacity') === '0' ||
+              path.closest('.recharts-line')?.getAttribute('opacity') === '0'
+          ).length
+      )
+    )
+    .toBe(11);
+  await expect.poll(() => api.getAttribute('aria-pressed')).toBe('true');
+  await analytics.click();
+  await expect
+    .poll(async () => legend.locator('[data-legend-excluded]').count())
+    .toBe((await legend.locator('button[aria-pressed]').count()) - 2);
+  await expect
+    .poll(() =>
+      curves.evaluateAll(
+        paths =>
+          paths.filter(
+            path =>
+              path.getAttribute('opacity') === '0' ||
+              path.closest('.recharts-line')?.getAttribute('opacity') === '0'
+          ).length
+      )
+    )
+    .toBe(10);
+  await chart.getByRole('button', { name: 'Show all' }).click();
+  await expect.poll(() => curves.count()).toBe(12);
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(0);
+});
+
+test('funnel and retention legends focus their plotted populations', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const [name, first, second] of [
+    ['FunnelChart', 'Free plan', 'Paid plan'],
+    ['RetentionChart', 'Sep 1', 'Sep 8'],
+  ]) {
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    const firstButton = chart.getByRole('button', {
+      name: first,
+      exact: name === 'RetentionChart',
+    });
+    const secondButton = chart.getByRole('button', {
+      name: second,
+      exact: name === 'RetentionChart',
+    });
+    await firstButton.click();
+    await expect
+      .poll(() => firstButton.getAttribute('aria-pressed'))
+      .toBe('true');
+    await expect
+      .poll(() => chart.locator('[data-legend-excluded]').count())
+      .toBe(1);
+    await secondButton.click();
+    await expect
+      .poll(() => chart.locator('[data-legend-excluded]').count())
+      .toBe(0);
+    await chart.getByRole('button', { name: 'Show all' }).click();
+    await expect
+      .poll(() => firstButton.getAttribute('aria-pressed'))
+      .toBe('false');
+  }
+});
+
+test('native function-key series respond to the automatic legend', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Native accessor plot',
+    exact: true,
+  });
+  const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
+  await alpha.click();
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('true');
+  await expect
+    .poll(() =>
+      chart
+        .locator('.recharts-line-curve')
+        .evaluateAll(
+          paths =>
+            paths.filter(
+              path =>
+                path.getAttribute('opacity') === '0' ||
+                path.closest('.recharts-line')?.getAttribute('opacity') === '0'
+            ).length
+        )
+    )
+    .toBe(1);
+  await chart.getByRole('button', { name: 'Show all' }).click();
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('false');
+});
+
 test('crowded automatic legends reserve a cell for expansion and restore their compact list', async ({
   page,
 }) => {
@@ -122,6 +263,16 @@ test('authored legends describe measures without controls and pie legends can be
   );
   expect(await legend.getByRole('button').count()).toBe(0);
   expect(await legend.getByRole('img').count()).toBe(0);
+  const sparseRetention = page.getByRole('region', {
+    name: 'Sparse retention basic example',
+    exact: true,
+  });
+  expect(
+    await sparseRetention
+      .getByRole('list', { name: 'Sparse retention cohorts' })
+      .getByRole('button')
+      .count()
+  ).toBe(0);
   const pie = page.getByRole('region', {
     name: 'Standalone pie basic example',
     exact: true,

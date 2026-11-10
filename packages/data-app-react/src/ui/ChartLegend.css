@@ -37,6 +37,10 @@
 .altertable-chart-legend-item[data-inactive] {
   opacity: var(--atbl-control-disabled-opacity);
 }
+.altertable-chart-legend-item[data-legend-muted],
+.altertable-chart-legend-item[data-legend-excluded] {
+  opacity: 0.4;
+}
 .altertable-chart-legend-marker {
   display: inline-block;
   width: 8px;
@@ -67,6 +71,13 @@
   color: inherit;
   font: inherit;
   text-align: left;
+}
+.altertable-chart-legend-action:where(button) {
+  cursor: pointer;
+}
+.altertable-chart-legend-show-all {
+  margin-top: var(--atbl-space-xs);
+  color: var(--atbl-accent);
 }
 .altertable-chart-legend[data-layout='vertical'][data-align='center'] {
   justify-items: center;

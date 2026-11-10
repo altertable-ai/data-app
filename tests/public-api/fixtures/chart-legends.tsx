@@ -230,6 +230,7 @@ function LegendIdentityExample({ kind }: { kind: LegendKind }) {
           })}
         <ComposedChart.Tooltip />
         <ComposedChart.Legend
+          interactive={false}
           itemSorter={entry =>
             descending
               ? entry.value === 'Beta'
@@ -546,6 +547,18 @@ createRoot(document.getElementById('root')!).render(
               dot={false}
             />
           ))}
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Native accessor legend"
+        description="Native series with function data keys keep automatic legend controls."
+      >
+        <ComposedChart data={legendRows} ariaLabel="Native accessor plot">
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <NativeLine key="alpha" dataKey={alphaAccessor} name="Alpha" />
+          <NativeLine key="beta" dataKey={betaAccessor} name="Beta" />
+          <ComposedChart.Legend />
         </ComposedChart>
       </Example>
       <Example
@@ -872,6 +885,7 @@ createRoot(document.getElementById('root')!).render(
         <RetentionChart
           ariaLabel="Sparse retention"
           unit="users"
+          interactiveLegend={false}
           series={[
             {
               id: 'alpha',

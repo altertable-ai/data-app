@@ -25,6 +25,11 @@ import {
   useChartSeries,
   isChartSeriesActive,
 } from './chart-interaction.tsx';
+import {
+  ChartLegendInteractionContext,
+  chartLegendSeriesKey,
+  useChartLegendSeries,
+} from './chart-legend-interaction.tsx';
 import { ChartValueFormat, axisValueFormatter } from './chart-value-format.ts';
 import { chartBarFill } from './chartColor.ts';
 import { ChartLegend } from './ChartLegend.tsx';
@@ -71,6 +76,7 @@ export function ChartBar<Row = unknown, Value = number | null>(
 ) {
   useDateAxisBar(props.xAxisId);
   const series = useChartSeries(props.id);
+  const legend = useChartLegendSeries(series.id, props.dataKey);
   return (
     <ChartSeries id={series.id}>
       <Bar<Row, Value>
@@ -81,6 +87,11 @@ export function ChartBar<Row = unknown, Value = number | null>(
         isAnimationActive={false}
         {...props}
         id={series.id}
+        opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
+        style={{
+          ...props.style,
+          pointerEvents: legend.hidden ? 'none' : props.style?.pointerEvents,
+        }}
       />
     </ChartSeries>
   );
@@ -95,6 +106,7 @@ export function ChartLine<Row = unknown, Value = number | null>({
   ...props
 }: LineProps<Row, Value>) {
   const series = useChartSeries(props.id);
+  const legend = useChartLegendSeries(series.id, props.dataKey);
   return (
     <ChartSeries id={series.id}>
       <Line<Row, Value>
@@ -123,6 +135,11 @@ export function ChartLine<Row = unknown, Value = number | null>({
         isAnimationActive={false}
         {...props}
         id={series.id}
+        opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
+        style={{
+          ...props.style,
+          pointerEvents: legend.hidden ? 'none' : props.style?.pointerEvents,
+        }}
       />
     </ChartSeries>
   );
@@ -136,6 +153,7 @@ export function ChartArea<Row = unknown, Value = number | null>({
   ...props
 }: AreaProps<Row, Value>) {
   const series = useChartSeries(props.id);
+  const legend = useChartLegendSeries(series.id, props.dataKey);
   return (
     <ChartSeries id={series.id}>
       <Area<Row, Value>
@@ -167,6 +185,11 @@ export function ChartArea<Row = unknown, Value = number | null>({
         isAnimationActive={false}
         {...props}
         id={series.id}
+        opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
+        style={{
+          ...props.style,
+          pointerEvents: legend.hidden ? 'none' : props.style?.pointerEvents,
+        }}
       />
     </ChartSeries>
   );
@@ -176,6 +199,7 @@ export function ChartScatter<Row = unknown, Value = number>(
   props: ComponentProps<typeof Scatter<Row, Value>>
 ) {
   const series = useChartSeries(props.id);
+  const legend = useChartLegendSeries(series.id, props.dataKey);
   return (
     <ChartSeries id={series.id}>
       <Scatter<Row, Value>
@@ -183,6 +207,11 @@ export function ChartScatter<Row = unknown, Value = number>(
         isAnimationActive={false}
         {...props}
         id={series.id}
+        opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
+        style={{
+          ...props.style,
+          pointerEvents: legend.hidden ? 'none' : props.style?.pointerEvents,
+        }}
       />
     </ChartSeries>
   );
@@ -309,21 +338,28 @@ export function ChartTooltipContent(
 export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
   const dateLabel = useDateAxisLabel(props.axisId);
   const interaction = useContext(ChartInteractionContext);
+  const legendInteraction = useContext(ChartLegendInteractionContext);
   return (
     <Tooltip
       labelFormatter={dateLabel}
       content={content => (
         <ChartTooltipContent
           {...content}
-          payload={
-            interaction?.isPointerInspection &&
-            interaction.seriesCount !== 1 &&
-            props.shared !== true
-              ? content.payload.filter(
-                  entry => entry.graphicalItemId === interaction.activeSeriesId
-                )
-              : content.payload
-          }
+          payload={(interaction?.isPointerInspection &&
+          interaction.seriesCount !== 1 &&
+          props.shared !== true
+            ? content.payload.filter(
+                entry => entry.graphicalItemId === interaction.activeSeriesId
+              )
+            : content.payload
+          ).filter(entry => {
+            if (!legendInteraction?.focusedKeys) return true;
+            const key = chartLegendSeriesKey(
+              entry.graphicalItemId,
+              entry.dataKey
+            );
+            return key == null || legendInteraction.focusedKeys.has(key);
+          })}
         />
       )}
       position={

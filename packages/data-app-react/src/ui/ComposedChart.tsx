@@ -3,6 +3,7 @@ import {
   Children,
   Fragment,
   isValidElement,
+  cloneElement,
   useState,
   useCallback,
   useEffect,
@@ -10,6 +11,7 @@ import {
   type PointerEvent,
   type ComponentProps,
   type ReactNode,
+  type ReactElement,
 } from 'react';
 import {
   ComposedChart as RechartsComposedChart,
@@ -20,6 +22,10 @@ import {
   ReferenceDot,
   Brush,
   Cell,
+  Line as NativeLine,
+  Bar as NativeBar,
+  Area as NativeArea,
+  Scatter as NativeScatter,
   Label,
   LabelList,
   ErrorBar,
@@ -31,6 +37,10 @@ import {
   ChartInteractionContext,
   type ChartPoint,
 } from './chart-interaction.tsx';
+import {
+  ChartLegendInteractionContext,
+  chartLegendSeriesKey,
+} from './chart-legend-interaction.tsx';
 import {
   ChartBar as Bar,
   ChartDot as Dot,
@@ -92,6 +102,66 @@ function hasAuthoredGrid(children: ReactNode): boolean {
         child.type === NativeCartesianGrid ||
         (child.type === Fragment && hasAuthoredGrid(child.props.children)))
   );
+}
+
+function applyNativeLegendInteraction(
+  children: ReactNode,
+  focusedKeys: ReadonlySet<string> | null,
+  hoveredKey: string | null,
+  path = 'root'
+): ReactNode {
+  return Children.map(children, (child, index) => {
+    if (!isValidElement(child)) return child;
+    if (child.type === Fragment) {
+      const props = child.props as { children?: ReactNode };
+      return cloneElement(child, {
+        children: applyNativeLegendInteraction(
+          props.children,
+          focusedKeys,
+          hoveredKey,
+          `${path}-${child.key ?? index}`
+        ),
+      } as { children: ReactNode });
+    }
+    if (
+      child.type !== NativeLine &&
+      child.type !== NativeBar &&
+      child.type !== NativeArea &&
+      child.type !== NativeScatter
+    )
+      return child;
+    const series = child as ReactElement<{
+      id?: string;
+      dataKey?: unknown;
+      hide?: boolean;
+      opacity?: number;
+      style?: { pointerEvents?: string };
+    }>;
+    const id =
+      series.props.id ??
+      (chartLegendSeriesKey(undefined, series.props.dataKey) == null
+        ? `atbl-native-${path}-${child.key ?? index}`
+        : undefined);
+    const key = chartLegendSeriesKey(id, series.props.dataKey)!;
+    return cloneElement(series, {
+      id,
+      opacity:
+        focusedKeys && !focusedKeys.has(key)
+          ? 0
+          : hoveredKey &&
+              (!focusedKeys || focusedKeys.has(hoveredKey)) &&
+              hoveredKey !== key
+            ? 0.2
+            : series.props.opacity,
+      style: {
+        ...series.props.style,
+        pointerEvents:
+          focusedKeys && !focusedKeys.has(key)
+            ? 'none'
+            : series.props.style?.pointerEvents,
+      },
+    });
+  });
 }
 
 /** Compose Cartesian series inside VisualizationWidget. Defaults to responsive
@@ -199,65 +269,91 @@ function ComposedChartRoot<Row>({
       });
     };
   }, []);
+  const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  const [focusedLegendKeys, setFocusedLegendKeys] =
+    useState<ReadonlySet<string> | null>(null);
+  const toggleLegendKey = useCallback((key: string) => {
+    setFocusedLegendKeys(current => {
+      if (!current) return new Set([key]);
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next.size ? next : null;
+    });
+  }, []);
   return (
     <ChartCursorChartContext.Provider value={{ cursor, mouseHover }}>
-      <ChartInteractionContext.Provider
+      <ChartLegendInteractionContext.Provider
         value={{
-          isPointerInspection,
-          activeSeriesId,
-          activePoint:
-            activeSeriesId == null ? undefined : points.get(activeSeriesId),
-          registerPoint,
-          setHoveredSeriesId,
-          seriesCount: seriesIds.size,
-          registerSeries,
+          hoveredKey: legendHoveredKey,
+          focusedKeys: focusedLegendKeys,
+          hover: setLegendHoveredKey,
+          toggle: toggleLegendKey,
+          showAll: () => setFocusedLegendKeys(null),
         }}
       >
-        <section
-          className={classNames('altertable-composed-chart', className)}
-          aria-label={ariaLabel}
-          data-atbl-internal-pointer-focus={hasPointerFocus || undefined}
-          onPointerDownCapture={event => {
-            setHasPointerFocus(trackPointer(event));
-          }}
-          onPointerOverCapture={trackPointer}
-          onPointerMoveCapture={trackPointer}
-          onPointerLeave={event => {
-            if (event.pointerType !== 'touch') {
-              resetPointerInspection();
-            }
-          }}
-          onKeyDownCapture={() => {
-            setHasPointerFocus(false);
-            resetPointerInspection();
-          }}
-          onBlurCapture={event => {
-            if (!event.currentTarget.contains(event.relatedTarget)) {
-              setHasPointerFocus(false);
-              resetPointerInspection();
-            }
+        <ChartInteractionContext.Provider
+          value={{
+            isPointerInspection,
+            activeSeriesId,
+            activePoint:
+              activeSeriesId == null ? undefined : points.get(activeSeriesId),
+            registerPoint,
+            setHoveredSeriesId,
+            seriesCount: seriesIds.size,
+            registerSeries,
           }}
         >
-          <ChartValueFormat.Provider value={valueFormat}>
-            <ChartDateAxes data={data}>
-              <RechartsComposedChart
-                data-atbl-focus="inset"
-                {...props}
-                data={data}
-                width={width}
-                height={height}
-                responsive={responsive}
-                aria-label={ariaLabel}
-              >
-                {horizontalGrid && !hasAuthoredGrid(children) && (
-                  <CartesianGrid />
-                )}
-                {children}
-              </RechartsComposedChart>
-            </ChartDateAxes>
-          </ChartValueFormat.Provider>
-        </section>
-      </ChartInteractionContext.Provider>
+          <section
+            className={classNames('altertable-composed-chart', className)}
+            aria-label={ariaLabel}
+            data-atbl-internal-pointer-focus={hasPointerFocus || undefined}
+            onPointerDownCapture={event => {
+              setHasPointerFocus(trackPointer(event));
+            }}
+            onPointerOverCapture={trackPointer}
+            onPointerMoveCapture={trackPointer}
+            onPointerLeave={event => {
+              if (event.pointerType !== 'touch') {
+                resetPointerInspection();
+              }
+            }}
+            onKeyDownCapture={() => {
+              setHasPointerFocus(false);
+              resetPointerInspection();
+            }}
+            onBlurCapture={event => {
+              if (!event.currentTarget.contains(event.relatedTarget)) {
+                setHasPointerFocus(false);
+                resetPointerInspection();
+              }
+            }}
+          >
+            <ChartValueFormat.Provider value={valueFormat}>
+              <ChartDateAxes data={data}>
+                <RechartsComposedChart
+                  data-atbl-focus="inset"
+                  {...props}
+                  data={data}
+                  width={width}
+                  height={height}
+                  responsive={responsive}
+                  aria-label={ariaLabel}
+                >
+                  {horizontalGrid && !hasAuthoredGrid(children) && (
+                    <CartesianGrid />
+                  )}
+                  {applyNativeLegendInteraction(
+                    children,
+                    focusedLegendKeys,
+                    legendHoveredKey
+                  )}
+                </RechartsComposedChart>
+              </ChartDateAxes>
+            </ChartValueFormat.Provider>
+          </section>
+        </ChartInteractionContext.Provider>
+      </ChartLegendInteractionContext.Provider>
     </ChartCursorChartContext.Provider>
   );
 }
