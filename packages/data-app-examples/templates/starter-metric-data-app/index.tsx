@@ -12,7 +12,6 @@ import {
   Stack,
 } from '@altertable/data-app-react';
 import { BarChart } from '@altertable/data-app-react/ui';
-import { createDataClient } from '@altertable/data-app/client';
 import { choiceFilter, parseCount } from '@altertable/data-app/contract';
 const dataApp = defineDataApp({
   title: 'Sample metric',
@@ -68,7 +67,7 @@ const groupName = choiceFilter({
 function queryGroup(groupName: string) {
   return groupName === 'all' ? '' : groupName;
 }
-const operations = {
+const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
@@ -101,7 +100,7 @@ const operations = {
       }));
     },
   }),
-};
+});
 const queryNames = {
   ...operations.sampleCountsByGroup.queryNames,
   ...operations.sampleCountsBySegment.queryNames,
@@ -120,7 +119,9 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineView } = createDataHooks(createDataClient({ operations }));
+const { defineView } = createDataHooks(
+  operations.createDataClient({ execution: 'browser' })
+);
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',

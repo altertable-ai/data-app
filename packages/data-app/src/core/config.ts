@@ -9,6 +9,8 @@ import {
   type InputOperationDefinition,
   type WithFilterInput,
 } from '../authoring/contract.ts';
+import { createDataClient, type DataClient } from '../client/data-client.ts';
+import type { DataTransport } from '../client/transport.ts';
 import type { FilterCollection } from './app-filters.ts';
 import type { AppearanceOptions } from './appearance.ts';
 import {
@@ -18,6 +20,7 @@ import {
   type SourceDimensionFilter,
 } from './dimension-source.ts';
 import type { FilterInput } from './operation-filters.ts';
+import type { DataOperations, Lakehouse } from './operation-types.ts';
 import {
   snapshotQueries,
   type QueryDefinitions,
@@ -49,6 +52,23 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
     queries: Queries;
   };
 
+export type DataAppOperationRegistry<Operations extends DataOperations> =
+  Operations & {
+    /** Named-operation client; the host or HTTP server executes the registry. */
+    readonly client: DataClient<Operations>;
+    /** Opt into browser execution through the host SQL route. */
+    createDataClient(
+      options:
+        | { execution: 'browser'; lakehouse?: Lakehouse }
+        | {
+            execution?: 'server';
+            transport?: DataTransport;
+            endpoint?: string;
+            fetch?: typeof fetch;
+          }
+    ): DataClient<Operations>;
+  };
+
 /** An app declaration with operations bound to its query registry. */
 export type DataAppDefinition<
   Queries extends QueryDefinitions = QueryDefinitions,
@@ -76,6 +96,10 @@ export type DataAppDefinition<
   >(
     operation: FilterOperationDefinition<Filters, Output, Queries>
   ): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>;
+  /** Bind a named registry to these queries and derive its client and filters. */
+  defineOperations<const Operations extends DataOperations>(
+    operations: Operations
+  ): DataAppOperationRegistry<Operations>;
 };
 
 /**
@@ -120,7 +144,56 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
         queries: queries as unknown as CheckedQueries<Queries>,
       } as never);
     },
-  });
+    defineOperations(operations: DataOperations) {
+      if (
+        Object.hasOwn(operations, 'client') ||
+        Object.hasOwn(operations, 'createDataClient')
+      )
+        throw new Error(
+          'Operation names client and createDataClient are reserved.'
+        );
+      const filters = Object.fromEntries(
+        Object.entries(operations).flatMap(([name, operation]) =>
+          operation.filters ? [[name, operation.filters]] : []
+        )
+      );
+      const client = (
+        createDataClient as (options: object) => DataClient<DataOperations>
+      )({ filters });
+      const registry = {
+        ...operations,
+      } as DataAppOperationRegistry<DataOperations>;
+      Object.setPrototypeOf(registry, {
+        client,
+        createDataClient(options: {
+          execution?: 'browser' | 'server';
+          lakehouse?: Lakehouse;
+          transport?: DataTransport;
+          endpoint?: string;
+          fetch?: typeof fetch;
+        }) {
+          if (options.execution === 'browser')
+            return (
+              createDataClient as (
+                options: object
+              ) => DataClient<DataOperations>
+            )({
+              operations,
+              lakehouse: options.lakehouse,
+            });
+          return (
+            createDataClient as (options: object) => DataClient<DataOperations>
+          )({
+            filters,
+            transport: options.transport,
+            endpoint: options.endpoint,
+            fetch: options.fetch,
+          });
+        },
+      });
+      return Object.freeze(registry);
+    },
+  }) as unknown as DataAppDefinition<Queries>;
 }
 
 export function dataAppTitle(

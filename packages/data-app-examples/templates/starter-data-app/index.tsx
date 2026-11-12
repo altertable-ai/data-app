@@ -12,7 +12,6 @@ import {
   mountDataApp,
   MetricWidget,
 } from '@altertable/data-app-react';
-import { createDataClient } from '@altertable/data-app/client';
 import { parseCount, searchFilter } from '@altertable/data-app/contract';
 import { formatMetric } from '@altertable/data-app/format';
 
@@ -50,7 +49,7 @@ WHERE $groupName = '' OR group_name = $groupName`,
 // Declare each filter once; operations list the filters they read, and views,
 // controls, and scope derive from them.
 const groupName = searchFilter({ key: 'group', label: 'Group' });
-const operations = {
+const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
@@ -70,7 +69,7 @@ const operations = {
       return { sampleCount: parseCount(queryResult.rows[0]?.sample_count) };
     },
   }),
-};
+});
 const queryNames = {
   ...operations.sampleCountsByGroup.queryNames,
   ...operations.sampleTotal.queryNames,
@@ -87,7 +86,9 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineView } = createDataHooks(createDataClient({ operations }));
+const { defineView } = createDataHooks(
+  operations.createDataClient({ execution: 'browser' })
+);
 const sampleCountsView = defineView({
   dataContext: sampleDataContext,
   operation: 'sampleCountsByGroup',
