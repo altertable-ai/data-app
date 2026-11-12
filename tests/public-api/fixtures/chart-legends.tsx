@@ -660,7 +660,7 @@ createRoot(document.getElementById('root')!).render(
           ariaLabel="Four series plot"
         >
           <ComposedChart.XAxis dataKey="x" type="number" />
-          <ComposedChart.YAxis />
+          <ComposedChart.YAxis domain={[0, 50]} />
           <ComposedChart.Line dataKey="alpha" name="Alpha" />
           <ComposedChart.Line dataKey="beta" name="Beta" />
           <ComposedChart.Line dataKey="gamma" name="Gamma" />

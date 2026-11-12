@@ -95,6 +95,7 @@ export function ChartBar<Row = unknown, Value = number | null>(
         isAnimationActive={false}
         {...props}
         id={series.id}
+        hide={legend.hidden || props.hide}
         opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
         style={{
           ...props.style,
@@ -147,6 +148,7 @@ export function ChartLine<Row = unknown, Value = number | null>({
         isAnimationActive={false}
         {...props}
         id={series.id}
+        hide={legend.hidden || props.hide}
         opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
         style={{
           ...props.style,
@@ -201,6 +203,7 @@ export function ChartArea<Row = unknown, Value = number | null>({
         isAnimationActive={false}
         {...props}
         id={series.id}
+        hide={legend.hidden || props.hide}
         opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
         style={{
           ...props.style,
@@ -223,6 +226,7 @@ export function ChartScatter<Row = unknown, Value = number>(
         isAnimationActive={false}
         {...props}
         id={series.id}
+        hide={legend.hidden || props.hide}
         opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
         style={{
           ...props.style,

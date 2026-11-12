@@ -26,6 +26,8 @@ import {
   Bar as NativeBar,
   Area as NativeArea,
   Scatter as NativeScatter,
+  XAxis as NativeXAxis,
+  YAxis as NativeYAxis,
   Label,
   LabelList,
   ErrorBar,
@@ -111,6 +113,7 @@ function applyNativeLegendInteraction(
   focusedKeys: ReadonlySet<string> | null,
   hoveredKey: string | null,
   suppressPlotInspection: boolean,
+  barAxisIds: ReadonlySet<string | number>,
   path = 'root'
 ): ReactNode {
   return Children.map(children, (child, index) => {
@@ -123,9 +126,30 @@ function applyNativeLegendInteraction(
           focusedKeys,
           hoveredKey,
           suppressPlotInspection,
+          barAxisIds,
           `${path}-${child.key ?? index}`
         ),
       } as { children: ReactNode });
+    }
+    if (child.type === XAxis || child.type === NativeXAxis) {
+      const axis = child as ReactElement<{ includeHidden?: boolean }>;
+      return cloneElement(axis, {
+        includeHidden: axis.props.includeHidden ?? true,
+      });
+    }
+    if (child.type === YAxis || child.type === NativeYAxis) {
+      const axis = child as ReactElement<{
+        yAxisId?: string | number;
+        domain?: unknown;
+        ticks?: unknown;
+      }>;
+      if (!focusedKeys || axis.props.domain != null || axis.props.ticks != null)
+        return child;
+      return cloneElement(axis, {
+        domain: barAxisIds.has(axis.props.yAxisId ?? 0)
+          ? [0, 'auto']
+          : ['auto', 'auto'],
+      });
     }
     if (
       child.type !== NativeLine &&
@@ -152,6 +176,7 @@ function applyNativeLegendInteraction(
     const excluded = !!(focusedKeys && !focusedKeys.has(key));
     return cloneElement(series, {
       id,
+      hide: excluded || series.props.hide,
       opacity: excluded
         ? 0
         : hoveredKey &&
@@ -172,6 +197,24 @@ function applyNativeLegendInteraction(
         : {}),
     });
   });
+}
+
+function collectBarAxisIds(
+  children: ReactNode,
+  ids = new Set<string | number>()
+) {
+  Children.forEach(children, child => {
+    if (!isValidElement(child)) return;
+    if (child.type === Fragment) {
+      collectBarAxisIds(
+        (child.props as { children?: ReactNode }).children,
+        ids
+      );
+    } else if (child.type === Bar || child.type === NativeBar) {
+      ids.add((child.props as { yAxisId?: string | number }).yAxisId ?? 0);
+    }
+  });
+  return ids;
 }
 
 /** Compose Cartesian series inside VisualizationWidget. Defaults to responsive
@@ -370,7 +413,8 @@ function ComposedChartRoot<Row>({
                     children,
                     focusedLegendKeys,
                     legendHoveredKey,
-                    suppressPlotInspection
+                    suppressPlotInspection,
+                    collectBarAxisIds(children)
                   )}
                 </RechartsComposedChart>
               </ChartDateAxes>

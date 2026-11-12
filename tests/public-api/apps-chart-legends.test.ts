@@ -43,18 +43,7 @@ test('automatic legend previews, focuses, and adds series', async ({
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
     .toBe((await legend.locator('button[aria-pressed]').count()) - 1);
-  await expect
-    .poll(() =>
-      curves.evaluateAll(
-        paths =>
-          paths.filter(
-            path =>
-              path.getAttribute('opacity') === '0' ||
-              path.closest('.recharts-line')?.getAttribute('opacity') === '0'
-          ).length
-      )
-    )
-    .toBe(11);
+  await expect.poll(() => curves.count()).toBe(1);
   await expect.poll(() => api.getAttribute('aria-pressed')).toBe('true');
   await analytics.hover();
   await expect
@@ -76,18 +65,7 @@ test('automatic legend previews, focuses, and adds series', async ({
   await expect
     .poll(async () => legend.locator('[data-legend-excluded]').count())
     .toBe((await legend.locator('button[aria-pressed]').count()) - 2);
-  await expect
-    .poll(() =>
-      curves.evaluateAll(
-        paths =>
-          paths.filter(
-            path =>
-              path.getAttribute('opacity') === '0' ||
-              path.closest('.recharts-line')?.getAttribute('opacity') === '0'
-          ).length
-      )
-    )
-    .toBe(10);
+  await expect.poll(() => curves.count()).toBe(2);
   await api.click();
   await analytics.click();
   expect((await chart.boundingBox())!.height).toBe(chartHeight);
@@ -110,6 +88,41 @@ test('focus removes dots from excluded line series', async ({ page }) => {
   await expect.poll(() => dots.count()).toBe(2);
   await alpha.click();
   await expect.poll(() => dots.count()).toBe(4);
+});
+
+test('focus rescales the value axis while preserving category positions', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Response time across twelve services',
+    exact: true,
+  });
+  const yTicks = chart.locator('svg text').filter({ hasText: /ms$/ });
+  const xTicks = chart.locator('svg text').filter({
+    hasText: /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/,
+  });
+  const fullY = await yTicks.allTextContents();
+  const fullX = await xTicks.evaluateAll(elements =>
+    elements.map(element => ({
+      text: element.textContent,
+      x: element.getBoundingClientRect().x,
+    }))
+  );
+  await chart.getByRole('button', { name: 'API', exact: true }).click();
+  await expect.poll(() => yTicks.allTextContents()).not.toEqual(fullY);
+  const focusedY = await yTicks.allTextContents();
+  expect(focusedY.some(tick => tick.startsWith('0'))).toBe(false);
+  expect(
+    await xTicks.evaluateAll(elements =>
+      elements.map(element => ({
+        text: element.textContent,
+        x: element.getBoundingClientRect().x,
+      }))
+    )
+  ).toEqual(fullX);
+  await chart.getByRole('button', { name: 'API', exact: true }).click();
+  await expect.poll(() => yTicks.allTextContents()).toEqual(fullY);
 });
 
 test('first legend click does not activate a plot tooltip', async ({
@@ -197,6 +210,10 @@ test('four series exit focus when all are re-enabled', async ({ page }) => {
     exact: true,
   });
   const legend = chart.getByRole('list', { name: 'Chart legend' });
+  const yTicks = chart
+    .locator('svg text')
+    .filter({ hasText: /^(0|10|20|30|40|50)$/ });
+  const fullY = await yTicks.allTextContents();
   await expect.poll(() => legend.getByRole('listitem').count()).toBe(4);
   expect(await chart.getByRole('button', { name: 'Show all' }).count()).toBe(0);
   const height = (await chart.boundingBox())!.height;
@@ -205,6 +222,7 @@ test('four series exit focus when all are re-enabled', async ({ page }) => {
   await expect
     .poll(() => legend.locator('[data-legend-excluded]').count())
     .toBe(3);
+  expect(await yTicks.allTextContents()).toEqual(fullY);
   expect(await legend.getByRole('listitem').count()).toBe(4);
   expect((await chart.boundingBox())!.height).toBe(height);
   for (const name of ['Beta', 'Gamma', 'Delta']) {
@@ -270,12 +288,8 @@ test('custom tooltip content receives only focused series', async ({
   await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
   await expect.poll(() => chart.getByRole('tooltip').count()).toBe(0);
   const plot = chart.getByRole('application');
-  await plot.scrollIntoViewIfNeeded();
-  const bounds = await plot.boundingBox();
-  await page.mouse.move(
-    bounds!.x + bounds!.width / 2,
-    bounds!.y + bounds!.height / 2
-  );
+  await plot.focus();
+  await page.keyboard.press('ArrowRight');
   const tooltip = chart.getByRole('tooltip');
   await expect.poll(() => tooltip.textContent()).toContain('Alpha');
   expect(await tooltip.textContent()).not.toContain('Beta');
@@ -363,18 +377,7 @@ test('native function-key series respond to the automatic legend', async ({
   await alpha.click();
   await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('true');
   await expect
-    .poll(() =>
-      chart
-        .locator('.recharts-line-curve')
-        .evaluateAll(
-          paths =>
-            paths.filter(
-              path =>
-                path.getAttribute('opacity') === '0' ||
-                path.closest('.recharts-line')?.getAttribute('opacity') === '0'
-            ).length
-        )
-    )
+    .poll(() => chart.locator('.recharts-line-curve').count())
     .toBe(1);
   await alpha.click();
   await expect
