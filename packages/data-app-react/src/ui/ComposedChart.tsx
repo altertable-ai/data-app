@@ -112,6 +112,45 @@ function hasAuthoredGrid(children: ReactNode): boolean {
   );
 }
 
+function countNativeSeriesKeys(
+  children: ReactNode,
+  counts = new Map<string, number>()
+) {
+  Children.forEach(children, child => {
+    if (!isValidElement(child)) return;
+    if (child.type === Fragment) {
+      countNativeSeriesKeys(
+        (child.props as { children?: ReactNode }).children,
+        counts
+      );
+    } else if (
+      child.type === NativeLine ||
+      child.type === NativeBar ||
+      child.type === NativeArea ||
+      child.type === NativeScatter
+    ) {
+      const props = child.props as { id?: string; dataKey?: unknown };
+      const key = chartLegendSeriesKey(props.id, props.dataKey);
+      if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  });
+  return counts;
+}
+
+function nativeSeriesId(
+  props: { id?: string; dataKey?: unknown },
+  child: ReactElement,
+  index: number,
+  path: string,
+  keyCounts: ReadonlyMap<string, number>
+) {
+  if (props.id != null) return props.id;
+  const key = chartLegendSeriesKey(undefined, props.dataKey);
+  return !key || (keyCounts.get(key) ?? 0) > 1
+    ? `atbl-native-${path}-${child.key ?? index}`
+    : undefined;
+}
+
 function applyNativeLegendInteraction(
   children: ReactNode,
   focusedKeys: ReadonlySet<string> | null,
@@ -121,6 +160,7 @@ function applyNativeLegendInteraction(
   visibleBarAxisIds: ReadonlySet<string | number>,
   fullAxisSpace: { left: number; right: number } | null,
   yAxisSideCounts: { left: number; right: number },
+  keyCounts: ReadonlyMap<string, number>,
   path = 'root'
 ): ReactNode {
   return Children.map(children, (child, index) => {
@@ -137,6 +177,7 @@ function applyNativeLegendInteraction(
           visibleBarAxisIds,
           fullAxisSpace,
           yAxisSideCounts,
+          keyCounts,
           `${path}-${child.key ?? index}`
         ),
       } as { children: ReactNode });
@@ -205,11 +246,7 @@ function applyNativeLegendInteraction(
       dot?: unknown;
       activeDot?: unknown;
     }>;
-    const id =
-      series.props.id ??
-      (chartLegendSeriesKey(undefined, series.props.dataKey) == null
-        ? `atbl-native-${path}-${child.key ?? index}`
-        : undefined);
+    const id = nativeSeriesId(series.props, child, index, path, keyCounts);
     const key = chartLegendSeriesKey(id, series.props.dataKey)!;
     const excluded = !!(focusedKeys && !focusedKeys.has(key));
     return cloneElement(series, {
@@ -241,6 +278,7 @@ function collectVisibleNativeBarAxisIds(
   children: ReactNode,
   focusedKeys: ReadonlySet<string> | null,
   valueAxis: 'x' | 'y',
+  keyCounts: ReadonlyMap<string, number>,
   path = 'root',
   ids = new Set<string | number>()
 ) {
@@ -251,6 +289,7 @@ function collectVisibleNativeBarAxisIds(
         (child.props as { children?: ReactNode }).children,
         focusedKeys,
         valueAxis,
+        keyCounts,
         `${path}-${child.key ?? index}`,
         ids
       );
@@ -262,11 +301,7 @@ function collectVisibleNativeBarAxisIds(
         xAxisId?: string | number;
         yAxisId?: string | number;
       };
-      const id =
-        props.id ??
-        (chartLegendSeriesKey(undefined, props.dataKey) == null
-          ? `atbl-native-${path}-${child.key ?? index}`
-          : undefined);
+      const id = nativeSeriesId(props, child, index, path, keyCounts);
       const key = chartLegendSeriesKey(id, props.dataKey)!;
       if (!props.hide && (!focusedKeys || focusedKeys.has(key))) {
         ids.add(
@@ -491,10 +526,12 @@ function ComposedChartRoot<Row>({
     [focusedLegendKeys]
   );
   const axisLayout = inspectAxisLayout(children);
+  const nativeKeyCounts = countNativeSeriesKeys(children);
   const visibleBarAxisIds = collectVisibleNativeBarAxisIds(
     children,
     focusedLegendKeys,
-    valueAxis
+    valueAxis,
+    nativeKeyCounts
   );
   for (const [key, axisId] of barAxisByKey) {
     if (!focusedLegendKeys || focusedLegendKeys.has(key))
@@ -597,7 +634,8 @@ function ComposedChartRoot<Row>({
                     valueAxis,
                     visibleBarAxisIds,
                     fullAxisSpace,
-                    axisLayout
+                    axisLayout,
+                    nativeKeyCounts
                   )}
                 </RechartsComposedChart>
               </ChartDateAxes>

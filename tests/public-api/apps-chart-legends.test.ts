@@ -476,6 +476,28 @@ test('native function-key series respond to the automatic legend', async ({
     .toBe(0);
 });
 
+test('native series sharing a data key focus without explicit IDs', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Native shared data key plot',
+    exact: true,
+  });
+  const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
+  const beta = chart.getByRole('button', { name: 'Beta', exact: true });
+  await alpha.click();
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('true');
+  await expect
+    .poll(() => chart.locator('.recharts-line-curve').count())
+    .toBe(1);
+  await beta.click();
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('false');
+  await expect
+    .poll(() => chart.locator('.recharts-line-curve').count())
+    .toBe(2);
+});
+
 test('crowded automatic legends reserve a cell for expansion and restore their compact list', async ({
   page,
 }) => {

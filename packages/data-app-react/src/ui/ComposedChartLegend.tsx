@@ -217,7 +217,6 @@ function LegendContent({
 }
 
 /** Opt in inside ComposedChart to derive the shared legend from its displayed series.
- * Give native series unique IDs when they share a data key.
  * Native positioning, sorting, formatters, callbacks, and custom content remain available. */
 export function ComposedChartLegend({
   maxVisibleItems,

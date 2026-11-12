@@ -619,6 +619,21 @@ createRoot(document.getElementById('root')!).render(
         </ComposedChart>
       </Example>
       <Example
+        name="Native shared data key legend"
+        description="Native series sharing a data key can be focused without explicit IDs."
+      >
+        <ComposedChart
+          data={legendRows}
+          ariaLabel="Native shared data key plot"
+        >
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <NativeLine key="alpha" dataKey="alpha" name="Alpha" />
+          <NativeLine key="beta" dataKey="alpha" name="Beta" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
         name="Series dot focus"
         description="Focused line series hide every dot from excluded series."
       >
