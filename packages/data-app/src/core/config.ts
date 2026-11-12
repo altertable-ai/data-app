@@ -54,14 +54,12 @@ export type DataAppConfig<Queries extends QueryDefinitions = QueryDefinitions> =
 
 export type DataAppOperationRegistry<Operations extends DataOperations> =
   Operations & {
-    /** Named-operation client; the host or HTTP server executes the registry. */
-    readonly client: DataClient<Operations>;
-    /** Opt into browser execution through the host SQL route. */
+    /** Choose whether the server or browser executes the named operations. */
     createDataClient(
       options:
         | { execution: 'browser'; lakehouse?: Lakehouse }
         | {
-            execution?: 'server';
+            execution: 'server';
             transport?: DataTransport;
             endpoint?: string;
             fetch?: typeof fetch;
@@ -145,28 +143,19 @@ export function defineDataApp<const Queries extends QueryDefinitions>(
       } as never);
     },
     defineOperations(operations: DataOperations) {
-      if (
-        Object.hasOwn(operations, 'client') ||
-        Object.hasOwn(operations, 'createDataClient')
-      )
-        throw new Error(
-          'Operation names client and createDataClient are reserved.'
-        );
+      if (Object.hasOwn(operations, 'createDataClient'))
+        throw new Error('Operation name createDataClient is reserved.');
       const filters = Object.fromEntries(
         Object.entries(operations).flatMap(([name, operation]) =>
           operation.filters ? [[name, operation.filters]] : []
         )
       );
-      const client = (
-        createDataClient as (options: object) => DataClient<DataOperations>
-      )({ filters });
       const registry = {
         ...operations,
       } as DataAppOperationRegistry<DataOperations>;
       Object.setPrototypeOf(registry, {
-        client,
         createDataClient(options: {
-          execution?: 'browser' | 'server';
+          execution: 'browser' | 'server';
           lakehouse?: Lakehouse;
           transport?: DataTransport;
           endpoint?: string;
