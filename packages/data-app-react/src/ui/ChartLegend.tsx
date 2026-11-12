@@ -40,7 +40,9 @@ function ChartLegendRoot({
     const container = containerRef.current;
     if (!container) return;
     function measure() {
-      const list = containerRef.current?.firstElementChild;
+      const list = containerRef.current?.querySelector(
+        '.altertable-chart-legend'
+      );
       if (list) {
         setColumns(
           getComputedStyle(list).gridTemplateColumns.split(' ').length

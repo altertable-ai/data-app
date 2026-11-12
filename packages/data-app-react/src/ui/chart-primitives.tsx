@@ -1,7 +1,13 @@
 import { useDateAxisLabel, useDateAxisBar } from './chart-date-axis.tsx';
 export { ChartXAxis } from './chart-date-axis.tsx';
 import { formatMetric, formatNumber } from '@altertable/data-app/format';
-import { useContext, useLayoutEffect, type ComponentProps } from 'react';
+import {
+  cloneElement,
+  isValidElement,
+  useContext,
+  useLayoutEffect,
+  type ComponentProps,
+} from 'react';
 import {
   Area,
   Dot,
@@ -11,9 +17,11 @@ import {
   Scatter,
   YAxis,
   useYAxisTicks,
+  useCartesianChartLayout,
   CartesianGrid,
   Tooltip,
   DefaultTooltipContent,
+  type TooltipContentProps,
   type BarProps,
   type LineProps,
   type AreaProps,
@@ -25,6 +33,11 @@ import {
   useChartSeries,
   isChartSeriesActive,
 } from './chart-interaction.tsx';
+import {
+  ChartLegendInteractionContext,
+  chartLegendSeriesKey,
+  useChartLegendSeries,
+} from './chart-legend-interaction.tsx';
 import { ChartValueFormat, axisValueFormatter } from './chart-value-format.ts';
 import { chartBarFill } from './chartColor.ts';
 import { ChartLegend } from './ChartLegend.tsx';
@@ -49,11 +62,12 @@ function NearestChartDot({
 }: DotProps & { seriesId: string }) {
   const interaction = useContext(ChartInteractionContext);
   const registerPoint = interaction?.registerPoint;
+  const legend = useChartLegendSeries(seriesId, undefined);
   useLayoutEffect(() => {
-    if (cx == null || cy == null) return;
+    if (legend.hidden || cx == null || cy == null) return;
     return registerPoint?.(seriesId, cx, cy);
-  }, [registerPoint, seriesId, cx, cy]);
-  const active = isChartSeriesActive(interaction, seriesId);
+  }, [registerPoint, seriesId, cx, cy, legend.hidden]);
+  const active = !legend.hidden && isChartSeriesActive(interaction, seriesId);
   return active ? (
     <ChartDot
       cx={cx}
@@ -71,6 +85,17 @@ export function ChartBar<Row = unknown, Value = number | null>(
 ) {
   useDateAxisBar(props.xAxisId);
   const series = useChartSeries(props.id);
+  const legend = useChartLegendSeries(series.id, props.dataKey);
+  const interaction = useContext(ChartLegendInteractionContext);
+  const layout = useCartesianChartLayout();
+  const registerBarAxis = interaction?.registerBarAxis;
+  const key = chartLegendSeriesKey(series.id, props.dataKey);
+  const axisId =
+    layout === 'vertical' ? (props.xAxisId ?? 0) : (props.yAxisId ?? 0);
+  useLayoutEffect(
+    () => (key && !props.hide ? registerBarAxis?.(key, axisId) : undefined),
+    [registerBarAxis, key, axisId, props.hide]
+  );
   return (
     <ChartSeries id={series.id}>
       <Bar<Row, Value>
@@ -81,6 +106,12 @@ export function ChartBar<Row = unknown, Value = number | null>(
         isAnimationActive={false}
         {...props}
         id={series.id}
+        hide={legend.hidden || props.hide}
+        opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
+        style={{
+          ...props.style,
+          pointerEvents: legend.hidden ? 'none' : props.style?.pointerEvents,
+        }}
       />
     </ChartSeries>
   );
@@ -95,6 +126,7 @@ export function ChartLine<Row = unknown, Value = number | null>({
   ...props
 }: LineProps<Row, Value>) {
   const series = useChartSeries(props.id);
+  const legend = useChartLegendSeries(series.id, props.dataKey);
   return (
     <ChartSeries id={series.id}>
       <Line<Row, Value>
@@ -104,25 +136,35 @@ export function ChartLine<Row = unknown, Value = number | null>({
         strokeLinecap="round"
         strokeLinejoin="round"
         dot={
-          dot === true
-            ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
-            : dot
+          legend.hidden
+            ? false
+            : dot === true
+              ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
+              : dot
         }
         activeDot={
-          activeDot === undefined || activeDot === true
-            ? ({ cx, cy }) => (
-                <NearestChartDot
-                  seriesId={series.id}
-                  cx={cx}
-                  cy={cy}
-                  stroke={stroke}
-                />
-              )
-            : activeDot
+          legend.hidden || legend.inspectingLegend
+            ? false
+            : activeDot === undefined || activeDot === true
+              ? ({ cx, cy }) => (
+                  <NearestChartDot
+                    seriesId={series.id}
+                    cx={cx}
+                    cy={cy}
+                    stroke={stroke}
+                  />
+                )
+              : activeDot
         }
         isAnimationActive={false}
         {...props}
         id={series.id}
+        hide={legend.hidden || props.hide}
+        opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
+        style={{
+          ...props.style,
+          pointerEvents: legend.hidden ? 'none' : props.style?.pointerEvents,
+        }}
       />
     </ChartSeries>
   );
@@ -136,6 +178,7 @@ export function ChartArea<Row = unknown, Value = number | null>({
   ...props
 }: AreaProps<Row, Value>) {
   const series = useChartSeries(props.id);
+  const legend = useChartLegendSeries(series.id, props.dataKey);
   return (
     <ChartSeries id={series.id}>
       <Area<Row, Value>
@@ -148,25 +191,35 @@ export function ChartArea<Row = unknown, Value = number | null>({
         fill={stroke}
         fillOpacity={0.14}
         dot={
-          dot === true
-            ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
-            : dot
+          legend.hidden
+            ? false
+            : dot === true
+              ? ({ cx, cy }) => <ChartDot cx={cx} cy={cy} stroke={stroke} />
+              : dot
         }
         activeDot={
-          activeDot === undefined || activeDot === true
-            ? ({ cx, cy }) => (
-                <NearestChartDot
-                  seriesId={series.id}
-                  cx={cx}
-                  cy={cy}
-                  stroke={stroke}
-                />
-              )
-            : activeDot
+          legend.hidden || legend.inspectingLegend
+            ? false
+            : activeDot === undefined || activeDot === true
+              ? ({ cx, cy }) => (
+                  <NearestChartDot
+                    seriesId={series.id}
+                    cx={cx}
+                    cy={cy}
+                    stroke={stroke}
+                  />
+                )
+              : activeDot
         }
         isAnimationActive={false}
         {...props}
         id={series.id}
+        hide={legend.hidden || props.hide}
+        opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
+        style={{
+          ...props.style,
+          pointerEvents: legend.hidden ? 'none' : props.style?.pointerEvents,
+        }}
       />
     </ChartSeries>
   );
@@ -176,6 +229,7 @@ export function ChartScatter<Row = unknown, Value = number>(
   props: ComponentProps<typeof Scatter<Row, Value>>
 ) {
   const series = useChartSeries(props.id);
+  const legend = useChartLegendSeries(series.id, props.dataKey);
   return (
     <ChartSeries id={series.id}>
       <Scatter<Row, Value>
@@ -183,6 +237,12 @@ export function ChartScatter<Row = unknown, Value = number>(
         isAnimationActive={false}
         {...props}
         id={series.id}
+        hide={legend.hidden || props.hide}
+        opacity={legend.hidden ? 0 : legend.dimmed ? 0.2 : props.opacity}
+        style={{
+          ...props.style,
+          pointerEvents: legend.hidden ? 'none' : props.style?.pointerEvents,
+        }}
       />
     </ChartSeries>
   );
@@ -309,23 +369,11 @@ export function ChartTooltipContent(
 export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
   const dateLabel = useDateAxisLabel(props.axisId);
   const interaction = useContext(ChartInteractionContext);
+  const legendInteraction = useContext(ChartLegendInteractionContext);
+  const { content: authoredContent, ...tooltipProps } = props;
   return (
     <Tooltip
       labelFormatter={dateLabel}
-      content={content => (
-        <ChartTooltipContent
-          {...content}
-          payload={
-            interaction?.isPointerInspection &&
-            interaction.seriesCount !== 1 &&
-            props.shared !== true
-              ? content.payload.filter(
-                  entry => entry.graphicalItemId === interaction.activeSeriesId
-                )
-              : content.payload
-          }
-        />
-      )}
       position={
         interaction?.isPointerInspection && interaction.activePoint
           ? { y: interaction.activePoint.y }
@@ -333,7 +381,32 @@ export function ChartTooltip(props: ComponentProps<typeof Tooltip>) {
       }
       cursor={false}
       isAnimationActive={false}
-      {...props}
+      {...tooltipProps}
+      content={content => {
+        if (legendInteraction?.suppressPlotInspection) return null;
+        const payload = (
+          interaction?.isPointerInspection &&
+          interaction.seriesCount !== 1 &&
+          props.shared !== true
+            ? content.payload.filter(
+                entry => entry.graphicalItemId === interaction.activeSeriesId
+              )
+            : content.payload
+        ).filter(entry => {
+          if (!legendInteraction?.focusedKeys) return true;
+          const key = chartLegendSeriesKey(
+            entry.graphicalItemId,
+            entry.dataKey
+          );
+          return key == null || legendInteraction.focusedKeys.has(key);
+        });
+        const filtered: TooltipContentProps = { ...content, payload };
+        if (typeof authoredContent === 'function')
+          return authoredContent(filtered);
+        if (isValidElement<TooltipContentProps>(authoredContent))
+          return cloneElement(authoredContent, filtered);
+        return <ChartTooltipContent {...filtered} />;
+      }}
     />
   );
 }

@@ -3,13 +3,16 @@ import {
   Children,
   Fragment,
   isValidElement,
+  cloneElement,
   useState,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   type PointerEvent,
   type ComponentProps,
   type ReactNode,
+  type ReactElement,
 } from 'react';
 import {
   ComposedChart as RechartsComposedChart,
@@ -20,6 +23,15 @@ import {
   ReferenceDot,
   Brush,
   Cell,
+  Line as NativeLine,
+  Bar as NativeBar,
+  Area as NativeArea,
+  Scatter as NativeScatter,
+  XAxis as NativeXAxis,
+  YAxis as NativeYAxis,
+  Legend as NativeLegend,
+  useOffset,
+  useMargin,
   Label,
   LabelList,
   ErrorBar,
@@ -31,6 +43,12 @@ import {
   ChartInteractionContext,
   type ChartPoint,
 } from './chart-interaction.tsx';
+import {
+  ChartLegendInteractionContext,
+  chartLegendSeriesKey,
+  reconcileLegendFocus,
+  toggleLegendFocus,
+} from './chart-legend-interaction.tsx';
 import {
   ChartBar as Bar,
   ChartDot as Dot,
@@ -94,6 +112,273 @@ function hasAuthoredGrid(children: ReactNode): boolean {
   );
 }
 
+function countNativeSeriesKeys(
+  children: ReactNode,
+  counts = new Map<string, number>()
+) {
+  Children.forEach(children, child => {
+    if (!isValidElement(child)) return;
+    if (child.type === Fragment) {
+      countNativeSeriesKeys(
+        (child.props as { children?: ReactNode }).children,
+        counts
+      );
+    } else if (
+      child.type === NativeLine ||
+      child.type === NativeBar ||
+      child.type === NativeArea ||
+      child.type === NativeScatter
+    ) {
+      const props = child.props as { id?: string; dataKey?: unknown };
+      const key = chartLegendSeriesKey(props.id, props.dataKey);
+      if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  });
+  return counts;
+}
+
+function nativeSeriesId(
+  props: { id?: string; dataKey?: unknown },
+  child: ReactElement,
+  index: number,
+  path: string,
+  keyCounts: ReadonlyMap<string, number>
+) {
+  if (props.id != null) return props.id;
+  const key = chartLegendSeriesKey(undefined, props.dataKey);
+  return !key || (keyCounts.get(key) ?? 0) > 1
+    ? `atbl-native-${path}-${child.key ?? index}`
+    : undefined;
+}
+
+function applyNativeLegendInteraction(
+  children: ReactNode,
+  focusedKeys: ReadonlySet<string> | null,
+  hoveredKey: string | null,
+  suppressPlotInspection: boolean,
+  valueAxis: 'x' | 'y',
+  visibleBarAxisIds: ReadonlySet<string | number>,
+  fullAxisSpace: { left: number; right: number } | null,
+  yAxisSideCounts: { left: number; right: number },
+  keyCounts: ReadonlyMap<string, number>,
+  path = 'root'
+): ReactNode {
+  return Children.map(children, (child, index) => {
+    if (!isValidElement(child)) return child;
+    if (child.type === Fragment) {
+      const props = child.props as { children?: ReactNode };
+      return cloneElement(child, {
+        children: applyNativeLegendInteraction(
+          props.children,
+          focusedKeys,
+          hoveredKey,
+          suppressPlotInspection,
+          valueAxis,
+          visibleBarAxisIds,
+          fullAxisSpace,
+          yAxisSideCounts,
+          keyCounts,
+          `${path}-${child.key ?? index}`
+        ),
+      } as { children: ReactNode });
+    }
+    if (child.type === XAxis || child.type === NativeXAxis) {
+      const axis = child as ReactElement<{
+        xAxisId?: string | number;
+        includeHidden?: boolean;
+        domain?: unknown;
+        ticks?: unknown;
+      }>;
+      if (valueAxis === 'y')
+        return cloneElement(axis, {
+          includeHidden: axis.props.includeHidden ?? true,
+        });
+      if (!focusedKeys || axis.props.domain != null || axis.props.ticks != null)
+        return child;
+      return cloneElement(axis, {
+        domain: visibleBarAxisIds.has(axis.props.xAxisId ?? 0)
+          ? [0, 'auto']
+          : ['auto', 'auto'],
+      });
+    }
+    if (child.type === YAxis || child.type === NativeYAxis) {
+      const axis = child as ReactElement<{
+        yAxisId?: string | number;
+        includeHidden?: boolean;
+        domain?: unknown;
+        ticks?: unknown;
+        width?: number | 'auto';
+        orientation?: 'left' | 'right';
+      }>;
+      if (valueAxis === 'x')
+        return cloneElement(axis, {
+          includeHidden: axis.props.includeHidden ?? true,
+        });
+      if (!focusedKeys || axis.props.domain != null || axis.props.ticks != null)
+        return child;
+      const side = axis.props.orientation ?? 'left';
+      const reservedWidth =
+        (axis.props.width === 'auto' ||
+          (child.type === YAxis && axis.props.width == null)) &&
+        yAxisSideCounts[side] === 1
+          ? fullAxisSpace?.[side]
+          : undefined;
+      return cloneElement(axis, {
+        domain: visibleBarAxisIds.has(axis.props.yAxisId ?? 0)
+          ? [0, 'auto']
+          : ['auto', 'auto'],
+        ...(reservedWidth != null && { width: reservedWidth }),
+      });
+    }
+    if (
+      child.type !== NativeLine &&
+      child.type !== NativeBar &&
+      child.type !== NativeArea &&
+      child.type !== NativeScatter
+    )
+      return child;
+    const series = child as ReactElement<{
+      id?: string;
+      dataKey?: unknown;
+      hide?: boolean;
+      opacity?: number;
+      style?: { pointerEvents?: string };
+      dot?: unknown;
+      activeDot?: unknown;
+    }>;
+    const id = nativeSeriesId(series.props, child, index, path, keyCounts);
+    const key = chartLegendSeriesKey(id, series.props.dataKey)!;
+    const excluded = !!(focusedKeys && !focusedKeys.has(key));
+    return cloneElement(series, {
+      id,
+      hide: excluded || series.props.hide,
+      opacity: excluded
+        ? 0
+        : hoveredKey &&
+            (!focusedKeys || focusedKeys.has(hoveredKey)) &&
+            hoveredKey !== key
+          ? 0.2
+          : series.props.opacity,
+      style: {
+        ...series.props.style,
+        pointerEvents: excluded ? 'none' : series.props.style?.pointerEvents,
+      },
+      ...(excluded && (child.type === NativeLine || child.type === NativeArea)
+        ? { dot: false, activeDot: false }
+        : {}),
+      ...(suppressPlotInspection &&
+      (child.type === NativeLine || child.type === NativeArea)
+        ? { activeDot: false }
+        : {}),
+    });
+  });
+}
+
+function collectVisibleNativeBarAxisIds(
+  children: ReactNode,
+  focusedKeys: ReadonlySet<string> | null,
+  valueAxis: 'x' | 'y',
+  keyCounts: ReadonlyMap<string, number>,
+  path = 'root',
+  ids = new Set<string | number>()
+) {
+  Children.forEach(children, (child, index) => {
+    if (!isValidElement(child)) return;
+    if (child.type === Fragment) {
+      collectVisibleNativeBarAxisIds(
+        (child.props as { children?: ReactNode }).children,
+        focusedKeys,
+        valueAxis,
+        keyCounts,
+        `${path}-${child.key ?? index}`,
+        ids
+      );
+    } else if (child.type === NativeBar) {
+      const props = child.props as {
+        id?: string;
+        dataKey?: unknown;
+        hide?: boolean;
+        xAxisId?: string | number;
+        yAxisId?: string | number;
+      };
+      const id = nativeSeriesId(props, child, index, path, keyCounts);
+      const key = chartLegendSeriesKey(id, props.dataKey)!;
+      if (!props.hide && (!focusedKeys || focusedKeys.has(key))) {
+        ids.add(
+          valueAxis === 'x' ? (props.xAxisId ?? 0) : (props.yAxisId ?? 0)
+        );
+      }
+    }
+  });
+  return ids;
+}
+
+function inspectAxisLayout(
+  children: ReactNode,
+  layout = { left: 0, right: 0, autoYAxis: false, interactiveLegend: false }
+) {
+  Children.forEach(children, child => {
+    if (!isValidElement(child)) return;
+    if (child.type === Fragment) {
+      inspectAxisLayout(
+        (child.props as { children?: ReactNode }).children,
+        layout
+      );
+    } else if (child.type === YAxis || child.type === NativeYAxis) {
+      const props = child.props as {
+        hide?: boolean;
+        mirror?: boolean;
+        orientation?: 'left' | 'right';
+        width?: number | 'auto';
+      };
+      if (!props.hide && !props.mirror) {
+        layout[props.orientation ?? 'left']++;
+        if (
+          props.width === 'auto' ||
+          (child.type === YAxis && props.width == null)
+        )
+          layout.autoYAxis = true;
+      }
+    } else if (child.type === Legend || child.type === NativeLegend) {
+      const props = child.props as {
+        position?: string;
+        align?: string;
+        layout?: string;
+        interactive?: boolean;
+      };
+      if (child.type === Legend && props.interactive !== false)
+        layout.interactiveLegend = true;
+      const side =
+        props.position === 'left' || props.position === 'right'
+          ? props.position
+          : props.layout === 'vertical' &&
+              (props.align === 'left' || props.align === 'right')
+            ? props.align
+            : null;
+      if (side) layout[side]++;
+    }
+  });
+  return layout;
+}
+
+function PlotOffsets({
+  onChange,
+}: {
+  onChange: (left: number, right: number) => void;
+}) {
+  const offset = useOffset();
+  const margin = useMargin();
+  const left = offset?.left;
+  const right = offset?.right;
+  const marginLeft = margin?.left ?? 5;
+  const marginRight = margin?.right ?? 5;
+  useLayoutEffect(() => {
+    if (left != null && right != null)
+      onChange(left - marginLeft, right - marginRight);
+  }, [left, right, marginLeft, marginRight, onChange]);
+  return null;
+}
+
 /** Compose Cartesian series inside VisualizationWidget. Defaults to responsive
  * full width and 300px height. Children retain native Recharts props and behavior,
  * including stacking, numeric/time axes, missing values, tooltips, and keyboard
@@ -111,6 +396,7 @@ function ComposedChartRoot<Row>({
   width = '100%',
   height = 300,
   responsive = true,
+  layout = 'horizontal',
   className,
   ...props
 }: ComposedChartProps<Row>) {
@@ -151,6 +437,7 @@ function ComposedChartRoot<Row>({
       resetPointerInspection();
       return false;
     }
+    setSuppressPlotInspection(false);
     setIsPointerInspection(true);
     // Direct-hit series do not need pointer coordinates to select a sample.
     if (hoveredSeriesId != null && !points.has(hoveredSeriesId)) {
@@ -199,65 +486,163 @@ function ComposedChartRoot<Row>({
       });
     };
   }, []);
+  const [legendHoveredKey, setLegendHoveredKey] = useState<string | null>(null);
+  const [suppressPlotInspection, setSuppressPlotInspection] = useState(false);
+  const [focusedLegendKeys, setFocusedLegendKeys] =
+    useState<ReadonlySet<string> | null>(null);
+  const [barAxisByKey, setBarAxisByKey] = useState<
+    ReadonlyMap<string, string | number>
+  >(() => new Map());
+  const registerBarAxis = useCallback(
+    (key: string, axisId: string | number) => {
+      setBarAxisByKey(current => {
+        if (current.get(key) === axisId) return current;
+        return new Map(current).set(key, axisId);
+      });
+      return () =>
+        setBarAxisByKey(current => {
+          if (current.get(key) !== axisId) return current;
+          const next = new Map(current);
+          next.delete(key);
+          return next;
+        });
+    },
+    []
+  );
+  const valueAxis = layout === 'vertical' ? 'x' : 'y';
+  const [fullAxisSpace, setFullAxisSpace] = useState<{
+    left: number;
+    right: number;
+  } | null>(null);
+  const trackPlotOffsets = useCallback(
+    (left: number, right: number) => {
+      if (focusedLegendKeys) return;
+      setFullAxisSpace(current =>
+        current?.left === left && current.right === right
+          ? current
+          : { left, right }
+      );
+    },
+    [focusedLegendKeys]
+  );
+  const axisLayout = inspectAxisLayout(children);
+  const nativeKeyCounts = countNativeSeriesKeys(children);
+  const visibleBarAxisIds = collectVisibleNativeBarAxisIds(
+    children,
+    focusedLegendKeys,
+    valueAxis,
+    nativeKeyCounts
+  );
+  for (const [key, axisId] of barAxisByKey) {
+    if (!focusedLegendKeys || focusedLegendKeys.has(key))
+      visibleBarAxisIds.add(axisId);
+  }
+  const reconcileLegendKeys = useCallback((keys: readonly string[]) => {
+    setFocusedLegendKeys(current => reconcileLegendFocus(current, keys));
+  }, []);
+  const toggleLegendKey = useCallback(
+    (key: string, keys: readonly string[]) => {
+      setSuppressPlotInspection(true);
+      setFocusedLegendKeys(current => toggleLegendFocus(current, key, keys));
+    },
+    []
+  );
   return (
     <ChartCursorChartContext.Provider value={{ cursor, mouseHover }}>
-      <ChartInteractionContext.Provider
+      <ChartLegendInteractionContext.Provider
         value={{
-          isPointerInspection,
-          activeSeriesId,
-          activePoint:
-            activeSeriesId == null ? undefined : points.get(activeSeriesId),
-          registerPoint,
-          setHoveredSeriesId,
-          seriesCount: seriesIds.size,
-          registerSeries,
+          hoveredKey: legendHoveredKey,
+          focusedKeys: focusedLegendKeys,
+          suppressPlotInspection,
+          hover: key => {
+            setLegendHoveredKey(key);
+            if (key) setSuppressPlotInspection(true);
+          },
+          toggle: toggleLegendKey,
+          reconcile: reconcileLegendKeys,
+          registerBarAxis,
         }}
       >
-        <section
-          className={classNames('altertable-composed-chart', className)}
-          aria-label={ariaLabel}
-          data-atbl-internal-pointer-focus={hasPointerFocus || undefined}
-          onPointerDownCapture={event => {
-            setHasPointerFocus(trackPointer(event));
-          }}
-          onPointerOverCapture={trackPointer}
-          onPointerMoveCapture={trackPointer}
-          onPointerLeave={event => {
-            if (event.pointerType !== 'touch') {
-              resetPointerInspection();
-            }
-          }}
-          onKeyDownCapture={() => {
-            setHasPointerFocus(false);
-            resetPointerInspection();
-          }}
-          onBlurCapture={event => {
-            if (!event.currentTarget.contains(event.relatedTarget)) {
-              setHasPointerFocus(false);
-              resetPointerInspection();
-            }
+        <ChartInteractionContext.Provider
+          value={{
+            isPointerInspection,
+            activeSeriesId,
+            activePoint:
+              activeSeriesId == null ? undefined : points.get(activeSeriesId),
+            registerPoint,
+            setHoveredSeriesId,
+            seriesCount: seriesIds.size,
+            registerSeries,
           }}
         >
-          <ChartValueFormat.Provider value={valueFormat}>
-            <ChartDateAxes data={data}>
-              <RechartsComposedChart
-                data-atbl-focus="inset"
-                {...props}
-                data={data}
-                width={width}
-                height={height}
-                responsive={responsive}
-                aria-label={ariaLabel}
-              >
-                {horizontalGrid && !hasAuthoredGrid(children) && (
-                  <CartesianGrid />
-                )}
-                {children}
-              </RechartsComposedChart>
-            </ChartDateAxes>
-          </ChartValueFormat.Provider>
-        </section>
-      </ChartInteractionContext.Provider>
+          <section
+            className={classNames('altertable-composed-chart', className)}
+            aria-label={ariaLabel}
+            data-atbl-internal-pointer-focus={hasPointerFocus || undefined}
+            onPointerDownCapture={event => {
+              setHasPointerFocus(trackPointer(event));
+            }}
+            onPointerOverCapture={trackPointer}
+            onPointerMoveCapture={trackPointer}
+            onPointerLeave={event => {
+              if (event.pointerType !== 'touch') {
+                resetPointerInspection();
+              }
+            }}
+            onKeyDownCapture={() => {
+              setHasPointerFocus(false);
+              resetPointerInspection();
+            }}
+            onFocusCapture={event => {
+              const svg = event.currentTarget.querySelector(
+                'svg[role="application"]'
+              );
+              if (svg?.contains(event.target)) setSuppressPlotInspection(false);
+            }}
+            onBlurCapture={event => {
+              if (!event.currentTarget.contains(event.relatedTarget)) {
+                setHasPointerFocus(false);
+                resetPointerInspection();
+              }
+            }}
+          >
+            <ChartValueFormat.Provider value={valueFormat}>
+              <ChartDateAxes data={data}>
+                <RechartsComposedChart
+                  data-atbl-focus="inset"
+                  {...props}
+                  data={data}
+                  width={width}
+                  height={height}
+                  responsive={responsive}
+                  layout={layout}
+                  aria-label={ariaLabel}
+                >
+                  {valueAxis === 'y' &&
+                    axisLayout.autoYAxis &&
+                    axisLayout.interactiveLegend && (
+                      <PlotOffsets onChange={trackPlotOffsets} />
+                    )}
+                  {horizontalGrid && !hasAuthoredGrid(children) && (
+                    <CartesianGrid />
+                  )}
+                  {applyNativeLegendInteraction(
+                    children,
+                    focusedLegendKeys,
+                    legendHoveredKey,
+                    suppressPlotInspection,
+                    valueAxis,
+                    visibleBarAxisIds,
+                    fullAxisSpace,
+                    axisLayout,
+                    nativeKeyCounts
+                  )}
+                </RechartsComposedChart>
+              </ChartDateAxes>
+            </ChartValueFormat.Provider>
+          </section>
+        </ChartInteractionContext.Provider>
+      </ChartLegendInteractionContext.Provider>
     </ChartCursorChartContext.Provider>
   );
 }

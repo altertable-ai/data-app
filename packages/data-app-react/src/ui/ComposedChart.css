@@ -17,6 +17,10 @@
 .altertable-composed-chart-legend-below {
   padding-top: var(--atbl-space-md);
 }
+.altertable-chart-legend-container[data-has-heading]
+  .altertable-composed-chart-legend-below {
+  padding-top: 0;
+}
 .altertable-composed-chart-legend-above {
   padding-bottom: var(--atbl-space-md);
 }

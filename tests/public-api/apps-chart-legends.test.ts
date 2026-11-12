@@ -2,6 +2,502 @@ import { expect } from 'vitest';
 
 import { test } from '@/tests/public-api/browser';
 
+test('automatic legend previews, focuses, and adds series', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Response time across twelve services',
+    exact: true,
+  });
+  const legend = chart.getByRole('list', { name: 'Chart legend' });
+  const api = legend.getByRole('button', { name: 'API', exact: true });
+  const analytics = legend.getByRole('button', {
+    name: 'Analytics',
+    exact: true,
+  });
+  const curves = chart.locator('.recharts-line-curve');
+  await expect.poll(() => curves.count()).toBe(12);
+  expect(await chart.getByRole('button', { name: 'Show all' }).count()).toBe(0);
+  const chartHeight = (await chart.boundingBox())!.height;
+  await api.hover();
+  await expect
+    .poll(() =>
+      legend.getByRole('listitem').nth(1).getAttribute('data-legend-muted')
+    )
+    .toBe('true');
+  await expect
+    .poll(() =>
+      curves.evaluateAll(
+        paths =>
+          paths.filter(
+            path =>
+              path.getAttribute('opacity') === '0.2' ||
+              path.closest('.recharts-line')?.getAttribute('opacity') === '0.2'
+          ).length
+      )
+    )
+    .toBe(11);
+  await api.click();
+  expect((await chart.boundingBox())!.height).toBe(chartHeight);
+  await expect
+    .poll(async () => legend.locator('[data-legend-excluded]').count())
+    .toBe((await legend.locator('button[aria-pressed]').count()) - 1);
+  await expect.poll(() => curves.count()).toBe(1);
+  await expect.poll(() => api.getAttribute('aria-pressed')).toBe('true');
+  await analytics.hover();
+  await expect
+    .poll(() => legend.locator('[data-legend-muted]').count())
+    .toBe(0);
+  await expect
+    .poll(() =>
+      curves.evaluateAll(
+        paths =>
+          paths.filter(
+            path =>
+              path.getAttribute('opacity') === '0.2' ||
+              path.closest('.recharts-line')?.getAttribute('opacity') === '0.2'
+          ).length
+      )
+    )
+    .toBe(0);
+  await analytics.click();
+  await expect
+    .poll(async () => legend.locator('[data-legend-excluded]').count())
+    .toBe((await legend.locator('button[aria-pressed]').count()) - 2);
+  await expect.poll(() => curves.count()).toBe(2);
+  await api.click();
+  await analytics.click();
+  expect((await chart.boundingBox())!.height).toBe(chartHeight);
+  await expect.poll(() => curves.count()).toBe(12);
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(0);
+});
+
+test('focus removes dots from excluded line series', async ({ page }) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Series dot plot',
+    exact: true,
+  });
+  const dots = chart.locator('.recharts-line-dots circle');
+  await expect.poll(() => dots.count()).toBe(4);
+  const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
+  await alpha.click();
+  await expect.poll(() => dots.count()).toBe(2);
+  await alpha.click();
+  await expect.poll(() => dots.count()).toBe(4);
+});
+
+test('focus rescales the value axis while preserving category positions', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Response time across twelve services',
+    exact: true,
+  });
+  const yTicks = chart.locator('svg text').filter({ hasText: /ms$/ });
+  const xTicks = chart.locator('svg text').filter({
+    hasText: /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/,
+  });
+  const fullY = await yTicks.allTextContents();
+  const fullX = await xTicks.evaluateAll(elements =>
+    elements.map(element => ({
+      text: element.textContent,
+      x: element.getBoundingClientRect().x,
+    }))
+  );
+  await chart.getByRole('button', { name: 'API', exact: true }).click();
+  await expect.poll(() => yTicks.allTextContents()).not.toEqual(fullY);
+  const focusedY = await yTicks.allTextContents();
+  expect(focusedY.some(tick => tick.startsWith('0'))).toBe(false);
+  expect(
+    await xTicks.evaluateAll(elements =>
+      elements.map(element => ({
+        text: element.textContent,
+        x: element.getBoundingClientRect().x,
+      }))
+    )
+  ).toEqual(fullX);
+  await chart.getByRole('button', { name: 'API', exact: true }).click();
+  await expect.poll(() => yTicks.allTextContents()).toEqual(fullY);
+});
+
+test('mixed charts use a zero baseline only while a bar is visible', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Mixed value-axis plot',
+    exact: true,
+  });
+  const ticks = chart.locator('.recharts-yAxis-tick-labels text');
+  const forecast = chart.getByRole('button', { name: 'Forecast', exact: true });
+  const revenue = chart.getByRole('button', { name: 'Revenue', exact: true });
+  expect((await ticks.allTextContents()).some(tick => tick === '0k')).toBe(
+    true
+  );
+  await forecast.click();
+  await expect
+    .poll(async () => {
+      const values = await ticks.allTextContents();
+      return (
+        values.length > 0 && values.every(value => Number.parseFloat(value) > 0)
+      );
+    })
+    .toBe(true);
+  await revenue.click();
+  await expect.poll(() => ticks.allTextContents()).toContain('0k');
+});
+
+test('horizontal bars rescale X and retain category positions', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Horizontal value-axis plot',
+    exact: true,
+  });
+  const xTicks = chart.locator('.recharts-xAxis-tick-labels text');
+  const yTicks = chart.locator('.recharts-yAxis-tick-labels text');
+  const categories = await yTicks.evaluateAll(elements =>
+    elements.map(element => ({
+      text: element.textContent,
+      y: Math.round(
+        element.getBoundingClientRect().y -
+          element.closest('svg')!.getBoundingClientRect().y
+      ),
+    }))
+  );
+  expect(
+    Math.max(...(await xTicks.allTextContents()).map(Number.parseFloat))
+  ).toBeGreaterThan(200);
+  await chart.getByRole('button', { name: 'Small', exact: true }).click();
+  await expect
+    .poll(async () =>
+      Math.max(...(await xTicks.allTextContents()).map(Number.parseFloat))
+    )
+    .toBeLessThan(100);
+  expect(await xTicks.allTextContents()).toContain('0ms');
+  expect(
+    await yTicks.evaluateAll(elements =>
+      elements.map(element => ({
+        text: element.textContent,
+        y: Math.round(
+          element.getBoundingClientRect().y -
+            element.closest('svg')!.getBoundingClientRect().y
+        ),
+      }))
+    )
+  ).toEqual(categories);
+});
+
+test('focus keeps category coordinates with an auto-width value axis', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Dynamic legend plot',
+    exact: true,
+  });
+  const ticks = chart.locator('.recharts-xAxis-tick-labels text');
+  const positions = await ticks.evaluateAll(elements =>
+    elements.map(element => element.getBoundingClientRect().x)
+  );
+  await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect
+    .poll(() =>
+      ticks.evaluateAll(elements =>
+        elements.map(element => element.getBoundingClientRect().x)
+      )
+    )
+    .toEqual(positions);
+});
+
+test('first legend click does not activate a plot tooltip', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Response time across twelve services',
+    exact: true,
+  });
+  const api = chart.getByRole('button', { name: 'API', exact: true });
+  await api.click();
+  await expect.poll(() => api.getAttribute('aria-pressed')).toBe('true');
+  await expect.poll(() => chart.getByRole('tooltip').count()).toBe(0);
+  await expect
+    .poll(() => chart.locator('.recharts-active-dot').count())
+    .toBe(0);
+  await page.mouse.move(20, 20);
+  await expect.poll(() => chart.getByRole('tooltip').count()).toBe(0);
+  await expect
+    .poll(() => chart.locator('.recharts-active-dot').count())
+    .toBe(0);
+});
+
+test('legend keyboard controls focus and restore series', async ({ page }) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Four series plot',
+    exact: true,
+  });
+  const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
+  await alpha.focus();
+  await page.keyboard.press('Enter');
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('true');
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(3);
+  await page.keyboard.press('Enter');
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+});
+
+test('automatic legend keeps long labels accessible without layout shift', async ({
+  mobilePage: page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Long series labels plot',
+    exact: true,
+  });
+  const legend = chart.getByRole('list', { name: 'Chart legend' });
+  const label = legend.getByText(
+    'Alpha — response time in production workspaces across Europe',
+    { exact: true }
+  );
+  await expect.poll(() => label.isVisible()).toBe(true);
+  expect(await label.getAttribute('title')).toBe(
+    'Alpha — response time in production workspaces across Europe'
+  );
+  expect(
+    await label.evaluate(element => element.scrollWidth > element.clientWidth)
+  ).toBe(true);
+  const chartHeight = (await chart.boundingBox())!.height;
+  const alpha = legend.getByRole('button', {
+    name: 'Alpha — response time in production workspaces across Europe',
+  });
+  await alpha.click();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBeGreaterThan(0);
+  expect((await chart.boundingBox())!.height).toBe(chartHeight);
+  await alpha.click();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(0);
+});
+
+test('four series exit focus when all are re-enabled', async ({ page }) => {
+  await page.setViewportSize({ width: 915, height: 968 });
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Four series plot',
+    exact: true,
+  });
+  const legend = chart.getByRole('list', { name: 'Chart legend' });
+  const yTicks = chart
+    .locator('svg text')
+    .filter({ hasText: /^(0|10|20|30|40|50)$/ });
+  const fullY = await yTicks.allTextContents();
+  await expect.poll(() => legend.getByRole('listitem').count()).toBe(4);
+  expect(await chart.getByRole('button', { name: 'Show all' }).count()).toBe(0);
+  const height = (await chart.boundingBox())!.height;
+  const alpha = legend.getByRole('button', { name: 'Alpha', exact: true });
+  await alpha.click();
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(3);
+  expect(await yTicks.allTextContents()).toEqual(fullY);
+  expect(await legend.getByRole('listitem').count()).toBe(4);
+  expect((await chart.boundingBox())!.height).toBe(height);
+  for (const name of ['Beta', 'Gamma', 'Delta']) {
+    await legend.getByRole('button', { name, exact: true }).click();
+  }
+  await expect
+    .poll(() => legend.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  for (const name of ['Alpha', 'Beta', 'Gamma', 'Delta']) {
+    await expect
+      .poll(() =>
+        legend
+          .getByRole('button', { name, exact: true })
+          .getAttribute('aria-pressed')
+      )
+      .toBe('false');
+  }
+  expect((await chart.boundingBox())!.height).toBe(height);
+});
+
+test('removing a focused series reconciles focus with current series', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const example = page.getByRole('region', {
+    name: 'Dynamic legend focus basic example',
+    exact: true,
+  });
+  const chart = example.getByRole('region', {
+    name: 'Dynamic legend plot',
+    exact: true,
+  });
+  await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(2);
+  await example.getByRole('button', { name: 'Remove Alpha series' }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  const beta = chart.getByRole('button', { name: 'Beta', exact: true });
+  const gamma = chart.getByRole('button', { name: 'Gamma', exact: true });
+  await beta.click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(1);
+  await gamma.click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  await expect.poll(() => beta.getAttribute('aria-pressed')).toBe('false');
+  await expect.poll(() => gamma.getAttribute('aria-pressed')).toBe('false');
+});
+
+test('custom tooltip content receives only focused series', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Dynamic legend plot',
+    exact: true,
+  });
+  await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect.poll(() => chart.getByRole('tooltip').count()).toBe(0);
+  const plot = chart.getByRole('application');
+  await plot.focus();
+  await page.keyboard.press('ArrowRight');
+  const tooltip = chart.getByRole('tooltip');
+  await expect.poll(() => tooltip.textContent()).toContain('Alpha');
+  expect(await tooltip.textContent()).not.toContain('Beta');
+  expect(await tooltip.textContent()).not.toContain('Gamma');
+});
+
+test('funnel focus follows changing populations', async ({ page }) => {
+  await page.goto('/chart-legends');
+  const example = page.getByRole('region', {
+    name: 'Dynamic funnel focus basic example',
+    exact: true,
+  });
+  const chart = example.getByRole('region', {
+    name: 'Dynamic funnel plot',
+    exact: true,
+  });
+  await chart.getByRole('button', { name: /Free plan/ }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(2);
+  await example.getByRole('button', { name: 'Remove Free plan' }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+  await chart.getByRole('button', { name: /Paid plan/ }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(1);
+  await chart.getByRole('button', { name: /Enterprise plan/ }).click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+});
+
+test('funnel and retention legends focus their plotted populations', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  for (const [name, first, second] of [
+    ['FunnelChart', 'Free plan', 'Paid plan'],
+    ['RetentionChart', 'Sep 1', 'Sep 8'],
+  ]) {
+    const chart = page.getByRole('region', {
+      name: `${name} basic example`,
+      exact: true,
+    });
+    const firstButton = chart.getByRole('button', {
+      name: first,
+      exact: name === 'RetentionChart',
+    });
+    const secondButton = chart.getByRole('button', {
+      name: second,
+      exact: name === 'RetentionChart',
+    });
+    await firstButton.click();
+    await expect
+      .poll(() => firstButton.getAttribute('aria-pressed'))
+      .toBe('true');
+    await expect
+      .poll(() => chart.locator('[data-legend-excluded]').count())
+      .toBe(1);
+    await secondButton.hover();
+    await expect
+      .poll(() => chart.locator('[data-legend-muted]').count())
+      .toBe(0);
+    await secondButton.click();
+    await expect
+      .poll(() => chart.locator('[data-legend-excluded]').count())
+      .toBe(0);
+    await expect
+      .poll(() => firstButton.getAttribute('aria-pressed'))
+      .toBe('false');
+  }
+});
+
+test('native function-key series respond to the automatic legend', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Native accessor plot',
+    exact: true,
+  });
+  const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
+  await alpha.click();
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('true');
+  await expect
+    .poll(() => chart.locator('.recharts-line-curve').count())
+    .toBe(1);
+  await alpha.click();
+  await expect
+    .poll(() => chart.locator('[data-legend-excluded]').count())
+    .toBe(0);
+});
+
+test('native series sharing a data key focus without explicit IDs', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Native shared data key plot',
+    exact: true,
+  });
+  const alpha = chart.getByRole('button', { name: 'Alpha', exact: true });
+  const beta = chart.getByRole('button', { name: 'Beta', exact: true });
+  await alpha.click();
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('true');
+  await expect
+    .poll(() => chart.locator('.recharts-line-curve').count())
+    .toBe(1);
+  await beta.click();
+  await expect.poll(() => alpha.getAttribute('aria-pressed')).toBe('false');
+  await expect
+    .poll(() => chart.locator('.recharts-line-curve').count())
+    .toBe(2);
+});
+
 test('crowded automatic legends reserve a cell for expansion and restore their compact list', async ({
   page,
 }) => {
@@ -102,7 +598,7 @@ test('crowded legends fill two rows and keep overflow in the final column on res
         const right = Math.max(...cells.map(cell => cell.right));
         return (
           cells.length <= 8 &&
-          cells.at(-1)!.text === `+${13 - cells.length} more` &&
+          cells.at(-1)!.text?.startsWith(`+${13 - cells.length} more`) &&
           rows === 2 &&
           cells.length === firstRow * 2 &&
           Math.abs(cells.at(-1)!.right - right) < 1
@@ -122,6 +618,16 @@ test('authored legends describe measures without controls and pie legends can be
   );
   expect(await legend.getByRole('button').count()).toBe(0);
   expect(await legend.getByRole('img').count()).toBe(0);
+  const sparseRetention = page.getByRole('region', {
+    name: 'Sparse retention basic example',
+    exact: true,
+  });
+  expect(
+    await sparseRetention
+      .getByRole('list', { name: 'Sparse retention cohorts' })
+      .getByRole('button')
+      .count()
+  ).toBe(0);
   const pie = page.getByRole('region', {
     name: 'Standalone pie basic example',
     exact: true,

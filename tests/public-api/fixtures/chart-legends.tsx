@@ -230,6 +230,7 @@ function LegendIdentityExample({ kind }: { kind: LegendKind }) {
           })}
         <ComposedChart.Tooltip />
         <ComposedChart.Legend
+          interactive={false}
           itemSorter={entry =>
             descending
               ? entry.value === 'Beta'
@@ -242,6 +243,63 @@ function LegendIdentityExample({ kind }: { kind: LegendKind }) {
           formatter={name => <LegendNote name={String(name)} />}
         />
       </ComposedChart>
+    </>
+  );
+}
+
+function DynamicLegendExample() {
+  const [showAlpha, setShowAlpha] = useState(true);
+  return (
+    <>
+      <Button onClick={() => setShowAlpha(false)}>Remove Alpha series</Button>
+      <ComposedChart
+        data={[
+          { x: 0, alpha: 10, beta: 20, gamma: 30 },
+          { x: 1, alpha: 15, beta: 25, gamma: 35 },
+        ]}
+        ariaLabel="Dynamic legend plot"
+      >
+        <ComposedChart.XAxis dataKey="x" type="number" />
+        <ComposedChart.YAxis />
+        <ComposedChart.Tooltip
+          shared
+          content={({ active, payload }) =>
+            active && payload.length ? (
+              <div role="tooltip">
+                {payload.map(entry => String(entry.name)).join(', ')}
+              </div>
+            ) : null
+          }
+        />
+        {showAlpha && <ComposedChart.Line dataKey="alpha" name="Alpha" />}
+        <ComposedChart.Line dataKey="beta" name="Beta" />
+        <ComposedChart.Line dataKey="gamma" name="Gamma" />
+        <ComposedChart.Legend />
+      </ComposedChart>
+    </>
+  );
+}
+
+function DynamicFunnelExample() {
+  const [showFree, setShowFree] = useState(true);
+  return (
+    <>
+      <Button onClick={() => setShowFree(false)}>Remove Free plan</Button>
+      <FunnelChart
+        ariaLabel="Dynamic funnel plot"
+        unit="users"
+        steps={[
+          { id: 'visit', label: 'Visited' },
+          { id: 'signup', label: 'Signed up' },
+        ]}
+        series={[
+          ...(showFree
+            ? [{ id: 'free', label: 'Free plan', values: [1000, 600] }]
+            : []),
+          { id: 'paid', label: 'Paid plan', values: [500, 400] },
+          { id: 'enterprise', label: 'Enterprise plan', values: [200, 180] },
+        ]}
+      />
     </>
   );
 }
@@ -547,6 +605,134 @@ createRoot(document.getElementById('root')!).render(
             />
           ))}
         </ComposedChart>
+      </Example>
+      <Example
+        name="Native accessor legend"
+        description="Native series with function data keys keep automatic legend controls."
+      >
+        <ComposedChart data={legendRows} ariaLabel="Native accessor plot">
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <NativeLine key="alpha" dataKey={alphaAccessor} name="Alpha" />
+          <NativeLine key="beta" dataKey={betaAccessor} name="Beta" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Native shared data key legend"
+        description="Native series sharing a data key can be focused without explicit IDs."
+      >
+        <ComposedChart
+          data={legendRows}
+          ariaLabel="Native shared data key plot"
+        >
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <NativeLine key="alpha" dataKey="alpha" name="Alpha" />
+          <NativeLine key="beta" dataKey="alpha" name="Beta" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Series dot focus"
+        description="Focused line series hide every dot from excluded series."
+      >
+        <ComposedChart data={legendRows} ariaLabel="Series dot plot">
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Line dataKey="alpha" name="Alpha" dot />
+          <ComposedChart.Line dataKey="beta" name="Beta" dot />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Automatic long series labels"
+        description="Long automatic legend labels remain readable at narrow widths."
+      >
+        <ComposedChart data={legendRows} ariaLabel="Long series labels plot">
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis />
+          <ComposedChart.Line
+            dataKey="alpha"
+            name="Alpha — response time in production workspaces across Europe"
+          />
+          <ComposedChart.Line
+            dataKey="beta"
+            name="Beta — response time in production workspaces across North America"
+          />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Four series focus"
+        description="Focus controls do not take a legend cell."
+      >
+        <ComposedChart
+          data={[
+            { x: 0, alpha: 10, beta: 20, gamma: 30, delta: 40 },
+            { x: 1, alpha: 15, beta: 25, gamma: 35, delta: 45 },
+          ]}
+          ariaLabel="Four series plot"
+        >
+          <ComposedChart.XAxis dataKey="x" type="number" />
+          <ComposedChart.YAxis domain={[0, 50]} />
+          <ComposedChart.Line dataKey="alpha" name="Alpha" />
+          <ComposedChart.Line dataKey="beta" name="Beta" />
+          <ComposedChart.Line dataKey="gamma" name="Gamma" />
+          <ComposedChart.Line dataKey="delta" name="Delta" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Mixed value-axis focus"
+        description="Only visible bars require a zero baseline."
+      >
+        <ComposedChart
+          data={[
+            { label: 'Jan', forecast: 40, revenue: 90 },
+            { label: 'Feb', forecast: 55, revenue: 110 },
+            { label: 'Mar', forecast: 70, revenue: 130 },
+          ]}
+          ariaLabel="Mixed value-axis plot"
+        >
+          <ComposedChart.XAxis dataKey="label" />
+          <ComposedChart.YAxis unit="k" width={48} />
+          <ComposedChart.Area dataKey="forecast" name="Forecast" />
+          <ComposedChart.Bar dataKey="revenue" name="Revenue" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Horizontal value-axis focus"
+        description="Horizontal bars scale the X value axis."
+      >
+        <ComposedChart
+          layout="vertical"
+          data={[
+            { label: 'Jan', small: 20, large: 180 },
+            { label: 'Feb', small: 30, large: 200 },
+            { label: 'Mar', small: 40, large: 220 },
+          ]}
+          ariaLabel="Horizontal value-axis plot"
+        >
+          <ComposedChart.XAxis type="number" unit="ms" />
+          <ComposedChart.YAxis dataKey="label" type="category" width={48} />
+          <ComposedChart.Bar dataKey="small" name="Small" />
+          <ComposedChart.Bar dataKey="large" name="Large" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Dynamic legend focus"
+        description="Removing a focused series reconciles the remaining legend."
+      >
+        <DynamicLegendExample />
+      </Example>
+      <Example
+        name="Dynamic funnel focus"
+        description="Removing a focused population reconciles the remaining legend."
+      >
+        <DynamicFunnelExample />
       </Example>
       <Example
         name="LineChart — long labels"
@@ -872,6 +1058,7 @@ createRoot(document.getElementById('root')!).render(
         <RetentionChart
           ariaLabel="Sparse retention"
           unit="users"
+          interactiveLegend={false}
           series={[
             {
               id: 'alpha',

@@ -1,11 +1,22 @@
 import { KEY_SEPARATOR } from '@altertable/data-app/internal';
-import { useState, type ComponentProps } from 'react';
+import {
+  useContext,
+  useLayoutEffect,
+  useState,
+  type ComponentProps,
+} from 'react';
 import { Legend, type LegendPayload } from 'recharts';
 
+import {
+  ChartLegendInteractionContext,
+  chartLegendSeriesKey,
+} from './chart-legend-interaction.tsx';
 import { ChartLegend, type ChartLegendMarkerKind } from './ChartLegend.tsx';
 
 export type ComposedChartLegendProps = ComponentProps<typeof Legend> & {
   maxVisibleItems?: number;
+  /** Enable hover emphasis and click to focus one or more series. */
+  interactive?: boolean;
 };
 type LegendContentProps = ComposedChartLegendProps & {
   payload?: readonly LegendPayload[];
@@ -41,11 +52,9 @@ function createLegendItemKeys() {
         source && typeof source === 'object' && 'id' in source
           ? source.id
           : undefined;
-      if (typeof id === 'string' || typeof id === 'number')
-        return ['series', typeof id, id].join(KEY_SEPARATOR);
       const key = entry.dataKey;
-      if (typeof key === 'string' || typeof key === 'number')
-        return ['data', typeof key, key].join(KEY_SEPARATOR);
+      const seriesKey = chartLegendSeriesKey(id, key);
+      if (seriesKey) return seriesKey;
       return ['object', identity(typeof key === 'function' ? key : entry)].join(
         KEY_SEPARATOR
       );
@@ -80,10 +89,24 @@ function LegendContent({
   onClick,
   onMouseEnter,
   onMouseLeave,
+  interactive = true,
   'aria-label': ariaLabel,
 }: LegendContentProps) {
   const [getItemKeys] = useState(createLegendItemKeys);
+  const interaction = useContext(ChartLegendInteractionContext);
   const itemKeys = getItemKeys(payload);
+  const selectableKeys = itemKeys.filter(
+    (_, index) => payload[index]?.type !== 'none'
+  );
+  useLayoutEffect(() => {
+    interaction?.reconcile(selectableKeys);
+  });
+  const canInteract =
+    interactive &&
+    !onClick &&
+    interaction &&
+    (payload.filter(entry => entry.type !== 'none').length > 1 ||
+      interaction.focusedKeys !== null);
   if (!payload.some(entry => entry.type !== 'none')) return null;
   const vertical =
     layout === 'vertical' ||
@@ -133,24 +156,53 @@ function LegendContent({
           <ChartLegend.Item
             key={itemKeys[index]}
             inactive={entry.inactive}
-            onMouseEnter={
-              onMouseEnter
-                ? event => onMouseEnter(entry, index, event)
+            data-legend-muted={
+              canInteract &&
+              interaction.hoveredKey &&
+              (!interaction.focusedKeys ||
+                interaction.focusedKeys.has(interaction.hoveredKey)) &&
+              interaction.hoveredKey !== itemKeys[index]
+                ? true
                 : undefined
             }
-            onMouseLeave={
-              onMouseLeave
-                ? event => onMouseLeave(entry, index, event)
+            data-legend-excluded={
+              canInteract &&
+              interaction.focusedKeys &&
+              !interaction.focusedKeys.has(itemKeys[index]!)
+                ? true
                 : undefined
             }
+            onMouseEnter={event => {
+              if (canInteract) interaction.hover(itemKeys[index]!);
+              onMouseEnter?.(entry, index, event);
+            }}
+            onMouseLeave={event => {
+              if (canInteract) interaction.hover(null);
+              onMouseLeave?.(entry, index, event);
+            }}
           >
-            {onClick ? (
+            {canInteract || onClick ? (
               <button
                 type="button"
                 data-atbl-control="action"
                 data-atbl-focus="ring"
                 className="altertable-chart-legend-action"
-                onClick={event => onClick(entry, index, event)}
+                aria-pressed={
+                  canInteract
+                    ? !!interaction.focusedKeys?.has(itemKeys[index]!)
+                    : undefined
+                }
+                onFocus={() => {
+                  if (canInteract) interaction.hover(itemKeys[index]!);
+                }}
+                onBlur={() => {
+                  if (canInteract) interaction.hover(null);
+                }}
+                onClick={event => {
+                  if (canInteract)
+                    interaction.toggle(itemKeys[index]!, selectableKeys);
+                  onClick?.(entry, index, event);
+                }}
               >
                 {content}
               </button>
@@ -165,17 +217,22 @@ function LegendContent({
 }
 
 /** Opt in inside ComposedChart to derive the shared legend from its displayed series.
- * Give native series unique IDs when they share a data key.
  * Native positioning, sorting, formatters, callbacks, and custom content remain available. */
 export function ComposedChartLegend({
   maxVisibleItems,
+  interactive = true,
   ...props
 }: ComposedChartLegendProps) {
   return (
     <Legend
       iconSize={8}
       inactiveColor="var(--atbl-muted)"
-      content={<LegendContent maxVisibleItems={maxVisibleItems} />}
+      content={
+        <LegendContent
+          maxVisibleItems={maxVisibleItems}
+          interactive={interactive}
+        />
+      }
       {...props}
     />
   );
