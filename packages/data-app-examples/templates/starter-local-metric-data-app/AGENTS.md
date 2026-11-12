@@ -2,7 +2,7 @@
 
 Read `node_modules/@altertable/data-app/docs/app-authoring.md` and use this project
 as the selected scaffold. If dependencies are unavailable, read the
-[version-matched recipe](https://github.com/altertable-ai/data-app/blob/v0.76.0/docs/app-authoring.md). <!-- x-release-please-version -->
+[version-matched recipe](https://github.com/altertable-ai/data-app/blob/v0.77.0/docs/app-authoring.md). <!-- x-release-please-version -->
 
 | Task                                       | App-owned files                                 |
 | ------------------------------------------ | ----------------------------------------------- |
