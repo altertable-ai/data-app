@@ -59,7 +59,7 @@ policy bounds app requests; the [host SQL handler](embed.md#sql-query-route)
 must independently enforce access and resource limits.
 
 For server-owned operations, register the same registry in the backend and use
-`operations.client` in the browser. Its `query()` sends a named operation and
+`operations.createDataClient({ execution: 'server' })` in the browser. Its `query()` sends a named operation and
 input through the installed iframe transport's `data:query` route, or through
 HTTP when no iframe transport is installed. The backend must own and authorize
 operation execution. A single-file hosted app needs a hosting build that

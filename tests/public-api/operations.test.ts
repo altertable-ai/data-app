@@ -65,7 +65,9 @@ test('app operation registry derives filters and supports both delivery modes', 
     }),
   });
   expect(Object.keys(operations)).toEqual(['salesByRegion']);
-  expect(operations.client.filters.salesByRegion).toEqual({ region });
+  expect(
+    operations.createDataClient({ execution: 'server' }).filters.salesByRegion
+  ).toEqual({ region });
   const handler = createDataHandler(operations, async () => ({
     lakehouse: {
       async queryAll() {
@@ -74,7 +76,8 @@ test('app operation registry derives filters and supports both delivery modes', 
     },
   }));
   expect(
-    (await handler(new Request('http://localhost/api/data/client'))).status
+    (await handler(new Request('http://localhost/api/data/createDataClient')))
+      .status
   ).toBe(404);
   const serverResponse = await handler(
     new Request('http://localhost/api/data/salesByRegion', {
@@ -95,7 +98,10 @@ test('app operation registry derives filters and supports both delivery modes', 
       queryIds: [],
     },
   }));
-  const serverClient = operations.createDataClient({ transport });
+  const serverClient = operations.createDataClient({
+    execution: 'server',
+    transport,
+  });
   expect(
     await serverClient.query('salesByRegion', { region: 'EU' })
   ).toMatchObject({

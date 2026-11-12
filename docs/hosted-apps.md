@@ -23,7 +23,8 @@ single-file starter collects the operations with `dataApp.defineOperations()`
 and selects browser execution with `operations.createDataClient({ execution:
 'browser' })`. Its host supplies the SQL route; no bootstrap or message routes
 are needed in app code. A hosting build that registers operations on the backend
-can use `operations.client` and the named `data:query` route instead.
+can use `operations.createDataClient({ execution: 'server' })` and the named
+`data:query` route instead.
 
 ## Convert a local data app
 
