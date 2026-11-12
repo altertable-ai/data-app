@@ -7,6 +7,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   type PointerEvent,
   type ComponentProps,
@@ -28,6 +29,9 @@ import {
   Scatter as NativeScatter,
   XAxis as NativeXAxis,
   YAxis as NativeYAxis,
+  Legend as NativeLegend,
+  useOffset,
+  useMargin,
   Label,
   LabelList,
   ErrorBar,
@@ -113,7 +117,10 @@ function applyNativeLegendInteraction(
   focusedKeys: ReadonlySet<string> | null,
   hoveredKey: string | null,
   suppressPlotInspection: boolean,
-  barAxisIds: ReadonlySet<string | number>,
+  valueAxis: 'x' | 'y',
+  visibleBarAxisIds: ReadonlySet<string | number>,
+  fullAxisSpace: { left: number; right: number } | null,
+  yAxisSideCounts: { left: number; right: number },
   path = 'root'
 ): ReactNode {
   return Children.map(children, (child, index) => {
@@ -126,29 +133,60 @@ function applyNativeLegendInteraction(
           focusedKeys,
           hoveredKey,
           suppressPlotInspection,
-          barAxisIds,
+          valueAxis,
+          visibleBarAxisIds,
+          fullAxisSpace,
+          yAxisSideCounts,
           `${path}-${child.key ?? index}`
         ),
       } as { children: ReactNode });
     }
     if (child.type === XAxis || child.type === NativeXAxis) {
-      const axis = child as ReactElement<{ includeHidden?: boolean }>;
+      const axis = child as ReactElement<{
+        xAxisId?: string | number;
+        includeHidden?: boolean;
+        domain?: unknown;
+        ticks?: unknown;
+      }>;
+      if (valueAxis === 'y')
+        return cloneElement(axis, {
+          includeHidden: axis.props.includeHidden ?? true,
+        });
+      if (!focusedKeys || axis.props.domain != null || axis.props.ticks != null)
+        return child;
       return cloneElement(axis, {
-        includeHidden: axis.props.includeHidden ?? true,
+        domain: visibleBarAxisIds.has(axis.props.xAxisId ?? 0)
+          ? [0, 'auto']
+          : ['auto', 'auto'],
       });
     }
     if (child.type === YAxis || child.type === NativeYAxis) {
       const axis = child as ReactElement<{
         yAxisId?: string | number;
+        includeHidden?: boolean;
         domain?: unknown;
         ticks?: unknown;
+        width?: number | 'auto';
+        orientation?: 'left' | 'right';
       }>;
+      if (valueAxis === 'x')
+        return cloneElement(axis, {
+          includeHidden: axis.props.includeHidden ?? true,
+        });
       if (!focusedKeys || axis.props.domain != null || axis.props.ticks != null)
         return child;
+      const side = axis.props.orientation ?? 'left';
+      const reservedWidth =
+        (axis.props.width === 'auto' ||
+          (child.type === YAxis && axis.props.width == null)) &&
+        yAxisSideCounts[side] === 1
+          ? fullAxisSpace?.[side]
+          : undefined;
       return cloneElement(axis, {
-        domain: barAxisIds.has(axis.props.yAxisId ?? 0)
+        domain: visibleBarAxisIds.has(axis.props.yAxisId ?? 0)
           ? [0, 'auto']
           : ['auto', 'auto'],
+        ...(reservedWidth != null && { width: reservedWidth }),
       });
     }
     if (
@@ -199,22 +237,111 @@ function applyNativeLegendInteraction(
   });
 }
 
-function collectBarAxisIds(
+function collectVisibleNativeBarAxisIds(
   children: ReactNode,
+  focusedKeys: ReadonlySet<string> | null,
+  valueAxis: 'x' | 'y',
+  path = 'root',
   ids = new Set<string | number>()
+) {
+  Children.forEach(children, (child, index) => {
+    if (!isValidElement(child)) return;
+    if (child.type === Fragment) {
+      collectVisibleNativeBarAxisIds(
+        (child.props as { children?: ReactNode }).children,
+        focusedKeys,
+        valueAxis,
+        `${path}-${child.key ?? index}`,
+        ids
+      );
+    } else if (child.type === NativeBar) {
+      const props = child.props as {
+        id?: string;
+        dataKey?: unknown;
+        hide?: boolean;
+        xAxisId?: string | number;
+        yAxisId?: string | number;
+      };
+      const id =
+        props.id ??
+        (chartLegendSeriesKey(undefined, props.dataKey) == null
+          ? `atbl-native-${path}-${child.key ?? index}`
+          : undefined);
+      const key = chartLegendSeriesKey(id, props.dataKey)!;
+      if (!props.hide && (!focusedKeys || focusedKeys.has(key))) {
+        ids.add(
+          valueAxis === 'x' ? (props.xAxisId ?? 0) : (props.yAxisId ?? 0)
+        );
+      }
+    }
+  });
+  return ids;
+}
+
+function inspectAxisLayout(
+  children: ReactNode,
+  layout = { left: 0, right: 0, autoYAxis: false, interactiveLegend: false }
 ) {
   Children.forEach(children, child => {
     if (!isValidElement(child)) return;
     if (child.type === Fragment) {
-      collectBarAxisIds(
+      inspectAxisLayout(
         (child.props as { children?: ReactNode }).children,
-        ids
+        layout
       );
-    } else if (child.type === Bar || child.type === NativeBar) {
-      ids.add((child.props as { yAxisId?: string | number }).yAxisId ?? 0);
+    } else if (child.type === YAxis || child.type === NativeYAxis) {
+      const props = child.props as {
+        hide?: boolean;
+        mirror?: boolean;
+        orientation?: 'left' | 'right';
+        width?: number | 'auto';
+      };
+      if (!props.hide && !props.mirror) {
+        layout[props.orientation ?? 'left']++;
+        if (
+          props.width === 'auto' ||
+          (child.type === YAxis && props.width == null)
+        )
+          layout.autoYAxis = true;
+      }
+    } else if (child.type === Legend || child.type === NativeLegend) {
+      const props = child.props as {
+        position?: string;
+        align?: string;
+        layout?: string;
+        interactive?: boolean;
+      };
+      if (child.type === Legend && props.interactive !== false)
+        layout.interactiveLegend = true;
+      const side =
+        props.position === 'left' || props.position === 'right'
+          ? props.position
+          : props.layout === 'vertical' &&
+              (props.align === 'left' || props.align === 'right')
+            ? props.align
+            : null;
+      if (side) layout[side]++;
     }
   });
-  return ids;
+  return layout;
+}
+
+function PlotOffsets({
+  onChange,
+}: {
+  onChange: (left: number, right: number) => void;
+}) {
+  const offset = useOffset();
+  const margin = useMargin();
+  const left = offset?.left;
+  const right = offset?.right;
+  const marginLeft = margin?.left ?? 5;
+  const marginRight = margin?.right ?? 5;
+  useLayoutEffect(() => {
+    if (left != null && right != null)
+      onChange(left - marginLeft, right - marginRight);
+  }, [left, right, marginLeft, marginRight, onChange]);
+  return null;
 }
 
 /** Compose Cartesian series inside VisualizationWidget. Defaults to responsive
@@ -234,6 +361,7 @@ function ComposedChartRoot<Row>({
   width = '100%',
   height = 300,
   responsive = true,
+  layout = 'horizontal',
   className,
   ...props
 }: ComposedChartProps<Row>) {
@@ -327,6 +455,51 @@ function ComposedChartRoot<Row>({
   const [suppressPlotInspection, setSuppressPlotInspection] = useState(false);
   const [focusedLegendKeys, setFocusedLegendKeys] =
     useState<ReadonlySet<string> | null>(null);
+  const [barAxisByKey, setBarAxisByKey] = useState<
+    ReadonlyMap<string, string | number>
+  >(() => new Map());
+  const registerBarAxis = useCallback(
+    (key: string, axisId: string | number) => {
+      setBarAxisByKey(current => {
+        if (current.get(key) === axisId) return current;
+        return new Map(current).set(key, axisId);
+      });
+      return () =>
+        setBarAxisByKey(current => {
+          if (current.get(key) !== axisId) return current;
+          const next = new Map(current);
+          next.delete(key);
+          return next;
+        });
+    },
+    []
+  );
+  const valueAxis = layout === 'vertical' ? 'x' : 'y';
+  const [fullAxisSpace, setFullAxisSpace] = useState<{
+    left: number;
+    right: number;
+  } | null>(null);
+  const trackPlotOffsets = useCallback(
+    (left: number, right: number) => {
+      if (focusedLegendKeys) return;
+      setFullAxisSpace(current =>
+        current?.left === left && current.right === right
+          ? current
+          : { left, right }
+      );
+    },
+    [focusedLegendKeys]
+  );
+  const axisLayout = inspectAxisLayout(children);
+  const visibleBarAxisIds = collectVisibleNativeBarAxisIds(
+    children,
+    focusedLegendKeys,
+    valueAxis
+  );
+  for (const [key, axisId] of barAxisByKey) {
+    if (!focusedLegendKeys || focusedLegendKeys.has(key))
+      visibleBarAxisIds.add(axisId);
+  }
   const reconcileLegendKeys = useCallback((keys: readonly string[]) => {
     setFocusedLegendKeys(current => reconcileLegendFocus(current, keys));
   }, []);
@@ -350,6 +523,7 @@ function ComposedChartRoot<Row>({
           },
           toggle: toggleLegendKey,
           reconcile: reconcileLegendKeys,
+          registerBarAxis,
         }}
       >
         <ChartInteractionContext.Provider
@@ -404,8 +578,14 @@ function ComposedChartRoot<Row>({
                   width={width}
                   height={height}
                   responsive={responsive}
+                  layout={layout}
                   aria-label={ariaLabel}
                 >
+                  {valueAxis === 'y' &&
+                    axisLayout.autoYAxis &&
+                    axisLayout.interactiveLegend && (
+                      <PlotOffsets onChange={trackPlotOffsets} />
+                    )}
                   {horizontalGrid && !hasAuthoredGrid(children) && (
                     <CartesianGrid />
                   )}
@@ -414,7 +594,10 @@ function ComposedChartRoot<Row>({
                     focusedLegendKeys,
                     legendHoveredKey,
                     suppressPlotInspection,
-                    collectBarAxisIds(children)
+                    valueAxis,
+                    visibleBarAxisIds,
+                    fullAxisSpace,
+                    axisLayout
                   )}
                 </RechartsComposedChart>
               </ChartDateAxes>

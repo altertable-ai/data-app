@@ -16,6 +16,7 @@ export type ChartLegendInteraction = {
   hover: (key: string | null) => void;
   toggle: (key: string, keys: readonly string[]) => void;
   reconcile: (keys: readonly string[]) => void;
+  registerBarAxis: (key: string, axisId: string | number) => () => void;
 };
 
 export function reconcileLegendFocus(

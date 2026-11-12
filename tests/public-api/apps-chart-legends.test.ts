@@ -125,6 +125,97 @@ test('focus rescales the value axis while preserving category positions', async 
   await expect.poll(() => yTicks.allTextContents()).toEqual(fullY);
 });
 
+test('mixed charts use a zero baseline only while a bar is visible', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Mixed value-axis plot',
+    exact: true,
+  });
+  const ticks = chart.locator('.recharts-yAxis-tick-labels text');
+  const forecast = chart.getByRole('button', { name: 'Forecast', exact: true });
+  const revenue = chart.getByRole('button', { name: 'Revenue', exact: true });
+  expect((await ticks.allTextContents()).some(tick => tick === '0k')).toBe(
+    true
+  );
+  await forecast.click();
+  await expect
+    .poll(async () => {
+      const values = await ticks.allTextContents();
+      return (
+        values.length > 0 && values.every(value => Number.parseFloat(value) > 0)
+      );
+    })
+    .toBe(true);
+  await revenue.click();
+  await expect.poll(() => ticks.allTextContents()).toContain('0k');
+});
+
+test('horizontal bars rescale X and retain category positions', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Horizontal value-axis plot',
+    exact: true,
+  });
+  const xTicks = chart.locator('.recharts-xAxis-tick-labels text');
+  const yTicks = chart.locator('.recharts-yAxis-tick-labels text');
+  const categories = await yTicks.evaluateAll(elements =>
+    elements.map(element => ({
+      text: element.textContent,
+      y: Math.round(
+        element.getBoundingClientRect().y -
+          element.closest('svg')!.getBoundingClientRect().y
+      ),
+    }))
+  );
+  expect(
+    Math.max(...(await xTicks.allTextContents()).map(Number.parseFloat))
+  ).toBeGreaterThan(200);
+  await chart.getByRole('button', { name: 'Small', exact: true }).click();
+  await expect
+    .poll(async () =>
+      Math.max(...(await xTicks.allTextContents()).map(Number.parseFloat))
+    )
+    .toBeLessThan(100);
+  expect(await xTicks.allTextContents()).toContain('0ms');
+  expect(
+    await yTicks.evaluateAll(elements =>
+      elements.map(element => ({
+        text: element.textContent,
+        y: Math.round(
+          element.getBoundingClientRect().y -
+            element.closest('svg')!.getBoundingClientRect().y
+        ),
+      }))
+    )
+  ).toEqual(categories);
+});
+
+test('focus keeps category coordinates with an auto-width value axis', async ({
+  page,
+}) => {
+  await page.goto('/chart-legends');
+  const chart = page.getByRole('region', {
+    name: 'Dynamic legend plot',
+    exact: true,
+  });
+  const ticks = chart.locator('.recharts-xAxis-tick-labels text');
+  const positions = await ticks.evaluateAll(elements =>
+    elements.map(element => element.getBoundingClientRect().x)
+  );
+  await chart.getByRole('button', { name: 'Alpha', exact: true }).click();
+  await expect
+    .poll(() =>
+      ticks.evaluateAll(elements =>
+        elements.map(element => element.getBoundingClientRect().x)
+      )
+    )
+    .toEqual(positions);
+});
+
 test('first legend click does not activate a plot tooltip', async ({
   page,
 }) => {

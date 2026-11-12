@@ -669,6 +669,45 @@ createRoot(document.getElementById('root')!).render(
         </ComposedChart>
       </Example>
       <Example
+        name="Mixed value-axis focus"
+        description="Only visible bars require a zero baseline."
+      >
+        <ComposedChart
+          data={[
+            { label: 'Jan', forecast: 40, revenue: 90 },
+            { label: 'Feb', forecast: 55, revenue: 110 },
+            { label: 'Mar', forecast: 70, revenue: 130 },
+          ]}
+          ariaLabel="Mixed value-axis plot"
+        >
+          <ComposedChart.XAxis dataKey="label" />
+          <ComposedChart.YAxis unit="k" width={48} />
+          <ComposedChart.Area dataKey="forecast" name="Forecast" />
+          <ComposedChart.Bar dataKey="revenue" name="Revenue" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
+        name="Horizontal value-axis focus"
+        description="Horizontal bars scale the X value axis."
+      >
+        <ComposedChart
+          layout="vertical"
+          data={[
+            { label: 'Jan', small: 20, large: 180 },
+            { label: 'Feb', small: 30, large: 200 },
+            { label: 'Mar', small: 40, large: 220 },
+          ]}
+          ariaLabel="Horizontal value-axis plot"
+        >
+          <ComposedChart.XAxis type="number" unit="ms" />
+          <ComposedChart.YAxis dataKey="label" type="category" width={48} />
+          <ComposedChart.Bar dataKey="small" name="Small" />
+          <ComposedChart.Bar dataKey="large" name="Large" />
+          <ComposedChart.Legend />
+        </ComposedChart>
+      </Example>
+      <Example
         name="Dynamic legend focus"
         description="Removing a focused series reconciles the remaining legend."
       >

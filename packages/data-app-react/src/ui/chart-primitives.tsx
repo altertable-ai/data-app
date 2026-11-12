@@ -17,6 +17,7 @@ import {
   Scatter,
   YAxis,
   useYAxisTicks,
+  useCartesianChartLayout,
   CartesianGrid,
   Tooltip,
   DefaultTooltipContent,
@@ -85,6 +86,16 @@ export function ChartBar<Row = unknown, Value = number | null>(
   useDateAxisBar(props.xAxisId);
   const series = useChartSeries(props.id);
   const legend = useChartLegendSeries(series.id, props.dataKey);
+  const interaction = useContext(ChartLegendInteractionContext);
+  const layout = useCartesianChartLayout();
+  const registerBarAxis = interaction?.registerBarAxis;
+  const key = chartLegendSeriesKey(series.id, props.dataKey);
+  const axisId =
+    layout === 'vertical' ? (props.xAxisId ?? 0) : (props.yAxisId ?? 0);
+  useLayoutEffect(
+    () => (key && !props.hide ? registerBarAxis?.(key, axisId) : undefined),
+    [registerBarAxis, key, axisId, props.hide]
+  );
   return (
     <ChartSeries id={series.id}>
       <Bar<Row, Value>
