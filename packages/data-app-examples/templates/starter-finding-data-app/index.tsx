@@ -14,7 +14,6 @@ import {
   VisualizationWidget,
 } from '@altertable/data-app-react';
 import { BarChart, ComposedChart } from '@altertable/data-app-react/ui';
-import { createDataClient } from '@altertable/data-app/client';
 import {
   dateTimeRangeFilter,
   displayChoice,
@@ -124,7 +123,7 @@ const breakdown = displayChoice({
   presentation: { control: 'widget' },
 });
 const policy = { maxQueryRows: 500, maxDurationMs: 15000 };
-const operations = {
+const operations = dataApp.defineOperations({
   sampleTotal: dataApp.defineOperation({
     filters: { period },
     policy,
@@ -185,7 +184,7 @@ const operations = {
       }));
     },
   }),
-};
+});
 const queryNames = {
   ...operations.sampleTotal.queryNames,
   ...operations.samplesOverTime.queryNames,
@@ -203,7 +202,9 @@ const sampleDataContext = createDataContext(queryNames)({
     },
   },
 });
-const { defineView } = createDataHooks(createDataClient({ operations }));
+const { defineView } = createDataHooks(
+  operations.createDataClient({ execution: 'browser' })
+);
 const count = { kind: 'count' } as const;
 const emptyFallback = {
   title: 'No samples in this period',

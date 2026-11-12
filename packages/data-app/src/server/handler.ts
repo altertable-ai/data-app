@@ -1,3 +1,4 @@
+import type { DataAppOperationRegistry } from '../core/config.ts';
 import {
   DataSourceError,
   type DataOperations,
@@ -23,11 +24,13 @@ export type RequestAccess = {
  * JSON, Origin, and Fetch Metadata checks reject cross-site browser POSTs; they do not
  * authenticate another local process. Query evidence accompanies every result.
  */
-export function createDataHandler(
-  operations: DataOperations,
+export function createDataHandler<const Operations extends DataOperations>(
+  operations: Operations | DataAppOperationRegistry<Operations>,
   authorize: (request: Request, operation: string) => Promise<RequestAccess>
 ) {
-  operations = withDimensionSelectors(operations);
+  const registeredOperations = withDimensionSelectors(
+    operations as DataOperations
+  );
   async function handleDataRequest(request: Request): Promise<Response> {
     const requestId = crypto.randomUUID();
     const url = new URL(request.url);
@@ -42,7 +45,7 @@ export function createDataHandler(
     } catch {
       return problem(404, 'not_found', 'Unknown data operation.', requestId);
     }
-    if (!Object.hasOwn(operations, name))
+    if (!Object.hasOwn(registeredOperations, name))
       return problem(404, 'not_found', 'Unknown data operation.', requestId);
     if (request.method !== 'POST')
       return problem(405, 'method_not_allowed', 'Use POST.', requestId);
@@ -87,7 +90,7 @@ export function createDataHandler(
         requestId
       );
     }
-    const operation = operations[name]!;
+    const operation = registeredOperations[name]!;
     let input: unknown;
     if (request.signal.aborted)
       return problem(504, 'timeout', 'The data request timed out.', requestId);

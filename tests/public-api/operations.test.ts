@@ -1,8 +1,10 @@
+import { defineDataApp } from '@altertable/data-app';
 import { createDataClient, DataAppError } from '@altertable/data-app/client';
 import {
   defineOperation,
   parseCount,
   DataSourceError,
+  searchFilter,
   type Lakehouse,
 } from '@altertable/data-app/contract';
 import { createDataHandler } from '@altertable/data-app/server';
@@ -38,6 +40,99 @@ function lakehouse(): Lakehouse {
     },
   };
 }
+
+test('app operation registry derives filters and supports both delivery modes', async () => {
+  const app = defineDataApp({
+    title: 'Sales',
+    description: 'Sales by region',
+    scope: { organization: 'test', environment: 'test' },
+    queries: {
+      salesSql: {
+        statement: 'SELECT total FROM sales WHERE region = $region',
+        params: { region: { type: 'string' } },
+        projections: { total: { type: 'number' } },
+      },
+    },
+  });
+  const region = searchFilter({ key: 'region', label: 'Region' });
+  const operations = app.defineOperations({
+    salesByRegion: app.defineOperation({
+      filters: { region },
+      policy: { maxQueryRows: 1, maxDurationMs: 100 },
+      async run({ query }, { region }) {
+        return (await query('salesSql', { region })).rows[0]!.total;
+      },
+    }),
+  });
+  expect(Object.keys(operations)).toEqual(['salesByRegion']);
+  expect(
+    operations.createDataClient({ execution: 'server' }).filters.salesByRegion
+  ).toEqual({ region });
+  const handler = createDataHandler(operations, async () => ({
+    lakehouse: {
+      async queryAll() {
+        return { columns: [{ name: 'total' }], rows: [[42]] };
+      },
+    },
+  }));
+  expect(
+    (await handler(new Request('http://localhost/api/data/createDataClient')))
+      .status
+  ).toBe(404);
+  const serverResponse = await handler(
+    new Request('http://localhost/api/data/salesByRegion', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ region: 'EU' }),
+    })
+  );
+  expect(serverResponse.status).toBe(200);
+  expect((await serverResponse.json()).data).toBe(42);
+
+  const transport = vi.fn(async (_name: string, _input: unknown) => ({
+    status: 200,
+    body: {
+      data: 42,
+      requestId: 'request-1',
+      queriedAt: '2026-01-01T00:00:00.000Z',
+      queryIds: [],
+    },
+  }));
+  const serverClient = operations.createDataClient({
+    execution: 'server',
+    transport,
+  });
+  expect(
+    await serverClient.query('salesByRegion', { region: 'EU' })
+  ).toMatchObject({
+    data: 42,
+    input: { region: 'EU' },
+  });
+  expect(transport).toHaveBeenCalledWith(
+    'salesByRegion',
+    { region: 'EU' },
+    undefined
+  );
+
+  const browserClient = operations.createDataClient({
+    execution: 'browser',
+    lakehouse: {
+      async queryAll(statement, { params }) {
+        expect(statement).toBe(
+          'SELECT total FROM sales WHERE region = $region'
+        );
+        expect(params).toEqual({ region: 'EU' });
+        return { columns: [{ name: 'total' }], rows: [[42]] };
+      },
+    },
+  });
+  expect(
+    await browserClient.query('salesByRegion', { region: 'EU' })
+  ).toMatchObject({
+    data: 42,
+    input: { region: 'EU' },
+  });
+});
 
 test('operation declarations retain runtime validation for unchecked check arrays and policy values', () => {
   const base = operation();

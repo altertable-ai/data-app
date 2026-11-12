@@ -40,14 +40,13 @@ See [contracts](contract.md), [server handlers](server.md), and
 
 ## Browser-owned operations for bundle apps
 
-Bundle apps pass their operation registry as a value, which also supplies its
-filters:
+Bundle apps can bind their operation registry to the app and select browser
+execution explicitly. The registry supplies its filters:
 
 ```ts
-import { createDataClient } from '@altertable/data-app/client';
-
-// ... operations declared with dataApp.defineOperation()
-const client = createDataClient({ operations });
+// ... app declared with defineDataApp(), operations created with dataApp.defineOperation()
+const operations = dataApp.defineOperations({ sampleCountsByGroup });
+const client = operations.createDataClient({ execution: 'browser' });
 const response = await client.query('sampleCountsByGroup', { groupName: '' });
 ```
 
@@ -58,6 +57,13 @@ must install it first or supply an authorized `lakehouse` adapter.
 Do not combine `operations` with `transport`, `endpoint`, or `fetch`. Browser
 policy bounds app requests; the [host SQL handler](embed.md#sql-query-route)
 must independently enforce access and resource limits.
+
+For server-owned operations, register the same registry in the backend and use
+`operations.createDataClient({ execution: 'server' })` in the browser. Its `query()` sends a named operation and
+input through the installed iframe transport's `data:query` route, or through
+HTTP when no iframe transport is installed. The backend must own and authorize
+operation execution. A single-file hosted app needs a hosting build that
+registers its operation code on the backend before choosing this mode.
 
 ## Iframe transport
 
