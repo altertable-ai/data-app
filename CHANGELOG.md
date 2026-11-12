@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.77.0](https://github.com/altertable-ai/data-app/compare/v0.76.0...v0.77.0) (2026-11-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* give each widget its own query, loaded near the viewport ([#145](https://github.com/altertable-ai/data-app/issues/145))
+
+### Features
+
+* **charts:** add interactive legend focus ([#148](https://github.com/altertable-ai/data-app/issues/148)) ([a1f40a5](https://github.com/altertable-ai/data-app/commit/a1f40a581c02579e257d9b3f2f3bcf43c5a3ffb1))
+* give each widget its own query, loaded near the viewport ([#145](https://github.com/altertable-ai/data-app/issues/145)) ([4f9fcd5](https://github.com/altertable-ai/data-app/commit/4f9fcd5ac72755805bf60de78e45e6cf2c4855a8))
+
 ## [0.76.0](https://github.com/altertable-ai/data-app/compare/v0.75.0...v0.76.0) (2026-11-09)
 
 
