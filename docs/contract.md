@@ -44,7 +44,7 @@ import { parseCount, searchFilter } from '@altertable/data-app/contract';
 
 // ... dataApp
 const groupName = searchFilter({ key: 'group', label: 'Group' });
-const operations = {
+const operations = dataApp.defineOperations({
   sampleCountsByGroup: dataApp.defineOperation({
     filters: { groupName },
     policy: { maxQueryRows: 10, maxDurationMs: 15000 },
@@ -56,7 +56,7 @@ const operations = {
       }));
     },
   }),
-};
+});
 ```
 
 The filters validate input and supply the operation's checks; enforce business

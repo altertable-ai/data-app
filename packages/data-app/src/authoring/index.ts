@@ -3,6 +3,7 @@ export { defineDataApp } from '../core/config.ts';
 export type {
   DataAppConfig,
   DataAppDefinition,
+  DataAppOperationRegistry,
   QueryDefinitions,
   QueryParameterValue,
   QueryParameter,

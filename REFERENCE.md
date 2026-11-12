@@ -389,10 +389,14 @@ DataAppDefinition.queries: QuerySnapshot<Queries>
 DataAppDefinition.defineDimension: <const Type extends 'string' | 'number'>(config: DimensionSourceConfig<Type> & { source: { query: DimensionSourceQueryName<Queries, NoInfer<Type>>; }; }) => SourceDimensionFilter<...>
 DataAppDefinition.defineOperation: <Input, Output, const Filters extends FilterCollection = {}>(operation: InputOperationDefinition<Input, Output, Queries, Filters>): DefinedOperation<WithFilterInput<Filters, Input>, Output, Queries, keyof Filters extends never ? undefined : Filters> — Parse a destination's own input, such as a record id, and list valid `checks`. Declare `filters` too when it reads the displayed scope.
 DataAppDefinition.defineOperation: <const Filters extends FilterCollection = {}, Output = unknown>(operation: FilterOperationDefinition<Filters, Output, Queries>): DefinedOperation<FilterInput<Filters>, Output, Queries, Filters>
+DataAppDefinition.defineOperations: <const Operations extends DataOperations>(operations: Operations) => DataAppOperationRegistry<Operations> — Bind a named registry to these queries and derive its client and filters.
 DataAppError (class, @altertable/data-app/client)
 DataAppError.code: string
 DataAppError.requestId?: string
 DataAppError.…: plus props inherited from built-in
+DataAppOperationRegistry (type, @altertable/data-app, @altertable/data-app/config): <Operations>
+DataAppOperationRegistry.client: DataClient<Operations> — Named-operation client; the host or HTTP server executes the registry.
+DataAppOperationRegistry.createDataClient: (options: { execution: 'browser'; lakehouse?: Lakehouse | undefined; } | { execution?: 'server' | undefined; transport?: DataTransport | undefined; endpoint?: string | undefined; fetch?: typeof fetch | undefined; }) => DataClient<...> — Opt into browser execution through the host SQL route.
 DataAppProps (type, @altertable/data-app-react): <Data, Input, SummaryViews> = props listed as DataApp.*
 DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode

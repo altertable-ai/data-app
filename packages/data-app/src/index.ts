@@ -2,6 +2,7 @@ export { defineDataApp } from './authoring/index.ts';
 export type {
   DataAppConfig,
   DataAppDefinition,
+  DataAppOperationRegistry,
   QueryDefinitions,
   QueryParameterValue,
   QueryParameter,
