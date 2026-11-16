@@ -30,7 +30,7 @@ for (const failure of [false, true]) {
     const revenueCard = await app
       .getByRole('region', { name: 'Revenue by month', exact: true })
       .boundingBox();
-    await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+    await page.getByRole('button', { name: 'Annotate', exact: true }).click();
     const selection = app.getByRole('button', {
       name: 'Annotation selection',
       exact: true,
@@ -121,15 +121,18 @@ test('feedback retains the displayed input while a newer filter is still loading
 }) => {
   await page.goto('/annotations-host?annotations&annotation-state');
   const app = page.frameLocator('iframe');
+  // Retained data shows while the advanced period loads.
+  await expect
+    .poll(() => app.getByText('42', { exact: true }).isVisible())
+    .toBe(true);
   await expect
     .poll(() =>
-      app
-        .getByRole('group', { name: 'Page actions', exact: true })
-        .getByText('Updating data', { exact: true })
-        .isVisible()
+      page
+        .getByRole('status', { name: 'App refreshing', exact: true })
+        .textContent()
     )
-    .toBe(true);
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+    .toBe('true');
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,
@@ -250,7 +253,14 @@ test('narrative cards sharing evidence remain separate whole-card annotation tar
   });
   const card = await narrative.boundingBox();
   expect(card).toBeTruthy();
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await expect
+    .poll(() =>
+      app
+        .getByRole('button', { name: 'Annotation selection', exact: true })
+        .isVisible()
+    )
+    .toBe(true);
   await page.mouse.click(card!.x + card!.width / 2, card!.y + card!.height / 2);
   const comment = app.getByRole('textbox', {
     name: 'Annotation text',
@@ -283,7 +293,7 @@ test('outside clicks cancel unfinished edits and require a second click to selec
   const card = await app
     .getByRole('region', { name: 'Customers', exact: true })
     .boundingBox();
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,
@@ -325,7 +335,7 @@ test('annotation mode scrolls by wheel and page keys while selected geometry fol
 }) => {
   await page.goto('/annotations-host?annotations&annotation-scroll');
   const app = page.frameLocator('iframe');
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,
@@ -368,7 +378,7 @@ for (const [title, expectedId] of [
   }) => {
     await page.goto('/annotations-host?annotations');
     const app = page.frameLocator('iframe');
-    await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+    await page.getByRole('button', { name: 'Annotate', exact: true }).click();
     const selection = app.getByRole('button', {
       name: 'Annotation selection',
       exact: true,
@@ -402,7 +412,7 @@ test('touch panning preserves unfinished comments and an outside tap dismisses t
 }) => {
   await page.goto('/annotations-host?annotations&annotation-scroll');
   const app = page.frameLocator('iframe');
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,
@@ -482,7 +492,7 @@ test('mouse region selection and saved pins follow the report while scrolling', 
 }) => {
   await page.goto('/annotations-host?annotations&annotation-scroll');
   const app = page.frameLocator('iframe');
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const layer = await app
     .getByRole('button', { name: 'Annotation selection', exact: true })
     .boundingBox();
@@ -525,7 +535,7 @@ test('window deactivation and tab switching preserve unfinished comments until a
 }) => {
   await page.goto('/annotations-host?annotations');
   const app = page.frameLocator('iframe');
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,
@@ -592,7 +602,7 @@ test('a delayed host dismissal cannot close an editor opened by a later selectio
   const card = await app
     .getByRole('region', { name: 'Customers', exact: true })
     .boundingBox();
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,
@@ -658,7 +668,7 @@ test('saved collision fallback targets still resolve when their evidence becomes
 }) => {
   await page.goto('/annotations-host?annotations');
   const app = page.frameLocator('iframe');
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,
@@ -699,7 +709,7 @@ test('explicit annotation identities remain authoritative alongside automatic ev
     '/annotations-host?annotations&annotation-explicit-collision'
   );
   const app = page.frameLocator('iframe');
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,
@@ -737,7 +747,7 @@ test('a narrative retains its legacy evidence identity from loading through read
       .getByRole('button', { name: 'Explore Loading narrative', exact: true })
       .count()
   ).toBe(0);
-  await app.getByRole('button', { name: 'Annotate', exact: true }).click();
+  await page.getByRole('button', { name: 'Annotate', exact: true }).click();
   const selection = app.getByRole('button', {
     name: 'Annotation selection',
     exact: true,

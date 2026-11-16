@@ -1,4 +1,5 @@
 import { defineMessageRoute } from './messages.ts';
+import { isRecord } from './record.ts';
 
 export type DataAppAnnotationDraft = {
   id: string;
@@ -34,7 +35,8 @@ export type DataAppAnnotationDraft = {
 
 export type DataAppAnnotationPresentation = {
   enabled: boolean;
-  /** When provided, the host owns the mode and renders the annotation trigger. */
+  /** When provided, the host owns the mode and renders the annotation trigger.
+   * Without an in-frame toolbar, as on embedded surfaces, the host always owns it; omitted means inactive. */
   active?: boolean;
   pinsVisible?: boolean;
   showHint?: boolean;
@@ -290,8 +292,7 @@ export function isAnnotationPresentation(
       (typeof input.selectedAnnotationId === 'string' &&
         input.selectedAnnotationId.length <= 128)) &&
     (input.dismissal === undefined ||
-      (input.dismissal !== null &&
-        typeof input.dismissal === 'object' &&
+      (isRecord(input.dismissal) &&
         typeof input.dismissal.id === 'string' &&
         input.dismissal.id.length <= 128 &&
         typeof input.dismissal.occurredAt === 'number' &&
@@ -324,8 +325,7 @@ export function isAnnotationPresentation(
                 target.anchor.y >= 0 &&
                 target.anchor.y <= 1)) &&
             (target.region === undefined ||
-              (typeof target.region === 'object' &&
-                target.region !== null &&
+              (isRecord(target.region) &&
                 ['x', 'y', 'width', 'height'].every(key => {
                   const value = (target.region as Record<string, unknown>)[key];
                   return (

@@ -13,14 +13,13 @@ import {
 import { Toast } from './Toast.tsx';
 import { Tooltip } from './Tooltip.tsx';
 
-export function ExportControl({ csv }: { csv?: CsvExport }) {
-  const [open, setOpen] = useState(false);
+/** Runs CSV downloads for a toolbar control or a host action; failures render a retryable toast. */
+export function useCsvExport(csv: CsvExport | undefined) {
   const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
-
   const [retryTableName, setRetryTableName] = useState<string>();
+
   async function download(table?: CsvTable) {
-    if (!csv?.tables.length) return;
-    setOpen(false);
+    if (!csv?.tables.length || status === 'pending') return;
     setRetryTableName(table?.name);
     setStatus('pending');
     try {
@@ -29,6 +28,31 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
     } catch {
       setStatus('error');
     }
+  }
+
+  const errorToast =
+    status === 'error' && csv ? (
+      <Toast
+        state="error"
+        position="top"
+        onRetry={() =>
+          void download(csv.tables.find(table => table.name === retryTableName))
+        }
+      >
+        Couldn’t export data.
+      </Toast>
+    ) : null;
+
+  return { status, download, errorToast };
+}
+
+export function ExportControl({ csv }: { csv?: CsvExport }) {
+  const [open, setOpen] = useState(false);
+  const { status, download: runDownload, errorToast } = useCsvExport(csv);
+
+  function download(table?: CsvTable) {
+    setOpen(false);
+    return runDownload(table);
   }
 
   if (!csv?.tables.length) {
@@ -45,19 +69,7 @@ export function ExportControl({ csv }: { csv?: CsvExport }) {
 
   return (
     <>
-      {status === 'error' && (
-        <Toast
-          state="error"
-          position="top"
-          onRetry={() =>
-            void download(
-              csv.tables.find(table => table.name === retryTableName)
-            )
-          }
-        >
-          Couldn’t export data.
-        </Toast>
-      )}
+      {errorToast}
       {csv.tables.length === 1 ? (
         <IconButton
           icon="export"

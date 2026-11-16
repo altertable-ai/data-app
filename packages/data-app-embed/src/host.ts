@@ -1,4 +1,8 @@
-import { type DataAppLogger } from '@altertable/data-app/client';
+import {
+  type DataAppAction,
+  type DataAppActions,
+  type DataAppLogger,
+} from '@altertable/data-app/client';
 import {
   type DataAppAnnotationPresentation,
   MessageRoutingError,
@@ -34,6 +38,9 @@ export type DataAppHost = {
   dispose: () => void;
   setPresentation: (presentation?: DataAppPresentation) => void;
   setLogger: (logger?: DataAppLogger) => void;
+  /** Runs an action the app offered through `onActionsChange`; ignored while disconnected.
+   * Call it from a user gesture so `presentStory` can show the frame fullscreen. */
+  runAction: (action: DataAppAction) => void;
 };
 
 export type DataAppHostOptions = {
@@ -43,6 +50,8 @@ export type DataAppHostOptions = {
   logger?: DataAppLogger;
   onStatusChange?: (status: DataAppStatus) => void;
   onDiagnostic?: (event: DataAppDiagnostic) => void;
+  /** The page actions the connected app offers; empty while disconnected or when it offers none. */
+  onActionsChange?: (actions: DataAppActions) => void;
   onMessage: MessageDispatcher;
 };
 
@@ -61,6 +70,7 @@ export function attachDataAppConnection({
   logger,
   onStatusChange,
   onDiagnostic,
+  onActionsChange,
   onMessage,
   repair,
   window: host = window,
@@ -85,6 +95,11 @@ export function attachDataAppConnection({
   let repairLease = repair?.session.connect(repair.revision);
   const unsubscribeRepair = repair?.session.subscribe(() => publishState());
   const pending = new Map<string, AbortController>();
+  let actions: DataAppActions = {};
+  let actionsIdentity = '{}';
+  // Set while a story this bridge opened shows the iframe fullscreen.
+  let ownsFullscreen = false;
+  const parentDocument = iframe.ownerDocument;
   const requestStartedAt = new Map<string, number>();
 
   function reportDiagnostic(event: BridgeDiagnostic) {
@@ -163,6 +178,49 @@ export function attachDataAppConnection({
     publishState();
   }
 
+  function publishActions(next: DataAppActions) {
+    const identity = JSON.stringify(next);
+    if (identity === actionsIdentity) return;
+    actionsIdentity = identity;
+    actions = next;
+    if (!next.presentStory?.presenting) exitStoryFullscreen();
+    onActionsChange?.(next);
+  }
+
+  function runAction(action: DataAppAction) {
+    if (disposed || !sessionId) return;
+    if (action.type === 'presentStory' && actions.presentStory?.enabled)
+      enterStoryFullscreen();
+    send('actionRun', { action });
+  }
+
+  /** Stories fill the screen as they do standalone; the frame alone cannot without its own gesture. */
+  function enterStoryFullscreen() {
+    if (!parentDocument.fullscreenEnabled || parentDocument.fullscreenElement)
+      return;
+    iframe.requestFullscreen().then(
+      () => {
+        ownsFullscreen = true;
+      },
+      // Keep the story available when fullscreen is denied.
+      () => {}
+    );
+  }
+
+  function exitStoryFullscreen() {
+    if (!ownsFullscreen) return;
+    ownsFullscreen = false;
+    if (parentDocument.fullscreenElement === iframe)
+      void parentDocument.exitFullscreen().catch(() => {});
+  }
+
+  function closeStoryOnFullscreenExit() {
+    if (!ownsFullscreen || parentDocument.fullscreenElement === iframe) return;
+    ownsFullscreen = false;
+    if (actions.presentStory?.presenting && sessionId)
+      send('actionRun', { action: { type: 'closeStory' } });
+  }
+
   function cancelAll() {
     for (const controller of pending.values()) controller.abort();
     pending.clear();
@@ -187,6 +245,7 @@ export function attachDataAppConnection({
       ready(message) {
         if (message.documentId !== documentId) {
           cancelAll();
+          publishActions({});
           if (documentId)
             repairLease = repair?.session.connect(repair.revision);
           documentId = message.documentId;
@@ -214,6 +273,9 @@ export function attachDataAppConnection({
       runtimeError() {
         onStatusChange?.('failed');
       },
+      actionsUpdate({ actions }) {
+        publishActions(actions);
+      },
       runtimeResize({ height }) {
         contentSizing.resize(height);
       },
@@ -226,6 +288,7 @@ export function attachDataAppConnection({
       },
       disconnect() {
         cancelAll();
+        publishActions({});
         documentId = undefined;
         sessionId = undefined;
         onStatusChange?.('disconnected');
@@ -348,11 +411,17 @@ export function attachDataAppConnection({
     repairLease = repair?.session.connect(repair.revision);
     documentId = undefined;
     sessionId = undefined;
+    publishActions({});
     onStatusChange?.('connecting');
     send('connect', {});
   }
 
   function dispose() {
+    exitStoryFullscreen();
+    parentDocument.removeEventListener(
+      'fullscreenchange',
+      closeStoryOnFullscreenExit
+    );
     disposed = true;
     unsubscribeRepair?.();
     repairLease?.dispose();
@@ -372,9 +441,13 @@ export function attachDataAppConnection({
   host.addEventListener('popstate', publishState);
   host.addEventListener('pagehide', cancelAll);
   host.addEventListener('click', publishAnnotationDismissal, true);
+  parentDocument.addEventListener(
+    'fullscreenchange',
+    closeStoryOnFullscreenExit
+  );
   // Reconnect an already-loaded iframe when its host bridge mounts again.
   onStatusChange?.('connecting');
   send('connect', {});
 
-  return { dispose, setPresentation, setLogger };
+  return { dispose, setPresentation, setLogger, runAction };
 }

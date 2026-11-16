@@ -44,7 +44,18 @@ export type PresentStoryProps = {
   theme?: ThemeController;
   headerActions?: ReactNode;
   footer?: ReactNode;
+  /** False renders only the presentation, which `?present=1&step=` opens. */
+  trigger?: boolean;
 } & Omit<ComponentPropsWithRef<'button'>, 'title'>;
+
+/** Opens a rendered story at its first finding through the URL, as Back/Forward would. */
+export function openStoryPresentation({
+  findings,
+  dataContext,
+}: Pick<PresentStoryProps, 'findings' | 'dataContext'>) {
+  const first = storySteps(findings, dataContext)[0];
+  if (first) writeSearch({ present: '1', step: first.id }, 'push');
+}
 
 const stepKeys: Record<string, (index: number, last: number) => number> = {
   ArrowRight(index) {
@@ -80,6 +91,7 @@ export function PresentStory({
   theme,
   headerActions,
   footer,
+  trigger: showTrigger = true,
   children,
   className,
   onClick,
@@ -198,7 +210,11 @@ export function PresentStory({
     writePresentation(firstStep.id, 'push');
   }
 
-  useShortcut(shortcuts.playStory, openPresentation, !unavailable);
+  useShortcut(
+    shortcuts.playStory,
+    openPresentation,
+    showTrigger && !unavailable
+  );
 
   function goTo(nextIndex: number) {
     const next = steps[nextIndex];
@@ -228,25 +244,27 @@ export function PresentStory({
 
   return (
     <>
-      <span className="altertable-present-launch">
-        <IconButton
-          {...props}
-          ref={triggerRef}
-          icon="present"
-          variant="elevated"
-          label={props['aria-label'] ?? 'Present story'}
-          shortcut={shortcuts.playStory}
-          tooltipAlign="end"
-          className={className}
-          disabled={unavailable}
-          onClick={event => {
-            onClick?.(event);
-            if (!event.defaultPrevented) void openPresentation();
-          }}
-        >
-          {children}
-        </IconButton>
-      </span>
+      {showTrigger && (
+        <span className="altertable-present-launch">
+          <IconButton
+            {...props}
+            ref={triggerRef}
+            icon="present"
+            variant="elevated"
+            label={props['aria-label'] ?? 'Present story'}
+            shortcut={shortcuts.playStory}
+            tooltipAlign="end"
+            className={className}
+            disabled={unavailable}
+            onClick={event => {
+              onClick?.(event);
+              if (!event.defaultPrevented) void openPresentation();
+            }}
+          >
+            {children}
+          </IconButton>
+        </span>
+      )}
       <dialog
         ref={dialog}
         className="altertable-present-dialog"

@@ -10,6 +10,7 @@ import type { NumberFilter, BooleanFilter } from './filters.ts';
 import { invariant } from './invariant.ts';
 import type { HistoryMode } from './navigation.ts';
 import type { IsUnion } from './queries.ts';
+import { isRecord } from './record.ts';
 export type { HistoryMode } from './navigation.ts';
 
 /** Where a filter's or display option's control renders. */
@@ -84,9 +85,7 @@ export function defineAppFilters<const Collection extends FilterCollection>(
     const presentation = filter.presentation;
     invariant(
       presentation === undefined ||
-        (presentation !== null &&
-          typeof presentation === 'object' &&
-          !Array.isArray(presentation) &&
+        (isRecord(presentation) &&
           (presentation.control === undefined ||
             presentation.control === 'toolbar' ||
             presentation.control === 'widget') &&

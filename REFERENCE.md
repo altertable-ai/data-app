@@ -350,9 +350,9 @@ CsvTable.rows: readonly (readonly CsvCell[])[]
 DataApp (component, @altertable/data-app-react): <Data, Input, const SummaryViews extends readonly AnyView[] = [ ]>(props: DataAppProps<Data, Input, SummaryViews>) — Executes the primary view and its summary views, and owns controls, inspection, exports, and stories.
 DataApp.children: ReactNode
 DataApp.description?: ReactNode — Override the declared subtitle; null hides it.
-DataApp.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states.
-DataApp.toolbarActions?: ReactNode
-DataApp.footerActions?: ReactNode
+DataApp.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states. Embedded surfaces have no toolbar: the host runs page actions through its bridge.
+DataApp.toolbarActions?: ReactNode — Standalone toolbar controls; embedded surfaces omit them.
+DataApp.footerActions?: ReactNode — Standalone footer controls; embedded surfaces omit them.
 DataApp.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
 DataApp.showSearch?: boolean — Show declared search controls. Defaults to true; hiding preserves their values.
 DataApp.showFilters?: boolean — Show declared filter controls, including display options. Defaults to true; hiding preserves their values.
@@ -366,9 +366,9 @@ DataApp (component, @altertable/data-app-react/ui): (props: DataAppProps) — Se
 DataApp.children: ReactNode
 DataApp.dataContext: DataContext
 DataApp.description?: ReactNode — Override the declared subtitle; null hides it.
-DataApp.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states.
-DataApp.toolbarActions?: ReactNode
-DataApp.footerActions?: ReactNode
+DataApp.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states. Embedded surfaces have no toolbar: the host runs page actions through its bridge.
+DataApp.toolbarActions?: ReactNode — Standalone toolbar controls; embedded surfaces omit them.
+DataApp.footerActions?: ReactNode — Standalone footer controls; embedded surfaces omit them.
 DataApp.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
 DataApp.csvExport?: CsvExport
 DataApp.queries?: DisclosedQuery[]
@@ -398,9 +398,9 @@ DataAppProps (type, @altertable/data-app-react/ui)
 DataAppProps.children: ReactNode
 DataAppProps.dataContext: DataContext
 DataAppProps.description?: ReactNode — Override the declared subtitle; null hides it.
-DataAppProps.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states.
-DataAppProps.toolbarActions?: ReactNode
-DataAppProps.footerActions?: ReactNode
+DataAppProps.showToolbar?: boolean — Show page actions. Defaults to true; does not hide filters or data states. Embedded surfaces have no toolbar: the host runs page actions through its bridge.
+DataAppProps.toolbarActions?: ReactNode — Standalone toolbar controls; embedded surfaces omit them.
+DataAppProps.footerActions?: ReactNode — Standalone footer controls; embedded surfaces omit them.
 DataAppProps.footer?: ReactNode — Optional source, coverage, or methodology note below the app content. Compose prose and inline components; typography and spacing are provided.
 DataAppProps.csvExport?: CsvExport
 DataAppProps.queries?: DisclosedQuery[]
@@ -1311,6 +1311,7 @@ PresentStory.dataContext: DataContext
 PresentStory.theme?: ThemeController
 PresentStory.headerActions?: ReactNode
 PresentStory.footer?: ReactNode
+PresentStory.trigger?: boolean — False renders only the presentation, which `?present=1&step=` opens.
 PresentStory.…: plus props inherited from React
 PresentStoryProps (type, @altertable/data-app-react/ui): = props listed as PresentStory.*
 QueryDefinitions (type, @altertable/data-app, @altertable/data-app/config, @altertable/data-app/contract): <Record<string, QueryDefinition>> = { readonly [x: string]: QueryDefinition; }

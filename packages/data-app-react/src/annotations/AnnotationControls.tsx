@@ -57,6 +57,8 @@ type AnnotationControlsProps = {
   presentation: DataAppAnnotationPresentation;
   displayedInput?: unknown;
   view?: string;
+  /** False leaves annotation mode to the host, as on embedded surfaces. */
+  trigger?: boolean;
 };
 type AnnotationSelection = {
   target: AnnotationTargetElement;
@@ -78,6 +80,7 @@ export function AnnotationControls({
   presentation,
   displayedInput,
   view,
+  trigger = true,
 }: AnnotationControlsProps) {
   const annotationClient = useDataAppAnnotations();
   const [state, dispatch] = useReducer(
@@ -86,7 +89,10 @@ export function AnnotationControls({
     createAnnotationControlsState
   );
   const { editor, hoveredTarget, saving } = state;
-  const active = presentation.active ?? state.annotationModeActive;
+  const hostOwnsMode = !trigger || presentation.active !== undefined;
+  const active = hostOwnsMode
+    ? (presentation.active ?? false)
+    : state.annotationModeActive;
   const pending = saving || presentation.readOnly === true;
   const editing = Boolean(editor);
   const editorDraftId = editor?.draft.id;
@@ -282,7 +288,7 @@ export function AnnotationControls({
 
   function setAnnotationMode(active: boolean) {
     dispatch({ type: 'annotationModeChanged', active });
-    if (presentation.active !== undefined) {
+    if (hostOwnsMode) {
       void annotationClient
         .requestAnnotationModeChange({ active })
         .catch(() => {});
@@ -430,7 +436,7 @@ export function AnnotationControls({
 
   return (
     <>
-      {presentation.active === undefined && (
+      {!hostOwnsMode && (
         <AnnotationTrigger
           buttonRef={toolbarRef}
           active={active}

@@ -1,7 +1,7 @@
 import { type AppDiagnosticReport } from '@altertable/data-app/client';
 import { parseAppDiagnosticReport } from '@altertable/data-app/internal';
 
-export const AUTOMATIC_REPAIR_LIMIT = 3;
+const AUTOMATIC_REPAIR_LIMIT = 3;
 
 /** Host-retained state for one app repair session. Never reset for revisions, healthy reports or manual requests. */
 export type DataAppRepairState = {

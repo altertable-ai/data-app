@@ -81,7 +81,6 @@ function App() {
       }}
       dataContext={{ description: 'Test report', glossary: {} }}
       description="Report description"
-      toolbarActions={<button>Custom toolbar action</button>}
       footerActions={<button>Custom footer action</button>}
     >
       <DataWidget

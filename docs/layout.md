@@ -38,6 +38,10 @@ Compose paragraphs, links, and inline components directly; no `<TextContent>`
 wrapper is needed. Keep headings and widgets in the body and controls in
 `footerActions`.
 
+Embedded hosts supply the page chrome, so `<DataApp>` omits its header, footer,
+`toolbarActions`, and `footerActions` there; the host runs refresh, export,
+story, and inspection. Keep controls readers need in the body.
+
 ## Verify rendered layouts
 
 Review authored composition with realistic labels and values. For custom layout

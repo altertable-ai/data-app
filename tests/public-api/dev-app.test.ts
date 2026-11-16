@@ -760,6 +760,79 @@ mountDataApp({ app, component: App });
   }
 });
 
+test('dev:file offers observed app errors to copy, with a selectable fallback', async () => {
+  const directory = await temporaryDirectory();
+  const entry = join(directory, 'index.tsx');
+  await writeFile(
+    entry,
+    `
+import { useState } from 'react';
+import { defineDataApp } from '@altertable/data-app';
+import { mountDataApp } from '@altertable/data-app-react';
+import { DataWidget } from '@altertable/data-app-react/ui';
+const app = defineDataApp({ title: 'Preview', description: 'Preview', scope: { organization: 'test', environment: 'test' }, queries: {} });
+function Chart({ broken }: { broken: boolean }) {
+  if (broken) throw new Error('Series requires a numeric value');
+  return <p>Chart ready</p>;
+}
+function App() {
+  const [broken, setBroken] = useState(false);
+  return <><button onClick={() => setBroken(true)}>Break widget</button>
+    <DataWidget title="Revenue"><Chart broken={broken} /></DataWidget></>;
+}
+mountDataApp({ app, component: App });
+`
+  );
+  const server = await startFile(entry);
+  const browser = await chromium.launch();
+  try {
+    for (const clipboard of [true, false]) {
+      const context = await browser.newContext({
+        permissions: clipboard ? ['clipboard-read', 'clipboard-write'] : [],
+      });
+      const page = await context.newPage();
+      await page.goto(server.url);
+      const app = page.frameLocator('iframe');
+      await app.getByText('Chart ready').waitFor();
+      expect(
+        await page.getByRole('region', { name: 'App errors' }).count()
+      ).toBe(0);
+      await app.getByRole('button', { name: 'Break widget' }).click();
+      const banner = page.getByRole('region', { name: 'App errors' });
+      await banner.waitFor();
+      expect(await banner.textContent()).toContain(
+        'Copy the diagnostics into your agent to request a fix.'
+      );
+      // The preview cannot invoke an agent, so neither it nor the widget offers a fix.
+      expect(await page.getByRole('button', { name: /^Fix/ }).count()).toBe(0);
+      expect(
+        await app.getByRole('button', { name: 'Fix error' }).isDisabled()
+      ).toBe(true);
+      await banner.getByRole('button', { name: 'Copy diagnostics' }).click();
+      if (clipboard) {
+        await vi.waitFor(async () => {
+          const report = JSON.parse(
+            await page.evaluate(() => navigator.clipboard.readText())
+          );
+          expect(report.failures).toHaveLength(1);
+          expect(report.failures[0].message).toContain(
+            'Series requires a numeric value'
+          );
+        });
+      } else {
+        await banner.getByText('Couldn’t copy.', { exact: false }).waitFor();
+        const report = JSON.parse(
+          (await banner.getByText(/"failures":/).textContent())!
+        );
+        expect(report.failures).toHaveLength(1);
+      }
+      await context.close();
+    }
+  } finally {
+    await browser.close();
+  }
+});
+
 test('the public Bun preview serves injected data and rejects foreign requests', async () => {
   const directory = await temporaryDirectory();
   const file = join(directory, 'index.tsx');

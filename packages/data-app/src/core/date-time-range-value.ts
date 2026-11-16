@@ -9,6 +9,7 @@ import type {
   RelativeUnit,
 } from './date-time-range.ts';
 import { invariant } from './invariant.ts';
+import { isRecord } from './record.ts';
 import { fixedUnitMilliseconds } from './time-units.ts';
 
 const anchors: Record<RelativeAnchor, string> = {
@@ -35,13 +36,9 @@ export function parseDateTimeRange(
   value: unknown,
   { maxRangeDays }: { maxRangeDays?: number } = {}
 ): DateTimeRange {
+  invariant(isRecord(value), 'Choose a datetime range.');
   invariant(
-    !!value && typeof value === 'object' && !Array.isArray(value),
-    'Choose a datetime range.'
-  );
-  const record = value as Record<string, unknown>;
-  invariant(
-    Object.keys(record).every(key => key === 'from' || key === 'to'),
+    Object.keys(value).every(key => key === 'from' || key === 'to'),
     'Unknown datetime range field.'
   );
   function bound(raw: unknown): AbsoluteOrRelativeDateTime | null {
@@ -55,41 +52,33 @@ export function parseDateTimeRange(
       );
       return date;
     }
+    invariant(isRecord(raw), 'Invalid datetime bound.');
     invariant(
-      typeof raw === 'object' && !Array.isArray(raw),
-      'Invalid datetime bound.'
-    );
-    const r = raw as Record<string, unknown>;
-    invariant(
-      Object.keys(r).every(key => key === 'anchor' || key === 'offset') &&
-        typeof r.anchor === 'string' &&
-        Object.hasOwn(anchors, r.anchor),
+      Object.keys(raw).every(key => key === 'anchor' || key === 'offset') &&
+        typeof raw.anchor === 'string' &&
+        Object.hasOwn(anchors, raw.anchor),
       'Invalid relative anchor.'
     );
     invariant(
-      Array.isArray(r.offset) && r.offset.length <= 16,
+      Array.isArray(raw.offset) && raw.offset.length <= 16,
       'Use at most 16 relative offsets.'
     );
-    const offset = r.offset.map((o: unknown) => {
+    const offset = raw.offset.map((o: unknown) => {
+      invariant(isRecord(o), 'Invalid relative offset.');
       invariant(
-        !!o && typeof o === 'object' && !Array.isArray(o),
+        Object.keys(o).every(key => key === 'amount' || key === 'unit') &&
+          typeof o.amount === 'number' &&
+          Number.isSafeInteger(o.amount) &&
+          Math.abs(o.amount) <= 1_000_000 &&
+          typeof o.unit === 'string' &&
+          Object.hasOwn(units, o.unit),
         'Invalid relative offset.'
       );
-      const v = o as Record<string, unknown>;
-      invariant(
-        Object.keys(v).every(key => key === 'amount' || key === 'unit') &&
-          typeof v.amount === 'number' &&
-          Number.isSafeInteger(v.amount) &&
-          Math.abs(v.amount) <= 1_000_000 &&
-          typeof v.unit === 'string' &&
-          Object.hasOwn(units, v.unit),
-        'Invalid relative offset.'
-      );
-      return { amount: v.amount, unit: v.unit as RelativeUnit };
+      return { amount: o.amount, unit: o.unit as RelativeUnit };
     });
-    return { anchor: r.anchor as RelativeAnchor, offset };
+    return { anchor: raw.anchor as RelativeAnchor, offset };
   }
-  const range = { from: bound(record.from), to: bound(record.to) };
+  const range = { from: bound(value.from), to: bound(value.to) };
   if (range.from instanceof Date && range.to instanceof Date)
     invariant(range.from < range.to, 'Start must be before end.');
   invariant(

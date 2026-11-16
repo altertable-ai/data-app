@@ -29,7 +29,7 @@ describe('export', () => {
     );
   });
 
-  test('embedded toolbar exports displayed results through its host during updates and failures', async ({
+  test('a host exports displayed results through offered actions during updates and failures', async ({
     page,
   }) => {
     let release!: () => void;
@@ -45,17 +45,24 @@ describe('export', () => {
     });
     await page.goto('/starter-data-app');
     const app = page.frameLocator('iframe');
-    await expect
-      .poll(() =>
-        app
-          .getByRole('group', { name: 'Page actions', exact: true })
-          .filter({ hasText: 'Loading data' })
-          .isVisible()
-      )
-      .toBe(true);
-    await expect
-      .poll(() => app.getByRole('button', { name: 'Export CSV' }).isDisabled())
-      .toBe(true);
+    const actions = page.getByRole('group', {
+      name: 'Host page actions',
+      exact: true,
+    });
+    const exportButton = actions.getByRole('button', {
+      name: 'Export CSV',
+      exact: true,
+    });
+    function refreshing() {
+      return actions
+        .getByRole('button', { name: /refresh/ })
+        .getAttribute('aria-busy');
+    }
+    expect(await app.getByRole('group', { name: 'Page actions' }).count()).toBe(
+      0
+    );
+    await expect.poll(refreshing).toBe('true');
+    await expect.poll(() => exportButton.isDisabled()).toBe(true);
     release();
     gate = Promise.resolve();
     await expect
@@ -72,9 +79,7 @@ describe('export', () => {
 
     async function expectExport(filename: string, csv: string) {
       const downloaded = page.waitForEvent('download');
-      await app
-        .getByRole('button', { name: 'Export CSV', exact: true })
-        .click();
+      await exportButton.click();
       const download = await downloaded;
       expect(download.suggestedFilename()).toBe(filename);
       expect(await contents(download)).toBe(csv);
@@ -90,14 +95,7 @@ describe('export', () => {
     await app
       .getByRole('searchbox', { name: 'Group', exact: true })
       .fill('Beta');
-    await expect
-      .poll(() =>
-        app
-          .getByRole('group', { name: 'Page actions', exact: true })
-          .getByText('Updating data', { exact: true })
-          .isVisible()
-      )
-      .toBe(true);
+    await expect.poll(refreshing).toBe('true');
     await expectExport(
       'sample-counts-all-data.csv',
       '\uFEFFGroup,Sample count\r\nAlpha,2200000\r\nBeta,0\r\n'
@@ -143,9 +141,7 @@ describe('export', () => {
           .isVisible()
       )
       .toBe(true);
-    await expect
-      .poll(() => app.getByRole('button', { name: 'Export CSV' }).isDisabled())
-      .toBe(true);
+    await expect.poll(() => exportButton.isDisabled()).toBe(true);
   });
 
   test('embedded export failures stay visible and allow retry', async ({
@@ -153,7 +149,11 @@ describe('export', () => {
   }) => {
     await page.goto('/starter-data-app?export-error');
     const app = page.frameLocator('iframe');
-    const button = app.getByRole('button', { name: 'Export CSV', exact: true });
+    const button = page.getByRole('button', {
+      name: 'Export CSV',
+      exact: true,
+    });
+    await expect.poll(() => button.isEnabled()).toBe(true);
     await button.click();
     await expect
       .poll(() => app.getByRole('alert').textContent())
@@ -172,65 +172,91 @@ describe('export', () => {
     await expect.poll(() => button.isEnabled()).toBe(true);
   });
 
-  for (const embedded of [false, true])
-    test(`multiple datasets export CSVs and a ZIP ${embedded ? 'through the iframe host' : 'standalone'}`, async ({
-      page,
-    }) => {
-      await page.goto(embedded ? '/bundle-host' : '/static?multiple-exports');
-      const app = embedded ? page.frameLocator('iframe') : page;
-      const button = app.getByRole('button', { name: 'Export', exact: true });
-      await button.focus();
-      await expect
-        .poll(() => app.getByRole('tooltip').textContent())
-        .toBe('Export data…');
-      await button.press('ArrowDown');
-      await expect
-        .poll(() =>
-          app
-            .getByRole('menuitem', { name: 'Export Counts CSV', exact: true })
-            .evaluate(
-              element => element === element.ownerDocument.activeElement
-            )
-        )
-        .toBe(true);
-      let downloaded = page.waitForEvent('download');
-      await app
-        .getByRole('menuitem', { name: 'Export Summary CSV', exact: true })
-        .click();
-      let download = await downloaded;
-      expect(download.suggestedFilename()).toBe('Summary.csv');
-      expect(await contents(download)).toBe('\uFEFFTotal\r\n0\r\n');
-      await button.click();
-      downloaded = page.waitForEvent('download');
-      await app
-        .getByRole('menuitem', { name: 'Export all ZIP', exact: true })
-        .click();
-      download = await downloaded;
-      expect(download.suggestedFilename()).toBe('gallery.zip');
-      const files = unzipSync(await bytes(download));
-      expect(Object.keys(files)).toEqual(['Counts.csv', 'Summary.csv']);
-      expect(Array.from(files['Summary.csv']!.slice(0, 3))).toEqual([
-        239, 187, 191,
-      ]);
-      expect(strFromU8(files['Summary.csv']!)).toBe('Total\r\n0\r\n');
-      await button.click();
-      downloaded = page.waitForEvent('download');
-      await app
-        .getByRole('menuitem', { name: 'Export all ZIP', exact: true })
-        .click();
-      expect((await downloaded).suggestedFilename()).toBe('gallery.zip');
-      await button.click();
+  test('multiple datasets export CSVs and a ZIP standalone', async ({
+    page,
+  }) => {
+    await page.goto('/static?multiple-exports');
+    const app = page;
+    const button = app.getByRole('button', { name: 'Export', exact: true });
+    await button.focus();
+    await expect
+      .poll(() => app.getByRole('tooltip').textContent())
+      .toBe('Export data…');
+    await button.press('ArrowDown');
+    await expect
+      .poll(() =>
+        app
+          .getByRole('menuitem', { name: 'Export Counts CSV', exact: true })
+          .evaluate(element => element === element.ownerDocument.activeElement)
+      )
+      .toBe(true);
+    let downloaded = page.waitForEvent('download');
+    await app
+      .getByRole('menuitem', { name: 'Export Summary CSV', exact: true })
+      .click();
+    let download = await downloaded;
+    expect(download.suggestedFilename()).toBe('Summary.csv');
+    expect(await contents(download)).toBe('\uFEFFTotal\r\n0\r\n');
+    await button.click();
+    downloaded = page.waitForEvent('download');
+    await app
+      .getByRole('menuitem', { name: 'Export all ZIP', exact: true })
+      .click();
+    download = await downloaded;
+    expect(download.suggestedFilename()).toBe('gallery.zip');
+    const files = unzipSync(await bytes(download));
+    expect(Object.keys(files)).toEqual(['Counts.csv', 'Summary.csv']);
+    expect(Array.from(files['Summary.csv']!.slice(0, 3))).toEqual([
+      239, 187, 191,
+    ]);
+    expect(strFromU8(files['Summary.csv']!)).toBe('Total\r\n0\r\n');
+    await button.click();
+    downloaded = page.waitForEvent('download');
+    await app
+      .getByRole('menuitem', { name: 'Export all ZIP', exact: true })
+      .click();
+    expect((await downloaded).suggestedFilename()).toBe('gallery.zip');
+    await button.click();
 
-      await app.getByRole('menu').press('Escape');
-      await expect.poll(() => app.getByRole('menu').count()).toBe(0);
-      await expect
-        .poll(() =>
-          button.evaluate(
-            element => element === element.ownerDocument.activeElement
-          )
+    await app.getByRole('menu').press('Escape');
+    await expect.poll(() => app.getByRole('menu').count()).toBe(0);
+    await expect
+      .poll(() =>
+        button.evaluate(
+          element => element === element.ownerDocument.activeElement
         )
-        .toBe(true);
+      )
+      .toBe(true);
+  });
+
+  test('a host exports each offered dataset and a ZIP', async ({ page }) => {
+    await page.goto('/bundle-host');
+    const actions = page.getByRole('group', {
+      name: 'Host page actions',
+      exact: true,
     });
+    const summary = actions.getByRole('button', {
+      name: 'Export Summary CSV',
+      exact: true,
+    });
+    await expect.poll(() => summary.isEnabled()).toBe(true);
+    expect(
+      await actions.getByRole('button', { name: 'Export Counts CSV' }).count()
+    ).toBe(1);
+    let downloaded = page.waitForEvent('download');
+    await summary.click();
+    let download = await downloaded;
+    expect(download.suggestedFilename()).toBe('Summary.csv');
+    expect(await contents(download)).toBe('\uFEFFTotal\r\n0\r\n');
+    downloaded = page.waitForEvent('download');
+    await actions
+      .getByRole('button', { name: 'Export all ZIP', exact: true })
+      .click();
+    download = await downloaded;
+    expect(download.suggestedFilename()).toBe('gallery.zip');
+    const files = unzipSync(await bytes(download));
+    expect(Object.keys(files)).toEqual(['Counts.csv', 'Summary.csv']);
+  });
 });
 
 test('omitting presentation and export retains refresh and loaded content', async ({

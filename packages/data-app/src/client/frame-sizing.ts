@@ -1,4 +1,5 @@
 import { isDataAppPresentation } from '../core/presentation.ts';
+import { isRecord } from '../core/record.ts';
 
 /** Reports the document height to a parent that sizes the iframe to its content.
  * Sizing applies only while the parent requests it and a UI owner whose styles support it
@@ -55,10 +56,7 @@ export function createFrameSizing(
   return {
     /** A new session starts with a parent that has not received the current height. */
     update(state: unknown, session: 'new' | 'current') {
-      const presentation =
-        state && typeof state === 'object' && 'presentation' in state
-          ? state.presentation
-          : undefined;
+      const presentation = isRecord(state) ? state.presentation : undefined;
       requested =
         isDataAppPresentation(presentation) &&
         presentation.sizing === 'content';

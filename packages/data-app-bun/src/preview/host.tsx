@@ -5,10 +5,7 @@ import {
   createSqlQueryHandler,
   type DataAppStatus,
 } from '@altertable/data-app-embed';
-import {
-  DataAppBridge,
-  DataAppRepairBanner,
-} from '@altertable/data-app-embed/react';
+import { DataAppBridge } from '@altertable/data-app-embed/react';
 import {
   DataSourceError,
   createMessageRouter,
@@ -20,6 +17,8 @@ import {
 import { downloadBlob } from '@altertable/data-app/internal';
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+
+import { RepairBanner } from './repair-banner.tsx';
 
 const openExternalLink = createExternalLinkHandler();
 
@@ -136,7 +135,7 @@ function DevFileHost() {
           The data app failed to start. Check the browser console.
         </p>
       )}
-      <DataAppRepairBanner session={repair} />
+      <RepairBanner session={repair} />
       <DataAppBridge
         repair={{ session: repair, revision: 'local-preview' }}
         source={{ type: 'bundle', javascript: bundle.javascript }}

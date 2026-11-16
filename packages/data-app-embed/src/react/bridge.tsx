@@ -1,10 +1,12 @@
 import {
+  useImperativeHandle,
   useRef,
   useLayoutEffect,
   useEffect,
   useState,
   type ComponentRef,
   type ComponentPropsWithoutRef,
+  type Ref,
 } from 'react';
 
 import { attachDataAppBridge, type DataAppBridgeOptions } from '../bridge.ts';
@@ -16,11 +18,14 @@ export type DataAppBridgeProps = Pick<
   | 'onMessage'
   | 'onStatusChange'
   | 'onDiagnostic'
+  | 'onActionsChange'
   | 'presentation'
   | 'logger'
   | 'repair'
-> &
-  (
+> & {
+  /** Runs page actions the app offers through `onActionsChange`. */
+  ref?: Ref<DataAppBridgeHandle>;
+} & (
     | {
         source: DataAppSource;
         title: string;
@@ -47,6 +52,8 @@ export type DataAppBridgeProps = Pick<
         iframeProps?: never;
       }
   );
+
+export type DataAppBridgeHandle = Pick<DataAppHost, 'runAction'>;
 
 /** Owns iframe setup and delivery. The consuming shell owns loading, error UI, and retries. */
 export function DataAppBridge(props: DataAppBridgeProps) {
@@ -77,6 +84,12 @@ function useBridgeState(props: DataAppBridgeProps) {
   useLayoutEffect(() => {
     handlers.current = props;
   });
+
+  useImperativeHandle(
+    props.ref,
+    () => ({ runAction: action => hostRef.current?.runAction(action) }),
+    []
+  );
 
   useEffect(() => {
     hostRef.current?.setPresentation(props.presentation);
@@ -119,6 +132,9 @@ function SourceBridge(props: SourceBridgeProps) {
       },
       onDiagnostic(event) {
         return handlers.current.onDiagnostic?.(event);
+      },
+      onActionsChange(actions) {
+        return handlers.current.onActionsChange?.(actions);
       },
     });
     hostRef.current = bridge;
@@ -183,6 +199,9 @@ function ConnectionBridge(props: ConnectionBridgeProps) {
       },
       onDiagnostic(event) {
         return handlers.current.onDiagnostic?.(event);
+      },
+      onActionsChange(actions) {
+        return handlers.current.onActionsChange?.(actions);
       },
     });
     hostRef.current = bridge;

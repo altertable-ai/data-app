@@ -6,6 +6,7 @@ import type {
 import { facetSource } from './facets.ts';
 import { invariant } from './invariant.ts';
 import { KEY_SEPARATOR } from './keys.ts';
+import { isRecord } from './record.ts';
 
 export type DimensionValue = string | number;
 export type DimensionMember<T extends DimensionValue = DimensionValue> =
@@ -284,7 +285,7 @@ export function parseFacetOptions<T extends DimensionValue>(
   const options: DimensionOption<T>[] = [];
   const seen = new Set<string>();
   for (const item of value) {
-    invariant(item && typeof item === 'object', 'Invalid facet option.');
+    invariant(isRecord(item), 'Invalid facet option.');
     const option = item as DimensionOption<T>;
     invariant(
       typeof option.value === filter.valueType &&

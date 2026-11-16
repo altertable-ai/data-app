@@ -7,6 +7,7 @@ import {
   type OutputOf,
 } from './operation-types.ts';
 import { isQueryParameters, type QueryParameters } from './queries.ts';
+import { isRecord } from './record.ts';
 export {
   type OperationContracts,
   type DataQueryInput,
@@ -229,8 +230,7 @@ export function defineDataQueryRoute<
         (!Array.isArray(body.queries) ||
           !body.queries.every(
             query =>
-              query &&
-              typeof query === 'object' &&
+              isRecord(query) &&
               typeof query.name === 'string' &&
               typeof query.statement === 'string' &&
               (query.params === undefined || isQueryParameters(query.params)) &&

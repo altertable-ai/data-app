@@ -2,11 +2,15 @@ import {
   createNavigationHandler,
   createExternalLinkHandler,
   createSqlQueryHandler,
+  type DataAppActions,
   type DataAppDiagnostic,
   type DataAppLogger,
   type DataAppStatus,
 } from '@altertable/data-app-embed';
-import { DataAppBridge } from '@altertable/data-app-embed/react';
+import {
+  DataAppBridge,
+  type DataAppBridgeHandle,
+} from '@altertable/data-app-embed/react';
 import { createHttpTransport } from '@altertable/data-app/client';
 import {
   createMessageRouter,
@@ -17,6 +21,7 @@ import {
 } from '@altertable/data-app/contract';
 import {
   useReducer,
+  useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -57,7 +62,78 @@ const offscreen = {
   overflow: 'hidden',
 } as const;
 
+/** Host-owned page actions, as a parent shell renders them from the app's offer. */
+function HostActionBar({
+  actions,
+  run,
+}: {
+  actions: DataAppActions;
+  run: DataAppBridgeHandle['runAction'];
+}) {
+  const { refresh, exportCsv, presentStory, aboutData } = actions;
+  return (
+    <fieldset aria-label="Host page actions">
+      {refresh && (
+        <button
+          aria-busy={refresh.refreshing}
+          disabled={refresh.refreshing && !refresh.cancellable}
+          onClick={() =>
+            run({ type: refresh.refreshing ? 'cancelRefresh' : 'refresh' })
+          }
+        >
+          {refresh.refreshing ? 'Cancel refresh' : 'Refresh data'}
+        </button>
+      )}
+      {exportCsv &&
+        (exportCsv.tables.length > 1 ? (
+          <>
+            {exportCsv.tables.map(table => (
+              <button
+                key={table}
+                disabled={!exportCsv.enabled}
+                onClick={() => run({ type: 'exportCsv', table })}
+              >
+                Export {table} CSV
+              </button>
+            ))}
+            <button
+              disabled={!exportCsv.enabled}
+              onClick={() => run({ type: 'exportCsv' })}
+            >
+              Export all ZIP
+            </button>
+          </>
+        ) : (
+          <button
+            disabled={!exportCsv.enabled}
+            onClick={() => run({ type: 'exportCsv' })}
+          >
+            Export CSV
+          </button>
+        ))}
+      {presentStory && (
+        <button
+          disabled={!presentStory.enabled}
+          onClick={() => run({ type: 'presentStory' })}
+        >
+          Present story
+        </button>
+      )}
+      {aboutData && (
+        <button
+          disabled={!aboutData.enabled}
+          onClick={() => run({ type: 'aboutData' })}
+        >
+          Explore data
+        </button>
+      )}
+    </fieldset>
+  );
+}
+
 function Host() {
+  const bridge = useRef<DataAppBridgeHandle>(null);
+  const [actions, setActions] = useState<DataAppActions>({});
   const [externalNavigation, setExternalNavigation] = useState('');
   function navigateNewWindowOrTab(
     url: string,
@@ -252,6 +328,10 @@ function Host() {
           Move embedded report
         </button>
       )}
+      <HostActionBar
+        actions={actions}
+        run={action => bridge.current?.runAction(action)}
+      />
       <section
         aria-label="Embed panel"
         style={
@@ -263,12 +343,11 @@ function Host() {
         <div style={{ height: panelOffset }} />
         <DataAppBridge
           key={attempt}
+          ref={bridge}
           title="Sandbox app"
           iframeProps={{
             hidden: status !== 'ready',
-            allow: params.has('no-fullscreen')
-              ? "fullscreen 'none'"
-              : 'fullscreen *',
+            allow: 'fullscreen *',
             allowFullScreen: true,
             style: { width: '100%', height: '80vh', border: 0 },
           }}
@@ -297,6 +376,7 @@ function Host() {
           }
           startupTimeoutMs={params.has('timeout') ? 200 : 10000}
           onStatusChange={setStatus}
+          onActionsChange={setActions}
           onMessage={router.dispatch}
           logger={logger}
           onDiagnostic={event => {
