@@ -271,7 +271,9 @@ only the keys present:
 
 Call `runAction()` from the user's click: the bridge needs that gesture to show
 a story fullscreen. It exits fullscreen when the story closes, and leaving
-fullscreen closes the story. The app ignores actions it does not currently
+fullscreen closes the story. `presentStory` and `aboutData` move focus into the
+frame; when that story closes, focus returns to the control that ran it unless
+the reader has moved elsewhere. The app ignores actions it does not currently
 offer. While the app reconnects, actions reset to `{}` and `runAction()` does
 nothing.
 

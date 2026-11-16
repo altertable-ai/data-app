@@ -61,6 +61,13 @@ export type DataAppConnectionOptions = DataAppHostOptions & {
   window?: Window;
 };
 
+type FocusableElement = Element & HTMLOrSVGElement;
+
+/** HTML and SVG elements can take focus; checked by shape so frames from other realms qualify. */
+function isFocusable(element: Element): element is FocusableElement {
+  return 'focus' in element;
+}
+
 /** The bridge owns delivery and cancellation; the routed handler owns validation, authorization and execution. */
 export function attachDataAppConnection({
   iframe,
@@ -99,6 +106,8 @@ export function attachDataAppConnection({
   let actionsIdentity = '{}';
   // Set while a story this bridge opened shows the iframe fullscreen.
   let ownsFullscreen = false;
+  // The host control that ran `presentStory`; it regains focus when that story closes.
+  let storyLauncher: FocusableElement | undefined;
   const parentDocument = iframe.ownerDocument;
   const requestStartedAt = new Map<string, number>();
 
@@ -182,16 +191,53 @@ export function attachDataAppConnection({
     const identity = JSON.stringify(next);
     if (identity === actionsIdentity) return;
     actionsIdentity = identity;
+    const wasPresenting = actions.presentStory?.presenting === true;
     actions = next;
-    if (!next.presentStory?.presenting) exitStoryFullscreen();
+    if (!next.presentStory?.presenting) {
+      // Focus cannot return to the host page until it leaves fullscreen.
+      const exited = exitStoryFullscreen();
+      if (wasPresenting) void exited.then(restoreStoryLauncher);
+    }
     onActionsChange?.(next);
   }
 
   function runAction(action: DataAppAction) {
     if (disposed || !sessionId) return;
-    if (action.type === 'presentStory' && actions.presentStory?.enabled)
+    if (
+      action.type === 'presentStory' &&
+      actions.presentStory?.enabled &&
+      !actions.presentStory.presenting
+    ) {
+      storyLauncher = focusedHostControl();
       enterStoryFullscreen();
+      // The frame cannot take focus from the host, so move keyboard users to the story.
+      iframe.focus({ preventScroll: true });
+    }
+    if (action.type === 'aboutData' && actions.aboutData?.enabled)
+      iframe.focus({ preventScroll: true });
     send('actionRun', { action });
+  }
+
+  function focusedHostControl() {
+    const active = parentDocument.activeElement;
+    return active &&
+      active !== iframe &&
+      active !== parentDocument.body &&
+      isFocusable(active)
+      ? active
+      : undefined;
+  }
+
+  /** Returns focus only from the frame or nowhere, never from a control the reader moved to. */
+  function restoreStoryLauncher() {
+    const launcher = storyLauncher;
+    storyLauncher = undefined;
+    const active = parentDocument.activeElement;
+    if (
+      launcher?.isConnected &&
+      (active === null || active === iframe || active === parentDocument.body)
+    )
+      launcher.focus({ preventScroll: true });
   }
 
   /** Stories fill the screen as they do standalone; the frame alone cannot without its own gesture. */
@@ -207,11 +253,12 @@ export function attachDataAppConnection({
     );
   }
 
-  function exitStoryFullscreen() {
-    if (!ownsFullscreen) return;
+  function exitStoryFullscreen(): Promise<void> {
+    if (!ownsFullscreen) return Promise.resolve();
     ownsFullscreen = false;
-    if (parentDocument.fullscreenElement === iframe)
-      void parentDocument.exitFullscreen().catch(() => {});
+    return parentDocument.fullscreenElement === iframe
+      ? parentDocument.exitFullscreen().catch(() => {})
+      : Promise.resolve();
   }
 
   function closeStoryOnFullscreenExit() {
@@ -417,7 +464,7 @@ export function attachDataAppConnection({
   }
 
   function dispose() {
-    exitStoryFullscreen();
+    void exitStoryFullscreen();
     parentDocument.removeEventListener(
       'fullscreenchange',
       closeStoryOnFullscreenExit
