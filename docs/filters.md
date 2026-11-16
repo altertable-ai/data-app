@@ -70,9 +70,8 @@ function App() {
 | `dateTimeRangeFilter()`                                | `{ range, comparison }` of resolved dates      |
 
 Pass values to declared query parameters; never interpolate them into SQL. Bind
-date filter bounds as [separate timestamp parameters](contract.md#bind-date-ranges).
-Write DuckDB SQL directly. For a single selected country, bind its value as a
-string parameter:
+date filter bounds as [separate parameters](contract.md#bind-date-ranges).
+For a single-value choice, bind its selected ID as a string:
 
 ```ts
 // ... in defineDataApp({ queries })
@@ -84,13 +83,12 @@ revenueByCampaign: {
   params: { country: { type: 'string' } },
   projections: { campaign: { type: 'string' }, revenue: { type: 'number' } },
 },
-// ... in the operation: query('revenueByCampaign', { country: selectedCountry })
+// ... in the operation: query('revenueByCampaign', { country: input.country })
 ```
 
-For multiple values, missing values, or exclusion, bind a validated selection
-and express its semantics with DuckDB JSON and list functions in the SQL. Dimension,
-number, and boolean selections support `{ kind: 'all' }`. Offer only predicates
-the registered query supports.
+Dimension selections bind as JSON. Express multiple values, missing values, and
+exclusion in DuckDB SQL. Dimension, number, and boolean selections support
+`{ kind: 'all' }`. Offer only predicates the registered query supports.
 
 ## Categorical dimensions
 
@@ -227,7 +225,7 @@ const dailyCounts = dataApp.defineOperation({
       ...resolvedDateTimeRangeParams(period.range, 'period'),
       groupName,
     });
-    // ... query with resolvedDateTimeRangeParams(period.comparison, 'period') when it is not null
+    // ... use period.comparison the same way when it is not null
     return current.rows;
   },
 });
@@ -236,7 +234,7 @@ const dailyCounts = dataApp.defineOperation({
 - `run()` receives `{ range, comparison }` with resolved dates. Ranges include
   `from` and exclude `to`: September 24–30 queries `2026-09-24T00:00:00Z`
   through `2026-10-01T00:00:00Z`. Bind them as
-  [separate timestamp parameters](contract.md#bind-date-ranges).
+  [separate parameters](contract.md#bind-date-ranges).
 - A range that runs past now ends at now: today picked in the calendar queries
   midnight through the current time.
 - `comparison: 'off'` or `'on'` offers the previous-period toggle, starting in

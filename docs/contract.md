@@ -84,9 +84,8 @@ Use `operations.sampleCountsByGroup.queryNames` for context and evidence.
 
 ### Bind date ranges
 
-The date filter supplies resolved `Date` bounds. Bind them as two string parameters
-and cast them to timezone-free DuckDB timestamps. Keep the start inclusive and
-the end exclusive:
+Bind a date filter's `range` or `comparison` as two string parameters. Cast
+them to DuckDB `TIMESTAMP`; include the start and exclude the end:
 
 ```ts
 const dataApp = defineDataApp({
@@ -109,15 +108,13 @@ const dataApp = defineDataApp({
     },
   },
 });
-
-// In the operation, import resolvedDateTimeRangeParams from
-// @altertable/data-app/contract:
-// query('dailyOrders', resolvedDateTimeRangeParams(period.range, 'period'))
 ```
+
+In the operation, import `resolvedDateTimeRangeParams` from
+`@altertable/data-app/contract` and call
+`query('dailyOrders', resolvedDateTimeRangeParams(period.range, 'period'))`.
 
 Date filters pass resolved bounds in their `timeZone`, encoded as UTC wall-clock
 fields: 4 PM in the reporting zone is 16:00Z. SQL bounds are therefore
 timezone-free timestamps; interpret timestamp-with-timezone columns in that same
-zone. Removing `Z` from the bound ISO strings preserves those wall-clock fields
-when DuckDB casts them to `TIMESTAMP`. Coverage and duration limits live on the
-[date filter](filters.md#date-ranges).
+zone. Coverage and duration limits live on the [date filter](filters.md#date-ranges).

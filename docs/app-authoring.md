@@ -34,9 +34,8 @@ app-owned files, not installed packages.
 2. **Write one query and operation per widget.** Give each metric, chart, and
    table its own named query and operation; do not combine unrelated results
    into one query. Write queries against inspected data and preserve supplied
-   metric definitions. Write DuckDB SQL directly; bind values as named parameters
-   without SDK-only shortcuts such as `$period.from` or `$country.matches(column)`.
-   Declare `params` and result aliases in `projections`.
+   metric definitions. Write DuckDB SQL with named parameters; declare `params`
+   and result aliases in `projections`.
    Execute named queries with `query()` and derive results from its typed rows.
 3. **Update context and bindings.** Describe definitions and coverage in the data
    context, using the operation's `queryNames` for evidence. Declare each dataset
